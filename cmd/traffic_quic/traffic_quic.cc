@@ -26,7 +26,9 @@
 #include "P_QUICNetProcessor.h"
 
 #include "ts/ink_string.h"
+#include "ts/ink_args.h"
 #include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 
 #define THREADS 1
 #define DIAGS_LOG_FILE "diags.log"
@@ -105,11 +107,11 @@ class QUICClient : public Continuation
 {
 public:
   QUICClient() : Continuation(new_ProxyMutex()) { SET_HANDLER(&QUICClient::state_http_server_open); };
-  void start();
+  void start(const char *host, int port);
   int state_http_server_open(int event, void *data);
 };
 
-// HttpSM::state_http_server_open(int event, void *data)
+// Similar to HttpSM::state_http_server_open(int event, void *data)
 int
 QUICClient::state_http_server_open(int event, void *data)
 {
@@ -131,14 +133,14 @@ QUICClient::state_http_server_open(int event, void *data)
   return 0;
 }
 
-// TODO: ip:port
 void
-QUICClient::start()
+QUICClient::start(const char * /* remote_addr */, int remote_port)
 {
+  // TODO: getdddrinfo
   sockaddr_in addr;
   addr.sin_family      = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  addr.sin_port        = htons(4433);
+  addr.sin_port        = htons(remote_port);
 
   NetVCOptions opt;
   opt.ip_proto  = NetVCOptions::USE_UDP;
@@ -149,11 +151,37 @@ QUICClient::start()
   quic_NetProcessor.connect_re(this, reinterpret_cast<sockaddr const *>(&addr), &opt);
 }
 
+// TODO: Support QUIC version, cipher suite ...etc
+// TODO: Support qdrive tests
+//   https://github.com/ekr/qdrive
+//   https://github.com/mcmanus/mozquic/tree/master/tests/qdrive
 int
-main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
+main(int argc, const char **argv)
 {
+  // Before accessing file system initialize Layout engine
   Layout::create();
-  init_diags("quic|udp", nullptr);
+
+  // Set up the application version info
+  AppVersionInfo appVersionInfo;
+  appVersionInfo.setup(PACKAGE_NAME, "traffic_quic", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
+  char addr[1024]       = "";
+  int port              = 4433;
+  char debug_tags[1024] = "";
+
+  const ArgumentDescription argument_descriptions[] = {
+    {"addr", 'a', "Address", "S1023", addr, nullptr, nullptr},
+    {"port", 'p', "Port", "I", &port, nullptr, nullptr},
+    {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, nullptr, nullptr},
+    HELP_ARGUMENT_DESCRIPTION(),
+    VERSION_ARGUMENT_DESCRIPTION(),
+    RUNROOT_ARGUMENT_DESCRIPTION(),
+  };
+
+  // Process command line arguments and dump into variables
+  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+
+  init_diags(debug_tags, nullptr);
   RecProcessInit(RECM_STAND_ALONE);
 
   SSLInitializeLibrary();
@@ -168,11 +196,12 @@ main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
   main_thread->set_specific();
 
   QUICClient client;
-  client.start();
+  client.start(addr, port);
 
   main_thread->execute();
 }
 
+// FIXME: remove stub
 //
 // stub
 //
