@@ -78,6 +78,8 @@ public:
   QUICPacketNumber largest_acked_packet_number();
 
 private:
+  Ptr<ProxyMutex> _loss_detection_mutex;
+
   QUICConnectionId _connection_id = 0;
 
   bool _time_loss_detection = true;

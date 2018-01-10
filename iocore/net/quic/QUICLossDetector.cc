@@ -42,7 +42,8 @@ constexpr static ink_hrtime DEFAULT_INITIAL_RTT = HRTIME_MSECONDS(100);
 QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc)
   : _transmitter(transmitter), _cc(cc)
 {
-  this->mutex = new_ProxyMutex();
+  this->mutex                 = new_ProxyMutex();
+  this->_loss_detection_mutex = new_ProxyMutex();
 
   if (this->_time_loss_detection) {
     this->_reordering_threshold     = UINT32_MAX;
@@ -69,7 +70,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
     break;
   }
   case QUIC_EVENT_LD_SHUTDOWN: {
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
     QUICLDDebug("Shutdown");
 
     if (this->_loss_detection_alarm) {
@@ -141,7 +142,7 @@ void
 QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_ack_only, bool is_handshake, size_t sent_bytes,
                                   QUICPacketUPtr packet)
 {
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_time_of_last_sent_packet = Thread::get_hrtime();
   this->_largest_sent_packet      = packet_number;
   // FIXME Should we really keep actual packet object?
@@ -158,7 +159,8 @@ QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_ack_on
 void
 QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame)
 {
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_largest_acked_packet = ack_frame->largest_acknowledged();
   // If the largest acked is newly acked, update the RTT.
   auto pi = this->_sent_packets.find(ack_frame->largest_acknowledged());
@@ -220,7 +222,8 @@ QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICP
 void
 QUICLossDetector::_on_packet_acked(QUICPacketNumber acked_packet_number, size_t acked_packet_size)
 {
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   // QUICLDDebug("Packet number %" PRIu64 " has been acked", acked_packet_number);
   this->_cc->on_packet_acked(acked_packet_number, acked_packet_size);
   // If a packet sent prior to RTO was acked, then the RTO
@@ -326,7 +329,7 @@ void
 QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_number)
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_loss_time = 0;
   std::map<QUICPacketNumber, PacketInfo &> lost_packets;
   double delay_until_lost = INFINITY;
@@ -375,7 +378,7 @@ void
 QUICLossDetector::_retransmit_handshake_packets()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   std::set<QUICPacketNumber> retransmitted_handshake_packets;
 
   for (auto &info : this->_sent_packets) {
@@ -395,7 +398,7 @@ void
 QUICLossDetector::_send_one_packet()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   if (this->_transmitter->transmit_packet() < 1) {
     auto ite = this->_sent_packets.rbegin();
     if (ite != this->_sent_packets.rend()) {
@@ -408,7 +411,7 @@ void
 QUICLossDetector::_send_two_packets()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   auto ite = this->_sent_packets.rbegin();
   if (ite != this->_sent_packets.rend()) {
     this->_transmitter->retransmit_packet(*ite->second->packet);
@@ -427,7 +430,7 @@ void
 QUICLossDetector::_retransmit_lost_packet(const QUICPacket &packet)
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_transmitter->retransmit_packet(packet);
 }
 
@@ -454,7 +457,7 @@ QUICLossDetector::_determine_newly_acked_packets(const QUICAckFrame &ack_frame)
 void
 QUICLossDetector::_add_to_sent_packet_list(QUICPacketNumber packet_number, std::unique_ptr<PacketInfo> packet_info)
 {
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
   // Add to the list
   this->_sent_packets.insert(std::pair<QUICPacketNumber, std::unique_ptr<PacketInfo>>(packet_number, std::move(packet_info)));
@@ -476,7 +479,7 @@ QUICLossDetector::_add_to_sent_packet_list(QUICPacketNumber packet_number, std::
 void
 QUICLossDetector::_remove_from_sent_packet_list(QUICPacketNumber packet_number)
 {
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
   // Decrement counters
   auto ite = this->_sent_packets.find(packet_number);
