@@ -125,6 +125,7 @@ private:
   void _detect_lost_packets(QUICPacketNumber largest_acked);
   void _set_loss_detection_alarm();
   void _on_loss_detection_alarm();
+  void _retransmit_lost_packet(const QUICPacket &packet);
 
   std::set<QUICPacketNumber> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
 

@@ -325,6 +325,7 @@ QUICLossDetector::_on_loss_detection_alarm()
 void
 QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_number)
 {
+  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   this->_loss_time = 0;
   std::map<QUICPacketNumber, PacketInfo &> lost_packets;
@@ -357,6 +358,12 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   if (!lost_packets.empty()) {
     this->_cc->on_packets_lost(lost_packets);
     for (auto lost_packet : lost_packets) {
+      // ADDITIONAL CODE
+      // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
+      // them somewhere.
+      // I couldn't find the place so just send them here for now.
+      this->_retransmit_lost_packet(*lost_packet.second.packet);
+      // END OF ADDITIONAL CODE
       this->_remove_from_sent_packet_list(lost_packet.first);
     }
   }
@@ -415,6 +422,14 @@ QUICLossDetector::_send_two_packets()
 }
 
 // ===== Functions below are helper functions =====
+
+void
+QUICLossDetector::_retransmit_lost_packet(const QUICPacket &packet)
+{
+  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  this->_transmitter->retransmit_packet(packet);
+}
 
 std::set<QUICPacketNumber>
 QUICLossDetector::_determine_newly_acked_packets(const QUICAckFrame &ack_frame)

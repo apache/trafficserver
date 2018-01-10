@@ -786,6 +786,7 @@ QUICNetVConnection::_packetize_frames()
   QUICFrameUPtr frame(nullptr, nullptr);
   bool retransmittable = false;
 
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
   QUICFrameUPtr ack_frame = QUICFrameFactory::create_null_ack_frame();
