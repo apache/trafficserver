@@ -143,6 +143,7 @@ public:
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
+  ProxyAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
 public:
   /** Start the underlying thread.
