@@ -273,6 +273,14 @@ QUICLossDetector::_set_loss_detection_alarm()
     QUICLDDebug("RTO alarm will be set");
   }
 
+  // ADDITIONAL CODE
+  // alarm_curation can be negative value because _loss_time is updated in _detect_lost_packets()
+  // In that case, perhaps we should trigger the alarm immediately.
+  if (alarm_duration < 0) {
+    alarm_duration = 1;
+  }
+  // END OF ADDITONAL CODE
+
   if (this->_loss_detection_alarm_at) {
     this->_loss_detection_alarm_at = std::min(this->_loss_detection_alarm_at, Thread::get_hrtime() + alarm_duration);
   } else {
