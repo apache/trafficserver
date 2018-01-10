@@ -246,7 +246,13 @@ private:
   void _gen_token(uint64_t data);
 };
 
-enum class QUICStreamType { CLIENT_BIDI, SERVER_BIDI, CLIENT_UNI, SERVER_UNI, HANDSHAKE };
+enum class QUICStreamType {
+  CLIENT_BIDI,
+  SERVER_BIDI,
+  CLIENT_UNI,
+  SERVER_UNI,
+  HANDSHAKE,
+};
 
 class QUICTypeUtil
 {
