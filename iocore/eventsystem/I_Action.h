@@ -25,6 +25,10 @@
 #ifndef _I_Action_h_
 #define _I_Action_h_
 
+#define ACTION_RESULT_NONE ((Action *)(0x01))
+#define ACTION_RESULT_DONE ((Action *)(0x02))
+#define ACTION_IO_ERROR ((Action *)(0x04))
+
 #include "ts/ink_platform.h"
 #include "I_Thread.h"
 #include "I_Continuation.h"
@@ -63,8 +67,6 @@
 
     - @b ACTION_RESULT_DONE The processor has completed the task
       and called the state machine back inline.
-    - @b ACTION_RESULT_INLINE Not currently used.
-    - @b ACTION_RESULT_IO_ERROR Not currently used.
 
   To make matters more complicated, it's possible if the result is
   ACTION_RESULT_DONE that state machine deallocated itself on the
@@ -114,37 +116,11 @@ public:
     Internal flag used to indicate whether the action has been
     cancelled.
 
-    This flag is set after a call to cancel or cancel_action and
-    it should not be accesed or modified directly by the state
-    machine.
+    This flag is set after a call to cancel and it should not be
+    accesed or modified directly by the state machine.
 
   */
-  int cancelled = false;
-
-  /**
-    Cancels the asynchronous operation represented by this action.
-
-    This method is called by state machines willing to cancel an
-    ongoing asynchronous operation. Classes derived from Action may
-    perform additional steps before flagging this action as cancelled.
-    There are certain rules that must be followed in order to cancel
-    an action (see the Remarks section).
-
-    @param c Continuation associated with this Action.
-
-  */
-  virtual void
-  cancel(Continuation *c = nullptr)
-  {
-    ink_assert(!c || c == continuation);
-#ifdef DEBUG
-    ink_assert(!cancelled);
-    cancelled = true;
-#else
-    if (!cancelled)
-      cancelled = true;
-#endif
-  }
+  bool cancelled = false;
 
   /**
     Cancels the asynchronous operation represented by this action.
@@ -158,16 +134,13 @@ public:
 
   */
   void
-  cancel_action(Continuation *c = nullptr)
+  cancel(Continuation *c = nullptr)
   {
     ink_assert(!c || c == continuation);
-#ifdef DEBUG
     ink_assert(!cancelled);
-    cancelled = true;
-#else
-    if (!cancelled)
+    if (!cancelled) {
       cancelled = true;
-#endif
+    }
   }
 
   Continuation *
@@ -190,16 +163,5 @@ public:
   Action() {}
   virtual ~Action() {}
 };
-
-#define ACTION_RESULT_NONE MAKE_ACTION_RESULT(0)
-#define ACTION_RESULT_DONE MAKE_ACTION_RESULT(1)
-#define ACTION_IO_ERROR MAKE_ACTION_RESULT(2)
-#define ACTION_RESULT_INLINE MAKE_ACTION_RESULT(3)
-
-// Use these classes by
-// #define ACTION_RESULT_HOST_DB_OFFLINE
-//   MAKE_ACTION_RESULT(ACTION_RESULT_HOST_DB_BASE + 0)
-
-#define MAKE_ACTION_RESULT(_x) (Action *)(((uintptr_t)((_x << 1) + 1)))
 
 #endif /*_Action_h_*/

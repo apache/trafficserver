@@ -728,7 +728,7 @@ UnixNetVConnection::cancel_OOB()
   UnixNetVConnection *u = (UnixNetVConnection *)this;
   if (u->oob_ptr) {
     if (u->oob_ptr->trigger) {
-      u->oob_ptr->trigger->cancel_action();
+      u->oob_ptr->trigger->cancel();
       u->oob_ptr->trigger = nullptr;
     }
     delete u->oob_ptr;

@@ -274,6 +274,10 @@ HttpSM::cleanup()
   tunnel.mutex.clear();
   cache_sm.mutex.clear();
   transform_cache_sm.mutex.clear();
+  if (pending_action) {
+    pending_action->cancel();
+    pending_action = nullptr;
+  }
   if (second_cache_sm) {
     second_cache_sm->mutex.clear();
     delete second_cache_sm;
@@ -2366,6 +2370,7 @@ int
 HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpSM : state_cache_open_write, event);
+  ink_assert(pending_action == nullptr);
 
   // Make sure we are on the "right" thread
   if (ua_txn) {
@@ -3931,7 +3936,7 @@ HttpSM::state_remap_request(int event, void * /* data ATS_UNUSED */)
   }
 
   default:
-    ink_assert("Unexpected event inside state_remap_request");
+    ink_assert(!"Unexpected event inside state_remap_request");
     break;
   }
 
