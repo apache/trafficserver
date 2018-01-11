@@ -22,6 +22,7 @@
 #include "P_OCSPStapling.h"
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
 
+#include <openssl/ssl.h>
 #include <openssl/ocsp.h>
 #include "P_Net.h"
 #include "P_SSLConfig.h"
@@ -77,11 +78,17 @@ ssl_stapling_ex_init()
 static X509 *
 stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
 {
-  X509 *issuer = nullptr;
-  int i;
-  X509_STORE *st = SSL_CTX_get_cert_store(ssl_ctx);
-  X509_STORE_CTX inctx;
+  X509 *issuer                = nullptr;
+  X509_STORE *st              = SSL_CTX_get_cert_store(ssl_ctx);
   STACK_OF(X509) *extra_certs = nullptr;
+  X509_STORE_CTX *inctx       = X509_STORE_CTX_new();
+
+  if (inctx == nullptr) {
+    return nullptr;
+  }
+  if (X509_STORE_CTX_init(inctx, st, nullptr, nullptr) == 0) {
+    goto end;
+  }
 
 #ifdef SSL_CTX_get_extra_chain_certs
   SSL_CTX_get_extra_chain_certs(ssl_ctx, &extra_certs);
@@ -90,24 +97,31 @@ stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
 #endif
 
   if (sk_X509_num(extra_certs) == 0) {
-    return nullptr;
+    goto end;
   }
 
-  for (i = 0; i < sk_X509_num(extra_certs); i++) {
+  for (int i = 0; i < sk_X509_num(extra_certs); i++) {
     issuer = sk_X509_value(extra_certs, i);
     if (X509_check_issued(issuer, x) == X509_V_OK) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000
       CRYPTO_add(&issuer->references, 1, CRYPTO_LOCK_X509);
       return issuer;
+#else
+      X509_up_ref(issuer);
+#endif
+      goto end;
     }
   }
 
-  if (!X509_STORE_CTX_init(&inctx, st, nullptr, nullptr)) {
-    return nullptr;
+  if (!X509_STORE_CTX_init(inctx, st, nullptr, nullptr)) {
+    goto end;
   }
-  if (X509_STORE_CTX_get1_issuer(&issuer, &inctx, x) <= 0) {
+  if (X509_STORE_CTX_get1_issuer(&issuer, inctx, x) <= 0) {
     issuer = nullptr;
   }
-  X509_STORE_CTX_cleanup(&inctx);
+
+end:
+  X509_STORE_CTX_free(inctx);
 
   return issuer;
 }
