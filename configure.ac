@@ -1970,6 +1970,7 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/stale_while_revalidate/Makefile
     plugins/experimental/ts_lua/Makefile
     plugins/experimental/url_sig/Makefile
+    plugins/experimental/cache_range_requests/Makefile
     plugins/experimental/xdebug/Makefile
 ])])
 
