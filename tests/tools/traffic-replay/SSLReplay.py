@@ -126,35 +126,41 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
             body = createDummyBodywithLength(nBytes)
         #print("request session is",id(request_session))
         if method == 'GET':
-            request_session.request('GET', 'https://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                    headers=txn_req_headers_dict, body=body)
-            r1 = request_session.getresponse()
-            responseHeaders = r1.getheaders()
-            responseContent = r1.read()
+            r1 = request_session.request('GET', extractHeader.extract_GET_path(
+                txn_req_headers), headers=txn_req_headers_dict, data=body)
+            responseHeaders = r1.headers
+            responseContent = r1.content  # byte array
 
         elif method == 'POST':
-            request_session.request('POST', 'https://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                    headers=txn_req_headers_dict, body=body)
-            r1 = request_session.getresponse()
-            responseHeaders = r1.getheaders()
-            responseContent = r1.read()
+            r1 = request_session.request('POST', extractHeader.extract_GET_path(
+                txn_req_headers), headers=txn_req_headers_dict, data=body)
+            responseHeaders = r1.headers
+            responseContent = r1.content
 
         elif method == 'HEAD':
-            request_session.request('HEAD', 'https://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                    headers=txn_req_headers_dict, body=body)
-            r1 = request_session.getresponse()
-            responseHeaders = r1.getheaders()
-            responseContent = r1.read()
-        for key, value in responseHeaders:
-            responseDict[key.lower()] = value
+            r1 = request_session.request('HEAD', extractHeader.extract_GET_path(
+                txn_req_headers), headers=txn_req_headers_dict, data=body)
+            responseHeaders = r1.headers
+            responseContent = r1.content
+
         expected = extractHeader.responseHeader_to_dict(resp.getHeaders())
-        # print(responseDict)
+        # print("------------EXPECTED-----------")
+        # print(expected)
+        # print("------------RESP--------------")
+        # print(responseHeaders)
+        # print()
         if mainProcess.verbose:
             expected_output_split = resp.getHeaders().split('\r\n')[0].split(' ', 2)
             expected_output = (int(expected_output_split[1]), str(expected_output_split[2]))
-            r = result.Result(session_filename, expected_output[0], r1.status)
-            print(r.getResultString(responseDict, expected, colorize=True))
-            r.Compare(responseDict, expected)
+            r = result.Result(session_filename, expected_output[0], r1.status_code, responseContent)
+            b_res, res = r.getResult(responseHeaders, expected, colorize=True)
+            print(res)
+
+            if not res:
+                print("Received response")
+                print(responseHeaders)
+                print("Expected response")
+                print(expected)
         # result_queue.put(r)
     except UnicodeEncodeError as e:
         # these unicode errors are due to the interaction between Requests and our wiretrace data.
@@ -165,7 +171,7 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
         print("ContentDecodingError", e)
     except:
         e = sys.exc_info()
-        print("ERROR in requests: ", e, response, session_filename)
+        print("ERROR in SSLReplay: ", e, response, session_filename)
 
 
 def client_replay(input, proxy, result_queue, nThread):

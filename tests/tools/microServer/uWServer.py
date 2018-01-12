@@ -52,7 +52,7 @@ import sessionvalidation.sessionvalidation as sv
 
 
 SERVER_PORT = 5005  # default port
-SERVER_DELAY = 0 # default delay
+SERVER_DELAY = 0  # default delay
 HTTP_VERSION = 'HTTP/1.1'
 G_replay_dict = {}
 
@@ -171,40 +171,39 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def getLookupKey(self, requestline):
         global lookup_key_
-        kpath= ""
+        kpath = ""
         path = ""
         url_part = requestline.split(" ")
         if url_part:
             if url_part[1].startswith("http"):
-                path = url_part[1].split("/",2)[2]
-                host_, path = path.split("/",1)
+                path = url_part[1].split("/", 2)[2]
+                host_, path = path.split("/", 1)
             else:
-                path = url_part[1].split("/",1)[1]
+                path = url_part[1].split("/", 1)[1]
         argsList = []
         keyslist = lookup_key_.split("}")
-        for keystr in keyslist:            
+        for keystr in keyslist:
             if keystr == '{PATH':
-                kpath = kpath+path
-                continue # do not include path in the list of header fields
+                kpath = kpath + path
+                continue  # do not include path in the list of header fields
             if keystr == '{HOST':
-                kpath = kpath+host_
+                kpath = kpath + host_
                 continue
-            stringk = keystr.replace("{%","")
+            stringk = keystr.replace("{%", "")
             argsList.append(stringk)
         KeyList = []
         for argsL in argsList:
-            print("args",argsL,len(argsL))
-            if len(argsL)>0:
+            print("args", argsL, len(argsL))
+            if len(argsL) > 0:
                 val = self.headers.get(argsL)
                 if val:
-                    field_val,__ = cgi.parse_header(val)
+                    field_val, __ = cgi.parse_header(val)
                 else:
-                    field_val=None
-                if field_val!=None:
+                    field_val = None
+                if field_val != None:
                     KeyList.append(field_val)
-        key = "".join(KeyList)+kpath
-        print("lookup key",key, len(key))
-
+        key = "".join(KeyList) + kpath
+        print("lookup key", key, len(key))
 
         return key
 
@@ -447,7 +446,7 @@ class MyHandler(BaseHTTPRequestHandler):
                     header_parts = header.split(':', 1)
                     header_field = str(header_parts[0].strip())
                     header_field_val = str(header_parts[1].strip())
-                    #print("{0} === >{1}".format(header_field, header_field_val))
+                    # print("{0} === >{1}".format(header_field, header_field_val))
                     self.send_header(header_field, header_field_val)
                 # End for
                 if test_mode_enabled:
@@ -712,7 +711,7 @@ def main():
         else:
             server = ThreadingServer((options.ip_address, options.port), MyHandler, options)
         server.timeout = 5
-        print("started server")
+        print("started server on port {0}".format(options.port))
         server_thread = threading.Thread(target=server.serve_forever())
         server_thread.daemon = True
         server_thread.start()

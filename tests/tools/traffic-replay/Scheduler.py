@@ -28,7 +28,7 @@ import time
 
 def LaunchWorkers(path, nProcess, proxy, replay_type, nThread):
     ms1 = time.time()
-    s = sv.SessionValidator(path)
+    s = sv.SessionValidator(path, allow_custom=True)
     sessions = s.getSessionList()
     sessions.sort(key=lambda session: session._timestamp)
     Processes = []
@@ -40,17 +40,44 @@ def LaunchWorkers(path, nProcess, proxy, replay_type, nThread):
     OutputQ = Queue()
     #======================================== Pre-load queues
     for session in sessions:
-        # if nProcess == 1:
-        #    QList[0].put(session)
-        # else:
-        QList[random.randint(0, nProcess - 1)].put(session)
-        # if QList[0].qsize() > 10 :
-        #    break
+        if replay_type == 'mixed':
+            if nProcess < 2:
+                raise ValueError("For mixed replay type, there should be at least 2 processes.")
+            # odd Qs for SSL sessions, even Qs for nonSSL sessions
+            num = random.randint(0, nProcess - 1)
+
+            # get the first transaction in each session, which is indictive if session is over SSL or not
+            if "https" in session.returnFirstTransaction().getRequest().getHeaders():
+                # spin until we get an odd number
+                while num & 1 == 0:
+                    num = random.randint(0, nProcess - 1)
+            else:
+                # nonSSL sessions get put here into even Qs
+                while num & 1 == 1:
+                    num = random.randint(0, nProcess - 1)
+
+            QList[num].put(session)
+        else:
+            # if nProcess == 1:
+            #    QList[0].put(session)
+            # else:
+            QList[random.randint(0, nProcess - 1)].put(session)
+            # if QList[0].qsize() > 10 :
+            #    break
     #=============================================== Launch Processes
+    # for i in range(nProcess):
+    #     QList[i].put('STOP')
     for i in range(nProcess):
         QList[i].put('STOP')
-    for i in range(nProcess):
-        p = Process(target=WorkerTask.worker, args=[QList[i], OutputQ, proxy, replay_type, nThread])
+
+        if replay_type == 'mixed':
+            if i & 1:  # odd/SSL
+                p = Process(target=WorkerTask.worker, args=[QList[i], OutputQ, proxy, 'ssl', nThread])
+            else:  # even/nonSSL
+                p = Process(target=WorkerTask.worker, args=[QList[i], OutputQ, proxy, 'nossl', nThread])
+        else:
+            p = Process(target=WorkerTask.worker, args=[QList[i], OutputQ, proxy, replay_type, nThread])
+
         p.daemon = False
         Processes.append(p)
         p.start()
