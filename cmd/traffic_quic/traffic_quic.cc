@@ -106,9 +106,13 @@ init_diags(const char *bdt, const char *bat)
 class QUICClient : public Continuation
 {
 public:
-  QUICClient() : Continuation(new_ProxyMutex()) { SET_HANDLER(&QUICClient::state_http_server_open); };
-  void start(const char *host, int port);
+  QUICClient(const char *addr, int port) : Continuation(new_ProxyMutex()), _remote_port(port) { SET_HANDLER(&QUICClient::start); };
+  void start();
   int state_http_server_open(int event, void *data);
+
+private:
+  // char *_remote_addr = nullptr;
+  int _remote_port = 0;
 };
 
 // Similar to HttpSM::state_http_server_open(int event, void *data)
@@ -126,6 +130,10 @@ QUICClient::state_http_server_open(int event, void *data)
     ink_assert(false);
     break;
   }
+  case NET_EVENT_ACCEPT: {
+    // do nothing
+    break;
+  }
   default:
     ink_assert(false);
   }
@@ -134,13 +142,15 @@ QUICClient::state_http_server_open(int event, void *data)
 }
 
 void
-QUICClient::start(const char * /* remote_addr */, int remote_port)
+QUICClient::start()
 {
+  SET_HANDLER(&QUICClient::state_http_server_open);
+
   // TODO: getdddrinfo
   sockaddr_in addr;
   addr.sin_family      = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  addr.sin_port        = htons(remote_port);
+  addr.sin_port        = htons(this->_remote_port);
 
   NetVCOptions opt;
   opt.ip_proto  = NetVCOptions::USE_UDP;
@@ -167,7 +177,7 @@ main(int argc, const char **argv)
 
   char addr[1024]       = "";
   int port              = 4433;
-  char debug_tags[1024] = "";
+  char debug_tags[1024] = "quic|udp";
 
   const ArgumentDescription argument_descriptions[] = {
     {"addr", 'a', "Address", "S1023", addr, nullptr, nullptr},
@@ -184,6 +194,10 @@ main(int argc, const char **argv)
   init_diags(debug_tags, nullptr);
   RecProcessInit(RECM_STAND_ALONE);
 
+  Thread *main_thread = new EThread;
+  main_thread->set_specific();
+  net_config_poll_timeout = 10;
+
   SSLInitializeLibrary();
   SSLConfig::startup();
 
@@ -192,13 +206,10 @@ main(int argc, const char **argv)
   udpNet.start(1, stacksize);
   quic_NetProcessor.start(-1, stacksize);
 
-  Thread *main_thread = new EThread;
-  main_thread->set_specific();
+  QUICClient client(addr, port);
+  eventProcessor.schedule_in(&client, 1, ET_UDP);
 
-  QUICClient client;
-  client.start(addr, port);
-
-  main_thread->execute();
+  this_thread()->execute();
 }
 
 // FIXME: remove stub

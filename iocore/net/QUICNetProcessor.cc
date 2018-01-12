@@ -110,25 +110,51 @@ QUICNetProcessor::allocate_vc(EThread *t)
 }
 
 Action *
-QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opt)
+QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions *opt)
 {
   Debug("quic_ps", "connect to server");
 
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t);
 
+  sockaddr_in local_addr;
+  local_addr.sin_family      = AF_INET;
+  local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  local_addr.sin_port        = 0;
+
+  // FIXME: set buffer size
+  int fd = socketManager.socket(local_addr.sin_family, SOCK_DGRAM, 0);
+  if (fd < 0) {
+    return ACTION_IO_ERROR;
+  }
+
+  int res = fcntl(fd, F_SETFL, O_NONBLOCK);
+  if (res < 0) {
+    return ACTION_IO_ERROR;
+  }
+
   // Setup UDPConnection
-  // FIXME: use udpNet.CreateUDPSocket
-  int fd                 = socket(AF_INET, SOCK_DGRAM, 0);
   UnixUDPConnection *con = new UnixUDPConnection(fd);
+  Debug("quic_ps", "con=%p fd=%d", con, fd);
+
   AcceptOptions const accept_opt;
+  // FIXME: create QUICPacketHandler for Client (origin server side)
   QUICPacketHandler *packet_handler = new QUICPacketHandler(accept_opt, this->_ssl_ctx);
-  con->setBinding(addr);
+  packet_handler->init_accept(t);
+  packet_handler->action_ = new NetAcceptAction();
+  *packet_handler->action_ = cont;
+
+  con->setBinding(reinterpret_cast<sockaddr const *>(&local_addr));
   con->bindToThread(packet_handler);
 
   PollCont *pc       = get_UDPPollCont(con->ethread);
   PollDescriptor *pd = pc->pollDescriptor;
-  con->ep.start(pd, con, EVENTIO_READ);
+
+  errno = 0;
+  res = con->ep.start(pd, con, EVENTIO_READ);
+  if (res < 0) {
+    Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
+  }
 
   // Setup QUICNetVConnection
   QUICConnectionId cid;
@@ -145,7 +171,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOpti
   // Connection ID will be changed
   vc->id = net_next_connection_number();
   vc->set_context(NET_VCONNECTION_OUT);
-  vc->con.setRemote(addr);
+  vc->con.setRemote(remote_addr);
   vc->submit_time = Thread::get_hrtime();
   vc->mutex       = cont->mutex;
   vc->action_     = cont;
