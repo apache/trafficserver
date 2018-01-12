@@ -621,7 +621,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     read.triggered = 0;
     nh->read_ready_list.remove(this);
     Debug("ssl", "read_from_net, read finished - would block");
-#ifdef TS_USE_PORT
+#if TS_USE_PORT
     if (ret == SSL_READ_WOULD_BLOCK)
       readReschedule(nh);
     else
