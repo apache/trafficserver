@@ -44,7 +44,11 @@ def addRecords(self, records=None, jsonFile=None):
 
     if records:
         for domain in records:
-            record = AddRecord(domain, records[domain])
+            # Let's do this for the test writer's convenience.
+            normalized_domain = domain
+            if normalized_domain[-1] != '.':
+                normalized_domain += '.'
+            record = AddRecord(normalized_domain, records[domain])
 
             jsondata["mappings"].append(record)
 
