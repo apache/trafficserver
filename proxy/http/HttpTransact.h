@@ -346,7 +346,7 @@ public:
     TOTAL_RESPONSE_ERROR_TYPES
   };
 
-  // Please do not forget to fix TSServerState (ts/ts.h)
+  // Please do not forget to fix TSServerState (ts/apidefs.h.in)
   // in case of any modifications in ServerState_t
   enum ServerState_t {
     STATE_UNDEFINED = 0,
