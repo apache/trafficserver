@@ -475,6 +475,69 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
 }
 
 //
+// QUICTransportParametersInNewSessionTicket
+//
+
+QUICTransportParametersInNewSessionTicket::QUICTransportParametersInNewSessionTicket(const uint8_t *buf, size_t len)
+{
+  this->_load(buf, len);
+  this->_print();
+}
+
+void
+QUICTransportParametersInNewSessionTicket::_store(uint8_t *buf, uint16_t *len) const
+{
+  // no additional fields defined
+  len = 0;
+}
+
+std::ptrdiff_t
+QUICTransportParametersInNewSessionTicket::_parameters_offset(const uint8_t *buf) const
+{
+  return 0;
+}
+
+int
+QUICTransportParametersInNewSessionTicket::_validate_parameters() const
+{
+  if (QUICTransportParameters::_validate_parameters() < 0) {
+    return 0;
+  }
+
+  decltype(this->_parameters)::const_iterator ite;
+
+  // MUSTs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -1;
+    }
+  } else {
+    return -2;
+  }
+
+  // MAYs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -3;
+    }
+    if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 1) {
+      return -4;
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -5;
+    }
+    if ((QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) & 0x03) != 3) {
+      return -6;
+    }
+  }
+
+  return 0;
+}
+
+//
 // QUICTransportParametersHandler
 //
 
@@ -484,7 +547,8 @@ QUICTransportParametersHandler::add(SSL *s, unsigned int ext_type, unsigned int 
 {
   QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
   *out              = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
-  hs->local_transport_parameters()->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
+  bool with_version = (context == SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS);
+  hs->local_transport_parameters(with_version)->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
 
   return 1;
 }
@@ -502,14 +566,15 @@ QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned in
   QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
 
   switch (context) {
-  case SSL_EXT_CLIENT_HELLO: {
+  case SSL_EXT_CLIENT_HELLO:
     hs->set_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
     break;
-  }
-  case SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS: {
+  case SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS:
     hs->set_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen));
     break;
-  }
+  case SSL_EXT_TLS1_3_NEW_SESSION_TICKET:
+    hs->set_transport_parameters(std::make_shared<QUICTransportParametersInNewSessionTicket>(in, inlen));
+    break;
   default:
     // Do nothing
     break;

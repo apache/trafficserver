@@ -147,6 +147,18 @@ protected:
   QUICVersion _versions[256]      = {};
 };
 
+class QUICTransportParametersInNewSessionTicket : public QUICTransportParameters
+{
+public:
+  QUICTransportParametersInNewSessionTicket() : QUICTransportParameters(){};
+  QUICTransportParametersInNewSessionTicket(const uint8_t *buf, size_t len);
+
+protected:
+  std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
+  int _validate_parameters() const override;
+  void _store(uint8_t *buf, uint16_t *len) const override;
+};
+
 class QUICTransportParametersHandler
 {
 public:

@@ -110,7 +110,7 @@ QUICHandshake::~QUICHandshake()
 QUICErrorUPtr
 QUICHandshake::start(QUICPacketFactory *packet_factory)
 {
-  this->_load_local_transport_parameters(QUIC_SUPPORTED_VERSIONS[0]);
+  this->_load_local_client_transport_parameters(QUIC_SUPPORTED_VERSIONS[0]);
   packet_factory->set_version(QUIC_SUPPORTED_VERSIONS[0]);
   return QUICErrorUPtr(new QUICNoError());
 }
@@ -126,7 +126,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
         QUICHSDebug("Version negotiation succeeded: %x", initial_packet->version());
-        this->_load_local_transport_parameters(initial_packet->version());
+        this->_load_local_server_transport_parameters(initial_packet->version());
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
         this->_client_qc->transmit_packet(
@@ -226,10 +226,45 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersI
   ink_assert(false);
 }
 
-std::shared_ptr<const QUICTransportParameters>
-QUICHandshake::local_transport_parameters()
+void
+QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersInNewSessionTicket> tp)
 {
-  return this->_local_transport_parameters;
+  // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR.
+  if (!tp->is_valid()) {
+    QUICHSDebug("Transport parameter is not valid");
+    this->_abort_handshake(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
+    return;
+  }
+
+  this->_remote_transport_parameters = tp;
+
+  // TODO Add client side implementation
+  ink_assert(false);
+}
+
+std::shared_ptr<const QUICTransportParameters>
+QUICHandshake::local_transport_parameters(bool with_version)
+{
+  if (with_version) {
+    return this->_local_transport_parameters;
+  } else {
+    QUICConfig::scoped_config params;
+    QUICTransportParametersInNewSessionTicket *tp = new QUICTransportParametersInNewSessionTicket();
+
+    // MUSTs
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
+    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
+    tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
+    tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
+
+    // MAYs
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_in());
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_in());
+    // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
+    // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
+
+    return std::unique_ptr<QUICTransportParameters>(tp);
+  }
 }
 
 std::shared_ptr<const QUICTransportParameters>
@@ -360,45 +395,45 @@ QUICHandshake::state_closed(int event, void *data)
 {
   return EVENT_DONE;
 }
+void
+QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_version)
+{
+  QUICConfig::scoped_config params;
+  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(negotiated_version);
+
+  // MUSTs
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
+  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
+  tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
+  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
+
+  // MAYs
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_in());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_in());
+  // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
+  // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
+
+  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+}
 
 void
-QUICHandshake::_load_local_transport_parameters(QUICVersion version)
+QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_version)
 {
   QUICConfig::scoped_config params;
 
-  if (this->_netvc_context == NET_VCONNECTION_IN) {
-    QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(version);
+  QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello(initial_version);
 
-    // MUSTs
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
-    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
-    tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
+  // MUSTs
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
+  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_out()));
 
-    // These two are MUSTs if this is a server
-    tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
-    tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
+  // MAYs
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_out());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_out());
 
-    // MAYs
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_in());
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_in());
-    // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
-    // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
-
-    this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
-  } else {
-    QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello(version);
-
-    // MUSTs
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
-    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
-    tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_out()));
-
-    // MAYs
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_out());
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_out());
-
-    this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
-  }
+  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
 
 QUICErrorUPtr

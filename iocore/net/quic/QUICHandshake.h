@@ -75,7 +75,7 @@ public:
   QUICVersion negotiated_version();
   const char *negotiated_cipher_suite();
   void negotiated_application_name(const uint8_t **name, unsigned int *len);
-  std::shared_ptr<const QUICTransportParameters> local_transport_parameters();
+  std::shared_ptr<const QUICTransportParameters> local_transport_parameters(bool with_version = true);
   std::shared_ptr<const QUICTransportParameters> remote_transport_parameters();
 
   bool is_version_negotiated();
@@ -83,6 +83,7 @@ public:
 
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInClientHello> tp);
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp);
+  void set_transport_parameters(std::shared_ptr<QUICTransportParametersInNewSessionTicket> tp);
 
 private:
   SSL *_ssl                                                             = nullptr;
@@ -92,7 +93,8 @@ private:
 
   QUICVersionNegotiator *_version_negotiator = nullptr;
 
-  void _load_local_transport_parameters(QUICVersion negotiated_version);
+  void _load_local_server_transport_parameters(QUICVersion negotiated_version);
+  void _load_local_client_transport_parameters(QUICVersion initial_version);
 
   QUICErrorUPtr _do_handshake(bool initial = false);
 
