@@ -93,14 +93,16 @@ QUICNetVConnection::startEvent(int /*event ATS_UNUSED */, Event *e)
 void
 QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
-  {
+  // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
+  if (this->direction() == NET_VCONNECTION_IN) {
     QUICConfig::scoped_config params;
     this->_reset_token.generate(this->_quic_connection_id, params->server_id());
+    this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_reset_token);
+  } else {
+    this->_handshake_handler = new QUICHandshake(this, ssl_ctx);
+    this->_handshake_handler->start(&this->_packet_factory);
   }
-
-  // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
-  this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_reset_token);
-  this->_application_map   = new QUICApplicationMap();
+  this->_application_map = new QUICApplicationMap();
   this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 
   this->_crypto           = this->_handshake_handler->crypto_module();

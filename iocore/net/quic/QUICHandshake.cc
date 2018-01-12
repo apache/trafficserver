@@ -83,8 +83,7 @@ static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token)
-  : QUICApplication(qc), _reset_token(token)
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICApplication(qc)
 {
   this->_ssl = SSL_new(ssl_ctx);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
@@ -94,15 +93,26 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   this->_version_negotiator = new QUICVersionNegotiator();
 
   this->_crypto->initialize_key_materials(this->_client_qc->original_connection_id());
-  // for client initial
-  this->_load_local_transport_parameters(QUIC_SUPPORTED_VERSIONS[0]);
 
   SET_HANDLER(&QUICHandshake::state_initial);
+}
+
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token) : QUICHandshake(qc, ssl_ctx)
+{
+  this->_reset_token = token;
 }
 
 QUICHandshake::~QUICHandshake()
 {
   SSL_free(this->_ssl);
+}
+
+QUICErrorUPtr
+QUICHandshake::start(QUICPacketFactory *packet_factory)
+{
+  this->_load_local_transport_parameters(QUIC_SUPPORTED_VERSIONS[0]);
+  packet_factory->set_version(QUIC_SUPPORTED_VERSIONS[0]);
+  return QUICErrorUPtr(new QUICNoError());
 }
 
 QUICErrorUPtr

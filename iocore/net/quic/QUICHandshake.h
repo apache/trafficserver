@@ -51,9 +51,15 @@ class SSLNextProtocolSet;
 class QUICHandshake : public QUICApplication
 {
 public:
+  // Constructor for client side
+  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx);
+  // Constructor for server side
   QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token);
   ~QUICHandshake();
 
+  // for client side
+  QUICErrorUPtr start(QUICPacketFactory *packet_factory);
+  // for server side
   QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
 
   // States

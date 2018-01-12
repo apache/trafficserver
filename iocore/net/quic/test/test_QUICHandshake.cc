@@ -41,11 +41,8 @@ TEST_CASE("1-RTT handshake ", "[quic]")
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
 
   QUICConnectionId client_conn_id = 0x12345;
-  // FIXME: remove this. client side stateless reset token doesn't make sense
-  QUICStatelessResetToken client_token;
-  client_token.generate(client_conn_id, 0);
 
-  QUICHandshake *client = new QUICHandshake(client_qc, client_ssl_ctx, client_token);
+  QUICHandshake *client = new QUICHandshake(client_qc, client_ssl_ctx);
 
   // setup server
   QUICConnection *server_qc = new MockQUICConnection(NET_VCONNECTION_IN);
