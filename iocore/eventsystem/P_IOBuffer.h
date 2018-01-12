@@ -1123,6 +1123,7 @@ MIOBuffer::alloc(int64_t i)
 #endif
   _writer->alloc(i);
   size_index = i;
+  water_mark = 0;
   init_readers();
 }
 
