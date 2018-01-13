@@ -789,6 +789,7 @@ new_MIOBuffer_internal(
   b->_location = location;
 #endif
   b->alloc(size_index);
+  b->water_mark = 0;
   return b;
 }
 
@@ -809,6 +810,7 @@ new_empty_MIOBuffer_internal(
 {
   MIOBuffer *b  = THREAD_ALLOC(ioAllocator, this_thread());
   b->size_index = size_index;
+  b->water_mark = 0;
 #ifdef TRACK_BUFFER_USER
   b->_location = location;
 #endif
@@ -1123,7 +1125,6 @@ MIOBuffer::alloc(int64_t i)
 #endif
   _writer->alloc(i);
   size_index = i;
-  water_mark = 0;
   init_readers();
 }
 
