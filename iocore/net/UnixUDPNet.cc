@@ -594,7 +594,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockad
   if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0) {
     goto HardError;
   }
-  if ((res = socketManager.ink_bind(fd, remote_addr, ats_ip_size(remote_addr), IPPROTO_UDP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, local_addr, ats_ip_size(local_addr), IPPROTO_UDP)) < 0) {
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(remote_addr, buff, sizeof(buff)));
     goto SoftError;
