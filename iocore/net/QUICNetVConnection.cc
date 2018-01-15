@@ -538,6 +538,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     this->_close_packet_write_ready(data);
     break;
   case QUIC_EVENT_DRAINING_TIMEOUT:
+    this->_close_draining_timeout(data);
     can_switch_to_close_state = true;
     break;
   default:
