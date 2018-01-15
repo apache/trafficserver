@@ -479,28 +479,33 @@ int
 QUICNetVConnection::state_connection_closing(int event, Event *data)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  bool can_switch_to_close_state = false;
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
-  case QUIC_EVENT_PACKET_READ_READY: {
+  case QUIC_EVENT_PACKET_READ_READY:
     if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
       error = this->_state_common_receive_packet();
+      // TODO receiving a closing frame is sufficient confirmation
+      // can_switch_to_close_state = true;
     } else {
       // FIXME Just ignore for now but it has to be acked (GitHub#2609)
     }
     break;
-  }
-  case QUIC_EVENT_PACKET_WRITE_READY: {
+  case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
+    // FIXME Only closing frames are allowed to send
     this->_state_common_send_packet();
     break;
-  }
+  case QUIC_EVENT_CLOSING_TIMEOUT:
+    this->_close_closing_timeout(data);
+    can_switch_to_close_state = true;
+    break;
   default:
     QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
-  // FIXME Enter closed state if CONNECTION_CLOSE was ACKed and draining period end
-  if (true) {
+  if (can_switch_to_close_state) {
     this->_switch_to_close_state();
   }
 
@@ -529,15 +534,14 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     // This should be the only difference between this and closing_state.
     this->_close_packet_write_ready(data);
     break;
-  case QUIC_EVENT_DRAINING_TIMEOUT:
-    this->_close_draining_timeout(data);
+  case QUIC_EVENT_CLOSING_TIMEOUT:
+    this->_close_closing_timeout(data);
     can_switch_to_close_state = true;
     break;
   default:
     QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
   }
 
-  // FIXME Enter closed state if CONNECTION_CLOSE was ACKed and draining period end
   if (can_switch_to_close_state) {
     this->_switch_to_close_state();
   }
@@ -552,7 +556,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_SHUTDOWN: {
     this->_unschedule_packet_write_ready();
-    this->_unschedule_draining_timeout();
+    this->_unschedule_closing_timeout();
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
 
@@ -1060,28 +1064,28 @@ QUICNetVConnection::_close_packet_write_ready(Event *data)
 }
 
 void
-QUICNetVConnection::_schedule_draining_timeout(ink_hrtime interval)
+QUICNetVConnection::_schedule_closing_timeout(ink_hrtime interval)
 {
-  if (!this->_draining_timeout) {
-    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_DRAINING_TIMEOUT));
-    this->_draining_timeout = this_ethread()->schedule_in_local(this, interval, QUIC_EVENT_DRAINING_TIMEOUT);
+  if (!this->_closing_timeout) {
+    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_CLOSING_TIMEOUT));
+    this->_closing_timeout = this_ethread()->schedule_in_local(this, interval, QUIC_EVENT_CLOSING_TIMEOUT);
   }
 }
 
 void
-QUICNetVConnection::_unschedule_draining_timeout()
+QUICNetVConnection::_unschedule_closing_timeout()
 {
-  if (this->_draining_timeout) {
-    this->_draining_timeout->cancel();
-    this->_draining_timeout = nullptr;
+  if (this->_closing_timeout) {
+    this->_closing_timeout->cancel();
+    this->_closing_timeout = nullptr;
   }
 }
 
 void
-QUICNetVConnection::_close_draining_timeout(Event *data)
+QUICNetVConnection::_close_closing_timeout(Event *data)
 {
-  ink_assert(this->_draining_timeout == data);
-  this->_draining_timeout = nullptr;
+  ink_assert(this->_closing_timeout == data);
+  this->_closing_timeout = nullptr;
 }
 
 int
@@ -1178,7 +1182,7 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
 
   // TODO The draining period should be obtained from QUICLossDetector since it is the only component that knows the RTO interval.
   // Use 3 times kkMinRTOTimeout(200ms) for now.
-  this->_schedule_draining_timeout(HRTIME_MSECONDS(3 * 200));
+  this->_schedule_closing_timeout(HRTIME_MSECONDS(3 * 200));
 }
 
 void

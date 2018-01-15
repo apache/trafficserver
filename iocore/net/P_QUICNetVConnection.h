@@ -256,10 +256,10 @@ private:
   void _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
-  void _schedule_draining_timeout(ink_hrtime interval);
-  void _unschedule_draining_timeout();
-  void _close_draining_timeout(Event *data);
-  Event *_draining_timeout = nullptr;
+  void _schedule_closing_timeout(ink_hrtime interval);
+  void _unschedule_closing_timeout();
+  void _close_closing_timeout(Event *data);
+  Event *_closing_timeout = nullptr;
 
   uint32_t _transmit_packet(QUICPacketUPtr);
   void _transmit_frame(QUICFrameUPtr);
