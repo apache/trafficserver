@@ -30,11 +30,17 @@
 class QUICClient : public Continuation
 {
 public:
-  QUICClient(const char *addr, int port) : Continuation(new_ProxyMutex()), _remote_port(port) { SET_HANDLER(&QUICClient::start); };
+  QUICClient(const char *addr, const char *port) : Continuation(new_ProxyMutex()), _remote_addr(addr), _remote_port(port)
+  {
+    SET_HANDLER(&QUICClient::start);
+  };
+  ~QUICClient();
+
   void start();
   int state_http_server_open(int event, void *data);
 
 private:
-  // char *_remote_addr = nullptr;
-  int _remote_port = 0;
+  const char *_remote_addr;
+  const char *_remote_port;
+  struct addrinfo *_remote_addr_info = nullptr;
 };

@@ -119,7 +119,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   ink_assert(t);
 
   sockaddr_in local_addr;
-  local_addr.sin_family      = AF_INET;
+  local_addr.sin_family      = remote_addr->sa_family;
   local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   local_addr.sin_port        = 0;
 
@@ -142,7 +142,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   // FIXME: create QUICPacketHandler for Client (origin server side)
   QUICPacketHandler *packet_handler = new QUICPacketHandler(accept_opt, this->_ssl_ctx);
   packet_handler->init_accept(t);
-  packet_handler->action_ = new NetAcceptAction();
+  packet_handler->action_  = new NetAcceptAction();
   *packet_handler->action_ = cont;
 
   con->setBinding(reinterpret_cast<sockaddr const *>(&local_addr));
@@ -152,7 +152,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   PollDescriptor *pd = pc->pollDescriptor;
 
   errno = 0;
-  res = con->ep.start(pd, con, EVENTIO_READ);
+  res   = con->ep.start(pd, con, EVENTIO_READ);
   if (res < 0) {
     Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
   }

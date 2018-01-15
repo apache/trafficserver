@@ -47,13 +47,13 @@ main(int argc, const char **argv)
   AppVersionInfo appVersionInfo;
   appVersionInfo.setup(PACKAGE_NAME, "traffic_quic", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
-  char addr[1024]       = "";
-  int port              = 4433;
+  char addr[1024]       = "127.0.0.1";
+  char port[16]         = "4433";
   char debug_tags[1024] = "quic|udp";
 
   const ArgumentDescription argument_descriptions[] = {
     {"addr", 'a', "Address", "S1023", addr, nullptr, nullptr},
-    {"port", 'p', "Port", "I", &port, nullptr, nullptr},
+    {"port", 'p', "Port", "S15", port, nullptr, nullptr},
     {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
