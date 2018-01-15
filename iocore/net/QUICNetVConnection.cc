@@ -1045,7 +1045,7 @@ QUICNetVConnection::_schedule_packet_write_ready()
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (!this->_packet_write_ready) {
     QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
-    this->_packet_write_ready = eventProcessor.schedule_imm(this, ET_CALL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+    this->_packet_write_ready = this_ethread()->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
   }
 }
 
