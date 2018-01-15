@@ -24,6 +24,7 @@ import sessionvalidation.request as request
 import sessionvalidation.response as response
 
 valid_HTTP_request_methods = ['GET', 'POST', 'HEAD']
+G_CUSTOM_METHODS = False
 G_VERBOSE_LOG = True
 
 
@@ -155,6 +156,7 @@ class SessionValidator(object):
         retval = True
 
         #valid_HTTP_request_methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'OPTIONS', 'CONNECT', 'PATCH']
+        custom_HTTP_request_methods = ['PULL']  # transaction monitor plugin for ATS may have custom methods
         # we can later uncomment the previous line to support more HTTP methods
         valid_HTTP_versions = ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0']
 
@@ -170,8 +172,9 @@ class SessionValidator(object):
                 _verbose_print("invalid transaction request timestamp")
                 retval = False
             elif txn_req.getHeaders().split()[0] not in valid_HTTP_request_methods:
-                _verbose_print("invalid HTTP method for transaction {0}".format(txn_req.getHeaders().split()[0]))
-                retval = False
+                if G_CUSTOM_METHODS and txn_req.getHeaders().split()[0] not in custom_HTTP_request_methods:
+                    _verbose_print("invalid HTTP method for transaction {0}".format(txn_req.getHeaders().split()[0]))
+                    retval = False
             elif not txn_req.getHeaders().endswith("\r\n\r\n"):
                 _verbose_print("transaction request headers didn't end with \\r\\n\\r\\n")
                 retval = False
@@ -250,8 +253,10 @@ class SessionValidator(object):
         ''' Returns an iterator of bad session filenames (iterator of strings) '''
         return iter(self._bad_sessions)
 
-    def __init__(self, json_log_dir):
+    def __init__(self, json_log_dir, allow_custom=False):
         global valid_HTTP_request_methods
+        global G_CUSTOM_METHODS
+        G_CUSTOM_METHODS = allow_custom
         self._json_log_dir = json_log_dir
         self._bad_sessions = list()   # list of filenames
         self._sessions = list()       # list of _good_ session objects

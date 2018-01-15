@@ -93,35 +93,48 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
             body = createDummyBodywithLength(nBytes)
         #print("request session is",id(request_session))
         if method == 'GET':
-            response = request_session.get('http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                           headers=txn_req_headers_dict, stream=False, allow_redirects=False, data=body)
-            if 'Content-Length' in response.headers:
-                content = response.raw
-                #print("len: {0} received {1}".format(response.headers['Content-Length'],content))
+            r1 = request_session.request('GET', extractHeader.extract_GET_path(
+                txn_req_headers), headers=txn_req_headers_dict, data=body)
+            responseHeaders = r1.headers
+            responseContent = r1.content  # byte array
+
+            #print("len: {0} received {1}".format(responseHeaders['Content-Length'], responseContent))
 
         elif method == 'POST':
-            response = request_session.post('http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                            headers=txn_req_headers_dict, stream=False, data=body, allow_redirects=False)
+            r1 = request_session.request('POST', extractHeader.extract_GET_path(
+                txn_req_headers), headers=txn_req_headers_dict, data=body)
+            responseHeaders = r1.headers
+            responseContent = r1.content
 
-            if 'Content-Length' in response.headers:
-                content = response.raw
-                # print("reading==========>>>>>>>>>>>>>.")
-                # print(content.data)
-                #print("len: {0} received {1}".format(response.headers['Content-Length'],content))
+            #print("len: {0} received {1}".format(responseHeaders['Content-Length'], responseContent))
         elif method == 'HEAD':
-            response = request_session.head('http://' + extractHeader.extract_host(txn_req_headers) + extractHeader.extract_GET_path(txn_req_headers),
-                                            headers=txn_req_headers_dict, stream=False)
+            r1 = request_session.request('HEAD', extractHeader.extract_GET_path(
+                txn_req_headers), headers=txn_req_headers_dict, data=body)
+            responseHeaders = r1.headers
+            responseContent = r1.content
 
-            #gzip_file = gzip.GzipFile(fileobj=content)
+            #gzip_file = gzip.GzipFile(fileobj=responseContent)
             #shutil.copyfileobj(gzip_file, f)
+
         expected = extractHeader.responseHeader_to_dict(resp.getHeaders())
+        # print("------------EXPECTED-----------")
         # print(expected)
+        # print("------------RESP--------------")
+        # print(responseHeaders)
+        # print()
+
         if mainProcess.verbose:
             expected_output_split = resp.getHeaders().split('\r\n')[0].split(' ', 2)
             expected_output = (int(expected_output_split[1]), str(expected_output_split[2]))
-            r = result.Result(session_filename, expected_output[0], response.status_code)
-            print(r.getResultString(response.headers, expected, colorize=True))
-            r.Compare(response.headers, expected)
+            r = result.Result(session_filename, expected_output[0], r1.status_code, responseContent)
+            b_res, res = r.getResult(responseHeaders, expected, colorize=True)
+            print(res)
+
+            if not b_res:
+                print("Received response")
+                print(responseHeaders)
+                print("Expected response")
+                print(expected)
         # result_queue.put(r)
     except UnicodeEncodeError as e:
         # these unicode errors are due to the interaction between Requests and our wiretrace data.
@@ -132,7 +145,7 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
         print("ContentDecodingError", e)
     except:
         e = sys.exc_info()
-        print("ERROR in requests: ", e, response, session_filename)
+        print("ERROR in NonSSLReplay: ", e, response, session_filename)
 
 
 def session_replay(input, proxy, result_queue):

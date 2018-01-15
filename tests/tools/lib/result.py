@@ -32,7 +32,8 @@ class TermColors:
     ENDC = '\033[0m'
 
 
-ignoredFields = {'age', 'set-cookie', 'server', 'date', 'last-modified', 'via', 'expires', 'cahe-control'}  # all lower case
+ignoredFields = {'age', 'set-cookie', 'server', 'date', 'last-modified',
+                 'via', 'expires', 'cache-control', 'vary', 'connection'}  # all lower case
 
 
 class Result(object):
@@ -57,33 +58,52 @@ class Result(object):
         else:
             return ""
 
-    def Compare(self, received_dict, expected_dict):
+    def Compare(self, received_dict, expected_dict, src=None):
         global ignoredFields
+        # print("RECEIVED")
+        # print(received_dict)
+        # print("RECIEVED CACHE CONTROL")
+        # print(received_dict['Cache-Control'.lower()])
+        # print("EXPECTED")
+        # print(expected_dict)
         try:
             for key in received_dict:
                 # print(key)
                 if key.lower() in expected_dict and key.lower() not in ignoredFields:
-                    #print("{0} ==? {1}".format(expected_dict[key.lower()],received_dict[key]))
-                    if received_dict[key] != expected_dict[key.lower()]:
+                    # print("{0} ==? {1}".format(expected_dict[key.lower()],received_dict[key]))
+                    if received_dict[key.lower()] != expected_dict[key.lower()]:
                         print("{0}Difference in the field \"{1}\": \n received:\n{2}\n expected:\n{3}{4}".format(
                             TermColors.FAIL, key, received_dict[key], expected_dict[key], TermColors.ENDC))
                         return False
+                    if key.lower() == 'content-length' and self._received_response_body:
+                        if int(received_dict[key.lower()]) != len(self._received_response_body):
+                            print("{0}Difference in received content length and actual body length \ncontent-length: {1} \nbody: {2}\nbody length: {3}{4}".format(
+                                TermColors.FAIL, received_dict[key.lower()], self._received_response_body, len(
+                                    self._received_response_body, TermColors.ENDC)
+                            ))
+                            return False
 
         except:
             e = sys.exc_info()
-            print("Error in comparing key ", e, key, expected_dict[key.lower()], received_dict[key])
+            if src:
+                print("In {0}: ".format(src), end='')
+            print("Error in comparing key ", e, key, "expected", expected_dict[key.lower()], "received", received_dict[key])
+            return False
         return True
 
-    def getResultString(self, received_dict, expected_dict, colorize=False):
+    def getResult(self, received_dict, expected_dict, colorize=False):
         global ignoredFields
+        retval = False
         ''' Return a nicely formatted result string with color if requested '''
-        if self.getResultBool() and self.Compare(received_dict, expected_dict):
+        if self.getResultBool() and self.Compare(received_dict, expected_dict, self._test_name):
             if colorize:
                 outstr = "{0}PASS{1}".format(
                     TermColors.OKGREEN, TermColors.ENDC)
 
             else:
                 outstr = "PASS"
+
+            retval = True
 
         else:
             if colorize:
@@ -93,6 +113,5 @@ class Result(object):
             else:
                 outstr = "FAIL: expected {0}, received {1}".format(
                     self._expected_response, self._received_response)
-                sys.exit(0)
 
-        return outstr
+        return (retval, outstr)
