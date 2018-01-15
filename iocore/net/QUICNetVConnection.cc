@@ -24,6 +24,7 @@
 #include <string>
 
 #include "ts/ink_config.h"
+#include "ts/ink_std_compat.h"
 #include "ts/EventNotify.h"
 #include "records/I_RecHttp.h"
 #include "ts/Diags.h"
@@ -357,8 +358,10 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
   case QUICFrameType::BLOCKED:
     // BLOCKED frame is for debugging. Nothing to do here.
     break;
+  case QUICFrameType::APPLICATION_CLOSE:
   case QUICFrameType::CONNECTION_CLOSE:
-    this->_switch_to_close_state();
+    this->_switch_to_draining_state(QUICConnectionErrorUPtr(
+      new QUICConnectionError(std::static_pointer_cast<const QUICApplicationCloseFrame>(frame)->error_code())));
     break;
   default:
     QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
@@ -505,12 +508,58 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
 }
 
 int
+QUICNetVConnection::state_connection_draining(int event, Event *data)
+{
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  bool can_switch_to_close_state = false;
+
+  // This states SHOULD persist for three times the
+  // current Retransmission Timeout (RTO) interval as defined in
+  // [QUIC-RECOVERY].
+
+  // TODO The draining period should be obtained from QUICLossDetector since it is the only component that knows the RTO interval.
+  // Use 3 times kkMinRTOTimeout(200ms) for now.
+  this->_schedule_draining_timeout(HRTIME_MSECONDS(3 * 200));
+
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  switch (event) {
+  case QUIC_EVENT_PACKET_READ_READY:
+    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+      error = this->_state_common_receive_packet();
+      // TODO receiving a closing frame is sufficient confirmation
+      // can_switch_to_close_state = true;
+    } else {
+      // FIXME Just ignore for now but it has to be acked (GitHub#2609)
+    }
+    break;
+  case QUIC_EVENT_PACKET_WRITE_READY:
+    // Do not send any packets in this state.
+    // This should be the only difference between this and closing_state.
+    this->_close_packet_write_ready(data);
+    break;
+  case QUIC_EVENT_DRAINING_TIMEOUT:
+    can_switch_to_close_state = true;
+    break;
+  default:
+    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
+  }
+
+  // FIXME Enter closed state if CONNECTION_CLOSE was ACKed and draining period end
+  if (can_switch_to_close_state) {
+    this->_switch_to_close_state();
+  }
+
+  return EVENT_DONE;
+}
+
+int
 QUICNetVConnection::state_connection_closed(int event, Event *data)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   switch (event) {
   case QUIC_EVENT_SHUTDOWN: {
     this->_unschedule_packet_write_ready();
+    this->_unschedule_draining_timeout();
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
 
@@ -1017,6 +1066,31 @@ QUICNetVConnection::_close_packet_write_ready(Event *data)
   this->_packet_write_ready = nullptr;
 }
 
+void
+QUICNetVConnection::_schedule_draining_timeout(ink_hrtime interval)
+{
+  if (!this->_draining_timeout) {
+    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_DRAINING_TIMEOUT));
+    this->_draining_timeout = this_ethread()->schedule_in_local(this, interval, QUIC_EVENT_DRAINING_TIMEOUT);
+  }
+}
+
+void
+QUICNetVConnection::_unschedule_draining_timeout()
+{
+  if (this->_draining_timeout) {
+    this->_draining_timeout->cancel();
+    this->_draining_timeout = nullptr;
+  }
+}
+
+void
+QUICNetVConnection::_close_draining_timeout(Event *data)
+{
+  ink_assert(this->_draining_timeout == data);
+  this->_draining_timeout = nullptr;
+}
+
 int
 QUICNetVConnection::_complete_handshake_if_possible()
 {
@@ -1089,6 +1163,21 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   }
   QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
+}
+
+void
+QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
+{
+  if (this->_complete_handshake_if_possible() != 0) {
+    QUICConDebug("Switching state without handshake completion");
+  }
+  if (error->msg) {
+    QUICConDebug("Reason: %.*s", static_cast<int>(strlen(error->msg)), error->msg);
+  } else {
+    QUICConDebug("Reason was not provided");
+  }
+  QUICConDebug("Enter state_connection_draining");
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
 }
 
 void

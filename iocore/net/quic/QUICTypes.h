@@ -146,7 +146,8 @@ enum class QUICTransErrorCode : uint16_t {
 };
 
 // Application Protocol Error Codes defined in application
-using QUICAppErrorCode = uint16_t;
+using QUICAppErrorCode                          = uint16_t;
+constexpr uint16_t QUIC_APP_ERROR_CODE_STOPPING = 0;
 
 class QUICError
 {

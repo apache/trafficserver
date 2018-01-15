@@ -124,11 +124,17 @@ class SSLNextProtocolSet;
  *  | WRITE:
  *  |   _state_common_send_packet()
  *  v
+ * state_connection_draining() (If closing passively)
+ *  | READ:
+ *  |   _state_connection_established_process_packet()
+ *  | WRITE:
+ *  |   Do nothing
+ *  v
  * state_connection_close()
  *    READ:
  *      Do nothing
  *    WRITE:
- *      _state_common_send_packet()
+ *      Do nothing
  **/
 class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
 {
@@ -150,6 +156,7 @@ public:
   int state_handshake(int event, Event *data);
   int state_connection_established(int event, Event *data);
   int state_connection_closing(int event, Event *data);
+  int state_connection_draining(int event, Event *data);
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
   void push_packet(UDPPacket *packet);
@@ -249,6 +256,11 @@ private:
   void _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
+  void _schedule_draining_timeout(ink_hrtime interval);
+  void _unschedule_draining_timeout();
+  void _close_draining_timeout(Event *data);
+  Event *_draining_timeout = nullptr;
+
   uint32_t _transmit_packet(QUICPacketUPtr);
   void _transmit_frame(QUICFrameUPtr);
 
@@ -280,6 +292,7 @@ private:
   void _switch_to_handshake_state();
   void _switch_to_established_state();
   void _switch_to_closing_state(QUICConnectionErrorUPtr error);
+  void _switch_to_draining_state(QUICConnectionErrorUPtr error);
   void _switch_to_close_state();
 
   void _handle_idle_timeout();
