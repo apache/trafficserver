@@ -513,14 +513,6 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   bool can_switch_to_close_state = false;
 
-  // This states SHOULD persist for three times the
-  // current Retransmission Timeout (RTO) interval as defined in
-  // [QUIC-RECOVERY].
-
-  // TODO The draining period should be obtained from QUICLossDetector since it is the only component that knows the RTO interval.
-  // Use 3 times kkMinRTOTimeout(200ms) for now.
-  this->_schedule_draining_timeout(HRTIME_MSECONDS(3 * 200));
-
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
@@ -1179,6 +1171,14 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   }
   QUICConDebug("Enter state_connection_draining");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
+
+  // This states SHOULD persist for three times the
+  // current Retransmission Timeout (RTO) interval as defined in
+  // [QUIC-RECOVERY].
+
+  // TODO The draining period should be obtained from QUICLossDetector since it is the only component that knows the RTO interval.
+  // Use 3 times kkMinRTOTimeout(200ms) for now.
+  this->_schedule_draining_timeout(HRTIME_MSECONDS(3 * 200));
 }
 
 void
@@ -1196,7 +1196,7 @@ void
 QUICNetVConnection::_handle_idle_timeout()
 {
   this->remove_from_active_queue();
-  this->close(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
+  this->_switch_to_draining_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
 
   // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
 }
