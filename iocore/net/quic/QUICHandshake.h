@@ -106,6 +106,6 @@ private:
   int _complete_handshake();
   void _abort_handshake(QUICTransErrorCode code);
 
-  QUICStatelessResetToken _reset_token;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
+  QUICStatelessResetToken _reset_token;
 };

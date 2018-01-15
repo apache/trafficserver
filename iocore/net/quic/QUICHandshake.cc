@@ -83,23 +83,23 @@ static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICApplication(qc)
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandshake(qc, ssl_ctx, {0})
 {
-  this->_ssl = SSL_new(ssl_ctx);
+}
+
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token)
+  : QUICApplication(qc),
+    _ssl(SSL_new(ssl_ctx)),
+    _crypto(new QUICCryptoTls(this->_ssl, qc->direction())),
+    _version_negotiator(new QUICVersionNegotiator()),
+    _netvc_context(qc->direction()),
+    _reset_token(token)
+{
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
-  this->_netvc_context      = qc->direction();
-  this->_crypto             = new QUICCryptoTls(this->_ssl, qc->direction());
-  this->_version_negotiator = new QUICVersionNegotiator();
-
   this->_crypto->initialize_key_materials(this->_client_qc->original_connection_id());
 
   SET_HANDLER(&QUICHandshake::state_initial);
-}
-
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token) : QUICHandshake(qc, ssl_ctx)
-{
-  this->_reset_token = token;
 }
 
 QUICHandshake::~QUICHandshake()
