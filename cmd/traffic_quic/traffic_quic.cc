@@ -21,145 +21,17 @@
  *  limitations under the License.
  */
 
-#include "I_EventSystem.h"
-#include "I_NetVConnection.h"
-#include "P_QUICNetProcessor.h"
-
 #include "ts/ink_string.h"
 #include "ts/ink_args.h"
 #include "ts/I_Layout.h"
 #include "ts/I_Version.h"
 
+#include "diags.h"
+#include "quic_client.h"
+
 #define THREADS 1
-#define DIAGS_LOG_FILE "diags.log"
 
 constexpr size_t stacksize = 1048576;
-
-// copy from iocore/utils/diags.i
-static void
-reconfigure_diags()
-{
-  int i;
-  DiagsConfigState c;
-
-  // initial value set to 0 or 1 based on command line tags
-  c.enabled[DiagsTagType_Debug]  = (diags->base_debug_tags != nullptr);
-  c.enabled[DiagsTagType_Action] = (diags->base_action_tags != nullptr);
-
-  c.enabled[DiagsTagType_Debug]  = 1;
-  c.enabled[DiagsTagType_Action] = 1;
-  diags->show_location           = SHOW_LOCATION_ALL;
-
-  // read output routing values
-  for (i = 0; i < DL_Status; i++) {
-    c.outputs[i].to_stdout   = 0;
-    c.outputs[i].to_stderr   = 1;
-    c.outputs[i].to_syslog   = 0;
-    c.outputs[i].to_diagslog = 0;
-  }
-
-  for (i = DL_Status; i < DiagsLevel_Count; i++) {
-    c.outputs[i].to_stdout   = 0;
-    c.outputs[i].to_stderr   = 0;
-    c.outputs[i].to_syslog   = 0;
-    c.outputs[i].to_diagslog = 1;
-  }
-
-  //////////////////////////////
-  // clear out old tag tables //
-  //////////////////////////////
-
-  diags->deactivate_all(DiagsTagType_Debug);
-  diags->deactivate_all(DiagsTagType_Action);
-
-  //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables
-  //////////////////////////////////////////////////////////////////////
-
-  if (diags->base_debug_tags)
-    diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-  if (diags->base_action_tags)
-    diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
-
-////////////////////////////////////
-// change the diags config values //
-////////////////////////////////////
-#if !defined(__GNUC__) && !defined(hpux)
-  diags->config = c;
-#else
-  memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
-#endif
-}
-
-static void
-init_diags(const char *bdt, const char *bat)
-{
-  char diags_logpath[500];
-  strcpy(diags_logpath, DIAGS_LOG_FILE);
-
-  diags = new Diags("Client", bdt, bat, new BaseLogFile(diags_logpath));
-  Status("opened %s", diags_logpath);
-
-  reconfigure_diags();
-}
-
-class QUICClient : public Continuation
-{
-public:
-  QUICClient(const char *addr, int port) : Continuation(new_ProxyMutex()), _remote_port(port) { SET_HANDLER(&QUICClient::start); };
-  void start();
-  int state_http_server_open(int event, void *data);
-
-private:
-  // char *_remote_addr = nullptr;
-  int _remote_port = 0;
-};
-
-// Similar to HttpSM::state_http_server_open(int event, void *data)
-int
-QUICClient::state_http_server_open(int event, void *data)
-{
-  switch (event) {
-  case NET_EVENT_OPEN: {
-    // TODO: create ProxyServerSession / ProxyServerTransaction
-    // TODO: send HTTP/0.9 message
-    Debug("quic_client", "start proxy server ssn/txn");
-    break;
-  }
-  case NET_EVENT_OPEN_FAILED: {
-    ink_assert(false);
-    break;
-  }
-  case NET_EVENT_ACCEPT: {
-    // do nothing
-    break;
-  }
-  default:
-    ink_assert(false);
-  }
-
-  return 0;
-}
-
-void
-QUICClient::start()
-{
-  SET_HANDLER(&QUICClient::state_http_server_open);
-
-  // TODO: getdddrinfo
-  sockaddr_in addr;
-  addr.sin_family      = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  addr.sin_port        = htons(this->_remote_port);
-
-  NetVCOptions opt;
-  opt.ip_proto  = NetVCOptions::USE_UDP;
-  opt.ip_family = addr.sin_family;
-
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-
-  quic_NetProcessor.connect_re(this, reinterpret_cast<sockaddr const *>(&addr), &opt);
-}
 
 // TODO: Support QUIC version, cipher suite ...etc
 // TODO: Support qdrive tests
