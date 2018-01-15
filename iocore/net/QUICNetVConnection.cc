@@ -360,8 +360,13 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     break;
   case QUICFrameType::APPLICATION_CLOSE:
   case QUICFrameType::CONNECTION_CLOSE:
-    this->_switch_to_draining_state(QUICConnectionErrorUPtr(
-      new QUICConnectionError(std::static_pointer_cast<const QUICApplicationCloseFrame>(frame)->error_code())));
+    if (this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closing) ||
+        this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_draining)) {
+      this->_switch_to_close_state();
+    } else {
+      this->_switch_to_draining_state(QUICConnectionErrorUPtr(
+        new QUICConnectionError(std::static_pointer_cast<const QUICApplicationCloseFrame>(frame)->error_code())));
+    }
     break;
   default:
     QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
@@ -479,34 +484,25 @@ int
 QUICNetVConnection::state_connection_closing(int event, Event *data)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  bool can_switch_to_close_state = false;
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
-    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-      error = this->_state_common_receive_packet();
-      // TODO receiving a closing frame is sufficient confirmation
-      // can_switch_to_close_state = true;
-    } else {
-      // FIXME Just ignore for now but it has to be acked (GitHub#2609)
-    }
+    error = this->_state_common_receive_packet();
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
-    // FIXME Only closing frames are allowed to send
+    // FIXME During the closing period, an endpoint that sends a
+    // closing frame SHOULD respond to any packet that it receives with
+    // another packet containing a closing frame.
     this->_state_common_send_packet();
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
-    can_switch_to_close_state = true;
+    this->_switch_to_close_state();
     break;
   default:
     QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
-  }
-
-  if (can_switch_to_close_state) {
-    this->_switch_to_close_state();
   }
 
   return EVENT_DONE;
@@ -516,18 +512,11 @@ int
 QUICNetVConnection::state_connection_draining(int event, Event *data)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  bool can_switch_to_close_state = false;
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
-    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-      error = this->_state_common_receive_packet();
-      // TODO receiving a closing frame is sufficient confirmation
-      // can_switch_to_close_state = true;
-    } else {
-      // FIXME Just ignore for now but it has to be acked (GitHub#2609)
-    }
+    error = this->_state_common_receive_packet();
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     // Do not send any packets in this state.
@@ -536,14 +525,10 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
-    can_switch_to_close_state = true;
+    this->_switch_to_close_state();
     break;
   default:
     QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
-  }
-
-  if (can_switch_to_close_state) {
-    this->_switch_to_close_state();
   }
 
   return EVENT_DONE;
@@ -1188,6 +1173,8 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
 void
 QUICNetVConnection::_switch_to_close_state()
 {
+  this->_unschedule_closing_timeout();
+
   if (this->_complete_handshake_if_possible() != 0) {
     QUICConDebug("Switching state without handshake completion");
   }
