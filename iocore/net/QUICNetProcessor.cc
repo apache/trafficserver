@@ -20,14 +20,14 @@
  */
 
 #include "ts/ink_config.h"
+#include "ts/I_Layout.h"
 
 #include "P_Net.h"
-#include "ts/I_Layout.h"
 #include "I_RecHttp.h"
+
 #include "QUICGlobals.h"
 #include "QUICConfig.h"
 #include "QUICTransportParameters.h"
-// #include "P_QUICUtils.h"
 
 //
 // Global Data
@@ -89,7 +89,7 @@ QUICNetProcessor::start(int, size_t stacksize)
 NetAccept *
 QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
-  return (NetAccept *)new QUICPacketHandler(opt, this->_ssl_ctx);
+  return (NetAccept *)new QUICPacketHandlerIn(opt, this->_ssl_ctx);
 }
 
 NetVConnection *
@@ -138,13 +138,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   UnixUDPConnection *con = new UnixUDPConnection(fd);
   Debug("quic_ps", "con=%p fd=%d", con, fd);
 
-  AcceptOptions const accept_opt;
-  // FIXME: create QUICPacketHandler for Client (origin server side)
-  QUICPacketHandler *packet_handler = new QUICPacketHandler(accept_opt, this->_ssl_ctx);
-  packet_handler->init_accept(t);
-  packet_handler->action_  = new NetAcceptAction();
-  *packet_handler->action_ = cont;
-
+  QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut();
   con->setBinding(reinterpret_cast<sockaddr const *>(&local_addr));
   con->bindToThread(packet_handler);
 
@@ -162,6 +156,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   cid.randomize();
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
   vc->init(cid, con, packet_handler);
+  packet_handler->init(vc);
 
   if (opt) {
     vc->options = *opt;

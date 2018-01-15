@@ -87,7 +87,7 @@ typedef enum {
 //
 //////////////////////////////////////////////////////////////////
 
-struct QUICPacketHandler;
+class QUICPacketHandler;
 class QUICLossDetector;
 
 class SSLNextProtocolSet;

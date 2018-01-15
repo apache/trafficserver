@@ -31,24 +31,65 @@
 class QUICNetVConnection;
 class QUICPacket;
 
-struct QUICPacketHandler : public NetAccept {
+class QUICPacketHandler
+{
 public:
-  QUICPacketHandler(const NetProcessor::AcceptOptions &opt, SSL_CTX *);
-  virtual ~QUICPacketHandler();
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc)        = 0;
+  virtual void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc) = 0;
 
+protected:
+  static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
+  static bool _read_connection_id(QUICConnectionId &cid, IOBufferBlock *block);
+
+  virtual void _recv_packet(int event, UDPPacket *udpPacket) = 0;
+};
+
+/*
+ * @class QUICPacketHanderIn
+ * @brief QUIC Packet Handler for incoming connections
+ */
+class QUICPacketHandlerIn : public NetAccept, public QUICPacketHandler
+{
+public:
+  QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, SSL_CTX *);
+  ~QUICPacketHandlerIn();
+
+  // NetAccept
   virtual NetProcessor *getNetProcessor() const override;
   virtual NetAccept *clone() const override;
   virtual int acceptEvent(int event, void *e) override;
   void init_accept(EThread *t) override;
-  void send_packet(const QUICPacket &packet, QUICNetVConnection *vc);
-  void send_packet(const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
 
-  void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc);
+  // QUICPacketHandler
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc) override;
+  virtual void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc) override;
 
 private:
-  void _recv_packet(int event, UDPPacket *udpPacket);
-  bool _read_connection_id(QUICConnectionId &cid, IOBufferBlock *block);
+  void _recv_packet(int event, UDPPacket *udp_packet) override;
 
   Map<int64_t, QUICNetVConnection *> _connections;
   SSL_CTX *_ssl_ctx;
+};
+
+/*
+ * @class QUICPacketHanderOut
+ * @brief QUIC Packet Handler for outgoing connections
+ */
+class QUICPacketHandlerOut : public Continuation, public QUICPacketHandler
+{
+public:
+  QUICPacketHandlerOut();
+  ~QUICPacketHandlerOut(){};
+
+  void init(QUICNetVConnection *vc);
+  int event_handler(int event, Event *data);
+
+  // QUICPacketHandler
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc) override;
+  virtual void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc) override;
+
+private:
+  void _recv_packet(int event, UDPPacket *udp_packet) override;
+
+  QUICNetVConnection *_vc = nullptr;
 };
