@@ -160,7 +160,7 @@ int
 QUICNetVConnection::connectUp(EThread *t, int fd)
 {
   // create stream for handshake
-  QUICErrorUPtr error = this->_stream_manager->create_client_stream(STREAM_ID_FOR_HANDSHAKE);
+  QUICErrorUPtr error = this->_stream_manager->create_stream(STREAM_ID_FOR_HANDSHAKE);
   if (error->cls != QUICErrorClass::NONE) {
     QUICConDebug("Couldn't create stream for handshake");
 

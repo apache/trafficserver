@@ -92,7 +92,7 @@ QUICStreamManager::set_max_stream_id(QUICStreamId id)
 }
 
 QUICErrorUPtr
-QUICStreamManager::create_client_stream(QUICStreamId stream_id)
+QUICStreamManager::create_stream(QUICStreamId stream_id)
 {
   // TODO: check stream_id
   QUICStream *stream = this->_find_or_create_stream(stream_id);

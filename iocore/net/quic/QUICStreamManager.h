@@ -48,7 +48,7 @@ public:
   void add_total_offset_sent(uint32_t sent_byte);
 
   uint32_t stream_count() const;
-  QUICErrorUPtr create_client_stream(QUICStreamId stream_id);
+  QUICErrorUPtr create_stream(QUICStreamId stream_id);
 
   void set_default_application(QUICApplication *app);
 
