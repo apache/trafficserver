@@ -36,6 +36,7 @@
 
 #include "P_SSLNextProtocolSet.h"
 
+#include "QUICStats.h"
 #include "QUICConfig.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
@@ -761,10 +762,12 @@ QUICNetVConnection::_state_common_send_packet()
   QUICPacket *packet;
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
+  uint32_t packet_count = this->_packet_send_queue.size;
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
     this->_packet_handler->send_packet(*packet, this);
     this->_loss_detector->on_packet_sent(QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet));
   }
+  QUIC_INCREMENT_DYN_STAT_EX(quic_total_packets_sent_stat, packet_count);
 
   net_activity(this, this_ethread());
 

@@ -23,10 +23,10 @@
 
 #include "HQ.h"
 
-RecRawStatBlock *quic_rsb;
+RecRawStatBlock *hq_rsb;
 
 void
 HQ::init()
 {
-  quic_rsb = RecAllocateRawStatBlock(static_cast<int>(HQ_N_STATS));
+  hq_rsb = RecAllocateRawStatBlock(static_cast<int>(HQ_N_STATS));
 }

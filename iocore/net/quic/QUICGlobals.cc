@@ -23,8 +23,11 @@
 
 #include <cstring>
 #include "QUICGlobals.h"
+#include "QUICStats.h"
 #include "QUICConnection.h"
 #include "P_SSLNextProtocolSet.h"
+
+RecRawStatBlock *quic_rsb;
 
 int QUIC::ssl_quic_qc_index = -1;
 int QUIC::ssl_quic_hs_index = -1;
@@ -45,4 +48,18 @@ QUIC::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned cha
   *out    = nullptr;
   *outlen = 0;
   return SSL_TLSEXT_ERR_NOACK;
+}
+
+void
+QUIC::_register_stats()
+{
+  quic_rsb = RecAllocateRawStatBlock(static_cast<int>(quic_stat_count));
+
+  // Transfered packet counts
+  RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_sent", RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(quic_total_packets_sent_stat), RecRawStatSyncSum);
+  // RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_retransmitted", RECD_INT, RECP_PERSISTENT,
+  //                              static_cast<int>(quic_total_packets_retransmitted_stat), RecRawStatSyncSum);
+  // RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_received", RECD_INT, RECP_PERSISTENT,
+  //                            static_cast<int>(quic_total_packets_received_stat), RecRawStatSyncSum);
 }

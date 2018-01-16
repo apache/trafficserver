@@ -31,6 +31,7 @@ public:
   static void
   init()
   {
+    QUIC::_register_stats();
     ssl_quic_qc_index = SSL_get_ex_new_index(0, (void *)"QUICConnection index", nullptr, nullptr, nullptr);
     ssl_quic_hs_index = SSL_get_ex_new_index(0, (void *)"QUICHandshake index", nullptr, nullptr, nullptr);
   }
@@ -40,4 +41,7 @@ public:
   // SSL callbacks
   static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                       unsigned inlen, void *);
+
+private:
+  static void _register_stats();
 };
