@@ -349,8 +349,9 @@ QUICTransportParametersInClientHello::_parameters_offset(const uint8_t *) const
 int
 QUICTransportParametersInClientHello::_validate_parameters() const
 {
-  if (QUICTransportParameters::_validate_parameters() < 0) {
-    return 0;
+  int res = QUICTransportParameters::_validate_parameters();
+  if (res < 0) {
+    return res - 100;
   }
 
   decltype(this->_parameters)::const_iterator ite;
@@ -366,7 +367,7 @@ QUICTransportParametersInClientHello::_validate_parameters() const
       return -2;
     }
     if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::CLIENT_BIDI) {
+        QUICStreamType::SERVER_BIDI) {
       return -3;
     }
   }
@@ -376,7 +377,7 @@ QUICTransportParametersInClientHello::_validate_parameters() const
       return -4;
     }
     if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::CLIENT_UNI) {
+        QUICStreamType::SERVER_UNI) {
       return -5;
     }
   }
@@ -446,8 +447,9 @@ QUICTransportParametersInEncryptedExtensions::_parameters_offset(const uint8_t *
 int
 QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
 {
-  if (QUICTransportParameters::_validate_parameters() < 0) {
-    return 0;
+  int res = QUICTransportParameters::_validate_parameters();
+  if (res < 0) {
+    return res - 100;
   }
 
   decltype(this->_parameters)::const_iterator ite;
@@ -467,7 +469,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
       return -3;
     }
     if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::SERVER_BIDI) {
+        QUICStreamType::CLIENT_BIDI) {
       return -4;
     }
   }
@@ -477,7 +479,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
       return -5;
     }
     if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::SERVER_UNI) {
+        QUICStreamType::CLIENT_UNI) {
       return -6;
     }
   }
@@ -511,8 +513,9 @@ QUICTransportParametersInNewSessionTicket::_parameters_offset(const uint8_t *buf
 int
 QUICTransportParametersInNewSessionTicket::_validate_parameters() const
 {
-  if (QUICTransportParameters::_validate_parameters() < 0) {
-    return 0;
+  int res = QUICTransportParameters::_validate_parameters();
+  if (res < 0) {
+    return res - 100;
   }
 
   decltype(this->_parameters)::const_iterator ite;
@@ -532,7 +535,7 @@ QUICTransportParametersInNewSessionTicket::_validate_parameters() const
       return -3;
     }
     if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::SERVER_BIDI) {
+        QUICStreamType::CLIENT_BIDI) {
       return -4;
     }
   }
@@ -542,7 +545,7 @@ QUICTransportParametersInNewSessionTicket::_validate_parameters() const
       return -5;
     }
     if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::SERVER_UNI) {
+        QUICStreamType::CLIENT_UNI) {
       return -6;
     }
   }
