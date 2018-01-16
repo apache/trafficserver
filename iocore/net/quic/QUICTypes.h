@@ -247,8 +247,8 @@ private:
   void _gen_token(uint64_t data);
 };
 
-enum class QUICStreamType {
-  CLIENT_BIDI,
+enum class QUICStreamType : uint8_t {
+  CLIENT_BIDI = 0x00,
   SERVER_BIDI,
   CLIENT_UNI,
   SERVER_UNI,

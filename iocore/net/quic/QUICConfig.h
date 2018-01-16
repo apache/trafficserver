@@ -46,10 +46,10 @@ private:
   uint32_t _no_activity_timeout_out        = 30;
   uint32_t _initial_max_data               = 131072;
   uint32_t _initial_max_stream_data        = 2048;
-  uint32_t _initial_max_stream_id_bidi_in  = 100;
-  uint32_t _initial_max_stream_id_bidi_out = 101;
-  uint32_t _initial_max_stream_id_uni_in   = 102;
-  uint32_t _initial_max_stream_id_uni_out  = 103;
+  uint32_t _initial_max_stream_id_bidi_out = 100;
+  uint32_t _initial_max_stream_id_bidi_in  = 101;
+  uint32_t _initial_max_stream_id_uni_out  = 102;
+  uint32_t _initial_max_stream_id_uni_in   = 103;
   uint32_t _server_id                      = 0;
 };
 

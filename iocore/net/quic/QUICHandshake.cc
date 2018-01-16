@@ -223,7 +223,8 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersI
   this->_remote_transport_parameters = tp;
 
   // TODO Add client side implementation
-  ink_assert(false);
+
+  return;
 }
 
 void
