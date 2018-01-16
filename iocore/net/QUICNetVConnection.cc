@@ -492,10 +492,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
-    // FIXME During the closing period, an endpoint that sends a
-    // closing frame SHOULD respond to any packet that it receives with
-    // another packet containing a closing frame.
-    this->_state_common_send_packet();
+    this->_state_closing_send_packet();
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
@@ -769,6 +766,18 @@ QUICNetVConnection::_state_common_send_packet()
   return QUICErrorUPtr(new QUICNoError());
 }
 
+QUICErrorUPtr
+QUICNetVConnection::_state_closing_send_packet()
+{
+  // During the closing period, an endpoint that sends a
+  // closing frame SHOULD respond to any packet that it receives with
+  // another packet containing a closing frame.  To minimize the state
+  // that an endpoint maintains for a closing connection, endpoints MAY
+  // send the exact same packet.
+  this->_packet_handler->send_packet(*this->_the_final_packet, this);
+  return QUICErrorUPtr(new QUICNoError());
+}
+
 // Store frame data to buffer for packet. When remaining buffer is too small to store frame data or packet type is different from
 // previous one, build packet and transmit it. After that, allocate new buffer.
 void
@@ -801,6 +810,15 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   QUICConDebug("type=%s", QUICDebugNames::frame_type(frame->type()));
   frame->store(buf.get() + len, &l);
   len += l;
+
+  if (frame->type() == QUICFrameType::CONNECTION_CLOSE || frame->type() == QUICFrameType::APPLICATION_CLOSE) {
+    this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
+    retransmittable = false;
+    len             = 0;
+    buf             = ats_unique_malloc(max_size);
+    frame->store(buf.get(), &l);
+    this->_the_final_packet = this->_build_packet(std::move(buf), l, false);
+  }
 
   return;
 }
@@ -836,6 +854,9 @@ QUICNetVConnection::_packetize_frames()
     frame = std::move(this->_frame_send_queue.front());
     this->_frame_send_queue.pop();
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+    if (this->_the_final_packet) {
+      return;
+    }
   }
 
   while (this->_stream_frame_send_queue.size() > 0) {

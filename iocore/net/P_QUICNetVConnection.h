@@ -279,6 +279,7 @@ private:
   QUICErrorUPtr _state_connection_established_process_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_common_receive_packet();
   QUICErrorUPtr _state_common_send_packet();
+  QUICErrorUPtr _state_closing_send_packet();
 
   Ptr<ProxyMutex> _packet_transmitter_mutex;
   Ptr<ProxyMutex> _frame_transmitter_mutex;
@@ -298,6 +299,7 @@ private:
   void _handle_idle_timeout();
   void _update_alt_connection_ids(uint8_t chosen);
 
+  QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
 };
 
