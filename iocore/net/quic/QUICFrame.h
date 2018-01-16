@@ -753,6 +753,16 @@ public:
                                                                                                     uint64_t maximum_stream_data);
 
   /*
+   * Creates a PING frame
+   */
+  static std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc> create_ping_frame(const uint8_t *data, size_t data_len);
+
+  /*
+   * Creates a PONG frame
+   */
+  static std::unique_ptr<QUICPongFrame, QUICFrameDeleterFunc> create_pong_frame(const QUICPingFrame &ping_frame);
+
+  /*
    * Creates a BLOCKED frame.
    */
   static std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc> create_blocked_frame(QUICOffset offset);

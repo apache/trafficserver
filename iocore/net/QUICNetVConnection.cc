@@ -355,6 +355,11 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     this->_schedule_packet_write_ready();
 
     break;
+  case QUICFrameType::PING:
+    if (std::static_pointer_cast<const QUICPingFrame>(frame)->data_length() > 0) {
+      this->transmit_frame(QUICFrameFactory::create_pong_frame(*std::static_pointer_cast<const QUICPingFrame>(frame)));
+    }
+    break;
   case QUICFrameType::BLOCKED:
     // BLOCKED frame is for debugging. Nothing to do here.
     break;

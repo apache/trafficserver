@@ -1898,6 +1898,28 @@ QUICFrameFactory::create_max_stream_data_frame(QUICStreamId stream_id, uint64_t 
   return std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_data_frame);
 }
 
+std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_ping_frame(const uint8_t *data, size_t data_len)
+{
+  ats_unique_buf buf = ats_unique_malloc(data_len);
+  memcpy(buf.get(), data, data_len);
+
+  QUICPingFrame *frame = quicPingFrameAllocator.alloc();
+  new (frame) QUICPingFrame(std::move(buf), data_len);
+  return std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_ping_frame);
+}
+
+std::unique_ptr<QUICPongFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_pong_frame(const QUICPingFrame &ping_frame)
+{
+  ats_unique_buf buf = ats_unique_malloc(ping_frame.data_length());
+  memcpy(buf.get(), ping_frame.data(), ping_frame.data_length());
+
+  QUICPongFrame *frame = quicPongFrameAllocator.alloc();
+  new (frame) QUICPongFrame(std::move(buf), ping_frame.data_length());
+  return std::unique_ptr<QUICPongFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_pong_frame);
+}
+
 std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_blocked_frame(QUICOffset offset)
 {
