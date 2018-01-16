@@ -48,6 +48,7 @@ public:
   void add_total_offset_sent(uint32_t sent_byte);
 
   uint32_t stream_count() const;
+  QUICErrorUPtr create_client_stream(QUICStreamId stream_id);
 
   void set_default_application(QUICApplication *app);
 
@@ -58,8 +59,8 @@ public:
   virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
 
 private:
-  QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICStream *_find_stream(QUICStreamId id);
+  QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &);

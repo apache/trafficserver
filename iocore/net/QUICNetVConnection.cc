@@ -159,12 +159,12 @@ QUICNetVConnection::reenable(VIO *vio)
 int
 QUICNetVConnection::connectUp(EThread *t, int fd)
 {
-  // create stream 0
-  // FIXME: integration w/ QUICStreamManager
-  QUICStream *stream = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
-  stream->init(this, this->connection_id(), STREAM_ID_FOR_HANDSHAKE);
-  if (!this->_handshake_handler->is_stream_set(stream)) {
-    this->_handshake_handler->set_stream(stream);
+  // create stream for handshake
+  QUICErrorUPtr error = this->_stream_manager->create_client_stream(STREAM_ID_FOR_HANDSHAKE);
+  if (error->cls != QUICErrorClass::NONE) {
+    QUICConDebug("Couldn't create stream for handshake");
+
+    return CONNECT_FAILURE;
   }
 
   // start QUIC handshake

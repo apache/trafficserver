@@ -92,6 +92,24 @@ QUICStreamManager::set_max_stream_id(QUICStreamId id)
 }
 
 QUICErrorUPtr
+QUICStreamManager::create_client_stream(QUICStreamId stream_id)
+{
+  // TODO: check stream_id
+  QUICStream *stream = this->_find_or_create_stream(stream_id);
+  if (!stream) {
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+  }
+
+  QUICApplication *application = this->_app_map->get(stream_id);
+
+  if (!application->is_stream_set(stream)) {
+    application->set_stream(stream);
+  }
+
+  return QUICErrorUPtr(new QUICNoError());
+}
+
+QUICErrorUPtr
 QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
@@ -216,6 +234,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
                this->_remote_maximum_stream_id_uni != 0) {
       return nullptr;
     }
+
     // TODO Free the stream somewhere
     stream                          = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
     uint32_t local_max_stream_data  = 0;
@@ -231,6 +250,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
     this->stream_list.push(stream);
   }
+
   return stream;
 }
 
