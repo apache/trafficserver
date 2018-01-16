@@ -719,7 +719,7 @@ QUICNetVConnection::_state_common_receive_packet()
   net_activity(this, this_ethread());
 
   // Check connection migration
-  if (p->connection_id() != this->_quic_connection_id) {
+  if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
     for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
       AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
       if (info.id == p->connection_id()) {
