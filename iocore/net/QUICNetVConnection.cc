@@ -132,7 +132,6 @@ QUICNetVConnection::free(EThread *t)
   this->_packet_handler = nullptr;
   _unschedule_packet_write_ready();
 
-  delete this->_version_negotiator;
   delete this->_handshake_handler;
   delete this->_application_map;
   delete this->_crypto;

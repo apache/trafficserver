@@ -230,7 +230,6 @@ private:
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
-  QUICVersionNegotiator *_version_negotiator        = nullptr;
   QUICHandshake *_handshake_handler                 = nullptr;
   QUICCrypto *_crypto                               = nullptr;
   QUICLossDetector *_loss_detector                  = nullptr;
