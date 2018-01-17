@@ -4231,6 +4231,8 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
   const char *s, *e, *tmp;
   RangeRecord *ranges = nullptr;
   int64_t start, end;
+  int64_t cutoff = INT64_MAX / 10;
+  int64_t cutlim = INT64_MAX % 10;
 
   ink_assert(field != nullptr && t_state.range_setup == HttpTransact::RANGE_NONE && t_state.ranges == nullptr);
 
@@ -4287,6 +4289,12 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       start = -1;
     } else {
       for (start = 0; s < e && *s >= '0' && *s <= '9'; ++s) {
+        // check the int64 overflow in case of high gcc with O3 option
+        // thinking the start is always positive
+        if (start >= cutoff && (start > cutoff || *s - '0' > cutlim)) {
+          t_state.range_setup = HttpTransact::RANGE_NONE;
+          goto Lfaild;
+        }
         start = start * 10 + (*s - '0');
       }
       // skip last white spaces
@@ -4319,6 +4327,12 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       end = content_length - 1;
     } else {
       for (end = 0; s < e && *s >= '0' && *s <= '9'; ++s) {
+        // check the int64 overflow in case of high gcc with O3 option
+        // thinking the start is always positive
+        if (end >= cutoff && (end > cutoff || *s - '0' > cutlim)) {
+          t_state.range_setup = HttpTransact::RANGE_NONE;
+          goto Lfaild;
+        }
         end = end * 10 + (*s - '0');
       }
       // skip last white spaces
