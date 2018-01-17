@@ -767,7 +767,7 @@ QUICNetVConnection::_state_common_send_packet()
     this->_packet_handler->send_packet(*packet, this);
     this->_loss_detector->on_packet_sent(QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet));
   }
-  QUIC_INCREMENT_DYN_STAT_EX(quic_total_packets_sent_stat, packet_count);
+  QUIC_INCREMENT_DYN_STAT_EX(QUICStats::total_packets_sent_stat, packet_count);
 
   net_activity(this, this_ethread());
 

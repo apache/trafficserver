@@ -53,11 +53,11 @@ QUIC::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned cha
 void
 QUIC::_register_stats()
 {
-  quic_rsb = RecAllocateRawStatBlock(static_cast<int>(quic_stat_count));
+  quic_rsb = RecAllocateRawStatBlock(static_cast<int>(QUICStats::count));
 
   // Transfered packet counts
   RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_sent", RECD_INT, RECP_PERSISTENT,
-                     static_cast<int>(quic_total_packets_sent_stat), RecRawStatSyncSum);
+                     static_cast<int>(QUICStats::total_packets_sent_stat), RecRawStatSyncSum);
   // RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_retransmitted", RECD_INT, RECP_PERSISTENT,
   //                              static_cast<int>(quic_total_packets_retransmitted_stat), RecRawStatSyncSum);
   // RecRegisterRawStat(quic_rsb, RECT_PROCESS, "proxy.process.quic.total_packets_received", RECD_INT, RECP_PERSISTENT,
