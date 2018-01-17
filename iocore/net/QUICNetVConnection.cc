@@ -170,7 +170,6 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
   // start QUIC handshake
   this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
 
-  // action_.continuation->handleEvent(NET_EVENT_OPEN, this);
   return CONNECT_SUCCESS;
 }
 
@@ -1123,11 +1122,15 @@ QUICNetVConnection::_complete_handshake_if_possible()
     app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
   }
 
-  Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
-  if (endpoint == nullptr) {
-    this->_handle_error(QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
+  if (netvc_context == NET_VCONNECTION_IN) {
+    Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
+    if (endpoint == nullptr) {
+      this->_handle_error(QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
+    } else {
+      endpoint->handleEvent(NET_EVENT_ACCEPT, this);
+    }
   } else {
-    endpoint->handleEvent(NET_EVENT_ACCEPT, this);
+    this->action_.continuation->handleEvent(NET_EVENT_OPEN, this);
   }
 
   return 0;
@@ -1148,7 +1151,9 @@ QUICNetVConnection::_switch_to_established_state()
     QUICConDebug("%s", this->_handshake_handler->negotiated_cipher_suite());
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
-    this->_update_alt_connection_ids(countof(this->_alt_quic_connection_ids) - 1);
+    if (netvc_context == NET_VCONNECTION_IN) {
+      this->_update_alt_connection_ids(countof(this->_alt_quic_connection_ids) - 1);
+    }
   } else {
     // Illegal state change
     ink_assert(!"Handshake has to be completed");
