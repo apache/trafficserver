@@ -28,7 +28,6 @@
 #include "QUICPacketTransmitter.h"
 #include "QUICFrameTransmitter.h"
 #include "QUICFrameHandler.h"
-#include "QUICTransportParameters.h"
 
 class QUICApplication;
 class QUICStreamManager;

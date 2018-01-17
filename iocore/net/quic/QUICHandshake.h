@@ -25,6 +25,7 @@
 
 #include "QUICConnection.h"
 #include "QUICApplication.h"
+#include "QUICTransportParameters.h"
 
 /**
  * @class QUICHandshake
