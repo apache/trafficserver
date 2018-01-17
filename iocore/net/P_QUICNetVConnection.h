@@ -176,6 +176,7 @@ public:
   // QUICConnection
   QUICConnectionId original_connection_id() override;
   QUICConnectionId connection_id() override;
+  void reset_connection_id(QUICConnectionId cid) override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;
@@ -247,8 +248,6 @@ private:
   // `_stream_frame_send_queue` is the queue for STREAM frame.
   std::queue<QUICFrameUPtr> _frame_send_queue;
   std::queue<QUICFrameUPtr> _stream_frame_send_queue;
-
-  bool _is_initial = true;
 
   void _schedule_packet_write_ready();
   void _unschedule_packet_write_ready();

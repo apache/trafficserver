@@ -285,6 +285,10 @@ QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
   Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
         ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
 
+  if (this->_vc->connection_id() != cid) {
+    this->_vc->reset_connection_id(cid);
+  }
+
   this->_vc->push_packet(udp_packet);
   eventProcessor.schedule_imm(this->_vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
 }

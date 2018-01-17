@@ -21,15 +21,18 @@
  *  limitations under the License.
  */
 
-#include "QUICGlobals.h"
 #include "QUICHandshake.h"
-#include "QUICCryptoTls.h"
 
 #include <utility>
-#include "QUICVersionNegotiator.h"
-#include "QUICConfig.h"
+
 #include "P_SSLNextProtocolSet.h"
 #include "P_VConnection.h"
+
+#include "QUICCryptoTls.h"
+#include "QUICEvents.h"
+#include "QUICGlobals.h"
+#include "QUICVersionNegotiator.h"
+#include "QUICConfig.h"
 
 static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 
@@ -281,6 +284,11 @@ QUICHandshake::state_initial(int event, Event *data)
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
+  case QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE: {
+    QUICHSDebug("Enter state_key_exchange");
+    SET_HANDLER(&QUICHandshake::state_key_exchange);
+    break;
+  }
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
     if (this->_netvc_context == NET_VCONNECTION_IN) {
@@ -319,6 +327,14 @@ QUICHandshake::state_key_exchange(int event, Event *data)
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
+  case QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE: {
+    int res = this->_complete_handshake();
+    if (!res) {
+      this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
+    }
+
+    break;
+  }
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
     ink_assert(this->_netvc_context == NET_VCONNECTION_OUT);
@@ -479,9 +495,6 @@ QUICHandshake::_process_initial()
 
   switch (result) {
   case SSL_ERROR_WANT_READ: {
-    QUICHSDebug("Enter state_key_exchange");
-    SET_HANDLER(&QUICHandshake::state_key_exchange);
-
     stream_io->write_reenable();
     stream_io->read_reenable();
 
@@ -527,13 +540,7 @@ QUICHandshake::_process_server_hello()
 
   switch (result) {
   case SSL_ERROR_NONE: {
-    int res = this->_complete_handshake();
-    if (res) {
-      stream_io->write_reenable();
-    } else {
-      this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
-    }
-
+    stream_io->write_reenable();
     break;
   }
   case SSL_ERROR_WANT_READ: {
@@ -581,6 +588,7 @@ QUICHandshake::_complete_handshake()
 {
   QUICHSDebug("Enter state_complete");
   SET_HANDLER(&QUICHandshake::state_complete);
+  QUICHSDebug("%s", this->negotiated_cipher_suite());
 
   int res = this->_crypto->update_key_materials();
   if (res) {

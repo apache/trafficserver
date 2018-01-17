@@ -185,6 +185,12 @@ QUICNetVConnection::connection_id()
   return this->_quic_connection_id;
 }
 
+void
+QUICNetVConnection::reset_connection_id(QUICConnectionId cid)
+{
+  this->_quic_connection_id = cid;
+}
+
 uint32_t
 QUICNetVConnection::pmtu()
 {
@@ -947,15 +953,23 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
                                                            std::move(buf), len, retransmittable);
     break;
   default:
-    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-      packet = this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                                    std::move(buf), len, retransmittable);
-    } else {
-      // FIXME: remove this flag
-      if (this->get_context() == NET_VCONNECTION_OUT && this->_is_initial) {
-        this->_is_initial = false;
-        packet            = this->_packet_factory.create_initial_packet(
+    if (this->get_context() == NET_VCONNECTION_OUT) {
+      if (this->_handshake_handler->handler == reinterpret_cast<NetVConnHandler>(&QUICHandshake::state_initial)) {
+        packet = this->_packet_factory.create_initial_packet(
           this->_original_quic_connection_id, this->largest_acked_packet_number(), QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
+        this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
+      } else if (this->_handshake_handler->handler == reinterpret_cast<NetVConnHandler>(&QUICHandshake::state_key_exchange)) {
+        packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                               std::move(buf), len, retransmittable);
+        this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
+      } else {
+        packet = this->_packet_factory.create_server_protected_packet(
+          this->_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
+      }
+    } else {
+      if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+        packet = this->_packet_factory.create_server_protected_packet(
+          this->_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
       } else {
         packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
                                                                std::move(buf), len, retransmittable);
@@ -1157,7 +1171,6 @@ QUICNetVConnection::_switch_to_established_state()
 {
   if (this->_complete_handshake_if_possible() == 0) {
     QUICConDebug("Enter state_connection_established");
-    QUICConDebug("%s", this->_handshake_handler->negotiated_cipher_suite());
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
     if (netvc_context == NET_VCONNECTION_IN) {
