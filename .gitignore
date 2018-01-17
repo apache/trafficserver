@@ -12,6 +12,7 @@ Makefile.in
 .*.sw*
 
 .deps/
+.vscode/
 
 .dirstamp
 
