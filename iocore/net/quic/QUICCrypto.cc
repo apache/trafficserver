@@ -116,11 +116,12 @@ QUICCryptoTls::~QUICCryptoTls()
   delete this->_server_pp;
 }
 
-bool
+int
 QUICCryptoTls::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len)
 {
   ink_assert(this->_ssl != nullptr);
 
+  // TODO: directly read/write from VIO
   BIO *rbio = BIO_new(BIO_s_mem());
   BIO *wbio = BIO_new(BIO_s_mem());
   if (in != nullptr || in_len != 0) {
@@ -128,11 +129,12 @@ QUICCryptoTls::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, cons
   }
   SSL_set_bio(this->_ssl, rbio, wbio);
 
+  int err = SSL_ERROR_NONE;
   if (!SSL_is_init_finished(this->_ssl)) {
     ERR_clear_error();
     int ret = SSL_do_handshake(this->_ssl);
     if (ret <= 0) {
-      int err = SSL_get_error(this->_ssl, ret);
+      err = SSL_get_error(this->_ssl, ret);
 
       switch (err) {
       case SSL_ERROR_WANT_READ:
@@ -142,26 +144,17 @@ QUICCryptoTls::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, cons
         char err_buf[256] = {0};
         ERR_error_string_n(err, err_buf, sizeof(err_buf));
         Debug(tag, "Handshake error: %s (%d)", err_buf, err);
-        return false;
+        return err;
       }
+    }
+
+    out_len = BIO_ctrl_pending(wbio);
+    if (out_len > 0) {
+      BIO_read(wbio, out, max_out_len);
     }
   }
 
-  // OpenSSL doesn't have BIO_mem_contents
-  // const uint8_t *buf;
-  // if (!BIO_mem_contents(wbio, &buf, &out_len)) {
-  //   return false;
-  // }
-  // if (out_len <= 0) {
-  //   return false;
-  // }
-
-  out_len = BIO_read(wbio, out, max_out_len);
-  if (out_len <= 0) {
-    return false;
-  }
-
-  return true;
+  return err;
 }
 
 bool

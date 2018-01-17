@@ -437,7 +437,7 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
 
-QUICErrorUPtr
+int
 QUICHandshake::_do_handshake(bool initial)
 {
   // TODO: pass stream_io
@@ -453,37 +453,42 @@ QUICHandshake::_do_handshake(bool initial)
 
     if (in_len <= 0) {
       QUICHSDebug("No message");
-      return QUICErrorUPtr(new QUICNoError());
+      return SSL_ERROR_NONE;
     }
     I_WANNA_DUMP_THIS_BUF(in, in_len);
   }
 
   uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t out_len                     = 0;
-  bool result                        = false;
-  result                             = this->_crypto->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, in, in_len);
+  int result                         = this->_crypto->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, in, in_len);
 
-  if (result) {
+  if (out_len > 0) {
     I_WANNA_DUMP_THIS_BUF(out, static_cast<int64_t>(out_len));
     stream_io->write(out, out_len);
-
-    return QUICErrorUPtr(new QUICNoError());
-  } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
+
+  return result;
 }
 
 QUICErrorUPtr
 QUICHandshake::_process_initial()
 {
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  QUICErrorUPtr error     = _do_handshake(true);
+  int result              = _do_handshake(true);
+  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
 
-  if (error->cls == QUICErrorClass::NONE) {
+  switch (result) {
+  case SSL_ERROR_WANT_READ: {
     QUICHSDebug("Enter state_key_exchange");
     SET_HANDLER(&QUICHandshake::state_key_exchange);
 
     stream_io->write_reenable();
+    stream_io->read_reenable();
+
+    break;
+  }
+  default:
+    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
 
   return error;
@@ -493,15 +498,21 @@ QUICErrorUPtr
 QUICHandshake::_process_client_hello()
 {
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  QUICErrorUPtr error     = _do_handshake();
+  int result              = _do_handshake();
+  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
 
-  if (error->cls == QUICErrorClass::NONE) {
+  switch (result) {
+  case SSL_ERROR_WANT_READ: {
     QUICHSDebug("Enter state_auth");
     SET_HANDLER(&QUICHandshake::state_auth);
 
     stream_io->write_reenable();
-  } else {
     stream_io->read_reenable();
+
+    break;
+  }
+  default:
+    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
 
   return error;
@@ -511,17 +522,26 @@ QUICErrorUPtr
 QUICHandshake::_process_server_hello()
 {
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  QUICErrorUPtr error     = _do_handshake();
+  int result              = _do_handshake();
+  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
 
-  if (error->cls == QUICErrorClass::NONE) {
+  switch (result) {
+  case SSL_ERROR_NONE: {
     int res = this->_complete_handshake();
     if (res) {
       stream_io->write_reenable();
     } else {
       this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
     }
-  } else {
+
+    break;
+  }
+  case SSL_ERROR_WANT_READ: {
     stream_io->read_reenable();
+    break;
+  }
+  default:
+    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
 
   return error;
@@ -531,17 +551,26 @@ QUICErrorUPtr
 QUICHandshake::_process_finished()
 {
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  QUICErrorUPtr error     = _do_handshake();
+  int result              = _do_handshake();
+  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
 
-  if (error->cls == QUICErrorClass::NONE) {
+  switch (result) {
+  case SSL_ERROR_NONE: {
     int res = this->_complete_handshake();
     if (res) {
       stream_io->write_reenable();
     } else {
       this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
     }
-  } else {
+
+    break;
+  }
+  case SSL_ERROR_WANT_READ: {
     stream_io->read_reenable();
+    break;
+  }
+  default:
+    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
 
   return error;

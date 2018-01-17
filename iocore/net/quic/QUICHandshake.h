@@ -97,7 +97,7 @@ private:
   void _load_local_server_transport_parameters(QUICVersion negotiated_version);
   void _load_local_client_transport_parameters(QUICVersion initial_version);
 
-  QUICErrorUPtr _do_handshake(bool initial = false);
+  int _do_handshake(bool initial = false);
 
   QUICErrorUPtr _process_initial();
   QUICErrorUPtr _process_client_hello();
