@@ -87,7 +87,7 @@ range_header_check(TSHttpTxn txnp) {
     char cache_key_url[8192] = {0};
     char new_url[8192] = {0};
     char *req_url, *comma;
-    int length, url_length;
+    int length, url_length, new_length;
     struct txndata *txn_state;
     TSMBuffer hdr_bufp;
     TSMLoc req_hdrs = nullptr;
@@ -122,12 +122,19 @@ range_header_check(TSHttpTxn txnp) {
                     if (req_url != nullptr) {
                         if (cache_key_no_args) {
                             comma = strchr(req_url, '?');
-                            if (comma != NULL) {
-                                snprintf(new_url, comma - req_url + 1, req_url);
+                            if (comma != nullptr) {
+
+                                new_length = comma - req_url;
+                                if (new_length > 8191)
+                                    new_length = 8191;
+
+                                memcpy(new_url, req_url, new_length);
+                                new_url[new_length] = '\0';
+
                             }
                         }
 
-                        if (cache_key_no_args && comma != NULL) {
+                        if (cache_key_no_args && comma != nullptr && strlen(new_url)) {
                             snprintf(cache_key_url, 8192, "%s-%s", new_url, txn_state->range_value);
                             DEBUG_LOG("Rewriting cache1 URL for %s to %s", new_url, cache_key_url);
                         } else {
@@ -337,18 +344,28 @@ change_cache_key(TSHttpTxn txnp) {
     TSMBuffer bufp;
     TSMLoc url_loc = nullptr;
     char *req_url, *comma;
-    int url_length;
+    int url_length, new_length;
     char cache_key_url[8192] = {0};
-    char new_url[8192] = {0};
 
     if (TSHttpTxnPristineUrlGet(txnp, &bufp, &url_loc) == TS_SUCCESS) {
         req_url = TSUrlStringGet(bufp, url_loc, &url_length);
         TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
 
+        if (req_url == nullptr || url_length <= 0) {
+            return TS_SUCCESS;
+        }
+
         comma = strchr(req_url, '?');
 
-        if (comma != NULL) {
-            snprintf(new_url, comma - req_url + 1, req_url);
+        if (comma != nullptr) {
+            new_length = comma - req_url;
+            if (new_length > 8191)
+                new_length = 8191;
+
+            char new_url[new_length + 1];
+            memcpy(new_url, req_url, new_length);
+            new_url[new_length] = '\0';
+
             snprintf(cache_key_url, 8192, "%s", new_url);
             DEBUG_LOG("Rewriting cache URL for %s to %s", req_url, cache_key_url);
             if (req_url != NULL) {
@@ -421,16 +438,23 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri) {
         int path_len;
         path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
         DEBUG_LOG("TSRemapDoRemap path: %d", path_len);
-        if (path == NULL) {
+
+        if (path == nullptr || path_len <= 0) {
             return TSREMAP_NO_REMAP;
         }
 
-        char copy_path[8192] = {0};
-        snprintf(copy_path, path_len, path);
-        copy_path[path_len] = '\0';
+        TSDebug(PLUGIN_NAME, "Checking PATH = %.*s", path_len, path);
+
+        char pathTmp[path_len + 1];
+        memcpy(pathTmp, path, path_len);
+        pathTmp[path_len] = '\0';
+        TSDebug(PLUGIN_NAME, "convert_url_func working on path: %s", pathTmp);
+
         const char *comma, *f_find;
-        comma = strchr(copy_path, '.');
-        if (comma != NULL) {
+        comma = strrchr(pathTmp, '.');
+        TSDebug(PLUGIN_NAME, "Checking 1");
+        if (comma != nullptr && (comma + 1) < (pathTmp + path_len)) {
+            TSDebug(PLUGIN_NAME, "Checking 2 if ");
             f_find = strcasestr(file_suffix, comma + 1);
             if (f_find) {
                 DEBUG_LOG("TSRemapDoRemap f_find");
