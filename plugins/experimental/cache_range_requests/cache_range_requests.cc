@@ -119,14 +119,14 @@ range_header_check(TSHttpTxn txnp) {
                         DEBUG_LOG("[%s] Got request URL [%s]", __FUNCTION__, req_url ? req_url : "(null)");
                     }
 
-                    if (req_url != nullptr) {
+                    if (req_url != nullptr && url_length > 0) {
                         if (cache_key_no_args) {
                             comma = strchr(req_url, '?');
                             if (comma != nullptr) {
 
                                 new_length = comma - req_url;
-                                if (new_length > 8191)
-                                    new_length = 8191;
+                                if (new_length > url_length)
+                                    new_length = url_length;
 
                                 memcpy(new_url, req_url, new_length);
                                 new_url[new_length] = '\0';
@@ -359,8 +359,8 @@ change_cache_key(TSHttpTxn txnp) {
 
         if (comma != nullptr) {
             new_length = comma - req_url;
-            if (new_length > 8191)
-                new_length = 8191;
+            if (new_length > url_length)
+                new_length = url_length;
 
             char new_url[new_length + 1];
             memcpy(new_url, req_url, new_length);
