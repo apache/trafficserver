@@ -309,7 +309,8 @@ QUICLossDetector::_on_loss_detection_alarm()
   } else if (this->_tlp_count < MAX_TLPS) {
     // Tail Loss Probe.
     QUICLDDebug("TLP");
-    this->_send_one_packet();
+    // FIXME TLP causes inifinite loop somehow
+    // this->_send_one_packet();
     this->_tlp_count++;
   } else {
     // RTO.
