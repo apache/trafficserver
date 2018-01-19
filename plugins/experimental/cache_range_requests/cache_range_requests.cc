@@ -452,9 +452,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri) {
 
         const char *comma, *f_find;
         comma = strrchr(pathTmp, '.');
-        TSDebug(PLUGIN_NAME, "Checking 1");
+//        TSDebug(PLUGIN_NAME, "Checking 1");
         if (comma != nullptr && (comma + 1) < (pathTmp + path_len)) {
-            TSDebug(PLUGIN_NAME, "Checking 2 if ");
+//            TSDebug(PLUGIN_NAME, "Checking 2 if ");
             f_find = strcasestr(file_suffix, comma + 1);
             if (f_find) {
                 DEBUG_LOG("TSRemapDoRemap f_find");
