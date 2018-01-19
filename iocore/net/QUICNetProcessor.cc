@@ -118,20 +118,15 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t);
 
-  sockaddr_in local_addr;
-  local_addr.sin_family      = remote_addr->sa_family;
-  local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  local_addr.sin_port        = 0;
+  sockaddr local_addr;
+  int local_addr_len;
+  local_addr.sa_family = remote_addr->sa_family;
 
-  // FIXME: set buffer size
-  int fd = socketManager.socket(local_addr.sin_family, SOCK_DGRAM, 0);
-  if (fd < 0) {
-    return ACTION_IO_ERROR;
-  }
-
-  int res = fcntl(fd, F_SETFL, O_NONBLOCK);
-  if (res < 0) {
-    return ACTION_IO_ERROR;
+  int fd;
+  Action *status;
+  bool result = udpNet.CreateUDPSocket(&fd, remote_addr, &local_addr, &local_addr_len, &status, 1048576, 1048576);
+  if (!result) {
+    return status;
   }
 
   // Setup UDPConnection
@@ -145,8 +140,8 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   PollCont *pc       = get_UDPPollCont(con->ethread);
   PollDescriptor *pd = pc->pollDescriptor;
 
-  errno = 0;
-  res   = con->ep.start(pd, con, EVENTIO_READ);
+  errno   = 0;
+  int res = con->ep.start(pd, con, EVENTIO_READ);
   if (res < 0) {
     Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
   }
