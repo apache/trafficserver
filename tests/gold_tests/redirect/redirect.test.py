@@ -51,7 +51,7 @@ dest_request_header = {"headers": "GET /redirectDest HTTP/1.1\r\nHost: *\r\n\r\n
 dest_response_header = {"headers": "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n", "timestamp": "22", "body": ""}
 dest_serv.addResponse("sessionfile.log", dest_request_header, dest_response_header)
 
-dns.addRecords(records={"iwillredirect.test.": ["127.0.0.1"]})
+dns.addRecords(records={"iwillredirect.test": ["127.0.0.1"]})
 
 data_dirname = 'generated_test_data'
 data_path = os.path.join(Test.TestDirectory, data_dirname)

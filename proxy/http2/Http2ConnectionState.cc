@@ -716,7 +716,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     ssize_t wnd = std::min(cstate.client_rwnd, stream->client_rwnd);
 
     if (!stream->is_closed() && stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
-      stream->send_response_body();
+      stream->restart_sending();
     }
   }
 
@@ -1085,14 +1085,14 @@ Http2ConnectionState::restart_streams()
       Http2Stream *next = static_cast<Http2Stream *>(s->link.next ? s->link.next : stream_list.head);
       if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
           std::min(this->client_rwnd, s->client_rwnd) > 0) {
-        s->send_response_body();
+        s->restart_sending();
       }
       ink_assert(s != next);
       s = next;
     }
     if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
         std::min(this->client_rwnd, s->client_rwnd) > 0) {
-      s->send_response_body();
+      s->restart_sending();
     }
 
     ++starting_point;

@@ -40,6 +40,7 @@
 
 #include "ts/ink_defs.h"
 #include "ts/ParseRules.h"
+#include "ts/ink_std_compat.h"
 
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
 #define TCPI_PLUGIN_SUPPORTED 1
@@ -315,7 +316,7 @@ TSPluginInit(int argc, const char *argv[])
   };
 
   TSPluginRegistrationInfo info;
-  std::unique_ptr<Config> config;
+  auto config          = std::make_unique<Config>();
   const char *filename = "tcpinfo";
   TSCont cont;
   unsigned int hooks                = 0;

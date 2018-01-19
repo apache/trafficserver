@@ -212,14 +212,6 @@ HttpDebugNames::get_event_name(int event)
     return ("HTTP_TUNNEL_EVENT_CONSUMER_DETACH");
 
   //////////////////////////////
-  //  CongestionControl Events
-  //////////////////////////////
-  case CONGESTION_EVENT_CONGESTED_ON_F:
-    return ("CONGESTION_EVENT_CONGESTED_ON_F");
-  case CONGESTION_EVENT_CONGESTED_ON_M:
-    return ("CONGESTION_EVENT_CONGESTED_ON_M");
-
-  //////////////////////////////
   //  Plugin Events
   //////////////////////////////
   case HTTP_API_CONTINUE:

@@ -1533,12 +1533,6 @@ Origin Server Connect Attempts
 Congestion Control
 ==================
 
-.. ts:cv:: CONFIG proxy.config.http.congestion_control.enabled INT 0
-
-   Enables (``1``) or disables (``0``) the Congestion Control option, which configures Traffic Server to stop forwarding
-   HTTP requests to origin servers when they become congested. Traffic Server sends the client a message to retry the
-   congested origin server later. Refer to :ref:`using-congestion-control`.
-
 .. ts:cv:: CONFIG proxy.config.http.flow_control.enabled INT 0
    :overridable:
 
