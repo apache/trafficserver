@@ -172,8 +172,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     // Create a new NetVConnection
-    vc = static_cast<QUICNetVConnection *>(
-      getNetProcessor()->allocate_vc(((UnixUDPConnection *)udp_packet->getConnection())->ethread));
+    vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
     vc->init(cid, udp_packet->getConnection(), this);
     vc->id = net_next_connection_number();
     vc->con.move(con);
