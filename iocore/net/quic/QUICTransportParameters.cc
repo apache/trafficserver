@@ -501,7 +501,7 @@ void
 QUICTransportParametersInNewSessionTicket::_store(uint8_t *buf, uint16_t *len) const
 {
   // no additional fields defined
-  len = 0;
+  *len = 0;
 }
 
 std::ptrdiff_t
