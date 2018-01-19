@@ -4959,7 +4959,9 @@ HttpSM::do_http_server_open(bool raw)
 
   int scheme_to_use = t_state.scheme; // get initial scheme
 
-  if (!t_state.is_websocket) { // if not websocket, then get scheme from server request
+  if (t_state.current.request_to == HttpTransact::PARENT_PROXY) {
+    scheme_to_use = t_state.next_hop_scheme;
+  } else if (!t_state.is_websocket) { // if not websocket, then get scheme from server request
     int new_scheme_to_use = t_state.hdr_info.server_request.url_get()->scheme_get_wksidx();
     // if the server_request url scheme was never set, try the client_request
     if (new_scheme_to_use < 0) {
