@@ -143,67 +143,21 @@ struct HostDBInfo : public RefCountObj {
       This is at least large enough to hold an IPv6 address.
   */
 
-  static HostDBInfo *
-  alloc(int size = 0)
-  {
-    size += sizeof(HostDBInfo);
-    int iobuffer_index = iobuffer_size_to_index(size);
-    ink_release_assert(iobuffer_index >= 0);
-    void *ptr = ioBufAllocator[iobuffer_index].alloc_void();
-    memset(ptr, 0, size);
-    HostDBInfo *ret     = new (ptr) HostDBInfo();
-    ret->iobuffer_index = iobuffer_index;
-    return ret;
-  }
+  static HostDBInfo * alloc(int size = 0);
 
-  void
-  free()
-  {
-    Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + iobuffer_index)), this);
-    ioBufAllocator[iobuffer_index].free_void((void *)(this));
-  }
+  void free();
 
   // return a version number-- so we can manage compatibility with the marshal/unmarshal
-  static VersionNumber
-  version()
-  {
-    return VersionNumber(1, 0);
-  }
+  static VersionNumber version() { return VersionNumber(1, 0); }
 
-  static HostDBInfo *
-  unmarshall(char *buf, unsigned int size)
-  {
-    if (size < sizeof(HostDBInfo)) {
-      return nullptr;
-    }
-    HostDBInfo *ret = HostDBInfo::alloc(size - sizeof(HostDBInfo));
-    int buf_index   = ret->iobuffer_index;
-    memcpy((void *)ret, buf, size);
-    // Reset the refcount back to 0, this is a bit ugly-- but I'm not sure we want to expose a method
-    // to mess with the refcount, since this is a fairly unique use case
-    ret                 = new (ret) HostDBInfo();
-    ret->iobuffer_index = buf_index;
-    return ret;
-  }
+  static HostDBInfo * unmarshall(char *buf, unsigned int size);
+
 
   // return expiry time (in seconds since epoch)
-  ink_time_t
-  expiry_time() const
-  {
-    return ip_timestamp + ip_timeout_interval + hostdb_serve_stale_but_revalidate;
-  }
+  ink_time_t expiry_time() const { return ip_timestamp + ip_timeout_interval + hostdb_serve_stale_but_revalidate; }
 
-  sockaddr *
-  ip()
-  {
-    return &data.ip.sa;
-  }
-
-  sockaddr const *
-  ip() const
-  {
-    return &data.ip.sa;
-  }
+  sockaddr * ip() { return &data.ip.sa; }
+  sockaddr const * ip() const { return &data.ip.sa; }
 
   char *hostname() const;
   char *perm_hostname() const;
@@ -214,18 +168,11 @@ struct HostDBInfo : public RefCountObj {
   /// address doesn't work - a retry can probably get a new address by doing another lookup and resolving to
   /// a different element of the round robin.
   bool
-  is_rr_elt() const
-  {
-    return 0 != round_robin_elt;
-  }
+  is_rr_elt() const { return 0 != round_robin_elt; }
 
   HostDBRoundRobin *rr();
 
-  unsigned int
-  ip_interval() const
-  {
-    return (hostdb_current_interval - ip_timestamp) & 0x7FFFFFFF;
-  }
+  unsigned int ip_interval() const { return (hostdb_current_interval - ip_timestamp) & 0x7FFFFFFF; }
 
   int
   ip_time_remaining() const
@@ -319,6 +266,8 @@ struct HostDBInfo : public RefCountObj {
       ats_ip_invalidate(ip());
   }
 
+// Member Variables
+  // allocator id, based on size of data structure
   int iobuffer_index;
 
   uint64_t key;

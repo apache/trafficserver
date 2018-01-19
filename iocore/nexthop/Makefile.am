@@ -1,4 +1,4 @@
-# Makefile.am for the traffic/iocore/utils hierarchy
+# Makefile.am for the traffic/iocore/nexthop hierarchy
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
+  $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/iocore/eventsystem
@@ -24,15 +25,11 @@ AM_CPPFLAGS += \
 noinst_LIBRARIES = libinkutils.a
 
 libinkutils_a_SOURCES = \
-  I_Machine.h \
-  I_OneWayMultiTunnel.h \
-  I_OneWayTunnel.h \
-  Machine.cc \
-  OneWayMultiTunnel.cc \
-  OneWayTunnel.cc \
-  PartitionedMap.h \
-  PropertyBlock.h 
-  
+  NextHopHost.h \
+  NextHopHostLookup.h \
+  NextHopHostHealth.h \
+  NextHopResolver.h \
+  NextHopTSAPI.h   
 
 include $(top_srcdir)/build/tidy.mk
 

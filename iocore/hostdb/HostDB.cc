@@ -77,6 +77,46 @@ HostDBCache hostDB;
 
 void ParseHostFile(const char *path, unsigned int interval);
 
+//////////////////////////////////////////////////////////////////////////////////////
+// HostDBInfo methods
+//////////////////////////////////////////////////////////////////////////////////////
+
+HostDBInfo *
+HostDBInfo::alloc(int size)
+{
+  size += sizeof(HostDBInfo);
+  int iobuffer_index = iobuffer_size_to_index(size);
+  ink_release_assert(iobuffer_index >= 0);
+  void *ptr = ioBufAllocator[iobuffer_index].alloc_void();
+  memset(ptr, 0, size);
+  HostDBInfo *ret     = new (ptr) HostDBInfo();
+  ret->iobuffer_index = iobuffer_index;
+  return ret;
+}
+
+void
+HostDBInfo::free()
+{
+  Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + iobuffer_index)), this);
+  ioBufAllocator[iobuffer_index].free_void((void *)(this));
+}
+
+HostDBInfo *
+HostDBInfo::unmarshall(char *buf, unsigned int size)
+{
+  if (size < sizeof(HostDBInfo)) {
+    return nullptr;
+  }
+  HostDBInfo *ret = HostDBInfo::alloc(size - sizeof(HostDBInfo));
+  int buf_index   = ret->iobuffer_index;
+  memcpy((void *)ret, buf, size);
+  // Reset the refcount back to 0, this is a bit ugly-- but I'm not sure we want to expose a method
+  // to mess with the refcount, since this is a fairly unique use case
+  ret                 = new (ret) HostDBInfo();
+  ret->iobuffer_index = buf_index;
+  return ret;
+}
+
 char *
 HostDBInfo::srvname(HostDBRoundRobin *rr) const
 {
@@ -89,7 +129,7 @@ HostDBInfo::srvname(HostDBRoundRobin *rr) const
 static inline bool
 is_addr_valid(uint8_t af, ///< Address family (format of data)
               void *ptr   ///< Raw address data (not a sockaddr variant!)
-              )
+)
 {
   return (AF_INET == af && INADDR_ANY != *(reinterpret_cast<in_addr_t *>(ptr))) ||
          (AF_INET6 == af && !IN6_IS_ADDR_UNSPECIFIED(reinterpret_cast<in6_addr *>(ptr)));
@@ -99,7 +139,7 @@ static inline void
 ip_addr_set(sockaddr *ip, ///< Target storage, sockaddr compliant.
             uint8_t af,   ///< Address format.
             void *ptr     ///< Raw address data
-            )
+)
 {
   if (AF_INET6 == af) {
     ats_ip6_set(ip, *static_cast<in6_addr *>(ptr));
@@ -114,7 +154,7 @@ static inline void
 ip_addr_set(IpAddr &ip, ///< Target storage.
             uint8_t af, ///< Address format.
             void *ptr   ///< Raw address data
-            )
+)
 {
   if (AF_INET6 == af) {
     ip = *static_cast<in6_addr *>(ptr);
@@ -2230,7 +2270,7 @@ struct HostDBFileContinuation : public Continuation {
   HostDBFileContinuation() : Continuation(nullptr) {}
   /// Finish update
   static void finish(Keys *keys ///< Valid keys from update.
-                     );
+  );
   /// Clean up this instance.
   void destroy();
 };
