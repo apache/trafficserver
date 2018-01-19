@@ -255,24 +255,38 @@ public:
   */
   template <typename F> self_type &trim_if(F const &pred);
 
-  /** Get the initial segment of the view before @a p.
+  /** Get the prefix of size @a n.
 
-      The byte at @a p is not included. If @a p is not in the view an empty view
-      is returned.
+      If @a n is greater than the size the entire view is returned.
 
-      @return A buffer that contains all data before @a p.
+      @return A view of the prefix.
   */
-  //  self_type prefix(const char *p) const;
-
-  /// Get the prefix of size @a n.
   self_type prefix(size_t n) const;
   /// Convenience overload to avoid ambiguity for literal numbers.
   self_type prefix(int n) const;
-  /// Get the prefix delimited by the character 'c'.
+  /** Get the prefix delimited by the first occurence of the character @a c.
+
+      If @a c is not found the entire view is returned.
+      The delimiter character is not included in the returned view.
+
+      @return A view of the prefix.
+  */
   self_type prefix(char c) const;
-  /// Get the prefix delimited by any character in @a delimiters .
+  /** Get the prefix delimited by the first occurence of a character in @a delimiters.
+
+      If no such character is found the entire view is returned.
+      The delimiter character is not included in the returned view.
+
+      @return A view of the prefix.
+  */
   self_type prefix(super_type const &delimiters) const;
-  /// Get the prefix delimited by the first character for which @a pred is @c true.
+  /** Get the prefix delimited by the first character for which @a pred is @c true.
+
+      If no such character is found the entire view is returned
+      The delimiter character is not included in the returned view.
+
+      @return A view of the prefix.
+  */
   template <typename F> self_type prefix_if(F const &pred) const;
 
   /** Split a prefix from the view on the character at offset @a n.
@@ -284,8 +298,11 @@ public:
 
       This is convenient when tokenizing.
 
-      @note If @a n is larger than the size of the view no change is made and an empty buffer is
-      returned. Therefore this method can be safely called with the return value of calling @c find.
+      If @a n is larger than the size of the view no change is made and an empty buffer is
+      returned. Therefore this method is most useful when checking for the presence of the delimiter
+      is desirable, as the result of @c find methods can be passed directly to this method.
+
+      @note This method and its overloads always remove the delimiter character.
 
       @code
         void f(TextView& text) {
@@ -293,7 +310,8 @@ public:
           if (token) { // ... process token }
       @endcode
 
-      @return A buffer containing data up to but not including the byte at offset @a n.
+      @return The prefix bounded at offset @a n or an empty view if @a n is more than the view
+      size.
 
       @see take_prefix_at
   */
@@ -305,21 +323,29 @@ public:
   self_type split_prefix_at(char c);
   /// Convenience overload, split on delimiter set.
   self_type split_prefix_at(super_type const &delimiters);
-  /// Convenience overload, split on delimiter set.
-  //  self_type split_prefix_at(const char *delimiters);
   /// Convenience overload, split on predicate.
   template <typename F> self_type split_prefix_if(F const &pred);
 
-  /** Always take the prefix of the view on the character at offset @a n.
+  /** Split a prefix from the view on the character at offset @a n.
 
-      A prefix of @a this is removed from the view and returned. If @a n is larger than the view
-      size then the entire view is removed and returned, leaving an empty view.
+      The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
+      all data @b after offset @a n (equivalent to <tt>TextView::substr(n+1)</tt>). A new view
+      containing the initial bytes up to but not including the byte at offset @a n is returned,
+      (equivalent to <tt>TextView(0, n)</tt>).
+
+      This is convenient when tokenizing.
+
+      If @a n is larger than the view size then the entire view is removed and returned, leaving an
+      empty view. Therefore if @this is not empty, a non-empty view is always returned. This is desirable
+      if a non-empty return view is always wanted, regardless of whether a delimiter is present.
+
+      @note This method and its overloads always remove the delimiter character.
 
       @code
       TextView text;
       while (text) {
         TextView token = text.take_prefix_at(text.find(delimiter));
-        // .. process token which will always be non-empty because text was not empty.
+        // token will always be non-empty because text was not empty.
       }
       @endcode
 
@@ -354,6 +380,24 @@ public:
   /// Get the prefix delimited by the first character for which @a pred is @c true.
   template <typename F> self_type suffix_if(F const &pred) const;
 
+  /** Split the view to get a suffix of size @a n.
+
+      The view is split in to two parts, a suffix of size @a n and a remainder which is the original
+      view less @a n + 1 characters at the end. That is, the character between the suffix and the
+      remainder is discarded. This is equivalent to <tt>TextView::suffix(this->size()-n)</tt> and
+      <tt>TextView::remove_suffix(this->size() - (n+1))</tt>.
+
+      If @a n is equal to or larger than the size of the view the entire view is removed as the
+      suffix.
+
+      @return The suffix of size @a n.
+
+      @see split_suffix_at
+  */
+  self_type split_suffix(size_t n);
+  /// Convenience overload for literal integers.
+  self_type split_suffix(int n);
+
   /** Split the view on the character at offset @a n.
 
       The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
@@ -361,10 +405,14 @@ public:
       new view containing the trailing bytes after offset @a n is returned, (equivalent to
       <tt>TextView::suffix(n))</tt>).
 
-      @note If @a p does not refer to a byte in the view, an empty view is returned and @a this is
-      unchanged.
+      If @a n is larger than the size of the view no change is made and an empty buffer is
+      returned. Therefore this method is most useful when checking for the presence of the delimiter
+      is desirable, as the result of @c find methods can be passed directly to this method.
 
-      @return @a this.
+      @note This method and its overloads always remove the delimiter character.
+
+      @return The suffix bounded at offset @a n or an empty view if @a n is more than the view
+      size.
   */
   self_type split_suffix_at(size_t n);
 
@@ -376,6 +424,33 @@ public:
   self_type split_suffix_at(super_type const &delimiters);
   /// Split the view on the last character for which @a pred is @c true.
   template <typename F> self_type split_suffix_if(F const &pred);
+
+  /** Split the view on the character at offset @a n.
+
+      The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
+      all data @b before offset @a n (equivalent to <tt>TextView::prefix(this->size()-n-1)</tt>). A
+      new view containing the trailing bytes after offset @a n is returned, (equivalent to
+      <tt>TextView::suffix(n))</tt>).
+
+      If @a n is larger than the view size then the entire view is removed and returned, leaving an
+      empty view. Therefore if @this is not empty, a non-empty view is always returned. This is desirable
+      if a non-empty return view is always wanted, regardless of whether a delimiter is present.
+
+      @note This method and its overloads always remove the delimiter character.
+
+      @return The suffix bounded at offset @a n or the entire view if @a n is more than the view
+      size.
+  */
+  self_type take_suffix_at(size_t n);
+
+  /// Convenience overload for literal integers.
+  self_type take_suffix_at(int n);
+  /// Convenience overload for character.
+  self_type take_suffix_at(char c);
+  /// Convenience overload for delimiter set.
+  self_type take_suffix_at(super_type const &delimiters);
+  /// Split the view on the last character for which @a pred is @c true.
+  template <typename F> self_type take_suffix_if(F const &pred);
 
   /** Prefix check.
       @return @c true if @a this is a prefix of @a that.
@@ -679,12 +754,29 @@ TextView::suffix_if(F const &pred) const
 }
 
 inline TextView
+TextView::split_suffix(size_t n)
+{
+  self_type zret;
+  n    = std::min(n, this->size());
+  zret = this->suffix(n);
+  this->remove_suffix(n + 1); // haha, saved by integer overflow!
+  return zret;
+}
+
+inline TextView
+TextView::split_suffix(int n)
+{
+  return this->split_suffix(static_cast<size_t>(n));
+}
+
+inline TextView
 TextView::split_suffix_at(size_t n)
 {
   self_type zret;
   if (n < this->size()) {
-    zret = this->suffix(n);
-    this->remove_suffix(n + 1);
+    n    = this->size() - n;
+    zret = this->suffix(n - 1);
+    this->remove_suffix(n);
   }
   return zret;
 }
@@ -698,7 +790,7 @@ TextView::split_suffix_at(int n)
 inline TextView
 TextView::split_suffix_at(char c)
 {
-  return this->split_suffix_at(this->find(c));
+  return this->split_suffix_at(this->rfind(c));
 }
 
 inline TextView
@@ -712,6 +804,39 @@ inline TextView
 TextView::split_suffix_if(F const &pred)
 {
   return this->split_suffix_at(this->rfind_if(pred));
+}
+
+inline TextView
+TextView::take_suffix_at(size_t n)
+{
+  self_type zret{*this};
+  *this = zret.split_prefix_at(n);
+  return zret;
+}
+
+inline TextView
+TextView::take_suffix_at(int n)
+{
+  return this->take_suffix_at(static_cast<size_t>(n));
+}
+
+inline TextView
+TextView::take_suffix_at(char c)
+{
+  return this->take_suffix_at(this->rfind(c));
+}
+
+inline TextView
+TextView::take_suffix_at(super_type const &delimiters)
+{
+  return this->take_suffix_at(this->rsearch(delimiters));
+}
+
+template <typename F>
+inline TextView
+TextView::take_suffix_if(F const &pred)
+{
+  return this->take_suffix_at(this->rfind_if(pred));
 }
 
 template <typename F>
