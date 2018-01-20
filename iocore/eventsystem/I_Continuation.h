@@ -153,6 +153,7 @@ public:
     return (this->*handler)(event, data);
   }
 
+protected:
   /**
     Constructor of the Continuation object. It should not be used
     directly. Instead create an object of a derived type.
