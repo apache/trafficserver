@@ -239,6 +239,9 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   *len   = 0;
   buf[0] = 0x80;
   buf[0] += static_cast<uint8_t>(this->_type);
+  if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
+    buf[0] |= rand();
+  }
   *len += 1;
 
   QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, buf + *len, &n);
