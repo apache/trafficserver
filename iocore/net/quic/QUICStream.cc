@@ -94,7 +94,7 @@ QUICStream::final_offset()
 int
 QUICStream::state_stream_open(int event, void *data)
 {
-  QUICStreamDebug("%s", get_vc_event_name(event));
+  QUICStreamDebug("%s (%d)", get_vc_event_name(event), event);
   QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
 
   switch (event) {
@@ -154,7 +154,7 @@ QUICStream::state_stream_open(int event, void *data)
 int
 QUICStream::state_stream_closed(int event, void *data)
 {
-  QUICStreamDebug("%s", get_vc_event_name(event));
+  QUICStreamDebug("%s (%d)", get_vc_event_name(event), event);
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -400,7 +400,7 @@ QUICStream::_signal_read_event()
     this_ethread()->schedule_imm(this->_read_vio._cont, event, &this->_read_vio);
   }
 
-  QUICStreamDebug("%s", get_vc_event_name(event));
+  QUICStreamDebug("%s (%d)", get_vc_event_name(event), event);
 }
 
 /**
@@ -422,7 +422,7 @@ QUICStream::_signal_write_event()
     this_ethread()->schedule_imm(this->_write_vio._cont, event, &this->_write_vio);
   }
 
-  QUICStreamDebug("%s", get_vc_event_name(event));
+  QUICStreamDebug("%s (%d)", get_vc_event_name(event), event);
 }
 
 int64_t

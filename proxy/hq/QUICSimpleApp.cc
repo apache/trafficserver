@@ -55,7 +55,7 @@ QUICSimpleApp::~QUICSimpleApp()
 int
 QUICSimpleApp::main_event_handler(int event, Event *data)
 {
-  Debug(tag, "%s", get_vc_event_name(event));
+  Debug(tag, "%s (%d)", get_vc_event_name(event), event);
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);

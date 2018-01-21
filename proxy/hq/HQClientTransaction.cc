@@ -94,7 +94,7 @@ int
 HQClientTransaction::state_stream_open(int event, void *edata)
 {
   // TODO: should check recursive call?
-  HQTransDebug("%s", get_vc_event_name(event));
+  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -136,7 +136,7 @@ HQClientTransaction::state_stream_open(int event, void *edata)
 int
 HQClientTransaction::state_stream_closed(int event, void *data)
 {
-  HQTransDebug("%s", get_vc_event_name(event));
+  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -318,7 +318,7 @@ HQClientTransaction::_signal_read_event()
     this_ethread()->schedule_imm(this->_read_vio._cont, event, &this->_read_vio);
   }
 
-  HQTransDebug("%s", get_vc_event_name(event));
+  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
 }
 
 /**
@@ -339,7 +339,7 @@ HQClientTransaction::_signal_write_event()
     this_ethread()->schedule_imm(this->_write_vio._cont, event, &this->_write_vio);
   }
 
-  HQTransDebug("%s", get_vc_event_name(event));
+  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
 }
 
 // Convert HTTP/0.9 to HTTP/1.1

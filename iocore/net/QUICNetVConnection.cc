@@ -448,7 +448,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->_handle_idle_timeout();
     break;
   default:
-    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
 
   if (error->cls != QUICErrorClass::NONE) {
@@ -479,7 +479,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   default:
-    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
 
   if (error->cls != QUICErrorClass::NONE) {
@@ -509,7 +509,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_switch_to_close_state();
     break;
   default:
-    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
 
   return EVENT_DONE;
@@ -535,7 +535,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     this->_switch_to_close_state();
     break;
   default:
-    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
 
   return EVENT_DONE;
@@ -566,7 +566,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     break;
   }
   default:
-    QUICConDebug("Unexpected event: %s", QUICDebugNames::quic_event(event));
+    QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
 
   return EVENT_DONE;

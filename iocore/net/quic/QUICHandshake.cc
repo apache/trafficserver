@@ -280,7 +280,7 @@ QUICHandshake::remote_transport_parameters()
 int
 QUICHandshake::state_initial(int event, Event *data)
 {
-  QUICHSDebug("%s", get_vc_event_name(event));
+  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
@@ -323,7 +323,7 @@ QUICHandshake::state_initial(int event, Event *data)
 int
 QUICHandshake::state_key_exchange(int event, Event *data)
 {
-  QUICHSDebug("%s", get_vc_event_name(event));
+  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
@@ -363,7 +363,7 @@ QUICHandshake::state_key_exchange(int event, Event *data)
 int
 QUICHandshake::state_auth(int event, Event *data)
 {
-  QUICHSDebug("%s", get_vc_event_name(event));
+  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
@@ -401,7 +401,7 @@ QUICHandshake::state_address_validation(int event, void *data)
 int
 QUICHandshake::state_complete(int event, void *data)
 {
-  QUICHSDebug("%s", get_vc_event_name(event));
+  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
   QUICHSDebug("Got an event on complete state. Ignoring it for now.");
 
   return EVENT_DONE;
