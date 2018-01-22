@@ -7706,8 +7706,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // Add HSTS header (Strict-Transport-Security) if max-age is set and the request was https
   // and the incoming request was remapped correctly
-  if (s->orig_scheme == URL_WKSIDX_HTTPS && s->txn_conf->proxy_response_hsts_max_age >= 0 &&
-      s->url_remap_success == true) {
+  if (s->orig_scheme == URL_WKSIDX_HTTPS && s->txn_conf->proxy_response_hsts_max_age >= 0 && s->url_remap_success == true) {
     TxnDebug("http_hdrs", "hsts max-age=%" PRId64, s->txn_conf->proxy_response_hsts_max_age);
     HttpTransactHeaders::insert_hsts_header_in_response(s, outgoing_response);
   }
