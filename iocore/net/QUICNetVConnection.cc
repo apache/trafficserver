@@ -1198,6 +1198,9 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   } else {
     this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
   }
+
+  this->remove_from_active_queue();
+
   QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
 }
