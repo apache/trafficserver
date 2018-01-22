@@ -65,6 +65,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
   switch (event) {
   case EVENT_INTERVAL: {
     if (this->_loss_detection_alarm_at <= Thread::get_hrtime()) {
+      this->_loss_detection_alarm_at = 0;
       this->_on_loss_detection_alarm();
     }
     break;
