@@ -26,9 +26,9 @@
 #include "../../eventsystem/I_EventSystem.h"
 #include "../../eventsystem/I_IOBuffer.h"
 #include "QUICTypes.h"
+#include "QUICConnection.h"
 #include "QUICStream.h"
 
-class QUICConnection;
 class QUICApplication;
 
 /**
