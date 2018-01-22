@@ -55,13 +55,13 @@ QUICSimpleApp::~QUICSimpleApp()
 int
 QUICSimpleApp::main_event_handler(int event, Event *data)
 {
-  Debug(tag, "%s (%d)", get_vc_event_name(event), event);
+  Debug(tag, "[%" PRIx64 "] %s (%d)", static_cast<uint64_t>(this->_client_qc->connection_id()), get_vc_event_name(event), event);
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);
 
   if (stream_io == nullptr) {
-    Debug(tag, "Unknown Stream");
+    Debug(tag, "[%" PRIx64 "] Unknown Stream", static_cast<uint64_t>(this->_client_qc->connection_id()));
     return -1;
   }
 

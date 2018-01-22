@@ -28,9 +28,8 @@
 #include "HQClientSession.h"
 #include "HttpSM.h"
 
-// XXX this->parent->connection_id() is Session ID of HQClientSession. Should this be QUIC Connection ID?
 #define HQTransDebug(fmt, ...) \
-  Debug("hq_trans", "[%" PRId64 "] [%" PRIx32 "] " fmt, this->parent->connection_id(), this->get_transaction_id(), ##__VA_ARGS__)
+  Debug("hq_trans", "[%" PRIx64 "] [%" PRIx32 "] " fmt, static_cast<uint64_t>(static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection*>(this->parent->get_netvc()))->connection_id()), this->get_transaction_id(), ##__VA_ARGS__)
 
 // static void
 // dump_io_buffer(IOBufferReader *reader)
@@ -126,7 +125,7 @@ HQClientTransaction::state_stream_open(int event, void *edata)
     break;
   }
   default:
-    Debug("hq_trans", "Unknown event %d", event);
+    HQTransDebug("Unknown event %d", event);
     ink_assert(false);
   }
 
