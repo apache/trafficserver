@@ -21,7 +21,7 @@ dnl
 AC_DEFUN([TS_CHECK_JEMALLOC], [
 has_jemalloc=0
 AC_ARG_WITH([jemalloc], [AC_HELP_STRING([--with-jemalloc=DIR], [use a specific jemalloc library])])
-AS_IF([test -n "$with_jemalloc" -a "x$with_jemalloc" != "xno" -a "x$enable_tcmalloc" = "xyes"], 
+AS_IF([test -n "$with_jemalloc" -a "x$with_jemalloc" != "xno" -a "x$enable_tcmalloc" = "xyes"],
  [ AC_MSG_ERROR([Cannot compile with both jemalloc and tcmalloc]) ])
 
 AS_IF([test -n "$with_jemalloc" -a "x$with_jemalloc" != "xno" ],[
@@ -56,29 +56,29 @@ AS_IF([test -n "$with_jemalloc" -a "x$with_jemalloc" != "xno" ],[
 
 dnl
 dnl define HAVE_LIBJEMALLOC is to be set and -ljemalloc added into LIBS?
-dnl 
-  AC_CHECK_LIB([jemalloc],[je_malloc_stats_print],[], 
+dnl
+  AC_CHECK_LIB([jemalloc],[je_malloc_stats_print],[],
     [AC_CHECK_LIB([jemalloc],[malloc_stats_print],[],
     [have_jemalloc=no])])
 
 dnl
 dnl define HAVE_JEMALLOC_JEMALLOC_H is to be set?
 dnl define HAVE_JEMALLOC_H is to be set?
-dnl 
-  AC_CHECK_HEADERS(jemalloc/jemalloc.h, [], 
+dnl
+  AC_CHECK_HEADERS(jemalloc/jemalloc.h, [],
     [AC_CHECK_HEADERS(jemalloc.h, [], [have_jemalloc=no])])
 
   LDFLAGS="$save_ldflags"
   CPPFLAGS="$save_cppflags"
   LIBS="$(echo "$LIBS" | sed -e 's| *-ljemalloc||' -e 's|$| -ljemalloc|')"
 
-  AS_IF([test "x$have_jemalloc" == "xno" ], 
+  AS_IF([test "x$have_jemalloc" == "xno" ],
      [AC_MSG_ERROR([Failed to compile with jemalloc.h and -ljemalloc]) ])
 
   has_jemalloc=1
 dnl
 dnl flags must be global setting for all libs
-dnl 
+dnl
   TS_ADDTO(CPPFLAGS,$JEMALLOC_CFLAGS)
   if test -n "$jemalloc_libdir"; then
       TS_ADDTO_RPATH($jemalloc_libdir)
@@ -86,46 +86,16 @@ dnl
   fi
 
   if test x$ac_cv_header_jemalloc_jemalloc_h = xyes; then
-      incpath="jemalloc/jemalloc.h";
+      incpath="jemalloc/jemalloc.h"
   elif test x$ac_cv_header_jemalloc_h = xyes; then
-      incpath="jemalloc.h";
+      incpath="jemalloc.h"
   fi
 
-  cat > $ac_aux_dir/jemalloc_shim.cc <<END
-#include <$incpath>
-extern void* malloc(size_t n) noexcept __attribute__((weak));
-extern void free(void *p) noexcept __attribute__((weak));
-extern void* operator new(size_t n) __attribute__((weak));
-extern void* operator new@<:@@:>@(size_t n) __attribute__((weak));
-extern void operator delete(void* p) noexcept __attribute__((weak));
-extern void operator delete@<:@@:>@(void* p) noexcept __attribute__((weak));
-extern void operator delete(void* p, size_t n) noexcept __attribute__((weak));
-extern void operator delete@<:@@:>@(void* p, size_t n) noexcept __attribute__((weak));
-
-void* malloc(size_t n) throw() { return ( n ? mallocx(n,MALLOCX_ZERO) : NULL ); }
-void free(void *p) throw() { ( p ? dallocx(p,0) : (void)0 ); }
-void* operator new(size_t n) { return mallocx(n,MALLOCX_ZERO); }
-void* operator new@<:@@:>@(size_t n) { return mallocx(n,MALLOCX_ZERO); }
-void operator delete(void* p) noexcept { return dallocx(p,0); }
-void operator delete@<:@@:>@(void* p) noexcept { return dallocx(p,0); }
-void operator delete(void* p, size_t n) noexcept { return sdallocx(p,n,0); }
-void operator delete@<:@@:>@(void* p, size_t n) noexcept { return sdallocx(p,n,0); }
-END
-
-dnl  $SHELL $ac_abs_confdir/libtool --mode=compile $CXX -fPIC -DPIC -S -O2 $ac_aux_dir/jemalloc_shim.cc -c -o $ac_aux_dir/jemalloc_shim.s
-dnl
-dnl  wrapargs=" -Wl$($SED -e '${g;y/\n/,/;p}' -e '/^_Z.*:$/!d' -e 's/^\(.*\):/--wrap,\1/' -e 'H;d' $ac_aux_dir/jemalloc_shim.s)"
-dnl  TS_ADDTO(LDFLAGS,$wrapargs)
-dnl
-dnl  $SED -i -e 's/_Zn/__wrap_\0/g' -e 's/_Zd/__wrap_\0/g' $ac_aux_dir/jemalloc_shim.s
-dnl  $SHELL $ac_abs_confdir/libtool --mode=compile $CC -fPIC -DPIC -c -x assembler $ac_aux_dir/jemalloc_shim.s -o $ac_aux_dir/jemalloc_shim.lo
-
-  $SHELL $ac_abs_confdir/libtool --mode=compile $CXX -std=c++11 -fPIC -DPIC -O2 $ac_aux_dir/jemalloc_shim.cc -c -o $ac_aux_dir/jemalloc_shim.lo
+  AC_DEFUN([JEMALLOC_INCLUDE], $incpath)
+  $SHELL $ac_abs_confdir/libtool --mode=compile $CXX -std=c++11 -fPIC -DPIC -O2 -D=JEMALLOC_INCLUDE=$incpath $rel_libdir/ts/jemalloc_shim.cc -c -o $ac_aux_dir/jemalloc_shim.lo
   $SHELL $ac_abs_confdir/libtool --mode=link $CC -o $ac_aux_dir/libjemalloc_shim.la $ac_aux_dir/jemalloc_shim.lo  
 
-  TS_ADDTO(LDFLAGS,$ac_abs_confdir/$ac_aux_dir/libjemalloc_shim.la)
-
-  $RM -f $ac_aux_dir/jemalloc_shim.{cc,lo,s}
+TS_ADDTO(AM_LDFLAGS,\$(top_srcdir)/$ac_aux_dir/libjemalloc_shim.la)
 ])
 
 AC_SUBST([has_jemalloc])

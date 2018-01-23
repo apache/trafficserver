@@ -65,6 +65,7 @@ template struct SetObjFxn<bool>;
 template struct SetObjFxn<std::string>;
 
 // some inlines need implementing after all
+#if 1
 template uint64_t GetObjFxn<uint64_t>::operator()() const;
 template uint64_t *GetObjFxn<uint64_t *>::operator()() const;
 template std::atomic_ulong *GetObjFxn<std::atomic_ulong *>::operator()() const;
@@ -72,6 +73,7 @@ template unsigned GetObjFxn<unsigned>::operator()() const;
 template bool GetObjFxn<bool>::operator()() const;
 template bool *GetObjFxn<bool *>::operator()() const;
 template std::string GetObjFxn<std::string>::operator()() const;
+#endif
 
 // request-or-sense new values in statistics
 const GetObjFxn<uint64_t> epoch{"epoch"};
