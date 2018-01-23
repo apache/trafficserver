@@ -57,9 +57,7 @@
 #include <sys/mman.h>
 #endif
 
-#if HAVE_JEMALLOC_JEMALLOC_H
-#include <jemalloc/jemalloc.h>
-#elif HAVE_JEMALLOC_H
+#if HAVE_LIBJEMALLOC
 #include <jemalloc.h>
 
 #else // no jemalloc includes used
@@ -79,8 +77,10 @@
 
 #if HAVE_LIBJEMALLOC
 #ifdef __cplusplus
-// c++: inline-override stdc++ version
 extern "C" {
+#endif
+
+
 inline void *
 malloc(size_t n) throw()
 {
@@ -91,7 +91,18 @@ free(void *p) throw()
 {
   p ? dallocx(p, 0) : (void)0;
 }
+inline void *
+realloc(void *ptr, size_t size) throw()
+{
+  return ( !size ? (free(ptr), (void*) NULL)
+         : !ptr  ? mallocx(size, MALLOCX_ZERO)
+                 : rallocx(ptr, size, MALLOCX_ZERO) );
 }
+
+
+#ifdef __cplusplus
+}
+
 inline void *
 operator new(size_t n)
 {

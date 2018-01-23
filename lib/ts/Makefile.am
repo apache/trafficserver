@@ -214,6 +214,7 @@ ParseRulesCType: CompileParseRules
 	./CompileParseRules
 
 mkdfa_SOURCES = mkdfa.c
+mkdfa_LDADD = ;true            # link without $(LIBS)
 
 test_atomic_SOURCES = test_atomic.cc
 test_atomic_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@

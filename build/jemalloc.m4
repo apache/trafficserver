@@ -43,7 +43,7 @@ AS_IF([test -n "$with_jemalloc" -a "x$with_jemalloc" != "xno" ],[
   test -z "$jemalloc_libdir" -o -d "$jemalloc_libdir" || jemalloc_libdir=
   test -z "$jemalloc_incdir" -o -d "$jemalloc_incdir" || jemalloc_incdir=
 
-  jemalloc_incdir="${jemalloc_incdir:+$(cd $jemalloc_incdir; pwd -P)}"
+  jemalloc_incdir="${jemalloc_incdir:+$(cd $jemalloc_incdir; cd jemalloc 2>/dev/null; pwd -P)}"
   jemalloc_libdir="${jemalloc_libdir:+$(cd $jemalloc_libdir; pwd -P)}"
 
   : ${JEMALLOC_CFLAGS:="${jemalloc_incdir:+ -I$jemalloc_incdir}"}
@@ -61,12 +61,7 @@ dnl
     [AC_CHECK_LIB([jemalloc],[malloc_stats_print],[],
     [have_jemalloc=no])])
 
-dnl
-dnl define HAVE_JEMALLOC_JEMALLOC_H is to be set?
-dnl define HAVE_JEMALLOC_H is to be set?
-dnl
-  AC_CHECK_HEADERS(jemalloc/jemalloc.h, [],
-    [AC_CHECK_HEADERS(jemalloc.h, [], [have_jemalloc=no])])
+  AC_CHECK_HEADERS(jemalloc.h, [], [have_jemalloc=no])
 
   LDFLAGS="$save_ldflags"
   CPPFLAGS="$save_cppflags"
@@ -85,17 +80,8 @@ dnl
       TS_ADDTO(LDFLAGS,$JEMALLOC_LDFLAGS)
   fi
 
-  if test x$ac_cv_header_jemalloc_jemalloc_h = xyes; then
-      incpath="jemalloc/jemalloc.h"
-  elif test x$ac_cv_header_jemalloc_h = xyes; then
-      incpath="jemalloc.h"
-  fi
-
-  AC_DEFUN([JEMALLOC_INCLUDE], $incpath)
-  $SHELL $ac_abs_confdir/libtool --mode=compile $CXX -std=c++11 -fPIC -DPIC -O2 -D=JEMALLOC_INCLUDE=$incpath $rel_libdir/ts/jemalloc_shim.cc -c -o $ac_aux_dir/jemalloc_shim.lo
-  $SHELL $ac_abs_confdir/libtool --mode=link $CC -o $ac_aux_dir/libjemalloc_shim.la $ac_aux_dir/jemalloc_shim.lo  
-
-TS_ADDTO(AM_LDFLAGS,\$(top_srcdir)/$ac_aux_dir/libjemalloc_shim.la)
+  AM_LIBS_NEEDED="-ljemalloc"
+  TS_SUBST(AM_LIBS_REQUIRED)
 ])
 
 AC_SUBST([has_jemalloc])
