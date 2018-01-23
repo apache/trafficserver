@@ -328,9 +328,12 @@ QUICHandshake::state_key_exchange(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE: {
-    int res = this->_complete_handshake();
-    if (!res) {
-      this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
+    QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_crypto);
+    if (crypto_tls && SSL_is_init_finished(crypto_tls->ssl_handle())) {
+      int res = this->_complete_handshake();
+      if (!res) {
+        this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
+      }
     }
 
     break;
@@ -338,8 +341,6 @@ QUICHandshake::state_key_exchange(int event, Event *data)
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
     ink_assert(this->_netvc_context == NET_VCONNECTION_OUT);
-
-    // FIXME: client could recv ServerHello and HelloRetryRequest
     error = this->_process_server_hello();
     break;
   }
@@ -544,6 +545,8 @@ QUICHandshake::_process_server_hello()
     break;
   }
   case SSL_ERROR_WANT_READ: {
+    // FIXME: check if write_reenable should be called or not
+    stream_io->write_reenable();
     stream_io->read_reenable();
     break;
   }
