@@ -80,7 +80,7 @@ dnl
       TS_ADDTO(LDFLAGS,$JEMALLOC_LDFLAGS)
   fi
 
-  AM_LIBS_NEEDED="-ljemalloc"
+  AM_LIBS_REQUIRED="-ljemalloc"
   TS_SUBST(AM_LIBS_REQUIRED)
 ])
 
