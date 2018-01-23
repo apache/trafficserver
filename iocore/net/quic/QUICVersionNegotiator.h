@@ -42,6 +42,4 @@ public:
 private:
   QUICVersion _negotiated_version      = 0;
   QUICVersionNegotiationStatus _status = QUICVersionNegotiationStatus::NOT_NEGOTIATED;
-
-  bool _is_supported(QUICVersion version);
 };

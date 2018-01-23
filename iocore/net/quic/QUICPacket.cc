@@ -668,6 +668,21 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     }
     break;
   case QUICPacketType::INITIAL:
+    if (!this->_crypto->is_handshake_finished()) {
+      if (QUICTypeUtil::is_supported_version(header->version())) {
+        if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
+                                   header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
+          result = QUICPacketCreationResult::SUCCESS;
+        } else {
+          result = QUICPacketCreationResult::FAILED;
+        }
+      } else {
+        result = QUICPacketCreationResult::SUCCESS;
+      }
+    } else {
+      result = QUICPacketCreationResult::IGNORED;
+    }
+    break;
   case QUICPacketType::HANDSHAKE:
     if (!this->_crypto->is_handshake_finished()) {
       if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),

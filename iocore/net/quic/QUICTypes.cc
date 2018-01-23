@@ -41,6 +41,17 @@ QUICTypeUtil::has_connection_id(const uint8_t *buf)
   return (buf[0] & 0x40) == 0;
 }
 
+bool
+QUICTypeUtil::is_supported_version(QUICVersion version)
+{
+  for (auto v : QUIC_SUPPORTED_VERSIONS) {
+    if (v == version) {
+      return true;
+    }
+  }
+  return false;
+}
+
 QUICStreamType
 QUICTypeUtil::detect_stream_type(QUICStreamId id)
 {

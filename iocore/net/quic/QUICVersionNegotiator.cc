@@ -33,7 +33,7 @@ QUICVersionNegotiator::status()
 QUICVersionNegotiationStatus
 QUICVersionNegotiator::negotiate(const QUICPacket *initial_packet)
 {
-  if (this->_is_supported(initial_packet->version())) {
+  if (QUICTypeUtil::is_supported_version(initial_packet->version())) {
     this->_status             = QUICVersionNegotiationStatus::NEGOTIATED;
     this->_negotiated_version = initial_packet->version();
   }
@@ -46,7 +46,7 @@ QUICVersionNegotiator::validate(const QUICTransportParametersInClientHello *tp)
   if (this->_negotiated_version == tp->initial_version()) {
     this->_status = QUICVersionNegotiationStatus::VALIDATED;
   } else {
-    if (this->_is_supported(tp->initial_version())) {
+    if (QUICTypeUtil::is_supported_version(tp->initial_version())) {
       this->_status             = QUICVersionNegotiationStatus::FAILED;
       this->_negotiated_version = 0;
     } else {
@@ -60,15 +60,4 @@ QUICVersion
 QUICVersionNegotiator::negotiated_version()
 {
   return this->_negotiated_version;
-}
-
-bool
-QUICVersionNegotiator::_is_supported(QUICVersion version)
-{
-  for (auto v : QUIC_SUPPORTED_VERSIONS) {
-    if (v == version) {
-      return true;
-    }
-  }
-  return false;
 }
