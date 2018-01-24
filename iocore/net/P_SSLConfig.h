@@ -112,6 +112,9 @@ struct SSLConfigParams : public ConfigInfo {
   static init_ssl_ctx_func init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
 
+  static int async_handshake_enabled;
+  static char *engine_conf_file;
+
   SSL_CTX *client_ctx;
 
   mutable HashMap<cchar *, class StringHashFns, SSL_CTX *> ctx_map;
