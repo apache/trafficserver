@@ -352,6 +352,9 @@ private:
   SessionAccept *sessionAcceptPtr  = nullptr;
   bool sslTrace                    = false;
   bool SNIMapping                  = false;
+#ifdef SSL_MODE_ASYNC
+  EventIO signalep;
+#endif
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

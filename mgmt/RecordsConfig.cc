@@ -1353,6 +1353,9 @@ static const RecordElement RecordsConfig[] =
   //###########
   {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL},
 
+  // Controls for TLS ASYN_JOBS and engine loading
+  {RECT_CONFIG, "proxy.config.ssl.async.handshake.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.ssl.engine.conf_file", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL},
 };
 // clang-format on
 
