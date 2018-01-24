@@ -35,6 +35,7 @@ AM_CPPFLAGS += -I$(abs_top_srcdir)/lib
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = \
+  @JEMALLOC_LIBS@ \
   @HWLOC_LIBS@ \
   @LIBOBJS@ \
   @LIBPCRE@ \
