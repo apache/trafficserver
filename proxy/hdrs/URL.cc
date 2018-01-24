@@ -1409,6 +1409,11 @@ parse_params1:
   params_start = cur + 1;
   GETNEXT(done);
 parse_params2:
+  if (*cur == '/') {
+    params_end = cur;
+    path_end = NULL;
+    goto parse_path2;
+  }
   if (*cur == '?') {
     params_end = cur;
     goto parse_query1;
