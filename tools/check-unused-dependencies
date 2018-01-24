@@ -50,6 +50,8 @@ def get_dependencies(program):
             map(
                 os.path.basename(dependency).startswith,
                 [
+                    'ld-linux-', # Because it is useful
+                    'libjemalloc.so.', # Because it is useful
                     'libdl.so.',  # Because we add -ldl to LIBS
                     'libgcc_s.so.',
                     'libm.so.',  # Why does Libtool call ld with -lm?
