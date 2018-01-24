@@ -98,7 +98,18 @@ realloc(void *ptr, size_t size) throw()
          : !ptr  ? mallocx(size, MALLOCX_ZERO)
                  : rallocx(ptr, size, MALLOCX_ZERO) );
 }
+inline void *
+calloc(size_t number, size_t size) throw()
+{
+  auto n = number*size;
+  return ( n ? mallocx(n, MALLOCX_ZERO) : NULL );
+}
 
+// inline size_t malloc_usable_size(const void *ptr) throw()
+inline size_t malloc_usable_size(void *ptr) throw()
+{
+  return ( ptr ? sallocx(ptr,0) : 0 );
+}
 
 #ifdef __cplusplus
 }
