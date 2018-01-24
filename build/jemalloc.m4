@@ -65,10 +65,19 @@ dnl
 
   LDFLAGS="$save_ldflags"
   CPPFLAGS="$save_cppflags"
-  LIBS="$(echo "$LIBS" | sed -e 's| *-ljemalloc||' -e 's|$| -ljemalloc|')"
+
+  R=$(expr "$AM_LDFLAGS" : '.*as-needed.*')
+
+  if [ x$R != x0 ]; then
+    JEMALLOC_LIBS=' -Wl,--no-as-needed -Wl,-ljemalloc -Wl,--as-needed'
+  else
+    JEMALLOC_LIBS=' -Wl,-ljemalloc'
+  fi
 
   AS_IF([test "x$have_jemalloc" == "xno" ],
      [AC_MSG_ERROR([Failed to compile with jemalloc.h and -ljemalloc]) ])
+
+  LIBS="$(echo "$LIBS" | sed -e 's/ -ljemalloc//' -e "s/^/$JEMALLOC_LIBS /" )"
 
   has_jemalloc=1
 dnl
@@ -80,8 +89,7 @@ dnl
       TS_ADDTO(LDFLAGS,$JEMALLOC_LDFLAGS)
   fi
 
-  AM_LIBS_REQUIRED="-ljemalloc"
-  TS_SUBST(AM_LIBS_REQUIRED)
+  AC_SUBST(JEMALLOC_LIBS)
 ])
 
 AC_SUBST([has_jemalloc])
