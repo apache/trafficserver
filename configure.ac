@@ -831,7 +831,6 @@ case $host_os_def in
       flex_cflags="-Wno-unused-parameter"
     ])
 
-    TS_ADDTO([AM_LDFLAGS], [\$(AM_LIBS_REQUIRED)])
     TS_ADDTO([AM_LDFLAGS], [-Wl,--as-needed])
 
     ;; # linux)
