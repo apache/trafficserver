@@ -79,7 +79,7 @@ using ::strcasecmp; // Make this an overload, not an override.
     - If the number starts with a literal '0' then it is treated as base 8.
     - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
 */
-intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 10);
+intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
 
 /** A read only view of contiguous piece of memory.
 
@@ -553,7 +553,7 @@ inline char TextView::operator*() const
 
 inline bool TextView::operator!() const
 {
-  return !this->empty();
+  return this->empty();
 }
 
 inline TextView::operator bool() const
@@ -1031,7 +1031,6 @@ extern template std::ostream &TextView::stream_write(std::ostream &, const TextV
 
 namespace std
 {
-ostream &operator<<(ostream &os, const ts::TextView &b);
 ostream &operator<<(ostream &os, const ts::TextView &b);
 }
 
