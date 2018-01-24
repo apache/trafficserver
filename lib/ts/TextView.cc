@@ -26,7 +26,6 @@
 #include <ts/TextView.h>
 #include <sstream>
 #include <cctype>
-#include <ts/ink_platform.h>
 
 int
 ts::memcmp(TextView const &lhs, TextView const &rhs)
@@ -96,10 +95,10 @@ ts::svtoi(TextView src, TextView *out, int base)
   if (out) {
     out->clear();
   }
-  if (!(1 < base && base <= 36)) {
+  if (!(0 <= base && base <= 36)) {
     return 0;
   }
-  if (src.ltrim_if(&isspace)) {
+  if (src.ltrim_if(&isspace) && src) {
     const char *start = src.data();
     int8_t v;
     bool neg = false;
@@ -107,7 +106,19 @@ ts::svtoi(TextView src, TextView *out, int base)
       ++src;
       neg = true;
     }
-    while (src.size() && (-1 != (v = convert[static_cast<unsigned char>(*src)]))) {
+    // If base is 0, it wasn't specified - check for standard base prefixes
+    if (0 == base) {
+      base = 10;
+      if ('0' == *src) {
+        ++src;
+        base = 8;
+        if (src && ('x' == *src || 'X' == *src)) {
+          ++src;
+          base = 16;
+        }
+      }
+    }
+    while (src.size() && (0 <= (v = convert[static_cast<unsigned char>(*src)])) && v < base) {
       zret = zret * base + v;
       ++src;
     }

@@ -25,6 +25,8 @@
 #include <catch.hpp>
 #include <iostream>
 
+using TV = ts::TextView;
+
 TEST_CASE("TextView Constructor", "[libts][TextView]")
 {
   static std::string base = "Evil Dave Rulez!";
@@ -37,12 +39,21 @@ TEST_CASE("TextView Constructor", "[libts][TextView]")
 
 TEST_CASE("TextView Operations", "[libts][TextView]")
 {
-  ts::TextView tv{"Evil Dave Rulez"};
+  TV tv{"Evil Dave Rulez"};
+  TV nothing;
   size_t off;
 
   REQUIRE(tv.find('l') == 3);
   off = tv.find_if([](char c) { return c == 'D'; });
   REQUIRE(off == tv.find('D'));
+
+  REQUIRE(tv);
+  REQUIRE(!tv == false);
+  if (nothing) {
+    REQUIRE(nullptr == "bad operator bool on TextView");
+  }
+  REQUIRE(!nothing == true);
+  REQUIRE(nothing.empty() == true);
 }
 
 TEST_CASE("TextView Trimming", "[libts][TextView]")
@@ -179,4 +190,26 @@ TEST_CASE("TextView Formatting", "[libts][TextView]")
     buff << '|' << std::setw(12) << std::left << std::setfill('_') << a << '|';
     REQUIRE(buff.str() == "|01234567____|");
   }
+}
+
+TEST_CASE("TextView Conversions", "[libts][TextView]")
+{
+  TV n  = "   956783";
+  TV n2 = n;
+  TV n3 = "031";
+  TV n4 = "13f8q";
+  TV n5 = "0x13f8";
+  TV n6 = "0X13f8";
+  TV x;
+  n2.ltrim_if(&isspace);
+
+  REQUIRE(956783 == svtoi(n));
+  REQUIRE(956783 == svtoi(n2));
+  REQUIRE(0x13f8 == svtoi(n4, &x, 16));
+  REQUIRE(x == "13f8");
+  REQUIRE(0x13f8 == svtoi(n5));
+  REQUIRE(0x13f8 == svtoi(n6));
+
+  REQUIRE(25 == svtoi(n3));
+  REQUIRE(31 == svtoi(n3, nullptr, 10));
 }
