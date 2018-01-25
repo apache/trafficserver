@@ -275,7 +275,7 @@ AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 AC_MSG_CHECKING([whether to build documentation])
 AC_ARG_ENABLE([docs],
   [AS_HELP_STRING([--enable-docs],[enable documentation building])],
-  [],
+  [enable_doc_build=yes],
   [enable_doc_build=no]
 )
 AC_MSG_RESULT([$enable_doc_build])
