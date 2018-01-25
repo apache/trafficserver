@@ -128,7 +128,7 @@ QUICIncomingFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t len, 
 
     this->_fin_offset = offset + len;
 
-    if (this->_max_offset >= this->_fin_offset) {
+    if (this->_max_offset > this->_fin_offset) {
       return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
     }
 

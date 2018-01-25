@@ -72,6 +72,18 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
     CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
   }
 
+  SECTION("Pure FIN")
+  {
+    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_1_r = QUICFrameFactory::create_stream_frame(data, 0, 1, 1024, true);
+
+    err = buffer.insert(stream1_frame_0_r);
+    CHECK(err->cls == QUICErrorClass::NONE);
+
+    err = buffer.insert(stream1_frame_1_r);
+    CHECK(err->cls == QUICErrorClass::NONE);
+  }
+
   delete stream;
 }
 
