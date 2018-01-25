@@ -1455,7 +1455,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       //
       // Decode cname
       //
-      if (is_addr_query(e->qtype) && (type == T_CNAME || type == T_DNAME)) {
+      if ((is_addr_query(e->qtype) || e->qtype == T_SRV) && (type == T_CNAME || type == T_DNAME)) {
         if (ap >= &buf->host_aliases[DNS_MAX_ALIASES - 1])
           continue;
         n = ink_dn_expand((u_char *)h, eom, cp, tbuf, sizeof(tbuf));
