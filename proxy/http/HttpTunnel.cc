@@ -331,7 +331,7 @@ ChunkedHandler::process_chunked_content()
 }
 
 bool
-ChunkedHandler::generate_chunked_content()
+ChunkedHandler::generate_chunked_content(int64_t max_read_len)
 {
   char tmp[16];
   bool server_done = false;
@@ -347,7 +347,17 @@ ChunkedHandler::generate_chunked_content()
     break;
   }
 
-  while ((r_avail = dechunked_reader->read_avail()) > 0 && state != CHUNK_WRITE_DONE) {
+  int64_t total_max_to_read = dechunked_reader->read_avail();
+  if (max_read_len > 0) {
+    total_max_to_read = std::min(max_read_len, total_max_to_read);
+  }
+  int64_t total_processed = 0;
+
+  while (total_processed < total_max_to_read && state != CHUNK_WRITE_DONE) {
+    r_avail = dechunked_reader->read_avail();
+    if (max_read_len > 0) {
+      r_avail = std::min(r_avail, max_read_len);
+    }
     int64_t write_val = std::min(max_chunk_size, r_avail);
 
     state = CHUNK_WRITE_CHUNK;
@@ -380,6 +390,8 @@ ChunkedHandler::generate_chunked_content()
     // Output the trailing CRLF.
     chunked_buffer->write("\r\n", 2);
     chunked_size += 2;
+
+    total_processed += write_val;
   }
 
   if (server_done) {

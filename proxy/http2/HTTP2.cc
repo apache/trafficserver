@@ -456,6 +456,12 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
       http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, false);
+
+      // For POST requests anyway, we need either a content length or a Transfer encoding header
+      if (method_wks_idx == HTTP_WKSIDX_POST && !headers->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+        // Add the Transfer-Encoding header to trigger the chunked logic
+        headers->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED, HTTP_LEN_CHUNKED, true);
+      }
     } else {
       return PARSE_RESULT_ERROR;
     }
@@ -475,6 +481,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     headers->field_delete(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
     headers->field_delete(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
     headers->field_delete(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
+
   } else {
     int status_len;
     const char *status;
