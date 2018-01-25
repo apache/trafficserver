@@ -23,6 +23,11 @@
 #ifndef _ink_memory_h_
 #define _ink_memory_h_
 
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
+
+#include <memory>
+
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
@@ -52,13 +57,95 @@
 #include <sys/mman.h>
 #endif
 
-#if TS_HAS_JEMALLOC
-#include <jemalloc/jemalloc.h>
-#else
+#if HAVE_LIBJEMALLOC
+#include <jemalloc.h>
+
+#else // no jemalloc includes used
+
+// fail these with zeros
+#define mallocx(...) nullptr
+#define sallocx(...) size_t()
+
+// no-ops
+#define sdallocx(...)
+#define dallocx(...)
+
 #if HAVE_MALLOC_H
 #include <malloc.h>
-#endif // ! HAVE_MALLOC_H
-#endif // ! TS_HAS_JEMALLOC
+#endif
+#endif // ! HAVE_JEMALLOC_H && ! HAVE_JEMALLOC_JEMALLOC_H
+
+#if HAVE_LIBJEMALLOC
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+inline void *
+malloc(size_t n) throw()
+{
+  return (n ? mallocx(n, MALLOCX_ZERO) : NULL);
+}
+inline void
+free(void *p) throw()
+{
+  p ? dallocx(p, 0) : (void)0;
+}
+inline void *
+realloc(void *ptr, size_t size) throw()
+{
+  return ( !size ? (free(ptr), (void*) NULL)
+         : !ptr  ? mallocx(size, MALLOCX_ZERO)
+                 : rallocx(ptr, size, MALLOCX_ZERO) );
+}
+inline void *
+calloc(size_t number, size_t size) throw()
+{
+  auto n = number*size;
+  return ( n ? mallocx(n, MALLOCX_ZERO) : NULL );
+}
+
+// inline size_t malloc_usable_size(const void *ptr) throw()
+inline size_t malloc_usable_size(void *ptr) throw()
+{
+  return ( ptr ? sallocx(ptr,0) : 0 );
+}
+
+#ifdef __cplusplus
+}
+
+inline void *
+operator new(size_t n)
+{
+  return mallocx(n, MALLOCX_ZERO);
+}
+inline void *
+operator new[](size_t n)
+{
+  return mallocx(n, MALLOCX_ZERO);
+}
+inline void
+operator delete(void *p) noexcept
+{
+  p ? dallocx(p, 0) : (void)0;
+}
+inline void
+operator delete[](void *p) noexcept
+{
+  p ? dallocx(p, 0) : (void)0;
+}
+inline void
+operator delete(void *p, size_t n) noexcept
+{
+  p ? sdallocx(p, n, 0) : (void)0;
+}
+inline void
+operator delete[](void *p, size_t n) noexcept
+{
+  p ? sdallocx(p, n, 0) : (void)0;
+}
+#endif
+#endif
 
 #ifndef MADV_NORMAL
 #define MADV_NORMAL 0
@@ -104,11 +191,10 @@ void *ats_memalign(size_t alignment, size_t size);
 void ats_free(void *ptr);
 void *ats_free_null(void *ptr);
 void ats_memalign_free(void *ptr);
-int ats_mallopt(int param, int value);
-
 int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
 int ats_madvise(caddr_t addr, size_t len, int flags);
 int ats_mlock(caddr_t addr, size_t len);
+void *ats_alloc_stack(size_t stacksize);
 
 void *ats_track_malloc(size_t size, uint64_t *stat);
 void *ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat);
@@ -159,6 +245,11 @@ inline char *
 ats_stringdup(ts::string_view const &p)
 {
   return p.empty() ? nullptr : _xstrdup(p.data(), p.size(), nullptr);
+}
+
+namespace numa
+{
+int create_global_nodump_arena();
 }
 
 template <typename PtrType, typename SizeType>

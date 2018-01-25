@@ -35,14 +35,14 @@ AM_CPPFLAGS += -I$(abs_top_srcdir)/lib
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = \
+  @JEMALLOC_LIBS@ \
   @HWLOC_LIBS@ \
   @LIBOBJS@ \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
   @LIBTCL@ \
   @LIBRESOLV@ \
-  @LIBCAP@ \
-  -lc
+  @LIBCAP@
 
 libtsutil_la_SOURCES = \
   Allocator.h \
@@ -155,6 +155,10 @@ libtsutil_la_SOURCES = \
   IpMapConf.h \
   IpMap.h \
   I_Version.h \
+  JemAllocator.h \
+  JemAllocator.cc \
+  jemallctl.cc \
+  jemallctl.h \
   Layout.cc \
   List.h \
   llqueue.cc \
@@ -211,6 +215,7 @@ ParseRulesCType: CompileParseRules
 	./CompileParseRules
 
 mkdfa_SOURCES = mkdfa.c
+mkdfa_LDADD = ;true            # link without $(LIBS)
 
 test_atomic_SOURCES = test_atomic.cc
 test_atomic_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
@@ -260,6 +265,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_TextView.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
+CompileParseRules_LDADD = ;true            # link command doesn't need $(LIBS)
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper
