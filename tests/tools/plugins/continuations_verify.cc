@@ -26,9 +26,6 @@
 #define __STDC_FORMAT_MACROS 1 // for inttypes.h
 #include <inttypes.h>          // for PRIu64
 #include <iostream>
-#include <map>
-#include <set>
-#include <sstream>
 #include <stdlib.h> // for abort
 #include <string.h> // for NULL macro
 #include <ts/ts.h>  // for debug
