@@ -5615,8 +5615,15 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     break;
   }
 
+  // The user agent may support chunked (HTTP/1.1) or not (HTTP/2)
+  // In either case, the server will support chunked (HTTP/1.1)
   if (chunked) {
-    tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT);
+    if (ua_txn->is_chunked_encoding_supported()) {
+      tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT);
+    } else {
+      tunnel.set_producer_chunking_action(p, 0, TCA_CHUNK_CONTENT);
+      tunnel.set_producer_chunking_size(p, 0);
+    }
   }
 
   ua_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));

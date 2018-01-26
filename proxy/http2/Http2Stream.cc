@@ -289,7 +289,7 @@ Http2Stream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 
   // Is there already data in the request_buffer?  If so, copy it over and then
   // schedule a READ_READY or READ_COMPLETE event after we return.
-  update_read_request(nbytes, false);
+  update_read_request(nbytes, false, true);
 
   return &read_vio;
 }
@@ -458,7 +458,7 @@ Http2Stream::send_tracked_event(Event *event, int send_event, VIO *vio)
 }
 
 void
-Http2Stream::update_read_request(int64_t read_len, bool call_update)
+Http2Stream::update_read_request(int64_t read_len, bool call_update, bool check_eos)
 {
   if (closed || parent == nullptr || current_reader == nullptr || read_vio.mutex == nullptr) {
     return;
@@ -483,10 +483,10 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update)
       }
       if (num_to_read > 0) {
         int bytes_added = read_vio.buffer.writer()->write(request_reader, num_to_read);
-        if (bytes_added > 0) {
+        if (bytes_added > 0 || (check_eos && recv_end_stream)) {
           request_reader->consume(bytes_added);
           read_vio.ndone += bytes_added;
-          int send_event = (read_vio.nbytes == read_vio.ndone) ? VC_EVENT_READ_COMPLETE : VC_EVENT_READ_READY;
+          int send_event = (read_vio.nbytes == read_vio.ndone || recv_end_stream) ? VC_EVENT_READ_COMPLETE : VC_EVENT_READ_READY;
           if (call_update) { // Safe to call vio handler directly
             inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
             if (read_vio._cont && this->current_reader) {
