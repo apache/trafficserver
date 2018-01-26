@@ -54,26 +54,26 @@ public:
   Http1ClientSession();
 
   // Implement ProxyClientSession interface.
-  virtual void destroy();
-  virtual void free();
+  void destroy() override;
+  void free() override;
   void release_transaction();
 
-  virtual void
-  start()
+  void
+  start() override
   {
     // Troll for data to get a new transaction
     this->release(&trans);
   }
 
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) override;
 
   // Implement VConnection interface.
-  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
-  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
+  VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
 
-  virtual void do_io_close(int lerrno = -1);
-  virtual void do_io_shutdown(ShutdownHowTo_t howto);
-  virtual void reenable(VIO *vio);
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
+  void reenable(VIO *vio) override;
 
   bool
   allow_half_open()
@@ -83,25 +83,31 @@ public:
   }
 
   void
-  set_half_close_flag(bool flag)
+  set_half_close_flag(bool flag) override
   {
     half_close = flag;
   }
 
   bool
-  get_half_close_flag() const
+  get_half_close_flag() const override
   {
     return half_close;
   }
 
-  virtual NetVConnection *
-  get_netvc() const
+  bool
+  is_chunked_encoding_supported() const override
+  {
+    return true;
+  }
+
+  NetVConnection *
+  get_netvc() const override
   {
     return client_vc;
   }
 
   int
-  get_transact_count() const
+  get_transact_count() const override
   {
     return transact_count;
   }
@@ -113,7 +119,7 @@ public:
   }
 
   // Indicate we are done with a transaction
-  virtual void release(ProxyClientTransaction *trans);
+  void release(ProxyClientTransaction *trans) override;
 
   virtual uint16_t
   get_outbound_port() const
@@ -133,43 +139,43 @@ public:
     return outbound_ip6;
   }
 
-  virtual void attach_server_session(HttpServerSession *ssession, bool transaction_done = true);
+  void attach_server_session(HttpServerSession *ssession, bool transaction_done = true) override;
 
-  virtual HttpServerSession *
-  get_server_session() const
+  HttpServerSession *
+  get_server_session() const override
   {
     return bound_ss;
   }
 
   void
-  set_active_timeout(ink_hrtime timeout_in)
+  set_active_timeout(ink_hrtime timeout_in) override
   {
     if (client_vc)
       client_vc->set_active_timeout(timeout_in);
   }
 
   void
-  set_inactivity_timeout(ink_hrtime timeout_in)
+  set_inactivity_timeout(ink_hrtime timeout_in) override
   {
     if (client_vc)
       client_vc->set_inactivity_timeout(timeout_in);
   }
 
   void
-  cancel_inactivity_timeout()
+  cancel_inactivity_timeout() override
   {
     if (client_vc)
       client_vc->cancel_inactivity_timeout();
   }
 
-  virtual const char *
-  get_protocol_string() const
+  const char *
+  get_protocol_string() const override
   {
     return "http";
   }
 
   bool
-  is_chunked_encoding_supported() const
+  is_transparent_passthrough_allowed() const override
   {
     return true;
   }

@@ -41,7 +41,14 @@ server.addResponse("sessionlog.json",
                    {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 191414\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
 
+post_body = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+server.addResponse("sessionlog.jason",
+                   {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
+                    "timestamp": "1469733493.993",
+                     "body": post_body},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 
+server.addResponse("sessionlog.json", request_header2, response_header2)
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
@@ -83,4 +90,34 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'python3 h2bigclient.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/bigfile.gold"
+tr.StillRunningAfter = server
+
+# Test Case 3: Chunked content
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'python3 h2chunked.py -p {0}  -u /{1}'.format(ts.Variables.ssl_port, requestLocation)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
+tr.StillRunningAfter = server
+
+# Test Case 4: Multiple request
+client_path = os.path.join(Test.Variables.AtsTestToolsDir, 'traffic-replay/')
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = "python3 {0} -type {1} -log_dir {2} -port {3} -host '127.0.0.1' -s_port {4} -v -colorize False".format(
+    client_path, 'h2', server.Variables.DataDir, ts.Variables.port, ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/replay.gold"
+tr.StillRunningAfter = server
+
+# Test Case 5:h2_active_timeout
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
+tr.StillRunningAfter = server
+
+# Test Case 6: Post with chunked body
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format( post_body, ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
