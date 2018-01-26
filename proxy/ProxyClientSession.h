@@ -138,6 +138,12 @@ public:
     return false;
   }
 
+  virtual bool
+  is_chunked_encoding_supported() const
+  {
+    return false;
+  }
+
   // Override if your session protocol cares.
   virtual void
   set_half_close_flag(bool flag)

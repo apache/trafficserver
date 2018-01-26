@@ -73,6 +73,12 @@ public:
     return parent ? parent->is_transparent_passthrough_allowed() : false;
   }
 
+  virtual bool
+  is_chunked_encoding_supported() const
+  {
+    return parent ? parent->is_chunked_encoding_supported() : false;
+  }
+
   void
   set_half_close_flag(bool flag)
   {

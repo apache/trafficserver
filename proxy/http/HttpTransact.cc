@@ -5128,8 +5128,19 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
         s->client_info.transfer_encoding != CHUNKED_ENCODING) {
-      if ((s->txn_conf->post_check_content_length_enabled) && !incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-        return NO_POST_CONTENT_LENGTH;
+      if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+        // In normal operation there will always be a ua_txn at this point, but in one of the -R1  regression tests a request is
+        // created
+        // independent of a transaction and this method is called, so we must null check
+        if (s->txn_conf->post_check_content_length_enabled &&
+            (!s->state_machine->ua_txn || s->state_machine->ua_txn->is_chunked_encoding_supported())) {
+          return NO_POST_CONTENT_LENGTH;
+        } else {
+          // Stuff in a TE setting so we treat this as chunked, sort of.
+          s->client_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
+          incoming_hdr->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED, HTTP_LEN_CHUNKED,
+                                     true);
+        }
       }
       if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
         return INVALID_POST_CONTENT_LENGTH;
