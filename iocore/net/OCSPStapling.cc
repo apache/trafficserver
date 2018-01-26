@@ -307,7 +307,7 @@ process_responder(OCSP_REQUEST *req, char *host, char *path, char *port, int req
 
   BIO_set_nbio(cbio, 1);
   if (BIO_do_connect(cbio) <= 0 && !BIO_should_retry(cbio)) {
-    Error("process_responder: failed to connect to OCSP response server. host=%s port=%s path=%s", host, port, path);
+    Debug("ssl_ocsp", "process_responder: failed to connect to OCSP response server. host=%s port=%s path=%s", host, port, path);
     goto end;
   }
   resp = query_responder(cbio, host, path, req, req_timeout);
@@ -440,7 +440,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
   current_time = time(nullptr);
   if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
     ink_mutex_release(&cinf->stapling_mutex);
-    Error("ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
+    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
     unsigned char *p = (unsigned char *)OPENSSL_malloc(cinf->resp_derlen);
