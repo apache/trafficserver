@@ -363,6 +363,8 @@ test_QUICCrypto_LDADD = \
   @OPENSSL_LIBS@ \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
 test_QUICCrypto_SOURCES = \
