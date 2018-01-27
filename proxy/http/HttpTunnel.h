@@ -147,7 +147,7 @@ struct ChunkedHandler {
 
   // Returns true if complete, false otherwise
   bool process_chunked_content();
-  bool generate_chunked_content();
+  bool generate_chunked_content(int64_t max_read_len = 0);
 
 private:
   void read_size();

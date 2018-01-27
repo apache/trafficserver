@@ -196,10 +196,25 @@ public:
   }
 
   IOBufferReader *response_get_data_reader() const;
+  IOBufferReader *request_get_data_reader() const;
+  MIOBuffer *
+  request_get_data_buffer()
+  {
+    if (chunked_req) {
+      return chunked_handler.chunked_buffer;
+    } else {
+      return &request_buffer;
+    }
+  }
   bool
   response_is_chunked() const
   {
-    return chunked;
+    return chunked_resp;
+  }
+  bool
+  request_is_chunked() const
+  {
+    return chunked_req;
   }
 
   void release(IOBufferReader *r) override;
@@ -237,10 +252,14 @@ public:
     return is_first_transaction_flag;
   }
 
+  void request_process_data(IOBufferReader *reader, int max_read_len);
+
 private:
   void response_initialize_data_handling(bool &is_done);
+  void request_initialize_data_handling(bool &is_done);
   void response_process_data(bool &is_done);
   bool response_is_data_available() const;
+  bool request_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
 
   HTTPParser http_parser;
@@ -255,7 +274,8 @@ private:
 
   bool trailing_header = false;
   bool body_done       = false;
-  bool chunked         = false;
+  bool chunked_req     = false;
+  bool chunked_resp    = false;
 
   // A brief disucssion of similar flags and state variables:  _state, closed, terminate_stream
   //
@@ -280,8 +300,9 @@ private:
   int reentrancy_count  = 0;
   bool terminate_stream = false;
 
-  uint64_t data_length = 0;
-  uint64_t bytes_sent  = 0;
+  uint64_t data_length  = 0;
+  uint64_t bytes_sent   = 0;
+  int offset_to_chunked = 0;
 
   ChunkedHandler chunked_handler;
   Event *cross_thread_event      = nullptr;

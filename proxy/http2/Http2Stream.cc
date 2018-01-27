@@ -168,6 +168,16 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     }
   } while (!done);
 
+  // Should the data be chunked?
+  bool is_done            = false;
+  this->offset_to_chunked = dumpoffset;
+  this->request_initialize_data_handling(is_done);
+  if (this->chunked_req) {
+    Http2StreamDebug("send_request: Request is chunked");
+  } else {
+    this->offset_to_chunked = 0;
+  }
+
   // Is there a read_vio request waiting?
   this->update_read_request(INT64_MAX, true);
 }
@@ -286,6 +296,8 @@ Http2Stream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   read_vio.ndone     = 0;
   read_vio.vc_server = this;
   read_vio.op        = VIO::READ;
+
+  offset_to_chunked = 0;
 
   // Is there already data in the request_buffer?  If so, copy it over and then
   // schedule a READ_READY or READ_COMPLETE event after we return.
@@ -473,18 +485,20 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update)
   }
   ink_release_assert(this->get_thread() == this_ethread());
   SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
+
   if (read_vio.nbytes > 0 && read_vio.ndone <= read_vio.nbytes) {
     // If this vio has a different buffer, we must copy
     ink_release_assert(this_ethread() == this->_thread);
-    if (read_vio.buffer.writer() != (&request_buffer)) {
+    IOBufferReader *reader = request_get_data_reader();
+    if (read_vio.buffer.writer() != reader->writer()) {
       int64_t num_to_read = read_vio.nbytes - read_vio.ndone;
       if (num_to_read > read_len) {
         num_to_read = read_len;
       }
       if (num_to_read > 0) {
-        int bytes_added = read_vio.buffer.writer()->write(request_reader, num_to_read);
+        int bytes_added = read_vio.buffer.writer()->write(reader, num_to_read);
         if (bytes_added > 0) {
-          request_reader->consume(bytes_added);
+          reader->consume(bytes_added);
           read_vio.ndone += bytes_added;
           int send_event = (read_vio.nbytes == read_vio.ndone) ? VC_EVENT_READ_COMPLETE : VC_EVENT_READ_READY;
           if (call_update) { // Safe to call vio handler directly
@@ -500,7 +514,7 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update)
     } else {
       // Try to be smart and only signal if there was additional data
       int send_event = (read_vio.nbytes == read_vio.ndone) ? VC_EVENT_READ_COMPLETE : VC_EVENT_READ_READY;
-      if (request_reader->read_avail() > 0 || send_event == VC_EVENT_READ_COMPLETE) {
+      if (reader->read_avail() > 0 || send_event == VC_EVENT_READ_COMPLETE) {
         if (call_update) { // Safe to call vio handler directly
           inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
           if (read_vio._cont && this->current_reader) {
@@ -546,7 +560,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 
   // if response is chunked, limit the dechunked_buffer size.
   bool is_done = false;
-  if (this->chunked) {
+  if (this->chunked_resp) {
     if (chunked_handler.dechunked_buffer && chunked_handler.dechunked_buffer->max_read_avail() > HTTP2_MAX_BUFFER_USAGE) {
       if (buffer_full_write_event == nullptr) {
         buffer_full_write_event = get_thread()->schedule_imm(this, VC_EVENT_WRITE_READY);
@@ -556,7 +570,8 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     }
   }
 
-  int64_t bytes_avail = this->response_get_data_reader()->read_avail();
+  IOBufferReader *reader = this->response_get_data_reader();
+  int64_t bytes_avail    = (reader) ? reader->read_avail() : 0;
   if (write_vio.nbytes > 0 && write_vio.ntodo() > 0) {
     int64_t num_to_write = write_vio.ntodo();
     if (num_to_write > write_len) {
@@ -761,6 +776,27 @@ check_continuation(Continuation *cont)
 }
 
 void
+Http2Stream::request_initialize_data_handling(bool &is_done)
+{
+  is_done           = false;
+  const char *name  = "transfer-encoding";
+  const char *value = "chunked";
+  int chunked_index = _req_header.value_get_index(name, strlen(name), value, strlen(value));
+  // -1 means this value was not found for this field
+  if (chunked_index >= 0) {
+    Http2StreamDebug("Request is chunked");
+    chunked_req = true;
+    this->chunked_handler.init_by_action(this->request_reader, ChunkedHandler::ACTION_DOCHUNK);
+    this->chunked_handler.chunked_reader = this->chunked_handler.chunked_buffer->alloc_reader();
+    this->chunked_handler.set_max_chunk_size(0);
+    // this->request_reader->dealloc();
+    // this->request_reader = nullptr;
+  } else {
+    chunked_req = false;
+  }
+}
+
+void
 Http2Stream::response_initialize_data_handling(bool &is_done)
 {
   is_done           = false;
@@ -770,7 +806,7 @@ Http2Stream::response_initialize_data_handling(bool &is_done)
   // -1 means this value was not found for this field
   if (chunked_index >= 0) {
     Http2StreamDebug("Response is chunked");
-    chunked = true;
+    chunked_resp = true;
     this->chunked_handler.init_by_action(this->response_reader, ChunkedHandler::ACTION_DECHUNK);
     this->chunked_handler.state            = ChunkedHandler::CHUNK_READ_SIZE;
     this->chunked_handler.dechunked_reader = this->chunked_handler.dechunked_buffer->alloc_reader();
@@ -780,6 +816,8 @@ Http2Stream::response_initialize_data_handling(bool &is_done)
     if (this->chunked_handler.chunked_reader->is_read_avail_more_than(0)) {
       response_process_data(is_done);
     }
+  } else {
+    chunked_resp = false;
   }
 }
 
@@ -787,13 +825,25 @@ void
 Http2Stream::response_process_data(bool &done)
 {
   done = false;
-  if (chunked) {
+  if (chunked_resp) {
     do {
       if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
         chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
       }
       done = this->chunked_handler.process_chunked_content();
     } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
+  }
+}
+
+void
+Http2Stream::request_process_data(IOBufferReader *dechunked_reader, int max_read_len)
+{
+  if (chunked_req) {
+    if (recv_end_stream) {
+      chunked_handler.last_server_event = VC_EVENT_READ_COMPLETE;
+    }
+    chunked_handler.dechunked_reader = dechunked_reader;
+    this->chunked_handler.generate_chunked_content(max_read_len);
   }
 }
 
@@ -804,10 +854,27 @@ Http2Stream::response_is_data_available() const
   return reader ? reader->is_read_avail_more_than(0) : false;
 }
 
+bool
+Http2Stream::request_is_data_available() const
+{
+  IOBufferReader *reader = this->request_get_data_reader();
+  return reader ? reader->is_read_avail_more_than(0) : false;
+}
+
 IOBufferReader *
 Http2Stream::response_get_data_reader() const
 {
-  return (chunked) ? chunked_handler.dechunked_reader : response_reader;
+  return (chunked_resp) ? chunked_handler.dechunked_reader : response_reader;
+}
+
+IOBufferReader *
+Http2Stream::request_get_data_reader() const
+{
+  if (chunked_req) {
+    return (read_vio.ndone >= offset_to_chunked) ? chunked_handler.chunked_reader : request_reader;
+  } else {
+    return request_reader;
+  }
 }
 
 void
