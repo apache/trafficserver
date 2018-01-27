@@ -28,8 +28,11 @@
 #include "HQClientSession.h"
 #include "HttpSM.h"
 
-#define HQTransDebug(fmt, ...) \
-  Debug("hq_trans", "[%" PRIx64 "] [%" PRIx32 "] " fmt, static_cast<uint64_t>(static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection*>(this->parent->get_netvc()))->connection_id()), this->get_transaction_id(), ##__VA_ARGS__)
+#define HQTransDebug(fmt, ...)                                                                                                \
+  Debug("hq_trans", "[%" PRIx64 "] [%" PRIx32 "] " fmt,                                                                       \
+        static_cast<uint64_t>(                                                                                                \
+          static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->parent->get_netvc()))->connection_id()), \
+        this->get_transaction_id(), ##__VA_ARGS__)
 
 // static void
 // dump_io_buffer(IOBufferReader *reader)
