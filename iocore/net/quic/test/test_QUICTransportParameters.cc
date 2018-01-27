@@ -43,7 +43,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
       0x0a, 0x0b, 0x0c, 0x0d, // value
       0x00, 0x03,             // parameter id
       0x00, 0x02,             // length of value
-      0xab, 0xcd,             // value
+      0x01, 0x23,             // value
     };
 
     QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
@@ -67,7 +67,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
 
     data = params_in_ch.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
     CHECK(len == 2);
-    CHECK(memcmp(data, "\xab\xcd", 2) == 0);
+    CHECK(memcmp(data, "\x01\x23", 2) == 0);
 
     data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_PACKET_SIZE, len);
     CHECK(len == 0);
@@ -145,7 +145,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
                      0x12, 0x34, 0x56, 0x78, // value
                      0x00, 0x03,             // parameter id
                      0x00, 0x02,             // length of value
-                     0x0a, 0x0b,             // value
+                     0x01, 0x23,             // value
                      0x00, 0x06,             // parameter id
                      0x00, 0x10,             // length of value
                      0x00, 0x10, 0x20, 0x30, // value
@@ -168,7 +168,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
 
     data = params_in_ee.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
     CHECK(len == 2);
-    CHECK(memcmp(data, "\x0a\x0b", 2) == 0);
+    CHECK(memcmp(data, "\x01\x23", 2) == 0);
 
     data = params_in_ee.getAsBytes(QUICTransportParameterId::STATELESS_RESET_TOKEN, len);
     CHECK(len == 16);
