@@ -176,7 +176,6 @@ public:
   // QUICConnection
   QUICConnectionId original_connection_id() override;
   QUICConnectionId connection_id() override;
-  void reset_connection_id(QUICConnectionId cid) override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;

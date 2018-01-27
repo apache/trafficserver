@@ -40,11 +40,6 @@ public:
   virtual QUICConnectionId connection_id()          = 0;
 
   /*
-   * Server chooses a new value for the connection ID and client needs to reset it.
-   */
-  virtual void reset_connection_id(QUICConnectionId cid) = 0;
-
-  /*
    * Retruns the maximum packet size at the time called
    *
    * The size depends on PMTU.

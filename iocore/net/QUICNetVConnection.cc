@@ -187,12 +187,6 @@ QUICNetVConnection::connection_id()
   return this->_quic_connection_id;
 }
 
-void
-QUICNetVConnection::reset_connection_id(QUICConnectionId cid)
-{
-  this->_quic_connection_id = cid;
-}
-
 uint32_t
 QUICNetVConnection::pmtu()
 {
@@ -1038,6 +1032,19 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     result = QUICPacketCreationResult::NOT_READY;
     return quic_packet;
   }
+
+  if (this->direction() == NET_VCONNECTION_OUT) {
+    // Reset CID if a server sent back a new CID
+    // FIXME This should happen only once
+    IOBufferBlock *block = udp_packet->getIOBlockChain();
+    if (QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(block->buf()))) {
+      QUICConnectionId cid = QUICPacket::connection_id(reinterpret_cast<const uint8_t *>(block->buf()));
+      if (this->_quic_connection_id != cid) {
+        this->_quic_connection_id = cid;
+      }
+    }
+  }
+
   net_activity(this, this_ethread());
 
   // Create a QUIC packet

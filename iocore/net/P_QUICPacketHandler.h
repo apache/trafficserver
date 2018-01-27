@@ -39,7 +39,7 @@ public:
 
 protected:
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
-  static bool _read_connection_id(QUICConnectionId &cid, IOBufferBlock *block);
+  static QUICConnectionId _read_connection_id(IOBufferBlock *block);
 
   virtual void _recv_packet(int event, UDPPacket *udpPacket) = 0;
 };

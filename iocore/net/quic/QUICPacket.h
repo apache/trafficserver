@@ -220,6 +220,8 @@ public:
   const uint8_t *payload() const;
   bool is_retransmittable() const;
 
+  static QUICConnectionId connection_id(const uint8_t *packet);
+
   /*
    * Size of whole QUIC packet (header + payload + integrity check)
    */

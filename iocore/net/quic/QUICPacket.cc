@@ -629,6 +629,22 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
   return true;
 }
 
+QUICConnectionId
+QUICPacket::connection_id(const uint8_t *buf)
+{
+  constexpr uint8_t cid_offset = 1;
+  constexpr uint8_t cid_len    = 8;
+  QUICConnectionId cid;
+  if (QUICTypeUtil::has_long_header(buf)) {
+    cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
+  } else {
+    ink_assert(QUICTypeUtil::has_connection_id(buf));
+    cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
+  }
+
+  return cid;
+}
+
 //
 // QUICPacketFactory
 //
