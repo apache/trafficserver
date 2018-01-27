@@ -799,7 +799,7 @@ Vol::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 }
 
 TS_INLINE OpenDirEntry *
-Vol::open_read_lock(INK_MD5 *key, EThread *t)
+Vol::open_read_lock(CryptoHash *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
   if (!lock.is_locked())
@@ -969,8 +969,8 @@ struct Cache {
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
                      const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0,
                      int host_len = 0);
-  static void generate_key(INK_MD5 *md5, CacheURL *url);
-  static void generate_key(HttpCacheKey *md5, CacheURL *url, cache_generation_t generation = -1);
+  static void generate_key(CryptoHash *hash, CacheURL *url);
+  static void generate_key(HttpCacheKey *hash, CacheURL *url, cache_generation_t generation = -1);
 
   Action *link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname,
                int host_len);
@@ -1000,9 +1000,9 @@ extern Cache *theStreamCache;
 inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 
 TS_INLINE void
-Cache::generate_key(INK_MD5 *md5, CacheURL *url)
+Cache::generate_key(CryptoHash *hash, CacheURL *url)
 {
-  url->hash_get(md5);
+  url->hash_get(hash);
 }
 
 TS_INLINE void
@@ -1013,9 +1013,9 @@ Cache::generate_key(HttpCacheKey *key, CacheURL *url, cache_generation_t generat
 }
 
 TS_INLINE unsigned int
-cache_hash(const INK_MD5 &md5)
+cache_hash(const CryptoHash &hash)
 {
-  uint64_t f         = md5.fold();
+  uint64_t f         = hash.fold();
   unsigned int mhash = (unsigned int)(f >> 32);
   return mhash;
 }

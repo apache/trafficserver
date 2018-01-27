@@ -276,11 +276,18 @@ struct CacheVol {
 
 // Note : hdr() needs to be 8 byte aligned.
 struct Doc {
-  uint32_t magic;        // DOC_MAGIC
-  uint32_t len;          // length of this fragment (including hlen & sizeof(Doc), unrounded)
-  uint64_t total_len;    // total length of document
-  CryptoHash first_key;  ///< first key in object.
-  CryptoHash key;        ///< Key for this doc.
+  uint32_t magic;     // DOC_MAGIC
+  uint32_t len;       // length of this fragment (including hlen & sizeof(Doc), unrounded)
+  uint64_t total_len; // total length of document
+#ifndef TS_ENABLE_FIPS
+  CryptoHash first_key; ///< first key in object.
+  CryptoHash key;       ///< Key for this doc.
+#else
+  // For FIPS CryptoHash is 256 bits vs. 128, and the 'first_key' must be checked first, so
+  // ensure that the new 'first_key' overlaps the old 'first_key' and that the rest of the data layout
+  // is the same by putting 'key' at the ned.
+  CryptoHash first_key; ///< first key in object.
+#endif
   uint32_t hlen;         ///< Length of this header.
   uint32_t doc_type : 8; ///< Doc type - indicates the format of this structure and its content.
   uint32_t v_major : 8;  ///< Major version number.
@@ -290,6 +297,9 @@ struct Doc {
   uint32_t write_serial;
   uint32_t pinned; // pinned until
   uint32_t checksum;
+#ifdef TS_ENABLE_FIPS
+  CryptoHash key; ///< Key for this doc.
+#endif
 
   uint32_t data_len();
   uint32_t prefix_len();

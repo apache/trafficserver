@@ -168,11 +168,11 @@ Filter objects are created by calling one of the following functions:
 
 filter.accept(string)
     Creates a filter object which accepts events for logging which match the
-    rule specified in ``string``.
+    rule specified in ``string``. Note that you may only have one accept filter.
 
 filter.reject(string)
     Creates a filter object which rejects events for logging which match the
-    rule specified in ``string``.
+    rule specified in ``string``. You may have multiple reject filters.
 
 filter.wipe(string)
     Creates a filter object which clears the values of query parameters listed
@@ -237,10 +237,11 @@ supported at this time.
 
 .. note::
 
-    It may be tempting to attach multiple Filters to a log object to accept or
+    It may be tempting to attach multiple Filters to a log object
     reject multiple log fields (in lieu of providing a single comma separated list
-    to a single Filter). Avoid this temptation and use a comma separated list
-    instead. Attaching multiple filters does the opposite of what you'd
+    to a single Filter). Avoid this temptation and use a comma separated list of reject objects
+    instead. Remember that you may not have multiple accept filter objects.
+    Attaching multiple filters does the opposite of what you'd
     expect. If, for example, we had 2 accept log filters, each disjoint from the other,
     nothing will ever get logged on the given log object.
 
@@ -314,7 +315,8 @@ RollingOffsetHr     number      Specifies an hour (from 0 to 23) at which log
 RollingSizeMb       number      Size, in megabytes, at which log files are
                                 rolled.
 Filters             array of    The optional list of filter objects which
-                    filters     restrict the individual events logged.
+                    filters     restrict the individual events logged. The array
+                                may only contain one accept filter.
 CollationHosts      array of    If present, one or more strings specifying the
                     strings     log collation hosts to which logs should be
                                 delivered, each in the form of "<ip>:<port>".

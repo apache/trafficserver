@@ -53,7 +53,7 @@ enum CacheInfoMagic {
 };
 
 struct CacheInfo {
-  INK_MD5 cache_key;
+  CryptoHash cache_key;
   CacheFragType frag_type;
   char *hostname;
   int len;

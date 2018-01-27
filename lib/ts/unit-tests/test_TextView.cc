@@ -56,8 +56,18 @@ TEST_CASE("TextView Trimming", "[libts][TextView]")
   REQUIRE("Evil Dave Rulz" == ts::TextView(tv).trim(" ."));
 }
 
+TEST_CASE("TextView Find", "[libts][TextView]")
+{
+  ts::TextView addr{"172.29.145.87:5050"};
+  REQUIRE(addr.find(':') == 13);
+  REQUIRE(addr.rfind(':') == 13);
+  REQUIRE(addr.find('.') == 3);
+  REQUIRE(addr.rfind('.') == 10);
+}
+
 TEST_CASE("TextView Affixes", "[libts][TextView]")
 {
+  ts::TextView s; // scratch.
   ts::TextView tv1("0123456789;01234567890");
   ts::TextView prefix{tv1.prefix(10)};
 
@@ -101,9 +111,34 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   REQUIRE("956" == t);
 
   t = addr3;
-  ts::TextView s{t.suffix(':')};
-  REQUIRE("5050" == s);
+  ts::TextView sf{t.suffix(':')};
+  REQUIRE("5050" == sf);
   REQUIRE(t == addr3);
+
+  t = addr3;
+  s = t.split_suffix_at(11);
+  REQUIRE("5050" == s);
+  REQUIRE("192.168.1.1" == t);
+
+  t = addr3;
+  s = t.split_suffix_at(':');
+  REQUIRE("5050" == s);
+  REQUIRE("192.168.1.1" == t);
+
+  t = addr3;
+  s = t.split_suffix_at('Q');
+  REQUIRE(s.empty());
+  REQUIRE(t == addr3);
+
+  t = addr3;
+  s = t.take_suffix_at(':');
+  REQUIRE("5050" == s);
+  REQUIRE("192.168.1.1" == t);
+
+  t = addr3;
+  s = t.take_suffix_at('Q');
+  REQUIRE(s == addr3);
+  REQUIRE(t.empty());
 }
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")

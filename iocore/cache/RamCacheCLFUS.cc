@@ -49,7 +49,7 @@
 #define REQUEUE_LIMIT 100
 
 struct RamCacheCLFUSEntry {
-  INK_MD5 key;
+  CryptoHash key;
   uint32_t auxkey1;
   uint32_t auxkey2;
   uint64_t hits;
@@ -76,9 +76,10 @@ struct RamCacheCLFUS : public RamCache {
   int64_t objects;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
-  int put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
-  int fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) override;
+  int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
+  int put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0,
+          uint32_t auxkey2 = 0) override;
+  int fixup(const CryptoHash *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) override;
   int64_t size() const override;
 
   void init(int64_t max_bytes, Vol *vol) override;
@@ -244,7 +245,7 @@ check_accounting(RamCacheCLFUS *c)
 #endif
 
 int
-RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
+RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
 {
   if (!max_bytes) {
     return 0;
@@ -464,7 +465,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       // store transient data for lock release
       Ptr<IOBufferData> edata = e->data;
       uint32_t elen           = e->len;
-      INK_MD5 key             = e->key;
+      CryptoHash key          = e->key;
       MUTEX_UNTAKE_LOCK(vol->mutex, thread);
       b           = (char *)ats_malloc(l);
       bool failed = false;
@@ -581,7 +582,7 @@ void RamCacheCLFUS::requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims)
 }
 
 int
-RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, uint32_t auxkey1, uint32_t auxkey2)
+RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, uint32_t auxkey1, uint32_t auxkey2)
 {
   if (!max_bytes) {
     return 0;
@@ -758,7 +759,7 @@ Lhistory:
 }
 
 int
-RamCacheCLFUS::fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
+RamCacheCLFUS::fixup(const CryptoHash *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
 {
   if (!max_bytes) {
     return 0;

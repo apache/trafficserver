@@ -49,7 +49,7 @@ int inkcoreapi ink_code_MMH(unsigned char *input, int len, unsigned char *sixtee
   cost.
 
 */
-class MMHContext : public CryptoContext
+class MMHContext : public ats::CryptoContextBase
 {
 protected:
   MMH_CTX _ctx;
