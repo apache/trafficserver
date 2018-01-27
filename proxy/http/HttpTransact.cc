@@ -1423,7 +1423,12 @@ HttpTransact::PPDNSLookup(State *s)
     HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
     s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
     // DNS lookup of parent failed, find next parent or o.s.
-    find_server_and_update_current_info(s);
+    if (find_server_and_update_current_info(s) == HttpTransact::HOST_NONE) {
+      ink_assert(s->current.request_to == HOST_NONE);
+      handle_parent_died(s);
+      return;
+    }
+
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
