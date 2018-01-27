@@ -25,7 +25,7 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_inet.h"
 #include "ts/ParseRules.h"
-#include "ts/ink_code.h"
+#include "ts/CryptoHash.h"
 #include "ts/ink_assert.h"
 #include <fstream>
 #include <ts/TextView.h>
@@ -267,38 +267,35 @@ ats_ip_pton(const ts::string_view &src, sockaddr *ip)
 uint32_t
 ats_ip_hash(sockaddr const *addr)
 {
-  union md5sum {
-    unsigned char c[16];
-    uint32_t i;
-  } zret;
-  zret.i = 0;
-
   if (ats_is_ip4(addr)) {
-    zret.i = ats_ip4_addr_cast(addr);
+    return ats_ip4_addr_cast(addr);
   } else if (ats_is_ip6(addr)) {
-    ink_code_md5(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE, zret.c);
+    CryptoHash hash;
+    CryptoContext().hash_immediate(hash, const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE);
+    return hash.u32[0];
+  } else {
+    // Bad address type.
+    return 0;
   }
-  return zret.i;
 }
 
 uint64_t
 ats_ip_port_hash(sockaddr const *addr)
 {
-  union md5sum {
-    uint64_t i;
-    uint16_t b[4];
-    unsigned char c[16];
-  } zret;
-
-  zret.i = 0;
   if (ats_is_ip4(addr)) {
-    zret.i = (static_cast<uint64_t>(ats_ip4_addr_cast(addr)) << 16) | (ats_ip_port_cast(addr));
+    return (static_cast<uint64_t>(ats_ip4_addr_cast(addr)) << 16) | (ats_ip_port_cast(addr));
   } else if (ats_is_ip6(addr)) {
-    ink_code_md5(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE, zret.c);
-    // now replace the bottom 16bits so we can account for the port.
-    zret.b[3] = ats_ip_port_cast(addr);
+    CryptoHash hash;
+    CryptoContext hash_context;
+    hash_context.update(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE);
+    in_port_t port = ats_ip_port_cast(addr);
+    hash_context.update((uint8_t *)(&port), sizeof(port));
+    hash_context.finalize(hash);
+    return hash.u64[0];
+  } else {
+    // Bad address type.
+    return 0;
   }
-  return zret.i;
 }
 
 int

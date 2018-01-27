@@ -4838,10 +4838,9 @@ HttpSM::do_http_server_open(bool raw)
   if (t_state.txn_conf->origin_max_connections > 0) {
     ConnectionCount *connections = ConnectionCount::getInstance();
 
-    INK_MD5 hostname_hash;
-    MD5Context md5_ctx;
-    md5_ctx.hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
-                           strlen(t_state.current.server->name));
+    CryptoHash hostname_hash;
+    CryptoContext().hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
+                                   strlen(t_state.current.server->name));
 
     if (connections->getCount(t_state.current.server->dst_addr, hostname_hash,
                               (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match) >=
@@ -5299,10 +5298,9 @@ HttpSM::handle_http_server_open()
 {
   // if we were a queued request, we need to decrement the queue size-- as we got a connection
   if (t_state.origin_request_queued) {
-    INK_MD5 hostname_hash;
-    MD5Context md5_ctx;
-    md5_ctx.hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
-                           strlen(t_state.current.server->name));
+    CryptoHash hostname_hash;
+    CryptoContext().hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
+                                   strlen(t_state.current.server->name));
 
     ConnectionCountQueue *waiting_connections = ConnectionCountQueue::getInstance();
     waiting_connections->incrementCount(t_state.current.server->dst_addr, hostname_hash,

@@ -64,7 +64,7 @@ ServerSessionPool::purge()
 }
 
 bool
-ServerSessionPool::match(HttpServerSession *ss, sockaddr const *addr, INK_MD5 const &hostname_hash,
+ServerSessionPool::match(HttpServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
                          TSServerSessionSharingMatchType match_style)
 {
   return TS_SERVER_SESSION_SHARING_MATCH_NONE != match_style && // if no matching allowed, fail immediately.
@@ -92,8 +92,8 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
 }
 
 HSMresult_t
-ServerSessionPool::acquireSession(sockaddr const *addr, INK_MD5 const &hostname_hash, TSServerSessionSharingMatchType match_style,
-                                  HttpSM *sm, HttpServerSession *&to_return)
+ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash,
+                                  TSServerSessionSharingMatchType match_style, HttpSM *sm, HttpServerSession *&to_return)
 {
   HSMresult_t zret = HSM_NOT_FOUND;
   if (TS_SERVER_SESSION_SHARING_MATCH_HOST == match_style) {
@@ -269,10 +269,10 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   HttpServerSession *to_return = nullptr;
   TSServerSessionSharingMatchType match_style =
     static_cast<TSServerSessionSharingMatchType>(sm->t_state.txn_conf->server_session_sharing_match);
-  INK_MD5 hostname_hash;
+  CryptoHash hostname_hash;
   HSMresult_t retval = HSM_NOT_FOUND;
 
-  ink_code_md5((unsigned char *)hostname, strlen(hostname), (unsigned char *)&hostname_hash);
+  CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
 
   // First check to see if there is a server session bound
   //   to the user agent session

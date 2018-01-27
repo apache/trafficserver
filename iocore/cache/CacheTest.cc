@@ -452,7 +452,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
     vols[i].disk = &disk;
     vols[i].len  = DEFAULT_STRIPE_SIZE;
     snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64, 'a' + i, DEFAULT_SKIP, vols[i].len);
-    MD5Context().hash_immediate(vols[i].hash_id, buff, strlen(buff));
+    CryptoContext().hash_immediate(vols[i].hash_id, buff, strlen(buff));
   }
 
   hr1.vol_hash_table = nullptr;
@@ -467,7 +467,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   sample      = vols + sample_idx;
   sample->len = 1024ULL * 1024 * 1024 * (1024 + 128); // 1.1 TB
   snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64, 'a' + sample_idx, DEFAULT_SKIP, sample->len);
-  MD5Context().hash_immediate(sample->hash_id, buff, strlen(buff));
+  CryptoContext().hash_immediate(sample->hash_id, buff, strlen(buff));
   build_vol_hash_table(&hr2);
 
   // See what the difference is
@@ -556,32 +556,32 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   for (int l = 0; l < 10; l++) {
     for (int i = 0; i < 200; i++) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
-      INK_MD5 md5;
+      CryptoHash hash;
 
       d->alloc(BUFFER_SIZE_INDEX_16K);
       data.push_back(make_ptr(d));
-      md5.u64[0] = ((uint64_t)i << 32) + i;
-      md5.u64[1] = ((uint64_t)i << 32) + i;
-      cache->put(&md5, data[i].get(), 1 << 15);
+      hash.u64[0] = ((uint64_t)i << 32) + i;
+      hash.u64[1] = ((uint64_t)i << 32) + i;
+      cache->put(&hash, data[i].get(), 1 << 15);
       // More hits for the first 10.
       for (int j = 0; j <= i && j < 10; j++) {
         Ptr<IOBufferData> data;
-        INK_MD5 md5;
+        CryptoHash hash;
 
-        md5.u64[0] = ((uint64_t)j << 32) + j;
-        md5.u64[1] = ((uint64_t)j << 32) + j;
-        cache->get(&md5, &data);
+        hash.u64[0] = ((uint64_t)j << 32) + j;
+        hash.u64[1] = ((uint64_t)j << 32) + j;
+        cache->get(&hash, &data);
       }
     }
   }
 
   for (int i = 0; i < 10; i++) {
-    INK_MD5 md5;
+    CryptoHash hash;
     Ptr<IOBufferData> data;
 
-    md5.u64[0] = ((uint64_t)i << 32) + i;
-    md5.u64[1] = ((uint64_t)i << 32) + i;
-    if (!cache->get(&md5, &data)) {
+    hash.u64[0] = ((uint64_t)i << 32) + i;
+    hash.u64[1] = ((uint64_t)i << 32) + i;
+    if (!cache->get(&hash, &data)) {
       pass = false;
     }
   }
@@ -597,15 +597,15 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   data.clear();
   int misses = 0;
   for (int i = 0; i < sample_size; i++) {
-    INK_MD5 md5;
-    md5.u64[0] = ((uint64_t)r[i] << 32) + r[i];
-    md5.u64[1] = ((uint64_t)r[i] << 32) + r[i];
+    CryptoHash hash;
+    hash.u64[0] = ((uint64_t)r[i] << 32) + r[i];
+    hash.u64[1] = ((uint64_t)r[i] << 32) + r[i];
     Ptr<IOBufferData> get_data;
-    if (!cache->get(&md5, &get_data)) {
+    if (!cache->get(&hash, &get_data)) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_16K);
       data.push_back(make_ptr(d));
-      cache->put(&md5, data.back().get(), 1 << 15);
+      cache->put(&hash, data.back().get(), 1 << 15);
       if (i >= sample_size / 2) {
         misses++; // Sample last half of the gets.
       }
@@ -617,15 +617,15 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   data.clear();
   misses = 0;
   for (int i = 0; i < sample_size; i++) {
-    INK_MD5 md5;
-    md5.u64[0] = ((uint64_t)r[i] << 32) + r[i];
-    md5.u64[1] = ((uint64_t)r[i] << 32) + r[i];
+    CryptoHash hash;
+    hash.u64[0] = ((uint64_t)r[i] << 32) + r[i];
+    hash.u64[1] = ((uint64_t)r[i] << 32) + r[i];
     Ptr<IOBufferData> get_data;
-    if (!cache->get(&md5, &get_data)) {
+    if (!cache->get(&hash, &get_data)) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_8K + (r[i] % 3));
       data.push_back(make_ptr(d));
-      cache->put(&md5, data.back().get(), d->block_size());
+      cache->put(&hash, data.back().get(), d->block_size());
       if (i >= sample_size / 2) {
         misses++; // Sample last half of the gets.
       }

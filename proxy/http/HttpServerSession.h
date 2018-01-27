@@ -137,7 +137,7 @@ public:
     return server_vc->get_remote_endpoint();
   }
 
-  INK_MD5 hostname_hash;
+  CryptoHash hostname_hash;
 
   int64_t con_id;
   int transact_count;
@@ -209,7 +209,7 @@ inline void
 HttpServerSession::attach_hostname(const char *hostname)
 {
   if (CRYPTO_HASH_ZERO == hostname_hash) {
-    ink_code_md5((unsigned char *)hostname, strlen(hostname), (unsigned char *)&hostname_hash);
+    CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
 }
 #endif

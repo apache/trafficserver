@@ -1,6 +1,6 @@
 /** @file
 
-  MD5 support class.
+  SHA256 support class.
 
   @section license License
 
@@ -27,23 +27,30 @@
 #include "ts/ink_code.h"
 #include "ts/ink_defs.h"
 #include "ts/CryptoHash.h"
+#include <openssl/sha.h>
 
-#ifndef TS_ENABLE_FIPS
+#ifdef TS_ENABLE_FIPS
 
-class MD5Context : public ats::CryptoContextBase
+class SHA256Context : public ats::CryptoContextBase
 {
 protected:
-  MD5_CTX _ctx;
+  SHA256_CTX _ctx;
 
 public:
-  MD5Context();
+  SHA256Context() { SHA256_Init(&_ctx); }
   /// Update the hash with @a data of @a length bytes.
-  virtual bool update(void const *data, int length);
+  virtual bool
+  update(void const *data, int length)
+  {
+    return SHA256_Update(&_ctx, data, length);
+  }
   /// Finalize and extract the @a hash.
-  virtual bool finalize(CryptoHash &hash);
+  virtual bool
+  finalize(CryptoHash &hash)
+  {
+    return SHA256_Final(hash.u8, &_ctx);
+  }
 };
 
-typedef CryptoHash INK_MD5;
 #endif
-
 #endif

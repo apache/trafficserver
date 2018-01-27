@@ -28,7 +28,6 @@
  ***************************************************************************/
 #include "ts/ink_platform.h"
 #include "ts/CryptoHash.h"
-#include "ts/INK_MD5.h"
 #include "P_EventSystem.h"
 #include "LogUtils.h"
 #include "LogField.h"
@@ -338,7 +337,7 @@ LogObject::compute_signature(LogFormat *format, char *filename, unsigned int fla
                                    flags & LogObject::BINARY ? "B" : (flags & LogObject::WRITES_TO_PIPE ? "P" : "A"), NULL);
 
     CryptoHash hash;
-    MD5Context().hash_immediate(hash, buffer, buf_size - 1);
+    CryptoContext().hash_immediate(hash, buffer, buf_size - 1);
     signature = hash.fold();
 
     ats_free(buffer);
