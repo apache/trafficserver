@@ -113,6 +113,7 @@ extern RecRawStatBlock *net_rsb;
 #include "P_QUICNetVConnection.h"
 #include "P_QUICNetProcessor.h"
 #include "P_QUICPacketHandler.h"
+#include "P_QUICNet.h"
 #endif
 // #include "P_QUICCertLookup.h"
 

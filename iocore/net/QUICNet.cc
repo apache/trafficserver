@@ -23,20 +23,95 @@
 
 #include "P_Net.h"
 
-QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m)
-  : Continuation(m.get()), net_handler(nullptr)
+QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m) : Continuation(m.get()), net_handler(nullptr)
 {
-  SET_HANDLER(&PollCont::pollEvent);
+  SET_HANDLER(&QUICPollCont::pollEvent);
 }
 
-QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh)
-  : Continuation(m.get()), net_handler(nh)
+QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh) : Continuation(m.get()), net_handler(nh)
 {
   SET_HANDLER(&QUICPollCont::pollEvent);
 }
 
 QUICPollCont::~QUICPollCont()
 {
+}
+
+void
+QUICPollCont::_process_long_header_packet(UDPPacketInternal *p, NetHandler *nh)
+{
+  QUICNetVConnection *vc;
+  QUICPacketType ptype;
+  uint8_t *buf;
+
+  // FIXME: VC is nullptr ?
+  vc  = static_cast<QUICNetVConnection *>(p->data.ptr);
+  buf = (uint8_t *)p->getIOBlockChain()->buf();
+  if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
+    // TODO: Some packets may not have connection id
+    p->free();
+    return;
+  }
+
+  ptype = static_cast<QUICPacketType>(buf[0] & 0x7f);
+  switch (ptype) {
+  case QUICPacketType::INITIAL:
+    vc->read.triggered = 1;
+    vc->handle_received_packet(p);
+    this->mutex->thread_holding->schedule_imm(vc);
+    return;
+  case QUICPacketType::ZERO_RTT_PROTECTED:
+  // TODO:: do something ?
+  // break;
+  case QUICPacketType::HANDSHAKE:
+  default:
+    // Just Pass Through
+    if (vc) {
+      vc->read.triggered = 1;
+      vc->handle_received_packet(p);
+    } else {
+      longInQueue.push(p);
+    }
+
+    // Push QUICNetVC into nethandler's enabled list
+    if (vc != nullptr) {
+      int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
+      if (!isin) {
+        nh->read_enable_list.push(vc);
+      }
+    }
+    break;
+  }
+}
+
+void
+QUICPollCont::_process_short_header_packet(UDPPacketInternal *p, NetHandler *nh)
+{
+  QUICNetVConnection *vc;
+  uint8_t *buf;
+
+  vc  = static_cast<QUICNetVConnection *>(p->data.ptr);
+  buf = (uint8_t *)p->getIOBlockChain()->buf();
+  if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
+    // TODO: Some packets may not have connection id
+    p->free();
+    return;
+  }
+
+  if (vc) {
+    vc->read.triggered = 1;
+    vc->handle_received_packet(p);
+  } else {
+    shortInQueue.push(p);
+  }
+
+  // Push QUICNetVC into nethandler's enabled list
+  if (vc != nullptr) {
+    int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
+    if (!isin) {
+      nh->read_enable_list.push(vc);
+    }
+  }
 }
 
 //
@@ -47,15 +122,10 @@ QUICPollCont::~QUICPollCont()
 int
 QUICPollCont::pollEvent(int, Event *)
 {
-  UnixUDPConnection *uc;
-  QUICPacketHandler *ph;
-  QUICNetVConnection *vc;
-  QUICConnectionId cid;
+  ink_assert(this->mutex->thread_holding == this_thread());
   uint8_t *buf;
-  uint8_t ptype;
-  UDPPacket *packet_r;
   UDPPacketInternal *p = nullptr;
-  NetHandler *nh       = get_NetHandler(t);
+  NetHandler *nh       = get_NetHandler(this->mutex->thread_holding);
 
   // Process the ASLL
   SList(UDPPacketInternal, alink) aq(inQueue.popall());
@@ -65,50 +135,14 @@ QUICPollCont::pollEvent(int, Event *)
   }
 
   while ((p = result.pop())) {
-    uc  = static_cast<UnixUDPConnection *>(p->getConnection());
-    ph  = static_cast<QUICPacketHandler *>(uc->continuation);
-    vc  = static_cast<QUICNetVConnection *>(p->data.ptr);
     buf = (uint8_t *)p->getIOBlockChain()->buf();
-    cid = QUICPacket::connection_id(buf)
-    if (buf[0] & 0x80) { // Long Header Packet with Connection ID, has a valid type value.
-      ptype = buf[0] & 0x7f;
-      if (ptype == QUICPacketType::INITIAL) { // Initial Packet
-        vc->read.triggered = 1;
-        vc->push_packet(p);
-        // reschedule the vc and callback vc->acceptEvent
-        this_ethread()->schedule_imm(vc);
-      } elseif (ptype == QUICPacketType::ZERO_RTT_PROTECTED) { // 0-RTT Packet
-        // TODO:
-      } elseif (ptype == QUICPacketType::HANDSHAKE) { // Handshake Packet
-        if (vc) {
-          vc->read.triggered = 1;
-          vc->push_packet(p);
-        } else {
-          longInQueue.push(p);
-        }
-      } else {
-        ink_assert(!"not reached!");
-      }
-    } elseif (buf[0] & 0x40) { // Short Header Packet with Connection ID, has a valid type value.
-      if (vc) {
-        vc->read.triggered = 1;
-        vc->push_packet(p);
-      } else {
-        shortInQueue.push(p);
-      }
-    } else {
-      ink_assert(!"not reached!");
-    }
-
-    // Push QUICNetVC into nethandler's enabled list
-    if (vc != nullptr) {
-      int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
-      if (!isin) {
-        nh->read_enable_list.push(vc);
-      }
+    if (QUICTypeUtil::has_long_header(buf)) { // Long Header Packet with Connection ID, has a valid type value.
+      this->_process_long_header_packet(p, nh);
+    } else { // Short Header Packet with Connection ID, has a valid type value.
+      this->_process_short_header_packet(p, nh);
     }
   }
-  
+
   return EVENT_CONT;
 }
 
@@ -122,4 +156,3 @@ initialize_thread_for_quic_net(EThread *thread)
 
   thread->schedule_every(quicpc, -9);
 }
-

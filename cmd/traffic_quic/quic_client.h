@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "P_Net.h"
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
 #include "P_QUICNetProcessor.h"

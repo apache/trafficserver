@@ -145,6 +145,9 @@ public:
   QUICNetVConnection() {}
   void init(QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *, QUICConnectionTable *ctable = nullptr);
 
+  // accept new conn_id
+  int acceptEvent(int event, Event *e);
+
   // UnixNetVConnection
   void reenable(VIO *vio) override;
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;

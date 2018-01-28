@@ -1800,6 +1800,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Do the inits for NetProcessors that use ET_NET threads. MUST be before starting those threads.
   netProcessor.init();
   init_HttpProxyServer();
+#if TS_USE_QUIC == 1
+  // OK, pushing a spawn scheduling here
+  quic_NetProcessor.init();
+#endif
 
   // !! ET_NET threads start here !!
   // This means any spawn scheduling must be done before this point.

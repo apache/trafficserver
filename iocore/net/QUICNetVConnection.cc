@@ -117,6 +117,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
     free(t);
     return EVENT_DONE;
   }
+  this->read.enabled = 1;
 
   // Handshake callback handler.
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);

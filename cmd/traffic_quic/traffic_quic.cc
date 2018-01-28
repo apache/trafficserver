@@ -78,6 +78,8 @@ main(int argc, const char **argv)
   SSLInitializeLibrary();
   SSLConfig::startup();
 
+  quic_NetProcessor.init();
+
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(THREADS);
   udpNet.start(1, stacksize);
