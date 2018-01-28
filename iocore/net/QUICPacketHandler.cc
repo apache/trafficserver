@@ -126,27 +126,28 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
   IOBufferBlock *block = udp_packet->getIOBlockChain();
 
-  QUICConnectionId cid;
-  if (QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(block->buf()))) {
-    cid = this->_read_connection_id(block);
-  } else {
-    // TODO: find cid from five tuples
-    ink_assert(false);
+  if (is_debug_tag_set("quic_sec")) {
+    ip_port_text_buffer ipb;
+    if (QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(block->buf()))) {
+      QUICConnectionId cid = this->_read_connection_id(block);
+      Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
+            ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+    } else {
+      Debug("quic_sec", "received packet from %s, size=%" PRId64 "without CID",
+            ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+    }
   }
 
-  ip_port_text_buffer ipb;
-  Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
-        ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+  QUICConnection *qc =
+    this->_ctable.lookup(reinterpret_cast<const uint8_t *>(block->buf()), {udp_packet->from, udp_packet->to, SOCK_DGRAM});
 
-  QUICNetVConnection *vc = nullptr;
-  vc                     = this->_connections.get(cid);
-
-  if (!vc) {
+  if (!qc) {
     Connection con;
     con.setRemote(&udp_packet->from.sa);
 
     // Send stateless reset if the packet is not a initial packet
     if (!QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) {
+      QUICConnectionId cid = this->_read_connection_id(block);
       QUICStatelessResetToken token;
       {
         QUICConfig::scoped_config params;
@@ -158,8 +159,9 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     // Create a new NetVConnection
-    vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
-    vc->init(cid, udp_packet->getConnection(), this);
+    QUICConnectionId original_cid = this->_read_connection_id(block);
+    QUICNetVConnection *vc        = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
+    vc->init(original_cid, udp_packet->getConnection(), this, &this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
@@ -172,18 +174,19 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = udp_packet->from.sa.sa_family;
 
-    this->_connections.put(cid, vc);
     this->action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
+    qc = vc;
   }
 
-  if (vc->is_closed()) {
-    this->_connections.put(vc->connection_id(), nullptr);
+  if (qc->is_closed()) {
+    this->_ctable.erase(qc->connection_id(), qc);
     // FIXME QUICNetVConnection is NOT freed to prevent crashes. #2674
     // QUICNetVConnections are going to be freed by QUICNetHandler
     // vc->free(vc->thread);
   } else {
-    vc->push_packet(udp_packet);
-    eventProcessor.schedule_imm(vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
+    qc->handle_received_packet(udp_packet);
+    // FIXME This cast is temporal. It'll be removed when we introduce QUICNetHandler.
+    eventProcessor.schedule_imm(static_cast<QUICNetVConnection *>(qc), ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
   }
 }
 
@@ -191,19 +194,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 void
 QUICPacketHandlerIn::send_packet(const QUICPacket &packet, QUICNetVConnection *vc)
 {
-  // TODO: remove a connection which is created by Client Initial
-  //       or update key to new one
-  if (!this->_connections.get(packet.connection_id())) {
-    this->_connections.put(packet.connection_id(), vc);
-  }
-
   this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu());
-}
-
-void
-QUICPacketHandlerIn::registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc)
-{
-  this->_connections.put(id, vc);
 }
 
 //
@@ -252,13 +243,6 @@ QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *
 }
 
 void
-QUICPacketHandlerOut::registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc)
-{
-  // do nothing
-  ink_assert(false);
-}
-
-void
 QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
 {
   IOBufferBlock *block = udp_packet->getIOBlockChain();
@@ -269,6 +253,6 @@ QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
   Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
         ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
 
-  this->_vc->push_packet(udp_packet);
+  this->_vc->handle_received_packet(udp_packet);
   eventProcessor.schedule_imm(this->_vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
 }

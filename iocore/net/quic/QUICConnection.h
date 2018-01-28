@@ -31,6 +31,7 @@
 
 class QUICApplication;
 class QUICStreamManager;
+class UDPPacket;
 class SSLNextProtocolSet;
 
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
@@ -62,4 +63,6 @@ public:
   virtual void close(QUICConnectionErrorUPtr error)         = 0;
   virtual QUICPacketNumber largest_received_packet_number() = 0;
   virtual QUICPacketNumber largest_acked_packet_number()    = 0;
+  virtual void handle_received_packet(UDPPacket *packeet)   = 0;
+  virtual bool is_closed()                                  = 0;
 };

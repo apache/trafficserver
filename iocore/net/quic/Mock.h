@@ -261,6 +261,17 @@ public:
     return &_stream_manager;
   }
 
+  bool
+  is_closed() override
+  {
+    return false;
+  }
+
+  void
+  handle_received_packet(UDPPacket *) override
+  {
+  }
+
   int _transmit_count   = 0;
   int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;

@@ -43,6 +43,7 @@
 #include "ts/List.h"
 
 #include "quic/QUICConnection.h"
+#include "quic/QUICConnectionTable.h"
 #include "quic/QUICVersionNegotiator.h"
 #include "quic/QUICPacket.h"
 #include "quic/QUICFrame.h"
@@ -142,7 +143,7 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
 
 public:
   QUICNetVConnection() {}
-  void init(QUICConnectionId cid, UDPConnection *, QUICPacketHandler *);
+  void init(QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *, QUICConnectionTable *ctable = nullptr);
 
   // UnixNetVConnection
   void reenable(VIO *vio) override;
@@ -159,7 +160,6 @@ public:
   int state_connection_draining(int event, Event *data);
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
-  void push_packet(UDPPacket *packet);
   void free(EThread *t) override;
 
   UDPConnection *get_udp_con();
@@ -171,7 +171,6 @@ public:
 
   // QUICNetVConnection
   void registerNextProtocolSet(SSLNextProtocolSet *s);
-  bool is_closed();
 
   // QUICConnection
   QUICConnectionId original_connection_id() override;
@@ -186,6 +185,8 @@ public:
   void close(QUICConnectionErrorUPtr error) override;
   QUICPacketNumber largest_received_packet_number() override;
   QUICPacketNumber largest_acked_packet_number() override;
+  void handle_received_packet(UDPPacket *packet) override;
+  bool is_closed() override;
 
   // QUICConnection (QUICPacketTransmitter)
   virtual uint32_t transmit_packet(QUICPacketUPtr packet) override;
@@ -238,6 +239,7 @@ private:
   QUICCongestionController *_congestion_controller  = nullptr;
   QUICRemoteFlowController *_remote_flow_controller = nullptr;
   QUICLocalFlowController *_local_flow_controller   = nullptr;
+  QUICConnectionTable *_ctable                      = nullptr;
 
   CountQueue<UDPPacket> _packet_recv_queue;
   CountQueue<QUICPacket> _packet_send_queue;

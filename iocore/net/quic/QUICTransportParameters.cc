@@ -26,8 +26,8 @@
 #include "QUICGlobals.h"
 #include "QUICTransportParameters.h"
 #include "QUICConnection.h"
+#include "QUICHandshake.h"
 #include "QUICDebugNames.h"
-#include "../P_QUICNetVConnection.h"
 
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 static constexpr char tag[]                            = "quic_handshake";

@@ -60,7 +60,8 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 // XXX This might be called on ET_UDP thread
 void
-QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler)
+QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler,
+                         QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
   this->_packet_transmitter_mutex    = new_ProxyMutex();
@@ -69,6 +70,8 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
   this->_packet_handler              = packet_handler;
   this->_original_quic_connection_id = original_cid;
   this->_quic_connection_id.randomize();
+  this->_ctable = ctable;
+  this->_ctable->insert(this->_quic_connection_id, this);
   QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(this->_original_quic_connection_id),
                static_cast<uint64_t>(this->_quic_connection_id));
 }
@@ -129,6 +132,12 @@ void
 QUICNetVConnection::free(EThread *t)
 {
   QUICConDebug("Free connection");
+
+  this->_ctable->erase(this->_original_quic_connection_id, this);
+  this->_ctable->erase(this->_quic_connection_id, this);
+  for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
+    this->_ctable->erase(this->_alt_quic_connection_ids[i].id, this);
+  }
 
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
@@ -292,7 +301,7 @@ QUICNetVConnection::get_packet_transmitter_mutex()
 }
 
 void
-QUICNetVConnection::push_packet(UDPPacket *packet)
+QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
   this->_packet_recv_queue.enqueue(packet);
 }
@@ -1276,10 +1285,10 @@ QUICNetVConnection::_update_alt_connection_ids(uint8_t chosen)
     conn_id.randomize();
     token.generate(conn_id, params->server_id());
     this->_alt_quic_connection_ids[index] = {this->_alt_quic_connection_id_seq_num + i, conn_id, token};
-    this->_packet_handler->registerAltConnectionId(conn_id, this);
     this->transmit_frame(QUICFrameFactory::create_new_connection_id_frame(this->_alt_quic_connection_ids[index].seq_num,
                                                                           this->_alt_quic_connection_ids[index].id,
                                                                           this->_alt_quic_connection_ids[index].token));
+    this->_ctable->insert(conn_id, this);
   }
   this->_alt_quic_connection_id_seq_num += count;
 }

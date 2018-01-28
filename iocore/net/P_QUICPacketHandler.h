@@ -27,6 +27,7 @@
 #include "P_Connection.h"
 #include "P_NetAccept.h"
 #include "quic/QUICTypes.h"
+#include "quic/QUICConnectionTable.h"
 
 class QUICNetVConnection;
 class QUICPacket;
@@ -34,8 +35,7 @@ class QUICPacket;
 class QUICPacketHandler
 {
 public:
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc)        = 0;
-  virtual void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc) = 0;
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc) = 0;
 
 protected:
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
@@ -62,12 +62,11 @@ public:
 
   // QUICPacketHandler
   virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc) override;
-  virtual void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc) override;
 
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
 
-  Map<int64_t, QUICNetVConnection *> _connections;
+  QUICConnectionTable _ctable;
   SSL_CTX *_ssl_ctx;
 };
 
@@ -86,7 +85,6 @@ public:
 
   // QUICPacketHandler
   virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc) override;
-  virtual void registerAltConnectionId(QUICConnectionId id, QUICNetVConnection *vc) override;
 
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
