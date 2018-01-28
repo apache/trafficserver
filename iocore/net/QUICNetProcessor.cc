@@ -50,6 +50,16 @@ QUICNetProcessor::cleanup()
   SSL_CTX_free(this->_ssl_ctx);
 }
 
+void
+QUICNetProcessor::init()
+{
+  // first we allocate a QUICPollCont.
+  this->quicPollCont_offset = eventProcessor.allocate(sizeof(QUICPollCont));
+
+  // schedule event
+  eventProcessor.schedule_spawn(&initialize_thread_for_quic_net, ET_NET);
+}
+
 int
 QUICNetProcessor::start(int, size_t stacksize)
 {

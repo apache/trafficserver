@@ -56,6 +56,7 @@ public:
   QUICNetProcessor();
   virtual ~QUICNetProcessor();
 
+  void init() override;
   virtual int start(int, size_t stacksize) override;
   void cleanup();
   // TODO: refactoring NetProcessor::connect_re and UnixNetProcessor::connect_re_internal

@@ -125,7 +125,8 @@ void
 QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
   EThread *eth;
-  IOBufferBlock *block = udp_packet->getIOBlockChain();
+  QUICNetVConnection *vc = nullptr;
+  IOBufferBlock *block   = udp_packet->getIOBlockChain();
 
   if (is_debug_tag_set("quic_sec")) {
     ip_port_text_buffer ipb;
@@ -163,7 +164,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
     // Create a new NetVConnection
     QUICConnectionId original_cid = this->_read_connection_id(block);
-    QUICNetVConnection *vc        = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
+    vc                            = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
     vc->init(original_cid, udp_packet->getConnection(), this, &this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
@@ -173,16 +174,21 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     vc->action_     = *this->action_;
     vc->set_is_transparent(this->opt.f_inbound_transparent);
     vc->set_context(NET_VCONNECTION_IN);
+    vc->read.triggered = 1;
+    vc->start(this->_ssl_ctx);
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = udp_packet->from.sa.sa_family;
 
     qc = vc;
+  } else {
+    vc  = static_cast<QUICNetVConnection *>(qc);
+    eth = vc->thread;
   }
 
   // Push the packet into QUICPollCont
   udp_packet->data.ptr = vc;
-  get_QUICPollCont(eth)->inQueue.push(udp_packet);
-
+  // should we use dynamic_cast ??
+  get_QUICPollCont(eth)->inQueue.push(static_cast<UDPPacketInternal *>(udp_packet));
 }
 
 // TODO: Should be called via eventProcessor?

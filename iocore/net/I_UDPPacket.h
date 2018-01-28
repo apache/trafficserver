@@ -63,7 +63,7 @@ public:
 
   int from_size;
   typedef union udppacket_data {
-    void    *ptr;
+    void *ptr;
     uint32_t u32;
     uint64_t u64;
   } udppacket_data_t;

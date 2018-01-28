@@ -32,6 +32,8 @@
 class NetHandler;
 typedef int (NetHandler::*NetContHandler)(int, void *);
 
+void initialize_thread_for_quic_net(EThread *thread);
+
 struct QUICPollCont : public Continuation {
   NetHandler *net_handler;
   PollDescriptor *pollDescriptor;
@@ -49,6 +51,10 @@ public:
   Que(UDPPacket, link) longInQueue;
   // Internal Queue to save Short Header Packet
   Que(UDPPacket, link) shortInQueue;
+
+private:
+  void _process_short_header_packet(UDPPacketInternal *p, NetHandler *nh);
+  void _process_long_header_packet(UDPPacketInternal *p, NetHandler *nh);
 };
 
 static inline QUICPollCont *
