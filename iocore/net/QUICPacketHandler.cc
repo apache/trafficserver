@@ -124,6 +124,7 @@ QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
 void
 QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
+  EThread *eth;
   IOBufferBlock *block = udp_packet->getIOBlockChain();
 
   if (is_debug_tag_set("quic_sec")) {
@@ -158,6 +159,8 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       return;
     }
 
+    eth = eventProcessor.assign_thread(ET_NET);
+
     // Create a new NetVConnection
     QUICConnectionId original_cid = this->_read_connection_id(block);
     QUICNetVConnection *vc        = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
@@ -165,29 +168,21 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
-    vc->mutex       = this->mutex;
+    vc->thread      = eth;
+    vc->mutex       = new_ProxyMutex();
     vc->action_     = *this->action_;
     vc->set_is_transparent(this->opt.f_inbound_transparent);
     vc->set_context(NET_VCONNECTION_IN);
-    vc->read.triggered = 1;
-    vc->start(this->_ssl_ctx);
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = udp_packet->from.sa.sa_family;
 
-    this->action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
     qc = vc;
   }
 
-  if (qc->is_closed()) {
-    this->_ctable.erase(qc->connection_id(), qc);
-    // FIXME QUICNetVConnection is NOT freed to prevent crashes. #2674
-    // QUICNetVConnections are going to be freed by QUICNetHandler
-    // vc->free(vc->thread);
-  } else {
-    qc->handle_received_packet(udp_packet);
-    // FIXME This cast is temporal. It'll be removed when we introduce QUICNetHandler.
-    eventProcessor.schedule_imm(static_cast<QUICNetVConnection *>(qc), ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
-  }
+  // Push the packet into QUICPollCont
+  udp_packet->data.ptr = vc;
+  get_QUICPollCont(eth)->inQueue.push(udp_packet);
+
 }
 
 // TODO: Should be called via eventProcessor?

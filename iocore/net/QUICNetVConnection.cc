@@ -63,7 +63,7 @@ void
 QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler,
                          QUICConnectionTable *ctable)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_packet_transmitter_mutex    = new_ProxyMutex();
   this->_frame_transmitter_mutex     = new_ProxyMutex();
   this->_udp_con                     = udp_con;
@@ -91,6 +91,51 @@ QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 {
   ink_assert(false);
   return nullptr;
+}
+
+int
+QUICNetVConnection::acceptEvent(int event, Event *e)
+{
+  EThread *t    = (e == nullptr) ? this_ethread() : e->ethread;
+  NetHandler *h = get_NetHandler(t);
+
+  MUTEX_TRY_LOCK(lock, h->mutex, t);
+  if (!lock.is_locked()) {
+    if (event == EVENT_NONE) {
+      t->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
+      return EVENT_DONE;
+    } else {
+      e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
+      return EVENT_CONT;
+    }
+  }
+
+  thread = t;
+
+  // Send this NetVC to NetHandler and start to polling read & write event.
+  if (h->startIO(this) < 0) {
+    free(t);
+    return EVENT_DONE;
+  }
+
+  // Handshake callback handler.
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
+
+  // Send this netvc to InactivityCop.
+  nh->startCop(this);
+
+  if (inactivity_timeout_in) {
+    set_inactivity_timeout(inactivity_timeout_in);
+  } else {
+    set_inactivity_timeout(0);
+  }
+
+  if (active_timeout_in) {
+    set_active_timeout(active_timeout_in);
+  }
+
+  action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  return EVENT_DONE;
 }
 
 int
@@ -589,8 +634,7 @@ QUICNetVConnection::get_udp_con()
 void
 QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
-  ink_assert(false);
-
+  this->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
   return;
 }
 
