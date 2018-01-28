@@ -302,4 +302,6 @@ private:
   QUICStatelessResetToken _reset_token;
 };
 
+typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);
+
 extern ClassAllocator<QUICNetVConnection> quicNetVCAllocator;

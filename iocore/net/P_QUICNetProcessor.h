@@ -67,6 +67,8 @@ public:
 
   Action *main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt) override;
 
+  off_t quicPollCont_offset;
+
 private:
   QUICNetProcessor(const QUICNetProcessor &);
   QUICNetProcessor &operator=(const QUICNetProcessor &);
