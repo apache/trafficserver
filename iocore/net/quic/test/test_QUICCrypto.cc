@@ -77,28 +77,31 @@ TEST_CASE("QUICCrypto Cleartext", "[quic]")
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t client_hello_len                     = 0;
-  CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0));
+  CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
   std::cout << "Client Hello" << std::endl;
   print_hex(client_hello, client_hello_len);
 
   // Server Hello
   uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t server_hello_len                     = 0;
-  CHECK(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len));
+  CHECK(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
+        SSL_ERROR_WANT_READ);
   std::cout << "Server Hello" << std::endl;
   print_hex(server_hello, server_hello_len);
 
   // Client Fnished
   uint8_t client_finished[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t client_finished_len                     = 0;
-  CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len));
+  CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
+        SSL_ERROR_NONE);
   std::cout << "Client Finished" << std::endl;
   print_hex(client_finished, client_finished_len);
 
   // Post Handshake Msg
   uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t post_handshake_msg_len                     = 0;
-  CHECK(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished, client_finished_len));
+  CHECK(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
+                          client_finished_len) == SSL_ERROR_NONE);
   std::cout << "Post Handshake Message" << std::endl;
   print_hex(post_handshake_msg, post_handshake_msg_len);
 
@@ -163,28 +166,31 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t client_hello_len                     = 0;
-  CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0));
+  CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
   std::cout << "Client Hello" << std::endl;
   print_hex(client_hello, client_hello_len);
 
   // Server Hello
   uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t server_hello_len                     = 0;
-  CHECK(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len));
+  CHECK(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
+        SSL_ERROR_WANT_READ);
   std::cout << "Server Hello" << std::endl;
   print_hex(server_hello, server_hello_len);
 
   // Client Fnished
   uint8_t client_finished[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t client_finished_len                     = 0;
-  CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len));
+  CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
+        SSL_ERROR_NONE);
   std::cout << "Client Finished" << std::endl;
   print_hex(client_finished, client_finished_len);
 
   // Post Handshake Msg
   uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t post_handshake_msg_len                     = 0;
-  CHECK(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished, client_finished_len));
+  CHECK(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
+                          client_finished_len) == SSL_ERROR_NONE);
   std::cout << "Post Handshake Message" << std::endl;
   print_hex(post_handshake_msg, post_handshake_msg_len);
 
