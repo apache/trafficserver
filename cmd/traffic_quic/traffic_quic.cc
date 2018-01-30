@@ -26,6 +26,8 @@
 #include "ts/I_Layout.h"
 #include "ts/I_Version.h"
 
+#include "RecordsConfig.h"
+
 #include "diags.h"
 #include "quic_client.h"
 
@@ -65,6 +67,9 @@ main(int argc, const char **argv)
 
   init_diags(debug_tags, nullptr);
   RecProcessInit(RECM_STAND_ALONE);
+  LibRecordsConfigInit();
+
+  Debug("quic_client", "Load configs from %s", RecConfigReadConfigDir().c_str());
 
   Thread *main_thread = new EThread;
   main_thread->set_specific();

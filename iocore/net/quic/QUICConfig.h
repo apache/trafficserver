@@ -41,16 +41,17 @@ public:
   uint32_t server_id() const;
 
 private:
-  // FIXME Fill appropriate values
-  uint32_t _no_activity_timeout_in         = 30;
-  uint32_t _no_activity_timeout_out        = 30;
-  uint32_t _initial_max_data               = 131072;
-  uint32_t _initial_max_stream_data        = 2048;
+  // FIXME Fill appropriate default values in RecordsConfig.cc
+  uint32_t _no_activity_timeout_in  = 0;
+  uint32_t _no_activity_timeout_out = 0;
+  uint32_t _initial_max_data        = 0;
+  uint32_t _initial_max_stream_data = 0;
+  uint32_t _server_id               = 0;
+
   uint32_t _initial_max_stream_id_bidi_in  = 100;
   uint32_t _initial_max_stream_id_bidi_out = 101;
   uint32_t _initial_max_stream_id_uni_in   = 102;
   uint32_t _initial_max_stream_id_uni_out  = 103;
-  uint32_t _server_id                      = 0;
 };
 
 class QUICConfig

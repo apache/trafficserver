@@ -35,6 +35,8 @@ QUICConfigParams::initialize()
 {
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_data, "proxy.config.quic.initial_max_data");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data, "proxy.config.quic.initial_max_stream_data");
   REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
 }
 

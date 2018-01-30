@@ -70,8 +70,11 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
   this->_packet_handler              = packet_handler;
   this->_original_quic_connection_id = original_cid;
   this->_quic_connection_id.randomize();
-  this->_ctable = ctable;
-  this->_ctable->insert(this->_quic_connection_id, this);
+  // PacketHandler for out going connection doesn't have connection table
+  if (ctable) {
+    this->_ctable = ctable;
+    this->_ctable->insert(this->_quic_connection_id, this);
+  }
   QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(this->_original_quic_connection_id),
                static_cast<uint64_t>(this->_quic_connection_id));
 }
