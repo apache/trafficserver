@@ -1411,7 +1411,7 @@ parse_params1:
 parse_params2:
   if (*cur == '/') {
     params_end = cur;
-    path_end = NULL;
+    path_end   = NULL;
     goto parse_path2;
   }
   if (*cur == '?') {
