@@ -75,6 +75,7 @@ TEST_CASE("1-RTT handshake ", "[quic]")
     // ClientHello
     client->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream_io->transfer() > 0);
+    client->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
 
     // ServerHello
     server->handleEvent(VC_EVENT_READ_READY, nullptr);
@@ -82,6 +83,7 @@ TEST_CASE("1-RTT handshake ", "[quic]")
 
     client->handleEvent(VC_EVENT_READ_READY, nullptr);
     CHECK(stream_io->transfer() > 0);
+    client->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
 
     // Finished
     server->handleEvent(VC_EVENT_READ_READY, nullptr);
