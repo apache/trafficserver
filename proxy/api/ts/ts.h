@@ -2448,6 +2448,18 @@ tsapi const char *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char cons
 tsapi const char *TSNormalizedProtocolTag(char const *tag);
 tsapi const char *TSRegisterProtocolTag(char const *tag);
 
+// If, for the given transaction, the URL has been remapped, this function puts the memory location of the "from" URL object in the
+// variable pointed to by urlLocp, and returns TS_SUCCESS.  (The URL object will be within memory allocated to the transaction
+// object.)  Otherwise, the function returns TS_ERROR.
+//
+tsapi TSReturnCode TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
+
+// If, for the given transaction, the URL has been remapped, this function puts the memory location of the "to" URL object in the
+// variable pointed to by urlLocp, and returns TS_SUCCESS.  (The URL object will be within memory allocated to the transaction
+// object.)  Otherwise, the function returns TS_ERROR.
+//
+tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

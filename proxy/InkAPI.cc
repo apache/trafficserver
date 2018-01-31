@@ -2137,7 +2137,10 @@ TSUrlLengthGet(TSMBuffer bufp, TSMLoc obj)
 char *
 TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  // bufp is not actually used anymore, so it can be null.
+  if (bufp) {
+    sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  }
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
 
@@ -9585,4 +9588,44 @@ const char *
 TSRegisterProtocolTag(const char *tag)
 {
   return nullptr;
+}
+
+namespace
+{
+// Function that contains the common logic for TSRemapFrom/ToUrlGet().
+//
+TSReturnCode
+remapUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp, URL *(UrlMappingContainer::*mfp)() const)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(urlLocp) == TS_SUCCESS);
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  URL *url = (sm->t_state.url_map.*mfp)();
+  if (url == nullptr) {
+    return TS_ERROR;
+  }
+
+  auto urlImpl = url->m_url_impl;
+  if (urlImpl == nullptr) {
+    return TS_ERROR;
+  }
+
+  *urlLocp = reinterpret_cast<TSMLoc>(urlImpl);
+
+  return TS_SUCCESS;
+}
+
+} // end anonymous namespace
+
+tsapi TSReturnCode
+TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
+{
+  return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getFromURL);
+}
+
+tsapi TSReturnCode
+TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
+{
+  return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getToURL);
 }
