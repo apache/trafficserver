@@ -74,10 +74,12 @@ main(int argc, const char **argv)
   Thread *main_thread = new EThread;
   main_thread->set_specific();
   net_config_poll_timeout = 10;
+  ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
 
   SSLInitializeLibrary();
   SSLConfig::startup();
 
+  netProcessor.init();
   quic_NetProcessor.init();
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
@@ -120,7 +122,7 @@ DNSConnection::trigger()
 void
 StatPagesManager::register_http(char const *, Action *(*)(Continuation *, HTTPHdr *))
 {
-  ink_assert(false);
+  //  ink_assert(false);
 }
 
 #include "ParentSelection.h"
