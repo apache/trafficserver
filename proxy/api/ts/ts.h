@@ -2445,6 +2445,20 @@ tsapi const char *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char cons
 tsapi const char *TSNormalizedProtocolTag(char const *tag);
 tsapi const char *TSRegisterProtocolTag(char const *tag);
 
+// If, for the given transaction, the URL has been remapped, this function returns the "from" URL in the matching remap
+// configuration line, as a string.  Otherwise, it returns a null pointer.  The string should not be assumed to be nul
+// terminated.  The length of the string (if any) is put into the variable pointed to by length.  The plugin must free the
+// returned pointer by calling TSfree().
+//
+tsapi const char *TSRemapFromUrlStringGet(TSHttpTxn txnp, int *length);
+
+// If, for the given transaction, the URL has been remapped, this function returns the "to" URL in the matching remap
+// configuration line, as a string.  Otherwise, it returns a null pointer.  The string should not be assumed to be nul
+// terminated.  The length of the string (if any) is put into the variable pointed to by length.  The plugin must free the
+// returned pointer by calling TSfree().
+//
+tsapi const char *TSRemapToUrlStringGet(TSHttpTxn txnp, int *length);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

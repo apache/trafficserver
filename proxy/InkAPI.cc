@@ -9568,3 +9568,41 @@ TSRegisterProtocolTag(const char *tag)
 {
   return nullptr;
 }
+
+namespace
+{
+// Function that contains the common logic for TSRemapFrom/ToUrlStringGet().
+//
+tsapi const char *
+remapUrlStringGet(TSHttpTxn txnp, int *length, URL *(UrlMappingContainer::*mfp)() const)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(length) == TS_SUCCESS);
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  auto url = (sm->t_state.url_map.*mfp)();
+  if (url == nullptr) {
+    return nullptr;
+  }
+
+  auto urlImpl = url->m_url_impl;
+  if (urlImpl == nullptr) {
+    return nullptr;
+  }
+
+  return url_string_get(urlImpl, nullptr, length, nullptr);
+}
+
+} // end anonymous namespace
+
+tsapi const char *
+TSRemapFromUrlStringGet(TSHttpTxn txnp, int *length)
+{
+  return remapUrlStringGet(txnp, length, &UrlMappingContainer::getFromURL);
+}
+
+tsapi const char *
+TSRemapToUrlStringGet(TSHttpTxn txnp, int *length)
+{
+  return remapUrlStringGet(txnp, length, &UrlMappingContainer::getToURL);
+}
