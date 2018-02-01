@@ -683,11 +683,11 @@ def main():
                         type=str,
                         default="{PATH}",
                         help="format string used as a key for response lookup: \
-                        example: \"{%Host}{%Server}{PATH}\", \"{HOST}{PATH}\", \"{PATH}\"\
-                        All the args preceded by % are header fields in the request\
+                        example: \"{%%Host}{%%Server}{PATH}\", \"{HOST}{PATH}\", \"{PATH}\"\
+                        All the args preceded by %% are header fields in the request\
                         The only two acceptable arguments which are not header fields are : fqdn (represented by HOST) and the url path (represented by PATH) in a request line.\
                         Example: given a client request as  << GET /some/resource/location HTTP/1.1\nHost: hahaha.com\n\n >>, if the user wishes the host field and the path to be used for the response lookup\
-                        then the required format will be {%Host}{PATH}")
+                        then the required format will be {%%Host}{PATH}")
 
     args = parser.parse_args()
     options = args
