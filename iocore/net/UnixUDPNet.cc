@@ -579,41 +579,66 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
 }
 
 bool
-UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockaddr *local_addr, int *local_addr_len,
-                                 Action **status, int send_bufsize, int recv_bufsize)
+UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions &opt)
 {
   int res = 0, fd = -1;
+  int local_addr_len;
+  IpEndpoint local_addr;
 
-  ink_assert(ats_ip_are_compatible(remote_addr, local_addr));
+  // Need to do address calculations first, so we can determine the
+  // address family for socket creation.
+  ink_zero(local_addr);
+
+  bool is_any_address = false;
+  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding || NetVCOptions::INTF_ADDR == opt.addr_binding) {
+    // Same for now, transparency for foreign addresses must be handled
+    // *after* the socket is created, and we need to do this calculation
+    // before the socket to get the IP family correct.
+    ink_release_assert(opt.local_ip.isValid());
+    local_addr.assign(opt.local_ip, htons(opt.local_port));
+    ink_assert(ats_ip_are_compatible(remote_addr, &local_addr.sa));
+  } else {
+    // No local address specified, so use family option if possible.
+    int family = ats_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
+    local_addr.setToAnyAddr(family);
+    is_any_address    = true;
+    local_addr.port() = htons(opt.local_port);
+  }
 
   *resfd = -1;
   if ((res = socketManager.socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto HardError;
   }
+
   fd = res;
   if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0) {
     goto HardError;
   }
-  if ((res = socketManager.ink_bind(fd, local_addr, ats_ip_size(local_addr), IPPROTO_UDP)) < 0) {
-    char buff[INET6_ADDRPORTSTRLEN];
-    Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(remote_addr, buff, sizeof(buff)));
-    goto SoftError;
+
+  if (opt.socket_recv_bufsize > 0) {
+    if (unlikely(socketManager.set_rcvbuf_size(fd, opt.socket_recv_bufsize))) {
+      Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_recv_bufsize);
+    }
+  }
+  if (opt.socket_send_bufsize > 0) {
+    if (unlikely(socketManager.set_sndbuf_size(fd, opt.socket_send_bufsize))) {
+      Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_send_bufsize);
+    }
   }
 
-  if (recv_bufsize) {
-    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize))) {
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
+  if (local_addr.port() || !is_any_address) {
+    if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
+      char buff[INET6_ADDRPORTSTRLEN];
+      Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(local_addr, buff, sizeof(buff)));
+      goto SoftError;
+    }
+
+    if ((res = safe_getsockname(fd, &local_addr.sa, &local_addr_len)) < 0) {
+      Debug("udpnet", "CreateUdpsocket: getsockname didnt' work");
+      goto HardError;
     }
   }
-  if (send_bufsize) {
-    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
-    }
-  }
-  if ((res = safe_getsockname(fd, local_addr, local_addr_len)) < 0) {
-    Debug("udpnet", "CreateUdpsocket: getsockname didnt' work");
-    goto HardError;
-  }
+
   *resfd  = fd;
   *status = nullptr;
   Debug("udpnet", "creating a udp socket port = %d, %d---success", ats_ip_port_host_order(remote_addr),
