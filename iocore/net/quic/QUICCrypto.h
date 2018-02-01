@@ -50,6 +50,7 @@ public:
 
   virtual int handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) = 0;
   virtual bool is_handshake_finished() const                 = 0;
+  virtual bool is_key_derived() const                        = 0;
   virtual int initialize_key_materials(QUICConnectionId cid) = 0;
   virtual int update_key_materials()                         = 0;
   virtual bool encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,

@@ -672,7 +672,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     result        = QUICPacketCreationResult::SUCCESS;
     break;
   case QUICPacketType::PROTECTED:
-    if (this->_crypto->is_handshake_finished()) {
+    if (this->_crypto->is_key_derived()) {
       if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
                                  header->packet_number(), header->buf(), header->size(), header->key_phase())) {
         result = QUICPacketCreationResult::SUCCESS;
@@ -684,7 +684,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     }
     break;
   case QUICPacketType::INITIAL:
-    if (!this->_crypto->is_handshake_finished()) {
+    if (!this->_crypto->is_key_derived()) {
       if (QUICTypeUtil::is_supported_version(header->version())) {
         if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
                                    header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
@@ -700,7 +700,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     }
     break;
   case QUICPacketType::HANDSHAKE:
-    if (!this->_crypto->is_handshake_finished()) {
+    if (!this->_crypto->is_key_derived()) {
       if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
                                  header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
         result = QUICPacketCreationResult::SUCCESS;

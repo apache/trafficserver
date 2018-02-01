@@ -160,6 +160,12 @@ QUICCryptoTls::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, cons
 bool
 QUICCryptoTls::is_handshake_finished() const
 {
+  return SSL_is_init_finished(this->_ssl);
+}
+
+bool
+QUICCryptoTls::is_key_derived() const
+{
   return (this->_client_pp->key_phase() != QUICKeyPhase::CLEARTEXT && this->_server_pp->key_phase() != QUICKeyPhase::CLEARTEXT);
 }
 

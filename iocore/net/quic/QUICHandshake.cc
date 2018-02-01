@@ -328,8 +328,7 @@ QUICHandshake::state_key_exchange(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE: {
-    QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_crypto);
-    if (crypto_tls && SSL_is_init_finished(crypto_tls->ssl_handle())) {
+    if (this->_crypto->is_handshake_finished()) {
       int res = this->_complete_handshake();
       if (!res) {
         this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);

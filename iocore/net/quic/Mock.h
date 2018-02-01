@@ -476,6 +476,12 @@ public:
     return true;
   }
 
+  bool
+  is_key_derived() const override
+  {
+    return true;
+  }
+
   int
   initialize_key_materials(QUICConnectionId cid) override
   {
