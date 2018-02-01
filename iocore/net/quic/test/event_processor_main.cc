@@ -27,9 +27,8 @@
 #include "catch.hpp"
 
 #include "I_EventSystem.h"
-#include "ts/ink_string.h"
 #include "ts/I_Layout.h"
-#include "diags.i"
+#include "ts/Diags.h"
 
 #define TEST_THREADS 1
 
@@ -39,8 +38,13 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
   virtual void
   testRunStarting(Catch::TestRunInfo const &testRunInfo) override
   {
+    BaseLogFile *base_log_file = new BaseLogFile("stderr");
+    diags                      = new Diags(testRunInfo.name.c_str(), "" /* tags */, "" /* actions */, base_log_file);
+    diags->activate_taglist("vv_quic|quic", DiagsTagType_Debug);
+    diags->config.enabled[DiagsTagType_Debug] = true;
+    diags->show_location                      = SHOW_LOCATION_DEBUG;
+
     Layout::create();
-    init_diags("", nullptr);
     RecProcessInit(RECM_STAND_ALONE);
 
     ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);

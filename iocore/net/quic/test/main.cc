@@ -25,3 +25,20 @@
 // https://github.com/philsquared/Catch/blob/master/docs/slow-compiles.md
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
+
+#include "ts/Diags.h"
+
+struct EventProcessorListener : Catch::TestEventListenerBase {
+  using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+
+  virtual void
+  testRunStarting(Catch::TestRunInfo const &testRunInfo) override
+  {
+    BaseLogFile *base_log_file = new BaseLogFile("stderr");
+    diags                      = new Diags(testRunInfo.name.c_str(), "" /* tags */, "" /* actions */, base_log_file);
+    diags->activate_taglist("vv_quic|quic", DiagsTagType_Debug);
+    diags->config.enabled[DiagsTagType_Debug] = true;
+    diags->show_location                      = SHOW_LOCATION_DEBUG;
+  }
+};
+CATCH_REGISTER_LISTENER(EventProcessorListener);
