@@ -455,8 +455,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri) {
 //        TSDebug(PLUGIN_NAME, "Checking 1");
         if (comma != nullptr && (comma + 1) < (pathTmp + path_len)) {
 //            TSDebug(PLUGIN_NAME, "Checking 2 if ");
+//            TSDebug(PLUGIN_NAME, "comma=%s", comma+1);
+//            TSDebug(PLUGIN_NAME, "file_suffix=%s", file_suffix);
             f_find = strcasestr(file_suffix, comma + 1);
-            if (f_find) {
+            if (f_find != nullptr) {
                 DEBUG_LOG("TSRemapDoRemap f_find");
                 range_header_check(txnp);
             } else {
