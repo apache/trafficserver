@@ -74,39 +74,8 @@ TEST_CASE("QUICCrypto Cleartext", "[quic]")
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
   QUICCrypto *server = new QUICCryptoTls(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
 
-  // Client Hello
-  uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
-  size_t client_hello_len                     = 0;
-  CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
-  std::cout << "Client Hello" << std::endl;
-  print_hex(client_hello, client_hello_len);
-
-  // Server Hello
-  uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
-  size_t server_hello_len                     = 0;
-  CHECK(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
-        SSL_ERROR_WANT_READ);
-  std::cout << "Server Hello" << std::endl;
-  print_hex(server_hello, server_hello_len);
-
-  // Client Fnished
-  uint8_t client_finished[MAX_HANDSHAKE_MSG_LEN] = {0};
-  size_t client_finished_len                     = 0;
-  CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
-        SSL_ERROR_NONE);
-  std::cout << "Client Finished" << std::endl;
-  print_hex(client_finished, client_finished_len);
-
-  // Post Handshake Msg
-  uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
-  size_t post_handshake_msg_len                     = 0;
-  CHECK(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
-                          client_finished_len) == SSL_ERROR_NONE);
-  std::cout << "Post Handshake Message" << std::endl;
-  print_hex(post_handshake_msg, post_handshake_msg_len);
-
-  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
-  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(client->initialize_key_materials(0x8394c8f03e515700));
+  CHECK(server->initialize_key_materials(0x8394c8f03e515700));
 
   // encrypt - decrypt
   uint8_t original[] = {
@@ -119,7 +88,7 @@ TEST_CASE("QUICCrypto Cleartext", "[quic]")
   uint8_t ad[]     = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
   // client (encrypt) - server (decrypt)
-  std::cout << "Original Text" << std::endl;
+  std::cout << "### Original Text" << std::endl;
   print_hex(original, sizeof(original));
 
   uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
@@ -127,14 +96,14 @@ TEST_CASE("QUICCrypto Cleartext", "[quic]")
   CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
                         QUICKeyPhase::CLEARTEXT));
 
-  std::cout << "Encrypted Text" << std::endl;
+  std::cout << "### Encrypted Text" << std::endl;
   print_hex(cipher, cipher_len);
 
   uint8_t plain[128] = {0};
   size_t plain_len   = 0;
   CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::CLEARTEXT));
 
-  std::cout << "Decrypted Text" << std::endl;
+  std::cout << "### Decrypted Text" << std::endl;
   print_hex(plain, plain_len);
 
   CHECK(sizeof(original) == (plain_len));
@@ -163,11 +132,14 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
   QUICCrypto *server = new QUICCryptoTls(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
 
+  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t client_hello_len                     = 0;
   CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
-  std::cout << "Client Hello" << std::endl;
+  std::cout << "### Client Hello" << std::endl;
   print_hex(client_hello, client_hello_len);
 
   // Server Hello
@@ -175,7 +147,7 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   size_t server_hello_len                     = 0;
   CHECK(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
         SSL_ERROR_WANT_READ);
-  std::cout << "Server Hello" << std::endl;
+  std::cout << "### Server Hello" << std::endl;
   print_hex(server_hello, server_hello_len);
 
   // Client Fnished
@@ -183,20 +155,19 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   size_t client_finished_len                     = 0;
   CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
         SSL_ERROR_NONE);
-  std::cout << "Client Finished" << std::endl;
+  std::cout << "### Client Finished" << std::endl;
   print_hex(client_finished, client_finished_len);
+
+  CHECK(client->update_key_materials());
 
   // Post Handshake Msg
   uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t post_handshake_msg_len                     = 0;
   CHECK(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
                           client_finished_len) == SSL_ERROR_NONE);
-  std::cout << "Post Handshake Message" << std::endl;
+  std::cout << "### Post Handshake Message" << std::endl;
   print_hex(post_handshake_msg, post_handshake_msg_len);
 
-  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
-  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
-  CHECK(client->update_key_materials());
   CHECK(server->update_key_materials());
 
   // encrypt - decrypt
@@ -210,7 +181,7 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   uint8_t ad[]     = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
   // client (encrypt) - server (decrypt)
-  std::cout << "Original Text" << std::endl;
+  std::cout << "### Original Text" << std::endl;
   print_hex(original, sizeof(original));
 
   uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
@@ -218,14 +189,14 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
                         QUICKeyPhase::PHASE_0));
 
-  std::cout << "Encrypted Text" << std::endl;
+  std::cout << "### Encrypted Text" << std::endl;
   print_hex(cipher, cipher_len);
 
   uint8_t plain[128] = {0};
   size_t plain_len   = 0;
   CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
 
-  std::cout << "Decrypted Text" << std::endl;
+  std::cout << "### Decrypted Text" << std::endl;
   print_hex(plain, plain_len);
 
   CHECK(sizeof(original) == (plain_len));
