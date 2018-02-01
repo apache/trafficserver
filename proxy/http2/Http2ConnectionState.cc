@@ -1186,8 +1186,13 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
     if (total_client_streams_count == 0) {
       if (fini_received) {
         // We were shutting down, go ahead and terminate the session
+        // this is a member of Http2ConnectionState and will be freed
+        // when ua_session is destroyed
         ua_session->destroy();
-        ua_session = nullptr;
+
+        // Can't do this because we just destroyed right here ^,
+        // or we can use a local variable to do it.
+        // ua_session = nullptr;
       } else if (shutdown_state == HTTP2_SHUTDOWN_IN_PROGRESS) {
         this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
       }
