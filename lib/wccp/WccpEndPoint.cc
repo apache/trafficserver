@@ -733,7 +733,6 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
   uint32_t recv_id = msg.m_router_id.idElt().getRecvId();
   RouterBag::iterator ar_spot; // active router
   int router_idx;              // index in active routers.
-  std::vector<SeedRouter>::iterator seed_spot;
 
   CapComp &caps = msg.m_capabilities;
   // Handle the router that sent us this.

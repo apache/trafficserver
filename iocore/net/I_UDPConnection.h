@@ -49,6 +49,7 @@ public:
 
   SOCKET getFd();
   void setBinding(struct sockaddr const *);
+  void setBinding(const IpAddr &, in_port_t);
   inkcoreapi int getBinding(struct sockaddr *);
 
   void destroy();

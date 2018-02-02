@@ -583,8 +583,21 @@ public:
     return terminate_sm;
   }
 
+  int
+  client_connection_id() const
+  {
+    return _client_connection_id;
+  }
+
+  int
+  client_transaction_id() const
+  {
+    return _client_transaction_id;
+  }
+
 private:
   PostDataBuffers _postbuf;
+  int _client_connection_id = -1, _client_transaction_id = -1;
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat
