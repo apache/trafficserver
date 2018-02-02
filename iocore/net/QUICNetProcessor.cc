@@ -120,18 +120,21 @@ Action *
 QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions *opt)
 {
   Debug("quic_ps", "connect to server");
-
   EThread *t = cont->mutex->thread_holding;
   ink_assert(t);
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
 
-  sockaddr local_addr;
-  int local_addr_len;
-  local_addr.sa_family = remote_addr->sa_family;
+  if (opt) {
+    vc->options = *opt;
+  } else {
+    opt = &vc->options;
+  }
 
   int fd;
   Action *status;
-  bool result = udpNet.CreateUDPSocket(&fd, remote_addr, &local_addr, &local_addr_len, &status, 1048576, 1048576);
+  bool result = udpNet.CreateUDPSocket(&fd, remote_addr, &status, *opt);
   if (!result) {
+    vc->free(t);
     return status;
   }
 
@@ -140,7 +143,9 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   Debug("quic_ps", "con=%p fd=%d", con, fd);
 
   QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut();
-  con->setBinding(reinterpret_cast<sockaddr const *>(&local_addr));
+  if (opt->local_ip.isValid()) {
+    con->setBinding(opt->local_ip, opt->local_port);
+  }
   con->bindToThread(packet_handler);
 
   PollCont *pc       = get_UDPPollCont(con->ethread);
@@ -155,15 +160,8 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   // Setup QUICNetVConnection
   QUICConnectionId cid;
   cid.randomize();
-  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(this->allocate_vc(t));
   vc->init(cid, con, packet_handler);
   packet_handler->init(vc);
-
-  if (opt) {
-    vc->options = *opt;
-  } else {
-    opt = &vc->options;
-  }
 
   // Connection ID will be changed
   vc->id = net_next_connection_number();
