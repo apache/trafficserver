@@ -7068,7 +7068,7 @@ HttpSM::update_stats()
     int length                 = 0;
     const char *field          = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
     if (field != nullptr && length > 0) {
-      length = std::min(length, static_cast<int>(sizeof(unique_id_string)));
+      length = std::min(length, static_cast<int>(sizeof(unique_id_string)) - 1);
       memcpy(unique_id_string, field, length);
       unique_id_string[length] = 0; // NULL terminate the string
     }
