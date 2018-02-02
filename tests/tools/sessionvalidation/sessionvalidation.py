@@ -23,7 +23,9 @@ import sessionvalidation.transaction as transaction
 import sessionvalidation.request as request
 import sessionvalidation.response as response
 
-valid_HTTP_request_methods = ['GET', 'POST', 'HEAD']
+# valid_HTTP_request_methods = ['GET', 'POST', 'HEAD']
+# custom_HTTP_request_methods = ['PULL']  # transaction monitor plugin for ATS may have custom methods
+allowed_HTTP_request_methods = ['GET', 'POST', 'HEAD', 'PULL']
 G_CUSTOM_METHODS = False
 G_VERBOSE_LOG = True
 
@@ -156,7 +158,6 @@ class SessionValidator(object):
         retval = True
 
         #valid_HTTP_request_methods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'OPTIONS', 'CONNECT', 'PATCH']
-        custom_HTTP_request_methods = ['PULL']  # transaction monitor plugin for ATS may have custom methods
         # we can later uncomment the previous line to support more HTTP methods
         valid_HTTP_versions = ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0']
 
@@ -171,10 +172,9 @@ class SessionValidator(object):
             elif float(txn_req.getTimestamp()) <= 0:
                 _verbose_print("invalid transaction request timestamp")
                 retval = False
-            elif txn_req.getHeaders().split()[0] not in valid_HTTP_request_methods:
-                if G_CUSTOM_METHODS and txn_req.getHeaders().split()[0] not in custom_HTTP_request_methods:
-                    _verbose_print("invalid HTTP method for transaction {0}".format(txn_req.getHeaders().split()[0]))
-                    retval = False
+            elif txn_req.getHeaders().split()[0] not in allowed_HTTP_request_methods:
+                _verbose_print("invalid HTTP method for transaction {0}".format(txn_req.getHeaders().split()[0]))
+                retval = False
             elif not txn_req.getHeaders().endswith("\r\n\r\n"):
                 _verbose_print("transaction request headers didn't end with \\r\\n\\r\\n")
                 retval = False
