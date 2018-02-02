@@ -1394,6 +1394,10 @@ Vol::handle_dir_read(int event, void *data)
   if (!(header->magic == VOL_MAGIC && footer->magic == VOL_MAGIC &&
         CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version.ink_major && header->version.ink_major <= CACHE_DB_MAJOR_VERSION)) {
     Warning("bad footer in cache directory for '%s', clearing", hash_text.get());
+    Note("VOL_MAGIC %d\n header magic: %d\n footer_magic %d\n CACHE_DB_MAJOR_VERSION_COMPATIBLE %d\n major version %d\n"
+         "CACHE_DB_MAJOR_VERSION %d\n",
+         VOL_MAGIC, header->magic, footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE, header->version.ink_major,
+         CACHE_DB_MAJOR_VERSION);
     Note("clearing cache directory '%s'", hash_text.get());
     clear_dir();
     return EVENT_DONE;
@@ -1769,7 +1773,9 @@ Vol::handle_header_read(int event, void *data)
       io.aiocb.aio_offset = skip + vol_dirlen(this);
       ink_assert(ink_aio_read(&io));
     } else {
-      Note("no good directory, clearing '%s'", hash_text.get());
+      Note("no good directory, clearing '%s' since sync_serials on both A and B copies are invalid", hash_text.get());
+      Note("Header A: %d\nFooter A: %d\n Header B: %d\n Footer B %d\n", hf[0]->sync_serial, hf[1]->sync_serial, hf[2]->sync_serial,
+           hf[3]->sync_serial);
       clear_dir();
       delete init_info;
       init_info = nullptr;
