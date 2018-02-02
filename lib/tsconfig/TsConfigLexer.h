@@ -21,14 +21,14 @@
     limitations under the License.
 */
 
-# if ! defined(TS_CONFIG_LEXER_HEADER)
-# define TS_CONFIG_LEXER_HEADER
+#if !defined(TS_CONFIG_LEXER_HEADER)
+#define TS_CONFIG_LEXER_HEADER
 
 struct TsConfigHandlers; // forward declare.
 
-# if defined(__cplusplus)
-    extern "C" {
-# endif
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /// Get the current line in the buffer during parsing.
 /// @return 1 based line number.
@@ -48,14 +48,13 @@ extern int tsconfiglex_current_col(void);
 
     @return Not sure.
  */
-extern int tsconfig_parse_buffer(
-  struct TsConfigHandlers* handlers, ///< Syntax handlers.
-  char* buffer, ///< Input buffer.
-  size_t buffer_len ///< Length of input buffer.
-);
+extern int tsconfig_parse_buffer(struct TsConfigHandlers *handlers, ///< Syntax handlers.
+                                 char *buffer,                      ///< Input buffer.
+                                 size_t buffer_len                  ///< Length of input buffer.
+                                 );
 
-# if defined(__cplusplus)
+#if defined(__cplusplus)
 }
-# endif
+#endif
 
-# endif // TS_CONFIG_LEXER_HEADER
+#endif // TS_CONFIG_LEXER_HEADER

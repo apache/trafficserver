@@ -26,10 +26,8 @@
  * Created on September 21, 2017, 4:04 PM
  */
 
-
 #ifndef TSCONFIGLUA_H
 #define TSCONFIGLUA_H
-
 
 #include "tsconfig/Errata.h"
 #include <unordered_map>
@@ -39,7 +37,8 @@
 #include <ts/HashFNV.h>
 
 /// Hash functor for @c string_view
-inline size_t TsLuaConfigSVHash(ts::string_view const& sv)
+inline size_t
+TsLuaConfigSVHash(ts::string_view const &sv)
 {
   ATSHash64FNV1a h;
   h.update(sv.data(), sv.size());
@@ -55,25 +54,25 @@ inline size_t TsLuaConfigSVHash(ts::string_view const& sv)
 struct TsConfigDescriptor {
   /// Type of the configuration value.
   enum class Type {
-    ARRAY, ///< A homogenous array of nested values.
+    ARRAY,  ///< A homogenous array of nested values.
     OBJECT, ///< A set of fields, each a name / value pair.
-    INT, ///< Integer value.
-    FLOAT, ///< Floating point value.
+    INT,    ///< Integer value.
+    FLOAT,  ///< Floating point value.
     STRING, ///< String.
     BOOL,
     ENUM ///< Enumeration (specialized).
   };
-/*  TsConfigDescriptor() : type_name(nullptr),name(nullptr),description(nullptr) {}
-  TsConfigDescriptor(Type typ,std::initializer_list<std::string> str_list): type(typ)
-  {
-      for (auto str :str_list) {
-                std::cout << str << std::endl;
-            }
-  }
- * */
-  Type type; ///< Value type.
-  ts::string_view type_name; ///< Literal type name used in the schema.
-  ts::string_view name; ///< Name of the configuration value.
+  /*  TsConfigDescriptor() : type_name(nullptr),name(nullptr),description(nullptr) {}
+    TsConfigDescriptor(Type typ,std::initializer_list<std::string> str_list): type(typ)
+    {
+        for (auto str :str_list) {
+                  std::cout << str << std::endl;
+              }
+    }
+   * */
+  Type type;                   ///< Value type.
+  ts::string_view type_name;   ///< Literal type name used in the schema.
+  ts::string_view name;        ///< Name of the configuration value.
   ts::string_view description; ///< Description of the  value.
 };
 
@@ -85,100 +84,112 @@ struct TsConfigDescriptor {
     configuration struct construction. The related description classes in contrast are data that is
     schema based and therefore can be static and shared among instances of the configuration struct.
 */
-class TsConfigBase {
+class TsConfigBase
+{
 public:
   /// Source of the value in the config struct.
   enum class Source {
-    NONE, ///< No source, the value is default constructed.
+    NONE,   ///< No source, the value is default constructed.
     SCHEMA, ///< Value set in schema.
-    CONFIG ///< Value set in configuration file.
+    CONFIG  ///< Value set in configuration file.
   };
   /// Constructor - need the static descriptor.
-  TsConfigBase(TsConfigDescriptor const& d) : descriptor(d) {}
-  TsConfigDescriptor const& descriptor; ///< Static schema data.
-  Source source = Source::NONE; ///< Where the instance data came from.
-  virtual ~TsConfigBase()
-  {}
+  TsConfigBase(TsConfigDescriptor const &d) : descriptor(d) {}
+  TsConfigDescriptor const &descriptor; ///< Static schema data.
+  Source source = Source::NONE;         ///< Where the instance data came from.
+  virtual ~TsConfigBase() {}
   /// Load the instance data from the Lua stack.
-  virtual ts::Errata loader(lua_State* s) = 0;
+  virtual ts::Errata loader(lua_State *s) = 0;
 };
 
-class TsConfigInt : public TsConfigBase {
+class TsConfigInt : public TsConfigBase
+{
 public:
-   TsConfigInt(TsConfigDescriptor const& d, int& i):TsConfigBase(d),ref(i){}
-   ts::Errata loader(lua_State* s) override;
+  TsConfigInt(TsConfigDescriptor const &d, int &i) : TsConfigBase(d), ref(i) {}
+  ts::Errata loader(lua_State *s) override;
+
 private:
-   int & ref;
+  int &ref;
 };
 
-class TsConfigBool : public TsConfigBase {
+class TsConfigBool : public TsConfigBase
+{
 public:
-    TsConfigBool(TsConfigDescriptor const& d, bool& i):TsConfigBase(d), ref(i) {}
-    ts::Errata loader(lua_State* s) override;
+  TsConfigBool(TsConfigDescriptor const &d, bool &i) : TsConfigBase(d), ref(i) {}
+  ts::Errata loader(lua_State *s) override;
+
 private:
-    bool &ref;
-
+  bool &ref;
 };
 
-class TsConfigString : public TsConfigBase {
+class TsConfigString : public TsConfigBase
+{
 public:
-   TsConfigString(TsConfigDescriptor const& d, std::string& str) : TsConfigBase(d), ref(str) {}
-//    TsConfigString& operator= (const TsConfigString& other)
-//    {
-//        ref = other.ref;
-//        return *this;
-//    }
-   ts::Errata loader(lua_State* s) override;
+  TsConfigString(TsConfigDescriptor const &d, std::string &str) : TsConfigBase(d), ref(str) {}
+  //    TsConfigString& operator= (const TsConfigString& other)
+  //    {
+  //        ref = other.ref;
+  //        return *this;
+  //    }
+  ts::Errata loader(lua_State *s) override;
+
 private:
-   std::string& ref;
+  std::string &ref;
 };
 
-
-
-class TsConfigArrayDescriptor : public TsConfigDescriptor {
+class TsConfigArrayDescriptor : public TsConfigDescriptor
+{
 public:
-   TsConfigArrayDescriptor(TsConfigDescriptor const& d) : item(d) {}
-   const TsConfigDescriptor& item;
+  TsConfigArrayDescriptor(TsConfigDescriptor const &d) : item(d) {}
+  const TsConfigDescriptor &item;
 };
 
-class TsConfigEnumDescriptor : public TsConfigDescriptor {
-  using self_type = TsConfigEnumDescriptor;
+class TsConfigEnumDescriptor : public TsConfigDescriptor
+{
+  using self_type  = TsConfigEnumDescriptor;
   using super_type = TsConfigDescriptor;
+
 public:
-  struct Pair { ts::string_view key; int value; };
- TsConfigEnumDescriptor(Type t, ts::string_view t_name, ts::string_view n, ts::string_view d, std::initializer_list<Pair> pairs)
+  struct Pair {
+    ts::string_view key;
+    int value;
+  };
+  TsConfigEnumDescriptor(Type t, ts::string_view t_name, ts::string_view n, ts::string_view d, std::initializer_list<Pair> pairs)
     : super_type{t, t_name, n, d}, values{pairs.size(), &TsLuaConfigSVHash}, keys{pairs.size()}
   {
-    for ( auto& p : pairs ) {
+    for (auto &p : pairs) {
       values[p.key] = p.value;
       keys[p.value] = p.key;
     }
   }
-  std::unordered_map<ts::string_view, int, size_t(*)(ts::string_view const&) > values;
+  std::unordered_map<ts::string_view, int, size_t (*)(ts::string_view const &)> values;
   std::unordered_map<int, ts::string_view> keys;
-  int get(ts::string_view key)
+  int
+  get(ts::string_view key)
   {
-      return values[key];
+    return values[key];
   }
 };
 
-class TsConfigObjectDescriptor : public TsConfigDescriptor {
-   std::unordered_map<std::string, TsConfigDescriptor const*> fields;
+class TsConfigObjectDescriptor : public TsConfigDescriptor
+{
+  std::unordered_map<std::string, TsConfigDescriptor const *> fields;
 };
 
-template < typename E >
-class TsConfigEnum : public TsConfigBase {
+template <typename E> class TsConfigEnum : public TsConfigBase
+{
 public:
-   TsConfigEnum(TsConfigEnumDescriptor const& d, int& i) : TsConfigBase(d),edescriptor(d), ref(i) {}
-   TsConfigEnumDescriptor edescriptor;
-   int& ref;
-   ts::Errata loader(lua_State* L) override
-   {
+  TsConfigEnum(TsConfigEnumDescriptor const &d, int &i) : TsConfigBase(d), edescriptor(d), ref(i) {}
+  TsConfigEnumDescriptor edescriptor;
+  int &ref;
+  ts::Errata
+  loader(lua_State *L) override
+  {
     ts::Errata zret;
-    std::string key(lua_tostring(L,-1));
+    std::string key(lua_tostring(L, -1));
     ref = edescriptor.get(ts::string_view(key));
     return zret;
-    }
+  }
 };
 
 #endif /* TSCONFIGLUA_H */

@@ -136,6 +136,7 @@ clang-format-lib:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/records
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/ts
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/wccp
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/tsconfig
 
 clang-format-mgmt:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/mgmt
