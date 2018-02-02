@@ -40,15 +40,13 @@
 #include "RemapProcessor.h"
 #include "Transform.h"
 #include "P_SSLConfig.h"
+#include "HttpPages.h"
+#include "IPAllow.h"
+#include "ts/I_Layout.h"
+
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
-#include "HttpPages.h"
-
-#include "IPAllow.h"
-//#include "I_Auth.h"
-//#include "HttpAuthParams.h"
-#include "congest/Congestion.h"
-#include "ts/I_Layout.h"
+#include <algorithm>
 
 using ts::StringView;
 
@@ -7054,11 +7052,10 @@ HttpSM::update_stats()
       if (is_action_tag_set("http_handler_times")) {
           print_all_http_handler_times();
       }
-      */
+  */
 
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
-    URL *url             = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
     int offset           = 0;
     int skip             = 0;
@@ -7068,13 +7065,12 @@ HttpSM::update_stats()
 
     // unique id
     char unique_id_string[128] = "";
-    // [amc] why do we check the URL to get a MIME field?
-    if (nullptr != url && url->valid()) {
-      int length        = 0;
-      const char *field = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
-      if (field != nullptr) {
-        ink_strlcpy(unique_id_string, field, sizeof(unique_id_string));
-      }
+    int length                 = 0;
+    const char *field          = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
+    if (field != nullptr && length > 0) {
+      length = std::min(length, static_cast<int>(sizeof(unique_id_string)));
+      memcpy(unique_id_string, field, length);
+      unique_id_string[length] = 0; // NULL terminate the string
     }
 
     // set the fd for the request
