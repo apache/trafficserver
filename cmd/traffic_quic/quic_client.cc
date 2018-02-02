@@ -49,8 +49,10 @@ QUICClient::start()
 
   for (struct addrinfo *info = this->_remote_addr_info; info != nullptr; info = info->ai_next) {
     NetVCOptions opt;
-    opt.ip_proto  = NetVCOptions::USE_UDP;
-    opt.ip_family = info->ai_family;
+    opt.ip_proto            = NetVCOptions::USE_UDP;
+    opt.ip_family           = info->ai_family;
+    opt.socket_recv_bufsize = 1048576;
+    opt.socket_send_bufsize = 1048576;
 
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
