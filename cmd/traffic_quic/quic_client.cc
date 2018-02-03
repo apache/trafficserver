@@ -51,6 +51,7 @@ QUICClient::start()
     NetVCOptions opt;
     opt.ip_proto            = NetVCOptions::USE_UDP;
     opt.ip_family           = info->ai_family;
+    opt.etype               = ET_NET;
     opt.socket_recv_bufsize = 1048576;
     opt.socket_send_bufsize = 1048576;
 

@@ -70,7 +70,6 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
   this->_packet_handler              = packet_handler;
   this->_original_quic_connection_id = original_cid;
   this->_quic_connection_id.randomize();
-  this->ep.syscall = false;
   // PacketHandler for out going connection doesn't have connection table
   if (ctable) {
     this->_ctable = ctable;
@@ -118,6 +117,8 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
     free(t);
     return EVENT_DONE;
   }
+
+  // FIXME: complete do_io_xxxx instead
   this->read.enabled = 1;
 
   // Handshake callback handler.
@@ -141,8 +142,21 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 }
 
 int
-QUICNetVConnection::startEvent(int /*event ATS_UNUSED */, Event *e)
+QUICNetVConnection::startEvent(int event, Event *e)
 {
+  ink_assert(event == EVENT_IMMEDIATE);
+  MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
+  if (!lock.is_locked()) {
+    e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
+    return EVENT_CONT;
+  }
+
+  if (!action_.cancelled) {
+    this->connectUp(e->ethread, NO_FD);
+  } else {
+    this->free(e->ethread);
+  }
+
   return EVENT_DONE;
 }
 
@@ -220,6 +234,17 @@ QUICNetVConnection::reenable(VIO *vio)
 int
 QUICNetVConnection::connectUp(EThread *t, int fd)
 {
+  int res        = 0;
+  NetHandler *nh = get_NetHandler(t);
+  this->thread   = this_ethread();
+  ink_assert(nh->mutex->thread_holding == this->thread);
+
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
+
+  if ((res = nh->startIO(this)) < 0) {
+    // FIXME: startIO only return 0 now! what should we do if it failed ?
+  }
+
   // create stream for handshake
   QUICErrorUPtr error = this->_stream_manager->create_stream(STREAM_ID_FOR_HANDSHAKE);
   if (error->cls != QUICErrorClass::NONE) {
@@ -227,6 +252,11 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
 
     return CONNECT_FAILURE;
   }
+
+  nh->startCop(this);
+
+  // FIXME: complete do_io_xxxx instead
+  this->read.enabled = 1;
 
   // start QUIC handshake
   this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
