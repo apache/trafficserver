@@ -154,5 +154,5 @@ initialize_thread_for_quic_net(EThread *thread)
 
   new ((ink_dummy_for_new *)quicpc) QUICPollCont(thread->mutex, nh);
 
-  thread->schedule_every(quicpc, -9);
+  thread->schedule_every(quicpc, -UDP_PERIOD);
 }

@@ -83,6 +83,7 @@ struct EventIO {
   int events = 0;
 #endif
   EventLoop event_loop = nullptr;
+  bool syscall         = true;
   int type             = 0;
   union {
     Continuation *c;
@@ -575,15 +576,8 @@ EventIO::start(EventLoop l, NetAccept *vc, int events)
 TS_INLINE int
 EventIO::start(EventLoop l, UnixNetVConnection *vc, int events)
 {
-  int r;
   type = EVENTIO_READWRITE_VC;
-  r    = start(l, vc->con.fd, (Continuation *)vc, events);
-  if (r < 0 && vc->options.ip_proto == NetVCOptions::USE_UDP) {
-    // Hack for QUICNetVC
-    return 0;
-  } else {
-    return r;
-  }
+  return start(l, vc->con.fd, (Continuation *)vc, events);
 }
 TS_INLINE int
 EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
@@ -594,6 +588,10 @@ EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
 TS_INLINE int
 EventIO::close()
 {
+  if (!this->syscall) {
+    return 0;
+  }
+
   stop();
   switch (type) {
   default:
@@ -615,15 +613,13 @@ EventIO::close()
 TS_INLINE int
 EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 {
+  if (!this->syscall) {
+    return 0;
+  }
+
   data.c     = c;
   fd         = afd;
   event_loop = l;
-  // Hack for QUICNetVC:
-  //   quicnetvc->con.fd == NO_FD
-  //   quicnetvc->options.ip_proto == NetVCOptions::USE_UDP
-  if (afd == NO_FD) {
-    return -1;
-  }
 #if TS_USE_EPOLL
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
@@ -656,9 +652,10 @@ EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 TS_INLINE int
 EventIO::modify(int e)
 {
-  if (fd == NO_FD) {
+  if (!this->syscall) {
     return 0;
   }
+
   ink_assert(event_loop);
 #if TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
   struct epoll_event ev;
@@ -738,9 +735,10 @@ EventIO::modify(int e)
 TS_INLINE int
 EventIO::refresh(int e)
 {
-  if (fd == NO_FD) {
+  if (!this->syscall) {
     return 0;
   }
+
   ink_assert(event_loop);
 #if TS_USE_KQUEUE && defined(USE_EDGE_TRIGGER)
   e = e & events;
@@ -782,9 +780,10 @@ EventIO::refresh(int e)
 TS_INLINE int
 EventIO::stop()
 {
-  if (fd == NO_FD) {
+  if (!this->syscall) {
     return 0;
   }
+
   if (event_loop) {
     int retval = 0;
 #if TS_USE_EPOLL

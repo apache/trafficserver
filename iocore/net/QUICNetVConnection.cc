@@ -70,6 +70,7 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
   this->_packet_handler              = packet_handler;
   this->_original_quic_connection_id = original_cid;
   this->_quic_connection_id.randomize();
+  this->ep.syscall = false;
   // PacketHandler for out going connection doesn't have connection table
   if (ctable) {
     this->_ctable = ctable;
