@@ -123,6 +123,7 @@ QUICNetProcessor::allocate_vc(EThread *t)
     }
   }
 
+  vc->ep.syscall = false;
   return vc;
 }
 
@@ -181,10 +182,29 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   vc->mutex       = cont->mutex;
   vc->action_     = cont;
 
-  SET_CONTINUATION_HANDLER(vc, &QUICNetVConnection::state_pre_handshake);
+  SET_CONTINUATION_HANDLER(vc, &QUICNetVConnection::startEvent);
 
   vc->start(this->_ssl_ctx);
-  vc->connectUp(t, NO_FD);
+
+  if (t->is_event_type(opt->etype)) {
+    MUTEX_TRY_LOCK(lock, cont->mutex, t);
+    if (lock.is_locked()) {
+      MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
+      if (lock2.is_locked()) {
+        vc->connectUp(t, NO_FD);
+        return ACTION_RESULT_DONE;
+      }
+    }
+  }
+
+  // Try to stay on the current thread if it is the right type
+  if (t->is_event_type(opt->etype)) {
+    t->schedule_imm(vc);
+  } else { // Otherwise, pass along to another thread of the right type
+    eventProcessor.schedule_imm(vc, opt->etype);
+  }
+
+  //  vc->connectUp(t, NO_FD);
 
   return ACTION_RESULT_DONE;
 }

@@ -88,7 +88,7 @@ main(int argc, const char **argv)
   quic_NetProcessor.start(-1, stacksize);
 
   QUICClient client(addr, port);
-  eventProcessor.schedule_in(&client, 1, ET_UDP);
+  eventProcessor.schedule_in(&client, 1, ET_NET);
 
   this_thread()->execute();
 }

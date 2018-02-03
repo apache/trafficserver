@@ -86,7 +86,7 @@ initialize_thread_for_udp_net(EThread *thread)
   REC_ReadConfigInt32(g_udp_numSendRetries, "proxy.config.udp.send_retries");
   g_udp_numSendRetries = g_udp_numSendRetries < 0 ? 0 : g_udp_numSendRetries;
 
-  thread->schedule_every(get_UDPPollCont(thread), -UDP_PERIOD);
+  thread->schedule_every(get_UDPPollCont(thread), -HRTIME_MSECONDS(UDP_PERIOD));
   thread->schedule_imm(get_UDPNetHandler(thread));
 }
 
