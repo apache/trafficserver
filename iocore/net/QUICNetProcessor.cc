@@ -181,6 +181,8 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   vc->mutex       = cont->mutex;
   vc->action_     = cont;
 
+  SET_CONTINUATION_HANDLER(vc, &QUICNetVConnection::state_pre_handshake);
+
   vc->start(this->_ssl_ctx);
   vc->connectUp(t, NO_FD);
 
