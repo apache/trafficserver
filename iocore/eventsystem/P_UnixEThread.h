@@ -78,7 +78,11 @@ EThread::schedule_every(Continuation *cont, ink_hrtime t, int callback_event, vo
   Event *e          = ::eventAllocator.alloc();
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, get_hrtime() + t, t));
+  if (t < 0) {
+    return schedule(e->init(cont, t, t));
+  } else {
+    return schedule(e->init(cont, get_hrtime() + t, t));
+  }
 }
 
 TS_INLINE Event *
@@ -128,7 +132,11 @@ EThread::schedule_every_local(Continuation *cont, ink_hrtime t, int callback_eve
   Event *e          = EVENT_ALLOC(eventAllocator, this);
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule_local(e->init(cont, get_hrtime() + t, t));
+  if (t < 0) {
+    return schedule(e->init(cont, t, t));
+  } else {
+    return schedule(e->init(cont, get_hrtime() + t, t));
+  }
 }
 
 TS_INLINE Event *
