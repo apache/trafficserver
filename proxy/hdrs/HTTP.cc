@@ -1823,10 +1823,7 @@ HTTPCacheAlt::HTTPCacheAlt()
     m_frag_offsets(nullptr),
     m_ext_buffer(nullptr)
 {
-  m_object_key[0]  = 0;
-  m_object_key[1]  = 0;
-  m_object_key[2]  = 0;
-  m_object_key[3]  = 0;
+  memset(&m_object_key[0], 0, CRYPTO_HASH_SIZE);
   m_object_size[0] = 0;
   m_object_size[1] = 0;
 }
@@ -1853,13 +1850,10 @@ HTTPCacheAlt::copy(HTTPCacheAlt *to_copy)
 {
   m_magic = to_copy->m_magic;
   // m_writeable =      to_copy->m_writeable;
-  m_unmarshal_len  = to_copy->m_unmarshal_len;
-  m_id             = to_copy->m_id;
-  m_rid            = to_copy->m_rid;
-  m_object_key[0]  = to_copy->m_object_key[0];
-  m_object_key[1]  = to_copy->m_object_key[1];
-  m_object_key[2]  = to_copy->m_object_key[2];
-  m_object_key[3]  = to_copy->m_object_key[3];
+  m_unmarshal_len = to_copy->m_unmarshal_len;
+  m_id            = to_copy->m_id;
+  m_rid           = to_copy->m_rid;
+  memcpy(&m_object_key[0], &to_copy->m_object_key[0], CRYPTO_HASH_SIZE);
   m_object_size[0] = to_copy->m_object_size[0];
   m_object_size[1] = to_copy->m_object_size[1];
 
