@@ -154,17 +154,13 @@ ts.Disk.remap_config.AddLine(
     ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=full'
 )
 
-# Ask the OS if the port is ready for connect()
-#
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
+tr = Test.AddTestRun()
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.Command = "sleep 3s" 
 
 # Basic HTTP 1.1 -- No Forwarded by default
 tr = Test.AddTestRun()
-# Wait for the micro server
-tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
-# Delay on readiness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=CheckPort(ts.Variables.ssl_port))
 #
 tr.Processes.Default.Command = (
   'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts.Variables.port)
@@ -200,38 +196,31 @@ TestHttp1_1('www.forwarded-connection-compact.com')
 TestHttp1_1('www.forwarded-connection-std.com')
 TestHttp1_1('www.forwarded-connection-full.com')
 
-ts2 = Test.MakeATSProcess("ts2", command="traffic_manager", select_ports=False)
+ts2 = Test.MakeATSProcess("ts2", select_ports=False)
 
-ts2.Variables.port += 1
+ts2.Variables.port = 8081
 
 baselineTsSetup(ts2, 4444)
 
 ts2.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1, # Retain Host header in original incoming client request.
-    'proxy.config.http.insert_forwarded': 'by=uuid'})
+    'proxy.config.http.insert_forwarded':
+      'for|by=ip|by=unknown|by=servername|by=uuid|proto|host|connection=compact|connection=std|connection=full'})
 
 ts2.Disk.remap_config.AddLine(
     'map https://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
+tr = Test.AddTestRun()
+tr.Processes.Default.StartBefore(Test.Processes.ts2)
+tr.Processes.Default.Command = "sleep 3s"
+
 # Forwarded header with UUID of 2nd ATS.
 tr = Test.AddTestRun()
-# Delay on readiness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts2, ready=CheckPort(ts2.Variables.ssl_port))
 #
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port)
 )
-tr.Processes.Default.ReturnCode = 0
-
-# Call traffic_ctrl to set insert_forwarded
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = (
-    'traffic_ctl --debug config set proxy.config.http.insert_forwarded' +
-    ' "for|by=ip|by=unknown|by=servername|by=uuid|proto|host|connection=compact|connection=std|connection=full"'
-)
-tr.Processes.Default.ForceUseShell = False
-tr.Processes.Default.Env = ts2.Env
 tr.Processes.Default.ReturnCode = 0
 
 # HTTP 1.1

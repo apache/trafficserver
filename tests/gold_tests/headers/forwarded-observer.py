@@ -22,7 +22,7 @@ import subprocess
 
 log = open('forwarded.log', 'w')
 
-regexByEqualUuid = re.compile("^by=_[0-9a-f-]+$")
+regexByEqualUuid = re.compile("by=_[0-9a-f-]+")
 
 byCount = 0;
 byEqualUuid = "__INVALID__"
@@ -38,16 +38,18 @@ def observe(headers):
 
             content = h[1]
 
-            if content.startswith("by="):
+            mo = regexByEqualUuid.search(content)
+
+            if mo != None:
 
                 byCount += 1
 
-                if ((byCount == 4) or (byCount == 5)) and regexByEqualUuid.match(content):  # "by" should give UUID
+                if (byCount == 1) or (byCount == 2):  # "by" should give UUID
 
                     # I don't think there is a way to know what UUID traffic_server generates, so I just do a crude format
                     # check and make sure the same value is used consistently.
 
-                    byEqualUuid = content
+                    byEqualUuid = mo.group(0)
 
             content = content.replace(byEqualUuid, "__BY_EQUAL_UUID__", 1)
 

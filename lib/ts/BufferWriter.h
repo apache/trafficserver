@@ -132,7 +132,6 @@ class FixedBufferWriter : public BufferWriter
 {
 protected:
   FixedBufferWriter(char *buf, size_t capacity, size_t attempted) : _buf(buf), _capacity(capacity), _attempted(attempted) {}
-
 public:
   // 'buf' is a pointer to the external array of char to write to.  'capacity' is the number of bytes in the array.
   //
@@ -140,7 +139,6 @@ public:
   // characters a series of writes would result it (from the extent() value) without actually writing.
   //
   FixedBufferWriter(char *buf, size_t capacity) : FixedBufferWriter(buf, capacity, 0) {}
-
   FixedBufferWriter &
   write(char c) override
   {
@@ -253,7 +251,6 @@ public:
   }
 
   operator string_view() const { return view(); }
-
   // No copying
   //
   FixedBufferWriter(const FixedBufferWriter &) = delete;
@@ -279,7 +276,6 @@ template <size_t N> class LocalBufferWriter : public FixedBufferWriter
 {
 public:
   LocalBufferWriter() : FixedBufferWriter(_arr, N) {}
-
   LocalBufferWriter(const LocalBufferWriter &that) : FixedBufferWriter(_arr, that._capacity, that._attempted)
   {
     std::memcpy(_arr, that._arr, size());

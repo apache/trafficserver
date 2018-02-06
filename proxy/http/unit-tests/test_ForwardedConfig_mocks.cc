@@ -53,15 +53,29 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
 {
 }
 inkcoreapi void
-ink_freelist_free(InkFreeList *f, void *item){STUB} inkcoreapi
-  void ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
+ink_freelist_free(InkFreeList *f, void *item)
 {
   STUB
 }
-void ink_mutex_destroy(pthread_mutex_t *){STUB} inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator("ARGH");
+inkcoreapi void
+ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
+{
+  STUB
+}
+int
+pthread_mutex_destroy(pthread_mutex_t *)
+{
+  STUB return 0;
+}
+inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator("ARGH");
 inkcoreapi ink_thread_key Thread::thread_data_key;
 volatile int res_track_memory;
-void ResourceTracker::increment(const char *, long){STUB} inkcoreapi Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
+void
+ResourceTracker::increment(const char *, long)
+{
+  STUB
+}
+inkcoreapi Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 void
 ats_free(void *)
 {

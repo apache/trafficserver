@@ -38,7 +38,6 @@ public:
   // Construct with referece to string that will contain error message.
   //
   BadOptionsErrMsg(ts::FixedBufferWriter &err) : _err(err), _count(0) {}
-
   // Add a bad option.
   //
   void

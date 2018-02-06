@@ -7882,7 +7882,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = &overridableHttpConfig->insert_squid_x_forwarded_for;
     break;
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
-    ret = _memberp_to_generic(&overridableHttpConfig->insert_forwarded, typep);
+    typ = OVERRIDABLE_TYPE_STRING;
+    ret = &overridableHttpConfig->insert_forwarded;
     break;
   case TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND:
     typ = OVERRIDABLE_TYPE_INT;

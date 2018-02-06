@@ -22,7 +22,7 @@ connection=http/1.1
 -
 connection=http/1.1-tcp-ipv4
 -
-__BY_EQUAL_UUID__
+for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=http;host=www.no-oride.com;connection=http;connection=http/1.1;connection=http/1.1-tcp-ipv4
 -
 for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=http;host=www.no-oride.com;connection=http;connection=http/1.1;connection=http/1.1-tcp-ipv4
 -
