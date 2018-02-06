@@ -75,6 +75,11 @@ public:
   mark_body_done()
   {
     body_done = true;
+    if (response_is_chunked()) {
+      ink_assert(chunked_handler.state == ChunkedHandler::CHUNK_READ_DONE ||
+                 chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR);
+      this->write_vio.nbytes = response_header.length_get() + chunked_handler.dechunked_size;
+    }
   }
 
   void
