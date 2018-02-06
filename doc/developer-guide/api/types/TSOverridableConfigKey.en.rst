@@ -132,7 +132,7 @@ Enumeration Members
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT
 .. c:member:: TSOverridableConfigKey  TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT
-
+.. c:member:: TSOverridableConfigKey  TS_CONFIG_HTTP_ALLOW_MULTI_RANGE
 Description
 ===========
 

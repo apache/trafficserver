@@ -404,6 +404,7 @@ struct OverridableHttpConfigParams {
       cache_required_headers(2),
       cache_range_lookup(1),
       cache_range_write(0),
+      allow_multi_range(1),
       insert_request_via_string(1),
       insert_response_via_string(0),
       doc_in_cache_skip_dns(1),
@@ -550,6 +551,7 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_required_headers;
   MgmtByte cache_range_lookup;
   MgmtByte cache_range_write;
+  MgmtByte allow_multi_range;
 
   MgmtByte insert_request_via_string;
   MgmtByte insert_response_via_string;
