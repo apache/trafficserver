@@ -207,6 +207,8 @@ Enumeration Members
 
 .. c:member:: TSOverridableConfigKey TS_CONFIG_LAST_ENTRY
 
+.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_ALLOW_MULTI_RANGE
+
 Description
 ===========
 

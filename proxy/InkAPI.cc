@@ -7986,6 +7986,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = &overridableHttpConfig->parent_failures_update_hostdb;
     break;
+  case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
+    ret = &overridableHttpConfig->allow_multi_range;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8225,6 +8228,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.range.write", length))
         cnf = TS_CONFIG_HTTP_CACHE_RANGE_WRITE;
+      else if (!strncmp(name, "proxy.config.http.allow_multi_range", length))
+        cnf = TS_CONFIG_HTTP_ALLOW_MULTI_RANGE;
       break;
     case 'p':
       if (!strncmp(name, "proxy.config.http.normalize_ae_gzip", length))

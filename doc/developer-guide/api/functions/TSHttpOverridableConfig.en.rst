@@ -153,6 +153,7 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.cache.max_open_write_retries`
 |   :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
 |   :ts:cv:`proxy.config.http.parent_proxy.mark_down_hostdb`
+|   :ts:cv:`proxy.config.http.allow_multi_range`
 
 Examples
 ========
