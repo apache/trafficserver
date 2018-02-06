@@ -1,0 +1,85 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import os
+
+# ----
+# Setup Test
+# ----
+Test.Summary = '''
+Test a basic remap of a http connection with Stream Priority Feature
+'''
+# need Curl
+Test.SkipUnless(
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
+    Condition.HasCurlFeature('http2'),
+    Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),
+)
+Test.ContinueOnFail = True
+
+# ----
+# Setup Origin Server
+# ----
+server = Test.MakeOriginServer("server")
+
+# Test Case 0:
+server.addResponse("sessionlog.json",
+                   {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 1048576\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
+
+# ----
+# Setup ATS
+# ----
+ts = Test.MakeATSProcess("ts", select_ports=False)
+
+ts.addSSLfile("ssl/server.pem")
+ts.addSSLfile("ssl/server.key")
+ts.Variables.ssl_port = 4443
+ts.Disk.remap_config.AddLine(
+    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
+)
+ts.Disk.ssl_multicert_config.AddLine(
+    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+)
+ts.Disk.records_config.update({
+    'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
+    'proxy.config.http.cache.http': 0,
+    'proxy.config.http2.stream_priority_enabled': 1,
+    'proxy.config.http2.no_activity_timeout_in': 3,
+    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'http2',
+})
+
+# ----
+# Test Cases
+# ----
+
+# Test Case 0:
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bigfile | shasum -a 256'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.Streams.stdout = "gold/priority_0_stdout.gold"
+tr.Processes.Default.Streams.stderr = "gold/priority_0_stderr.gold"
+tr.StillRunningAfter = server
