@@ -29,10 +29,27 @@
 #include "ts/ink_platform.h"
 
 #include "P_Net.h"
+
 class NetHandler;
 typedef int (NetHandler::*NetContHandler)(int, void *);
 
 void initialize_thread_for_quic_net(EThread *thread);
+
+struct QUICPollEvent {
+  typedef union data_t {
+    void *ptr;
+    uint32_t u32;
+    uint64_t u64;
+  } data_t;
+
+  void free();
+
+  data_t data;
+  UDPPacketInternal *packet;
+
+  SLINK(QUICPollEvent, alink);
+  LINK(QUICPollEvent, link);
+};
 
 struct QUICPollCont : public Continuation {
   NetHandler *net_handler;
@@ -45,16 +62,16 @@ struct QUICPollCont : public Continuation {
 
 public:
   // Atomic Queue to save incoming packets
-  ASLL(UDPPacketInternal, alink) inQueue;
+  ASLL(QUICPollEvent, alink) inQueue;
 
   // Internal Queue to save Long Header Packet
-  Que(UDPPacket, link) longInQueue;
+  Que(UDPPacketInternal, link) longInQueue;
   // Internal Queue to save Short Header Packet
-  Que(UDPPacket, link) shortInQueue;
+  Que(UDPPacketInternal, link) shortInQueue;
 
 private:
-  void _process_short_header_packet(UDPPacketInternal *p, NetHandler *nh);
-  void _process_long_header_packet(UDPPacketInternal *p, NetHandler *nh);
+  void _process_short_header_packet(QUICPollEvent *e, NetHandler *nh);
+  void _process_long_header_packet(QUICPollEvent *e, NetHandler *nh);
 };
 
 static inline QUICPollCont *
@@ -63,4 +80,5 @@ get_QUICPollCont(EThread *t)
   return (QUICPollCont *)ETHREAD_GET_PTR(t, quic_NetProcessor.quicPollCont_offset);
 }
 
+extern ClassAllocator<QUICPollEvent> quicPollEventAllocator;
 #endif

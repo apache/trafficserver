@@ -23,6 +23,14 @@
 
 #include "P_Net.h"
 
+ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
+
+void
+QUICPollEvent::free()
+{
+  quicPollEventAllocator.free(this);
+}
+
 QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m) : Continuation(m.get()), net_handler(nullptr)
 {
   SET_HANDLER(&QUICPollCont::pollEvent);
@@ -38,15 +46,16 @@ QUICPollCont::~QUICPollCont()
 }
 
 void
-QUICPollCont::_process_long_header_packet(UDPPacketInternal *p, NetHandler *nh)
+QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  QUICNetVConnection *vc;
-  QUICPacketType ptype;
   uint8_t *buf;
-
+  QUICPacketType ptype;
+  UDPPacketInternal *p = e->packet;
   // FIXME: VC is nullptr ?
-  vc  = static_cast<QUICNetVConnection *>(p->data.ptr);
-  buf = (uint8_t *)p->getIOBlockChain()->buf();
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->data.ptr);
+  buf                    = (uint8_t *)p->getIOBlockChain()->buf();
+
+  e->free();
   if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
     // TODO: Some packets may not have connection id
     p->free();
@@ -85,13 +94,14 @@ QUICPollCont::_process_long_header_packet(UDPPacketInternal *p, NetHandler *nh)
 }
 
 void
-QUICPollCont::_process_short_header_packet(UDPPacketInternal *p, NetHandler *nh)
+QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  QUICNetVConnection *vc;
   uint8_t *buf;
+  UDPPacketInternal *p   = e->packet;
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->data.ptr);
+  buf                    = (uint8_t *)p->getIOBlockChain()->buf();
 
-  vc  = static_cast<QUICNetVConnection *>(p->data.ptr);
-  buf = (uint8_t *)p->getIOBlockChain()->buf();
+  e->free();
   if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
     // TODO: Some packets may not have connection id
     p->free();
@@ -124,22 +134,22 @@ QUICPollCont::pollEvent(int, Event *)
 {
   ink_assert(this->mutex->thread_holding == this_thread());
   uint8_t *buf;
-  UDPPacketInternal *p = nullptr;
-  NetHandler *nh       = get_NetHandler(this->mutex->thread_holding);
+  QUICPollEvent *e;
+  NetHandler *nh = get_NetHandler(this->mutex->thread_holding);
 
   // Process the ASLL
-  SList(UDPPacketInternal, alink) aq(inQueue.popall());
-  Queue<UDPPacketInternal> result;
-  while ((p = aq.pop())) {
-    result.push(p);
+  SList(QUICPollEvent, link) aq(inQueue.popall());
+  Queue<QUICPollEvent> result;
+  while ((e = aq.pop())) {
+    result.push(e);
   }
 
-  while ((p = result.pop())) {
-    buf = (uint8_t *)p->getIOBlockChain()->buf();
+  while ((e = result.pop())) {
+    buf = (uint8_t *)e->packet->getIOBlockChain()->buf();
     if (QUICTypeUtil::has_long_header(buf)) { // Long Header Packet with Connection ID, has a valid type value.
-      this->_process_long_header_packet(p, nh);
+      this->_process_long_header_packet(e, nh);
     } else { // Short Header Packet with Connection ID, has a valid type value.
-      this->_process_short_header_packet(p, nh);
+      this->_process_short_header_packet(e, nh);
     }
   }
 
@@ -154,5 +164,5 @@ initialize_thread_for_quic_net(EThread *thread)
 
   new ((ink_dummy_for_new *)quicpc) QUICPollCont(thread->mutex, nh);
 
-  thread->schedule_every(quicpc, -UDP_PERIOD);
+  thread->schedule_every(quicpc, -HRTIME_MSECONDS(UDP_PERIOD));
 }
