@@ -124,7 +124,8 @@ QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
 void
 QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  EThread *eth;
+  EThread *eth           = nullptr;
+  QUICPollEvent *qe      = nullptr;
   QUICNetVConnection *vc = nullptr;
   IOBufferBlock *block   = udp_packet->getIOBlockChain();
 
@@ -185,10 +186,13 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     eth = vc->thread;
   }
 
-  // Push the packet into QUICPollCont
-  udp_packet->data.ptr = vc;
+  qe = quicPollEventAllocator.alloc();
+
+  qe->data.ptr = vc;
   // should we use dynamic_cast ??
-  get_QUICPollCont(eth)->inQueue.push(static_cast<UDPPacketInternal *>(udp_packet));
+  qe->packet = static_cast<UDPPacketInternal *>(udp_packet);
+  // Push the packet into QUICPollCont
+  get_QUICPollCont(eth)->inQueue.push(qe);
 }
 
 // TODO: Should be called via eventProcessor?
