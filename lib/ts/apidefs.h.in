@@ -763,6 +763,7 @@ typedef enum {
   TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT,
   TS_CONFIG_HTTP_NORMALIZE_AE,
   TS_CONFIG_HTTP_INSERT_FORWARDED,
+  TS_CONFIG_HTTP_ALLOW_MULTI_RANGE,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -885,7 +886,7 @@ typedef struct TSFetchUrlParams {
 
 // This is a duplicate of the SSL_MAX_SSL_SESSION_ID_LENGTH constant
 // Redefining here so we don't include the openssl/ssl.h file here
-#define TS_SSL_MAX_SSL_SESSION_ID_LENGTH        32
+#define TS_SSL_MAX_SSL_SESSION_ID_LENGTH 32
 
 // This mirrors the internal data structure SSLSessionID
 typedef struct TSSslSessionID_s {

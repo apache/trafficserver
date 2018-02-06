@@ -7602,7 +7602,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {"proxy.config.url_r
                                                              "proxy.config.http.parent_proxy.per_parent_connect_attempts",
                                                              "proxy.config.http.parent_proxy.connect_attempts_timeout",
                                                              "proxy.config.http.normalize_ae",
-                                                             "proxy.config.http.insert_forwarded"};
+                                                             "proxy.config.http.insert_forwarded",
+                                                             "proxy.config.http.allow_multi_range"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
