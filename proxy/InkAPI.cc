@@ -7482,6 +7482,9 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 // This API tells the core to follow normal (301/302) redirects using the
 // standard Location: URL. This does not need to be called if you set an
 // explicit URL using TSHttpTxnRedirectUrlSet().
+//
+// TODO: This should be deprecated on 7.1.x, and removed from 8.0.0, now that the configuration
+// for this is properly overridable.
 TSReturnCode
 TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
 {
@@ -7489,10 +7492,19 @@ TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
 
   HttpSM *sm = (HttpSM *)txnp;
 
-  sm->enable_redirection = (on ? true : false);
-  // Make sure we allow for at least one redirection.
-  if (0 == sm->redirection_tries) {
-    sm->redirection_tries = 1;
+  // This is necessary since we might not have setup these overridable configurations
+  sm->t_state.setup_per_txn_configs();
+
+  if (on) {
+    sm->redirection_tries  = 0;
+    sm->enable_redirection = true;
+    // Make sure we allow for at least one redirection.
+    if (sm->t_state.txn_conf->number_of_redirections <= 0) {
+      sm->t_state.txn_conf->number_of_redirections = 1;
+    }
+  } else {
+    sm->enable_redirection                       = false;
+    sm->t_state.txn_conf->number_of_redirections = 0;
   }
 
   return TS_SUCCESS;
@@ -7516,10 +7528,12 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   sm->redirect_url       = (char *)url;
   sm->redirect_url_len   = url_len;
   sm->enable_redirection = true;
+  sm->redirection_tries  = 0;
 
   // Make sure we allow for at least one redirection.
-  if (0 == sm->redirection_tries) {
-    sm->redirection_tries = 1;
+  if (sm->t_state.txn_conf->number_of_redirections <= 0) {
+    sm->t_state.setup_per_txn_configs();
+    sm->t_state.txn_conf->number_of_redirections = 1;
   }
 }
 
