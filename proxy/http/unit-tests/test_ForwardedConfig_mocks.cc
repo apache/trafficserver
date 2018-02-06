@@ -84,3 +84,8 @@ void
 IOBufferData::free()
 {
 }
+
+void
+thread_freeup(Allocator &a, ProxyAllocator &l)
+{
+}
