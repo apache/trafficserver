@@ -1739,6 +1739,22 @@ Security
    post body larger than this limit the response will be terminated with
    413 - Request Entity Too Large and logged accordingly.
 
+.. ts:cv:: CONFIG proxy.config.http.allow_multi_range INT 1
+   :reloadable:
+   :overridable:
+
+   This option allows the administrator to configure different behavior and
+   handling of requests with multiple ranges in the ``Range`` header.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Do not allow multiple ranges, effectively ignoring the ``Range`` header
+   ``1`` Allows multiple ranges. This can be potentially dangerous since well
+         formed requests can cause excessive resource consumption on the server.
+   ``2`` Similar to 0, except return a 416 error code and no response body.
+   ===== ======================================================================
+
 Cache Control
 =============
 
