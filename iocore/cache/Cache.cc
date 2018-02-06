@@ -2348,7 +2348,7 @@ CacheVC::handleReadDone(int event, Event *e)
 #endif
 
     if (is_debug_tag_set("cache_read")) {
-      char xt[33];
+      char xt[CRYPTO_HEX_SIZE];
       Debug("cache_read", "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64 " prefix=%d",
             doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len());
     }
