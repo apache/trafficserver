@@ -616,7 +616,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     //   bail on the state machine
     vc_table.cleanup_entry(ua_entry);
     ua_entry                  = nullptr;
-    t_state.client_info.abort = HttpTransact::ABORTED;
+    set_ua_abort(HttpTransact::ABORTED, event);
     terminate_sm              = true;
     return 0;
   }
@@ -1005,7 +1005,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
     // The user agent is hosed.  Send an error
-    t_state.client_info.abort = HttpTransact::ABORTED;
+    set_ua_abort(HttpTransact::ABORTED, event);
     call_transact_and_set_next_state(HttpTransact::HandleBadPushRespHdr);
     return 0;
   }
@@ -3297,7 +3297,7 @@ HttpSM::tunnel_handler_ua_push(int event, HttpTunnelProducer *p)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     // Transfer terminated.  Bail on the cache write.
-    t_state.client_info.abort = HttpTransact::ABORTED;
+    set_ua_abort(HttpTransact::ABORTED, event);
     p->vc->do_io_close(EHTTP_ERROR);
     p->read_vio = nullptr;
     tunnel.chain_abort_all(p);
@@ -5150,7 +5150,21 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
   switch (ua_abort) {
   case HttpTransact::ABORTED:
   case HttpTransact::MAYBE_ABORTED:
-    t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_ABORT;
+    // More detailed client side abort logging based on event
+    switch (event) {
+    case VC_EVENT_ACTIVE_TIMEOUT:
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_READ_TIMEOUT;
+      break;
+    case VC_EVENT_ERROR:
+      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_READ_ERROR;
+      break;
+    case VC_EVENT_EOS:
+    // Fall-through
+    default:
+      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_ABORT;
+      break;
+    }
     break;
   default:
     // Handled here:
