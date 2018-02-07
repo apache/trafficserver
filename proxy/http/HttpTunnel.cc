@@ -1144,6 +1144,10 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
   if (p->do_chunking) {
+    if (p->chunked_handler.chunked_buffer && p->chunked_handler.chunked_buffer->max_read_avail() > 524288) {
+      this_ethread()->schedule_imm(this, event);
+      return false;
+    }
     event = producer_handler_dechunked(event, p);
 
     // If we were in PRECOMPLETE when this function was called
@@ -1154,6 +1158,10 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
       event = VC_EVENT_EOS;
     }
   } else if (p->do_dechunking || p->do_chunked_passthru) {
+    if (p->chunked_handler.dechunked_buffer && p->chunked_handler.dechunked_buffer->max_read_avail() > 524288) {
+      this_ethread()->schedule_imm(this, event);
+      return false;
+    }
     event = producer_handler_chunked(event, p);
   } else {
     p->last_event = event;
