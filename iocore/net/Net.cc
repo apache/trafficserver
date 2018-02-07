@@ -108,6 +108,11 @@ register_net_stats()
   NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_total_stat);
   NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_count_stat);
   NET_CLEAR_DYN_STAT(default_inactivity_timeout_stat);
+
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_throttled_in", RECD_INT, RECP_PERSISTENT,
+                     (int)net_connections_throttled_in_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_throttled_out", RECD_INT, RECP_PERSISTENT,
+                     (int)net_connections_throttled_out_stat, RecRawStatSyncSum);
 }
 
 void
