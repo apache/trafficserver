@@ -32,6 +32,7 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include <ts/apidefs.h>
+#include "ts/TextView.h"
 #include <ts/string_view.h>
 
 #define CONNECT_SUCCESS 1
@@ -601,6 +602,9 @@ public:
   /** Set remote sock addr struct. */
   virtual void set_remote_addr() = 0;
 
+  /** Set remote sock addr struct. */
+  virtual void set_remote_addr(const sockaddr *) = 0;
+
   // for InkAPI
   bool
   get_is_internal_request() const
@@ -642,6 +646,113 @@ public:
   // noncopyable
   NetVConnection(const NetVConnection &) = delete;
   NetVConnection &operator=(const NetVConnection &) = delete;
+
+  enum class ProxyProtocolVersion {
+    UNDEFINED,
+    V1,
+    V2,
+  };
+
+  enum class ProxyProtocolData {
+    UNDEFINED,
+    SRC,
+    DST,
+  };
+
+  int
+  set_proxy_protocol_addr(const ProxyProtocolData src_or_dst, ts::TextView &ip_addr_str)
+  {
+    int ret = -1;
+
+    if (src_or_dst == ProxyProtocolData::SRC) {
+      ret = ats_ip_pton(ip_addr_str, &pp_info.src_addr);
+    } else {
+      ret = ats_ip_pton(ip_addr_str, &pp_info.dst_addr);
+    }
+    return ret;
+  }
+
+  int
+  set_proxy_protocol_src_addr(ts::TextView src)
+  {
+    return set_proxy_protocol_addr(ProxyProtocolData::SRC, src);
+  }
+
+  int
+  set_proxy_protocol_dst_addr(ts::TextView src)
+  {
+    return set_proxy_protocol_addr(ProxyProtocolData::DST, src);
+  }
+
+  int
+  set_proxy_protocol_port(const ProxyProtocolData src_or_dst, in_port_t port)
+  {
+    if (src_or_dst == ProxyProtocolData::SRC) {
+      pp_info.src_addr.port() = htons(port);
+    } else {
+      pp_info.dst_addr.port() = htons(port);
+    }
+    return port;
+  }
+
+  int
+  set_proxy_protocol_src_port(in_port_t port)
+  {
+    return set_proxy_protocol_port(ProxyProtocolData::SRC, port);
+  }
+
+  int
+  set_proxy_protocol_dst_port(in_port_t port)
+  {
+    return set_proxy_protocol_port(ProxyProtocolData::DST, port);
+  }
+
+  void
+  set_proxy_protocol_version(const ProxyProtocolVersion ver)
+  {
+    pp_info.proxy_protocol_version = ver;
+  }
+
+  ProxyProtocolVersion
+  get_proxy_protocol_version()
+  {
+    return pp_info.proxy_protocol_version;
+  }
+
+  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData);
+
+  sockaddr const *
+  get_proxy_protocol_src_addr()
+  {
+    return get_proxy_protocol_addr(ProxyProtocolData::SRC);
+  }
+
+  uint16_t
+  get_proxy_protocol_src_port()
+  {
+    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::SRC));
+  }
+
+  sockaddr const *
+  get_proxy_protocol_dst_addr()
+  {
+    return get_proxy_protocol_addr(ProxyProtocolData::DST);
+  }
+
+  uint16_t
+  get_proxy_protocol_dst_port()
+  {
+    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
+  };
+
+  typedef struct _ProxyProtocol {
+    ProxyProtocolVersion proxy_protocol_version = ProxyProtocolVersion::UNDEFINED;
+    uint16_t ip_family;
+    IpEndpoint src_addr;
+    IpEndpoint dst_addr;
+  } ProxyProtocol;
+
+  ProxyProtocol pp_info;
 
 protected:
   IpEndpoint local_addr;
