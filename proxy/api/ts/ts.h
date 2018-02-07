@@ -1977,6 +1977,10 @@ tsapi int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp);
 
 tsapi struct sockaddr const *TSNetVConnLocalAddrGet(TSVConn vc);
 
+tsapi void TSIOBufferWriterInit(TSIOBufferWriter *bwp, TSIOBuffer bufp);
+tsapi void TSIOBufferWriterWrite(TSIOBufferWriter *bwp, const void *buf, size_t length);
+tsapi size_t TSIOBufferWriterCount(TSIOBufferWriter *bwp);
+
 /* --------------------------------------------------------------------------
    Stats and configs based on librecords raw stats (this is preferred API until we
    rewrite stats). This system has a limitation of up to 1,500 stats max, controlled
