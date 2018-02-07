@@ -283,6 +283,7 @@ public:
 
   void set_local_addr() override;
   void set_remote_addr() override;
+  void set_remote_addr(const sockaddr *) override;
   int set_tcp_init_cwnd(int init_cwnd) override;
   int set_tcp_congestion_control(int side) override;
   void apply_options() override;
@@ -316,6 +317,13 @@ TS_INLINE void
 UnixNetVConnection::set_remote_addr()
 {
   ats_ip_copy(&remote_addr, &con.addr);
+  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
+}
+
+TS_INLINE void
+UnixNetVConnection::set_remote_addr(const sockaddr *new_sa)
+{
+  ats_ip_copy(&remote_addr, new_sa);
   this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
 }
 
