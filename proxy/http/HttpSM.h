@@ -181,7 +181,6 @@ class PostDataBuffers
 {
 public:
   PostDataBuffers() { Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]"); }
-
   MIOBuffer *postdata_copy_buffer            = nullptr;
   IOBufferReader *postdata_copy_buffer_start = nullptr;
   IOBufferReader *ua_buffer_reader           = nullptr;
