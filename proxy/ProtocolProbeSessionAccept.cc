@@ -25,6 +25,7 @@
 #include "I_Machine.h"
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/HTTP2.h"
+#include "ProxyProtocol.h"
 
 static bool
 proto_is_http2(IOBufferReader *reader)
@@ -88,6 +89,10 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
       // Not enough data read. Well, that sucks.
       goto done;
+    }
+
+    if (http_has_proxy_v1(reader, netvc)) {
+      Debug("http", "ioCompletionEvent: http has proxy_v1 header");
     }
 
     if (proto_is_http2(reader)) {
