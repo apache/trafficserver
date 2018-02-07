@@ -1303,11 +1303,11 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   int res;
 
   thread = t;
-  if (check_net_throttle(CONNECT, submit_time)) {
-    check_throttle_warning();
-    action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_THROTTLING);
-    free(t);
-    return CONNECT_FAILURE;
+  if (check_net_throttle(CONNECT)) {
+    check_throttle_warning(CONNECT);
+    res = -ENET_THROTTLING;
+    NET_INCREMENT_DYN_STAT(net_connections_throttled_out_stat);
+    goto fail;
   }
 
   // Force family to agree with remote (server) address.
@@ -1342,18 +1342,6 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     con.fd           = fd;
     con.is_connected = true;
     con.is_bound     = true;
-  }
-
-  if (check_emergency_throttle(con)) {
-    // The `con' could be closed if there is hyper emergency
-    if (con.fd == NO_FD) {
-      // We need to decrement the stat because close_UnixNetVConnection only decrements with a valid connection descriptor.
-      NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
-      // Set errno force to EMFILE (reached limit for open file descriptors)
-      errno = EMFILE;
-      res   = -errno;
-      goto fail;
-    }
   }
 
   // Must connect after EventIO::Start() to avoid a race condition
