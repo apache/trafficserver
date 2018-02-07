@@ -1068,8 +1068,8 @@ msgid "offset_high"
 msgstr "offset_high"
 
 #: ../../../developer-guide/architecture/architecture.en.rst:514
-msgid "inku16"
-msgstr "inku16"
+msgid "unsigned int:16"
+msgstr "unsigned int:16"
 
 #: ../../../developer-guide/architecture/architecture.en.rst:514
 msgid "High order offset bits"

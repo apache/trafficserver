@@ -544,7 +544,7 @@ The in memory volume directory entries are described below.
    pinned      unsigned int:1      Flag: document is pinned
    token       unsigned int:1      Flag: Unknown
    next        unsigned int:16     Segment local index of next entry.
-   offset_high inku16              High order offset bits
+   offset_high unsigned int:16     High order offset bits
    =========== =================== ===================================================
 
 The stripe directory is an array of ``Dir`` instances. Each entry refers to
