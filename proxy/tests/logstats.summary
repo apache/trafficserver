@@ -16,6 +16,8 @@ Cache miss other                           0      0.00%      0.00KB      0.00%
 Cache miss total                          66     98.51%      6.30MB    100.00%
 
 Client aborted                             1      1.49%      0.00KB      0.00%
+Client read timeout                        0      0.00%      0.00KB      0.00%
+Client read error                          0      0.00%      0.00KB      0.00%
 Connect failed                             0      0.00%      0.00KB      0.00%
 Invalid request                            0      0.00%      0.00KB      0.00%
 Unknown error(99)                          0      0.00%      0.00KB      0.00%
