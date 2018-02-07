@@ -615,9 +615,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
     // The user agent is hosed.  Close it &
     //   bail on the state machine
     vc_table.cleanup_entry(ua_entry);
-    ua_entry                  = nullptr;
+    ua_entry = nullptr;
     set_ua_abort(HttpTransact::ABORTED, event);
-    terminate_sm              = true;
+    terminate_sm = true;
     return 0;
   }
 
@@ -5152,14 +5152,12 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
   case HttpTransact::MAYBE_ABORTED:
     // More detailed client side abort logging based on event
     switch (event) {
-    case VC_EVENT_ACTIVE_TIMEOUT:
-    case VC_EVENT_INACTIVITY_TIMEOUT:
-      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_READ_TIMEOUT;
-      break;
     case VC_EVENT_ERROR:
       t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_READ_ERROR;
       break;
     case VC_EVENT_EOS:
+    case VC_EVENT_ACTIVE_TIMEOUT:     // Won't matter. Server will hangup
+    case VC_EVENT_INACTIVITY_TIMEOUT: // Won't matter. Send back 408
     // Fall-through
     default:
       t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_ABORT;
