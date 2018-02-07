@@ -33,6 +33,7 @@
 #include "P_SSLClientUtils.h"
 #include "P_SSLSNI.h"
 #include "HttpTunnel.h"
+#include "ProxyProtocol.h"
 
 #include <climits>
 #include <string>
@@ -352,6 +353,9 @@ SSLNetVConnection::read_raw_data()
   char *buffer       = nullptr;
   int buf_len;
   IOBufferBlock *b = this->handShakeBuffer->first_write_block();
+  // int f_proxy_protocol = 1;  // these are mocked up variableds
+  int src_ip = 1;
+  int the_trusted_whitelist = 1;
 
   rattempted = b->write_avail();
   while (rattempted) {
@@ -382,6 +386,22 @@ SSLNetVConnection::read_raw_data()
     }
   }
   NET_SUM_DYN_STAT(net_read_bytes_stat, r);
+
+  if (this->get_is_proxy_protocol()) {
+    Debug("ssl", "[SSLNetVConnection::read_raw_data] proxy protocol is enabled on this port");
+    if (src_ip == the_trusted_whitelist) {
+      char buff[INET6_ADDRSTRLEN];
+      Debug("ssl", "[SSLNetVConnection::read_raw_data] this source IP [%s] is trusted in the whitelist for proxy protocol", ats_ip_ntop(get_remote_addr(), buff, INET6_ADDRSTRLEN));
+      if (ssl_has_proxy_v1(this, buffer, &r)) {
+        Debug("ssl", "[SSLNetVConnection::read_raw_data] ssl has proxy_v1 header");
+      } else {
+        Debug("ssl", "[SSLNetVConnection::read_raw_data] proxy protocol was enabled, but required header was not present in the transaction - closing connection");
+      }
+    }
+  }
+//    if (ssl_has_proxy_v1(this, buffer, &r)) {
+//      Debug("ssl", "[SSLNetVConnection::read_raw_data] ssl has proxy_v1 header");
+//    }
 
   if (r > 0) {
     this->handShakeBuffer->fill(r);

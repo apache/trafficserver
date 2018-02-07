@@ -1600,6 +1600,22 @@ Proxy User Variables
    is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
    incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
 
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_to_forwarded INT 0
+   :reloadable:
+   :overridable:
+
+   Enables and disables transforming an incoming Proxy Protocol header to Forwarded: header
+
+   ======== ===================================================================
+   Value    Effect
+   ======== ===================================================================
+   ``0``    Disabled - default value
+   ``1``    Enables transforming Proxy Protocol version 1 to the Forwarded header
+   ======== ===================================================================
+   
+   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header.
+   See :ts:cv:`proxy.config.http.insert_forwarded` for information on configuring the `Forwarded:` header.
+   
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
    :overridable:
@@ -2501,7 +2517,7 @@ HostDB
    Set the file path for an external host file.
 
    If this is set (non-empty) then the file is presumed to be a hosts file in
-   the standard `host file format <http://tools.ietf.org/html/rfc1123#page-13>`_.
+   the standard .
    It is read and the entries there added to the HostDB. The file is
    periodically checked for a more recent modification date in which case it is
    reloaded. The interval is set with :ts:cv:`proxy.config.hostdb.host_file.interval`.

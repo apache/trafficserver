@@ -25,6 +25,7 @@
 #include "I_Machine.h"
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/HTTP2.h"
+#include "ProxyProtocol.h"
 
 static bool
 proto_is_http2(IOBufferReader *reader)
@@ -65,6 +66,9 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     VIO *vio;
     NetVConnection *netvc;
     ProtoGroupKey key = N_PROTO_GROUPS; // use this as an invalid value.
+    // int f_proxy_protocol = 1;  // these are mocked up variableds
+    int src_ip = 1;
+    int the_trusted_whitelist = 1;
 
     vio   = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
@@ -88,6 +92,27 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
       // Not enough data read. Well, that sucks.
       goto done;
+    }
+
+    // if proxy_protocol is enabled via port descriptor AND the src IP is in
+    // the trusted whitelist for proxy protocol, then check to see if it is
+    // present
+    if (netvc->options.f_blocking) {
+
+    } 
+    if (netvc->get_is_proxy_protocol()) {
+    // if (f_proxy_protocol) {
+      Debug("http", "ioCompletionEvent: proxy protocol is enabled on this port");
+      if (src_ip == the_trusted_whitelist) {
+        char new_host[INET6_ADDRSTRLEN];
+        Debug("http", "ioCompletionEvent: this source IP [%s] is trusted in the whitelist for proxy protocol", ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
+        if (http_has_proxy_v1(reader, netvc)) {
+          Debug("http", "ioCompletionEvent: http has proxy_v1 header");
+        } else {
+          Debug("http", "ioCompletionEvent: proxy protocol was enabled, but required header was not present in the transaction - closing connection");
+          goto done;
+        }
+      }
     }
 
     if (proto_is_http2(reader)) {

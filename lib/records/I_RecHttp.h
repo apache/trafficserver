@@ -232,6 +232,7 @@ public:
     TRANSPORT_COMPRESSED,   ///< Compressed HTTP.
     TRANSPORT_BLIND_TUNNEL, ///< Blind tunnel (no processing).
     TRANSPORT_SSL,          ///< SSL connection.
+    TRANSPORT_PROXY_PROTO,  ///< Proxy Protocol
     TRANSPORT_PLUGIN        /// < Protocol plugin connection
   };
 
@@ -239,6 +240,8 @@ public:
   TransportType m_type; ///< Type of connection.
   in_port_t m_port;     ///< Port on which to listen.
   uint8_t m_family;     ///< IP address family.
+  /// True if proxy protocol is required on incoming requests.
+  bool m_proxy_protocol;
   /// True if inbound connects (from client) are transparent.
   bool m_inbound_transparent_p;
   /// True if outbound connections (to origin servers) are transparent.
@@ -390,6 +393,7 @@ public:
   static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
   static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
   static const char *const OPT_SSL;                     ///< SSL (experimental)
+  static const char *const OPT_PROXY_PROTO;             ///< Proxy Protocol
   static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
   static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
   static const char *const OPT_COMPRESSED;              ///< Compressed.
