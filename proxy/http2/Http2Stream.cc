@@ -309,7 +309,10 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.vc_server = this;
   write_vio.op        = VIO::WRITE;
   response_reader     = abuffer;
-  return update_write_request(abuffer, nbytes, false) ? &write_vio : nullptr;
+
+  update_write_request(abuffer, nbytes, false);
+
+  return &write_vio;
 }
 
 // Initiated from SM
@@ -521,12 +524,11 @@ Http2Stream::restart_sending()
   this->send_response_body(true);
 }
 
-bool
+void
 Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
 {
-  bool retval = true;
   if (!this->is_client_state_writeable() || closed || parent == nullptr || write_vio.mutex == nullptr) {
-    return retval;
+    return;
   }
   if (this->get_thread() != this_ethread()) {
     SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
@@ -534,7 +536,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       // Send to the right thread
       cross_thread_event = this->get_thread()->schedule_imm(this, VC_EVENT_WRITE_READY, nullptr);
     }
-    return retval;
+    return;
   }
   ink_release_assert(this->get_thread() == this_ethread());
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
@@ -568,67 +570,68 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
                    ", reader.read_avail=%" PRId64,
                    write_vio.nbytes, write_vio.ndone, write_vio.get_writer()->write_avail(), bytes_avail);
 
-  if (bytes_avail > 0 || is_done) {
-    // Process the new data
-    if (!this->response_header_done) {
-      // Still parsing the response_header
-      int bytes_used = 0;
-      int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
-      // HTTPHdr::parse_resp() consumed the response_reader in above
-      write_vio.ndone += this->response_header.length_get();
-
-      switch (state) {
-      case PARSE_RESULT_DONE: {
-        this->response_header_done = true;
-
-        // Schedule session shutdown if response header has "Connection: close"
-        MIMEField *field = this->response_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-        if (field) {
-          int len;
-          const char *value = field->value_get(&len);
-          if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
-            SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-            if (parent->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-              parent->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
-            }
-          }
-        }
-
-        // Send the response header back
-        parent->connection_state.send_headers_frame(this);
-
-        // See if the response is chunked.  Set up the dechunking logic if it is
-        // Make sure to check if the chunk is complete and signal appropriately
-        this->response_initialize_data_handling(is_done);
-
-        // If there is additional data, send it along in a data frame.  Or if this was header only
-        // make sure to send the end of stream
-        if (this->response_is_data_available() || is_done) {
-          if ((write_vio.ntodo() + this->response_header.length_get()) == bytes_avail || is_done) {
-            this->mark_body_done();
-          }
-
-          this->send_response_body(call_update);
-        }
-        break;
-      }
-      case PARSE_RESULT_CONT:
-        // Let it ride for next time
-        break;
-      default:
-        break;
-      }
-    } else {
-      if (write_vio.ntodo() == bytes_avail || is_done) {
-        this->mark_body_done();
-        retval = false;
-      }
-
-      this->send_response_body(call_update);
-    }
+  if (bytes_avail <= 0 && !is_done) {
+    return;
   }
 
-  return retval;
+  // Process the new data
+  if (!this->response_header_done) {
+    // Still parsing the response_header
+    int bytes_used = 0;
+    int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
+    // HTTPHdr::parse_resp() consumed the response_reader in above
+    write_vio.ndone += this->response_header.length_get();
+
+    switch (state) {
+    case PARSE_RESULT_DONE: {
+      this->response_header_done = true;
+
+      // Schedule session shutdown if response header has "Connection: close"
+      MIMEField *field = this->response_header.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+      if (field) {
+        int len;
+        const char *value = field->value_get(&len);
+        if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
+          SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+          if (parent->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+            parent->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+          }
+        }
+      }
+
+      // Send the response header back
+      parent->connection_state.send_headers_frame(this);
+
+      // See if the response is chunked.  Set up the dechunking logic if it is
+      // Make sure to check if the chunk is complete and signal appropriately
+      this->response_initialize_data_handling(is_done);
+
+      // If there is additional data, send it along in a data frame.  Or if this was header only
+      // make sure to send the end of stream
+      if (this->response_is_data_available() || is_done) {
+        if ((write_vio.ntodo() + this->response_header.length_get()) == bytes_avail || is_done) {
+          this->mark_body_done();
+        }
+
+        this->send_response_body(call_update);
+      }
+      break;
+    }
+    case PARSE_RESULT_CONT:
+      // Let it ride for next time
+      break;
+    default:
+      break;
+    }
+  } else {
+    if (write_vio.ntodo() == bytes_avail || is_done) {
+      this->mark_body_done();
+    }
+
+    this->send_response_body(call_update);
+  }
+
+  return;
 }
 
 void

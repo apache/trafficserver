@@ -156,7 +156,7 @@ public:
   void terminate_if_possible();
   void do_io_shutdown(ShutdownHowTo_t) override {}
   void update_read_request(int64_t read_len, bool send_update, bool check_eos = false);
-  bool update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
+  void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
   void signal_write_event(bool call_update);
   void reenable(VIO *vio) override;
   virtual void transaction_done() override;
@@ -169,7 +169,6 @@ public:
   }
 
   void restart_sending();
-  void send_response_body(bool call_update);
   void push_promise(URL &url, const MIMEField *accept_encoding);
 
   // Stream level window size
@@ -248,6 +247,7 @@ private:
   void response_process_data(bool &is_done);
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
+  void send_response_body(bool call_update);
 
   HTTPParser http_parser;
   ink_hrtime _start_time = 0;
