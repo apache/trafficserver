@@ -126,16 +126,16 @@ struct Dir {
   // USE MACROS TO PREVENT UNALIGNED LOADS
   // bits are numbered from lowest in u16 to highest
   // always index as u16 to avoid byte order issues
-  unsigned int offset : 24; // (0,1:0-7) 16M * 512 = 8GB
-  unsigned int big : 2;     // (1:8-9) 512 << (3 * big)
-  unsigned int size : 6;    // (1:10-15) 6**2 = 64, 64*512 = 32768 .. 64*256=16MB
-  unsigned int tag : 12;    // (2:0-11) 2048 / 8 entries/bucket = .4%
-  unsigned int phase : 1;   // (2:12)
-  unsigned int head : 1;    // (2:13) first segment in a document
-  unsigned int pinned : 1;  // (2:14)
-  unsigned int token : 1;   // (2:15)
-  unsigned int next : 16;   // (3)
-  inku16 offset_high;       // 8GB * 65k = 0.5PB (4)
+  unsigned int offset : 24;      // (0,1:0-7) 16M * 512 = 8GB
+  unsigned int big : 2;          // (1:8-9) 512 << (3 * big)
+  unsigned int size : 6;         // (1:10-15) 6**2 = 64, 64*512 = 32768 .. 64*256=16MB
+  unsigned int tag : 12;         // (2:0-11) 2048 / 8 entries/bucket = .4%
+  unsigned int phase : 1;        // (2:12)
+  unsigned int head : 1;         // (2:13) first segment in a document
+  unsigned int pinned : 1;       // (2:14)
+  unsigned int token : 1;        // (2:15)
+  unsigned int next : 16;        // (3)
+  unsigned int offset_high : 16; // 8GB * 65k = 0.5PB (4)
 #else
   uint16_t w[5];
   Dir() { dir_clear(this); }
@@ -150,9 +150,9 @@ struct FreeDir {
   // USE MACROS TO PREVENT UNALIGNED LOADS
   unsigned int offset : 24; // 0: empty
   unsigned int reserved : 8;
-  unsigned int prev : 16; // (2)
-  unsigned int next : 16; // (3)
-  inku16 offset_high;     // 0: empty
+  unsigned int prev : 16;        // (2)
+  unsigned int next : 16;        // (3)
+  unsigned int offset_high : 16; // 0: empty
 #else
   uint16_t w[5];
   FreeDir() { dir_clear(this); }
