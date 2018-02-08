@@ -38,6 +38,8 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: uint24_t
 .. cpp:type:: DLL
 .. cpp:type:: INK_MD5
+.. cpp:type:: Queue
+.. cpp:type:: LINK
 
 .. cpp:class:: VersionNumber
 

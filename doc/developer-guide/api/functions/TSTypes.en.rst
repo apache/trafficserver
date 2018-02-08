@@ -170,6 +170,8 @@ more widely. Those are described on this page.
 
     An anchor for a double linked instrusive list of instance of :arg:`T`.
 
+.. cpp:class:: template<typename T> Queue
+
 .. type:: TSAcceptor
 
 .. type:: TSNextProtocolSet
