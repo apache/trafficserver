@@ -34,7 +34,7 @@ class QUICStreamManager;
 class UDPPacket;
 class SSLNextProtocolSet;
 
-class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
+class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler, public RefCountObj
 {
 public:
   virtual QUICConnectionId original_connection_id() = 0;
@@ -65,4 +65,15 @@ public:
   virtual QUICPacketNumber largest_acked_packet_number()    = 0;
   virtual void handle_received_packet(UDPPacket *packeet)   = 0;
   virtual bool is_closed()                                  = 0;
+
+  bool
+  shouldDestroy()
+  {
+    return this->refcount() == 0;
+  }
+
+  int in_closed_queue = 0;
+
+  LINK(QUICConnection, closed_link);
+  SLINK(QUICConnection, closed_alink);
 };

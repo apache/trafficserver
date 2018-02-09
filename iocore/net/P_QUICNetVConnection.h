@@ -152,6 +152,7 @@ public:
   void reenable(VIO *vio) override;
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
   int connectUp(EThread *t, int fd) override;
 
   // QUICNetVConnection
@@ -164,6 +165,7 @@ public:
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
   void free(EThread *t) override;
+  void destroy(EThread *t);
 
   UDPConnection *get_udp_con();
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
@@ -171,6 +173,7 @@ public:
 
   int populate_protocol(ts::string_view *results, int n) const override;
   const char *protocol_contains(ts::string_view tag) const override;
+  void cleanup_connection();
 
   // QUICNetVConnection
   void registerNextProtocolSet(SSLNextProtocolSet *s);

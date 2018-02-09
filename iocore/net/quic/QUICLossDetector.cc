@@ -76,6 +76,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
 
     if (this->_loss_detection_alarm) {
       this->_loss_detection_alarm->cancel();
+      this->_loss_detection_alarm = nullptr;
     }
     break;
   }

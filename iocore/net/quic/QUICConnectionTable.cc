@@ -36,7 +36,13 @@ QUICConnectionTable::insert(QUICConnectionId cid, QUICConnection *connection)
 void
 QUICConnectionTable::erase(QUICConnectionId cid, QUICConnection *connection)
 {
-  ink_assert(this->_connections.get(cid) == connection);
+  QUICConnection *con = this->_connections.get(cid);
+  if (con == nullptr) {
+    Debug("ctable", "[%" PRIx64 "] can't find the vc ", static_cast<uint64_t>(cid));
+    return;
+  }
+  ink_assert(con == connection);
+  Debug("ctable", "[%" PRIx64 "] erase vc", static_cast<uint64_t>(cid));
   // if (this->_cids.get(connection->endpoint(), connection->connection_id()) == cid) {
   //   this->_cids.put(connection->endpoint(), nullptr);
   // }
