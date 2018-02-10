@@ -498,6 +498,38 @@ private:
   IdQualifiers _id_qual;
 };
 
+// cidr: A CIDR masked string representation of the Client's IP.
+class ConditionCidr : public Condition
+{
+  using MatcherType = Matchers<std::string>;
+  using self        = ConditionCidr;
+
+public:
+  explicit ConditionCidr()
+  {
+    _create_masks(); // This must be called here, because we might not have parameters specified
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCidr");
+  };
+
+  ConditionCidr(self &) = delete;
+  self &operator=(self &) = delete;
+
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  void _create_masks();
+  int _v4_cidr = 24;
+  int _v6_cidr = 48;
+  struct in_addr _v4_mask; // We do a 32-bit & using this mask, for efficiency
+  unsigned char _v6_mask;  // Only need one byte here, since we memset the rest (see next)
+  int _v6_zero_bytes;      // How many initial bytes to memset to 0
+};
+
 /// Information about the inbound (client) session.
 class ConditionInbound : public Condition
 {

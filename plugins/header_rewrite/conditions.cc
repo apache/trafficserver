@@ -1185,6 +1185,105 @@ ConditionId::eval(const Resources &res)
 }
 
 void
+ConditionCidr::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  MatcherType *match = new MatcherType(_cond_op);
+
+  match->set(p.get_arg());
+  _matcher = match;
+}
+
+void
+ConditionCidr::set_qualifier(const std::string &q)
+{
+  bool ok = true;
+  int cidr;
+  char *endp;
+
+  Condition::set_qualifier(q);
+
+  TSDebug(PLUGIN_NAME, "\tParsing %%{CIDR:%s} qualifier", q.c_str());
+  cidr = strtol(q.c_str(), &endp, 10);
+  if (cidr >= 0 && cidr <= 32) {
+    _v4_mask.s_addr = UINT32_MAX >> (32 - cidr);
+    _v4_cidr        = cidr;
+    if (endp && (*endp == ',' || *endp == '/' || *endp == ':')) {
+      cidr = strtol(endp + 1, nullptr, 10);
+      if (cidr >= 0 && cidr <= 128) {
+        _v6_cidr = cidr;
+      } else {
+        TSError("[%s] Bad CIDR mask for IPv6: %s", PLUGIN_NAME, q.c_str());
+        ok = false;
+      }
+    }
+  } else {
+    TSError("[%s] Bad CIDR mask for IPv4: %s", PLUGIN_NAME, q.c_str());
+    ok = false;
+  }
+
+  // Update the bit-masks
+  if (ok) {
+    _create_masks();
+  }
+}
+
+bool
+ConditionCidr::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+  TSDebug(PLUGIN_NAME, "Evaluating CIDR()");
+
+  return static_cast<MatcherType *>(_matcher)->test(s);
+}
+
+void
+ConditionCidr::append_value(std::string &s, const Resources &res)
+{
+  struct sockaddr const *addr = TSHttpTxnClientAddrGet(res.txnp);
+
+  switch (addr->sa_family) {
+  case AF_INET: {
+    char res[INET_ADDRSTRLEN];
+    struct in_addr ipv4 = reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr;
+
+    ipv4.s_addr &= _v4_mask.s_addr;
+    inet_ntop(AF_INET, &ipv4, res, INET_ADDRSTRLEN);
+    if (res[0]) {
+      s += res;
+    }
+  } break;
+  case AF_INET6: {
+    char res[INET6_ADDRSTRLEN];
+    struct in6_addr ipv6 = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
+
+    if (_v6_zero_bytes > 0) {
+      memset(&ipv6.s6_addr[16 - _v6_zero_bytes], 0, _v6_zero_bytes);
+    }
+    if (_v6_mask != 0xff) {
+      ipv6.s6_addr[16 - _v6_zero_bytes] &= _v6_mask;
+    }
+    inet_ntop(AF_INET6, &ipv6, res, INET6_ADDRSTRLEN);
+    if (res[0]) {
+      s += res;
+    }
+  } break;
+  }
+}
+
+// Little helper function, to create the masks
+void
+ConditionCidr::_create_masks()
+{
+  _v4_mask.s_addr = htonl(UINT32_MAX << (32 - _v4_cidr));
+  _v6_zero_bytes  = (128 - _v6_cidr) / 8;
+  _v6_mask        = 0xff >> ((128 - _v6_cidr) % 8);
+}
+
+void
 ConditionInbound::initialize(Parser &p)
 {
   Condition::initialize(p);
