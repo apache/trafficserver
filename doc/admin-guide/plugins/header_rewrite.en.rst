@@ -288,6 +288,39 @@ arguments to another operator. For example::
 
     set-header ATS-Req-UUID %{ID:UNIQUE}
 
+CIDR
+~~
+::
+
+   set-header @Client-CIDR %{CIDR:24,48}
+
+This condition takes the client IP, and applies the provided CIDR style masks
+to the IP, before producing a string. The typical use of this conditions is as
+above, producing a header that contains a IP representation which has some
+privacy properties. It can of course also be used as a regular condition, and
+the output is a string that can be compared against. The two optional
+arguments are as follows:
+
+    IPv4-Mask    Length, in bits, of the IPv4 address to preserve. Default: 24
+    IPv6-Mask    Length, in bits, of the IPv6 address to preserve. Default: 48
+
+The two arguments, if provided, are comma separated. Valid syntax includes
+
+    %{CIDR}         Defaults to 24,48 (as above)
+    %{CIDR:16}      IPv4 CIDR mask is 16 bits, IPv6 mask is 48
+    %{CIDR:18,42}   IPv4 CIDR mask is 18 bits, IPv6 mask is 42 bits
+
+A typical use case is to insert the @-prefixed header as above, and then use
+this header in a custom log format, rather than logging the full client
+IP. Another use case could be to make a special condition on a sub-net,
+e.g. ::
+
+    cond %{CIDR:8} ="8.0.0.0"
+        set-header X-Is-Eight "Yes"
+
+This condition has no requirements other than access to the Client IP, hence,
+it should work in any and all hooks.
+
 INBOUND
 ~~~~~~~
 ::
