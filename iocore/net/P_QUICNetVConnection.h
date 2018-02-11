@@ -304,7 +304,8 @@ private:
   void _handle_idle_timeout();
   void _update_alt_connection_ids(uint8_t chosen);
 
-  QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
+  QUICPacketUPtr _the_final_packet    = QUICPacketFactory::create_null_packet();
+  QUICConnectionErrorUPtr _error_code = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR));
   QUICStatelessResetToken _reset_token;
 };
 

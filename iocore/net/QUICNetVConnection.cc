@@ -95,6 +95,7 @@ QUICNetVConnection::do_io_close(int lerrno)
     this->_unschedule_packet_write_ready();
 
     this->_switch_to_closing_state(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR)));
+    this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
   }
 }
 
@@ -459,6 +460,7 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
     // do nothing
   } else {
     this->_switch_to_closing_state(std::move(error));
+    this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
   }
 }
 
@@ -498,6 +500,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     // (Receive close frame here ,  just switch to draining)
     this->_switch_to_draining_state(QUICConnectionErrorUPtr(
       new QUICConnectionError(std::static_pointer_cast<const QUICApplicationCloseFrame>(frame)->error_code())));
+    this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
     break;
   default:
     QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
@@ -539,11 +542,6 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
-  if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-    this->_switch_to_established_state();
-    return this->handleEvent(event, data);
-  }
-
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (event) {
@@ -558,6 +556,11 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
       } else {
         error = this->_state_handshake_process_packet(std::move(packet));
+      }
+
+      if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+        this->_switch_to_established_state();
+        return this->handleEvent(event, data);
       }
     } while (result == QUICPacketCreationResult::SUCCESS && error->cls == QUICErrorClass::NONE);
 
@@ -628,6 +631,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_SHUTDOWN:
+    this->_unschedule_packet_write_ready();
     this->_unschedule_closing_timeout();
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
@@ -648,6 +652,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->nh->add_to_active_queue(this);
     set_active_timeout(3 * HRTIME_MSECONDS(200));
 
+    this->_state_closing_send_packet();
     break;
 
   case QUIC_EVENT_PACKET_READ_READY:
@@ -665,6 +670,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   case VC_EVENT_IMMEDIATE:
   case VC_EVENT_ACTIVE_TIMEOUT:
     this->_switch_to_close_state();
+    this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
     break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
@@ -721,6 +727,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
   case VC_EVENT_IMMEDIATE:
   case VC_EVENT_ACTIVE_TIMEOUT:
     this->_switch_to_close_state();
+    this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
     break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
@@ -735,8 +742,8 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
 {
   this->closed = 1; // we need set closed flag, although it doesn't work.
   // at the end of the closing or draining period, free netvc
-  this->remove_from_active_queue();
   if (this->nh) {
+    this->remove_from_active_queue();
     this->nh->free_netvc(this);
   } else {
     this->free(nullptr);
@@ -968,14 +975,34 @@ QUICNetVConnection::_state_common_send_packet()
 QUICErrorUPtr
 QUICNetVConnection::_state_closing_send_packet()
 {
+  if (this->_frame_send_queue.size() > 0) {
+    this->_frame_send_queue = std::queue<QUICFrameUPtr>();
+  }
+
+  if (this->_stream_frame_send_queue.size() > 0) {
+    this->_stream_frame_send_queue = std::queue<QUICFrameUPtr>();
+  }
+
   // During the closing period, an endpoint that sends a
   // closing frame SHOULD respond to any packet that it receives with
   // another packet containing a closing frame.  To minimize the state
   // that an endpoint maintains for a closing connection, endpoints MAY
   // send the exact same packet.
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (this->_the_final_packet) {
     this->_packet_handler->send_packet(*this->_the_final_packet, this);
+    return QUICErrorUPtr(new QUICNoError());
   }
+
+  if (this->_error_code->cls == QUICErrorClass::APPLICATION) {
+    this->_frame_send_queue.push(std::move(QUICFrameFactory::create_application_close_frame(std::move(this->_error_code))));
+  } else {
+    this->_frame_send_queue.push(std::move(QUICFrameFactory::create_connection_close_frame(std::move(this->_error_code))));
+  }
+  this->_packetize_frames();
+  ink_assert(this->_the_final_packet != nullptr);
+  this->_packet_handler->send_packet(*this->_the_final_packet, this);
+
   return QUICErrorUPtr(new QUICNoError());
 }
 
@@ -1391,15 +1418,11 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   } else {
     QUICConDebug("Reason was not provided");
   }
-  if (error->cls == QUICErrorClass::APPLICATION) {
-    this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
-  } else {
-    this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
-  }
+
+  this->_error_code = std::move(error);
 
   QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
-  this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
 }
 
 void
@@ -1415,8 +1438,6 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   }
   QUICConDebug("Enter state_connection_draining");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
-
-  this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
 }
 
 void
@@ -1429,14 +1450,14 @@ QUICNetVConnection::_switch_to_close_state()
   }
   QUICConDebug("Enter state_connection_closed");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
-  this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
 }
 
 void
 QUICNetVConnection::_handle_idle_timeout()
 {
   this->remove_from_active_queue();
-  this->_switch_to_draining_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
+  this->_switch_to_closing_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
+  this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
 
   // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
 }
