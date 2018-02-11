@@ -25,7 +25,6 @@
 
 ink_hrtime last_throttle_warning;
 ink_hrtime last_shedding_warning;
-ink_hrtime emergency_throttle_time;
 int net_connections_throttle;
 bool net_memory_throttle = false;
 int fds_throttle;

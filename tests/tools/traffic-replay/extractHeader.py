@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import sessionvalidation
+import sessionvalidation.sessionvalidation as sv
 
 
 def extract_txn_req_method(headers):
@@ -34,6 +34,16 @@ def extract_host(headers):
             return line.split(' ')[1]
     return "notfound"
 
+def responseHeaderTuple_to_dict(header):
+    header_dict = {}
+
+    for key, val in header:
+        if key.lower() in header_dict:
+            header_dict[key.lower()] += ", {0}".format(val)
+        else:
+            header_dict[key.lower()] = val
+
+    return header_dict
 
 def responseHeader_to_dict(header):
     headerFields = header.split('\r\n', 1)[1]
@@ -59,7 +69,14 @@ def header_to_dict(header):
     header = [x for x in header if (x != u'')]
     headers = {}
     for line in header:
-        if 'GET' in line or 'POST' in line or 'HEAD' in line:     # ignore initial request line
+        should_skip = False
+
+        # we have to ignore the intital request line with the HTTP method in it
+        for method in sv.allowed_HTTP_request_methods:
+            if method in line:
+                should_skip = True
+
+        if should_skip:     # ignore initial request line
             continue
 
         split_here = line.find(":")

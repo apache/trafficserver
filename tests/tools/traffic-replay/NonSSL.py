@@ -112,6 +112,11 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
                 txn_req_headers), headers=txn_req_headers_dict, data=body)
             responseHeaders = r1.headers
             responseContent = r1.content
+        else:   # EXPERIMENTAL
+            r1 = request_session.request(method, extractHeader.extract_GET_path(
+                txn_req_headers), headers=txn_req_headers_dict, data=body)
+            responseHeaders = r1.headers
+            responseContent = r1.content
 
             #gzip_file = gzip.GzipFile(fileobj=responseContent)
             #shutil.copyfileobj(gzip_file, f)

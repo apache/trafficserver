@@ -8518,6 +8518,11 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
     HTTP_SUM_DYN_STAT(http_err_client_abort_user_agent_bytes_stat, user_agent_bytes);
     HTTP_SUM_DYN_STAT(http_err_client_abort_origin_server_bytes_stat, origin_server_bytes);
     break;
+  case SQUID_LOG_ERR_CLIENT_READ_ERROR:
+    HTTP_INCREMENT_DYN_STAT(http_err_client_read_error_count_stat);
+    HTTP_SUM_DYN_STAT(http_err_client_read_error_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_err_client_read_error_origin_server_bytes_stat, origin_server_bytes);
+    break;
   case SQUID_LOG_ERR_CONNECT_FAIL:
     HTTP_INCREMENT_DYN_STAT(http_err_connect_fail_count_stat);
     HTTP_SUM_DYN_STAT(http_err_connect_fail_user_agent_bytes_stat, user_agent_bytes);

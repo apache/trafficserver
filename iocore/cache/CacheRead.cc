@@ -573,7 +573,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     {
       doc = (Doc *)buf->data();
       if (doc->magic != DOC_MAGIC) {
-        char tmpstring[100];
+        char tmpstring[CRYPTO_HEX_SIZE];
         if (doc->magic == DOC_CORRUPT) {
           Warning("Middle: Doc checksum does not match for %s", key.toHexStr(tmpstring));
         } else {
@@ -619,7 +619,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     // fall through for truncated documents
   }
 Lerror : {
-  char tmpstring[100];
+  char tmpstring[CRYPTO_HEX_SIZE];
   if (request.valid()) {
     int url_length;
     const char *url_text = request.url_get()->string_get_ref(&url_length);
@@ -656,7 +656,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     HTTPInfo::FragOffset *frags = alternate.get_frag_table();
     if (is_debug_tag_set("cache_seek")) {
-      char b[33], c[33];
+      char b[CRYPTO_HEX_SIZE], c[CRYPTO_HEX_SIZE];
       Debug("cache_seek", "Seek @ %" PRId64 " in %s from #%d @ %" PRId64 "/%d:%s", seek_to, first_key.toHexStr(b), fragment,
             doc_pos, doc->len, doc->key.toHexStr(c));
     }
@@ -702,7 +702,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         }
 
         if (is_debug_tag_set("cache_seek")) {
-          char target_key_str[33];
+          char target_key_str[CRYPTO_HEX_SIZE];
           key.toHexStr(target_key_str);
           Debug("cache_seek", "Seek #%d @ %" PRId64 " -> #%d @ %" PRId64 ":%s", cfi, doc_pos, target, seek_to, target_key_str);
         }
@@ -718,7 +718,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     ntodo     = vio.ntodo();
     bytes     = doc->len - doc_pos;
     if (is_debug_tag_set("cache_seek")) {
-      char target_key_str[33];
+      char target_key_str[CRYPTO_HEX_SIZE];
       key.toHexStr(target_key_str);
       Debug("cache_seek", "Read # %d @ %" PRId64 "/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
     }
@@ -846,7 +846,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     }
     doc = (Doc *)buf->data();
     if (doc->magic != DOC_MAGIC) {
-      char tmpstring[100];
+      char tmpstring[CRYPTO_HEX_SIZE];
       if (is_action_tag_set("cache")) {
         ink_release_assert(false);
       }
@@ -1048,7 +1048,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     }
     doc = (Doc *)buf->data();
     if (doc->magic != DOC_MAGIC) {
-      char tmpstring[100];
+      char tmpstring[CRYPTO_HEX_SIZE];
       if (is_action_tag_set("cache")) {
         ink_release_assert(false);
       }
@@ -1144,7 +1144,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     }
 
     if (is_debug_tag_set("cache_read")) { // amc debug
-      char xt[33], yt[33];
+      char xt[CRYPTO_HEX_SIZE], yt[CRYPTO_HEX_SIZE];
       Debug("cache_read", "CacheReadStartHead - read %s target %s - %s %d of %" PRId64 " bytes, %d fragments",
             doc->key.toHexStr(xt), key.toHexStr(yt), f.single_fragment ? "single" : "multi", doc->len, doc->total_len,
             alternate.get_frag_offset_count());

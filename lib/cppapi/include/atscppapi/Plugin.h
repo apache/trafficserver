@@ -27,6 +27,7 @@
 #ifndef ATSCPPAPI_PLUGIN_H_
 #define ATSCPPAPI_PLUGIN_H_
 
+#include <atscppapi/Request.h>
 #include <atscppapi/Transaction.h>
 #include <atscppapi/noncopyable.h>
 
@@ -146,11 +147,7 @@ public:
   /**
    * This method must be implemented when you hook HOOK_SELECT_ALT
    */
-  virtual void
-  handleSelectAlt(Transaction &transaction)
-  {
-    transaction.resume();
-  };
+  virtual void handleSelectAlt(const Request &clientReq, const Request &cachedReq, const Response &cachedResp){};
 
   virtual ~Plugin(){};
 

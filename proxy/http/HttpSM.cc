@@ -39,14 +39,13 @@
 #include "RemapProcessor.h"
 #include "Transform.h"
 #include "P_SSLConfig.h"
+#include "HttpPages.h"
+#include "IPAllow.h"
+#include "ts/I_Layout.h"
+
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
-#include "HttpPages.h"
-
-#include "IPAllow.h"
-//#include "I_Auth.h"
-//#include "HttpAuthParams.h"
-#include "ts/I_Layout.h"
+#include <algorithm>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
@@ -615,9 +614,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
     // The user agent is hosed.  Close it &
     //   bail on the state machine
     vc_table.cleanup_entry(ua_entry);
-    ua_entry                  = nullptr;
-    t_state.client_info.abort = HttpTransact::ABORTED;
-    terminate_sm              = true;
+    ua_entry = nullptr;
+    set_ua_abort(HttpTransact::ABORTED, event);
+    terminate_sm = true;
     return 0;
   }
 
@@ -1005,7 +1004,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
     // The user agent is hosed.  Send an error
-    t_state.client_info.abort = HttpTransact::ABORTED;
+    set_ua_abort(HttpTransact::ABORTED, event);
     call_transact_and_set_next_state(HttpTransact::HandleBadPushRespHdr);
     return 0;
   }
@@ -1796,6 +1795,9 @@ HttpSM::state_http_server_open(int event, void *data)
       }
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE; // part of the problem, clear it.
       terminate_sm                   = true;
+    } else if (ENET_THROTTLING == t_state.current.server->connect_result) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+      send_origin_throttled_response();
     } else {
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
@@ -3297,7 +3299,7 @@ HttpSM::tunnel_handler_ua_push(int event, HttpTunnelProducer *p)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     // Transfer terminated.  Bail on the cache write.
-    t_state.client_info.abort = HttpTransact::ABORTED;
+    set_ua_abort(HttpTransact::ABORTED, event);
     p->vc->do_io_close(EHTTP_ERROR);
     p->read_vio = nullptr;
     tunnel.chain_abort_all(p);
@@ -5150,7 +5152,19 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
   switch (ua_abort) {
   case HttpTransact::ABORTED:
   case HttpTransact::MAYBE_ABORTED:
-    t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_ABORT;
+    // More detailed client side abort logging based on event
+    switch (event) {
+    case VC_EVENT_ERROR:
+      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_READ_ERROR;
+      break;
+    case VC_EVENT_EOS:
+    case VC_EVENT_ACTIVE_TIMEOUT:     // Won't matter. Server will hangup
+    case VC_EVENT_INACTIVITY_TIMEOUT: // Won't matter. Send back 408
+    // Fall-through
+    default:
+      t_state.squid_codes.log_code = SQUID_LOG_ERR_CLIENT_ABORT;
+      break;
+    }
     break;
   default:
     // Handled here:
@@ -6923,11 +6937,10 @@ HttpSM::update_stats()
       if (is_action_tag_set("http_handler_times")) {
           print_all_http_handler_times();
       }
-      */
+  */
 
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
-    URL *url             = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
     int offset           = 0;
     int skip             = 0;
@@ -6937,13 +6950,12 @@ HttpSM::update_stats()
 
     // unique id
     char unique_id_string[128] = "";
-    // [amc] why do we check the URL to get a MIME field?
-    if (nullptr != url && url->valid()) {
-      int length        = 0;
-      const char *field = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
-      if (field != nullptr) {
-        ink_strlcpy(unique_id_string, field, sizeof(unique_id_string));
-      }
+    int length                 = 0;
+    const char *field          = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
+    if (field != nullptr && length > 0) {
+      length = std::min(length, static_cast<int>(sizeof(unique_id_string)) - 1);
+      memcpy(unique_id_string, field, length);
+      unique_id_string[length] = 0; // NULL terminate the string
     }
 
     // set the fd for the request

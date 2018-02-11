@@ -17,13 +17,17 @@
  */
 
 #include <cstdlib>
+#include <stdio.h>
 #include <cstdio>
 #include <strings.h>
+#include <sstream>
 #include <cstring>
 #include <getopt.h>
 
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
+
+#define DEBUG_TAG_LOG_HEADERS "xdebug.headers"
 
 static struct {
   const char *str;
@@ -36,6 +40,7 @@ enum {
   XHEADER_X_CACHE          = 0x0010u,
   XHEADER_X_GENERATION     = 0x0020u,
   XHEADER_X_TRANSACTION_ID = 0x0040u,
+  XHEADER_X_DUMP_HEADERS   = 0x0080u,
 };
 
 static int XArgIndex             = 0;
@@ -252,6 +257,44 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   }
 }
 
+///////////////////////////////////////////////////////////////////////////
+// Dump a header on stderr, useful together with TSDebug().
+void
+log_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, const char *msg_type)
+{
+  TSIOBuffer output_buffer;
+  TSIOBufferReader reader;
+  TSIOBufferBlock block;
+  const char *block_start;
+  int64_t block_avail;
+
+  std::stringstream ss;
+  ss << "TxnID:" << TSHttpTxnIdGet(txn) << " " << msg_type << " Headers are...";
+
+  output_buffer = TSIOBufferCreate();
+  reader        = TSIOBufferReaderAlloc(output_buffer);
+
+  /* This will print  just MIMEFields and not the http request line */
+  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+
+  /* We need to loop over all the buffer blocks, there can be more than 1 */
+  block = TSIOBufferReaderStart(reader);
+  do {
+    block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
+    if (block_avail > 0) {
+      ss << "\n" << std::string(block_start, static_cast<int>(block_avail));
+    }
+    TSIOBufferReaderConsume(reader, block_avail);
+    block = TSIOBufferReaderStart(reader);
+  } while (block && block_avail != 0);
+
+  /* Free up the TSIOBuffer that we used to print out the header */
+  TSIOBufferReaderFree(reader);
+  TSIOBufferDestroy(output_buffer);
+
+  TSDebug(DEBUG_TAG_LOG_HEADERS, "%s", ss.str().c_str());
+}
+
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
@@ -289,6 +332,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
   if (xheaders & XHEADER_X_TRANSACTION_ID) {
     InjectTxnUuidHeader(txn, buffer, hdr);
+  }
+
+  if (xheaders & XHEADER_X_DUMP_HEADERS) {
+    log_headers(txn, buffer, hdr, "ClientResponse");
   }
 
 done:
@@ -347,6 +394,45 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       } else if (header_field_eq("diags", value, vsize)) {
         // Enable diagnostics for DebugTxn()'s only
         TSHttpTxnDebugSet(txn, 1);
+      } else if (header_field_eq("log-headers", value, vsize) && TSIsDebugTagSet(DEBUG_TAG_LOG_HEADERS)) {
+        xheaders |= XHEADER_X_DUMP_HEADERS;
+        log_headers(txn, buffer, hdr, "ClientRequest");
+
+        // dump on server request
+        auto send_req_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
+          TSHttpTxn txn = (TSHttpTxn)edata;
+          TSMBuffer buffer;
+          TSMLoc hdr;
+          if (TSHttpTxnServerReqGet(txn, &buffer, &hdr) == TS_SUCCESS) {
+            // re-add header "X-Debug: log-headers", but only once
+            TSMLoc dst = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len);
+            if (dst == TS_NULL_MLOC) {
+              if (TSMimeHdrFieldCreateNamed(buffer, hdr, xDebugHeader.str, xDebugHeader.len, &dst) == TS_SUCCESS) {
+                TSReleaseAssert(TSMimeHdrFieldAppend(buffer, hdr, dst) == TS_SUCCESS);
+                TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "log-headers",
+                                                                lengthof("log-headers")) == TS_SUCCESS);
+                log_headers(txn, buffer, hdr, "ServerRequest");
+              }
+            }
+          }
+          TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+          return TS_EVENT_NONE;
+        };
+        TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(send_req_dump, nullptr));
+
+        // dump on server response
+        auto read_resp_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
+          TSHttpTxn txn = (TSHttpTxn)edata;
+          TSMBuffer buffer;
+          TSMLoc hdr;
+          if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS) {
+            log_headers(txn, buffer, hdr, "ServerResponse");
+          }
+          TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+          return TS_EVENT_NONE;
+        };
+        TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_resp_dump, nullptr));
+
       } else {
         TSDebug("xdebug", "ignoring unrecognized debug tag '%.*s'", vsize, value);
       }

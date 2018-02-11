@@ -603,6 +603,15 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.err_client_abort_origin_server_bytes_stat", RECD_INT,
                      RECP_PERSISTENT, (int)http_err_client_abort_origin_server_bytes_stat, RecRawStatSyncSum);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.err_client_read_error_count_stat", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_err_client_read_error_count_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.err_client_read_error_user_agent_bytes_stat", RECD_INT,
+                     RECP_PERSISTENT, (int)http_err_client_read_error_user_agent_bytes_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.err_client_read_error_origin_server_bytes_stat", RECD_INT,
+                     RECP_PERSISTENT, (int)http_err_client_read_error_origin_server_bytes_stat, RecRawStatSyncSum);
+
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.err_connect_fail_count_stat", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_err_connect_fail_count_stat, RecRawStatSyncCount);
 

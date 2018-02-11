@@ -56,6 +56,8 @@ enum Net_Stats {
   net_fastopen_attempts_stat,
   net_fastopen_successes_stat,
   net_tcp_accept_stat,
+  net_connections_throttled_in_stat,
+  net_connections_throttled_out_stat,
   Net_Stat_Count
 };
 

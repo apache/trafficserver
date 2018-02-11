@@ -126,7 +126,7 @@ CacheHTTPInfoVector::clear(bool destroy)
 void
 CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
 {
-  char buf[33], *p;
+  char buf[CRYPTO_HEX_SIZE], *p;
   int purl;
   int i, tmp;
 

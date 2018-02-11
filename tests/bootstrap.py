@@ -48,7 +48,8 @@ distro_packages = {
     "Ubuntu": [
         "install python3",
         "install python3-virtualenv",
-        "install virtualenv"
+        "install virtualenv",
+	"install python3-dev"
     ],
     "CentOS": [
         "install epel-release",
