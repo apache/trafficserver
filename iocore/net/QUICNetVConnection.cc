@@ -95,8 +95,6 @@ QUICNetVConnection::do_io_close(int lerrno)
     this->_unschedule_packet_write_ready();
 
     this->_switch_to_closing_state(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR)));
-
-    this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
   }
 }
 
@@ -245,7 +243,12 @@ QUICNetVConnection::free(EThread *t)
   QUICConDebug("Free connection");
 
   this->_udp_con = nullptr;
-  _unschedule_packet_write_ready();
+  // 7.9.3. Immediate Close
+  // During the closing period, an endpoint that sends a closing frame SHOULD respond to any packet that
+  // it receives with another packet containing a closing frame.
+  // FIXME: cancel write event may lose some close frame if we receive the close frame
+  // at the end of closing period
+  this->_unschedule_packet_write_ready();
 
   delete this->_handshake_handler;
   delete this->_application_map;
@@ -546,8 +549,9 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     QUICPacketCreationResult result;
+    CountQueue<UDPPacket> remainder;
     do {
-      QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+      QUICPacketUPtr packet = this->_dequeue_recv_packet(remainder, result);
       if (result == QUICPacketCreationResult::NOT_READY) {
         error = QUICErrorUPtr(new QUICNoError());
       } else if (result == QUICPacketCreationResult::FAILED) {
@@ -556,6 +560,11 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         error = this->_state_handshake_process_packet(std::move(packet));
       }
     } while (result == QUICPacketCreationResult::SUCCESS && error->cls == QUICErrorClass::NONE);
+
+    if (remainder.size > 0) {
+      this->_packet_recv_queue.append(remainder);
+      this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
+    }
 
     break;
   }
@@ -652,6 +661,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_close_closing_timeout(data);
     break;
 
+  // active timeout signal VC_EVENT_IMMEDIATE
   case VC_EVENT_IMMEDIATE:
   case VC_EVENT_ACTIVE_TIMEOUT:
     this->_switch_to_close_state();
@@ -707,6 +717,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     this->_close_closing_timeout(data);
     break;
 
+  // active timeout signal VC_EVENT_IMMEDIATE
   case VC_EVENT_IMMEDIATE:
   case VC_EVENT_ACTIVE_TIMEOUT:
     this->_switch_to_close_state();
@@ -722,6 +733,8 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
 int
 QUICNetVConnection::state_connection_closed(int event, Event *data)
 {
+  this->closed = 1; // we need set closed flag, although it doesn't work.
+  // at the end of the closing or draining period, free netvc
   this->remove_from_active_queue();
   if (this->nh) {
     this->nh->free_netvc(this);
@@ -875,10 +888,11 @@ QUICNetVConnection::_state_common_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   QUICPacketCreationResult result;
+  CountQueue<UDPPacket> remainder;
 
   do {
     // Receive a QUIC packet
-    QUICPacketUPtr p = this->_dequeue_recv_packet(result);
+    QUICPacketUPtr p = this->_dequeue_recv_packet(remainder, result);
     if (result == QUICPacketCreationResult::FAILED) {
       return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
     } else if (result == QUICPacketCreationResult::NOT_READY) {
@@ -914,13 +928,20 @@ QUICNetVConnection::_state_common_receive_packet()
       break;
     case QUICPacketType::HANDSHAKE:
       // FIXME Just ignore for now but it has to be acked (GitHub#2609)
+      QUICConDebug("FIXME Just ignore for now but it has to be acked (GitHub#2609)");
       break;
     default:
       error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
       break;
     }
 
-  } while (result == QUICPacketCreationResult::SUCCESS && error->cls == QUICErrorClass::NONE); 
+  } while (result == QUICPacketCreationResult::SUCCESS && error->cls == QUICErrorClass::NONE);
+
+  if (remainder.size > 0) {
+    this->_packet_recv_queue.append(remainder);
+    this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
+  }
+
   return error;
 }
 
@@ -1191,7 +1212,7 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
+QUICNetVConnection::_dequeue_recv_packet(CountQueue<UDPPacket> &remainder, QUICPacketCreationResult &result)
 {
   QUICPacketUPtr quic_packet = QUICPacketFactory::create_null_packet();
   UDPPacket *udp_packet      = this->_packet_recv_queue.dequeue();
@@ -1212,8 +1233,6 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     }
   }
 
-  net_activity(this, this_ethread());
-
   // Create a QUIC packet
   ats_unique_buf pkt = ats_unique_malloc(udp_packet->getPktLength());
   IOBufferBlock *b   = udp_packet->getIOBlockChain();
@@ -1227,8 +1246,10 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   if (result == QUICPacketCreationResult::NOT_READY) {
     QUICConDebug("Not ready to decrypt the packet");
     // Retry later
-    this->_packet_recv_queue.enqueue(udp_packet);
-    this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
+    remainder.enqueue(udp_packet);
+    if (this->_packet_recv_queue.size > 0) {
+      result = QUICPacketCreationResult::SUCCESS;
+    }
   } else if (result == QUICPacketCreationResult::IGNORED) {
     QUICConDebug("Ignore to decrypt the packet");
 
@@ -1238,6 +1259,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     if (result == QUICPacketCreationResult::SUCCESS) {
       QUICConDebug("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
                    quic_packet->packet_number(), quic_packet->size());
+      net_activity(this, this_ethread());
     } else {
       QUICConDebug("Failed to decrypt the packet");
     }

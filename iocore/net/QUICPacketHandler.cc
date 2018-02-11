@@ -133,8 +133,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
     return EVENT_CONT;
   } else if (event == NET_EVENT_DATAGRAM_READ_READY) {
     if (this->_collector_event == nullptr) {
-      this->_collector_event =
-        static_cast<EThread *>(this_thread())->schedule_every(this->_closed_con_collector, HRTIME_MSECONDS(100));
+      this->_collector_event = this_ethread()->schedule_every(this->_closed_con_collector, HRTIME_MSECONDS(100));
     }
 
     Queue<UDPPacket> *queue = (Queue<UDPPacket> *)data;

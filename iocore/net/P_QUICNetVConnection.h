@@ -292,7 +292,7 @@ private:
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICErrorUPtr error);
-  QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
+  QUICPacketUPtr _dequeue_recv_packet(CountQueue<UDPPacket> &remainder, QUICPacketCreationResult &result);
 
   int _complete_handshake_if_possible();
   void _switch_to_handshake_state();
