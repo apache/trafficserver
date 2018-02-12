@@ -60,14 +60,6 @@ Copyright (C) 2005-2014 Mike Pall. All rights reserved.
 
 ~~~
 
-ats_speed - PageSpeed for ATS. Author: oschaaf@we-amp.com (Otto van der Schaaf)
-Copyright (C) 2013 We-Amp B.V.
-
-prepare_psol.sh, ats_message_handler.cc and ats_message_handler.h for ats_speed:
-Copyright (C) 2012 Google Inc.
-
-~~~
-
 collapsed_collapsing: Plugin for connection collapsing to origin
 Copyright (C) 2014 Yahoo! Inc.  All rights reserved.
 
