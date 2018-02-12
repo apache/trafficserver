@@ -14,6 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+#########################################################################
+# NOTE: This plugin is deprecated, being moved to the Apache Pagespeed
+#       project.
+#
 SHELL := /bin/bash
 TSXS?=tsxs
 # Specify BUILDTYPE=Debug for a debug build

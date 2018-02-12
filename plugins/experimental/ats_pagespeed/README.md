@@ -1,6 +1,8 @@
 ![ScreenShot](http://www.atsspeed.com/images/xATSSPEED_logo_plusshout_728x91.png.pagespeed.ic.8mRpu2PXS0.png
 )
 
+NOTE: This plugin is deprecated, moved to the Apache Pagespeed project instead.
+
 Apache Traffic Server web content optimization plugin powered by Google PageSpeed
 
 http://www.atspagespeed.com/
