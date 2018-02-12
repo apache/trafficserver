@@ -393,7 +393,7 @@ main(int argc, const char **argv)
   static const char USAGE[] = "Usage: traffic_top [-s seconds]";
 #endif
 
-  int sleep_time = 6000;
+  int sleep_time = 6; // In seconds
   bool absolute  = false;
   string url;
 
@@ -485,7 +485,7 @@ main(int argc, const char **argv)
 
     curs_set(0);
     refresh();
-    timeout(sleep_time);
+    timeout(sleep_time * 1000);
 
     int x = getch();
     switch (x) {
