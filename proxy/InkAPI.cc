@@ -7482,9 +7482,6 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 // This API tells the core to follow normal (301/302) redirects using the
 // standard Location: URL. This does not need to be called if you set an
 // explicit URL using TSHttpTxnRedirectUrlSet().
-//
-// TODO: This should be deprecated on 7.1.x, and removed from 8.0.0, now that the configuration
-// for this is properly overridable.
 TSReturnCode
 TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
 {

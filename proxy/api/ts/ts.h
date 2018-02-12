@@ -1220,23 +1220,23 @@ tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
 tsapi int TSHttpSsnTransactionCount(TSHttpSsn ssnp);
-// get TSVConn from session
+/* get TSVConn from session */
 tsapi TSVConn TSHttpSsnClientVConnGet(TSHttpSsn ssnp);
 tsapi TSVConn TSHttpSsnServerVConnGet(TSHttpSsn ssnp);
 
 /* --------------------------------------------------------------------------
    SSL connections */
-/// Re-enable an SSL connection from a hook.
-/// This must be called exactly once before the SSL connection will resume.
+/* Re-enable an SSL connection from a hook.
+   This must be called exactly once before the SSL connection will resume. */
 tsapi void TSVConnReenable(TSVConn sslvcp);
-/// Set the connection to go into blind tunnel mode
+/*  Set the connection to go into blind tunnel mode */
 tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
-// Return the SSL object associated with the connection
+/*  Return the SSL object associated with the connection */
 tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
-// Fetch a SSL context from the global lookup table
+/*  Fetch a SSL context from the global lookup table */
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
-// Create a new SSL context based on the settings in records.config
+/*  Create a new SSL context based on the settings in records.config */
 tsapi TSSslContext TSSslServerContextCreate(void);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
 tsapi void TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
@@ -1248,7 +1248,7 @@ void TSRegisterProtocolSet(TSVConn sslp, TSNextProtocolSet ps);
 int TSAcceptorCount();
 int TSAcceptorIDGet(TSAcceptor acceptor);
 
-// Returns 1 if the sslp argument refers to a SSL connection
+/*  Returns 1 if the sslp argument refers to a SSL connection */
 tsapi int TSVConnIsSsl(TSVConn sslp);
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
@@ -1322,7 +1322,7 @@ tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
 
     @return SSL object of this session
  */
-tsapi void *TSHttpSsnSSLConnectionGet(TSHttpSsn ssnp); // returns SSL *
+tsapi void *TSHttpSsnSSLConnectionGet(TSHttpSsn ssnp); /* returns SSL * */
 
 /** Get client address for transaction @a txnp.
     Retrieves the socket address of the remote client that has
@@ -2288,12 +2288,15 @@ tsapi TSReturnCode TSHttpTxnConfigFind(const char *name, int length, TSOverridab
    This API informs the core to try to follow redirections (e.g. 301 responses.
    The new URL would be provided in the standard Location header.
 
+   This is deprecated as of v8.0.0. You should instead rely on using the overridable
+   proxy.config.http.number_of_redirections setting.
+
    @param txnp the transaction pointer
    @param on   turn this on or off (0 or 1)
 
    @return @c TS_SUCCESS if it succeeded
 */
-tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
+tsapi TS_DEPRECATED TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
 
 /**
    This is a generalization of the TSHttpTxnFollowRedirect(), but gives finer
@@ -2303,7 +2306,7 @@ tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
    make sure it is heap allocated, and that you do not free it.
 
    Calling this API implicitly also enables the "Follow Redirect" feature, so
-   there is no reason to call TSHttpTxnFollowRedirect() as well.
+   there is no need to set that overridable configuration as well.
 
    @param txnp the transaction pointer
    @param url  a heap allocated string with the URL
@@ -2321,7 +2324,7 @@ tsapi void TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int ur
    @return the url string
 */
 tsapi const char *TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr);
-//  This is deprecated as of v5.0.0.
+/*   This is deprecated as of v5.0.0. */
 tsapi TS_DEPRECATED const char *TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr);
 
 /**
