@@ -549,6 +549,7 @@ ts_lua_http_client_packet_tos_set(lua_State *L)
   return 0;
 }
 
+/* ToDo: This should be removed, it's not needed */
 static int
 ts_lua_http_enable_redirect(lua_State *L)
 {
@@ -560,7 +561,7 @@ ts_lua_http_enable_redirect(lua_State *L)
   value = luaL_checkinteger(L, 1);
 
   TSDebug(TS_LUA_DEBUG_TAG, "enable redirect");
-  TSHttpTxnFollowRedirect(http_ctx->txnp, value);
+  TSHttpTxnConfigIntSet(http_ctx->txnp, TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS, value);
 
   return 0;
 }
