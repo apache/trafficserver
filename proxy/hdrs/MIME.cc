@@ -2479,9 +2479,15 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         zret = PARSE_RESULT_ERROR; // Unterminated field.
       }
     } else if (data_size) {
-      // Inside a field but more data is expected. Save what we've got.
-      mime_scanner_append(S, *raw_input_s, data_size);
-      data_size = 0; // Don't append again.
+      if (MIME_PARSE_INSIDE == S->m_state) {
+        // Inside a field but more data is expected. Save what we've got.
+        mime_scanner_append(S, *raw_input_s, data_size);
+        data_size = 0; // Don't append again.
+      } else if (MIME_PARSE_AFTER == S->m_state) {
+        // After a field but we still have data. Need to parse it too.
+        S->m_state = MIME_PARSE_BEFORE;
+        zret       = PARSE_RESULT_OK;
+      }
     }
   }
 
