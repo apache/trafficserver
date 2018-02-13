@@ -285,10 +285,21 @@ AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 # Build documentation?
 #
 
+# Java needed only for documentation building, but making it conditional
+# makes the diagnostic output ugly and hard to follow.
+AC_ARG_VAR(JAVA, [path to java executor])
+AC_CHECK_PROG(JAVA, java, java)
 AC_MSG_CHECKING([whether to build documentation])
 AC_ARG_ENABLE([docs],
   [AS_HELP_STRING([--enable-docs],[enable documentation building])],
-  [],
+  [
+    enable_doc_build=yes
+    AS_IF([test -z "$JAVA"],
+      [
+        enable_doc_build=no
+	AC_ERROR([Doc building disabled, java required but not found])
+      ])
+  ],
   [enable_doc_build=no]
 )
 AC_MSG_RESULT([$enable_doc_build])
@@ -2010,6 +2021,8 @@ AC_CONFIG_FILES([
   cmd/traffic_via/Makefile
   cmd/traffic_wccp/Makefile
   doc/Makefile
+  doc/ext/local-config.py
+  doc/uml/Makefile
   example/Makefile
   iocore/Makefile
   iocore/aio/Makefile
