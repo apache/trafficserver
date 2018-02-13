@@ -1,5 +1,3 @@
-# doc/uml Makefile
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,8 +14,28 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# This is exlicitly not tied in to the general make setup. It is intended
-# to be run manually only as needed so that only people who need to update
-# diagrams must install Java support for plantuml.
-all:
-	java -jar ~/bin/plantuml.jar -o images -tsvg *.uml
+.PHONY: jar-check
+
+if BUILD_DOCS
+images := $(patsubst %.uml,images/%.svg,$(wildcard *.uml))
+PLANTUML_JAR := $(shell ../plantuml_fetch.sh | tail -1)
+
+all-am: jar-check $(images)
+endif
+
+images/%.svg : %.uml
+	$(JAVA) -jar $(PLANTUML_JAR) -o images -tsvg $<
+
+clean-local: rm images/*.svg
+
+jar-check:
+	@if [ -z "$(PLANTUML_JAR)" ] ; then \
+	  echo plantuml jar file variable not set.; \
+	  exit 1; \
+	elif [ ! -r "$(PLANTUML_JAR)" ] ; then \
+	  echo plantuml jar \'${PLANTUML_JAR}\' not readable.; \
+	  exit 1; \
+	elif [ -d "${PLANTUML_JAR}" ] ; then \
+	  echo plantuml jar not downloaded to \'${PLANTUML_JAR}\'.; \
+	  exit 1; \
+	fi
