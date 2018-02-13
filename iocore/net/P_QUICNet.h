@@ -36,16 +36,10 @@ typedef int (NetHandler::*NetContHandler)(int, void *);
 void initialize_thread_for_quic_net(EThread *thread);
 
 struct QUICPollEvent {
-  typedef union data_t {
-    void *ptr;
-    uint32_t u32;
-    uint64_t u64;
-  } data_t;
-
-  void free();
-
-  data_t data;
+  QUICConnection *con;
   UDPPacketInternal *packet;
+  void init(QUICConnection *con, UDPPacketInternal *packet);
+  void free();
 
   SLINK(QUICPollEvent, alink);
   LINK(QUICPollEvent, link);
@@ -64,10 +58,9 @@ public:
   // Atomic Queue to save incoming packets
   ASLL(QUICPollEvent, alink) inQueue;
 
+private:
   // Internal Queue to save Long Header Packet
-  Que(UDPPacketInternal, link) longInQueue;
-  // Internal Queue to save Short Header Packet
-  Que(UDPPacketInternal, link) shortInQueue;
+  Que(UDPPacketInternal, link) _longInQueue;
 
 private:
   void _process_short_header_packet(QUICPollEvent *e, NetHandler *nh);
