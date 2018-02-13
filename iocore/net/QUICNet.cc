@@ -26,6 +26,13 @@
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
 
 void
+QUICPollEvent::init(QUICConnection *con, UDPPacketInternal *packet)
+{
+  this->con    = con;
+  this->packet = packet;
+}
+
+void
 QUICPollEvent::free()
 {
   quicPollEventAllocator.free(this);
@@ -52,7 +59,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
   QUICPacketType ptype;
   UDPPacketInternal *p = e->packet;
   // FIXME: VC is nullptr ?
-  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->data.ptr);
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   buf                    = (uint8_t *)p->getIOBlockChain()->buf();
 
   e->free();
@@ -79,7 +86,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
       vc->read.triggered = 1;
       vc->handle_received_packet(p);
     } else {
-      longInQueue.push(p);
+      this->_longInQueue.push(p);
     }
 
     // Push QUICNetVC into nethandler's enabled list
@@ -98,7 +105,7 @@ QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
   uint8_t *buf;
   UDPPacketInternal *p   = e->packet;
-  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->data.ptr);
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   buf                    = (uint8_t *)p->getIOBlockChain()->buf();
 
   e->free();
@@ -108,19 +115,13 @@ QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
     return;
   }
 
-  if (vc) {
-    vc->read.triggered = 1;
-    vc->handle_received_packet(p);
-  } else {
-    shortInQueue.push(p);
-  }
+  vc->read.triggered = 1;
+  vc->handle_received_packet(p);
 
   // Push QUICNetVC into nethandler's enabled list
-  if (vc != nullptr) {
-    int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
-    if (!isin) {
-      nh->read_enable_list.push(vc);
-    }
+  int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
+  if (!isin) {
+    nh->read_enable_list.push(vc);
   }
 }
 
@@ -138,7 +139,7 @@ QUICPollCont::pollEvent(int, Event *)
   NetHandler *nh = get_NetHandler(this->mutex->thread_holding);
 
   // Process the ASLL
-  SList(QUICPollEvent, link) aq(inQueue.popall());
+  SList(QUICPollEvent, alink) aq(inQueue.popall());
   Queue<QUICPollEvent> result;
   while ((e = aq.pop())) {
     result.push(e);
