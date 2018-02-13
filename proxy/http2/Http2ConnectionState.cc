@@ -1152,6 +1152,16 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   }
 
   stream_list.remove(stream);
+  if (http2_is_client_streamid(stream->get_id())) {
+    ink_assert(client_streams_in_count > 0);
+    --client_streams_in_count;
+  } else {
+    ink_assert(client_streams_out_count > 0);
+    --client_streams_out_count;
+  }
+  // total_client_streams_count will be decremented in release_stream(), because it's a counter include streams in the process of
+  // shutting down.
+
   stream->initiating_close();
 
   return true;
@@ -1160,16 +1170,10 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 void
 Http2ConnectionState::release_stream(Http2Stream *stream)
 {
-  // Update stream counts
   if (stream) {
+    // Decrement total_client_streams_count here, because it's a counter include streams in the process of shutting down.
+    // Other counters (client_streams_in_count/client_streams_out_count) are already decremented in delete_stream().
     --total_client_streams_count;
-    if (http2_is_client_streamid(stream->get_id())) {
-      ink_assert(client_streams_in_count > 0);
-      --client_streams_in_count;
-    } else {
-      ink_assert(client_streams_out_count > 0);
-      --client_streams_out_count;
-    }
   }
 
   if (ua_session) {
