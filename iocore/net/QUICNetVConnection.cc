@@ -83,7 +83,7 @@ void
 QUICNetVConnection::do_io_close(int lerrno)
 {
   QUICConDebug("close connection");
-  if (!this->is_closed()) {
+  if (!this->is_closing()) {
     // FIXME: should call do_io_read and do_io_write;
     this->read.enabled       = 1;
     this->read.vio._cont     = this;
@@ -94,8 +94,7 @@ QUICNetVConnection::do_io_close(int lerrno)
 
     this->_unschedule_packet_write_ready();
 
-    this->_switch_to_closing_state(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR)));
-    this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
+    this->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR)));
   }
 }
 
@@ -547,14 +546,13 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     QUICPacketCreationResult result;
-    CountQueue<UDPPacket> remainder;
     do {
-      QUICPacketUPtr packet = this->_dequeue_recv_packet(remainder, result);
+      QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
       if (result == QUICPacketCreationResult::NOT_READY) {
         error = QUICErrorUPtr(new QUICNoError());
       } else if (result == QUICPacketCreationResult::FAILED) {
         error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
-      } else {
+      } else if (result == QUICPacketCreationResult::SUCCESS) {
         error = this->_state_handshake_process_packet(std::move(packet));
       }
 
@@ -563,11 +561,6 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         return this->handleEvent(event, data);
       }
     } while (result == QUICPacketCreationResult::SUCCESS && error->cls == QUICErrorClass::NONE);
-
-    if (remainder.size > 0) {
-      this->_packet_recv_queue.append(remainder);
-      this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
-    }
 
     break;
   }
@@ -623,6 +616,19 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   return EVENT_CONT;
 }
 
+void
+QUICNetVConnection::_prepare_to_close_or_drain()
+{
+  this->_unschedule_packet_write_ready();
+  this->_unschedule_closing_timeout();
+  this->next_inactivity_timeout_at = 0;
+  this->next_activity_timeout_at   = 0;
+  this->inactivity_timeout_in      = 0;
+  this->active_timeout_in          = 0;
+
+  this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
+}
+
 int
 QUICNetVConnection::state_connection_closing(int event, Event *data)
 {
@@ -631,16 +637,9 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_SHUTDOWN:
-    this->_unschedule_packet_write_ready();
-    this->_unschedule_closing_timeout();
-    this->next_inactivity_timeout_at = 0;
-    this->next_activity_timeout_at   = 0;
-    this->inactivity_timeout_in      = 0;
-    this->active_timeout_in          = 0;
-
+    this->_prepare_to_close_or_drain();
     // Shutdown loss detector
     // In the closing state, only a packet containing a closing frame can be sent.
-    this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
     this->_stream_manager->close_all_streams(VC_EVENT_ERROR);
 
     // TODO: find rto from cc
@@ -651,7 +650,6 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     // persist for three times the current Retransmission Timeout (RTO) interval as defined in [QUIC-RECOVERY].
     this->nh->add_to_active_queue(this);
     set_active_timeout(3 * HRTIME_MSECONDS(200));
-
     this->_state_closing_send_packet();
     break;
 
@@ -688,18 +686,8 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_SHUTDOWN:
-    this->_unschedule_closing_timeout();
-    this->next_inactivity_timeout_at = 0;
-    this->next_activity_timeout_at   = 0;
-    this->inactivity_timeout_in      = 0;
-    this->active_timeout_in          = 0;
-
-    // Shutdown loss detector
-    // In the closing state, only a packet containing a closing frame can be sent.
-    this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
-    if (this->_stream_manager) {
-      this->_stream_manager->close_all_streams(VC_EVENT_EOS);
-    }
+    this->_prepare_to_close_or_drain();
+    this->_stream_manager->close_all_streams(VC_EVENT_EOS);
 
     // TODO: find rto from cc
     // rto = this->_cc->get_rto()
@@ -709,7 +697,6 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     // persist for three times the current Retransmission Timeout (RTO) interval as defined in [QUIC-RECOVERY].
     this->nh->add_to_active_queue(this);
     set_active_timeout(3 * HRTIME_MSECONDS(200));
-
     break;
   case QUIC_EVENT_PACKET_READ_READY:
     error = this->_state_common_receive_packet();
@@ -807,9 +794,14 @@ QUICNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
 bool
 QUICNetVConnection::is_closed()
 {
-  return (this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed) ||
-          this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_draining) ||
-          this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closing));
+  return this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed);
+}
+
+bool
+QUICNetVConnection::is_closing()
+{
+  return (this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closing) ||
+          this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_draining));
 }
 
 SSLNextProtocolSet *
@@ -895,11 +887,10 @@ QUICNetVConnection::_state_common_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   QUICPacketCreationResult result;
-  CountQueue<UDPPacket> remainder;
 
   do {
     // Receive a QUIC packet
-    QUICPacketUPtr p = this->_dequeue_recv_packet(remainder, result);
+    QUICPacketUPtr p = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::FAILED) {
       return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
     } else if (result == QUICPacketCreationResult::NOT_READY) {
@@ -943,11 +934,6 @@ QUICNetVConnection::_state_common_receive_packet()
     }
 
   } while (result == QUICPacketCreationResult::SUCCESS && error->cls == QUICErrorClass::NONE);
-
-  if (remainder.size > 0) {
-    this->_packet_recv_queue.append(remainder);
-    this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
-  }
 
   return error;
 }
@@ -1239,7 +1225,7 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_dequeue_recv_packet(CountQueue<UDPPacket> &remainder, QUICPacketCreationResult &result)
+QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 {
   QUICPacketUPtr quic_packet = QUICPacketFactory::create_null_packet();
   UDPPacket *udp_packet      = this->_packet_recv_queue.dequeue();
@@ -1272,8 +1258,9 @@ QUICNetVConnection::_dequeue_recv_packet(CountQueue<UDPPacket> &remainder, QUICP
   quic_packet = this->_packet_factory.create(std::move(pkt), written, this->largest_received_packet_number(), result);
   if (result == QUICPacketCreationResult::NOT_READY) {
     QUICConDebug("Not ready to decrypt the packet");
-    // Retry later
-    remainder.enqueue(udp_packet);
+    // unordered packet discard for now !
+    // FIXME: we should buffer it and try it again
+    udp_packet->free();
     if (this->_packet_recv_queue.size > 0) {
       result = QUICPacketCreationResult::SUCCESS;
     }
@@ -1456,8 +1443,7 @@ void
 QUICNetVConnection::_handle_idle_timeout()
 {
   this->remove_from_active_queue();
-  this->_switch_to_closing_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
-  this->handleEvent(QUIC_EVENT_SHUTDOWN, nullptr);
+  this->close(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
 
   // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
 }

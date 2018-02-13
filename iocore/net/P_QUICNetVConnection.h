@@ -193,6 +193,7 @@ public:
   QUICPacketNumber largest_acked_packet_number() override;
   void handle_received_packet(UDPPacket *packet) override;
   bool is_closed() override;
+  bool is_closing();
 
   // QUICConnection (QUICPacketTransmitter)
   virtual uint32_t transmit_packet(QUICPacketUPtr packet) override;
@@ -292,7 +293,7 @@ private:
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICErrorUPtr error);
-  QUICPacketUPtr _dequeue_recv_packet(CountQueue<UDPPacket> &remainder, QUICPacketCreationResult &result);
+  QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
 
   int _complete_handshake_if_possible();
   void _switch_to_handshake_state();
@@ -303,6 +304,7 @@ private:
 
   void _handle_idle_timeout();
   void _update_alt_connection_ids(uint8_t chosen);
+  void _prepare_to_close_or_drain();
 
   QUICPacketUPtr _the_final_packet    = QUICPacketFactory::create_null_packet();
   QUICConnectionErrorUPtr _error_code = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR));

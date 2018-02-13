@@ -73,7 +73,6 @@ public:
   }
 
   int in_closed_queue = 0;
-
   LINK(QUICConnection, closed_link);
   SLINK(QUICConnection, closed_alink);
 };

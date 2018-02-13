@@ -95,7 +95,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
       vc->read.triggered = 1;
       vc->handle_received_packet(p);
     } else {
-      longInQueue.push(p);
+      this->_longInQueue.push(p);
     }
 
     // Push QUICNetVC into nethandler's enabled list
