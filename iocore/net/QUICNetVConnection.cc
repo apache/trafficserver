@@ -513,14 +513,24 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     QUICPacketCreationResult result;
-    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
-    if (result == QUICPacketCreationResult::NOT_READY) {
-      error = QUICErrorUPtr(new QUICNoError());
-    } else if (result == QUICPacketCreationResult::FAILED) {
-      error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
-    } else {
-      error = this->_state_handshake_process_packet(std::move(packet));
-    }
+    do {
+      QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+      if (result == QUICPacketCreationResult::NOT_READY) {
+        error = QUICErrorUPtr(new QUICNoError());
+      } else if (result == QUICPacketCreationResult::FAILED) {
+        error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
+      } else if (result == QUICPacketCreationResult::SUCCESS) {
+        error = this->_state_handshake_process_packet(std::move(packet));
+      }
+
+      // if we complete handshake, switch to establish state
+      if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+        this->_switch_to_established_state();
+        return this->handleEvent(event, data);
+      }
+
+    } while (error->cls == QUICErrorClass::NONE &&
+             (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::IGNORED));
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
@@ -801,47 +811,51 @@ QUICNetVConnection::_state_common_receive_packet()
   QUICPacketCreationResult result;
 
   // Receive a QUIC packet
-  QUICPacketUPtr p = this->_dequeue_recv_packet(result);
-  if (result == QUICPacketCreationResult::FAILED) {
-    return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
-  } else if (result == QUICPacketCreationResult::NOT_READY) {
-    return QUICErrorUPtr(new QUICNoError());
-  } else if (result == QUICPacketCreationResult::IGNORED) {
-    return QUICErrorUPtr(new QUICNoError());
-  }
-
-  net_activity(this, this_ethread());
-
-  // Check connection migration
-  if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
-    for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
-      AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
-      if (info.id == p->connection_id()) {
-        // Migrate connection
-        // TODO Address Validation
-        // TODO Adjust expected packet number with a gap computed based on info.seq_num
-        // TODO Unregister the old connection id (Should we wait for a while?)
-        this->_quic_connection_id = info.id;
-        this->_reset_token        = info.token;
-        this->_update_alt_connection_ids(i);
-        break;
-      }
+  do {
+    QUICPacketUPtr p = this->_dequeue_recv_packet(result);
+    if (result == QUICPacketCreationResult::FAILED) {
+      return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
+    } else if (result == QUICPacketCreationResult::NOT_READY) {
+      return QUICErrorUPtr(new QUICNoError());
+    } else if (result == QUICPacketCreationResult::IGNORED) {
+      continue;
     }
-    ink_assert(p->connection_id() == this->_quic_connection_id);
-  }
 
-  // Process the packet
-  switch (p->type()) {
-  case QUICPacketType::PROTECTED:
-    error = this->_state_connection_established_process_packet(std::move(p));
-    break;
-  case QUICPacketType::HANDSHAKE:
-    // FIXME Just ignore for now but it has to be acked (GitHub#2609)
-    break;
-  default:
-    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
-    break;
-  }
+    net_activity(this, this_ethread());
+
+    // Check connection migration
+    if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
+      for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
+        AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
+        if (info.id == p->connection_id()) {
+          // Migrate connection
+          // TODO Address Validation
+          // TODO Adjust expected packet number with a gap computed based on info.seq_num
+          // TODO Unregister the old connection id (Should we wait for a while?)
+          this->_quic_connection_id = info.id;
+          this->_reset_token        = info.token;
+          this->_update_alt_connection_ids(i);
+          break;
+        }
+      }
+      ink_assert(p->connection_id() == this->_quic_connection_id);
+    }
+
+    // Process the packet
+    switch (p->type()) {
+    case QUICPacketType::PROTECTED:
+      error = this->_state_connection_established_process_packet(std::move(p));
+      break;
+    case QUICPacketType::HANDSHAKE:
+      // FIXME Just ignore for now but it has to be acked (GitHub#2609)
+      break;
+    default:
+      error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
+      break;
+    }
+
+  } while (error->cls == QUICErrorClass::NONE &&
+           (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::IGNORED));
   return error;
 }
 
@@ -1147,8 +1161,11 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   quic_packet = this->_packet_factory.create(std::move(pkt), written, this->largest_received_packet_number(), result);
   if (result == QUICPacketCreationResult::NOT_READY) {
     QUICConDebug("Not ready to decrypt the packet");
-    // Retry later
-    this->_packet_recv_queue.enqueue(udp_packet);
+    // FIXME: unordered packet should be buffered and retried
+    udp_packet->free();
+    if (this->_packet_recv_queue.size > 0) {
+      result = QUICPacketCreationResult::SUCCESS;
+    }
     this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
   } else if (result == QUICPacketCreationResult::IGNORED) {
     QUICConDebug("Ignore to decrypt the packet");
