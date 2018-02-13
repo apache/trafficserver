@@ -46,6 +46,12 @@ QUICStreamManager::interests()
 }
 
 void
+QUICStreamManager::close_all_streams(int event)
+{
+  // TODO: close all stream, send the sm something: error, eos ??
+}
+
+void
 QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                             const std::shared_ptr<const QUICTransportParameters> &remote_tp)
 {

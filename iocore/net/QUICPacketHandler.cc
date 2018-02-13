@@ -30,6 +30,43 @@
 //
 // QUICPacketHandler
 //
+QUICPacketHandler::QUICPacketHandler()
+{
+  this->_closed_con_collector        = new QUICClosedConCollector;
+  this->_closed_con_collector->mutex = new_ProxyMutex();
+}
+
+//
+// QUICPacketHandler
+//
+QUICPacketHandler::~QUICPacketHandler()
+{
+  if (this->_collector_event != nullptr) {
+    this->_collector_event->cancel();
+    this->_collector_event = nullptr;
+  }
+
+  if (this->_closed_con_collector != nullptr) {
+    delete this->_closed_con_collector;
+    this->_closed_con_collector = nullptr;
+  }
+}
+
+//
+// QUICPacketHandler
+//
+void
+QUICPacketHandler::close_conenction(QUICConnection *conn)
+{
+  int isin = ink_atomic_swap(&conn->in_closed_queue, 1);
+  if (!isin) {
+    this->_closed_con_collector->closedQueue.push(conn);
+  }
+}
+
+//
+// QUICPacketHandler
+//
 void
 QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu)
 {
@@ -91,11 +128,14 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
                      event == NET_EVENT_DATAGRAM_ERROR);
   ink_release_assert((event == NET_EVENT_DATAGRAM_OPEN) ? (data != nullptr) : (1));
   ink_release_assert((event == NET_EVENT_DATAGRAM_READ_READY) ? (data != nullptr) : (1));
-
   if (event == NET_EVENT_DATAGRAM_OPEN) {
     // Nothing to do.
     return EVENT_CONT;
   } else if (event == NET_EVENT_DATAGRAM_READ_READY) {
+    if (this->_collector_event == nullptr) {
+      this->_collector_event = this_ethread()->schedule_every(this->_closed_con_collector, HRTIME_MSECONDS(100));
+    }
+
     Queue<UDPPacket> *queue = (Queue<UDPPacket> *)data;
     UDPPacket *packet_r;
     while ((packet_r = queue->dequeue())) {
@@ -156,8 +196,11 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
         QUICConfig::scoped_config params;
         token.generate(cid, params->server_id());
       }
+
       auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
       this->_send_packet(this, *packet, udp_packet->getConnection(), con.addr, 1200);
+      // free udp_packet
+      udp_packet->free();
       return;
     }
 
@@ -184,13 +227,30 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   } else {
     vc  = static_cast<QUICNetVConnection *>(qc);
     eth = vc->thread;
+    // qc is not availiable anymore, send stateless reset.
+    // 7.1. Matching Packets to Connections
+    // A server that discards a packet that cannot be associated with a connection MAY also generate a stateless reset (Section
+    // 7.9.4).
+    if (qc->in_closed_queue) {
+      Connection con;
+      con.setRemote(&udp_packet->from.sa);
+      QUICConnectionId cid = this->_read_connection_id(block);
+      QUICStatelessResetToken token;
+      {
+        QUICConfig::scoped_config params;
+        token.generate(cid, params->server_id());
+      }
+      auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
+      this->_send_packet(this, *packet, udp_packet->getConnection(), con.addr, 1200);
+      // free udp_packet
+      udp_packet->free();
+      return;
+    }
   }
 
   qe = quicPollEventAllocator.alloc();
-
-  qe->data.ptr = vc;
-  // should we use dynamic_cast ??
-  qe->packet = static_cast<UDPPacketInternal *>(udp_packet);
+  // increasing qc reference here
+  qe->init(qc, static_cast<UDPPacketInternal *>(udp_packet));
   // Push the packet into QUICPollCont
   get_QUICPollCont(eth)->inQueue.push(qe);
 }

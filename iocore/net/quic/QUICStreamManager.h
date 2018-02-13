@@ -52,6 +52,8 @@ public:
 
   void set_default_application(QUICApplication *app);
 
+  void close_all_streams(int event);
+
   DLL<QUICStream> stream_list;
 
   // QUICFrameHandler

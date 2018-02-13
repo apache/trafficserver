@@ -26,6 +26,7 @@
 #include "ts/ink_platform.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
+#include "P_QUICClosedConCollector.h"
 #include "quic/QUICTypes.h"
 #include "quic/QUICConnectionTable.h"
 
@@ -35,9 +36,16 @@ class QUICPacket;
 class QUICPacketHandler
 {
 public:
+  QUICPacketHandler();
+  ~QUICPacketHandler();
+
   virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc) = 0;
+  virtual void close_conenction(QUICConnection *conn);
 
 protected:
+  Event *_collector_event                       = nullptr;
+  QUICClosedConCollector *_closed_con_collector = nullptr;
+
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
   static QUICConnectionId _read_connection_id(IOBufferBlock *block);
 
