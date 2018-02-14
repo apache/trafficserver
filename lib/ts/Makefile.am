@@ -20,7 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 
 library_includedir=$(includedir)/ts
 
-library_include_HEADERS = apidefs.h
+library_include_HEADERS = apidefs.h string_view.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_Scalar test_tslib
