@@ -435,7 +435,7 @@ struct OverridableHttpConfigParams {
       cache_required_headers(2),
       cache_range_lookup(1),
       cache_range_write(0),
-      allow_multi_range(1),
+      allow_multi_range(0),
       cache_enable_default_vary_headers(0),
       ignore_accept_mismatch(0),
       ignore_accept_language_mismatch(0),
