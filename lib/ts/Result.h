@@ -32,7 +32,21 @@
 // the success case. Arguably it ought to just be Error(), but Diags.h
 // already owns that name.
 
+#include <utility>
 struct Result {
+  Result() {}
+
+  Result &
+  operator=(Result &&other)
+  {
+    if (this != &other) {
+      buf = std::move(other.buf);
+    }
+    return *this;
+  }
+
+  Result(Result &&other) { *this = std::move(other); }
+
   bool
   failed() const
   {

@@ -33,6 +33,7 @@
  ****************************************************************************/
 
 #include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
 #include "ts/ink_apidefs.h"
 
 #include <stdarg.h>
@@ -46,6 +47,16 @@ public:
     if (!rhs.empty()) {
       copyFrom(rhs.bufPtr(), rhs.spaceUsed());
     }
+  }
+  TextBuffer &
+  operator=(TextBuffer &&other)
+  {
+    if (this != &other) {
+      ats_free(bufferStart);
+      bufferStart       = other.bufferStart;
+      other.bufferStart = nullptr;
+    }
+    return *this;
   }
 
   TextBuffer(int size);
