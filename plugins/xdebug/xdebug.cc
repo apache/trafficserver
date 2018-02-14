@@ -262,6 +262,10 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 void
 log_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, const char *msg_type)
 {
+  if (!TSIsDebugTagSet(DEBUG_TAG_LOG_HEADERS)) {
+    return;
+  }
+
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
   TSIOBufferBlock block;
@@ -394,7 +398,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       } else if (header_field_eq("diags", value, vsize)) {
         // Enable diagnostics for DebugTxn()'s only
         TSHttpTxnDebugSet(txn, 1);
-      } else if (header_field_eq("log-headers", value, vsize) && TSIsDebugTagSet(DEBUG_TAG_LOG_HEADERS)) {
+      } else if (header_field_eq("log-headers", value, vsize)) {
         xheaders |= XHEADER_X_DUMP_HEADERS;
         log_headers(txn, buffer, hdr, "ClientRequest");
 
