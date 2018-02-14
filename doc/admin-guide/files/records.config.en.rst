@@ -1475,7 +1475,7 @@ Security
    post body larger than this limit the response will be terminated with
    413 - Request Entity Too Large and logged accordingly.
 
-.. ts:cv:: CONFIG proxy.config.http.allow_multi_range INT 1
+.. ts:cv:: CONFIG proxy.config.http.allow_multi_range INT 0
    :reloadable:
    :overridable:
 
