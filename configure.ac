@@ -830,7 +830,8 @@ case $host_os_def in
       # -Wall is overzealous for us, so need to turn this off for now:
       #
       #  #873 is "has no corresponding operator delete"
-      common_opt="-pipe -Wall -wd873"
+      #  #279 is "controlling expression is constant" (which is e.g. TSReleaseAssert(!"Unexpected Event");
+      common_opt="-pipe -Wall -wd873 -wd279"
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
