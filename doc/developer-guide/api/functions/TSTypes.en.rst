@@ -40,6 +40,18 @@ more widely. Those are described on this page.
 
 .. type:: ink_hrtime
 
+.. type:: INK_MD5
+
+   Buffer type sufficient to contain an MD5 hash value.
+   
+.. cpp:class:: INK_MD5
+
+   See :type:`INK_MD5`.
+   
+.. cpp:class:: RecRawStatBlock
+
+   A data block intended to contain |TS| statistics.
+
 .. type:: TSAction
 
 .. type:: TSCacheKey
@@ -176,4 +188,16 @@ more widely. Those are described on this page.
 
 .. type:: TSNextProtocolSet
 
+.. cpp:class:: template <typename T> LINK
 
+.. cpp:class:: VersionNumber
+
+   A two part version number, defined in :ts:git:`lib/ts/I_Version.h`.
+
+   .. cpp:member:: short int ink_major
+
+      Major version number.
+
+   .. cpp:member:: short int ink_minor
+
+      Minor version number.

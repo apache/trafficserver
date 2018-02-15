@@ -52,6 +52,5 @@ duplicate bugs is encouraged, but not required.
    api/index.en
    continuous-integration/index.en
    documentation/index.en
-   Statistics/index.en
    host-resolution-proposal.en
    client-session-architecture.en

@@ -23,10 +23,26 @@ PLANTUML_JAR := $(shell ../plantuml_fetch.sh | tail -1)
 all-am: jar-check $(images)
 endif
 
+# These are handle when the make target comes from the the base doc makefile.
+# In cases the .SVG files are built.
+
+html-local: all-am
+
+dirhtml: all-am
+
+singlehtml: all-am
+
+epub: all-am
+
+latex: all-am
+
+man: all-am
+
 images/%.svg : %.uml
 	$(JAVA) -jar $(PLANTUML_JAR) -o images -tsvg $<
 
-clean-local: rm images/*.svg
+clean-local:
+	rm images/*.svg
 
 jar-check:
 	@if [ -z "$(PLANTUML_JAR)" ] ; then \
