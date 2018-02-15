@@ -1498,17 +1498,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
 
   SSL *save_ssl = (sslvc) ? sslvc->ssl : nullptr;
-  if (save_ssl) {
-    SSLNetVCDetach(sslvc->ssl);
-    sslvc->ssl = nullptr;
-  }
 
-  // Do_io_close will signal the VC to be freed on the original thread
-  // Since we moved the con context, the fd will not be closed
-  // Go ahead and remove the fd from the original thread's epoll structure, so it is not
-  // processed on two threads simultaneously
-  this->ep.stop();
-  this->do_io_close();
+  UnixNetVConnection *ret_vc = nullptr;
 
   // Create new VC:
   if (save_ssl) {
@@ -1518,8 +1509,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
       sslvc = nullptr;
     } else {
       sslvc->set_context(get_context());
+      ret_vc = sslvc;
     }
-    return sslvc;
     // Update the SSL fields
   } else {
     UnixNetVConnection *netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
@@ -1528,9 +1519,27 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
       netvc = nullptr;
     } else {
       netvc->set_context(get_context());
+      ret_vc = netvc;
     }
-    return netvc;
   }
+
+  // clear con.fd and ssl ctx from this NetVC since a new NetVC is created.
+  if (ret_vc != nullptr) {
+    if (save_ssl) {
+      SSLNetVCDetach(sslvc->ssl);
+      sslvc->ssl = nullptr;
+    }
+    ink_assert(this->con.fd == NO_FD);
+
+    // Do_io_close will signal the VC to be freed on the original thread
+    // Since we moved the con context, the fd will not be closed
+    // Go ahead and remove the fd from the original thread's epoll structure, so it is not
+    // processed on two threads simultaneously
+    this->ep.stop();
+    this->do_io_close();
+  }
+
+  return ret_vc;
 }
 
 void
