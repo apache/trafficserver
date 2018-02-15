@@ -307,7 +307,7 @@ Data Structures
 
       Indicates if this is a new stripe rather than an existing one. In case a stripe is new ATS decides to clear that stripe(:class:`Vol`)
 
-   .. member:: LINK(DiskVolBlockQueue, link)
+   .. member:: LINK<DiskVolBlockQueue> link
 
 
 .. class:: DiskVol
@@ -333,6 +333,11 @@ Data Structures
 
    .. member:: Queue<DiskVolBlockQueue> dpb_queue
       
+.. enum:: CacheType
+
+   .. enumerator:: HTTP
+   
+   .. enumerator:: Stream
 
 .. class:: CacheVol
 
@@ -344,7 +349,7 @@ Data Structures
 
    .. member:: int scheme
 
-      scheme: HTTP or Stream
+      An enumeration of value :enumerator:`CacheType::HTTP` or :enumerator:`CacheType::Stream`.
 
    .. member:: off_t size
 
@@ -361,12 +366,11 @@ Data Structures
 
       disk_vols contain references to the disks of all the stripes in this volume
       
-   .. member:: LINK(CacheVol, link)
+   .. member:: LINK<CacheVol> link
 
    .. member:: RecRawStatBlock vol_rsb
       
       per volume stat
-
 
 .. class:: ConfigVol
 
@@ -378,8 +382,6 @@ Data Structures
 
    .. member:: CacheType scheme
 
-      scheme : HTTP or STREAM
-
    .. member:: off_t size
    
    .. member:: bool in_percent
@@ -387,12 +389,10 @@ Data Structures
       Used as an indicator if the volume is part of the overall volumes created by ATS
 
    .. member:: int percent
-
       
    .. member:: CacheVol* cachep
 
-      
-   .. member:: LINK(ConfigVol, link)
+   .. member:: LINK<ConfigVol> link
 
 .. class:: ConfigVolumes
 
