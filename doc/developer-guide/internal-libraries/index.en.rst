@@ -26,7 +26,8 @@ Here we document various internal libraries whose use is encouraged by |ATS|
 development team.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   string_view.en
    memview.en
    scalar.en
