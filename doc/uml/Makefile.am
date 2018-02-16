@@ -42,7 +42,7 @@ images/%.svg : %.uml
 	$(JAVA) -jar $(PLANTUML_JAR) -o images -tsvg $<
 
 clean-local:
-	rm images/*.svg
+	rm -f images/*.svg
 
 jar-check:
 	@if [ -z "$(PLANTUML_JAR)" ] ; then \
