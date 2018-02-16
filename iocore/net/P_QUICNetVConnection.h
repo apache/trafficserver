@@ -164,6 +164,7 @@ public:
   int state_connection_closed(int event, Event *data);
   void start(SSL_CTX *);
   void free(EThread *t) override;
+  void destroy(EThread *t);
 
   UDPConnection *get_udp_con();
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
@@ -202,6 +203,13 @@ public:
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
   QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame> frame) override;
+
+  int in_closed_queue = 0;
+
+  bool shouldDestroy();
+
+  LINK(QUICNetVConnection, closed_link);
+  SLINK(QUICNetVConnection, closed_alink);
 
 private:
   class AltConnectionInfo

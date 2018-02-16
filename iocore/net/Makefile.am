@@ -161,11 +161,13 @@ libinknet_a_SOURCES = \
 
 if ENABLE_QUIC
 libinknet_a_SOURCES += \
+  P_QUICClosedConCollector.h \
   P_QUICPacketHandler.h \
   P_QUICNet.h \
   P_QUICNetProcessor.h \
   P_QUICNetVConnection.h \
   P_QUICNextProtocolAccept.h \
+  QUICClosedConCollector.cc \
   QUICPacketHandler.cc \
   QUICNet.cc \
   QUICNetProcessor.cc \

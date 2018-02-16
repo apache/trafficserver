@@ -29,17 +29,25 @@
 #include "quic/QUICTypes.h"
 #include "quic/QUICConnectionTable.h"
 
+class QUICClosedConCollector;
 class QUICNetVConnection;
 class QUICPacket;
 
 class QUICPacketHandler
 {
 public:
+  QUICPacketHandler();
+  ~QUICPacketHandler();
+
   virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc) = 0;
+  virtual void close_conenction(QUICNetVConnection *conn);
 
 protected:
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
   static QUICConnectionId _read_connection_id(IOBufferBlock *block);
+
+  Event *_collector_event                       = nullptr;
+  QUICClosedConCollector *_closed_con_collector = nullptr;
 
   virtual void _recv_packet(int event, UDPPacket *udpPacket) = 0;
 };
