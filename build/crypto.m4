@@ -119,14 +119,13 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
     enable_tls_sni=no
   ])
 
-  AC_CHECK_FUNCS(SSL_get_servername, [], [enable_tls_sni=no])
+  AC_CHECK_FUNCS(SSL_get_servername, [], [enable_tls_sni])
 
   LIBS=$_sni_saved_LIBS
 
   AC_MSG_CHECKING(whether to enable ServerNameIndication TLS extension support)
   AC_MSG_RESULT([$enable_tls_sni])
   TS_ARG_ENABLE_VAR([use], [tls-sni])
-  AC_SUBST(use_tls_sni)
 ])
 
 AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [

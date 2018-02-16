@@ -3349,9 +3349,7 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.wire_trace_server_name STRING NULL
 
-   This specifies the server name for which wire_traces should be
-   printed. This only works if traffic_server is built with
-   TS_USE_TLS_SNI flag set to true.
+   This specifies the server name for which wire_traces should be printed.
 
 Client-Related Configuration
 ----------------------------
