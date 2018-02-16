@@ -79,6 +79,13 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
                static_cast<uint64_t>(this->_quic_connection_id));
 }
 
+bool
+QUICNetVConnection::shouldDestroy()
+{
+  // TODO: return this->refcount == 0;
+  return true;
+}
+
 VIO *
 QUICNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
@@ -654,6 +661,12 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     // Shutdown loss detector
     this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
 
+    if (this->nh) {
+      this->nh->stopCop(this);
+      this->nh->stopIO(this);
+    }
+
+    this->_packet_handler->close_conenction(this);
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {

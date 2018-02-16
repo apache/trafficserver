@@ -22,6 +22,7 @@
 #include "ts/ink_config.h"
 #include "P_Net.h"
 
+#include "P_QUICClosedConCollector.h"
 #include "QUICConfig.h"
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
@@ -30,6 +31,34 @@
 //
 // QUICPacketHandler
 //
+QUICPacketHandler::QUICPacketHandler()
+{
+  this->_closed_con_collector        = new QUICClosedConCollector;
+  this->_closed_con_collector->mutex = new_ProxyMutex();
+}
+
+QUICPacketHandler::~QUICPacketHandler()
+{
+  if (this->_collector_event != nullptr) {
+    this->_collector_event->cancel();
+    this->_collector_event = nullptr;
+  }
+
+  if (this->_closed_con_collector != nullptr) {
+    delete this->_closed_con_collector;
+    this->_closed_con_collector = nullptr;
+  }
+}
+
+void
+QUICPacketHandler::close_conenction(QUICNetVConnection *conn)
+{
+  int isin = ink_atomic_swap(&conn->in_closed_queue, 1);
+  if (!isin) {
+    this->_closed_con_collector->closedQueue.push(conn);
+  }
+}
+
 void
 QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu)
 {
@@ -96,6 +125,10 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
     // Nothing to do.
     return EVENT_CONT;
   } else if (event == NET_EVENT_DATAGRAM_READ_READY) {
+    if (this->_collector_event == nullptr) {
+      this->_collector_event = this_ethread()->schedule_every(this->_closed_con_collector, HRTIME_MSECONDS(100));
+    }
+
     Queue<UDPPacket> *queue = (Queue<UDPPacket> *)data;
     UDPPacket *packet_r;
     while ((packet_r = queue->dequeue())) {
