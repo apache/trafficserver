@@ -317,7 +317,6 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   session_cache->removeSession(sid);
 }
 
-#if TS_USE_TLS_SNI
 int
 set_context_cert(SSL *ssl)
 {
@@ -330,7 +329,6 @@ set_context_cert(SSL *ssl)
   int retval               = 1;
 
   Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
-  // set SSL trace (we do this a little later in the USE_TLS_SNI case so we can get the servername
   if (SSLConfigParams::ssl_wire_trace_enabled) {
     bool trace = netvc->computeSSLTrace();
     Debug("ssl", "sslnetvc. setting trace to=%s", trace ? "true" : "false");
@@ -495,7 +493,6 @@ done:
   return retval;
 }
 #endif
-#endif /* TS_USE_TLS_SNI */
 
 #if TS_USE_GET_DH_2048_256 == 0
 /* Build 2048-bit MODP Group with 256-bit Prime Order Subgroup from RFC 5114 */
@@ -1492,14 +1489,12 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 static void
 ssl_set_handshake_callbacks(SSL_CTX *ctx)
 {
-#if TS_USE_TLS_SNI
 // Make sure the callbacks are set
 #if TS_USE_CERT_CB
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_only_callback);
 #else
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_and_cert_callback);
-#endif
 #endif
 }
 
