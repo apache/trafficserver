@@ -31,3 +31,4 @@ development team.
    string_view.en
    memview.en
    scalar.en
+   buffer-writer.en

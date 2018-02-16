@@ -1040,7 +1040,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       // Fail-safe.
       hdr.auxBuffer()[hdr.remaining() - 1] = '\0';
 
-      hdr.write(strlen(hdr.auxBuffer()));
+      hdr.fill(strlen(hdr.auxBuffer()));
 
       if (is_ipv6) {
         hdr << "]\"";
@@ -1094,7 +1094,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       // Fail-safe.
       hdr.auxBuffer()[hdr.remaining() - 1] = '\0';
 
-      hdr.write(strlen(hdr.auxBuffer()));
+      hdr.fill(strlen(hdr.auxBuffer()));
 
       if (is_ipv6) {
         hdr << "]\"";
@@ -1124,7 +1124,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       int numChars = HttpTransactHeaders::write_hdr_protocol_stack(hdr.auxBuffer(), hdr.remaining(), ProtocolStackDetail::Compact,
                                                                    protoBuf.data(), n_proto, '-');
       if (numChars > 0) {
-        hdr.write(size_t(numChars));
+        hdr.fill(size_t(numChars));
       }
     }
 
@@ -1165,7 +1165,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
           int numChars =
             HttpTransactHeaders::write_hdr_protocol_stack(hdr.auxBuffer(), hdr.remaining(), detail, protoBuf.data(), n_proto, '-');
           if (numChars > 0) {
-            hdr.write(size_t(numChars));
+            hdr.fill(size_t(numChars));
           }
 
           if ((numChars <= 0) or (hdr.size() >= hdr.capacity())) {
