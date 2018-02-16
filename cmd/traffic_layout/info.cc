@@ -90,7 +90,6 @@ produce_features(bool json)
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
   print_feature("TS_USE_TLS_NPN", TS_USE_TLS_NPN, json);
   print_feature("TS_USE_TLS_ALPN", TS_USE_TLS_ALPN, json);
-  print_feature("TS_USE_TLS_SNI", TS_USE_TLS_SNI, json);
   print_feature("TS_USE_CERT_CB", TS_USE_CERT_CB, json);
   print_feature("TS_USE_SET_RBIO", TS_USE_SET_RBIO, json);
   print_feature("TS_USE_TLS_ECKEY", TS_USE_TLS_ECKEY, json);

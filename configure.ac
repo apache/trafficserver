@@ -1160,10 +1160,6 @@ TS_CHECK_CRYPTO_ALPN
 TS_CHECK_CRYPTO_EC_KEYS
 
 #
-# Check for ServerNameIndication TLS extension support.
-TS_CHECK_CRYPTO_SNI
-
-#
 # Check for the presense of the certificate callback in the ssl library
 TS_CHECK_CRYPTO_CERT_CB
 
