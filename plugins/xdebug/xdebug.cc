@@ -41,6 +41,7 @@ enum {
   XHEADER_X_GENERATION     = 0x0020u,
   XHEADER_X_TRANSACTION_ID = 0x0040u,
   XHEADER_X_DUMP_HEADERS   = 0x0080u,
+  XHEADER_X_REMAP          = 0x0100u,
 };
 
 static int XArgIndex             = 0;
@@ -242,6 +243,63 @@ done:
   }
 }
 
+static const char NotFound[] = "Not-Found";
+
+// The returned string must be freed with TSfree() unless it is equal to the constant NotFound.
+//
+static const char *
+getRemapUrlStr(TSHttpTxn txnp, TSReturnCode (*remapUrlGetFunc)(TSHttpTxn, TSMLoc *), int &urlStrLen)
+{
+  TSMLoc urlLoc;
+
+  TSReturnCode rc = remapUrlGetFunc(txnp, &urlLoc);
+  if (rc != TS_SUCCESS) {
+    urlStrLen = sizeof(NotFound) - 1;
+    return NotFound;
+  }
+
+  char *urlStr = TSUrlStringGet(nullptr, urlLoc, &urlStrLen);
+
+  // Be defensive.
+  if ((urlStrLen == 0) and urlStr) {
+    TSError("[xdebug] non-null remap URL string with zero length");
+    TSfree(urlStr);
+    urlStr = nullptr;
+  }
+
+  if (!urlStr) {
+    urlStrLen = sizeof(NotFound) - 1;
+    return NotFound;
+  }
+
+  return urlStr;
+}
+
+static void
+InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Remap", lengthof("X-Remap"));
+
+  if (TS_NULL_MLOC != dst) {
+    int fromUrlStrLen, toUrlStrLen;
+    const char *fromUrlStr = getRemapUrlStr(txn, TSRemapFromUrlGet, fromUrlStrLen);
+    const char *toUrlStr   = getRemapUrlStr(txn, TSRemapToUrlGet, toUrlStrLen);
+
+    char buf[2048];
+    int len = snprintf(buf, sizeof(buf) - 1, "from=%*s, to=%*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
+
+    if (fromUrlStr != NotFound) {
+      TSfree(const_cast<char *>(fromUrlStr));
+    }
+    if (toUrlStr != NotFound) {
+      TSfree(const_cast<char *>(toUrlStr));
+    }
+
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, buf, len) == TS_SUCCESS);
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
+}
+
 static void
 InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
@@ -338,6 +396,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
     log_headers(txn, buffer, hdr, "ClientResponse");
   }
 
+  if (xheaders & XHEADER_X_REMAP) {
+    InjectRemapHeader(txn, buffer, hdr);
+  }
+
 done:
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   return TS_EVENT_NONE;
@@ -388,6 +450,8 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         xheaders |= XHEADER_X_GENERATION;
       } else if (header_field_eq("x-transaction-id", value, vsize)) {
         xheaders |= XHEADER_X_TRANSACTION_ID;
+      } else if (header_field_eq("x-remap", value, vsize)) {
+        xheaders |= XHEADER_X_REMAP;
       } else if (header_field_eq("via", value, vsize)) {
         // If the client requests the Via header, enable verbose Via debugging for this transaction.
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, 3);
@@ -504,5 +568,3 @@ TSPluginInit(int argc, const char *argv[])
   TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, nullptr));
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, nullptr));
 }
-
-// vim: set ts=2 sw=2 et :
