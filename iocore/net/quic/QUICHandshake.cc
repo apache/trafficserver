@@ -247,28 +247,9 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersI
 }
 
 std::shared_ptr<const QUICTransportParameters>
-QUICHandshake::local_transport_parameters(bool with_version)
+QUICHandshake::local_transport_parameters()
 {
-  if (with_version) {
-    return this->_local_transport_parameters;
-  } else {
-    QUICConfig::scoped_config params;
-    QUICTransportParametersInNewSessionTicket *tp = new QUICTransportParametersInNewSessionTicket();
-
-    // MUSTs
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
-    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
-    tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
-    tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
-
-    // MAYs
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_in());
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_in());
-    // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
-    // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
-
-    return std::unique_ptr<QUICTransportParameters>(tp);
-  }
+  return this->_local_transport_parameters;
 }
 
 std::shared_ptr<const QUICTransportParameters>

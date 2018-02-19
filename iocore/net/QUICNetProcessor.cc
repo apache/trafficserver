@@ -86,8 +86,7 @@ QUICNetProcessor::start(int, size_t stacksize)
 
   SSL_CTX_set_alpn_select_cb(this->_ssl_ctx, QUIC::ssl_select_next_protocol, nullptr);
   SSL_CTX_add_custom_ext(this->_ssl_ctx, QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID,
-                         SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS |
-                           SSL_EXT_TLS1_3_NEW_SESSION_TICKET,
+                         SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
                          &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
                          &QUICTransportParametersHandler::parse, nullptr);
 

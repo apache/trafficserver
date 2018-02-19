@@ -563,8 +563,7 @@ QUICTransportParametersHandler::add(SSL *s, unsigned int ext_type, unsigned int 
 {
   QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
   *out              = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
-  bool with_version = (context != SSL_EXT_TLS1_3_NEW_SESSION_TICKET);
-  hs->local_transport_parameters(with_version)->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
+  hs->local_transport_parameters()->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
 
   return 1;
 }
@@ -587,9 +586,6 @@ QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned in
     break;
   case SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS:
     hs->set_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen));
-    break;
-  case SSL_EXT_TLS1_3_NEW_SESSION_TICKET:
-    hs->set_transport_parameters(std::make_shared<QUICTransportParametersInNewSessionTicket>(in, inlen));
     break;
   default:
     // Do nothing
