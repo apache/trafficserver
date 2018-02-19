@@ -215,8 +215,9 @@ QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICP
     this->_smoothed_rtt = latest_rtt;
     this->_rttvar       = latest_rtt / 2.0;
   } else {
-    this->_rttvar       = 3.0 / 4.0 * this->_rttvar + 1.0 / 4.0 * ABS(this->_smoothed_rtt - latest_rtt);
-    this->_smoothed_rtt = 7.0 / 8.0 * this->_smoothed_rtt + 1.0 / 8.0 * latest_rtt;
+    double rttvar_sample = ABS(this->_smoothed_rtt - latest_rtt);
+    this->_rttvar        = 3.0 / 4.0 * this->_rttvar + 1.0 / 4.0 * rttvar_sample;
+    this->_smoothed_rtt  = 7.0 / 8.0 * this->_smoothed_rtt + 1.0 / 8.0 * latest_rtt;
   }
 }
 
