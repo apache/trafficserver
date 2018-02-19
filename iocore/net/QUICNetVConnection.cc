@@ -210,6 +210,7 @@ QUICNetVConnection::free(EThread *t)
     this->_ctable->erase(this->_alt_quic_connection_ids[i].id, this);
   }
 
+/* TODO: Uncmment these blocks after refactoring read / write process
   this->_udp_con        = nullptr;
   this->_packet_handler = nullptr;
   _unschedule_packet_write_ready();
@@ -230,6 +231,7 @@ QUICNetVConnection::free(EThread *t)
   } else {
     THREAD_FREE(this, quicNetVCAllocator, t);
   }
+*/
 }
 
 void
