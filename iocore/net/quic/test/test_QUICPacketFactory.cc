@@ -51,7 +51,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   CHECK(packet->connection_id() == client_initial_packet.connection_id());
   CHECK(packet->packet_number() == client_initial_packet.packet_number());
   CHECK(packet->version() == 0x00);
-  CHECK(memcmp(packet->payload(), "\xff\x00\x00\x08", 4) == 0);
+  CHECK(memcmp(packet->payload(), "\xff\x00\x00\x09", 4) == 0);
 }
 
 TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
