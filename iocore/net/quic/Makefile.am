@@ -61,6 +61,7 @@ libquic_a_SOURCES = \
   QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   QUICKeyGenerator.cc \
+  QUICHKDF.cc \
   QUICTransportParameters.cc \
   QUICConnectionTable.cc \
   QUICAckFrameCreator.cc \

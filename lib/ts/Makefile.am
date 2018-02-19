@@ -212,7 +212,6 @@ HKDF_impl = HKDF_openssl.cc
 endif
 libtsutil_la_SOURCES += \
   HKDF.h \
-  HKDF.cc \
   $(HKDF_impl)
 endif
 

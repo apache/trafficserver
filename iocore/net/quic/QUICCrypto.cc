@@ -27,10 +27,10 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 
-#include "ts/HKDF.h"
 #include "ts/Diags.h"
 #include "ts/string_view.h"
 #include "QUICTypes.h"
+#include "QUICHKDF.h"
 
 constexpr static char tag[] = "quic_crypto";
 

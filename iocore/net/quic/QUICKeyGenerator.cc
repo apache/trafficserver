@@ -24,7 +24,7 @@
 #include <openssl/ssl.h>
 #include "QUICKeyGenerator.h"
 #include "ts/ink_assert.h"
-#include "ts/HKDF.h"
+#include "QUICHKDF.h"
 
 constexpr static uint8_t QUIC_VERSION_1_SALT[] = {
   0xaf, 0xc8, 0x24, 0xec, 0x5f, 0xc7, 0x7e, 0xca, 0x1e, 0x9d, 0x36, 0xf3, 0x7f, 0xb2, 0xd4, 0x65, 0x18, 0xc3, 0x66, 0x39,
@@ -45,7 +45,7 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
   const EVP_MD *md              = EVP_sha256();
   uint8_t secret[512];
   size_t secret_len = sizeof(secret);
-  HKDF hkdf(md);
+  QUICHKDF hkdf(md);
 
   switch (this->_ctx) {
   case Context::CLIENT:
@@ -72,7 +72,7 @@ QUICKeyGenerator::generate(SSL *ssl)
   const EVP_MD *md              = _get_handshake_digest(ssl);
   uint8_t secret[512];
   size_t secret_len = sizeof(secret);
-  HKDF hkdf(md);
+  QUICHKDF hkdf(md);
 
   switch (this->_ctx) {
   case Context::CLIENT:
@@ -91,12 +91,12 @@ QUICKeyGenerator::generate(SSL *ssl)
 }
 
 int
-QUICKeyGenerator::_generate(uint8_t *key, size_t *key_len, uint8_t *iv, size_t *iv_len, HKDF &hkdf, const uint8_t *secret,
+QUICKeyGenerator::_generate(uint8_t *key, size_t *key_len, uint8_t *iv, size_t *iv_len, QUICHKDF &hkdf, const uint8_t *secret,
                             size_t secret_len, const QUIC_EVP_CIPHER *cipher)
 {
   // Generate a key and a IV
-  //   key = HKDF-Expand-Label(S, "key", "", key_length)
-  //   iv  = HKDF-Expand-Label(S, "iv", "", iv_length)
+  //   key = QHKDF-Expand(S, "key", "", key_length)
+  //   iv  = QHKDF-Expand(S, "iv", "", iv_length)
   this->_generate_key(key, key_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
   this->_generate_iv(iv, iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
 
@@ -104,7 +104,7 @@ QUICKeyGenerator::_generate(uint8_t *key, size_t *key_len, uint8_t *iv, size_t *
 }
 
 int
-QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, HKDF &hkdf, QUICConnectionId cid, const char *label,
+QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
                                              size_t label_len, size_t length)
 {
   uint8_t client_connection_id[8];
@@ -118,13 +118,12 @@ QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, HKDF
     return -1;
   }
 
-  hkdf.expand_label(out, out_len, cleartext_secret, cleartext_secret_len, reinterpret_cast<const char *>(label), label_len, "", 0,
-                    length);
+  hkdf.expand(out, out_len, cleartext_secret, cleartext_secret_len, reinterpret_cast<const char *>(label), label_len, length);
   return 0;
 }
 
 int
-QUICKeyGenerator::_generate_pp_secret(uint8_t *out, size_t *out_len, HKDF &hkdf, SSL *ssl, const char *label, size_t label_len,
+QUICKeyGenerator::_generate_pp_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, const char *label, size_t label_len,
                                       size_t length)
 {
   *out_len = length;
@@ -141,15 +140,15 @@ QUICKeyGenerator::_generate_pp_secret(uint8_t *out, size_t *out_len, HKDF &hkdf,
 }
 
 int
-QUICKeyGenerator::_generate_key(uint8_t *out, size_t *out_len, HKDF &hkdf, const uint8_t *secret, size_t secret_len,
+QUICKeyGenerator::_generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                                 size_t key_length) const
 {
-  return hkdf.expand_label(out, out_len, secret, secret_len, LABEL_FOR_KEY.data(), LABEL_FOR_KEY.length(), "", 0, key_length);
+  return hkdf.expand(out, out_len, secret, secret_len, LABEL_FOR_KEY.data(), LABEL_FOR_KEY.length(), key_length);
 }
 
 int
-QUICKeyGenerator::_generate_iv(uint8_t *out, size_t *out_len, HKDF &hkdf, const uint8_t *secret, size_t secret_len,
+QUICKeyGenerator::_generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                                size_t iv_length) const
 {
-  return hkdf.expand_label(out, out_len, secret, secret_len, LABEL_FOR_IV.data(), LABEL_FOR_IV.length(), "", 0, iv_length);
+  return hkdf.expand(out, out_len, secret, secret_len, LABEL_FOR_IV.data(), LABEL_FOR_IV.length(), iv_length);
 }

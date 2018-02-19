@@ -20,13 +20,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "HKDF.h"
+#include "QUICHKDF.h"
 #include <cstdio>
 #include <cstring>
 
 int
-HKDF::expand_label(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t secret_len, const char *label, size_t label_len,
-                   const char *hash_value, size_t hash_value_len, uint16_t length)
+QUICHKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t secret_len, const char *label, size_t label_len,
+                 uint16_t length)
 {
   // Create HKDF label
   uint8_t hkdf_label[512]; // 2 + 255 + 255
@@ -39,9 +39,8 @@ HKDF::expand_label(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t 
   hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%cQUIC %.*s", static_cast<int>(5 + label_len),
                             static_cast<int>(label_len), label);
   // Hash Value
-  hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%c%.*s", static_cast<int>(hash_value_len),
-                            static_cast<int>(hash_value_len), hash_value);
+  hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%c%.*s", 0, 0, "");
 
-  this->expand(dst, dst_len, secret, secret_len, hkdf_label, hkdf_label_len, length);
+  HKDF::expand(dst, dst_len, secret, secret_len, hkdf_label, hkdf_label_len, length);
   return 1;
 }

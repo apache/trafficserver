@@ -133,6 +133,7 @@ test_QUICFrame_SOURCES = \
   ../QUICPacket.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICTypes.cc \
@@ -185,6 +186,7 @@ test_QUICFrameDispatcher_SOURCES = \
   $(QUICCrypto_impl) \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../../SSLNextProtocolSet.cc
 
 test_QUICFrameDispatcher_LDADD = \
@@ -306,6 +308,7 @@ test_QUICTransportParameters_SOURCES = \
   $(QUICCrypto_impl) \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICStream.cc \
   ../QUICIncomingFrameBuffer.cc \
   ../QUICStreamState.cc \
@@ -347,6 +350,7 @@ test_QUICKeyGenerator_SOURCES = \
   test_QUICKeyGenerator.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICTypes.cc
 
 #
@@ -372,6 +376,7 @@ test_QUICCrypto_SOURCES = \
   test_QUICCrypto.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICCrypto.h \
@@ -437,6 +442,7 @@ test_QUICTypeUtil_SOURCES = \
   ../QUICPacket.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICTypes.cc
@@ -472,6 +478,7 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICDebugNames.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../../SSLNextProtocolSet.cc
@@ -503,6 +510,7 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICPacket.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICApplication.cc \
@@ -551,6 +559,7 @@ test_QUICFlowController_SOURCES = \
   ../QUICPacket.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICHKDF.cc \
   ../QUICCrypto.cc \
   $(QUICCrypto_impl) \
   ../QUICFrame.cc
