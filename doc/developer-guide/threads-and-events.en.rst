@@ -191,7 +191,7 @@ Types
 
       Register an event type with the name :arg:`name`. The unique type index is returned.
 
-   .. function:: Event * schedule_spawn(Continuation * c, EventType ev_type, int event = EVENT_IMMEDIATE, void * cookie = NULL)
+   .. function:: Event * schedule_spawn(Continuation * c, EventType ev_type, int event = EVENT_IMMEDIATE, void * cookie = nullptr)
 
       When the :class:`EventProcessor` starts a thread of type :arg:`ev_type`, :arg:`c` will be
       called before any events are dispatched by the thread. The handler for :arg:`c` will be called

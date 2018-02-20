@@ -40,27 +40,37 @@ TS.Scalar consists primarily of the template class :code:`Scalar`. Instances of 
 a *count* and represent a *value* which is the *count* multiplied by :arg:`SCALE`. Note this
 quantizes the values that can be represented by an instance.
 
-.. class:: template < intmax_t SCALE, typename COUNTER, typename TAG > Scalar
+.. class:: template < intmax_t SCALE, typename C, typename TAG > Scalar
 
-   .. var:: intmax_t SCALE
+   A quantized integral with a distinct type.
 
-      The scaling factor for the type. This must be an positive integer. Values for an instance will
-      always be an integral multiple of :arg:`SCALE`.
+   :tparam SCALE: Scaling factor.
+   :tparam C: Base storage type.
+   :tparam TAG: Distinguishing type tag.
 
    .. type:: COUNTER
 
-      This is the type used to hold the internal count. This must be an integral type. It can be omitted and will default to :code:`int`. The size of an instance is the same size as :arg:`COUNTER`.
+      Imported template parameter :arg:`C`.
 
-   .. type:: TAG
+   The scaling factor :arg:`SCALE` must be an positive integer. Values for an instance will always
+   be an integral multiple of :arg:`SCALE`. The alue of an instance will always be a
+   multiple of :arg:`SCALE`.
 
-      A distinguishing tag which must be a type. It can be omitted and will default to :code:`tag::generic`. This means that :class:`Scalar` types without a tag will all interoperate. The tag type is usually a :code:`struct` defined in name only. ::
+   :arg:`C` must be an integral type. An instance of this type is used to hold the internal
+   count.It can be omitted and will default to :code:`int`. The size of an instance is the same size
+   as :arg:`C` and an instance of that type can be replaced with a :class:`Scalar` of that size
+   without changing the memory layout.
 
-         struct YoureIt; // no other information about YoureIt is required.
-         typedef Scalar<100, int, YoureIt> HectoTouch; // how many hundreds of touches.
+   :arg:`TAG` must be a type. It can be omitted and will default to :code:`tag::generic`. :arg:`TAG`
+   is a mechanism for preventing accidental cross assignments. Assignment of any sort from a
+   :class:`Scalar` instance to another instance with a different :arg:`TAG` is a compile time error.
+   If this isn't useful :arg:`TAG` can be omitted and will default to :code:`tag::generic` which
+   will enable all instances to interoperate.
 
-      :arg:`TAG` s a mechanism for preventing accidental cross assignments. Assignment of any sort from
-      a :class:`Scalar` to another with a different :arg:`TAG` is a compile time error. If this isn't
-      useful the :arg:`TAG` can be omitted and will default to the same for all derived types.
+   The type used for :arg:`TAG` can be defined in name only.::
+
+      struct YoureIt; // no other information about YoureIt is required.
+      typedef Scalar<100, int, YoureIt> HectoTouch; // how many hundreds of touches.
 
    .. function:: COUNTER count() const
 
