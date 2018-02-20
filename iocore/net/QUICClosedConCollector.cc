@@ -43,7 +43,7 @@ QUICClosedConCollector::_process_closed_connection(EThread *t)
 
   while ((qvc = this->_localClosedQueue.pop())) {
     if (qvc->shouldDestroy()) {
-      qvc->free(t);
+      qvc->destroy(t);
     } else {
       local_queue.push(qvc);
     }
@@ -51,8 +51,9 @@ QUICClosedConCollector::_process_closed_connection(EThread *t)
 
   SList(QUICNetVConnection, closed_alink) aq(this->closedQueue.popall());
   while ((qvc = aq.pop())) {
+    qvc->remove_connection_ids();
     if (qvc->shouldDestroy()) {
-      qvc->free(t);
+      qvc->destroy(t);
     } else {
       local_queue.push(qvc);
     }

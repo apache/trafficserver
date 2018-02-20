@@ -87,8 +87,7 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
 bool
 QUICNetVConnection::shouldDestroy()
 {
-  // TODO: return this->refcount == 0;
-  return true;
+  return this->refcount() == 0;
 }
 
 VIO *
@@ -212,16 +211,12 @@ void
 QUICNetVConnection::free(EThread *t)
 {
   QUICConDebug("Free connection");
-
-  this->_ctable->erase(this->_original_quic_connection_id, this);
-  this->_ctable->erase(this->_quic_connection_id, this);
-  if (this->_alt_con_manager) {
-    this->_alt_con_manager->invalidate_alt_connections();
-  }
+  this->remove_connection_ids();
 
   /* TODO: Uncmment these blocks after refactoring read / write process
     this->_udp_con        = nullptr;
     this->_packet_handler = nullptr;
+
     _unschedule_packet_write_ready();
 
     delete this->_handshake_handler;
@@ -235,9 +230,28 @@ QUICNetVConnection::free(EThread *t)
       delete this->_alt_con_manager;
     }
 
-    // TODO: clear member variables like `UnixNetVConnection::free(EThread *t)`
-    this->mutex.clear();
+    super::clear();
+  */
+  this->_packet_handler->close_conenction(this);
+}
 
+// called by ET_UDP
+void
+QUICNetVConnection::remove_connection_ids()
+{
+  this->_ctable->erase(this->_original_quic_connection_id, this);
+  this->_ctable->erase(this->_quic_connection_id, this);
+  if (this->_alt_con_manager) {
+    this->_alt_con_manager->invalidate_alt_connections();
+  }
+}
+
+// called by ET_UDP
+void
+QUICNetVConnection::destroy(EThread *t)
+{
+  QUICConDebug("Destroy connection");
+  /*  TODO: Uncmment these blocks after refactoring read / write process
     if (from_accept_thread) {
       quicNetVCAllocator.free(this);
     } else {
@@ -660,11 +674,10 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
 
     if (this->nh) {
-      this->nh->stopCop(this);
-      this->nh->stopIO(this);
+      this->nh->free_netvc(this);
+    } else {
+      this->free(this->mutex->thread_holding);
     }
-
-    this->_packet_handler->close_conenction(this);
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
