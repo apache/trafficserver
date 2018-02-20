@@ -142,7 +142,7 @@ class SSLNextProtocolSet;
  *    WRITE:
  *      Do nothing
  **/
-class QUICNetVConnection : public UnixNetVConnection, public QUICConnection
+class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public RefCountObj
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -168,6 +168,7 @@ public:
   int state_connection_draining(int event, Event *data);
   int state_connection_closed(int event, Event *data);
   void start();
+  void remove_connection_ids();
   void free(EThread *t) override;
   void destroy(EThread *t);
 

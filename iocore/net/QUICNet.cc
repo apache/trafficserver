@@ -31,11 +31,19 @@ QUICPollEvent::init(QUICConnection *con, UDPPacketInternal *packet)
 {
   this->con    = con;
   this->packet = packet;
+  if (con != nullptr) {
+    static_cast<QUICNetVConnection *>(con)->refcount_inc();
+  }
 }
 
 void
 QUICPollEvent::free()
 {
+  if (this->con != nullptr) {
+    ink_assert(static_cast<QUICNetVConnection *>(this->con)->refcount_dec() >= 0);
+    this->con = nullptr;
+  }
+
   quicPollEventAllocator.free(this);
 }
 
@@ -61,9 +69,9 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   uint8_t *buf           = (uint8_t *)p->getIOBlockChain()->buf();
 
-  e->free();
   if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
     // TODO: Some packets may not have connection id
+    e->free();
     p->free();
     return;
   }
@@ -73,6 +81,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
     vc->read.triggered = 1;
     vc->handle_received_packet(p);
     vc->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
+    e->free();
     return;
   }
 
@@ -90,6 +99,9 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
       nh->read_enable_list.push(vc);
     }
   }
+
+  // Note: We should free QUICPollEvent here since vc could be freed from other thread.
+  e->free();
 }
 
 void
@@ -100,10 +112,10 @@ QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   buf                    = (uint8_t *)p->getIOBlockChain()->buf();
 
-  e->free();
   if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
     // TODO: Some packets may not have connection id
     p->free();
+    e->free();
     return;
   }
 
@@ -115,6 +127,9 @@ QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
   if (!isin) {
     nh->read_enable_list.push(vc);
   }
+
+  // Note: We should free QUICPollEvent here since vc could be freed from other thread.
+  e->free();
 }
 
 //
@@ -134,6 +149,13 @@ QUICPollCont::pollEvent(int, Event *)
   SList(QUICPollEvent, alink) aq(inQueue.popall());
   Queue<QUICPollEvent> result;
   while ((e = aq.pop())) {
+    QUICNetVConnection *qvc = static_cast<QUICNetVConnection *>(e->con);
+    UDPPacketInternal *p    = e->packet;
+    if (qvc != nullptr && qvc->in_closed_queue) {
+      p->free();
+      e->free();
+      continue;
+    }
     result.push(e);
   }
 
