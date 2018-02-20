@@ -29,10 +29,10 @@ Synopsis
 
 .. class:: string_view
 
-This is an internal implementation of `std::string_view
-<https://en.cppreference.com/w/cpp/header/string_view>`__. This was done because
-:code:`std::string_view` is part of the C++17 standard and therefore cannot be assumed in our
-supported compilers (which are currently only C++11).
+   An internal implementation of `std::string_view
+   <https://en.cppreference.com/w/cpp/header/string_view>`__. This was done because
+   :code:`std::string_view` is part of the C++17 standard and therefore cannot be assumed in our
+   supported compilers (which are currently only C++11).
 
 Description
 ===========
@@ -59,6 +59,10 @@ If you discover any other differences, that is a bug in our implementation and s
 
 For a class that provides a much richer set of text manipulation methods, see :class:`TextView`
 which is a subclass of :class:`string_view`.
+
+For passing instance of :class:`string_view` it is reasonable to pass it by value. Examining machine
+code shows this is the same cost as passing the pointer and length as two arguments and saves
+indirection on in the called code.
 
 There is no shortage of additional reference material available, beyond the basic description noted
 above, which serves to describe the API and usage of this class, and duplicating it here would serve

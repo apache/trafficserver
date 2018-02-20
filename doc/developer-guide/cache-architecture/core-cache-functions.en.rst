@@ -40,22 +40,6 @@ Core Cache Types
 
    A range of content to be evacuated.
 
-.. cpp:class:: Vol
-
-   A representation of a :term:`cache stripe`.
-
-   .. cpp:member:: off_t data_blocks
-
-      The number of blocks of storage in the stripe.
-
-   .. cpp:member:: DLL<EvacuationBlock> evacuate
-
-      A list of blocks to evacuate.
-
-   .. cpp:member:: int aggWrite(int event, void * e)
-
-      Schedule the aggregation buffer to be written to disk.
-      
 .. cpp:class:: CacheProcessor
 
    The singleton cache management object. This handles threads and global initialization for the cache.
