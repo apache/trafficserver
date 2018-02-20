@@ -43,6 +43,7 @@ dnl
 
 AC_DEFUN([TS_CHECK_CRYPTO_EC_KEYS], [
   _eckeys_saved_LIBS=$LIBS
+
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ec.h)
   AC_CHECK_FUNCS(EC_KEY_new_by_curve_name, [enable_tls_eckey=yes], [enable_tls_eckey=no])
@@ -57,6 +58,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_EC_KEYS], [
 AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   enable_tls_npn=yes
   _npn_saved_LIBS=$LIBS
+
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_FUNCS(SSL_CTX_set_next_protos_advertised_cb SSL_CTX_set_next_proto_select_cb SSL_select_next_proto SSL_get0_next_proto_negotiated,
     [], [enable_tls_npn=no]
@@ -72,6 +74,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
 AC_DEFUN([TS_CHECK_CRYPTO_ALPN], [
   enable_tls_alpn=yes
   _alpn_saved_LIBS=$LIBS
+
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_FUNCS(SSL_CTX_set_alpn_protos SSL_CTX_set_alpn_select_cb SSL_get0_alpn_selected SSL_select_next_proto,
     [], [enable_tls_alpn=no]
@@ -84,9 +87,9 @@ AC_DEFUN([TS_CHECK_CRYPTO_ALPN], [
   AC_SUBST(use_tls_alpn)
 ])
 
-AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
-  _sni_saved_LIBS=$LIBS
-  enable_tls_sni=yes
+AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
+  _cert_saved_LIBS=$LIBS
+  enable_cert_cb=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
@@ -96,44 +99,6 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
 #include <openssl/tls1.h>
 #endif ])
 
-  # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
-  # macro, so AC_CHECK_FUNCS is not going to do the business.
-  AC_MSG_CHECKING([for SSL_CTX_set_tlsext_servername_callback])
-  AC_COMPILE_IFELSE(
-  [
-    AC_LANG_PROGRAM([[
-#if HAVE_OPENSSL_SSL_H
-#include <openssl/ssl.h>
-#endif
-#if HAVE_OPENSSL_TLS1_H
-#include <openssl/tls1.h>
-#endif
-      ]],
-      [[SSL_CTX_set_tlsext_servername_callback(NULL, NULL);]])
-  ],
-  [
-    AC_MSG_RESULT([yes])
-  ],
-  [
-    AC_MSG_RESULT([no])
-    enable_tls_sni=no
-  ])
-
-  AC_CHECK_FUNCS(SSL_get_servername, [], [enable_tls_sni=no])
-
-  LIBS=$_sni_saved_LIBS
-
-  AC_MSG_CHECKING(whether to enable ServerNameIndication TLS extension support)
-  AC_MSG_RESULT([$enable_tls_sni])
-  TS_ARG_ENABLE_VAR([use], [tls-sni])
-  AC_SUBST(use_tls_sni)
-])
-
-AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
-  _cert_saved_LIBS=$LIBS
-  enable_cert_cb=yes
-
-  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_MSG_CHECKING([for SSL_CTX_set_cert_cb])
   AC_LINK_IFELSE(
   [

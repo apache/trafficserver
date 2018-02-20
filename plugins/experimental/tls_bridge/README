@@ -1,0 +1,20 @@
+ATS (Apache Traffic Server) TLS Bridge Plugin
+
+This plugin enables a TLS bridge from an "Ingress" ATS instance to a "Peer" ATS instance using
+the `CONNECT` method. A Client sends a CONNECT to the Ingress, which sets up a TLS connection
+to the Peer. The Peer then processes the original Client CONNECT. The behavior is as if the Client
+sent the CONNECT to the Peer.
+
+Configuration is done in 'plugin.config' by passing pairs of arguments. Each pair is a service and a peer.
+The service is an anchored regular expression which is checked against the host name in the Client
+CONNECT. The peer is an FQDN or IP address with an optional port. If matched, the TLS bridge is created
+to the peer using the specified FQDN and port.
+
+Example:
+
+   tls_bridge.so .*[.]service[.]com peer.example.com:4443
+
+This will create a bridge to 'peer.example.com' on port 4443 for CONNECT requests that end in '.service.com'.
+
+Version 7.0.0 [11/10/17, solidwallofcode]
+  - [YTSATS-1633] Initial version.

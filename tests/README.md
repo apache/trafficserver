@@ -295,7 +295,6 @@ ts.Disk.remap_config.AddLine(
  * TS_USE_HWLOC
  * TS_USE_TLS_NPN
  * TS_USE_TLS_ALPN
- * TS_USE_TLS_SNI
  * TS_USE_CERT_CB
  * TS_USE_SET_RBIO
  * TS_USE_TLS_ECKEY

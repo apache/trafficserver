@@ -141,6 +141,8 @@ condition_factory(const std::string &cond)
     c = new ConditionGeo();
   } else if (c_name == "ID") {
     c = new ConditionId();
+  } else if (c_name == "CIDR") {
+    c = new ConditionCidr();
   } else if (c_name == "INBOUND") {
     c = new ConditionInbound();
   } else {

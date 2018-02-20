@@ -308,7 +308,7 @@ public:
 
     _capacity += n;
 
-    ink_assert(_capacity < N);
+    ink_assert(_capacity <= N);
 
     return *this;
   }

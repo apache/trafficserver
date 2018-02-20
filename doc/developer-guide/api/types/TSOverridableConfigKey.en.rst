@@ -146,6 +146,7 @@ Enumeration Members
    .. c:macro:: TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT
    .. c:macro:: TS_CONFIG_HTTP_NORMALIZE_AE
    .. c:macro:: TS_CONFIG_HTTP_INSERT_FORWARDED
+   .. c:macro:: TS_CONFIG_HTTP_ALLOW_MULTI_RANGE
    
 Description
 ===========

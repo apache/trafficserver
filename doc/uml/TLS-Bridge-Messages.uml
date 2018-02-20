@@ -1,0 +1,80 @@
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+' Unless required by  applicable law or agreed to in writing, software distributed under the License is distributed
+' on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and limitations under the License.
+
+@startuml
+
+scale max 720 width
+
+actor Client
+box "Ingress ATS" #DDFFDD
+entity "Client\nNetVConn" as uanet
+participant "Ingress\nATS" as ingress
+entity "Client\nVConn" as uavc
+entity "TLS Bridge" as plugin
+entity "Peer\nVConn" as peervc
+end box
+box "Peer ATS" #DDDDFF
+participant "Peer\nATS" as peer
+end box
+participant Service
+
+Client <-[#green]> ingress : <font color="green">//TCP//</font> Handshake
+activate uanet
+Client -[#blue]-> uanet : <font color="blue">""CONNECT"" Service</font>
+uanet -> ingress : //Parse request//
+ingress -[#black]> plugin : ""READ_REQUEST_HDR_HOOK""
+plugin -> ingress : //TSHttpTxnIntercept()//
+ingress -> uavc : //Create//
+activate uavc
+uanet -[#blue]-> ingress : <font color="blue">""CONNECT"" Service</font>
+ingress -[#blue]-> uavc : <font color="blue">""CONNECT"" Service</font>
+ingress -[#black]> plugin : ""TS_EVENT_NET_ACCEPT""
+note right : Client VConn is passed in event data.
+
+plugin -\ ingress : //TSHttpConnect()//
+ingress -> peervc : //create//
+activate peervc
+ingress -/ plugin : //return Peer VConn//
+
+plugin -[#blue]-> peervc : <font color="blue">""CONNECT"" Peer</font>
+peervc -> ingress : //parse request//
+ingress <-[#green]> peer : <font color="green">//TCP//</font> Handshake
+ingress <-[#green]> peer : <font color="green">//TLS//</font> Handshake
+ingress -[#blue]-> peervc : <font color="blue">""200 OK""</font>
+peervc -[#blue]-> plugin : <font color="blue">""200 OK""</font>
+note left
+This signals a raw TLS connection
+nto the Peer ATS. The response is
+parsed and consumed by Plugin.
+end note
+
+note over plugin : Plugin switches to byte forwarding.
+uavc -[#blue]-> plugin : <font color="blue">""CONNECT"" Service</font>
+note left: Original Client Request.
+plugin -[#blue]-> peervc : <font color="blue">""CONNECT"" Service</font>
+peervc -[#blue]-> peer : <font color="blue">""CONNECT"" Service</font>
+peer <-[#green]> Service : <font color="green">//TCP//</font> Handshake
+peer <-[#green]> Service : <font color="green">//TLS//</font> Handshake
+note left : Optional, based on 'Service'
+peer -[#blue]-> peervc : <font color="blue">""200 OK""</font>
+peervc -[#blue]-> plugin : <font color="blue">""200 OK""</font>
+plugin -[#blue]-> uavc : <font color="blue">""200 OK""</font>
+uavc -[#blue]-> ingress : <font color="blue">""200 OK""</font>
+note left
+ATS updates the incoming response based on
+local configuration. This means what goes out
+to the Client may be different than what the
+plugin wrote (forwarded from Peer ATS).
+end note
+ingress -[#black]> plugin : ""SEND_RESPONSE_HDR_HOOK""
+note right : Plugin cleans up response here.
+ingress -[#blue]-> uanet : <font color="blue">""200 OK""</font>
+uanet -[#blue]-> Client : <font color="blue">""200 OK""</font>
+
+Client <-[#green]> Service : //TCP/TLS Connect//
+
+@enduml

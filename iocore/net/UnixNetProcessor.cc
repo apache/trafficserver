@@ -30,7 +30,6 @@
 #include "StatPages.h"
 
 int net_accept_number = 0;
-extern std::vector<NetAccept *> naVec;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
 NetProcessor::AcceptOptions &
@@ -174,7 +173,12 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   } else {
     na->init_accept(nullptr);
   }
-  naVec.push_back(na);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
+    naVec.push_back(na);
+  }
+
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read

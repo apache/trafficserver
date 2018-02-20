@@ -320,3 +320,20 @@ TEST_CASE("Buffer Writer << operator", "[BW<<]")
 
   REQUIRE(bw.view() == "The quick brown fox");
 }
+
+TEST_CASE("LocalBufferWriter clip and extend")
+{
+  ts::LocalBufferWriter<10> bw;
+
+  bw.clip(7);
+  bw << "aaaaaa";
+  REQUIRE(bw.view() == "aaa");
+
+  bw.extend(3);
+  bw << "bbbbbb";
+  REQUIRE(bw.view() == "aaabbb");
+
+  bw.extend(4);
+  bw.write(static_cast<size_t>(snprintf(bw.auxBuffer(), bw.remaining(), "ccc")));
+  REQUIRE(bw.view() == "aaabbbccc");
+}

@@ -55,8 +55,12 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
+    'sphinxcontrib.plantuml',
     'traffic-server',
 ]
+
+# Contains values that are dependent on configure.ac.
+execfile('ext/local-config.py')
 
 if version_info >= (1, 4):
     extensions.append('sphinx.ext.imgmath')

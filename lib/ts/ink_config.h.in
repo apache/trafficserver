@@ -71,7 +71,6 @@
 #define TS_USE_HWLOC @use_hwloc@
 #define TS_USE_TLS_NPN @use_tls_npn@
 #define TS_USE_TLS_ALPN @use_tls_alpn@
-#define TS_USE_TLS_SNI @use_tls_sni@
 #define TS_USE_CERT_CB @use_cert_cb@
 #define TS_USE_SET_RBIO @use_set_rbio@
 #define TS_USE_GET_DH_2048_256 @use_dh_get_2048_256@

@@ -21,7 +21,18 @@
 SPHINXBUILD="$1"
 shift
 
+if [ -z "${PLANTUML_JAR}" ] ; then
+  echo 'PLANTUML_JAR' not set.
+  exit 1;
+elif [ ! -r "${PLANTUML_JAR}" ] ; then
+  echo plantuml jar \'${PLANTUML_JAR}\' not readable.
+  exit 1;
+elif [ ! -f "${PLANTUML_JAR}" ] ; then
+  echo plantuml jar \'${PLANTUML_JAR}\' is not actually a jar.
+  exit 1;
+fi
+
+
 exec $SPHINXBUILD \
   `eval echo \\$PAPEROPT_$PAPER` \
   "$@"
-

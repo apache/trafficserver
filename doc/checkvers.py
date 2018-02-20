@@ -57,3 +57,11 @@ if __name__ == '__main__':
         except Exception as e:
             print e
             sys.exit(1)
+
+        print 'checking for sphinxcontrib.plantuml...',
+        try:
+            import sphinxcontrib.plantuml
+            print 'yes'
+        except Exception as e:
+            print e;
+            sys.exit(1)

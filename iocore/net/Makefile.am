@@ -175,11 +175,6 @@ libinknet_a_SOURCES += \
   QUICNextProtocolAccept.cc
 endif
 
-#test_UNUSED_SOURCES = \
-#  NetTest-http-server.c \
-#  test_I_Net.cc \
-#  test_P_Net.cc
-
 if BUILD_TESTS
   libinknet_a_SOURCES += \
      NetVCTest.cc \

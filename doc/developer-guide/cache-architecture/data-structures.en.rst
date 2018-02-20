@@ -121,9 +121,6 @@ Data Structures
          from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was started,
          non-zero otherwise.
 
-.. class:: CacheVol
-
-   A :term:`cache volume` as described in :file:`volume.config`.
 
 .. class:: Doc
 
@@ -231,11 +228,11 @@ Data Structures
 
 .. class:: DiskVolBlock
 
-   A description of a span block. This is a serialized data structure.
+   A description of a span stripe (Vol) block . This is a serialized data structure.
 
    .. member:: uint64_t offset
 
-      Offset in the span of the start of the span block, in bytes.
+      Offset in the span of the start of the span stripe (Vol) block, in bytes.
 
    .. member:: uint64_t len
 
@@ -300,6 +297,118 @@ Data Structures
 
       An array of directory entry indices. Each element is the directory entry of the start of the free list
       for a segment, in the same order as the segments in the directory.
+
+
+.. class:: DiskVolBlockQueue
+
+   .. member:: DiskVolBlock* b
+   
+   .. member:: int new_block
+
+      Indicates if this is a new stripe rather than an existing one. In case a stripe is new ATS decides to clear that stripe(:class:`Vol`)
+
+   .. member:: LINK<DiskVolBlockQueue> link
+
+
+.. class:: DiskVol
+
+   Describes the Disk that contains the stripe identified by vol_number. This class also contains the queue
+   containing all the DiskVolBlock
+
+   .. member:: int num_volblocks
+
+      Number of blocks in the stripe identified by vol_number
+
+   .. member:: int vol_number
+
+      Identification number of the stripe (:class:`Vol`)
+
+   .. member:: uint64_t size
+
+      Size of the stripe
+
+   .. member:: CacheDisk* disk
+
+      The disk containing the stripe
+
+   .. member:: Queue<DiskVolBlockQueue> dpb_queue
+      
+.. enum:: CacheType
+
+   .. enumerator:: HTTP
+   
+   .. enumerator:: Stream
+
+.. class:: CacheVol
+
+   A :term:`cache volume` as described in :file:`volume.config`. This class represents a single volume. :class:`CacheVol` comprises of stripes spread across Spans(disks)
+
+   .. member:: int volume_number
+      
+      indentification number of this volume
+
+   .. member:: int scheme
+
+      An enumeration of value :enumerator:`CacheType::HTTP` or :enumerator:`CacheType::Stream`.
+
+   .. member:: off_t size
+
+
+   .. member:: int num_vols
+
+      Number of stripes(:class:`Vol`) contained in this volume
+
+   .. member:: Vol** vols
+      
+      :class:`Vol` represents a single stripe in the disk. vols contains all the stripes this volume is made up of
+   
+   .. member:: DiskVol** disk_vols
+
+      disk_vols contain references to the disks of all the stripes in this volume
+      
+   .. member:: LINK<CacheVol> link
+
+   .. member:: RecRawStatBlock vol_rsb
+      
+      per volume stat
+
+.. class:: ConfigVol
+
+   This class represents an individual volume.
+
+   .. member:: int number
+
+      Identification number of the volume
+
+   .. member:: CacheType scheme
+
+   .. member:: off_t size
+   
+   .. member:: bool in_percent
+
+      Used as an indicator if the volume is part of the overall volumes created by ATS
+
+   .. member:: int percent
+      
+   .. member:: CacheVol* cachep
+
+   .. member:: LINK<ConfigVol> link
+
+.. class:: ConfigVolumes
+
+    .. member:: int num_volumes
+
+       Total number of volumes specified in volume.config
+
+    .. member:: int num_http_volumes
+
+       Total number of volumes scpecified in volume.config for HTTP scheme
+
+    .. member:: int num_stream_volumes
+
+       Total number of volumes scpecified in volume.config for stream
+
+    .. member:: Queue<ConfigVol> cp_queue
 
 .. rubric:: Footnotes
 
