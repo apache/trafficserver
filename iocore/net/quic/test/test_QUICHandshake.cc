@@ -62,9 +62,8 @@ TEST_CASE("1-RTT handshake ", "[quic]")
   QUICHandshake *server = new QUICHandshake(server_qc, server_ssl_ctx, server_token);
 
   // setup stream 0
-  QUICStream *stream = new MockQUICStream();
   MockQUICFrameTransmitter tx;
-  stream->init(&tx, conn_id, 0);
+  QUICStream *stream = new MockQUICStream();
   MockQUICStreamIO *stream_io = new MockQUICStreamIO(nullptr, stream);
 
   client->set_stream(stream, stream_io);

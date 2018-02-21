@@ -70,8 +70,7 @@ TEST_CASE("QUICStream", "[quic]")
     IOBufferReader *reader = read_buffer->alloc_reader();
     MockQUICFrameTransmitter tx;
 
-    std::unique_ptr<QUICStream> stream(new QUICStream());
-    stream->init(&tx, 0, stream_id, 1024, 1024);
+    std::unique_ptr<QUICStream> stream(new QUICStream(&tx, 0, stream_id, 1024, 1024));
     stream->do_io_read(nullptr, 0, read_buffer);
 
     stream->recv(frame_1);
@@ -97,8 +96,7 @@ TEST_CASE("QUICStream", "[quic]")
     IOBufferReader *reader = read_buffer->alloc_reader();
     MockQUICFrameTransmitter tx;
 
-    std::unique_ptr<QUICStream> stream(new QUICStream());
-    stream->init(&tx, 0, stream_id);
+    std::unique_ptr<QUICStream> stream(new QUICStream(&tx, 0, stream_id));
     stream->do_io_read(nullptr, 0, read_buffer);
 
     stream->recv(frame_8);
@@ -124,8 +122,7 @@ TEST_CASE("QUICStream", "[quic]")
     IOBufferReader *reader = read_buffer->alloc_reader();
     MockQUICFrameTransmitter tx;
 
-    std::unique_ptr<QUICStream> stream(new QUICStream());
-    stream->init(&tx, 0, stream_id);
+    std::unique_ptr<QUICStream> stream(new QUICStream(&tx, 0, stream_id));
     stream->do_io_read(nullptr, 0, read_buffer);
 
     stream->recv(frame_8);
@@ -155,8 +152,7 @@ TEST_CASE("QUICStream", "[quic]")
     IOBufferReader *reader = read_buffer->alloc_reader();
     MockQUICFrameTransmitter tx;
 
-    std::unique_ptr<QUICStream> stream(new QUICStream());
-    stream->init(&tx, 0, stream_id);
+    std::unique_ptr<QUICStream> stream(new QUICStream(&tx, 0, stream_id));
     stream->init_flow_control_params(4096, 4096);
     stream->do_io_read(nullptr, 0, read_buffer);
 
@@ -193,8 +189,7 @@ TEST_CASE("QUICStream", "[quic]")
     IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
     MockQUICFrameTransmitter tx;
 
-    std::unique_ptr<QUICStream> stream(new QUICStream());
-    stream->init(&tx, 0, stream_id);
+    std::unique_ptr<QUICStream> stream(new QUICStream(&tx, 0, stream_id));
     stream->init_flow_control_params(4096, 4096);
     MockContinuation mock_cont(stream->mutex);
     stream->do_io_read(nullptr, 0, read_buffer);
