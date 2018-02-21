@@ -612,6 +612,9 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
     break;
+  case EVENT_IMMEDIATE:
+    // nothing to do (maybe)
+    break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
@@ -637,6 +640,9 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
+    break;
+  case EVENT_IMMEDIATE:
+    // nothing to do (maybe)
     break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
