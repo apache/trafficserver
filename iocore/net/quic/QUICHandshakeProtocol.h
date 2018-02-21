@@ -42,11 +42,11 @@ private:
   QUICKeyPhase _key_phase                     = QUICKeyPhase::CLEARTEXT;
 };
 
-class QUICCrypto
+class QUICHandshakeProtocol
 {
 public:
-  QUICCrypto(){};
-  virtual ~QUICCrypto(){};
+  QUICHandshakeProtocol(){};
+  virtual ~QUICHandshakeProtocol(){};
 
   virtual int handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) = 0;
   virtual bool is_handshake_finished() const                 = 0;

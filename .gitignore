@@ -91,7 +91,7 @@ lib/perl/lib/Apache/TS.pm
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
 iocore/net/quic/test/test_QUICAckFrameCreator
-iocore/net/quic/test/test_QUICCrypto
+iocore/net/quic/test/test_QUICHandshakeProtocol
 iocore/net/quic/test/test_QUICFlowController
 iocore/net/quic/test/test_QUICFrame
 iocore/net/quic/test/test_QUICFrameDispatcher

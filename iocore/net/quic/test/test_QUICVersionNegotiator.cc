@@ -29,8 +29,8 @@
 TEST_CASE("QUICVersionNegotiator", "[quic]")
 {
   QUICPacketFactory packet_factory;
-  MockQUICCrypto crypto;
-  packet_factory.set_crypto_module(&crypto);
+  MockQUICHandshakeProtocol hs_protocol;
+  packet_factory.set_hs_protocol(&hs_protocol);
   QUICVersionNegotiator vn;
 
   SECTION("Normal case")

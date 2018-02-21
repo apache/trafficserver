@@ -27,7 +27,7 @@ check_PROGRAMS = \
   test_QUICStreamManager \
   test_QUICTransportParameters \
   test_QUICKeyGenerator \
-  test_QUICCrypto \
+  test_QUICHandshakeProtocol \
   test_QUICLossDetector \
   test_QUICTypeUtil \
   test_QUICAckFrameCreator \
@@ -53,10 +53,10 @@ AM_CPPFLAGS += \
 
 if OPENSSL_IS_BORINGSSL
 QUICKeyGenerator_impl = ../QUICKeyGenerator_boringssl.cc
-QUICCrypto_impl = ../QUICCrypto_boringssl.cc
+QUICHandshakeProtocol_impl = ../QUICHandshakeProtocol_boringssl.cc
 else
 QUICKeyGenerator_impl = ../QUICKeyGenerator_openssl.cc
-QUICCrypto_impl = ../QUICCrypto_openssl.cc
+QUICHandshakeProtocol_impl = ../QUICHandshakeProtocol_openssl.cc
 endif
 
 #
@@ -72,8 +72,8 @@ test_QUICPacket_SOURCES = \
   event_processor_main.cc \
   test_QUICPacket.cc \
   ../QUICPacket.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICTypes.cc
 
 test_QUICPacket_LDADD = \
@@ -100,8 +100,8 @@ test_QUICPacketFactory_SOURCES = \
   event_processor_main.cc \
   test_QUICPacketFactory.cc \
   ../QUICPacket.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICTypes.cc
 
 test_QUICPacketFactory_LDADD = \
@@ -134,8 +134,8 @@ test_QUICFrame_SOURCES = \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICTypes.cc \
   ../QUICStream.cc \
   ../QUICStreamState.cc \
@@ -182,8 +182,8 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICTypes.cc \
   ../QUICEchoApp.cc \
   ../QUICDebugNames.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
@@ -304,8 +304,8 @@ test_QUICTransportParameters_SOURCES = \
   ../QUICApplicationMap.cc \
   ../QUICHandshake.cc \
   ../QUICVersionNegotiator.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
@@ -354,16 +354,16 @@ test_QUICKeyGenerator_SOURCES = \
   ../QUICTypes.cc
 
 #
-# test_QUICCrypto
+# test_QUICHandshakeProtocol
 #
-test_QUICCrypto_CPPFLAGS = \
+test_QUICHandshakeProtocol_CPPFLAGS = \
   $(AM_CPPFLAGS)
 
-test_QUICCrypto_LDFLAGS = \
+test_QUICHandshakeProtocol_LDFLAGS = \
   @AM_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
-test_QUICCrypto_LDADD = \
+test_QUICHandshakeProtocol_LDADD = \
   @OPENSSL_LIBS@ \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
@@ -371,15 +371,15 @@ test_QUICCrypto_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
-test_QUICCrypto_SOURCES = \
+test_QUICHandshakeProtocol_SOURCES = \
   main.cc \
-  test_QUICCrypto.cc \
+  test_QUICHandshakeProtocol.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
-  ../QUICCrypto.h \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
+  ../QUICHandshakeProtocol.h \
   ../QUICTypes.cc \
   ../QUICGlobals.cc \
   ../../SSLNextProtocolSet.cc
@@ -410,8 +410,8 @@ test_QUICLossDetector_SOURCES = \
   ../QUICLossDetector.cc \
   ../QUICTypes.cc \
   ../QUICPacket.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICFrame.cc
 
 #
@@ -443,8 +443,8 @@ test_QUICTypeUtil_SOURCES = \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICTypes.cc
 
 #
@@ -479,8 +479,8 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../../SSLNextProtocolSet.cc
 
 #
@@ -511,8 +511,8 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICApplication.cc \
   ../QUICApplicationMap.cc \
   ../QUICHandshake.cc \
@@ -560,8 +560,8 @@ test_QUICFlowController_SOURCES = \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
-  ../QUICCrypto.cc \
-  $(QUICCrypto_impl) \
+  ../QUICHandshakeProtocol.cc \
+  $(QUICHandshakeProtocol_impl) \
   ../QUICFrame.cc
 
 #

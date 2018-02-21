@@ -183,9 +183,9 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   this->_application_map = new QUICApplicationMap();
   this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 
-  this->_crypto           = this->_handshake_handler->crypto_module();
+  this->_hs_protocol      = this->_handshake_handler->protocol();
   this->_frame_dispatcher = new QUICFrameDispatcher();
-  this->_packet_factory.set_crypto_module(this->_crypto);
+  this->_packet_factory.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
   this->_stream_manager         = new QUICStreamManager(this->connection_id(), this, this->_application_map);
@@ -217,7 +217,7 @@ QUICNetVConnection::free(EThread *t)
 
     delete this->_handshake_handler;
     delete this->_application_map;
-    delete this->_crypto;
+    delete this->_hs_protocol;
     delete this->_loss_detector;
     delete this->_frame_dispatcher;
     delete this->_stream_manager;

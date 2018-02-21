@@ -28,7 +28,7 @@
 #include "P_SSLNextProtocolSet.h"
 #include "P_VConnection.h"
 
-#include "QUICCryptoTls.h"
+#include "QUICTLS.h"
 #include "QUICEvents.h"
 #include "QUICGlobals.h"
 #include "QUICVersionNegotiator.h"
@@ -93,14 +93,14 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandsha
 QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token)
   : QUICApplication(qc),
     _ssl(SSL_new(ssl_ctx)),
-    _crypto(new QUICCryptoTls(this->_ssl, qc->direction())),
+    _hs_protocol(new QUICCryptoTls(this->_ssl, qc->direction())),
     _version_negotiator(new QUICVersionNegotiator()),
     _netvc_context(qc->direction()),
     _reset_token(token)
 {
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
-  this->_crypto->initialize_key_materials(this->_client_qc->original_connection_id());
+  this->_hs_protocol->initialize_key_materials(this->_client_qc->original_connection_id());
 
   SET_HANDLER(&QUICHandshake::state_initial);
 }
@@ -155,10 +155,10 @@ QUICHandshake::is_completed()
   return this->handler == &QUICHandshake::state_complete;
 }
 
-QUICCrypto *
-QUICHandshake::crypto_module()
+QUICHandshakeProtocol *
+QUICHandshake::protocol()
 {
-  return this->_crypto;
+  return this->_hs_protocol;
 }
 
 QUICVersion
@@ -172,7 +172,7 @@ const char *
 QUICHandshake::negotiated_cipher_suite()
 {
   // FIXME Generalize and remove dynamic_cast
-  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_crypto);
+  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_hs_protocol);
   if (crypto_tls) {
     return SSL_get_cipher_name(crypto_tls->ssl_handle());
   }
@@ -184,7 +184,7 @@ void
 QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len)
 {
   // FIXME Generalize and remove dynamic_cast
-  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_crypto);
+  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_hs_protocol);
   if (crypto_tls) {
     SSL_get0_alpn_selected(crypto_tls->ssl_handle(), name, len);
   }
@@ -309,7 +309,7 @@ QUICHandshake::state_key_exchange(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE: {
-    if (this->_crypto->is_handshake_finished()) {
+    if (this->_hs_protocol->is_handshake_finished()) {
       int res = this->_complete_handshake();
       if (!res) {
         this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
@@ -457,7 +457,7 @@ QUICHandshake::_do_handshake(bool initial)
 
   uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
   size_t out_len                     = 0;
-  int result                         = this->_crypto->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, in, in_len);
+  int result                         = this->_hs_protocol->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, in, in_len);
 
   if (out_len > 0) {
     I_WANNA_DUMP_THIS_BUF(out, static_cast<int64_t>(out_len));
@@ -573,7 +573,7 @@ QUICHandshake::_complete_handshake()
   SET_HANDLER(&QUICHandshake::state_complete);
   QUICHSDebug("%s", this->negotiated_cipher_suite());
 
-  int res = this->_crypto->update_key_materials();
+  int res = this->_hs_protocol->update_key_materials();
   if (res) {
     QUICHSDebug("Keying Materials are exported");
   } else {

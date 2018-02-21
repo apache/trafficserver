@@ -31,7 +31,7 @@
 #include "I_IOBuffer.h"
 
 #include "QUICTypes.h"
-#include "QUICCrypto.h"
+#include "QUICHandshakeProtocol.h"
 
 #define QUIC_FIELD_OFFSET_CONNECTION_ID 1
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4
@@ -306,11 +306,11 @@ public:
   static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
                                                       QUICStatelessResetToken stateless_reset_token);
   void set_version(QUICVersion negotiated_version);
-  void set_crypto_module(QUICCrypto *crypto);
+  void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
 
 private:
   QUICVersion _version = QUIC_SUPPORTED_VERSIONS[0];
-  QUICCrypto *_crypto  = nullptr;
+  QUICHandshakeProtocol *_hs_protocol = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeader *header);

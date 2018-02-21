@@ -72,7 +72,7 @@ public:
   int state_closed(int event, void *data);
 
   // Getters
-  QUICCrypto *crypto_module();
+  QUICHandshakeProtocol *protocol();
   QUICVersion negotiated_version();
   const char *negotiated_cipher_suite();
   void negotiated_application_name(const uint8_t **name, unsigned int *len);
@@ -88,7 +88,7 @@ public:
 
 private:
   SSL *_ssl                                                             = nullptr;
-  QUICCrypto *_crypto                                                   = nullptr;
+  QUICHandshakeProtocol *_hs_protocol                                   = nullptr;
   std::shared_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
   std::shared_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
 

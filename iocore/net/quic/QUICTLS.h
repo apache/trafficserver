@@ -34,9 +34,9 @@
 
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
-#include "QUICCrypto.h"
+#include "QUICHandshakeProtocol.h"
 
-class QUICCryptoTls : public QUICCrypto
+class QUICCryptoTls : public QUICHandshakeProtocol
 {
 public:
   QUICCryptoTls(SSL *ssl, NetVConnectionContext_t nvc_ctx);

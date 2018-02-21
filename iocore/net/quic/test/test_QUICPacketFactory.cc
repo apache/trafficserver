@@ -29,8 +29,8 @@
 TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {
   QUICPacketFactory factory;
-  MockQUICCrypto crypto;
-  factory.set_crypto_module(&crypto);
+  MockQUICHandshakeProtocol hs_protocol;
+  factory.set_hs_protocol(&hs_protocol);
 
   uint8_t client_initial_packet_header[] = {
     0x82,                                           // Type
@@ -57,8 +57,8 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
 {
   QUICPacketFactory factory;
-  MockQUICCrypto crypto;
-  factory.set_crypto_module(&crypto);
+  MockQUICHandshakeProtocol hs_protocol;
+  factory.set_hs_protocol(&hs_protocol);
   factory.set_version(0x11223344);
 
   uint8_t raw[]          = {0xaa, 0xbb, 0xcc, 0xdd};
@@ -76,8 +76,8 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
 TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
 {
   QUICPacketFactory factory;
-  MockQUICCrypto crypto;
-  factory.set_crypto_module(&crypto);
+  MockQUICHandshakeProtocol hs_protocol;
+  factory.set_hs_protocol(&hs_protocol);
   QUICStatelessResetToken token;
   token.generate(12345, 67890);
   uint8_t expected_output[] = {

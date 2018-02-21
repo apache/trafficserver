@@ -459,10 +459,10 @@ private:
   }
 };
 
-class MockQUICCrypto : public QUICCrypto
+class MockQUICHandshakeProtocol : public QUICHandshakeProtocol
 {
 public:
-  MockQUICCrypto() : QUICCrypto() {}
+  MockQUICHandshakeProtocol() : QUICHandshakeProtocol() {}
 
   int
   handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) override

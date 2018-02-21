@@ -29,9 +29,9 @@
 
 TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {
-  MockQUICCrypto crypto;
+  MockQUICHandshakeProtocol hs_protocol;
   QUICPacketFactory pf;
-  pf.set_crypto_module(&crypto);
+  pf.set_hs_protocol(&hs_protocol);
 
   QUICAckFrameCreator *afc         = new QUICAckFrameCreator();
   QUICConnectionId connection_id   = 1;

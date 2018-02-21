@@ -672,8 +672,8 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     result        = QUICPacketCreationResult::SUCCESS;
     break;
   case QUICPacketType::PROTECTED:
-    if (this->_crypto->is_key_derived()) {
-      if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
+    if (this->_hs_protocol->is_key_derived()) {
+      if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
                                  header->packet_number(), header->buf(), header->size(), header->key_phase())) {
         result = QUICPacketCreationResult::SUCCESS;
       } else {
@@ -684,9 +684,9 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     }
     break;
   case QUICPacketType::INITIAL:
-    if (!this->_crypto->is_key_derived()) {
+    if (!this->_hs_protocol->is_key_derived()) {
       if (QUICTypeUtil::is_supported_version(header->version())) {
-        if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
+        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
                                    header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
@@ -700,8 +700,8 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     }
     break;
   case QUICPacketType::HANDSHAKE:
-    if (!this->_crypto->is_key_derived()) {
-      if (this->_crypto->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
+    if (!this->_hs_protocol->is_key_derived()) {
+      if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
                                  header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
         result = QUICPacketCreationResult::SUCCESS;
       } else {
@@ -768,7 +768,7 @@ QUICPacketUPtr
 QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
-  // TODO Key phase should be picked up from QUICCrypto, probably
+  // TODO Key phase should be picked up from QUICHandshakeProtocol, probably
   QUICPacketHeader *header =
     QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, std::move(payload), len);
@@ -820,7 +820,7 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header, bool retra
   size_t cipher_txt_len     = 0;
 
   QUICPacket *packet = nullptr;
-  if (this->_crypto->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
+  if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                              header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
@@ -836,9 +836,9 @@ QUICPacketFactory::set_version(QUICVersion negotiated_version)
 }
 
 void
-QUICPacketFactory::set_crypto_module(QUICCrypto *crypto)
+QUICPacketFactory::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
 {
-  this->_crypto = crypto;
+  this->_hs_protocol = hs_protocol;
 }
 
 //

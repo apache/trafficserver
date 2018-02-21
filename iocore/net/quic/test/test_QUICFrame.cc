@@ -1113,8 +1113,8 @@ TEST_CASE("QUICFrameFactory Create RST_STREAM with a QUICStreamError", "[quic]")
 TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 {
   QUICPacketFactory factory;
-  MockQUICCrypto crypto;
-  factory.set_crypto_module(&crypto);
+  MockQUICHandshakeProtocol hs_protocol;
+  factory.set_hs_protocol(&hs_protocol);
   QUICPacketUPtr packet = factory.create_server_protected_packet(0x01020304, 0, {nullptr, [](void *p) { ats_free(p); }}, 0, true);
 
   SECTION("STREAM frame")

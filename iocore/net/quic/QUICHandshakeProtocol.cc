@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Crypto (TLS to Secure QUIC)
+ *  QUIC Handshake Protocol (TLS to Secure QUIC)
  *
  *  @section license License
  *
@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 #include "QUICGlobals.h"
-#include "QUICCryptoTls.h"
+#include "QUICTLS.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -94,9 +94,9 @@ QUICPacketProtection::key_phase() const
 }
 
 //
-// QUICCrypto
+// QUICHandshakeProtocol
 //
-QUICCryptoTls::QUICCryptoTls(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICCrypto(), _ssl(ssl), _netvc_context(nvc_ctx)
+QUICCryptoTls::QUICCryptoTls(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx)
 {
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     SSL_set_accept_state(this->_ssl);

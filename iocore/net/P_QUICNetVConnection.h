@@ -51,7 +51,7 @@
 #include "quic/QUICHandshake.h"
 #include "quic/QUICApplication.h"
 #include "quic/QUICStream.h"
-#include "quic/QUICCrypto.h"
+#include "quic/QUICHandshakeProtocol.h"
 #include "quic/QUICAckFrameCreator.h"
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
@@ -243,7 +243,7 @@ private:
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
   QUICHandshake *_handshake_handler                 = nullptr;
-  QUICCrypto *_crypto                               = nullptr;
+  QUICHandshakeProtocol *_hs_protocol               = nullptr;
   QUICLossDetector *_loss_detector                  = nullptr;
   QUICFrameDispatcher *_frame_dispatcher            = nullptr;
   QUICStreamManager *_stream_manager                = nullptr;

@@ -34,7 +34,7 @@
 #include <openssl/ssl.h>
 
 #include "Mock.h"
-#include "QUICCryptoTls.h"
+#include "QUICTLS.h"
 
 static constexpr uint32_t MAX_HANDSHAKE_MSG_LEN = 2048;
 
@@ -56,13 +56,13 @@ print_hex(const uint8_t *v, size_t len)
   return;
 }
 
-TEST_CASE("QUICCrypto Cleartext", "[quic]")
+TEST_CASE("QUICHndshakeProtocol Cleartext", "[quic]")
 {
   // Client
   SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
-  QUICCrypto *client = new QUICCryptoTls(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
+  QUICHandshakeProtocol *client = new QUICCryptoTls(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
 
   // Server
   SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
@@ -72,7 +72,7 @@ TEST_CASE("QUICCrypto Cleartext", "[quic]")
   SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
-  QUICCrypto *server = new QUICCryptoTls(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
+  QUICHandshakeProtocol *server = new QUICCryptoTls(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
 
   CHECK(client->initialize_key_materials(0x8394c8f03e515700));
   CHECK(server->initialize_key_materials(0x8394c8f03e515700));
@@ -114,13 +114,13 @@ TEST_CASE("QUICCrypto Cleartext", "[quic]")
   delete server;
 }
 
-TEST_CASE("QUICCrypto 1-RTT", "[quic]")
+TEST_CASE("QUICHandshakeProtocol 1-RTT", "[quic]")
 {
   // Client
   SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
-  QUICCrypto *client = new QUICCryptoTls(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
+  QUICHandshakeProtocol *client = new QUICCryptoTls(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
 
   // Server
   SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
@@ -130,7 +130,7 @@ TEST_CASE("QUICCrypto 1-RTT", "[quic]")
   SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
-  QUICCrypto *server = new QUICCryptoTls(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
+  QUICHandshakeProtocol *server = new QUICCryptoTls(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
 
   CHECK(client->initialize_key_materials(0x8394c8f03e515708));
   CHECK(server->initialize_key_materials(0x8394c8f03e515708));
