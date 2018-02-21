@@ -210,28 +210,28 @@ QUICNetVConnection::free(EThread *t)
     this->_ctable->erase(this->_alt_quic_connection_ids[i].id, this);
   }
 
-/* TODO: Uncmment these blocks after refactoring read / write process
-  this->_udp_con        = nullptr;
-  this->_packet_handler = nullptr;
-  _unschedule_packet_write_ready();
+  /* TODO: Uncmment these blocks after refactoring read / write process
+    this->_udp_con        = nullptr;
+    this->_packet_handler = nullptr;
+    _unschedule_packet_write_ready();
 
-  delete this->_handshake_handler;
-  delete this->_application_map;
-  delete this->_crypto;
-  delete this->_loss_detector;
-  delete this->_frame_dispatcher;
-  delete this->_stream_manager;
-  delete this->_congestion_controller;
+    delete this->_handshake_handler;
+    delete this->_application_map;
+    delete this->_crypto;
+    delete this->_loss_detector;
+    delete this->_frame_dispatcher;
+    delete this->_stream_manager;
+    delete this->_congestion_controller;
 
-  // TODO: clear member variables like `UnixNetVConnection::free(EThread *t)`
-  this->mutex.clear();
+    // TODO: clear member variables like `UnixNetVConnection::free(EThread *t)`
+    this->mutex.clear();
 
-  if (from_accept_thread) {
-    quicNetVCAllocator.free(this);
-  } else {
-    THREAD_FREE(this, quicNetVCAllocator, t);
-  }
-*/
+    if (from_accept_thread) {
+      quicNetVCAllocator.free(this);
+    } else {
+      THREAD_FREE(this, quicNetVCAllocator, t);
+    }
+  */
 }
 
 void
