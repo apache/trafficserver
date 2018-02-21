@@ -42,6 +42,7 @@
 #include "ts/ink_time.h"
 #include "ts/ink_hrtime.h"
 #include "ts/ink_thread.h"
+#include "ts/BufferWriter.h"
 #include "ts/Diags.h"
 
 int diags_on_for_plugins         = 0;
@@ -65,19 +66,6 @@ location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
   }
 
   return false;
-}
-
-template <int Size>
-static void
-vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
-{
-  int nbytes = strlen(buffer);
-
-  vfprintf(fp, buffer, ap);
-  if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
-    ink_assert(nbytes < Size);
-    putc('\n', fp);
-  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -226,43 +214,51 @@ void
 Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocation *loc, const char *format_string,
                 va_list ap) const
 {
-  struct timeval tp;
-  const char *s;
-  char *buffer, *d, timestamp_buf[48];
-  char format_buf[1024], format_buf_w_ts[1024], *end_of_format;
-
   ink_release_assert(diags_level < DiagsLevel_Count);
 
-  ////////////////////////////////////////////////////////////////////////
-  // there are 2 format buffers that hold a printf-style format string  //
-  // format_buf contains <prefix_string>: (<debug_tag>) <format_string> //
-  // and format_buf_w_ts has the same thing with a prepended timestamp. //
-  ////////////////////////////////////////////////////////////////////////
+  using ts::LocalBufferWriter;
+  LocalBufferWriter<1024> format_writer;
 
-  format_buf[0]      = NUL;
-  format_buf_w_ts[0] = NUL;
+  // Save room for optional newline and terminating NUL bytes.
+  format_writer.clip(2);
 
-  /////////////////////////////////////////////////////
-  // format_buf holds 1024 characters, end_of_format //
-  // points to the current available character       //
-  /////////////////////////////////////////////////////
+  //////////////////////
+  // append timestamp //
+  //////////////////////
+  {
+    struct timeval tp = ink_gettimeofday();
+    time_t cur_clock  = (time_t)tp.tv_sec;
+    char timestamp_buf[48];
+    char *buffer = ink_ctime_r(&cur_clock, timestamp_buf);
 
-  end_of_format  = format_buf;
-  *end_of_format = NUL;
+    int num_bytes_written = snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
 
-  // add the thread id
-  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", (uint64_t)ink_thread_self());
-
-  //////////////////////////////////////
-  // start with the diag level prefix //
-  //////////////////////////////////////
-
-  for (s = level_name(diags_level); *s; *end_of_format++ = *s++) {
-    ;
+    if (num_bytes_written > 0) {
+      format_writer.write('[');
+      format_writer.write(buffer + 4, num_bytes_written);
+      format_writer.write("] ", 2);
+    }
   }
 
-  *end_of_format++ = ':';
-  *end_of_format++ = ' ';
+  size_t timestamp_end_offset = format_writer.size();
+
+  ///////////////////////
+  // add the thread id //
+  ///////////////////////
+  {
+    int num_bytes_written =
+      snprintf(format_writer.auxBuffer(), format_writer.remaining(), "{0x%" PRIx64 "} ", (uint64_t)ink_thread_self());
+    if (num_bytes_written > 0) {
+      format_writer.write(static_cast<size_t>(num_bytes_written));
+    }
+  }
+
+  //////////////////////////////////
+  // append the diag level prefix //
+  //////////////////////////////////
+
+  format_writer.write(level_name(diags_level), strlen(level_name(diags_level)));
+  format_writer.write(": ", 2);
 
   /////////////////////////////
   // append location, if any //
@@ -272,66 +268,31 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     char *lp, buf[256];
     lp = loc->str(buf, sizeof(buf));
     if (lp) {
-      *end_of_format++ = '<';
-      for (s = lp; *s; *end_of_format++ = *s++) {
-        ;
-      }
-      *end_of_format++ = '>';
-      *end_of_format++ = ' ';
+      format_writer.write('<');
+      format_writer.write(lp, std::min(strlen(lp), sizeof(buf)));
+      format_writer.write("> ", 2);
     }
   }
   //////////////////////////
   // append debugging tag //
   //////////////////////////
 
-  if (debug_tag) {
-    *end_of_format++ = '(';
-    for (s = debug_tag; *s; *end_of_format++ = *s++) {
-      ;
-    }
-    *end_of_format++ = ')';
-    *end_of_format++ = ' ';
+  if (debug_tag != nullptr) {
+    format_writer.write('(');
+    format_writer.write(debug_tag, strlen(debug_tag));
+    format_writer.write(") ", 2);
   }
   //////////////////////////////////////////////////////
-  // append original format string, and NUL terminate //
+  // append original format string, ensure there is a //
+  // newline, and NUL terminate                       //
   //////////////////////////////////////////////////////
 
-  for (s = format_string; *s; *end_of_format++ = *s++) {
-    ;
+  format_writer.write(format_string, strlen(format_string));
+  format_writer.extend(2);
+  if (format_writer.data()[format_writer.size() - 1] != '\n') {
+    format_writer.write('\n');
   }
-  *end_of_format++ = NUL;
-
-  //////////////////////////////////////////////////////////////////
-  // prepend timestamp into the timestamped version of the buffer //
-  //////////////////////////////////////////////////////////////////
-
-  tp               = ink_gettimeofday();
-  time_t cur_clock = (time_t)tp.tv_sec;
-  buffer           = ink_ctime_r(&cur_clock, timestamp_buf);
-
-  snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
-
-  d    = format_buf_w_ts;
-  *d++ = '[';
-
-  for (int i = 4; buffer[i]; i++) {
-    *d++ = buffer[i];
-  }
-
-  *d++ = ']';
-  *d++ = ' ';
-
-  for (int k = 0; prefix_str[k]; k++) {
-    *d++ = prefix_str[k];
-  }
-
-  *d++ = ' ';
-
-  for (s = format_buf; *s; *d++ = *s++) {
-    ;
-  }
-
-  *d++ = NUL;
+  format_writer.write('\0');
 
   //////////////////////////////////////
   // now, finally, output the message //
@@ -342,7 +303,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     if (diags_log && diags_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
-      vprintline(diags_log->m_fp, format_buf_w_ts, tmp);
+      vfprintf(diags_log->m_fp, format_writer.data(), tmp);
       va_end(tmp);
     }
   }
@@ -351,7 +312,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     if (stdout_log && stdout_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
-      vprintline(stdout_log->m_fp, format_buf_w_ts, tmp);
+      vfprintf(stdout_log->m_fp, format_writer.data(), tmp);
       va_end(tmp);
     }
   }
@@ -360,7 +321,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     if (stderr_log && stderr_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
-      vprintline(stderr_log->m_fp, format_buf_w_ts, tmp);
+      vfprintf(stderr_log->m_fp, format_writer.data(), tmp);
       va_end(tmp);
     }
   }
@@ -404,7 +365,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
       priority = LOG_NOTICE;
       break;
     }
-    vsnprintf(syslog_buffer, sizeof(syslog_buffer) - 1, format_buf, ap);
+    vsnprintf(syslog_buffer, sizeof(syslog_buffer) - 1, format_writer.data() + timestamp_end_offset, ap);
     syslog(priority, "%s", syslog_buffer);
   }
 
