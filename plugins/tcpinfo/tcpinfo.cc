@@ -137,10 +137,10 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
 
   if (config->log_level == 2) {
 #if !defined(freebsd) || defined(__GLIBC__)
-    ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
+    ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
-                               info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets);
+                               info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans);
 #else
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.__tcpi_last_data_sent, info.tcpi_last_data_recv,
