@@ -45,10 +45,16 @@ class QUICStreamManager;
 class QUICStream : public VConnection
 {
 public:
-  QUICStream() : VConnection(nullptr), _received_stream_frame_buffer(this) {}
+  QUICStream()
+    : VConnection(nullptr),
+      _remote_flow_controller(0, nullptr, 0),
+      _local_flow_controller(0, nullptr, 0),
+      _received_stream_frame_buffer(this)
+  {
+  }
+  QUICStream(QUICFrameTransmitter *tx, QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data = 0,
+             uint64_t send_max_stream_data = 0);
   ~QUICStream();
-  void init(QUICFrameTransmitter *tx, QUICConnectionId cid, QUICStreamId id, uint64_t recv_max_stream_data = 0,
-            uint64_t send_max_stream_data = 0);
   // void start();
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);
@@ -96,9 +102,9 @@ private:
   QUICStreamId _id                = 0;
   QUICOffset _send_offset         = 0;
 
-  QUICRemoteStreamFlowController *_remote_flow_controller = nullptr;
-  QUICLocalStreamFlowController *_local_flow_controller   = nullptr;
-  uint64_t _flow_control_buffer_size                      = 1024;
+  QUICRemoteStreamFlowController _remote_flow_controller;
+  QUICLocalStreamFlowController _local_flow_controller;
+  uint64_t _flow_control_buffer_size = 1024;
 
   VIO _read_vio;
   VIO _write_vio;

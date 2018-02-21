@@ -235,8 +235,6 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
       return nullptr;
     }
 
-    // TODO Free the stream somewhere
-    stream                          = new (THREAD_ALLOC(quicStreamAllocator, this_ethread())) QUICStream();
     uint32_t local_max_stream_data  = 0;
     uint32_t remote_max_stream_data = 0;
     if (this->_local_tp) {
@@ -246,7 +244,10 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
       QUICConfig::scoped_config params;
       local_max_stream_data = params->initial_max_stream_data();
     }
-    stream->init(this->_tx, this->_connection_id, stream_id, local_max_stream_data, remote_max_stream_data);
+
+    // TODO Free the stream somewhere
+    stream = THREAD_ALLOC(quicStreamAllocator, this_ethread());
+    new (stream) QUICStream(this->_tx, this->_connection_id, stream_id, local_max_stream_data, remote_max_stream_data);
 
     this->stream_list.push(stream);
   }
