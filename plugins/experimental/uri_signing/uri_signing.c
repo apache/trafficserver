@@ -153,10 +153,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const int max_cpi       = 20;
   int64_t checkpoints[20] = {0};
   int cpi                 = 0;
+  int url_ct              = 0;
+  const char *url         = NULL;
 
   const char *package = "URISigningPackage";
-  int url_ct          = 0;
-  const char *url     = NULL;
 
   TSMBuffer mbuf;
   TSMLoc ul;
@@ -246,6 +246,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
   return TSREMAP_NO_REMAP;
 fail:
+  if (uri_matches_auth_directive((struct config *)ih, url, url_ct)) {
+    return TSREMAP_NO_REMAP;
+  }
   PluginDebug("Invalid JWT for %.*s", url_ct, url);
   TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_FORBIDDEN);
   PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);

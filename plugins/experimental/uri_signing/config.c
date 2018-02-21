@@ -19,6 +19,7 @@
 #include "uri_signing.h"
 #include "config.h"
 #include "timing.h"
+#include "jwt.h"
 
 #include <ts/ts.h>
 
@@ -31,11 +32,19 @@
 
 #define JSONError(err) PluginError("json-err: %s:%d:%d: %s", (err).source, (err).line, (err).column, (err).text)
 
+#define AUTH_DENY 0
+#define AUTH_ALLOW 1
+struct auth_directive {
+  char auth;
+  char *container;
+};
+
 struct config {
   struct hsearch_data *issuers;
   cjose_jwk_t ***jwkis;
   char **issuer_names;
   struct signer signer;
+  struct auth_directive *auth_directives;
 };
 
 cjose_jwk_t **
@@ -46,6 +55,7 @@ find_keys(struct config *cfg, const char *issuer)
     PluginDebug("Unable to locate any keys at %p for issuer %s in %p->%p", entry, issuer, cfg, cfg->issuers);
     return NULL;
   }
+
   int n = 0;
   for (cjose_jwk_t **jwks = entry->data; *jwks; ++jwks, ++n) {
     ;
@@ -94,6 +104,8 @@ config_new(size_t n)
   cfg->signer.jwk    = NULL;
   cfg->signer.alg    = NULL;
 
+  cfg->auth_directives = NULL;
+
   PluginDebug("New config object created at %p", cfg);
   return cfg;
 }
@@ -121,6 +133,13 @@ config_delete(struct config *cfg)
 
   if (cfg->signer.alg) {
     free(cfg->signer.alg);
+  }
+
+  if (cfg->auth_directives) {
+    for (struct auth_directive *ad = cfg->auth_directives; ad->container; ++ad) {
+      free(ad->container);
+    }
+    free(cfg->auth_directives);
   }
   free(cfg);
 }
@@ -172,7 +191,60 @@ read_config(const char *path)
   json_t *jwks;
   json_object_foreach(issuer_json, json_issuer, jwks)
   {
-    *issuer         = strdup(json_issuer);
+    *issuer = strdup(json_issuer);
+
+    json_t *ad_json = json_object_get(jwks, "auth_directives");
+    if (ad_json) {
+      PluginDebug("Loading auth_directives.");
+      size_t ad_ct = json_array_size(ad_json);
+      if (ad_ct) {
+        PluginDebug("Loading %d new auth_directives.", (int)ad_ct);
+        struct auth_directive *ad = cfg->auth_directives;
+        if (cfg->auth_directives) {
+          /* We've already got directives, so extend them. */
+          PluginDebug("Extending existing auth_directives.");
+          size_t ad_old_ct = 0;
+          while (ad->container) {
+            ++ad;
+            ++ad_old_ct;
+          }
+          cfg->auth_directives = realloc(cfg->auth_directives, (ad_ct + ad_old_ct + 1) * sizeof *cfg->auth_directives);
+          ad                   = cfg->auth_directives + ad_old_ct;
+        } else {
+          ad = cfg->auth_directives = malloc((ad_ct + 1) * sizeof *cfg->auth_directives);
+        }
+        json_t *ad_obj;
+        for (size_t idx = 0; (idx < ad_ct) && (ad_obj = json_array_get(ad_json, idx)); ++idx, ++ad) {
+          json_t *uri_json  = json_object_get(ad_obj, "uri");
+          json_t *auth_json = json_object_get(ad_obj, "auth");
+          if (uri_json) {
+            const char *uri = json_string_value(uri_json);
+            ad->container   = strdup(uri ? uri : "");
+            ad->auth        = AUTH_DENY;
+            if (auth_json) {
+              const char *auth = json_string_value(auth_json);
+              if (!auth) {
+                auth = "";
+              }
+              if (!strcmp(auth, "allow")) {
+                ad->auth = AUTH_ALLOW;
+              } else if (!strcmp(auth, "deny")) {
+                ad->auth = AUTH_DENY;
+              } else {
+                PluginError("auth_directive has unknown auth parameter '%s', defaulting to deny: %s", auth, uri);
+              }
+            } else {
+              PluginError("auth_directive is missing auth parameter, defaulting to deny: %s", uri);
+            }
+            PluginDebug("Adding auth_directive %d for %s.", (int)ad->auth, ad->container);
+          }
+        }
+        ad->container = NULL;
+      }
+    } else {
+      PluginDebug("No auth_directives to load for %s.", *issuer);
+    }
+
     json_t *key_ary = json_object_get(jwks, "keys");
     if (!key_ary) {
       PluginError("Failed to get keys member from jwk for issuer %s", *issuer);
@@ -249,4 +321,24 @@ config_signer(struct config *cfg)
     return NULL;
   }
   return &cfg->signer;
+}
+
+bool
+uri_matches_auth_directive(struct config *cfg, const char *uri, size_t uri_ct)
+{
+  if (!cfg || !cfg->auth_directives || !uri) {
+    return false;
+  }
+
+  char *uri_s = malloc(uri_ct + 1);
+  memcpy(uri_s, uri, uri_ct);
+  uri_s[uri_ct] = 0;
+  for (const struct auth_directive *ad = cfg->auth_directives; ad->container; ++ad) {
+    if (jwt_check_uri(ad->container, uri_s)) {
+      free(uri_s);
+      return (ad->auth == AUTH_ALLOW);
+    }
+  }
+  free(uri_s);
+  return false;
 }
