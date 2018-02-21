@@ -674,7 +674,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   case QUICPacketType::PROTECTED:
     if (this->_hs_protocol->is_key_derived()) {
       if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                                 header->packet_number(), header->buf(), header->size(), header->key_phase())) {
+                                      header->packet_number(), header->buf(), header->size(), header->key_phase())) {
         result = QUICPacketCreationResult::SUCCESS;
       } else {
         result = QUICPacketCreationResult::FAILED;
@@ -686,8 +686,9 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   case QUICPacketType::INITIAL:
     if (!this->_hs_protocol->is_key_derived()) {
       if (QUICTypeUtil::is_supported_version(header->version())) {
-        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                                   header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
+        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                        QUICKeyPhase::CLEARTEXT)) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
@@ -702,7 +703,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   case QUICPacketType::HANDSHAKE:
     if (!this->_hs_protocol->is_key_derived()) {
       if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                                 header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
+                                      header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
         result = QUICPacketCreationResult::SUCCESS;
       } else {
         result = QUICPacketCreationResult::FAILED;
@@ -821,7 +822,7 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header, bool retra
 
   QUICPacket *packet = nullptr;
   if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                             header->packet_number(), header->buf(), header->size(), header->key_phase())) {
+                                  header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
   }

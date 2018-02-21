@@ -29,10 +29,10 @@
 #include <openssl/hkdf.h>
 #include <openssl/aead.h>
 
-static constexpr char tag[] = "quic_crypto";
+static constexpr char tag[] = "quic_tls";
 
 const EVP_AEAD *
-QUICCryptoTls::_get_evp_aead(const SSL_CIPHER *cipher) const
+QUICTLS::_get_evp_aead(const SSL_CIPHER *cipher) const
 {
   ink_assert(SSL_CIPHER_is_AEAD(cipher));
 
@@ -50,14 +50,14 @@ QUICCryptoTls::_get_evp_aead(const SSL_CIPHER *cipher) const
 }
 
 size_t
-QUICCryptoTls::_get_aead_tag_len(const SSL_CIPHER * /* cipher */) const
+QUICTLS::_get_aead_tag_len(const SSL_CIPHER * /* cipher */) const
 {
   return EVP_AEAD_DEFAULT_TAG_LENGTH;
 }
 
 int
-QUICCryptoTls::_hkdf_expand_label(uint8_t *dst, size_t dst_len, const uint8_t *secret, size_t secret_len, const char *label,
-                                  size_t label_len, const EVP_MD *digest) const
+QUICTLS::_hkdf_expand_label(uint8_t *dst, size_t dst_len, const uint8_t *secret, size_t secret_len, const char *label,
+                            size_t label_len, const EVP_MD *digest) const
 {
   uint8_t info[256] = {0};
   size_t info_len   = 0;
@@ -66,9 +66,9 @@ QUICCryptoTls::_hkdf_expand_label(uint8_t *dst, size_t dst_len, const uint8_t *s
 }
 
 bool
-QUICCryptoTls::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                        uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, size_t key_len, const uint8_t *iv,
-                        size_t iv_len, size_t tag_len) const
+QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
+                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, size_t key_len, const uint8_t *iv,
+                  size_t iv_len, size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;
@@ -91,9 +91,9 @@ QUICCryptoTls::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_l
 }
 
 bool
-QUICCryptoTls::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                        uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, size_t key_len, const uint8_t *iv,
-                        size_t iv_len, size_t tag_len) const
+QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
+                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, size_t key_len, const uint8_t *iv,
+                  size_t iv_len, size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;

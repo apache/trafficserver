@@ -53,10 +53,10 @@ AM_CPPFLAGS += \
 
 if OPENSSL_IS_BORINGSSL
 QUICKeyGenerator_impl = ../QUICKeyGenerator_boringssl.cc
-QUICHandshakeProtocol_impl = ../QUICHandshakeProtocol_boringssl.cc
+QUICTLS_impl = ../QUICTLS_boringssl.cc
 else
 QUICKeyGenerator_impl = ../QUICKeyGenerator_openssl.cc
-QUICHandshakeProtocol_impl = ../QUICHandshakeProtocol_openssl.cc
+QUICTLS_impl = ../QUICTLS_openssl.cc
 endif
 
 #
@@ -73,7 +73,8 @@ test_QUICPacket_SOURCES = \
   test_QUICPacket.cc \
   ../QUICPacket.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICTypes.cc
 
 test_QUICPacket_LDADD = \
@@ -101,7 +102,8 @@ test_QUICPacketFactory_SOURCES = \
   test_QUICPacketFactory.cc \
   ../QUICPacket.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICTypes.cc
 
 test_QUICPacketFactory_LDADD = \
@@ -135,7 +137,8 @@ test_QUICFrame_SOURCES = \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICTypes.cc \
   ../QUICStream.cc \
   ../QUICStreamState.cc \
@@ -183,7 +186,8 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICEchoApp.cc \
   ../QUICDebugNames.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
@@ -305,7 +309,8 @@ test_QUICTransportParameters_SOURCES = \
   ../QUICHandshake.cc \
   ../QUICVersionNegotiator.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
@@ -378,7 +383,8 @@ test_QUICHandshakeProtocol_SOURCES = \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICHandshakeProtocol.h \
   ../QUICTypes.cc \
   ../QUICGlobals.cc \
@@ -411,7 +417,8 @@ test_QUICLossDetector_SOURCES = \
   ../QUICTypes.cc \
   ../QUICPacket.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICFrame.cc
 
 #
@@ -444,7 +451,8 @@ test_QUICTypeUtil_SOURCES = \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICTypes.cc
 
 #
@@ -480,7 +488,8 @@ test_QUICAckFrameCreator_SOURCES = \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../../SSLNextProtocolSet.cc
 
 #
@@ -512,7 +521,8 @@ test_QUICVersionNegotiator_SOURCES = \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICApplication.cc \
   ../QUICApplicationMap.cc \
   ../QUICHandshake.cc \
@@ -561,7 +571,8 @@ test_QUICFlowController_SOURCES = \
   $(QUICKeyGenerator_impl) \
   ../QUICHKDF.cc \
   ../QUICHandshakeProtocol.cc \
-  $(QUICHandshakeProtocol_impl) \
+  ../QUICTLS.cc \
+  $(QUICTLS_impl) \
   ../QUICFrame.cc
 
 #

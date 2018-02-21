@@ -36,11 +36,11 @@
 #include "I_NetVConnection.h"
 #include "QUICHandshakeProtocol.h"
 
-class QUICCryptoTls : public QUICHandshakeProtocol
+class QUICTLS : public QUICHandshakeProtocol
 {
 public:
-  QUICCryptoTls(SSL *ssl, NetVConnectionContext_t nvc_ctx);
-  ~QUICCryptoTls();
+  QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx);
+  ~QUICTLS();
 
   int handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) override;
   bool is_handshake_finished() const override;

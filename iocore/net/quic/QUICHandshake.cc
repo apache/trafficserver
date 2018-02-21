@@ -93,7 +93,7 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandsha
 QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token)
   : QUICApplication(qc),
     _ssl(SSL_new(ssl_ctx)),
-    _hs_protocol(new QUICCryptoTls(this->_ssl, qc->direction())),
+    _hs_protocol(new QUICTLS(this->_ssl, qc->direction())),
     _version_negotiator(new QUICVersionNegotiator()),
     _netvc_context(qc->direction()),
     _reset_token(token)
@@ -172,9 +172,9 @@ const char *
 QUICHandshake::negotiated_cipher_suite()
 {
   // FIXME Generalize and remove dynamic_cast
-  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_hs_protocol);
-  if (crypto_tls) {
-    return SSL_get_cipher_name(crypto_tls->ssl_handle());
+  QUICTLS *hs_tls = dynamic_cast<QUICTLS *>(this->_hs_protocol);
+  if (hs_tls) {
+    return SSL_get_cipher_name(hs_tls->ssl_handle());
   }
 
   return nullptr;
@@ -184,9 +184,9 @@ void
 QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len)
 {
   // FIXME Generalize and remove dynamic_cast
-  QUICCryptoTls *crypto_tls = dynamic_cast<QUICCryptoTls *>(this->_hs_protocol);
-  if (crypto_tls) {
-    SSL_get0_alpn_selected(crypto_tls->ssl_handle(), name, len);
+  QUICTLS *hs_tls = dynamic_cast<QUICTLS *>(this->_hs_protocol);
+  if (hs_tls) {
+    SSL_get0_alpn_selected(hs_tls->ssl_handle(), name, len);
   }
 }
 

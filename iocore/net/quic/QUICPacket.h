@@ -309,7 +309,7 @@ public:
   void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
 
 private:
-  QUICVersion _version = QUIC_SUPPORTED_VERSIONS[0];
+  QUICVersion _version                = QUIC_SUPPORTED_VERSIONS[0];
   QUICHandshakeProtocol *_hs_protocol = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
 
