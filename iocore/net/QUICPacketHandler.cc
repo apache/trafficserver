@@ -177,25 +177,30 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   QUICConnection *qc =
     this->_ctable.lookup(reinterpret_cast<const uint8_t *>(block->buf()), {udp_packet->from, udp_packet->to, SOCK_DGRAM});
 
-  if (!qc) {
+  vc = static_cast<QUICNetVConnection *>(qc);
+  // 7.1. Matching Packets to Connections
+  // A server that discards a packet that cannot be associated with a connection MAY also generate a stateless reset
+  // Send stateless reset if the packet is not a initial packet or connection is closed.
+  if ((!vc && !QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) || (vc && vc->in_closed_queue)) {
+    Connection con;
+    con.setRemote(&udp_packet->from.sa);
+    QUICConnectionId cid = this->_read_connection_id(block);
+    QUICStatelessResetToken token;
+    {
+      QUICConfig::scoped_config params;
+      token.generate(cid, params->server_id());
+    }
+    auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
+    this->_send_packet(this, *packet, udp_packet->getConnection(), con.addr, 1200);
+    udp_packet->free();
+    return;
+  }
+
+  if (!vc) {
     Connection con;
     con.setRemote(&udp_packet->from.sa);
 
-    // Send stateless reset if the packet is not a initial packet
-    if (!QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      QUICConnectionId cid = this->_read_connection_id(block);
-      QUICStatelessResetToken token;
-      {
-        QUICConfig::scoped_config params;
-        token.generate(cid, params->server_id());
-      }
-      auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
-      this->_send_packet(this, *packet, udp_packet->getConnection(), con.addr, 1200);
-      return;
-    }
-
     eth = eventProcessor.assign_thread(ET_NET);
-
     // Create a new NetVConnection
     QUICConnectionId original_cid = this->_read_connection_id(block);
     vc                            = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
@@ -215,7 +220,6 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
     qc = vc;
   } else {
-    vc  = static_cast<QUICNetVConnection *>(qc);
     eth = vc->thread;
   }
 
