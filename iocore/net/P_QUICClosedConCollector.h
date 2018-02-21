@@ -16,8 +16,7 @@
   limitations under the License.
  */
 
-#ifndef _QUIC_CLOSED_CON_COLLECTOR_H_
-#define _QUIC_CLOSED_CON_COLLECTOR_H_
+#pragma once
 
 #include "P_QUICNetVConnection.h"
 
@@ -35,5 +34,3 @@ private:
 
   void _process_closed_connection(EThread *t);
 };
-
-#endif
