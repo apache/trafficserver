@@ -145,17 +145,17 @@ jwt_validate(struct jwt *jwt)
 }
 
 bool
-jwt_check_uri(struct jwt *jwt, const char *uri)
+jwt_check_uri(const char *sub, const char *uri)
 {
   static const char CONT_URI_STR[]         = "uri";
   static const char CONT_URI_PATTERN_STR[] = "uri-pattern";
   static const char CONT_URI_REGEX_STR[]   = "uri-regex";
 
-  if (!jwt || !uri) {
+  if (!sub || !*sub || !uri) {
     return false;
   }
 
-  const char *kind = jwt->sub, *container = jwt->sub;
+  const char *kind = sub, *container = sub;
   while (*container && *container != ':') {
     ++container;
   }
