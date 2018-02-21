@@ -588,8 +588,11 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     case PARSE_RESULT_DONE: {
       this->response_header_done = true;
 
-      // Send the response header back
-      parent->connection_state.send_headers_frame(this);
+      {
+        SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
+        // Send the response header back
+        parent->connection_state.send_headers_frame(this);
+      }
 
       // See if the response is chunked.  Set up the dechunking logic if it is
       // Make sure to check if the chunk is complete and signal appropriately
@@ -652,6 +655,7 @@ void
 Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 {
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
+  SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
   parent->connection_state.send_push_promise_frame(this, url, accept_encoding);
 }
 
@@ -661,10 +665,12 @@ Http2Stream::send_response_body(bool call_update)
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
 
   if (Http2::stream_priority_enabled) {
+    SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
     parent->connection_state.schedule_stream(this);
     // signal_write_event() will be called from `Http2ConnectionState::send_data_frames_depends_on_priority()`
     // when write_vio is consumed
   } else {
+    SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
     parent->connection_state.send_data_frames(this);
     this->signal_write_event(call_update);
   }
