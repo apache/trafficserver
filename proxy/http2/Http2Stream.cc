@@ -592,15 +592,18 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         int len;
         const char *value = field->value_get(&len);
         if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
-          SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+          SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
           if (parent->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
             parent->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
           }
         }
       }
 
-      // Send the response header back
-      parent->connection_state.send_headers_frame(this);
+      {
+        SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
+        // Send the response header back
+        parent->connection_state.send_headers_frame(this);
+      }
 
       // See if the response is chunked.  Set up the dechunking logic if it is
       // Make sure to check if the chunk is complete and signal appropriately
@@ -662,6 +665,7 @@ void
 Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 {
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
+  SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
   parent->connection_state.send_push_promise_frame(this, url, accept_encoding);
 }
 
@@ -671,10 +675,12 @@ Http2Stream::send_response_body(bool call_update)
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
 
   if (Http2::stream_priority_enabled) {
+    SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
     parent->connection_state.schedule_stream(this);
     // signal_write_event() will be called from `Http2ConnectionState::send_data_frames_depends_on_priority()`
     // when write_vio is consumed
   } else {
+    SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
     parent->connection_state.send_data_frames(this);
     this->signal_write_event(call_update);
   }
