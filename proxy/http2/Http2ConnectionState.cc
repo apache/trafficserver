@@ -716,6 +716,7 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     ssize_t wnd = std::min(cstate.client_rwnd, stream->client_rwnd);
 
     if (!stream->is_closed() && stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
+      SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
       stream->restart_sending();
     }
   }
@@ -1054,7 +1055,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   ++total_client_streams_count;
 
   new_stream->set_parent(ua_session);
-  new_stream->mutex                     = ua_session->mutex;
+  new_stream->mutex                     = new_ProxyMutex();
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
   ua_session->get_netvc()->add_to_active_queue();
@@ -1096,6 +1097,7 @@ Http2ConnectionState::restart_streams()
       Http2Stream *next = static_cast<Http2Stream *>(s->link.next ? s->link.next : stream_list.head);
       if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
           std::min(this->client_rwnd, s->client_rwnd) > 0) {
+        SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
         s->restart_sending();
       }
       ink_assert(s != next);
@@ -1103,6 +1105,7 @@ Http2ConnectionState::restart_streams()
     }
     if (!s->is_closed() && s->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
         std::min(this->client_rwnd, s->client_rwnd) > 0) {
+      SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
       s->restart_sending();
     }
 
@@ -1220,6 +1223,7 @@ Http2ConnectionState::update_initial_rwnd(Http2WindowSize new_size)
 {
   // Update stream level window sizes
   for (Http2Stream *s = stream_list.head; s; s = static_cast<Http2Stream *>(s->link.next)) {
+    SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
     s->client_rwnd = new_size - (client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - s->client_rwnd);
   }
 }
