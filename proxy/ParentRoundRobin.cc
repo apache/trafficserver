@@ -20,6 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "HostStatus.h"
 #include "ParentRoundRobin.h"
 
 ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _round_robin_type)
@@ -60,9 +61,10 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
                                unsigned int retry_time)
 {
   Debug("parent_select", "In ParentRoundRobin::selectParent(): Using a round robin parent selection strategy.");
-  int cur_index    = 0;
-  bool parentUp    = false;
-  bool parentRetry = false;
+  int cur_index       = 0;
+  bool parentUp       = false;
+  bool parentRetry    = false;
+  HostStatus &pStatus = HostStatus::instance();
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
 
@@ -131,6 +133,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       }
     }
   }
+
   // Loop through the array of parent seeing if any are up or
   //   should be retried
   do {
@@ -154,7 +157,8 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       }
     }
 
-    if (parentUp == true) {
+    if (parentUp == true && pStatus.getHostStatus(parents[cur_index].hostname) != HOST_STATUS_DOWN) {
+      Debug("parent_select", "status for %s: %d", parents[cur_index].hostname, pStatus.getHostStatus(parents[cur_index].hostname));
       result->result      = PARENT_SPECIFIED;
       result->hostname    = parents[cur_index].hostname;
       result->port        = parents[cur_index].port;

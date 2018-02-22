@@ -27,6 +27,7 @@
 #include "ControlMatcher.h"
 #include "Main.h"
 #include "ProxyConfig.h"
+#include "HostStatus.h"
 #include "HTTP.h"
 #include "HttpTransact.h"
 #include "I_Machine.h"
@@ -1385,6 +1386,87 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   sleep(1);
   RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 183);
+
+  // Test 184
+  // mark fuzzy down with HostStatus API.
+  HostStatus &_st = HostStatus::instance();
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN);
+
+  ST(184);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 184);
+
+  // Test 185
+  // mark fluffy down and expect furry to be chosen
+  _st.setHostStatus("fluffy", HOST_STATUS_DOWN);
+
+  ST(185);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 185);
+
+  // Test 186
+  // mark furry and frisky down, fuzzy up and expect fuzzy to be chosen
+  _st.setHostStatus("furry", HOST_STATUS_DOWN);
+  _st.setHostStatus("frisky", HOST_STATUS_DOWN);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+
+  ST(186);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 186);
+
+  // test
+  // test the HostStatus API with ParentConsistent Hash.
+  tbl[0] = '\0';
+  ST(178);
+  T("dest_domain=rabbit.net parent=fuzzy:80|1.0;fluffy:80|1.0;furry:80|1.0;frisky:80|1.0 "
+    "round_robin=consistent_hash go_direct=false\n");
+  REBUILD;
+  REINIT;
+
+  // mark all up.
+  _st.setHostStatus("furry", HOST_STATUS_UP);
+  _st.setHostStatus("fluffy", HOST_STATUS_UP);
+  _st.setHostStatus("frisky", HOST_STATUS_UP);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+
+  // Test 187
+  ST(187);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 187);
+
+  // Test 188
+  // mark fuzzy down and expect fluffy.
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN);
+
+  ST(188);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 188);
+
+  // Test 189
+  // mark fuzzy back up and expect fuzzy.
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+
+  ST(189);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 189);
 
   delete request;
   delete result;
