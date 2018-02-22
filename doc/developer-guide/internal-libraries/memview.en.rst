@@ -31,6 +31,8 @@ Synopsis
 
 .. class:: StringView
 
+.. class:: TextView
+
 These classes act as views in to already allocated memory. Internally in |TS| work must be done with
 string or memory entities that are embedded in larger pre-existing memory structures. These classes
 are designed to make that easier, more efficient, and less error prone.

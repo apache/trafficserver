@@ -33,6 +33,4 @@ Description
 
 These types are provided by the compiler ("built-in") or from a required operating system, POSIX, or package header.
 
-
-
 .. cpp:type:: uint24_t
