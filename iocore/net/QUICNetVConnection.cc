@@ -612,11 +612,9 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
     break;
-  case EVENT_IMMEDIATE:
-    // nothing to do (maybe)
-    break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
+    ink_assert(false);
   }
 
   return EVENT_DONE;
@@ -641,11 +639,9 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
     break;
-  case EVENT_IMMEDIATE:
-    // nothing to do (maybe)
-    break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
+    ink_assert(false);
   }
 
   return EVENT_DONE;
@@ -1335,9 +1331,18 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   }
 
   this->remove_from_active_queue();
+  this->set_inactivity_timeout(0);
 
   QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
+
+  // This states SHOULD persist for three times the
+  // current Retransmission Timeout (RTO) interval as defined in
+  // [QUIC-RECOVERY].
+
+  // TODO The closing period should be obtained from QUICLossDetector since it is the only component that knows the RTO interval.
+  // Use 3 times kkMinRTOTimeout(200ms) for now.
+  this->_schedule_closing_timeout(HRTIME_MSECONDS(3 * 200));
 }
 
 void
@@ -1351,6 +1356,10 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   } else {
     QUICConDebug("Reason was not provided");
   }
+
+  this->remove_from_active_queue();
+  this->set_inactivity_timeout(0);
+
   QUICConDebug("Enter state_connection_draining");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
 
