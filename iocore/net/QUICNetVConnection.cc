@@ -74,6 +74,7 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
   if (ctable) {
     this->_ctable = ctable;
     this->_ctable->insert(this->_quic_connection_id, this);
+    this->_ctable->insert(this->_original_quic_connection_id, this);
   }
   QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(this->_original_quic_connection_id),
                static_cast<uint64_t>(this->_quic_connection_id));
