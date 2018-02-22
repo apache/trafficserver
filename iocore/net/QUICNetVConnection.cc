@@ -1181,7 +1181,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     // FIXME: unordered packet should be buffered and retried
     udp_packet->free();
     if (this->_packet_recv_queue.size > 0) {
-      result = QUICPacketCreationResult::SUCCESS;
+      result = QUICPacketCreationResult::IGNORED;
     }
     this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
   } else if (result == QUICPacketCreationResult::IGNORED) {
