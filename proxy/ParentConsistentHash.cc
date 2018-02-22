@@ -20,6 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "HostStatus.h"
 #include "ParentConsistentHash.h"
 
 ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
@@ -115,6 +116,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   uint64_t path_hash            = 0;
   uint32_t last_lookup;
   pRecord *prtmp = nullptr, *pRec = nullptr;
+  HostStatus &pStatus = HostStatus::instance();
 
   Debug("parent_select", "ParentConsistentHash::%s(): Using a consistent hash parent selection strategy.", __func__);
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
@@ -165,9 +167,8 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
       } while (prtmp && strcmp(prtmp->hostname, result->hostname) == 0);
     }
   }
-
   // didn't find a parent or the parent is marked unavailable.
-  if (!pRec || (pRec && !pRec->available)) {
+  if ((pRec && !pRec->available) || pStatus.getHostStatus(pRec->hostname) == HOST_STATUS_DOWN) {
     do {
       if (pRec && !pRec->available) {
         Debug("parent_select", "Parent.failedAt = %u, retry = %u, xact_start = %u", (unsigned int)pRec->failedAt,
@@ -215,7 +216,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
         Debug("parent_select", "No available parents.");
         break;
       }
-    } while (!prtmp || !pRec->available);
+    } while (!prtmp || !pRec->available || pStatus.getHostStatus(pRec->hostname) == HOST_STATUS_DOWN);
   }
 
   // use the available or marked for retry parent.
