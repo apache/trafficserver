@@ -185,8 +185,7 @@ Partitioning the Cache
 You can manage your cache space more efficiently and restrict disk usage
 by creating :term:`cache volumes <cache volume>` with different sizes for
 specific protocols. You can further configure these volumes to store data from
-specific :term:`origin servers <origin server>` and/or domains. The volume
-configuration must be the same on all nodes in a :ref:`cluster <traffic-server-cluster>`.
+specific :term:`origin servers <origin server>` and/or domains.
 
 Creating Cache Partitions for Specific Protocols
 ------------------------------------------------

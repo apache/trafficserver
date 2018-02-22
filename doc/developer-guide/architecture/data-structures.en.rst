@@ -93,20 +93,24 @@ Data Structures
 
    This represents a :term:`storage unit` inside a :term:`cache volume`.
 
-   .. cpp:member:: off_t Vol::segments
+   .. cpp:member:: off_t data_blocks
+
+      The number of blocks of storage in the stripe.
+
+   .. cpp:member:: off_t segments
 
       The number of segments in the volume. This will be roughly the total
       number of entries divided by the number of entries in a segment. It will
       be rounded up to cover all entries.
 
-   .. cpp:member:: off_t Vol::buckets
+   .. cpp:member:: off_t buckets
 
       The number of buckets in the volume. This will be roughly the number of
       entries in a segment divided by ``DIR_DEPTH``. For currently defined
       values this is around 16,384 (2^16 / 4). Buckets are used as the targets
       of the index hash.
 
-   .. cpp:member:: DLL\<EvacuationBlock\> Vol::evacuate
+   .. cpp:member:: DLL\<EvacuationBlock\> evacuate
 
       Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there
       is one bucket for every evacuation span.
@@ -129,42 +133,42 @@ Data Structures
 
    Defined in |P-CacheVol.h|_.
 
-   .. cpp:member:: uint32_t Doc::magic
+   .. cpp:member:: uint32_t magic
 
       Validity check value. Set to ``DOC_MAGIC`` for a valid document.
 
-   .. cpp:member:: uint32_t Doc::len
+   .. cpp:member:: uint32_t len
 
       The length of this segment including the header length, fragment table,
       and this structure.
 
-   .. cpp:member:: uint64_t Doc::total_len
+   .. cpp:member:: uint64_t total_len
 
       Total length of the entire document not including meta data but including
       headers.
 
-   .. cpp:member:: INK_MD5 Doc::first_key
+   .. cpp:member:: INK_MD5 first_key
 
       First index key in the document (the index key used to locate this object
       in the volume index).
 
-   .. cpp:member:: INK_MD5 Doc::key
+   .. cpp:member:: INK_MD5 key
 
       The index key for this fragment. Fragment keys are computationally
       chained so that the key for the next and previous fragments can be
       computed from this key.
 
-   .. cpp:member:: uint32_t Doc::hlen
+   .. cpp:member:: uint32_t hlen
 
       Document header (metadata) length. This is not the length of the HTTP
       headers.
 
-   .. cpp:member:: uint8_t Doc::ftype
+   .. cpp:member:: uint8_t ftype
 
       Fragment type. Currently only ``CACHE_FRAG_TYPE_HTTP`` is used. Other
       types may be used for cache extensions if those are ever implemented.
 
-   .. cpp:member:: uint24_t Doc::flen
+   .. cpp:member:: uint24_t flen
 
       Fragment table length, if any. Only the first ``Doc`` in an object should
       contain a fragment table.
@@ -180,11 +184,11 @@ Data Structures
 
       Removed as of version 3.3.0. [#fragment-offset-table]_
 
-   .. cpp:member:: uint32_t Doc::sync_serial
+   .. cpp:member:: uint32_t sync_serial
 
       Unknown.
 
-   .. cpp:member:: uint32_t Doc::write_serial
+   .. cpp:member:: uint32_t write_serial
 
       Unknown.
 
@@ -204,4 +208,3 @@ Data Structures
 
    Changed in version 3.2.0. This previously resided in the first ``Doc`` but
    that caused different alternates to share the same fragment table.
-
