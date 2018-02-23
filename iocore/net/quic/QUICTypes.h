@@ -121,6 +121,7 @@ enum class QUICPacketCreationResult {
   FAILED,
   NOT_READY,
   IGNORED,
+  UNSUPPORTED,
 };
 
 enum class QUICErrorClass {

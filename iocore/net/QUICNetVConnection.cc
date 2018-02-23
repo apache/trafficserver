@@ -528,7 +528,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         error = QUICErrorUPtr(new QUICNoError());
       } else if (result == QUICPacketCreationResult::FAILED) {
         error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
-      } else if (result == QUICPacketCreationResult::SUCCESS) {
+      } else if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
         error = this->_state_handshake_process_packet(std::move(packet));
       }
 
@@ -1175,26 +1175,30 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     written += b->read_avail();
     b = b->next.get();
   }
+  udp_packet->free();
+
   quic_packet = this->_packet_factory.create(std::move(pkt), written, this->largest_received_packet_number(), result);
-  if (result == QUICPacketCreationResult::NOT_READY) {
+  switch (result) {
+  case QUICPacketCreationResult::NOT_READY:
     QUICConDebug("Not ready to decrypt the packet");
     // FIXME: unordered packet should be buffered and retried
-    udp_packet->free();
     if (this->_packet_recv_queue.size > 0) {
       result = QUICPacketCreationResult::IGNORED;
     }
-  } else if (result == QUICPacketCreationResult::IGNORED) {
-    QUICConDebug("Ignore to decrypt the packet");
-
-    udp_packet->free();
-  } else {
-    udp_packet->free();
-    if (result == QUICPacketCreationResult::SUCCESS) {
-      QUICConDebug("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
-                   quic_packet->packet_number(), quic_packet->size());
-    } else {
-      QUICConDebug("Failed to decrypt the packet");
-    }
+    break;
+  case QUICPacketCreationResult::IGNORED:
+    QUICConDebug("Ignored");
+    break;
+  case QUICPacketCreationResult::UNSUPPORTED:
+    QUICConDebug("Unsupported version");
+    break;
+  case QUICPacketCreationResult::SUCCESS:
+    QUICConDebug("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
+                 quic_packet->packet_number(), quic_packet->size());
+    break;
+  default:
+    QUICConDebug("Failed to decrypt the packet");
+    break;
   }
 
   return quic_packet;

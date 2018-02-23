@@ -663,29 +663,52 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
 
   QUICPacketHeader *header = QUICPacketHeader::load(buf.release(), len, base_packet_number);
 
-  switch (header->type()) {
-  case QUICPacketType::VERSION_NEGOTIATION:
-  case QUICPacketType::STATELESS_RESET:
-    // These packets are unprotected. Just copy the payload
+  if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
+    // We can't decrypt packets that have unknown versions
+    result = QUICPacketCreationResult::UNSUPPORTED;
     memcpy(plain_txt.get(), header->payload(), header->payload_size());
     plain_txt_len = header->payload_size();
-    result        = QUICPacketCreationResult::SUCCESS;
-    break;
-  case QUICPacketType::PROTECTED:
-    if (this->_hs_protocol->is_key_derived()) {
-      if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                                      header->packet_number(), header->buf(), header->size(), header->key_phase())) {
-        result = QUICPacketCreationResult::SUCCESS;
+  } else {
+    switch (header->type()) {
+    case QUICPacketType::VERSION_NEGOTIATION:
+    case QUICPacketType::STATELESS_RESET:
+      // These packets are unprotected. Just copy the payload
+      memcpy(plain_txt.get(), header->payload(), header->payload_size());
+      plain_txt_len = header->payload_size();
+      result        = QUICPacketCreationResult::SUCCESS;
+      break;
+    case QUICPacketType::PROTECTED:
+      if (this->_hs_protocol->is_key_derived()) {
+        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                        header->key_phase())) {
+          result = QUICPacketCreationResult::SUCCESS;
+        } else {
+          result = QUICPacketCreationResult::FAILED;
+        }
       } else {
-        result = QUICPacketCreationResult::FAILED;
+        result = QUICPacketCreationResult::NOT_READY;
       }
-    } else {
-      result = QUICPacketCreationResult::NOT_READY;
-    }
-    break;
-  case QUICPacketType::INITIAL:
-    if (!this->_hs_protocol->is_key_derived()) {
-      if (QUICTypeUtil::is_supported_version(header->version())) {
+      break;
+    case QUICPacketType::INITIAL:
+      if (!this->_hs_protocol->is_key_derived()) {
+        if (QUICTypeUtil::is_supported_version(header->version())) {
+          if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                          QUICKeyPhase::CLEARTEXT)) {
+            result = QUICPacketCreationResult::SUCCESS;
+          } else {
+            result = QUICPacketCreationResult::FAILED;
+          }
+        } else {
+          result = QUICPacketCreationResult::SUCCESS;
+        }
+      } else {
+        result = QUICPacketCreationResult::IGNORED;
+      }
+      break;
+    case QUICPacketType::HANDSHAKE:
+      if (!this->_hs_protocol->is_key_derived()) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
                                         QUICKeyPhase::CLEARTEXT)) {
@@ -694,31 +717,17 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
           result = QUICPacketCreationResult::FAILED;
         }
       } else {
-        result = QUICPacketCreationResult::SUCCESS;
+        result = QUICPacketCreationResult::IGNORED;
       }
-    } else {
-      result = QUICPacketCreationResult::IGNORED;
+      break;
+    default:
+      result = QUICPacketCreationResult::FAILED;
+      break;
     }
-    break;
-  case QUICPacketType::HANDSHAKE:
-    if (!this->_hs_protocol->is_key_derived()) {
-      if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(), header->payload_size(),
-                                      header->packet_number(), header->buf(), header->size(), QUICKeyPhase::CLEARTEXT)) {
-        result = QUICPacketCreationResult::SUCCESS;
-      } else {
-        result = QUICPacketCreationResult::FAILED;
-      }
-    } else {
-      result = QUICPacketCreationResult::IGNORED;
-    }
-    break;
-  default:
-    result = QUICPacketCreationResult::FAILED;
-    break;
   }
 
   QUICPacket *packet = nullptr;
-  if (result == QUICPacketCreationResult::SUCCESS) {
+  if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(header, std::move(plain_txt), plain_txt_len);
   }
