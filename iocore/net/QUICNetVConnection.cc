@@ -522,6 +522,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
     QUICPacketCreationResult result;
+    net_activity(this, this_ethread());
     do {
       QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
       if (result == QUICPacketCreationResult::NOT_READY) {
@@ -828,6 +829,7 @@ QUICNetVConnection::_state_common_receive_packet()
   QUICPacketCreationResult result;
 
   // Receive a QUIC packet
+  net_activity(this, this_ethread());
   do {
     QUICPacketUPtr p = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::FAILED) {
@@ -837,8 +839,6 @@ QUICNetVConnection::_state_common_receive_packet()
     } else if (result == QUICPacketCreationResult::IGNORED) {
       continue;
     }
-
-    net_activity(this, this_ethread());
 
     // Check connection migration
     if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
@@ -1181,8 +1181,6 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
       }
     }
   }
-
-  net_activity(this, this_ethread());
 
   // Create a QUIC packet
   ats_unique_buf pkt = ats_unique_malloc(udp_packet->getPktLength());
