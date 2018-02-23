@@ -496,7 +496,7 @@ HdrTest::test_mime()
     "continuation: part1\r\n"
     " part2\r\n"
     "scooby: doo\r\n"
-    "scooby : doo\r\n"
+    " scooby: doo\r\n"
     "bar: foo\r\n"
     "\r\n",
   };
