@@ -602,7 +602,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
-    error = this->_state_common_receive_packet();
+    error = this->_state_connection_closing_and_draining_receive_packet();
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
@@ -628,7 +628,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
-    error = this->_state_common_receive_packet();
+    error = this->_state_connection_closing_and_draining_receive_packet();
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     // Do not send any packets in this state.
@@ -874,6 +874,24 @@ QUICNetVConnection::_state_common_receive_packet()
   } while (error->cls == QUICErrorClass::NONE &&
            (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::IGNORED));
   return error;
+}
+
+QUICErrorUPtr
+QUICNetVConnection::_state_connection_closing_and_draining_receive_packet()
+{
+  QUICPacketCreationResult result;
+  QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+  if (result == QUICPacketCreationResult::SUCCESS) {
+    this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+    this->_schedule_packet_write_ready();
+  }
+
+  if (this->_packet_recv_queue.size > 0) {
+    // FIXME: scheduling new event to ensure the closed frame could be sent.
+    this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
+  }
+
+  return QUICErrorUPtr(new QUICNoError());
 }
 
 QUICErrorUPtr
