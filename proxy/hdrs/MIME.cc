@@ -2545,8 +2545,16 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     if (!colon)
       continue; // toss away garbage line
     field_name_last = colon - 1;
-    while ((field_name_last >= field_name_first) && is_ws(*field_name_last))
-      --field_name_last;
+    // RFC7230 section 3.2.4:
+    // No whitespace is allowed between the header field-name and colon.  In
+    // the past, differences in the handling of such whitespace have led to
+    // security vulnerabilities in request routing and response handling.  A
+    // server MUST reject any received request message that contains
+    // whitespace between a header field-name and colon with a response code
+    // of 400 (Bad Request).
+    if ((field_name_last >= field_name_first) && is_ws(*field_name_last)) {
+      return PARSE_ERROR;
+    }
 
     // find value first
     field_value_first = colon + 1;
