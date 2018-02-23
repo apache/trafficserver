@@ -229,7 +229,7 @@ void
 Bridge::net_accept(TSVConn vc)
 {
   char buff[1024];
-  int64_t n = snprintf(buff, sizeof(buff) - 1, CONNECT_FORMAT, static_cast<int>(_peer.size()), _peer.data());
+  int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, static_cast<int>(_peer.size()), _peer.data());
 
   TSDebug(PLUGIN_TAG, "Received UA VConn");
   // UA side intercepted.

@@ -1122,7 +1122,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // Check directive keywords (starting from '.')
     if (bti->paramv[0][0] == '.') {
       if ((errStr = remap_parse_directive(bti, errBuf, sizeof(errBuf))) != nullptr) {
-        snprintf(errStrBuf, sizeof(errStrBuf) - 1, "error on line %d - %s", cln + 1, errStr);
+        snprintf(errStrBuf, sizeof(errStrBuf), "error on line %d - %s", cln + 1, errStr);
         errStr = errStrBuf;
         goto MAP_ERROR;
       }
@@ -1156,7 +1156,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       Debug("url_rewrite", "[BuildTable] - FORWARD_MAP_WITH_RECV_PORT");
       maptype = FORWARD_MAP_WITH_RECV_PORT;
     } else {
-      snprintf(errStrBuf, sizeof(errStrBuf) - 1, "unknown mapping type at line %d", cln + 1);
+      snprintf(errStrBuf, sizeof(errStrBuf), "unknown mapping type at line %d", cln + 1);
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
