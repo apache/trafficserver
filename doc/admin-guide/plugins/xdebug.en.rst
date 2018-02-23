@@ -87,3 +87,7 @@ X-Milestones
 X-Transaction-ID
     A unique transaction ID, which identifies this request / transaction. This
     matches the log field format that is also available, %<cruuid>.
+
+X-Remap
+    If the URL was remapped for a request, this header gives the *to* and *from* field from the line in remap.config that caused
+    the URL to be remapped.
