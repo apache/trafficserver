@@ -256,13 +256,23 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     last_mark = checkpoints[i];
   }
   PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
+  TSfree((void *)url);
   return TSREMAP_NO_REMAP;
 fail:
   if (uri_matches_auth_directive((struct config *)ih, url, url_ct)) {
+    if (url != NULL) {
+      TSfree((void *)url);
+    }
     return TSREMAP_NO_REMAP;
   }
+
   PluginDebug("Invalid JWT for %.*s", url_ct, url);
   TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_FORBIDDEN);
   PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
+
+  if (url != NULL) {
+    TSfree((void *)url);
+  }
+
   return TSREMAP_DID_REMAP;
 }
