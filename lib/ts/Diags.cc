@@ -235,7 +235,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 
     if (num_bytes_written > 0) {
       format_writer.write('[');
-      format_writer.write(buffer + 4, num_bytes_written);
+      format_writer.write(buffer + 4, strlen(buffer + 4));
       format_writer.write("] ", 2);
     }
   }
