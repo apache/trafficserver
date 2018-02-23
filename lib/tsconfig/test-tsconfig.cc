@@ -18,21 +18,27 @@
     limitations under the License.
 */
 
-# include "tsconfig/TsValue.h"
-# include <cstdio>
-# include <iostream>
+#include "tsconfig/TsValue.h"
+#include <cstdio>
+#include <iostream>
 
 using ts::config::Configuration;
 using ts::config::Value;
 
-inline std::ostream& operator << ( std::ostream& s, ts::ConstBuffer const& b ) {
-  if (b._ptr) { s.write(b._ptr, b._size);
-  } else { s << b._size;
-}
+inline std::ostream &
+operator<<(std::ostream &s, ts::ConstBuffer const &b)
+{
+  if (b._ptr) {
+    s.write(b._ptr, b._size);
+  } else {
+    s << b._size;
+  }
   return s;
 }
 
-int main(int /* argc ATS_UNUSED */, char **/* argv ATS_UNUSED */) {
+int
+main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
+{
   printf("Testing TsConfig\n");
   ts::Rv<Configuration> cv = Configuration::loadFromPath("test-1.tsconfig");
   if (cv.isOK()) {
@@ -43,8 +49,6 @@ int main(int /* argc ATS_UNUSED */, char **/* argv ATS_UNUSED */) {
       std::cout << "Failed to find 'name' in 'thing-1'" << std::endl;
     }
   } else {
-    std::cout << "Load failed" << std::endl
-              << cv.errata()
-      ;
+    std::cout << "Load failed" << std::endl << cv.errata();
   }
 }

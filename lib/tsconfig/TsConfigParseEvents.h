@@ -1,5 +1,5 @@
-# if ! defined(TS_CONFIG_PARSE_EVENTS_HEADER)
-# define TS_CONFIG_PARSE_EVENTS_HEADER
+#if !defined(TS_CONFIG_PARSE_EVENTS_HEADER)
+#define TS_CONFIG_PARSE_EVENTS_HEADER
 
 /** @file
 
@@ -24,44 +24,44 @@
     limitations under the License.
  */
 
-# include "TsConfigTypes.h"
+#include "TsConfigTypes.h"
 
-typedef void (*TsConfigEventFunction)(void* data, YYSTYPE* token);
+typedef void (*TsConfigEventFunction)(void *data, YYSTYPE *token);
 struct TsConfigEventHandler {
-    TsConfigEventFunction _f; ///< Callback function.
-    void* _data; ///< Callback context data.
+  TsConfigEventFunction _f; ///< Callback function.
+  void *_data;              ///< Callback context data.
 };
-typedef int (*TsConfigErrorFunction)(void* data, char const* text);
+typedef int (*TsConfigErrorFunction)(void *data, char const *text);
 struct TsConfigErrorHandler {
-    TsConfigErrorFunction _f; ///< Callback function.
-    void* _data; ///< Callback context data.
+  TsConfigErrorFunction _f; ///< Callback function.
+  void *_data;              ///< Callback context data.
 };
 
 enum TsConfigEventType {
-    TsConfigEventGroupOpen,
-    TsConfigEventGroupName,
-    TsConfigEventGroupClose,
-    TsConfigEventListOpen,
-    TsConfigEventListClose,
-    TsConfigEventPathOpen,
-    TsConfigEventPathTag,
-    TsConfigEventPathIndex,
-    TsConfigEventPathClose,
-    TsConfigEventLiteralValue,
-    TsConfigEventInvalidToken
+  TsConfigEventGroupOpen,
+  TsConfigEventGroupName,
+  TsConfigEventGroupClose,
+  TsConfigEventListOpen,
+  TsConfigEventListClose,
+  TsConfigEventPathOpen,
+  TsConfigEventPathTag,
+  TsConfigEventPathIndex,
+  TsConfigEventPathClose,
+  TsConfigEventLiteralValue,
+  TsConfigEventInvalidToken
 };
 
-# if defined(__cplusplus)
+#if defined(__cplusplus)
 static const size_t TS_CONFIG_N_EVENT_TYPES = TsConfigEventInvalidToken + 1;
-# else
-# define TS_CONFIG_N_EVENT_TYPES (TsConfigEventInvalidToken + 1)
-# endif
+#else
+#define TS_CONFIG_N_EVENT_TYPES (TsConfigEventInvalidToken + 1)
+#endif
 
 struct TsConfigHandlers {
-    struct TsConfigErrorHandler error; ///< Syntax error.
-    /// Parsing event handlers.
-    /// Indexed by @c TsConfigEventType.
-    struct TsConfigEventHandler handler[TS_CONFIG_N_EVENT_TYPES];
+  struct TsConfigErrorHandler error; ///< Syntax error.
+  /// Parsing event handlers.
+  /// Indexed by @c TsConfigEventType.
+  struct TsConfigEventHandler handler[TS_CONFIG_N_EVENT_TYPES];
 };
 
-# endif // TS_CONFIG_PARSE_EVENTS_HEADER
+#endif // TS_CONFIG_PARSE_EVENTS_HEADER
