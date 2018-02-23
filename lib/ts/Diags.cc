@@ -365,7 +365,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
       priority = LOG_NOTICE;
       break;
     }
-    vsnprintf(syslog_buffer, sizeof(syslog_buffer) - 1, format_writer.data() + timestamp_end_offset, ap);
+    vsnprintf(syslog_buffer, sizeof(syslog_buffer), format_writer.data() + timestamp_end_offset, ap);
     syslog(priority, "%s", syslog_buffer);
   }
 

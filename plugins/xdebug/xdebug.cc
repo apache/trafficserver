@@ -286,7 +286,7 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     const char *toUrlStr   = getRemapUrlStr(txn, TSRemapToUrlGet, toUrlStrLen);
 
     char buf[2048];
-    int len = snprintf(buf, sizeof(buf) - 1, "from=%*s, to=%*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
+    int len = snprintf(buf, sizeof(buf), "from=%*s, to=%*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
 
     if (fromUrlStr != NotFound) {
       TSfree(const_cast<char *>(fromUrlStr));
@@ -308,7 +308,7 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   if (TS_NULL_MLOC != dst) {
     char buf[TS_UUID_STRING_LEN + 22]; // Padded for int64_t (20) + 1 ('-') + 1 ('\0')
     TSUuid uuid = TSProcessUuidGet();
-    int len     = snprintf(buf, sizeof(buf) - 1, "%s-%" PRIu64 "", TSUuidStringGet(uuid), TSHttpTxnIdGet(txn));
+    int len     = snprintf(buf, sizeof(buf), "%s-%" PRIu64 "", TSUuidStringGet(uuid), TSHttpTxnIdGet(txn));
 
     TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, buf, len) == TS_SUCCESS);
     TSHandleMLocRelease(buffer, hdr, dst);
