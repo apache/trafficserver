@@ -46,9 +46,9 @@ AIOCallback::ok()
   return (off_t)aiocb.aio_nbytes == (off_t)aio_result;
 }
 
-#if AIO_MODE == AIO_MODE_NATIVE
-
 extern Continuation *aio_err_callbck;
+
+#if AIO_MODE == AIO_MODE_NATIVE
 
 struct AIOCallbackInternal : public AIOCallback {
   int io_complete(int event, void *data);
@@ -58,21 +58,6 @@ struct AIOCallbackInternal : public AIOCallback {
     SET_HANDLER(&AIOCallbackInternal::io_complete);
   }
 };
-
-TS_INLINE int
-AIOCallbackInternal::io_complete(int event, void *data)
-{
-  (void)event;
-  (void)data;
-
-  if (!ok() && aio_err_callbck)
-    eventProcessor.schedule_imm(aio_err_callbck, ET_CALL, AIO_EVENT_DONE);
-  mutex = action.mutex;
-  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-  if (!action.cancelled)
-    action.continuation->handleEvent(AIO_EVENT_DONE, this);
-  return EVENT_DONE;
-}
 
 TS_INLINE int
 AIOVec::mainEvent(int /* event */, Event *)
@@ -104,16 +89,6 @@ struct AIOCallbackInternal : public AIOCallback {
   AIOCallbackInternal() { SET_HANDLER(&AIOCallbackInternal::io_complete); }
 };
 
-TS_INLINE int
-AIOCallbackInternal::io_complete(int event, void *data)
-{
-  (void)event;
-  (void)data;
-  if (!action.cancelled)
-    action.continuation->handleEvent(AIO_EVENT_DONE, this);
-  return EVENT_DONE;
-}
-
 struct AIO_Reqs {
   Que(AIOCallback, link) aio_todo;      /* queue for holding non-http requests */
   Que(AIOCallback, link) http_aio_todo; /* queue for http requests */
@@ -130,6 +105,25 @@ struct AIO_Reqs {
 };
 
 #endif // AIO_MODE == AIO_MODE_NATIVE
+
+TS_INLINE int
+AIOCallbackInternal::io_complete(int event, void *data)
+{
+  (void)event;
+  (void)data;
+  if (aio_err_callbck && !ok()) {
+    AIOCallback *err_op          = new AIOCallbackInternal();
+    err_op->aiocb.aio_fildes     = this->aiocb.aio_fildes;
+    err_op->aiocb.aio_lio_opcode = this->aiocb.aio_lio_opcode;
+    err_op->mutex                = aio_err_callbck->mutex;
+    err_op->action               = aio_err_callbck;
+    eventProcessor.schedule_imm(err_op);
+  }
+  if (!action.cancelled)
+    action.continuation->handleEvent(AIO_EVENT_DONE, this);
+  return EVENT_DONE;
+}
+
 #ifdef AIO_STATS
 class AIOTestData : public Continuation
 {

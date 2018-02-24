@@ -495,16 +495,7 @@ aio_thread_main(void *arg)
         aio_bytes_read += op->aiocb.aio_nbytes;
       }
       ink_mutex_release(&current_req->aio_mutex);
-      if (cache_op((AIOCallbackInternal *)op) <= 0) {
-        if (aio_err_callbck) {
-          AIOCallback *callback_op          = new AIOCallbackInternal();
-          callback_op->aiocb.aio_fildes     = op->aiocb.aio_fildes;
-          callback_op->aiocb.aio_lio_opcode = op->aiocb.aio_lio_opcode;
-          callback_op->mutex                = aio_err_callbck->mutex;
-          callback_op->action               = aio_err_callbck;
-          eventProcessor.schedule_imm(callback_op);
-        }
-      }
+      cache_op((AIOCallbackInternal *)op);
       ink_atomic_increment((int *)&current_req->requests_queued, -1);
 #ifdef AIO_STATS
       ink_atomic_increment((int *)&current_req->pending, -1);
@@ -514,9 +505,7 @@ aio_thread_main(void *arg)
       op->mutex     = op->action.mutex;
       if (op->thread == AIO_CALLBACK_THREAD_AIO) {
         SCOPED_MUTEX_LOCK(lock, op->mutex, thr_info->mutex->thread_holding);
-        if (!op->action.cancelled) {
-          op->action.continuation->handleEvent(AIO_EVENT_DONE, op);
-        }
+        op->handleEvent(EVENT_NONE, nullptr);
       } else if (op->thread == AIO_CALLBACK_THREAD_ANY) {
         eventProcessor.schedule_imm_signal(op);
       } else {
@@ -587,7 +576,13 @@ Lagain:
   }
 
   while ((op = complete_list.dequeue()) != nullptr) {
-    op->handleEvent(event, e);
+    op->mutex = op->action.mutex;
+    MUTEX_TRY_LOCK(lock, op->mutex, trigger_event->ethread);
+    if (!lock.is_locked()) {
+      trigger_event->ethread->schedule_imm(op);
+    } else {
+      op->handleEvent(EVENT_NONE, nullptr);
+    }
   }
   return EVENT_CONT;
 }
