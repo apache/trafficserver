@@ -21,20 +21,198 @@
   limitations under the License.
  */
 
+#include <errno.h>
 #include "ts/ink_platform.h"
 #include "ts/ink_assert.h"
+#include "ts/ink_memory.h"
 #include "ts/ink_cap.h"
 #include "MgmtSocket.h"
+
+#if HAVE_EVENTFD
+#include <sys/eventfd.h>
+#endif
 
 #if HAVE_UCRED_H
 #include <ucred.h>
 #endif
 
+#define MGMT_MAX_TRANSIENT_ERRORS       64
+
+SocketPoller::SocketPoller(int fds) 
+{
+    int ret;
+
+    epfd = epoll_create(fds + 1); // +1 for the wakeup_event fd
+    ink_assert(epfd > 0);
+
+#ifdef HAVE_EVENTFD
+    // add wakeup event
+    wakeup_event = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    ink_assert(wakeup_event > 0);
+
+    ret = registerFileDescriptor(wakeup_event);
+    ink_assert(ret > 0);
+
+#endif
+
+    events = (PollEvent *)ats_malloc(sizeof(PollEvent) * fds);
+}
+
+SocketPoller::~SocketPoller() 
+{
+  if(registered_fds.size() > 0) { // haven't purged yet. do cleanup
+    cleanup();
+  }
+}
+
+void
+SocketPoller::cleanup()
+{
+  if(events) {
+    ats_free(events);
+    events = nullptr;
+  }
+
+  purgeDescriptors();
+
+  close(wakeup_event);
+  close(epfd);
+}
+
+int
+SocketPoller::readSocketTimeout(unsigned int timeout_ms)
+{
+  int r, retries;
+
+  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
+    r = epoll_wait(epfd, events, 1, timeout_ms);
+    if (r >= 0) {
+      return r;
+    }
+    if (!mgmt_transient_error()) {
+      break;
+    }
+  }
+  return r;
+}
+
+std::vector<int>
+SocketPoller::getReadyFileDescriptors(int num_ready) const
+{
+  int i;
+  std::vector<int> res;
+
+  for(i = 0; i < num_ready; ++i) {
+    res.push_back(events[i].data.fd);
+  }
+  return res;
+}
+
+int
+SocketPoller::getReadyFileDescriptorAt(int index, int num_ready) const
+{
+  ink_assert(index < num_ready);
+  return events[index].data.fd;
+}
+
+int
+SocketPoller::registerFileDescriptor(int fd)
+{
+  if(registered_fds.find(fd) != registered_fds.end()) {
+    return 0;
+  }
+
+  int r, retries;
+
+  PollEvent event;
+  event.data.fd = fd;
+  event.events = EPOLLIN; /* level triggered */
+
+  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
+    r = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
+    if (r >= 0) {
+      registered_fds.insert(fd);
+      return r;
+    }
+    if (!mgmt_transient_error()) {
+      break;
+    }
+  }
+  return r;
+}
+
+int
+SocketPoller::removeFileDescriptor(int fd)
+{
+  if(registered_fds.find(fd) != registered_fds.end()) {
+    int r, retries;
+
+    for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
+      r = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, 0);
+      if (r >= 0) {
+        registered_fds.erase(fd);
+        return r;
+      }
+      if (!mgmt_transient_error()) {
+        break;
+      }
+    }
+    return r;
+  } else { // wasn't registered before, don't do anything
+    return 0; 
+  }
+}
+
+void 
+SocketPoller::poke()
+{
+#if HAVE_EVENTFD
+  int r, retries;
+
+  for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
+    r = write(wakeup_event, 0, sizeof(uint64_t));
+    if (r >= 0) {
+      break;
+    }
+    if (!mgmt_transient_error()) {
+      break;
+    }
+  }
+  return;
+#endif 
+}
+
+void 
+SocketPoller::purgeDescriptors()
+{
+  for(const int& it : registered_fds) {
+    removeFileDescriptor(it);
+  }
+}
+
+bool
+SocketPoller::isRegistered(int fd) const
+{
+  if(registered_fds.size() <= 0) return false;
+
+  if(registered_fds.find(fd) != registered_fds.end()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+int
+SocketPoller::wakeupDescriptor() const
+{ 
+  return wakeup_event;
+}
+
+
 //-------------------------------------------------------------------------
-// defines
+// system calls (based on implementation from UnixSocketManager)
 //-------------------------------------------------------------------------
 
-#define MGMT_MAX_TRANSIENT_ERRORS 64
 
 //-------------------------------------------------------------------------
 // transient_error
@@ -65,10 +243,6 @@ mgmt_transient_error()
     return false;
   }
 }
-
-//-------------------------------------------------------------------------
-// system calls (based on implementation from UnixSocketManager)
-//-------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
 // mgmt_accept
@@ -315,6 +489,7 @@ mgmt_read_timeout(int fd, int sec, int usec)
 
   return mgmt_select(fd + 1, &readSet, nullptr, nullptr, &timeout);
 }
+
 
 bool
 mgmt_has_peereid()

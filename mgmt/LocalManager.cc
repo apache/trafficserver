@@ -28,7 +28,6 @@
 #include "MgmtUtils.h"
 #include "ts/I_Layout.h"
 #include "LocalManager.h"
-#include "MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "FileManager.h"
 #include <ts/string_view.h>
@@ -42,6 +41,7 @@
 void
 LocalManager::mgmtCleanup()
 {
+  data_sock->cleanup();
   close_socket(process_server_sockfd);
   process_server_sockfd = ts::NO_FD;
 
@@ -209,6 +209,8 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on)
   // Calculate proxy_binary from the absolute bin_path
   absolute_proxy_binary = ats_stringdup(Layout::relative_to(bindir, proxy_binary));
 
+  data_sock = nullptr;
+
   // coverity[fs_check_call]
   if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
     mgmt_log("[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n", absolute_proxy_binary, errno, strerror(errno));
@@ -221,6 +223,7 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on)
 LocalManager::~LocalManager()
 {
   delete alarm_keeper;
+  delete data_sock;
   ats_free(absolute_proxy_binary);
   ats_free(proxy_name);
   ats_free(proxy_binary);
@@ -241,6 +244,7 @@ LocalManager::initAlarm()
 void
 LocalManager::initMgmtProcessServer()
 {
+  int sock_ret;
   std::string rundir(RecConfigReadRuntimeDir());
   std::string sockpath(Layout::relative_to(rundir, LM_CONNECTION_SERVER));
   mode_t oldmask = umask(0);
@@ -257,6 +261,14 @@ LocalManager::initMgmtProcessServer()
     mgmt_fatal(errno, "[LocalManager::initMgmtProcessServer] failed to bind socket at %s\n", sockpath.c_str());
   }
 
+  // register socket to epoll instance 
+  data_sock = new SocketPoller();
+  
+  sock_ret = data_sock->registerFileDescriptor(process_server_sockfd);
+  if(sock_ret < 0) {
+    mgmt_fatal(errno, "[LocalManager::initMgmtProcessServer] failed to register SocketPoller fd");
+  }
+
   umask(oldmask);
   RecSetRecordInt("proxy.node.restarts.manager.start_time", manager_started_at, REC_SOURCE_DEFAULT);
 }
@@ -269,9 +281,9 @@ LocalManager::initMgmtProcessServer()
 void
 LocalManager::pollMgmtProcessServer()
 {
-  int num;
+  int num, fds;
   struct timeval timeout;
-  fd_set fdlist;
+  std::vector<int> ret_fds;
 
   while (true) {
 #if TS_HAS_WCCP
@@ -280,16 +292,6 @@ LocalManager::pollMgmtProcessServer()
 
     timeout.tv_sec  = process_server_timeout_secs;
     timeout.tv_usec = process_server_timeout_msecs * 1000;
-
-    FD_ZERO(&fdlist);
-
-    if (process_server_sockfd != ts::NO_FD) {
-      FD_SET(process_server_sockfd, &fdlist);
-    }
-
-    if (watched_process_fd != ts::NO_FD) {
-      FD_SET(watched_process_fd, &fdlist);
-    }
 
 #if TS_HAS_WCCP
     // Only run WCCP housekeeping while we have a server process.
@@ -301,16 +303,16 @@ LocalManager::pollMgmtProcessServer()
         timeout.tv_sec = wccp_wait;
 
       if (wccp_fd != ts::NO_FD) {
-        FD_SET(wccp_fd, &fdlist);
+        data_sock->registerFileDescriptor(wccp_fd);
       }
     }
 #endif
 
-    num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
+    num = data_sock->readSocketTimeout(timeout.tv_sec * 100);
 
     switch (num) {
     case 0:
-      // Timed out, nothing to do.
+      // Timed out.
       return;
     case -1:
       if (mgmt_transient_error()) {
@@ -319,97 +321,112 @@ LocalManager::pollMgmtProcessServer()
 
       mgmt_log("[LocalManager::pollMgmtProcessServer] select failed: %s (%d)\n", ::strerror(errno), errno);
       return;
-
     default:
+      int cur_fd;
+      
+      int ready_fds = num; // since we adjust num as we process fds, keep a copy of the total to loop over
+      for(fds = 0; fds < ready_fds; ++fds) {
+
+        cur_fd = data_sock->getReadyFileDescriptorAt(fds, num);
+
+        if(cur_fd == data_sock->wakeupDescriptor()) {
+          return;
+        }
 
 #if TS_HAS_WCCP
-      if (wccp_fd != ts::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
-        wccp_cache.handleMessage();
-        --num;
-      }
-#endif
-
-      if (process_server_sockfd != ts::NO_FD && FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
-        struct sockaddr_in clientAddr;
-        socklen_t clientLen = sizeof(clientAddr);
-        int new_sockfd      = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
-
-        mgmt_log("[LocalManager::pollMgmtProcessServer] New process connecting fd '%d'\n", new_sockfd);
-
-        if (new_sockfd < 0) {
-          mgmt_elog(errno, "[LocalManager::pollMgmtProcessServer] ==> ");
-        } else if (!processRunning()) {
-          watched_process_fd = new_sockfd;
-        } else {
-          close_socket(new_sockfd);
+        if (wccp_fd != ts::NO_FD && wccp_fd == cur_fd) {
+          wccp_cache.handleMessage();
+          --num;
         }
-        --num;
-      }
+#endif      
+        if (process_server_sockfd != ts::NO_FD && process_server_sockfd == cur_fd) { /* New connection */
+          struct sockaddr_in clientAddr;
+          socklen_t clientLen = sizeof(clientAddr);
+          int new_sockfd      = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
 
-      if (ts::NO_FD != watched_process_fd && FD_ISSET(watched_process_fd, &fdlist)) {
-        int res;
-        MgmtMessageHdr mh_hdr;
-        MgmtMessageHdr *mh_full;
-        char *data_raw;
+          mgmt_log("[LocalManager::pollMgmtProcessServer] New process connecting fd '%d'\n", new_sockfd);
 
-        // read the message
-        if ((res = mgmt_read_pipe(watched_process_fd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
-          mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
-          memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
-          data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
-          if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
-            handleMgmtMsgFromProcesses(mh_full);
+          if (new_sockfd < 0) {
+            mgmt_elog(errno, "[LocalManager::pollMgmtProcessServer] ==> ");
+          } else if (!processRunning()) {
+            watched_process_fd = new_sockfd;
+            data_sock->registerFileDescriptor(watched_process_fd);
+          } else {
+            data_sock->removeFileDescriptor(new_sockfd);
+            close_socket(new_sockfd);
+          }
+          --num;
+        }
+
+        if (ts::NO_FD != watched_process_fd && watched_process_fd == cur_fd) {
+          int res;
+          MgmtMessageHdr mh_hdr;
+          MgmtMessageHdr *mh_full;
+          char *data_raw;
+
+          // read the message
+          if ((res = mgmt_read_pipe(watched_process_fd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
+            mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
+            memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
+            data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
+            if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
+              handleMgmtMsgFromProcesses(mh_full);
+            } else if (res < 0) {
+              mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
+            }
           } else if (res < 0) {
             mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
           }
-        } else if (res < 0) {
-          mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
-        }
 
-        // handle EOF
-        if (res == 0) {
-          int estatus;
-          pid_t tmp_pid = watched_process_pid;
+          // handle EOF
+          if (res == 0) {
+            int estatus;
+            pid_t tmp_pid = watched_process_pid;
 
-          Debug("lm", "[LocalManager::pollMgmtProcessServer] Lost process EOF!");
+            Debug("lm", "[LocalManager::pollMgmtProcessServer] Lost process EOF!");
 
-          close_socket(watched_process_fd);
+            data_sock->removeFileDescriptor(watched_process_fd);
+            close_socket(watched_process_fd);
 
-          waitpid(watched_process_pid, &estatus, 0); /* Reap child */
-          if (WIFSIGNALED(estatus)) {
-            int sig = WTERMSIG(estatus);
-            mgmt_log("[LocalManager::pollMgmtProcessServer] Server Process terminated due to Sig %d: %s\n", sig, strsignal(sig));
-          } else if (WIFEXITED(estatus)) {
-            int return_code = WEXITSTATUS(estatus);
+            waitpid(watched_process_pid, &estatus, 0); /* Reap child */
+            if (WIFSIGNALED(estatus)) {
+              int sig = WTERMSIG(estatus);
+              mgmt_log("[LocalManager::pollMgmtProcessServer] Server Process terminated due to Sig %d: %s\n", sig, strsignal(sig));
+            } else if (WIFEXITED(estatus)) {
+              int return_code = WEXITSTATUS(estatus);
 
-            // traffic_server's exit code will be UNRECOVERABLE_EXIT if it calls
-            // ink_emergency() or ink_emergency_va(). The call signals that traffic_server
-            // cannot be recovered with a reboot. In other words, catastrophic failure.
-            if (return_code == UNRECOVERABLE_EXIT) {
-              proxy_recoverable = false;
+              // traffic_server's exit code will be UNRECOVERABLE_EXIT if it calls
+              // ink_emergency() or ink_emergency_va(). The call signals that traffic_server
+              // cannot be recovered with a reboot. In other words, catastrophic failure.
+              if (return_code == UNRECOVERABLE_EXIT) {
+                proxy_recoverable = false;
+              }
             }
+
+            if (lmgmt->run_proxy) {
+              mgmt_log("[Alarms::signalAlarm] Server Process was reset\n");
+              lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, nullptr);
+            } else {
+              mgmt_log("[TrafficManager] Server process shutdown\n");
+            }
+
+            watched_process_fd = watched_process_pid = -1;
+            if (tmp_pid != -1) { /* Incremented after a pid: message is sent */
+              proxy_running--;
+            }
+            proxy_started_at = -1;
+            RecSetRecordInt("proxy.node.proxy_running", 0, REC_SOURCE_DEFAULT);
           }
 
-          if (lmgmt->run_proxy) {
-            mgmt_log("[Alarms::signalAlarm] Server Process was reset\n");
-            lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, nullptr);
-          } else {
-            mgmt_log("[TrafficManager] Server process shutdown\n");
-          }
-
-          watched_process_fd = watched_process_pid = -1;
-          if (tmp_pid != -1) { /* Incremented after a pid: message is sent */
-            proxy_running--;
-          }
-          proxy_started_at = -1;
-          RecSetRecordInt("proxy.node.proxy_running", 0, REC_SOURCE_DEFAULT);
+          num--;
         }
-
-        num--;
       }
 
       ink_assert(num == 0); /* Invariant */
     }
+#if TS_HAS_WCCP
+    data_sock->removeFileDescriptor(wccp_fd);
+#endif
   }
 }
 
@@ -629,6 +646,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
           if ((kill(watched_process_pid, 0) < 0) && (errno == ESRCH)) {
             // TS is down
             pid_t tmp_pid = watched_process_pid;
+            data_sock->removeFileDescriptor(watched_process_fd);
             close_socket(watched_process_fd);
             mgmt_log("[LocalManager::pollMgmtProcessServer] "
                      "Server Process has been terminated\n");
@@ -691,6 +709,9 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
   mh->msg_id   = msg_id;
   mh->data_len = data_len;
   memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
+  if(processRunning() && data_sock) {
+    data_sock->poke();
+  }
   ink_assert(enqueue(mgmt_event_queue, mh));
 
   return;
@@ -886,6 +907,7 @@ LocalManager::closeProxyPorts()
   for (int i = 0, n = lmgmt->m_proxy_ports.size(); i < n; ++i) {
     HttpProxyPort &p = lmgmt->m_proxy_ports[i];
     if (ts::NO_FD != p.m_fd) {
+      data_sock->removeFileDescriptor(p.m_fd);
       close_socket(p.m_fd);
       p.m_fd = ts::NO_FD;
     }
