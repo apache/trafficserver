@@ -170,6 +170,7 @@ libtsutil_la_SOURCES = \
   Map.h \
   MatcherUtils.cc \
   MatcherUtils.h \
+  MemSpan.h \
   MMH.cc \
   MMH.h \
   MT_hashtable.h \
@@ -267,7 +268,8 @@ test_tslib_SOURCES = \
 	unit-tests/test_layout.cc \
 	unit-tests/test_MT_hashtable.cc \
 	unit-tests/test_string_view.cc \
-	unit-tests/test_TextView.cc
+	unit-tests/test_TextView.cc \
+	unit-tests/test_MemSpan.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
