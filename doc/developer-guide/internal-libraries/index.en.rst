@@ -29,6 +29,7 @@ development team.
    :maxdepth: 1
 
    string_view.en
-   memview.en
+   TextView.en
+   MemSpan.en
    scalar.en
    buffer-writer.en

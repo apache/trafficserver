@@ -35,11 +35,15 @@ These types are provided by the compiler ("built-in") or from a required operati
 
 .. c:type:: off_t
 
-   `Reference <https://linux.die.net/include/unistd.h>`__.
+   `Reference <https://www.gnu.org/software/libc/manual/html_node/Important-Data-Types.html>`__.
 
 .. cpp:type:: off_t
 
-   `Reference <https://linux.die.net/include/unistd.h>`__.
+   `Reference <https://www.gnu.org/software/libc/manual/html_node/Important-Data-Types.html>`__.
+
+.. cpp:type:: ptrdiff_t
+
+   The difference between two pointers. `Reference <https://www.gnu.org/software/libc/manual/html_node/Important-Data-Types.html>`__.
 
 .. cpp:type:: uint64_t
 
