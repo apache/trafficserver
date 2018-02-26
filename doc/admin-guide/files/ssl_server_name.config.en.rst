@@ -40,7 +40,7 @@ By default this is named :file:`ssl_server_name.config`. The file can be changed
 The configuration file is Lua based. After parsing and executing the Lua code, the global Lua
 variable :code:`server_config` is examined. Its value should be a list of tables. Each table is a set
 of key / value pairs that create a configuration item. This configuration file accepts wildcard entries. To apply an SNI based
-setting on all the servernames with a common upper level domain name, the user needs to enter the fqdn in the configuration 
+setting on all the servernames with a common upper level domain name, the user needs to enter the fqdn in the configuration
 with a ``*.`` followed by the common domain name. (``*.yahoo.com`` for e.g.,).
 
 ======================= ==============================================================================
@@ -108,13 +108,13 @@ Examples
 
 Disable HTTP/2 for ``no-http2.example.com``.
 
-.. code-block:: Lua
+.. code-block:: lua
 
    server_config = {{ fqdn="no-http2.example.com", disable_h2=true }}
 
 Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (for e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certficate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
 
-.. code-block:: Lua
+.. code-block:: lua
 
    server_config = {
       { fqdn="example.com", verify_client=MODERATE },
@@ -124,7 +124,7 @@ Require client certificate verification for ``example.com`` and any server name 
 Disable outbound server certificate verification for ``trusted.example.com`` and require a valid
 client certificate.
 
-.. code-block:: Lua
+.. code-block:: lua
 
    server_config = {
       {
