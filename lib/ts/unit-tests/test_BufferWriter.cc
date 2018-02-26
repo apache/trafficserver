@@ -21,12 +21,9 @@
     limitations under the License.
  */
 
-#include "BufferWriter.h"
-
 #include "catch.hpp"
-
-#include "string_view.h"
-
+#include <ts/BufferWriter.h>
+#include <ts/string_view.h>
 #include <cstring>
 
 namespace
@@ -331,19 +328,6 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   // Make sure no actual writing.
   //
   REQUIRE(scratch[0] == '!');
-}
-
-TEST_CASE("Buffer Writer << operator", "[BW<<]")
-{
-  ts::LocalBufferWriter<50> bw;
-
-  bw << "The" << ' ' << "quick" << ' ' << "brown fox";
-
-  REQUIRE(bw.view() == "The quick brown fox");
-
-  bw.reduce(0);
-  bw << "x=" << bw.capacity();
-  REQUIRE(bw.view() == "x=50");
 }
 
 TEST_CASE("LocalBufferWriter clip and extend")

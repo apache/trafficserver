@@ -25,11 +25,6 @@
 BufferWriter
 *************
 
-:class:`BufferWriter` is designed to make writing text to a buffer fast and safe. The output buffer
-can have a size and :class:`BufferWriter` will prevent writing past the end, while tracking the
-theoretical output to enable buffer resizing after the fact. This also lets a :class:`BufferWriter`
-instance write into the middle of a larger buffer, making nested output logic easy to build.
-
 Synopsis
 ++++++++
 
@@ -39,6 +34,17 @@ Synopsis
 
 Description
 +++++++++++
+
+:class:`BufferWriter` is designed to make writing text to a buffer fast, convenient, and safe. It is
+easier and less error-prone than using a combination of :code:`sprintf` and :code:`memcpy` as is
+done in many places in the code.. A :class:`BufferWriter` can have a size and will prevent writing
+past the end, while tracking the theoretical output to enable buffer resizing after the fact. This
+also lets a :class:`BufferWriter` instance write into the middle of a larger buffer, making nested
+output logic easy to build.
+
+The header files are divided in to two variants. ``BufferWriter.h`` provides the basic capabilities
+of buffer output control. ``BufferWriterFormat.h`` provides formatted output mechanisms, primarily
+the implementation and ancillary classes for :func:`BufferWriter::print`.
 
 :class:`BufferWriter` is an abstract base class, in the style of :code:`std::ostream`. There are
 several subclasses for various use cases. When passing around this is the common type.
@@ -84,7 +90,7 @@ Several basic types are overloaded and it is easy to extend to additional types.
 
 .. code-block:: cpp
 
-   ts::BufferWriter & operator << (ts::BufferWriter & w, ts::TextView const & sv) {
+   ts::BufferWriter & operator << (ts::BufferWriter & w, TextView const & sv) {
       w.write(sv.data(), sv.size());
       return w;
    }
@@ -263,6 +269,10 @@ Reference
       well with the standard "try before you buy" approach of attempting to write output, counting
       the characters needed, then allocating a sufficiently sized buffer and actually writing.
 
+   .. function:: BufferWriter & print(TextView fmt, ...)
+
+      Print the arguments according to the format. See `bw-formatting`_.
+
 .. class:: FixedBufferWriter : public BufferWriter
 
    This is a class that implements :class:`BufferWriter` on a fixed buffer, passed in to the constructor.
@@ -293,6 +303,114 @@ Reference
    .. function:: LocalBufferWriter::LocalBufferWriter()
 
       Construct an instance with a capacity of :arg:`N`.
+
+.. _bw-formatting:
+
+Formatted Output
+++++++++++++++++
+
+:class:`BufferWriter` supports formatting output in a style similar to Python formatting via
+:func:`BufferWriter::print`. This takes a format string which then controls the use of subsquent
+arguments in generating out in the buffer. The basic format is divided in to three parts, separated by colons.
+
+.. productionList:: BufferWriterFormat
+   Format: "{" [name] [":" [specifier] [":" extension]] "}"
+   name: index | name
+   extension: <printable character except "{}">*
+
+:arg:`name`
+   The name of the argument to use. This can be a number in which case it is the zero based index of the argument to the method call. E.g. ``{0}`` means the first argument and ``{2}`` is the third argument after the format.
+
+      ``bw.print("{0} {1}", 'a', 'b')`` => ``a b``
+
+      ``bw.print("{1} {0}", 'a', 'b')`` => ``b a``
+
+   The name can be omitted in which case it is treated as an index in parallel to the position in
+   the format string. Only the position in the format string matters, not what names those other
+   format elements may have used.
+
+      ``bw.print("{0} {2} {}", 'a', 'b', 'c')`` => ``a c c``
+
+      ``bw.print("{0} {2} {2}", 'a', 'b', 'c')`` => ``a c c``
+
+   Note that an argument can be printed more than once if the name is used more than once.
+
+      ``bw.print("{0} {} {0}", 'a', 'b')`` => ``a b a``
+
+      ``bw.print("{0} {1} {0}", 'a', 'b')`` => ``a b a``
+
+   Alphanumeric names refer to values in a global table. These will be described in more detail someday.
+
+:arg:`specifier`
+   Basic formatting control.
+
+   .. productionList:: specifier
+      specifier: [[fill]align][sign]["#"]["0"][[min][.precision][,max][type]]
+      fill: <printable character except "{}%:"> | URI-char
+      URI-char: "%" hex-digit hex-digit
+      align: "<" | ">" | "=" | "^"
+      sign: "+" | "-" | " "
+      min: integer
+      precision: integer
+      max: integer
+      type: "x" | "o" | "b"
+
+   The output is placed in a field that is at least :token:`min` wide and no more than :token:`max` wide. If
+   the output is less than :token:`min` then
+
+      *  The :token:`fill` character is used for the extra space required. This can be an explicit
+         character or a URI encoded one (to allow otherwise reserved characters).
+      *  The output is shifted according to the :token:`align`.
+
+         <
+            Align to the left, fill to the right.
+
+         >
+            Align to the right, fill to the left.
+
+         ^
+            Align in the middle, fill to left and right.
+
+         =
+            Numerically align, putting the fill between the output and the sign character.
+
+   The output is clipped by :token:`max` width characters or the end of the buffer. :token:`precision` is used by
+   floating point values to specify the number of places of precision. The precense of the ``#`` character is used for
+   integer values and causes a radix indicator to be used (one of ``0xb``, ``0``, ``0x``).
+
+   :token:`type` is used to indicate type specific formatting. For integers it indicates the output
+   radix. If ``#`` is present the radix is prefix is generated with case matching that of the type
+   (e.g. type ``x`` causes ``0x`` and type ``X`` causes ``0X``).
+
+      = ===============
+      b binary
+      o octal
+      x hexadecimal
+      = ===============
+
+
+:arg:`extension`
+   Text (excluding braces) that is passed to the formatting function. This can be used to provide
+   extensions for specific argument types (e.g., IP addresses). The base logic ignores it but passes
+   it on to the formatting function for the corresponding argument type which can then behave
+   different based on the extension.
+
+User Defined Formatting
++++++++++++++++++++++++
+
+When an value needs to be formatted an overloaded function for type :code:`V` is called.
+
+.. code-block:: cpp
+
+   BufferWriter& ts::bwformat(BufferWriter& w, BWFSpec const& spec, V const& v)
+
+This can (and should be) overloaded for user defined types. This makes it easier and cheaper to
+build one overload on another by tweaking the :arg:`spec` as it passed through. The calling
+framework will handle basic alignment, the overload does not need to unless the alignment
+requirements are more detailed (e.g. integer alignment operations).
+
+The output stream operator :code:`operator<<` is defined to call this function with a default
+constructed :code:`BWFSpec` instance.
 
 Futures
 +++++++
