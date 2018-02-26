@@ -95,4 +95,5 @@ Reference
    Strong caution must be used with containers such as :code:`std::vector` or :code:`std::string`
    because the lifetime of the memory can be much less than the lifetime of the container. In
    particular, adding or removing any element from a :code:`std::vector` can cause a re-allocation,
-   invalidating any view of the original memory. In general views should be treated like iterators.
+   invalidating any view of the original memory. In general views should be treated like iterators,
+   suitable for passing to nested function calls but not for storing.
