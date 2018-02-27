@@ -213,7 +213,6 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     vc->action_     = *this->action_;
     vc->set_is_transparent(this->opt.f_inbound_transparent);
     vc->set_context(NET_VCONNECTION_IN);
-    vc->read.triggered = 1;
     vc->start(this->_ssl_ctx);
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = udp_packet->from.sa.sa_family;
