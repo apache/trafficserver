@@ -22,6 +22,7 @@
  */
 
 #include "P_Net.h"
+#include "quic/QUICEvents.h"
 
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
 
@@ -74,7 +75,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
   case QUICPacketType::INITIAL:
     vc->read.triggered = 1;
     vc->handle_received_packet(p);
-    this->mutex->thread_holding->schedule_imm(vc);
+    this->mutex->thread_holding->schedule_imm(vc, QUIC_EVENT_PACKET_READ_READY);
     return;
   case QUICPacketType::ZERO_RTT_PROTECTED:
   // TODO:: do something ?
