@@ -720,6 +720,10 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
         result = QUICPacketCreationResult::IGNORED;
       }
       break;
+    case QUICPacketType::ZERO_RTT_PROTECTED:
+      // TODO Support 0-RTT
+      result = QUICPacketCreationResult::IGNORED;
+      break;
     default:
       result = QUICPacketCreationResult::FAILED;
       break;
