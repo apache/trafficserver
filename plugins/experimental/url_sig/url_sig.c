@@ -54,7 +54,7 @@ struct config {
 static void
 free_cfg(struct config *cfg)
 {
-  TSError("[url_sig] Cleaning up...");
+  TSError("[url_sig] Cleaning up");
   TSfree(cfg->err_url);
 
   if (cfg->regex_extra) {
@@ -99,7 +99,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   if (argc != 3) {
     snprintf(errbuf, errbuf_size - 1,
-             "[TSRemapNewKeyInstance] - Argument count wrong (%d)... Need exactly two pparam= (config file name).", argc);
+             "[TSRemapNewKeyInstance] - Argument count wrong (%d)... Need exactly two pparam= (config file name)", argc);
     return TS_ERROR;
   }
   TSDebug(PLUGIN_NAME, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
@@ -109,7 +109,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   TSDebug(PLUGIN_NAME, "config file name: %s", config_file);
   FILE *file = fopen(config_file, "r");
   if (file == NULL) {
-    snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Error opening file %s.", config_file);
+    snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Error opening file %s", config_file);
     return TS_ERROR;
   }
 
@@ -128,7 +128,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
     char *pos = strchr(line, '=');
     if (pos == NULL) {
-      TSError("[url_sig] Error parsing line %d of file %s (%s).", line_no, config_file, line);
+      TSError("[url_sig] Error parsing line %d of file %s (%s)", line_no, config_file, line);
       continue;
     }
     *pos        = '\0';
@@ -141,7 +141,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       *pos = '\0';
     }
     if (pos == NULL || strlen(value) >= MAX_KEY_LEN) {
-      snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum key length (%d) exceeded on line %d.", MAX_KEY_LEN - 1,
+      snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum key length (%d) exceeded on line %d", MAX_KEY_LEN - 1,
                line_no);
       fclose(file);
       free_cfg(cfg);
@@ -159,8 +159,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       }
       TSDebug(PLUGIN_NAME, "key number %d == %s", keynum, value);
       if (keynum >= MAX_KEY_NUM || keynum < 0) {
-        snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) >= MAX_KEY_NUM (%d) or NaN.", keynum,
-                 MAX_KEY_NUM);
+        snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) >= MAX_KEY_NUM (%d) or NaN", keynum, MAX_KEY_NUM);
         fclose(file);
         free_cfg(cfg);
         return TS_ERROR;
@@ -191,7 +190,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
       cfg->regex = pcre_compile(value, options, &errptr, &erroffset, NULL);
       if (cfg->regex == NULL) {
-        TSDebug(PLUGIN_NAME, "Regex compilation failed with error (%s) at character %d.", errptr, erroffset);
+        TSDebug(PLUGIN_NAME, "Regex compilation failed with error (%s) at character %d", errptr, erroffset);
       } else {
 #ifdef PCRE_STUDY_JIT_COMPILE
         options = PCRE_STUDY_JIT_COMPILE;
@@ -200,7 +199,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
           cfg->regex, options, &errptr); // We do not need to check the error here because we can still run without the studying?
       }
     } else {
-      TSError("[url_sig] Error parsing line %d of file %s (%s).", line_no, config_file, line);
+      TSError("[url_sig] Error parsing line %d of file %s (%s)", line_no, config_file, line);
     }
   }
 
@@ -222,7 +221,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
     break;
   default:
-    snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Return code %d not supported.", cfg->err_status);
+    snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Return code %d not supported", cfg->err_status);
     fclose(file);
     free_cfg(cfg);
     return TS_ERROR;
@@ -261,7 +260,7 @@ getAppQueryString(char *query_string, int query_length)
   char buf[MAX_QUERY_LEN];
 
   if (query_length > MAX_QUERY_LEN) {
-    TSDebug(PLUGIN_NAME, "Cannot process the query string as the length exceeds %d bytes.", MAX_QUERY_LEN);
+    TSDebug(PLUGIN_NAME, "Cannot process the query string as the length exceeds %d bytes", MAX_QUERY_LEN);
     return NULL;
   }
   memset(buf, 0, MAX_QUERY_LEN);
@@ -343,7 +342,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   url = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &url_len);
 
   if (url_len >= MAX_REQ_LEN - 1) {
-    err_log(url, "URL string too long.");
+    err_log(url, "URL string too long");
     goto deny;
   }
 
@@ -369,12 +368,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   if (query == NULL) {
-    err_log(url, "Has no query string.");
+    err_log(url, "Has no query string");
     goto deny;
   }
 
   if (strncmp(url, "http://", strlen("http://")) != 0) {
-    err_log(url, "Invalid URL scheme - only http supported.");
+    err_log(url, "Invalid URL scheme - only http supported");
     goto deny;
   }
 
@@ -388,7 +387,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     p += strlen(CIP_QSTRING + 1);
     pp = strstr(p, "&");
     if ((pp - p) > CIP_STRLEN - 1 || (pp - p) < 4) {
-      err_log(url, "IP address string too long or short.");
+      err_log(url, "IP address string too long or short");
       goto deny;
     }
     strncpy(client_ip, p + strlen(CIP_QSTRING) + 1, (pp - p - (strlen(CIP_QSTRING) + 1)));
@@ -396,7 +395,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     TSDebug(PLUGIN_NAME, "CIP: -%s-", client_ip);
     retval = TSHttpTxnClientFdGet(txnp, &sockfd);
     if (retval != TS_SUCCESS) {
-      err_log(url, "Error getting sockfd.");
+      err_log(url, "Error getting sockfd");
       goto deny;
     }
     peer_len = sizeof(peer);
@@ -407,7 +406,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
     TSDebug(PLUGIN_NAME, "Peer address: -%s-", ipstr);
     if (strcmp(ipstr, client_ip) != 0) {
-      err_log(url, "Client IP doesn't match signature.");
+      err_log(url, "Client IP doesn't match signature");
       goto deny;
     }
   }
@@ -417,12 +416,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     p += strlen(EXP_QSTRING) + 1;
     expiration = atoi(p);
     if (expiration == 0 || expiration < time(NULL)) {
-      err_log(url, "Invalid expiration, or expired.");
+      err_log(url, "Invalid expiration, or expired");
       goto deny;
     }
     TSDebug(PLUGIN_NAME, "Exp: %d", (int)expiration);
   } else {
-    err_log(url, "Expiration query string not found.");
+    err_log(url, "Expiration query string not found");
     goto deny;
   }
   // Algorithm
@@ -433,7 +432,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     // The check for a valid algorithm is later.
     TSDebug(PLUGIN_NAME, "Algorithm: %d", algorithm);
   } else {
-    err_log(url, "Algorithm query string not found.");
+    err_log(url, "Algorithm query string not found");
     goto deny;
   }
   // Key index
@@ -442,12 +441,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     p += strlen(KIN_QSTRING) + 1;
     keyindex = atoi(p);
     if (keyindex < 0 || keyindex >= MAX_KEY_NUM || 0 == cfg->keys[keyindex][0]) {
-      err_log(url, "Invalid key index.");
+      err_log(url, "Invalid key index");
       goto deny;
     }
     TSDebug(PLUGIN_NAME, "Key Index: %d", keyindex);
   } else {
-    err_log(url, "KeyIndex query string not found.");
+    err_log(url, "KeyIndex query string not found");
     goto deny;
   }
   // Parts
@@ -458,7 +457,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     p     = strstr(parts, "&");
     TSDebug(PLUGIN_NAME, "Parts: %.*s", (int)(p - parts), parts);
   } else {
-    err_log(url, "PartsSigned query string not found.");
+    err_log(url, "PartsSigned query string not found");
     goto deny;
   }
   // And finally, the sig (has to be last)
@@ -468,11 +467,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     signature = p; // NOTE sig is not NULL terminated, it has to be 20 chars
     if ((algorithm == USIG_HMAC_SHA1 && strlen(signature) < SHA1_SIG_SIZE) ||
         (algorithm == USIG_HMAC_MD5 && strlen(signature) < MD5_SIG_SIZE)) {
-      err_log(url, "Signature query string too short (< 20).");
+      err_log(url, "Signature query string too short (< 20)");
       goto deny;
     }
   } else {
-    err_log(url, "Signature query string not found.");
+    err_log(url, "Signature query string not found");
     goto deny;
   }
 
@@ -524,7 +523,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     }
     break;
   default:
-    err_log(url, "Algorithm not supported.");
+    err_log(url, "Algorithm not supported");
     goto deny;
   }
 
@@ -537,10 +536,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   /* and compare to signature that was sent */
   cmp_res = strncmp(sig_string, signature, sig_len * 2);
   if (cmp_res != 0) {
-    err_log(url, "Signature check failed.");
+    err_log(url, "Signature check failed");
     goto deny;
   } else {
-    TSDebug(PLUGIN_NAME, "Signature check passed.");
+    TSDebug(PLUGIN_NAME, "Signature check passed");
     goto allow;
   }
 
@@ -583,7 +582,7 @@ allow:
     rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, NULL, 0);
   }
   if (rval != TS_SUCCESS) {
-    TSError("[url_sig] Error setting the query string: %d.", rval);
+    TSError("[url_sig] Error setting the query string: %d", rval);
   }
   return TSREMAP_NO_REMAP;
 }
