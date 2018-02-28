@@ -37,18 +37,9 @@ Edge cache debugging
 		CONFIG proxy.config.diags.debug.enabled INT 1
 		CONFIG proxy.config.diags.debug.tags STRING url_sig
 
-	and do a traffic_ctl config reload; Debug output will go
-	to traffic.out.  Failed transactions (signature check fails
-	that is) will be logged in to error.log.
-
-Application Query Parameters.
-  If a request to be signed has application query parameters, the signing
-  parameters must be concatenated to the end of the requests application
-  query parameters.  The application query parameters will be included in
-  the signing calculation as determined by the 'Parts' signing explained
-  below.  At the edge after verification of the signing by this plugin,
-  the signing parameters are removed and the application query parameters
-  are preserved in the request.
+	and do a traffic_ctl config reload; Debug output will go to traffic.out.
+	Failed transactions (signature check fails that is) will be logged
+	in to error.log.
 
 Signing a URL
 	At the signing portal take the full URL, without any query string, and
@@ -85,6 +76,31 @@ Signing a URL
 		including "S=".
 		S=<signature>
 
+Signing a URL using path parameters instead of using a query string.
+
+  The parameters above may be embedded in the path part of the request
+  url vs using a query string.  When this method is used, the parameters
+  above are inserted after the path but before the file part of the path
+  in the request url.  Any origin application query parameters then follow
+  the file part of the request and are never part of the sign string.
+
+  Path parameters are separated by a ';' in the path.  The complete signature
+  string is base64 encoded as a single path parameter that is assinged to the 
+  'siganchor', and will appear in that path as siganchor=base64string. The 
+  following is an example signed request using the path parameter method and 
+  with an origin application query string:
+
+  http://ds-01.comcast.net/vod/t;urlsig=O0U9MTQ2MzkyOTYxODtBPTE7Sz0zO1A9MTtTPTEyZDlmN2RiNjUyZWI0YmI4MWYyNmVlMjE3MzczZGE5Y2VkYTRmZGY/Frag10Num10.ts?appid=2&t=1
+
+  Note that the signing string is embedded in the path between the last
+  directory part and before the file part of the request.  Using 'parts' in
+  sign.pl, the signature may be signed accordingly up to S= in the above
+  request. To generate a signed url using this method, use the --pathparams
+  option in sign.pl
+
+
+
+
 
 Example
 	Build, install
@@ -119,7 +135,7 @@ Example
 
 		map http://test-remap.domain.com http://google.com @plugin=url_sig.so @pparam=sign_test.config
 
-	Restart traffic server or "traffic_ctl config reload" - verify there are no errors in diags.log
+	Restart traffic server or traffic_ctl config reload  - verify there are no errors in diags.log
 
 	Try the path unsigned:
 
@@ -151,7 +167,8 @@ Example
 		Authorization Denied$
 		$
 
-	Sign the URL and try it again. Run the script with appropriate params, and it will output the curl line to run:
+	Sign the URL and try it again. Run the script with appropriate params, and
+	it will output the curl line to run:
 
 		$ ./sign.pl --url http://test-remap.domain.com/ --useparts 1 --algorithm 1 --duration 60 --keyindex 3 --key DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
 		curl -s -o /dev/null -v --max-redirs 0 'http://test-remap.domain.com/?E=1397603088&A=1&K=3&P=1&S=28d822f68ac7265db61a8441e0877a98fe1007cc'
@@ -190,3 +207,15 @@ Example
 		{ [data not shown]
 		* Connection #0 to host localhost left intact
 		$
+
+Generating a signed URL with path parameters:
+
+  $ ./sign.pl --url "http://test-remap.domain.com/vod/t/prog_index.m3u8?appid=2&t=1" --useparts 1 --algorithm 1 --duration 86400 --keyindex 3 --key kSCE1_uBREdGI3TPnr_dXKc9f_J4ZV2f --pathparams --siganchor urlsig
+
+  curl -s -o /dev/null -v --max-redirs 0 'http://test-remap.domain.com/vod/t;urlsig=O0U9MTQ2MzkyOTM4NTtBPTE7Sz0zO1A9MTtTPTIxYzk2YWRiZWZkOGJkMDFhYmM3MmZkMTEzMWVkMGM5ZmU1ZmFiMjE/prog_index.m3u8?appid=2&t=1'
+
+
+Client IP in the Signing Script
+	Below is an example of how to include client ip in the signing script
+	Works for both IPv4 and IPv6
+	--client 10.10.10.10
