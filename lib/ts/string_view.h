@@ -1220,7 +1220,13 @@ template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _
   size_t
   operator()(string_type const &x) const
   {
-    return hash<typename string_type::const_pointer>()(x.data());
+// not what I would normally do.. but better than making a custom hash function at the moment.
+// This should also mean we have some consistent behavior with std code
+#if defined(__linux__)
+    return std::_Hash_impl::hash(x.data(), x.length() * sizeof(typename string_type::value_type));
+#elif defined(__FreeBSD__)
+    return __do_string_hash(x.data(), x.data() + x.size());
+#endif
   }
 };
 }
