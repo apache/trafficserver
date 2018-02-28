@@ -1654,7 +1654,15 @@ Proxy User Variables
    :reloadable:
    :overridable:
 
-   When enabled (``1``), Traffic Server inserts ``Client-IP`` headers to retain the client IP address.
+   Specifies whether Traffic Server inserts ``Client-IP`` headers to retain the client IP address:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Don't insert the ``Client-ip`` header
+   ``1`` Insert the ``Client-ip`` header, but only if the UA did not send one
+   ``2`` Always insert the ``Client-ip`` header
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.http.anonymize_other_header_list STRING NULL
    :reloadable:

@@ -5017,13 +5017,25 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   }
 
   // if we want client-ip headers, and there isn't one, add one
-  if ((s->txn_conf->anonymize_insert_client_ip) && (!s->txn_conf->anonymize_remove_client_ip)) {
-    bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
-    TxnDebug("http_trans", "client_ip_set = %d", client_ip_set);
+  if (!s->txn_conf->anonymize_remove_client_ip) {
+    switch (s->txn_conf->anonymize_insert_client_ip) {
+    case 1: { // Insert the client-ip, but only if the UA did not send one
+      bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
+      TxnDebug("http_trans", "client_ip_set = %d", client_ip_set);
 
-    if (client_ip_set == true) {
+      if (client_ip_set == true) {
+        break;
+      }
+    }
+
+    // FALL-THROUGH
+    case 2: // Always insert the client-ip
       request->value_set(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, ip_string, ip_string_size);
       TxnDebug("http_trans", "inserted request header 'Client-ip: %s'", ip_string);
+      break;
+
+    default: // don't insert client-ip
+      break;
     }
   }
 

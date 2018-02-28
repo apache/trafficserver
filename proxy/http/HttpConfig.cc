@@ -1317,7 +1317,7 @@ HttpConfig::reconfigure()
   params->oride.anonymize_remove_user_agent = INT_TO_BOOL(m_master.oride.anonymize_remove_user_agent);
   params->oride.anonymize_remove_cookie     = INT_TO_BOOL(m_master.oride.anonymize_remove_cookie);
   params->oride.anonymize_remove_client_ip  = INT_TO_BOOL(m_master.oride.anonymize_remove_client_ip);
-  params->oride.anonymize_insert_client_ip  = INT_TO_BOOL(m_master.oride.anonymize_insert_client_ip);
+  params->oride.anonymize_insert_client_ip  = m_master.oride.anonymize_insert_client_ip;
   params->anonymize_other_header_list       = ats_strdup(m_master.anonymize_other_header_list);
 
   params->oride.global_user_agent_header = ats_strdup(m_master.oride.global_user_agent_header);
