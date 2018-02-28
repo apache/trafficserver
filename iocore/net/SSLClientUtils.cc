@@ -105,16 +105,12 @@ SSLInitClientContext(const SSLConfigParams *params)
   meth       = SSLv23_client_method();
   client_ctx = SSL_CTX_new(meth);
 
-  // disable selected protocols
-  SSL_CTX_set_options(client_ctx, params->ssl_ctx_options);
   if (!client_ctx) {
     SSLError("cannot create new client context");
     ::exit(1);
   }
 
-  if (params->ssl_client_ctx_protocols) {
-    SSL_CTX_set_options(client_ctx, params->ssl_client_ctx_protocols);
-  }
+  SSL_CTX_set_options(client_ctx, params->ssl_client_ctx_options);
   if (params->client_cipherSuite != nullptr) {
     if (!SSL_CTX_set_cipher_list(client_ctx, params->client_cipherSuite)) {
       SSLError("invalid client cipher suite in records.config");
