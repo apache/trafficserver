@@ -402,7 +402,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
       bool match = true;
 
       if (rp->method_restriction_enabled) {
-        if (method_wksidx != -1) {
+        if (method_wksidx >= 0 && method_wksidx < HTTP_WKSIDX_METHODS_CNT) {
           match = rp->standard_method_lookup[method_wksidx];
         } else if (!rp->nonstandard_methods.empty()) {
           int method_str_len;
