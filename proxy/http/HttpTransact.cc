@@ -8136,6 +8136,11 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   }
 
+  // If there is a parse error on reading the request it can leave reading the request stream in an undetermined state
+  if (status_code == HTTP_STATUS_BAD_REQUEST) {
+    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  }
+
   switch (status_code) {
   case HTTP_STATUS_BAD_REQUEST:
     SET_VIA_STRING(VIA_CLIENT_REQUEST, VIA_CLIENT_ERROR);
