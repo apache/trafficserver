@@ -1,0 +1,45 @@
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+' Unless required by  applicable law or agreed to in writing, software distributed under the License is distributed
+' on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and limitations under the License.
+
+@startuml
+
+actor user
+box "traffic_ctl address space" #DDFFDD
+entity traffic_ctl
+end box
+collections "Remote RPC API" as remote_rpc
+box "traffic_manager address space" #DDDDFF
+entity traffic_manager
+end box
+collections "Local RPC API" as local_rpc
+box "traffic_server address space" #FFDB99
+entity traffic_server
+end box
+entity plugin
+
+traffic_manager -> traffic_server : traffic_server registers\ncallback for ""MGMT_EVENT_LIFECYCLE_EVENT""
+traffic_server -> plugin : register to ""TS_LIFECYCLE_MSG_HOOK""
+user -> traffic_ctl : "traffic_ctl plugin msg TAG hello" 
+traffic_ctl -> remote_rpc : lifecycle message 
+note left : msd id ""MGMT_EVENT_LIFECYCLE_MESSAGE""
+remote_rpc -[#blue]-> remote_rpc : <font color="blue">//serialize message//</font>
+remote_rpc -> traffic_manager : sent over sockets
+note over traffic_ctl, traffic_manager : Using remote RPC functions\n""CoreAPIRemote, NetworkUtilsRemote""
+
+traffic_manager -[#blue]-> local_rpc: <font color="blue">//serialized message//</font>
+local_rpc -> traffic_server : resent over sockets 
+note over traffic_manager, traffic_server : Local RPC functions\n""CoreAPI, NetworkUtilsLocal""
+traffic_server -> traffic_server : callback function selected based on msg id\n""MGMT_EVENT_LIFECYCLE_MESSAGE""
+traffic_server -[#blue]-> local_rpc : <font color="blue">//unserialize message//</font>
+traffic_server -> plugin : invoke hook and attach ""TSPluginMsg""
+plugin -> plugin : hooks ""TS_LIFECYCLE_MSG_HOOK""\nand reads ""TSPluginMsg""
+traffic_manager -[#green]-> remote_rpc : <font color="green">TS_ERR_OK</font>
+note right : traffic_manager has no idea if\nplugin actually recieved message
+remote_rpc -> traffic_ctl : parse response
+
+
+@enduml
