@@ -39,5 +39,5 @@ header field.
 
 .. note::
 
-   This is much faster than calling :c:func:`TSHttpEffectiveUrlStringGet` and
+   This is much faster than calling :c:func:`TSHttpTxnEffectiveUrlStringGet` and
    extracting the host from the result.

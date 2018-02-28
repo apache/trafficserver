@@ -38,7 +38,7 @@ Description
 servicing of the request as though it was the origin server. In the
 event a request needs to be made to the server for transaction
 :arg:`txnp`, :arg:`contp` will be sent a :data:`TS_EVENT_NET_ACCEPT`
-event. The :arg:`edata` passed with :data:`TS_NET_EVENT_ACCEPT` is
+event. The :arg:`edata` passed with :data:`TS_EVENT_NET_ACCEPT` is
 an :type:`TSVConn` just as it would be for a normal accept. The
 plugin must act as if it is an HTTP server and read the HTTP request
 and body from the :type:`TSVConn` and send an HTTP response header

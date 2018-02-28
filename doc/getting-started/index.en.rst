@@ -422,7 +422,7 @@ Extended-2* format you may wish to enable that logging format in addition to,
 or instead of, the default |TS| logs.
 
 The Administrator's Guide discusses logging options in great detail in
-:ref:`admin-monitoring-logging`.
+:ref:`admin-logging`.
 
 Using Traffic Top
 -----------------
@@ -448,4 +448,3 @@ You may also want to learn more about :ref:`admin-monitoring`, or ensuring
 that your installation is properly secured by reading the :ref:`admin-security`
 section. Properly sizing your cache, both the on-disk cache and the companion
 memory cache, are important topics covered in :ref:`admin-configuration`.
-

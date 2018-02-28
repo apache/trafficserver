@@ -16,7 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
-
+.. default-domain:: cpp
 .. _developer-cache-architecture:
 
 Cache Architecture
@@ -608,7 +608,7 @@ Directory Probing
 
 Directory probing is the locating of a specific :term:`directory entry` in the
 stripe directory based on a :term:`cache ID`. This is handled primarily by the
-function :cpp:func:`dir_probe()`. This is passed the cache ID (:arg:`key`), a
+function :code:`dir_probe()`. This is passed the cache ID (:arg:`key`), a
 stripe (:arg:`d`), and a last collision (:arg:`last_collision`). The last of
 these is an in and out parameter, updated as useful during the probe.
 
@@ -616,7 +616,7 @@ Given an ID, the top half (64 bits) is used as a :ref:`segment <dir-segment>`
 index, taken modulo the number of segments in the directory. The bottom half is
 used as a :ref:`bucket <dir-bucket>` index, taken modulo the number of buckets
 per segment. The :arg:`last_collision` value is used to mark the last matching
-entry returned by :cpp:func:`dir_probe`.
+entry returned by :code:`dir_probe`.
 
 After computing the appropriate bucket, the entries in that bucket are searched
 to find a match. In this case a match is detected by comparison of the bottom
@@ -698,7 +698,7 @@ The checks that are done are:
    Cacheable Method
       The request must be one of ``GET``, ``HEAD``, ``POST``, ``DELETE``, ``PUT``.
 
-      See ``HttpTransact::is_method_cache_lookupable()``.
+      See :code:`HttpTransact::is_method_cache_lookupable`.
 
    Dynamic URL
       |TS| tries to avoid caching dynamic content because it's dynamic. A URL is
@@ -769,13 +769,13 @@ The basic steps to a cache lookup are:
 #. If the directory entry is found the first ``Doc`` is read from disk and
    checked for validity.
 
-   This is done in :cpp:func:`CacheVC::openReadStartHead()` or
-   :cpp:func:`CacheVC::openReadStartEarliest()` which are tightly coupled
+   This is done in :cpp:func:`CacheVC::openReadStartHead` or
+   :cpp:func:`CacheVC::openReadStartEarliest` which are tightly coupled
    methods.
 
 If the lookup succeeds, then a more detailed directory entry (struct
 :cpp:class:`OpenDir`) is created. Note that the directory probe includes a check
-for an already extant ``OpenDir`` which, if found, is returned without
+for an already extant :class:`OpenDir` which, if found, is returned without
 additional work.
 
 Cache Read
@@ -956,7 +956,7 @@ stripe data structures (attached to the :cpp:class:`Vol` instance).
 
 Evacuation data structures are defined by dividing up the volume content into
 a disjoint and contiguous set of regions of ``EVACUATION_BUCKET_SIZE`` bytes.
-The :cpp:member:`Vol::evacuate` member is an array with an element for each
+The :code:`Vol::evacuate` member is an array with an element for each
 evacuation region. Each element is a doubly linked list of :cpp:class:`EvacuationBlock`
 instances. Each instance contains a :cpp:class:`Dir` that specifies the fragment
 to evacuate. It is assumed that an evacuation block is placed in the evacuation
@@ -982,14 +982,14 @@ if the count goes to zero. If the ``EvacuationBlock`` already exists with a
 count of zero, the count is not modified and the number of readers is not
 tracked, so the evacuation is valid as long as the object exists.
 
-Evacuation is driven by cache writes, essentially in :cpp:member:`Vol::aggWrite`.
+Evacuation is driven by cache writes, essentially in :code:`Vol::aggWrite`.
 This method processes the pending cache virtual connections that are trying to
 write to the stripe. Some of these may be evacuation virtual connections. If so
 then the completion callback for that virtual connection is called as the data
 is put in to the aggregation buffer.
 
 When no more cache virtual connections can be processed (due to an empty queue
-or the aggregation buffer filling) then :cpp:member:`Vol::evac_range` is called
+or the aggregation buffer filling) then :code:`Vol::evac_range` is called
 to clear the range to be overwritten plus an additional :const:`EVACUATION_SIZE`
 range. The buckets covering that range are checked. If there are any items in
 the buckets a new cache virtual connection (a *doc evacuator*) is created and
@@ -999,7 +999,7 @@ the read completes it is checked for validity and if valid, the cache virtual
 connection for it is placed at the front of the write queue for the stripe and
 the write aggregation resumed.
 
-Before doing a write, the method :cpp:func:`Vol::evac_range()` is called to
+Before doing a write, the method :code:`Vol::evac_range()` is called to
 start an evacuation. If any fragments are found in the buckets in the range the
 earliest such fragment (smallest offset, closest to the write cursor) is
 selected and read from disk and the aggregation buffer write is suspended. The
@@ -1067,9 +1067,9 @@ appropriate evacuation bucket.
 Initialization
 ==============
 
-Initialization starts with an instance of :cpp:class:`Store` reading the storage
+Initialization starts with an instance of :code:`Store` reading the storage
 configuration file, by default :file:`storage.config`. For each valid element in
-the file an instance of :cpp:class:`Span` is created. These are of basically
+the file an instance of :code:`Span` is created. These are of basically
 four types:
 
 * File
@@ -1080,12 +1080,12 @@ four types:
 
 * Raw device
 
-After creating all the :cpp:class:`Span` instances, they are grouped by device
-ID to internal linked lists attached to the :cpp:member:`Store::disk`
+After creating all the :code:`Span` instances, they are grouped by device
+ID to internal linked lists attached to the :code:`Store::disk`
 array[#store-disk-array]_. Spans that refer to the same directory, disk, or raw
 device are coalesced in to a single span. Spans that refer to the same file
 with overlapping offsets are also coalesced [#coalesced-spans]_. This is all done in
-:c:func:`ink_cache_init()` called during startup.
+:code:`ink_cache_init()` called during startup.
 
 .. note::
 
@@ -1093,26 +1093,26 @@ with overlapping offsets are also coalesced [#coalesced-spans]_. This is all don
    inexplicable feature is provided by the span logic for that module.
 
 After configuration initialization, the cache processor is started by calling
-:cpp:func:`CacheProcessor::start()`. This does a number of things:
+:code:`CacheProcessor::start`. This does a number of things:
 
-For each valid span, an instance of :cpp:class:`CacheDisk` is created. This
+For each valid span, an instance of :code:`CacheDisk` is created. This
 class is a :term:`continuation` and so can be used to perform potentially
 blocking operations on the span. The primary use of these is to be passed to
 the AIO threads as the callback when an I/O operation completes. These are then
 dispatched to AIO threads to perform :term:`storage unit` initialization. After
 all of those have completed, the resulting storage is distributed across the
-:term:`volumes <cache volume>` in :c:func:`cplist_reconfigure`. The
+:term:`volumes <cache volume>` in :code:`cplist_reconfigure`. The
 :cpp:class:`CacheVol` instances are created at this time.
 
 :term:`Cache stripe <cache stripe>` assignment setup is done once all stripes
 have initialized (that is, the stripe header information has been successfully
 read from disk for all stripes). The assignment information is stored as an
 array of indices. These are indices in to an array of stripes. Both the
-assignment and the stripe arrays are stored in an instance of :cpp:class:`CacheHostRecord`.
+assignment and the stripe arrays are stored in an instance of :code:`CacheHostRecord`.
 Assignment initialization consists of populating the assignment array, which is
 much larger than the stripe array.
 
-There is an instance of :cpp:class:`CacheHostRecord` for each line in
+There is an instance of :code:`CacheHostRecord` for each line in
 :file:`hosting.config` and one generic record. For the configured instances, the
 set of stripes is determined from the cache volume specified in the line. If no
 lines are specified, all stripes are placed in the generic record, otherwise
@@ -1123,8 +1123,8 @@ only those stripes marked as default are placed in the generic record.
    If hosting records are specified, it is an error to not specify at least one
    default cache volume.
 
-The assignment table is initialized in :c:func:`build_vol_hash_table` which is
-called for each :cpp:class:`CacheHostRecord` instance. For each stripe in the
+The assignment table is initialized in :code:`build_vol_hash_table` which is
+called for each :code:`CacheHostRecord` instance. For each stripe in the
 host record, a sequence of pseudo-random numbers is generated. This begins with
 the folded hash of the stripe hash identifier, which is the device path followed
 by the ``skip`` and ``size`` values for that stripe, making it unique. This
@@ -1155,4 +1155,3 @@ including the size of each stripe.
    This linked list is mostly ignored in later processing, causing all but one
    file or directory storage units on the same device to be ignored. See
    `TS-1869 <https://issues.apache.org/jira/browse/TS-1869>`_.
-

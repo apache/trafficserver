@@ -26,7 +26,7 @@ Traffic Server TLS server context creation.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+:code:`#include <ts/ts.h>`
 
 .. function:: TSSslContext TSSslServerContextCreate(void)
 .. function:: void TSSslContextDestroy(TSSslContext ctx)
@@ -37,10 +37,10 @@ Description
 :func:`TSSslServerContextCreate` creates a new TLS server context.
 The context is configured using the TLS settings specified in
 :file:`records.config`. :func:`TSSslServerContextCreate` returns
-``NULL`` on failure.
+``nullptr`` on failure.
 
-:func:`TSSslServerContextDestroy` destroys a TLS context created
-by :func:`TSSslServerContextCreate`. If :arg:`ctx` is ``NULL``, no
+:func:`TSSslContextDestroy` destroys a TLS context created
+by :func:`TSSslServerContextCreate`. If :arg:`ctx` is ``nullptr``, no
 operation is performed.
 
 Type
@@ -49,7 +49,7 @@ Type
 .. type:: TSSslContext
 
 The SSL context object. This is an opaque type that can be cast to
-the underlying SSL library type (SSL_CTX * for the OpenSSL library).
+the underlying SSL library type (:code:`SSL_CTX *` for the OpenSSL library).
 
 See also
 ========

@@ -482,18 +482,6 @@ is explicitly restarted with: ::
 
    trafficserver start
 
-Warning in the system log file when manually editing vaddrs.config
-------------------------------------------------------------------
-
-If you manually edit :file:`vaddrs.config` as a non-root user, then
-Traffic Server issues a warning message in the system log file similar
-to the following::
-
-   WARNING: interface is ignored: Operation not permitted
-
-You can safely ignore this message as Traffic Server will still apply your
-configuration edits.
-
 Traffic Server is running but no log files are created
 ------------------------------------------------------
 
