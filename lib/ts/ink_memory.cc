@@ -90,7 +90,6 @@ ats_memalign(size_t alignment, size_t size)
 {
   void *ptr;
 
-#if HAVE_POSIX_MEMALIGN || TS_HAS_JEMALLOC
   if (alignment <= 8)
     return ats_malloc(size);
 
@@ -110,12 +109,7 @@ ats_memalign(size_t alignment, size_t size)
       ink_abort("couldn't allocate %zu bytes at alignment %zu - unknown error %d", size, alignment, retcode);
     }
   }
-#else
-  ptr = memalign(alignment, size);
-  if (unlikely(ptr == nullptr)) {
-    ink_abort("couldn't allocate %zu bytes at alignment %zu", size, alignment);
-  }
-#endif
+
   return ptr;
 } /* End ats_memalign */
 
