@@ -127,7 +127,8 @@ public:
       continued_stream_id(0),
       _scheduled(false),
       fini_received(false),
-      recursion(0)
+      recursion(0),
+      fini_event(nullptr)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
@@ -166,6 +167,10 @@ public:
 
     delete dependency_tree;
     this->ua_session = nullptr;
+
+    if (fini_event) {
+      fini_event->cancel();
+    }
   }
 
   // Event handlers
@@ -305,6 +310,7 @@ private:
   bool _scheduled;
   bool fini_received;
   int recursion;
+  Event *fini_event;
 };
 
 #endif // __HTTP2_CONNECTION_STATE_H__
