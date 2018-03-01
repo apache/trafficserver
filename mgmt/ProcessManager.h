@@ -37,6 +37,7 @@
 #define _PROCESS_MANAGER_H
 
 #include "MgmtUtils.h"
+#include "MgmtSocket.h"
 #include "BaseManager.h"
 #include "ts/ink_sock.h"
 
@@ -91,11 +92,18 @@ private:
   std::function<void()> init;
 
   int local_manager_sockfd;
-  ConfigUpdateCbTable *cbtable;
-  int max_msgs_in_a_row;
 
+  SocketPoller *ctrl_sock; //TODO: add special socket for control messages
+  SocketPoller *data_sock;
+
+  ConfigUpdateCbTable *cbtable;
+
+  int max_msgs_in_a_row;
   static const int MAX_MSGS_IN_A_ROW = 10000;
+
   static void *processManagerThread(void *arg);
+
+  int readManagementMsg(int sockfd, ink_hrtime timeout, MgmtMessageHdr **msg);
 };
 
 inkcoreapi extern ProcessManager *pmgmt;

@@ -36,6 +36,7 @@
 
 #include "Alarms.h"
 #include "BaseManager.h"
+#include "MgmtSocket.h"
 #include <records/I_RecHttp.h>
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
@@ -120,6 +121,8 @@ public:
   pid_t watched_process_pid = -1;
 
   int syslog_facility = LOG_DAEMON;
+
+  SocketPoller* data_sock;
 
 #if TS_HAS_WCCP
   wccp::Cache wccp_cache;

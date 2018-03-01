@@ -36,24 +36,30 @@
  */
 inkcoreapi ProcessManager *pmgmt = nullptr;
 
-// read_management_message attempts to read a message from the management
+// readManagementMsg attempts to read a message from the management
 // socket. Returns -errno on error, otherwise 0. If a message was read the
 // *msg pointer will be filled in with the message that was read.
-static int
-read_management_message(int sockfd, ink_hrtime timeout, MgmtMessageHdr **msg)
+int
+ProcessManager::readManagementMsg(int sockfd, ink_hrtime timeout, MgmtMessageHdr **msg)
 {
   MgmtMessageHdr hdr;
-  int ret;
+  int ret, sock_ret;
 
   *msg = nullptr;
 
-  switch (mgmt_read_timeout(sockfd, ink_hrtime_to_sec(timeout), 0 /* usec */)) {
+  sock_ret = data_sock->readSocketTimeout(ink_hrtime_to_sec(timeout) * 100 /* ms */); 
+  switch (sock_ret) {
   case 0:
     // Timed out.
     return 0;
   case -1:
     return -errno;
   }
+
+  sock_ret = data_sock->getReadyFileDescriptorAt(0, sock_ret);
+  if (sock_ret == data_sock->wakeupDescriptor()) {
+    return 0;
+  } 
 
   // We have a message, try to read the message header.
   ret = mgmt_read_pipe(sockfd, reinterpret_cast<char *>(&hdr), sizeof(MgmtMessageHdr));
@@ -114,6 +120,13 @@ ProcessManager::stop()
   int tmp = local_manager_sockfd;
 
   local_manager_sockfd = -1;
+
+  if(data_sock) {
+    data_sock->removeFileDescriptor(tmp);
+    data_sock->cleanup();
+    delete data_sock;
+  }
+
   close_socket(tmp);
   ink_thread_kill(poll_thread, SIGINT);
 
@@ -171,8 +184,6 @@ ProcessManager::processManagerThread(void *arg)
     if (ret < 0 && pmgmt->running) {
       Alert("exiting with write error from process manager: %s", strerror(-ret));
     }
-
-    mgmt_sleep_sec(pmgmt->timeout);
   }
 
   return ret;
@@ -186,6 +197,7 @@ ProcessManager::ProcessManager(bool rlm)
   // Set temp. process/manager timeout. Will be reconfigure later.
   // Making the process_manager thread a spinning thread to start traffic server
   // as quickly as possible. Will reset this timeout when reconfigure()
+  data_sock = nullptr;
   timeout = 0;
 }
 
@@ -239,6 +251,9 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
   mh->data_len = data_len;
   memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
 
+  if(running && data_sock) {
+    data_sock->poke();
+  }
   ink_release_assert(enqueue(mgmt_signal_queue, mh));
 }
 
@@ -329,6 +344,15 @@ ProcessManager::initLMConnection()
   if ((connect(local_manager_sockfd, (struct sockaddr *)&serv_addr, servlen)) < 0) {
     Fatal("failed to connect management socket '%s': %s", sockpath.c_str(), strerror(errno));
   }
+  int sock_ret;
+
+  // register socket to epoll instance 
+  data_sock = new SocketPoller();
+
+  sock_ret = data_sock->registerFileDescriptor(local_manager_sockfd);
+  if(sock_ret < 0) {
+    Fatal("failed to register SocketPoller fd. errno: %d", errno);
+  }
 
   data_len          = sizeof(pid_t);
   mh_full           = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
@@ -350,7 +374,7 @@ ProcessManager::pollLMConnection()
 
   for (count = 0; running && count < max_msgs_in_a_row; ++count) {
     MgmtMessageHdr *msg;
-    int ret = read_management_message(local_manager_sockfd, HRTIME_SECONDS(1), &msg);
+    int ret = readManagementMsg(local_manager_sockfd, HRTIME_SECONDS(1), &msg);
     if (ret < 0) {
       return ret;
     }
