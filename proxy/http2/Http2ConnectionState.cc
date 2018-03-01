@@ -836,6 +836,9 @@ static const http2_frame_dispatch frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
+  if (edata == fini_event) {
+    fini_event = nullptr;
+  }
   ++recursion;
   switch (event) {
   // Initialize HTTP/2 Connection
@@ -910,7 +913,9 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
         }
         this->send_goaway_frame(this->latest_streamid_in, error.code);
         this->ua_session->set_half_close_local_flag(true);
-        this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+        if (fini_event == nullptr) {
+          fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+        }
 
         // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
         // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
@@ -944,8 +949,11 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 }
 
 int
-Http2ConnectionState::state_closed(int /* event */, void * /* edata */)
+Http2ConnectionState::state_closed(int /* event */, void *edata)
 {
+  if (edata == fini_event) {
+    fini_event = nullptr;
+  }
   return 0;
 }
 
@@ -1410,7 +1418,9 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
     this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
     this->ua_session->set_half_close_local_flag(true);
-    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+    if (fini_event == nullptr) {
+      fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+    }
 
     h2_hdr.destroy();
     ats_free(buf);
@@ -1587,7 +1597,9 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
     if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
       this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
       this->ua_session->set_half_close_local_flag(true);
-      this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      if (fini_event == nullptr) {
+        fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      }
 
       return;
     }
@@ -1623,7 +1635,9 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
       if (!http2_write_settings(param, iov)) {
         this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
         this->ua_session->set_half_close_local_flag(true);
-        this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+        if (fini_event == nullptr) {
+          fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+        }
 
         return;
       }
