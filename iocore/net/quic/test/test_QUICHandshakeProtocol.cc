@@ -62,12 +62,14 @@ TEST_CASE("QUICHndshakeProtocol Cleartext", "[quic]")
   SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
   QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
 
   // Server
   SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
   BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
   SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
@@ -120,12 +122,14 @@ TEST_CASE("QUICHandshakeProtocol 1-RTT", "[quic]")
   SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
   QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
 
   // Server
   SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
   BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
   SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
