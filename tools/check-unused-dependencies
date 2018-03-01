@@ -45,15 +45,15 @@ def get_dependencies(program):
         program
     ]
     for dependency in subprocess.Popen(args, stdout=subprocess.PIPE).stdout:
-        dependency = dependency[:-1]
+        dependency = dependency.decode('utf-8')[:-1]
         if any(
             map(
                 os.path.basename(dependency).startswith,
                 [
-                    'libdl.so.',  # Because we add -ldl to LIBS
+                    'libdl.so.',      # Because we add -ldl to LIBS
                     'libgcc_s.so.',
-                    'libm.so.',  # Why does Libtool call ld with -lm?
-                    'libpthread.so.',  # Because we add -lpthread to LIBS
+                    'libm.so.',       # Why does Libtool call ld with -lm?
+                    'libpthread.so.'  # Because we add -lpthread to LIBS
                 ])):
             continue
 
@@ -64,11 +64,12 @@ def get_dependencies(program):
                     os.path.basename(dependency).startswith, [
                         'libcrypto.so.',
                         'libresolv.so.',
-                        'libssl.so.',
+                        'libssl.so.'
                     ])):
                 continue
 
-        yield dependency
+        if re.sub('\s+', '', dependency):
+            yield dependency
 
 
 success = True
@@ -84,7 +85,7 @@ for filename in config_files.split():
             if prefix not in [
                 'EXTRA_',
                 'check_',
-                'noinst_',
+                'noinst_'
             ]:
                 for program in programs.split():
                     program = os.path.join(os.path.dirname(filename), program)
@@ -92,9 +93,9 @@ for filename in config_files.split():
                         dependencies = list(get_dependencies(program))
                         if len(dependencies) > 1:
                             success = False
-                            print (program)
+                            print(program)
                             for dependency in dependencies:
-                                print (dependency)
+                                print(dependency)
 
 if not success:
     sys.exit(1)
