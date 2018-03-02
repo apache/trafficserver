@@ -18,7 +18,8 @@
 
 AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records
+  -I$(abs_top_srcdir)/lib/records \
+  $(TS_INCLUDES)
 
 TESTS = $(check_PROGRAMS)
 

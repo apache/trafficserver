@@ -30,7 +30,8 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt/api \
   -I$(abs_top_srcdir)/mgmt/api/include \
   -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/lib
+  -I$(abs_top_srcdir)/lib \
+  $(TS_INCLUDES)
 
 if BUILD_LUAJIT
 AM_CPPFLAGS += \

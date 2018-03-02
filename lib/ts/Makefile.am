@@ -32,9 +32,10 @@ TESTS = $(check_PROGRAMS)
 lib_LTLIBRARIES = libtsutil.la
 
 AM_CPPFLAGS += \
-               $(iocore_include_dirs) \
-               -I$(abs_top_srcdir)/lib \
-               -I$(abs_top_srcdir)/lib/records
+  $(iocore_include_dirs) \
+  -I$(abs_top_srcdir)/lib \
+  -I$(abs_top_srcdir)/lib/records \
+  $(TS_INCLUDES)
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = \

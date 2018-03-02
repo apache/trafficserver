@@ -27,6 +27,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
   -I$(abs_top_srcdir)/proxy/http \
+  $(TS_INCLUDES) \
   @OPENSSL_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
