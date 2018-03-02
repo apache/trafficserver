@@ -465,13 +465,16 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
     break;
   case QUICFrameType::APPLICATION_CLOSE:
   case QUICFrameType::CONNECTION_CLOSE:
-    if (this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closing) ||
+    if (this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed) ||
         this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_draining)) {
-      this->_switch_to_close_state();
-    } else {
-      this->_switch_to_draining_state(QUICConnectionErrorUPtr(
-        new QUICConnectionError(std::static_pointer_cast<const QUICApplicationCloseFrame>(frame)->error_code())));
+      return error;
     }
+
+    // 7.9.1. Closing and Draining Connection States
+    // An endpoint MAY transition from the closing period to the draining period if it can confirm that its peer is also closing or
+    // draining. Receiving a closing frame is sufficient confirmation, as is receiving a stateless reset.
+    this->_switch_to_draining_state(QUICConnectionErrorUPtr(
+      new QUICConnectionError(std::static_pointer_cast<const QUICApplicationCloseFrame>(frame)->error_code())));
     break;
   default:
     QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
