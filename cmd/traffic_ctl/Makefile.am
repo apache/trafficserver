@@ -22,7 +22,8 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/api/include
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  $(TS_INCLUDES)
 
 bin_PROGRAMS = traffic_ctl
 

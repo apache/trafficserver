@@ -23,7 +23,8 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/mgmt/api/include
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  $(TS_INCLUDES)
 
 AM_LDFLAGS += \
   @OPENSSL_LDFLAGS@

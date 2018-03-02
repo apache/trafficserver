@@ -16,7 +16,8 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir)
+  -I$(abs_top_srcdir) \
+  $(TS_INCLUDES)
 
 bin_PROGRAMS = unit_tests
 

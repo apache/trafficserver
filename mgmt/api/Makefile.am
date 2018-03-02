@@ -28,6 +28,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt/utils \
   -I$(abs_top_srcdir)/mgmt/api/include \
   -I$(abs_top_srcdir)/lib \
+  $(TS_INCLUDES) \
   $(LIBUNWIND_CFLAGS)
 
 noinst_LTLIBRARIES = libmgmtapilocal.la libmgmtapi.la
