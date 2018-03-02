@@ -26,6 +26,7 @@
 
 #include "operators.h"
 #include "expander.h"
+#include "../../lib/ts/apidefs.h"
 
 // OperatorConfig
 void
@@ -279,10 +280,9 @@ OperatorSetRedirect::initialize(Parser &p)
 
   _status.set_value(p.get_arg());
   _location.set_value(p.get_value());
-
-  if ((_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_PERMANENTLY) &&
-      (_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_TEMPORARILY)) {
-    TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, _status.get_int_value());
+  auto status = _status.get_int_value();
+  if (status < 300 || status > 399 || status == TS_HTTP_STATUS_NOT_MODIFIED) {
+    TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, status);
   }
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);

@@ -693,6 +693,8 @@ HttpTransact::EndRemapRequest(State *s)
     switch (s->http_return_code) {
     case HTTP_STATUS_MOVED_PERMANENTLY:
     case HTTP_STATUS_PERMANENT_REDIRECT:
+    case HTTP_STATUS_SEE_OTHER:
+    case HTTP_STATUS_USE_PROXY:
       error_body_type = "redirect#moved_permanently";
       break;
     case HTTP_STATUS_MOVED_TEMPORARILY:
