@@ -622,7 +622,6 @@ CacheProcessor::start_internal(int flags)
   fix                  = !!(flags & PROCESSOR_FIX);
   check                = (flags & PROCESSOR_CHECK) != 0;
   start_done           = 0;
-  int diskok           = 1;
   Span *sd;
 
   /* read the config file and create the data structures corresponding
@@ -666,22 +665,22 @@ CacheProcessor::start_internal(int flags)
       fd = open(path, DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
 
     if (fd >= 0) {
+      bool diskok = true;
       if (!sd->file_pathname) {
         if (!check) {
           if (ftruncate(fd, blocks * STORE_BLOCK_SIZE) < 0) {
             Warning("unable to truncate cache file '%s' to %" PRId64 " blocks", path, blocks);
-            diskok = 0;
+            diskok = false;
           }
         } else { // read-only mode checks
           struct stat sbuf;
-          diskok = 0;
           if (-1 == fstat(fd, &sbuf)) {
             fprintf(stderr, "Failed to stat cache file for directory %s\n", path);
+            diskok = false;
           } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
             fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64 "\n", path, sbuf.st_size,
                     blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
-          } else {
-            diskok = 1;
+            diskok = false;
           }
         }
       }
