@@ -24,7 +24,6 @@
 #pragma once
 
 #include "ProxyConfig.h"
-
 class QUICConfigParams : public ConfigInfo
 {
 public:
@@ -39,6 +38,7 @@ public:
   uint32_t initial_max_stream_id_uni_in() const;
   uint32_t initial_max_stream_id_uni_out() const;
   uint32_t server_id() const;
+  static int connection_table_size();
 
 private:
   // FIXME Fill appropriate default values in RecordsConfig.cc
@@ -47,6 +47,7 @@ private:
   uint32_t _initial_max_data        = 0;
   uint32_t _initial_max_stream_data = 0;
   uint32_t _server_id               = 0;
+  static int _connection_table_size;
 
   uint32_t _initial_max_stream_id_bidi_in  = 100;
   uint32_t _initial_max_stream_id_bidi_out = 101;

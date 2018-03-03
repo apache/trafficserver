@@ -25,7 +25,7 @@
 
 #include "QUICTypes.h"
 #include "QUICConnection.h"
-#include "ts/Map.h"
+#include "ts/MT_hashtable.h"
 
 class QUICFiveTuple
 {
@@ -43,12 +43,15 @@ private:
 class QUICConnectionTable
 {
 public:
+  QUICConnectionTable(int hash_table_size = 65521) : _connections(hash_table_size) {}
+  ~QUICConnectionTable();
   /*
    * Insert an entry
    *
-   * Return 1 if it is the only connection or the first connection from the endpoint.
+   * Return zero if it is the only connection or the first connection from the endpoint.
+   * Caller is responsible for memory management.
    */
-  int insert(QUICConnectionId cid, QUICConnection *connection);
+  QUICConnection *insert(QUICConnectionId cid, QUICConnection *connection);
 
   /*
    * Remove an entry
@@ -56,6 +59,7 @@ public:
    * Fails if CID is not associated to a specified connection
    */
   void erase(QUICConnectionId cid, QUICConnection *connection);
+  QUICConnection *erase(QUICConnectionId cid);
 
   /*
    *  Lookup QUICConnection
@@ -65,7 +69,5 @@ public:
   QUICConnection *lookup(const uint8_t *packet, QUICFiveTuple endpoint);
 
 private:
-  // FIXME Use another map impl. that has good support for concurrent access
-  Map<int64_t, QUICConnection *> _connections;
-  // Map<QUICFiveTuple, QUICConnectionId> _cids;
+  MTHashTable<uint64_t, QUICConnection *> _connections;
 };
