@@ -91,10 +91,15 @@ QUICPacketHandler::_read_connection_id(IOBufferBlock *block)
 QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, SSL_CTX *ctx) : NetAccept(opt), _ssl_ctx(ctx)
 {
   this->mutex = new_ProxyMutex();
+  // create Connection Table
+  QUICConfig::scoped_config params;
+  _ctable = new QUICConnectionTable(params->connection_table_size());
 }
 
 QUICPacketHandlerIn::~QUICPacketHandlerIn()
 {
+  // TODO: clear all values before destory the table.
+  delete _ctable;
 }
 
 NetProcessor *
@@ -175,7 +180,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   }
 
   QUICConnection *qc =
-    this->_ctable.lookup(reinterpret_cast<const uint8_t *>(block->buf()), {udp_packet->from, udp_packet->to, SOCK_DGRAM});
+    this->_ctable->lookup(reinterpret_cast<const uint8_t *>(block->buf()), {udp_packet->from, udp_packet->to, SOCK_DGRAM});
 
   vc = static_cast<QUICNetVConnection *>(qc);
   // 7.1. Matching Packets to Connections
@@ -204,7 +209,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     // Create a new NetVConnection
     QUICConnectionId original_cid = this->_read_connection_id(block);
     vc                            = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
-    vc->init(original_cid, udp_packet->getConnection(), this, &this->_ctable);
+    vc->init(original_cid, udp_packet->getConnection(), this, this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();

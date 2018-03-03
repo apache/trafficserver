@@ -23,29 +23,35 @@
 
 #include "QUICConnectionTable.h"
 
-int
+QUICConnectionTable::~QUICConnectionTable()
+{
+  // TODO: clear all values.
+}
+
+QUICConnection *
 QUICConnectionTable::insert(QUICConnectionId cid, QUICConnection *connection)
 {
-  this->_connections.put(cid, connection);
-  // if (this->_cids.get(connection->endpoint()) == nullptr) {
-  //     this->_cids.put(connection->endpoint(), cid);
-  // }
-  return 0;
+  SCOPED_MUTEX_LOCK(lock, _connections.lock_for_key(cid), this_ethread());
+  // To check whether the return value is nullptr by caller in case memory leak.
+  // The return value isn't nullptr, the new value will take up the slot and return old value.
+  return _connections.insert_entry(cid, connection);
 }
 
 void
 QUICConnectionTable::erase(QUICConnectionId cid, QUICConnection *connection)
 {
-  QUICConnection *qc = this->_connections.get(cid);
-  if (qc == nullptr) {
-    return;
+  SCOPED_MUTEX_LOCK(lock, _connections.lock_for_key(cid), this_ethread());
+  QUICConnection *ret_connection = _connections.remove_entry(cid);
+  if (ret_connection) {
+    ink_assert(ret_connection == connection);
   }
-  ink_assert(qc == connection);
-  Debug("quic_ctable", "ctable erase cid: [%" PRIx64 "] ", static_cast<uint64_t>(cid));
-  // if (this->_cids.get(connection->endpoint(), connection->connection_id()) == cid) {
-  //   this->_cids.put(connection->endpoint(), nullptr);
-  // }
-  this->_connections.put(cid, nullptr);
+}
+
+QUICConnection *
+QUICConnectionTable::erase(QUICConnectionId cid)
+{
+  SCOPED_MUTEX_LOCK(lock, _connections.lock_for_key(cid), this_ethread());
+  return _connections.remove_entry(cid);
 }
 
 QUICConnection *
@@ -59,5 +65,6 @@ QUICConnectionTable::lookup(const uint8_t *packet, QUICFiveTuple endpoint)
     // cid = this->_cids.get(endpoint);
     ink_assert(false);
   }
-  return this->_connections.get(cid);
+  SCOPED_MUTEX_LOCK(lock, _connections.lock_for_key(cid), this_ethread());
+  return _connections.lookup_entry(cid);
 }

@@ -25,7 +25,8 @@
 
 #include <records/I_RecHttp.h>
 
-int QUICConfig::_config_id = 0;
+int QUICConfig::_config_id                   = 0;
+int QUICConfigParams::_connection_table_size = 65521;
 
 //
 // QUICConfigParams
@@ -38,6 +39,7 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_initial_max_data, "proxy.config.quic.initial_max_data");
   REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data, "proxy.config.quic.initial_max_stream_data");
   REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
+  REC_EstablishStaticConfigInt32(_connection_table_size, "proxy.config.quic.connection_table.size");
 }
 
 uint32_t
@@ -56,6 +58,12 @@ uint32_t
 QUICConfigParams::server_id() const
 {
   return this->_server_id;
+}
+
+int
+QUICConfigParams::connection_table_size()
+{
+  return _connection_table_size;
 }
 
 uint32_t
