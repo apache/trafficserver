@@ -37,6 +37,18 @@
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4
 #define QUIC_FIELD_OFFSET_PAYLOAD 5
 
+class QUICPacketHeader;
+class QUICPacket;
+class QUICPacketLongHeader;
+class QUICPacketShortHeader;
+
+extern ClassAllocator<QUICPacket> quicPacketAllocator;
+extern ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator;
+extern ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator;
+
+using QUICPacketHeaderDeleterFunc = void (*)(QUICPacketHeader *p);
+using QUICPacketHeaderUPtr        = std::unique_ptr<QUICPacketHeader, QUICPacketHeaderDeleterFunc>;
+
 class QUICPacketHeader
 {
 public:
@@ -79,7 +91,7 @@ public:
    */
   virtual void store(uint8_t *buf, size_t *len) const = 0;
 
-  QUICPacketHeader *clone() const;
+  QUICPacketHeaderUPtr clone() const;
 
   virtual bool has_key_phase() const     = 0;
   virtual bool has_connection_id() const = 0;
@@ -92,32 +104,32 @@ public:
    *
    * This creates either a QUICPacketShortHeader or a QUICPacketLongHeader.
    */
-  static QUICPacketHeader *load(const uint8_t *buf, size_t len, QUICPacketNumber base);
+  static QUICPacketHeaderUPtr load(const uint8_t *buf, size_t len, QUICPacketNumber base);
 
   /*
    * Build a QUICPacketHeader
    *
    * This creates a QUICPacketLongHeader.
    */
-  static QUICPacketHeader *build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                                 QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len);
+  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
+                                    QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len);
 
   /*
    * Build a QUICPacketHeader
    *
    * This creates a QUICPacketShortHeader that contains a ConnectionID.
    */
-  static QUICPacketHeader *build(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
-                                 QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
+  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
+                                    QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
 
   /*
    * Build a QUICPacketHeader
    *
    * This creates a QUICPacketShortHeader that doesn't contain a ConnectionID..
    */
-  static QUICPacketHeader *build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id,
-                                 QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
-                                 size_t len);
+  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id,
+                                    QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
+                                    size_t len);
 
 protected:
   QUICPacketHeader(){};
@@ -188,10 +200,36 @@ private:
   QUICPacketShortHeaderType _packet_number_type = QUICPacketShortHeaderType::UNINITIALIZED;
 };
 
+class QUICPacketHeaderDeleter
+{
+public:
+  static void
+  delete_null_header(QUICPacketHeader *header)
+  {
+    ink_assert(header == nullptr);
+  }
+
+  static void
+  delete_long_header(QUICPacketHeader *header)
+  {
+    QUICPacketLongHeader *long_header = dynamic_cast<QUICPacketLongHeader *>(header);
+    ink_assert(long_header != nullptr);
+    quicPacketLongHeaderAllocator.free(long_header);
+  }
+
+  static void
+  delete_short_header(QUICPacketHeader *header)
+  {
+    QUICPacketShortHeader *short_header = dynamic_cast<QUICPacketShortHeader *>(header);
+    ink_assert(short_header != nullptr);
+    quicPacketShortHeaderAllocator.free(short_header);
+  }
+};
+
 class QUICPacket
 {
 public:
-  QUICPacket(){};
+  QUICPacket();
 
   /*
    * Creates a QUICPacket with a QUICPacketHeader and a buffer that contains payload
@@ -199,7 +237,7 @@ public:
    * This will be used for receiving packets. Therefore, it is expected that payload is already decrypted.
    * However,  QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
-  QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len);
+  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len);
 
   /*
    * Creates a QUICPacket with a QUICPacketHeader, a buffer that contains payload and a flag that indicates whether the packet is
@@ -208,7 +246,7 @@ public:
    * This will be used for sending packets. Therefore, it is expected that payload is already encrypted.
    * However, QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
-  QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, bool retransmittable);
+  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable);
 
   ~QUICPacket();
 
@@ -249,10 +287,10 @@ public:
   LINK(QUICPacket, link);
 
 private:
-  QUICPacketHeader *_header;
-  ats_unique_buf _payload  = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
-  size_t _payload_size     = 0;
-  bool _is_retransmittable = false;
+  QUICPacketHeaderUPtr _header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
+  ats_unique_buf _payload      = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
+  size_t _payload_size         = 0;
+  bool _is_retransmittable     = false;
 };
 
 class QUICPacketNumberGenerator
@@ -268,10 +306,6 @@ private:
 
 using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
 using QUICPacketUPtr        = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>;
-
-extern ClassAllocator<QUICPacket> quicPacketAllocator;
-extern ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator;
-extern ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator;
 
 class QUICPacketDeleter
 {
@@ -313,6 +347,6 @@ private:
   QUICHandshakeProtocol *_hs_protocol = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
 
-  static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeader *header);
-  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeader *header, bool retransmittable);
+  static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
+  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable);
 };

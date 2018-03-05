@@ -61,52 +61,54 @@ QUICPacketHeader::packet_size() const
   return this->_buf_len;
 }
 
-QUICPacketHeader *
+QUICPacketHeaderUPtr
 QUICPacketHeader::load(const uint8_t *buf, size_t len, QUICPacketNumber base)
 {
+  QUICPacketHeaderUPtr header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
   if (QUICTypeUtil::has_long_header(buf)) {
     QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
     new (long_header) QUICPacketLongHeader(buf, len, base);
-    return long_header;
+    header = QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
   } else {
     QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
     new (short_header) QUICPacketShortHeader(buf, len, base);
-    return short_header;
+    header = QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
   }
+  return std::move(header);
 }
 
-QUICPacketHeader *
+QUICPacketHeaderUPtr
 QUICPacketHeader::build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len)
 {
   QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
   new (long_header) QUICPacketLongHeader(type, connection_id, packet_number, base_packet_number, version, std::move(payload), len);
-  return long_header;
+  return QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
 }
 
-QUICPacketHeader *
+QUICPacketHeaderUPtr
 QUICPacketHeader::build(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
   QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
   new (short_header) QUICPacketShortHeader(type, key_phase, packet_number, base_packet_number, std::move(payload), len);
-  return short_header;
+  return QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
 }
 
-QUICPacketHeader *
+QUICPacketHeaderUPtr
 QUICPacketHeader::build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
   QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
   new (short_header)
     QUICPacketShortHeader(type, key_phase, connection_id, packet_number, base_packet_number, std::move(payload), len);
-  return short_header;
+  return QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
 }
 
-QUICPacketHeader *
+QUICPacketHeaderUPtr
 QUICPacketHeader::clone() const
 {
-  return nullptr;
+  return QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
 }
 
 //
@@ -473,16 +475,20 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 // QUICPacket
 //
 
-QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len)
+QUICPacket::QUICPacket()
 {
-  this->_header       = header;
+}
+
+QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len)
+{
+  this->_header       = std::move(header);
   this->_payload      = std::move(payload);
   this->_payload_size = payload_len;
 }
 
-QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t payload_len, bool retransmittable)
+QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable)
 {
-  this->_header             = header;
+  this->_header             = std::move(header);
   this->_payload            = std::move(payload);
   this->_payload_size       = payload_len;
   this->_is_retransmittable = retransmittable;
@@ -490,11 +496,7 @@ QUICPacket::QUICPacket(QUICPacketHeader *header, ats_unique_buf payload, size_t 
 
 QUICPacket::~QUICPacket()
 {
-  if (this->_header->has_version()) {
-    quicPacketLongHeaderAllocator.free(static_cast<QUICPacketLongHeader *>(this->_header));
-  } else {
-    quicPacketShortHeaderAllocator.free(static_cast<QUICPacketShortHeader *>(this->_header));
-  }
+  this->_header = nullptr;
 }
 
 /**
@@ -522,7 +524,7 @@ QUICPacket::packet_number() const
 const QUICPacketHeader *
 QUICPacket::header() const
 {
-  return this->_header;
+  return this->_header.get();
 }
 
 const uint8_t *
@@ -661,7 +663,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
   size_t plain_txt_len     = 0;
 
-  QUICPacketHeader *header = QUICPacketHeader::load(buf.release(), len, base_packet_number);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::load(buf.release(), len, base_packet_number);
 
   if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
     // We can't decrypt packets that have unknown versions
@@ -733,7 +735,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   QUICPacket *packet = nullptr;
   if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
     packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(header, std::move(plain_txt), plain_txt_len);
+    new (packet) QUICPacket(std::move(header), std::move(plain_txt), plain_txt_len);
   }
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
@@ -752,30 +754,31 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
     p += n;
   }
 
-  QUICPacketHeader *header =
+  QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
                             packet_sent_by_client->packet_number(), base_packet_number, 0x00, std::move(versions), len);
 
-  return QUICPacketFactory::_create_unprotected_packet(header);
+  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, QUICVersion version,
                                          ats_unique_buf payload, size_t len)
 {
-  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::INITIAL, connection_id, this->_packet_number_generator.next(),
-                                                     base_packet_number, version, std::move(payload), len);
-  return this->_create_encrypted_packet(header, true);
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::build(QUICPacketType::INITIAL, connection_id, this->_packet_number_generator.next(), base_packet_number,
+                            version, std::move(payload), len);
+  return this->_create_encrypted_packet(std::move(header), true);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_handshake_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                            ats_unique_buf payload, size_t len, bool retransmittable)
 {
-  QUICPacketHeader *header =
+  QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::HANDSHAKE, connection_id, this->_packet_number_generator.next(), base_packet_number,
                             this->_version, std::move(payload), len);
-  return this->_create_encrypted_packet(header, retransmittable);
+  return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 
 QUICPacketUPtr
@@ -783,10 +786,10 @@ QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
   // TODO Key phase should be picked up from QUICHandshakeProtocol, probably
-  QUICPacketHeader *header =
+  QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, this->_packet_number_generator.next(),
                             base_packet_number, std::move(payload), len);
-  return this->_create_encrypted_packet(header, retransmittable);
+  return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 
 QUICPacketUPtr
@@ -807,26 +810,26 @@ QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id,
   memcpy(naked_payload + payload_len - 16, stateless_reset_token.buf(), 16);
 
   // KeyPhase won't be used
-  QUICPacketHeader *header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::CLEARTEXT, connection_id,
-                                                     random_packet_number, 0, std::move(payload), payload_len);
-  return QUICPacketFactory::_create_unprotected_packet(header);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::CLEARTEXT, connection_id,
+                                                        random_packet_number, 0, std::move(payload), payload_len);
+  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }
 
 QUICPacketUPtr
-QUICPacketFactory::_create_unprotected_packet(QUICPacketHeader *header)
+QUICPacketFactory::_create_unprotected_packet(QUICPacketHeaderUPtr header)
 {
   ats_unique_buf cleartext = ats_unique_malloc(2048);
   size_t cleartext_len     = header->payload_size();
 
   memcpy(cleartext.get(), header->payload(), cleartext_len);
   QUICPacket *packet = quicPacketAllocator.alloc();
-  new (packet) QUICPacket(header, std::move(cleartext), cleartext_len, false);
+  new (packet) QUICPacket(std::move(header), std::move(cleartext), cleartext_len, false);
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
 QUICPacketUPtr
-QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header, bool retransmittable)
+QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable)
 {
   // TODO: use pmtu of UnixNetVConnection
   size_t max_cipher_txt_len = 2048;
@@ -837,7 +840,7 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeader *header, bool retra
   if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                                   header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(header, std::move(cipher_txt), cipher_txt_len, retransmittable);
+    new (packet) QUICPacket(std::move(header), std::move(cipher_txt), cipher_txt_len, retransmittable);
   }
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
