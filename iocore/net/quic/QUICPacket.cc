@@ -521,10 +521,10 @@ QUICPacket::packet_number() const
   return this->_header->packet_number();
 }
 
-const QUICPacketHeader *
+const QUICPacketHeader &
 QUICPacket::header() const
 {
-  return this->_header.get();
+  return *this->_header;
 }
 
 const uint8_t *

@@ -362,8 +362,8 @@ QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
   ink_assert(packet.type() != QUICPacketType::VERSION_NEGOTIATION && packet.type() != QUICPacketType::UNINITIALIZED);
 
   // Get payload from a header because packet.payload() is encrypted
-  uint16_t size          = packet.header()->payload_size();
-  const uint8_t *payload = packet.header()->payload();
+  uint16_t size          = packet.header().payload_size();
+  const uint8_t *payload = packet.header().payload();
 
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
   uint16_t cursor     = 0;

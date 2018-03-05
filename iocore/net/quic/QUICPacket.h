@@ -254,7 +254,7 @@ public:
   QUICConnectionId connection_id() const;
   QUICPacketNumber packet_number() const;
   QUICVersion version() const;
-  const QUICPacketHeader *header() const;
+  const QUICPacketHeader &header() const;
   const uint8_t *payload() const;
   bool is_retransmittable() const;
 
