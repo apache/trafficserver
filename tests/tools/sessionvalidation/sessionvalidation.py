@@ -88,7 +88,11 @@ class SessionValidator(object):
                         txn_response_body = ''
                         if 'body' in txn_response:
                             txn_response_body = txn_response['body']
-                        txn_response_obj = response.Response(txn_response['timestamp'], txn_response['headers'], txn_response_body)
+                        txn_response_action = ''
+                        if 'action' in txn_response:
+                            txn_response_action = txn_response['action']
+                        txn_response_obj = response.Response(
+                            txn_response['timestamp'], txn_response['headers'], txn_response_body, txn_response_action)
 
                         # create Transaction object
                         txn_obj = transaction.Transaction(txn_request_obj, txn_response_obj, txn['uuid'])

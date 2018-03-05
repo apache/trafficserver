@@ -1,0 +1,10 @@
+HTTP/1.1 504 Connection Timed Out
+Date:``
+Connection: ``
+Server: ATS/``
+Cache-Control:``
+Content-Type: ``
+Content-Language: ``
+Content-Length: ``
+
+``Inactivity Timeout``
