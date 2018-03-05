@@ -965,9 +965,12 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   --recursion;
   if (recursion == 0 && ua_session && !ua_session->is_recursing()) {
     if (this->ua_session->ready_to_free()) {
-      this->ua_session->free();
-      // After the free, the Http2ConnectionState object is also freed.
-      // The Http2ConnectionState object is allocted within the Http2ClientSession object
+      MUTEX_TRY_LOCK(lock, this->ua_session->mutex, this_ethread());
+      if (lock.is_locked()) {
+        this->ua_session->free();
+        // After the free, the Http2ConnectionState object is also freed.
+        // The Http2ConnectionState object is allocted within the Http2ClientSession object
+      }
     }
   }
 
