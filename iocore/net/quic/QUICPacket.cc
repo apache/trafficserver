@@ -74,7 +74,7 @@ QUICPacketHeader::load(const uint8_t *buf, size_t len, QUICPacketNumber base)
     new (short_header) QUICPacketShortHeader(buf, len, base);
     header = QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
   }
-  return std::move(header);
+  return header;
 }
 
 QUICPacketHeaderUPtr
