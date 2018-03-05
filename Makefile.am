@@ -74,12 +74,10 @@ asf-distdir:
 	$(RM) -r -- $(distdir)/autom4te.cache $(distdir)/ci `find $(distdir) -name .git -o -name .gitignore -o -name .gitmodules`
 
 asf-dist-sign: asf-dist
-	md5sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
 	sha512sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha512
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
 
 asf-dist-sign-rc: asf-dist-rc
-	md5sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.md5
 	sha512sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.sha512
 	gpg --armor --output $(distdir)-rc$(RC).tar.bz2.asc  --detach-sig $(distdir)-rc$(RC).tar.bz2
 
