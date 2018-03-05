@@ -185,7 +185,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->mutex          = new_vc->mutex;
   this->in_destroy     = false;
 
-  this->connection_state.mutex = new_ProxyMutex();
+  this->connection_state.mutex = this->mutex;
 
   DebugHttp2Ssn("session born, netvc %p", this->client_vc);
 
