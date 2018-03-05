@@ -392,6 +392,18 @@ done:
   return retval;
 }
 
+// Callback function for verifying client certificate
+int
+ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+  Debug("ssl", "Callback: verify client cert");
+  auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+
+  netvc->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
+  return SSL_TLSEXT_ERR_OK;
+}
+
 // Use the certificate callback for openssl 1.0.2 and greater
 // otherwise use the SNI callback
 #if TS_USE_CERT_CB
@@ -425,17 +437,6 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 
   // Return 1 for success, 0 for error, or -1 to pause
   return retval;
-}
-
-static int
-ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
-{
-  Debug("ssl", "ssl verify callback");
-  auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-
-  netvc->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
-  return SSL_TLSEXT_ERR_OK;
 }
 
 /*
