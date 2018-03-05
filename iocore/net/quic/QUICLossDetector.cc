@@ -390,9 +390,6 @@ QUICLossDetector::_retransmit_handshake_packets()
   std::set<QUICPacketNumber> retransmitted_handshake_packets;
 
   for (auto &info : this->_sent_packets) {
-    if (!info.second->handshake) {
-      break;
-    }
     retransmitted_handshake_packets.insert(info.first);
     this->_transmitter->retransmit_packet(*info.second->packet);
   }
