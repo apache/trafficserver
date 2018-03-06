@@ -41,10 +41,10 @@
 //                          int* read_size_ptr)
 //
 //  Attempts to open and read arg file_path into a buffer allocated
-//   off the heap (via malloc() )  Returns a pointer to the buffer
+//   off the heap (via ats_malloc() )  Returns a pointer to the buffer
 //   is successful and nullptr otherwise.
 //
-//  CALLEE is responsibled for deallocating the buffer via free()
+//  CALLEE is responsibled for deallocating the buffer via ats_free()
 //
 char *
 readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr)
@@ -90,10 +90,12 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
     ats_free(file_buf);
     file_buf = nullptr;
   } else if (read_size < file_info.st_size) {
-    // We don't want to signal this error on WIN32 because the sizes
-    // won't match if the file contains any CR/LF sequence.
+    // Didn't get the whole file, drop everything. We don't want to return
+    //   something partially read because, ie. with configs, the behaviour
+    //   is undefined.
     Error("%s Only able to read %d bytes out %d for %s file", module_name, read_size, (int)file_info.st_size, file_path);
-    file_buf[read_size] = '\0';
+    ats_free(file_buf);
+    file_buf = nullptr;
   }
 
   if (file_buf && read_size_ptr) {
