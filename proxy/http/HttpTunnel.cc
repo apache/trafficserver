@@ -1356,6 +1356,9 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
 
     c->bytes_written = c->write_vio ? c->write_vio->ndone : 0;
 
+    if (c->vc_handler == nullptr) {
+      break;
+    }
     // Interesting tunnel event, call SM
     jump_point = c->vc_handler;
     (sm->*jump_point)(event, c);
