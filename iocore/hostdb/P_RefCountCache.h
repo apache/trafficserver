@@ -578,7 +578,8 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, std::string dirn
 
   int fd = open(filepath.c_str(), O_RDONLY);
   if (fd < 0) {
-    return -1; // specific code for missing?
+    Warning("Unable to open file %s; [Error]: %s", filepath.c_str(), strerror(errno));
+    return -1;
   }
 
   // read in the header
