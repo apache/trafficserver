@@ -82,6 +82,13 @@ stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
   if (inctx == nullptr) {
     return nullptr;
   }
+
+#ifdef SSL_CTX_select_current_cert
+  if (!SSL_CTX_select_current_cert(ssl_ctx, x)) {
+    Warning("OCSP: could not select current certifcate chain %p", x);
+  }
+#endif
+
   if (X509_STORE_CTX_init(inctx, st, nullptr, nullptr) == 0) {
     goto end;
   }
