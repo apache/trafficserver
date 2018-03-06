@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <cstddef>
+#include <mutex>
 #include "atscppapi/Plugin.h"
 #include "atscppapi/GlobalPlugin.h"
 #include "atscppapi/Transaction.h"
@@ -218,7 +219,7 @@ utils::internal::convertInternalTransformationTypeToTsHook(TransformationPlugin:
 void
 utils::internal::invokePluginForEvent(TransactionPlugin *plugin, TSHttpTxn ats_txn_handle, TSEvent event)
 {
-  ScopedSharedMutexLock scopedLock(plugin->getMutex());
+  std::lock_guard<Mutex> scopedLock(*(plugin->getMutex()));
   ::invokePluginForEvent(static_cast<Plugin *>(plugin), ats_txn_handle, event);
 }
 
