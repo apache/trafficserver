@@ -443,6 +443,7 @@ void http_parser_clear(HTTPParser *parser);
 MIMEParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                       bool must_copy_strings, bool eof);
 MIMEParseResult validate_hdr_host(HTTPHdrImpl *hh);
+MIMEParseResult validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh);
 MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                        bool must_copy_strings, bool eof);
 
