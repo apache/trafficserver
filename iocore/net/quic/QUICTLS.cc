@@ -76,6 +76,10 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
 
   int err = SSL_ERROR_NONE;
   if (!SSL_is_init_finished(this->_ssl)) {
+    if (!this->_early_data_processed && this->_read_early_data() == 1) {
+      Debug(tag, "Early data processed");
+      this->_early_data_processed = true;
+    }
     ERR_clear_error();
     int ret = SSL_do_handshake(this->_ssl);
     if (ret <= 0) {
@@ -190,6 +194,19 @@ QUICTLS::update_key_materials()
   this->_aead = _get_evp_aead();
 
   return 1;
+}
+
+int
+QUICTLS::_read_early_data()
+{
+  uint8_t early_data[8];
+  size_t early_data_len = 0;
+  int ret               = 0;
+  do {
+    ERR_clear_error();
+    ret = SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
+  } while (ret == SSL_READ_EARLY_DATA_SUCCESS);
+  return ret == SSL_READ_EARLY_DATA_FINISH ? 1 : 0;
 }
 
 SSL *

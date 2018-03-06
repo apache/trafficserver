@@ -80,4 +80,7 @@ private:
   QUICPacketProtection *_client_pp       = nullptr;
   QUICPacketProtection *_server_pp       = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
+
+  bool _early_data_processed = false;
+  int _read_early_data();
 };
