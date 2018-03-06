@@ -442,6 +442,7 @@ void http_parser_clear(HTTPParser *parser);
 ParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                   bool must_copy_strings, bool eof, bool strict_uri_parsing);
 ParseResult validate_hdr_host(HTTPHdrImpl *hh);
+ParseResult validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh);
 ParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                    bool must_copy_strings, bool eof);
 
