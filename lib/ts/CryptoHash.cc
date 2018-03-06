@@ -30,35 +30,39 @@
 #include "ts/CryptoHash.h"
 #include "ts/SHA256.h"
 
-#ifndef TS_ENABLE_FIPS
-CryptoContext::HashType CryptoContext::Setting = CryptoContext::MD5;
-#else
+#if TS_ENABLE_FIPS == 1
 CryptoContext::HashType CryptoContext::Setting = CryptoContext::SHA256;
+#else
+#include "ts/INK_MD5.h"
+#include "ts/MMH.h"
+CryptoContext::HashType CryptoContext::Setting = CryptoContext::MD5;
 #endif
 
 CryptoContext::CryptoContext()
 {
   switch (Setting) {
   case UNSPECIFIED:
-#ifndef TS_ENABLE_FIPS
+#if TS_ENABLE_FIPS == 0
   case MD5:
     new (_obj) MD5Context;
     break;
   case MMH:
     new (_obj) MMHContext;
     break;
-#endif
+#else
   case SHA256:
     new (_obj) SHA256Context;
     break;
+#endif
   default:
     ink_release_assert("Invalid global URL hash context");
   };
-#ifndef TS_ENABLE_FIPS
+#if TS_ENABLE_FIPS == 0
   static_assert(CryptoContext::OBJ_SIZE >= sizeof(MD5Context), "bad OBJ_SIZE");
   static_assert(CryptoContext::OBJ_SIZE >= sizeof(MMHContext), "bad OBJ_SIZE");
-#endif
+#else
   static_assert(CryptoContext::OBJ_SIZE >= sizeof(SHA256Context), "bad OBJ_SIZE");
+#endif
 }
 
 /**
