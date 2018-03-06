@@ -28,7 +28,7 @@
 #include "ts/ink_assert.h"
 
 ats::CryptoHash const ats::CRYPTO_HASH_ZERO; // default constructed is correct.
-#ifndef TS_ENABLE_FIPS
+#if TS_ENABLE_FIPS == 0
 
 MD5Context::MD5Context()
 {

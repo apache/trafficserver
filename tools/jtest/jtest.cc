@@ -3438,18 +3438,6 @@ UrlHashTable::~UrlHashTable()
 } // UrlHashTable::~UrlHashTable
 
 static int
-ink_code_md5(unsigned const char *input, int input_length, unsigned char *sixteen_byte_hash_pointer)
-{
-  MD5_CTX context;
-
-  MD5_Init(&context);
-  MD5_Update(&context, input, input_length);
-  MD5_Final(sixteen_byte_hash_pointer, &context);
-
-  return (0);
-}
-
-static int
 seen_it(char *url)
 {
   if (!url_hash_entries) {
