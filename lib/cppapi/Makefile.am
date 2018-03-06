@@ -33,7 +33,6 @@ libatscppapi_la_SOURCES = \
 	HttpVersion.cc \
 	InterceptPlugin.cc \
 	Logger.cc \
-	Mutex.cc \
 	Plugin.cc \
 	RemapPlugin.cc \
 	Request.cc \
@@ -64,7 +63,6 @@ library_include_HEADERS = \
 	$(base_include_folder)/HttpVersion.h \
 	$(base_include_folder)/InterceptPlugin.h \
 	$(base_include_folder)/Logger.h \
-	$(base_include_folder)/Mutex.h \
 	$(base_include_folder)/Plugin.h \
 	$(base_include_folder)/PluginInit.h \
 	$(base_include_folder)/RemapPlugin.h \
