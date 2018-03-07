@@ -820,63 +820,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
   return 0;
 }
 
-#ifdef PROXY_DRAIN
-int
-HttpSM::state_drain_client_request_body(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::state_drain_client_request_body, event);
-
-  ink_assert(ua_entry->read_vio == (VIO *)data);
-  ink_assert(ua_entry->vc == ua_session);
-
-  NetVConnection *netvc = ua_session->get_netvc();
-  if (!netvc && event != VC_EVENT_EOS)
-    return 0;
-
-  switch (event) {
-  case VC_EVENT_EOS:
-  case VC_EVENT_ERROR:
-  case VC_EVENT_ACTIVE_TIMEOUT:
-  case VC_EVENT_INACTIVITY_TIMEOUT: {
-    // Nothing we can do
-    terminate_sm = true;
-    break;
-  }
-  case VC_EVENT_READ_READY: {
-    int64_t avail = ua_buffer_reader->read_avail();
-    int64_t left  = t_state.hdr_info.request_content_length - client_request_body_bytes;
-
-    // Since we are only reading what's needed to complete
-    //   the post, there must be something left to do
-    ink_assert(avail < left);
-
-    client_request_body_bytes += avail;
-    ua_buffer_reader->consume(avail);
-    ua_entry->read_vio->reenable_re();
-    break;
-  }
-  case VC_EVENT_READ_COMPLETE: {
-    // We've finished draing the POST body
-    int64_t avail = ua_buffer_reader->read_avail();
-
-    ua_buffer_reader->consume(avail);
-    client_request_body_bytes += avail;
-    ink_assert(client_request_body_bytes == t_state.hdr_info.request_content_length);
-
-    ua_buffer_reader->mbuf->size_index = HTTP_HEADER_BUFFER_SIZE_INDEX;
-    ua_entry->vc_handler               = &HttpSM::state_watch_for_client_abort;
-    ua_entry->read_vio                 = ua_entry->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
-    call_transact_and_set_next_state(NULL);
-    break;
-  }
-  default:
-    ink_release_assert(0);
-  }
-
-  return EVENT_DONE;
-}
-#endif /* PROXY_DRAIN */
-
 int
 HttpSM::state_watch_for_client_abort(int event, void *data)
 {
@@ -5501,29 +5444,34 @@ HttpSM::setup_transform_to_server_transfer()
   tunnel.tunnel_run(p);
 }
 
-#ifdef PROXY_DRAIN
 void
 HttpSM::do_drain_request_body()
 {
-  int64_t post_bytes = t_state.hdr_info.request_content_length;
-  int64_t avail      = ua_buffer_reader->read_avail();
+  int64_t content_length = t_state.hdr_info.client_request.get_content_length();
+  int64_t avail          = ua_buffer_reader->read_avail();
 
-  int64_t act_on = (avail < post_bytes) ? avail : post_bytes;
-
-  client_request_body_bytes = act_on;
-  ua_buffer_reader->consume(act_on);
-
-  ink_assert(client_request_body_bytes <= post_bytes);
-
-  if (client_request_body_bytes < post_bytes) {
-    ua_buffer_reader->mbuf->size_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
-    ua_entry->vc_handler               = &HttpSM::state_drain_client_request_body;
-    ua_entry->read_vio = ua_entry->vc->do_io_read(this, post_bytes - client_request_body_bytes, ua_buffer_reader->mbuf);
-  } else {
-    call_transact_and_set_next_state(NULL);
+  if (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+    DebugSM("http", "Chunked body, setting the response to non-keepalive");
+    goto close_connection;
   }
+
+  if (content_length > 0) {
+    if (avail >= content_length) {
+      DebugSM("http", "entire body is in the buffer, consuming");
+      int64_t act_on            = (avail < content_length) ? avail : content_length;
+      client_request_body_bytes = act_on;
+      ua_buffer_reader->consume(act_on);
+    } else {
+      DebugSM("http", "entire body is not in the buffer, setting the response to non-keepalive");
+      goto close_connection;
+    }
+  }
+  return;
+
+close_connection:
+  t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  t_state.hdr_info.client_response.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
 }
-#endif /* PROXY_DRAIN */
 
 void
 HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
@@ -7306,6 +7254,8 @@ HttpSM::set_next_state()
     release_server_session(true);
     t_state.source = HttpTransact::SOURCE_CACHE;
 
+    do_drain_request_body();
+
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
       ink_assert((t_state.hdr_info.transform_response.valid() ? true : false) == true);
@@ -7495,13 +7445,6 @@ HttpSM::set_next_state()
     call_transact_and_set_next_state(NULL);
     break;
   }
-
-#ifdef PROXY_DRAIN
-  case HttpTransact::SM_ACTION_DRAIN_REQUEST_BODY: {
-    do_drain_request_body();
-    break;
-  }
-#endif /* PROXY_DRAIN */
 
   case HttpTransact::SM_ACTION_CONTINUE: {
     ink_release_assert(!"Not implemented");

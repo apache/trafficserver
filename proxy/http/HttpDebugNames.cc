@@ -367,11 +367,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::SM_ACTION_TRANSFORM_READ:
     return ("SM_ACTION_TRANSFORM_READ");
 
-#ifdef PROXY_DRAIN
-  case HttpTransact::SM_ACTION_DRAIN_REQUEST_BODY:
-    return ("SM_ACTION_DRAIN_REQUEST_BODY");
-#endif /* PROXY_DRAIN */
-
   case HttpTransact::SM_ACTION_API_SM_START:
     return ("SM_ACTION_API_SM_START");
   case HttpTransact::SM_ACTION_REDIRECT_READ:
