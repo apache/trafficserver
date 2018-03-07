@@ -383,9 +383,6 @@ protected:
 
   int tunnel_handler_100_continue(int event, void *data);
   int tunnel_handler_cache_fill(int event, void *data);
-#ifdef PROXY_DRAIN
-  int state_drain_client_request_body(int event, void *data);
-#endif /* PROXY_DRAIN */
   int state_read_client_request_header(int event, void *data);
   int state_watch_for_client_abort(int event, void *data);
   int state_read_push_response_header(int event, void *data);
@@ -452,9 +449,7 @@ protected:
   void do_api_callout_internal();
   void do_redirect();
   void redirect_request(const char *redirect_url, const int redirect_len);
-#ifdef PROXY_DRAIN
   void do_drain_request_body();
-#endif
 
   bool do_congestion_control_lookup();
 
