@@ -35,6 +35,7 @@
 README.*$
 ^TODO$
 ^REVIEWERS$
+^INSTALL.SKIP$
 ^MANIFEST$
 ^configure$
 ^ink_rand\.cc$
