@@ -312,6 +312,9 @@ private:
   void _switch_to_draining_state(QUICConnectionErrorUPtr error);
   void _switch_to_close_state();
 
+  bool _application_started = false;
+  void _start_application();
+
   void _handle_idle_timeout();
   void _update_alt_connection_ids(uint8_t chosen);
 

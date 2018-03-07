@@ -76,9 +76,14 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
 
   int err = SSL_ERROR_NONE;
   if (!SSL_is_init_finished(this->_ssl)) {
-    if (!this->_early_data_processed && this->_read_early_data() == 1) {
-      Debug(tag, "Early data processed");
-      this->_early_data_processed = true;
+    if (!this->_early_data_processed) {
+      if (this->_read_early_data()) {
+        Debug(tag, "Early data processed");
+        this->_early_data_processed = true;
+      }
+      if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT) && SSL_get_early_data_status(this->_ssl) == SSL_EARLY_DATA_ACCEPTED) {
+        this->_generate_0rtt_key();
+      }
     }
     ERR_clear_error();
     int ret = SSL_do_handshake(this->_ssl);
@@ -113,9 +118,13 @@ QUICTLS::is_handshake_finished() const
 }
 
 bool
-QUICTLS::is_key_derived() const
+QUICTLS::is_key_derived(QUICKeyPhase key_phase) const
 {
-  return (this->_client_pp->key_phase() != QUICKeyPhase::CLEARTEXT && this->_server_pp->key_phase() != QUICKeyPhase::CLEARTEXT);
+  if (key_phase == QUICKeyPhase::ZERORTT) {
+    return this->_client_pp->get_key(QUICKeyPhase::ZERORTT);
+  } else {
+    return this->_client_pp->get_key(key_phase) && this->_server_pp->get_key(key_phase);
+  }
 }
 
 int
@@ -151,7 +160,6 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
 int
 QUICTLS::update_key_materials()
 {
-  ink_assert(SSL_is_init_finished(this->_ssl));
   // Switch key phase
   QUICKeyPhase next_key_phase;
   switch (this->_client_pp->key_phase()) {
@@ -162,6 +170,9 @@ QUICTLS::update_key_materials()
     next_key_phase = QUICKeyPhase::PHASE_0;
     break;
   case QUICKeyPhase::CLEARTEXT:
+    next_key_phase = QUICKeyPhase::PHASE_0;
+    break;
+  case QUICKeyPhase::ZERORTT:
     next_key_phase = QUICKeyPhase::PHASE_0;
     break;
   default:
@@ -202,11 +213,29 @@ QUICTLS::_read_early_data()
   uint8_t early_data[8];
   size_t early_data_len = 0;
   int ret               = 0;
+
   do {
     ERR_clear_error();
     ret = SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
   } while (ret == SSL_READ_EARLY_DATA_SUCCESS);
+
   return ret == SSL_READ_EARLY_DATA_FINISH ? 1 : 0;
+}
+
+void
+QUICTLS::_generate_0rtt_key()
+{
+  // Generate key material for 0-RTT
+  std::unique_ptr<KeyMaterial> km;
+  km = this->_keygen_for_client.generate_0rtt(this->_ssl);
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    uint8_t print_buf[512];
+    to_hex(print_buf, km->key, km->key_len);
+    Debug("vv_quic_crypto", "0rtt key 0x%s", print_buf);
+    to_hex(print_buf, km->iv, km->iv_len);
+    Debug("vv_quic_crypto", "0rtt iv 0x%s", print_buf);
+  }
+  this->_client_pp->set_key(std::move(km), QUICKeyPhase::ZERORTT);
 }
 
 SSL *
@@ -235,8 +264,13 @@ QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, con
     return false;
   }
 
-  size_t tag_len = this->_get_aead_tag_len();
-  return _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, pp->get_key(phase), tag_len);
+  size_t tag_len        = this->_get_aead_tag_len();
+  const KeyMaterial *km = pp->get_key(phase);
+  if (!km) {
+    return false;
+  }
+
+  return _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, tag_len);
 }
 
 bool
@@ -259,8 +293,12 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
     return false;
   }
 
-  size_t tag_len = this->_get_aead_tag_len();
-  bool ret       = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, pp->get_key(phase), tag_len);
+  size_t tag_len        = this->_get_aead_tag_len();
+  const KeyMaterial *km = pp->get_key(phase);
+  if (!km) {
+    return false;
+  }
+  bool ret = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, tag_len);
   if (!ret) {
     Debug(tag, "Failed to decrypt a packet: pkt_num=%" PRIu64, pkt_num);
   }

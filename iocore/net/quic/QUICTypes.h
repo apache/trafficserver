@@ -114,6 +114,7 @@ enum class QUICKeyPhase : int {
   PHASE_0 = 0,
   PHASE_1,
   CLEARTEXT,
+  ZERORTT,
 };
 
 enum class QUICPacketCreationResult {

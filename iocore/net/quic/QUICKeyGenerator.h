@@ -63,6 +63,8 @@ public:
    */
   std::unique_ptr<KeyMaterial> generate(SSL *ssl);
 
+  std::unique_ptr<KeyMaterial> generate_0rtt(SSL *ssl);
+
 private:
   Context _ctx = Context::SERVER;
 
@@ -75,6 +77,7 @@ private:
                                  size_t label_len, size_t length);
   int _generate_pp_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, const char *label, size_t label_len,
                           size_t length);
+  int _generate_0rtt_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, size_t length);
   int _generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                     size_t key_length) const;
   int _generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t iv_length) const;

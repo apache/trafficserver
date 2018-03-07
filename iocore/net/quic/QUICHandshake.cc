@@ -464,6 +464,15 @@ QUICHandshake::_do_handshake(bool initial)
     stream_io->write(out, out_len);
   }
 
+  if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0)) {
+    int res = this->_hs_protocol->update_key_materials();
+    if (res) {
+      QUICHSDebug("Keying Materials are exported");
+    } else {
+      QUICHSDebug("Failed to export Keying Materials");
+    }
+  }
+
   return result;
 }
 
@@ -573,11 +582,14 @@ QUICHandshake::_complete_handshake()
   SET_HANDLER(&QUICHandshake::state_complete);
   QUICHSDebug("%s", this->negotiated_cipher_suite());
 
-  int res = this->_hs_protocol->update_key_materials();
-  if (res) {
-    QUICHSDebug("Keying Materials are exported");
-  } else {
-    QUICHSDebug("Failed to export Keying Materials");
+  int res = 1;
+  if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0)) {
+    res = this->_hs_protocol->update_key_materials();
+    if (res) {
+      QUICHSDebug("Keying Materials are exported");
+    } else {
+      QUICHSDebug("Failed to export Keying Materials");
+    }
   }
 
   return res;

@@ -50,23 +50,28 @@ QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phas
   case QUICKeyPhase::CLEARTEXT:
     this->_cleartext_key = std::move(km);
     break;
+  case QUICKeyPhase::ZERORTT:
+    this->_zerortt_key = std::move(km);
+    break;
   }
 }
 
-const KeyMaterial &
+const KeyMaterial *
 QUICPacketProtection::get_key(QUICKeyPhase phase) const
 {
   switch (phase) {
   case QUICKeyPhase::PHASE_0:
-    return *this->_phase_0_key;
+    return this->_phase_0_key.get();
   case QUICKeyPhase::PHASE_1:
-    return *this->_phase_1_key;
+    return this->_phase_1_key.get();
   case QUICKeyPhase::CLEARTEXT:
-    return *this->_cleartext_key;
+    return this->_cleartext_key.get();
+  case QUICKeyPhase::ZERORTT:
+    return this->_zerortt_key.get();
   }
 
   ink_release_assert(!"Bad phase");
-  return *this->_cleartext_key;
+  return nullptr;
 }
 
 QUICKeyPhase

@@ -31,6 +31,7 @@ constexpr static uint8_t QUIC_VERSION_1_SALT[] = {
 };
 constexpr static ts::string_view LABEL_FOR_CLIENT_CLEARTEXT_SECRET("client hs"_sv);
 constexpr static ts::string_view LABEL_FOR_SERVER_CLEARTEXT_SECRET("server hs"_sv);
+constexpr static ts::string_view LABEL_FOR_CLIENT_0RTT_SECRET("EXPORTER-QUIC 0rtt"_sv);
 constexpr static ts::string_view LABEL_FOR_CLIENT_PP_SECRET("EXPORTER-QUIC client 1rtt"_sv);
 constexpr static ts::string_view LABEL_FOR_SERVER_PP_SECRET("EXPORTER-QUIC server 1rtt"_sv);
 constexpr static ts::string_view LABEL_FOR_KEY("key"_sv);
@@ -58,6 +59,23 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
     break;
   }
 
+  this->_generate(km->key, &km->key_len, km->iv, &km->iv_len, hkdf, secret, secret_len, cipher);
+
+  return km;
+}
+
+std::unique_ptr<KeyMaterial>
+QUICKeyGenerator::generate_0rtt(SSL *ssl)
+{
+  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
+
+  const QUIC_EVP_CIPHER *cipher = this->_get_cipher_for_protected_packet(ssl);
+  const EVP_MD *md              = _get_handshake_digest(ssl);
+  uint8_t secret[512];
+  size_t secret_len = sizeof(secret);
+  QUICHKDF hkdf(md);
+
+  this->_generate_0rtt_secret(secret, &secret_len, hkdf, ssl, EVP_MD_size(md));
   this->_generate(km->key, &km->key_len, km->iv, &km->iv_len, hkdf, secret, secret_len, cipher);
 
   return km;
@@ -135,6 +153,16 @@ QUICKeyGenerator::_generate_pp_secret(uint8_t *out, size_t *out_len, QUICHKDF &h
 
   memcpy(this->_last_secret, out, *out_len);
   this->_last_secret_len = *out_len;
+
+  return 0;
+}
+
+int
+QUICKeyGenerator::_generate_0rtt_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, size_t length)
+{
+  *out_len = length;
+  SSL_export_keying_material_early(ssl, out, *out_len, LABEL_FOR_CLIENT_0RTT_SECRET.data(), LABEL_FOR_CLIENT_0RTT_SECRET.length(),
+                                   reinterpret_cast<const uint8_t *>(""), 0);
 
   return 0;
 }

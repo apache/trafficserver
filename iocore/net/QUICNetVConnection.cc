@@ -817,8 +817,8 @@ QUICNetVConnection::_state_handshake_process_client_cleartext_packet(QUICPacketU
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet)
 {
-  // TODO: Not sure what we have to do
-  return QUICErrorUPtr(new QUICNoError());
+  this->_start_application();
+  return this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
 }
 
 QUICErrorUPtr
@@ -945,6 +945,9 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   QUICRetransmissionFrame *rf         = dynamic_cast<QUICRetransmissionFrame *>(frame.get());
   if (rf) {
     current_packet_type = rf->packet_type();
+  } else if (frame->type() == QUICFrameType::STREAM &&
+             static_cast<const QUICStreamFrame *>(frame.get())->stream_id() != STREAM_ID_FOR_HANDSHAKE) {
+    current_packet_type = QUICPacketType::PROTECTED;
   } else {
     current_packet_type = QUICPacketType::UNINITIALIZED;
   }
@@ -1089,6 +1092,10 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   case QUICPacketType::HANDSHAKE:
     packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
                                                            std::move(buf), len, retransmittable);
+    break;
+  case QUICPacketType::PROTECTED:
+    packet = this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                                  std::move(buf), len, retransmittable);
     break;
   default:
     if (this->get_context() == NET_VCONNECTION_OUT) {
@@ -1317,26 +1324,36 @@ QUICNetVConnection::_complete_handshake_if_possible()
   this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                   this->_handshake_handler->remote_transport_parameters());
 
-  const uint8_t *app_name;
-  unsigned int app_name_len = 0;
-  this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
-  if (app_name == nullptr) {
-    app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.data());
-    app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
-  }
-
-  if (netvc_context == NET_VCONNECTION_IN) {
-    Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
-    if (endpoint == nullptr) {
-      this->_handle_error(QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
-    } else {
-      endpoint->handleEvent(NET_EVENT_ACCEPT, this);
-    }
-  } else {
-    this->action_.continuation->handleEvent(NET_EVENT_OPEN, this);
-  }
+  this->_start_application();
 
   return 0;
+}
+
+void
+QUICNetVConnection::_start_application()
+{
+  if (!this->_application_started) {
+    this->_application_started = true;
+
+    const uint8_t *app_name;
+    unsigned int app_name_len = 0;
+    this->_handshake_handler->negotiated_application_name(&app_name, &app_name_len);
+    if (app_name == nullptr) {
+      app_name     = reinterpret_cast<const uint8_t *>(IP_PROTO_TAG_HTTP_QUIC.data());
+      app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
+    }
+
+    if (netvc_context == NET_VCONNECTION_IN) {
+      Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
+      if (endpoint == nullptr) {
+        this->_handle_error(QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR)));
+      } else {
+        endpoint->handleEvent(NET_EVENT_ACCEPT, this);
+      }
+    } else {
+      this->action_.continuation->handleEvent(NET_EVENT_OPEN, this);
+    }
+  }
 }
 
 void

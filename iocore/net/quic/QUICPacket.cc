@@ -24,6 +24,7 @@
 #include <ts/ink_assert.h>
 #include <ts/Diags.h>
 #include "QUICPacket.h"
+#include "QUICDebugNames.h"
 
 ClassAllocator<QUICPacket> quicPacketAllocator("quicPacketAllocator");
 ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator("quicPacketLongHeaderAllocator");
@@ -671,6 +672,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     memcpy(plain_txt.get(), header->payload(), header->payload_size());
     plain_txt_len = header->payload_size();
   } else {
+    Debug("quic_packet", "Decrypting %s packet", QUICDebugNames::packet_type(header->type()));
     switch (header->type()) {
     case QUICPacketType::VERSION_NEGOTIATION:
     case QUICPacketType::STATELESS_RESET:
@@ -680,7 +682,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
       result        = QUICPacketCreationResult::SUCCESS;
       break;
     case QUICPacketType::PROTECTED:
-      if (this->_hs_protocol->is_key_derived()) {
+      if (this->_hs_protocol->is_key_derived(header->key_phase())) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
                                         header->key_phase())) {
@@ -693,7 +695,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
       }
       break;
     case QUICPacketType::INITIAL:
-      if (!this->_hs_protocol->is_key_derived()) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT)) {
         if (QUICTypeUtil::is_supported_version(header->version())) {
           if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                           header->payload_size(), header->packet_number(), header->buf(), header->size(),
@@ -710,7 +712,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
       }
       break;
     case QUICPacketType::HANDSHAKE:
-      if (!this->_hs_protocol->is_key_derived()) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
                                         QUICKeyPhase::CLEARTEXT)) {
@@ -723,8 +725,17 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
       }
       break;
     case QUICPacketType::ZERO_RTT_PROTECTED:
-      // TODO Support 0-RTT
-      result = QUICPacketCreationResult::IGNORED;
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::ZERORTT)) {
+        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                        QUICKeyPhase::ZERORTT)) {
+          result = QUICPacketCreationResult::SUCCESS;
+        } else {
+          result = QUICPacketCreationResult::IGNORED;
+        }
+      } else {
+        result = QUICPacketCreationResult::NOT_READY;
+      }
       break;
     default:
       result = QUICPacketCreationResult::FAILED;
@@ -836,11 +847,14 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool re
   ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
   size_t cipher_txt_len     = 0;
 
+  Debug("quic_packet", "Encrypting %s packet", QUICDebugNames::packet_type(header->type()));
   QUICPacket *packet = nullptr;
   if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                                   header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(std::move(header), std::move(cipher_txt), cipher_txt_len, retransmittable);
+  } else {
+    Debug("quic_packet", "Failed to encrypt a packet");
   }
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
