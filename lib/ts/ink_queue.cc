@@ -51,6 +51,7 @@
 #include "ts/ink_align.h"
 #include "ts/hugepages.h"
 #include "ts/Diags.h"
+#include "ts/JeAllocator.h"
 
 #define DEBUG_TAG "freelist"
 
@@ -64,6 +65,8 @@
 #define SANITY
 #define DEADBEEF
 #endif
+
+static auto jna = jearena::globalJemallocNodumpAllocator();
 
 struct ink_freelist_ops {
   void *(*fl_new)(InkFreeList *);
@@ -258,10 +261,7 @@ malloc_new(InkFreeList *f)
   void *newp = nullptr;
 
   if (f->alignment) {
-    newp = ats_memalign(f->alignment, f->type_size);
-    if (f->advice && (INK_ALIGN((uint64_t)newp, ats_pagesize()) == (uint64_t)newp)) {
-      ats_madvise((caddr_t)newp, INK_ALIGN(f->type_size, f->alignment), f->advice);
-    }
+    newp = jna.allocate(f);
   } else {
     newp = ats_malloc(f->type_size);
   }
@@ -320,7 +320,7 @@ static void
 malloc_free(InkFreeList *f, void *item)
 {
   if (f->alignment) {
-    ats_memalign_free(item);
+    jna.deallocate(f, item);
   } else {
     ats_free(item);
   }
@@ -389,7 +389,7 @@ malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
   if (f->alignment) {
     for (size_t i = 0; i < num_item && item; ++i, item = next) {
       next = *(void **)item; // find next item before freeing current item
-      ats_memalign_free(item);
+      jna.deallocate(f, item);
     }
   } else {
     for (size_t i = 0; i < num_item && item; ++i, item = next) {

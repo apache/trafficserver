@@ -161,6 +161,8 @@ libtsutil_la_SOURCES = \
   IpMapConf.h \
   IpMap.h \
   I_Version.h \
+  JeAllocator.h \
+  JeAllocator.cc \
   Layout.cc \
   List.h \
   llqueue.cc \
