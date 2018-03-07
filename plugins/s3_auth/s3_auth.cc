@@ -495,7 +495,10 @@ ConfigCache::get(const char *fname)
 
       TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
       it->second.second = tv.tv_sec;
-      it->second.first->release();
+      if (nullptr != it->second.first) {
+        // The previous config update / reload attempt did not fail, safe to call release.
+        it->second.first->release();
+      }
       if (s3->parse_config(config_fname)) {
         it->second.first = s3;
       } else {
