@@ -37,7 +37,12 @@ QUICFlowController::current_offset()
 QUICOffset
 QUICFlowController::current_limit()
 {
-  return this->_limit;
+  // if _limit is 0, the limit is not set yet.
+  if (this->_limit) {
+    return this->_limit;
+  } else {
+    return UINT64_MAX;
+  }
 }
 
 int

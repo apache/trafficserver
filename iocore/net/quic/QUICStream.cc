@@ -463,7 +463,7 @@ QUICStream::_process_write_vio()
     int64_t len      = 0;
     bool fin         = false;
 
-    int64_t credit = this->_remote_flow_controller.current_limit() - this->_remote_flow_controller.current_offset();
+    uint64_t credit = this->_remote_flow_controller.current_limit() - this->_remote_flow_controller.current_offset();
     if (credit != 0 && max_size > credit) {
       max_size = credit;
     }
