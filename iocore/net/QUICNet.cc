@@ -77,8 +77,8 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
       vc->read.triggered = 1;
       vc->handle_received_packet(p);
       vc->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
-      return;
     }
+    return;
   case QUICPacketType::ZERO_RTT_PROTECTED:
   // TODO:: do something ?
   // break;

@@ -70,7 +70,7 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
 
   switch (event) {
   case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE: {
+  case VC_EVENT_READ_COMPLETE:
     if (stream_io->is_read_avail_more_than(0)) {
       if (txn == nullptr) {
         txn = new HQClientTransaction(this->_client_session, stream_io);
@@ -80,24 +80,20 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
       } else {
         txn->handleEvent(event);
       }
-      break;
     }
-  }
+    break;
   case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE: {
+  case VC_EVENT_WRITE_COMPLETE:
     if (txn != nullptr) {
       txn->handleEvent(event);
     }
-
     break;
-  }
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-  case VC_EVENT_ACTIVE_TIMEOUT: {
+  case VC_EVENT_ACTIVE_TIMEOUT:
     ink_assert(false);
     break;
-  }
   default:
     break;
   }
