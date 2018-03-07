@@ -2230,6 +2230,7 @@ SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten)
     }
     return SSL_ERROR_NONE;
   }
+  nwritten      = -errno;
   int ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.write")) {
     char buf[512];
@@ -2254,6 +2255,11 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
     nread = ret;
     return SSL_ERROR_NONE;
   }
+  if (ret == 0) { // EOS or shutdown
+    nread = 0;
+    return SSL_ERROR_ZERO_RETURN;
+  }
+  nread         = -errno;
   int ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.read")) {
     char buf[512];
@@ -2266,10 +2272,11 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
 }
 
 ssl_error_t
-SSLAccept(SSL *ssl)
+SSLAccept(SSL *ssl, int &err)
 {
   ERR_clear_error();
   int ret = SSL_accept(ssl);
+  err     = errno;
   if (ret > 0) {
     return SSL_ERROR_NONE;
   }
@@ -2285,10 +2292,11 @@ SSLAccept(SSL *ssl)
 }
 
 ssl_error_t
-SSLConnect(SSL *ssl)
+SSLConnect(SSL *ssl, int &err)
 {
   ERR_clear_error();
   int ret = SSL_connect(ssl);
+  err     = errno;
   if (ret > 0) {
     return SSL_ERROR_NONE;
   }
