@@ -436,8 +436,9 @@ Http2Stream::initiating_close()
       SCOPED_MUTEX_LOCK(lock, current_reader->mutex, this_ethread());
       current_reader->handleEvent(VC_EVENT_ERROR);
     } else if (!sent_write_complete) {
-      // Transaction is already gone.  Kill yourself
+      // Transaction is already gone or not started. Kill yourself
       do_io_close();
+      destroy();
     }
   }
 }

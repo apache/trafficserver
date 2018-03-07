@@ -26,6 +26,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/lib/records \
   -I$(abs_top_srcdir)/lib \
+  $(TS_INCLUDES) \
   @OPENSSL_INCLUDES@
 
 # header files used by other libraries

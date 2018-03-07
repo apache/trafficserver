@@ -2485,9 +2485,15 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         zret = PARSE_RESULT_ERROR; // Unterminated field.
       }
     } else if (data_size) {
-      // Inside a field but more data is expected. Save what we've got.
-      mime_scanner_append(S, *raw_input_s, data_size);
-      data_size = 0; // Don't append again.
+      if (MIME_PARSE_INSIDE == S->m_state) {
+        // Inside a field but more data is expected. Save what we've got.
+        mime_scanner_append(S, *raw_input_s, data_size);
+        data_size = 0; // Don't append again.
+      } else if (MIME_PARSE_AFTER == S->m_state) {
+        // After a field but we still have data. Need to parse it too.
+        S->m_state = MIME_PARSE_BEFORE;
+        zret       = PARSE_RESULT_OK;
+      }
     }
   }
 
@@ -2613,8 +2619,15 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       continue; // toss away garbage line
     }
     field_name_last = colon - 1;
-    while ((field_name_last >= field_name_first) && is_ws(*field_name_last)) {
-      --field_name_last;
+    // RFC7230 section 3.2.4:
+    // No whitespace is allowed between the header field-name and colon.  In
+    // the past, differences in the handling of such whitespace have led to
+    // security vulnerabilities in request routing and response handling.  A
+    // server MUST reject any received request message that contains
+    // whitespace between a header field-name and colon with a response code
+    // of 400 (Bad Request).
+    if ((field_name_last >= field_name_first) && is_ws(*field_name_last)) {
+      return PARSE_RESULT_ERROR;
     }
 
     // find value first

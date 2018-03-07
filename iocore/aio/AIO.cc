@@ -221,15 +221,12 @@ aio_init_fildes(int fildes, int fromAPI = 0)
 {
   char thr_name[MAX_THREAD_NAME_LENGTH];
   int i;
-  AIO_Reqs *request = (AIO_Reqs *)ats_malloc(sizeof(AIO_Reqs));
-
-  memset(request, 0, sizeof(AIO_Reqs));
+  AIO_Reqs *request = new AIO_Reqs;
 
   INK_WRITE_MEMORY_BARRIER;
 
   ink_cond_init(&request->aio_cond);
   ink_mutex_init(&request->aio_mutex);
-  ink_atomiclist_init(&request->aio_temp_list, "temp_list", (uintptr_t) & ((AIOCallback *)nullptr)->link);
 
   RecInt thread_num;
 
@@ -280,12 +277,7 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
 #endif
   if (op->aiocb.aio_reqprio == AIO_LOWEST_PRIORITY) // http request
   {
-    AIOCallback *cb = (AIOCallback *)req->http_aio_todo.tail;
-    if (!cb) {
-      req->http_aio_todo.push(op);
-    } else {
-      req->http_aio_todo.insert(op, cb);
-    }
+    req->http_aio_todo.enqueue(op);
   } else {
     AIOCallback *cb = (AIOCallback *)req->aio_todo.tail;
 
@@ -305,23 +297,21 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
 static void
 aio_move(AIO_Reqs *req)
 {
-  AIOCallback *next = nullptr, *prev = nullptr, *cb = (AIOCallback *)ink_atomiclist_popall(&req->aio_temp_list);
-  /* flip the list */
-  if (!cb) {
+  if (req->aio_temp_list.empty()) {
     return;
   }
-  while (cb->link.next) {
-    next          = (AIOCallback *)cb->link.next;
-    cb->link.next = prev;
-    prev          = cb;
-    cb            = next;
+
+  AIOCallbackInternal *cbi;
+  SList(AIOCallbackInternal, alink) aq(req->aio_temp_list.popall());
+
+  // flip the list
+  Queue<AIOCallback> cbq;
+  while ((cbi = aq.pop())) {
+    cbq.push(cbi);
   }
-  /* fix the last pointer */
-  cb->link.next = prev;
-  for (; cb; cb = next) {
-    next          = (AIOCallback *)cb->link.next;
-    cb->link.next = nullptr;
-    cb->link.prev = nullptr;
+
+  AIOCallback *cb;
+  while ((cb = cbq.pop())) {
     aio_insert(cb, req);
   }
 }
@@ -385,15 +375,13 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
 #ifdef AIO_STATS
     ink_atomic_increment(&data->num_temp, 1);
 #endif
-    ink_atomiclist_push(&req->aio_temp_list, op);
+    req->aio_temp_list.push(op);
   } else {
 /* check if any pending requests on the atomic list */
 #ifdef AIO_STATS
     ink_atomic_increment(&data->num_queue, 1);
 #endif
-    if (!INK_ATOMICLIST_EMPTY(req->aio_temp_list)) {
-      aio_move(req);
-    }
+    aio_move(req);
     /* now put the new request */
     aio_insert(op, req);
     ink_cond_signal(&req->aio_cond);
@@ -475,9 +463,7 @@ aio_thread_main(void *arg)
       }
       current_req = my_aio_req;
       /* check if any pending requests on the atomic list */
-      if (!INK_ATOMICLIST_EMPTY(my_aio_req->aio_temp_list)) {
-        aio_move(my_aio_req);
-      }
+      aio_move(my_aio_req);
       if (!(op = my_aio_req->aio_todo.pop()) && !(op = my_aio_req->http_aio_todo.pop())) {
         break;
       }
@@ -495,16 +481,7 @@ aio_thread_main(void *arg)
         aio_bytes_read += op->aiocb.aio_nbytes;
       }
       ink_mutex_release(&current_req->aio_mutex);
-      if (cache_op((AIOCallbackInternal *)op) <= 0) {
-        if (aio_err_callbck) {
-          AIOCallback *callback_op          = new AIOCallbackInternal();
-          callback_op->aiocb.aio_fildes     = op->aiocb.aio_fildes;
-          callback_op->aiocb.aio_lio_opcode = op->aiocb.aio_lio_opcode;
-          callback_op->mutex                = aio_err_callbck->mutex;
-          callback_op->action               = aio_err_callbck;
-          eventProcessor.schedule_imm(callback_op);
-        }
-      }
+      cache_op((AIOCallbackInternal *)op);
       ink_atomic_increment((int *)&current_req->requests_queued, -1);
 #ifdef AIO_STATS
       ink_atomic_increment((int *)&current_req->pending, -1);
@@ -514,9 +491,7 @@ aio_thread_main(void *arg)
       op->mutex     = op->action.mutex;
       if (op->thread == AIO_CALLBACK_THREAD_AIO) {
         SCOPED_MUTEX_LOCK(lock, op->mutex, thr_info->mutex->thread_holding);
-        if (!op->action.cancelled) {
-          op->action.continuation->handleEvent(AIO_EVENT_DONE, op);
-        }
+        op->handleEvent(EVENT_NONE, nullptr);
       } else if (op->thread == AIO_CALLBACK_THREAD_ANY) {
         eventProcessor.schedule_imm_signal(op);
       } else {
@@ -587,7 +562,13 @@ Lagain:
   }
 
   while ((op = complete_list.dequeue()) != nullptr) {
-    op->handleEvent(event, e);
+    op->mutex = op->action.mutex;
+    MUTEX_TRY_LOCK(lock, op->mutex, trigger_event->ethread);
+    if (!lock.is_locked()) {
+      trigger_event->ethread->schedule_imm(op);
+    } else {
+      op->handleEvent(EVENT_NONE, nullptr);
+    }
   }
   return EVENT_CONT;
 }

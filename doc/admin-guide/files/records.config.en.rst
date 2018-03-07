@@ -1654,7 +1654,15 @@ Proxy User Variables
    :reloadable:
    :overridable:
 
-   When enabled (``1``), Traffic Server inserts ``Client-IP`` headers to retain the client IP address.
+   Specifies whether Traffic Server inserts ``Client-IP`` headers to retain the client IP address:
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Don't insert the ``Client-ip`` header
+   ``1`` Insert the ``Client-ip`` header, but only if the UA did not send one
+   ``2`` Always insert the ``Client-ip`` header
+   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.http.anonymize_other_header_list STRING NULL
    :reloadable:
@@ -3395,6 +3403,23 @@ Client-Related Configuration
 
    Specifies the location of the certificate authority file against
    which the origin server will be verified.
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.SSLv3 INT 0
+
+   Enables (``1``) or disables (``0``) SSLv3 in the ATS client context. Disabled by default
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 1
+
+   Enables (``1``) or disables (``0``) TLSv1 in the ATS client context. If not specified, enabled by default
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 1
+
+   Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, enabled by default
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_2 INT 1
+
+   Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
+
 
 OCSP Stapling Configuration
 ===========================

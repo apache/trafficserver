@@ -230,7 +230,7 @@ int
 RefCountCacheSerializer<C>::initialize_storage(int /* event */, Event *e)
 {
   this->fd = socketManager.open(this->tmp_filename.c_str(), O_TRUNC | O_RDWR | O_CREAT, 0644); // TODO: configurable perms
-  if (this->fd == -1) {
+  if (this->fd < 0) {
     Warning("Unable to create temporary file %s, unable to persist hostdb: %s", this->tmp_filename.c_str(), strerror(errno));
     delete this;
     return EVENT_DONE;

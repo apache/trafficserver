@@ -26,12 +26,8 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/shared \
   -I$(abs_top_srcdir)/proxy/http/remap \
   -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils
-
-ADD_SRC =
-if BUILD_TESTS
-  ADD_SRC += CacheTest.cc P_CacheTest.h
-endif
+  -I$(abs_top_srcdir)/mgmt/utils \
+  $(TS_INCLUDES)
 
 noinst_LIBRARIES = libinkcache.a
 
@@ -62,8 +58,13 @@ libinkcache_a_SOURCES = \
   P_RamCache.h \
   RamCacheCLFUS.cc \
   RamCacheLRU.cc \
-  Store.cc \
-  $(ADD_SRC)
+  Store.cc
+
+if BUILD_TESTS
+libinkcache_a_SOURCES += \
+  CacheTest.cc \
+  P_CacheTest.h
+endif
 
 include $(top_srcdir)/build/tidy.mk
 

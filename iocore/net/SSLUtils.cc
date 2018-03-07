@@ -392,6 +392,18 @@ done:
   return retval;
 }
 
+// Callback function for verifying client certificate
+int
+ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+  Debug("ssl", "Callback: verify client cert");
+  auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+
+  netvc->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
+  return SSL_TLSEXT_ERR_OK;
+}
+
 // Use the certificate callback for openssl 1.0.2 and greater
 // otherwise use the SNI callback
 #if TS_USE_CERT_CB
@@ -1722,7 +1734,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
       server_verify_client = SSL_VERIFY_NONE;
       Error("illegal client certification level %d in records.config", server_verify_client);
     }
-    SSL_CTX_set_verify(ctx, server_verify_client, nullptr);
+    SSL_CTX_set_verify(ctx, server_verify_client, ssl_verify_client_callback);
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
   }
 

@@ -25,7 +25,7 @@
 
 /// Apache Traffic Server commons.
 
-#ifdef TS_ENABLE_FIPS
+#if TS_ENABLE_FIPS == 1
 // #include "ts/SHA256.h"
 #define CRYPTO_HASH_SIZE (256 / 8)
 #else
@@ -149,7 +149,7 @@ public:
 
   enum HashType {
     UNSPECIFIED,
-#ifndef TS_ENABLE_FIPS
+#if TS_ENABLE_FIPS == 0
     MD5,
     MMH,
 #endif

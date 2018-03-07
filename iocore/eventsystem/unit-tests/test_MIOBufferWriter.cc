@@ -141,11 +141,11 @@ writeOnce(MIOBufferWriter &bw, std::size_t len)
 
     if (cap >= len) {
       memcpy(bw.auxBuffer(), s.data(), len);
-      bw.write(len);
+      bw.fill(len);
 
     } else {
       memcpy(bw.auxBuffer(), s.data(), cap);
-      bw.write(cap);
+      bw.fill(cap);
       bw.write(s.data() + cap, len - cap);
     }
   } else {

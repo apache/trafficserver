@@ -127,7 +127,7 @@ store_my_error_message(TSReturnCode retcode, char *err_msg_buf, int buf_size, co
     va_list ap;
     va_start(ap, fmt);
     err_msg_buf[0] = 0;
-    (void)vsnprintf(err_msg_buf, buf_size - 1, fmt, ap);
+    (void)vsnprintf(err_msg_buf, buf_size, fmt, ap);
     err_msg_buf[buf_size - 1] = 0;
     va_end(ap);
   }

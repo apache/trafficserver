@@ -46,6 +46,35 @@ If there is not precisely one renewal key, the plugin will not load.
 Although the `kid` and `alg` parameters are optional in JWKs generally, both
 members must be present in keys used for URI signing.
 
+### Auth Directives
+
+It's occasionally useful to allow un-signed access to specific paths. To
+that end, the `auth_directives` parameter is supported. It can be used
+like this:
+
+    {
+      "Kabletown URI Authority": {
+        "renewal_kid": "Second Key",
+        "auth_directives": [
+          { auth: "allow", uri: "uri-regex:.*crossdomain.xml" },
+          { auth: "deny",  uri: "uri-regex:https?://[^/]*/public/secret.xml.*" },
+          { auth: "allow", uri: "uri-regex:https?://[^/]*/public/.*" },
+          { auth: "allow", uri: "uri-regex:.*favicon.ico" }
+        ]
+        "keys": [
+          ⋮
+        ]
+    }
+
+Each of the `auth_directives` will be evaluated in order for each url
+that does not have a valid token. If it matches an allowed path before
+it matches a denied one, it will be served anyway. If it matches no
+`auth_directives`, it will not be served.
+
+It's worth noting that multiple issuers can provide `auth_directives`.
+Each issuer will be processed in order and any issuer can provide access to
+a path.
+
 Usage
 -----
 

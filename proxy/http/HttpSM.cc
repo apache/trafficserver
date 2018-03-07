@@ -5433,14 +5433,16 @@ HttpSM::handle_server_setup_error(int event, void *data)
         ua_producer->alive         = false;
         ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
         tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
+        return;
       }
     } else {
       // c could be null here as well
       if (c != nullptr) {
         tunnel.handleEvent(event, c->write_vio);
+        return;
       }
     }
-    return;
+    // If there is no consumer, let the event pass through to shutdown
   } else {
     if (post_transform_info.vc) {
       HttpTunnelConsumer *c = tunnel.get_consumer(post_transform_info.vc);
@@ -5477,14 +5479,16 @@ HttpSM::handle_server_setup_error(int event, void *data)
     // if (vio->op == VIO::WRITE && vio->ndone == 0) {
     if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
-      if (server_entry) {
-        ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
-        vc_table.cleanup_entry(server_entry);
-        server_entry   = nullptr;
-        server_session = nullptr;
-      }
     } else {
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;
+    }
+    // Clean up the vc_table entry so any events in play to the timed out server vio
+    // don't get handled.  The connection isn't there.
+    if (server_entry) {
+      ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
+      vc_table.cleanup_entry(server_entry);
+      server_entry   = nullptr;
+      server_session = nullptr;
     }
     break;
   default:

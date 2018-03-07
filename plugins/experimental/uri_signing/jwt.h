@@ -35,7 +35,7 @@ struct jwt {
 struct jwt *parse_jwt(json_t *raw);
 void jwt_delete(struct jwt *jwt);
 bool jwt_validate(struct jwt *jwt);
-bool jwt_check_uri(struct jwt *jwt, const char *uri);
+bool jwt_check_uri(const char *sub, const char *uri);
 
 struct _cjose_jwk_int;
 char *renew(struct jwt *jwt, const char *iss, struct _cjose_jwk_int *jwk, const char *alg, const char *package);

@@ -2137,7 +2137,10 @@ TSUrlLengthGet(TSMBuffer bufp, TSMLoc obj)
 char *
 TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  // bufp is not actually used anymore, so it can be null.
+  if (bufp) {
+    sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  }
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
 
@@ -7744,8 +7747,9 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
   Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
   if (stream) {
-    Http2ClientSession *parent = static_cast<Http2ClientSession *>(stream->get_parent());
-    if (!parent->is_url_pushed(url, url_len)) {
+    Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_parent());
+    SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
+    if (!ua_session->connection_state.is_state_closed() && !ua_session->is_url_pushed(url, url_len)) {
       HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
       TSMLoc obj    = reinterpret_cast<TSMLoc>(hptr->m_http);
 
@@ -7753,7 +7757,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
       MIMEField *f    = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
       stream->push_promise(url_obj, f);
 
-      parent->add_url_to_pushed_table(url, url_len);
+      ua_session->add_url_to_pushed_table(url, url_len);
     }
   }
   url_obj.destroy();
@@ -9585,4 +9589,44 @@ const char *
 TSRegisterProtocolTag(const char *tag)
 {
   return nullptr;
+}
+
+namespace
+{
+// Function that contains the common logic for TSRemapFrom/ToUrlGet().
+//
+TSReturnCode
+remapUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp, URL *(UrlMappingContainer::*mfp)() const)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(urlLocp) == TS_SUCCESS);
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  URL *url = (sm->t_state.url_map.*mfp)();
+  if (url == nullptr) {
+    return TS_ERROR;
+  }
+
+  auto urlImpl = url->m_url_impl;
+  if (urlImpl == nullptr) {
+    return TS_ERROR;
+  }
+
+  *urlLocp = reinterpret_cast<TSMLoc>(urlImpl);
+
+  return TS_SUCCESS;
+}
+
+} // end anonymous namespace
+
+tsapi TSReturnCode
+TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
+{
+  return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getFromURL);
+}
+
+tsapi TSReturnCode
+TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
+{
+  return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getToURL);
 }

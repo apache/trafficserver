@@ -960,8 +960,12 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       }
 
       ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+      // If we're done with the main parse do some validation
       if (ret == PARSE_RESULT_DONE) {
-        ret = validate_hdr_host(hh); // if we're done with the main parse, check HOST.
+        ret = validate_hdr_host(hh); // check HOST header
+      }
+      if (ret == PARSE_RESULT_DONE) {
+        ret = validate_hdr_content_length(heap, hh);
       }
       return ret;
     }
@@ -1111,8 +1115,12 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     parser->m_parsing_http = false;
 
     ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+    // If we're done with the main parse do some validation
     if (ret == PARSE_RESULT_DONE) {
-      ret = validate_hdr_host(hh); // if we're done with the main parse, check HOST.
+      ret = validate_hdr_host(hh); // check HOST header
+    }
+    if (ret == PARSE_RESULT_DONE) {
+      ret = validate_hdr_content_length(heap, hh);
     }
     return ret;
   }
@@ -1154,6 +1162,54 @@ validate_hdr_host(HTTPHdrImpl *hh)
     }
   }
   return ret;
+}
+
+ParseResult
+validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
+{
+  MIMEField *content_length_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+
+  if (content_length_field) {
+    // RFC 7230 section 3.3.3:
+    // If a message is received with both a Transfer-Encoding and a
+    // Content-Length header field, the Transfer-Encoding overrides
+    // the Content-Length
+    if (mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr) {
+      // Delete all Content-Length headers
+      Debug("http", "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
+      mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field);
+      return PARSE_RESULT_DONE;
+    }
+
+    // RFC 7230 section 3.3.3:
+    // If a message is received without Transfer-Encoding and with
+    // either multiple Content-Length header fields having differing
+    // field-values or a single Content-Length header field having an
+    // invalid value, then the message framing is invalid and the
+    // recipient MUST treat it as an unrecoverable error.  If this is a
+    // request message, the server MUST respond with a 400 (Bad Request)
+    // status code and then close the connection
+    int content_length_len         = 0;
+    const char *content_length_val = content_length_field->value_get(&content_length_len);
+
+    while (content_length_field->has_dups()) {
+      int content_length_len_2         = 0;
+      const char *content_length_val_2 = content_length_field->m_next_dup->value_get(&content_length_len_2);
+
+      if ((content_length_len != content_length_len_2) ||
+          (memcmp(content_length_val, content_length_val_2, content_length_len) != 0)) {
+        // Values are different, parse error
+        Debug("http", "Content-Length headers don't match, returning parse error");
+        return PARSE_RESULT_ERROR;
+      } else {
+        // Delete the duplicate since it has the same value
+        Debug("http", "Deleting duplicate Content-Length header");
+        mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field->m_next_dup, false);
+      }
+    }
+  }
+
+  return PARSE_RESULT_DONE;
 }
 
 /*-------------------------------------------------------------------------

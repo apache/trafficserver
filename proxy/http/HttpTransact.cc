@@ -693,6 +693,8 @@ HttpTransact::EndRemapRequest(State *s)
     switch (s->http_return_code) {
     case HTTP_STATUS_MOVED_PERMANENTLY:
     case HTTP_STATUS_PERMANENT_REDIRECT:
+    case HTTP_STATUS_SEE_OTHER:
+    case HTTP_STATUS_USE_PROXY:
       error_body_type = "redirect#moved_permanently";
       break;
     case HTTP_STATUS_MOVED_TEMPORARILY:
@@ -5017,13 +5019,25 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   }
 
   // if we want client-ip headers, and there isn't one, add one
-  if ((s->txn_conf->anonymize_insert_client_ip) && (!s->txn_conf->anonymize_remove_client_ip)) {
-    bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
-    TxnDebug("http_trans", "client_ip_set = %d", client_ip_set);
+  if (!s->txn_conf->anonymize_remove_client_ip) {
+    switch (s->txn_conf->anonymize_insert_client_ip) {
+    case 1: { // Insert the client-ip, but only if the UA did not send one
+      bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
+      TxnDebug("http_trans", "client_ip_set = %d", client_ip_set);
 
-    if (client_ip_set == true) {
+      if (client_ip_set == true) {
+        break;
+      }
+    }
+
+    // FALL-THROUGH
+    case 2: // Always insert the client-ip
       request->value_set(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, ip_string, ip_string_size);
       TxnDebug("http_trans", "inserted request header 'Client-ip: %s'", ip_string);
+      break;
+
+    default: // don't insert client-ip
+      break;
     }
   }
 
@@ -6275,10 +6289,9 @@ HttpTransact::is_request_retryable(State *s)
 {
   // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
   // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
-  // If there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (!HttpTransactHeaders::is_method_safe(s->method) &&
-      (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0 &&
-       s->state_machine->get_server_session()->get_netvc()->outstanding() != s->state_machine->server_request_hdr_bytes)) {
+  // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry
+  if (!HttpTransactHeaders::is_method_safe(s->method) && s->current.state != CONNECTION_ERROR &&
+      s->state_machine->server_request_hdr_bytes > 0) {
     return false;
   }
 
@@ -7812,6 +7825,11 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if ((s->state_machine->ua_txn && s->state_machine->ua_txn->is_outbound_transparent()) &&
       (status_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || status_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
        status_code == HTTP_STATUS_BAD_GATEWAY || status_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
+    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  }
+
+  // If there is a parse error on reading the request it can leave reading the request stream in an undetermined state
+  if (status_code == HTTP_STATUS_BAD_REQUEST) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   }
 

@@ -110,9 +110,9 @@ ink_warning(const char *message_format, ...)
   va_list ap;
   char extended_format[4096], message[4096];
   va_start(ap, message_format);
-  snprintf(extended_format, sizeof(extended_format) - 1, "WARNING: %s", message_format);
+  snprintf(extended_format, sizeof(extended_format), "WARNING: %s", message_format);
   extended_format[sizeof(extended_format) - 1] = 0;
-  vsnprintf(message, sizeof(message) - 1, extended_format, ap);
+  vsnprintf(message, sizeof(message), extended_format, ap);
   message[sizeof(message) - 1] = 0;
   fprintf(stderr, "%s\n", message);
   syslog(LOG_WARNING, "%s", message);
@@ -134,10 +134,10 @@ ink_pwarning(const char *message_format, ...)
 
   va_start(ap, message_format);
   errno_string = strerror(errno);
-  snprintf(extended_format, sizeof(extended_format) - 1, "WARNING: %s <last errno = %d (%s)>", message_format, errno,
+  snprintf(extended_format, sizeof(extended_format), "WARNING: %s <last errno = %d (%s)>", message_format, errno,
            (errno_string == nullptr ? "unknown" : errno_string));
   extended_format[sizeof(extended_format) - 1] = 0;
-  vsnprintf(message, sizeof(message) - 1, extended_format, ap);
+  vsnprintf(message, sizeof(message), extended_format, ap);
   message[sizeof(message) - 1] = 0;
   fprintf(stderr, "%s\n", message);
   syslog(LOG_WARNING, "%s", message);
@@ -155,9 +155,9 @@ ink_notice(const char *message_format, ...)
   va_list ap;
   char extended_format[4096], message[4096];
   va_start(ap, message_format);
-  snprintf(extended_format, sizeof(extended_format) - 1, "NOTE: %s", message_format);
+  snprintf(extended_format, sizeof(extended_format), "NOTE: %s", message_format);
   extended_format[sizeof(extended_format) - 1] = 0;
-  vsnprintf(message, sizeof(message) - 1, extended_format, ap);
+  vsnprintf(message, sizeof(message), extended_format, ap);
   message[sizeof(message) - 1] = 0;
   fprintf(stderr, "%s\n", message);
   syslog(LOG_NOTICE, "%s", message);
@@ -175,7 +175,7 @@ ink_eprintf(const char *message_format, ...)
   va_list ap;
   char message[4096];
   va_start(ap, message_format);
-  vsnprintf(message, sizeof(message) - 1, message_format, ap);
+  vsnprintf(message, sizeof(message), message_format, ap);
   message[sizeof(message) - 1] = 0;
   fprintf(stderr, "ERROR: %s\n", message);
   va_end(ap);
@@ -192,9 +192,9 @@ ink_error(const char *message_format, ...)
   va_list ap;
   char extended_format[2048], message[4096];
   va_start(ap, message_format);
-  snprintf(extended_format, sizeof(extended_format) - 1, "ERROR: %s", message_format);
+  snprintf(extended_format, sizeof(extended_format), "ERROR: %s", message_format);
   extended_format[sizeof(extended_format) - 1] = 0;
-  vsnprintf(message, sizeof(message) - 1, extended_format, ap);
+  vsnprintf(message, sizeof(message), extended_format, ap);
   message[sizeof(message) - 1] = 0;
   fprintf(stderr, "%s\n", message);
   syslog(LOG_ERR, "%s", message);

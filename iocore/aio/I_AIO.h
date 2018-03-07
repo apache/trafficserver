@@ -102,13 +102,7 @@ struct AIOCallback : public Continuation {
   int64_t aio_result = 0;
 
   int ok();
-  AIOCallback()
-  {
-    aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
-#if AIO_MODE == AIO_MODE_NATIVE
-    memset((void *)&(this->aiocb), 0, sizeof(this->aiocb));
-#endif
-  }
+  AIOCallback() {}
 };
 
 #if AIO_MODE == AIO_MODE_NATIVE

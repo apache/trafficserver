@@ -601,9 +601,8 @@ TS_SUBST([pkgdocdir])
 # Implementation note (toc)
 # 1) Get default compiler settings (case statement.)
 # 2) Check for over-rides of default compiler.
-# 3) Set standard CFLAGS, SHARED_CFLAGS, etc.
-# 4) (in first kludge mode block...) obtain any further CFLAG-type additions.
-# 5) Test compilers with all flags set.
+# 3) (in first kludge mode block...) obtain any further CFLAG-type additions.
+# 4) Test compilers with all flags set.
 
 # AC_PROG can sometimes mangle CFLAGS etc.
 # in particular, on Linux they insert -g -O2, here we preserve any user CFLAGS
@@ -656,7 +655,7 @@ case $host_os in
   freebsd*)
     host_os_def="freebsd"
     AM_LDFLAGS="-rdynamic"
-    TS_ADDTO(AM_CPPFLAGS, [-I/usr/local/include])
+    TS_ADDTO(TS_INCLUDES, [-I/usr/local/include])
     TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99])
     TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99_MATH])
     TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99_MATH_TR1])
@@ -664,7 +663,7 @@ case $host_os in
   kfreebsd*)
     host_os_def="freebsd"
     AM_LDFLAGS="-rdynamic"
-    TS_ADDTO(AM_CPPFLAGS, [-I/usr/local/include])
+    TS_ADDTO(TS_INCLUDES, [-I/usr/local/include])
     TS_ADDTO(AM_CPPFLAGS, [-Dkfreebsd])
     ;;
   openbsd*)
@@ -873,7 +872,7 @@ case $host_os_def in
 
     # NOTE: This seems semi-kludgy, but useful for MacPorts I think.
     AS_IF([test -d /opt/local/include], [
-      TS_ADDTO(AM_CPPFLAGS, [-I/opt/local/include])
+      TS_ADDTO(TS_INCLUDES, [-I/opt/local/include])
     ])
     AS_IF([test -d /opt/local/lib], [
       TS_ADDTO(AM_LDFLAGS, [-L/opt/local/lib])
@@ -955,11 +954,6 @@ cxx_oflag_dbg="$debug_opt $cxx_opt $cxx_dbg"
 
 # Special compiler flag hacks for various pieces of the code
 AC_SUBST([FLEX_CFLAGS], $flex_cflags)
-
-SHARED_CFLAGS=-fPIC
-SHARED_LDFLAGS=-shared
-SHARED_CXXFLAGS=-fPIC
-SHARED_CXXLINKFLAGS=-shared
 
 #
 # _Here_ is where we go ahead and add the _optimizations_ to already
@@ -1281,10 +1275,10 @@ AC_SUBST([LIBTCL],[$TCL_LIB_SPEC])
 
 
 if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
-   TS_ADDTO(AM_CPPFLAGS, [$TCL_INCLUDE_SPEC])
+   TS_ADDTO(TS_INCLUDES, [$TCL_INCLUDE_SPEC])
 fi
 
-AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
 AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])
 AC_CHECK_FUNCS([strsignal psignal psiginfo accept4])
@@ -2023,10 +2017,13 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
 AC_SUBST([iocore_include_dirs])
-AC_SUBST([SHARED_CFLAGS])
-AC_SUBST([SHARED_CXXFLAGS])
-AC_SUBST([SHARED_CXXLINKFLAGS])
-AC_SUBST([SHARED_LDFLAGS])
+
+# NOTE: All additions to the default include path must be added to
+# TS_INCLUDES *not* to AM_CPPFLAGS. If you add then to AM_CPPFLAGS
+# then they are always prepended to the local AM_CPPFLAGS which risks
+# name collisions with in-tree files. We always want the in-tree files
+# to have precendence.
+AC_SUBST([TS_INCLUDES])
 
 AS_IF([test "x$RPATH" != "x"], [
        TS_ADDTO_RPATH([$RPATH])
@@ -2116,13 +2113,10 @@ AC_MSG_NOTICE([Build option summary:
     AM@&t@_CXXFLAGS:        $AM_CXXFLAGS
     AM@&t@_CPPFLAGS:        $AM_CPPFLAGS
     AM@&t@_LDFLAGS:         $AM_LDFLAGS
-    SHARED_CFLAGS:      $SHARED_CFLAGS
-    SHARED_CXXFLAGS:    $SHARED_CXXFLAGS
-    SHARED_CXXLINKFLAGS:$SHARED_LINKCXXFLAGS
-    SHARED_LDFLAGS:     $SHARED_LDFLAGS
+    TS_INCLUDES:        $TS_INCLUDES
     OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
     LUAJIT_CFLAGS:      $LUAJIT_CFLAGS
-    LUAJIT_CPPFLAGS:	$LUAJIT_CPPFLAGS
+    LUAJIT_CPPFLAGS:	  $LUAJIT_CPPFLAGS
     LUAJIT_LDFLAGS:     $LUAJIT_LDFLAGS
 ])

@@ -178,7 +178,7 @@ twice(BWType &bw)
   }
 
   std::strcpy(bw.auxBuffer(), " fox");
-  bw.write(sizeof(" fox") - 1);
+  bw.fill(sizeof(" fox") - 1);
 
   if (bw.error()) {
     return false;
@@ -258,13 +258,34 @@ TEST_CASE("Concrete Buffer Writers 2", "[BWC2]")
 
   REQUIRE(space[20] == '!');
 
-  LBW<20> bw2(bw), bw3;
+  LBW<20> bw20(bw);
+  LBW<30> bw30(bw); // test cross length constructors
+  LBW<10> bw10(bw);
 
-  REQUIRE(bw2.view() == "The quick brown fox");
+  REQUIRE(bw20.view() == "The quick brown fox");
 
-  bw3 = bw2;
+  bw30 = bw20;
+  REQUIRE(bw30.view() == "The quick brown fox");
 
-  REQUIRE(bw3.view() == "The quick brown fox");
+  bw10 = bw20;
+  REQUIRE(bw10.view() == "The quick ");
+  bw10.reduce(0);
+  bw10.write("01234567890123456789");
+  REQUIRE(bw10.extent() == 20);
+  REQUIRE(bw10.view() == "0123456789");
+  REQUIRE(bw10.remaining() == 0);
+  bw20 = bw10;
+  REQUIRE(bw20.view() == "0123456789");
+  REQUIRE(bw20.extent() == 10);
+  REQUIRE(bw20.size() == 10);
+
+  auto abw = bw20.auxWriter();
+  REQUIRE(abw.remaining() == 10);
+  abw.write("abcdefghijklmnopqrstuvwxyz");
+  bw20.fill(abw.extent());
+  REQUIRE(bw20.size() == 20);
+  REQUIRE(bw20.extent() == 36);
+  REQUIRE(bw20.view() == "0123456789abcdefghij");
 }
 
 TEST_CASE("Discard Buffer Writer", "[BWD]")
@@ -292,7 +313,7 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown") - 1));
 
-  bw.write(sizeof(" fox") - 1);
+  bw.fill(sizeof(" fox") - 1);
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown fox") - 1));
@@ -319,6 +340,10 @@ TEST_CASE("Buffer Writer << operator", "[BW<<]")
   bw << "The" << ' ' << "quick" << ' ' << "brown fox";
 
   REQUIRE(bw.view() == "The quick brown fox");
+
+  bw.reduce(0);
+  bw << "x=" << bw.capacity();
+  REQUIRE(bw.view() == "x=50");
 }
 
 TEST_CASE("LocalBufferWriter clip and extend")
@@ -334,6 +359,6 @@ TEST_CASE("LocalBufferWriter clip and extend")
   REQUIRE(bw.view() == "aaabbb");
 
   bw.extend(4);
-  bw.write(static_cast<size_t>(snprintf(bw.auxBuffer(), bw.remaining(), "ccc")));
+  bw.fill(static_cast<size_t>(snprintf(bw.auxBuffer(), bw.remaining(), "ccc")));
   REQUIRE(bw.view() == "aaabbbccc");
 }

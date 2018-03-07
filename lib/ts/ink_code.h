@@ -26,7 +26,7 @@
 
 #include "ts/ink_apidefs.h"
 #include "ts/ink_defs.h"
-#ifndef TS_ENABLE_FIPS
+#if TS_ENABLE_FIPS == 0
 #include <openssl/md5.h>
 
 /* INK_MD5 context. */
