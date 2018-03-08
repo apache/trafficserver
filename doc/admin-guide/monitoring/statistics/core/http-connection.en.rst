@@ -91,6 +91,17 @@ HTTP Connection
    :type: counter
    :unit: bytes
 
+.. ts:stat:: global proxy.process.http.err_client_read_error_count_stat integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.http.err_client_read_error_origin_server_bytes_stat integer
+   :type: counter
+   :unit: bytes
+
+.. ts:stat:: global proxy.process.http.err_client_read_error_user_agent_bytes_stat integer
+   :type: counter
+   :unit: bytes
+
 .. ts:stat:: global proxy.process.http.err_connect_fail_count_stat integer
    :type: counter
    :ungathered:
