@@ -31,8 +31,6 @@
 #include "InkAPIInternal.h"
 #include "http/HttpServerSession.h"
 
-extern bool http_client_session_draining;
-
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
 // member function.
@@ -125,7 +123,11 @@ public:
   bool
   is_draining() const
   {
-    return http_client_session_draining;
+    RecInt draining;
+    if (RecGetRecordInt("proxy.node.config.draining", &draining) != REC_ERR_OKAY) {
+      return false;
+    }
+    return draining != 0;
   }
 
   // Initiate an API hook invocation.

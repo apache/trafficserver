@@ -347,6 +347,10 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     break;
   }
 
+  if (!this->is_draining()) {
+    this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NONE);
+  }
+
   // For a case we already checked Connection header and it didn't exist
   if (this->is_draining() && this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
     this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
