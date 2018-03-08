@@ -17,6 +17,7 @@
  */
 
 #include <iostream>
+#include <ts/string_view.h>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/TransformationPlugin.h>
@@ -26,7 +27,6 @@
 #include "ts/ts.h"
 
 using namespace atscppapi;
-using std::string;
 
 /*
  * This example demonstrates how you can pause a transformation and resume it
@@ -65,7 +65,7 @@ public:
   }
 
   void
-  consume(const string &data)
+  consume(ts::string_view data)
   {
     TS_DEBUG(TAG, "Consuming...");
     produce(data);
