@@ -22,10 +22,9 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_GZIPDEFLATETRANSFORMATION_H_
-#define ATSCPPAPI_GZIPDEFLATETRANSFORMATION_H_
 
 #include <string>
+#include <ts/string_view.h>
 #include "atscppapi/TransformationPlugin.h"
 
 namespace atscppapi
@@ -71,13 +70,13 @@ namespace transformations
      *
      * @param data the input data to compress
      */
-    void consume(const std::string &data);
+    void consume(ts::string_view data) override;
 
     /**
      * Any TransformationPlugin must implement handleInputComplete(), this method will
      * finalize the gzip compression and flush any remaining data and the epilouge.
      */
-    void handleInputComplete();
+    void handleInputComplete() override;
 
     virtual ~GzipDeflateTransformation();
 
@@ -86,5 +85,3 @@ namespace transformations
   };
 }
 }
-
-#endif /* ATSCPPAPI_GZIPDEFLATETRANSFORMATION_H_ */

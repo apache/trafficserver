@@ -19,17 +19,16 @@
  * @file GzipDeflateTransformation.cc
  */
 
-#include <string>
 #include <cstring>
 #include <vector>
 #include <zlib.h>
 #include <cinttypes>
+#include <ts/string_view.h>
 #include "atscppapi/TransformationPlugin.h"
 #include "atscppapi/GzipDeflateTransformation.h"
 #include "logging_internal.h"
 
 using namespace atscppapi::transformations;
-using std::string;
 using std::vector;
 
 namespace
@@ -81,7 +80,7 @@ GzipDeflateTransformation::~GzipDeflateTransformation()
 }
 
 void
-GzipDeflateTransformation::consume(const string &data)
+GzipDeflateTransformation::consume(ts::string_view data)
 {
   if (data.size() == 0) {
     return;
@@ -94,7 +93,7 @@ GzipDeflateTransformation::consume(const string &data)
 
   int iteration               = 0;
   state_->z_stream_.data_type = Z_ASCII;
-  state_->z_stream_.next_in   = reinterpret_cast<unsigned char *>(const_cast<char *>(data.c_str()));
+  state_->z_stream_.next_in   = reinterpret_cast<unsigned char *>(const_cast<char *>(data.data()));
   state_->z_stream_.avail_in  = data.length();
 
   // For small payloads the size can actually be greater than the original input
@@ -119,7 +118,7 @@ GzipDeflateTransformation::consume(const string &data)
 
     LOG_DEBUG("Iteration %d: Deflate compressed %ld bytes to %d bytes, producing output...", iteration, data.size(),
               bytes_to_write);
-    produce(string(reinterpret_cast<char *>(&buffer[0]), static_cast<size_t>(bytes_to_write)));
+    produce(ts::string_view(reinterpret_cast<char *>(&buffer[0]), static_cast<size_t>(bytes_to_write)));
   } while (state_->z_stream_.avail_out == 0);
 
   state_->z_stream_.next_out = nullptr;
@@ -153,7 +152,7 @@ GzipDeflateTransformation::handleInputComplete()
     if (status == Z_OK || status == Z_STREAM_END) {
       LOG_DEBUG("Iteration %d: Gzip deflate finalize had an extra %d bytes to process, status '%d'. Producing output...", iteration,
                 bytes_to_write, status);
-      produce(string(reinterpret_cast<char *>(buffer), static_cast<size_t>(bytes_to_write)));
+      produce(ts::string_view(reinterpret_cast<char *>(buffer), static_cast<size_t>(bytes_to_write)));
     } else if (status != Z_STREAM_END) {
       LOG_ERROR("Iteration %d: Gzip deflinate finalize produced an error '%d'", iteration, status);
     }

@@ -17,6 +17,7 @@
  */
 
 #include <iostream>
+#include <ts/string_view.h>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/TransformationPlugin.h>
@@ -103,7 +104,7 @@ public:
   }
 
   void
-  consume(const string &data) override
+  consume(ts::string_view data) override
   {
     produce(data);
   }
