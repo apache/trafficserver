@@ -21,10 +21,8 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_TRANSFORMATIONPLUGIN_H_
-#define ATSCPPAPI_TRANSFORMATIONPLUGIN_H_
 
-#include <string>
+#include <ts/string_view.h>
 #include <atscppapi/Transaction.h>
 #include <atscppapi/TransactionPlugin.h>
 
@@ -64,7 +62,7 @@ struct TransformationPluginState;
  *     transaction.getClientResponse().getHeaders().set("X-Content-Transformed", "1");
  *     transaction.resume();
  *   }
- *   void consume(const string &data) {
+ *   void consume(ts::string_view data) {
  *     produce(data);
  *   }
  *   void handleInputComplete() {
@@ -95,7 +93,7 @@ public:
    * A method that you must implement when writing a TransformationPlugin, this method will be
    * fired whenever an upstream TransformationPlugin has produced output.
    */
-  virtual void consume(const std::string &data) = 0;
+  virtual void consume(ts::string_view data) = 0;
 
   /**
   * Call this method if you wish to pause the transformation.
@@ -117,11 +115,9 @@ public:
 protected:
   /**
    * This method is how a TransformationPlugin will produce output for the downstream
-   * transformation plugin, if you need to produce binary data this can still be
-   * done with strings by a call to string::assign() or by constructing a string
-   * with string::string(char *, size_t).
+   * transformation plugin.
    */
-  size_t produce(const std::string &);
+  size_t produce(ts::string_view);
 
   /**
    * This is the method that you must call when you're done producing output for
@@ -134,10 +130,8 @@ protected:
 
 private:
   TransformationPluginState *state_; /** Internal state for a TransformationPlugin */
-  size_t doProduce(const std::string &);
+  size_t doProduce(ts::string_view);
   static int resumeCallback(TSCont cont, TSEvent event, void *edata); /** Resume callback*/
 };
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_TRANSFORMATIONPLUGIN_H_ */

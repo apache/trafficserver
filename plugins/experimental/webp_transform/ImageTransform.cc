@@ -25,14 +25,12 @@
 
 #include <Magick++.h>
 
-using std::string;
 using namespace Magick;
 using namespace atscppapi;
 
-namespace
-{
+using std::string;
+
 #define TAG "webp_transform"
-}
 
 class ImageTransform : public TransformationPlugin
 {
@@ -53,9 +51,9 @@ public:
   }
 
   void
-  consume(const string &data) override
+  consume(ts::string_view data) override
   {
-    _img.write(data.data(), data.size());
+    _img.write(data.data(), data.length());
   }
 
   void
@@ -69,8 +67,7 @@ public:
     Blob output_blob;
     image.magick("WEBP");
     image.write(&output_blob);
-    string output_data(reinterpret_cast<const char *>(output_blob.data()), output_blob.length());
-    produce(output_data);
+    produce(ts::string_view(reinterpret_cast<const char *>(output_blob.data()), output_blob.length()));
 
     setOutputComplete();
   }

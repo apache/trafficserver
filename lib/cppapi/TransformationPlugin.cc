@@ -302,7 +302,7 @@ TransformationPlugin::resumeCallback(TSCont cont, TSEvent event, void *edata)
 }
 
 size_t
-TransformationPlugin::doProduce(const std::string &data)
+TransformationPlugin::doProduce(ts::string_view data)
 {
   LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p producing output with length=%ld", this, state_->txn_, data.length());
   int64_t write_length = static_cast<int64_t>(data.length());
@@ -331,7 +331,7 @@ TransformationPlugin::doProduce(const std::string &data)
   }
 
   // Finally we can copy this data into the output_buffer
-  int64_t bytes_written = TSIOBufferWrite(state_->output_buffer_, data.c_str(), write_length);
+  int64_t bytes_written = TSIOBufferWrite(state_->output_buffer_, data.data(), write_length);
   state_->bytes_written_ += bytes_written; // So we can set BytesDone on outputComplete().
   LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p write to TSIOBuffer %" PRId64 " bytes total bytes written %" PRId64, this,
             state_->txn_, bytes_written, state_->bytes_written_);
@@ -358,10 +358,10 @@ TransformationPlugin::doProduce(const std::string &data)
 }
 
 size_t
-TransformationPlugin::produce(const std::string &data)
+TransformationPlugin::produce(ts::string_view data)
 {
   if (state_->type_ == REQUEST_TRANSFORMATION) {
-    state_->request_xform_output_.append(data);
+    state_->request_xform_output_.append(data.data(), data.length());
     return data.size();
   } else if (state_->type_ == SINK_TRANSFORMATION) {
     LOG_DEBUG("produce TransformationPlugin=%p tshttptxn=%p : This is a sink transform. Not producing any output", this,
