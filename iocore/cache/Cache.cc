@@ -1320,9 +1320,8 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   off_t footer_offset = vol_dirlen(this) - footerlen;
   // try A
   off_t as = skip;
-  if (is_debug_tag_set("cache_init")) {
-    Note("reading directory '%s'", hash_text.get());
-  }
+
+  Debug("cache_init", "reading directory '%s'", hash_text.get());
   SET_HANDLER(&Vol::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
@@ -1669,10 +1668,10 @@ Ldone : {
     dir_clear_range(clear_end, DIR_OFFSET_MAX, this);
     dir_clear_range(1, clear_start, this);
   }
-  if (is_debug_tag_set("cache_init")) {
-    Note("recovery clearing offsets [%" PRIu64 ", %" PRIu64 "] sync_serial %d next %d\n", header->write_pos, recover_pos,
-         header->sync_serial, next_sync_serial);
-  }
+
+  Note("recovery clearing offsets of Vol %s : [%" PRIu64 ", %" PRIu64 "] sync_serial %d next %d\n", hash_text.get(),
+       header->write_pos, recover_pos, header->sync_serial, next_sync_serial);
+
   footer->sync_serial = header->sync_serial = next_sync_serial;
 
   for (int i = 0; i < 3; i++) {
