@@ -56,6 +56,7 @@ include experimental/acme/Makefile.inc
 include experimental/balancer/Makefile.inc
 include experimental/buffer_upload/Makefile.inc
 include experimental/cache_range_requests/Makefile.inc
+include experimental/certifier/Makefile.inc
 include experimental/collapsed_connection/Makefile.inc
 include experimental/collapsed_forwarding/Makefile.inc
 include experimental/custom_redirect/Makefile.inc
