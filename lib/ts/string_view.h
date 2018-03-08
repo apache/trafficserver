@@ -1224,7 +1224,7 @@ template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _
 // This should also mean we have some consistent behavior with std code
 #if defined(__linux__)
     return std::_Hash_impl::hash(x.data(), x.length() * sizeof(typename string_type::value_type));
-#elif defined(__FreeBSD__)
+#elif defined(freebsd) || defined(darwin)
     return __do_string_hash(x.data(), x.data() + x.size());
 #endif
   }
