@@ -22,7 +22,8 @@
 */
 
 // funciton for file system management
-// including: make directory (with parents), copy directory (recursively), remove directory (recursively)
+// including: make directory (with parents), copy directory (recursively), remove directory (recursively), remove all directories
+// inside
 
 #include "ts/ink_error.h"
 #include "ts/I_Layout.h"
@@ -194,11 +195,11 @@ copy_function(const char *src_path, const struct stat *sb, int flag)
         ink_error("overwrite file falied during copy");
       }
     }
-    // for files if bin executable mode, symlink
+    // hardlink bin executable
     if (sb->st_mode == BIN_MODE) {
-      if (symlink(src_path, dst_path.c_str()) != 0) {
+      if (link(src_path, dst_path.c_str()) != 0) {
         if (errno != EEXIST)
-          ink_warning("failed to create symbolic link - %s", strerror(errno));
+          ink_warning("failed to create hard link - %s", strerror(errno));
       }
     } else {
       // for normal other files

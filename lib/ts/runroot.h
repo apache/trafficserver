@@ -29,7 +29,7 @@
 #include <string>
 #include <unordered_map>
 
-std::string check_parent_path(const std::string &path, bool json = false);
+std::string check_parent_path(const std::string &path);
 
 void runroot_handler(const char **argv, bool json = false);
 
