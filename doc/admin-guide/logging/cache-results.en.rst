@@ -187,6 +187,13 @@ ERR_CLIENT_ABORT
 
 The client disconnected before the complete object was sent.
 
+.. _crc-err-client-read-error:
+
+ERR_CLIENT_READ_ERROR
+---------------------
+
+The client had read errors (network problems).
+
 .. _crc-err-connect-fail:
 
 ERR_CONNECT_FAIL
