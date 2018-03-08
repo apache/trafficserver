@@ -600,6 +600,50 @@ handle_restart(int fd, void *req, size_t reqlen)
 }
 
 /**************************************************************************
+ * handle_stop
+ *
+ * purpose: handles request to stop TS
+ * output: TS_ERR_xx
+ * note: None
+ *************************************************************************/
+static TSMgmtError
+handle_stop(int fd, void *req, size_t reqlen)
+{
+  OpType optype;
+  MgmtMarshallInt options;
+  MgmtMarshallInt err;
+
+  err = recv_mgmt_request(req, reqlen, OpType::STOP, &optype, &options);
+  if (err == TS_ERR_OKAY) {
+    err = Stop(options);
+  }
+
+  return send_mgmt_response(fd, OpType::STOP, &err);
+}
+
+/**************************************************************************
+ * handle_drain
+ *
+ * purpose: handles request to drain TS
+ * output: TS_ERR_xx
+ * note: None
+ *************************************************************************/
+static TSMgmtError
+handle_drain(int fd, void *req, size_t reqlen)
+{
+  OpType optype;
+  MgmtMarshallInt options;
+  MgmtMarshallInt err;
+
+  err = recv_mgmt_request(req, reqlen, OpType::DRAIN, &optype, &options);
+  if (err == TS_ERR_OKAY) {
+    err = Drain(options);
+  }
+
+  return send_mgmt_response(fd, OpType::DRAIN, &err);
+}
+
+/**************************************************************************
  * handle_storage_device_cmd_offline
  *
  * purpose: handle storage offline command.
@@ -956,6 +1000,8 @@ static const control_message_handler handlers[] = {
   /* RECONFIGURE                */ {MGMT_API_PRIVILEGED, handle_reconfigure},
   /* RESTART                    */ {MGMT_API_PRIVILEGED, handle_restart},
   /* BOUNCE                     */ {MGMT_API_PRIVILEGED, handle_restart},
+  /* STOP                       */ {MGMT_API_PRIVILEGED, handle_stop},
+  /* DRAIN                      */ {MGMT_API_PRIVILEGED, handle_drain},
   /* EVENT_RESOLVE              */ {MGMT_API_PRIVILEGED, handle_event_resolve},
   /* EVENT_GET_MLT              */ {0, handle_event_get_mlt},
   /* EVENT_ACTIVE               */ {0, handle_event_active},

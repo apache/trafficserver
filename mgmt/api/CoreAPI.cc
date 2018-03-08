@@ -403,7 +403,8 @@ Reconfigure()
 TSMgmtError
 Restart(unsigned options)
 {
-  lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_RESTART : MGMT_PENDING_RESTART;
+  lmgmt->mgmt_shutdown_triggered_at = time(nullptr);
+  lmgmt->mgmt_shutdown_outstanding  = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_RESTART : MGMT_PENDING_RESTART;
 
   return TS_ERR_OKAY;
 }
@@ -416,8 +417,47 @@ Restart(unsigned options)
 TSMgmtError
 Bounce(unsigned options)
 {
-  lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_BOUNCE : MGMT_PENDING_BOUNCE;
+  lmgmt->mgmt_shutdown_triggered_at = time(nullptr);
+  lmgmt->mgmt_shutdown_outstanding  = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_BOUNCE : MGMT_PENDING_BOUNCE;
 
+  return TS_ERR_OKAY;
+}
+
+/*-------------------------------------------------------------------------
+ * Stop
+ *-------------------------------------------------------------------------
+ * Stops traffic_server process(es).
+ */
+TSMgmtError
+Stop(unsigned options)
+{
+  lmgmt->mgmt_shutdown_triggered_at = time(nullptr);
+  lmgmt->mgmt_shutdown_outstanding  = (options & TS_STOP_OPT_DRAIN) ? MGMT_PENDING_IDLE_STOP : MGMT_PENDING_STOP;
+
+  return TS_ERR_OKAY;
+}
+
+/*-------------------------------------------------------------------------
+ * Drain
+ *-------------------------------------------------------------------------
+ * Drain requests of traffic_server
+ */
+TSMgmtError
+Drain(unsigned options)
+{
+  switch (options) {
+  case TS_DRAIN_OPT_NONE:
+    lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_DRAIN;
+    break;
+  case TS_DRAIN_OPT_IDLE:
+    lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_IDLE_DRAIN;
+    break;
+  case TS_DRAIN_OPT_UNDO:
+    lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_UNDO_DRAIN;
+    break;
+  default:
+    ink_release_assert(!"Not expected to reach here");
+  }
   return TS_ERR_OKAY;
 }
 

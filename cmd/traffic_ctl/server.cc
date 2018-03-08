@@ -115,16 +115,23 @@ static int
 server_stop(unsigned argc, const char **argv)
 {
   TSMgmtError error;
+  const char *usage = "server stop [OPTIONS]";
+  unsigned flags    = TS_RESTART_OPT_NONE;
 
-  // I am not sure whether it really makes sense to add the --drain option here.
-  // TSProxyStateSet() is a synchronous API, returning only after the proxy has
-  // been shut down. However, draining can take a long time and we don't want
-  // to wait for it. Maybe the right approach is to make the stop async.
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
-    return CtrlCommandUsage("server stop");
+  const ArgumentDescription opts[] = {
+    {"drain", '-', "Wait for client connections to drain before stopping", "F", &drain, nullptr, nullptr},
+  };
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
+    return CtrlCommandUsage(usage, opts, countof(opts));
   }
 
-  error = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE);
+  if (drain) {
+    flags |= TS_STOP_OPT_DRAIN;
+  }
+
+  error = TSStop(flags);
+
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "server stop failed");
     return CTRL_EX_ERROR;
@@ -162,16 +169,49 @@ server_start(unsigned argc, const char **argv)
   return CTRL_EX_OK;
 }
 
+static int
+server_drain(unsigned argc, const char **argv)
+{
+  TSMgmtError error;
+  const char *usage = "server drain [OPTIONS]";
+
+  int no_new_connection            = 0;
+  int undo                         = 0;
+  const ArgumentDescription opts[] = {
+    {"no-new-connection", 'N', "Wait for new connections down to threshold before starting draining", "F", &no_new_connection,
+     nullptr, nullptr},
+    {"undo", 'U', "Recover server from the drain mode", "F", &undo, nullptr, nullptr},
+  };
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
+    return CtrlCommandUsage(usage, opts, countof(opts));
+  }
+
+  if (undo) {
+    error = TSDrain(TS_DRAIN_OPT_UNDO);
+  } else if (no_new_connection) {
+    error = TSDrain(TS_DRAIN_OPT_IDLE);
+  } else {
+    error = TSDrain(TS_DRAIN_OPT_NONE);
+  }
+
+  if (error != TS_ERR_OKAY) {
+    CtrlMgmtError(error, "server drain failed");
+    return CTRL_EX_ERROR;
+  }
+
+  return CTRL_EX_OK;
+}
+
 int
 subcommand_server(unsigned argc, const char **argv)
 {
-  const subcommand commands[] = {
-    {server_backtrace, "backtrace", "Show a full stack trace of the traffic_server process"},
-    {server_restart, "restart", "Restart Traffic Server"},
-    {server_start, "start", "Start the proxy"},
-    {server_status, "status", "Show the proxy status"},
-    {server_stop, "stop", "Stop the proxy"},
-  };
+  const subcommand commands[] = {{server_backtrace, "backtrace", "Show a full stack trace of the traffic_server process"},
+                                 {server_restart, "restart", "Restart Traffic Server"},
+                                 {server_start, "start", "Start the proxy"},
+                                 {server_status, "status", "Show the proxy status"},
+                                 {server_stop, "stop", "Stop the proxy"},
+                                 {server_drain, "drain", "Drain the requests"}};
 
   return CtrlGenericSubcommand("server", commands, countof(commands), argc, argv);
 }

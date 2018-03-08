@@ -166,6 +166,39 @@ is_server_idle()
   return active <= threshold;
 }
 
+static bool
+is_server_idle_from_new_connection()
+{
+  RecInt active    = 0;
+  RecInt threshold = 0;
+  // TODO implement with the right metric
+
+  Debug("lm", "%" PRId64 " active clients, threshold is %" PRId64, active, threshold);
+
+  return active <= threshold;
+}
+
+static bool
+is_server_draining()
+{
+  RecInt draining = 0;
+  if (RecGetRecordInt("proxy.node.config.draining", &draining) != REC_ERR_OKAY) {
+    return false;
+  }
+  return draining != 0;
+}
+
+static bool
+waited_enough()
+{
+  RecInt timeout = 0;
+  if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) != REC_ERR_OKAY) {
+    return false;
+  }
+
+  return (lmgmt->mgmt_shutdown_triggered_at + timeout >= time(nullptr));
+}
+
 static void
 check_lockfile()
 {
@@ -682,6 +715,8 @@ main(int argc, const char **argv)
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.cop", 0, RECP_NON_PERSISTENT);
 
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
+
   binding = new BindingInstance;
   metrics_binding_initialize(*binding);
   metrics_binding_configure(*binding);
@@ -727,7 +762,10 @@ main(int argc, const char **argv)
       ::exit(0);
       break;
     case MGMT_PENDING_IDLE_RESTART:
-      if (is_server_idle()) {
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      if (is_server_idle() || waited_enough()) {
         lmgmt->mgmtShutdown();
         ::exit(0);
       }
@@ -737,8 +775,42 @@ main(int argc, const char **argv)
       lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
       break;
     case MGMT_PENDING_IDLE_BOUNCE:
-      if (is_server_idle()) {
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      if (is_server_idle() || waited_enough()) {
         lmgmt->processBounce();
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    case MGMT_PENDING_STOP:
+      lmgmt->processShutdown();
+      lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      break;
+    case MGMT_PENDING_IDLE_STOP:
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      if (is_server_idle() || waited_enough()) {
+        lmgmt->processShutdown();
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    case MGMT_PENDING_DRAIN:
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      break;
+    case MGMT_PENDING_IDLE_DRAIN:
+      if (is_server_idle_from_new_connection()) {
+        lmgmt->processDrain();
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    case MGMT_PENDING_UNDO_DRAIN:
+      if (is_server_draining()) {
+        lmgmt->processDrain(0);
         lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
       }
       break;
