@@ -69,14 +69,9 @@ log.ascii {
 }'''.split("\n")
 )
 
-# Ask the OS if the port is ready for connect()
-#
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
-
 tr = Test.AddTestRun()
 # Delay on readiness of ssl port
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=CheckPort(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 #
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(
     ts.Variables.port)
