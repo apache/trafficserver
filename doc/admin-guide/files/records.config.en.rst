@@ -1651,6 +1651,36 @@ Proxy User Variables
 
    When enabled (``1``), Traffic Server adds the client IP address to the ``X-Forwarded-For`` header.
 
+.. ts:cv:: CONFIG proxy.config.http.insert_forwarded STRING none
+   :reloadable:
+   :overridable:
+
+   The default value (``none``) means that Traffic Server does not insert or append information to any
+   ``Forwarded`` header (described in IETF RFC 7239) in the request message.  To put information into a
+   ``Forwarded`` header in the request, the value of this variable must be a list of the ``Forwarded``
+   parameters to be inserted.
+
+   ==================  ===============================================================
+   Parameter           Value of parameter place in outgoing Forwarded header
+   ==================  ===============================================================
+   for                 Client IP address
+   by=ip               Proxy IP address
+   by=unknown          The literal string ``unknown``
+   by=servername       Proxy server name
+   by=uuid             Server UUID prefixed with ``_``
+   proto               Protocol of incoming request
+   host                The host specified in the incoming request
+   connection=compact  Connection with basic transaction codes.
+   connection=std      Connection with detailed transaction codes.
+   connection=full     Full user agent connection :ref:`protocol tags <protocol_tags>`
+   ==================  ===============================================================
+
+   Each paramater in the list must be separated by ``|`` or ``:``.  For example, ``for|by=uuid|proto`` is
+   a valid value for this variable.  Note that the ``connection`` parameter is a non-standard extension to
+   RFC 7239.  Also note that, while Traffic Server allows multiple ``by`` parameters for the same proxy, this
+   is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
+   incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
+
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae_gzip INT 1
    :reloadable:
    :overridable:

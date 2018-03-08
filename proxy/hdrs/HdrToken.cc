@@ -108,7 +108,9 @@ static const char *_hdrtoken_strs[] = {
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
-};
+
+  // RFC-2739
+  "Forwarded"};
 
 static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file", HDRTOKEN_TYPE_SCHEME},
@@ -234,6 +236,7 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Xref", MIME_SLOTID_NONE, MIME_PRESENCE_XREF, HTIF_NONE},
   {"X-ID", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)},
   {"X-Forwarded-For", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS)},
+  {"Forwarded", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Sec-WebSocket-Key", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Sec-WebSocket-Version", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {nullptr, 0, 0, 0},
@@ -292,6 +295,9 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// WARNING:  Indexes into this array are stored on disk for cached objects.  New strings must be added at the end of the array to
+// avoid changing the indexes of pre-existing entries, unless the cache format version number is increased.
+//
 static const char *_hdrtoken_commonly_tokenized_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
@@ -353,7 +359,9 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
-};
+
+  // RFC-2739
+  "Forwarded"};
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

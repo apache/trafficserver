@@ -191,6 +191,7 @@ libtsutil_la_SOURCES = \
   signals.cc \
   signals.h \
   string_view.h \
+  BufferWriter.h \
   X509HostnameValidator.cc \
   X509HostnameValidator.h
 
@@ -248,7 +249,8 @@ test_tslib_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tslib_LDADD = libtsutil.la
 test_tslib_SOURCES = \
 	unit-tests/main.cpp \
-	unit-tests/string_view.cpp
+	unit-tests/string_view.cpp \
+	unit-tests/BufferWriter.cpp
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

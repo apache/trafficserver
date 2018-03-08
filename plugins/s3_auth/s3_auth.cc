@@ -363,6 +363,7 @@ public:
 
     /* Exclude headers that are meant to be changed */
     _v4excludeHeaders.insert("x-forwarded-for");
+    _v4excludeHeaders.insert("forwarded");
     _v4excludeHeaders.insert("via");
   }
 

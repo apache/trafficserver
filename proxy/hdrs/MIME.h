@@ -388,6 +388,7 @@ extern const char *MIME_FIELD_XREF;
 extern const char *MIME_FIELD_ATS_INTERNAL;
 extern const char *MIME_FIELD_X_ID;
 extern const char *MIME_FIELD_X_FORWARDED_FOR;
+extern const char *MIME_FIELD_FORWARDED;
 extern const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
 extern const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
 extern const char *MIME_FIELD_HTTP2_SETTINGS;
@@ -491,6 +492,7 @@ extern int MIME_LEN_XREF;
 extern int MIME_LEN_ATS_INTERNAL;
 extern int MIME_LEN_X_ID;
 extern int MIME_LEN_X_FORWARDED_FOR;
+extern int MIME_LEN_FORWARDED;
 
 extern int MIME_LEN_BYTES;
 extern int MIME_LEN_CHUNKED;

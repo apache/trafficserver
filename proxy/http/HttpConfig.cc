@@ -180,6 +180,33 @@ http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, v
   return REC_ERR_OKAY;
 }
 
+static int
+http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  bool valid_p        = false;
+  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+
+  if (0 == strcasecmp("proxy.config.http.insert_forwarded", name)) {
+    if (RECD_STRING == dtype) {
+      ts::LocalBufferWriter<1024> error;
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(data.rec_string), error);
+      if (!error.size()) {
+        c->oride.insert_forwarded = bs;
+        valid_p                   = true;
+      } else {
+        Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+      }
+    }
+  }
+
+  // Signal an update if valid value arrived.
+  if (valid_p) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+
+  return REC_ERR_OKAY;
+}
+
 void
 register_stat_callbacks()
 {
@@ -940,6 +967,21 @@ HttpConfig::startup()
                         c.oride.server_session_sharing_match);
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
 
+  RecRegisterConfigUpdateCb("proxy.config.http.insert_forwarded", &http_insert_forwarded_cb, &c);
+  {
+    char str[512];
+
+    if (REC_ERR_OKAY == RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))) {
+      ts::LocalBufferWriter<1024> error;
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(str), error);
+      if (!error.size()) {
+        c.oride.insert_forwarded = bs;
+      } else {
+        Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
+      }
+    }
+  }
+
   HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 
   HttpEstablishStaticConfigByte(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
@@ -1296,6 +1338,7 @@ HttpConfig::reconfigure()
   params->oride.proxy_response_server_enabled = m_master.oride.proxy_response_server_enabled;
 
   params->oride.insert_squid_x_forwarded_for = INT_TO_BOOL(m_master.oride.insert_squid_x_forwarded_for);
+  params->oride.insert_forwarded             = m_master.oride.insert_forwarded;
   params->oride.insert_age_in_response       = INT_TO_BOOL(m_master.oride.insert_age_in_response);
   params->enable_http_stats                  = INT_TO_BOOL(m_master.enable_http_stats);
   params->oride.normalize_ae_gzip            = INT_TO_BOOL(m_master.oride.normalize_ae_gzip);

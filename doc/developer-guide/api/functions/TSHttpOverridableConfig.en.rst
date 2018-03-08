@@ -126,6 +126,7 @@ c:member:`TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE`                    :ts:cv:`prox
 c:member:`TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR`                    :ts:cv:`proxy.config.http.insert_request_via_str`
 c:member:`TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR`                   :ts:cv:`proxy.config.http.insert_response_via_str`
 c:member:`TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR`              :ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`
+c:member:`TS_CONFIG_HTTP_INSERT_FORWARDED`                          :ts:cv:`proxy.config.http.insert_forwarded`
 c:member:`TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN`                     :ts:cv:`proxy.config.http.keep_alive_enabled_in`
 c:member:`TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT`                    :ts:cv:`proxy.config.http.keep_alive_enabled_out`
 c:member:`TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TlMEOUT_IN`         :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`
