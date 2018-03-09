@@ -23,7 +23,12 @@
 
 #pragma once
 
+#ifdef __cplusplus
+//
 #if __cplusplus < 201402L
+//
+// C++ 14 compatibility
+//
 #include <memory>
 namespace std
 {
@@ -33,5 +38,25 @@ make_unique(Args &&... args)
 {
   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
+} // namespace std
+#endif // C++ 14 compatibility
+
+//
+#if __cplusplus < 201700L
+//
+// C++ 17 compatibility
+//
+#include <cassert>
+namespace std
+{
+template <typename T>
+inline const T &
+clamp(const T &v, const T &lo, const T &hi)
+{
+  assert(lo <= hi);
+  return (v < lo) ? lo : ((hi < v) ? hi : v);
 }
-#endif
+
+} // namespace std
+#endif // C++ 17 compatibility
+#endif // __cplusplus
