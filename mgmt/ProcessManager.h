@@ -43,6 +43,10 @@
 #include "ts/ink_apidefs.h"
 #include <functional>
 
+#if HAVE_EVENTFD
+#include <sys/eventfd.h>
+#endif
+
 class ConfigUpdateCbTable;
 
 class ProcessManager : public BaseManager
@@ -91,6 +95,9 @@ private:
   std::function<void()> init;
 
   int local_manager_sockfd;
+#if HAVE_EVENTFD
+  int wakeup_fd; // external trigger to stop polling
+#endif
   ConfigUpdateCbTable *cbtable;
   int max_msgs_in_a_row;
 

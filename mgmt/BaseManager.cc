@@ -113,44 +113,6 @@ BaseManager::registerMgmtCallback(int msg_id, MgmtCallback cb, void *opaque_cb_d
   return msg_id;
 } /* End BaseManager::registerMgmtCallback */
 
-/*
- * signalMgmtEntity(...)
- */
-int
-BaseManager::signalMgmtEntity(int msg_id, char *data_str)
-{
-  if (data_str) {
-    return signalMgmtEntity(msg_id, data_str, strlen(data_str) + 1);
-  } else {
-    return signalMgmtEntity(msg_id, nullptr, 0);
-  }
-
-} /* End BaseManager::signalMgmtEntity */
-
-/*
- * signalMgmtEntity(...)
- */
-int
-BaseManager::signalMgmtEntity(int msg_id, char *data_raw, int data_len)
-{
-  MgmtMessageHdr *mh;
-
-  if (data_raw) {
-    mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
-    mh->msg_id   = msg_id;
-    mh->data_len = data_len;
-    memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
-  } else {
-    mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr));
-    mh->msg_id   = msg_id;
-    mh->data_len = 0;
-  }
-
-  ink_release_assert(enqueue(mgmt_event_queue, mh));
-  return msg_id;
-
-} /* End BaseManager::signalMgmtEntity */
-
 void
 BaseManager::executeMgmtCallback(int msg_id, char *data_raw, int data_len)
 {

@@ -124,9 +124,6 @@ public:
 
   int registerMgmtCallback(int msg_id, MgmtCallback func, void *opaque_callback_data = NULL);
 
-  int signalMgmtEntity(int msg_id, char *data_str = NULL);
-  int signalMgmtEntity(int msg_id, char *data_raw, int data_len);
-
   LLQ *mgmt_event_queue;
   InkHashTable *mgmt_callback_table;
 

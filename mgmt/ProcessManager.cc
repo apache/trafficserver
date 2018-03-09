@@ -40,20 +40,12 @@ inkcoreapi ProcessManager *pmgmt = nullptr;
 // socket. Returns -errno on error, otherwise 0. If a message was read the
 // *msg pointer will be filled in with the message that was read.
 static int
-read_management_message(int sockfd, ink_hrtime timeout, MgmtMessageHdr **msg)
+read_management_message(int sockfd, MgmtMessageHdr **msg)
 {
   MgmtMessageHdr hdr;
   int ret;
 
   *msg = nullptr;
-
-  switch (mgmt_read_timeout(sockfd, ink_hrtime_to_sec(timeout), 0 /* usec */)) {
-  case 0:
-    // Timed out.
-    return 0;
-  case -1:
-    return -errno;
-  }
 
   // We have a message, try to read the message header.
   ret = mgmt_read_pipe(sockfd, reinterpret_cast<char *>(&hdr), sizeof(MgmtMessageHdr));
@@ -65,7 +57,7 @@ read_management_message(int sockfd, ink_hrtime timeout, MgmtMessageHdr **msg)
     break;
   default:
     // Received -errno.
-    return ret;
+    return -errno;
   }
 
   size_t msg_size          = sizeof(MgmtMessageHdr) + hdr.data_len;
@@ -111,10 +103,22 @@ ProcessManager::stop()
   ink_release_assert(running == 1);
   ink_atomic_decrement(&running, 1);
 
-  int tmp = local_manager_sockfd;
+  int tmp;
 
-  local_manager_sockfd = -1;
-  close_socket(tmp);
+  if (local_manager_sockfd != ts::NO_FD) {
+    tmp                  = local_manager_sockfd;
+    local_manager_sockfd = ts::NO_FD;
+    close_socket(tmp);
+  }
+
+#if HAVE_EVENTFD
+  if (wakeup_fd != ts::NO_FD) {
+    tmp       = wakeup_fd;
+    wakeup_fd = ts::NO_FD;
+    close_socket(tmp);
+  }
+#endif
+
   ink_thread_kill(poll_thread, SIGINT);
 
   ink_thread_join(poll_thread);
@@ -166,13 +170,10 @@ ProcessManager::processManagerThread(void *arg)
       }
     }
 
-    pmgmt->processEventQueue();
     ret = pmgmt->processSignalQueue();
     if (ret < 0 && pmgmt->running) {
       Alert("exiting with write error from process manager: %s", strerror(-ret));
     }
-
-    mgmt_sleep_sec(pmgmt->timeout);
   }
 
   return ret;
@@ -182,6 +183,11 @@ ProcessManager::ProcessManager(bool rlm)
   : BaseManager(), require_lm(rlm), pid(getpid()), local_manager_sockfd(0), cbtable(nullptr), max_msgs_in_a_row(1)
 {
   mgmt_signal_queue = create_queue();
+
+  local_manager_sockfd = ts::NO_FD;
+#if HAVE_EVENTFD
+  wakeup_fd = ts::NO_FD;
+#endif
 
   // Set temp. process/manager timeout. Will be reconfigure later.
   // Making the process_manager thread a spinning thread to start traffic server
@@ -240,33 +246,20 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
   memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
 
   ink_release_assert(enqueue(mgmt_signal_queue, mh));
-}
 
-bool
-ProcessManager::processEventQueue()
-{
-  bool ret = false;
-
-  while (!queue_is_empty(mgmt_event_queue)) {
-    MgmtMessageHdr *mh = (MgmtMessageHdr *)dequeue(mgmt_event_queue);
-
-    Debug("pmgmt", "processing event id '%d' payload=%d", mh->msg_id, mh->data_len);
-    if (mh->data_len > 0) {
-      executeMgmtCallback(mh->msg_id, (char *)mh + sizeof(MgmtMessageHdr), mh->data_len);
-    } else {
-      executeMgmtCallback(mh->msg_id, nullptr, 0);
-    }
-
-    // A shutdown message is a normal exit, so Alert rather than Fatal.
-    if (mh->msg_id == MGMT_EVENT_SHUTDOWN) {
-      Alert("exiting on shutdown message");
-    }
-
-    ats_free(mh);
-    ret = true;
+#if HAVE_EVENTFD
+  // we don't care about the actual value of wakeup_fd, so just keep adding 1. just need to
+  // wakeup the fd. also, note that wakeup_fd was initalized to non-blocking so we can
+  // directly write to it without any timeout checking.
+  //
+  // don't tigger if MGMT_EVENT_LIBRECORD because they happen all the time
+  // and don't require a quick response. for MGMT_EVENT_LIBRECORD, rely on timeouts so
+  // traffic_server can spend more time doing other things/
+  uint64_t one = 1;
+  if (wakeup_fd != ts::NO_FD && mh->msg_id != MGMT_SIGNAL_LIBRECORDS) {
+    ATS_UNUSED_RETURN(write(wakeup_fd, &one, sizeof(uint64_t))); // trigger to stop polling
   }
-
-  return ret;
+#endif
 }
 
 int
@@ -330,6 +323,13 @@ ProcessManager::initLMConnection()
     Fatal("failed to connect management socket '%s': %s", sockpath.c_str(), strerror(errno));
   }
 
+#if HAVE_EVENTFD
+  wakeup_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  if (wakeup_fd < 0) {
+    Fatal("unable to create wakeup eventfd. errno: %s", strerror(errno));
+  }
+#endif
+
   data_len          = sizeof(pid_t);
   mh_full           = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
   mh_full->msg_id   = MGMT_SIGNAL_PID;
@@ -345,26 +345,67 @@ ProcessManager::initLMConnection()
 int
 ProcessManager::pollLMConnection()
 {
-  // Avoid getting stuck enqueuing too many requests in a row, limit to MAX_MSGS_IN_A_ROW.
   int count;
+  int ready;
+  struct timeval timeout;
+  fd_set fdlist;
 
+  // Avoid getting stuck enqueuing too many requests in a row, limit to MAX_MSGS_IN_A_ROW.
   for (count = 0; running && count < max_msgs_in_a_row; ++count) {
-    MgmtMessageHdr *msg;
-    int ret = read_management_message(local_manager_sockfd, HRTIME_SECONDS(1), &msg);
-    if (ret < 0) {
-      return ret;
+    timeout.tv_sec  = 1;
+    timeout.tv_usec = 0;
+
+    FD_ZERO(&fdlist);
+
+    if (local_manager_sockfd != ts::NO_FD) {
+      FD_SET(local_manager_sockfd, &fdlist);
     }
 
-    // No message, we are done polling. */
-    if (msg == nullptr) {
+#if HAVE_EVENTFD
+    if (wakeup_fd != ts::NO_FD) {
+      FD_SET(wakeup_fd, &fdlist);
+    }
+#endif
+
+    // wait for data on socket
+    ready = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
+
+    switch (ready) {
+    case 0:
+      // Timed out.
+      return 0;
+    case -1:
+      if (mgmt_transient_error()) {
+        continue;
+      }
+      return -errno;
+    }
+
+    if (local_manager_sockfd != ts::NO_FD && FD_ISSET(local_manager_sockfd, &fdlist)) { /* Message from manager */
+      MgmtMessageHdr *msg;
+
+      int ret = read_management_message(local_manager_sockfd, &msg);
+      if (ret < 0) {
+        return ret;
+      }
+
+      // No message, we are done polling. */
+      if (msg == nullptr) {
+        return 0;
+      }
+
+      Debug("pmgmt", "received message ID %d", msg->msg_id);
+      handleMgmtMsgFromLM(msg);
+    }
+#if HAVE_EVENTFD
+    else if (wakeup_fd != ts::NO_FD && FD_ISSET(wakeup_fd, &fdlist)) { /* if msg, keep polling for more */
+      // read or else fd will always be set.
+      uint64_t ignore;
+      ATS_UNUSED_RETURN(read(wakeup_fd, &ignore, sizeof(uint64_t)));
       break;
     }
-
-    Debug("pmgmt", "received message ID %d", msg->msg_id);
-    handleMgmtMsgFromLM(msg);
-    ats_free(msg);
+#endif
   }
-
   Debug("pmgmt", "enqueued %d of max %d messages in a row", count, max_msgs_in_a_row);
   return 0;
 }
@@ -372,23 +413,27 @@ ProcessManager::pollLMConnection()
 void
 ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
 {
+  ink_assert(mh != nullptr);
+
   char *data_raw = (char *)mh + sizeof(MgmtMessageHdr);
 
+  Debug("pmgmt", "processing event id '%d' payload=%d", mh->msg_id, mh->data_len);
   switch (mh->msg_id) {
   case MGMT_EVENT_SHUTDOWN:
-    signalMgmtEntity(MGMT_EVENT_SHUTDOWN);
+    executeMgmtCallback(MGMT_EVENT_SHUTDOWN, nullptr, 0);
+    Alert("exiting on shutdown message");
     break;
   case MGMT_EVENT_RESTART:
-    signalMgmtEntity(MGMT_EVENT_RESTART);
+    executeMgmtCallback(MGMT_EVENT_RESTART, nullptr, 0);
     break;
   case MGMT_EVENT_DRAIN:
-    signalMgmtEntity(MGMT_EVENT_DRAIN, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_DRAIN, data_raw, mh->data_len);
     break;
   case MGMT_EVENT_CLEAR_STATS:
-    signalMgmtEntity(MGMT_EVENT_CLEAR_STATS);
+    executeMgmtCallback(MGMT_EVENT_CLEAR_STATS, nullptr, 0);
     break;
   case MGMT_EVENT_ROLL_LOG_FILES:
-    signalMgmtEntity(MGMT_EVENT_ROLL_LOG_FILES);
+    executeMgmtCallback(MGMT_EVENT_ROLL_LOG_FILES, nullptr, 0);
     break;
   case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
     if (data_raw != nullptr && data_raw[0] != '\0' && this->cbtable) {
@@ -413,16 +458,18 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
     */
     break;
   case MGMT_EVENT_LIBRECORDS:
-    signalMgmtEntity(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
     break;
   case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
-    signalMgmtEntity(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, data_raw, mh->data_len);
     break;
   case MGMT_EVENT_LIFECYCLE_MESSAGE:
-    signalMgmtEntity(MGMT_EVENT_LIFECYCLE_MESSAGE, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, data_raw, mh->data_len);
     break;
   default:
     Warning("received unknown message ID %d\n", mh->msg_id);
     break;
   }
+
+  ats_free(mh);
 }

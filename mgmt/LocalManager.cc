@@ -45,6 +45,13 @@ LocalManager::mgmtCleanup()
   close_socket(process_server_sockfd);
   process_server_sockfd = ts::NO_FD;
 
+#if HAVE_EVENTFD
+  if (wakeup_fd != ts::NO_FD) {
+    close_socket(wakeup_fd);
+    wakeup_fd = ts::NO_FD;
+  }
+#endif
+
   // fix me for librecords
 
   closelog();
@@ -265,6 +272,13 @@ LocalManager::initMgmtProcessServer()
     mgmt_fatal(errno, "[LocalManager::initMgmtProcessServer] failed to bind socket at %s\n", sockpath.c_str());
   }
 
+#if HAVE_EVENTFD
+  wakeup_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  if (wakeup_fd < 0) {
+    mgmt_fatal(errno, "[LocalManager::initMgmtProcessServer] failed to create eventfd. errno : %s\n", strerror(errno));
+  }
+#endif
+
   umask(oldmask);
   RecSetRecordInt("proxy.node.restarts.manager.start_time", manager_started_at, REC_SOURCE_DEFAULT);
 }
@@ -314,6 +328,12 @@ LocalManager::pollMgmtProcessServer()
     }
 #endif
 
+#if HAVE_EVENTFD
+    if (wakeup_fd != ts::NO_FD) {
+      FD_SET(wakeup_fd, &fdlist);
+    }
+#endif
+
     num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
 
     switch (num) {
@@ -329,11 +349,14 @@ LocalManager::pollMgmtProcessServer()
       return;
 
     default:
-
+      // if we get a wakeup_fd event, we may not want to follow it
+      // because there may be more data to be read on the socket.
+      bool keep_polling = false;
 #if TS_HAS_WCCP
       if (wccp_fd != ts::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
         wccp_cache.handleMessage();
         --num;
+        keep_polling = true;
       }
 #endif
 
@@ -352,6 +375,7 @@ LocalManager::pollMgmtProcessServer()
           close_socket(new_sockfd);
         }
         --num;
+        keep_polling = true;
       }
 
       if (ts::NO_FD != watched_process_fd && FD_ISSET(watched_process_fd, &fdlist)) {
@@ -359,6 +383,8 @@ LocalManager::pollMgmtProcessServer()
         MgmtMessageHdr mh_hdr;
         MgmtMessageHdr *mh_full;
         char *data_raw;
+
+        keep_polling = true;
 
         // read the message
         if ((res = mgmt_read_pipe(watched_process_fd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
@@ -413,8 +439,22 @@ LocalManager::pollMgmtProcessServer()
           RecSetRecordInt("proxy.node.proxy_running", 0, REC_SOURCE_DEFAULT);
         }
 
-        num--;
+        --num;
       }
+
+#if HAVE_EVENTFD
+      if (wakeup_fd != ts::NO_FD && FD_ISSET(wakeup_fd, &fdlist)) {
+        if (!keep_polling) {
+          // read or else fd will always be set.
+          uint64_t ignore;
+          ATS_UNUSED_RETURN(read(wakeup_fd, &ignore, sizeof(uint64_t)));
+          return;
+        }
+        --num;
+      }
+#else
+      (void)keep_polling; // suppress compiler warning
+#endif
 
       ink_assert(num == 0); /* Invariant */
     }
@@ -701,7 +741,19 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
   memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
   ink_assert(enqueue(mgmt_event_queue, mh));
 
-  return;
+#if HAVE_EVENTFD
+  // we don't care about the actual value of wakeup_fd, so just keep adding 1. just need to
+  // wakeup the fd. also, note that wakeup_fd was initalized to non-blocking so we can
+  // directly write to it without any timeout checking.
+  //
+  // don't tigger if MGMT_EVENT_LIBRECORD because they happen all the time
+  // and don't require a quick response. for MGMT_EVENT_LIBRECORD, rely on timeouts so
+  // traffic_server can spend more time doing other things
+  uint64_t one = 1;
+  if (wakeup_fd != ts::NO_FD && mh->msg_id != MGMT_EVENT_LIBRECORDS) {
+    ATS_UNUSED_RETURN(write(wakeup_fd, &one, sizeof(uint64_t))); // trigger to stop polling
+  }
+#endif
 }
 
 /*
