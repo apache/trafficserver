@@ -37,10 +37,13 @@
 #include "Alarms.h"
 #include "BaseManager.h"
 #include <records/I_RecHttp.h>
+#include <syslog.h>
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
 #endif
-#include <syslog.h>
+#if HAVE_EVENTFD
+#include <sys/eventfd.h>
+#endif
 
 class FileManager;
 
@@ -120,7 +123,10 @@ public:
 
   int process_server_sockfd = ts::NO_FD;
   int watched_process_fd    = ts::NO_FD;
-  pid_t proxy_launch_pid    = -1;
+#if HAVE_EVENTFD
+  int wakeup_fd = ts::NO_FD; // external trigger to stop polling
+#endif
+  pid_t proxy_launch_pid = -1;
 
   Alarms *alarm_keeper     = nullptr;
   FileManager *configFiles = nullptr;
