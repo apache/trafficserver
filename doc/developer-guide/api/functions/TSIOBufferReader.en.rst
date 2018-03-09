@@ -32,7 +32,7 @@ Synopsis
 .. function:: void TSIOBufferReaderFree(TSIOBufferReader readerp)
 .. function:: void TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
 .. function:: TSIOBufferBlock TSIOBufferReaderStart(TSIOBufferReader readerp)
-.. function:: int64_t TSIOBufferReadAvail(TSIOBufferReader readerp)
+.. function:: int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp)
 .. function:: bool TSIOBufferReaderIsAvailAtLeast(TSIOBufferReader, int64_t nbytes)
 .. function:: int64_t TSIOBufferReaderRead(TSIOBufferReader reader, const void * buf, int64_t length)
 .. function:: bool TSIOBufferReaderIterate(TSIOBufferReader reader, TSIOBufferBlockFunc* func, void* context)
@@ -79,12 +79,12 @@ time. Reader allocation is fast and cheap until this maxium is reached at which 
 
    .. note:: The byte at the position of :arg:`reader` is in the block but is not necessarily the first byte of the block.
 
-:func:`TSIOBufferReadAvail` returns the number of bytes which :arg:`reader` could consume. That is
+:func:`TSIOBufferReaderAvail` returns the number of bytes which :arg:`reader` could consume. That is
       the number of bytes in the IO buffer starting at the current position of :arg:`reader`.
 
 :func:`TSIOBufferReaderIsAvailAtLeast` return ``true`` if the available number of bytes for
       :arg:`reader` is at least :arg:`nbytes`, ``false`` if not. This can be more efficient than
-      :func:`TSIOBufferReadAvail` because the latter must walk all the IO buffer blocks in the IO
+      :func:`TSIOBufferReaderAvail` because the latter must walk all the IO buffer blocks in the IO
       buffer. This function returns as soon as the return value can be determined. In particular a
       value of ``1`` for :arg:`nbytes` means only the first buffer block will be checked.
 
