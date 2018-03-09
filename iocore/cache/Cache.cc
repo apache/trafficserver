@@ -1181,10 +1181,16 @@ Vol::db_check(bool /* fix ATS_UNUSED */)
 static void
 vol_init_data_internal(Vol *d)
 {
-  d->buckets  = ((d->len - (d->start - d->skip)) / cache_config_min_average_object_size) / DIR_DEPTH;
-  d->segments = (d->buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
-  d->buckets  = (d->buckets + d->segments - 1) / d->segments;
-  d->start    = d->skip + 2 * vol_dirlen(d);
+  // step1: calculate the number of entries.
+  off_t total_entries = (d->len - (d->start - d->skip)) / cache_config_min_average_object_size;
+  // step2: calculate the number of buckets
+  off_t total_buckets = total_entries / DIR_DEPTH;
+  // step3: calculate the number of segments, no semgent has more than 16384 buckets
+  d->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
+  // step4: divide total_buckets into segments on average.
+  d->buckets = (total_buckets + d->segments - 1) / d->segments;
+  // step5: set the start pointer.
+  d->start = d->skip + 2 * vol_dirlen(d);
 }
 
 static void
