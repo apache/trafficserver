@@ -1,0 +1,57 @@
+Changes with Apache Traffic Server 7.1.3
+  #2048 - Prevent potential dispatch of HttpTunnel events to a dead consumer.
+  #2050 - Address session/transaction close errors.
+  #2099 - Fix session-based memory leak.
+  #2267 - Add diagram for header_rewrite Hooks
+  #2766 - Move the postbuf into HttpSM
+  #2986 - Modify regex_revalidate so that traffic_ctl may be used to trigger updates
+  #2993 - Cherry pick and some manual fixes to address testing issues in 7.1
+  #3001 - Fix an enum element mismatch between TSServerState and ServerState_t
+  #3002 - new_MIOBuffer: uninitialized water_mark fix.
+  #3022 - Do not send HSTS header when remap has failed
+  #3029 - clang-format
+  #3032 - Avoid copying over data in the write_vio into response_buffer
+  #3043 - moves ocsp connect failures to Debug
+  #3044 - Explicitly set enable_doc_build to yes if --enable-docs is provided to allow documentation and manpages build
+  #3045 - Processing DNS reponses with CNAME & SRV records
+  #3048 - Fix OCSP under OpenSSL 1.1.x
+  #3063 - Fixes a warning from clang v6.x
+  #3068 - Fixed crash in microserver help message
+  #3070 - Fix X-Id logging for slow log
+  #3075 - coverity 1385717: Out-of-bounds write
+  #3076 - Note the stripe meta while clearing the stripe
+  #3083 - Fix a bug that chunked resopnses aren't logged properly if the client side is H2
+  #3085 - Heap use after free (backport #3069)
+  #3096 - Send VC_EVENT_WRITE_READY/COMPLETE when write_vio is consumed
+  #3106 - Adds a new configuration proxy.config.http.allow_multi_range
+  #3108 - Restores traffic_top -s option to be in seconds
+  #3109 - Handle MIME hdr parsing edge case
+  #3113 - Decrement stream counts immediately when the stream is removed from stream_list
+  #3120 - Use the correct Lua symbol for verify-server setting
+  #3128 - Heap use after free in UnixNetVConnection
+  #3134 - Test: fix string_view unit test.
+  #3146 - Call mark_body_done() when response body is empty
+  #3164 - Doc: Fix 7.1.x documentation building for Sphinx 1.7.0.
+  #3184 - Doc for overridable client cert filename
+  #3189 - Added a first cut of a .spec file, losely based on the Fedora repos
+  #3190 - Fix the expression for checking file descriptor
+  #3191 - Doc for ATS client tls configuration
+  #3192 - Return 400 if there is whitespace after the field name and before the colon
+  #3195 - Adds better sanity checks around the method IX
+  #3197 - Free Http2Stream directly when HttpSM is already gone or not allocated
+  #3201 - Close the connection when returning a 400 error response
+  #3205 - Isolate client ctx options from server options
+  #3206 - Remove HAVE_POSIX_MEMALIGN related code
+  #3219 - fix unpredictable diskok within CacheProcessor::start_internal
+  #3220 - Support more redirect status codes - 303, 305.
+  #3222 - Fix instability caused by HTTP2_SESSION_EVENT_FINI
+  #3227 - Acquire lock before calling Http2ClientSession::free() from Http2ConnectionState
+  #3228 - Combine mutex of Http2ClientSession and Http2ConnectionState
+  #3230 - Removed MD5 signature files based on ASF updated release policy
+  #3231 - Validate Content-Length headers for incoming requests
+  #3233 - All or nothing for readIntoBuffer
+  #3240 - Fixing #3232, crash when making a server push
+  #3241 - Warning message when openning hostdb file fails
+  #3243 - Make throttling feature more useful.
+  #3247 - s3_auth: check if previous config (re)load failed
+  #3252 - Print the volume path that is clearing its directories
