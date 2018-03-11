@@ -271,6 +271,11 @@ private:
   void _close_closing_timeout(Event *data);
   Event *_closing_timeout = nullptr;
 
+  void _schedule_closed_event();
+  void _unschedule_closed_event();
+  void _close_closed_event(Event *data);
+  Event *_closed_event = nullptr;
+
   uint32_t _transmit_packet(QUICPacketUPtr);
   void _transmit_frame(QUICFrameUPtr);
 
