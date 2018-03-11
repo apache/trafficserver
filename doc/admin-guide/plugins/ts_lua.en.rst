@@ -196,6 +196,22 @@ We should write this TAG in records.config(If TAG is missing, default TAG will b
 
 `TOP <#ts-lua-plugin>`_
 
+ts.error
+--------
+**syntax:** *ts.error(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log
+
+Here is an example:
+
+::
+
+       ts.error('This is an error message')
+
+`TOP <#ts-lua-plugin>`_
+
 Remap status constants
 ----------------------
 **context:** do_remap
@@ -2369,6 +2385,44 @@ Here is an example
         if result == TS_LUA_SRVSTATE_CONNECTION_ALIVE then
           ts.debug('Alive')
         end
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_remap_from_url
+--------------------------
+**syntax:** *ts.http.get_remap_from_url()*
+
+**context:** do_global_post_remap
+
+**description:** This function can be used to get the *from* URL in the matching line in :file:`remap.config`.
+
+Here is an example
+
+::
+
+    function do_global_post_remap()
+        local from_url = ts.http.get_remap_from_url()
+        ts.debug(from_url)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_remap_to_url
+------------------------
+**syntax:** *ts.http.get_remap_to_url()*
+
+**context:** do_global_post_remap
+
+**description:** This function can be used to get the *to* URL in the matching line in :file:`remap.config`.
+
+Here is an example
+
+::
+
+    function do_global_post_remap()
+        local to_url = ts.http.get_remap_to_url()
+        ts.debug(to_url)
     end
 
 `TOP <#ts-lua-plugin>`_
