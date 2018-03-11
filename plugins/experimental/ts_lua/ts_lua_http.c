@@ -99,6 +99,9 @@ static int ts_lua_http_transaction_count(lua_State *L);
 static int ts_lua_http_redirect_url_set(lua_State *L);
 static int ts_lua_http_get_server_state(lua_State *L);
 
+static int ts_lua_http_get_remap_from_url(lua_State *L);
+static int ts_lua_http_get_remap_to_url(lua_State *L);
+
 static void ts_lua_inject_server_state_variables(lua_State *L);
 
 static void ts_lua_inject_http_resp_transform_api(lua_State *L);
@@ -228,6 +231,12 @@ ts_lua_inject_http_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_get_server_state);
   lua_setfield(L, -2, "get_server_state");
+
+  lua_pushcfunction(L, ts_lua_http_get_remap_from_url);
+  lua_setfield(L, -2, "get_remap_from_url");
+
+  lua_pushcfunction(L, ts_lua_http_get_remap_to_url);
+  lua_setfield(L, -2, "get_remap_to_url");
 
   ts_lua_inject_server_state_variables(L);
 }
@@ -741,6 +750,60 @@ ts_lua_http_get_server_state(lua_State *L)
 
   TSServerState ss = TSHttpTxnServerStateGet(http_ctx->txnp);
   lua_pushnumber(L, ss);
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_remap_from_url(lua_State *L)
+{
+  TSMLoc url = TS_NULL_MLOC;
+  char *str  = NULL;
+  int len;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSRemapFromUrlGet(http_ctx->txnp, &url) != TS_SUCCESS) {
+    lua_pushnil(L);
+    goto done;
+  }
+
+  str = TSUrlStringGet(NULL, url, &len);
+
+  lua_pushlstring(L, str, len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : len);
+
+done:
+  if (str != NULL) {
+    TSfree(str);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_remap_to_url(lua_State *L)
+{
+  TSMLoc url = TS_NULL_MLOC;
+  char *str  = NULL;
+  int len;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSRemapToUrlGet(http_ctx->txnp, &url) != TS_SUCCESS) {
+    lua_pushnil(L);
+    goto done;
+  }
+
+  str = TSUrlStringGet(NULL, url, &len);
+
+  lua_pushlstring(L, str, len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : len);
+
+done:
+  if (str != NULL) {
+    TSfree(str);
+  }
 
   return 1;
 }
