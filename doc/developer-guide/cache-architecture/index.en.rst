@@ -35,6 +35,7 @@ understanding and modifying the source.
    :maxdepth: 2
 
    architecture.en
+   cache-initialization.en
    core-cache-functions.en
    data-structures.en
    api-functions.en

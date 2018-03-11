@@ -22,6 +22,50 @@
 Data Structures
 ***************
 
+.. uml::
+   :align: center
+
+   hide empty members
+
+   CacheHostRecord *-- "*" Stripe : Vol >
+   CacheHostRecord *-- "*" CacheVol : cp >
+   CacheVol *-- "*" Stripe : Vol >
+
+.. class:: CacheHostTable
+
+   A container that maps from a FQDN to a :class:`CacheHostRecord`. This is constructed from
+   the contents of :file:`hosting.config`.
+
+   .. function:: void Match(char const * fqdn, int len, CacheHostResult * result)
+
+      Search the table for a match for the hostname :arg:`fqdn`, a string of length :arg:`len`.
+      If found the result is placed in :arg:`result`.
+
+.. class:: CacheHostResult
+
+   A wrapper for :class:`CacheHostRecord` used by :func:`CacheHostTable::Match`. This contains
+   the set of cache volumes for the cache host record and is used to perform stripe assignment.
+
+.. class:: CacheHostRecord
+
+   A cache hosting record from :file:`hosting.config`.
+
+   .. member:: CacheVol ** cp
+
+      The cache volumes that are part of this cache host record.
+
+   .. member:: Vol ** vols
+
+      The stripes that are part of the cache volumes. This is the union over the stripes of
+      :member:`CacheHostRecord::cp`
+
+   .. member:: unsigned short * vol_hash_table
+
+      The stripe assignment table. This is an array of indices in to
+      :member:`CacheHostRecord::vols`.
+
+   .. see: :class:`CacheHostTable`.
+
 .. class:: OpenDir
 
    An open directory entry. It contains all the information of a
@@ -31,13 +75,13 @@ Data Structures
 
    A virtual connection class which accepts input for writing to cache.
 
-.. function:: int CacheVC::openReadStartHead(int event, Event* e)
+   .. function:: int openReadStartHead(int event, Event* e)
 
-   Performs the initial read for a cached object.
+      Performs the initial read for a cached object.
 
-.. function:: int CacheVC::openReadStartEarliest(int event, Event* e)
+   .. function:: int openReadStartEarliest(int event, Event* e)
 
-   Performs the initial read for an :term:`alternate` of an object.
+      Performs the initial read for an :term:`alternate` of an object.
 
 .. class:: HttpTunnel
 
@@ -96,7 +140,7 @@ Data Structures
    .. cpp:member:: int aggWrite(int event, void * e)
 
       Schedule the aggregation buffer to be written to disk.
-      
+
    .. member:: off_t segments
 
       The number of segments in the volume. This will be roughly the total
@@ -305,7 +349,7 @@ Data Structures
 .. class:: DiskVolBlockQueue
 
    .. member:: DiskVolBlock* b
-   
+
    .. member:: int new_block
 
       Indicates if this is a new stripe rather than an existing one. In case a stripe is new ATS decides to clear that stripe(:class:`Vol`)
@@ -335,11 +379,11 @@ Data Structures
       The disk containing the stripe
 
    .. member:: Queue<DiskVolBlockQueue> dpb_queue
-      
+
 .. enum:: CacheType
 
    .. enumerator:: HTTP
-   
+
    .. enumerator:: Stream
 
 .. class:: CacheVol
@@ -347,7 +391,7 @@ Data Structures
    A :term:`cache volume` as described in :file:`volume.config`. This class represents a single volume. :class:`CacheVol` comprises of stripes spread across Spans(disks)
 
    .. member:: int volume_number
-      
+
       indentification number of this volume
 
    .. member:: int scheme
@@ -362,17 +406,17 @@ Data Structures
       Number of stripes(:class:`Vol`) contained in this volume
 
    .. member:: Vol** vols
-      
+
       :class:`Vol` represents a single stripe in the disk. vols contains all the stripes this volume is made up of
-   
+
    .. member:: DiskVol** disk_vols
 
       disk_vols contain references to the disks of all the stripes in this volume
-      
+
    .. member:: LINK<CacheVol> link
 
    .. member:: RecRawStatBlock vol_rsb
-      
+
       per volume stat
 
 .. class:: ConfigVol
@@ -386,13 +430,13 @@ Data Structures
    .. member:: CacheType scheme
 
    .. member:: off_t size
-   
+
    .. member:: bool in_percent
 
       Used as an indicator if the volume is part of the overall volumes created by ATS
 
    .. member:: int percent
-      
+
    .. member:: CacheVol* cachep
 
    .. member:: LINK<ConfigVol> link
@@ -412,6 +456,23 @@ Data Structures
        Total number of volumes scpecified in volume.config for stream
 
     .. member:: Queue<ConfigVol> cp_queue
+
+.. class:: Cache
+
+   Base object for a cache.
+
+   .. member:: CacheHostRecord hosttable
+
+      A generic class:`CacheHostRecord` that contains all cache volumes that are not explicitly
+      assigned in :file:`hosting.config`.
+
+   .. function:: Vol * key_to_vol(const char * key, const char * host, int host_len)
+
+      Compute the stripe (:code:`Vol*`) for a cache :arg:`key` and :arg:`host`. The :arg:`host` is
+      used to find the appropriate :class:`CacheHostRecord` instance. From there the stripe
+      assignment slot is determined by taking bits 64..83 (20 bits) of the cache :arg:`key` modulo
+      the stripe assignment array count (:code:`VOL_HASH_TABLE_SIZE`). These bits are the third 32
+      bit slice of the :arg:`key` less the bottom :code:`DIR_TAG_WIDTH` (12) bits.
 
 .. rubric:: Footnotes
 
