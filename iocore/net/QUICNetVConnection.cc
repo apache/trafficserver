@@ -926,6 +926,7 @@ QUICNetVConnection::_state_closing_send_packet()
   // another packet containing a closing frame.  To minimize the state
   // that an endpoint maintains for a closing connection, endpoints MAY
   // send the exact same packet.
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (this->_the_final_packet) {
     this->_packet_handler->send_packet(*this->_the_final_packet, this);
   }
