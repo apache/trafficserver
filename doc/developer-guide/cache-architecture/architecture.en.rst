@@ -353,7 +353,7 @@ the client as the object.
 Objects are rooted in a :cpp:class:`Doc` structure stored in the cache.
 :cpp:class:`Doc` serves as the header data for a :term:`cache fragment` and is
 contained at the start of every fragment. The first fragment for an object is
-termed the *first Doc* and always contains the object metadata. Any
+termed the *First Doc* and always contains the object metadata. Any
 operation on the object will read this fragment first. The fragment is located
 by converting the :term:`cache key` for the object to a :term:`cache ID` and
 then doing a lookup for a :term:`directory entry` with that key. The directory
@@ -464,8 +464,6 @@ Objects can only be pinned via :file:`cache.config` and while
 default). Objects which are in use when the write cursor is near use the same
 underlying evacuation mechanism but are handled automatically and not via the
 explicit ``pinned`` bit in :cpp:class:`Dir`.
-
-.. [#multiple-alternates] It could, under certain circumstances, be accurate for none of the alternates.
 
 Additional Notes
 ----------------
@@ -601,7 +599,7 @@ The target fragment size can set with the :file:`records.config` value
 
 This value should be chosen so that it is a multiple of a
 :ref:`cache entry multiplier <big-mult>`. It is not necessary to make it a
-power of two[#cache-mult-value]_. Larger fragments increase I/O efficiency but
+power of two [#cache-mult-value]_. Larger fragments increase I/O efficiency but
 lead to more wasted space. The default size (1M, 2^20) is a reasonable choice
 in most circumstances, altough in very specific cases there can be benefit from
 tuning this parameter. |TS| imposes an internal maximum of a 4,194,232 bytes,
@@ -627,12 +625,6 @@ entry in the segment.
 Index entries in a segment are grouped :term:`buckets <directory bucket>`, each
 of ``DIR_DEPTH`` (currently 4) entries. These are handled in the standard hash
 table manner, giving somewhat less than 2^14 buckets per segment.
-
-.. [#cache-mult-value]
-
-   The comment in earlier versions of the :file:`records.config` documentation
-   which indicated that this value must be a power of two were, unfortunately,
-   mistaken and have been corrected.
 
 .. _cache-directory-probe:
 
@@ -762,14 +754,7 @@ The checks that are done are:
 A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request to
 be viewed as cache valid.
 
-.. [#cacheability-overrides]
-
-   The code appears to check :file:`cache.config` in this logic by setting the
-   ``does_config_permit_lookup`` in the ``cache_info.directives`` of the state
-   machine instance but I can find no place where the value is used. The
-   directive ``does_config_permit_storing`` is set and later checked so the
-   directive (from the administrator point of view) is effective in preventing
-   caching of the object.
+.. _cache-lookup:
 
 Cache Lookup
 -------------------------
@@ -789,9 +774,9 @@ The basic steps to a cache lookup are:
 
 #. The cache stripe is determined (based on the cache key).
 
-   The :term:`cache key` is used as a hash key in to an array of
-   :cpp:class:`Vol` instances. The construction and arrangement of this array
-   is the essence of how volumes are assigned.
+   The :term:`cache key` is used as a hash key in to an array of :cpp:class:`Vol` instances by
+   :func:`Cache::key_to_vol`. The construction and arrangement of this array is the essence of how
+   volumes are assigned.
 
 #. The cache stripe directory :ref:`is probed <cache-directory-probe>` using the
    index key computed from the cache key.
@@ -1095,96 +1080,21 @@ fragment while it remains open (as all open objects are evacuated). If, when the
 object is closed, the fragment is still marked then it is placed in the
 appropriate evacuation bucket.
 
-.. _cache-initialization:
-
-Initialization
--------------------------
-
-Initialization starts with an instance of :cpp:class:`Store` reading the storage
-configuration file, by default :file:`storage.config`. For each valid element in
-the file an instance of :cpp:class:`Span` is created. These are of basically
-four types:
-
-* File
-
-* Directory
-
-* Disk
-
-* Raw device
-
-After creating all the :cpp:class:`Span` instances, they are grouped by device
-ID to internal linked lists attached to the :cpp:member:`Store::disk`
-array[#store-disk-array]_. Spans that refer to the same directory, disk, or raw
-device are coalesced in to a single span. Spans that refer to the same file
-with overlapping offsets are also coalesced [#coalesced-spans]_. This is all done in
-:func:`ink_cache_init` called during startup.
-
-.. note::
-
-   The span logic is also used by the HostDB and more than one otherwise
-   inexplicable feature is provided by the span logic for that module.
-
-After configuration initialization, the cache processor is started by calling
-:cpp:member:`CacheProcessor::start()`. This does a number of things:
-
-For each valid span, an instance of :cpp:class:`CacheDisk` is created. This
-class is a :term:`continuation` and so can be used to perform potentially
-blocking operations on the span. The primary use of these is to be passed to
-the AIO threads as the callback when an I/O operation completes. These are then
-dispatched to AIO threads to perform :term:`storage unit` initialization. After
-all of those have completed, the resulting storage is distributed across the
-:term:`volumes <cache volume>` in :func:`cplist_reconfigure`. The
-:cpp:class:`CacheVol` instances are created at this time.
-
-:term:`Cache stripe <cache stripe>` assignment setup is done once all stripes
-have initialized (that is, the stripe header information has been successfully
-read from disk for all stripes). The assignment information is stored as an
-array of indices. These are indices in to an array of stripes. Both the
-assignment and the stripe arrays are stored in an instance of :cpp:class:`CacheHostRecord`.
-Assignment initialization consists of populating the assignment array, which is
-much larger than the stripe array.
-
-There is an instance of :cpp:class:`CacheHostRecord` for each line in
-:file:`hosting.config` and one generic record. For the configured instances, the
-set of stripes is determined from the cache volume specified in the line. If no
-lines are specified, all stripes are placed in the generic record, otherwise
-only those stripes marked as default are placed in the generic record.
-
-.. note::
-
-   If hosting records are specified, it is an error to not specify at least one
-   default cache volume.
-
-The assignment table is initialized in :func:`build_vol_hash_table` which is
-called for each :cpp:class:`CacheHostRecord` instance. For each stripe in the
-host record, a sequence of pseudo-random numbers is generated. This begins with
-the folded hash of the stripe hash identifier, which is the device path followed
-by the ``skip`` and ``size`` values for that stripe, making it unique. This
-also makes the sequence deterministic for any particular stripe.
-
-Each stripe gets one number in its sequence for every `VOL_HASH_ALLOC_SIZE` (8
-MB currently) of storage. These numbers are paired with the stripe index,
-combined across all stripes, then sorted by the random values. The resulting
-array is sampled for every slot in the stripe assignment table by dividing the
-maximum random value by the size of the assignment table and using the value
-midway between each multiple of the result of the division. The coalesced
-pseudo-random sequence is scanned for each sample in turn and the first number
-not greater than the sample is found. The stripe associated with that value is
-used for that assignment table entry.
-
-While this procedure is deterministic, it is sensitive to initial conditions,
-including the size of each stripe.
-
 .. rubric:: Footnotes
 
-.. [#store-disk-array]
+.. [#multiple-alternates] It could, under certain circumstances, be accurate for none of the alternates.
 
-   `Work is under way <https://issues.apache.org/jira/browse/TS-2020>`_ on
-   extending this to include objects that are in the memory cache.
+.. [#cache-mult-value]
 
-.. [#coalesced-spans]
+   The comment in earlier versions of the :file:`records.config` documentation
+   which indicated that this value must be a power of two were, unfortunately,
+   mistaken and have been corrected.
 
-   This linked list is mostly ignored in later processing, causing all but one
-   file or directory storage units on the same device to be ignored. See
-   `TS-1869 <https://issues.apache.org/jira/browse/TS-1869>`_.
+.. [#cacheability-overrides]
+
+   The code appears to check :file:`cache.config` in this logic by setting the
+   ``does_config_permit_lookup`` in the ``cache_info.directives`` of the state
+   machine instance but I can find no place where the value is used. The
+   directive ``does_config_permit_storing`` is set and later checked so the
+   directive (from the administrator point of view) is effective in preventing
+   caching of the object.
