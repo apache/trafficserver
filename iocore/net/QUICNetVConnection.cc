@@ -660,6 +660,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
   case QUIC_EVENT_SHUTDOWN: {
     this->_unschedule_packet_write_ready();
     this->_unschedule_closing_timeout();
+    this->_close_closed_event(data);
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
 
@@ -1277,6 +1278,31 @@ QUICNetVConnection::_close_closing_timeout(Event *data)
   this->_closing_timeout = nullptr;
 }
 
+void
+QUICNetVConnection::_schedule_closed_event()
+{
+  if (!this->_closed_event) {
+    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_SHUTDOWN));
+    this->_closed_event = this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
+  }
+}
+
+void
+QUICNetVConnection::_unschedule_closed_event()
+{
+  if (!this->_closed_event) {
+    this->_closed_event->cancel();
+    this->_closed_event = nullptr;
+  }
+}
+
+void
+QUICNetVConnection::_close_closed_event(Event *data)
+{
+  ink_assert(this->_closed_event == data);
+  this->_closed_event = nullptr;
+}
+
 int
 QUICNetVConnection::_complete_handshake_if_possible()
 {
@@ -1405,7 +1431,7 @@ QUICNetVConnection::_switch_to_close_state()
   }
   QUICConDebug("Enter state_connection_closed");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closed);
-  this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
+  this->_schedule_closed_event();
 }
 
 void
