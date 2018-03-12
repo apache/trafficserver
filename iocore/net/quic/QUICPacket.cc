@@ -47,7 +47,7 @@ const uint8_t *
 QUICPacketHeader::buf()
 {
   if (this->_buf) {
-    return this->_buf;
+    return this->_buf.get();
   } else {
     // TODO Reuse serialzied data if nothing has changed
     size_t dummy;
@@ -63,16 +63,16 @@ QUICPacketHeader::packet_size() const
 }
 
 QUICPacketHeaderUPtr
-QUICPacketHeader::load(const uint8_t *buf, size_t len, QUICPacketNumber base)
+QUICPacketHeader::load(ats_unique_buf buf, size_t len, QUICPacketNumber base)
 {
   QUICPacketHeaderUPtr header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
-  if (QUICTypeUtil::has_long_header(buf)) {
+  if (QUICTypeUtil::has_long_header(buf.get())) {
     QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
-    new (long_header) QUICPacketLongHeader(buf, len, base);
+    new (long_header) QUICPacketLongHeader(std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
   } else {
     QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
-    new (short_header) QUICPacketShortHeader(buf, len, base);
+    new (short_header) QUICPacketShortHeader(std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
   }
   return header;
@@ -133,7 +133,7 @@ QUICPacketType
 QUICPacketLongHeader::type() const
 {
   if (this->_buf) {
-    uint8_t type = this->_buf[0] & 0x7F;
+    uint8_t type = this->_buf.get()[0] & 0x7F;
     if (this->version() == 0x00) {
       return QUICPacketType::VERSION_NEGOTIATION;
     } else {
@@ -149,7 +149,7 @@ QUICConnectionId
 QUICPacketLongHeader::connection_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICConnectionId(this->_buf + LONG_HDR_OFFSET_CONNECTION_ID, 8);
+    return QUICTypeUtil::read_QUICConnectionId(this->_buf.get() + LONG_HDR_OFFSET_CONNECTION_ID, 8);
   } else {
     return this->_connection_id;
   }
@@ -160,7 +160,7 @@ QUICPacketLongHeader::packet_number() const
 {
   if (this->_buf) {
     const uint8_t packet_number_len = 4;
-    QUICPacketNumber src = QUICTypeUtil::read_QUICPacketNumber(this->_buf + LONG_HDR_OFFSET_PACKET_NUMBER, packet_number_len);
+    QUICPacketNumber src = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + LONG_HDR_OFFSET_PACKET_NUMBER, packet_number_len);
     QUICPacketNumber dst = 0;
     QUICPacket::decode_packet_number(dst, src, packet_number_len, this->_base_packet_number);
 
@@ -180,7 +180,7 @@ QUICVersion
 QUICPacketLongHeader::version() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVersion(this->_buf + LONG_HDR_OFFSET_VERSION);
+    return QUICTypeUtil::read_QUICVersion(this->_buf.get() + LONG_HDR_OFFSET_VERSION);
   } else {
     return this->_version;
   }
@@ -196,7 +196,7 @@ const uint8_t *
 QUICPacketLongHeader::payload() const
 {
   if (this->_buf) {
-    return this->_buf + LONG_HDR_OFFSET_PAYLOAD;
+    return this->_buf.get() + LONG_HDR_OFFSET_PAYLOAD;
   } else {
     return this->_payload.get();
   }
@@ -314,7 +314,7 @@ QUICPacketShortHeader::connection_id() const
 {
   if (this->_buf) {
     ink_release_assert(this->has_connection_id());
-    return QUICTypeUtil::read_QUICConnectionId(this->_buf + SHORT_HDR_OFFSET_CONNECTION_ID, 8);
+    return QUICTypeUtil::read_QUICConnectionId(this->_buf.get() + SHORT_HDR_OFFSET_CONNECTION_ID, 8);
   } else {
     return _connection_id;
   }
@@ -330,7 +330,7 @@ QUICPacketShortHeader::packet_number() const
       offset += 8;
     }
 
-    QUICPacketNumber src = QUICTypeUtil::read_QUICPacketNumber(this->_buf + offset, n);
+    QUICPacketNumber src = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + offset, n);
     QUICPacketNumber dst = 0;
     QUICPacket::decode_packet_number(dst, src, n, this->_base_packet_number);
 
@@ -357,7 +357,7 @@ QUICPacketShortHeader::_packet_number_len() const
 {
   QUICPacketShortHeaderType type;
   if (this->_buf) {
-    type = static_cast<QUICPacketShortHeaderType>(this->_buf[0] & 0x1F);
+    type = static_cast<QUICPacketShortHeaderType>(this->_buf.get()[0] & 0x1F);
   } else {
     type = this->_packet_number_type;
   }
@@ -393,7 +393,7 @@ bool
 QUICPacketShortHeader::has_connection_id() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::has_connection_id(this->_buf);
+    return QUICTypeUtil::has_connection_id(this->_buf.get());
   } else {
     return this->_has_connection_id;
   }
@@ -403,7 +403,7 @@ const uint8_t *
 QUICPacketShortHeader::payload() const
 {
   if (this->_buf) {
-    return this->_buf + this->size();
+    return this->_buf.get() + this->size();
   } else {
     return this->_payload.get();
   }
@@ -419,7 +419,7 @@ QUICKeyPhase
 QUICPacketShortHeader::key_phase() const
 {
   if (this->_buf) {
-    if (this->_buf[0] & 0x20) {
+    if (this->_buf.get()[0] & 0x20) {
       return QUICKeyPhase::PHASE_1;
     } else {
       return QUICKeyPhase::PHASE_0;
@@ -664,7 +664,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
   size_t plain_txt_len     = 0;
 
-  QUICPacketHeaderUPtr header = QUICPacketHeader::load(buf.release(), len, base_packet_number);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::load(std::move(buf), len, base_packet_number);
 
   if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
     // We can't decrypt packets that have unknown versions

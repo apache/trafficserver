@@ -587,6 +587,7 @@ public:
   static void
   delete_stream_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicStreamFrameAllocator.free(static_cast<QUICStreamFrame *>(frame));
   }
 
@@ -600,90 +601,105 @@ public:
   static void
   delete_padding_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicPaddingFrameAllocator.free(static_cast<QUICPaddingFrame *>(frame));
   }
 
   static void
   delete_rst_stream_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicRstStreamFrameAllocator.free(static_cast<QUICRstStreamFrame *>(frame));
   }
 
   static void
   delete_connection_close_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicConnectionCloseFrameAllocator.free(static_cast<QUICConnectionCloseFrame *>(frame));
   }
 
   static void
   delete_application_close_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicApplicationCloseFrameAllocator.free(static_cast<QUICApplicationCloseFrame *>(frame));
   }
 
   static void
   delete_max_data_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicMaxDataFrameAllocator.free(static_cast<QUICMaxDataFrame *>(frame));
   }
 
   static void
   delete_max_stream_data_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicMaxStreamDataFrameAllocator.free(static_cast<QUICMaxStreamDataFrame *>(frame));
   }
 
   static void
   delete_max_stream_id_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicMaxStreamIdFrameAllocator.free(static_cast<QUICMaxStreamIdFrame *>(frame));
   }
 
   static void
   delete_ping_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicPingFrameAllocator.free(static_cast<QUICPingFrame *>(frame));
   }
 
   static void
   delete_blocked_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicBlockedFrameAllocator.free(static_cast<QUICBlockedFrame *>(frame));
   }
 
   static void
   delete_stream_blocked_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicStreamBlockedFrameAllocator.free(static_cast<QUICStreamBlockedFrame *>(frame));
   }
 
   static void
   delete_stream_id_blocked_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicStreamIdBlockedFrameAllocator.free(static_cast<QUICStreamIdBlockedFrame *>(frame));
   }
 
   static void
   delete_new_connection_id_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicNewConnectionIdFrameAllocator.free(static_cast<QUICNewConnectionIdFrame *>(frame));
   }
 
   static void
   delete_stop_sending_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicStopSendingFrameAllocator.free(static_cast<QUICStopSendingFrame *>(frame));
   }
 
   static void
   delete_pong_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicPongFrameAllocator.free(static_cast<QUICPongFrame *>(frame));
   }
 
   static void
   delete_retransmission_frame(QUICFrame *frame)
   {
+    frame->~QUICFrame();
     quicRetransmissionFrameAllocator.free(static_cast<QUICRetransmissionFrame *>(frame));
   }
 };

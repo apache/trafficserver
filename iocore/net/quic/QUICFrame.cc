@@ -332,6 +332,9 @@ void
 QUICAckFrame::reset(const uint8_t *buf, size_t len)
 {
   QUICFrame::reset(buf, len);
+  if (this->_ack_block_section) {
+    delete this->_ack_block_section;
+  }
   this->_ack_block_section = new AckBlockSection(buf + this->_get_ack_block_section_offset(), this->ack_block_count());
 }
 

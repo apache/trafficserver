@@ -52,7 +52,11 @@ using QUICPacketHeaderUPtr        = std::unique_ptr<QUICPacketHeader, QUICPacket
 class QUICPacketHeader
 {
 public:
-  QUICPacketHeader(const uint8_t *buf, size_t len, QUICPacketNumber base) : _buf(buf), _buf_len(len), _base_packet_number(base) {}
+  QUICPacketHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base)
+    : _buf(std::move(buf)), _buf_len(len), _base_packet_number(base)
+  {
+  }
+  ~QUICPacketHeader() {}
   const uint8_t *buf();
   virtual QUICPacketType type() const            = 0;
   virtual QUICConnectionId connection_id() const = 0;
@@ -104,7 +108,7 @@ public:
    *
    * This creates either a QUICPacketShortHeader or a QUICPacketLongHeader.
    */
-  static QUICPacketHeaderUPtr load(const uint8_t *buf, size_t len, QUICPacketNumber base);
+  static QUICPacketHeaderUPtr load(ats_unique_buf buf, size_t len, QUICPacketNumber base);
 
   /*
    * Build a QUICPacketHeader
@@ -135,7 +139,7 @@ protected:
   QUICPacketHeader(){};
 
   // These two are used only if the instance was created with a buffer
-  const uint8_t *_buf = nullptr;
+  ats_unique_buf _buf = {nullptr, [](void *p) { ats_free(p); }};
   size_t _buf_len     = 0;
 
   // These are used only if the instance was created without a buffer
@@ -157,7 +161,8 @@ class QUICPacketLongHeader : public QUICPacketHeader
 {
 public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
-  QUICPacketLongHeader(const uint8_t *buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(buf, len, base) {}
+  ~QUICPacketLongHeader(){};
+  QUICPacketLongHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(std::move(buf), len, base) {}
   QUICPacketLongHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                        QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf, size_t len);
   QUICPacketType type() const;
@@ -177,7 +182,8 @@ class QUICPacketShortHeader : public QUICPacketHeader
 {
 public:
   QUICPacketShortHeader() : QUICPacketHeader(){};
-  QUICPacketShortHeader(const uint8_t *buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(buf, len, base) {}
+  ~QUICPacketShortHeader(){};
+  QUICPacketShortHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(std::move(buf), len, base) {}
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
@@ -214,6 +220,7 @@ public:
   {
     QUICPacketLongHeader *long_header = dynamic_cast<QUICPacketLongHeader *>(header);
     ink_assert(long_header != nullptr);
+    long_header->~QUICPacketLongHeader();
     quicPacketLongHeaderAllocator.free(long_header);
   }
 
@@ -222,6 +229,7 @@ public:
   {
     QUICPacketShortHeader *short_header = dynamic_cast<QUICPacketShortHeader *>(header);
     ink_assert(short_header != nullptr);
+    short_header->~QUICPacketShortHeader();
     quicPacketShortHeaderAllocator.free(short_header);
   }
 };
@@ -320,6 +328,7 @@ public:
   static void
   delete_packet(QUICPacket *packet)
   {
+    packet->~QUICPacket();
     quicPacketAllocator.free(packet);
   }
 };
