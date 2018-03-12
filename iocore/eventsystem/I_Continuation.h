@@ -116,8 +116,16 @@ public:
     lock is initialized in the constructor and should not be set
     directly.
 
+    TODO:  make this private.
+
   */
   Ptr<ProxyMutex> mutex;
+
+  ProxyMutex *
+  getMutex() const
+  {
+    return mutex.get();
+  }
 
   /**
     Link to other continuations.
