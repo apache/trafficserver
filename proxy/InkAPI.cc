@@ -6722,9 +6722,9 @@ TSVConn
 TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  // TODO: This is somewhat of a leap of faith, but I think a TSHttpTxn is just another
-  // fancy continuation?
-  return TSVConnCreate(event_funcp, TSContMutexGet(reinterpret_cast<TSCont>(txnp)));
+
+  return TSVConnCreate(event_funcp,
+                       reinterpret_cast<TSMutex>(static_cast<Continuation *>(reinterpret_cast<HttpSM *>(txnp))->getMutex()));
 }
 
 TSVConn
