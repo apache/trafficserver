@@ -161,7 +161,7 @@ class QUICPacketLongHeader : public QUICPacketHeader
 {
 public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
-  ~QUICPacketLongHeader(){};
+  virtual ~QUICPacketLongHeader(){};
   QUICPacketLongHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(std::move(buf), len, base) {}
   QUICPacketLongHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                        QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf, size_t len);
@@ -182,7 +182,7 @@ class QUICPacketShortHeader : public QUICPacketHeader
 {
 public:
   QUICPacketShortHeader() : QUICPacketHeader(){};
-  ~QUICPacketShortHeader(){};
+  virtual ~QUICPacketShortHeader(){};
   QUICPacketShortHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(std::move(buf), len, base) {}
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
