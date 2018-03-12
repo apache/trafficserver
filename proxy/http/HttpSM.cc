@@ -1813,16 +1813,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
   case VC_EVENT_EOS:
     server_entry->eos = true;
 
-    // If no bytes were transmitted, the parser treats
-    // as a good 0.9 response which is technically is
-    // but it's indistinguishable from an overloaded
-    // server closing the connection so don't accept
-    // zero length responses
-    if (vio->ndone == 0) {
-      // Error handling function
-      handle_server_setup_error(event, data);
-      return 0;
-    }
   // Fall through
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
@@ -1863,12 +1853,11 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   server_response_hdr_bytes += bytes_used;
 
-  // Don't allow 0.9 (unparsable headers) on keep-alive connections after
-  //  the connection has already served a transaction as what we are likely
-  //  looking at is garbage on a keep-alive channel corrupted by the origin
-  //  server
-  if (state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9) &&
-      server_session->transact_count > 1) {
+  // Don't allow HTTP 0.9 (unparsable headers) on resued connections.
+  // And don't allow empty headers from closed connections
+  if ((state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9) &&
+       server_session->transact_count > 1) ||
+      (server_entry->eos && vio->ndone == 0)) {
     state = PARSE_RESULT_ERROR;
   }
   // Check to see if we are over the hdr size limit
