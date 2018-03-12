@@ -798,7 +798,7 @@ QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id,
   std::random_device rnd;
 
   uint8_t random_packet_number = static_cast<uint8_t>(rnd() & 0xFF);
-  size_t payload_len           = static_cast<uint8_t>(rnd() & 0xFF);
+  size_t payload_len           = static_cast<uint8_t>((rnd() & 0xFF) | 16); // Mimimum length has to be 16
   ats_unique_buf payload       = ats_unique_malloc(payload_len + 16);
   uint8_t *naked_payload       = payload.get();
 
