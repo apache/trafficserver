@@ -328,9 +328,9 @@ CacheVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *abuf)
   vio.nbytes    = nbytes;
   vio.vc_server = this;
 #ifdef DEBUG
-  ink_assert(c->mutex->thread_holding);
+  ink_assert(!c || c->mutex->thread_holding);
 #endif
-  if (!trigger && !recursive)
+  if (c && !trigger && !recursive)
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   return &vio;
 }
@@ -364,9 +364,9 @@ CacheVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuf, bool
   vio.nbytes    = nbytes;
   vio.vc_server = this;
 #ifdef DEBUG
-  ink_assert(c->mutex->thread_holding);
+  ink_assert(!c || c->mutex->thread_holding);
 #endif
-  if (!trigger && !recursive)
+  if (c && !trigger && !recursive)
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   return &vio;
 }
