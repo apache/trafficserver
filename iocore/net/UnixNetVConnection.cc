@@ -729,7 +729,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
     read.vio._cont  = nullptr;
-    f.shutdown      = NET_VC_SHUTDOWN_READ;
+    f.shutdown |= NET_VC_SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
     socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 1);
@@ -737,7 +737,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
     write.vio._cont  = nullptr;
-    f.shutdown       = NET_VC_SHUTDOWN_WRITE;
+    f.shutdown |= NET_VC_SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
     socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 2);
