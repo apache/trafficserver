@@ -194,6 +194,18 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
 }
 
 bool
+HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) const
+{
+  // maintain backwards compatibility/usability out of the box
+  if (compressible_status_codes_.empty()) {
+    return status_code == 200;
+  }
+
+  std::set<TSHttpStatus>::const_iterator it = compressible_status_codes_.find(status_code);
+  return it != compressible_status_codes_.end();
+}
+
+bool
 HostConfiguration::is_content_type_compressible(const char *content_type, int content_type_length)
 {
   string scontent_type(content_type, content_type_length);
@@ -242,6 +254,25 @@ HostConfiguration::add_compression_algorithms(string &line)
     } else {
       error("Unknown compression type. Supported compression-algorithms <br,gzip,deflate>.");
     }
+  }
+}
+
+void
+HostConfiguration::add_compressible_status_codes(string &line)
+{
+  for (;;) {
+    string token = extractFirstToken(line, isCommaOrSpace);
+    if (token.empty()) {
+      break;
+    }
+
+    uint status_code = strtoul(token.c_str(), nullptr, 10);
+    if (status_code == 0) {
+      error("Invalid status code %s", token.c_str());
+      continue;
+    }
+
+    compressible_status_codes_.insert(static_cast<TSHttpStatus>(status_code));
   }
 }
 
@@ -334,6 +365,9 @@ Configuration::Parse(const char *path)
           state = kParseStart;
         } else if (token == "allow") {
           state = kParseAllow;
+        } else if (token == "compressible-status-code") {
+          current_host_configuration->add_compressible_status_codes(line);
+          state = kParseStart;
         } else {
           warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
         }
