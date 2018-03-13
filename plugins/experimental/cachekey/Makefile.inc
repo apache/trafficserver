@@ -21,7 +21,3 @@ experimental_cachekey_cachekey_la_SOURCES = \
   experimental/cachekey/configs.cc \
   experimental/cachekey/pattern.cc \
   experimental/cachekey/plugin.cc
-
-VIRTUALENV_DIR = ../../../ci/tsqa/virtualenv
-tsqa: $(VIRTUALENV_DIR)
-	@. $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO
