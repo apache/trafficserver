@@ -34,16 +34,16 @@ Using the plugin in a remap rule would be e.g.::
 
    # remap.config
 
-   ...  @plugin=s3_auth @pparam=--access_key @pparam=my-key \
-                        @pparam=--secret_key @pparam=my-secret \
-			@pparam=--virtual_host
+   ...  @plugin=s3_auth.so @pparam=--access_key @pparam=my-key \
+                           @pparam=--secret_key @pparam=my-secret \
+                           @pparam=--virtual_host
 
 
 Alternatively, you can store the access key and secret in an external configuration file, and point the remap rule(s) to it::
 
    # remap.config
 
-   ...  @plugin=s3_auth @pparam=--config @pparam=s3_auth_v2.config
+   ...  @plugin=s3_auth.so @pparam=--config @pparam=s3_auth_v2.config
 
 
 Where ``s3.config`` could look like::
