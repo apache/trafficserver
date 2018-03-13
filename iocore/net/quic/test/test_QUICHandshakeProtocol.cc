@@ -102,8 +102,6 @@ verify_cookie_callback(SSL *ssl, const unsigned char *cookie, size_t cookie_len)
   }
 }
 
-
-
 TEST_CASE("QUICHndshakeProtocol Cleartext", "[quic]")
 {
   // Client

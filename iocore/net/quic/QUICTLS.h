@@ -45,6 +45,7 @@ public:
 
   int handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) override;
   bool is_handshake_finished() const override;
+  bool is_ready_to_derive() const override;
   bool is_key_derived(QUICKeyPhase key_phase) const override;
   int initialize_key_materials(QUICConnectionId cid) override;
   int update_key_materials() override;

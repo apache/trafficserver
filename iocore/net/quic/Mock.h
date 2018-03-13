@@ -476,6 +476,12 @@ public:
     return true;
   }
 
+  bool
+  is_ready_to_derive() const override
+  {
+    return true;
+  };
+
   bool is_key_derived(QUICKeyPhase /* key_phase */) const override { return true; }
 
   int

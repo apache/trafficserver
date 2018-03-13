@@ -42,7 +42,8 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
     0x00 // Payload
   };
 
-  QUICPacketHeaderUPtr header = QUICPacketHeader::load({client_initial_packet_header, [](void *) {}}, sizeof(client_initial_packet_header), 0);
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::load({client_initial_packet_header, [](void *) {}}, sizeof(client_initial_packet_header), 0);
   QUICPacket client_initial_packet(std::move(header), ats_unique_buf(client_initial_packet_payload, [](void *) {}),
                                    sizeof(client_initial_packet_payload), 0);
 

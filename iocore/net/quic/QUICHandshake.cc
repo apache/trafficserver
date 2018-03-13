@@ -464,7 +464,7 @@ QUICHandshake::_do_handshake(bool initial)
     stream_io->write(out, out_len);
   }
 
-  if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0)) {
+  if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0) && this->_hs_protocol->is_ready_to_derive()) {
     int res = this->_hs_protocol->update_key_materials();
     if (res) {
       QUICHSDebug("Keying Materials are exported");

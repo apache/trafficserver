@@ -150,6 +150,12 @@ QUICTLS::is_handshake_finished() const
 }
 
 bool
+QUICTLS::is_ready_to_derive() const
+{
+  return SSL_get_current_cipher(this->_ssl) != nullptr;
+}
+
+bool
 QUICTLS::is_key_derived(QUICKeyPhase key_phase) const
 {
   if (key_phase == QUICKeyPhase::ZERORTT) {

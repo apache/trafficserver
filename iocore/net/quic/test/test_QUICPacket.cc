@@ -37,7 +37,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x00, 0x00, 0x00, 0x09,                         // Supported Version 1
     };
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({const_cast<uint8_t*>(input), [](void *p) {}}, sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0);
     CHECK(header->size() == 13);
     CHECK(header->packet_size() == 21);
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
@@ -58,7 +58,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0xff, 0xff,                                     // Payload (dummy)
     };
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({const_cast<uint8_t*>(input), [](void *p) {}}, sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0);
     CHECK(header->size() == 17);
     CHECK(header->packet_size() == 19);
     CHECK(header->type() == QUICPacketType::INITIAL);
@@ -141,7 +141,7 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
     ats_unique_buf payload = ats_unique_malloc(5);
     memcpy(payload.get(), expected + 13, 5);
     QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, 0x0102030405060708,
-                                                       0x12345678, 0, std::move(payload), 32);
+                                                          0x12345678, 0, std::move(payload), 32);
     CHECK(header->size() == 13);
     CHECK(header->packet_size() == 0);
     CHECK(header->has_key_phase() == true);
