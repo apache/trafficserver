@@ -54,6 +54,7 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 
 ParentConsistentHash::~ParentConsistentHash()
 {
+  Debug("parent_select", "~ParentConsistentHash(): releasing hashes");
   delete chash[PRIMARY];
   delete chash[SECONDARY];
 }

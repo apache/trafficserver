@@ -325,7 +325,7 @@ class ParentConfigParams : public ConfigInfo
 {
 public:
   explicit ParentConfigParams(P_table *_parent_table);
-  ~ParentConfigParams(){};
+  ~ParentConfigParams();
 
   bool apiParentExists(HttpRequestData *rdata);
   void findParent(HttpRequestData *rdata, ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);
