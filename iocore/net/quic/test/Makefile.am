@@ -347,6 +347,8 @@ test_QUICKeyGenerator_LDFLAGS = \
 test_QUICKeyGenerator_LDADD = \
   @OPENSSL_LIBS@ \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a
 
@@ -355,6 +357,13 @@ test_QUICKeyGenerator_SOURCES = \
   test_QUICKeyGenerator.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
+  ../QUICDebugNames.cc \
+  ../QUICIncomingFrameBuffer.cc \
+  ../QUICFlowController.cc \
+  ../QUICPacket.cc \
+  ../QUICStreamState.cc \
+  ../QUICFrame.cc \
+  ../QUICStream.cc \
   ../QUICHKDF.cc \
   ../QUICTypes.cc
 
@@ -387,6 +396,13 @@ test_QUICHandshakeProtocol_SOURCES = \
   $(QUICTLS_impl) \
   ../QUICHandshakeProtocol.h \
   ../QUICTypes.cc \
+  ../QUICDebugNames.cc \
+  ../QUICStreamState.cc \
+  ../QUICFrame.cc \
+  ../QUICStream.cc \
+  ../QUICPacket.cc \
+  ../QUICIncomingFrameBuffer.cc \
+  ../QUICFlowController.cc \
   ../QUICGlobals.cc \
   ../../SSLNextProtocolSet.cc
 
