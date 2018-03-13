@@ -663,9 +663,9 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
 
-  // For now, only do gzip / brotli on 200 responses, dealing with error responses can mess up plugins
-  // like the escalate.so plugin, and possibly the escalation feature of parent.config. See #2913.
-  if (resp_status != 200) {
+  // NOTE: error responses can mess up plugins like the escalate.so plugin,
+  // and possibly the escalation feature of parent.config. See #2913.
+  if (!host_configuration->is_status_code_compressible(resp_status)) {
     info("http response status [%d] is not compressible", resp_status);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;

@@ -24,6 +24,7 @@
 #ifndef GZIP_CONFIGURATION_H_
 #define GZIP_CONFIGURATION_H_
 
+#include <set>
 #include <string>
 #include <vector>
 #include "debug_macros.h"
@@ -114,8 +115,10 @@ public:
   void add_disallow(const std::string &disallow);
   void add_allow(const std::string &allow);
   void add_compressible_content_type(const std::string &content_type);
+  void add_compressible_status_codes(std::string &status_codes);
   bool is_url_allowed(const char *url, int url_len);
   bool is_content_type_compressible(const char *content_type, int content_type_length);
+  bool is_status_code_compressible(const TSHttpStatus status_code) const;
   void add_compression_algorithms(std::string &algorithms);
   int compression_algorithms();
 
@@ -146,6 +149,7 @@ private:
   StringContainer compressible_content_types_;
   StringContainer disallows_;
   StringContainer allows_;
+  std::set<TSHttpStatus> compressible_status_codes_;
 
   DISALLOW_COPY_AND_ASSIGN(HostConfiguration);
 };
