@@ -104,7 +104,8 @@ enum ParserState {
   kParseCache,
   kParseDisallow,
   kParseFlush,
-  kParseAllow
+  kParseAllow,
+  kParseMinimumContentLength
 };
 
 void
@@ -377,6 +378,8 @@ Configuration::Parse(const char *path)
         } else if (token == "compressible-status-code") {
           current_host_configuration->add_compressible_status_codes(line);
           state = kParseStart;
+        } else if (token == "minimum-content-length") {
+          state = kParseMinimumContentLength;
         } else {
           warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
         }
@@ -407,6 +410,10 @@ Configuration::Parse(const char *path)
         break;
       case kParseAllow:
         current_host_configuration->add_allow(token);
+        state = kParseStart;
+        break;
+      case kParseMinimumContentLength:
+        current_host_configuration->set_minimum_content_length(strtoul(token.c_str(), nullptr, 10));
         state = kParseStart;
         break;
       }

@@ -51,6 +51,7 @@ public:
       remove_accept_encoding_(false),
       flush_(false),
       compression_algorithms_(ALGORITHM_GZIP),
+      minimum_content_length_(1024),
       ref_count_(0)
   {
   }
@@ -111,6 +112,16 @@ public:
   {
     return !allows_.empty();
   }
+  unsigned int
+  minimum_content_length() const
+  {
+    return minimum_content_length_;
+  }
+  void
+  set_minimum_content_length(unsigned int x)
+  {
+    minimum_content_length_ = x;
+  }
 
   void update_defaults();
   void add_disallow(const std::string &disallow);
@@ -145,6 +156,7 @@ private:
   bool remove_accept_encoding_;
   bool flush_;
   int compression_algorithms_;
+  unsigned int minimum_content_length_;
   int ref_count_;
 
   StringContainer compressible_content_types_;
