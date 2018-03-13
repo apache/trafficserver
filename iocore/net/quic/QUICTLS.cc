@@ -22,6 +22,7 @@
  */
 
 #include "QUICTLS.h"
+#include "QUICDebugNames.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -131,6 +132,7 @@ int
 QUICTLS::initialize_key_materials(QUICConnectionId cid)
 {
   // Generate keys
+  Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(QUICKeyPhase::CLEARTEXT));
   uint8_t print_buf[512];
   std::unique_ptr<KeyMaterial> km;
   km = this->_keygen_for_client.generate(cid);
@@ -182,6 +184,7 @@ QUICTLS::update_key_materials()
   }
 
   // Generate keys
+  Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(next_key_phase));
   uint8_t print_buf[512];
   std::unique_ptr<KeyMaterial> km;
   km = this->_keygen_for_client.generate(this->_ssl);
@@ -226,6 +229,7 @@ void
 QUICTLS::_generate_0rtt_key()
 {
   // Generate key material for 0-RTT
+  Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(QUICKeyPhase::ZERORTT));
   std::unique_ptr<KeyMaterial> km;
   km = this->_keygen_for_client.generate_0rtt(this->_ssl);
   if (is_debug_tag_set("vv_quic_crypto")) {
@@ -249,6 +253,7 @@ QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, con
                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
   QUICPacketProtection *pp = nullptr;
+  Debug(tag, "Encrypting packet using %s key", QUICDebugNames::key_phase(phase));
 
   switch (this->_netvc_context) {
   case NET_VCONNECTION_IN: {
@@ -267,10 +272,15 @@ QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, con
   size_t tag_len        = this->_get_aead_tag_len();
   const KeyMaterial *km = pp->get_key(phase);
   if (!km) {
+    Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
 
-  return _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, tag_len);
+  bool ret = _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, tag_len);
+  if (!ret) {
+    Debug(tag, "Failed to encrypt a packet: pkt_num=%" PRIu64, pkt_num);
+  }
+  return ret;
 }
 
 bool
@@ -278,6 +288,7 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
   QUICPacketProtection *pp = nullptr;
+  Debug(tag, "Decrypting packet using %s key", QUICDebugNames::key_phase(phase));
 
   switch (this->_netvc_context) {
   case NET_VCONNECTION_IN: {
@@ -296,6 +307,7 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
   size_t tag_len        = this->_get_aead_tag_len();
   const KeyMaterial *km = pp->get_key(phase);
   if (!km) {
+    Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
   bool ret = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, tag_len);

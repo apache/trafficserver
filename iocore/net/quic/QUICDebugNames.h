@@ -38,4 +38,5 @@ public:
   static const char *transport_parameter_id(QUICTransportParameterId id);
   static const char *stream_state(QUICStreamState state);
   static const char *quic_event(int event);
+  static const char *key_phase(QUICKeyPhase phase);
 };

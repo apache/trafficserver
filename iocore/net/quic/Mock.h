@@ -476,11 +476,7 @@ public:
     return true;
   }
 
-  bool
-  is_key_derived(QUICKeyPhase /* key_phase */) const override
-  {
-    return true;
-  }
+  bool is_key_derived(QUICKeyPhase /* key_phase */) const override { return true; }
 
   int
   initialize_key_materials(QUICConnectionId cid) override

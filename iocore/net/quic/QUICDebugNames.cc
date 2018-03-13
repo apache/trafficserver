@@ -208,3 +208,20 @@ QUICDebugNames::stream_state(QUICStreamState state)
     return "UNKNOWN";
   }
 }
+
+const char *
+QUICDebugNames::key_phase(QUICKeyPhase phase)
+{
+  switch (phase) {
+  case QUICKeyPhase::PHASE_0:
+    return "PHASE_0";
+  case QUICKeyPhase::PHASE_1:
+    return "PHASE_1";
+  case QUICKeyPhase::CLEARTEXT:
+    return "CLEARTEXT";
+  case QUICKeyPhase::ZERORTT:
+    return "ZERORTT";
+  default:
+    return "UNKNOWN";
+  }
+}

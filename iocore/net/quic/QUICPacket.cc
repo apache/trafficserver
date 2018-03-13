@@ -672,7 +672,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
     memcpy(plain_txt.get(), header->payload(), header->payload_size());
     plain_txt_len = header->payload_size();
   } else {
-    Debug("quic_packet", "Decrypting %s packet", QUICDebugNames::packet_type(header->type()));
+    Debug("quic_packet", "Decrypting %s packet #%" PRIu64, QUICDebugNames::packet_type(header->type()), header->packet_number());
     switch (header->type()) {
     case QUICPacketType::VERSION_NEGOTIATION:
     case QUICPacketType::STATELESS_RESET:
@@ -847,7 +847,7 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool re
   ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
   size_t cipher_txt_len     = 0;
 
-  Debug("quic_packet", "Encrypting %s packet", QUICDebugNames::packet_type(header->type()));
+  Debug("quic_packet", "Encrypting %s packet #%" PRIu64, QUICDebugNames::packet_type(header->type()), header->packet_number());
   QUICPacket *packet = nullptr;
   if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                                   header->packet_number(), header->buf(), header->size(), header->key_phase())) {
