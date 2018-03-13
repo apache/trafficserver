@@ -42,18 +42,17 @@ to_hex(uint8_t *out, uint8_t *in, int in_len)
   out[in_len * 2] = 0;
 }
 
-QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx)
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless)
+  : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx), _stateless(stateless)
 {
-  if (this->_netvc_context == NET_VCONNECTION_IN) {
-    SSL_set_accept_state(this->_ssl);
-  } else if (this->_netvc_context == NET_VCONNECTION_OUT) {
-    SSL_set_connect_state(this->_ssl);
-  } else {
-    ink_assert(false);
-  }
+  ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
 
   this->_client_pp = new QUICPacketProtection();
   this->_server_pp = new QUICPacketProtection();
+}
+
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICTLS(ssl, nvc_ctx, false)
+{
 }
 
 QUICTLS::~QUICTLS()
@@ -77,18 +76,50 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
 
   int err = SSL_ERROR_NONE;
   if (!SSL_is_init_finished(this->_ssl)) {
-    if (!this->_early_data_processed) {
-      if (this->_read_early_data()) {
-        Debug(tag, "Early data processed");
-        this->_early_data_processed = true;
-      }
-      if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT) && SSL_get_early_data_status(this->_ssl) == SSL_EARLY_DATA_ACCEPTED) {
-        this->_generate_0rtt_key();
-      }
-    }
     ERR_clear_error();
-    int ret = SSL_do_handshake(this->_ssl);
-    if (ret <= 0) {
+    int ret = 0;
+    if (this->_netvc_context == NET_VCONNECTION_IN) {
+      // // process early data
+      if (!this->_early_data_processed) {
+        if (this->_read_early_data()) {
+          this->_early_data_processed = true;
+        }
+
+        if (SSL_get_early_data_status(this->_ssl) == SSL_EARLY_DATA_ACCEPTED) {
+          Debug(tag, "Early data processed");
+
+          if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
+            this->_generate_0rtt_key();
+          }
+        }
+      }
+
+      // process stateless retry
+      if (this->_stateless && SSL_get_early_data_status(this->_ssl) != SSL_EARLY_DATA_ACCEPTED) {
+        // start over
+        // TODO: make sure no memory leaks
+        rbio = BIO_new(BIO_s_mem());
+        wbio = BIO_new(BIO_s_mem());
+        if (in != nullptr || in_len != 0) {
+          BIO_write(rbio, in, in_len);
+        }
+        SSL_set_bio(this->_ssl, rbio, wbio);
+
+        ret = SSL_stateless(this->_ssl);
+        if (ret >= 0) {
+          Debug(tag, "Sending HRR");
+          this->_stateless = false;
+        } else {
+          Debug(tag, "SSL_stateless error");
+        }
+      } else {
+        ret = SSL_accept(this->_ssl);
+      }
+    } else {
+      ret = SSL_connect(this->_ssl);
+    }
+
+    if (ret < 0) {
       err = SSL_get_error(this->_ssl, ret);
 
       switch (err) {
@@ -97,8 +128,8 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
         break;
       default:
         char err_buf[256] = {0};
-        ERR_error_string_n(err, err_buf, sizeof(err_buf));
-        Debug(tag, "Handshake error: %s (%d)", err_buf, err);
+        ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+        Debug(tag, "Handshake: %s", err_buf);
         return err;
       }
     }
@@ -126,6 +157,12 @@ QUICTLS::is_key_derived(QUICKeyPhase key_phase) const
   } else {
     return this->_client_pp->get_key(key_phase) && this->_server_pp->get_key(key_phase);
   }
+}
+
+bool
+QUICTLS::is_stateless()
+{
+  return this->_stateless;
 }
 
 int

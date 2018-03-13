@@ -56,6 +56,54 @@ print_hex(const uint8_t *v, size_t len)
   return;
 }
 
+static const uint8_t original[] = {
+  0x41, 0x70, 0x61, 0x63, 0x68, 0x65, 0x20, 0x54, 0x72, 0x61, 0x66, 0x66, 0x69, 0x63, 0x20, 0x53,
+  0x65, 0x72, 0x76, 0x65, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+static const uint64_t pkt_num = 0x123456789;
+static const uint8_t ad[]     = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+
+/* Fixed value used in the ServerHello random field to identify an HRR */
+const unsigned char hrr_random[] = {
+  0xcf, 0x21, 0xad, 0x74, 0xe5, 0x9a, 0x61, 0x11, 0xbe, 0x1d, 0x8c, 0x02, 0x1e, 0x65, 0xb8, 0x91,
+  0xc2, 0xa2, 0x11, 0x16, 0x7a, 0xbb, 0x8c, 0x5e, 0x07, 0x9e, 0x09, 0xe2, 0xc8, 0xa8, 0x33, 0x9c,
+};
+
+static const bool
+is_hrr(uint8_t *msg, size_t msg_len)
+{
+  return memmem(msg, msg_len, hrr_random, sizeof(hrr_random)) != nullptr;
+}
+
+// dummy token to simplify test
+static uint8_t token[] = {0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef,
+                          0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef,
+                          0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef,
+                          0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef};
+
+static int
+generate_cookie_callback(SSL * /* ssl */, unsigned char *cookie, size_t *cookie_len)
+{
+  memcpy(cookie, token, sizeof(token));
+  *cookie_len = sizeof(token);
+
+  return 1;
+}
+
+static int
+verify_cookie_callback(SSL *ssl, const unsigned char *cookie, size_t cookie_len)
+{
+  if (memcmp(token, cookie, sizeof(token)) == 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+
+
 TEST_CASE("QUICHndshakeProtocol Cleartext", "[quic]")
 {
   // Client
@@ -80,15 +128,6 @@ TEST_CASE("QUICHndshakeProtocol Cleartext", "[quic]")
   CHECK(server->initialize_key_materials(0x8394c8f03e515700));
 
   // encrypt - decrypt
-  uint8_t original[] = {
-    0x41, 0x70, 0x61, 0x63, 0x68, 0x65, 0x20, 0x54, 0x72, 0x61, 0x66, 0x66, 0x69, 0x63, 0x20, 0x53,
-    0x65, 0x72, 0x76, 0x65, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  };
-  uint64_t pkt_num = 0x123456789;
-  uint8_t ad[]     = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
-
   // client (encrypt) - server (decrypt)
   std::cout << "### Original Text" << std::endl;
   print_hex(original, sizeof(original));
@@ -175,15 +214,364 @@ TEST_CASE("QUICHandshakeProtocol 1-RTT", "[quic]")
   CHECK(server->update_key_materials());
 
   // encrypt - decrypt
-  uint8_t original[] = {
-    0x41, 0x70, 0x61, 0x63, 0x68, 0x65, 0x20, 0x54, 0x72, 0x61, 0x66, 0x66, 0x69, 0x63, 0x20, 0x53,
-    0x65, 0x72, 0x76, 0x65, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  };
-  uint64_t pkt_num = 0x123456789;
-  uint8_t ad[]     = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+  // client (encrypt) - server (decrypt)
+  std::cout << "### Original Text" << std::endl;
+  print_hex(original, sizeof(original));
 
+  uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
+  size_t cipher_len   = 0;
+  CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
+                        QUICKeyPhase::PHASE_0));
+
+  std::cout << "### Encrypted Text" << std::endl;
+  print_hex(cipher, cipher_len);
+
+  uint8_t plain[128] = {0};
+  size_t plain_len   = 0;
+  CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
+
+  std::cout << "### Decrypted Text" << std::endl;
+  print_hex(plain, plain_len);
+
+  CHECK(sizeof(original) == (plain_len));
+  CHECK(memcmp(original, plain, plain_len) == 0);
+
+  // Teardown
+  delete client;
+  delete server;
+}
+
+// HRR - Incorrect DHE Share
+// NOTE: This is *NOT* client address validation.
+//       https://tools.ietf.org/html/draft-ietf-tls-tls13-26 - 2.1.  Incorrect DHE Share
+TEST_CASE("QUICHandshakeProtocol 1-RTT HRR key_share mismatch", "[quic]")
+{
+  // Client
+  SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+
+  QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
+
+  // Server
+  SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+  BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
+  SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
+  BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
+  SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
+
+  // client key_share will be X25519 (default of OpenSSL)
+  if (SSL_CTX_set1_groups_list(server_ssl_ctx, "P-521:P-384:P-256") != 1) {
+    REQUIRE(false);
+  }
+
+  QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
+
+  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+
+  // Client Hello
+  uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_hello_len                     = 0;
+  REQUIRE(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
+  REQUIRE(client_hello_len > 0);
+  std::cout << "### Client Hello" << std::endl;
+  print_hex(client_hello, client_hello_len);
+
+  // Hello Retry Request w/o cookie
+  uint8_t retry[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t retry_len                     = 0;
+  REQUIRE(server->handshake(retry, retry_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) == SSL_ERROR_WANT_READ);
+  REQUIRE(retry_len > 0);
+  REQUIRE(is_hrr(retry, retry_len));
+  std::cout << "### HRR" << std::endl;
+  print_hex(retry, retry_len);
+
+  // Client Hello w/ cookie
+  memset(client_hello, 0, MAX_HANDSHAKE_MSG_LEN);
+  client_hello_len = 0;
+  REQUIRE(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, retry, retry_len) == SSL_ERROR_WANT_READ);
+  REQUIRE(client_hello_len > 0);
+  std::cout << "### Client Hello" << std::endl;
+  print_hex(client_hello, client_hello_len);
+
+  // Server Hello
+  uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t server_hello_len                     = 0;
+  REQUIRE(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
+          SSL_ERROR_WANT_READ);
+  REQUIRE(server_hello_len > 0);
+  std::cout << "### Server Hello" << std::endl;
+  print_hex(server_hello, server_hello_len);
+
+  // Client Fnished
+  uint8_t client_finished[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_finished_len                     = 0;
+  REQUIRE(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
+          SSL_ERROR_NONE);
+  REQUIRE(client_finished_len > 0);
+  std::cout << "### Client Finished" << std::endl;
+  print_hex(client_finished, client_finished_len);
+
+  CHECK(client->update_key_materials());
+
+  // Post Handshake Msg
+  uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t post_handshake_msg_len                     = 0;
+  REQUIRE(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
+                            client_finished_len) == SSL_ERROR_NONE);
+  std::cout << "### Post Handshake Message" << std::endl;
+  print_hex(post_handshake_msg, post_handshake_msg_len);
+
+  CHECK(server->update_key_materials());
+
+  // encrypt - decrypt
+  // client (encrypt) - server (decrypt)
+  std::cout << "### Original Text" << std::endl;
+  print_hex(original, sizeof(original));
+
+  uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
+  size_t cipher_len   = 0;
+  CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
+                        QUICKeyPhase::PHASE_0));
+
+  std::cout << "### Encrypted Text" << std::endl;
+  print_hex(cipher, cipher_len);
+
+  uint8_t plain[128] = {0};
+  size_t plain_len   = 0;
+  CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
+
+  std::cout << "### Decrypted Text" << std::endl;
+  print_hex(plain, plain_len);
+
+  CHECK(sizeof(original) == (plain_len));
+  CHECK(memcmp(original, plain, plain_len) == 0);
+
+  // Teardown
+  delete client;
+  delete server;
+}
+
+// HRR for client address varidation
+TEST_CASE("QUICHandshakeProtocol 1-RTT HRR statless", "[quic]")
+{
+  // Client
+  SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+
+  QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
+
+  // Server
+  SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+  BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
+  SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
+  BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
+  SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
+
+  // callbacks for cookie ext
+  // Requires OpenSSL-1.1.1-rc3+ : https://github.com/openssl/openssl/pull/5463
+  SSL_CTX_set_stateless_cookie_generate_cb(server_ssl_ctx, generate_cookie_callback);
+  SSL_CTX_set_stateless_cookie_verify_cb(server_ssl_ctx, verify_cookie_callback);
+
+  bool stateless                = true;
+  QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN, stateless);
+
+  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+
+  // Client Hello
+  uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_hello_len                     = 0;
+  REQUIRE(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
+  REQUIRE(client_hello_len > 0);
+  std::cout << "### Client Hello" << std::endl;
+  print_hex(client_hello, client_hello_len);
+
+  // Hello Retry Request
+  uint8_t retry[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t retry_len                     = 0;
+  CHECK(server->handshake(retry, retry_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) == SSL_ERROR_NONE);
+  REQUIRE(retry_len > 0);
+  CHECK(is_hrr(retry, retry_len));
+  std::cout << "### HRR" << std::endl;
+  print_hex(retry, retry_len);
+
+  // Make sure "stateless"
+  delete server;
+  server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN, stateless);
+
+  // Client Hello w/ cookie
+  memset(client_hello, 0, MAX_HANDSHAKE_MSG_LEN);
+  client_hello_len = 0;
+  CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, retry, retry_len) == SSL_ERROR_WANT_READ);
+  REQUIRE(client_hello_len > 0);
+  std::cout << "### Client Hello" << std::endl;
+  print_hex(client_hello, client_hello_len);
+
+  // Server Hello
+  uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t server_hello_len                     = 0;
+  REQUIRE(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
+          SSL_ERROR_NONE);
+  REQUIRE(server_hello_len > 0);
+  std::cout << "### Server Hello" << std::endl;
+  print_hex(server_hello, server_hello_len);
+
+  // Client Fnished
+  uint8_t client_finished[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_finished_len                     = 0;
+  REQUIRE(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
+          SSL_ERROR_NONE);
+  REQUIRE(client_finished_len > 0);
+  std::cout << "### Client Finished" << std::endl;
+  print_hex(client_finished, client_finished_len);
+
+  CHECK(client->update_key_materials());
+
+  // Post Handshake Msg
+  uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t post_handshake_msg_len                     = 0;
+  REQUIRE(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
+                            client_finished_len) == SSL_ERROR_NONE);
+  std::cout << "### Post Handshake Message" << std::endl;
+  print_hex(post_handshake_msg, post_handshake_msg_len);
+
+  CHECK(server->update_key_materials());
+
+  // encrypt - decrypt
+  // client (encrypt) - server (decrypt)
+  std::cout << "### Original Text" << std::endl;
+  print_hex(original, sizeof(original));
+
+  uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
+  size_t cipher_len   = 0;
+  CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
+                        QUICKeyPhase::PHASE_0));
+
+  std::cout << "### Encrypted Text" << std::endl;
+  print_hex(cipher, cipher_len);
+
+  uint8_t plain[128] = {0};
+  size_t plain_len   = 0;
+  CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
+
+  std::cout << "### Decrypted Text" << std::endl;
+  print_hex(plain, plain_len);
+
+  CHECK(sizeof(original) == (plain_len));
+  CHECK(memcmp(original, plain, plain_len) == 0);
+
+  // Teardown
+  delete client;
+  delete server;
+}
+
+// HRR for client address varidation & Incorrect DHE Share
+TEST_CASE("QUICHandshakeProtocol 1-RTT HRR statless & key_share mismatch", "[quic]")
+{
+  // Client
+  SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+
+  QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
+
+  // Server
+  SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+  BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
+  SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
+  BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
+  SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
+
+  // client key_share will be X25519 (default of OpenSSL)
+  if (SSL_CTX_set1_groups_list(server_ssl_ctx, "P-521:P-384:P-256") != 1) {
+    REQUIRE(false);
+  }
+
+  // callbacks for cookie ext
+  SSL_CTX_set_stateless_cookie_generate_cb(server_ssl_ctx, generate_cookie_callback);
+  SSL_CTX_set_stateless_cookie_verify_cb(server_ssl_ctx, verify_cookie_callback);
+
+  bool stateless                = true;
+  QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN, stateless);
+
+  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+
+  // Client Hello
+  uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_hello_len                     = 0;
+  REQUIRE(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
+  REQUIRE(client_hello_len > 0);
+  std::cout << "### Client Hello" << std::endl;
+  print_hex(client_hello, client_hello_len);
+
+  // Hello Retry Request
+  uint8_t retry[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t retry_len                     = 0;
+  CHECK(server->handshake(retry, retry_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) == SSL_ERROR_NONE);
+  REQUIRE(retry_len > 0);
+  REQUIRE(is_hrr(retry, retry_len));
+  std::cout << "### HRR" << std::endl;
+  print_hex(retry, retry_len);
+
+  // Make sure "stateless"
+  delete server;
+  server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN, stateless);
+
+  // Client Hello w/ cookie
+  memset(client_hello, 0, MAX_HANDSHAKE_MSG_LEN);
+  client_hello_len = 0;
+  REQUIRE(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, retry, retry_len) == SSL_ERROR_WANT_READ);
+  REQUIRE(client_hello_len > 0);
+  std::cout << "### Client Hello" << std::endl;
+  print_hex(client_hello, client_hello_len);
+
+  // Server Hello
+  uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t server_hello_len                     = 0;
+  REQUIRE(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
+          SSL_ERROR_NONE);
+  REQUIRE(server_hello_len > 0);
+  std::cout << "### Server Hello" << std::endl;
+  print_hex(server_hello, server_hello_len);
+
+  // Client Fnished
+  uint8_t client_finished[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_finished_len                     = 0;
+  CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
+        SSL_ERROR_NONE);
+  REQUIRE(client_finished_len > 0);
+  std::cout << "### Client Finished" << std::endl;
+  print_hex(client_finished, client_finished_len);
+
+  CHECK(client->update_key_materials());
+
+  // Post Handshake Msg
+  uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t post_handshake_msg_len                     = 0;
+  REQUIRE(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
+                            client_finished_len) == SSL_ERROR_NONE);
+  std::cout << "### Post Handshake Message" << std::endl;
+  print_hex(post_handshake_msg, post_handshake_msg_len);
+
+  CHECK(server->update_key_materials());
+
+  // encrypt - decrypt
   // client (encrypt) - server (decrypt)
   std::cout << "### Original Text" << std::endl;
   print_hex(original, sizeof(original));
