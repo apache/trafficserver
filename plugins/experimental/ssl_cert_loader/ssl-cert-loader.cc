@@ -391,7 +391,7 @@ CB_Pre_Accept(TSCont /*contp*/, TSEvent event, void *edata)
   char buff2[INET6_ADDRSTRLEN];
 
   TSDebug(PN, "Pre accept callback %p - event is %s, target address %s, client address %s", ssl_vc,
-          event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad", ip.toString(buff, sizeof(buff)),
+          event == TS_EVENT_VCONN_START ? "good" : "bad", ip.toString(buff, sizeof(buff)),
           ip_client.toString(buff2, sizeof(buff2)));
 
   // Is there a cert already defined for this IP?
@@ -534,7 +534,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "Failed to create SNI callback");
   } else {
     TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb_lc);
-    TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
+    TSHttpHookAdd(TS_VCONN_START_HOOK, cb_pa);
     TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
     success = true;
   }

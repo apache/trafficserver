@@ -257,9 +257,9 @@ typedef enum {
 
     The two transform hooks can ONLY be added as transaction hooks.
 
-    TS_VCONN_PRE_ACCEPT_HOOK - Called before the SSL hand
-    shake starts.  No handshake data has been read or sent (from the
-    proxy) at this point
+    TS_VCONN_START_HOOK - called just after the connection is created,
+    before other activity such as I/O or TLS handshakes  No handshake
+    data has been read or sent (from the proxy) at this point
 
     TS_HTTP_LAST_HOOK _must_ be the last element. Only right place
     to insert a new element is just before TS_HTTP_LAST_HOOK.
@@ -286,7 +286,9 @@ typedef enum {
   // Putting the SSL hooks in the same enum space
   // So both sets of hooks can be set by the same Hook function
   TS_SSL_FIRST_HOOK,
-  TS_VCONN_PRE_ACCEPT_HOOK = TS_SSL_FIRST_HOOK,
+  TS_VCONN_START_HOOK = TS_SSL_FIRST_HOOK,
+  TS_VCONN_PRE_ACCEPT_HOOK = TS_VCONN_START_HOOK, // Deprecated but compatible for now.
+  TS_VCONN_CLOSE_HOOK,
   TS_SSL_SNI_HOOK,
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
   TS_SSL_SERVERNAME_HOOK,
@@ -294,7 +296,7 @@ typedef enum {
   TS_SSL_VERIFY_CLIENT_HOOK,
   TS_SSL_SESSION_HOOK,
   TS_SSL_LAST_HOOK = TS_SSL_SESSION_HOOK,
-  TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK = 23,
+  TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK = 24,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
 
@@ -451,7 +453,9 @@ typedef enum {
   TS_EVENT_LIFECYCLE_CACHE_READY                = 60020,
   TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60021,
   TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60022,
-  TS_EVENT_VCONN_PRE_ACCEPT                     = 60023,
+  TS_EVENT_VCONN_START                          = 60023,
+  TS_EVENT_VCONN_PRE_ACCEPT                     = TS_EVENT_VCONN_START, // Deprecated but still compatible
+  TS_EVENT_VCONN_CLOSE                          = 60026,
   TS_EVENT_LIFECYCLE_MSG                        = 60024,
   TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE         = 60025,
   TS_EVENT_MGMT_UPDATE                          = 60100,

@@ -62,7 +62,8 @@ example_Plugins = \
 	txn_data_sink.la \
 	version.la \
 	disable_http2.la \
-	verify_cert.la
+	verify_cert.la \
+	vconn_args.la
 
 example_Plugins += \
 	cppapi/AsyncHttpFetch.la \
@@ -133,6 +134,7 @@ txn_data_sink_la_SOURCES = txn_data_sink/txn_data_sink.c
 version_la_SOURCES = version/version.c
 redirect_1_la_SOURCES = redirect_1/redirect_1.c
 session_hooks_la_SOURCES = session_hooks/session_hooks.c
+vconn_args_la_SOURCES = vconn_args/vconn_args.cc
 
 cppapi_AsyncHttpFetchStreaming_la_SOURCES = cppapi/async_http_fetch_streaming/AsyncHttpFetchStreaming.cc
 cppapi_AsyncHttpFetch_la_SOURCES = cppapi/async_http_fetch/AsyncHttpFetch.cc
