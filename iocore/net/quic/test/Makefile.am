@@ -49,6 +49,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/proxy/logging \
   -I$(abs_top_srcdir)/proxy/shared \
   -I$(abs_top_srcdir)/tests/include \
+  $(TS_INCLUDES) \
   @OPENSSL_INCLUDES@
 
 if OPENSSL_IS_BORINGSSL
@@ -382,12 +383,13 @@ test_QUICHandshakeProtocol_LDFLAGS = \
   @OPENSSL_LDFLAGS@
 
 test_QUICHandshakeProtocol_LDADD = \
-  @OPENSSL_LIBS@ \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @LIBTCL@ \
+  @OPENSSL_LIBS@
 
 test_QUICHandshakeProtocol_SOURCES = \
   main.cc \
