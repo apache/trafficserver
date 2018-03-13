@@ -477,7 +477,7 @@ public:
   }
 
   bool
-  is_key_derived() const override
+  is_key_derived(QUICKeyPhase /* key_phase */) const override
   {
     return true;
   }
