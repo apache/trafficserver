@@ -258,7 +258,7 @@ struct NetVCOptions {
   stream IO to be done based on a single read or write call.
 
 */
-class NetVConnection : public VConnection
+class NetVConnection : public AnnotatedVConnection
 {
 public:
   // How many bytes have been queued to the OS for sending by haven't been sent yet
@@ -661,7 +661,7 @@ protected:
 };
 
 inline NetVConnection::NetVConnection()
-  : VConnection(nullptr),
+  : AnnotatedVConnection(nullptr),
     attributes(0),
     thread(nullptr),
     got_local_addr(0),
