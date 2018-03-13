@@ -742,6 +742,21 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
     return 0;
   }
 
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+  if (field_loc != TS_NULL_MLOC) {
+    unsigned int value = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, field_loc, -1);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    if (value == 0) {
+      info("response is 0-length, not compressible");
+      return 0;
+    }
+
+    if (value < host_configuration->minimum_content_length()) {
+      info("response is is smaller than minimum content length, not compressing");
+      return 0;
+    }
+  }
+
   /* We only want to do gzip compression on documents that have a
      content type of "text/" or "application/x-javascript". */
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
