@@ -23,7 +23,7 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h string_view.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_Scalar test_tslib
+check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -251,8 +251,6 @@ test_tsutil_SOURCES = \
 	test_Regex.cc \
 	tests.cc
 
-test_Scalar_SOURCES = test_Scalar.cc Scalar.h
-
 test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
@@ -266,6 +264,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \
 	unit-tests/test_MT_hashtable.cc \
+	unit-tests/test_Scalar.cc \
 	unit-tests/test_string_view.cc \
 	unit-tests/test_TextView.cc
 
