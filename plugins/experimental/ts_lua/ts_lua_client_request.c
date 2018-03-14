@@ -527,10 +527,8 @@ ts_lua_client_request_set_url_scheme(lua_State *L)
 static int
 ts_lua_client_request_get_uri(lua_State *L)
 {
-  char uri[TS_LUA_MAX_URL_LENGTH];
   const char *path;
   int path_len;
-  int uri_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -538,13 +536,9 @@ ts_lua_client_request_get_uri(lua_State *L)
 
   path = TSUrlPathGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &path_len);
 
-  uri_len = snprintf(uri, TS_LUA_MAX_URL_LENGTH, "/%.*s", path_len, path);
-
-  if (uri_len >= TS_LUA_MAX_URL_LENGTH) {
-    lua_pushlstring(L, uri, TS_LUA_MAX_URL_LENGTH - 1);
-  } else {
-    lua_pushlstring(L, uri, uri_len);
-  }
+  lua_pushlstring(L, "/", 1);
+  lua_pushlstring(L, path, path_len >= TS_LUA_MAX_URL_LENGTH - 1 ? TS_LUA_MAX_URL_LENGTH - 2 : path_len);
+  lua_concat(L, 2);
 
   return 1;
 }

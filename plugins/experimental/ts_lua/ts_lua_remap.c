@@ -170,10 +170,8 @@ ts_lua_remap_get_from_url_scheme(lua_State *L)
 static int
 ts_lua_remap_get_from_uri(lua_State *L)
 {
-  char uri[TS_LUA_MAX_URL_LENGTH];
   const char *path;
   int path_len;
-  int uri_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -182,13 +180,9 @@ ts_lua_remap_get_from_uri(lua_State *L)
   if (http_ctx->rri != NULL) {
     path = TSUrlPathGet(http_ctx->client_request_bufp, http_ctx->rri->mapFromUrl, &path_len);
 
-    uri_len = snprintf(uri, TS_LUA_MAX_URL_LENGTH, "/%.*s", path_len, path);
-
-    if (uri_len >= TS_LUA_MAX_URL_LENGTH) {
-      lua_pushlstring(L, uri, TS_LUA_MAX_URL_LENGTH - 1);
-    } else {
-      lua_pushlstring(L, uri, uri_len);
-    }
+    lua_pushlstring(L, "/", 1);
+    lua_pushlstring(L, path, path_len >= TS_LUA_MAX_URL_LENGTH - 1 ? TS_LUA_MAX_URL_LENGTH - 2 : path_len);
+    lua_concat(L, 2);
   } else {
     lua_pushnil(L);
   }
@@ -199,10 +193,8 @@ ts_lua_remap_get_from_uri(lua_State *L)
 static int
 ts_lua_remap_get_from_url(lua_State *L)
 {
-  char output[TS_LUA_MAX_URL_LENGTH];
   char *url;
   int url_len;
-  int output_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -211,13 +203,7 @@ ts_lua_remap_get_from_url(lua_State *L)
   if (http_ctx->rri != NULL) {
     url = TSUrlStringGet(http_ctx->client_request_bufp, http_ctx->rri->mapFromUrl, &url_len);
 
-    output_len = snprintf(output, TS_LUA_MAX_URL_LENGTH, "%.*s", url_len, url);
-
-    if (output_len >= TS_LUA_MAX_URL_LENGTH) {
-      lua_pushlstring(L, output, TS_LUA_MAX_URL_LENGTH - 1);
-    } else {
-      lua_pushlstring(L, output, output_len);
-    }
+    lua_pushlstring(L, url, url_len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : url_len);
 
     TSfree(url);
   } else {
@@ -300,10 +286,8 @@ ts_lua_remap_get_to_url_scheme(lua_State *L)
 static int
 ts_lua_remap_get_to_uri(lua_State *L)
 {
-  char uri[TS_LUA_MAX_URL_LENGTH];
   const char *path;
   int path_len;
-  int uri_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -312,13 +296,9 @@ ts_lua_remap_get_to_uri(lua_State *L)
   if (http_ctx->rri != NULL) {
     path = TSUrlPathGet(http_ctx->client_request_bufp, http_ctx->rri->mapToUrl, &path_len);
 
-    uri_len = snprintf(uri, TS_LUA_MAX_URL_LENGTH, "/%.*s", path_len, path);
-
-    if (uri_len >= TS_LUA_MAX_URL_LENGTH) {
-      lua_pushlstring(L, uri, TS_LUA_MAX_URL_LENGTH - 1);
-    } else {
-      lua_pushlstring(L, uri, uri_len);
-    }
+    lua_pushlstring(L, "/", 1);
+    lua_pushlstring(L, path, path_len >= TS_LUA_MAX_URL_LENGTH - 1 ? TS_LUA_MAX_URL_LENGTH - 2 : path_len);
+    lua_concat(L, 2);
   } else {
     lua_pushnil(L);
   }
@@ -329,10 +309,8 @@ ts_lua_remap_get_to_uri(lua_State *L)
 static int
 ts_lua_remap_get_to_url(lua_State *L)
 {
-  char output[TS_LUA_MAX_URL_LENGTH];
   char *url;
   int url_len;
-  int output_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -341,13 +319,7 @@ ts_lua_remap_get_to_url(lua_State *L)
   if (http_ctx->rri != NULL) {
     url = TSUrlStringGet(http_ctx->client_request_bufp, http_ctx->rri->mapToUrl, &url_len);
 
-    output_len = snprintf(output, TS_LUA_MAX_URL_LENGTH, "%.*s", url_len, url);
-
-    if (output_len >= TS_LUA_MAX_URL_LENGTH) {
-      lua_pushlstring(L, output, TS_LUA_MAX_URL_LENGTH - 1);
-    } else {
-      lua_pushlstring(L, output, output_len);
-    }
+    lua_pushlstring(L, url, url_len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : url_len);
 
     TSfree(url);
   } else {
