@@ -112,6 +112,8 @@ class SSLNextProtocolSet;
  *  |   _state_handshake_process_zero_rtt_protected_packet()
  *  | WRITE:
  *  |   _state_common_send_packet()
+ *  |   or
+ *  |   _state_handshake_send_retry_packet()
  *  v
  * state_connection_established()
  *  | READ:
@@ -295,6 +297,7 @@ private:
   QUICErrorUPtr _state_common_receive_packet();
   QUICErrorUPtr _state_connection_closing_and_draining_receive_packet();
   QUICErrorUPtr _state_common_send_packet();
+  QUICErrorUPtr _state_handshake_send_retry_packet();
   QUICErrorUPtr _state_closing_send_packet();
 
   Ptr<ProxyMutex> _packet_transmitter_mutex;

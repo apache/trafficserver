@@ -1328,6 +1328,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.connection_table.size", RECD_INT, "65521", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-536870909]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.quic.stateless_retry", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
 
   //# Add LOCAL Records Here
   {RECT_LOCAL, "proxy.local.incoming_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

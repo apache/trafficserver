@@ -55,7 +55,7 @@ public:
   // Constructor for client side
   QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx);
   // Constructor for server side
-  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token);
+  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token, bool stateless_retry);
   ~QUICHandshake();
 
   // for client side
@@ -79,12 +79,16 @@ public:
   std::shared_ptr<const QUICTransportParameters> local_transport_parameters();
   std::shared_ptr<const QUICTransportParameters> remote_transport_parameters();
 
-  bool is_version_negotiated();
-  bool is_completed();
+  bool is_version_negotiated() const;
+  bool is_completed() const;
+  bool is_stateless_retry_enabled() const;
 
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInClientHello> tp);
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp);
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInNewSessionTicket> tp);
+
+  // A workaround API to indicate handshake msg type to QUICNetVConnection
+  QUICHandshakeMsgType msg_type() const;
 
 private:
   SSL *_ssl                                                             = nullptr;
@@ -93,6 +97,9 @@ private:
   std::shared_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
 
   QUICVersionNegotiator *_version_negotiator = nullptr;
+  NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
+  QUICStatelessResetToken _reset_token;
+  bool _stateless_retry = false;
 
   void _load_local_server_transport_parameters(QUICVersion negotiated_version);
   void _load_local_client_transport_parameters(QUICVersion initial_version);
@@ -106,7 +113,4 @@ private:
 
   int _complete_handshake();
   void _abort_handshake(QUICTransErrorCode code);
-
-  NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
-  QUICStatelessResetToken _reset_token;
 };

@@ -56,7 +56,6 @@ public:
 
   // FIXME SSL handle should not be exported
   SSL *ssl_handle();
-  bool is_stateless();
 
 private:
   QUICKeyGenerator _keygen_for_client = QUICKeyGenerator(QUICKeyGenerator::Context::CLIENT);

@@ -85,6 +85,32 @@ QUICPacketHandler::_read_connection_id(IOBufferBlock *block)
   return QUICPacket::connection_id(buf);
 }
 
+// TODO: ramdomize token and verify it
+// dummy token to simplify test
+static uint8_t token[] = {0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef,
+                          0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef,
+                          0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef,
+                          0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef};
+
+static int
+generate_cookie_callback(SSL * /* ssl */, unsigned char *cookie, size_t *cookie_len)
+{
+  memcpy(cookie, token, sizeof(token));
+  *cookie_len = sizeof(token);
+
+  return 1;
+}
+
+static int
+verify_cookie_callback(SSL *ssl, const unsigned char *cookie, size_t cookie_len)
+{
+  if (memcmp(token, cookie, sizeof(token)) == 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 //
 // QUICPacketHandlerIn
 //
@@ -94,6 +120,11 @@ QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt,
   // create Connection Table
   QUICConfig::scoped_config params;
   _ctable = new QUICConnectionTable(params->connection_table_size());
+
+  // callbacks for cookie ext
+  // Requires OpenSSL-1.1.1-pre3+ : https://github.com/openssl/openssl/pull/5463
+  SSL_CTX_set_stateless_cookie_generate_cb(this->_ssl_ctx, generate_cookie_callback);
+  SSL_CTX_set_stateless_cookie_verify_cb(this->_ssl_ctx, verify_cookie_callback);
 }
 
 QUICPacketHandlerIn::~QUICPacketHandlerIn()

@@ -176,7 +176,7 @@ QUICNetVConnection::start(SSL_CTX *ssl_ctx)
   if (this->direction() == NET_VCONNECTION_IN) {
     QUICConfig::scoped_config params;
     this->_reset_token.generate(this->_quic_connection_id, params->server_id());
-    this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_reset_token);
+    this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_reset_token, params->stateless_retry());
   } else {
     this->_handshake_handler = new QUICHandshake(this, ssl_ctx);
     this->_handshake_handler->start(&this->_packet_factory);
@@ -549,7 +549,16 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_close_packet_write_ready(data);
-    error = this->_state_common_send_packet();
+
+    if (this->_handshake_handler && this->_handshake_handler->msg_type() == QUICHandshakeMsgType::HRR) {
+      error = this->_state_handshake_send_retry_packet();
+      if (this->_handshake_handler->is_stateless_retry_enabled()) {
+        this->_switch_to_close_state();
+      }
+    } else {
+      error = this->_state_common_send_packet();
+    }
+
     break;
   }
   case EVENT_IMMEDIATE:
@@ -919,6 +928,37 @@ QUICNetVConnection::_state_common_send_packet()
   return QUICErrorUPtr(new QUICNoError());
 }
 
+// RETRY packet contains ONLY a single STREAM frame
+QUICErrorUPtr
+QUICNetVConnection::_state_handshake_send_retry_packet()
+{
+  size_t len = 0;
+  ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
+  QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
+
+  QUICFrameUPtr frame(nullptr, nullptr);
+  bool retransmittable = this->_handshake_handler->is_stateless_retry_enabled() ? false : true;
+
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
+
+  ink_assert(this->_frame_send_queue.size() == 1);
+  frame = std::move(this->_frame_send_queue.front());
+  this->_frame_send_queue.pop();
+  this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+  if (len == 0) {
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
+  }
+
+  QUICPacketUPtr packet = this->_build_packet(std::move(buf), len, retransmittable, QUICPacketType::RETRY);
+  this->_packet_handler->send_packet(*packet, this);
+  this->_loss_detector->on_packet_sent(std::move(packet));
+
+  QUIC_INCREMENT_DYN_STAT_EX(QUICStats::total_packets_sent_stat, 1);
+
+  return QUICErrorUPtr(new QUICNoError());
+}
+
 QUICErrorUPtr
 QUICNetVConnection::_state_closing_send_packet()
 {
@@ -1088,6 +1128,10 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
     ink_assert(this->get_context() == NET_VCONNECTION_OUT);
     packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->largest_acked_packet_number(),
                                                          QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
+    break;
+  case QUICPacketType::RETRY:
+    packet = this->_packet_factory.create_retry_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                       std::move(buf), len, retransmittable);
     break;
   case QUICPacketType::HANDSHAKE:
     packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),

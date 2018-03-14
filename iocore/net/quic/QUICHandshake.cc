@@ -86,17 +86,18 @@ static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandshake(qc, ssl_ctx, {})
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandshake(qc, ssl_ctx, {}, false)
 {
 }
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token)
+QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token, bool stateless_retry)
   : QUICApplication(qc),
     _ssl(SSL_new(ssl_ctx)),
-    _hs_protocol(new QUICTLS(this->_ssl, qc->direction())),
+    _hs_protocol(new QUICTLS(this->_ssl, qc->direction(), stateless_retry)),
     _version_negotiator(new QUICVersionNegotiator()),
     _netvc_context(qc->direction()),
-    _reset_token(token)
+    _reset_token(token),
+    _stateless_retry(stateless_retry)
 {
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
@@ -144,16 +145,23 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
 }
 
 bool
-QUICHandshake::is_version_negotiated()
+QUICHandshake::is_version_negotiated() const
 {
   return (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NEGOTIATED);
 }
 
 bool
-QUICHandshake::is_completed()
+QUICHandshake::is_completed() const
 {
   return this->handler == &QUICHandshake::state_complete;
 }
+
+bool
+QUICHandshake::is_stateless_retry_enabled() const
+{
+  return this->_stateless_retry;
+}
+
 
 QUICHandshakeProtocol *
 QUICHandshake::protocol()
@@ -393,6 +401,16 @@ QUICHandshake::state_closed(int event, void *data)
 {
   return EVENT_DONE;
 }
+
+QUICHandshakeMsgType
+QUICHandshake::msg_type() const {
+  if (this->_hs_protocol) {
+    return this->_hs_protocol->msg_type();
+  } else {
+    return QUICHandshakeMsgType::NONE;
+  }
+}
+
 void
 QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_version)
 {
@@ -505,12 +523,18 @@ QUICHandshake::_process_client_hello()
   QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
 
   switch (result) {
+  case SSL_ERROR_NONE:
   case SSL_ERROR_WANT_READ: {
-    QUICHSDebug("Enter state_auth");
-    SET_HANDLER(&QUICHandshake::state_auth);
+    if (this->_hs_protocol->msg_type() == QUICHandshakeMsgType::HRR) {
+      // TODO: Send HRR on Retry Packet directly
+      stream_io->write_reenable();
+    } else {
+      QUICHSDebug("Enter state_auth");
+      SET_HANDLER(&QUICHandshake::state_auth);
 
-    stream_io->write_reenable();
-    stream_io->read_reenable();
+      stream_io->write_reenable();
+      stream_io->read_reenable();
+    }
 
     break;
   }

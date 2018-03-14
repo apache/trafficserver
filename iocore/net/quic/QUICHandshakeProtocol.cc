@@ -79,3 +79,12 @@ QUICPacketProtection::key_phase() const
 {
   return this->_key_phase;
 }
+
+//
+// QUICHandshakeProtocol
+//
+QUICHandshakeMsgType
+QUICHandshakeProtocol::msg_type() const
+{
+  return this->_msg_type;
+}

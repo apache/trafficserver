@@ -343,7 +343,7 @@ public:
   QUICPacketUPtr create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, QUICVersion version,
                                        ats_unique_buf payload, size_t len);
   QUICPacketUPtr create_retry_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, ats_unique_buf payload,
-                                     size_t len);
+                                     size_t len, bool retransmittable);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                          ats_unique_buf payload, size_t len, bool retransmittable);
   QUICPacketUPtr create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,

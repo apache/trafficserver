@@ -79,7 +79,7 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
     ERR_clear_error();
     int ret = 0;
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      // // process early data
+      // process early data
       if (!this->_early_data_processed) {
         if (this->_read_early_data()) {
           this->_early_data_processed = true;
@@ -106,14 +106,15 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
         SSL_set_bio(this->_ssl, rbio, wbio);
 
         ret = SSL_stateless(this->_ssl);
-        if (ret >= 0) {
-          Debug(tag, "Sending HRR");
+        if (ret > 0) {
           this->_stateless = false;
-        } else {
-          Debug(tag, "SSL_stateless error");
+          this->_msg_type = QUICHandshakeMsgType::SH;
+        } else if (ret == 0) {
+          this->_msg_type = QUICHandshakeMsgType::HRR;
         }
       } else {
         ret = SSL_accept(this->_ssl);
+        this->_msg_type = QUICHandshakeMsgType::SH;
       }
     } else {
       ret = SSL_connect(this->_ssl);
@@ -163,12 +164,6 @@ QUICTLS::is_key_derived(QUICKeyPhase key_phase) const
   } else {
     return this->_client_pp->get_key(key_phase) && this->_server_pp->get_key(key_phase);
   }
-}
-
-bool
-QUICTLS::is_stateless()
-{
-  return this->_stateless;
 }
 
 int

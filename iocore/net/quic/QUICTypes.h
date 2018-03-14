@@ -136,6 +136,14 @@ enum class QUICTransErrorCode : uint16_t {
   TLS_FATAL_ALERT_RECEIVED,
 };
 
+enum class QUICHandshakeMsgType {
+  NONE = 0,
+  CH,
+  SH,
+  HRR,
+  FN,
+};
+
 // Application Protocol Error Codes defined in application
 using QUICAppErrorCode                          = uint16_t;
 constexpr uint16_t QUIC_APP_ERROR_CODE_STOPPING = 0;

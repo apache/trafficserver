@@ -59,4 +59,8 @@ public:
                        uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const = 0;
   virtual bool decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
                        uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const = 0;
+  virtual QUICHandshakeMsgType msg_type() const;
+
+protected:
+  QUICHandshakeMsgType _msg_type = QUICHandshakeMsgType::NONE;
 };

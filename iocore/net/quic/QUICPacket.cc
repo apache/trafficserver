@@ -782,14 +782,13 @@ QUICPacketFactory::create_initial_packet(QUICConnectionId connection_id, QUICPac
   return this->_create_encrypted_packet(std::move(header), true);
 }
 
-// retransmittable? depends on stateless?
 QUICPacketUPtr
 QUICPacketFactory::create_retry_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, ats_unique_buf payload,
-                                       size_t len)
+                                       size_t len, bool retransmittable)
 {
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::RETRY, connection_id, this->_packet_number_generator.next(),
                                                         base_packet_number, this->_version, std::move(payload), len);
-  return this->_create_encrypted_packet(std::move(header), false);
+  return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 
 QUICPacketUPtr
