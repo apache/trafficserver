@@ -3,6 +3,7 @@ Changes with Apache Traffic Server 7.1.3
   #2050 - Address session/transaction close errors.
   #2099 - Fix session-based memory leak.
   #2267 - Add diagram for header_rewrite Hooks
+  #2515 - Fix timing error in the tls_hook10 test.
   #2766 - Move the postbuf into HttpSM
   #2986 - Modify regex_revalidate so that traffic_ctl may be used to trigger updates
   #2993 - Cherry pick and some manual fixes to address testing issues in 7.1
@@ -38,6 +39,7 @@ Changes with Apache Traffic Server 7.1.3
   #3191 - Doc for ATS client tls configuration
   #3192 - Return 400 if there is whitespace after the field name and before the colon
   #3195 - Adds better sanity checks around the method IX
+  #3196 - Backport of url_sig plugin from master to 7.1.x
   #3197 - Free Http2Stream directly when HttpSM is already gone or not allocated
   #3201 - Close the connection when returning a 400 error response
   #3205 - Isolate client ctx options from server options
@@ -55,3 +57,8 @@ Changes with Apache Traffic Server 7.1.3
   #3243 - Make throttling feature more useful.
   #3247 - s3_auth: check if previous config (re)load failed
   #3252 - Print the volume path that is clearing its directories
+  #3265 - Crash/assert on collision between connection reattempt and returning error
+  #3268 - Clear vio so lingering IO is not confused when error message is returned
+  #3274 - Correct shutdown flag in UnixNetVConnection
+  #3277 - Drain the request body if there is a cache hit.  Only drain if the
+  #3285 - Stop connection reattempts on origin which sends EOS on no data.
