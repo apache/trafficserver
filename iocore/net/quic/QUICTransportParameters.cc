@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include "ts/Diags.h"
 #include "QUICGlobals.h"
+#include "QUICIntUtil.h"
 #include "QUICTransportParameters.h"
 #include "QUICConnection.h"
 #include "QUICHandshake.h"
@@ -160,7 +161,7 @@ QUICTransportParameters::_validate_parameters() const
     if (ite->second->len() != 2) {
       return -5;
     }
-    if (QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 600) {
+    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 600) {
       return -6;
     }
   } else {
@@ -178,7 +179,7 @@ QUICTransportParameters::_validate_parameters() const
     if (ite->second->len() != 2) {
       return -9;
     }
-    if (QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
+    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
       return -10;
     }
   }
@@ -187,7 +188,7 @@ QUICTransportParameters::_validate_parameters() const
     if (ite->second->len() != 1) {
       return -11;
     }
-    if (QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 20) {
+    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 20) {
       return -12;
     }
   }
@@ -214,7 +215,7 @@ QUICTransportParameters::getAsUInt8(QUICTransportParameterId tpid) const
   uint16_t len         = 0;
   const uint8_t *value = this->getAsBytes(tpid, len);
   if (value) {
-    return QUICTypeUtil::read_nbytes_as_uint(value, 1);
+    return QUICIntUtil::read_nbytes_as_uint(value, 1);
   } else {
     return 0;
   }
@@ -226,7 +227,7 @@ QUICTransportParameters::getAsUInt16(QUICTransportParameterId tpid) const
   uint16_t len         = 0;
   const uint8_t *value = this->getAsBytes(tpid, len);
   if (value) {
-    return QUICTypeUtil::read_nbytes_as_uint(value, 2);
+    return QUICIntUtil::read_nbytes_as_uint(value, 2);
   } else {
     return 0;
   }
@@ -238,7 +239,7 @@ QUICTransportParameters::getAsUInt32(QUICTransportParameterId tpid) const
   uint16_t len         = 0;
   const uint8_t *value = this->getAsBytes(tpid, len);
   if (value) {
-    return QUICTypeUtil::read_nbytes_as_uint(value, 4);
+    return QUICIntUtil::read_nbytes_as_uint(value, 4);
   } else {
     return 0;
   }
@@ -258,7 +259,7 @@ QUICTransportParameters::set(QUICTransportParameterId id, uint16_t value)
 {
   uint8_t v[2];
   size_t n;
-  QUICTypeUtil::write_uint_as_nbytes(value, 2, v, &n);
+  QUICIntUtil::write_uint_as_nbytes(value, 2, v, &n);
   this->set(id, v, 2);
 }
 
@@ -267,7 +268,7 @@ QUICTransportParameters::set(QUICTransportParameterId id, uint32_t value)
 {
   uint8_t v[4];
   size_t n;
-  QUICTypeUtil::write_uint_as_nbytes(value, 4, v, &n);
+  QUICIntUtil::write_uint_as_nbytes(value, 4, v, &n);
   this->set(id, v, 4);
 }
 
@@ -312,8 +313,8 @@ QUICTransportParameters::_print() const
       Debug(tag, "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
     } else if (p.second->len() <= 8) {
       Debug(tag, "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
-            QUICTypeUtil::read_nbytes_as_uint(p.second->data(), p.second->len()),
-            QUICTypeUtil::read_nbytes_as_uint(p.second->data(), p.second->len()));
+            QUICIntUtil::read_nbytes_as_uint(p.second->data(), p.second->len()),
+            QUICIntUtil::read_nbytes_as_uint(p.second->data(), p.second->len()));
     } else {
       Debug(tag, "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
     }
@@ -366,7 +367,7 @@ QUICTransportParametersInClientHello::_validate_parameters() const
     if (ite->second->len() != 4) {
       return -2;
     }
-    if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
+    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
         QUICStreamType::SERVER_BIDI) {
       return -3;
     }
@@ -376,7 +377,7 @@ QUICTransportParametersInClientHello::_validate_parameters() const
     if (ite->second->len() != 4) {
       return -4;
     }
-    if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
+    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
         QUICStreamType::SERVER_UNI) {
       return -5;
     }
@@ -468,7 +469,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
     if (ite->second->len() != 4) {
       return -3;
     }
-    if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
+    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
         QUICStreamType::CLIENT_BIDI) {
       return -4;
     }
@@ -478,7 +479,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
     if (ite->second->len() != 4) {
       return -5;
     }
-    if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
+    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
         QUICStreamType::CLIENT_UNI) {
       return -6;
     }
@@ -534,7 +535,7 @@ QUICTransportParametersInNewSessionTicket::_validate_parameters() const
     if (ite->second->len() != 4) {
       return -3;
     }
-    if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
+    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
         QUICStreamType::CLIENT_BIDI) {
       return -4;
     }
@@ -544,7 +545,7 @@ QUICTransportParametersInNewSessionTicket::_validate_parameters() const
     if (ite->second->len() != 4) {
       return -5;
     }
-    if (QUICTypeUtil::detect_stream_type(QUICTypeUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
+    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
         QUICStreamType::CLIENT_UNI) {
       return -6;
     }

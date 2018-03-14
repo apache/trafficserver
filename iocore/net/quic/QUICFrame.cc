@@ -23,6 +23,7 @@
 
 #include "QUICFrame.h"
 #include "QUICStream.h"
+#include "QUICIntUtil.h"
 
 ClassAllocator<QUICStreamFrame> quicStreamFrameAllocator("quicStreamFrameAllocator");
 ClassAllocator<QUICAckFrame> quicAckFrameAllocator("quicAckFrameAllocator");
@@ -122,7 +123,7 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, bool include_length_field) con
 
   // [Length (i)] "L of "0b0010OLF"
   if (include_length_field) {
-    QUICTypeUtil::write_QUICVariableInt(this->data_length(), buf + *len, &n);
+    QUICIntUtil::write_QUICVariableInt(this->data_length(), buf + *len, &n);
     *len += n;
     buf[0] += 0x02;
   }
@@ -166,7 +167,7 @@ QUICStreamFrame::data_length() const
 {
   if (this->_buf) {
     if (this->has_length_field()) {
-      return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_length_field_offset());
+      return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_length_field_offset());
     } else {
       return this->_len - this->_get_data_field_offset();
     }
@@ -358,11 +359,11 @@ QUICAckFrame::store(uint8_t *buf, size_t *len) const
   *p = static_cast<uint8_t>(QUICFrameType::ACK);
   ++p;
 
-  QUICTypeUtil::write_QUICVariableInt(this->_largest_acknowledged, p, &n);
+  QUICIntUtil::write_QUICVariableInt(this->_largest_acknowledged, p, &n);
   p += n;
-  QUICTypeUtil::write_QUICVariableInt(this->_ack_delay, p, &n);
+  QUICIntUtil::write_QUICVariableInt(this->_ack_delay, p, &n);
   p += n;
-  QUICTypeUtil::write_QUICVariableInt(this->ack_block_count(), p, &n);
+  QUICIntUtil::write_QUICVariableInt(this->ack_block_count(), p, &n);
   p += n;
   this->_ack_block_section->store(p, &n);
   p += n;
@@ -390,7 +391,7 @@ uint64_t
 QUICAckFrame::ack_delay() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_ack_delay_offset());
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_ack_delay_offset());
   } else {
     return this->_ack_delay;
   }
@@ -400,7 +401,7 @@ uint64_t
 QUICAckFrame::ack_block_count() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_ack_block_count_offset());
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_ack_block_count_offset());
   } else {
     return this->_ack_block_section->count();
   }
@@ -479,7 +480,7 @@ uint64_t
 QUICAckFrame::AckBlock::gap() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf);
+    return QUICIntUtil::read_QUICVariableInt(this->_buf);
   } else {
     return this->_gap;
   }
@@ -489,7 +490,7 @@ uint64_t
 QUICAckFrame::AckBlock::length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_gap_size());
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_gap_size());
   } else {
     return this->_length;
   }
@@ -560,13 +561,13 @@ QUICAckFrame::AckBlockSection::store(uint8_t *buf, size_t *len) const
   size_t n;
   uint8_t *p = buf;
 
-  QUICTypeUtil::write_QUICVariableInt(this->_first_ack_block_length, p, &n);
+  QUICIntUtil::write_QUICVariableInt(this->_first_ack_block_length, p, &n);
   p += n;
 
   for (auto &&block : *this) {
-    QUICTypeUtil::write_QUICVariableInt(block.gap(), p, &n);
+    QUICIntUtil::write_QUICVariableInt(block.gap(), p, &n);
     p += n;
-    QUICTypeUtil::write_QUICVariableInt(block.length(), p, &n);
+    QUICIntUtil::write_QUICVariableInt(block.length(), p, &n);
     p += n;
   }
 
@@ -577,7 +578,7 @@ uint64_t
 QUICAckFrame::AckBlockSection::first_ack_block_length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf);
+    return QUICIntUtil::read_QUICVariableInt(this->_buf);
   } else {
     return this->_first_ack_block_length;
   }
@@ -831,7 +832,7 @@ uint8_t
 QUICPingFrame::data_length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + sizeof(QUICFrameType), 1);
+    return QUICIntUtil::read_nbytes_as_uint(this->_buf + sizeof(QUICFrameType), 1);
   } else {
     return this->_data_len;
   }
@@ -902,7 +903,7 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len) const
     ++p;
     QUICTypeUtil::write_QUICTransErrorCode(this->_error_code, p, &n);
     p += n;
-    QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
+    QUICIntUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
     p += n;
     if (this->_reason_phrase_length > 0) {
       memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
@@ -927,7 +928,7 @@ uint64_t
 QUICConnectionCloseFrame::reason_phrase_length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_reason_phrase_length_field_offset());
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_reason_phrase_length_field_offset());
   } else {
     return this->_reason_phrase_length;
   }
@@ -1002,7 +1003,7 @@ QUICApplicationCloseFrame::store(uint8_t *buf, size_t *len) const
     ++p;
     QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
     p += n;
-    QUICTypeUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
+    QUICIntUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
     p += n;
     if (this->_reason_phrase_length > 0) {
       memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
@@ -1027,7 +1028,7 @@ uint64_t
 QUICApplicationCloseFrame::reason_phrase_length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf + this->_get_reason_phrase_length_field_offset());
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_reason_phrase_length_field_offset());
   } else {
     return this->_reason_phrase_length;
   }
@@ -1490,7 +1491,7 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len) const
     uint8_t *p = buf;
     *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
     ++p;
-    QUICTypeUtil::write_QUICVariableInt(this->_sequence, p, &n);
+    QUICIntUtil::write_QUICVariableInt(this->_sequence, p, &n);
     p += n;
     QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, p, &n);
     p += n;
@@ -1505,7 +1506,7 @@ uint64_t
 QUICNewConnectionIdFrame::sequence() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVariableInt(this->_buf + sizeof(QUICFrameType));
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + sizeof(QUICFrameType));
   } else {
     return this->_sequence;
   }
@@ -1668,7 +1669,7 @@ uint8_t
 QUICPongFrame::data_length() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_nbytes_as_uint(this->_buf + sizeof(QUICFrameType), 1);
+    return QUICIntUtil::read_nbytes_as_uint(this->_buf + sizeof(QUICFrameType), 1);
   } else {
     return this->_data_len;
   }

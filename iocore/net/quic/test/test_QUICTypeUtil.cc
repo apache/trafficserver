@@ -24,6 +24,7 @@
 #include "catch.hpp"
 
 #include "quic/QUICTypes.h"
+#include "quic/QUICIntUtil.h"
 #include <memory>
 
 TEST_CASE("QUICTypeUtil", "[quic]")
@@ -31,39 +32,39 @@ TEST_CASE("QUICTypeUtil", "[quic]")
   uint8_t buf[8];
   size_t len;
 
-  QUICTypeUtil::write_uint_as_nbytes(0xff, 1, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0xff, 1, buf, &len);
   INFO("1 byte to 1 byte");
   CHECK(memcmp(buf, "\xff\x00\x00\x00\x00\x00\x00\x00", 1) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0xff, 2, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0xff, 2, buf, &len);
   INFO("1 byte to 2 byte");
   CHECK(memcmp(buf, "\x00\xff\x00\x00\x00\x00\x00\x00", 2) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0xff, 4, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0xff, 4, buf, &len);
   INFO("1 byte to 4 byte");
   CHECK(memcmp(buf, "\x00\x00\x00\xff\x00\x00\x00\x00", 4) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0xff, 6, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0xff, 6, buf, &len);
   INFO("1 byte to 6 byte");
   CHECK(memcmp(buf, "\x00\x00\x00\x00\x00\xff\x00\x00", 6) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0xff, 8, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0xff, 8, buf, &len);
   INFO("1 byte to 8 byte");
   CHECK(memcmp(buf, "\x00\x00\x00\x00\x00\x00\x00\xff", 8) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0x11ff, 2, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0x11ff, 2, buf, &len);
   INFO("2 byte to 2 byte");
   CHECK(memcmp(buf, "\x11\xff\x00\x00\x00\x00\x00\x00", 2) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0x11ff, 4, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0x11ff, 4, buf, &len);
   INFO("2 byte to 4 byte");
   CHECK(memcmp(buf, "\x00\x00\x11\xff\x00\x00\x00\x00", 4) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0x11ff, 6, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0x11ff, 6, buf, &len);
   INFO("2 byte to 6 byte");
   CHECK(memcmp(buf, "\x00\x00\x00\x00\x11\xff\x00\x00", 6) == 0);
 
-  QUICTypeUtil::write_uint_as_nbytes(0x11ff, 8, buf, &len);
+  QUICIntUtil::write_uint_as_nbytes(0x11ff, 8, buf, &len);
   INFO("2 byte to 8 byte");
   CHECK(memcmp(buf, "\x00\x00\x00\x00\x00\x00\x11\xff", 8) == 0);
 }

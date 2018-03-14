@@ -46,6 +46,7 @@ endif
 libquic_a_SOURCES = \
   QUICGlobals.cc \
   QUICTypes.cc \
+  QUICIntUtil.cc \
   QUICPacket.cc \
   QUICFrame.cc \
   QUICFrameDispatcher.cc \
