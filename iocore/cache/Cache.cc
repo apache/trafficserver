@@ -192,6 +192,7 @@ static int create_volume(int volume_number, off_t size_in_blocks, int scheme, Ca
 static void rebuild_host_table(Cache *cache);
 void register_cache_stats(RecRawStatBlock *rsb, const char *prefix);
 
+// Global list of the volumes created
 Queue<CacheVol> cp_list;
 int cp_list_len = 0;
 ConfigVolumes config_volumes;
@@ -618,6 +619,10 @@ CacheProcessor::start_internal(int flags)
   ink_aio_set_callback(new AIO_Callback_handler());
 
   config_volumes.read_config_file();
+
+  /*
+   create CacheDisk objects for each span in the configuration file and store in gdisks
+   */
   for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
     sd = theCacheStore.disk[i];
     char path[PATH_NAME_MAX];
@@ -682,8 +687,6 @@ CacheProcessor::start_internal(int flags)
           gdisks[gndisks]->hash_base_string = ats_strdup(sd->hash_base_string);
         }
 
-        Debug("cache_hosting", "Disk: %d, blocks: %" PRId64 "", gndisks, blocks);
-
         if (sector_size < cache_config_force_sector_size) {
           sector_size = cache_config_force_sector_size;
         }
@@ -703,6 +706,8 @@ CacheProcessor::start_internal(int flags)
 #else
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
 #endif
+
+        Debug("cache_hosting", "Disk: %d:%s, blocks: %" PRId64 "", gndisks, path, blocks);
         fd = -1;
         gndisks++;
       }
@@ -802,8 +807,8 @@ CacheProcessor::diskInitialized()
     /* create the cachevol list only if num volumes are greater
        than 0. */
     if (config_volumes.num_volumes == 0) {
-      res = cplist_reconfigure();
       /* if no volumes, default to just an http cache */
+      res = cplist_reconfigure();
     } else {
       // else
       /* create the cachevol list. */
@@ -834,7 +839,8 @@ CacheProcessor::diskInitialized()
       CacheDisk *d = gdisks[i];
       if (is_debug_tag_set("cache_hosting")) {
         int j;
-        Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks, d->free_space);
+        Debug("cache_hosting", "Disk: %d:%s: Vol Blocks: %u: Free space: %" PRIu64, i, d->path, d->header->num_diskvol_blks,
+              d->free_space);
         for (j = 0; j < (int)d->header->num_volumes; j++) {
           Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
         }
@@ -1301,8 +1307,8 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate      = (DLL<EvacuationBlock> *)ats_malloc(evac_len);
   memset(evacuate, 0, evac_len);
 
-  Debug("cache_init", "allocating %zu directory bytes for a %lld byte volume (%lf%%)", vol_dirlen(this), (long long)this->len,
-        (double)vol_dirlen(this) / (double)this->len * 100.0);
+  Debug("cache_init", "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), vol_dirlen(this),
+        (long long)this->len, (double)vol_dirlen(this) / (double)this->len * 100.0);
 
   raw_dir = nullptr;
   if (ats_hugepage_enabled()) {
