@@ -37,10 +37,6 @@
 #define MAGIC_NUMBER_1 1
 #define MAGIC_NUMBER_TRUE true
 
-// TODO: move to lib/ts/ink_memory.h?
-using ats_unique_buf = std::unique_ptr<uint8_t, decltype(&ats_free)>;
-ats_unique_buf ats_unique_malloc(size_t size);
-
 using QUICPacketNumber = uint64_t;
 using QUICVersion      = uint32_t;
 using QUICStreamId     = uint64_t;

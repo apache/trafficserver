@@ -24,12 +24,6 @@
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
 
-ats_unique_buf
-ats_unique_malloc(size_t size)
-{
-  return ats_unique_buf(reinterpret_cast<uint8_t *>(ats_malloc(size)), [](void *p) { ats_free(p); });
-}
-
 bool
 QUICTypeUtil::has_long_header(const uint8_t *buf)
 {
