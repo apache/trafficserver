@@ -362,8 +362,8 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
 #endif
     if (!dir_valid(vol, e) || !dir_offset(e)) {
       if (is_debug_tag_set("dir_clean")) {
-        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d", e, dir_tag(e), dir_offset(e), b, p,
-              dir_bucket_length(b, s, vol));
+        Debug("dir_clean", "cleaning Vol:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
+              dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       }
       if (dir_offset(e)) {
         CACHE_DEC_DIR_USED(vol->mutex);
