@@ -243,6 +243,12 @@ struct Vol : public Continuation {
   int within_hit_evacuate_window(Dir *dir);
   uint32_t round_to_approx_size(uint32_t l);
 
+  // inline functions
+  TS_INLINE int headerlen();         // calculates the total length of the vol header and the freelist
+  TS_INLINE int direntries();        // total number of dir entries
+  TS_INLINE Dir *dir_segment(int s); // returns the first dir in the segment s
+  TS_INLINE size_t dirlen();         // calculates the total length of header, directories and footer
+
   Vol() : Continuation(new_ProxyMutex())
   {
     open_dir.mutex = mutex;
@@ -321,22 +327,28 @@ extern unsigned short *vol_hash_table;
 // inline Functions
 
 TS_INLINE int
-vol_headerlen(Vol *d)
+Vol::headerlen()
 {
-  return ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter) + sizeof(uint16_t) * (d->segments - 1));
+  return ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter) + sizeof(uint16_t) * (this->segments - 1));
+}
+
+TS_INLINE Dir *
+Vol::dir_segment(int s)
+{
+  return (Dir *)(((char *)this->dir) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 TS_INLINE size_t
-vol_dirlen(Vol *d)
+Vol::dirlen()
 {
-  return vol_headerlen(d) + ROUND_TO_STORE_BLOCK(((size_t)d->buckets) * DIR_DEPTH * d->segments * SIZEOF_DIR) +
+  return this->headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->buckets) * DIR_DEPTH * this->segments * SIZEOF_DIR) +
          ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
 }
 
 TS_INLINE int
-vol_direntries(Vol *d)
+Vol::direntries()
 {
-  return d->buckets * DIR_DEPTH * d->segments;
+  return this->buckets * DIR_DEPTH * this->segments;
 }
 
 TS_INLINE int
@@ -379,12 +391,6 @@ TS_INLINE off_t
 vol_offset_to_offset(Vol *d, off_t pos)
 {
   return d->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
-}
-
-TS_INLINE Dir *
-vol_dir_segment(Vol *d, int s)
-{
-  return (Dir *)(((char *)d->dir) + (s * d->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
 TS_INLINE int

@@ -215,7 +215,7 @@ cache_bytes_used(int volume)
       if (!gvol[i]->header->cycle) {
         used += gvol[i]->header->write_pos - gvol[i]->start;
       } else {
-        used += gvol[i]->len - vol_dirlen(gvol[i]) - EVACUATION_SIZE;
+        used += gvol[i]->len - gvol[i]->dirlen() - EVACUATION_SIZE;
       }
     }
   }
@@ -966,13 +966,13 @@ CacheProcessor::cacheInitialized()
         Debug("cache_init", "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
         for (i = 0; i < gnvol; i++) {
           vol = gvol[i];
-          gvol[i]->ram_cache->init(vol_dirlen(vol) * DEFAULT_RAM_CACHE_MULTIPLIER, vol);
-          ram_cache_bytes += vol_dirlen(gvol[i]);
+          gvol[i]->ram_cache->init(vol->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER, vol);
+          ram_cache_bytes += gvol[i]->dirlen();
           Debug("cache_init", "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", ram_cache_bytes,
                 ram_cache_bytes / (1024 * 1024));
-          CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)vol_dirlen(gvol[i]));
+          CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)gvol[i]->dirlen());
 
-          vol_total_cache_bytes = gvol[i]->len - vol_dirlen(gvol[i]);
+          vol_total_cache_bytes = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes += vol_total_cache_bytes;
           Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
                 total_cache_bytes, total_cache_bytes / (1024 * 1024));
@@ -1024,7 +1024,7 @@ CacheProcessor::cacheInitialized()
           }
           Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-          vol_total_cache_bytes = gvol[i]->len - vol_dirlen(gvol[i]);
+          vol_total_cache_bytes = gvol[i]->len - gvol[i]->dirlen();
           total_cache_bytes += vol_total_cache_bytes;
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
           Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %" PRId64 " = %" PRId64 "Mb",
@@ -1196,7 +1196,7 @@ vol_init_data_internal(Vol *d)
   // step4: divide total_buckets into segments on average.
   d->buckets = (total_buckets + d->segments - 1) / d->segments;
   // step5: set the start pointer.
-  d->start = d->skip + 2 * vol_dirlen(d);
+  d->start = d->skip + 2 * d->dirlen();
 }
 
 static void
@@ -1215,7 +1215,7 @@ vol_init_dir(Vol *d)
 
   for (s = 0; s < d->segments; s++) {
     d->header->freelist[s] = 0;
-    Dir *seg               = dir_segment(s, d);
+    Dir *seg               = d->dir_segment(s);
     for (l = 1; l < DIR_DEPTH; l++) {
       for (b = 0; b < d->buckets; b++) {
         Dir *bucket = dir_bucket(b, seg);
@@ -1228,7 +1228,7 @@ vol_init_dir(Vol *d)
 void
 vol_clear_init(Vol *d)
 {
-  size_t dir_len = vol_dirlen(d);
+  size_t dir_len = d->dirlen();
   memset(d->raw_dir, 0, dir_len);
   vol_init_dir(d);
   d->header->magic             = VOL_MAGIC;
@@ -1247,7 +1247,7 @@ vol_clear_init(Vol *d)
 int
 vol_dir_clear(Vol *d)
 {
-  size_t dir_len = vol_dirlen(d);
+  size_t dir_len = d->dirlen();
   vol_clear_init(d);
 
   if (pwrite(d->fd, d->raw_dir, dir_len, d->skip) < 0) {
@@ -1260,7 +1260,7 @@ vol_dir_clear(Vol *d)
 int
 Vol::clear_dir()
 {
-  size_t dir_len = vol_dirlen(this);
+  size_t dir_len = this->dirlen();
   vol_clear_init(this);
 
   SET_HANDLER(&Vol::handle_dir_clear);
@@ -1307,20 +1307,20 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate      = (DLL<EvacuationBlock> *)ats_malloc(evac_len);
   memset(evacuate, 0, evac_len);
 
-  Debug("cache_init", "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), vol_dirlen(this),
-        (long long)this->len, (double)vol_dirlen(this) / (double)this->len * 100.0);
+  Debug("cache_init", "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
+        (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
 
   raw_dir = nullptr;
   if (ats_hugepage_enabled()) {
-    raw_dir = (char *)ats_alloc_hugepage(vol_dirlen(this));
+    raw_dir = (char *)ats_alloc_hugepage(this->dirlen());
   }
   if (raw_dir == nullptr) {
-    raw_dir = (char *)ats_memalign(ats_pagesize(), vol_dirlen(this));
+    raw_dir = (char *)ats_memalign(ats_pagesize(), this->dirlen());
   }
 
-  dir    = (Dir *)(raw_dir + vol_headerlen(this));
+  dir    = (Dir *)(raw_dir + this->headerlen());
   header = (VolHeaderFooter *)raw_dir;
-  footer = (VolHeaderFooter *)(raw_dir + vol_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
+  footer = (VolHeaderFooter *)(raw_dir + this->dirlen() - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
 
   if (clear) {
     Note("clearing cache directory '%s'", hash_text.get());
@@ -1329,7 +1329,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   init_info           = new VolInitInfo();
   int footerlen       = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
-  off_t footer_offset = vol_dirlen(this) - footerlen;
+  off_t footer_offset = this->dirlen() - footerlen;
   // try A
   off_t as = skip;
 
@@ -1337,7 +1337,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   SET_HANDLER(&Vol::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
-  off_t bs                               = skip + vol_dirlen(this);
+  off_t bs                               = skip + this->dirlen();
   init_info->vol_aio[2].aiocb.aio_offset = bs;
   init_info->vol_aio[3].aiocb.aio_offset = bs + footer_offset;
 
@@ -1361,7 +1361,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 int
 Vol::handle_dir_clear(int event, void *data)
 {
-  size_t dir_len = vol_dirlen(this);
+  size_t dir_len = this->dirlen();
   AIOCallback *op;
 
   if (event == AIO_EVENT_DONE) {
@@ -1694,7 +1694,7 @@ Ldone : {
     aio->then             = (i < 2) ? &(init_info->vol_aio[i + 1]) : nullptr;
   }
   int footerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
-  size_t dirlen = vol_dirlen(this);
+  size_t dirlen = this->dirlen();
   int B         = header->sync_serial & 1;
   off_t ss      = skip + (B ? dirlen : 0);
 
@@ -1759,7 +1759,7 @@ Vol::handle_header_read(int event, void *data)
     }
 
     io.aiocb.aio_fildes = fd;
-    io.aiocb.aio_nbytes = vol_dirlen(this);
+    io.aiocb.aio_nbytes = this->dirlen();
     io.aiocb.aio_buf    = raw_dir;
     io.action           = this;
     io.thread           = AIO_CALLBACK_THREAD_ANY;
@@ -1780,7 +1780,7 @@ Vol::handle_header_read(int event, void *data)
       if (is_debug_tag_set("cache_init")) {
         Note("using directory B for '%s'", hash_text.get());
       }
-      io.aiocb.aio_offset = skip + vol_dirlen(this);
+      io.aiocb.aio_offset = skip + this->dirlen();
       ink_assert(ink_aio_read(&io));
     } else {
       Note("no good directory, clearing '%s' since sync_serials on both A and B copies are invalid", hash_text.get());
@@ -1985,7 +1985,7 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
     if (d->fd == gvol[p]->fd) {
       total_dir_delete += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
       used_dir_delete += dir_entries_used(gvol[p]);
-      total_bytes_delete += gvol[p]->len - vol_dirlen(gvol[p]);
+      total_bytes_delete += gvol[p]->len - gvol[p]->dirlen();
     }
   }
 
