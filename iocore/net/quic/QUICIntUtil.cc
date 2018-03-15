@@ -24,6 +24,7 @@
 #include "QUICIntUtil.h"
 #include "ts/ink_endian.h"
 #include <memory>
+#include <cstring>
 
 size_t
 QUICVariableInt::size(const uint8_t *src)
