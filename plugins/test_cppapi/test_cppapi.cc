@@ -16,19 +16,22 @@
  * limitations under the License.
  */
 
-#include <sstream>
 #include <vector>
+#include <utility>
+#include <sstream>
 
 #include <ts/ts.h>
 
 #include <ts/TextView.h>
 
+#include <atscppapi/Continuation.h>
+
 // TSReleaseAssert() doesn't seem to produce any logging output for a debug build, so do both kinds of assert.
 //
-#define ASS(EXPR)          \
-  {                        \
-    TSAssert(EXPR);        \
-    TSReleaseAssert(EXPR); \
+#define ALWAYS_ASSERT(EXPR) \
+  {                         \
+    TSAssert(EXPR);         \
+    TSReleaseAssert(EXPR);  \
   }
 
 std::vector<void (*)()> testList;
@@ -41,31 +44,121 @@ struct ATest {
 //
 #define TEST(TEST_FUNC) ATest t(TEST_FUNC);
 
-#define TNS_(LN) TestNamespaceName##LN
-
-// Generate a unique name for a separate namespace for each test.
-//
-#define TNS namespace TNS_(__LINE__)
-
 // TextView test. This is not testing the actual TextView code, just that it works to call functions in TextView.cc in the core
 // from a plugin.
 //
-TNS
+namespace TextViewTest
 {
-  void f()
+void
+f()
+{
+  ts::TextView tv("abcdefg");
+
+  std::ostringstream oss;
+
+  oss << tv;
+
+  ALWAYS_ASSERT(ts::memcmp(ts::TextView(oss.str()), tv) == 0)
+}
+
+TEST(f)
+
+} // end namespace TextViewTest
+
+// Test for Continuation class.
+//
+namespace ContinuationTest
+{
+struct {
+  TSEvent event;
+  void *edata;
+} passedToEventFunc;
+
+bool
+checkPassed(TSEvent event, void *edata)
+{
+  return (passedToEventFunc.event == event) and (passedToEventFunc.edata == edata);
+}
+
+class TestCont : public atscppapi::Continuation
+{
+public:
+  TestCont(Mutex m) : atscppapi::Continuation(m) {}
+
+  TestCont() = default;
+
+private:
+  int
+  _run(TSEvent event, void *edata) override
   {
-    ts::TextView tv("abcdefg");
+    passedToEventFunc.event = event;
+    passedToEventFunc.edata = edata;
 
-    std::ostringstream oss;
-
-    oss << tv;
-
-    ASS(ts::memcmp(ts::TextView(oss.str()), tv) == 0)
+    return 666;
   }
+};
 
-  TEST(f)
+void
+f()
+{
+  TestCont::Mutex m(TSMutexCreate());
 
-} // end TNS namespace
+  TestCont c(m);
+
+  ALWAYS_ASSERT(!!c)
+  ALWAYS_ASSERT(c.asTSCont() != nullptr)
+  ALWAYS_ASSERT(c.mutex() == m)
+
+  TestCont c2(std::move(c));
+
+  ALWAYS_ASSERT(!!c2)
+  ALWAYS_ASSERT(c2.asTSCont() != nullptr)
+  ALWAYS_ASSERT(c2.mutex() == m)
+
+  ALWAYS_ASSERT(!c)
+  ALWAYS_ASSERT(c.asTSCont() == nullptr)
+  ALWAYS_ASSERT(c.mutex() == nullptr)
+
+  TestCont c3;
+
+  ALWAYS_ASSERT(!c3)
+  ALWAYS_ASSERT(c3.asTSCont() == nullptr)
+  ALWAYS_ASSERT(c3.mutex() == nullptr)
+
+  c3 = std::move(c2);
+
+  ALWAYS_ASSERT(!!c3)
+  ALWAYS_ASSERT(c3.asTSCont() != nullptr)
+  ALWAYS_ASSERT(c3.mutex() == m)
+
+  ALWAYS_ASSERT(!c2)
+  ALWAYS_ASSERT(c2.asTSCont() == nullptr)
+  ALWAYS_ASSERT(c2.mutex() == nullptr)
+
+  c3.destroy();
+
+  ALWAYS_ASSERT(!c3)
+  ALWAYS_ASSERT(c3.asTSCont() == nullptr)
+  ALWAYS_ASSERT(c3.mutex() == nullptr)
+
+  c = TestCont(m);
+
+  ALWAYS_ASSERT(!!c)
+  ALWAYS_ASSERT(c.asTSCont() != nullptr)
+  ALWAYS_ASSERT(c.mutex() == m)
+
+  ALWAYS_ASSERT(c.call(TS_EVENT_INTERNAL_206) == 666)
+  ALWAYS_ASSERT(checkPassed(TS_EVENT_INTERNAL_206, nullptr))
+
+  int dummy;
+
+  ALWAYS_ASSERT(c.call(TS_EVENT_INTERNAL_207, &dummy) == 666)
+  ALWAYS_ASSERT(checkPassed(TS_EVENT_INTERNAL_207, &dummy))
+}
+
+TEST(f)
+
+} // end namespace ContinuationTest
 
 // Run all the tests.
 //
@@ -78,7 +171,7 @@ TSPluginInit(int, const char **)
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
-  ASS(TSPluginRegister(&info) == TS_SUCCESS)
+  ALWAYS_ASSERT(TSPluginRegister(&info) == TS_SUCCESS)
 
   for (auto fp : testList) {
     fp();
