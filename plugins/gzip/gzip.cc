@@ -335,18 +335,19 @@ gzip_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_len
   }
 }
 
-static void
-brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
-{
 #if HAVE_BROTLI_ENCODE_H
+static bool
+brotli_compress_operation(Data *data, const char *upstream_buffer, int64_t upstream_length, BrotliEncoderOperation op)
+{
   TSIOBufferBlock downstream_blkp;
   char *downstream_buffer;
   int64_t downstream_length;
-  int err;
 
+  data->bstrm.next_in  = (uint8_t *)upstream_buffer;
   data->bstrm.avail_in = upstream_length;
 
-  while (data->bstrm.avail_in > 0) {
+  bool ok = true;
+  while (ok) {
     downstream_blkp   = TSIOBufferStart(data->downstream_buffer);
     downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
 
@@ -354,37 +355,49 @@ brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_l
     data->bstrm.avail_out = downstream_length;
     data->bstrm.total_out = 0;
 
-    data->bstrm.next_in = (uint8_t *)upstream_buffer;
-    if (!data->hc->flush()) {
-      err = BrotliEncoderCompressStream(data->bstrm.br, BROTLI_OPERATION_PROCESS, &data->bstrm.avail_in,
-                                        (const uint8_t **)&data->bstrm.next_in, &data->bstrm.avail_out, &data->bstrm.next_out,
-                                        &data->bstrm.total_out);
-    } else {
-      err = BrotliEncoderCompressStream(data->bstrm.br, BROTLI_OPERATION_FLUSH, &data->bstrm.avail_in,
-                                        (const uint8_t **)&data->bstrm.next_in, &data->bstrm.avail_out, &data->bstrm.next_out,
-                                        &data->bstrm.total_out);
+    ok =
+      !!BrotliEncoderCompressStream(data->bstrm.br, op, &data->bstrm.avail_in, &const_cast<const uint8_t *&>(data->bstrm.next_in),
+                                    &data->bstrm.avail_out, &data->bstrm.next_out, &data->bstrm.total_out);
+
+    if (!ok) {
+      error("BrotliEncoderCompressStream(%d) call failed", op);
+      return ok;
     }
 
-    if (err != BROTLI_TRUE) {
-      warning("BrotliEncoderCompressStream() call failed: %d", err);
+    TSIOBufferProduce(data->downstream_buffer, downstream_length - data->bstrm.avail_out);
+    data->downstream_length += (downstream_length - data->bstrm.avail_out);
+    if (data->bstrm.avail_in || BrotliEncoderHasMoreOutput(data->bstrm.br)) {
+      continue;
     }
 
-    if (downstream_length > (int64_t)data->bstrm.avail_out) {
-      TSIOBufferProduce(data->downstream_buffer, downstream_length - data->bstrm.avail_out);
-      data->downstream_length += (downstream_length - data->bstrm.avail_out);
-    }
-
-    if (data->bstrm.avail_out > 0) {
-      if (data->bstrm.avail_in != 0) {
-        error("brotli-transform: ERROR: brotli avail_in is (%lu): should be 0", data->bstrm.avail_in);
-      }
-    }
+    break;
   }
-  data->bstrm.total_in += upstream_length;
-#else
-  error("brotli-transform: ERROR: compile with brotli support");
-#endif
+
+  return ok;
 }
+
+static void
+brotli_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_length)
+{
+  bool ok = brotli_compress_operation(data, upstream_buffer, upstream_length, BROTLI_OPERATION_PROCESS);
+  if (!ok) {
+    error("BrotliEncoderCompressStream(PROCESS) call failed");
+    return;
+  }
+
+  data->bstrm.total_in += upstream_length;
+
+  if (!data->hc->flush()) {
+    return;
+  }
+
+  ok = brotli_compress_operation(data, nullptr, 0, BROTLI_OPERATION_FLUSH);
+  if (!ok) {
+    error("BrotliEncoderCompressStream(FLUSH) call failed");
+    return;
+  }
+}
+#endif
 
 static void
 compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
@@ -409,10 +422,13 @@ compress_transform_one(Data *data, TSIOBufferReader upstream_reader, int amount)
       upstream_length = amount;
     }
 
+#if HAVE_BROTLI_ENCODE_H
     if (data->compression_type & COMPRESSION_TYPE_BROTLI && (data->compression_algorithms & ALGORITHM_BROTLI)) {
       brotli_transform_one(data, upstream_buffer, upstream_length);
-    } else if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
-               (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
+    } else
+#endif
+      if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
+          (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
       gzip_transform_one(data, upstream_buffer, upstream_length);
     } else {
       warning("No compression supported. Shoudn't come here.");
@@ -466,67 +482,46 @@ gzip_transform_finish(Data *data)
   }
 }
 
+#if HAVE_BROTLI_ENCODE_H
 static void
 brotli_transform_finish(Data *data)
 {
-#if HAVE_BROTLI_ENCODE_H
-  if (data->state == transform_state_output) {
-    TSIOBufferBlock downstream_blkp;
-    char *downstream_buffer;
-    int64_t downstream_length;
-    int err;
-
-    data->state = transform_state_finished;
-
-    for (;;) {
-      downstream_blkp = TSIOBufferStart(data->downstream_buffer);
-
-      downstream_buffer     = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
-      data->bstrm.next_out  = (unsigned char *)downstream_buffer;
-      data->bstrm.avail_out = downstream_length;
-
-      err = BrotliEncoderCompressStream(data->bstrm.br, BROTLI_OPERATION_FINISH, &data->bstrm.avail_in,
-                                        (const uint8_t **)&data->bstrm.next_in, &data->bstrm.avail_out, &data->bstrm.next_out,
-                                        &data->bstrm.total_out);
-
-      if (downstream_length > (int64_t)data->bstrm.avail_out) {
-        TSIOBufferProduce(data->downstream_buffer, downstream_length - data->bstrm.avail_out);
-        data->downstream_length += (downstream_length - data->bstrm.avail_out);
-      }
-      if (!BrotliEncoderIsFinished(data->bstrm.br)) {
-        continue;
-      }
-
-      if (err != BROTLI_TRUE) { /* some more data to encode */
-        warning("brotli_transform: BrotliEncoderCompressStream should return BROTLI_TRUE");
-      }
-
-      break;
-    }
-
-    if (data->downstream_length != (int64_t)(data->bstrm.total_out)) {
-      error("brotli-transform: ERROR: output lengths don't match (%d, %ld)", data->downstream_length, data->bstrm.total_out);
-    }
-    debug("brotli-transform: Finished brotli");
-    gzip_log_ratio(data->bstrm.total_in, data->downstream_length);
+  if (data->state != transform_state_output) {
+    return;
   }
-#else
-  error("brotli-transform: compile with brotli support");
-#endif
+
+  data->state = transform_state_finished;
+
+  bool ok = brotli_compress_operation(data, nullptr, 0, BROTLI_OPERATION_FINISH);
+  if (!ok) {
+    error("BrotliEncoderCompressStream(PROCESS) call failed");
+    return;
+  }
+
+  if (data->downstream_length != (int64_t)(data->bstrm.total_out)) {
+    error("brotli-transform: output lengths don't match (%d, %ld)", data->downstream_length, data->bstrm.total_out);
+  }
+
+  debug("brotli-transform: Finished brotli");
+  gzip_log_ratio(data->bstrm.total_in, data->downstream_length);
 }
+#endif
 
 static void
 compress_transform_finish(Data *data)
 {
+#if HAVE_BROTLI_ENCODE_H
   if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
     brotli_transform_finish(data);
     debug("brotli-transform: Brotli compression finish.");
-  } else if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
-             (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
+  } else
+#endif
+    if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
+        (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
     gzip_transform_finish(data);
     debug("gzip-transform: Gzip compression finish.");
   } else {
-    warning("No Compression matched, shouldn't come here.");
+    error("No Compression matched, shouldn't come here.");
   }
 }
 
