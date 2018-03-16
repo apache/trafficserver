@@ -28,19 +28,16 @@
 class QUIC
 {
 public:
-  static void
-  init()
-  {
-    QUIC::_register_stats();
-    ssl_quic_qc_index = SSL_get_ex_new_index(0, (void *)"QUICConnection index", nullptr, nullptr, nullptr);
-    ssl_quic_hs_index = SSL_get_ex_new_index(0, (void *)"QUICHandshake index", nullptr, nullptr, nullptr);
-  }
-  static int ssl_quic_qc_index;
-  static int ssl_quic_hs_index;
+  static void init();
 
   // SSL callbacks
   static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                       unsigned inlen, void *);
+  static int ssl_generate_stateless_cookie(SSL *ssl, unsigned char *cookie, size_t *cookie_len);
+  static int ssl_verify_stateless_cookie(SSL *ssl, const unsigned char *cookie, size_t cookie_len);
+
+  static int ssl_quic_qc_index;
+  static int ssl_quic_hs_index;
 
 private:
   static void _register_stats();

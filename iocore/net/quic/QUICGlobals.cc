@@ -21,16 +21,36 @@
  *  limitations under the License.
  */
 
-#include <cstring>
 #include "QUICGlobals.h"
+
+#include <cstring>
+
+#include <openssl/hmac.h>
+#include <openssl/evp.h>
+
+#include "P_SSLNextProtocolSet.h"
+#include "P_QUICNetVConnection.h"
 #include "QUICStats.h"
 #include "QUICConnection.h"
-#include "P_SSLNextProtocolSet.h"
 
 RecRawStatBlock *quic_rsb;
 
 int QUIC::ssl_quic_qc_index = -1;
 int QUIC::ssl_quic_hs_index = -1;
+
+static constexpr size_t STATELESS_COOKIE_SECRET_LENGTH                 = 16;
+static uint8_t stateless_cookie_secret[STATELESS_COOKIE_SECRET_LENGTH] = {0};
+
+void
+QUIC::init()
+{
+  QUIC::_register_stats();
+  ssl_quic_qc_index = SSL_get_ex_new_index(0, (void *)"QUICConnection index", nullptr, nullptr, nullptr);
+  ssl_quic_hs_index = SSL_get_ex_new_index(0, (void *)"QUICHandshake index", nullptr, nullptr, nullptr);
+
+  // TODO: read cookie secret from file like SSLTicketKeyConfig
+  RAND_bytes(stateless_cookie_secret, STATELESS_COOKIE_SECRET_LENGTH);
+}
 
 int
 QUIC::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen,
@@ -48,6 +68,39 @@ QUIC::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned cha
   *out    = nullptr;
   *outlen = 0;
   return SSL_TLSEXT_ERR_NOACK;
+}
+
+int
+QUIC::ssl_generate_stateless_cookie(SSL *ssl, unsigned char *cookie, size_t *cookie_len)
+{
+  // Call UnixNetVConnection::get_remote_addr() safely
+  // TODO: add APIs to getting client addr in QUICConnection
+  QUICConnection *qc      = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
+  QUICNetVConnection *qvc = dynamic_cast<QUICNetVConnection *>(qc);
+
+  uint8_t key[INET6_ADDRPORTSTRLEN] = {0};
+  size_t key_len                    = INET6_ADDRPORTSTRLEN;
+  ats_ip_nptop(qvc->get_remote_addr(), reinterpret_cast<char *>(key), key_len);
+
+  unsigned int dst_len = 0;
+  HMAC(EVP_sha1(), stateless_cookie_secret, STATELESS_COOKIE_SECRET_LENGTH, key, key_len, cookie, &dst_len);
+  *cookie_len = dst_len;
+
+  return 1;
+}
+
+int
+QUIC::ssl_verify_stateless_cookie(SSL *ssl, const unsigned char *cookie, size_t cookie_len)
+{
+  uint8_t token[EVP_MAX_MD_SIZE];
+  size_t token_len;
+
+  if (QUIC::ssl_generate_stateless_cookie(ssl, token, &token_len) && cookie_len == token_len &&
+      memcmp(token, cookie, cookie_len) == 0) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 void
