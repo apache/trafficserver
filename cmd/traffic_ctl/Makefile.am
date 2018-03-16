@@ -34,6 +34,7 @@ traffic_ctl_SOURCES = \
   plugin.cc \
   server.cc \
   storage.cc \
+  host.cc \
   traffic_ctl.cc
 
 traffic_ctl_LDADD = \

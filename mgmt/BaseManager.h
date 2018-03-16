@@ -71,6 +71,8 @@
 #define MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE 10011
 #define MGMT_EVENT_LIFECYCLE_MESSAGE 10012
 #define MGMT_EVENT_DRAIN 10013
+#define MGMT_EVENT_HOST_STATUS_UP 10014
+#define MGMT_EVENT_HOST_STATUS_DOWN 10015
 
 /***********************************************************************
  *

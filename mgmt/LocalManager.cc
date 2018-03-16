@@ -115,6 +115,20 @@ LocalManager::rollLogFiles()
 }
 
 void
+LocalManager::hostStatusSetDown(const char *name)
+{
+  signalEvent(MGMT_EVENT_HOST_STATUS_DOWN, name);
+  return;
+}
+
+void
+LocalManager::hostStatusSetUp(const char *name)
+{
+  signalEvent(MGMT_EVENT_HOST_STATUS_UP, name);
+  return;
+}
+
+void
 LocalManager::clearStats(const char *name)
 {
   // Clear our records and then send the signal.  There is a race condition

@@ -799,6 +799,49 @@ handle_stats_reset(int fd, void *req, size_t reqlen)
 }
 
 /**************************************************************************
+ * handle_host_status_up
+ *
+ * purpose: handles request to reset statistics to default values
+ * output: TS_ERR_xx
+ *************************************************************************/
+static TSMgmtError
+handle_host_status_up(int fd, void *req, size_t reqlen)
+{
+  OpType optype;
+  MgmtMarshallString name = nullptr;
+  MgmtMarshallInt err;
+
+  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_UP, &optype, &name);
+  if (err == TS_ERR_OKAY) {
+    err = HostStatusSetUp(name);
+  }
+
+  ats_free(name);
+  return send_mgmt_response(fd, (OpType)optype, &err);
+}
+
+/**************************************************************************
+ * handle_host_status_down
+ *
+ * purpose: handles request to reset statistics to default values
+ * output: TS_ERR_xx
+ *************************************************************************/
+static TSMgmtError
+handle_host_status_down(int fd, void *req, size_t reqlen)
+{
+  OpType optype;
+  MgmtMarshallString name = nullptr;
+  MgmtMarshallInt err;
+
+  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_DOWN, &optype, &name);
+  if (err == TS_ERR_OKAY) {
+    err = HostStatusSetDown(name);
+  }
+
+  ats_free(name);
+  return send_mgmt_response(fd, (OpType)optype, &err);
+}
+/**************************************************************************
  * handle_api_ping
  *
  * purpose: handles the API_PING messaghat is sent by API clients to keep
@@ -1015,6 +1058,8 @@ static const control_message_handler handlers[] = {
   /* SERVER_BACKTRACE           */ {MGMT_API_PRIVILEGED, handle_server_backtrace},
   /* RECORD_DESCRIBE_CONFIG     */ {0, handle_record_describe},
   /* LIFECYCLE_MESSAGE          */ {MGMT_API_PRIVILEGED, handle_lifecycle_message},
+  /* HOST_STATUS_UP             */ {MGMT_API_PRIVILEGED, handle_host_status_up},
+  /* HOST_STATUS_DOWN           */ {MGMT_API_PRIVILEGED, handle_host_status_down},
 };
 
 // This should use countof(), but we need a constexpr :-/

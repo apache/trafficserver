@@ -91,6 +91,8 @@ public:
   void processDrain(int to_drain = 1);
   void rollLogFiles();
   void clearStats(const char *name = NULL);
+  void hostStatusSetDown(const char *name);
+  void hostStatusSetUp(const char *name);
 
   bool processRunning();
 

@@ -1023,6 +1023,28 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 }
 
 TSMgmtError
+HostStatusSetDown(const char *host_name)
+{
+  TSMgmtError ret         = TS_ERR_PARAMS;
+  OpType op               = OpType::HOST_STATUS_DOWN;
+  MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
+
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+}
+
+TSMgmtError
+HostStatusSetUp(const char *host_name)
+{
+  TSMgmtError ret         = TS_ERR_PARAMS;
+  OpType op               = OpType::HOST_STATUS_UP;
+  MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
+
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+}
+
+TSMgmtError
 StatsReset(const char *stat_name)
 {
   TSMgmtError ret;
