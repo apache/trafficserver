@@ -30,13 +30,27 @@
 
 AppVersionInfo CtrlVersionInfo;
 
-const char *CtrlMgmtRecord::name() const { return this->ele->rec_name; }
+const char *
+CtrlMgmtRecord::name() const
+{
+  return this->ele->rec_name;
+}
 
-TSRecordT CtrlMgmtRecord::type() const { return this->ele->rec_type; }
+TSRecordT
+CtrlMgmtRecord::type() const
+{
+  return this->ele->rec_type;
+}
 
-int CtrlMgmtRecord::rclass() const { return this->ele->rec_class; }
+int
+CtrlMgmtRecord::rclass() const
+{
+  return this->ele->rec_class;
+}
 
-int64_t CtrlMgmtRecord::as_int() const {
+int64_t
+CtrlMgmtRecord::as_int() const
+{
   switch (this->ele->rec_type) {
   case TS_REC_INT:
     return this->ele->valueT.int_val;
@@ -47,35 +61,43 @@ int64_t CtrlMgmtRecord::as_int() const {
   }
 }
 
-TSMgmtError CtrlMgmtRecord::fetch(const char *name) {
+TSMgmtError
+CtrlMgmtRecord::fetch(const char *name)
+{
   return TSRecordGet(name, this->ele);
 }
 
-TSMgmtError CtrlMgmtRecordList::match(const char *name) {
+TSMgmtError
+CtrlMgmtRecordList::match(const char *name)
+{
   return TSRecordGetMatchMlt(name, this->list);
 }
 
-CtrlMgmtRecordValue::CtrlMgmtRecordValue(const CtrlMgmtRecord &rec) {
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(const CtrlMgmtRecord &rec)
+{
   this->init(rec.ele->rec_type, rec.ele->valueT);
 }
 
-CtrlMgmtRecordValue::CtrlMgmtRecordValue(const TSRecordEle *ele) {
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(const TSRecordEle *ele)
+{
   this->init(ele->rec_type, ele->valueT);
 }
 
-CtrlMgmtRecordValue::CtrlMgmtRecordValue(TSRecordT _t, TSRecordValueT _v) {
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(TSRecordT _t, TSRecordValueT _v)
+{
   this->init(_t, _v);
 }
 
-void CtrlMgmtRecordValue::init(TSRecordT _t, TSRecordValueT _v) {
+void
+CtrlMgmtRecordValue::init(TSRecordT _t, TSRecordValueT _v)
+{
   this->rec_type = _t;
   switch (this->rec_type) {
   case TS_REC_INT:
     snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%" PRId64, _v.int_val);
     break;
   case TS_REC_COUNTER:
-    snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%" PRId64,
-             _v.counter_val);
+    snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%" PRId64, _v.counter_val);
     break;
   case TS_REC_FLOAT:
     snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%f", _v.float_val);
@@ -88,12 +110,14 @@ void CtrlMgmtRecordValue::init(TSRecordT _t, TSRecordValueT _v) {
     }
     break;
   default:
-    rec_type = TS_REC_STRING;
+    rec_type      = TS_REC_STRING;
     this->fmt.str = "(invalid)";
   }
 }
 
-const char *CtrlMgmtRecordValue::c_str() const {
+const char *
+CtrlMgmtRecordValue::c_str() const
+{
   switch (this->rec_type) {
   case TS_REC_STRING:
     return this->fmt.str;
@@ -102,7 +126,9 @@ const char *CtrlMgmtRecordValue::c_str() const {
   }
 }
 
-void CtrlMgmtError(TSMgmtError err, const char *fmt, ...) {
+void
+CtrlMgmtError(TSMgmtError err, const char *fmt, ...)
+{
   ats_scoped_str msg(TSGetErrorMessage(err));
 
   if (fmt) {
@@ -119,14 +145,13 @@ void CtrlMgmtError(TSMgmtError err, const char *fmt, ...) {
   }
 }
 
-int CtrlSubcommandUsage(const char *name, const subcommand *cmds,
-                        unsigned ncmds, const ArgumentDescription *desc,
-                        unsigned ndesc) {
+int
+CtrlSubcommandUsage(const char *name, const subcommand *cmds, unsigned ncmds, const ArgumentDescription *desc, unsigned ndesc)
+{
   const char *opt = ndesc ? "[OPTIONS]" : "";
   const char *sep = (ndesc && name) ? " " : "";
 
-  fprintf(stderr, "Usage: traffic_ctl %s%s%s CMD [ARGS ...]\n\nSubcommands:\n",
-          name ? name : "", sep, opt);
+  fprintf(stderr, "Usage: traffic_ctl %s%s%s CMD [ARGS ...]\n\nSubcommands:\n", name ? name : "", sep, opt);
 
   for (unsigned i = 0; i < ncmds; ++i) {
     fprintf(stderr, "    %-16s%s\n", cmds[i].name, cmds[i].help);
@@ -139,8 +164,9 @@ int CtrlSubcommandUsage(const char *name, const subcommand *cmds,
   return CTRL_EX_USAGE;
 }
 
-int CtrlCommandUsage(const char *msg, const ArgumentDescription *desc,
-                     unsigned ndesc) {
+int
+CtrlCommandUsage(const char *msg, const ArgumentDescription *desc, unsigned ndesc)
+{
   fprintf(stderr, "Usage: traffic_ctl %s\n", msg);
 
   if (ndesc) {
@@ -150,19 +176,23 @@ int CtrlCommandUsage(const char *msg, const ArgumentDescription *desc,
   return CTRL_EX_USAGE;
 }
 
-bool CtrlProcessArguments(int /* argc */, const char **argv,
-                          const ArgumentDescription *desc, unsigned ndesc) {
+bool
+CtrlProcessArguments(int /* argc */, const char **argv, const ArgumentDescription *desc, unsigned ndesc)
+{
   n_file_arguments = 0;
   return process_args_ex(&CtrlVersionInfo, desc, ndesc, argv);
 }
 
-int CtrlUnimplementedCommand(unsigned /* argc */, const char **argv) {
+int
+CtrlUnimplementedCommand(unsigned /* argc */, const char **argv)
+{
   CtrlDebug("the '%s' command is not implemented", *argv);
   return CTRL_EX_UNIMPLEMENTED;
 }
 
-int CtrlGenericSubcommand(const char *name, const subcommand *cmds,
-                          unsigned ncmds, unsigned argc, const char **argv) {
+int
+CtrlGenericSubcommand(const char *name, const subcommand *cmds, unsigned ncmds, unsigned argc, const char **argv)
+{
   CtrlCommandLine cmdline;
 
   // Process command line arguments and dump into variables
@@ -182,55 +212,49 @@ int CtrlGenericSubcommand(const char *name, const subcommand *cmds,
 }
 
 static const subcommand commands[] = {
-    {subcommand_alarm, "alarm", "Manipulate alarms"},
-    {subcommand_config, "config", "Manipulate configuration records"},
-    {subcommand_metric, "metric", "Manipulate performance metrics"},
-    {subcommand_server, "server", "Stop, restart and examine the server"},
-    {subcommand_storage, "storage", "Manipulate cache storage"},
-    {subcommand_plugin, "plugin", "Interact with plugins"},
+  {subcommand_alarm, "alarm", "Manipulate alarms"},
+  {subcommand_config, "config", "Manipulate configuration records"},
+  {subcommand_metric, "metric", "Manipulate performance metrics"},
+  {subcommand_server, "server", "Stop, restart and examine the server"},
+  {subcommand_storage, "storage", "Manipulate cache storage"},
+  {subcommand_plugin, "plugin", "Interact with plugins"},
 };
 
-int main(int argc, const char **argv) {
+int
+main(int argc, const char **argv)
+{
   CtrlCommandLine cmdline;
   int debug = false;
 
-  CtrlVersionInfo.setup(PACKAGE_NAME, "traffic_ctl", PACKAGE_VERSION, __DATE__,
-                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  CtrlVersionInfo.setup(PACKAGE_NAME, "traffic_ctl", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   program_name = CtrlVersionInfo.AppStr;
 
   ArgumentDescription argument_descriptions[] = {
-      {"debug", '-', "Enable debugging output", "F", &debug, nullptr, nullptr},
-      {"help", 'h', "Print usage information", nullptr, nullptr, nullptr,
-       [](const ArgumentDescription *args, unsigned nargs,
-          const char *arg_unused) {
-         CtrlSubcommandUsage(nullptr, commands, countof(commands), args, nargs);
-       }},
-      VERSION_ARGUMENT_DESCRIPTION(),
-      RUNROOT_ARGUMENT_DESCRIPTION(),
+    {"debug", '-', "Enable debugging output", "F", &debug, nullptr, nullptr},
+    {"help", 'h', "Print usage information", nullptr, nullptr, nullptr,
+     [](const ArgumentDescription *args, unsigned nargs, const char *arg_unused) {
+       CtrlSubcommandUsage(nullptr, commands, countof(commands), args, nargs);
+     }},
+    VERSION_ARGUMENT_DESCRIPTION(),
+    RUNROOT_ARGUMENT_DESCRIPTION(),
   };
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
-  diags =
-      new Diags(program_name, "" /* tags */, "" /* actions */, base_log_file);
+  diags                      = new Diags(program_name, "" /* tags */, "" /* actions */, base_log_file);
 
   // Process command line arguments and dump into variables
-  if (!CtrlProcessArguments(argc, argv, argument_descriptions,
-                            countof(argument_descriptions))) {
-    return CtrlSubcommandUsage(nullptr, commands, countof(commands),
-                               argument_descriptions,
-                               countof(argument_descriptions));
+  if (!CtrlProcessArguments(argc, argv, argument_descriptions, countof(argument_descriptions))) {
+    return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
   }
 
   if (debug) {
     diags->activate_taglist("traffic_ctl", DiagsTagType_Debug);
     diags->config.enabled[DiagsTagType_Debug] = true;
-    diags->show_location = SHOW_LOCATION_DEBUG;
+    diags->show_location                      = SHOW_LOCATION_DEBUG;
   }
 
   if (n_file_arguments < 1) {
-    return CtrlSubcommandUsage(nullptr, commands, countof(commands),
-                               argument_descriptions,
-                               countof(argument_descriptions));
+    return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
   }
 
   runroot_handler(argv);
@@ -245,8 +269,7 @@ int main(int argc, const char **argv) {
   // doesn't matter that we failed. If we end up performing some operation then
   // that operation will fail and display the
   // error.
-  TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS |
-                                            TS_MGMT_OPT_NO_SOCK_TESTS));
+  TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
 
   for (unsigned i = 0; i < countof(commands); ++i) {
     if (strcmp(file_arguments[0], commands[i].name) == 0) {
@@ -259,7 +282,5 @@ int main(int argc, const char **argv) {
 
   // Done with the mgmt API.
   TSTerminate();
-  return CtrlSubcommandUsage(nullptr, commands, countof(commands),
-                             argument_descriptions,
-                             countof(argument_descriptions));
+  return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
 }
