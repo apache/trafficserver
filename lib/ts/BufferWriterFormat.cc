@@ -184,41 +184,73 @@ namespace bw_fmt
   void
   Do_Alignment(BWFSpec const &spec, BufferWriter &w, BufferWriter &lw)
   {
-    size_t size = lw.size();
-    size_t min  = spec._min;
-    if (size < min) {
-      size_t delta = min - size; // note - size <= extent -> size < min
+    size_t extent = lw.extent();
+    size_t min    = spec._min;
+    size_t size   = lw.size();
+    if (extent < min) {
+      size_t delta = min - extent;
+      char *base   = w.auxBuffer();        // should be first byte of @a lw e.g. lw.data() - avoid const_cast.
+      char *limit  = base + lw.capacity(); // first invalid byte.
+      char *dst;                           // used to track memory operation targest;
+      char *last;                          // track limit of memory operation.
+      size_t d2;
       switch (spec._align) {
-      case BWFSpec::Align::NONE: // same as LEFT for output.
-      case BWFSpec::Align::LEFT:
-        w.fill(size);
-        while (delta--)
-          w.write(spec._fill);
-        break;
       case BWFSpec::Align::RIGHT:
-        std::memmove(w.auxBuffer() + delta, w.auxBuffer(), size);
-        while (delta--)
-          w.write(spec._fill);
-        w.fill(size);
+        dst = base + delta; // move existing content to here.
+        if (dst < limit) {
+          last = dst + size; // amount of data to move.
+          if (last > limit)
+            last = limit;
+          std::memmove(dst, base, last - dst);
+        }
+        dst  = base;
+        last = base + delta;
+        if (last > limit)
+          last = limit;
+        while (dst < last)
+          *dst++ = spec._fill;
         break;
       case BWFSpec::Align::CENTER:
-        if (delta > 1) {
-          size_t d2 = delta / 2;
-          std::memmove(w.auxBuffer() + (delta / 2), w.auxBuffer(), size);
-          while (d2--)
-            w.write(spec._fill);
+        d2 = (delta + 1) / 2;
+        if (d2 > 1) {
+          dst = base + d2; // move existing content to here.
+          if (dst < limit) {
+            last = dst + size; // amount of data to move.
+            if (last > limit)
+              last = limit;
+            std::memmove(dst, base, last - dst);
+          }
+          dst  = base + size + d2;
+          last = base + delta / 2;
+          if (last > limit)
+            last = limit;
+          while (dst < last)
+            *dst++ = spec._fill;
         }
-        w.fill(size);
-        delta = (delta + 1) / 2;
-        while (delta--)
-          w.write(spec._fill);
+        dst  = base;
+        last = base + d2;
+        if (last > limit)
+          last = limit;
+        while (dst < last)
+          *dst++ = spec._fill;
         break;
-      case BWFSpec::Align::SIGN:
-        w.fill(size);
+      default:
+        // Everything else is equivalent to LEFT - distinction is for more specialized
+        // types such as integers.
+        dst  = base + size;
+        last = dst + delta;
+        if (last > limit)
+          last = limit;
+        while (dst < last)
+          *dst++ = spec._fill;
         break;
       }
+      w.fill(min);
     } else {
-      w.fill(size);
+      size_t max = spec._max;
+      if (max < extent)
+        extent = max;
+      w.fill(extent);
     }
   }
 
@@ -371,6 +403,47 @@ namespace bw_fmt
     return w;
   }
 
+  /// Write out the @a data as hexadecimal, using @a digits as the conversion.
+  void
+  Hex_Dump(BufferWriter &w, string_view data, const char *digits)
+  {
+    const char *ptr = data.data();
+    for (auto n = data.size(); n > 0; --n) {
+      char c = *ptr++;
+      w.write(digits[(c >> 4) & 0xF]);
+      w.write(digits[c & 0xf]);
+    }
+  }
+
+  template <typename F>
+  void
+  Write_Aligned(BufferWriter &w, F const &f, BWFSpec::Align align, int width, char fill)
+  {
+    switch (align) {
+    case BWFSpec::Align::LEFT:
+    case BWFSpec::Align::SIGN:
+      f();
+      while (width-- > 0)
+        w.write(fill);
+      break;
+    case BWFSpec::Align::RIGHT:
+      while (width-- > 0)
+        w.write(fill);
+      f();
+      break;
+    case BWFSpec::Align::CENTER:
+      for (int i = width / 2; i > 0; --i)
+        w.write(fill);
+      f();
+      for (int i = (width + 1) / 2; i > 0; --i)
+        w.write(fill);
+      break;
+    default:
+      f();
+      break;
+    }
+  }
+
 } // bw_fmt
 
 BufferWriter &
@@ -380,29 +453,35 @@ bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
   if (spec._prec > 0)
     sv.remove_prefix(spec._prec);
 
-  width -= sv.size();
-  switch (spec._align) {
-  case BWFSpec::Align::LEFT:
-  case BWFSpec::Align::SIGN:
-    w.write(sv);
-    while (width-- > 0)
-      w.write(spec._fill);
-    break;
-  case BWFSpec::Align::RIGHT:
-    while (width-- > 0)
-      w.write(spec._fill);
-    w.write(sv);
-    break;
-  case BWFSpec::Align::CENTER:
-    for (int i = width / 2; i > 0; --i)
-      w.write(spec._fill);
-    w.write(sv);
-    for (int i = (width + 1) / 2; i > 0; --i)
-      w.write(spec._fill);
-    break;
-  default:
-    w.write(sv);
-    break;
+  if ('x' == spec._type || 'X' == spec._type) {
+    const char *digits = 'x' == spec._type ? bw_fmt::LOWER_DIGITS : bw_fmt::UPPER_DIGITS;
+    width -= sv.size() * 2;
+    if (spec._radix_lead_p) {
+      w.write('0');
+      w.write(spec._type);
+      width -= 2;
+    }
+    bw_fmt::Write_Aligned(w, [&w, &sv, digits]() { bw_fmt::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill);
+  } else {
+    width -= sv.size();
+    bw_fmt::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill);
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span)
+{
+  static const BWFormat default_fmt{"{:#x}@{}"};
+  if (spec._ext.size() && 'd' == spec._ext.front()) {
+    const char *digits = 'X' == spec._type ? bw_fmt::UPPER_DIGITS : bw_fmt::LOWER_DIGITS;
+    if (spec._radix_lead_p) {
+      w.write('0');
+      w.write(digits[33]);
+    }
+    bw_fmt::Hex_Dump(w, string_view{static_cast<char *>(span.data()), span.usize()}, digits);
+  } else {
+    w.print(default_fmt, span.size(), span.data());
   }
   return w;
 }

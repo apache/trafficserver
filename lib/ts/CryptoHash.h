@@ -23,6 +23,9 @@
 #if !defined CRYPTO_HASH_HEADER
 #define CRYPTO_HASH_HEADER
 
+#include <ts/BufferWriter.h>
+#include <ts/string_view.h>
+
 /// Apache Traffic Server commons.
 
 #if TS_ENABLE_FIPS == 1
@@ -177,6 +180,18 @@ CryptoContext::finalize(CryptoHash &hash)
 }
 
 } // end namespace
+
+namespace ts
+{
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, ats::CryptoHash const &hash)
+{
+  BWFSpec local_spec{spec};
+  if ('X' != local_spec._type)
+    local_spec._type = 'x';
+  return bwformat(w, local_spec, ts::string_view(reinterpret_cast<const char *>(hash.u8), CRYPTO_HASH_SIZE));
+}
+} // ts
 
 using ats::CryptoHash;
 using ats::CryptoContext;

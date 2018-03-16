@@ -141,6 +141,8 @@ public:
 
   /// Number of bytes in the span.
   constexpr ptrdiff_t size() const;
+  /// Number of bytes in the span (unsigned).
+  constexpr size_t usize() const;
 
   /// Memory pointer.
   /// @note This is equivalent to @c begin currently but it's probably good to have separation.
@@ -426,6 +428,12 @@ MemSpan::size() const
   return _size;
 }
 
+inline constexpr size_t
+MemSpan::usize() const
+{
+  return _size;
+}
+
 inline MemSpan &
 MemSpan::operator=(MemSpan const &that)
 {
@@ -559,13 +567,11 @@ MemSpan::find_if(F const &pred)
 
 namespace std
 {
-ostream &
+inline ostream &
 operator<<(ostream &os, const ts::MemSpan &b)
 {
   if (os.good()) {
-    ostringstream out;
-    out << b.size() << '@' << hex << b.data();
-    os << out.str();
+    os << b.size() << '@' << hex << b.data();
   }
   return os;
 }
