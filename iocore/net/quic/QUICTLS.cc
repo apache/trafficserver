@@ -108,12 +108,12 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
         ret = SSL_stateless(this->_ssl);
         if (ret > 0) {
           this->_stateless = false;
-          this->_msg_type = QUICHandshakeMsgType::SH;
+          this->_msg_type  = QUICHandshakeMsgType::SH;
         } else if (ret == 0) {
           this->_msg_type = QUICHandshakeMsgType::HRR;
         }
       } else {
-        ret = SSL_accept(this->_ssl);
+        ret             = SSL_accept(this->_ssl);
         this->_msg_type = QUICHandshakeMsgType::SH;
       }
     } else {

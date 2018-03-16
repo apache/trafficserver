@@ -162,7 +162,6 @@ QUICHandshake::is_stateless_retry_enabled() const
   return this->_stateless_retry;
 }
 
-
 QUICHandshakeProtocol *
 QUICHandshake::protocol()
 {
@@ -403,7 +402,8 @@ QUICHandshake::state_closed(int event, void *data)
 }
 
 QUICHandshakeMsgType
-QUICHandshake::msg_type() const {
+QUICHandshake::msg_type() const
+{
   if (this->_hs_protocol) {
     return this->_hs_protocol->msg_type();
   } else {
