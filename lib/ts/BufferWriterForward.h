@@ -38,7 +38,9 @@ namespace ts
 /** A parsed version of a format specifier.
  */
 struct BWFSpec {
-  using self_type = BWFSpec; ///< Self reference type.
+  using self_type                    = BWFSpec; ///< Self reference type.
+  static constexpr char DEFAULT_TYPE = 'g';     ///< Default format type.
+
   /// Constructor a default instance.
   constexpr BWFSpec() {}
 
@@ -48,21 +50,21 @@ struct BWFSpec {
   char _fill = ' '; ///< Fill character.
   char _sign = '-'; ///< Numeric sign style, space + -
   enum class Align : char {
-    NONE,                           ///< No alignment.
-    LEFT,                           ///< Left alignment '<'.
-    RIGHT,                          ///< Right alignment '>'.
-    CENTER,                         ///< Center alignment '='.
-    SIGN                            ///< Align plus/minus sign before numeric fill. '^'
-  } _align           = Align::NONE; ///< Output field alignment.
-  char _type         = 'g';         ///< Type / radix indicator.
-  bool _radix_lead_p = false;       ///< Print leading radix indication.
+    NONE,                            ///< No alignment.
+    LEFT,                            ///< Left alignment '<'.
+    RIGHT,                           ///< Right alignment '>'.
+    CENTER,                          ///< Center alignment '='.
+    SIGN                             ///< Align plus/minus sign before numeric fill. '^'
+  } _align           = Align::NONE;  ///< Output field alignment.
+  char _type         = DEFAULT_TYPE; ///< Type / radix indicator.
+  bool _radix_lead_p = false;        ///< Print leading radix indication.
   // @a _min is unsigned because there's no point in an invalid default, 0 works fine.
-  unsigned int _min = 0;  ///< Minimum width.
-  int _prec         = -1; ///< Precision
-  unsigned int _max = 0;  ///< Maxium width
-  int _idx          = -1; ///< Positional "name" of the specification.
-  string_view _name;      ///< Name of the specification.
-  string_view _ext;       ///< Extension if provided.
+  unsigned int _min = 0;                                        ///< Minimum width.
+  int _prec         = -1;                                       ///< Precision
+  unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maxium width
+  int _idx          = -1;                                       ///< Positional "name" of the specification.
+  string_view _name;                                            ///< Name of the specification.
+  string_view _ext;                                             ///< Extension if provided.
 
   static const self_type DEFAULT;
 

@@ -28,10 +28,11 @@
 #include <utility>
 #include <cstring>
 #include <vector>
-#include <map>
+#include <string>
 #include <ts/ink_std_compat.h>
 
 #include <ts/TextView.h>
+#include <ts/MemSpan.h>
 #include <ts/ink_assert.h>
 #include <ts/BufferWriterForward.h>
 
@@ -558,8 +559,9 @@ BufferWriter::print(TextView fmt, Rest... rest)
     if (spec_p) {
       BWFSpec spec{spec_v};
       size_t width = this->remaining();
-      if (spec._max > 0)
-        width = std::min(width, static_cast<size_t>(spec._max));
+      if (spec._max < width) {
+        width = spec._max;
+      }
       FixedBufferWriter lw{this->auxBuffer(), width};
 
       if (spec._name.size() == 0) {
@@ -580,7 +582,7 @@ BufferWriter::print(TextView fmt, Rest... rest)
           lw.write(msg).write(spec._name).write('}');
         }
       }
-      if (lw.size()) {
+      if (lw.extent()) {
         bw_fmt::Do_Alignment(spec, *this, lw);
       }
       ++arg_idx;
@@ -599,9 +601,8 @@ BufferWriter::print(BWFormat const &fmt, Rest... rest)
 
   for (BWFormat::Item const &item : fmt._items) {
     size_t width = this->remaining();
-    size_t max   = item._spec._max;
-    if (max && max < width) {
-      width = max;
+    if (item._spec._max < width) {
+      width = item._spec._max;
     }
     FixedBufferWriter lw{this->auxBuffer(), width};
     if (item._gf) {
@@ -627,6 +628,20 @@ operator<<(BufferWriter &w, V &&v)
   return bwformat(w, BWFSpec::DEFAULT, std::forward<V>(v));
 }
 
+// Pointers
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
+{
+  BWFSpec ptr_spec{spec};
+  ptr_spec._radix_lead_p = true;
+  if (ptr_spec._type == BWFSpec::DEFAULT_TYPE)
+    ptr_spec._type = 'x'; // if default, switch to hex.
+  return bw_fmt::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
+}
+
+// MemSpan
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span);
+
 // -- Common formatters --
 
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv);
@@ -637,10 +652,22 @@ bwformat(BufferWriter &w, BWFSpec const &, char c)
   return w.write(c);
 }
 
+template <size_t N>
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, const char (&a)[N])
+{
+  return bwformat(w, spec, string_view(a, N - 1));
+}
+
 inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, const char *v)
 {
-  return bwformat(w, spec, string_view(v));
+  if (spec._type == 'x' || spec._type == 'X') {
+    bwformat(w, spec, static_cast<const void *>(v));
+  } else {
+    bwformat(w, spec, string_view(v));
+  }
+  return w;
 }
 
 inline BufferWriter &
@@ -679,6 +706,24 @@ inline BufferWriter &
 operator<<(BufferWriter &w, int const &i)
 {
   return bwformat(w, BWFSpec::DEFAULT, static_cast<intmax_t>(i));
+}
+
+// std::string support
+/** Print to a @c std::string
+
+    Print to the string @a s. If there is overflow then resize the string sufficiently to hold the output
+    and print again. The effect is the string is resized only as needed to hold the output.
+ */
+template <typename... Rest>
+void
+bwprint(std::string &s, ts::TextView fmt, Rest &&... rest)
+{
+  auto len = s.size();
+  size_t n = ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).print(fmt, std::forward<Rest>(rest)...).extent();
+  s.resize(n);   // always need to resize - if shorter, must clip pre-existing text.
+  if (n > len) { // dropped data, try again.
+    ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).print(fmt, std::forward<Rest>(rest)...);
+  }
 }
 
 } // end namespace ts

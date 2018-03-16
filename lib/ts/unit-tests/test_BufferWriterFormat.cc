@@ -22,9 +22,12 @@
  */
 
 #include "catch.hpp"
-#include <ts/BufferWriter.h>
 #include <chrono>
 #include <iostream>
+#include <ts/BufferWriter.h>
+#include <ts/MemSpan.h>
+#include <ts/INK_MD5.h>
+#include <ts/CryptoHash.h>
 
 TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
 {
@@ -143,6 +146,90 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.reduce(0);
   bw.print("Text: _{0:-<20.52,20}_", text);
   REQUIRE(bw.view() == "Text: _QRSTUVWXYZ----------_");
+
+  void *ptr = reinterpret_cast<void *>(0XBADD0956);
+  bw.reduce(0);
+  bw.print("{}", ptr);
+  REQUIRE(bw.view() == "0xbadd0956");
+  bw.reduce(0);
+  bw.print("{:X}", ptr);
+  REQUIRE(bw.view() == "0XBADD0956");
+  int *int_ptr = static_cast<int *>(ptr);
+  bw.reduce(0);
+  bw.print("{}", int_ptr);
+  REQUIRE(bw.view() == "0xbadd0956");
+  auto char_ptr = "good";
+  bw.reduce(0);
+  bw.print("{:x}", static_cast<char *>(ptr));
+  REQUIRE(bw.view() == "0xbadd0956");
+  bw.reduce(0);
+  bw.print("{}", char_ptr);
+  REQUIRE(bw.view() == "good");
+
+  ts::MemSpan span{ptr, 0x200};
+  bw.reduce(0);
+  bw.print("{}", span);
+  REQUIRE(bw.view() == "0x200@0xbadd0956");
+
+  bw.reduce(0);
+  bw.print("{::d}", ts::MemSpan(const_cast<char *>(char_ptr), 4));
+  REQUIRE(bw.view() == "676f6f64");
+  bw.reduce(0);
+  bw.print("{:#:d}", ts::MemSpan(const_cast<char *>(char_ptr), 4));
+  REQUIRE(bw.view() == "0x676f6f64");
+
+  ts::string_view sv{"abc123"};
+  bw.reduce(0);
+  bw.print("{}", sv);
+  REQUIRE(bw.view() == sv);
+  bw.reduce(0);
+  bw.print("{:x}", sv);
+  REQUIRE(bw.view() == "616263313233");
+  bw.reduce(0);
+  bw.print("{:#x}", sv);
+  REQUIRE(bw.view() == "0x616263313233");
+  bw.reduce(0);
+  bw.print("|{:16x}|", sv);
+  REQUIRE(bw.view() == "|616263313233    |");
+  bw.reduce(0);
+  bw.print("|{:>16x}|", sv);
+  REQUIRE(bw.view() == "|    616263313233|");
+  bw.reduce(0);
+  bw.print("|{:=16x}|", sv);
+  REQUIRE(bw.view() == "|  616263313233  |");
+  bw.reduce(0);
+  bw.print("|{:>16.2x}|", sv);
+  REQUIRE(bw.view() == "|        63313233|");
+  bw.reduce(0);
+  bw.print("|{:<0.2,5x}|", sv);
+  REQUIRE(bw.view() == "|63313|");
+
+  INK_MD5 md5;
+  bw.reduce(0);
+  bw.print("{}", md5);
+  REQUIRE(bw.view() == "00000000000000000000000000000000");
+  CryptoContext().hash_immediate(md5, sv.data(), sv.size());
+  bw.reduce(0);
+  bw.print("{}", md5);
+  REQUIRE(bw.view() == "e99a18c428cb38d5f260853678922e03");
+}
+
+TEST_CASE("bwstring", "[bwprint][bwstring]")
+{
+  std::string s;
+  size_t n;
+  ts::TextView fmt("{} -- {}");
+  ts::string_view text{"e99a18c428cb38d5f260853678922e03"};
+
+  bwprint(s, fmt, "string", 956);
+  REQUIRE(s.size() == 13);
+  REQUIRE(s == "string -- 956");
+
+  bwprint(s, fmt, 99999, text);
+  REQUIRE(s == "99999 -- e99a18c428cb38d5f260853678922e03");
+
+  bwprint(s, "{} .. |{:,20}|", 32767, text);
+  REQUIRE(s == "32767 .. |e99a18c428cb38d5f260|");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code
@@ -155,34 +242,31 @@ TEST_CASE("bwperf", "[bwprint][performance]")
   auto delta = std::chrono::high_resolution_clock::now() - start;
   constexpr int N_LOOPS = 1000000;
 
-  ts::string_view text{"Format |"};
+  static constexpr const char * FMT = "Format |{:#010x}| '{}'";
+  static constexpr ts::TextView fmt{FMT, strlen(FMT)};
+  static constexpr ts::string_view text{"e99a18c428cb38d5f260853678922e03"_sv};
   ts::LocalBufferWriter<256> bw;
 
   ts::BWFSpec spec;
 
-  start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < N_LOOPS; ++i) {
-    bw.reduce(0);
-    bw.print( "Format |{:#010x}|", -956);
-  }
-  delta = std::chrono::high_resolution_clock::now() - start;
-  std::cout << "BW Timing is " << delta.count() << "ns or " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
-            << "ms" << std::endl;
+  bw.reduce(0);
+  bw.print(fmt, -956, text);
+  REQUIRE(bw.view() == "Format |-0x00003bc| 'e99a18c428cb38d5f260853678922e03'");
 
   start = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < N_LOOPS; ++i) {
     bw.reduce(0);
-    bw.print("Format |{:#010x}|", -956);
+    bw.print(fmt, -956, text);
   }
   delta = std::chrono::high_resolution_clock::now() - start;
   std::cout << "bw.print() " << delta.count() << "ns or " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
             << "ms" << std::endl;
 
-  ts::BWFormat fmt("Format |{:#010x}|");
+  ts::BWFormat pre_fmt(fmt);
   start = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < N_LOOPS; ++i) {
     bw.reduce(0);
-    bw.print( fmt, -956);
+    bw.print(pre_fmt, -956, text);
   }
   delta = std::chrono::high_resolution_clock::now() - start;
   std::cout << "Preformatted: " << delta.count() << "ns or "
@@ -191,7 +275,7 @@ TEST_CASE("bwperf", "[bwprint][performance]")
   char buff[256];
   start = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < N_LOOPS; ++i) {
-    snprintf(buff, sizeof(buff), "Format |%#0x10|", -956);
+    snprintf(buff, sizeof(buff), "Format |%#0x10| '%.*s'", -956, static_cast<int>(text.size()), text.data());
   }
   delta = std::chrono::high_resolution_clock::now() - start;
   std::cout << "snprint Timing is " << delta.count() << "ns or "
