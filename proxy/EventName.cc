@@ -130,6 +130,10 @@ event_int_to_string(int event, int blen, char *buffer)
     return "MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION";
   case MGMT_EVENT_CLEAR_STATS:
     return "MGMT_EVENT_CLEAR_STATS";
+  case MGMT_EVENT_HOST_STATUS_UP:
+    return "MGMT_EVENT_HOST_STATUS_UP";
+  case MGMT_EVENT_HOST_STATUS_DOWN:
+    return "MGMT_EVENT_HOST_STATUS_DOWN";
 
   default:
     if (buffer != nullptr) {

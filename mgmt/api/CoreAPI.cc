@@ -881,6 +881,30 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 }
 
 /*-------------------------------------------------------------------------
+ * HostStatusSetDown
+ *-------------------------------------------------------------------------
+ * Sets the HOST status to Down
+ */
+TSMgmtError
+HostStatusSetDown(const char *name)
+{
+  lmgmt->hostStatusSetDown(name);
+  return TS_ERR_OKAY;
+}
+
+/*-------------------------------------------------------------------------
+ * HostStatusSetUp
+ *-------------------------------------------------------------------------
+ * Sets the HOST status to Up
+ */
+TSMgmtError
+HostStatusSetUp(const char *name)
+{
+  lmgmt->hostStatusSetUp(name);
+  return TS_ERR_OKAY;
+}
+
+/*-------------------------------------------------------------------------
  * StatsReset
  *-------------------------------------------------------------------------
  * Iterates through the RecordsConfig table, and for all stats

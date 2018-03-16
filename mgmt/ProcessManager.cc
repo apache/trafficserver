@@ -432,6 +432,12 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
   case MGMT_EVENT_CLEAR_STATS:
     executeMgmtCallback(MGMT_EVENT_CLEAR_STATS, nullptr, 0);
     break;
+  case MGMT_EVENT_HOST_STATUS_UP:
+    executeMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, data_raw, mh->data_len);
+    break;
+  case MGMT_EVENT_HOST_STATUS_DOWN:
+    executeMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, data_raw, mh->data_len);
+    break;
   case MGMT_EVENT_ROLL_LOG_FILES:
     executeMgmtCallback(MGMT_EVENT_ROLL_LOG_FILES, nullptr, 0);
     break;
