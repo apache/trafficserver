@@ -47,7 +47,6 @@ except NameError:
     def is_string_type(s):
         return isinstance(s, str)
 
-
 class TSConfVar(std.Target):
     """
     Description of a traffic server configuration variable.
