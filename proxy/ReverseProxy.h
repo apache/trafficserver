@@ -53,8 +53,8 @@ extern remap_plugin_info *remap_pi_list;
 // API Functions
 int init_reverse_proxy();
 
-mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url);
-bool response_url_remap(HTTPHdr *response_header);
+mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url, UrlRewrite *table);
+bool response_url_remap(HTTPHdr *response_header, UrlRewrite *table);
 
 // Reload Functions
 bool reloadUrlRewrite();

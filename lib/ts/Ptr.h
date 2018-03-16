@@ -90,9 +90,6 @@ private:
   int m_refcount;
 };
 
-#define REF_COUNT_OBJ_REFCOUNT_INC(_x) (_x)->refcount_inc()
-#define REF_COUNT_OBJ_REFCOUNT_DEC(_x) (_x)->refcount_dec()
-
 ////////////////////////////////////////////////////////////////////////
 //
 // class Ptr
