@@ -37,6 +37,7 @@
 #include "P_EventSystem.h"
 #include "HttpCacheSM.h"
 #include "HttpTransact.h"
+#include "UrlRewrite.h"
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
 #include "../ProxyClientTransaction.h"
@@ -327,6 +328,10 @@ public:
   PluginVCCore *plugin_tunnel           = nullptr;
 
   HttpTransact::State t_state;
+
+  // This unfortunately can't go into the t_state, beacuse of circular dependencies. We could perhaps refactor
+  // this, with a lot of work, but this is easier for now.
+  UrlRewrite *m_remap;
 
   // _postbuf api
   int64_t postbuf_reader_avail();

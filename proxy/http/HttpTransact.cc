@@ -1095,7 +1095,7 @@ HttpTransact::handleIfRedirect(State *s)
   int answer;
   URL redirect_url;
 
-  answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url);
+  answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url, s->state_machine->m_remap);
   if ((answer == PERMANENT_REDIRECT) || (answer == TEMPORARY_REDIRECT)) {
     int remap_redirect_len;
 
@@ -7761,7 +7761,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // process reverse mappings on the location header
   // TS-1364: do this regardless of response code
-  response_url_remap(outgoing_response);
+  response_url_remap(outgoing_response, s->state_machine->m_remap);
 
   if (s->http_config_param->enable_http_stats) {
     HttpTransactHeaders::generate_and_set_squid_codes(outgoing_response, s->via_string, &s->squid_codes);

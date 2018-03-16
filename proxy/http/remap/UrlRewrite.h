@@ -51,7 +51,7 @@ enum mapping_type {
 /**
  *
 **/
-class UrlRewrite
+class UrlRewrite : public RefCountObj
 {
 public:
   UrlRewrite();
@@ -62,12 +62,31 @@ public:
   bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
   void Print();
+
+  // The UrlRewrite object is-a RefCountObj, but this is a convenience to make it clear that we
+  // don't delete() these objects directly, but via the release() method only.
+  UrlRewrite *
+  acquire()
+  {
+    this->refcount_inc();
+    return this;
+  }
+
+  void
+  release()
+  {
+    if (0 == this->refcount_dec()) {
+      // Delete this on an ET_TASK thread, which avoids doing potentially slow things on an ET_NET thread.
+      Debug("url_rewrite", "Deleting old configuration immediately");
+      new_Deleter(this, 0);
+    }
+  }
+
   bool
   is_valid() const
   {
     return _valid;
   };
-  //  private:
 
   static const int MAX_REGEX_SUBS = 10;
 
