@@ -64,21 +64,25 @@ private:
 #ifdef OPENSSL_IS_BORINGSSL
   const EVP_AEAD *_get_evp_aead() const;
 #else
-  const EVP_CIPHER *_get_evp_aead() const;
+  const EVP_CIPHER *_get_evp_aead(QUICKeyPhase phase) const;
 #endif // OPENSSL_IS_BORINGSSL
-  size_t _get_aead_tag_len() const;
+  size_t _get_aead_tag_len(QUICKeyPhase phase) const;
 
-  bool _encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const;
-  bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
-                const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const;
-
-  SSL *_ssl = nullptr;
 #ifdef OPENSSL_IS_BORINGSSL
-  const EVP_AEAD *_aead = nullptr;
+  bool _encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
+                uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead,
+                size_t tag_len) const;
+  bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
+                const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead, size_t tag_len) const;
 #else
-  const EVP_CIPHER *_aead = nullptr;
+  bool _encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
+                uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead,
+                size_t tag_len) const;
+  bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
+                const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead, size_t tag_len) const;
 #endif // OPENSSL_IS_BORINGSSL
+
+  SSL *_ssl                              = nullptr;
   QUICPacketProtection *_client_pp       = nullptr;
   QUICPacketProtection *_server_pp       = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;

@@ -31,54 +31,67 @@
 static constexpr char tag[] = "quic_tls";
 
 const EVP_CIPHER *
-QUICTLS::_get_evp_aead() const
+QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {
-  if (this->is_handshake_finished()) {
-    switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
-    case TLS1_3_CK_AES_128_GCM_SHA256:
-      return EVP_aes_128_gcm();
-    case TLS1_3_CK_AES_256_GCM_SHA384:
-      return EVP_aes_256_gcm();
-    case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
-      return EVP_chacha20_poly1305();
-    case TLS1_3_CK_AES_128_CCM_SHA256:
-    case TLS1_3_CK_AES_128_CCM_8_SHA256:
-      return EVP_aes_128_ccm();
-    default:
+  if (phase == QUICKeyPhase::CLEARTEXT) {
+    return EVP_aes_128_gcm();
+  } else {
+    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
+    if (cipher) {
+      switch (SSL_CIPHER_get_id(cipher)) {
+      case TLS1_3_CK_AES_128_GCM_SHA256:
+        return EVP_aes_128_gcm();
+      case TLS1_3_CK_AES_256_GCM_SHA384:
+        return EVP_aes_256_gcm();
+      case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+        return EVP_chacha20_poly1305();
+      case TLS1_3_CK_AES_128_CCM_SHA256:
+      case TLS1_3_CK_AES_128_CCM_8_SHA256:
+        return EVP_aes_128_ccm();
+      default:
+        ink_assert(false);
+        return nullptr;
+      }
+    } else {
       ink_assert(false);
       return nullptr;
     }
-  } else {
-    return EVP_aes_128_gcm();
   }
 }
 
 size_t
-QUICTLS::_get_aead_tag_len() const
+QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
 {
-  if (this->is_handshake_finished()) {
-    switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
-    case TLS1_3_CK_AES_128_GCM_SHA256:
-    case TLS1_3_CK_AES_256_GCM_SHA384:
-      return EVP_GCM_TLS_TAG_LEN;
-    case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
-      return EVP_CHACHAPOLY_TLS_TAG_LEN;
-    case TLS1_3_CK_AES_128_CCM_SHA256:
-      return EVP_CCM_TLS_TAG_LEN;
-    case TLS1_3_CK_AES_128_CCM_8_SHA256:
-      return EVP_CCM8_TLS_TAG_LEN;
-    default:
+  if (phase == QUICKeyPhase::CLEARTEXT) {
+    return EVP_GCM_TLS_TAG_LEN;
+  } else {
+    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
+    if (cipher) {
+      switch (SSL_CIPHER_get_id(cipher)) {
+      case TLS1_3_CK_AES_128_GCM_SHA256:
+      case TLS1_3_CK_AES_256_GCM_SHA384:
+        return EVP_GCM_TLS_TAG_LEN;
+      case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+        return EVP_CHACHAPOLY_TLS_TAG_LEN;
+      case TLS1_3_CK_AES_128_CCM_SHA256:
+        return EVP_CCM_TLS_TAG_LEN;
+      case TLS1_3_CK_AES_128_CCM_8_SHA256:
+        return EVP_CCM8_TLS_TAG_LEN;
+      default:
+        ink_assert(false);
+        return -1;
+      }
+    } else {
       ink_assert(false);
       return -1;
     }
-  } else {
-    return EVP_GCM_TLS_TAG_LEN;
   }
 }
 
 bool
 QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const
+                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead,
+                  size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;
@@ -90,7 +103,7 @@ QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, co
   if (!(aead_ctx = EVP_CIPHER_CTX_new())) {
     return false;
   }
-  if (!EVP_EncryptInit_ex(aead_ctx, this->_aead, nullptr, nullptr, nullptr)) {
+  if (!EVP_EncryptInit_ex(aead_ctx, aead, nullptr, nullptr, nullptr)) {
     return false;
   }
   if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_IVLEN, nonce_len, nullptr)) {
@@ -127,7 +140,8 @@ QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, co
 
 bool
 QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, size_t tag_len) const
+                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead,
+                  size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;
@@ -139,7 +153,7 @@ QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const
   if (!(aead_ctx = EVP_CIPHER_CTX_new())) {
     return false;
   }
-  if (!EVP_DecryptInit_ex(aead_ctx, this->_aead, nullptr, nullptr, nullptr)) {
+  if (!EVP_DecryptInit_ex(aead_ctx, aead, nullptr, nullptr, nullptr)) {
     return false;
   }
   if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_IVLEN, nonce_len, nullptr)) {

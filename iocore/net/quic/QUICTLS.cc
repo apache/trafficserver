@@ -191,9 +191,6 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   }
   this->_server_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 
-  // Update algorithm
-  this->_aead = _get_evp_aead();
-
   return 1;
 }
 
@@ -241,9 +238,6 @@ QUICTLS::update_key_materials()
     Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
   }
   this->_server_pp->set_key(std::move(km), next_key_phase);
-
-  // Update algorithm
-  this->_aead = _get_evp_aead();
 
   return 1;
 }
@@ -307,14 +301,15 @@ QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, con
     return false;
   }
 
-  size_t tag_len        = this->_get_aead_tag_len();
+  size_t tag_len        = this->_get_aead_tag_len(phase);
   const KeyMaterial *km = pp->get_key(phase);
   if (!km) {
     Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
+  const EVP_CIPHER *aead = this->_get_evp_aead(phase);
 
-  bool ret = _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, tag_len);
+  bool ret = _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, aead, tag_len);
   if (!ret) {
     Debug(tag, "Failed to encrypt a packet: pkt_num=%" PRIu64, pkt_num);
   }
@@ -342,13 +337,14 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
     return false;
   }
 
-  size_t tag_len        = this->_get_aead_tag_len();
+  size_t tag_len        = this->_get_aead_tag_len(phase);
   const KeyMaterial *km = pp->get_key(phase);
   if (!km) {
     Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
-  bool ret = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, tag_len);
+  const EVP_CIPHER *aead = this->_get_evp_aead(phase);
+  bool ret               = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, aead, tag_len);
   if (!ret) {
     Debug(tag, "Failed to decrypt a packet: pkt_num=%" PRIu64, pkt_num);
   }
