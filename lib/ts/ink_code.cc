@@ -24,11 +24,12 @@
 #include <cstring>
 #include <cstdio>
 #include "ts/ink_code.h"
-#include "ts/INK_MD5.h"
 #include "ts/ink_assert.h"
+#include "ts/CryptoHash.h"
 
 ats::CryptoHash const ats::CRYPTO_HASH_ZERO; // default constructed is correct.
 #if TS_ENABLE_FIPS == 0
+#include "ts/INK_MD5.h"
 
 MD5Context::MD5Context()
 {
