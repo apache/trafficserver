@@ -28,6 +28,7 @@
 #include "QUICGlobals.h"
 #include "QUICConfig.h"
 #include "QUICTransportParameters.h"
+#include "QUICStatelessRetry.h"
 
 //
 // Global Data
@@ -67,6 +68,7 @@ QUICNetProcessor::start(int, size_t stacksize)
   // This initialization order matters ...
   // QUICInitializeLibrary();
   QUICConfig::startup();
+  QUICStatelessRetry::init();
 
 #ifdef TLS1_3_VERSION_DRAFT_TXT
   // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
@@ -79,6 +81,7 @@ QUICNetProcessor::start(int, size_t stacksize)
   // Initialize QUIC statistics. This depends on an initial set of certificates being loaded above.
   // QUICInitializeStatistics();
 
+  // TODO: separate SSL_CTX for client and server
   // TODO: load certs from SSLConfig
   this->_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(this->_ssl_ctx, TLS1_3_VERSION);
@@ -93,6 +96,11 @@ QUICNetProcessor::start(int, size_t stacksize)
                          SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
                          &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
                          &QUICTransportParametersHandler::parse, nullptr);
+
+  // callbacks for cookie ext
+  // Requires OpenSSL-1.1.1-pre3+ : https://github.com/openssl/openssl/pull/5463
+  SSL_CTX_set_stateless_cookie_generate_cb(this->_ssl_ctx, QUICStatelessRetry::generate_cookie);
+  SSL_CTX_set_stateless_cookie_verify_cb(this->_ssl_ctx, QUICStatelessRetry::verify_cookie);
 
   SSLConfig::scoped_config params;
   SSLParseCertificateConfiguration(params, this->_ssl_ctx);

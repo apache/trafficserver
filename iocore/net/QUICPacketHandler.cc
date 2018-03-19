@@ -27,7 +27,6 @@
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
-#include "QUICGlobals.h"
 
 //
 // QUICPacketHandler
@@ -95,11 +94,6 @@ QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt,
   // create Connection Table
   QUICConfig::scoped_config params;
   _ctable = new QUICConnectionTable(params->connection_table_size());
-
-  // callbacks for cookie ext
-  // Requires OpenSSL-1.1.1-pre3+ : https://github.com/openssl/openssl/pull/5463
-  SSL_CTX_set_stateless_cookie_generate_cb(this->_ssl_ctx, QUIC::ssl_generate_stateless_cookie);
-  SSL_CTX_set_stateless_cookie_verify_cb(this->_ssl_ctx, QUIC::ssl_verify_stateless_cookie);
 }
 
 QUICPacketHandlerIn::~QUICPacketHandlerIn()

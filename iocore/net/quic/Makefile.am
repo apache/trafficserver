@@ -72,7 +72,8 @@ libquic_a_SOURCES = \
   QUICDebugNames.cc \
   QUICApplication.cc \
   QUICApplicationMap.cc \
-  QUICIncomingFrameBuffer.cc
+  QUICIncomingFrameBuffer.cc \
+  QUICStatelessRetry.cc
 
 include $(top_srcdir)/build/tidy.mk
 

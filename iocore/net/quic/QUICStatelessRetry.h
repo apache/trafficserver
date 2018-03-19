@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Globals
+ *  Callbacks for Stateless Retry
  *
  *  @section license License
  *
@@ -25,18 +25,10 @@
 
 #include <openssl/ssl.h>
 
-class QUIC
+class QUICStatelessRetry
 {
 public:
   static void init();
-
-  // SSL callbacks
-  static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                      unsigned inlen, void *);
-
-  static int ssl_quic_qc_index;
-  static int ssl_quic_hs_index;
-
-private:
-  static void _register_stats();
+  static int generate_cookie(SSL *ssl, unsigned char *cookie, size_t *cookie_len);
+  static int verify_cookie(SSL *ssl, const unsigned char *cookie, size_t cookie_len);
 };
