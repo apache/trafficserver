@@ -61,7 +61,7 @@ TEST_CASE("1-RTT handshake ", "[quic]")
   QUICStatelessResetToken server_token;
   server_token.generate(conn_id, 0);
 
-  QUICHandshake *server = new QUICHandshake(server_qc, server_ssl_ctx, server_token);
+  QUICHandshake *server = new QUICHandshake(server_qc, server_ssl_ctx, server_token, false);
 
   // setup stream 0
   MockQUICFrameTransmitter tx;

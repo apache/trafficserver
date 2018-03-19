@@ -66,7 +66,7 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
   memcpy(payload.get(), raw, sizeof(raw));
 
-  QUICPacketUPtr packet = factory.create_retry_packet(0x01020304, 0, std::move(payload), sizeof(raw));
+  QUICPacketUPtr packet = factory.create_retry_packet(0x01020304, 0, std::move(payload), sizeof(raw), false);
   CHECK(packet->type() == QUICPacketType::RETRY);
   CHECK(packet->connection_id() == 0x01020304);
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
