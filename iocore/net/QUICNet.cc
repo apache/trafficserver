@@ -56,12 +56,10 @@ QUICPollCont::~QUICPollCont()
 void
 QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  uint8_t *buf;
-  QUICPacketType ptype;
   UDPPacketInternal *p = e->packet;
   // FIXME: VC is nullptr ?
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
-  buf                    = (uint8_t *)p->getIOBlockChain()->buf();
+  uint8_t *buf           = (uint8_t *)p->getIOBlockChain()->buf();
 
   e->free();
   if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
@@ -70,38 +68,27 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
     return;
   }
 
-  ptype = static_cast<QUICPacketType>(buf[0] & 0x7f);
-  switch (ptype) {
-  case QUICPacketType::INITIAL:
-    if (!vc->read.triggered) {
-      vc->read.triggered = 1;
-      vc->handle_received_packet(p);
-      vc->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
-    } else {
-      p->free();
-    }
+  QUICPacketType ptype = static_cast<QUICPacketType>(buf[0] & 0x7f);
+  if (ptype == QUICPacketType::INITIAL && !vc->read.triggered) {
+    vc->read.triggered = 1;
+    vc->handle_received_packet(p);
+    vc->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
     return;
-  case QUICPacketType::ZERO_RTT_PROTECTED:
-  // TODO:: do something ?
-  // break;
-  case QUICPacketType::HANDSHAKE:
-  default:
-    // Just Pass Through
-    if (vc) {
-      vc->read.triggered = 1;
-      vc->handle_received_packet(p);
-    } else {
-      this->_longInQueue.push(p);
-    }
+  }
 
-    // Push QUICNetVC into nethandler's enabled list
-    if (vc != nullptr) {
-      int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
-      if (!isin) {
-        nh->read_enable_list.push(vc);
-      }
+  if (vc) {
+    vc->read.triggered = 1;
+    vc->handle_received_packet(p);
+  } else {
+    this->_longInQueue.push(p);
+  }
+
+  // Push QUICNetVC into nethandler's enabled list
+  if (vc != nullptr) {
+    int isin = ink_atomic_swap(&vc->read.in_enabled_list, 1);
+    if (!isin) {
+      nh->read_enable_list.push(vc);
     }
-    break;
   }
 }
 
