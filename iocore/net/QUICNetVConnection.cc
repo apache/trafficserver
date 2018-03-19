@@ -48,6 +48,9 @@
 #define QUICConDebug(fmt, ...) \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
+#define QUICConVDebug(fmt, ...) \
+  Debug("v_quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
+
 #define QUICError(fmt, ...)                                                                                 \
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__); \
   Error("quic_net [%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
@@ -339,7 +342,7 @@ QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
 
   if (packet) {
-    QUICConDebug("Packet Number=%" PRIu64 " Type=%s Size=%hu", packet->packet_number(), QUICDebugNames::packet_type(packet->type()),
+    QUICConDebug("Enqueue %s pkt_num=%" PRIu64 " size=%hu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                  packet->size());
     // TODO Remove const_cast
     this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
@@ -402,7 +405,7 @@ QUICNetVConnection::_transmit_frame(QUICFrameUPtr frame)
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
   if (frame) {
-    QUICConDebug("Frame Type=%s Size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+    QUICConVDebug("type=%s size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
     if (frame->type() == QUICFrameType::STREAM) {
       QUICStreamFrame &stream_frame = static_cast<QUICStreamFrame &>(*frame);
       // XXX: Stream 0 is exempt from the connection-level flow control window.
@@ -1005,7 +1008,7 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   }
 
   size_t l = 0;
-  QUICConDebug("type=%s", QUICDebugNames::frame_type(frame->type()));
+  QUICConDebug("type=%s size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
   frame->store(buf.get() + len, &l);
   len += l;
 
@@ -1265,7 +1268,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     QUICConDebug("Unsupported version");
     break;
   case QUICPacketCreationResult::SUCCESS:
-    QUICConDebug("type=%s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
+    QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
                  quic_packet->packet_number(), quic_packet->size());
     break;
   default:

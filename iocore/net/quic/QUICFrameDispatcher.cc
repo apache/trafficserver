@@ -24,7 +24,7 @@
 #include "QUICFrameDispatcher.h"
 #include "QUICDebugNames.h"
 
-static constexpr char tag[] = "quic_frame_handler";
+static constexpr char tag[] = "quic_net";
 
 //
 // Frame Dispatcher
@@ -58,7 +58,7 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size, bool 
 
     // TODO: check debug build
     if (type != QUICFrameType::PADDING) {
-      Debug(tag, "Received %s frame, size %zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+      Debug(tag, "type=%s, size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
     }
 
     should_send_ack |= (type != QUICFrameType::PADDING && type != QUICFrameType::ACK);
