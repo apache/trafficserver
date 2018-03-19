@@ -262,7 +262,7 @@ PluginVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 
   // Note: we set vio.op last because process_read_side looks at it to
   //  tell if the VConnection is active.
-  read_state.vio.mutex     = c->mutex;
+  read_state.vio.mutex     = c ? c->mutex : this->mutex;
   read_state.vio._cont     = c;
   read_state.vio.nbytes    = nbytes;
   read_state.vio.ndone     = 0;
