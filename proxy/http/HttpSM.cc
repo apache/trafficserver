@@ -2653,7 +2653,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE: // Tunnel done.
-    if (p->handler_state == HTTP_SM_POST_UA_FAIL && client_response_hdr_bytes == 0) {
+    if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
       // post failed
       switch (t_state.client_info.state) {
       case HttpTransact::ACTIVE_TIMEOUT:
