@@ -153,7 +153,11 @@ QUICTLS::is_handshake_finished() const
 bool
 QUICTLS::is_ready_to_derive() const
 {
-  return SSL_get_current_cipher(this->_ssl) != nullptr;
+  if (this->_netvc_context == NET_VCONNECTION_IN) {
+    return SSL_get_current_cipher(this->_ssl) != nullptr;
+  } else {
+    return this->is_handshake_finished();
+  }
 }
 
 bool
