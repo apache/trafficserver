@@ -25,9 +25,13 @@
 
 #include "I_VConnection.h"
 #include "ProxyClientTransaction.h"
+#include "HQFrameDispatcher.h"
+#include "HQFrameCollector.h"
 
 class QUICStreamIO;
 class HQClientSession;
+class HQHeaderFramer;
+class HQDataFramer;
 
 class HQClientTransaction : public ProxyClientTransaction
 {
@@ -35,6 +39,7 @@ public:
   using super = ProxyClientTransaction;
 
   HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io);
+  ~HQClientTransaction();
 
   // Implement ProxyClienTransaction interface
   void set_active_timeout(ink_hrtime timeout_in) override;
@@ -59,6 +64,8 @@ public:
   // HQClientTransaction specific methods
   int state_stream_open(int, void *);
   int state_stream_closed(int event, void *data);
+  bool is_response_header_sent() const;
+  bool is_response_body_sent() const;
 
 private:
   Event *_send_tracked_event(Event *, int, VIO *);
@@ -75,5 +82,16 @@ private:
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
 
+  // These are for HQ
+  HQFrameDispatcher _frame_dispatcher;
+  HQFrameCollector _frame_collector;
+  HQFrameGenerator *_header_framer = nullptr;
+  HQFrameGenerator *_data_framer   = nullptr;
+  HQFrameHandler *_header_handler  = nullptr;
+  HQFrameHandler *_data_handler    = nullptr;
+
+  // These are for 0.9 support
+  bool _protocol_detected          = false;
+  bool _legacy_request             = false;
   bool _client_req_header_complete = false;
 };

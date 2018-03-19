@@ -43,6 +43,7 @@ public:
   int64_t read_avail();
   bool is_read_avail_more_than(int64_t size);
   int64_t read(uint8_t *buf, int64_t len);
+  int64_t write_avail();
   int64_t write(const uint8_t *buf, int64_t len);
   int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
   void set_write_vio_nbytes(int64_t);

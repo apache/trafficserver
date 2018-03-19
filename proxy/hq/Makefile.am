@@ -19,6 +19,8 @@
 
 include $(top_srcdir)/build/tidy.mk
 
+SUBDIRS = test
+
 AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/proxy/api/ts \
@@ -40,6 +42,13 @@ libhq_a_SOURCES = \
   HQSessionAccept.cc \
   HQClientSession.cc \
   HQClientTransaction.cc \
+  HQFrame.cc \
+  HQFrameCollector.cc \
+  HQFrameDispatcher.cc \
+  HQHeaderFramer.cc \
+  HQDataFramer.cc \
+  HQHeaderVIOAdaptor.cc \
+  HQStreamDataVIOAdaptor.cc \
   QUICSimpleApp.cc
 
 tidy-local: $(libhq_a_SOURCES) \

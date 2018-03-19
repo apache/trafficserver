@@ -70,6 +70,12 @@ QUICStreamIO::write(const uint8_t *buf, int64_t len)
 }
 
 int64_t
+QUICStreamIO::write_avail()
+{
+  return this->_write_buffer->write_avail();
+}
+
+int64_t
 QUICStreamIO::write(IOBufferReader *r, int64_t alen, int64_t offset)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());

@@ -26,6 +26,10 @@
 #include "QUICDebugNames.h"
 
 #include "HQClientSession.h"
+#include "HQStreamDataVIOAdaptor.h"
+#include "HQHeaderVIOAdaptor.h"
+#include "HQHeaderFramer.h"
+#include "HQDataFramer.h"
 #include "HttpSM.h"
 
 #define HQTransDebug(fmt, ...)                                                                                                \
@@ -45,14 +49,32 @@
 // }
 
 HQClientTransaction::HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
-
 {
   this->mutex = new_ProxyMutex();
   this->set_parent(session);
   this->sm_reader = this->_read_vio_buf.alloc_reader();
   static_cast<HQClientSession *>(this->parent)->add_transaction(this);
 
+  this->_header_framer = new HQHeaderFramer(this, &this->_write_vio);
+  this->_data_framer   = new HQDataFramer(this, &this->_write_vio);
+  this->_frame_collector.add_generator(this->_header_framer);
+  this->_frame_collector.add_generator(this->_data_framer);
+  // this->_frame_collector.add_generator(this->_push_controller);
+
+  this->_header_handler = new HQHeaderVIOAdaptor(&this->_read_vio);
+  this->_data_handler   = new HQStreamDataVIOAdaptor(&this->_read_vio);
+  this->_frame_dispatcher.add_handler(this->_header_handler);
+  this->_frame_dispatcher.add_handler(this->_data_handler);
+
   SET_HANDLER(&HQClientTransaction::state_stream_open);
+}
+
+HQClientTransaction::~HQClientTransaction()
+{
+  delete this->_header_framer;
+  delete this->_data_framer;
+  delete this->_header_handler;
+  delete this->_data_handler;
 }
 
 void
@@ -356,33 +378,59 @@ HQClientTransaction::_process_read_vio()
 
   IOBufferReader *client_vio_reader = this->_stream_io->get_read_buffer_reader();
   int64_t bytes_avail               = client_vio_reader->read_avail();
-  MIOBuffer *writer                 = this->_read_vio.get_writer();
 
-  if (!this->_client_req_header_complete) {
-    int n = 2;
-    // Check client request is complete or not
-    if (bytes_avail < 2 || client_vio_reader->start()[bytes_avail - 1] != '\n') {
+  // Nuke this block when we drop 0.9 support
+  if (!this->_protocol_detected) {
+    if (bytes_avail < 3) {
       return 0;
     }
-    this->_client_req_header_complete = true;
-
-    // Check "CRLF" or "LF"
-    if (client_vio_reader->start()[bytes_avail - 2] != '\r') {
-      n = 1;
+    // If the first two bit are 0 and 1, the 3rd byte is type field.
+    // Because there is no type value larger than 0x20, we can assume that the
+    // request is HTTP/0.9 if the value is larger than 0x20.
+    const uint8_t *start = reinterpret_cast<uint8_t *>(client_vio_reader->start());
+    if (0x40 <= *start && *start < 0x80 && *(start + 2) > 0x20) {
+      this->_legacy_request = true;
     }
-
-    writer->write(client_vio_reader, bytes_avail - n);
-    client_vio_reader->consume(bytes_avail);
-
-    // FIXME: Get hostname from SNI?
-    const char version[] = " HTTP/1.1\r\nHost: localhost\r\n\r\n";
-    writer->write(version, sizeof(version));
-  } else {
-    writer->write(client_vio_reader, bytes_avail);
-    client_vio_reader->consume(bytes_avail);
+    this->_protocol_detected = true;
   }
 
-  return bytes_avail;
+  if (this->_legacy_request) {
+    MIOBuffer *writer = this->_read_vio.get_writer();
+
+    // Nuke this branch when we drop 0.9 support
+    if (!this->_client_req_header_complete) {
+      int n = 2;
+      // Check client request is complete or not
+      if (bytes_avail < 2 || client_vio_reader->start()[bytes_avail - 1] != '\n') {
+        return 0;
+      }
+      this->_client_req_header_complete = true;
+
+      // Check "CRLF" or "LF"
+      if (client_vio_reader->start()[bytes_avail - 2] != '\r') {
+        n = 1;
+      }
+
+      writer->write(client_vio_reader, bytes_avail - n);
+      client_vio_reader->consume(bytes_avail);
+
+      // FIXME: Get hostname from SNI?
+      const char version[] = " HTTP/1.1\r\nHost: localhost\r\n\r\n";
+      writer->write(version, sizeof(version));
+    } else {
+      writer->write(client_vio_reader, bytes_avail);
+      client_vio_reader->consume(bytes_avail);
+    }
+
+    return bytes_avail;
+    // End of code for HTTP/0.9
+  } else {
+    // This branch is for HQ
+    uint16_t nread = 0;
+    this->_frame_dispatcher.on_read_ready(reinterpret_cast<uint8_t *>(client_vio_reader->start()), bytes_avail, nread);
+    client_vio_reader->consume(nread);
+    return nread;
+  }
 }
 
 // FIXME: already defined somewhere?
@@ -400,45 +448,52 @@ HQClientTransaction::_process_write_vio()
 
   IOBufferReader *reader = this->_write_vio.get_reader();
 
-  int64_t http_1_1_version_len = sizeof(http_1_1_version) - 1;
+  if (this->_legacy_request) {
+    // This branch is for HTTP/0.9
+    int64_t http_1_1_version_len = sizeof(http_1_1_version) - 1;
 
-  if (reader->is_read_avail_more_than(http_1_1_version_len) &&
-      memcmp(reader->start(), http_1_1_version, http_1_1_version_len) == 0) {
-    // Skip HTTP/1.1 response headers
-    IOBufferBlock *headers = reader->get_current_block();
-    int64_t headers_size   = headers->read_avail();
-    reader->consume(headers_size);
-    this->_write_vio.ndone += headers_size;
+    if (reader->is_read_avail_more_than(http_1_1_version_len) &&
+        memcmp(reader->start(), http_1_1_version, http_1_1_version_len) == 0) {
+      // Skip HTTP/1.1 response headers
+      IOBufferBlock *headers = reader->get_current_block();
+      int64_t headers_size   = headers->read_avail();
+      reader->consume(headers_size);
+      this->_write_vio.ndone += headers_size;
 
-    // The size of respons to client
-    this->_stream_io->set_write_vio_nbytes(this->_write_vio.nbytes - headers_size);
-  }
-
-  // Write HTTP/1.1 response body
-  int64_t bytes_avail   = reader->read_avail();
-  int64_t total_written = 0;
-
-  HQTransDebug("%" PRId64, bytes_avail);
-
-  while (total_written < bytes_avail) {
-    int64_t data_len      = reader->block_read_avail();
-    int64_t bytes_written = this->_stream_io->write(reader, data_len);
-    if (bytes_written <= 0) {
-      break;
+      // The size of respons to client
+      this->_stream_io->set_write_vio_nbytes(this->_write_vio.nbytes - headers_size);
     }
 
-    reader->consume(bytes_written);
-    this->_write_vio.ndone += bytes_written;
-    total_written += bytes_written;
-  }
+    // Write HTTP/1.1 response body
+    int64_t bytes_avail   = reader->read_avail();
+    int64_t total_written = 0;
 
-  // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
-  // is CHUNK_READ_DONE and set FIN flag
-  if (this->_write_vio.ntodo() == 0) {
-    this->_stream_io->shutdown();
-  }
+    HQTransDebug("%" PRId64, bytes_avail);
 
-  return total_written;
+    while (total_written < bytes_avail) {
+      int64_t data_len      = reader->block_read_avail();
+      int64_t bytes_written = this->_stream_io->write(reader, data_len);
+      if (bytes_written <= 0) {
+        break;
+      }
+
+      reader->consume(bytes_written);
+      this->_write_vio.ndone += bytes_written;
+      total_written += bytes_written;
+    }
+
+    // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
+    // is CHUNK_READ_DONE and set FIN flag
+    if (this->_write_vio.ntodo() == 0) {
+      this->_stream_io->shutdown();
+    }
+
+    return total_written;
+  } else {
+    size_t nwritten = 0;
+    this->_frame_collector.on_write_ready(this->_stream_io, nwritten);
+    return nwritten;
+  }
 }
 
 void
@@ -452,4 +507,16 @@ int
 HQClientTransaction::get_transaction_id() const
 {
   return this->_stream_io->get_transaction_id();
+}
+
+bool
+HQClientTransaction::is_response_header_sent() const
+{
+  return this->_header_framer->is_done();
+}
+
+bool
+HQClientTransaction::is_response_body_sent() const
+{
+  return this->_data_framer->is_done();
 }

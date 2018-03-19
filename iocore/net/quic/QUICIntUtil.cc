@@ -84,6 +84,9 @@ QUICVariableInt::encode(uint8_t *dst, size_t dst_len, size_t &len, uint64_t src)
 int
 QUICVariableInt::decode(uint64_t &dst, size_t &len, const uint8_t *src, size_t src_len)
 {
+  if (src_len < 1) {
+    return -1;
+  }
   len = 1 << (src[0] >> 6);
   if (src_len < len) {
     return 1;
