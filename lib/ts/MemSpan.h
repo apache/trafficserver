@@ -27,6 +27,8 @@
 #pragma once
 #include <cstring>
 #include <iosfwd>
+#include <iostream>
+#include <cstddef>
 
 /// Apache Traffic Server commons.
 namespace ts
