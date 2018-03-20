@@ -122,6 +122,8 @@ proxy/http2/test_Huffmancode
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
+proxy/hq/test/test_HQFrame
+proxy/hq/test/test_HQFrameDispatcher
 proxy/logging/test_LogUtils
 
 plugins/header_rewrite/header_rewrite_test
