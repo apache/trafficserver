@@ -174,6 +174,8 @@ libtsutil_la_SOURCES = \
   MatcherUtils.cc \
   MatcherUtils.h \
   MemSpan.h \
+  MemArena.cc \
+  MemArena.h \
   MMH.cc \
   MMH.h \
   MT_hashtable.h \
@@ -267,11 +269,12 @@ test_tslib_SOURCES = \
 	unit-tests/test_ink_inet.cc \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \
+       unit-tests/test_MemSpan.cc \
+       unit-tests/test_MemArena.cc \
 	unit-tests/test_MT_hashtable.cc \
 	unit-tests/test_Scalar.cc \
 	unit-tests/test_string_view.cc \
-	unit-tests/test_TextView.cc \
-	unit-tests/test_MemSpan.cc
+	unit-tests/test_TextView.cc 
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
