@@ -45,14 +45,11 @@ QUICStatelessRetry::init()
 int
 QUICStatelessRetry::generate_cookie(SSL *ssl, unsigned char *cookie, size_t *cookie_len)
 {
-  // Call UnixNetVConnection::get_remote_addr() safely
-  // TODO: add APIs to getting client addr in QUICConnection
-  QUICConnection *qc      = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
-  QUICNetVConnection *qvc = dynamic_cast<QUICNetVConnection *>(qc);
+  QUICConnection *qc = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
 
   uint8_t key[INET6_ADDRPORTSTRLEN] = {0};
   size_t key_len                    = INET6_ADDRPORTSTRLEN;
-  ats_ip_nptop(qvc->get_remote_addr(), reinterpret_cast<char *>(key), key_len);
+  ats_ip_nptop(qc->five_tuple().source(), reinterpret_cast<char *>(key), key_len);
 
   unsigned int dst_len = 0;
   HMAC(EVP_sha1(), stateless_cookie_secret, STATELESS_COOKIE_SECRET_LENGTH, key, key_len, cookie, &dst_len);

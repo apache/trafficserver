@@ -175,6 +175,7 @@ QUICNetVConnection::startEvent(int event, Event *e)
 void
 QUICNetVConnection::start(SSL_CTX *ssl_ctx)
 {
+  this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
     QUICConfig::scoped_config params;
@@ -287,6 +288,12 @@ QUICConnectionId
 QUICNetVConnection::connection_id()
 {
   return this->_quic_connection_id;
+}
+
+const QUICFiveTuple
+QUICNetVConnection::five_tuple()
+{
+  return this->_five_tuple;
 }
 
 uint32_t

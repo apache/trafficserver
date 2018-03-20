@@ -157,6 +157,12 @@ public:
     return 0;
   }
 
+  const QUICFiveTuple
+  five_tuple() override
+  {
+    return QUICFiveTuple();
+  }
+
   uint32_t
   transmit_packet(QUICPacketUPtr packet) override
   {

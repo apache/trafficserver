@@ -39,6 +39,7 @@ class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter
 public:
   virtual QUICConnectionId original_connection_id() = 0;
   virtual QUICConnectionId connection_id()          = 0;
+  virtual const QUICFiveTuple five_tuple()          = 0;
 
   /*
    * Retruns the maximum packet size at the time called

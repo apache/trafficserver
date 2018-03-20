@@ -27,19 +27,6 @@
 #include "QUICConnection.h"
 #include "ts/MT_hashtable.h"
 
-class QUICFiveTuple
-{
-public:
-  QUICFiveTuple(IpEndpoint src, IpEndpoint dst, int protocol)
-  {
-    // FIXME Generate a hash code
-    this->_hash_code = src.port() + dst.port() + protocol;
-  }
-
-private:
-  uint64_t _hash_code = 0;
-};
-
 class QUICConnectionTable
 {
 public:

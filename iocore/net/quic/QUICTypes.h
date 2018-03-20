@@ -31,6 +31,7 @@
 #include <cstdint>
 #include "ts/INK_MD5.h"
 #include "ts/ink_memory.h"
+#include "ts/ink_inet.h"
 
 // These magical defines should be removed when we implement seriously
 #define MAGIC_NUMBER_0 0
@@ -252,6 +253,23 @@ enum class QUICStreamType : uint8_t {
   CLIENT_UNI,
   SERVER_UNI,
   HANDSHAKE,
+};
+
+class QUICFiveTuple
+{
+public:
+  QUICFiveTuple(){};
+  QUICFiveTuple(IpEndpoint src, IpEndpoint dst, int protocol);
+  void update(IpEndpoint src, IpEndpoint dst, int protocol);
+  IpEndpoint source() const;
+  IpEndpoint destination() const;
+  int protocol() const;
+
+private:
+  IpEndpoint _source;
+  IpEndpoint _destination;
+  int _protocol;
+  uint64_t _hash_code = 0;
 };
 
 class QUICTypeUtil

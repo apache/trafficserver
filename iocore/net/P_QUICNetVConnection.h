@@ -181,6 +181,7 @@ public:
   // QUICConnection
   QUICConnectionId original_connection_id() override;
   QUICConnectionId connection_id() override;
+  const QUICFiveTuple five_tuple() override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
   uint32_t maximum_stream_frame_data_size() override;
@@ -226,6 +227,7 @@ private:
 
   QUICConnectionId _original_quic_connection_id;
   QUICConnectionId _quic_connection_id;
+  QUICFiveTuple _five_tuple;
 
   AltConnectionInfo _alt_quic_connection_ids[3];
   int8_t _alt_quic_connection_id_seq_num = 0;

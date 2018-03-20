@@ -175,3 +175,40 @@ QUICError::code()
 {
   return static_cast<uint16_t>(this->trans_error_code);
 }
+
+//
+// QUICFiveTuple
+//
+QUICFiveTuple::QUICFiveTuple(IpEndpoint src, IpEndpoint dst, int protocol) : _source(src), _destination(dst), _protocol(protocol)
+{
+  // FIXME Generate a hash code
+  this->_hash_code = src.port() + dst.port() + protocol;
+}
+void
+QUICFiveTuple::update(IpEndpoint src, IpEndpoint dst, int protocol)
+{
+  this->_source      = src;
+  this->_destination = dst;
+  this->_protocol    = protocol;
+
+  // FIXME Generate a hash code
+  this->_hash_code = src.port() + dst.port() + protocol;
+}
+
+IpEndpoint
+QUICFiveTuple::source() const
+{
+  return this->_source;
+}
+
+IpEndpoint
+QUICFiveTuple::destination() const
+{
+  return this->_destination;
+}
+
+int
+QUICFiveTuple::protocol() const
+{
+  return this->_protocol;
+}
