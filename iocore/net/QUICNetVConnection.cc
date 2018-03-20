@@ -1133,7 +1133,8 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
                                                          QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
     break;
   case QUICPacketType::RETRY:
-    packet = this->_packet_factory.create_retry_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
+    // Echo "_largest_received_packet_number" as packet number. Probably this is the packet number from triggering client packet.
+    packet = this->_packet_factory.create_retry_packet(this->_quic_connection_id, this->_largest_received_packet_number,
                                                        std::move(buf), len, retransmittable);
     break;
   case QUICPacketType::HANDSHAKE:
