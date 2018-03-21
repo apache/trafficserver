@@ -564,7 +564,7 @@ QUICTransportParametersHandler::add(SSL *s, unsigned int ext_type, unsigned int 
 {
   QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
   *out              = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
-  hs->local_transport_parameters()->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
+  hs->local_transport_encrypted_extensions_parameters()->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
 
   return 1;
 }
