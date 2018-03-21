@@ -1680,8 +1680,8 @@ HttpTransact::OSDNSLookup(State *s)
 
   // It's never valid to connect *to* INADDR_ANY, so let's reject the request now.
   if (ats_is_ip_any(s->host_db_info.ip())) {
-    TxnDebug("http_trans", "[OSDNSLookup] Invalid request IP: INADDR_ANY");
-    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad Destination Address", "request#syntax_error");
+    DebugTxn("http_trans", "[OSDNSLookup] Invalid request IP: INADDR_ANY");
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad Destination Address", "request#syntax_error", nullptr);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
   }
