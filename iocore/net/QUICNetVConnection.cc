@@ -1376,8 +1376,8 @@ QUICNetVConnection::_complete_handshake_if_possible()
     return -1;
   }
 
-  this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
-                                  this->_handshake_handler->remote_transport_parameters());
+  this->_init_flow_control_params(this->_handshake_handler->local_transport_encrypted_extensions_parameters(),
+                                  this->_handshake_handler->remote_transport_encrypted_extensions_parameters());
 
   this->_start_application();
 

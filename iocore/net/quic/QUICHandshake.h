@@ -76,8 +76,8 @@ public:
   QUICVersion negotiated_version();
   const char *negotiated_cipher_suite();
   void negotiated_application_name(const uint8_t **name, unsigned int *len);
-  std::shared_ptr<const QUICTransportParameters> local_transport_parameters();
-  std::shared_ptr<const QUICTransportParameters> remote_transport_parameters();
+  std::shared_ptr<const QUICTransportParameters> local_transport_encrypted_extensions_parameters();
+  std::shared_ptr<const QUICTransportParameters> remote_transport_encrypted_extensions_parameters();
 
   bool is_version_negotiated() const;
   bool is_completed() const;
@@ -91,10 +91,10 @@ public:
   QUICHandshakeMsgType msg_type() const;
 
 private:
-  SSL *_ssl                                                             = nullptr;
-  QUICHandshakeProtocol *_hs_protocol                                   = nullptr;
-  std::shared_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
-  std::shared_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
+  SSL *_ssl                                                                                  = nullptr;
+  QUICHandshakeProtocol *_hs_protocol                                                        = nullptr;
+  std::shared_ptr<QUICTransportParameters> _local_transport_encrypted_extensions_parameters  = nullptr;
+  std::shared_ptr<QUICTransportParameters> _remote_transport_encrypted_extensions_parameters = nullptr;
 
   QUICVersionNegotiator *_version_negotiator = nullptr;
   NetVConnectionContext_t _netvc_context     = NET_VCONNECTION_UNSET;
