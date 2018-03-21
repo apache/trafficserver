@@ -251,7 +251,7 @@ HQFrameFactory::create(const uint8_t *buf, size_t len)
     return HQFrameUPtr(frame, &HQFrameDeleter::delete_data_frame);
   default:
     // Unknown frame
-    Debug("hq_frame_factory", "Unknown frame type %hhx", type);
+    Debug("hq_frame_factory", "Unknown frame type %hhx", static_cast<uint8_t>(type));
     frame = hqFrameAllocator.alloc();
     new (frame) HQFrame(buf, len);
     return HQFrameUPtr(frame, &HQFrameDeleter::delete_frame);

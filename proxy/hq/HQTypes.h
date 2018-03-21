@@ -23,6 +23,10 @@
 
 #pragma once
 
+#include "ts/ink_platform.h"
+
+#include <memory>
+
 // Update HQFrame::type(const uint8_t *) too when you modify this list
 enum class HQFrameType : uint8_t {
   DATA          = 0x00,
