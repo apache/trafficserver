@@ -3812,6 +3812,13 @@ Sockets
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
 
+.. ts:cv:: CONFIG proxy.config.http.allow_half_open INT 1
+   :reloadable:
+   :overridable:
+
+   Turn on or off support for connection half open for client side. Default is on, so
+   after client sends FIN, the connection is still there.
+
 .. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
 
    Accepting inbound connections and starting the cache are independent

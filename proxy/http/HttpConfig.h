@@ -450,6 +450,7 @@ struct OverridableHttpConfigParams {
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
       request_buffer_enabled(0),
+      allow_half_open(1),
       ssl_client_verify_server(0),
       redirect_use_orig_cache_key(0),
       number_of_redirections(0),
@@ -628,6 +629,11 @@ struct OverridableHttpConfigParams {
   // Buffer post body before connecting servers //
   ////////////////////////////////////////////////
   MgmtByte request_buffer_enabled;
+
+  /////////////////////////////////////////////////
+  // Keep connection open after client sends FIN //
+  /////////////////////////////////////////////////
+  MgmtByte allow_half_open;
 
   /////////////////////////////
   // server verification mode//
