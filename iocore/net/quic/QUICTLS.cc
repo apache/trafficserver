@@ -79,32 +79,10 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
     ERR_clear_error();
     int ret = 0;
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      // process early data
-      if (!this->_early_data_processed) {
-        if (this->_read_early_data()) {
-          this->_early_data_processed = true;
-        }
-
-        if (SSL_get_early_data_status(this->_ssl) == SSL_EARLY_DATA_ACCEPTED) {
-          Debug(tag, "Early data processed");
-
-          if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
-            this->_generate_0rtt_key();
-          }
-        }
-      }
-
-      // process stateless retry
-      if (this->_stateless && SSL_get_early_data_status(this->_ssl) != SSL_EARLY_DATA_ACCEPTED) {
-        // start over
-        // TODO: make sure no memory leaks
-        rbio = BIO_new(BIO_s_mem());
-        wbio = BIO_new(BIO_s_mem());
-        if (in != nullptr || in_len != 0) {
-          BIO_write(rbio, in, in_len);
-        }
-        SSL_set_bio(this->_ssl, rbio, wbio);
-
+      // If stateless is enabled, TS should not allow early data, these are incompatible.
+      // Details in https://github.com/openssl/openssl/issues/5235
+      if (this->_stateless) {
+        // process stateless retry
         ret = SSL_stateless(this->_ssl);
         if (ret > 0) {
           this->_stateless = false;
@@ -113,6 +91,21 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
           this->_msg_type = QUICHandshakeMsgType::HRR;
         }
       } else {
+        // process early data
+        if (!this->_early_data_processed) {
+          if (this->_read_early_data()) {
+            this->_early_data_processed = true;
+          }
+
+          if (SSL_get_early_data_status(this->_ssl) == SSL_EARLY_DATA_ACCEPTED) {
+            Debug(tag, "Early data processed");
+
+            if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
+              this->_generate_0rtt_key();
+            }
+          }
+        }
+
         ret             = SSL_accept(this->_ssl);
         this->_msg_type = QUICHandshakeMsgType::SH;
       }
