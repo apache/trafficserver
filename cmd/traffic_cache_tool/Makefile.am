@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I $(srcdir)/lib/ts -D__STDC_FORMAT_MACROS
+AM_CPPFLAGS = -I $(top_srcdir)/lib -D__STDC_FORMAT_MACROS
 
 noinst_PROGRAMS = traffic_cache_tool
 
