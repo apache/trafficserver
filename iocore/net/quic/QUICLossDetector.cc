@@ -178,10 +178,14 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
               this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
   // Find all newly acked packets.
-  for (auto acked_packet_number : this->_determine_newly_acked_packets(*ack_frame)) {
-    auto pi = this->_sent_packets.find(acked_packet_number);
-    if (pi != this->_sent_packets.end()) {
-      this->_on_packet_acked(pi->first, pi->second->bytes);
+  for (auto &&range : this->_determine_newly_acked_packets(*ack_frame)) {
+    for (auto ite = this->_sent_packets.begin(); ite != this->_sent_packets.end(); /* no increment here*/) {
+      auto tmp_ite = ite;
+      tmp_ite++;
+      if (range.contains(ite->first)) {
+        this->_on_packet_acked(ite->first, ite->second->bytes);
+      }
+      ite = tmp_ite;
     }
   }
 
@@ -439,24 +443,20 @@ QUICLossDetector::_retransmit_lost_packet(const QUICPacket &packet)
   this->_transmitter->retransmit_packet(packet);
 }
 
-std::set<QUICPacketNumber>
+std::set<QUICAckFrame::PacketNumberRange>
 QUICLossDetector::_determine_newly_acked_packets(const QUICAckFrame &ack_frame)
 {
-  std::set<QUICPacketNumber> packets;
+  std::set<QUICAckFrame::PacketNumberRange> numbers;
   QUICPacketNumber x = ack_frame.largest_acknowledged();
-  for (uint64_t i = 0; i <= ack_frame.ack_block_section()->first_ack_block_length(); ++i) {
-    packets.insert(x--);
-  }
+  numbers.insert({x, static_cast<uint64_t>(x) - ack_frame.ack_block_section()->first_ack_block_length()});
+  x -= ack_frame.ack_block_section()->first_ack_block_length() + 1;
   for (auto &&block : *(ack_frame.ack_block_section())) {
-    for (uint64_t i = 0; i <= block.gap(); ++i) {
-      x--;
-    }
-    for (uint64_t i = 0; i <= block.length(); ++i) {
-      packets.insert(x--);
-    }
+    x -= block.gap() + 1;
+    numbers.insert({x, static_cast<uint64_t>(x) - block.length()});
+    x -= block.length() + 1;
   }
 
-  return packets;
+  return numbers;
 }
 
 void

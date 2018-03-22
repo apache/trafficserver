@@ -98,6 +98,26 @@ private:
 class QUICAckFrame : public QUICFrame
 {
 public:
+  class PacketNumberRange
+  {
+  public:
+    PacketNumberRange(QUICPacketNumber first, QUICPacketNumber last) : _first(first), _last(last) {}
+    PacketNumberRange(PacketNumberRange &&a) noexcept;
+    QUICPacketNumber first() const;
+    QUICPacketNumber last() const;
+    uint64_t size() const;
+    bool contains(QUICPacketNumber x) const;
+    bool
+    operator<(const PacketNumberRange &b) const
+    {
+      return static_cast<uint64_t>(this->first()) < static_cast<uint64_t>(b.first());
+    }
+
+  private:
+    QUICPacketNumber _first;
+    QUICPacketNumber _last;
+  };
+
   class AckBlock
   {
   public:

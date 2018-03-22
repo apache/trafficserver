@@ -474,6 +474,40 @@ QUICAckFrame::_get_ack_block_section_offset() const
 }
 
 //
+// QUICAckFrame::PacketNumberRange
+//
+QUICAckFrame::PacketNumberRange::PacketNumberRange(PacketNumberRange &&a) noexcept
+{
+  this->_first = a._first;
+  this->_last  = a._last;
+}
+
+uint64_t
+QUICAckFrame::PacketNumberRange::first() const
+{
+  return this->_first;
+}
+
+uint64_t
+QUICAckFrame::PacketNumberRange::last() const
+{
+  return this->_last;
+}
+
+uint64_t
+QUICAckFrame::PacketNumberRange::size() const
+{
+  return this->_first - this->_last;
+}
+
+bool
+QUICAckFrame::PacketNumberRange::contains(QUICPacketNumber x) const
+{
+  return static_cast<uint64_t>(this->_last) <= static_cast<uint64_t>(x) &&
+         static_cast<uint64_t>(x) <= static_cast<uint64_t>(this->_first);
+}
+
+//
 // QUICAckFrame::AckBlock
 //
 uint64_t

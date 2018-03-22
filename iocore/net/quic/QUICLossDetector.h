@@ -129,7 +129,7 @@ private:
   void _on_loss_detection_alarm();
   void _retransmit_lost_packet(const QUICPacket &packet);
 
-  std::set<QUICPacketNumber> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
+  std::set<QUICAckFrame::PacketNumberRange> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
 
   void _retransmit_handshake_packets();
   void _send_one_packet();

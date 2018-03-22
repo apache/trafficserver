@@ -26,6 +26,7 @@
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
 #include "Mock.h"
+#include "ts/ink_hrtime.h"
 
 TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {
@@ -152,4 +153,21 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     CHECK(cc->lost_packets.find(pn8) == cc->lost_packets.end());
     CHECK(cc->lost_packets.find(pn9) == cc->lost_packets.end());
   }
+}
+
+TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
+{
+  MockQUICPacketTransmitter *tx    = new MockQUICPacketTransmitter();
+  MockQUICCongestionController *cc = new MockQUICCongestionController();
+  QUICLossDetector detector(tx, cc);
+
+  // Check initial state
+  CHECK(tx->retransmitted.size() == 0);
+
+  auto t1                           = Thread::get_hrtime();
+  std::shared_ptr<QUICAckFrame> ack = QUICFrameFactory::create_ack_frame(100000000, 100, 10000000);
+  ack->ack_block_section()->add_ack_block({20000000, 30000000});
+  detector.handle_frame(ack);
+  auto t2 = Thread::get_hrtime();
+  CHECK(t2 - t1 < HRTIME_MSECONDS(100));
 }
