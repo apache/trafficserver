@@ -103,7 +103,11 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
   this->_hs_protocol->initialize_key_materials(this->_client_qc->original_connection_id());
 
-  SET_HANDLER(&QUICHandshake::state_initial);
+  if (this->_netvc_context == NET_VCONNECTION_OUT) {
+    this->_initial = true;
+  }
+
+  SET_HANDLER(&QUICHandshake::state_handshake);
 }
 
 QUICHandshake::~QUICHandshake()
@@ -266,50 +270,7 @@ QUICHandshake::remote_transport_parameters()
 }
 
 int
-QUICHandshake::state_initial(int event, Event *data)
-{
-  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
-
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
-  switch (event) {
-  case QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE: {
-    QUICHSDebug("Enter state_key_exchange");
-    SET_HANDLER(&QUICHandshake::state_key_exchange);
-    break;
-  }
-  case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE: {
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
-      error = this->_process_client_hello();
-    }
-    break;
-  }
-  case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE: {
-    if (this->_netvc_context == NET_VCONNECTION_OUT) {
-      error = this->_process_initial();
-    }
-    break;
-  }
-  default:
-    break;
-  }
-
-  if (error->cls != QUICErrorClass::NONE) {
-    QUICTransErrorCode code;
-    if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
-      code = error->trans_error_code;
-    } else {
-      code = QUICTransErrorCode::PROTOCOL_VIOLATION;
-    }
-    this->_abort_handshake(code);
-  }
-
-  return EVENT_DONE;
-}
-
-int
-QUICHandshake::state_key_exchange(int event, Event *data)
+QUICHandshake::state_handshake(int event, Event *data)
 {
   QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
 
@@ -322,13 +283,13 @@ QUICHandshake::state_key_exchange(int event, Event *data)
         this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
       }
     }
-
     break;
   }
   case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE: {
-    ink_assert(this->_netvc_context == NET_VCONNECTION_OUT);
-    error = this->_process_server_hello();
+  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE: {
+    error = this->_process_handshake_msg();
     break;
   }
   default:
@@ -345,44 +306,6 @@ QUICHandshake::state_key_exchange(int event, Event *data)
     this->_abort_handshake(code);
   }
 
-  return EVENT_DONE;
-}
-
-int
-QUICHandshake::state_auth(int event, Event *data)
-{
-  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
-
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
-  switch (event) {
-  case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE: {
-    ink_assert(this->_netvc_context == NET_VCONNECTION_IN);
-
-    error = this->_process_finished();
-    break;
-  }
-  default:
-    break;
-  }
-
-  if (error->cls != QUICErrorClass::NONE) {
-    QUICTransErrorCode code;
-    if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
-      code = error->trans_error_code;
-    } else {
-      code = QUICTransErrorCode::PROTOCOL_VIOLATION;
-    }
-    this->_abort_handshake(code);
-  }
-
-  return EVENT_CONT;
-}
-
-int
-QUICHandshake::state_address_validation(int event, void *data)
-{
-  // TODO Address validation should be implemented for the 2nd implementation draft
   return EVENT_DONE;
 }
 
@@ -453,7 +376,7 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
 }
 
 int
-QUICHandshake::_do_handshake(bool initial)
+QUICHandshake::_do_handshake(size_t &out_len)
 {
   // TODO: pass stream_io
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
@@ -461,7 +384,9 @@ QUICHandshake::_do_handshake(bool initial)
   uint8_t in[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
   int64_t in_len                       = 0;
 
-  if (!initial) {
+  if (this->_initial) {
+    this->_initial = false;
+  } else {
     // Complete message should fit in a packet and be able to read
     in_len = stream_io->read_avail();
     stream_io->read(in, in_len);
@@ -474,7 +399,6 @@ QUICHandshake::_do_handshake(bool initial)
   }
 
   uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
-  size_t out_len                     = 0;
   int result                         = this->_hs_protocol->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, in, in_len);
 
   if (out_len > 0) {
@@ -495,104 +419,32 @@ QUICHandshake::_do_handshake(bool initial)
 }
 
 QUICErrorUPtr
-QUICHandshake::_process_initial()
+QUICHandshake::_process_handshake_msg()
 {
   QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  int result              = _do_handshake(true);
-  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
-
-  switch (result) {
-  case SSL_ERROR_WANT_READ: {
-    stream_io->write_reenable();
-    stream_io->read_reenable();
-
-    break;
-  }
-  default:
-    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
-  }
-
-  return error;
-}
-
-QUICErrorUPtr
-QUICHandshake::_process_client_hello()
-{
-  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  int result              = _do_handshake();
+  size_t out_len          = 0;
+  int result              = this->_do_handshake(out_len);
   QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
 
   switch (result) {
   case SSL_ERROR_NONE:
-  case SSL_ERROR_WANT_READ: {
-    if (this->_hs_protocol->msg_type() == QUICHandshakeMsgType::RETRY) {
-      // TODO: Send HRR on Retry Packet directly
-      stream_io->write_reenable();
-    } else {
-      QUICHSDebug("Enter state_auth");
-      SET_HANDLER(&QUICHandshake::state_auth);
-
-      stream_io->write_reenable();
-      stream_io->read_reenable();
+    if (this->_hs_protocol->is_handshake_finished()) {
+      int res = this->_complete_handshake();
+      if (!res) {
+        error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
+      }
     }
-
-    break;
-  }
-  default:
-    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
-  }
-
-  return error;
-}
-
-QUICErrorUPtr
-QUICHandshake::_process_server_hello()
-{
-  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  int result              = _do_handshake();
-  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
-
-  switch (result) {
-  case SSL_ERROR_NONE: {
-    stream_io->write_reenable();
-    break;
-  }
+  // Fall-through
   case SSL_ERROR_WANT_READ: {
-    // FIXME: check if write_reenable should be called or not
-    stream_io->write_reenable();
-    stream_io->read_reenable();
-    break;
-  }
-  default:
-    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
-  }
-
-  return error;
-}
-
-QUICErrorUPtr
-QUICHandshake::_process_finished()
-{
-  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  int result              = _do_handshake();
-  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
-
-  switch (result) {
-  case SSL_ERROR_NONE: {
-    int res = this->_complete_handshake();
-    if (res) {
+    if (out_len > 0) {
       stream_io->write_reenable();
-    } else {
-      this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
     }
+    stream_io->read_reenable();
 
     break;
   }
-  case SSL_ERROR_WANT_READ: {
-    stream_io->read_reenable();
-    break;
-  }
   default:
+    QUICHSDebug("Handshake failed: %d", result);
     error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
   }
 

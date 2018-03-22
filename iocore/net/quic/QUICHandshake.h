@@ -32,19 +32,12 @@
  * @brief Do handshake as a QUIC application
  * @detail
  *
- * # client
- * state_initial()
+ * state_handshake()
+ *  |
  *  v
- * state_key_exchange()
- *  v
- * state_complete()
- *
- * # server
- * state_initial()
- *  v
- * state_auth()
- *  v
- * state_complete()
+ * state_complete() on success
+ *  or
+ * state_closed() on error
  */
 class QUICVersionNegotiator;
 class SSLNextProtocolSet;
@@ -64,10 +57,7 @@ public:
   QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
 
   // States
-  int state_initial(int event, Event *data);
-  int state_key_exchange(int event, Event *data);
-  int state_address_validation(int event, void *data);
-  int state_auth(int event, Event *data);
+  int state_handshake(int event, Event *data);
   int state_complete(int event, void *data);
   int state_closed(int event, void *data);
 
@@ -99,17 +89,15 @@ private:
   QUICVersionNegotiator *_version_negotiator = nullptr;
   NetVConnectionContext_t _netvc_context     = NET_VCONNECTION_UNSET;
   QUICStatelessResetToken _reset_token;
+  bool _initial         = false;
   bool _stateless_retry = false;
 
   void _load_local_server_transport_parameters(QUICVersion negotiated_version);
   void _load_local_client_transport_parameters(QUICVersion initial_version);
 
-  int _do_handshake(bool initial = false);
+  int _do_handshake(size_t &out_len);
 
-  QUICErrorUPtr _process_initial();
-  QUICErrorUPtr _process_client_hello();
-  QUICErrorUPtr _process_server_hello();
-  QUICErrorUPtr _process_finished();
+  QUICErrorUPtr _process_handshake_msg();
 
   int _complete_handshake();
   void _abort_handshake(QUICTransErrorCode code);

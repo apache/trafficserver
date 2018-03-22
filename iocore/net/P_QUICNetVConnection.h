@@ -297,6 +297,7 @@ private:
   QUICErrorUPtr _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_handshake_process_protected_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_connection_established_process_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_common_receive_packet();
