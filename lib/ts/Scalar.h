@@ -101,13 +101,13 @@ namespace detail
 
      Conversions between scales and types for the scalar helpers is done inside the helper classes
      and a user type conversion operator exists so the helper can be converted by the compiler to
-     the correct type. For the untis bases conversion this is done in @c Scalar because the
+     the correct type. For the units bases conversion this is done in @c Scalar because the
      generality of the needed conversion is too broad to be easily used. It can be done but there is
      some ugliness due to the fact that in some cases two user conversions which is difficult to
      deal with. I have tried it both ways and overall this seems a cleaner implementation.
 
-     Much of this is driven by the fact that the assignment operator, in some case, can not be
-     templated and therefore to have a nice interace for assignment this split is needed.
+     Much of this is driven by the fact that the assignment operator, in some cases, can not be
+     templated and therefore to have a nice interface for assignment this split is needed.
    */
 
   // Unit value, to be rounded up.

@@ -1443,7 +1443,7 @@ VolumeAllocator::allocateFor(Span &span)
   }
   assert(total_shares != 0);
   // Now allocate blocks.
-  CacheStripeBlocks span_blocks{round_down(span._free_space)};
+  CacheStripeBlocks span_blocks(round_down(span._free_space));
   CacheStripeBlocks span_used{0};
 
   // sort by deficit so least relatively full volumes go first.
