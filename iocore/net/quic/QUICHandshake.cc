@@ -525,7 +525,7 @@ QUICHandshake::_process_client_hello()
   switch (result) {
   case SSL_ERROR_NONE:
   case SSL_ERROR_WANT_READ: {
-    if (this->_hs_protocol->msg_type() == QUICHandshakeMsgType::HRR) {
+    if (this->_hs_protocol->msg_type() == QUICHandshakeMsgType::RETRY) {
       // TODO: Send HRR on Retry Packet directly
       stream_io->write_reenable();
     } else {

@@ -86,9 +86,9 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
         ret = SSL_stateless(this->_ssl);
         if (ret > 0) {
           this->_stateless = false;
-          this->_msg_type  = QUICHandshakeMsgType::SH;
+          this->_msg_type  = QUICHandshakeMsgType::HANDSHAKE;
         } else if (ret == 0) {
-          this->_msg_type = QUICHandshakeMsgType::HRR;
+          this->_msg_type = QUICHandshakeMsgType::RETRY;
         }
       } else {
         // process early data
@@ -107,10 +107,17 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
         }
 
         ret             = SSL_accept(this->_ssl);
-        this->_msg_type = QUICHandshakeMsgType::SH;
+        this->_msg_type = QUICHandshakeMsgType::HANDSHAKE;
       }
     } else {
       ret = SSL_connect(this->_ssl);
+
+      // FIXME: if SSL_get_state work well on server side, use this for distinction of HANDSHAKE and RERTY
+      if (SSL_get_state(this->_ssl) == TLS_ST_CW_CLNT_HELLO) {
+        this->_msg_type = QUICHandshakeMsgType::INITIAL;
+      } else {
+        this->_msg_type = QUICHandshakeMsgType::HANDSHAKE;
+      }
     }
 
     if (ret < 0) {

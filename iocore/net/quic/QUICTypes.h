@@ -51,6 +51,13 @@ constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
 };
 constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
+enum class QUICHandshakeMsgType {
+  NONE = 0,
+  INITIAL,
+  RETRY,
+  HANDSHAKE,
+};
+
 // Devide to QUICPacketType and QUICPacketLongHeaderType ?
 enum class QUICPacketType : uint8_t {
   VERSION_NEGOTIATION = 0,
@@ -135,14 +142,6 @@ enum class QUICTransErrorCode : uint16_t {
   TLS_HANDSHAKE_FAILED = 0x0201,
   TLS_FATAL_ALERT_GENERATED,
   TLS_FATAL_ALERT_RECEIVED,
-};
-
-enum class QUICHandshakeMsgType {
-  NONE = 0,
-  CH,
-  SH,
-  HRR,
-  FN,
 };
 
 // Application Protocol Error Codes defined in application

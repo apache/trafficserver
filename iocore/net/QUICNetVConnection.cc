@@ -560,7 +560,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_close_packet_write_ready(data);
 
-    if (this->_handshake_handler && this->_handshake_handler->msg_type() == QUICHandshakeMsgType::HRR) {
+    if (this->_handshake_handler && this->_handshake_handler->msg_type() == QUICHandshakeMsgType::RETRY) {
       error = this->_state_handshake_send_retry_packet();
       if (this->_handshake_handler->is_stateless_retry_enabled()) {
         this->_switch_to_close_state();
