@@ -347,11 +347,11 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::SM_ACTION_TRANSFORM_READ:
     return ("SM_ACTION_TRANSFORM_READ");
 
-#ifdef PROXY_DRAIN
-  case HttpTransact::SM_ACTION_DRAIN_REQUEST_BODY:
-    return ("SM_ACTION_DRAIN_REQUEST_BODY");
-#endif /* PROXY_DRAIN */
+  case HttpTransact::SM_ACTION_WAIT_FOR_FULL_BODY:
+    return ("SM_ACTION_WAIT_FOR_FULL_BODY");
 
+  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
+    return ("SM_ACTION_REQUEST_BUFFER_READ_COMPLETE");
   case HttpTransact::SM_ACTION_API_SM_START:
     return ("SM_ACTION_API_SM_START");
   case HttpTransact::SM_ACTION_REDIRECT_READ:
@@ -438,6 +438,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_HTTP_SEND_RESPONSE_HDR_HOOK";
   case TS_HTTP_REQUEST_TRANSFORM_HOOK:
     return "TS_HTTP_REQUEST_TRANSFORM_HOOK";
+  case TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK:
+    return "TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK";
   case TS_HTTP_RESPONSE_TRANSFORM_HOOK:
     return "TS_HTTP_RESPONSE_TRANSFORM_HOOK";
   case TS_HTTP_SELECT_ALT_HOOK:

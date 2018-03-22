@@ -297,7 +297,7 @@ AC_ARG_ENABLE([docs],
     AS_IF([test -z "$JAVA"],
       [
         enable_doc_build=no
-	AC_ERROR([Doc building disabled, java required but not found])
+        AC_ERROR([Doc building disabled, java required but not found])
       ])
   ],
   [enable_doc_build=no]
@@ -1149,6 +1149,11 @@ TS_CHECK_CRYPTO_NEXTPROTONEG
 #
 # Check for ALPN TLS extension support.
 TS_CHECK_CRYPTO_ALPN
+
+#
+# Check for openssl ASYNC jobs
+TS_CHECK_CRYPTO_ASYNC
+
 #
 # Check for EC key support.
 TS_CHECK_CRYPTO_EC_KEYS
@@ -1311,11 +1316,8 @@ if test "x${enable_pcre}" != "xyes"; then
   AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
 fi
 
-# Check Brotli
-AC_CHECK_HEADERS([brotli/encode.h], [has_brotli=1],[has_brotli=0])
-AC_CHECK_LIB([brotlienc],[BrotliEncoderCreateInstance],[AC_SUBST([LIB_BROTLIENC],["-lbrotlienc"])],[has_brotli=0])
-AC_SUBST(has_brotli)
-AM_CONDITIONAL([HAS_BROTLI], [ test "x${has_brotli}" = "x1" ])
+# Check for optional brotli library
+TS_CHECK_BROTLI
 
 #
 # Enable experimental/uri_singing plugin
@@ -2110,6 +2112,7 @@ AC_MSG_NOTICE([Build option summary:
     CC:                 $CC
     CXX:                $CXX
     CPP:                $CPP
+    CPPFLAGS:           $CPPFLAGS
     AM@&t@_CFLAGS:          $AM_CFLAGS
     AM@&t@_CXXFLAGS:        $AM_CXXFLAGS
     AM@&t@_CPPFLAGS:        $AM_CPPFLAGS
@@ -2118,6 +2121,6 @@ AC_MSG_NOTICE([Build option summary:
     OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
     LUAJIT_CFLAGS:      $LUAJIT_CFLAGS
-    LUAJIT_CPPFLAGS:	  $LUAJIT_CPPFLAGS
+    LUAJIT_CPPFLAGS:    $LUAJIT_CPPFLAGS
     LUAJIT_LDFLAGS:     $LUAJIT_LDFLAGS
 ])

@@ -51,7 +51,6 @@ struct RunrootEngine {
   void runroot_help_message(const bool runflag, const bool cleanflag);
 
   // the pass in arguments
-  int _argc;
   std::vector<std::string> _argv;
   // flags for command line parsing
   bool help_flag    = false;

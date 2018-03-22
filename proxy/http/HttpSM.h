@@ -184,10 +184,27 @@ public:
   MIOBuffer *postdata_copy_buffer            = nullptr;
   IOBufferReader *postdata_copy_buffer_start = nullptr;
   IOBufferReader *ua_buffer_reader           = nullptr;
+  bool post_data_buffer_done                 = false;
 
   void clear();
   void init(IOBufferReader *ua_reader);
   void copy_partial_post_data();
+  IOBufferReader *get_post_data_buffer_clone_reader();
+  void
+  set_post_data_buffer_done(bool done)
+  {
+    post_data_buffer_done = done;
+  }
+  bool
+  get_post_data_buffer_done()
+  {
+    return post_data_buffer_done;
+  }
+  bool
+  is_valid()
+  {
+    return postdata_copy_buffer_start != nullptr;
+  }
 
   ~PostDataBuffers();
 };
@@ -318,6 +335,10 @@ public:
   void disable_redirect();
   void postbuf_copy_partial_data();
   void postbuf_init(IOBufferReader *ua_reader);
+  void set_postbuf_done(bool done);
+  bool get_postbuf_done();
+  bool is_postbuf_valid();
+  IOBufferReader *get_postbuf_clone_reader();
 
 protected:
   int reentrancy_count = 0;
@@ -384,9 +405,6 @@ protected:
 
   int tunnel_handler_100_continue(int event, void *data);
   int tunnel_handler_cache_fill(int event, void *data);
-#ifdef PROXY_DRAIN
-  int state_drain_client_request_body(int event, void *data);
-#endif /* PROXY_DRAIN */
   int state_read_client_request_header(int event, void *data);
   int state_watch_for_client_abort(int event, void *data);
   int state_read_push_response_header(int event, void *data);
@@ -450,9 +468,9 @@ protected:
   void do_api_callout_internal();
   void do_redirect();
   void redirect_request(const char *redirect_url, const int redirect_len);
-#ifdef PROXY_DRAIN
   void do_drain_request_body();
-#endif
+
+  void wait_for_full_body();
 
   virtual void handle_api_return();
   void handle_server_setup_error(int event, void *data);
@@ -528,6 +546,8 @@ public:
   const char *client_cipher_suite = "-";
   int server_transact_count       = 0;
   bool server_connection_is_ssl   = false;
+  bool is_waiting_for_full_body   = false;
+  bool is_using_post_buffer       = false;
 
   TransactionMilestones milestones;
   ink_hrtime api_timer = 0;
@@ -731,4 +751,27 @@ HttpSM::postbuf_init(IOBufferReader *ua_reader)
   this->_postbuf.init(ua_reader);
 }
 
+inline void
+HttpSM::set_postbuf_done(bool done)
+{
+  this->_postbuf.set_post_data_buffer_done(done);
+}
+
+inline bool
+HttpSM::get_postbuf_done()
+{
+  return this->_postbuf.get_post_data_buffer_done();
+}
+
+inline bool
+HttpSM::is_postbuf_valid()
+{
+  return this->_postbuf.is_valid();
+}
+
+inline IOBufferReader *
+HttpSM::get_postbuf_clone_reader()
+{
+  return this->_postbuf.get_post_data_buffer_clone_reader();
+}
 #endif

@@ -285,7 +285,7 @@ Vol::scan_for_pinned_documents()
     int vol_end_offset    = offset_to_vol_offset(this, len + skip);
     int before_end_of_vol = pe < vol_end_offset;
     DDebug("cache_evac", "scan %d %d", ps, pe);
-    for (int i = 0; i < vol_direntries(this); i++) {
+    for (int i = 0; i < this->direntries(); i++) {
       // is it a valid pinned object?
       if (!dir_is_empty(&dir[i]) && dir_pinned(&dir[i]) && dir_head(&dir[i])) {
         // select objects only within this PIN_SCAN region

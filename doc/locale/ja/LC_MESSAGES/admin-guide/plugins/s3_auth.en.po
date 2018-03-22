@@ -59,7 +59,7 @@ msgid ""
 msgstr ""
 
 #: ../../admin-guide/plugins/s3_auth.en.rst:50
-msgid "...  @plugin=s3_auth @pparam=--config @pparam=s3.config"
+msgid "...  @plugin=s3_auth.so @pparam=--config @pparam=s3.config"
 msgstr ""
 
 #: ../../admin-guide/plugins/s3_auth.en.rst:53

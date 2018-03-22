@@ -134,7 +134,7 @@ make_vol_map(Vol *d)
   // Scan directories.
   // Copied from dir_entries_used() and modified to fill in the map instead.
   for (int s = 0; s < d->segments; s++) {
-    Dir *seg = dir_segment(s, d);
+    Dir *seg = d->dir_segment(s);
     for (int b = 0; b < d->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
       if (dir_bucket_loop_fix(e, s, d)) {

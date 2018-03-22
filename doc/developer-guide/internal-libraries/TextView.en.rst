@@ -19,60 +19,62 @@
 
 .. default-domain:: cpp
 
-MemView
+TextView
 *************
 
 Synopsis
 ========
 
-:code:`#include <ts/MemView.h>`
-
-.. class:: MemView
-
-.. class:: StringView
+:code:`#include <ts/TextView.h>`
 
 .. class:: TextView
 
-These classes act as views in to already allocated memory. Internally in |TS| work must be done with
-string or memory entities that are embedded in larger pre-existing memory structures. These classes
-are designed to make that easier, more efficient, and less error prone.
+This class acts as a view in to memory allocated / owned elsewhere. It is in effect a pointer and
+should be treated as such (e.g. care must be taken to avoid dangling references by knowing where the
+memory really is). The purpose is to provide string manipulation that is fast, efficient, and
+non-modifying, particularly when temporary "copies" are needed.
+
 
 Description
 ===========
 
-The term "view" will be used to mean an instance of :class:`MemView` or :class:`StringView`.
-Fundamentally both classes do the same thing, maintain a read only view of a contiguous region of
-memory. They differ in the methods and return types due to the conflicting requirements of raw
-memory operations and string based operations.
+:class:`TextView` is a subclass of :class:`string_view` and has all of those methods. In addition it
+provides a number of ancillary methods of common string manipulation methods.
 
-A view is constructed by providing a contiguous region of memory, either based on a start pointer
-and a length or a pair of pointers in the usual STL half open range style where the view starts at
-the first pointer and ends one short of the second pointer. A view can be empty and refer to no
-memory (which what default construction yields). A view attempts to act like a normal pointer in
-most situations. A view is only somewhat more expensive than a raw pointer but in most cases a count
-is needed as well making a view not any more costly than existing code. Any code that already keeps
-a pointer and a count is a good candidate for using :class:`MemView` or :class:`StringView`.
+A :class:`TextView` should be treated as an enhanced character pointer that both a location and a
+size. This is when makes it possible to pass sub strings around without having to make copies or
+allocation additional memory. This comes at the cost of keeping track of the actual owner of the
+string memory and making sure the :class:`TextView` does not outlive the memory owner, just as with
+a normal pointer type. Internal for |TS| any place that passes a :code:`char *` and a size is an
+excellent candidate for using a :class:`TextView` as it is more convinient and no more risky than
+the existing arguments.
 
-:class:`MemView` and :class:`StringView` inter-convert because the difference between them is simply
-the API to access the underingly memory in the view, the actual class internal data is identical.
+In deciding between :class:`string_view` and :class:`TextView` remember that these easily and
+cheaply cross convert. In general if the string is treated as a block of data, :class:`string_view`
+is better. If the contents of the string are to be examined / parsed non-uniformly then
+:class:`TextView` is better. For example, if the string is used simply as a key or a hash source,
+use :class:`string_view`. Or, if the string may contain substrings of interests such as key / value
+pairs, then use a :class:`TextView`.
 
-:class:`StringView` provides a variety of methods for manipulating the view as a string. These are provided as families of overloads differentiated by how characters are compared. There are four flavors.
+:class:`TextView` provides a variety of methods for manipulating the view as a string. These are
+provided as families of overloads differentiated by how characters are compared. There are four
+flavors.
 
 * Direct, a pointer to the target character.
 * Comparison, an explicit character value to compare.
-* Set, a set of characters (described by a :class:`StringView`) which are compared, any one of which matches.
+* Set, a set of characters (described by a :class:`TextView`) which are compared, any one of which matches.
 * Predicate, a function that takes a single character argument and returns a bool to indicate a match.
 
 If the latter three are inadequate the first, the direct pointer, can be used after finding the
 appropriate character through some other mechanism.
 
-The increment operator for :class:`StringView` shrinks the view by one character from the front
+The increment operator for :class:`TextView` shrinks the view by one character from the front
 which allows stepping through the view in normal way, although the string view itself should be the
 loop condition, not a dereference of it.
 
 .. code-block:: cpp
 
-   StringView v;
+   TextView v;
    size_t hash = 0;
    for ( ; v ; ++v) hash = hash * 13 + *v;
 
@@ -80,21 +82,21 @@ Or, because the view acts as a container of characters, this can be done non-des
 
 .. code-block:: cpp
 
-   StringView v;
+   TextView v;
    size_t hash = 0;
    for (char c : v) hash = hash * 13 + c;
 
 Views are cheap to construct therefore making a copy to use destructively is very inexpensive.
 
-:class:`MemView` provides a :code:`find` method that searches for a matching value. The type of this
+:class:`MemSpan` provides a :code:`find` method that searches for a matching value. The type of this
 value can be anything that is fixed sized and supports the equality operator. The view is treated as
 an array of the type and searched sequentially for a matching value. The value type is treated as
 having no identity and cheap to copy, in the manner of a integral type.
 
-Parsing with StringView
+Parsing with TextView
 -----------------------
 
-A primary use of :class:`StringView` is to do field oriented parsing. It is easy and fast to split
+A primary use of :class:`TextView` is to do field oriented parsing. It is easy and fast to split
 strings in to fields without modifying the original data. For example, assume that :arg:`value`
 contains a null terminated string which is possibly several tokens separated by commas.
 
@@ -102,9 +104,9 @@ contains a null terminated string which is possibly several tokens separated by 
 
    #include <ctype.h>
    parse_token(const char* value) {
-     StringView v(value); // construct assuming null terminated string.
+     TextView v(value); // construct assuming null terminated string.
      while (v) {
-       StringView token(v.extractPrefix(','));
+       TextView token(v.extractPrefix(','));
        token.trim(&isspace);
        if (token) {
          // process token
@@ -125,10 +127,10 @@ What if the tokens were key / value pairs, of the form `key=value`? This is can 
 
    #include <ctype.h>
    parse_token(const char* source) {
-     StringView in(source); // construct assuming null terminated string.
+     TextView in(source); // construct assuming null terminated string.
      while (in) {
-       StringView value(in.extractPrefix(','));
-       StringView key(value.trim(&isspace).splitPrefix('=').rtrim(&isspace));
+       TextView value(in.extractPrefix(','));
+       TextView key(value.trim(&isspace).splitPrefix('=').rtrim(&isspace));
        if (key) {
          // it's a key=value token with key and value set appropriately.
          value.ltrim(&isspace); // clip potential space after '='.
@@ -159,9 +161,9 @@ proved to provide little of the functionality available in :code:`ts::ConstBuffe
 reworking was required in any case, it seemed better to start from scratch and build just what was
 useful in the |TS| context.
 
-The next step was the :code:`StringView` class which turned out reasonably well. It was then
+The next step was the :code:`TextView` class which turned out reasonably well. It was then
 suggested that more support for raw memory (as opposed to memory presumed to contain printable ASCII
 data) would be useful. An attempt was made to do this but the differences in arguments, subtle
-method differences, and return types made that infeasible. Instead :class:`MemView` was split off to
+method differences, and return types made that infeasible. Instead :class:`MemSpan` was split off to
 provide a :code:`void*` oriented view. String specific methods were stripped out and a few
 non-character based methods added.

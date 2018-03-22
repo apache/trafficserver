@@ -103,7 +103,6 @@ struct CacheVC;
     (_e)->w[4] = 0;   \
   } while (0)
 #define dir_clean(_e) dir_set_offset(_e, 0)
-#define dir_segment(_s, _d) vol_dir_segment(_d, _s)
 
 // OpenDir
 

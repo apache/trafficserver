@@ -23,9 +23,9 @@
 
 #include "traffic_ctl.h"
 
-#include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
+#include "ts/I_Layout.h"
 #include "ts/runroot.h"
 
 AppVersionInfo CtrlVersionInfo;
@@ -211,6 +211,15 @@ CtrlGenericSubcommand(const char *name, const subcommand *cmds, unsigned ncmds, 
   return CtrlSubcommandUsage(name, cmds, ncmds, nullptr, 0);
 }
 
+static const subcommand commands[] = {
+  {subcommand_alarm, "alarm", "Manipulate alarms"},
+  {subcommand_config, "config", "Manipulate configuration records"},
+  {subcommand_metric, "metric", "Manipulate performance metrics"},
+  {subcommand_server, "server", "Stop, restart and examine the server"},
+  {subcommand_storage, "storage", "Manipulate cache storage"},
+  {subcommand_plugin, "plugin", "Interact with plugins"},
+};
+
 int
 main(int argc, const char **argv)
 {
@@ -222,18 +231,12 @@ main(int argc, const char **argv)
 
   ArgumentDescription argument_descriptions[] = {
     {"debug", '-', "Enable debugging output", "F", &debug, nullptr, nullptr},
-    HELP_ARGUMENT_DESCRIPTION(),
+    {"help", 'h', "Print usage information", nullptr, nullptr, nullptr,
+     [](const ArgumentDescription *args, unsigned nargs, const char *arg_unused) {
+       CtrlSubcommandUsage(nullptr, commands, countof(commands), args, nargs);
+     }},
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION(),
-  };
-
-  const subcommand commands[] = {
-    {subcommand_alarm, "alarm", "Manipulate alarms"},
-    {subcommand_config, "config", "Manipulate configuration records"},
-    {subcommand_metric, "metric", "Manipulate performance metrics"},
-    {subcommand_server, "server", "Stop, restart and examine the server"},
-    {subcommand_storage, "storage", "Manipulate cache storage"},
-    {subcommand_plugin, "plugin", "Interact with plugins"},
   };
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
@@ -261,8 +264,10 @@ main(int argc, const char **argv)
 
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
-  // Make a best effort to connect the control socket. If it turns out we are just displaying help or something then it
-  // doesn't matter that we failed. If we end up performing some operation then that operation will fail and display the
+  // Make a best effort to connect the control socket. If it turns out we are
+  // just displaying help or something then it
+  // doesn't matter that we failed. If we end up performing some operation then
+  // that operation will fail and display the
   // error.
   TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
 

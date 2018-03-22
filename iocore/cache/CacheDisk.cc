@@ -84,6 +84,8 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
 
   header = (DiskHeader *)ats_memalign(ats_pagesize(), header_len);
   memset(header, 0, header_len);
+
+  // traffic server was asked to clear the cache, i.e., auto clear cache flag is set
   if (clear) {
     if (read_only_p) {
       fprintf(stderr, "Could not read disk header for disk %s", path);
@@ -96,6 +98,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
     }
   }
 
+  //
   SET_HANDLER(&CacheDisk::openStart);
   io.aiocb.aio_offset = skip;
   io.aiocb.aio_buf    = (char *)header;

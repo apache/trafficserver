@@ -23,7 +23,7 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h string_view.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_Scalar test_tslib
+check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -56,6 +56,9 @@ libtsutil_la_SOURCES = \
   BaseLogFile.h \
   Bitops.cc \
   Bitops.h \
+  BufferWriter.h \
+  BufferWriterForward.h \
+  BufferWriterFormat.cc \
   ConsistentHash.cc \
   ConsistentHash.h \
   ContFlags.cc \
@@ -161,6 +164,8 @@ libtsutil_la_SOURCES = \
   IpMapConf.h \
   IpMap.h \
   I_Version.h \
+  JeAllocator.h \
+  JeAllocator.cc \
   Layout.cc \
   List.h \
   llqueue.cc \
@@ -168,6 +173,7 @@ libtsutil_la_SOURCES = \
   Map.h \
   MatcherUtils.cc \
   MatcherUtils.h \
+  MemSpan.h \
   MMH.cc \
   MMH.h \
   MT_hashtable.h \
@@ -192,7 +198,6 @@ libtsutil_la_SOURCES = \
   SourceLocation.cc \
   SourceLocation.h \
   string_view.h \
-  BufferWriter.h \
   TestBox.h \
   TextBuffer.cc \
   TextBuffer.h \
@@ -261,8 +266,6 @@ test_tsutil_SOURCES = \
 	test_Regex.cc \
 	tests.cc
 
-test_Scalar_SOURCES = test_Scalar.cc Scalar.h
-
 test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
@@ -272,12 +275,15 @@ test_tslib_LDADD = libtsutil.la $(top_builddir)/iocore/eventsystem/libinkevent.a
 test_tslib_SOURCES = \
 	unit-tests/unit_test_main.cc \
 	unit-tests/test_BufferWriter.cc \
+	unit-tests/test_BufferWriterFormat.cc \
 	unit-tests/test_ink_inet.cc \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \
 	unit-tests/test_MT_hashtable.cc \
+	unit-tests/test_Scalar.cc \
 	unit-tests/test_string_view.cc \
-	unit-tests/test_TextView.cc
+	unit-tests/test_TextView.cc \
+	unit-tests/test_MemSpan.cc
 
 if HAS_HKDF
 test_tslib_SOURCES += \

@@ -27,9 +27,14 @@
 #include <stdlib.h>
 #include <utility>
 #include <cstring>
+#include <vector>
+#include <string>
+#include <ts/ink_std_compat.h>
 
-#include <ts/string_view.h>
+#include <ts/TextView.h>
+#include <ts/MemSpan.h>
 #include <ts/ink_assert.h>
+#include <ts/BufferWriterForward.h>
 
 namespace ts
 {
@@ -170,6 +175,22 @@ public:
 
   // Force virtual destructor.
   virtual ~BufferWriter() {}
+
+  /** BufferWriter print.
+
+      This prints its arguments to the @c BufferWriter @a w according to the format @a fmt. The format
+      string is based on Python style formating, each argument substitution marked by braces, {}. Each
+      specification has three parts, a @a name, a @a specifier, and an @a extention. These are
+      separated by colons. The name should be either omitted or a number, the index of the argument to
+      use. If omitted the place in the format string is used as the argument index. E.g. "{} {} {}",
+      "{} {1} {}", and "{0} {1} {2}" are equivalent. Using an explicit index does not reset the
+      position of subsequent substiations, therefore "{} {0} {}" is equivalent to "{0} {0} {2}".
+  */
+  template <typename... Rest> BufferWriter &print(TextView fmt, Rest... rest);
+
+  template <typename... Rest> BufferWriter &print(BWFormat const &fmt, Rest... rest);
+
+  //    bwprint(*this, fmt, std::forward<Rest>(rest)...);
 };
 
 /** A @c BufferWrite concrete subclass to write to a fixed size buffer.
@@ -412,64 +433,297 @@ protected:
   char _arr[N]; ///< output buffer.
 };
 
-// Define stream operators for built in @c write overloads.
+// --------------- Implementation --------------------
+/** Overridable formatting for type @a V.
 
-inline BufferWriter &
-operator<<(BufferWriter &b, char c)
-{
-  return b.write(c);
-}
+    This is the output generator for data to a @c BufferWriter. Default stream operators call this with
+    the default format specification (although those can be overloaded specifically for performance).
+    User types should overload this function to format output for that type.
 
-inline BufferWriter &
-operator<<(BufferWriter &b, const string_view &sv)
-{
-  return b.write(sv);
-}
+    @code
+      BufferWriter &
+      bwformat(BufferWriter &w, BWFSpec  &, V const &v)
+      {
+        // generate output on @a w
+      }
+    @endcode
+  */
 
-inline BufferWriter &
-operator<<(BufferWriter &w, intmax_t i)
+namespace bw_fmt
 {
-  if (i) {
-    char txt[std::numeric_limits<intmax_t>::digits10 + 1];
-    int n = sizeof(txt);
-    while (i) {
-      txt[--n] = '0' + i % 10;
-      i /= 10;
-    }
-    return w.write(txt + n, sizeof(txt) - n);
-  } else {
-    return w.write('0');
+  template <typename TUPLE> using ArgFormatterSignature = BufferWriter &(*)(BufferWriter &w, BWFSpec const &, TUPLE const &args);
+
+  /// Internal error / reporting message generators
+  void Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n);
+
+  // MSVC will expand the parameter pack inside a lambda but not gcc, so this indirection is required.
+
+  /// This selects the @a I th argument in the @a TUPLE arg pack and calls the formatter on it. This
+  /// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
+  /// signature, not vary per argument. Effectively this indirection erases the type of the specific
+  /// argument being formatter.
+  template <typename TUPLE, size_t I>
+  BufferWriter &
+  Arg_Formatter(BufferWriter &w, BWFSpec const &spec, TUPLE const &args)
+  {
+    return bwformat(w, spec, std::get<I>(args));
   }
-}
 
-// Annoying but otherwise ambiguous.
-inline BufferWriter &
-operator<<(BufferWriter &w, int i)
-{
-  return w << static_cast<intmax_t>(i);
-}
-
-inline BufferWriter &
-operator<<(BufferWriter &w, uintmax_t i)
-{
-  if (i) {
-    char txt[std::numeric_limits<uintmax_t>::digits10 + 1];
-    int n = sizeof(txt);
-    while (i) {
-      txt[--n] = '0' + i % 10;
-      i /= 10;
-    }
-    return w.write(txt + n, sizeof(txt) - n);
-  } else {
-    return w.write('0');
+  /// This exists only to expand the index sequence into an array of formatters for the tuple type
+  /// @a TUPLE.  Due to langauge limitations it cannot be done directly. The formatters can be
+  /// access via standard array access in constrast to templated tuple access. The actual array is
+  /// static and therefore at run time the only operation is loading the address of the array.
+  template <typename TUPLE, size_t... N>
+  ArgFormatterSignature<TUPLE> *
+  Get_Arg_Formatter_Array(std::index_sequence<N...>)
+  {
+    static ArgFormatterSignature<TUPLE> fa[sizeof...(N)] = {&bw_fmt::Arg_Formatter<TUPLE, N>...};
+    return fa;
   }
+
+  /// Perform alignment adjustments / fill on @a w of the content in @a lw.
+  void Do_Alignment(BWFSpec const &spec, BufferWriter &w, BufferWriter &lw);
+
+  /// Global named argument table.
+  using GlobalSignature = void (*)(BufferWriter &, BWFSpec const &);
+  using GlobalTable     = std::map<string_view, GlobalSignature>;
+  extern GlobalTable BWF_GLOBAL_TABLE;
+  extern GlobalSignature Global_Table_Find(string_view name);
+
+  /// Generic integral conversion.
+  BufferWriter &Format_Integer(BufferWriter &w, BWFSpec const &spec, uintmax_t n, bool negative_p);
+
+} // bw_fmt
+
+/** Compiled BufferWriter format
+ */
+class BWFormat
+{
+public:
+  /// Construct from a format string @a fmt.
+  BWFormat(TextView fmt);
+  ~BWFormat();
+
+  /** Parse elements of a format string.
+
+      @param fmt The format string [in|out]
+      @param literal A literal if found
+      @param spec A specifier if found (less enclosing braces)
+      @return @c true if a specifier was found, @c false if not.
+
+      Pull off the next literal and/or specifier from @a fmt. The return value distinguishes
+      the case of no specifier found (@c false) or an empty specifier (@c true).
+
+   */
+  static bool parse(TextView &fmt, string_view &literal, string_view &spec);
+
+  /** Parsed items from the format string.
+
+      Literals are handled by putting the literal text in the extension field and setting the
+      global formatter @a _gf to @c LiteralFormatter, which writes out the extension as a literal.
+   */
+  struct Item {
+    BWFSpec _spec; ///< Specification.
+    /// If the spec has a global formatter name, cache it here.
+    mutable bw_fmt::GlobalSignature _gf = nullptr;
+
+    Item() {}
+    Item(BWFSpec const &spec, bw_fmt::GlobalSignature gf) : _spec(spec), _gf(gf) {}
+  };
+
+  using Items = std::vector<Item>;
+  Items _items; ///< Items from format string.
+
+protected:
+  /// Handles literals by writing the contents of the extension directly to @a w.
+  static void Format_Literal(BufferWriter &w, BWFSpec const &spec);
+};
+
+template <typename... Rest>
+BufferWriter &
+BufferWriter::print(TextView fmt, Rest... rest)
+{
+  static constexpr int N = sizeof...(Rest);
+  auto args(std::forward_as_tuple(rest...));
+  auto fa     = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Rest...>{});
+  int arg_idx = 0;
+
+  while (fmt.size()) {
+    string_view lit_v;
+    string_view spec_v;
+    bool spec_p = BWFormat::parse(fmt, lit_v, spec_v);
+
+    if (lit_v.size()) {
+      this->write(lit_v);
+    }
+    if (spec_p) {
+      BWFSpec spec{spec_v};
+      size_t width = this->remaining();
+      if (spec._max < width) {
+        width = spec._max;
+      }
+      FixedBufferWriter lw{this->auxBuffer(), width};
+
+      if (spec._name.size() == 0) {
+        spec._idx = arg_idx;
+      }
+      if (0 <= spec._idx) {
+        if (spec._idx < N) {
+          fa[spec._idx](lw, spec, args);
+        } else {
+          bw_fmt::Err_Bad_Arg_Index(lw, spec._idx, N);
+        }
+      } else if (spec._name.size()) {
+        auto gf = bw_fmt::Global_Table_Find(spec._name);
+        if (gf) {
+          gf(lw, spec);
+        } else {
+          static constexpr TextView msg{"{invalid name:"};
+          lw.write(msg).write(spec._name).write('}');
+        }
+      }
+      if (lw.extent()) {
+        bw_fmt::Do_Alignment(spec, *this, lw);
+      }
+      ++arg_idx;
+    }
+  }
+  return *this;
 }
 
-// Annoying but otherwise ambiguous.
-inline BufferWriter &
-operator<<(BufferWriter &w, unsigned int i)
+template <typename... Rest>
+BufferWriter &
+BufferWriter::print(BWFormat const &fmt, Rest... rest)
 {
-  return w << static_cast<uintmax_t>(i);
+  static constexpr int N = sizeof...(Rest);
+  auto const args(std::forward_as_tuple(rest...));
+  static const auto fa = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Rest...>{});
+
+  for (BWFormat::Item const &item : fmt._items) {
+    size_t width = this->remaining();
+    if (item._spec._max < width) {
+      width = item._spec._max;
+    }
+    FixedBufferWriter lw{this->auxBuffer(), width};
+    if (item._gf) {
+      item._gf(lw, item._spec);
+    } else {
+      auto idx = item._spec._idx;
+      if (0 <= idx && idx < N) {
+        fa[idx](lw, item._spec, args);
+      } else if (item._spec._name.size() && (nullptr != (item._gf = bw_fmt::Global_Table_Find(item._spec._name)))) {
+        item._gf(lw, item._spec);
+      }
+    }
+    bw_fmt::Do_Alignment(item._spec, *this, lw);
+  }
+  return *this;
+}
+
+// Generically a stream operator is a formatter with the default specification.
+template <typename V>
+BufferWriter &
+operator<<(BufferWriter &w, V &&v)
+{
+  return bwformat(w, BWFSpec::DEFAULT, std::forward<V>(v));
+}
+
+// Pointers
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
+{
+  BWFSpec ptr_spec{spec};
+  ptr_spec._radix_lead_p = true;
+  if (ptr_spec._type == BWFSpec::DEFAULT_TYPE)
+    ptr_spec._type = 'x'; // if default, switch to hex.
+  return bw_fmt::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
+}
+
+// MemSpan
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span);
+
+// -- Common formatters --
+
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv);
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &, char c)
+{
+  return w.write(c);
+}
+
+template <size_t N>
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, const char (&a)[N])
+{
+  return bwformat(w, spec, string_view(a, N - 1));
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, const char *v)
+{
+  if (spec._type == 'x' || spec._type == 'X') {
+    bwformat(w, spec, static_cast<const void *>(v));
+  } else {
+    bwformat(w, spec, string_view(v));
+  }
+  return w;
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, TextView const &tv)
+{
+  return bwformat(w, spec, static_cast<string_view>(tv));
+}
+
+//-- Integral types
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, uintmax_t const &i)
+{
+  return bw_fmt::Format_Integer(w, spec, i, false);
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, intmax_t const &i)
+{
+  return i < 0 ? bw_fmt::Format_Integer(w, spec, -i, true) : bw_fmt::Format_Integer(w, spec, i, false);
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, unsigned int const &i)
+{
+  return bw_fmt::Format_Integer(w, spec, i, false);
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, int const &i)
+{
+  return i < 0 ? bw_fmt::Format_Integer(w, spec, -i, true) : bw_fmt::Format_Integer(w, spec, i, false);
+}
+
+// Annoying but otherwise ambiguous with char
+inline BufferWriter &
+operator<<(BufferWriter &w, int const &i)
+{
+  return bwformat(w, BWFSpec::DEFAULT, static_cast<intmax_t>(i));
+}
+
+// std::string support
+/** Print to a @c std::string
+
+    Print to the string @a s. If there is overflow then resize the string sufficiently to hold the output
+    and print again. The effect is the string is resized only as needed to hold the output.
+ */
+template <typename... Rest>
+void
+bwprint(std::string &s, ts::TextView fmt, Rest &&... rest)
+{
+  auto len = s.size();
+  size_t n = ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).print(fmt, std::forward<Rest>(rest)...).extent();
+  s.resize(n);   // always need to resize - if shorter, must clip pre-existing text.
+  if (n > len) { // dropped data, try again.
+    ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).print(fmt, std::forward<Rest>(rest)...);
+  }
 }
 
 } // end namespace ts

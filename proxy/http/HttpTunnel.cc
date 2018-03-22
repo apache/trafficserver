@@ -757,7 +757,6 @@ void
 HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
 {
   Debug("http_tunnel", "tunnel_run started, p_arg is %s", p_arg ? "provided" : "NULL");
-
   if (p_arg) {
     producer_run(p_arg);
   } else {
@@ -876,7 +875,6 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   // Do the IO on the consumers first so
   //  data doesn't disappear out from
   //  under the tunnel
-  ink_release_assert(p->num_consumers > 0);
   for (c = p->consumer_list.head; c;) {
     // Create a reader for each consumer.  The reader allows
     // us to implement skip bytes
@@ -952,15 +950,20 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   // YTS Team, yamsat Plugin
   // Allocate and copy partial POST data to buffers. Check for the various parameters
   // including the maximum configured post data size
-  if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && (p->vc_type == HT_HTTP_CLIENT)) {
+  if ((p->vc_type == HT_BUFFER_READ && sm->is_postbuf_valid()) ||
+      (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_run] client post: %" PRId64 " max size: %" PRId64 "",
           p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 
     // (note that since we are not dechunking POST, this is the chunked size if chunked)
     if (p->buffer_start->read_avail() > HttpConfig::m_master.post_copy_size) {
-      Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
-            p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
+      Warning("http_redirect, [HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
+              p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
+      if (p->vc_type == HT_BUFFER_READ) {
+        producer_handler(VC_EVENT_ERROR, p);
+        return;
+      }
     } else {
       sm->postbuf_copy_partial_data();
     }
@@ -993,8 +996,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     // p->chunked_handler.skip_bytes);
 
     producer_handler(VC_EVENT_READ_READY, p);
-    if (!p->chunked_handler.chunked_reader->read_avail() && sm->redirection_tries > 0 &&
-        p->vc_type == HT_HTTP_CLIENT) { // read_avail() == 0
+    if (sm->get_postbuf_done() && p->vc_type == HT_HTTP_CLIENT) { // read_avail() == 0
       // [bug 2579251]
       // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the
       // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set
@@ -1162,17 +1164,24 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   // YTS Team, yamsat Plugin
   // Copy partial POST data to buffers. Check for the various parameters including
   // the maximum configured post data size
-  if (sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection &&
-      (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && (p->vc_type == HT_HTTP_CLIENT)) {
+  if ((p->vc_type == HT_BUFFER_READ && sm->is_postbuf_valid()) ||
+      (sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection &&
+       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_handler] [%s %s]", p->name, HttpDebugNames::get_event_name(event));
 
     if ((sm->postbuf_buffer_avail() + sm->postbuf_reader_avail()) > HttpConfig::m_master.post_copy_size) {
-      Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64
-                             " reader_avail=%" PRId64 " limit=%" PRId64 "",
-            sm->postbuf_buffer_avail(), sm->postbuf_reader_avail(), HttpConfig::m_master.post_copy_size);
+      Warning("http_redirect, [HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64
+              " reader_avail=%" PRId64 " limit=%" PRId64 "",
+              sm->postbuf_buffer_avail(), sm->postbuf_reader_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
+      if (p->vc_type == HT_BUFFER_READ) {
+        event = VC_EVENT_ERROR;
+      }
     } else {
       sm->postbuf_copy_partial_data();
+      if (event == VC_EVENT_READ_COMPLETE || event == HTTP_TUNNEL_EVENT_PRECOMPLETE || event == VC_EVENT_EOS) {
+        sm->set_postbuf_done(true);
+      }
     }
   } // end of added logic for partial copy of POST
 
@@ -1236,6 +1245,9 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     if (p->alive) {
       p->alive      = false;
       p->bytes_read = p->read_vio->ndone;
+      // Clear any outstanding reads so they don't
+      // collide with future tunnel IO's
+      p->vc->do_io_read(nullptr, 0, 0);
       // Interesting tunnel event, call SM
       jump_point = p->vc_handler;
       (sm->*jump_point)(event, p);

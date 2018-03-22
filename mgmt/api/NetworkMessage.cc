@@ -45,6 +45,8 @@ static const struct NetCmdOperation requests[] = {
   /* RECONFIGURE                */ {1, {MGMT_MARSHALL_INT}},
   /* RESTART                    */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* BOUNCE                     */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
+  /* STOP                       */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
+  /* DRAIN                      */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* EVENT_RESOLVE              */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* EVENT_GET_MLT              */ {1, {MGMT_MARSHALL_INT}},
   /* EVENT_ACTIVE               */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
@@ -71,6 +73,8 @@ static const struct NetCmdOperation responses[] = {
   /* RECONFIGURE                */ {1, {MGMT_MARSHALL_INT}},
   /* RESTART                    */ {1, {MGMT_MARSHALL_INT}},
   /* BOUNCE                     */ {1, {MGMT_MARSHALL_INT}},
+  /* STOP                       */ {1, {MGMT_MARSHALL_INT}},
+  /* DRAIN                      */ {1, {MGMT_MARSHALL_INT}},
   /* EVENT_RESOLVE              */ {1, {MGMT_MARSHALL_INT}},
   /* EVENT_GET_MLT              */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* EVENT_ACTIVE               */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
@@ -190,6 +194,8 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   // Switch on operations, grouped by response format.
   switch (optype) {
   case OpType::BOUNCE:
+  case OpType::STOP:
+  case OpType::DRAIN:
   case OpType::EVENT_RESOLVE:
   case OpType::LIFECYCLE_MESSAGE:
   case OpType::PROXY_STATE_SET:

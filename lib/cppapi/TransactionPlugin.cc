@@ -25,7 +25,6 @@
 #include <cassert>
 #include <ts/ts.h>
 #include "atscppapi/TransactionPlugin.h"
-#include "atscppapi/Mutex.h"
 #include "utils_internal.h"
 #include "atscppapi/noncopyable.h"
 #include "logging_internal.h"
@@ -40,7 +39,7 @@ struct atscppapi::TransactionPluginState : noncopyable {
   TSCont cont_ = nullptr;
   TSHttpTxn ats_txn_handle_;
   std::shared_ptr<Mutex> mutex_;
-  TransactionPluginState(TSHttpTxn ats_txn_handle) : ats_txn_handle_(ats_txn_handle), mutex_(new Mutex(Mutex::TYPE_RECURSIVE)) {}
+  TransactionPluginState(TSHttpTxn ats_txn_handle) : ats_txn_handle_(ats_txn_handle), mutex_(new Mutex) {}
 };
 
 namespace

@@ -66,14 +66,7 @@ struct HttpTunnelProducer;
 typedef int (HttpSM::*HttpProducerHandler)(int event, HttpTunnelProducer *p);
 typedef int (HttpSM::*HttpConsumerHandler)(int event, HttpTunnelConsumer *c);
 
-enum HttpTunnelType_t {
-  HT_HTTP_SERVER,
-  HT_HTTP_CLIENT,
-  HT_CACHE_READ,
-  HT_CACHE_WRITE,
-  HT_TRANSFORM,
-  HT_STATIC,
-};
+enum HttpTunnelType_t { HT_HTTP_SERVER, HT_HTTP_CLIENT, HT_CACHE_READ, HT_CACHE_WRITE, HT_TRANSFORM, HT_STATIC, HT_BUFFER_READ };
 
 enum TunnelChunkingAction_t {
   TCA_CHUNK_CONTENT,

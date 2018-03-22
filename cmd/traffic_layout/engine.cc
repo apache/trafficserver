@@ -113,22 +113,21 @@ check_delete_path(const std::string &arg, const bool forceflag)
 static std::string
 path_handler(std::string &path)
 {
-  if (path[0] == '/') {
-    return path;
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
   }
+  // no path passed in, use cwd
   if (path.empty()) {
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-      ink_fatal("unexcepted failure from getcwd() code=%d", errno);
-    }
     return cwd;
   }
-  char resolved_path[PATH_MAX];
-  if (realpath(path.c_str(), resolved_path) == nullptr) {
-    ink_fatal("unexcepted failure from realpath() code=%d", errno);
+  // absolute path
+  if (path[0] == '/') {
+    return path;
+  } else {
+    return Layout::relative_to(cwd, path);
+    ;
   }
-
-  return resolved_path;
 }
 
 // the help message for traffic_layout runroot
@@ -163,53 +162,45 @@ RunrootEngine::runroot_help_message(const bool runflag, const bool cleanflag)
 bool
 RunrootEngine::runroot_parse()
 {
-  int i = 1;
-  while (i < _argc) {
+  for (unsigned int i = 1; i < _argv.size(); ++i) {
     std::string argument = _argv[i];
     // set the help, version, force and absolute flags
     if (argument == "-h" || argument == "--help") {
       help_flag = true;
-      ++i;
       continue;
     }
     if (argument == "-V" || argument == "--version") {
       version_flag = true;
-      ++i;
       continue;
     }
     if (argument == "--force") {
       force_flag = true;
-      ++i;
       continue;
     }
     if (argument == "--absolute") {
       abs_flag = true;
-      ++i;
       continue;
     }
     if (argument.substr(0, RUNROOT_WORD_LENGTH) == "--run-root") {
-      ++i;
       continue;
     }
     // set init flag & sandbox path
     if (argument == "init") {
       run_flag = true;
-      ++i;
       continue;
     }
     // set remove flag & sandbox path
     if (argument == "remove") {
       clean_flag = true;
-      ++i;
       continue;
     }
     if (argument == "--path") {
-      if (i + 1 >= static_cast<int>(_argv.size()) || _argv[i + 1][0] == '-') {
+      if (i + 1 >= _argv.size() || _argv[i + 1][0] == '-') {
         // invalid path
         return false;
       }
       path = _argv[i + 1];
-      i += 2;
+      ++i;
       continue;
     }
     return false;
@@ -272,7 +263,7 @@ clean_parent(const std::string &bin_path)
   }
   std::string RealBinPath = resolved_binpath;
 
-  std::vector<std::string> TwoPath = {RealBinPath, cwd};
+  std::vector<std::string> TwoPath = {cwd, RealBinPath};
   for (auto it : TwoPath) {
     std::string path = check_parent_path(it);
     if (path.size() != 0) {
@@ -342,7 +333,7 @@ RunrootEngine::clean_runroot()
         remove(clean_root.c_str());
       }
     } else {
-      ink_fatal("invalid path to clean (no runroot_path.yml file found)");
+      ink_fatal("runroot_path.yml not found - invalid path to clean");
     }
   }
 }

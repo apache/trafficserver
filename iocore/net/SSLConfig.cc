@@ -64,6 +64,8 @@ char *SSLConfigParams::ssl_wire_trace_addr        = nullptr;
 IpAddr *SSLConfigParams::ssl_wire_trace_ip        = nullptr;
 int SSLConfigParams::ssl_wire_trace_percentage    = 0;
 char *SSLConfigParams::ssl_wire_trace_server_name = nullptr;
+int SSLConfigParams::async_handshake_enabled      = 0;
+char *SSLConfigParams::engine_conf_file           = nullptr;
 
 static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
@@ -299,7 +301,8 @@ SSLConfigParams::initialize()
   REC_EstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
 
-  REC_ReadConfigInt32(ssl_handshake_timeout_in, "proxy.config.ssl.handshake_timeout_in");
+  REC_ReadConfigInt32(async_handshake_enabled, "proxy.config.ssl.async.handshake.enabled");
+  REC_ReadConfigStringAlloc(engine_conf_file, "proxy.config.ssl.engine.conf_file");
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;

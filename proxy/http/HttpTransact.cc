@@ -1123,76 +1123,80 @@ HttpTransact::HandleRequest(State *s)
 {
   TxnDebug("http_trans", "START HttpTransact::HandleRequest");
 
-  ink_assert(!s->hdr_info.server_request.valid());
+  if (!s->state_machine->is_waiting_for_full_body) {
+    ink_assert(!s->hdr_info.server_request.valid());
 
-  HTTP_INCREMENT_DYN_STAT(http_incoming_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_incoming_requests_stat);
 
-  if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
-    HTTP_INCREMENT_DYN_STAT(https_incoming_requests_stat);
-  }
-
-  ///////////////////////////////////////////////
-  // if request is bad, return error response  //
-  ///////////////////////////////////////////////
-
-  if (!(is_request_valid(s, &s->hdr_info.client_request))) {
-    HTTP_INCREMENT_DYN_STAT(http_invalid_client_requests_stat);
-    TxnDebug("http_seq", "[HttpTransact::HandleRequest] request invalid.");
-    s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
-    //  s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
-    return;
-  }
-  TxnDebug("http_seq", "[HttpTransact::HandleRequest] request valid.");
-
-  if (is_debug_tag_set("http_chdr_describe")) {
-    obj_describe(s->hdr_info.client_request.m_http, true);
-  }
-
-  // at this point we are guaranteed that the request is good and acceptable.
-  // initialize some state variables from the request (client version,
-  // client keep-alive, cache action, etc.
-  initialize_state_variables_from_request(s, &s->hdr_info.client_request);
-
-  // The following chunk of code will limit the maximum number of websocket connections (TS-3659)
-  if (s->is_upgrade_request && s->is_websocket && s->http_config_param->max_websocket_connections >= 0) {
-    int64_t val = 0;
-    HTTP_READ_DYN_SUM(http_websocket_current_active_client_connections_stat, val);
-    if (val >= s->http_config_param->max_websocket_connections) {
-      s->is_websocket = false; // unset to avoid screwing up stats.
-      TxnDebug("http_trans", "Rejecting websocket connection because the limit has been exceeded");
-      bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-      build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "WebSocket Connection Limit Exceeded", nullptr);
-      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+    if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
+      HTTP_INCREMENT_DYN_STAT(https_incoming_requests_stat);
     }
-  }
 
-  // The following code is configurable to allow a user to control the max post size (TS-3631)
-  if (s->http_config_param->max_post_size > 0 && s->hdr_info.request_content_length > 0 &&
-      s->hdr_info.request_content_length > s->http_config_param->max_post_size) {
-    TxnDebug("http_trans", "Max post size %" PRId64 " Client tried to post a body that was too large.",
-             s->http_config_param->max_post_size);
-    HTTP_INCREMENT_DYN_STAT(http_post_body_too_large);
-    bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-    build_error_response(s, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large");
-    s->squid_codes.log_code = SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE;
-    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-  }
+    ///////////////////////////////////////////////
+    // if request is bad, return error response  //
+    ///////////////////////////////////////////////
 
-  // The following chunk of code allows you to disallow post w/ expect 100-continue (TS-3459)
-  if (s->hdr_info.request_content_length && s->http_config_param->disallow_post_100_continue) {
-    MIMEField *expect = s->hdr_info.client_request.field_find(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+    if (!(is_request_valid(s, &s->hdr_info.client_request))) {
+      HTTP_INCREMENT_DYN_STAT(http_invalid_client_requests_stat);
+      TxnDebug("http_seq", "[HttpTransact::HandleRequest] request invalid.");
+      s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
+      //  s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
+      return;
+    }
+    TxnDebug("http_seq", "[HttpTransact::HandleRequest] request valid.");
 
-    if (expect != nullptr) {
-      const char *expect_hdr_val = nullptr;
-      int expect_hdr_val_len     = 0;
-      expect_hdr_val             = expect->value_get(&expect_hdr_val_len);
-      if (ptr_len_casecmp(expect_hdr_val, expect_hdr_val_len, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
-        // Let's error out this request.
-        TxnDebug("http_trans", "Client sent a post expect: 100-continue, sending 405.");
-        HTTP_INCREMENT_DYN_STAT(disallowed_post_100_continue);
-        build_error_response(s, HTTP_STATUS_METHOD_NOT_ALLOWED, "Method Not Allowed", "request#method_unsupported");
+    if (is_debug_tag_set("http_chdr_describe")) {
+      obj_describe(s->hdr_info.client_request.m_http, true);
+    }
+    // at this point we are guaranteed that the request is good and acceptable.
+    // initialize some state variables from the request (client version,
+    // client keep-alive, cache action, etc.
+    initialize_state_variables_from_request(s, &s->hdr_info.client_request);
+    // The following chunk of code will limit the maximum number of websocket connections (TS-3659)
+    if (s->is_upgrade_request && s->is_websocket && s->http_config_param->max_websocket_connections >= 0) {
+      int64_t val = 0;
+      HTTP_READ_DYN_SUM(http_websocket_current_active_client_connections_stat, val);
+      if (val >= s->http_config_param->max_websocket_connections) {
+        s->is_websocket = false; // unset to avoid screwing up stats.
+        TxnDebug("http_trans", "Rejecting websocket connection because the limit has been exceeded");
+        bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+        build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "WebSocket Connection Limit Exceeded", nullptr);
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       }
+    }
+
+    // The following code is configurable to allow a user to control the max post size (TS-3631)
+    if (s->http_config_param->max_post_size > 0 && s->hdr_info.request_content_length > 0 &&
+        s->hdr_info.request_content_length > s->http_config_param->max_post_size) {
+      TxnDebug("http_trans", "Max post size %" PRId64 " Client tried to post a body that was too large.",
+               s->http_config_param->max_post_size);
+      HTTP_INCREMENT_DYN_STAT(http_post_body_too_large);
+      bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+      build_error_response(s, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large");
+      s->squid_codes.log_code = SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE;
+      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+    }
+
+    // The following chunk of code allows you to disallow post w/ expect 100-continue (TS-3459)
+    if (s->hdr_info.request_content_length && s->http_config_param->disallow_post_100_continue) {
+      MIMEField *expect = s->hdr_info.client_request.field_find(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+
+      if (expect != nullptr) {
+        const char *expect_hdr_val = nullptr;
+        int expect_hdr_val_len     = 0;
+        expect_hdr_val             = expect->value_get(&expect_hdr_val_len);
+        if (ptr_len_casecmp(expect_hdr_val, expect_hdr_val_len, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
+          // Let's error out this request.
+          TxnDebug("http_trans", "Client sent a post expect: 100-continue, sending 405.");
+          HTTP_INCREMENT_DYN_STAT(disallowed_post_100_continue);
+          build_error_response(s, HTTP_STATUS_METHOD_NOT_ALLOWED, "Method Not Allowed", "request#method_unsupported");
+          TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+        }
+      }
+    }
+    if (s->txn_conf->request_buffer_enabled &&
+        (s->hdr_info.request_content_length > 0 || s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
+      TRANSACT_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, nullptr);
     }
   }
 
@@ -1304,6 +1308,12 @@ HttpTransact::HandleRequest(State *s)
     // if the request is authorized
     StartAccessControl(s);
   }
+}
+
+void
+HttpTransact::HandleRequestBufferDone(State *s)
+{
+  TRANSACT_RETURN(SM_ACTION_REQUEST_BUFFER_READ_COMPLETE, HttpTransact::HandleRequest);
 }
 
 void
@@ -1558,6 +1568,14 @@ HttpTransact::OSDNSLookup(State *s)
 
   TxnDebug("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
   ++s->dns_info.attempts;
+
+  // It's never valid to connect *to* INADDR_ANY, so let's reject the request now.
+  if (ats_is_ip_any(s->host_db_info.ip())) {
+    TxnDebug("http_trans", "[OSDNSLookup] Invalid request IP: INADDR_ANY");
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad Destination Address", "request#syntax_error");
+    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+  }
 
   // detect whether we are about to self loop. the client may have
   // specified the proxy as the origin server (badness).

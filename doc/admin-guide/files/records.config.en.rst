@@ -3420,6 +3420,20 @@ Client-Related Configuration
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
 
+.. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
+
+   Enables the use of openssl async job during the TLS handshake.  Traffic
+   Server must be build against openssl 1.1 or greater or this to take affect.
+   Can be useful if using a crypto engine that communicates off chip.  The
+   thread will be rescheduled for other work until the crypto engine operation
+   completes. A test crypto engine that inserts a 5 second delay on private key
+   operations can be found at :ts:git:`contrib/openssl/async_engine.c`.
+   
+.. ts:cv:: CONFIG proxy.config.ssl.engine.conf_file STRING NULL
+
+   Specify the location of the openssl config file used to load dynamic crypto
+   engines. This setting assumes an absolute path.  An example config file is at
+   :ts:git:`contrib/openssl/load_engine.cnf`.
 
 OCSP Stapling Configuration
 ===========================

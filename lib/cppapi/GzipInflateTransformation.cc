@@ -20,17 +20,16 @@
  * @file GzipInflateTransformation.cc
  */
 
-#include <string>
 #include <cstring>
 #include <vector>
 #include <zlib.h>
 #include <cinttypes>
+#include <ts/string_view.h>
 #include "atscppapi/TransformationPlugin.h"
 #include "atscppapi/GzipInflateTransformation.h"
 #include "logging_internal.h"
 
 using namespace atscppapi::transformations;
-using std::string;
 using std::vector;
 
 namespace
@@ -84,7 +83,7 @@ GzipInflateTransformation::~GzipInflateTransformation()
 }
 
 void
-GzipInflateTransformation::consume(const string &data)
+GzipInflateTransformation::consume(ts::string_view data)
 {
   if (data.size() == 0) {
     return;
@@ -101,7 +100,7 @@ GzipInflateTransformation::consume(const string &data)
   vector<char> buffer(inflate_block_size);
 
   // Setup the compressed input
-  state_->z_stream_.next_in  = reinterpret_cast<unsigned char *>(const_cast<char *>(data.c_str()));
+  state_->z_stream_.next_in  = reinterpret_cast<unsigned char *>(const_cast<char *>(data.data()));
   state_->z_stream_.avail_in = data.length();
 
   // Loop while we have more data to inflate
@@ -123,7 +122,7 @@ GzipInflateTransformation::consume(const string &data)
 
     LOG_DEBUG("Iteration %d: Gzip inflated a total of %d bytes, producingOutput...", iteration,
               (inflate_block_size - state_->z_stream_.avail_out));
-    produce(string(&buffer[0], (inflate_block_size - state_->z_stream_.avail_out)));
+    produce(ts::string_view(&buffer[0], (inflate_block_size - state_->z_stream_.avail_out)));
     state_->bytes_produced_ += (inflate_block_size - state_->z_stream_.avail_out);
   }
   state_->z_stream_.next_out = nullptr;

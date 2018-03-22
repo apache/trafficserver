@@ -42,7 +42,7 @@ struct subcommand {
   const std::string help;
 };
 
-// // Command line arguments (parsing)
+// Command line arguments (parsing)
 struct CommandLineArgs {
   int layout;
   int features;
@@ -120,7 +120,6 @@ traffic_runroot(int argc, const char **argv)
 {
   // runroot engine for operations
   RunrootEngine engine;
-  engine._argc = argc;
 
   int i = 0;
   while (argv[i]) {

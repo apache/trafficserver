@@ -215,7 +215,7 @@ void
 dir_init_segment(int s, Vol *d)
 {
   d->header->freelist[s] = 0;
-  Dir *seg               = dir_segment(s, d);
+  Dir *seg               = d->dir_segment(s);
   int l, b;
   memset(seg, 0, SIZEOF_DIR * DIR_DEPTH * d->buckets);
   for (l = 1; l < DIR_DEPTH; l++) {
@@ -231,7 +231,7 @@ dir_init_segment(int s, Vol *d)
 int
 dir_bucket_loop_fix(Dir *start_dir, int s, Vol *d)
 {
-  if (!dir_bucket_loop_check(start_dir, dir_segment(s, d))) {
+  if (!dir_bucket_loop_check(start_dir, d->dir_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
     dir_init_segment(s, d);
     return 1;
@@ -243,7 +243,7 @@ int
 dir_freelist_length(Vol *d, int s)
 {
   int free = 0;
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   Dir *e   = dir_from_offset(d->header->freelist[s], seg);
   if (dir_bucket_loop_fix(e, s, d)) {
     return (DIR_DEPTH - 1) * d->buckets;
@@ -260,7 +260,7 @@ dir_bucket_length(Dir *b, int s, Vol *d)
 {
   Dir *e   = b;
   int i    = 0;
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
 #ifdef LOOP_CHECK_MODE
   if (dir_bucket_loop_fix(b, s, d))
     return 1;
@@ -281,7 +281,7 @@ check_dir(Vol *d)
   int i, s;
   Debug("cache_check_dir", "inside check dir");
   for (s = 0; s < d->segments; s++) {
-    Dir *seg = dir_segment(s, d);
+    Dir *seg = d->dir_segment(s);
     for (i = 0; i < d->buckets; i++) {
       Dir *b = dir_bucket(i, seg);
       if (!(dir_bucket_length(b, s, d) >= 0)) {
@@ -301,7 +301,7 @@ check_dir(Vol *d)
 inline void
 unlink_from_freelist(Dir *e, int s, Vol *d)
 {
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   Dir *p   = dir_from_offset(dir_prev(e), seg);
   if (p) {
     dir_set_next(p, dir_next(e));
@@ -317,7 +317,7 @@ unlink_from_freelist(Dir *e, int s, Vol *d)
 inline Dir *
 dir_delete_entry(Dir *e, Dir *p, int s, Vol *d)
 {
-  Dir *seg         = dir_segment(s, d);
+  Dir *seg         = d->dir_segment(s);
   int no           = dir_next(e);
   d->header->dirty = 1;
   if (p) {
@@ -348,7 +348,7 @@ inline void
 dir_clean_bucket(Dir *b, int s, Vol *vol)
 {
   Dir *e = b, *p = nullptr;
-  Dir *seg = dir_segment(s, vol);
+  Dir *seg = vol->dir_segment(s);
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
 #endif
@@ -362,8 +362,8 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
 #endif
     if (!dir_valid(vol, e) || !dir_offset(e)) {
       if (is_debug_tag_set("dir_clean")) {
-        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d", e, dir_tag(e), dir_offset(e), b, p,
-              dir_bucket_length(b, s, vol));
+        Debug("dir_clean", "cleaning Vol:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", vol->hash_text.get(), e,
+              dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       }
       if (dir_offset(e)) {
         CACHE_DEC_DIR_USED(vol->mutex);
@@ -379,7 +379,7 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
 void
 dir_clean_segment(int s, Vol *d)
 {
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   for (int64_t i = 0; i < d->buckets; i++) {
     dir_clean_bucket(dir_bucket(i, seg), s, d);
     ink_assert(!dir_next(dir_bucket(i, seg)) || dir_offset(dir_bucket(i, seg)));
@@ -430,7 +430,7 @@ freelist_clean(int s, Vol *vol)
   }
   Warning("cache directory overflow on '%s' segment %d, purging...", vol->path, s);
   int n    = 0;
-  Dir *seg = dir_segment(s, vol);
+  Dir *seg = vol->dir_segment(s);
   for (int bi = 0; bi < vol->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
     for (int l = 0; l < DIR_DEPTH; l++) {
@@ -447,7 +447,7 @@ freelist_clean(int s, Vol *vol)
 inline Dir *
 freelist_pop(int s, Vol *d)
 {
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   Dir *e   = dir_from_offset(d->header->freelist[s], seg);
   if (!e) {
     freelist_clean(s, d);
@@ -473,7 +473,7 @@ dir_segment_accounted(int s, Vol *d, int offby, int *f, int *u, int *et, int *v,
   int used = 0, empty = 0;
   int valid = 0, agg_valid = 0;
   int64_t agg_size = 0;
-  Dir *seg         = dir_segment(s, d);
+  Dir *seg         = d->dir_segment(s);
   for (int bi = 0; bi < d->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
     Dir *e = b;
@@ -522,7 +522,7 @@ dir_segment_accounted(int s, Vol *d, int offby, int *f, int *u, int *et, int *v,
 void
 dir_free_entry(Dir *e, int s, Vol *d)
 {
-  Dir *seg        = dir_segment(s, d);
+  Dir *seg        = d->dir_segment(s);
   unsigned int fo = d->header->freelist[s];
   unsigned int eo = dir_to_offset(e, seg);
   dir_set_next(e, fo);
@@ -538,7 +538,7 @@ dir_probe(const CacheKey *key, Vol *d, Dir *result, Dir **last_collision)
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s    = key->slice32(0) % d->segments;
   int b    = key->slice32(1) % d->buckets;
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
   Vol *vol = d;
   CHECK_DIR(d);
@@ -606,7 +606,7 @@ dir_insert(const CacheKey *key, Vol *d, Dir *to_part)
   int s  = key->slice32(0) % d->segments, l;
   int bi = key->slice32(1) % d->buckets;
   ink_assert(dir_approx_size(to_part) <= MAX_FRAG_SIZE + sizeof(Doc));
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   Dir *e   = nullptr;
   Dir *b   = dir_bucket(bi, seg);
   Vol *vol = d;
@@ -659,7 +659,7 @@ dir_overwrite(const CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_o
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s          = key->slice32(0) % d->segments, l;
   int bi         = key->slice32(1) % d->buckets;
-  Dir *seg       = dir_segment(s, d);
+  Dir *seg       = d->dir_segment(s);
   Dir *e         = nullptr;
   Dir *b         = dir_bucket(bi, seg);
   unsigned int t = DIR_MASK_TAG(key->slice32(2));
@@ -735,7 +735,7 @@ dir_delete(const CacheKey *key, Vol *d, Dir *del)
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s    = key->slice32(0) % d->segments;
   int b    = key->slice32(1) % d->buckets;
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   Dir *e = nullptr, *p = nullptr;
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
@@ -905,7 +905,7 @@ dir_entries_used(Vol *d)
   uint64_t full  = 0;
   uint64_t sfull = 0;
   for (int s = 0; s < d->segments; full += sfull, s++) {
-    Dir *seg = dir_segment(s, d);
+    Dir *seg = d->dir_segment(s);
     sfull    = 0;
     for (int b = 0; b < d->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
@@ -953,7 +953,7 @@ sync_cache_dir_on_shutdown()
       Debug("cache_dir_sync", "Dir %s: ignoring -- bad disk", d->hash_text.get());
       continue;
     }
-    size_t dirlen = vol_dirlen(d);
+    size_t dirlen = d->dirlen();
     ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
     if (!d->header->dirty && !d->dir_sync_in_progress) {
       Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_text.get());
@@ -1092,7 +1092,7 @@ Lrestart:
     }
 
     int headerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
-    size_t dirlen = vol_dirlen(vol);
+    size_t dirlen = vol->dirlen();
     if (!writepos) {
       // start
       Debug("cache_dir_sync", "sync started");
@@ -1216,7 +1216,7 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
   printf("  Entries:   %" PRIu64 "\n", total_entries);
 
   for (int s = 0; s < segments; s++) {
-    Dir *seg               = dir_segment(s, this);
+    Dir *seg               = this->dir_segment(s);
     int seg_chain_max      = 0;
     int seg_empty          = 0;
     int seg_in_use         = 0;
@@ -1406,7 +1406,7 @@ dir_corrupt_bucket(Dir *b, int s, Vol *d)
   // coverity[dont_call]
   int l    = ((int)(dir_bucket_length(b, s, d) * drand48()));
   Dir *e   = b;
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
   for (int i = 0; i < l; i++) {
     ink_release_assert(e);
     e = next_dir(e, seg);
@@ -1445,7 +1445,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   rand_CacheKey(&key, thread->mutex);
 
   int s    = key.slice32(0) % d->segments, i, j;
-  Dir *seg = dir_segment(s, d);
+  Dir *seg = d->dir_segment(s);
 
   // test insert
   rprintf(t, "insert test\n", free);
@@ -1508,7 +1508,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     rprintf(t, "probe rate = %d / second\n", (int)((newfree * (uint64_t)1000000) / us));
   }
 
-  for (int c = 0; c < vol_direntries(d) * 0.75; c++) {
+  for (int c = 0; c < d->direntries() * 0.75; c++) {
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
@@ -1524,7 +1524,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     rand_CacheKey(&key, thread->mutex);
     s1 = key.slice32(0) % d->segments;
     b1 = key.slice32(1) % d->buckets;
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
+    dir_corrupt_bucket(dir_bucket(b1, d->dir_segment(s1)), s1, d);
     dir_insert(&key, d, &dir);
     Dir *last_collision = 0;
     dir_probe(&key, d, &dir, &last_collision);
@@ -1532,7 +1532,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     rand_CacheKey(&key, thread->mutex);
     s1 = key.slice32(0) % d->segments;
     b1 = key.slice32(1) % d->buckets;
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
+    dir_corrupt_bucket(dir_bucket(b1, d->dir_segment(s1)), s1, d);
 
     last_collision = 0;
     dir_probe(&key, d, &dir, &last_collision);
@@ -1549,7 +1549,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     dir_insert(&key, d, &dir);
     key1.b[1] = 80;
     dir_insert(&key1, d, &dir1);
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
+    dir_corrupt_bucket(dir_bucket(b1, d->dir_segment(s1)), s1, d);
     dir_overwrite(&key, d, &dir, &dir, 1);
 
     rand_CacheKey(&key, thread->mutex);
@@ -1557,12 +1557,12 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     b1       = key.slice32(1) % d->buckets;
     key.b[1] = 23;
     dir_insert(&key, d, &dir1);
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
+    dir_corrupt_bucket(dir_bucket(b1, d->dir_segment(s1)), s1, d);
     dir_overwrite(&key, d, &dir, &dir, 0);
 
     rand_CacheKey(&key, thread->mutex);
     s1        = key.slice32(0) % d->segments;
-    Dir *seg1 = dir_segment(s1, d);
+    Dir *seg1 = d->dir_segment(s1);
     // dir_freelist_length in freelist with loop
     dir_corrupt_bucket(dir_from_offset(d->header->freelist[s], seg1), s1, d);
     dir_freelist_length(d, s1);
@@ -1571,8 +1571,8 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     s1 = key.slice32(0) % d->segments;
     b1 = key.slice32(1) % d->buckets;
     // dir_bucket_length in bucket with loop
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
-    dir_bucket_length(dir_bucket(b1, dir_segment(s1, d)), s1, d);
+    dir_corrupt_bucket(dir_bucket(b1, d->dir_segment(s1)), s1, d);
+    dir_bucket_length(dir_bucket(b1, d->dir_segment(s1)), s1, d);
     if (!check_dir(d))
       ret = REGRESSION_TEST_FAILED;
 #else
@@ -1586,7 +1586,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     dir_insert(&key, d, &dir1);
     dir_insert(&key, d, &dir1);
     dir_insert(&key, d, &dir1);
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
+    dir_corrupt_bucket(dir_bucket(b1, d->dir_segment(s1)), s1, d);
     if (check_dir(d)) {
       ret = REGRESSION_TEST_FAILED;
     }

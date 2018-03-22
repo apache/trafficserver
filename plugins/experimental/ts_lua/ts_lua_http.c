@@ -99,6 +99,9 @@ static int ts_lua_http_transaction_count(lua_State *L);
 static int ts_lua_http_redirect_url_set(lua_State *L);
 static int ts_lua_http_get_server_state(lua_State *L);
 
+static int ts_lua_http_get_remap_from_url(lua_State *L);
+static int ts_lua_http_get_remap_to_url(lua_State *L);
+
 static void ts_lua_inject_server_state_variables(lua_State *L);
 
 static void ts_lua_inject_http_resp_transform_api(lua_State *L);
@@ -229,6 +232,12 @@ ts_lua_inject_http_misc_api(lua_State *L)
   lua_pushcfunction(L, ts_lua_http_get_server_state);
   lua_setfield(L, -2, "get_server_state");
 
+  lua_pushcfunction(L, ts_lua_http_get_remap_from_url);
+  lua_setfield(L, -2, "get_remap_from_url");
+
+  lua_pushcfunction(L, ts_lua_http_get_remap_to_url);
+  lua_setfield(L, -2, "get_remap_to_url");
+
   ts_lua_inject_server_state_variables(L);
 }
 
@@ -341,8 +350,6 @@ ts_lua_http_set_cache_lookup_status(lua_State *L)
 static int
 ts_lua_http_get_cache_lookup_url(lua_State *L)
 {
-  char output[TS_LUA_MAX_URL_LENGTH];
-  int output_len;
   TSMLoc url = TS_NULL_MLOC;
   char *str  = NULL;
   int len;
@@ -363,12 +370,7 @@ ts_lua_http_get_cache_lookup_url(lua_State *L)
 
   str = TSUrlStringGet(http_ctx->client_request_bufp, url, &len);
 
-  output_len = snprintf(output, TS_LUA_MAX_URL_LENGTH, "%.*s", len, str);
-  if (output_len >= TS_LUA_MAX_URL_LENGTH) {
-    lua_pushlstring(L, output, TS_LUA_MAX_URL_LENGTH - 1);
-  } else {
-    lua_pushlstring(L, output, output_len);
-  }
+  lua_pushlstring(L, str, len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : len);
 
 done:
   if (url != TS_NULL_MLOC) {
@@ -460,8 +462,6 @@ ts_lua_http_set_parent_proxy(lua_State *L)
 static int
 ts_lua_http_get_parent_selection_url(lua_State *L)
 {
-  char output[TS_LUA_MAX_URL_LENGTH];
-  int output_len;
   TSMLoc url = TS_NULL_MLOC;
   char *str  = NULL;
   int len;
@@ -482,12 +482,7 @@ ts_lua_http_get_parent_selection_url(lua_State *L)
 
   str = TSUrlStringGet(http_ctx->client_request_bufp, url, &len);
 
-  output_len = snprintf(output, TS_LUA_MAX_URL_LENGTH, "%.*s", len, str);
-  if (output_len >= TS_LUA_MAX_URL_LENGTH) {
-    lua_pushlstring(L, output, TS_LUA_MAX_URL_LENGTH - 1);
-  } else {
-    lua_pushlstring(L, output, output_len);
-  }
+  lua_pushlstring(L, str, len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : len);
 
 done:
   if (url != TS_NULL_MLOC) {
@@ -741,6 +736,60 @@ ts_lua_http_get_server_state(lua_State *L)
 
   TSServerState ss = TSHttpTxnServerStateGet(http_ctx->txnp);
   lua_pushnumber(L, ss);
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_remap_from_url(lua_State *L)
+{
+  TSMLoc url = TS_NULL_MLOC;
+  char *str  = NULL;
+  int len;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSRemapFromUrlGet(http_ctx->txnp, &url) != TS_SUCCESS) {
+    lua_pushnil(L);
+    goto done;
+  }
+
+  str = TSUrlStringGet(NULL, url, &len);
+
+  lua_pushlstring(L, str, len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : len);
+
+done:
+  if (str != NULL) {
+    TSfree(str);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_remap_to_url(lua_State *L)
+{
+  TSMLoc url = TS_NULL_MLOC;
+  char *str  = NULL;
+  int len;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSRemapToUrlGet(http_ctx->txnp, &url) != TS_SUCCESS) {
+    lua_pushnil(L);
+    goto done;
+  }
+
+  str = TSUrlStringGet(NULL, url, &len);
+
+  lua_pushlstring(L, str, len >= TS_LUA_MAX_URL_LENGTH ? TS_LUA_MAX_URL_LENGTH - 1 : len);
+
+done:
+  if (str != NULL) {
+    TSfree(str);
+  }
 
   return 1;
 }

@@ -71,6 +71,22 @@ AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   AC_SUBST(use_tls_npn)
 ])
 
+AC_DEFUN([TS_CHECK_CRYPTO_ASYNC], [
+  enable_tls_async=yes
+  _async_saved_LIBS=$LIBS
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_FUNCS(SSL_get_all_async_fds ASYNC_init_thread,
+    [], [enable_tls_async=no]
+  )
+  LIBS=$_async_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable ASYNC job openssl support)
+  AC_MSG_RESULT([$enable_tls_async])
+  TS_ARG_ENABLE_VAR([use], [tls-async])
+  AC_SUBST(use_tls_async)
+])
+
 AC_DEFUN([TS_CHECK_CRYPTO_ALPN], [
   enable_tls_alpn=yes
   _alpn_saved_LIBS=$LIBS
