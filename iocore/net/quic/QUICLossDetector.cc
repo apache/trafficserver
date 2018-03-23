@@ -140,6 +140,20 @@ QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
 }
 
 void
+QUICLossDetector::reset()
+{
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
+  if (this->_loss_detection_alarm) {
+    this->_loss_detection_alarm->cancel();
+  }
+
+  this->_sent_packets.clear();
+
+  this->_handshake_outstanding       = 0;
+  this->_retransmittable_outstanding = 0;
+}
+
+void
 QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_ack_only, bool is_handshake, size_t sent_bytes,
                                   QUICPacketUPtr packet)
 {

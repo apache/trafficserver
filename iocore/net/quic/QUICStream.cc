@@ -361,6 +361,25 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame)
 }
 
 /**
+ * Reset send/recv offset of stream. This is only for stream 0.
+ */
+void
+QUICStream::reset_send_offset()
+{
+  if (this->_id == STREAM_ID_FOR_HANDSHAKE) {
+    this->_send_offset = 0;
+  }
+}
+
+void
+QUICStream::reset_recv_offset()
+{
+  if (this->_id == STREAM_ID_FOR_HANDSHAKE) {
+    this->_received_stream_frame_buffer.clear();
+  }
+}
+
+/**
  * Replace existing event only if the new event is different than the inprogress event
  */
 Event *

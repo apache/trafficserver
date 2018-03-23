@@ -76,6 +76,7 @@ public:
   virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
   void on_packet_sent(QUICPacketUPtr packet);
   QUICPacketNumber largest_acked_packet_number();
+  void reset();
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;

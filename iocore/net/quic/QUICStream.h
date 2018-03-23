@@ -63,6 +63,8 @@ public:
 
   QUICStreamId id() const;
   QUICOffset final_offset();
+  void reset_send_offset();
+  void reset_recv_offset();
 
   // Implement VConnection Interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;

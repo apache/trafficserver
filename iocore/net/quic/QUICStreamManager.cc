@@ -297,3 +297,19 @@ QUICStreamManager::set_default_application(QUICApplication *app)
 {
   this->_app_map->set_default(app);
 }
+
+void
+QUICStreamManager::reset_send_offset()
+{
+  QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
+
+  stream->reset_send_offset();
+}
+
+void
+QUICStreamManager::reset_recv_offset()
+{
+  QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
+
+  stream->reset_recv_offset();
+}
