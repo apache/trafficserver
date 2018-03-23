@@ -25,13 +25,13 @@
   limitations under the License.
  */
 
-#if !defined(TS_SCALAR_H)
-#define TS_SCALAR_H
+#pragma once
 
 #include <cstdint>
 #include <ratio>
 #include <ostream>
 #include <type_traits>
+#include <ts/BufferWriter.h>
 
 namespace tag
 {
@@ -911,14 +911,35 @@ namespace detail
     return s;
   }
   template <typename T>
+  inline BufferWriter &
+  tag_label(BufferWriter &w, BWFSpec const &, tag_label_A const &)
+  {
+    return w;
+  }
+  template <typename T>
   inline auto
   tag_label(std::ostream &s, tag_label_B const &) -> decltype(s << T::label, s)
   {
     return s << T::label;
   }
+  template <typename T>
+  inline auto
+  tag_label(BufferWriter &w, BWFSpec const &spec, tag_label_B const &) -> decltype(bwformat(w, spec, T::label), w)
+  {
+    return bwformat(w, spec, T::label);
+  }
 } // detail
 
-} // namespace
+template <intmax_t N, typename C, typename T>
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, Scalar<N, C, T> const &x)
+{
+  static constexpr ts::detail::tag_label_B b{};
+  bwformat(w, spec, x.value());
+  return ts::detail::tag_label<T>(w, spec, b);
+}
+
+} // ts
 
 namespace std
 {
@@ -938,5 +959,4 @@ template <intmax_t N, typename C, intmax_t S, typename I, typename T> struct com
   typedef std::ratio<N, S> R;
   typedef ts::Scalar<N / R::num, typename common_type<C, I>::type, T> type;
 };
-}
-#endif // TS_SCALAR_H
+} // std

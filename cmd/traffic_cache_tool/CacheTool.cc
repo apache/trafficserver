@@ -26,24 +26,26 @@
 #include <memory>
 #include <vector>
 #include <map>
-#include <ts/ink_memory.h>
-#include <ts/ink_file.h>
 #include <getopt.h>
 #include <system_error>
 #include <string.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include "File.h"
-#include "CacheDefs.h"
-#include "Command.h"
-#include "ts/ink_code.h"
 #include <cstring>
-#include <openssl/md5.h>
 #include <vector>
 #include <unordered_set>
 #include <time.h>
 #include <bitset>
 #include <inttypes.h>
+
+#include <ts/ink_memory.h>
+#include <ts/ink_file.h>
+#include <ts/BufferWriter.h>
+#include <ts/CryptoHash.h>
+
+#include "File.h"
+#include "CacheDefs.h"
+#include "Command.h"
 
 using ts::Bytes;
 using ts::Megabytes;
