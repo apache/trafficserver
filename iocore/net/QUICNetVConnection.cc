@@ -1102,8 +1102,8 @@ QUICNetVConnection::_packetize_frames()
 QUICErrorUPtr
 QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
 {
-  const uint8_t *payload = packet->payload();
-  uint16_t size = packet->payload_size();
+  const uint8_t *payload      = packet->payload();
+  uint16_t size               = packet->payload_size();
   QUICPacketNumber packet_num = packet->packet_number();
 
   if (packet_num > this->_largest_received_packet_number) {
