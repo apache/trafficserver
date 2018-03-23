@@ -589,7 +589,7 @@ BWF_Now(ts::BufferWriter &w, ts::BWFSpec const &spec)
   w.fill(std::strftime(w.auxBuffer(), w.remaining(), "%Y%b%d:%H%M%S", std::localtime(&t)));
 }
 
-static bool BW_INITIALIZED = []() -> bool {
+static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
   ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
   return true;
 }();
