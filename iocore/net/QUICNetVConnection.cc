@@ -819,7 +819,7 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
   // Start handshake
   QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
   if (this->_handshake_handler->is_version_negotiated()) {
-    error = this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+    error = this->_recv_and_ack(std::move(packet));
   } else {
     // Perhaps response packets for initial client packet were lost, but no need to start handshake again because loss detector will
     // retransmit the packets.
@@ -830,20 +830,20 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet)
 {
-  return this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+  return this->_recv_and_ack(std::move(packet));
 }
 
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet)
 {
   this->_start_application();
-  return this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+  return this->_recv_and_ack(std::move(packet));
 }
 
 QUICErrorUPtr
 QUICNetVConnection::_state_connection_established_process_packet(QUICPacketUPtr packet)
 {
-  return this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+  return this->_recv_and_ack(std::move(packet));
 }
 
 QUICErrorUPtr
@@ -906,7 +906,7 @@ QUICNetVConnection::_state_connection_closing_and_draining_receive_packet()
   QUICPacketCreationResult result;
   QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
   if (result == QUICPacketCreationResult::SUCCESS) {
-    this->_recv_and_ack(packet->payload(), packet->payload_size(), packet->packet_number());
+    this->_recv_and_ack(std::move(packet));
     this->_schedule_packet_write_ready();
   }
 
@@ -995,8 +995,7 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   QUICRetransmissionFrame *rf         = dynamic_cast<QUICRetransmissionFrame *>(frame.get());
   if (rf) {
     current_packet_type = rf->packet_type();
-  } else if (frame->type() == QUICFrameType::STREAM &&
-             static_cast<const QUICStreamFrame *>(frame.get())->stream_id() != STREAM_ID_FOR_HANDSHAKE) {
+  } else if (frame->is_protected()) {
     current_packet_type = QUICPacketType::PROTECTED;
   } else {
     current_packet_type = QUICPacketType::UNINITIALIZED;
@@ -1101,8 +1100,12 @@ QUICNetVConnection::_packetize_frames()
 }
 
 QUICErrorUPtr
-QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_num)
+QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
 {
+  const uint8_t *payload = packet->payload();
+  uint16_t size = packet->payload_size();
+  QUICPacketNumber packet_num = packet->packet_number();
+
   if (packet_num > this->_largest_received_packet_number) {
     this->_largest_received_packet_number = packet_num;
   }
@@ -1123,7 +1126,8 @@ QUICNetVConnection::_recv_and_ack(const uint8_t *payload, uint16_t size, QUICPac
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
 
-  this->_ack_frame_creator.update(packet_num, should_send_ack);
+  bool protection = packet->type() == QUICPacketType::PROTECTED || packet->type() == QUICPacketType::ZERO_RTT_PROTECTED;
+  this->_ack_frame_creator.update(packet_num, protection, should_send_ack);
   static_cast<QUICConnection *>(this)->transmit_frame();
 
   return error;

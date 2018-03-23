@@ -26,13 +26,17 @@
 #include <algorithm>
 
 int
-QUICAckFrameCreator::update(QUICPacketNumber packet_number, bool should_send)
+QUICAckFrameCreator::update(QUICPacketNumber packet_number, bool protection, bool should_send)
 {
   if (this->_packet_numbers.size() == MAXIMUM_PACKET_COUNT) {
     return -1;
   }
 
   this->_packet_numbers.push_back(packet_number);
+
+  if (!protection) {
+    this->_unprotected_packets.insert(packet_number);
+  }
 
   if (!this->_can_send) {
     this->_can_send = true;
@@ -54,6 +58,7 @@ QUICAckFrameCreator::create()
     this->_should_send  = false;
     this->_packet_count = 0;
     this->_packet_numbers.clear();
+    this->_unprotected_packets.clear();
   }
   return ack_frame;
 }
@@ -85,8 +90,14 @@ QUICAckFrameCreator::_create_ack_frame()
   size_t i        = 0;
   uint8_t gap     = 0;
   uint64_t length = 0;
+  bool protection = false;
 
   while (i < this->_packet_numbers.size()) {
+    if (!protection) {
+      if (this->_unprotected_packets.find(last_ack_number) == this->_unprotected_packets.end()) {
+        protection = true;
+      }
+    }
     if (this->_packet_numbers[i] == last_ack_number) {
       last_ack_number--;
       length++;
@@ -95,10 +106,10 @@ QUICAckFrameCreator::_create_ack_frame()
     }
 
     if (ack_frame) {
-      ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
+      ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1}, protection);
     } else {
       uint64_t delay = this->_calculate_delay();
-      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
+      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, protection);
     }
 
     gap             = last_ack_number - this->_packet_numbers[i];
@@ -107,10 +118,10 @@ QUICAckFrameCreator::_create_ack_frame()
   }
 
   if (ack_frame) {
-    ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
+    ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1}, protection);
   } else {
     uint64_t delay = this->_calculate_delay();
-    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
+    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, protection);
   }
   return ack_frame;
 }

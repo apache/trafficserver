@@ -26,6 +26,8 @@
 #include "ts/ink_hrtime.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"
+#include <vector>
+#include <set>
 
 class QUICAckPacketNumbers
 {
@@ -59,7 +61,7 @@ public:
    * All packet numbers ATS received need to be passed to this method.
    * Returns 0 if updated successfully.
    */
-  int update(QUICPacketNumber packet_number, bool should_send);
+  int update(QUICPacketNumber packet_number, bool protection, bool should_send);
 
   /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.
@@ -80,6 +82,7 @@ private:
 
   QUICAckPacketNumbers _packet_numbers;
   uint16_t _packet_count = 0;
+  std::set<QUICPacketNumber> _unprotected_packets;
 
   void _sort_packet_numbers();
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame();

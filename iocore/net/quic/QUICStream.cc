@@ -476,8 +476,9 @@ QUICStream::_process_write_vio()
       }
     }
 
+    bool protection           = this->_id != STREAM_ID_FOR_HANDSHAKE;
     QUICStreamFrameUPtr frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len,
-                                                                      this->_id, this->_send_offset, fin);
+                                                                      this->_id, this->_send_offset, fin, protection);
     if (!this->_state.is_allowed_to_send(*frame)) {
       QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
       break;

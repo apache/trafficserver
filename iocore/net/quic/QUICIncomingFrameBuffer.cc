@@ -101,7 +101,7 @@ std::shared_ptr<const QUICStreamFrame>
 QUICIncomingFrameBuffer::_clone(std::shared_ptr<const QUICStreamFrame> frame)
 {
   return QUICFrameFactory::create_stream_frame(frame->data(), frame->data_length(), frame->stream_id(), frame->offset(),
-                                               frame->has_fin_flag());
+                                               frame->has_fin_flag(), frame->is_protected());
 }
 
 QUICErrorUPtr

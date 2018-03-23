@@ -289,7 +289,7 @@ private:
   QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
 
-  QUICErrorUPtr _recv_and_ack(const uint8_t *payload, uint16_t size, QUICPacketNumber packet_numm);
+  QUICErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
 
   QUICErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
