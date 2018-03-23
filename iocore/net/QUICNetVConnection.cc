@@ -1006,6 +1006,7 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
     this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
     retransmittable = false;
     len             = 0;
+    buf             = nullptr;
   }
 
   retransmittable = retransmittable || (frame->type() != QUICFrameType::ACK && frame->type() != QUICFrameType::PADDING);
