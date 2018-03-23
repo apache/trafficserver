@@ -238,10 +238,14 @@ Stripe::clear()
 {
   Errata zret;
   alignas(512) static char zero[CacheStoreBlocks::SCALE]; // should be all zero, it's static.
-  pwrite(_span->_fd, zero, sizeof(zero), this->_meta_pos[A][HEAD]);
-  pwrite(_span->_fd, zero, sizeof(zero), this->_meta_pos[A][FOOT]);
-  pwrite(_span->_fd, zero, sizeof(zero), this->_meta_pos[B][HEAD]);
-  pwrite(_span->_fd, zero, sizeof(zero), this->_meta_pos[B][FOOT]);
+  for (auto i : {A, B}) {
+    for (auto j : {HEAD, FOOT}) {
+      ssize_t n = pwrite(_span->_fd, zero, CacheStoreBlocks::SCALE, this->_meta_pos[i][j]);
+      if (n < CacheStoreBlocks::SCALE)
+        std::cout << "Failed to clear stripe header" << std::endl;
+    }
+  }
+
   return zret;
 }
 Stripe::Chunk::~Chunk()
@@ -605,7 +609,9 @@ Stripe::dir_probe(INK_MD5 *key, CacheDirEntry *result, CacheDirEntry **last_coll
     int fd         = _span->_fd;
     int64_t offset = stripe_offset(e);
     int64_t size   = dir_approx_size(e);
-    pread(fd, stripe_buff2, size, offset);
+    ssize_t n      = pread(fd, stripe_buff2, size, offset);
+    if (n < size)
+      std::cout << "Failed to read content from the Stripe" << std::endl;
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
     std::string hdr(doc->hdr(), doc->hlen);
@@ -748,10 +754,13 @@ Errata
 Stripe::loadDir()
 {
   Errata zret;
-  char *raw_dir = (char *)ats_memalign(ats_pagesize(), this->vol_dirlen());
-  dir           = (CacheDirEntry *)(raw_dir + this->vol_headerlen());
+  int64_t dirlen = this->vol_dirlen();
+  char *raw_dir  = (char *)ats_memalign(ats_pagesize(), dirlen);
+  dir            = (CacheDirEntry *)(raw_dir + this->vol_headerlen());
   // read directory
-  pread(this->_span->_fd, raw_dir, this->vol_dirlen(), this->_start);
+  ssize_t n = pread(this->_span->_fd, raw_dir, dirlen, this->_start);
+  if (n < dirlen)
+    std::cout << "Failed to read Dir from stripe @" << this->hashText;
   return zret;
 }
 //
@@ -1824,7 +1833,9 @@ Span::loadDevice()
             memcpy(_header.get(), buff, span_hdr_size);
           } else {
             // TODO - check the pread return
-            pread(fd, _header.get(), span_hdr_size, offset);
+            ssize_t n = pread(fd, _header.get(), span_hdr_size, offset);
+            if (n < span_hdr_size)
+              std::cout << "Failed to read the Span Header" << std::endl;
           }
           _len = _header->num_blocks;
         } else {
