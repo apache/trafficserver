@@ -24,14 +24,14 @@ autoreconf -if && ./configure
 rm -f lib/ts/stamp-h1
 
 ${ATS_MAKE} rat | tee RAT.txt
-mv RAT.txt /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new
-mv /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new /home/jenkins/RAT/rat-${ATS_BRANCH}.txt
+mv RAT.txt /CA/RAT/rat-${ATS_BRANCH}.txt.new
+mv /CA/RAT/rat-${ATS_BRANCH}.txt.new /CA/RAT/rat-${ATS_BRANCH}.txt
 
 # Purgatory
-curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/files/RAT/rat-${ATS_BRANCH}.txt
+curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/RAT/rat-${ATS_BRANCH}.txt
 
 # Mark as failed if there are any unknown licesnes
-grep '0 Unknown Licenses' /home/jenkins/RAT/rat-${ATS_BRANCH}.txt > /dev/null || exit 1
+grep '0 Unknown Licenses' /CA/RAT/rat-${ATS_BRANCH}.txt > /dev/null || exit 1
 
 # Normal exit
 exit 0

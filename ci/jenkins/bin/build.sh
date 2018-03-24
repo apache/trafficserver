@@ -22,10 +22,10 @@ test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && DEBUG="--enable-debug"
 
 # When to turn on ccache, disabled for some builds
 CCACHE="--enable-ccache"
-test "${JOB_NAME#*debian_8}" != "${JOB_NAME}" && CCACHE=""
-test "${JOB_NAME#*ubuntu_12_04}" != "${JOB_NAME}" && CCACHE=""
-test "${JOB_NAME#*ubuntu_14_04}" != "${JOB_NAME}" && CCACHE=""
-test "${JOB_NAME#*compiler=clang,label=ubuntu_16_04}" != "${JOB_NAME}" && CCACHE=""
+#test "${JOB_NAME#*debian_8}" != "${JOB_NAME}" && CCACHE=""
+#test "${JOB_NAME#*ubuntu_12_04}" != "${JOB_NAME}" && CCACHE=""
+#test "${JOB_NAME#*ubuntu_14_04}" != "${JOB_NAME}" && CCACHE=""
+#test "${JOB_NAME#*compiler=clang,label=ubuntu_16_04}" != "${JOB_NAME}" && CCACHE=""
 
 # When to enable -Werror, turned off for RHEL5 node (due to LuaJIT / gcc issues on RHEL5)
 WERROR="--enable-werror"

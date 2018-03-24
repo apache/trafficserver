@@ -59,11 +59,11 @@ if [ "${JOB_NAME#*-github}" != "${JOB_NAME}" ]; then
 	[ ! -d "${output}"] && mkdir "${output}"
     fi
     github_pr=" PR #${ghprbPullId}"
-    results_url="https://ci.trafficserver.apache.org/files/clang-analyzer/${ATS_BRANCH}/${ghprbPullId}/"
+    results_url="https://ci.trafficserver.apache.org/clang-analyzer/${ATS_BRANCH}/${ghprbPullId}/"
 else
     test -w "${OUTPUT_BASE}/${ATS_BRANCH}" && output="${OUTPUT_BASE}/${ATS_BRANCH}"
     github_pr=""
-    results_url="https://ci.trafficserver.apache.org/files/clang-analyzer/${ATS_BRANCH}/"
+    results_url="https://ci.trafficserver.apache.org/clang-analyzer/${ATS_BRANCH}/"
 fi
 
 # Tell scan-build to use clang as the underlying compiler to actually build

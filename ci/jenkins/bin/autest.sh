@@ -24,7 +24,7 @@ mkdir -p $INSTALL
 cd src
 autoreconf -if
 
-URL="https://ci.trafficserver.apache.org/files/autest"
+URL="https://ci.trafficserver.apache.org/autest"
 AUSB="ausb-${ghprbPullId}.${BUILD_NUMBER}"
 SANDBOX="/var/tmp/${AUSB}"
 
