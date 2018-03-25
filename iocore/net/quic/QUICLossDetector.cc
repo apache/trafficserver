@@ -135,7 +135,7 @@ QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
 
   QUICPacketNumber packet_number = packet->packet_number();
   bool is_ack_only               = !packet->is_retransmittable();
-  size_t sent_bytes              = packet->size();
+  size_t sent_bytes              = is_ack_only ? 0 : packet->size();
   this->_on_packet_sent(packet_number, is_ack_only, is_handshake, sent_bytes, std::move(packet));
 }
 
