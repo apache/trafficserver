@@ -204,6 +204,33 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.print("|{:<0.2,5x}|", sv);
   REQUIRE(bw.view() == "|63313|");
 
+  bw.reduce(0);
+  bw.print("|{}|", true);
+  REQUIRE(bw.view() == "|1|");
+  bw.reduce(0);
+  bw.print("|{}|", false);
+  REQUIRE(bw.view() == "|0|");
+  bw.reduce(0);
+  bw.print("|{:s}|", true);
+  REQUIRE(bw.view() == "|true|");
+  bw.reduce(0);
+  bw.print("|{:S}|", false);
+  REQUIRE(bw.view() == "|FALSE|");
+  bw.reduce(0);
+  bw.print("|{:>9s}|", false);
+  REQUIRE(bw.view() == "|    false|");
+  bw.reduce(0);
+  bw.print("|{:=10s}|", true);
+  REQUIRE(bw.view() == "|   true   |");
+
+  // Test clipping a bit.
+  ts::LocalBufferWriter<20> bw20;
+  bw20.print("0123456789abc|{:=10s}|", true);
+  REQUIRE(bw20.view() == "0123456789abc|   tru");
+  bw20.reduce(0);
+  bw20.print("012345|{:=10s}|6789abc", true);
+  REQUIRE(bw20.view() == "012345|   true   |67");
+
   INK_MD5 md5;
   bw.reduce(0);
   bw.print("{}", md5);

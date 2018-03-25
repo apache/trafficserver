@@ -227,27 +227,28 @@ namespace bw_fmt
         }
         break;
       case BWFSpec::Align::CENTER:
-        d2 = (delta + 1) / 2;
-        if (d2 > 1) {
-          dst = base + d2; // move existing content to here.
-          if (dst < limit) {
-            last = dst + size; // amount of data to move.
-            if (last > limit) {
-              last = limit;
-            }
-            std::memmove(dst, base, last - dst);
-          }
-          dst  = base + size + d2;
-          last = base + delta / 2;
+        d2 = (delta + 1) / 2; // always > 0 because min > extent
+        // Move the original content right to make space to fill on the left.
+        dst = base + d2; // move existing content to here.
+        if (dst < limit) {
+          last = dst + size; // amount of data to move.
           if (last > limit) {
             last = limit;
           }
-          while (dst < last) {
-            *dst++ = spec._fill;
-          }
+          std::memmove(dst, base, last - dst); // move content.
         }
+        // Left fill.
         dst  = base;
         last = base + d2;
+        if (last > limit) {
+          last = limit;
+        }
+        while (dst < last) {
+          *dst++ = spec._fill;
+        }
+        // Right fill.
+        dst += size;
+        last = dst + delta / 2; // round down
         if (last > limit) {
           last = limit;
         }

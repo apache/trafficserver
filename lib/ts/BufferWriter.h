@@ -654,6 +654,19 @@ bwformat(BufferWriter &w, BWFSpec const &, char c)
   return w.write(c);
 }
 
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bool f)
+{
+  if ('s' == spec._type) {
+    w.write(f ? "true"_sv : "false"_sv);
+  } else if ('S' == spec._type) {
+    w.write(f ? "TRUE"_sv : "FALSE"_sv);
+  } else {
+    bw_fmt::Format_Integer(w, spec, static_cast<uintmax_t>(f), false);
+  }
+  return w;
+}
+
 template <size_t N>
 BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, const char (&a)[N])
