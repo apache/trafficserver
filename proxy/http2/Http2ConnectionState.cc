@@ -1357,6 +1357,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
+    // Update write_vio nbytes in the chunked case
+    stream->finalize_chunked_sent_bytes();
     Http2StreamDebug(ua_session, stream->get_id(), "End of DATA frame");
     stream->send_end_stream = true;
     // Setting to the same state shouldn't be erroneous
