@@ -23,10 +23,16 @@
 
 #pragma once
 
+#include <openssl/ssl.h>
+
 #include "ProxyConfig.h"
+
 class QUICConfigParams : public ConfigInfo
 {
 public:
+  QUICConfigParams(){};
+  ~QUICConfigParams();
+
   void initialize();
 
   uint32_t no_activity_timeout_in() const;
@@ -40,6 +46,9 @@ public:
   uint32_t server_id() const;
   static int connection_table_size();
   uint32_t stateless_retry() const;
+
+  SSL_CTX *server_ssl_ctx() const;
+  SSL_CTX *client_ssl_ctx() const;
 
 private:
   // FIXME Fill appropriate default values in RecordsConfig.cc
@@ -55,6 +64,10 @@ private:
   uint32_t _initial_max_stream_id_bidi_out = 101;
   uint32_t _initial_max_stream_id_uni_in   = 102;
   uint32_t _initial_max_stream_id_uni_out  = 103;
+
+  // TODO: integrate with SSLCertLookup or SNIConfigParams
+  SSL_CTX *_server_ssl_ctx = nullptr;
+  SSL_CTX *_client_ssl_ctx = nullptr;
 };
 
 class QUICConfig

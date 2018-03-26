@@ -23,6 +23,8 @@
 #include "P_Net.h"
 
 #include "P_QUICClosedConCollector.h"
+
+#include "QUICGlobals.h"
 #include "QUICConfig.h"
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
@@ -88,7 +90,7 @@ QUICPacketHandler::_read_connection_id(IOBufferBlock *block)
 //
 // QUICPacketHandlerIn
 //
-QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, SSL_CTX *ctx) : NetAccept(opt), _ssl_ctx(ctx)
+QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt) : NetAccept(opt)
 {
   this->mutex = new_ProxyMutex();
   // create Connection Table
@@ -112,7 +114,7 @@ NetAccept *
 QUICPacketHandlerIn::clone() const
 {
   NetAccept *na;
-  na  = new QUICPacketHandlerIn(opt, this->_ssl_ctx);
+  na  = new QUICPacketHandlerIn(opt);
   *na = *this;
   return na;
 }
@@ -218,7 +220,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     vc->action_     = *this->action_;
     vc->set_is_transparent(this->opt.f_inbound_transparent);
     vc->set_context(NET_VCONNECTION_IN);
-    vc->start(this->_ssl_ctx);
+    vc->start();
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = udp_packet->from.sa.sa_family;
 

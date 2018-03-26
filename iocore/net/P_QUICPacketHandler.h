@@ -59,7 +59,7 @@ protected:
 class QUICPacketHandlerIn : public NetAccept, public QUICPacketHandler
 {
 public:
-  QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, SSL_CTX *);
+  QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt);
   ~QUICPacketHandlerIn();
 
   // NetAccept
@@ -75,7 +75,6 @@ private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
 
   QUICConnectionTable *_ctable = nullptr;
-  SSL_CTX *_ssl_ctx;
 };
 
 /*

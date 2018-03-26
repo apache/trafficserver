@@ -73,8 +73,6 @@ public:
 private:
   QUICNetProcessor(const QUICNetProcessor &);
   QUICNetProcessor &operator=(const QUICNetProcessor &);
-
-  SSL_CTX *_ssl_ctx = nullptr;
 };
 
 extern QUICNetProcessor quic_NetProcessor;

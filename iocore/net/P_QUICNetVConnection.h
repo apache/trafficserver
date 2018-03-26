@@ -165,7 +165,7 @@ public:
   int state_connection_closing(int event, Event *data);
   int state_connection_draining(int event, Event *data);
   int state_connection_closed(int event, Event *data);
-  void start(SSL_CTX *);
+  void start();
   void free(EThread *t) override;
   void destroy(EThread *t);
 

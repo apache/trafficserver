@@ -27,8 +27,6 @@
 
 #include "QUICGlobals.h"
 #include "QUICConfig.h"
-#include "QUICTransportParameters.h"
-#include "QUICStatelessRetry.h"
 
 //
 // Global Data
@@ -48,7 +46,6 @@ QUICNetProcessor::~QUICNetProcessor()
 void
 QUICNetProcessor::cleanup()
 {
-  SSL_CTX_free(this->_ssl_ctx);
 }
 
 void
@@ -68,47 +65,9 @@ QUICNetProcessor::start(int, size_t stacksize)
   // This initialization order matters ...
   // QUICInitializeLibrary();
   QUICConfig::startup();
-  QUICStatelessRetry::init();
-
-#ifdef TLS1_3_VERSION_DRAFT_TXT
-  // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
-  Debug("quic_ps", "%s", TLS1_3_VERSION_DRAFT_TXT);
-#endif
-
-  // Acquire a QUICConfigParams instance *after* we start QUIC up.
-  // QUICConfig::scoped_config params;
 
   // Initialize QUIC statistics. This depends on an initial set of certificates being loaded above.
   // QUICInitializeStatistics();
-
-  // TODO: separate SSL_CTX for client and server
-  // TODO: load certs from SSLConfig
-  this->_ssl_ctx = SSL_CTX_new(TLS_method());
-  SSL_CTX_set_min_proto_version(this->_ssl_ctx, TLS1_3_VERSION);
-  SSL_CTX_set_max_proto_version(this->_ssl_ctx, TLS1_3_VERSION);
-
-  // FIXME: OpenSSL (1.1.1-alpha) enable this option by default. But this shoule be removed when OpenSSL disable this by default.
-  SSL_CTX_clear_options(this->_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
-
-  SSL_CTX_set_alpn_select_cb(this->_ssl_ctx, QUIC::ssl_select_next_protocol, nullptr);
-  SSL_CTX_set_max_early_data(this->_ssl_ctx, UINT32_C(0xFFFFFFFF));
-  SSL_CTX_add_custom_ext(this->_ssl_ctx, QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID,
-                         SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
-                         &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
-                         &QUICTransportParametersHandler::parse, nullptr);
-
-  // callbacks for cookie ext
-  // Requires OpenSSL-1.1.1-pre3+ : https://github.com/openssl/openssl/pull/5463
-  SSL_CTX_set_stateless_cookie_generate_cb(this->_ssl_ctx, QUICStatelessRetry::generate_cookie);
-  SSL_CTX_set_stateless_cookie_verify_cb(this->_ssl_ctx, QUICStatelessRetry::verify_cookie);
-
-  SSLConfig::scoped_config params;
-  SSLParseCertificateConfiguration(params, this->_ssl_ctx);
-
-  if (SSL_CTX_check_private_key(this->_ssl_ctx) != 1) {
-    Error("check private key failed");
-    // ink_assert(false);
-  }
 
   return 0;
 }
@@ -116,7 +75,7 @@ QUICNetProcessor::start(int, size_t stacksize)
 NetAccept *
 QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
-  return (NetAccept *)new QUICPacketHandlerIn(opt, this->_ssl_ctx);
+  return (NetAccept *)new QUICPacketHandlerIn(opt);
 }
 
 NetVConnection *
@@ -195,7 +154,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
 
   SET_CONTINUATION_HANDLER(vc, &QUICNetVConnection::startEvent);
 
-  vc->start(this->_ssl_ctx);
+  vc->start();
 
   if (t->is_event_type(opt->etype)) {
     MUTEX_TRY_LOCK(lock, cont->mutex, t);

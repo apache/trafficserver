@@ -174,16 +174,17 @@ QUICNetVConnection::startEvent(int event, Event *e)
 
 // XXX This might be called on ET_UDP thread
 void
-QUICNetVConnection::start(SSL_CTX *ssl_ctx)
+QUICNetVConnection::start()
 {
+  QUICConfig::scoped_config params;
+
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
-    QUICConfig::scoped_config params;
     this->_reset_token.generate(this->_quic_connection_id, params->server_id());
-    this->_handshake_handler = new QUICHandshake(this, ssl_ctx, this->_reset_token, params->stateless_retry());
+    this->_handshake_handler = new QUICHandshake(this, params->server_ssl_ctx(), this->_reset_token, params->stateless_retry());
   } else {
-    this->_handshake_handler = new QUICHandshake(this, ssl_ctx);
+    this->_handshake_handler = new QUICHandshake(this, params->client_ssl_ctx());
     this->_handshake_handler->start(&this->_packet_factory);
   }
   this->_application_map = new QUICApplicationMap();

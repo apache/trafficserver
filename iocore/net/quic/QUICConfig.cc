@@ -23,14 +23,80 @@
 
 #include "QUICConfig.h"
 
+#include <openssl/ssl.h>
 #include <records/I_RecHttp.h>
+
+#include "P_SSLConfig.h"
+
+#include "QUICGlobals.h"
+#include "QUICTransportParameters.h"
+#include "QUICStatelessRetry.h"
 
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
 
+static SSL_CTX *
+quic_new_ssl_ctx()
+{
+#ifdef TLS1_3_VERSION_DRAFT_TXT
+  // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
+  Debug("quic_ps", "%s", TLS1_3_VERSION_DRAFT_TXT);
+#endif
+
+  SSL_CTX *ssl_ctx = SSL_CTX_new(TLS_method());
+
+  SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_3_VERSION);
+
+  // FIXME: OpenSSL (1.1.1-alpha) enable this option by default. But this shoule be removed when OpenSSL disable this by default.
+  SSL_CTX_clear_options(ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+
+  SSL_CTX_set_max_early_data(ssl_ctx, UINT32_C(0xFFFFFFFF));
+
+  SSL_CTX_add_custom_ext(ssl_ctx, QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID,
+                         SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
+                         &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
+                         &QUICTransportParametersHandler::parse, nullptr);
+  return ssl_ctx;
+}
+
+static SSL_CTX *
+quic_init_server_ssl_ctx(SSL_CTX *ssl_ctx)
+{
+  SSLConfig::scoped_config ssl_params;
+  SSLParseCertificateConfiguration(ssl_params, ssl_ctx);
+
+  if (SSL_CTX_check_private_key(ssl_ctx) != 1) {
+    Error("check private key failed");
+  }
+
+  // callbacks for cookie ext
+  // Requires OpenSSL-1.1.1-pre3+ : https://github.com/openssl/openssl/pull/5463
+  SSL_CTX_set_stateless_cookie_generate_cb(ssl_ctx, QUICStatelessRetry::generate_cookie);
+  SSL_CTX_set_stateless_cookie_verify_cb(ssl_ctx, QUICStatelessRetry::verify_cookie);
+
+  SSL_CTX_set_alpn_select_cb(ssl_ctx, QUIC::ssl_select_next_protocol, nullptr);
+
+  return ssl_ctx;
+}
+
+static SSL_CTX *
+quic_init_client_ssl_ctx(SSL_CTX *ssl_ctx)
+{
+  // SSL_CTX_set_alpn_protos()
+
+  return ssl_ctx;
+}
+
 //
 // QUICConfigParams
 //
+QUICConfigParams::~QUICConfigParams()
+{
+  SSL_CTX_free(this->_server_ssl_ctx);
+  SSL_CTX_free(this->_client_ssl_ctx);
+};
+
 void
 QUICConfigParams::initialize()
 {
@@ -41,6 +107,11 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
   REC_EstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.stateless_retry");
+
+  QUICStatelessRetry::init();
+
+  this->_server_ssl_ctx = quic_init_server_ssl_ctx(quic_new_ssl_ctx());
+  this->_client_ssl_ctx = quic_init_client_ssl_ctx(quic_new_ssl_ctx());
 }
 
 uint32_t
@@ -107,6 +178,18 @@ uint32_t
 QUICConfigParams::initial_max_stream_id_uni_out() const
 {
   return this->_initial_max_stream_id_uni_out;
+}
+
+SSL_CTX *
+QUICConfigParams::server_ssl_ctx() const
+{
+  return this->_server_ssl_ctx;
+}
+
+SSL_CTX *
+QUICConfigParams::client_ssl_ctx() const
+{
+  return this->_client_ssl_ctx;
 }
 
 //
