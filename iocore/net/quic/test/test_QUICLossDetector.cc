@@ -130,12 +130,12 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
 
     // Receive an ACK for (1) (4) (5) (7) (8) (9)
-    afc->update(pn1, true);
-    afc->update(pn4, true);
-    afc->update(pn5, true);
-    afc->update(pn7, true);
-    afc->update(pn8, true);
-    afc->update(pn9, true);
+    afc->update(pn1, false, true);
+    afc->update(pn4, false, true);
+    afc->update(pn5, false, true);
+    afc->update(pn7, false, true);
+    afc->update(pn8, false, true);
+    afc->update(pn9, false, true);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     frame = afc->create();
     detector.handle_frame(frame);

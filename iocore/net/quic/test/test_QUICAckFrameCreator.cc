@@ -36,7 +36,7 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame == nullptr);
 
   // One packet
-  creator.update(1, true);
+  creator.update(1, false, true);
   frame = creator.create();
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -47,10 +47,10 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame == nullptr);
 
   // Not sequential
-  creator.update(2, true);
-  creator.update(5, true);
-  creator.update(3, true);
-  creator.update(4, true);
+  creator.update(2, false, true);
+  creator.update(5, false, true);
+  creator.update(3, false, true);
+  creator.update(4, false, true);
   frame = creator.create();
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -58,9 +58,9 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block_length() == 3);
 
   // Loss
-  creator.update(6, true);
-  creator.update(7, true);
-  creator.update(10, true);
+  creator.update(6, false, true);
+  creator.update(7, false, true);
+  creator.update(10, false, true);
   frame = creator.create();
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
@@ -78,11 +78,11 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   frame = creator.create();
   CHECK(frame == nullptr);
 
-  creator.update(2, true);
-  creator.update(5, true);
-  creator.update(6, true);
-  creator.update(8, true);
-  creator.update(9, true);
+  creator.update(2, false, true);
+  creator.update(5, false, true);
+  creator.update(6, false, true);
+  creator.update(8, false, true);
+  creator.update(9, false, true);
 
   frame = creator.create();
   CHECK(frame != nullptr);
@@ -94,8 +94,8 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   frame = creator.create();
   CHECK(frame == nullptr);
 
-  creator.update(7, true);
-  creator.update(4, true);
+  creator.update(7, false, true);
+  creator.update(4, false, true);
   frame = creator.create();
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
