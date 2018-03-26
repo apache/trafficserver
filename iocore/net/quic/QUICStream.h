@@ -32,9 +32,9 @@
 #include "QUICStreamState.h"
 #include "QUICFlowController.h"
 #include "QUICIncomingFrameBuffer.h"
+#include "QUICFrameGenerator.h"
 
 class QUICNetVConnection;
-class QUICFrameTransmitter;
 class QUICStreamState;
 class QUICStreamManager;
 
@@ -42,18 +42,14 @@ class QUICStreamManager;
  * @brief QUIC Stream
  * TODO: This is similar to Http2Stream. Need to think some integration.
  */
-class QUICStream : public VConnection
+class QUICStream : public VConnection, public QUICFrameGenerator
 {
 public:
   QUICStream()
-    : VConnection(nullptr),
-      _remote_flow_controller(0, nullptr, 0),
-      _local_flow_controller(0, nullptr, 0),
-      _received_stream_frame_buffer(this)
+    : VConnection(nullptr), _remote_flow_controller(0, 0), _local_flow_controller(0, 0), _received_stream_frame_buffer(this)
   {
   }
-  QUICStream(QUICFrameTransmitter *tx, QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data = 0,
-             uint64_t send_max_stream_data = 0);
+  QUICStream(QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data = 0, uint64_t send_max_stream_data = 0);
   ~QUICStream();
   // void start();
   int state_stream_open(int event, void *data);
@@ -65,6 +61,7 @@ public:
   QUICOffset final_offset();
   void reset_send_offset();
   void reset_recv_offset();
+  QUICStreamFrameUPtr generete_frame(uint16_t flow_control_credit, uint16_t maximum_frame_size);
 
   // Implement VConnection Interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
@@ -89,6 +86,10 @@ public:
 
   LINK(QUICStream, link);
 
+  // QUICFrameGenerator
+  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size) override;
+  bool will_generate_frame() override;
+
 private:
   virtual int64_t _process_read_vio();
   virtual int64_t _process_write_vio();
@@ -99,10 +100,11 @@ private:
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
 
   QUICStreamState _state;
-  bool _fin                       = false;
-  QUICConnectionId _connection_id = 0;
-  QUICStreamId _id                = 0;
-  QUICOffset _send_offset         = 0;
+  bool _fin                         = false;
+  QUICStreamErrorUPtr _reset_reason = nullptr;
+  QUICConnectionId _connection_id   = 0;
+  QUICStreamId _id                  = 0;
+  QUICOffset _send_offset           = 0;
 
   QUICRemoteStreamFlowController _remote_flow_controller;
   QUICLocalStreamFlowController _local_flow_controller;
@@ -117,6 +119,4 @@ private:
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
   QUICIncomingFrameBuffer _received_stream_frame_buffer;
-
-  QUICFrameTransmitter *_tx = nullptr;
 };

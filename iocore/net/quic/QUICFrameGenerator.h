@@ -25,14 +25,10 @@
 
 #include "QUICFrame.h"
 
-class QUICFrameTransmitter
+class QUICFrameGenerator
 {
 public:
-  /*
-   * Enqueue a frame for transmission
-   *
-   * This schedules QUIC_PACKET_WRITE_READY event.
-   */
-  virtual void transmit_frame(QUICFrameUPtr frame = QUICFrameUPtr(nullptr, &QUICFrameDeleter::delete_null_frame)) = 0;
-  virtual uint32_t maximum_stream_frame_data_size() = 0;
+  virtual ~QUICFrameGenerator(){};
+  virtual bool will_generate_frame() = 0;
+  virtual QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size) = 0;
 };

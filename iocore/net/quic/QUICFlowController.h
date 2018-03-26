@@ -26,11 +26,10 @@
 #include "QUICTypes.h"
 #include "QUICFrame.h"
 
-class QUICFrameTransmitter;
-
 class QUICFlowController
 {
 public:
+  uint32_t credit();
   QUICOffset current_offset();
   QUICOffset current_limit();
 
@@ -40,21 +39,22 @@ public:
   virtual int update(QUICOffset offset);
   virtual void forward_limit(QUICOffset limit);
   void set_threshold(uint64_t threshold);
+  QUICFrameUPtr generate_frame();
 
 protected:
-  QUICFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : _limit(initial_limit), _tx(tx) {}
+  QUICFlowController(uint64_t initial_limit) : _limit(initial_limit) {}
   virtual QUICFrameUPtr _create_frame() = 0;
 
-  QUICOffset _offset        = 0;
-  QUICOffset _limit         = 0;
-  QUICOffset _threshold     = 1024;
-  QUICFrameTransmitter *_tx = nullptr;
+  QUICOffset _offset    = 0;
+  QUICOffset _limit     = 0;
+  QUICOffset _threshold = 1024;
+  QUICFrameUPtr _frame  = QUICFrameFactory::create_null_frame();
 };
 
 class QUICRemoteFlowController : public QUICFlowController
 {
 public:
-  QUICRemoteFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICFlowController(initial_limit, tx) {}
+  QUICRemoteFlowController(uint64_t initial_limit) : QUICFlowController(initial_limit) {}
   int update(QUICOffset offset) override;
   void forward_limit(QUICOffset limit) override;
 
@@ -65,33 +65,29 @@ private:
 class QUICLocalFlowController : public QUICFlowController
 {
 public:
-  QUICLocalFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICFlowController(initial_limit, tx) {}
+  QUICLocalFlowController(uint64_t initial_limit) : QUICFlowController(initial_limit) {}
   void forward_limit(QUICOffset limit) override;
 };
 
 class QUICRemoteConnectionFlowController : public QUICRemoteFlowController
 {
 public:
-  QUICRemoteConnectionFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICRemoteFlowController(initial_limit, tx)
-  {
-  }
+  QUICRemoteConnectionFlowController(uint64_t initial_limit) : QUICRemoteFlowController(initial_limit) {}
   QUICFrameUPtr _create_frame() override;
 };
 
 class QUICLocalConnectionFlowController : public QUICLocalFlowController
 {
 public:
-  QUICLocalConnectionFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx) : QUICLocalFlowController(initial_limit, tx)
-  {
-  }
+  QUICLocalConnectionFlowController(uint64_t initial_limit) : QUICLocalFlowController(initial_limit) {}
   QUICFrameUPtr _create_frame() override;
 };
 
 class QUICRemoteStreamFlowController : public QUICRemoteFlowController
 {
 public:
-  QUICRemoteStreamFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx, QUICStreamId stream_id)
-    : QUICRemoteFlowController(initial_limit, tx), _stream_id(stream_id)
+  QUICRemoteStreamFlowController(uint64_t initial_limit, QUICStreamId stream_id)
+    : QUICRemoteFlowController(initial_limit), _stream_id(stream_id)
   {
   }
   QUICFrameUPtr _create_frame() override;
@@ -103,8 +99,8 @@ private:
 class QUICLocalStreamFlowController : public QUICLocalFlowController
 {
 public:
-  QUICLocalStreamFlowController(uint64_t initial_limit, QUICFrameTransmitter *tx, QUICStreamId stream_id)
-    : QUICLocalFlowController(initial_limit, tx), _stream_id(stream_id)
+  QUICLocalStreamFlowController(uint64_t initial_limit, QUICStreamId stream_id)
+    : QUICLocalFlowController(initial_limit), _stream_id(stream_id)
   {
   }
   QUICFrameUPtr _create_frame() override;

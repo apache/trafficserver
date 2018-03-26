@@ -26,7 +26,6 @@
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
 #include "QUICPacketTransmitter.h"
-#include "QUICFrameTransmitter.h"
 #include "QUICFrameHandler.h"
 
 class QUICApplication;
@@ -34,7 +33,7 @@ class QUICStreamManager;
 class UDPPacket;
 class SSLNextProtocolSet;
 
-class QUICConnection : public QUICPacketTransmitter, public QUICFrameTransmitter, public QUICFrameHandler
+class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler
 {
 public:
   virtual QUICConnectionId original_connection_id() = 0;

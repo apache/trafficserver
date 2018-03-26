@@ -53,8 +53,10 @@
 #include "quic/QUICStream.h"
 #include "quic/QUICHandshakeProtocol.h"
 #include "quic/QUICAckFrameCreator.h"
+#include "quic/QUICPacketRetransmitter.h"
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
+#include "quic/QUICAltConnectionManager.h"
 #include "quic/QUICApplicationMap.h"
 
 // These are included here because older OpenQUIC libraries don't have them.
@@ -185,7 +187,6 @@ public:
   const QUICFiveTuple five_tuple() override;
   uint32_t maximum_quic_packet_size() override;
   uint32_t minimum_quic_packet_size() override;
-  uint32_t maximum_stream_frame_data_size() override;
   QUICStreamManager *stream_manager() override;
   uint32_t pmtu() override;
   NetVConnectionContext_t direction() override;
@@ -201,12 +202,13 @@ public:
   virtual void retransmit_packet(const QUICPacket &packet) override;
   virtual Ptr<ProxyMutex> get_packet_transmitter_mutex() override;
 
-  // QUICConnection (QUICFrameTransmitter)
-  virtual void transmit_frame(QUICFrameUPtr frame) override;
-
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
   QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame> frame) override;
+
+  // QUICConnection (QUICFrameGenerator)
+  bool will_generate_frame();
+  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size);
 
   int in_closed_queue = 0;
 
@@ -216,14 +218,6 @@ public:
   SLINK(QUICNetVConnection, closed_alink);
 
 private:
-  class AltConnectionInfo
-  {
-  public:
-    int seq_num;
-    QUICConnectionId id;
-    QUICStatelessResetToken token;
-  };
-
   QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
   std::random_device _rnd;
 
@@ -231,15 +225,13 @@ private:
   QUICConnectionId _quic_connection_id;
   QUICFiveTuple _five_tuple;
 
-  AltConnectionInfo _alt_quic_connection_ids[3];
-  int8_t _alt_quic_connection_id_seq_num = 0;
-
   QUICPacketNumber _largest_received_packet_number = 0;
   UDPConnection *_udp_con                          = nullptr;
   QUICPacketHandler *_packet_handler               = nullptr;
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;
+  QUICPacketRetransmitter _packet_retransmitter;
   QUICApplicationMap *_application_map = nullptr;
 
   uint32_t _pmtu = 1280;
@@ -257,17 +249,15 @@ private:
   QUICRemoteFlowController *_remote_flow_controller = nullptr;
   QUICLocalFlowController *_local_flow_controller   = nullptr;
   QUICConnectionTable *_ctable                      = nullptr;
+  QUICAltConnectionManager *_alt_con_manager        = nullptr;
 
   CountQueue<UDPPacket> _packet_recv_queue;
   CountQueue<QUICPacket> _packet_send_queue;
   std::queue<QUICPacketUPtr> _quic_packet_recv_queue;
-  // `_frame_send_queue` is the queue for any type of frame except STREAM frame.
-  // The flow contorl doesn't blcok frames in this queue.
-  // `_stream_frame_send_queue` is the queue for STREAM frame.
-  std::queue<QUICFrameUPtr> _frame_send_queue;
-  std::queue<QUICFrameUPtr> _stream_frame_send_queue;
 
-  void _schedule_packet_write_ready();
+  QUICConnectionErrorUPtr _connection_error = nullptr;
+
+  void _schedule_packet_write_ready(bool delay = false);
   void _unschedule_packet_write_ready();
   void _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
@@ -282,9 +272,8 @@ private:
   void _close_closed_event(Event *data);
   Event *_closed_event = nullptr;
 
-  uint32_t _transmit_packet(QUICPacketUPtr);
-  void _transmit_frame(QUICFrameUPtr);
-
+  uint32_t _maximum_stream_frame_data_size();
+  uint32_t _transmit_packet(QUICPacketUPtr packet);
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                     QUICFrameUPtr frame);
   void _packetize_frames();
@@ -324,7 +313,6 @@ private:
   void _start_application();
 
   void _handle_idle_timeout();
-  void _update_alt_connection_ids(uint8_t chosen);
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;

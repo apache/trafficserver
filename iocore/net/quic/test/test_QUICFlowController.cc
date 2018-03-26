@@ -30,8 +30,7 @@
 TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
 {
   int ret = 0;
-  MockQUICFrameTransmitter tx;
-  QUICLocalConnectionFlowController fc(1024, &tx);
+  QUICLocalConnectionFlowController fc(1024);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -71,11 +70,12 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   CHECK(ret != 0);
 
   // MAX_STREAM_DATA
-  CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_DATA)] == 0);
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
-  CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_DATA)] == 1);
+  QUICFrameUPtr frame = fc.generate_frame();
+  CHECK(frame);
+  CHECK(frame->type() == QUICFrameType::MAX_DATA);
 
   ret = fc.update(1280);
   CHECK(fc.current_offset() == 1280);
@@ -86,8 +86,7 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
 TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
 {
   int ret = 0;
-  MockQUICFrameTransmitter tx;
-  QUICRemoteConnectionFlowController fc(1024, &tx);
+  QUICRemoteConnectionFlowController fc(1024);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -121,12 +120,13 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   CHECK(ret == 0);
 
   // Exceed limit
-  CHECK(tx.frameCount[static_cast<int>(QUICFrameType::BLOCKED)] == 0);
   ret = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret != 0);
-  CHECK(tx.frameCount[static_cast<int>(QUICFrameType::BLOCKED)] == 1);
+  QUICFrameUPtr frame = fc.generate_frame();
+  CHECK(frame);
+  CHECK(frame->type() == QUICFrameType::BLOCKED);
 
   // MAX_STREAM_DATA
   fc.forward_limit(2048);
@@ -142,8 +142,7 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
 TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
 {
   int ret = 0;
-  MockQUICFrameTransmitter tx;
-  QUICLocalStreamFlowController fc(1024, &tx, 0);
+  QUICLocalStreamFlowController fc(1024, 0);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -183,11 +182,12 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   CHECK(ret != 0);
 
   // MAX_STREAM_DATA
-  CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_STREAM_DATA)] == 0);
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
-  CHECK(tx.frameCount[static_cast<int>(QUICFrameType::MAX_STREAM_DATA)] == 1);
+  QUICFrameUPtr frame = fc.generate_frame();
+  CHECK(frame);
+  CHECK(frame->type() == QUICFrameType::MAX_STREAM_DATA);
 
   ret = fc.update(1280);
   CHECK(fc.current_offset() == 1280);
@@ -198,8 +198,7 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
 TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
 {
   int ret = 0;
-  MockQUICFrameTransmitter tx;
-  QUICRemoteStreamFlowController fc(1024, &tx, 0);
+  QUICRemoteStreamFlowController fc(1024, 0);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -233,7 +232,6 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
   CHECK(ret == 0);
 
   // Exceed limit
-  CHECK(tx.frameCount[static_cast<int>(QUICFrameType::STREAM_BLOCKED)] == 0);
   ret = fc.update(1280);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);

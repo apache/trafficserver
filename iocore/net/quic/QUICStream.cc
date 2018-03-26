@@ -35,15 +35,13 @@
   Debug("quic_flow_ctrl", "[%" PRIx64 "] [%" PRIx64 "] [%s] " fmt, static_cast<uint64_t>(this->_connection_id), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
-QUICStream::QUICStream(QUICFrameTransmitter *tx, QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data,
-                       uint64_t send_max_stream_data)
+QUICStream::QUICStream(QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
   : VConnection(nullptr),
     _connection_id(cid),
     _id(sid),
-    _remote_flow_controller(send_max_stream_data, tx, _id),
-    _local_flow_controller(recv_max_stream_data, tx, _id),
-    _received_stream_frame_buffer(this),
-    _tx(tx)
+    _remote_flow_controller(send_max_stream_data, _id),
+    _local_flow_controller(recv_max_stream_data, _id),
+    _received_stream_frame_buffer(this)
 {
   SET_HANDLER(&QUICStream::state_stream_open);
   mutex = new_ProxyMutex();
@@ -359,6 +357,76 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame)
   return QUICErrorUPtr(new QUICNoError());
 }
 
+bool
+QUICStream::will_generate_frame()
+{
+  return this->_write_vio.get_reader()->read_avail() > 0;
+}
+
+QUICFrameUPtr
+QUICStream::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+
+  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
+
+  if (this->_reset_reason) {
+    return QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
+  }
+
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  frame               = this->_local_flow_controller.generate_frame();
+  if (frame) {
+    return frame;
+  }
+
+  IOBufferReader *reader = this->_write_vio.get_reader();
+  int64_t bytes_avail    = reader->read_avail();
+  if (bytes_avail == 0) {
+    return frame;
+  }
+
+  int64_t data_len = reader->block_read_avail();
+  int64_t len      = 0;
+  bool fin         = false;
+
+  len = std::min(data_len, static_cast<int64_t>(
+                             std::min(static_cast<uint32_t>(maximum_frame_size),
+                                      std::min(this->_remote_flow_controller.credit(), static_cast<uint32_t>(connection_credit)))));
+  if (len >= bytes_avail) {
+    fin = this->_fin;
+  }
+
+  if (len > 0) {
+    bool protection = this->_id != STREAM_ID_FOR_HANDSHAKE;
+    frame           = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id,
+                                                  this->_send_offset, fin, protection);
+    if (!this->_state.is_allowed_to_send(*frame)) {
+      QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
+      return frame;
+    }
+  } else {
+    len = bytes_avail;
+  }
+
+  int ret = this->_remote_flow_controller.update(this->_send_offset + len);
+  // We cannot cancel sending the frame after updating the flow controller
+
+  QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
+                    this->_remote_flow_controller.current_limit());
+  if (frame && ret == 0) {
+    this->_send_offset += len;
+    reader->consume(len);
+    this->_write_vio.ndone += len;
+    this->_signal_write_event();
+    this->_state.update_with_sent_frame(*frame);
+  } else {
+    QUICStreamDebug("Flow Controller blocked sending a STREAM frame");
+    frame = this->_remote_flow_controller.generate_frame();
+  }
+  return frame;
+}
+
 /**
  * Reset send/recv offset of stream. This is only for stream 0.
  */
@@ -467,66 +535,13 @@ QUICStream::_process_write_vio()
     return 0;
   }
 
-  SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
-
-  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
-
-  IOBufferReader *reader = this->_write_vio.get_reader();
-  int64_t bytes_avail    = reader->read_avail();
-  int64_t total_len      = 0;
-  uint32_t max_size      = this->_tx->maximum_stream_frame_data_size();
-
-  while (total_len < bytes_avail) {
-    int64_t data_len = reader->block_read_avail();
-    int64_t len      = 0;
-    bool fin         = false;
-
-    uint64_t credit = this->_remote_flow_controller.current_limit() - this->_remote_flow_controller.current_offset();
-    if (credit != 0 && max_size > credit) {
-      max_size = credit;
-    }
-    if (data_len > max_size) {
-      len = max_size;
-    } else {
-      len = data_len;
-      if (total_len + len >= bytes_avail) {
-        fin = this->_fin;
-      }
-    }
-
-    bool protection           = this->_id != STREAM_ID_FOR_HANDSHAKE;
-    QUICStreamFrameUPtr frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len,
-                                                                      this->_id, this->_send_offset, fin, protection);
-    if (!this->_state.is_allowed_to_send(*frame)) {
-      QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
-      break;
-    }
-
-    int ret = this->_remote_flow_controller.update(this->_send_offset + len);
-    QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
-                      this->_remote_flow_controller.current_limit());
-    if (ret != 0) {
-      QUICStreamDebug("Flow Controller blocked sending a STREAM frame");
-      break;
-    }
-    // We cannot cancel sending the frame after updating the flow controller
-
-    this->_send_offset += len;
-    reader->consume(len);
-    this->_write_vio.ndone += len;
-    total_len += len;
-
-    this->_state.update_with_sent_frame(*frame);
-    this->_tx->transmit_frame(std::move(frame));
-  }
-
-  return total_len;
+  return 0;
 }
 
 void
 QUICStream::reset(QUICStreamErrorUPtr error)
 {
-  this->_tx->transmit_frame(QUICFrameFactory::create_rst_stream_frame(std::move(error)));
+  this->_reset_reason = std::move(error);
 }
 
 void

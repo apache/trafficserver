@@ -67,12 +67,14 @@ libquic_a_SOURCES = \
   QUICHKDF.cc \
   QUICTransportParameters.cc \
   QUICConnectionTable.cc \
+  QUICAltConnectionManager.cc \
   QUICAckFrameCreator.cc \
   QUICConfig.cc \
   QUICDebugNames.cc \
   QUICApplication.cc \
   QUICApplicationMap.cc \
   QUICIncomingFrameBuffer.cc \
+  QUICPacketRetransmitter.cc \
   QUICStatelessRetry.cc
 
 include $(top_srcdir)/build/tidy.mk

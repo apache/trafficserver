@@ -56,6 +56,8 @@
 static constexpr uint32_t MAX_PACKET_OVERHEAD                = 17; // Max long header len(17)
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD          = 15;
 static constexpr uint32_t MINIMUM_INITIAL_CLIENT_PACKET_SIZE = 1200;
+static constexpr ink_hrtime WRITE_READY_INTERVAL             = HRTIME_MSECONDS(20);
+static constexpr int FRAME_PER_EVENT                         = 64;
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
@@ -148,6 +150,8 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   }
 
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  this->_schedule_packet_write_ready();
+
   return EVENT_DONE;
 }
 
@@ -193,11 +197,11 @@ QUICNetVConnection::start()
   this->_packet_factory.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
-  this->_stream_manager         = new QUICStreamManager(this->connection_id(), this, this->_application_map);
+  this->_stream_manager         = new QUICStreamManager(this->connection_id(), this->_application_map);
   this->_congestion_controller  = new QUICCongestionController();
   this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
-  this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0, this);
-  this->_local_flow_controller  = new QUICLocalConnectionFlowController(0, this);
+  this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0);
+  this->_local_flow_controller  = new QUICLocalConnectionFlowController(0);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
@@ -211,9 +215,7 @@ QUICNetVConnection::free(EThread *t)
 
   this->_ctable->erase(this->_original_quic_connection_id, this);
   this->_ctable->erase(this->_quic_connection_id, this);
-  for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
-    this->_ctable->erase(this->_alt_quic_connection_ids[i].id, this);
-  }
+  this->_alt_con_manager->invalidate_alt_connections();
 
   /* TODO: Uncmment these blocks after refactoring read / write process
     this->_udp_con        = nullptr;
@@ -227,6 +229,9 @@ QUICNetVConnection::free(EThread *t)
     delete this->_frame_dispatcher;
     delete this->_stream_manager;
     delete this->_congestion_controller;
+    if (this->_alt_con_manager) {
+      delete this->_alt_con_manager;
+    }
 
     // TODO: clear member variables like `UnixNetVConnection::free(EThread *t)`
     this->mutex.clear();
@@ -332,7 +337,7 @@ QUICNetVConnection::maximum_quic_packet_size()
 }
 
 uint32_t
-QUICNetVConnection::maximum_stream_frame_data_size()
+QUICNetVConnection::_maximum_stream_frame_data_size()
 {
   return this->maximum_quic_packet_size() - MAX_STREAM_FRAME_OVERHEAD - MAX_PACKET_OVERHEAD;
 }
@@ -368,30 +373,7 @@ QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
 void
 QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 {
-  QUICConDebug("Retransmit packet #%" PRIu64 " type %s", packet.packet_number(), QUICDebugNames::packet_type(packet.type()));
-  ink_assert(packet.type() != QUICPacketType::VERSION_NEGOTIATION && packet.type() != QUICPacketType::UNINITIALIZED);
-
-  // Get payload from a header because packet.payload() is encrypted
-  uint16_t size          = packet.header().payload_size();
-  const uint8_t *payload = packet.header().payload();
-
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-  uint16_t cursor     = 0;
-
-  while (cursor < size) {
-    frame = QUICFrameFactory::create(payload + cursor, size - cursor);
-    cursor += frame->size();
-
-    switch (frame->type()) {
-    case QUICFrameType::PADDING:
-    case QUICFrameType::ACK:
-      break;
-    default:
-      frame = QUICFrameFactory::create_retransmission_frame(std::move(frame), packet);
-      this->transmit_frame(std::move(frame));
-      break;
-    }
-  }
+  this->_packet_retransmitter.retransmit_packet(packet);
 }
 
 Ptr<ProxyMutex>
@@ -404,34 +386,6 @@ void
 QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
   this->_packet_recv_queue.enqueue(packet);
-}
-
-void
-QUICNetVConnection::_transmit_frame(QUICFrameUPtr frame)
-{
-  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
-
-  if (frame) {
-    QUICConVDebug("type=%s size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
-    if (frame->type() == QUICFrameType::STREAM) {
-      QUICStreamFrame &stream_frame = static_cast<QUICStreamFrame &>(*frame);
-      // XXX: Stream 0 is exempt from the connection-level flow control window.
-      if (stream_frame.stream_id() == STREAM_ID_FOR_HANDSHAKE) {
-        this->_frame_send_queue.push(std::move(frame));
-      } else {
-        this->_stream_frame_send_queue.push(std::move(frame));
-      }
-    } else {
-      this->_frame_send_queue.push(std::move(frame));
-    }
-  }
-}
-
-void
-QUICNetVConnection::transmit_frame(QUICFrameUPtr frame)
-{
-  this->_transmit_frame(std::move(frame));
-  this->_schedule_packet_write_ready();
 }
 
 void
@@ -466,9 +420,7 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
 
     break;
   case QUICFrameType::PING:
-    if (std::static_pointer_cast<const QUICPingFrame>(frame)->data_length() > 0) {
-      this->transmit_frame(QUICFrameFactory::create_pong_frame(*std::static_pointer_cast<const QUICPingFrame>(frame)));
-    }
+    // Nothing to do
     break;
   case QUICFrameType::BLOCKED:
     // BLOCKED frame is for debugging. Nothing to do here.
@@ -577,6 +529,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
       error = this->_state_common_send_packet();
     }
+    // Reschedule WRITE_READY
+    this->_schedule_packet_write_ready(true);
 
     break;
   }
@@ -608,6 +562,8 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_close_packet_write_ready(data);
     error = this->_state_common_send_packet();
+    // Reschedule WRITE_READY
+    this->_schedule_packet_write_ready(true);
     break;
   }
   case EVENT_IMMEDIATE: {
@@ -640,6 +596,8 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
     this->_state_closing_send_packet();
+    // Reschedule WRITE_READY
+    this->_schedule_packet_write_ready(true);
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
@@ -901,22 +859,15 @@ QUICNetVConnection::_state_common_receive_packet()
     case QUICPacketType::PROTECTED:
       // Check connection migration
       if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
-        for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
-          AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
-          if (info.id == p->connection_id()) {
-            // Migrate connection
-            // TODO Address Validation
-            // TODO Adjust expected packet number with a gap computed based on info.seq_num
-            // TODO Unregister the old connection id (Should we wait for a while?)
-            this->_quic_connection_id = info.id;
-            this->_reset_token        = info.token;
-            this->_update_alt_connection_ids(i);
-            break;
-          }
+        if (this->_alt_con_manager->migrate_to(p->connection_id(), this->_reset_token)) {
+          // Migrate connection
+          // TODO Address Validation
+          // TODO Adjust expected packet number with a gap computed based on info.seq_num
+          this->_quic_connection_id = p->connection_id();
+        } else {
+          // TODO Send some error?
         }
-        ink_assert(p->connection_id() == this->_quic_connection_id);
       }
-
       error = this->_state_connection_established_process_packet(std::move(p));
       break;
     case QUICPacketType::INITIAL:
@@ -943,7 +894,7 @@ QUICNetVConnection::_state_connection_closing_and_draining_receive_packet()
   QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
   if (result == QUICPacketCreationResult::SUCCESS) {
     this->_recv_and_ack(std::move(packet));
-    this->_schedule_packet_write_ready();
+    this->_schedule_packet_write_ready(true);
   }
 
   if (this->_packet_recv_queue.size > 0) {
@@ -969,7 +920,9 @@ QUICNetVConnection::_state_common_send_packet()
   }
   QUIC_INCREMENT_DYN_STAT_EX(QUICStats::total_packets_sent_stat, packet_count);
 
-  net_activity(this, this_ethread());
+  if (packet_count) {
+    net_activity(this, this_ethread());
+  }
 
   return QUICErrorUPtr(new QUICNoError());
 }
@@ -988,9 +941,9 @@ QUICNetVConnection::_state_handshake_send_retry_packet()
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
-  ink_assert(this->_frame_send_queue.size() == 1);
-  frame = std::move(this->_frame_send_queue.front());
-  this->_frame_send_queue.pop();
+  frame = this->_stream_manager->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+  ink_assert(frame);
+  ink_assert(frame->type() == QUICFrameType::STREAM);
   this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
   if (len == 0) {
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
@@ -1025,6 +978,8 @@ void
 QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                                  QUICFrameUPtr frame)
 {
+  QUICConVDebug("type=%s size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+
   uint32_t max_size = this->maximum_quic_packet_size();
 
   QUICPacketType previous_packet_type = current_packet_type;
@@ -1074,7 +1029,8 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
 void
 QUICNetVConnection::_packetize_frames()
 {
-  size_t len = 0;
+  int frame_count = 0;
+  size_t len      = 0;
   ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
 
@@ -1084,45 +1040,93 @@ QUICNetVConnection::_packetize_frames()
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
-  QUICFrameUPtr ack_frame = QUICFrameFactory::create_null_ack_frame();
-  if (this->_frame_send_queue.size() || this->_stream_frame_send_queue.size()) {
-    ack_frame = this->_ack_frame_creator.create();
-  } else {
-    ack_frame = this->_ack_frame_creator.create_if_needed();
-  }
-  if (ack_frame != nullptr) {
-    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(ack_frame));
+  bool will_be_ack_only = true;
+  if (this->_connection_error || this->_packet_retransmitter.will_generate_frame() ||
+      this->_stream_manager->will_generate_frame()) {
+    will_be_ack_only = false;
   }
 
-  while (this->_frame_send_queue.size() > 0) {
-    frame = std::move(this->_frame_send_queue.front());
-    this->_frame_send_queue.pop();
+  // ACK
+  if (will_be_ack_only) {
+    frame = this->_ack_frame_creator.create_if_needed();
+  } else {
+    frame = this->_ack_frame_creator.create();
+  }
+  if (frame != nullptr) {
+    ++frame_count;
+    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+  }
+
+  // CONNECTION_CLOSE, APPLICATION_CLOSE
+  if (this->_connection_error) {
+    QUICFrameUPtr frame = QUICFrameFactory::create_null_ack_frame();
+    if (this->_connection_error->cls == QUICErrorClass::APPLICATION) {
+      frame = QUICFrameFactory::create_application_close_frame(std::move(this->_connection_error));
+    } else {
+      frame = QUICFrameFactory::create_connection_close_frame(std::move(this->_connection_error));
+    }
+    ++frame_count;
+    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+  }
+
+  // NEW_CONNECTION_ID
+  if (this->_alt_con_manager) {
+    frame =
+      this->_alt_con_manager->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+    while (frame) {
+      ++frame_count;
+      this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+      if (this->_the_final_packet) {
+        return;
+      }
+      if (frame_count >= FRAME_PER_EVENT) {
+        break;
+      }
+      frame =
+        this->_alt_con_manager->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+    }
+  }
+
+  // Lost frames
+  frame =
+    this->_packet_retransmitter.generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+  while (frame) {
+    ++frame_count;
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
     if (this->_the_final_packet) {
       return;
     }
-  }
-
-  while (this->_stream_frame_send_queue.size() > 0) {
-    const QUICFrameUPtr &f = this->_stream_frame_send_queue.front();
-    uint32_t frame_size    = f->size();
-
-    int ret = this->_remote_flow_controller->update((this->_stream_manager->total_offset_sent() + frame_size));
-    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
-          static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
-          this->_remote_flow_controller->current_limit());
-
-    if (ret != 0) {
-      QUICConDebug("Flow Controller blocked sending a STREAM frame");
+    if (frame_count >= FRAME_PER_EVENT) {
       break;
     }
-
-    frame = std::move(this->_stream_frame_send_queue.front());
-    this->_stream_frame_send_queue.pop();
-    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
-    this->_stream_manager->add_total_offset_sent(frame_size);
+    frame =
+      this->_packet_retransmitter.generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
   }
 
+  // STREAM, MAX_STREAM_DATA, STREAM_BLOCKED
+  frame = this->_stream_manager->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+  while (frame) {
+    ++frame_count;
+    if (frame->type() == QUICFrameType::STREAM) {
+      uint16_t frame_size = frame->size();
+      int ret             = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent() + frame_size);
+      Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
+            static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
+            this->_remote_flow_controller->current_limit());
+      ink_assert(ret == 0);
+      this->_stream_manager->add_total_offset_sent(frame_size);
+    }
+    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+    if (this->_the_final_packet) {
+      return;
+    }
+    if (frame_count >= FRAME_PER_EVENT) {
+      break;
+    }
+    frame = this->_stream_manager->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+  }
+
+  // Schedule a packet
   if (len != 0) {
     // Pad with PADDING frames
     uint32_t min_size = this->minimum_quic_packet_size();
@@ -1168,7 +1172,6 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
 
   bool protection = packet->type() == QUICPacketType::PROTECTED || packet->type() == QUICPacketType::ZERO_RTT_PROTECTED;
   this->_ack_frame_creator.update(packet_num, protection, should_send_ack);
-  static_cast<QUICConnection *>(this)->transmit_frame();
 
   return error;
 }
@@ -1337,12 +1340,16 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 }
 
 void
-QUICNetVConnection::_schedule_packet_write_ready()
+QUICNetVConnection::_schedule_packet_write_ready(bool delay)
 {
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (!this->_packet_write_ready) {
-    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
-    this->_packet_write_ready = this_ethread()->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+    QUICConVDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
+    if (delay) {
+      this->_packet_write_ready = this_ethread()->schedule_in(this, WRITE_READY_INTERVAL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+    } else {
+      this->_packet_write_ready = this_ethread()->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+    }
   }
 }
 
@@ -1475,7 +1482,7 @@ QUICNetVConnection::_switch_to_established_state()
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
     if (netvc_context == NET_VCONNECTION_IN) {
-      this->_update_alt_connection_ids(countof(this->_alt_quic_connection_ids) - 1);
+      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable);
     }
   } else {
     // Illegal state change
@@ -1494,11 +1501,7 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   } else {
     QUICConDebug("Reason was not provided");
   }
-  if (error->cls == QUICErrorClass::APPLICATION) {
-    this->transmit_frame(QUICFrameFactory::create_application_close_frame(std::move(error)));
-  } else {
-    this->transmit_frame(QUICFrameFactory::create_connection_close_frame(std::move(error)));
-  }
+  this->_connection_error = std::move(error);
 
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
@@ -1562,29 +1565,4 @@ QUICNetVConnection::_handle_idle_timeout()
   this->_switch_to_draining_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
 
   // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
-}
-
-void
-QUICNetVConnection::_update_alt_connection_ids(uint8_t chosen)
-{
-  QUICConfig::scoped_config params;
-  int n       = sizeof(this->_alt_quic_connection_ids);
-  int current = this->_alt_quic_connection_id_seq_num % n;
-  int delta   = chosen - current;
-  int count   = (n + delta) % n + 1;
-
-  for (int i = 0; i < count; ++i) {
-    int index = (current + i) % n;
-    QUICConnectionId conn_id;
-    QUICStatelessResetToken token;
-
-    conn_id.randomize();
-    token.generate(conn_id, params->server_id());
-    this->_alt_quic_connection_ids[index] = {this->_alt_quic_connection_id_seq_num + i, conn_id, token};
-    this->transmit_frame(QUICFrameFactory::create_new_connection_id_frame(this->_alt_quic_connection_ids[index].seq_num,
-                                                                          this->_alt_quic_connection_ids[index].id,
-                                                                          this->_alt_quic_connection_ids[index].token));
-    this->_ctable->insert(conn_id, this);
-  }
-  this->_alt_quic_connection_id_seq_num += count;
 }

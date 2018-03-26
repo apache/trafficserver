@@ -28,17 +28,16 @@
 #include "QUICApplicationMap.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrame.h"
-#include "QUICFrameTransmitter.h"
 
 extern ClassAllocator<QUICStream> quicStreamAllocator;
 
 class QUICTransportParameters;
 
-class QUICStreamManager : public QUICFrameHandler
+class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   QUICStreamManager(){};
-  QUICStreamManager(QUICConnectionId cid, QUICFrameTransmitter *tx, QUICApplicationMap *app_map);
+  QUICStreamManager(QUICConnectionId cid, QUICApplicationMap *app_map);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
@@ -60,6 +59,10 @@ public:
   virtual std::vector<QUICFrameType> interests() override;
   virtual QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame>) override;
 
+  // QUICFrameGenerator
+  bool will_generate_frame() override;
+  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size) override;
+
 private:
   QUICStream *_find_stream(QUICStreamId id);
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
@@ -70,7 +73,6 @@ private:
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
 
   QUICConnectionId _connection_id                           = 0;
-  QUICFrameTransmitter *_tx                                 = nullptr;
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;

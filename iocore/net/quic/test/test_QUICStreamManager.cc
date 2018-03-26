@@ -31,11 +31,10 @@
 
 TEST_CASE("QUICStreamManager_NewStream", "[quic]")
 {
-  MockQUICFrameTransmitter tx;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(0, &tx, &app_map);
+  QUICStreamManager sm(0, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
   std::shared_ptr<QUICTransportParameters> remote_tp =
@@ -78,11 +77,10 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
 
 TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
 {
-  MockQUICFrameTransmitter tx;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(0, &tx, &app_map);
+  QUICStreamManager sm(0, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
   std::shared_ptr<QUICTransportParameters> remote_tp =
@@ -99,11 +97,10 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
 
 TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
 {
-  MockQUICFrameTransmitter tx;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(0, &tx, &app_map);
+  QUICStreamManager sm(0, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
   local_tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, UINT32_C(4096));
@@ -133,11 +130,10 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
 
 TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
 {
-  MockQUICFrameTransmitter tx;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(0, &tx, &app_map);
+  QUICStreamManager sm(0, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
   local_tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, UINT32_C(4096));

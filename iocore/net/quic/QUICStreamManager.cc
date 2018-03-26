@@ -32,8 +32,7 @@ static constexpr char tag[] = "quic_stream_manager";
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
 ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
 
-QUICStreamManager::QUICStreamManager(QUICConnectionId cid, QUICFrameTransmitter *tx, QUICApplicationMap *app_map)
-  : _connection_id(cid), _tx(tx), _app_map(app_map)
+QUICStreamManager::QUICStreamManager(QUICConnectionId cid, QUICApplicationMap *app_map) : _connection_id(cid), _app_map(app_map)
 {
 }
 
@@ -247,7 +246,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC(quicStreamAllocator, this_ethread());
-    new (stream) QUICStream(this->_tx, this->_connection_id, stream_id, local_max_stream_data, remote_max_stream_data);
+    new (stream) QUICStream(this->_connection_id, stream_id, local_max_stream_data, remote_max_stream_data);
 
     this->stream_list.push(stream);
   }
@@ -312,4 +311,24 @@ QUICStreamManager::reset_recv_offset()
   QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
 
   stream->reset_recv_offset();
+}
+
+bool
+QUICStreamManager::will_generate_frame()
+{
+  return this->stream_list.head;
+}
+
+QUICFrameUPtr
+QUICStreamManager::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
+{
+  // FIXME We should pick a stream based on priority
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+    frame = s->generate_frame(connection_credit, maximum_frame_size);
+    if (frame) {
+      break;
+    }
+  }
+  return frame;
 }

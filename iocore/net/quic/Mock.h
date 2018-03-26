@@ -182,11 +182,6 @@ public:
     return this->_mutex;
   }
 
-  void
-  transmit_frame(QUICFrameUPtr frame) override
-  {
-  }
-
   std::vector<QUICFrameType>
   interests() override
   {
@@ -212,12 +207,6 @@ public:
   maximum_quic_packet_size() override
   {
     return 1200;
-  }
-
-  uint32_t
-  maximum_stream_frame_data_size() override
-  {
-    return 1160;
   }
 
   uint32_t
@@ -320,24 +309,6 @@ public:
 
   std::set<QUICPacketNumber> transmitted;
   std::set<QUICPacketNumber> retransmitted;
-};
-
-class MockQUICFrameTransmitter : public QUICFrameTransmitter
-{
-public:
-  void
-  transmit_frame(QUICFrameUPtr frame) override
-  {
-    ++frameCount[static_cast<int>(frame->type())];
-  }
-
-  uint32_t
-  maximum_stream_frame_data_size() override
-  {
-    return 1200;
-  }
-
-  int frameCount[256] = {0};
 };
 
 class MockQUICCongestionController : public QUICCongestionController
