@@ -169,6 +169,7 @@ test_QUICFrameDispatcher_SOURCES = \
   test_QUICFrameDispatcher.cc \
   ../QUICGlobals.cc \
   ../QUICConfig.cc \
+  stub_QUICConfig.cc \
   ../QUICVersionNegotiator.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICTransportParameters.cc \
@@ -198,6 +199,7 @@ test_QUICFrameDispatcher_SOURCES = \
 
 test_QUICFrameDispatcher_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
@@ -205,7 +207,6 @@ test_QUICFrameDispatcher_LDADD = \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ \
   @HWLOC_LIBS@
-
 
 #
 # test_QUICStreamState
@@ -249,7 +250,8 @@ test_QUICStream_SOURCES = \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
   ../QUICCongestionController.cc \
-  ../../SSLNextProtocolSet.cc
+  ../../SSLNextProtocolSet.cc \
+  stub_QUICConfig.cc
 
 test_QUICStream_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -280,7 +282,9 @@ test_QUICStreamManager_SOURCES = \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
   ../QUICCongestionController.cc \
-  ../../SSLNextProtocolSet.cc
+  ../../SSLNextProtocolSet.cc \
+  ../QUICConfig.cc \
+  stub_QUICConfig.cc
 
 test_QUICStreamManager_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -307,6 +311,7 @@ test_QUICTransportParameters_SOURCES = \
   test_QUICTransportParameters.cc \
   ../QUICGlobals.cc \
   ../QUICConfig.cc \
+  stub_QUICConfig.cc \
   ../QUICApplication.cc \
   ../QUICApplicationMap.cc \
   ../QUICHandshake.cc \
@@ -332,6 +337,7 @@ test_QUICTransportParameters_SOURCES = \
 
 test_QUICTransportParameters_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
@@ -345,8 +351,7 @@ test_QUICKeyGenerator_CPPFLAGS = \
   $(AM_CPPFLAGS)
 
 test_QUICKeyGenerator_LDFLAGS = \
-  @AM_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
+  @AM_LDFLAGS@
 
 test_QUICKeyGenerator_LDADD = \
   @OPENSSL_LIBS@ \
@@ -442,7 +447,9 @@ test_QUICLossDetector_SOURCES = \
   ../QUICHandshakeProtocol.cc \
   ../QUICTLS.cc \
   $(QUICTLS_impl) \
-  ../QUICFrame.cc
+  ../QUICFrame.cc \
+  ../../SSLNextProtocolSet.cc \
+  stub_QUICConfig.cc
 
 #
 # test_QUICTypeUtil
@@ -455,10 +462,12 @@ test_QUICTypeUtil_LDFLAGS = \
 
 test_QUICTypeUtil_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/lib/ts/libtsutil.la
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @OPENSSL_LIBS@
 
 test_QUICTypeUtil_SOURCES = \
   main.cc \
@@ -477,7 +486,9 @@ test_QUICTypeUtil_SOURCES = \
   ../QUICTLS.cc \
   $(QUICTLS_impl) \
   ../QUICIntUtil.cc \
-  ../QUICTypes.cc
+  ../QUICTypes.cc \
+  ../../SSLNextProtocolSet.cc \
+  stub_QUICConfig.cc
 
 #
 # test_QUICAckFrameCreator
@@ -490,6 +501,7 @@ test_QUICAckFrameCreator_LDFLAGS = \
 
 test_QUICAckFrameCreator_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
@@ -515,7 +527,8 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICHandshakeProtocol.cc \
   ../QUICTLS.cc \
   $(QUICTLS_impl) \
-  ../../SSLNextProtocolSet.cc
+  ../../SSLNextProtocolSet.cc \
+  stub_QUICConfig.cc
 
 #
 # test_QUICTypeUtil
@@ -529,6 +542,7 @@ test_QUICVersionNegotiator_LDFLAGS = \
 test_QUICVersionNegotiator_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -562,6 +576,7 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICVersionNegotiator.cc \
   ../QUICTransportParameters.cc \
   ../QUICConfig.cc \
+  stub_QUICConfig.cc \
   ../../SSLNextProtocolSet.cc
 
 #
@@ -576,6 +591,7 @@ test_QUICFlowController_LDFLAGS = \
 test_QUICFlowController_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -620,7 +636,8 @@ test_QUICIncomingFrameBuffer_SOURCES = \
   ../QUICCongestionController.cc \
   ../../SSLNextProtocolSet.cc \
   ../QUICIncomingFrameBuffer.cc \
-  test_QUICIncomingFrameBuffer.cc
+  test_QUICIncomingFrameBuffer.cc \
+  stub_QUICConfig.cc
 
 test_QUICIncomingFrameBuffer_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -646,7 +663,8 @@ test_QUICHandshake_SOURCES = \
   event_processor_main.cc \
   test_QUICHandshake.cc \
   ../QUICHandshake.cc \
-  ../../SSLNextProtocolSet.cc
+  ../../SSLNextProtocolSet.cc \
+  stub_QUICConfig.cc
 
 test_QUICHandshake_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \

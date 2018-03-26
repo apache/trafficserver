@@ -27,7 +27,6 @@
 #include "P_VConnection.h"
 #include "QUICStreamManager.h"
 #include "QUICDebugNames.h"
-#include "QUICConfig.h"
 
 #define QUICStreamDebug(fmt, ...)                                                                                       \
   Debug("quic_stream", "[%" PRIx64 "] [%" PRIx64 "] [%s] " fmt, static_cast<uint64_t>(this->_connection_id), this->_id, \
