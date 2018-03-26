@@ -46,6 +46,8 @@ public:
   uint32_t server_id() const;
   static int connection_table_size();
   uint32_t stateless_retry() const;
+  const char *server_supported_groups() const;
+  const char *client_supported_groups() const;
 
   SSL_CTX *server_ssl_ctx() const;
   SSL_CTX *client_ssl_ctx() const;
@@ -64,6 +66,9 @@ private:
   uint32_t _initial_max_stream_id_bidi_out = 101;
   uint32_t _initial_max_stream_id_uni_in   = 102;
   uint32_t _initial_max_stream_id_uni_out  = 103;
+
+  char *_server_supported_groups;
+  char *_client_supported_groups;
 
   // TODO: integrate with SSLCertLookup or SNIConfigParams
   SSL_CTX *_server_ssl_ctx = nullptr;

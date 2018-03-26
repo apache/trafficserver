@@ -66,8 +66,10 @@ QUICNetProcessor::start(int, size_t stacksize)
   // QUICInitializeLibrary();
   QUICConfig::startup();
 
-  // Initialize QUIC statistics. This depends on an initial set of certificates being loaded above.
-  // QUICInitializeStatistics();
+#ifdef TLS1_3_VERSION_DRAFT_TXT
+  // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
+  Debug("quic_ps", "%s", TLS1_3_VERSION_DRAFT_TXT);
+#endif
 
   return 0;
 }

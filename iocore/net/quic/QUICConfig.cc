@@ -38,11 +38,6 @@ int QUICConfigParams::_connection_table_size = 65521;
 static SSL_CTX *
 quic_new_ssl_ctx()
 {
-#ifdef TLS1_3_VERSION_DRAFT_TXT
-  // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
-  Debug("quic_ps", "%s", TLS1_3_VERSION_DRAFT_TXT);
-#endif
-
   SSL_CTX *ssl_ctx = SSL_CTX_new(TLS_method());
 
   SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_3_VERSION);
@@ -61,8 +56,10 @@ quic_new_ssl_ctx()
 }
 
 static SSL_CTX *
-quic_init_server_ssl_ctx(SSL_CTX *ssl_ctx)
+quic_init_server_ssl_ctx(const QUICConfigParams *params)
 {
+  SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
+
   SSLConfig::scoped_config ssl_params;
   SSLParseCertificateConfiguration(ssl_params, ssl_ctx);
 
@@ -77,13 +74,27 @@ quic_init_server_ssl_ctx(SSL_CTX *ssl_ctx)
 
   SSL_CTX_set_alpn_select_cb(ssl_ctx, QUIC::ssl_select_next_protocol, nullptr);
 
+  if (params->server_supported_groups() != nullptr) {
+    if (SSL_CTX_set1_groups_list(ssl_ctx, params->server_supported_groups()) != 1) {
+      Error("SSL_CTX_set1_groups_list failed");
+    }
+  }
+
   return ssl_ctx;
 }
 
 static SSL_CTX *
-quic_init_client_ssl_ctx(SSL_CTX *ssl_ctx)
+quic_init_client_ssl_ctx(const QUICConfigParams *params)
 {
+  SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
+
   // SSL_CTX_set_alpn_protos()
+
+  if (params->client_supported_groups() != nullptr) {
+    if (SSL_CTX_set1_groups_list(ssl_ctx, params->client_supported_groups()) != 1) {
+      Error("SSL_CTX_set1_groups_list failed");
+    }
+  }
 
   return ssl_ctx;
 }
@@ -93,6 +104,9 @@ quic_init_client_ssl_ctx(SSL_CTX *ssl_ctx)
 //
 QUICConfigParams::~QUICConfigParams()
 {
+  this->_server_supported_groups = (char *)ats_free_null(this->_server_supported_groups);
+  this->_client_supported_groups = (char *)ats_free_null(this->_client_supported_groups);
+
   SSL_CTX_free(this->_server_ssl_ctx);
   SSL_CTX_free(this->_client_ssl_ctx);
 };
@@ -107,11 +121,13 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
   REC_EstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.stateless_retry");
+  REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
+  REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
 
   QUICStatelessRetry::init();
 
-  this->_server_ssl_ctx = quic_init_server_ssl_ctx(quic_new_ssl_ctx());
-  this->_client_ssl_ctx = quic_init_client_ssl_ctx(quic_new_ssl_ctx());
+  this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
+  this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
 }
 
 uint32_t
@@ -178,6 +194,18 @@ uint32_t
 QUICConfigParams::initial_max_stream_id_uni_out() const
 {
   return this->_initial_max_stream_id_uni_out;
+}
+
+const char *
+QUICConfigParams::server_supported_groups() const
+{
+  return this->_server_supported_groups;
+}
+
+const char *
+QUICConfigParams::client_supported_groups() const
+{
+  return this->_client_supported_groups;
 }
 
 SSL_CTX *
