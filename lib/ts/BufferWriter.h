@@ -493,6 +493,9 @@ namespace bw_fmt
   /// Generic integral conversion.
   BufferWriter &Format_Integer(BufferWriter &w, BWFSpec const &spec, uintmax_t n, bool negative_p);
 
+  /// Generic floating point conversion.
+  BufferWriter &Format_Floating(BufferWriter &w, BWFSpec const &spec, double n, bool negative_p);
+
 } // bw_fmt
 
 /** Compiled BufferWriter format
@@ -674,6 +677,18 @@ inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, TextView const &tv)
 {
   return bwformat(w, spec, static_cast<string_view>(tv));
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, double const &d)
+{
+  return d < 0 ? bw_fmt::Format_Floating(w, spec, -d, true) : bw_fmt::Format_Floating(w, spec, d, false);
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, float const &f)
+{
+  return f < 0 ? bw_fmt::Format_Floating(w, spec, -f, true) : bw_fmt::Format_Floating(w, spec, f, false);
 }
 
 /* Integer types.
