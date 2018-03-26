@@ -347,14 +347,6 @@ start_HttpProxyServer()
     hook->invoke(TS_EVENT_LIFECYCLE_PORTS_READY, nullptr);
     hook = hook->next();
   }
-
-  // Start the back door, since it's just a special HttpProxyServer,
-  // the requirements to start it has been met if we got here.
-  int back_door_port = NO_FD;
-  REC_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
-  if (back_door_port != NO_FD) {
-    start_HttpProxyServerBackDoor(back_door_port, !!num_accept_threads); // One accept thread is enough
-  }
 }
 
 void
