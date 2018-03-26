@@ -2503,6 +2503,7 @@ main(int argc, char *argv[])
 
   if (result.size()) {
     std::cerr << result;
+    exit(1);
   }
   if (inp)
     free(inp);
