@@ -35,12 +35,18 @@
 #include <ostream>
 #include <cstring>
 
-#if __cplusplus < 201402
+#if __cplusplus < 201402L
 #define CONSTEXPR14 inline
 #else
 #define CONSTEXPR14 constexpr
 #endif
 
+#if __cplusplus >= 201703L
+namespace ts
+{
+using string_view = std::string_view;
+}
+#else
 namespace ts
 {
 // forward declare class for iterator friend relationship
@@ -1229,6 +1235,7 @@ template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _
   }
 };
 }
+#endif
 
 /// Literal suffix for string_view.
 /// @note This enables @c string_view literals from C++ string literals in @c constexpr contexts, which

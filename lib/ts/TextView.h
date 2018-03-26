@@ -150,7 +150,7 @@ public:
 
   /// Construct from @c std::string, referencing the entire string contents.
   /// @internal Not all compilers make @c std::string methods called @c constexpr
-  constexpr TextView(std::string const &str);
+  TextView(std::string const &str);
 
   /// Pointer to byte past the last byte in the view.
   const char *data_end() const;
@@ -515,7 +515,7 @@ inline constexpr TextView::TextView(const char *start, const char *end) : super_
 inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0)
 {
 }
-inline constexpr TextView::TextView(std::string const &str) : super_type(str)
+inline TextView::TextView(std::string const &str) : super_type(str)
 {
 }
 inline constexpr TextView::TextView(super_type const &that) : super_type(that)
