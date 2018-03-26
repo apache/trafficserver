@@ -89,6 +89,14 @@ public:
     this->write_vio.ndone += num_bytes;
   }
 
+  void
+  finalize_chunked_sent_bytes()
+  {
+    if (chunked) {
+      write_vio.nbytes = write_vio.ndone;
+    }
+  }
+
   Http2StreamId
   get_id() const
   {
