@@ -16,20 +16,59 @@
  * limitations under the License.
  */
 
-#include "ts/ts.h"
+#include <sstream>
+#include <vector>
 
-// Placeholder test.
+#include <ts/ts.h>
+
+#include <ts/TextView.h>
+
+// TSReleaseAssert() doesn't seem to produce any logging output for a debug build, so do both kinds of assert.
 //
-namespace Test1
-{
-void
-x()
-{
-  TSReleaseAssert(true);
-}
+#define ASS(EXPR)          \
+  {                        \
+    TSAssert(EXPR);        \
+    TSReleaseAssert(EXPR); \
+  }
 
-} // end namespace Test1;
+std::vector<void (*)()> testList;
 
+struct ATest {
+  ATest(void (*testFuncPtr)()) { testList.push_back(testFuncPtr); }
+};
+
+// Put a test function, whose name is the actual parameter for TEST_FUNC, into testList, the list of test functions.
+//
+#define TEST(TEST_FUNC) ATest t(TEST_FUNC);
+
+#define TNS_(LN) TestNamespaceName##LN
+
+// Generate a unique name for a separate namespace for each test.
+//
+#define TNS namespace TNS_(__LINE__)
+
+// TextView test. This is not testing the actual TextView code, just that it works to call functions in TextView.cc in the core
+// from a plugin.
+//
+TNS
+{
+  void f()
+  {
+    ts::TextView tv("abcdefg");
+
+    std::ostringstream oss;
+
+    oss << tv;
+
+    ASS(ts::memcmp(ts::TextView(oss.str()), tv) == 0)
+  }
+
+  TEST(f)
+
+} // end TNS namespace
+
+// Run all the tests.
+//
 void
 TSPluginInit(int, const char **)
 {
@@ -39,7 +78,9 @@ TSPluginInit(int, const char **)
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
-  TSReleaseAssert(TSPluginRegister(&info) == TS_SUCCESS);
+  ASS(TSPluginRegister(&info) == TS_SUCCESS)
 
-  Test1::x();
+  for (auto fp : testList) {
+    fp();
+  }
 }
