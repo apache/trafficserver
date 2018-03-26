@@ -711,6 +711,21 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
         result = QUICPacketCreationResult::IGNORED;
       }
       break;
+    case QUICPacketType::RETRY:
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT)) {
+        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                        QUICKeyPhase::CLEARTEXT)) {
+          result = QUICPacketCreationResult::SUCCESS;
+        } else {
+          // ignore failure - probably clear text key is already updated
+          // FIXME: make sure packet number is smaller than largest sent packet number
+          result = QUICPacketCreationResult::IGNORED;
+        }
+      } else {
+        result = QUICPacketCreationResult::IGNORED;
+      }
+      break;
     case QUICPacketType::HANDSHAKE:
       if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),

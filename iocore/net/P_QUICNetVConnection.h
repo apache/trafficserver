@@ -108,6 +108,7 @@ class SSLNextProtocolSet;
  *  | READ:
  *  |   _state_handshake_process_packet()
  *  |   _state_handshake_process_initial_client_packet()
+ *  |   _state_handshake_process_retry_packet()
  *  |   _state_handshake_process_client_cleartext_packet()
  *  |   _state_handshake_process_zero_rtt_protected_packet()
  *  | WRITE:
@@ -223,6 +224,7 @@ private:
     QUICStatelessResetToken token;
   };
 
+  QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
   std::random_device _rnd;
 
   QUICConnectionId _original_quic_connection_id;
@@ -293,6 +295,7 @@ private:
 
   QUICErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_connection_established_process_packet(QUICPacketUPtr packet);

@@ -79,6 +79,7 @@ QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, 
     this->_ctable->insert(this->_quic_connection_id, this);
     this->_ctable->insert(this->_original_quic_connection_id, this);
   }
+
   QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(this->_original_quic_connection_id),
                static_cast<uint64_t>(this->_quic_connection_id));
 }
@@ -566,6 +567,16 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         this->_switch_to_close_state();
       }
     } else {
+      if (this->get_context() == NET_VCONNECTION_OUT && (this->_last_received_packet_type == QUICPacketType::UNINITIALIZED ||
+                                                         this->_last_received_packet_type == QUICPacketType::RETRY)) {
+        QUICConnectionId tmp = this->_original_quic_connection_id;
+        this->_original_quic_connection_id.randomize();
+        QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(tmp),
+                     static_cast<uint64_t>(this->_original_quic_connection_id));
+
+        this->_hs_protocol->initialize_key_materials(this->_original_quic_connection_id);
+      }
+
       error = this->_state_common_send_packet();
     }
 
@@ -794,6 +805,9 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
   case QUICPacketType::INITIAL:
     error = this->_state_handshake_process_initial_client_packet(std::move(packet));
     break;
+  case QUICPacketType::RETRY:
+    error = this->_state_handshake_process_retry_packet(std::move(packet));
+    break;
   case QUICPacketType::HANDSHAKE:
     error = this->_state_handshake_process_client_cleartext_packet(std::move(packet));
     break;
@@ -821,9 +835,26 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
   if (this->_handshake_handler->is_version_negotiated()) {
     error = this->_recv_and_ack(std::move(packet));
   } else {
-    // Perhaps response packets for initial client packet were lost, but no need to start handshake again because loss detector will
+    // Perhaps response packets for initial client packet were lost, but no need to start handshake again because loss detector
+    // will
     // retransmit the packets.
   }
+  return error;
+}
+
+QUICErrorUPtr
+QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
+{
+  // discard all transport state
+  this->_stream_manager->reset_send_offset();
+  this->_loss_detector->reset();
+
+  QUICErrorUPtr error = this->_recv_and_ack(std::move(packet));
+
+  // Packet number of RETRY packet is echo of INITIAL packet
+  this->_largest_received_packet_number = 0;
+  this->_stream_manager->reset_recv_offset();
+
   return error;
 }
 
@@ -1119,6 +1150,10 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
     return error;
   }
 
+  if (packet->type() == QUICPacketType::RETRY) {
+    should_send_ack = false;
+  }
+
   int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
         this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
@@ -1138,11 +1173,25 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 {
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
+  // TODO: support NET_VCONNECTION_IN
+  if (this->get_context() == NET_VCONNECTION_OUT && type == QUICPacketType::UNINITIALIZED) {
+    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+      type = QUICPacketType::PROTECTED;
+    } else if (this->_last_received_packet_type == QUICPacketType::UNINITIALIZED ||
+               this->_last_received_packet_type == QUICPacketType::RETRY) {
+      type = QUICPacketType::INITIAL;
+    } else if (_last_received_packet_type == QUICPacketType::HANDSHAKE) {
+      type = QUICPacketType::HANDSHAKE;
+    }
+  }
+
   switch (type) {
   case QUICPacketType::INITIAL:
     ink_assert(this->get_context() == NET_VCONNECTION_OUT);
     packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->largest_acked_packet_number(),
                                                          QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
+    this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
+
     break;
   case QUICPacketType::RETRY:
     // Echo "_largest_received_packet_number" as packet number. Probably this is the packet number from triggering client packet.
@@ -1152,26 +1201,15 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   case QUICPacketType::HANDSHAKE:
     packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
                                                            std::move(buf), len, retransmittable);
+    this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
+
     break;
   case QUICPacketType::PROTECTED:
     packet = this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
                                                                   std::move(buf), len, retransmittable);
     break;
   default:
-    if (this->get_context() == NET_VCONNECTION_OUT) {
-      if (this->_handshake_handler->handler == reinterpret_cast<NetVConnHandler>(&QUICHandshake::state_initial)) {
-        packet = this->_packet_factory.create_initial_packet(
-          this->_original_quic_connection_id, this->largest_acked_packet_number(), QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
-        this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
-      } else if (this->_handshake_handler->handler == reinterpret_cast<NetVConnHandler>(&QUICHandshake::state_key_exchange)) {
-        packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                               std::move(buf), len, retransmittable);
-        this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
-      } else {
-        packet = this->_packet_factory.create_server_protected_packet(
-          this->_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
-      }
-    } else {
+    if (this->get_context() == NET_VCONNECTION_IN) {
       if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
         packet = this->_packet_factory.create_server_protected_packet(
           this->_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
@@ -1283,6 +1321,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   case QUICPacketCreationResult::SUCCESS:
     QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
                  quic_packet->packet_number(), quic_packet->size());
+    this->_last_received_packet_type = quic_packet->type();
     break;
   default:
     QUICConDebug("Failed to decrypt the packet");
