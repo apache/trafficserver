@@ -20,7 +20,14 @@ include $(top_srcdir)/build/tidy.mk
 
 library_includedir=$(includedir)/ts
 
-library_include_HEADERS = apidefs.h TextView.h
+library_include_HEADERS = \
+apidefs.h \
+ink_assert.h \
+ink_apidefs.h \
+BufferWriter.h \
+BufferWriterForward.h \
+MemSpan.h \
+TextView.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
