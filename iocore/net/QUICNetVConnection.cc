@@ -568,8 +568,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         this->_switch_to_close_state();
       }
     } else {
-      if (this->get_context() == NET_VCONNECTION_OUT && (this->_last_received_packet_type == QUICPacketType::UNINITIALIZED ||
-                                                         this->_last_received_packet_type == QUICPacketType::RETRY)) {
+      if (this->get_context() == NET_VCONNECTION_OUT && (this->_last_received_packet_type == QUICPacketType::RETRY)) {
         QUICConnectionId tmp = this->_original_quic_connection_id;
         this->_original_quic_connection_id.randomize();
         QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(tmp),
