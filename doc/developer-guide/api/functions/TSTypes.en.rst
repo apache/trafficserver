@@ -136,6 +136,10 @@ more widely. Those are described on this page.
 
 .. type:: TSRemapRequestInfo
 
+.. type:: TSSslX509
+
+    This type represents the :code:`X509` object created from an SSL certificate.
+
 .. type:: TSTextLogObject
 
    This type represents a custom log file that you create with

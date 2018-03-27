@@ -58,6 +58,7 @@
 #include "I_AIO.h"
 #include "I_Tasks.h"
 
+#include "P_OCSPStapling.h"
 #include "I_RecDefs.h"
 #include "I_RecCore.h"
 #include "I_Machine.h"
@@ -9285,12 +9286,19 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
 }
 
 tsapi TSSslContext
-TSSslServerContextCreate()
+TSSslServerContextCreate(TSSslX509 cert, const char *certname)
 {
   TSSslContext ret        = nullptr;
   SSLConfigParams *config = SSLConfig::acquire();
   if (config != nullptr) {
     ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
+    if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
+      if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
+        if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname)) {
+          Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+        }
+      }
+    }
     SSLConfig::release(config);
   }
   return ret;
