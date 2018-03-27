@@ -856,6 +856,7 @@ typedef struct tsapi_cachetxn *TSCacheTxn;
 typedef struct tsapi_port *TSPortDescriptor;
 typedef struct tsapi_vio *TSVIO;
 typedef struct tsapi_thread *TSThread;
+typedef struct tsapi_x509 *TSSslX509;
 typedef struct tsapi_mutex *TSMutex;
 typedef struct tsapi_config *TSConfig;
 typedef struct tsapi_cont *TSCont;
