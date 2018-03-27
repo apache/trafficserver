@@ -2465,6 +2465,12 @@ tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
  */
 tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
 
+/*
+ * Attach the ATS OCSP callback with the given context.
+ * This API is useful for contexts created via plugin
+ */
+tsapi TSReturnCode TSSslOCSPCallbackSet(TSSslContext ctx);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
