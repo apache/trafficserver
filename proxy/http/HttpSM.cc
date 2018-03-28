@@ -4869,15 +4869,17 @@ HttpSM::do_http_server_open(bool raw)
 
     CryptoHash hostname_hash;
     CryptoContext().hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
-                                   strlen(t_state.current.server->name));
+                                   static_cast<int>(strlen(t_state.current.server->name)));
 
-    if (connections->getCount(t_state.current.server->dst_addr, hostname_hash,
-                              (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match) >=
-        t_state.txn_conf->origin_max_connections) {
+    auto ccount = connections->getCount(t_state.current.server->dst_addr, hostname_hash,
+                                        (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match);
+    if (ccount >= t_state.txn_conf->origin_max_connections) {
       ip_port_text_buffer addrbuf;
       ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
-      SMDebug("http", "[%" PRId64 "] over the number of connection for this host: %s", sm_id, addrbuf);
-      Warning("[%" PRId64 "] over the max number of connections for this host: %s", sm_id, addrbuf);
+      SMDebug("http", "[%" PRId64 "] too many connections (%d) for this host (%" PRId64 "): %s", sm_id, ccount,
+              t_state.txn_conf->origin_max_connections, addrbuf);
+      Warning("[%" PRId64 "] too many connections (%d) for this host (%" PRId64 "): %s", sm_id, ccount,
+              t_state.txn_conf->origin_max_connections, addrbuf);
       ink_assert(pending_action == nullptr);
 
       // if we were previously queued, or the queue is disabled-- just reschedule
