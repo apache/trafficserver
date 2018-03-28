@@ -52,6 +52,8 @@ startProcessManager(void *arg)
   }
   if (pmgmt->require_lm) { /* Allow p. process to run w/o a lm */
     pmgmt->initLMConnection();
+  } else {
+    return ret;
   }
 
   if (pmgmt->init)
