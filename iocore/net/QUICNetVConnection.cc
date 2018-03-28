@@ -811,15 +811,12 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
   case QUICPacketType::HANDSHAKE:
     error = this->_state_handshake_process_client_cleartext_packet(std::move(packet));
     break;
-  case QUICPacketType::PROTECTED:
-    error = this->_state_handshake_process_protected_packet(std::move(packet));
-    break;
   case QUICPacketType::ZERO_RTT_PROTECTED:
     error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(packet));
     break;
-
+  case QUICPacketType::PROTECTED:
   default:
-    QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(packet->type()), packet->type());
+    QUICConDebug("Ignore %s(%" PRIu8 ") packet", QUICDebugNames::packet_type(packet->type()), packet->type());
 
     error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
     break;
@@ -866,12 +863,6 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
 
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet)
-{
-  return this->_recv_and_ack(std::move(packet));
-}
-
-QUICErrorUPtr
-QUICNetVConnection::_state_handshake_process_protected_packet(QUICPacketUPtr packet)
 {
   return this->_recv_and_ack(std::move(packet));
 }
