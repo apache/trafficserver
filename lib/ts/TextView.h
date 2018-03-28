@@ -663,7 +663,7 @@ TextView::split_prefix_at(size_t n)
   self_type zret; // default to empty return.
   if (n < this->size()) {
     zret = this->prefix(n);
-    this->remove_prefix(n + 1);
+    this->remove_prefix(std::min(n + 1, this->size()));
   }
   return zret;
 }
@@ -698,7 +698,7 @@ TextView::take_prefix_at(size_t n)
 {
   n              = std::min(n, this->size());
   self_type zret = this->prefix(n);
-  this->remove_prefix(n + 1);
+  this->remove_prefix(std::min(n + 1, this->size()));
   return zret;
 }
 

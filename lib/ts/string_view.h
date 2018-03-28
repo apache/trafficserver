@@ -358,9 +358,8 @@ public:
 
   CONSTEXPR14 void remove_prefix(const size_type length) noexcept // strengthened
   {                                                               // chop off the beginning
-    auto tmp = std::min(length, m_size);
-    m_data += tmp;
-    m_size -= tmp;
+    m_data += length;
+    m_size -= length;
   }
 
   CONSTEXPR14 void remove_suffix(const size_type length) noexcept // strengthened

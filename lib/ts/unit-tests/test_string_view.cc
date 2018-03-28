@@ -335,7 +335,7 @@ TEST_CASE("Modifier", "[string_view] [modifier]")
     sv.remove_prefix(3);
     REQUIRE(sv == "de");
 
-    sv.remove_prefix(100);
+    sv.remove_prefix(2);
     REQUIRE(sv == "");
   }
 
