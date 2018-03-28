@@ -1192,13 +1192,13 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 
   // TODO: support NET_VCONNECTION_IN
   if (this->get_context() == NET_VCONNECTION_OUT && type == QUICPacketType::UNINITIALIZED) {
-    if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
-      type = QUICPacketType::PROTECTED;
-    } else if (this->_last_received_packet_type == QUICPacketType::UNINITIALIZED ||
-               this->_last_received_packet_type == QUICPacketType::RETRY) {
+    if (this->_last_received_packet_type == QUICPacketType::UNINITIALIZED ||
+        this->_last_received_packet_type == QUICPacketType::RETRY) {
       type = QUICPacketType::INITIAL;
     } else if (_last_received_packet_type == QUICPacketType::HANDSHAKE) {
       type = QUICPacketType::HANDSHAKE;
+    } else if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
+      type = QUICPacketType::PROTECTED;
     }
   }
 
