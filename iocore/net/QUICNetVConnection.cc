@@ -838,9 +838,9 @@ QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPt
   if (this->_handshake_handler->is_version_negotiated()) {
     error = this->_recv_and_ack(std::move(packet));
   } else {
-    // Perhaps response packets for initial client packet were lost, but no need to start handshake again because loss detector
-    // will
-    // retransmit the packets.
+    // Perhaps response packets for initial packet were lost. Pass packet to _recv_and_ack to send ack to the initial packet.
+    // Stream data will be discarded by offset mismatch.
+    error = this->_recv_and_ack(std::move(packet));
   }
   return error;
 }
@@ -923,9 +923,8 @@ QUICNetVConnection::_state_common_receive_packet()
       break;
     case QUICPacketType::INITIAL:
     case QUICPacketType::HANDSHAKE:
-      // FIXME Just ignore for now but it has to be acked (GitHub#2609)
-      QUICConDebug("Ignore %s packet", QUICDebugNames::packet_type(p->type()));
-
+      // Pass packet to _recv_and_ack to send ack to the packet. Stream data will be discarded by offset mismatch.
+      error = this->_recv_and_ack(std::move(p));
       break;
     default:
       QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), p->type());
