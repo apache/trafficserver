@@ -18,10 +18,10 @@
 
 .. default-domain:: c
 
-TSSslContextFindByName
-**********************
+TS SSL Context
+**************
 
-Traffic Server TLS server context lookup.
+Traffic Server TLS server context.
 
 Synopsis
 ========
@@ -31,6 +31,8 @@ Synopsis
 .. function:: TSSslContext TSSslContextFindByName(const char * name)
 
 .. function:: TSSslContext TSSslContextFindByAddr(const struct sockaddr * address)
+
+.. function:: TSReturnCode TSSslOCSPCallbackSet(TSSslContext ctx)
 
 Description
 ===========
@@ -42,6 +44,9 @@ server :arg:`name`.
 :func:`TSSslContextFindByAddr` searches for a SSL server context
 created from :file:`ssl_multicert.config` matchin against the server
 :arg:`address`.
+
+:func:`TSSslOCSPCallbackSet` sets the OCSP callback described in ATS
+to the SSL context passed as an argument. This API is useful for contexts created externally via plugin
 
 
 See also

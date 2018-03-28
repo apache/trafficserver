@@ -58,6 +58,7 @@
 #include "I_AIO.h"
 #include "I_Tasks.h"
 
+#include "P_OCSPStapling.h"
 #include "I_RecDefs.h"
 #include "I_RecCore.h"
 #include "I_Machine.h"
@@ -9642,4 +9643,12 @@ TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
   return (TSIOBufferReader)sm->get_postbuf_clone_reader();
+}
+
+tsapi TSReturnCode
+TSSslOCSPCallbackSet(TSSslContext ctx)
+{
+  if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ctx), ssl_callback_ocsp_stapling))
+    return TS_SUCCESS;
+  return TS_ERROR;
 }
