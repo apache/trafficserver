@@ -907,31 +907,34 @@ QUICNetVConnection::_state_common_receive_packet()
       continue;
     }
 
-    // Check connection migration
-    if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
-      for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
-        AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
-        if (info.id == p->connection_id()) {
-          // Migrate connection
-          // TODO Address Validation
-          // TODO Adjust expected packet number with a gap computed based on info.seq_num
-          // TODO Unregister the old connection id (Should we wait for a while?)
-          this->_quic_connection_id = info.id;
-          this->_reset_token        = info.token;
-          this->_update_alt_connection_ids(i);
-          break;
-        }
-      }
-      ink_assert(p->connection_id() == this->_quic_connection_id);
-    }
-
     // Process the packet
     switch (p->type()) {
     case QUICPacketType::PROTECTED:
+      // Check connection migration
+      if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
+        for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
+          AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
+          if (info.id == p->connection_id()) {
+            // Migrate connection
+            // TODO Address Validation
+            // TODO Adjust expected packet number with a gap computed based on info.seq_num
+            // TODO Unregister the old connection id (Should we wait for a while?)
+            this->_quic_connection_id = info.id;
+            this->_reset_token        = info.token;
+            this->_update_alt_connection_ids(i);
+            break;
+          }
+        }
+        ink_assert(p->connection_id() == this->_quic_connection_id);
+      }
+
       error = this->_state_connection_established_process_packet(std::move(p));
       break;
+    case QUICPacketType::INITIAL:
     case QUICPacketType::HANDSHAKE:
       // FIXME Just ignore for now but it has to be acked (GitHub#2609)
+      QUICConDebug("Ignore %s packet", QUICDebugNames::packet_type(p->type()));
+
       break;
     default:
       QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), p->type());
