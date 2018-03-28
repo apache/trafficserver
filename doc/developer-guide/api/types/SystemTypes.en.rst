@@ -75,7 +75,7 @@ These types are provided by the compiler ("built-in") or from a required operati
 
 .. cpp:type:: ssize_t
 
-   Signed integral type. 
+   Signed integral type.
 
 .. cpp:type:: unspecified_type
 
@@ -88,3 +88,12 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: va_list
 
    Variable Argument List.
+
+.. cpp:namespace-push:: std
+
+.. cpp:class:: template < typename T > vector
+
+   See `std::vector <http://en.cppreference.com/w/cpp/container/vector>`__.
+
+.. cpp:namespace-pop::
+
