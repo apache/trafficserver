@@ -196,12 +196,8 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
 bool
 HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) const
 {
-  // maintain backwards compatibility/usability out of the box
-  if (compressible_status_codes_.empty()) {
-    return status_code == 200;
-  }
-
   std::set<TSHttpStatus>::const_iterator it = compressible_status_codes_.find(status_code);
+
   return it != compressible_status_codes_.end();
 }
 

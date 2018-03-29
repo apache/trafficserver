@@ -149,7 +149,9 @@ private:
   StringContainer compressible_content_types_;
   StringContainer disallows_;
   StringContainer allows_;
-  std::set<TSHttpStatus> compressible_status_codes_;
+  // maintain backwards compatibility/usability out of the box
+  std::set<TSHttpStatus> compressible_status_codes_ = {TS_HTTP_STATUS_OK, TS_HTTP_STATUS_PARTIAL_CONTENT,
+                                                       TS_HTTP_STATUS_NOT_MODIFIED};
 
   DISALLOW_COPY_AND_ASSIGN(HostConfiguration);
 };
