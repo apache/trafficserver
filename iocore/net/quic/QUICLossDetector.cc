@@ -187,6 +187,9 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
   QUICLDDebug("Largest Acknowledged: %" PRIu64, ack_frame->largest_acknowledged());
   QUICLDDebug("ACK Delay: %" PRIu64, ack_frame->ack_delay());
   QUICLDDebug("ACK Block Count: %" PRIu64, ack_frame->ack_block_count());
+  if (ack_frame->ack_block_section()) {
+    QUICLDDebug("First ACK Block: %" PRIu64, ack_frame->ack_block_section()->first_ack_block());
+  }
 
   this->_largest_acked_packet = ack_frame->largest_acknowledged();
   // If the largest acked is newly acked, update the RTT.
@@ -474,8 +477,8 @@ QUICLossDetector::_determine_newly_acked_packets(const QUICAckFrame &ack_frame)
 {
   std::set<QUICAckFrame::PacketNumberRange> numbers;
   QUICPacketNumber x = ack_frame.largest_acknowledged();
-  numbers.insert({x, static_cast<uint64_t>(x) - ack_frame.ack_block_section()->first_ack_block_length()});
-  x -= ack_frame.ack_block_section()->first_ack_block_length() + 1;
+  numbers.insert({x, static_cast<uint64_t>(x) - ack_frame.ack_block_section()->first_ack_block()});
+  x -= ack_frame.ack_block_section()->first_ack_block() + 1;
   for (auto &&block : *(ack_frame.ack_block_section())) {
     x -= block.gap() + 1;
     numbers.insert({x, static_cast<uint64_t>(x) - block.length()});

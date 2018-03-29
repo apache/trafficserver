@@ -322,13 +322,12 @@ QUICAckFrame::QUICAckFrame(const uint8_t *buf, size_t len, bool protection) : QU
   this->reset(buf, len);
 }
 
-QUICAckFrame::QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block_length,
-                           bool protection)
+QUICAckFrame::QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, bool protection)
   : QUICFrame(protection)
 {
   this->_largest_acknowledged = largest_acknowledged;
   this->_ack_delay            = ack_delay;
-  this->_ack_block_section    = new AckBlockSection(first_ack_block_length);
+  this->_ack_block_section    = new AckBlockSection(first_ack_block);
 }
 
 QUICAckFrame::~QUICAckFrame()
@@ -596,7 +595,7 @@ QUICAckFrame::AckBlockSection::size() const
 {
   size_t n = 0;
 
-  n += this->_get_first_ack_block_length_size();
+  n += this->_get_first_ack_block_size();
 
   for (auto &&block : *this) {
     n += block.size();
@@ -611,7 +610,7 @@ QUICAckFrame::AckBlockSection::store(uint8_t *buf, size_t *len) const
   size_t n;
   uint8_t *p = buf;
 
-  QUICIntUtil::write_QUICVariableInt(this->_first_ack_block_length, p, &n);
+  QUICIntUtil::write_QUICVariableInt(this->_first_ack_block, p, &n);
   p += n;
 
   for (auto &&block : *this) {
@@ -625,12 +624,12 @@ QUICAckFrame::AckBlockSection::store(uint8_t *buf, size_t *len) const
 }
 
 uint64_t
-QUICAckFrame::AckBlockSection::first_ack_block_length() const
+QUICAckFrame::AckBlockSection::first_ack_block() const
 {
   if (this->_buf) {
     return QUICIntUtil::read_QUICVariableInt(this->_buf);
   } else {
-    return this->_first_ack_block_length;
+    return this->_first_ack_block;
   }
 }
 
@@ -651,7 +650,7 @@ QUICAckFrame::AckBlockSection::const_iterator
 QUICAckFrame::AckBlockSection::begin() const
 {
   if (this->_buf) {
-    return const_iterator(0, this->_buf + this->_get_first_ack_block_length_size(), this->_ack_block_count);
+    return const_iterator(0, this->_buf + this->_get_first_ack_block_size(), this->_ack_block_count);
   } else {
     return const_iterator(0, &this->_ack_blocks);
   }
@@ -668,12 +667,12 @@ QUICAckFrame::AckBlockSection::end() const
 }
 
 size_t
-QUICAckFrame::AckBlockSection::_get_first_ack_block_length_size() const
+QUICAckFrame::AckBlockSection::_get_first_ack_block_size() const
 {
   if (this->_buf) {
     return QUICVariableInt::size(this->_buf);
   } else {
-    return QUICVariableInt::size(this->_first_ack_block_length);
+    return QUICVariableInt::size(this->_first_ack_block);
   }
 }
 
@@ -1901,11 +1900,11 @@ QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUIC
 }
 
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block_length,
+QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block,
                                    bool protection)
 {
   QUICAckFrame *frame = quicAckFrameAllocator.alloc();
-  new (frame) QUICAckFrame(largest_acknowledged, ack_delay, first_ack_block_length, protection);
+  new (frame) QUICAckFrame(largest_acknowledged, ack_delay, first_ack_block, protection);
   return std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_ack_frame);
 }
 

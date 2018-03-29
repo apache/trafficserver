@@ -364,7 +364,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ack_frame1->ack_block_count() == 0);
 
     const QUICAckFrame::AckBlockSection *section = ack_frame1->ack_block_section();
-    CHECK(section->first_ack_block_length() == 0x01);
+    CHECK(section->first_ack_block() == 0x01);
   }
 
   SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
@@ -391,7 +391,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ack_frame1->ack_block_count() == 2);
 
     const QUICAckFrame::AckBlockSection *section = ack_frame1->ack_block_section();
-    CHECK(section->first_ack_block_length() == 0x01);
+    CHECK(section->first_ack_block() == 0x01);
     auto ite = section->begin();
     CHECK(ite != section->end());
     CHECK(ite->gap() == 0x02);

@@ -168,30 +168,30 @@ public:
       const std::vector<QUICAckFrame::AckBlock> *_ack_blocks = nullptr;
     };
 
-    AckBlockSection(uint64_t first_ack_block_length) : _first_ack_block_length(first_ack_block_length) {}
+    AckBlockSection(uint64_t first_ack_block) : _first_ack_block(first_ack_block) {}
     AckBlockSection(const uint8_t *buf, uint8_t ack_block_count) : _buf(buf), _ack_block_count(ack_block_count) {}
     uint8_t count() const;
     size_t size() const;
     void store(uint8_t *buf, size_t *len) const;
-    uint64_t first_ack_block_length() const;
+    uint64_t first_ack_block() const;
     void add_ack_block(const AckBlock block, bool protection = true);
     const_iterator begin() const;
     const_iterator end() const;
     bool has_protected() const;
 
   private:
-    size_t _get_first_ack_block_length_size() const;
+    size_t _get_first_ack_block_size() const;
 
-    const uint8_t *_buf              = nullptr;
-    uint64_t _first_ack_block_length = 0;
-    uint8_t _ack_block_count         = 0;
+    const uint8_t *_buf       = nullptr;
+    uint64_t _first_ack_block = 0;
+    uint8_t _ack_block_count  = 0;
     std::vector<QUICAckFrame::AckBlock> _ack_blocks;
     bool _protection = false;
   };
 
   QUICAckFrame() : QUICFrame() {}
   QUICAckFrame(const uint8_t *buf, size_t len, bool protection = true);
-  QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block_length, bool protection = true);
+  QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, bool protection = true);
 
   virtual ~QUICAckFrame();
   virtual void reset(const uint8_t *buf, size_t len) override;
@@ -777,7 +777,7 @@ public:
    * need to ack.
    */
   static std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_ack_frame(QUICPacketNumber largest_acknowledged,
-                                                                              uint64_t ack_delay, uint64_t first_ack_block_length,
+                                                                              uint64_t ack_delay, uint64_t first_ack_block,
                                                                               bool protection = true);
   /*
    * Creates a CONNECTION_CLOSE frame.
