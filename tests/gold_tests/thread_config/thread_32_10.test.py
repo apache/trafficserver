@@ -18,7 +18,8 @@
 
 import sys
 
-Test.Summary = 'Test that Trafficserver starts with default configurations.'
+
+Test.Summary = 'Test that Trafficserver starts with different thread configurations.'
 Test.SkipUnless(Condition.HasProgram('curl', 'Curl need to be installed on system for this test to work'))
 
 Test.ContinueOnFail = True
@@ -28,12 +29,13 @@ server = Test.MakeOriginServer('server')
 
 Test.testName = ''
 request_header = {
-    'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n', 
-    'timestamp': '1469733493.993', 
-    'body': ''}
+    'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
+    'timestamp': '1469733493.993',
+    'body': ''
+}
 response_header = {
     'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-    'timestamp': '1469733493.993', 
+    'timestamp': '1469733493.993',
     'body': ''
 }
 server.addResponse("sessionfile.log", request_header, response_header)
@@ -50,12 +52,17 @@ ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
+ts.Setup.CopyAs('check_threads.py', Test.RunDirectory)
+
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl --proxy http://127.0.0.1:{0} http://www.example.com -H "Proxy-Connection: Keep-Alive" --verbose'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.Streams.stderr = 'gold/http_200.gold'
-ts.Streams.stderr = 'gold/thread_32_10.gold'
-ts.Streams.stderr += Testers.ExcludesExpression('Created ET\_NET thread #33', 'there should be more than 32 threads')
-ts.Streams.stderr += Testers.ExcludesExpression('Created accept thread #11', 'there should be more than 10 threads')
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'python3 check_threads.py -t {0} -e {1} -a {2}'.format(ts.Env['TS_ROOT'], 32, 10)
+tr.Processes.Default.ReturnCode = 0
