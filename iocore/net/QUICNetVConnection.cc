@@ -25,13 +25,11 @@
 
 #include "ts/ink_config.h"
 #include "ts/ink_std_compat.h"
-#include "ts/EventNotify.h"
 #include "records/I_RecHttp.h"
 #include "ts/Diags.h"
 
 #include "P_Net.h"
 #include "InkAPIInternal.h" // Added to include the quic_hook definitions
-#include "BIO_fastopen.h"
 #include "Log.h"
 
 #include "P_SSLNextProtocolSet.h"
