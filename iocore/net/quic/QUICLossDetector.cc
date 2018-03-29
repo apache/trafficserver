@@ -63,7 +63,11 @@ QUICLossDetector::~QUICLossDetector()
 {
   if (this->_loss_detection_alarm) {
     this->_loss_detection_alarm->cancel();
+    this->_loss_detection_alarm = nullptr;
   }
+
+  this->_transmitter = nullptr;
+  this->_cc          = nullptr;
 }
 
 int
@@ -83,6 +87,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
 
     if (this->_loss_detection_alarm) {
       this->_loss_detection_alarm->cancel();
+      this->_loss_detection_alarm = nullptr;
     }
     break;
   }
@@ -152,6 +157,7 @@ QUICLossDetector::reset()
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   if (this->_loss_detection_alarm) {
     this->_loss_detection_alarm->cancel();
+    this->_loss_detection_alarm = nullptr;
   }
 
   this->_sent_packets.clear();
@@ -283,6 +289,7 @@ QUICLossDetector::_set_loss_detection_alarm()
     this->_loss_detection_alarm->cancel();
     this->_loss_detection_alarm = nullptr;
     QUICLDDebug("Loss detection alarm has been unset");
+
     return;
   }
   if (this->_handshake_outstanding) {
