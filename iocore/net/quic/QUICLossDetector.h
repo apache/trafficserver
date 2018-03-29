@@ -69,6 +69,7 @@ class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
   QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc);
+  ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
 

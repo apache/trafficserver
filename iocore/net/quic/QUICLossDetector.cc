@@ -59,6 +59,13 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConge
   SET_HANDLER(&QUICLossDetector::event_handler);
 }
 
+QUICLossDetector::~QUICLossDetector()
+{
+  if (this->_loss_detection_alarm) {
+    this->_loss_detection_alarm->cancel();
+  }
+}
+
 int
 QUICLossDetector::event_handler(int event, Event *edata)
 {
