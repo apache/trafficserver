@@ -26,7 +26,11 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#include "ts/I_Layout.h"
 #include "ts/Diags.h"
+
+#include "RecordsConfig.h"
+#include "QUICConfig.h"
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -39,6 +43,12 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     diags->activate_taglist("vv_quic|quic", DiagsTagType_Debug);
     diags->config.enabled[DiagsTagType_Debug] = true;
     diags->show_location                      = SHOW_LOCATION_DEBUG;
+
+    Layout::create();
+    RecProcessInit(RECM_STAND_ALONE);
+    LibRecordsConfigInit();
+
+    QUICConfig::startup();
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);

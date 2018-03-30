@@ -27,19 +27,17 @@
 bool
 SSLParseCertificateConfiguration(const SSLConfigParams *, SSL_CTX *)
 {
-  ink_assert(false);
   return false;
 }
 
 SSLConfigParams *
 SSLConfig::acquire()
 {
-  ink_assert(false);
   return nullptr;
 }
 
 void
 SSLConfig::release(SSLConfigParams *)
 {
-  ink_assert(false);
+  return;
 }

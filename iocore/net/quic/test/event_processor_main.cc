@@ -26,9 +26,13 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "I_EventSystem.h"
 #include "ts/I_Layout.h"
 #include "ts/Diags.h"
+
+#include "I_EventSystem.h"
+#include "RecordsConfig.h"
+
+#include "QUICConfig.h"
 
 #define TEST_THREADS 1
 
@@ -46,6 +50,9 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     Layout::create();
     RecProcessInit(RECM_STAND_ALONE);
+    LibRecordsConfigInit();
+
+    QUICConfig::startup();
 
     ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
     eventProcessor.start(TEST_THREADS);

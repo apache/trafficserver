@@ -60,6 +60,16 @@ QUICKeyGenerator_impl = ../QUICKeyGenerator_openssl.cc
 QUICTLS_impl = ../QUICTLS_openssl.cc
 endif
 
+catch_main = \
+  main.cc \
+  stub_QUICConfig.cc \
+  ../../SSLNextProtocolSet.cc
+
+catch_event_processor_main = \
+  event_processor_main.cc \
+  stub_QUICConfig.cc \
+  ../../SSLNextProtocolSet.cc
+
 #
 # test_QUICPacket
 #
@@ -70,7 +80,7 @@ test_QUICPacket_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICPacket_SOURCES = \
-  event_processor_main.cc \
+  $(catch_main) \
   test_QUICPacket.cc \
   ../QUICPacket.cc \
   ../QUICHandshakeProtocol.cc \
@@ -99,7 +109,7 @@ test_QUICPacketFactory_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICPacketFactory_SOURCES = \
-  event_processor_main.cc \
+  $(catch_main) \
   test_QUICPacketFactory.cc \
   ../QUICPacket.cc \
   ../QUICHandshakeProtocol.cc \
@@ -129,7 +139,7 @@ test_QUICFrame_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICFrame_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICFrame.cc \
   ../QUICGlobals.cc \
   ../QUICFrame.cc \
@@ -146,14 +156,15 @@ test_QUICFrame_SOURCES = \
   ../QUICStreamState.cc \
   ../QUICIncomingFrameBuffer.cc \
   ../QUICDebugNames.cc \
-  ../QUICFlowController.cc \
-  ../../SSLNextProtocolSet.cc
+  ../QUICFlowController.cc
 
 test_QUICFrame_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a
+
 
 #
 # test_QUICFrameDispatcher
@@ -165,11 +176,10 @@ test_QUICFrameDispatcher_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICFrameDispatcher_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICFrameDispatcher.cc \
   ../QUICGlobals.cc \
   ../QUICConfig.cc \
-  stub_QUICConfig.cc \
   ../QUICVersionNegotiator.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICTransportParameters.cc \
@@ -194,8 +204,7 @@ test_QUICFrameDispatcher_SOURCES = \
   $(QUICTLS_impl) \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
-  ../QUICHKDF.cc \
-  ../../SSLNextProtocolSet.cc
+  ../QUICHKDF.cc
 
 test_QUICFrameDispatcher_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -218,7 +227,7 @@ test_QUICStreamState_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICStreamState_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICStreamState.cc \
   ../QUICStreamState.cc
 
@@ -242,16 +251,14 @@ test_QUICStream_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICStream_SOURCES = \
-  event_processor_main.cc \
+  $(catch_event_processor_main) \
   test_QUICStream.cc \
   ../QUICStream.cc \
   ../QUICIncomingFrameBuffer.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
-  ../QUICCongestionController.cc \
-  ../../SSLNextProtocolSet.cc \
-  stub_QUICConfig.cc
+  ../QUICCongestionController.cc
 
 test_QUICStream_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -274,7 +281,7 @@ test_QUICStreamManager_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICStreamManager_SOURCES = \
-  event_processor_main.cc \
+  $(catch_event_processor_main) \
   test_QUICStreamManager.cc \
   ../QUICStream.cc \
   ../QUICIncomingFrameBuffer.cc \
@@ -282,9 +289,7 @@ test_QUICStreamManager_SOURCES = \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
   ../QUICCongestionController.cc \
-  ../../SSLNextProtocolSet.cc \
-  ../QUICConfig.cc \
-  stub_QUICConfig.cc
+  ../QUICConfig.cc
 
 test_QUICStreamManager_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -307,11 +312,10 @@ test_QUICTransportParameters_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICTransportParameters_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICTransportParameters.cc \
   ../QUICGlobals.cc \
   ../QUICConfig.cc \
-  stub_QUICConfig.cc \
   ../QUICApplication.cc \
   ../QUICApplicationMap.cc \
   ../QUICHandshake.cc \
@@ -332,8 +336,7 @@ test_QUICTransportParameters_SOURCES = \
   ../QUICDebugNames.cc \
   ../QUICTransportParameters.cc \
   ../QUICTypes.cc \
-  ../QUICIntUtil.cc \
-  ../../SSLNextProtocolSet.cc
+  ../QUICIntUtil.cc
 
 test_QUICTransportParameters_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -359,10 +362,11 @@ test_QUICKeyGenerator_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a
 
 test_QUICKeyGenerator_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICKeyGenerator.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
@@ -393,11 +397,12 @@ test_QUICHandshakeProtocol_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
   @LIBTCL@ \
   @OPENSSL_LIBS@
 
 test_QUICHandshakeProtocol_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICHandshakeProtocol.cc \
   ../QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
@@ -415,8 +420,7 @@ test_QUICHandshakeProtocol_SOURCES = \
   ../QUICPacket.cc \
   ../QUICIncomingFrameBuffer.cc \
   ../QUICFlowController.cc \
-  ../QUICGlobals.cc \
-  ../../SSLNextProtocolSet.cc
+  ../QUICGlobals.cc
 
 #
 # test_QUICLossDetector
@@ -439,7 +443,7 @@ test_QUICLossDetector_LDADD = \
   @HWLOC_LIBS@
 
 test_QUICLossDetector_SOURCES = \
-  event_processor_main.cc \
+  $(catch_event_processor_main) \
   test_QUICLossDetector.cc \
   ../QUICLossDetector.cc \
   ../QUICTypes.cc \
@@ -447,9 +451,7 @@ test_QUICLossDetector_SOURCES = \
   ../QUICHandshakeProtocol.cc \
   ../QUICTLS.cc \
   $(QUICTLS_impl) \
-  ../QUICFrame.cc \
-  ../../SSLNextProtocolSet.cc \
-  stub_QUICConfig.cc
+  ../QUICFrame.cc
 
 #
 # test_QUICTypeUtil
@@ -470,7 +472,7 @@ test_QUICTypeUtil_LDADD = \
   @OPENSSL_LIBS@
 
 test_QUICTypeUtil_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICTypeUtil.cc \
   ../QUICStream.cc \
   ../QUICIncomingFrameBuffer.cc \
@@ -486,9 +488,7 @@ test_QUICTypeUtil_SOURCES = \
   ../QUICTLS.cc \
   $(QUICTLS_impl) \
   ../QUICIntUtil.cc \
-  ../QUICTypes.cc \
-  ../../SSLNextProtocolSet.cc \
-  stub_QUICConfig.cc
+  ../QUICTypes.cc
 
 #
 # test_QUICAckFrameCreator
@@ -508,7 +508,7 @@ test_QUICAckFrameCreator_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la
 
 test_QUICAckFrameCreator_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICAckFrameCreator.cc \
   ../QUICAckFrameCreator.cc \
   ../QUICGlobals.cc \
@@ -526,9 +526,7 @@ test_QUICAckFrameCreator_SOURCES = \
   ../QUICHKDF.cc \
   ../QUICHandshakeProtocol.cc \
   ../QUICTLS.cc \
-  $(QUICTLS_impl) \
-  ../../SSLNextProtocolSet.cc \
-  stub_QUICConfig.cc
+  $(QUICTLS_impl)
 
 #
 # test_QUICTypeUtil
@@ -551,7 +549,7 @@ test_QUICVersionNegotiator_LDADD = \
   @HWLOC_LIBS@
 
 test_QUICVersionNegotiator_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICVersionNegotiator.cc \
   ../QUICGlobals.cc \
   ../QUICTypes.cc \
@@ -575,9 +573,7 @@ test_QUICVersionNegotiator_SOURCES = \
   ../QUICDebugNames.cc \
   ../QUICVersionNegotiator.cc \
   ../QUICTransportParameters.cc \
-  ../QUICConfig.cc \
-  stub_QUICConfig.cc \
-  ../../SSLNextProtocolSet.cc
+  ../QUICConfig.cc
 
 #
 # test_QUICFlowController
@@ -600,7 +596,7 @@ test_QUICFlowController_LDADD = \
   @HWLOC_LIBS@
 
 test_QUICFlowController_SOURCES = \
-  main.cc \
+  $(catch_main) \
   test_QUICFlowController.cc \
   ../QUICFlowController.cc \
   ../QUICStream.cc \
@@ -628,16 +624,14 @@ test_QUICIncomingFrameBuffer_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICIncomingFrameBuffer_SOURCES = \
-  event_processor_main.cc \
+  $(catch_event_processor_main) \
   ../QUICStream.cc \
   ../QUICFrameDispatcher.cc \
   ../QUICStreamManager.cc \
   ../QUICApplicationMap.cc \
   ../QUICCongestionController.cc \
-  ../../SSLNextProtocolSet.cc \
   ../QUICIncomingFrameBuffer.cc \
-  test_QUICIncomingFrameBuffer.cc \
-  stub_QUICConfig.cc
+  test_QUICIncomingFrameBuffer.cc
 
 test_QUICIncomingFrameBuffer_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -660,11 +654,9 @@ test_QUICHandshake_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICHandshake_SOURCES = \
-  event_processor_main.cc \
+  $(catch_event_processor_main) \
   test_QUICHandshake.cc \
-  ../QUICHandshake.cc \
-  ../../SSLNextProtocolSet.cc \
-  stub_QUICConfig.cc
+  ../QUICHandshake.cc
 
 test_QUICHandshake_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
