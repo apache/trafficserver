@@ -36,7 +36,6 @@ check_PROGRAMS = \
   test_QUICIncomingFrameBuffer \
   test_QUICHandshake
 
-
 AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
@@ -70,6 +69,16 @@ catch_event_processor_main = \
   stub_QUICConfig.cc \
   ../../SSLNextProtocolSet.cc
 
+test_LDADD = \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ \
+  @HWLOC_LIBS@
+
 #
 # test_QUICPacket
 #
@@ -89,15 +98,7 @@ test_QUICPacket_SOURCES = \
   ../QUICTypes.cc
 
 test_QUICPacket_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 #
 # test_QUICPacketFactory
@@ -118,15 +119,7 @@ test_QUICPacketFactory_SOURCES = \
   ../QUICTypes.cc
 
 test_QUICPacketFactory_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 #
 # test_QUICFrame
@@ -135,7 +128,6 @@ test_QUICFrame_CPPFLAGS = \
   $(AM_CPPFLAGS)
 
 test_QUICFrame_LDFLAGS = \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @AM_LDFLAGS@
 
 test_QUICFrame_SOURCES = \
@@ -159,12 +151,7 @@ test_QUICFrame_SOURCES = \
   ../QUICFlowController.cc
 
 test_QUICFrame_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a
-
+  $(test_LDADD)
 
 #
 # test_QUICFrameDispatcher
@@ -207,15 +194,7 @@ test_QUICFrameDispatcher_SOURCES = \
   ../QUICHKDF.cc
 
 test_QUICFrameDispatcher_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 #
 # test_QUICStreamState
@@ -232,14 +211,7 @@ test_QUICStreamState_SOURCES = \
   ../QUICStreamState.cc
 
 test_QUICStreamState_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 #
 # test_QUICStream
@@ -261,15 +233,7 @@ test_QUICStream_SOURCES = \
   ../QUICCongestionController.cc
 
 test_QUICStream_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 #
 # test_QUICStreamManager
@@ -292,15 +256,7 @@ test_QUICStreamManager_SOURCES = \
   ../QUICConfig.cc
 
 test_QUICStreamManager_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 #
 # test_QUICTransportParameters
@@ -339,13 +295,7 @@ test_QUICTransportParameters_SOURCES = \
   ../QUICIntUtil.cc
 
 test_QUICTransportParameters_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a
+  $(test_LDADD)
 
 #
 # test_QUICKeyGenerator
@@ -357,13 +307,7 @@ test_QUICKeyGenerator_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICKeyGenerator_LDADD = \
-  @OPENSSL_LIBS@ \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a
+  $(test_LDADD)
 
 test_QUICKeyGenerator_SOURCES = \
   $(catch_main) \
@@ -392,14 +336,7 @@ test_QUICHandshakeProtocol_LDFLAGS = \
   @OPENSSL_LDFLAGS@
 
 test_QUICHandshakeProtocol_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  @LIBTCL@ \
-  @OPENSSL_LIBS@
+  $(test_LDADD)
 
 test_QUICHandshakeProtocol_SOURCES = \
   $(catch_main) \
@@ -432,15 +369,7 @@ test_QUICLossDetector_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICLossDetector_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 test_QUICLossDetector_SOURCES = \
   $(catch_event_processor_main) \
@@ -463,13 +392,7 @@ test_QUICTypeUtil_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICTypeUtil_LDADD = \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @OPENSSL_LIBS@
+  $(test_LDADD)
 
 test_QUICTypeUtil_SOURCES = \
   $(catch_main) \
@@ -500,12 +423,7 @@ test_QUICAckFrameCreator_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICAckFrameCreator_LDADD = \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/lib/ts/libtsutil.la
+  $(test_LDADD)
 
 test_QUICAckFrameCreator_SOURCES = \
   $(catch_main) \
@@ -538,15 +456,7 @@ test_QUICVersionNegotiator_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICVersionNegotiator_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 test_QUICVersionNegotiator_SOURCES = \
   $(catch_main) \
@@ -585,15 +495,7 @@ test_QUICFlowController_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICFlowController_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 test_QUICFlowController_SOURCES = \
   $(catch_main) \
@@ -634,15 +536,7 @@ test_QUICIncomingFrameBuffer_SOURCES = \
   test_QUICIncomingFrameBuffer.cc
 
 test_QUICIncomingFrameBuffer_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 #
 # test_QUICHandshake
@@ -659,15 +553,7 @@ test_QUICHandshake_SOURCES = \
   ../QUICHandshake.cc
 
 test_QUICHandshake_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
-  @HWLOC_LIBS@
+  $(test_LDADD)
 
 include $(top_srcdir)/build/tidy.mk
 
