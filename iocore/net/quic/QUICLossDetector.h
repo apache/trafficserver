@@ -63,6 +63,8 @@ private:
   uint32_t _congestion_window       = 0;
   QUICPacketNumber _end_of_recovery = 0;
   uint32_t _ssthresh                = UINT32_MAX;
+
+  bool _in_recovery(QUICPacketNumber packet_number);
 };
 
 class QUICLossDetector : public Continuation, public QUICFrameHandler

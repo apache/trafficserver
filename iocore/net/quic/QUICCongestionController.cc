@@ -41,12 +41,18 @@ QUICCongestionController::on_packet_sent(size_t bytes_sent)
   this->_bytes_in_flight += bytes_sent;
 }
 
+bool
+QUICCongestionController::_in_recovery(QUICPacketNumber packet_number)
+{
+  return packet_number <= this->_end_of_recovery;
+}
+
 void
 QUICCongestionController::on_packet_acked(QUICPacketNumber acked_packet_number, size_t acked_packet_size)
 {
   // Remove from bytes_in_flight.
   this->_bytes_in_flight -= acked_packet_size;
-  if (acked_packet_number < this->_end_of_recovery) {
+  if (this->_in_recovery(acked_packet_number)) {
     // Do not increase congestion window in recovery period.
     return;
   }
@@ -69,7 +75,7 @@ QUICCongestionController::on_packets_lost(std::map<QUICPacketNumber, PacketInfo 
   QUICPacketNumber largest_lost_packet = lost_packets.rbegin()->first;
   // Start a new recovery epoch if the lost packet is larger
   // than the end of the previous recovery epoch.
-  if (this->_end_of_recovery < largest_lost_packet) {
+  if (!this->_in_recovery(largest_lost_packet)) {
     this->_end_of_recovery = largest_lost_packet;
     this->_congestion_window *= LOSS_REDUCTION_FACTOR;
     this->_congestion_window = std::max(this->_congestion_window, MINIMUM_WINDOW);

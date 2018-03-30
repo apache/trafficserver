@@ -299,7 +299,7 @@ QUICLossDetector::_set_loss_detection_alarm()
     } else {
       alarm_duration = 2 * this->_smoothed_rtt;
     }
-    alarm_duration = std::max(alarm_duration, MIN_TLP_TIMEOUT);
+    alarm_duration = std::max(alarm_duration + this->_max_ack_delay, MIN_TLP_TIMEOUT);
     alarm_duration = alarm_duration * (1 << this->_handshake_count);
     QUICLDDebug("Handshake retransmission alarm will be set");
   } else if (this->_loss_time != 0) {
@@ -312,7 +312,7 @@ QUICLossDetector::_set_loss_detection_alarm()
     QUICLDDebug("TLP alarm will be set");
   } else {
     // RTO alarm
-    alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar;
+    alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar + this->_max_ack_delay;
     alarm_duration = std::max(alarm_duration, MIN_RTO_TIMEOUT);
     alarm_duration = alarm_duration * (1 << this->_rto_count);
     QUICLDDebug("RTO alarm will be set");
