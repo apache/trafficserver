@@ -43,12 +43,15 @@ struct RunrootEngine {
   // the function of creating runroot
   void create_runroot();
 
+  // the function of verifying runroot
+  void verify_runroot();
+
   // copy the stuff from original_root to ts_runroot
   // fill in the global map for yaml file emitting later
   void copy_runroot(const std::string &original_root, const std::string &ts_runroot);
 
   // the help message for runroot
-  void runroot_help_message(const bool runflag, const bool cleanflag);
+  void runroot_help_message(const bool runflag, const bool cleanflag, const bool verifyflag, const bool fixflag);
 
   // the pass in arguments
   std::vector<std::string> _argv;
@@ -59,6 +62,11 @@ struct RunrootEngine {
   bool clean_flag   = false;
   bool force_flag   = false;
   bool abs_flag     = false;
+  bool verify_flag  = false;
+  bool fix_flag     = false;
+  // for parsing
+  int command_num = 0;
+
   // the path for create & remove
   std::string path;
 

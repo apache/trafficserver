@@ -66,6 +66,7 @@ help_usage()
                "init         Initialize the ts_runroot sandbox\n"
                "remove       Remove the ts_runroot sandbox\n"
                "info         Show the layout as default\n"
+               "verify:      Verify the ts_runroot paths\n"
             << std::endl;
   std::cout << "Switches of runroot:\n"
                "--path       Specify the path of the runroot\n"
@@ -73,7 +74,7 @@ help_usage()
                "--absolute:  Produce absolute path in the yaml file\n"
                "--run-root(=/path):  Using specified TS_RUNROOT as sandbox\n"
             << std::endl;
-
+  printf("Detailed usage and description in traffic_layout.en.rst\n");
   printf("General Usage:\n");
   usage(argument_descriptions, countof(argument_descriptions), nullptr);
 }
@@ -128,7 +129,7 @@ traffic_runroot(int argc, const char **argv)
   }
   // parse the command line & put into global variable
   if (!engine.runroot_parse()) {
-    engine.runroot_help_message(true, true);
+    engine.runroot_help_message(true, true, true, true);
     return 0;
   }
   // check sanity of the command about the runroot program
@@ -138,13 +139,15 @@ traffic_runroot(int argc, const char **argv)
   runroot_handler(argv);
   Layout::create();
 
-  // check to clean the runroot or not
-  if (engine.clean_flag) {
-    engine.clean_runroot();
-    std::cout << "runroot removed" << std::endl;
-  } else {
+  // check the command to execute
+  if (engine.run_flag) {
     engine.create_runroot();
+  } else if (engine.clean_flag) {
+    engine.clean_runroot();
+  } else if (engine.verify_flag) {
+    engine.verify_runroot();
   }
+
   return 0;
 }
 
@@ -155,6 +158,8 @@ main(int argc, const char **argv)
     {info, "info", "Show the layout"},
     {traffic_runroot, "init", "Initialize the ts_runroot sandbox"},
     {traffic_runroot, "remove", "Remove the ts_runroot sandbox"},
+    {traffic_runroot, "verify", "verify the ts_runroot paths"},
+    {traffic_runroot, "fix", "fix permmision issue of the ts_runroot"},
   };
 
   // with command (info, init, remove)

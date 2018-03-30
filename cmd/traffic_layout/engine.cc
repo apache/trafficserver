@@ -31,14 +31,16 @@
 #include "ts/I_Version.h"
 #include "ts/ink_file.h"
 #include "records/I_RecCore.h"
+#include "ts/ink_config.h"
 
 #include "engine.h"
 #include "file_system.h"
+#include "ts/runroot.h"
 
 #include <fstream>
 #include <iostream>
-#include <system_error>
 #include <ftw.h>
+#include <pwd.h>
 
 std::string directory_check = "";
 
@@ -94,64 +96,94 @@ check_run_path(const std::string &arg, const bool forceflag)
   }
 }
 
-// return true if the path is good to delete
-static bool
-check_delete_path(const std::string &arg, const bool forceflag)
-{
-  if (arg.empty()) {
-    return false;
-  }
-
-  std::ifstream check_file(arg);
-  if (check_file) {
-    return true;
-  }
-  return false;
-}
-
 // handle the path of the engine during parsing
 static std::string
-path_handler(std::string &path)
+path_handler(const std::string &path, bool run_flag, const std::string &command)
 {
   char cwd[PATH_MAX];
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     ink_fatal("unexcepted failure from getcwd() code=%d", errno);
   }
-  // no path passed in, use cwd
-  if (path.empty()) {
-    return cwd;
+
+  if (run_flag) {
+    // no path passed in, use cwd
+    if (path.empty()) {
+      return cwd;
+    }
+    if (path[0] == '/') {
+      return path;
+    } else {
+      return Layout::relative_to(cwd, path);
+    }
   }
-  // absolute path
-  if (path[0] == '/') {
-    return path;
-  } else {
-    return Layout::relative_to(cwd, path);
-    ;
+
+  // for other commands
+  // 1. passed in path
+  if (!path.empty()) {
+    std::string cmdpath;
+    if (path[0] == '/') {
+      cmdpath = check_path(path);
+    } else {
+      cmdpath = check_path(Layout::relative_to(cwd, path));
+    }
+    if (!cmdpath.empty()) {
+      return cmdpath;
+    }
   }
+
+  // 2. check Environment variable
+  char *env_val = getenv("TS_RUNROOT");
+  if (env_val != nullptr) {
+    std::string envpath = check_path(env_val);
+    if (!envpath.empty()) {
+      return envpath;
+    }
+  }
+
+  // 3. find cwd or parent path of cwd to check
+  std::string cwdpath = check_parent_path(cwd);
+  if (!cwdpath.empty()) {
+    return cwdpath;
+  }
+
+  // 4. installed executable
+  char RealBinPath[PATH_MAX] = {0};
+  if (!command.empty() && realpath(command.c_str(), RealBinPath) != nullptr) {
+    std::string bindir = RealBinPath;
+    bindir             = bindir.substr(0, bindir.find_last_of("/")); // getting the bin dir not executable path
+    bindir             = check_parent_path(bindir);
+    if (!bindir.empty()) {
+      return bindir;
+    }
+  }
+
+  return path;
 }
 
 // the help message for traffic_layout runroot
 void
-RunrootEngine::runroot_help_message(const bool runflag, const bool cleanflag)
+RunrootEngine::runroot_help_message(const bool runflag, const bool cleanflag, const bool verifyflag, const bool fixflag)
 {
   if (runflag) {
-    std::cout << "\ninit Usage: traffic_layout init ([switch]) --path /path/to/sandbox\n"
-                 "Note : if no path provided, please set Environment variable $TS_RUNROOT\n"
-              << std::endl;
+    std::cout << "\ninit Usage: traffic_layout init ([switch]) (--path /path/to/sandbox)\n" << std::endl;
     std::cout << "Sub-switches:\n"
-                 "--path        Specify the path of the runroot (the path should be the next argument)\n"
+                 "--path        Specify the path of the runroot to create (the path should be the next argument)\n"
                  "--force       Force to create ts_runroot even directory already exists\n"
                  "--absolute    Produce absolute path in the yaml file\n"
                  "--run-root(=/path)  Using specified TS_RUNROOT as sandbox\n"
               << std::endl;
   }
   if (cleanflag) {
-    std::cout << "\nremove Usage: traffic_layout remove ([switch]) --path /path/to/sandbox\n"
-                 "Note : if no path provided, please set Environment variable $TS_RUNROOT\n"
-              << std::endl;
+    std::cout << "\nremove Usage: traffic_layout remove ([switch]) (--path /path/to/sandbox)\n" << std::endl;
     std::cout << "Sub-switches:\n"
-                 "--path       specify the path of the runroot (the path should be the next argument)\n"
-                 "--force      force to remove ts_runroot even with  other unknown files\n"
+                 "--path       specify the path of the runroot to remove (the path should be the next argument)\n"
+                 "--force      force to remove ts_runroot even with other unknown files\n"
+              << std::endl;
+  }
+  if (verifyflag) {
+    std::cout << "\nverify Usage: traffic_layout verify (--path /path/to/sandbox)\n" << std::endl;
+    std::cout << "Sub-switches:\n"
+                 "--path       specify the path of the runroot to verify (the path should be the next argument)\n"
               << std::endl;
   }
   return;
@@ -184,14 +216,28 @@ RunrootEngine::runroot_parse()
     if (argument.substr(0, RUNROOT_WORD_LENGTH) == "--run-root") {
       continue;
     }
-    // set init flag & sandbox path
+    // set init flag
     if (argument == "init") {
       run_flag = true;
+      command_num++;
       continue;
     }
-    // set remove flag & sandbox path
+    // set remove flag
     if (argument == "remove") {
       clean_flag = true;
+      command_num++;
+      continue;
+    }
+    // set verify flag
+    if (argument == "verify") {
+      verify_flag = true;
+      command_num++;
+      continue;
+    }
+    // set fix flag
+    if (argument == "--fix") {
+      fix_flag = true;
+      command_num++;
       continue;
     }
     if (argument == "--path") {
@@ -214,7 +260,7 @@ RunrootEngine::sanity_check()
 {
   // check output help or not
   if (help_flag) {
-    runroot_help_message(run_flag, clean_flag);
+    runroot_help_message(run_flag, clean_flag, verify_flag, fix_flag);
     exit(0);
   }
   if (version_flag) {
@@ -224,53 +270,27 @@ RunrootEngine::sanity_check()
     ink_fputln(stdout, appVersionInfo.FullVersionInfoStr);
     exit(0);
   }
-  if (run_flag && clean_flag) {
-    ink_fatal("Cannot run and clean in the same time");
+  if (command_num > 1) {
+    ink_fatal("Cannot run multiple command at the same time");
   }
-  if (!run_flag && !clean_flag) {
+  if (command_num < 1) {
     ink_fatal("No command specified");
   }
   if ((force_flag && !run_flag) && (force_flag && !clean_flag)) {
     ink_fatal("Nothing to force");
   }
 
-  path = path_handler(path);
+  path = path_handler(path, run_flag, _argv[0]);
+
+  if (path.empty()) {
+    ink_fatal("Path not valild (runroot_path.yml not found)");
+  }
 
   if (run_flag) {
     if (!check_run_path(path, force_flag)) {
-      ink_fatal("Invalid path to create: %s", path.c_str());
+      ink_fatal("Failed to create runroot with path '%s'", path.c_str());
     }
   }
-  if (clean_flag) {
-    if (!check_delete_path(path, force_flag)) {
-      ink_fatal("Invalid path to remove: %s", path.c_str());
-    }
-  }
-}
-// for cleanning the parent of bin / cwd
-// return the path if we can clean the bin / cwd
-const static std::string
-clean_parent(const std::string &bin_path)
-{
-  char cwd[PATH_MAX];
-  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
-  }
-
-  char resolved_binpath[PATH_MAX];
-  if (realpath(bin_path.c_str(), resolved_binpath) == nullptr) { // bin path
-    ink_fatal("unexcepted failure from realpath() code=%d", errno);
-  }
-  std::string RealBinPath = resolved_binpath;
-
-  std::vector<std::string> TwoPath = {cwd, RealBinPath};
-  for (auto it : TwoPath) {
-    std::string path = check_parent_path(it);
-    if (path.size() != 0) {
-      return path;
-    }
-  }
-  return "";
 }
 
 // the function for removing the runroot
@@ -286,54 +306,42 @@ RunrootEngine::clean_runroot()
   std::string cur_working_dir = cwd;
 
   if (force_flag) {
-    std::ifstream check_file(Layout::relative_to(clean_root, "runroot_path.yml"));
-    if (!check_file.good()) {
-      ink_fatal("invalid path to clean (no runroot_path.yml file found)");
-    }
     // the force clean
     if (!check_force()) {
       std::cout << "Force remove terminated" << std::endl;
       exit(0);
     }
     std::cout << "Forcing removing runroot ..." << std::endl;
-    if (cur_working_dir == path) {
+    if (cur_working_dir == clean_root) {
       // if cwd is the runroot, keep the directory and remove everything insides
       remove_inside_directory(clean_root);
     } else {
       if (!remove_directory(clean_root)) {
-        ink_warning("Failed force removing runroot: %s - %s", clean_root.c_str(), strerror(errno));
+        ink_warning("Failed force removing runroot '%s' - %s", clean_root.c_str(), strerror(errno));
       }
     }
   } else {
-    // if we can find the yaml, then clean it
-    std::ifstream check_file(Layout::relative_to(clean_root, "runroot_path.yml"));
-    if (check_file.good() || !clean_parent(_argv[0]).empty()) {
-      if (!clean_parent(_argv[0]).empty()) {
-        clean_root = clean_parent(_argv[0]);
-      }
-      // handle the map and deleting of each directories specified in the yml file
-      std::string yaml_file = Layout::relative_to(clean_root, "runroot_path.yml");
-      std::unordered_map<std::string, std::string> map = runroot_map(yaml_file, clean_root);
-      map.erase("prefix");
-      map.erase("exec_prefix");
-      append_slash(clean_root);
-      for (auto it : map) {
-        std::string dir = it.second;
-        append_slash(dir);
-        std::string later_dir = dir.substr(clean_root.size());
-        dir                   = Layout::relative_to(clean_root, later_dir.substr(0, later_dir.find_first_of("/")));
-        remove_directory(dir);
-      }
-      // coverity issue need check on value
-      if (yaml_file.size()) {
-        remove(yaml_file.c_str());
-      }
-      if (cur_working_dir != path) {
-        // if the runroot is empty, remove it
-        remove(clean_root.c_str());
-      }
-    } else {
-      ink_fatal("runroot_path.yml not found - invalid path to clean");
+    // handle the map and deleting of each directories specified in the yml file
+    std::unordered_map<std::string, std::string> map = runroot_map(clean_root);
+    map.erase("prefix");
+    map.erase("exec_prefix");
+    append_slash(clean_root);
+    for (auto it : map) {
+      std::string dir = it.second;
+      append_slash(dir);
+      std::string later_dir = dir.substr(clean_root.size());
+      dir                   = Layout::relative_to(clean_root, later_dir.substr(0, later_dir.find_first_of("/")));
+      remove_directory(dir);
+    }
+
+    std::string yaml_file = Layout::relative_to(clean_root, "runroot_path.yml");
+    // remove yml file
+    if (yaml_file.size()) {
+      remove(yaml_file.c_str());
+    }
+    if (cur_working_dir != clean_root) {
+      // if the runroot is empty, remove it
+      remove(clean_root.c_str());
     }
   }
 }
@@ -437,7 +445,7 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
     }
 
     if (!copy_directory(old_path, new_path)) {
-      ink_warning("Copy failed for %s - %s", it.first.c_str(), strerror(errno));
+      ink_warning("Copy failed for '%s' - %s", it.first.c_str(), strerror(errno));
     }
   }
 
@@ -447,5 +455,125 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
     path_map["prefix"] = ts_runroot;
   } else {
     path_map["prefix"] = ".";
+  }
+}
+
+// return an array containing gid and uid of provided user
+static std::pair<int, int>
+get_giduid(const char *user)
+{
+  passwd *pwd;
+  if (*user == '#') {
+    // Numeric user notation.
+    uid_t uid = (uid_t)atoi(&user[1]);
+    pwd       = getpwuid(uid);
+  } else {
+    pwd = getpwnam(user);
+  }
+  if (!pwd) {
+    // null ptr
+    ink_fatal("missing password database entry for '%s'", user);
+  }
+  std::pair<int, int> giduid = {int(pwd->pw_gid), int(pwd->pw_uid)};
+  return giduid;
+}
+
+static void
+output_read_permission(const std::string &permission)
+{
+  if (permission[0] == '1') {
+    std::cout << "\tRead Permission: \033[1;32mPASSED\033[0m" << std::endl;
+  } else {
+    std::cout << "\tRead Permission: \033[1;31mFAILED\033[0m" << std::endl;
+  }
+}
+
+static void
+output_write_permission(const std::string &permission)
+{
+  if (permission[1] == '1') {
+    std::cout << "\tWrite Permission: \033[1;32mPASSED\033[0m" << std::endl;
+  } else {
+    std::cout << "\tWrite Permission: \033[1;31mFAILED\033[0m" << std::endl;
+  }
+}
+
+static void
+output_execute_permission(const std::string &permission)
+{
+  if (permission[2] == '1') {
+    std::cout << "\tExecute Permission: \033[1;32mPASSED\033[0m" << std::endl;
+  } else {
+    std::cout << "\tExecute Permission: \033[1;31mFAILED\033[0m" << std::endl;
+  }
+}
+
+void
+RunrootEngine::verify_runroot()
+{
+  std::pair<int, int> giduid = get_giduid(TS_PKGSYSUSER);
+
+  int gid = giduid.first;
+  int uid = giduid.second;
+
+  std::cout << "trafficserver user: " << TS_PKGSYSUSER << std::endl << std::endl;
+
+  if (int(getuid()) != uid) {
+    if (getuid() != 0) {
+      ink_error("In order to test as user '%s', root privileges are required.\nPlease run with sudo.", TS_PKGSYSUSER);
+      exit(70);
+    }
+    if (setregid(gid, gid) != 0) {
+      ink_fatal("failed to set group ID '%d' - %s", gid, strerror(errno));
+    }
+    if (setreuid(uid, uid) != 0) {
+      ink_fatal("failed to set user ID '%d' - %s", uid, strerror(errno));
+    }
+  }
+
+  std::unordered_map<std::string, std::string> path_map = runroot_map(path);
+  std::unordered_map<std::string, std::string> permission_map;
+
+  // set up permission map for all permissions
+  for (auto it : path_map) {
+    std::string name  = it.first;
+    std::string value = it.second;
+
+    if (name == "prefix" || name == "exec_prefix")
+      continue;
+
+    permission_map[name] = "000"; // default rwx all 0
+
+    if (!access(value.c_str(), R_OK)) {
+      permission_map[name][0] = '1';
+    }
+    if (!access(value.c_str(), W_OK)) {
+      permission_map[name][1] = '1';
+    }
+    if (!access(value.c_str(), X_OK)) {
+      permission_map[name][2] = '1';
+    }
+  }
+
+  // display pass or fail for permission required
+  for (auto it : permission_map) {
+    std::string name       = it.first;
+    std::string permission = it.second;
+    std::cout << name << ": \x1b[1m" + path_map[name] + "\x1b[0m" << std::endl;
+
+    // check for read permission
+    if (name == "includedir" || name == "mandir" || name == "sysconfdir" || name == "datadir") {
+      output_read_permission(permission);
+    }
+    // check for write permission
+    if (name == "localstatedir" || name == "logdir" || name == "runtimedir" || name == "cachedir") {
+      output_read_permission(permission);
+      output_write_permission(permission);
+    }
+    // check for execute permission
+    if (name == "bindir" || name == "sbindir" || name == "libdir" || name == "libexecdir") {
+      output_read_permission(permission);
+      output_execute_permission(permission);
+    }
   }
 }
