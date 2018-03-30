@@ -215,7 +215,9 @@ QUICNetVConnection::free(EThread *t)
 
   this->_ctable->erase(this->_original_quic_connection_id, this);
   this->_ctable->erase(this->_quic_connection_id, this);
-  this->_alt_con_manager->invalidate_alt_connections();
+  if (this->_alt_con_manager) {
+    this->_alt_con_manager->invalidate_alt_connections();
+  }
 
   /* TODO: Uncmment these blocks after refactoring read / write process
     this->_udp_con        = nullptr;
