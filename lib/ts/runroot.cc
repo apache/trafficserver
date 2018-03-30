@@ -177,30 +177,31 @@ runroot_handler(const char **argv, bool json)
 
 // return a map of all path in runroot_path.yml
 std::unordered_map<std::string, std::string>
-runroot_map(std::string &yaml_path, std::string &prefix)
+runroot_map(const std::string &prefix)
 {
+  std::string yaml_path = Layout::relative_to(prefix, "runroot_path.yml");
   std::ifstream file;
   file.open(yaml_path);
   if (!file.good()) {
-    ink_warning("Bad path, continue with default value");
+    ink_warning("Bad path '%s', continue with default value", prefix.c_str());
     return std::unordered_map<std::string, std::string>{};
   }
 
   std::ifstream yamlfile(yaml_path);
-  std::unordered_map<std::string, std::string> runroot_map;
+  std::unordered_map<std::string, std::string> map;
   std::string str;
   while (std::getline(yamlfile, str)) {
     int pos = str.find(':');
-    runroot_map[str.substr(0, pos)] = str.substr(pos + 2);
+    map[str.substr(0, pos)] = str.substr(pos + 2);
   }
 
   // change it to absolute path in the map
-  for (auto it : runroot_map) {
+  for (auto it : map) {
     if (it.second[0] != '/') {
-      runroot_map[it.first] = Layout::relative_to(prefix, it.second);
+      map[it.first] = Layout::relative_to(prefix, it.second);
     }
   }
-  return runroot_map;
+  return map;
 }
 
 // check for the using of runroot
@@ -217,6 +218,5 @@ check_runroot()
   if ((len + 1) > PATH_NAME_MAX) {
     ink_fatal("runroot path is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
   }
-  std::string yaml_path = Layout::relative_to(using_runroot, "runroot_path.yml");
-  return runroot_map(yaml_path, using_runroot);
+  return runroot_map(using_runroot);
 }
