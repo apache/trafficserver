@@ -112,6 +112,7 @@ public:
     return !allows_.empty();
   }
 
+  void update_defaults();
   void add_disallow(const std::string &disallow);
   void add_allow(const std::string &allow);
   void add_compressible_content_type(const std::string &content_type);

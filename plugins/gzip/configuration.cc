@@ -115,6 +115,15 @@ Configuration::add_host_configuration(HostConfiguration *hc)
 }
 
 void
+HostConfiguration::update_defaults()
+{
+  // maintain backwards compatibility/usability out of the box
+  if (compressible_status_codes_.empty()) {
+    compressible_status_codes_ = {TS_HTTP_STATUS_OK, TS_HTTP_STATUS_PARTIAL_CONTENT, TS_HTTP_STATUS_NOT_MODIFIED};
+  }
+}
+
+void
 HostConfiguration::add_disallow(const std::string &disallow)
 {
   disallows_.push_back(disallow);
@@ -295,6 +304,7 @@ Configuration::Parse(const char *path)
 
   Configuration *c                              = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
+
   c->add_host_configuration(current_host_configuration);
 
   if (pathstring.empty()) {
@@ -341,7 +351,10 @@ Configuration::Parse(const char *path)
       switch (state) {
       case kParseStart:
         if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-          std::string current_host   = token.substr(1, token.size() - 2);
+          std::string current_host = token.substr(1, token.size() - 2);
+
+          // Makes sure that any default settings are properly set, when not explicitly set via configs
+          current_host_configuration->update_defaults();
           current_host_configuration = new HostConfiguration(current_host);
           c->add_host_configuration(current_host_configuration);
         } else if (token == "compressible-content-type") {
@@ -399,6 +412,9 @@ Configuration::Parse(const char *path)
       }
     }
   }
+
+  // Update the defaults for the last host configuration too, if needed.
+  current_host_configuration->update_defaults();
 
   if (state != kParseStart) {
     warning("the parser state indicates that data was expected when it reached the end of the file (%d)", state);
