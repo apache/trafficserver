@@ -124,6 +124,24 @@ QUICConfigParams::initialize()
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
 
+  REC_EstablishStaticConfigInt32U(this->_ld_max_tlps, "proxy.config.quic.loss_detection.max_tlps");
+  REC_EstablishStaticConfigInt32U(this->_ld_reordering_threshold, "proxy.config.quic.loss_detection.reordering_threshold");
+  REC_EstablishStaticConfigFloat(this->_ld_time_reordering_fraction, "proxy.config.quic.loss_detection.time_reordering_fraction");
+  REC_EstablishStaticConfigInt32U(this->_ld_time_loss_detection, "proxy.config.quic.loss_detection.using_time_loss_detection");
+
+  uint32_t timeout = 0;
+  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.min_tlp_timeout");
+  this->_ld_min_tlp_timeout = HRTIME_MSECONDS(timeout);
+
+  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.min_rto_timeout");
+  this->_ld_min_rto_timeout = HRTIME_MSECONDS(timeout);
+
+  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.delayed_ack_timeout");
+  this->_ld_delayed_ack_timeout = HRTIME_MSECONDS(timeout);
+
+  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.default_initial_rtt");
+  this->_ld_default_initial_rtt = HRTIME_MSECONDS(timeout);
+
   QUICStatelessRetry::init();
 
   this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
@@ -218,6 +236,54 @@ SSL_CTX *
 QUICConfigParams::client_ssl_ctx() const
 {
   return this->_client_ssl_ctx;
+}
+
+uint32_t
+QUICConfigParams::ld_max_tlps() const
+{
+  return _ld_max_tlps;
+}
+
+uint32_t
+QUICConfigParams::ld_reordering_threshold() const
+{
+  return _ld_reordering_threshold;
+}
+
+float
+QUICConfigParams::ld_time_reordering_fraction() const
+{
+  return _ld_time_reordering_fraction;
+}
+
+uint32_t
+QUICConfigParams::ld_time_loss_detection() const
+{
+  return _ld_time_loss_detection;
+}
+
+ink_hrtime
+QUICConfigParams::ld_min_tlp_timeout() const
+{
+  return _ld_min_tlp_timeout;
+}
+
+ink_hrtime
+QUICConfigParams::ld_min_rto_timeout() const
+{
+  return _ld_min_rto_timeout;
+}
+
+ink_hrtime
+QUICConfigParams::ld_delayed_ack_timeout() const
+{
+  return _ld_delayed_ack_timeout;
+}
+
+ink_hrtime
+QUICConfigParams::ld_default_initial_rtt() const
+{
+  return _ld_default_initial_rtt;
 }
 
 //

@@ -22,22 +22,14 @@
  */
 
 #include "QUICLossDetector.h"
-#include "QUICEvents.h"
+
 #include "ts/ink_assert.h"
+
+#include "QUICConfig.h"
+#include "QUICEvents.h"
 
 #define QUICLDDebug(fmt, ...) \
   Debug("quic_loss_detector", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_connection_id), ##__VA_ARGS__)
-
-// 3.4.1.  Constants of interest (draft-08)
-// Keep the order as the same as the spec so that we can see the difference easily.
-constexpr static uint32_t MAX_TLPS               = 2;
-constexpr static uint32_t REORDERING_THRESHOLD   = 3;
-constexpr static double TIME_REORDERING_FRACTION = 1.0 / 8.0;
-constexpr static ink_hrtime MIN_TLP_TIMEOUT      = HRTIME_MSECONDS(10);
-constexpr static ink_hrtime MIN_RTO_TIMEOUT      = HRTIME_MSECONDS(200);
-// This is defined on the spec but not used
-// constexpr static ink_hrtime DELAYED_ACK_TIMEOUT  = HRTIME_MSECONDS(25);
-constexpr static ink_hrtime DEFAULT_INITIAL_RTT = HRTIME_MSECONDS(100);
 
 QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc)
   : _transmitter(transmitter), _cc(cc)
@@ -45,11 +37,21 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConge
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
 
-  if (this->_time_loss_detection) {
+  QUICConfig::scoped_config params;
+  this->_k_max_tlps                  = params->ld_max_tlps();
+  this->_k_reordering_threshold      = params->ld_reordering_threshold();
+  this->_k_time_reordering_fraction  = params->ld_time_reordering_fraction();
+  this->_k_using_time_loss_detection = params->ld_time_loss_detection();
+  this->_k_min_tlp_timeout           = params->ld_min_tlp_timeout();
+  this->_k_min_rto_timeout           = params->ld_min_rto_timeout();
+  this->_k_delayed_ack_timeout       = params->ld_delayed_ack_timeout();
+  this->_k_default_initial_rtt       = params->ld_default_initial_rtt();
+
+  if (this->_k_using_time_loss_detection) {
     this->_reordering_threshold     = UINT32_MAX;
-    this->_time_reordering_fraction = TIME_REORDERING_FRACTION;
+    this->_time_reordering_fraction = this->_k_time_reordering_fraction;
   } else {
-    this->_reordering_threshold     = REORDERING_THRESHOLD;
+    this->_reordering_threshold     = this->_k_reordering_threshold;
     this->_time_reordering_fraction = INFINITY;
   }
 
@@ -295,25 +297,25 @@ QUICLossDetector::_set_loss_detection_alarm()
   if (this->_handshake_outstanding) {
     // Handshake retransmission alarm.
     if (this->_smoothed_rtt == 0) {
-      alarm_duration = 2 * DEFAULT_INITIAL_RTT;
+      alarm_duration = 2 * this->_k_default_initial_rtt;
     } else {
       alarm_duration = 2 * this->_smoothed_rtt;
     }
-    alarm_duration = std::max(alarm_duration + this->_max_ack_delay, MIN_TLP_TIMEOUT);
+    alarm_duration = std::max(alarm_duration + this->_max_ack_delay, this->_k_min_tlp_timeout);
     alarm_duration = alarm_duration * (1 << this->_handshake_count);
     QUICLDDebug("Handshake retransmission alarm will be set");
   } else if (this->_loss_time != 0) {
     // Early retransmit timer or time loss detection.
     alarm_duration = this->_loss_time - this->_time_of_last_sent_packet;
     QUICLDDebug("Early retransmit timer or time loss detection will be set");
-  } else if (this->_tlp_count < MAX_TLPS) {
+  } else if (this->_tlp_count < this->_k_max_tlps) {
     // Tail Loss Probe
-    alarm_duration = std::max(static_cast<ink_hrtime>(1.5 * this->_smoothed_rtt + this->_max_ack_delay), MIN_TLP_TIMEOUT);
+    alarm_duration = std::max(static_cast<ink_hrtime>(1.5 * this->_smoothed_rtt + this->_max_ack_delay), this->_k_min_tlp_timeout);
     QUICLDDebug("TLP alarm will be set");
   } else {
     // RTO alarm
     alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar + this->_max_ack_delay;
-    alarm_duration = std::max(alarm_duration, MIN_RTO_TIMEOUT);
+    alarm_duration = std::max(alarm_duration, this->_k_min_rto_timeout);
     alarm_duration = alarm_duration * (1 << this->_rto_count);
     QUICLDDebug("RTO alarm will be set");
   }
@@ -348,7 +350,7 @@ QUICLossDetector::_on_loss_detection_alarm()
   } else if (this->_loss_time != 0) {
     // Early retransmit or Time Loss Detection
     this->_detect_lost_packets(this->_largest_acked_packet);
-  } else if (this->_tlp_count < MAX_TLPS) {
+  } else if (this->_tlp_count < this->_k_max_tlps) {
     // Tail Loss Probe.
     QUICLDDebug("TLP");
     // FIXME TLP causes inifinite loop somehow
@@ -377,7 +379,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   std::map<QUICPacketNumber, PacketInfo &> lost_packets;
   double delay_until_lost = INFINITY;
 
-  if (this->_time_loss_detection) {
+  if (this->_k_using_time_loss_detection) {
     delay_until_lost = (1 + this->_time_reordering_fraction) * std::max(this->_latest_rtt, this->_smoothed_rtt);
   } else if (largest_acked_packet_number == this->_largest_sent_packet) {
     // Early retransmit alarm.

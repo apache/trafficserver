@@ -86,11 +86,20 @@ private:
 
   QUICConnectionId _connection_id = 0;
 
-  bool _time_loss_detection = true;
-
   // TODO QUICCongestionController *cc = nullptr;
 
-  // 3.4.2.  Variables of interest (draft-08)
+  // 3.4.1.  Constants of interest (draft-10)
+  // Values will be loaded from records.config via QUICConfig at constructor
+  uint32_t _k_max_tlps              = 0;
+  uint32_t _k_reordering_threshold  = 0;
+  float _k_time_reordering_fraction = 0.0;
+  bool _k_using_time_loss_detection = false;
+  ink_hrtime _k_min_tlp_timeout     = 0;
+  ink_hrtime _k_min_rto_timeout     = 0;
+  ink_hrtime _k_delayed_ack_timeout = 0;
+  ink_hrtime _k_default_initial_rtt = 0;
+
+  // 3.4.2.  Variables of interest (draft-10)
   // Keep the order as the same as the spec so that we can see the difference easily.
   Action *_loss_detection_alarm        = nullptr;
   uint32_t _handshake_count            = 0;
@@ -105,9 +114,9 @@ private:
   ink_hrtime _rttvar                   = 0;
   ink_hrtime _min_rtt                  = 0;
   ink_hrtime _max_ack_delay            = 0;
-  uint32_t _reordering_threshold;
-  double _time_reordering_fraction;
-  ink_hrtime _loss_time = 0;
+  uint32_t _reordering_threshold       = 0;
+  double _time_reordering_fraction     = 0.0;
+  ink_hrtime _loss_time                = 0;
   std::map<QUICPacketNumber, std::unique_ptr<PacketInfo>> _sent_packets;
 
   // These are not defined on the spec but expected to be count

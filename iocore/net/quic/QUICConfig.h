@@ -52,27 +52,47 @@ public:
   SSL_CTX *server_ssl_ctx() const;
   SSL_CTX *client_ssl_ctx() const;
 
+  uint32_t ld_max_tlps() const;
+  uint32_t ld_reordering_threshold() const;
+  float ld_time_reordering_fraction() const;
+  uint32_t ld_time_loss_detection() const;
+  ink_hrtime ld_min_tlp_timeout() const;
+  ink_hrtime ld_min_rto_timeout() const;
+  ink_hrtime ld_delayed_ack_timeout() const;
+  ink_hrtime ld_default_initial_rtt() const;
+
 private:
+  static int _connection_table_size;
+
   // FIXME Fill appropriate default values in RecordsConfig.cc
   uint32_t _no_activity_timeout_in  = 0;
   uint32_t _no_activity_timeout_out = 0;
   uint32_t _initial_max_data        = 0;
   uint32_t _initial_max_stream_data = 0;
   uint32_t _server_id               = 0;
-  static int _connection_table_size;
-  uint32_t _stateless_retry = 0;
+  uint32_t _stateless_retry         = 0;
 
   uint32_t _initial_max_stream_id_bidi_in  = 100;
   uint32_t _initial_max_stream_id_bidi_out = 101;
   uint32_t _initial_max_stream_id_uni_in   = 102;
   uint32_t _initial_max_stream_id_uni_out  = 103;
 
-  char *_server_supported_groups;
-  char *_client_supported_groups;
+  char *_server_supported_groups = nullptr;
+  char *_client_supported_groups = nullptr;
 
   // TODO: integrate with SSLCertLookup or SNIConfigParams
   SSL_CTX *_server_ssl_ctx = nullptr;
   SSL_CTX *_client_ssl_ctx = nullptr;
+
+  // [draft-10 recovery] - 3.4.1.  Constants of interest
+  uint32_t _ld_max_tlps              = 2;
+  uint32_t _ld_reordering_threshold  = 3;
+  float _ld_time_reordering_fraction = 0.125;
+  uint32_t _ld_time_loss_detection   = 0;
+  ink_hrtime _ld_min_tlp_timeout     = HRTIME_MSECONDS(10);
+  ink_hrtime _ld_min_rto_timeout     = HRTIME_MSECONDS(200);
+  ink_hrtime _ld_delayed_ack_timeout = HRTIME_MSECONDS(25);
+  ink_hrtime _ld_default_initial_rtt = HRTIME_MSECONDS(100);
 };
 
 class QUICConfig
