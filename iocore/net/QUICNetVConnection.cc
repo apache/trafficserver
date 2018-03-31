@@ -774,7 +774,7 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
     break;
   case QUICPacketType::PROTECTED:
   default:
-    QUICConDebug("Ignore %s(%" PRIu8 ") packet", QUICDebugNames::packet_type(packet->type()), packet->type());
+    QUICConDebug("Ignore %s(%" PRIu8 ") packet", QUICDebugNames::packet_type(packet->type()), static_cast<uint8_t>(packet->type()));
 
     error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
     break;
@@ -878,7 +878,7 @@ QUICNetVConnection::_state_common_receive_packet()
       error = this->_recv_and_ack(std::move(p));
       break;
     default:
-      QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), p->type());
+      QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), static_cast<uint8_t>(p->type()));
 
       error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
       break;
