@@ -50,12 +50,19 @@ class QUICCongestionController
 {
 public:
   QUICCongestionController();
+  QUICCongestionController(QUICConnectionId connection_id);
   virtual ~QUICCongestionController() {}
 
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(QUICPacketNumber acked_packet_number, size_t acked_packet_size);
   virtual void on_packets_lost(std::map<QUICPacketNumber, PacketInfo &> packets);
   void on_retransmission_timeout_verified();
+  bool check_credit() const;
+
+  // Debug
+  uint32_t bytes_in_flight() const;
+  uint32_t congestion_window() const;
+  uint32_t current_ssthresh() const;
 
 private:
   // 4.7.2.  Variables of interest
@@ -63,6 +70,8 @@ private:
   uint32_t _congestion_window       = 0;
   QUICPacketNumber _end_of_recovery = 0;
   uint32_t _ssthresh                = UINT32_MAX;
+
+  QUICConnectionId _connection_id = 0;
 
   bool _in_recovery(QUICPacketNumber packet_number);
 };

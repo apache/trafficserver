@@ -197,7 +197,7 @@ QUICNetVConnection::start()
 
   // Create frame handlers
   this->_stream_manager         = new QUICStreamManager(this->connection_id(), this->_application_map);
-  this->_congestion_controller  = new QUICCongestionController();
+  this->_congestion_controller  = new QUICCongestionController(this->connection_id());
   this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(0);
@@ -935,10 +935,16 @@ QUICNetVConnection::_state_common_send_packet()
   QUICPacket *packet;
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-  uint32_t packet_count = this->_packet_send_queue.size;
+  uint32_t packet_count = 0;
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
+    if (!this->_congestion_controller->check_credit()) {
+      this->_packet_send_queue.push(packet);
+      break;
+    }
+
     this->_packet_handler->send_packet(*packet, this);
     this->_loss_detector->on_packet_sent(QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet));
+    packet_count++;
   }
   QUIC_INCREMENT_DYN_STAT_EX(QUICStats::total_packets_sent_stat, packet_count);
 
