@@ -540,3 +540,13 @@ QUICLossDetector::_remove_from_sent_packet_list(QUICPacketNumber packet_number)
   // Remove from the list
   this->_sent_packets.erase(packet_number);
 }
+
+ink_hrtime
+QUICLossDetector::current_rto_period()
+{
+  ink_hrtime alarm_duration;
+  alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar + this->_max_ack_delay;
+  alarm_duration = std::max(alarm_duration, this->_k_min_rto_timeout);
+  alarm_duration = alarm_duration * (1 << this->_rto_count);
+  return alarm_duration;
+}

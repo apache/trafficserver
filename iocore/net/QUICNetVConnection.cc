@@ -1508,16 +1508,16 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  QUICConDebug("Enter state_connection_closing");
+  ink_hrtime rto = this->_loss_detector->current_rto_period();
+
+  QUICConDebug("Enter state_connection_closing %" PRIu64 "ms", 3 * rto / HRTIME_MSECOND);
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
 
   // This states SHOULD persist for three times the
   // current Retransmission Timeout (RTO) interval as defined in
   // [QUIC-RECOVERY].
 
-  // TODO The closing period should be obtained from QUICLossDetector since it is the only component that knows the RTO interval.
-  // Use 3 times kkMinRTOTimeout(200ms) for now.
-  this->_schedule_closing_timeout(HRTIME_MSECONDS(3 * 200));
+  this->_schedule_closing_timeout(3 * rto);
 }
 
 void
@@ -1535,16 +1535,16 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  QUICConDebug("Enter state_connection_draining");
+  ink_hrtime rto = this->_loss_detector->current_rto_period();
+
+  QUICConDebug("Enter state_connection_draining %" PRIu64 "ms", 3 * rto / HRTIME_MSECOND);
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
 
   // This states SHOULD persist for three times the
   // current Retransmission Timeout (RTO) interval as defined in
   // [QUIC-RECOVERY].
 
-  // TODO The draining period should be obtained from QUICLossDetector since it is the only component that knows the RTO interval.
-  // Use 3 times kkMinRTOTimeout(200ms) for now.
-  this->_schedule_closing_timeout(HRTIME_MSECONDS(3 * 200));
+  this->_schedule_closing_timeout(3 * rto);
 }
 
 void
