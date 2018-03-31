@@ -80,6 +80,7 @@ public:
   void on_packet_sent(QUICPacketUPtr packet);
   QUICPacketNumber largest_acked_packet_number();
   void reset();
+  ink_hrtime current_rto_period();
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;
