@@ -23,7 +23,17 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h string_view.h TextView.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
+check_PROGRAMS = \
+test_tsutil \
+test_arena \
+test_atomic \
+test_freelist \
+test_geometry \
+test_List \
+test_Map \
+test_Vec \
+test_X509HostnameValidator \
+test_tslib
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -73,6 +83,7 @@ libtsutil_la_SOURCES = \
   EventNotify.h \
   fastlz.c \
   fastlz.h \
+  fnv1aHash.h \
   Hash.cc \
   HashFNV.cc \
   HashFNV.h \
@@ -271,7 +282,8 @@ test_tslib_SOURCES = \
 	unit-tests/test_Scalar.cc \
 	unit-tests/test_string_view.cc \
 	unit-tests/test_TextView.cc \
-	unit-tests/test_MemSpan.cc
+	unit-tests/test_MemSpan.cc \
+	unit-tests/test_fnv1aHash.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
