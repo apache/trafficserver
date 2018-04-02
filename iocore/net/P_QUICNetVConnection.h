@@ -170,6 +170,7 @@ public:
   void start();
   void remove_connection_ids();
   void free(EThread *t) override;
+  void free() override;
   void destroy(EThread *t);
 
   UDPConnection *get_udp_con();
