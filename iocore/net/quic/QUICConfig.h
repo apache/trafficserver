@@ -61,6 +61,11 @@ public:
   ink_hrtime ld_delayed_ack_timeout() const;
   ink_hrtime ld_default_initial_rtt() const;
 
+  uint32_t cc_default_mss() const;
+  uint32_t cc_initial_window() const;
+  uint32_t cc_minimum_window() const;
+  float cc_loss_reduction_factor() const;
+
 private:
   static int _connection_table_size;
 
@@ -93,6 +98,12 @@ private:
   ink_hrtime _ld_min_rto_timeout     = HRTIME_MSECONDS(200);
   ink_hrtime _ld_delayed_ack_timeout = HRTIME_MSECONDS(25);
   ink_hrtime _ld_default_initial_rtt = HRTIME_MSECONDS(100);
+
+  // [draft-10 recovery] - 4.7.1.  Constants of interest
+  uint32_t _cc_default_mss          = 1460;
+  uint32_t _cc_initial_window_scale = 10; // Actual initial window size is this value multiplied by the _cc_default_mss
+  uint32_t _cc_minimum_window_scale = 2;  // Actual minimum window size is this value multiplied by the _cc_default_mss
+  float _cc_loss_reduction_factor   = 0.5;
 };
 
 class QUICConfig

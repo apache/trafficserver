@@ -24,6 +24,8 @@
 #include <ts/Diags.h>
 #include <QUICLossDetector.h>
 
+#include "QUICConfig.h"
+
 #define QUICCCDebug(fmt, ...)                                                                                           \
   Debug("quic_cc", "[%" PRIx64 "] "                                                                                     \
                    "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt,                                 \
@@ -36,20 +38,20 @@
         static_cast<uint64_t>(this->_connection_id), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         ##__VA_ARGS__)
 
-// 4.7.1.  Constants of interest
-constexpr static uint16_t DEFAULT_MSS         = 1460;
-constexpr static uint32_t INITIAL_WINDOW      = 10 * DEFAULT_MSS;
-constexpr static uint32_t MINIMUM_WINDOW      = 2 * DEFAULT_MSS;
-constexpr static double LOSS_REDUCTION_FACTOR = 0.5;
-
-QUICCongestionController::QUICCongestionController()
+QUICCongestionController::QUICCongestionController() : QUICCongestionController(0)
 {
-  this->_congestion_window = INITIAL_WINDOW;
 }
 
 QUICCongestionController::QUICCongestionController(QUICConnectionId connection_id) : _connection_id(connection_id)
 {
-  this->_congestion_window = INITIAL_WINDOW;
+  QUICConfig::scoped_config params;
+  this->_k_default_mss           = params->cc_default_mss();
+  this->_k_initial_window        = params->cc_initial_window();
+  this->_k_minimum_window        = params->cc_minimum_window();
+  this->_k_loss_reduction_factor = params->cc_loss_reduction_factor();
+
+  // 4.7.3.  Initialization
+  this->_congestion_window = this->_k_initial_window;
 }
 
 void
@@ -79,7 +81,7 @@ QUICCongestionController::on_packet_acked(QUICPacketNumber acked_packet_number, 
     QUICCCDebug("slow start window chaged");
   } else {
     // Congestion avoidance.
-    this->_congestion_window += DEFAULT_MSS * acked_packet_size / this->_congestion_window;
+    this->_congestion_window += this->_k_default_mss * acked_packet_size / this->_congestion_window;
     QUICCCDebug("Congestion avoidance window changed");
   }
 }
@@ -96,8 +98,8 @@ QUICCongestionController::on_packets_lost(std::map<QUICPacketNumber, PacketInfo 
   // than the end of the previous recovery epoch.
   if (!this->_in_recovery(largest_lost_packet)) {
     this->_end_of_recovery = largest_lost_packet;
-    this->_congestion_window *= LOSS_REDUCTION_FACTOR;
-    this->_congestion_window = std::max(this->_congestion_window, MINIMUM_WINDOW);
+    this->_congestion_window *= this->_k_loss_reduction_factor;
+    this->_congestion_window = std::max(this->_congestion_window, this->_k_minimum_window);
     this->_ssthresh          = this->_congestion_window;
     QUICCCDebug("packet lost, window changed");
   }
@@ -106,7 +108,7 @@ QUICCongestionController::on_packets_lost(std::map<QUICPacketNumber, PacketInfo 
 void
 QUICCongestionController::on_retransmission_timeout_verified()
 {
-  this->_congestion_window = MINIMUM_WINDOW;
+  this->_congestion_window = this->_k_minimum_window;
 }
 
 bool

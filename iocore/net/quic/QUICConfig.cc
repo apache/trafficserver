@@ -142,6 +142,11 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.default_initial_rtt");
   this->_ld_default_initial_rtt = HRTIME_MSECONDS(timeout);
 
+  REC_EstablishStaticConfigInt32U(this->_cc_default_mss, "proxy.config.quic.congestion_control.default_mss");
+  REC_EstablishStaticConfigInt32U(this->_cc_initial_window_scale, "proxy.config.quic.congestion_control.initial_window_scale");
+  REC_EstablishStaticConfigInt32U(this->_cc_minimum_window_scale, "proxy.config.quic.congestion_control.minimum_window_scale");
+  REC_EstablishStaticConfigFloat(this->_cc_loss_reduction_factor, "proxy.config.quic.congestion_control.loss_reduction_factor");
+
   QUICStatelessRetry::init();
 
   this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
@@ -284,6 +289,30 @@ ink_hrtime
 QUICConfigParams::ld_default_initial_rtt() const
 {
   return _ld_default_initial_rtt;
+}
+
+uint32_t
+QUICConfigParams::cc_default_mss() const
+{
+  return _cc_default_mss;
+}
+
+uint32_t
+QUICConfigParams::cc_initial_window() const
+{
+  return _cc_initial_window_scale * _cc_default_mss;
+}
+
+uint32_t
+QUICConfigParams::cc_minimum_window() const
+{
+  return _cc_minimum_window_scale * _cc_default_mss;
+}
+
+float
+QUICConfigParams::cc_loss_reduction_factor() const
+{
+  return _cc_loss_reduction_factor;
 }
 
 //

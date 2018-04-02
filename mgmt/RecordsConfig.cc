@@ -1351,6 +1351,15 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.loss_detection.default_initial_rtt", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
+  // Constatns of Congestion Control
+  {RECT_CONFIG, "proxy.config.quic.congestion_control.default_mss", RECD_INT, "1460", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.congestion_control.initial_window_scale", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.congestion_control.minimum_window_scale", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.congestion_control.loss_reduction_factor", RECD_FLOAT, "0.5", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[\\.0-9]+$", RECA_NULL}
+  ,
 
   //# Add LOCAL Records Here
   {RECT_LOCAL, "proxy.local.incoming_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

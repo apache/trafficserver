@@ -65,7 +65,14 @@ public:
   uint32_t current_ssthresh() const;
 
 private:
-  // 4.7.2.  Variables of interest
+  // 4.7.1. Constants of interest (draft-10)
+  // Values will be loaded from records.config via QUICConfig at constructor
+  uint32_t _k_default_mss        = 0;
+  uint32_t _k_initial_window     = 0;
+  uint32_t _k_minimum_window     = 0;
+  float _k_loss_reduction_factor = 0.0;
+
+  // 4.7.2. Variables of interest
   uint32_t _bytes_in_flight         = 0;
   uint32_t _congestion_window       = 0;
   QUICPacketNumber _end_of_recovery = 0;
