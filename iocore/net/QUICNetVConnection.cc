@@ -245,8 +245,11 @@ QUICNetVConnection::free()
 void
 QUICNetVConnection::remove_connection_ids()
 {
-  this->_ctable->erase(this->_original_quic_connection_id, this);
-  this->_ctable->erase(this->_quic_connection_id, this);
+  if (this->_ctable) {
+    this->_ctable->erase(this->_original_quic_connection_id, this);
+    this->_ctable->erase(this->_quic_connection_id, this);
+  }
+
   if (this->_alt_con_manager) {
     this->_alt_con_manager->invalidate_alt_connections();
   }
