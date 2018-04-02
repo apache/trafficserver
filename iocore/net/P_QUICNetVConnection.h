@@ -109,9 +109,9 @@ class SSLNextProtocolSet;
  * state_handshake()
  *  | READ:
  *  |   _state_handshake_process_packet()
- *  |   _state_handshake_process_initial_client_packet()
+ *  |   _state_handshake_process_initial_packet()
  *  |   _state_handshake_process_retry_packet()
- *  |   _state_handshake_process_client_cleartext_packet()
+ *  |   _state_handshake_process_handshake_packet()
  *  |   _state_handshake_process_zero_rtt_protected_packet()
  *  | WRITE:
  *  |   _state_common_send_packet()
@@ -284,9 +284,9 @@ private:
   QUICErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
 
   QUICErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_handshake_process_initial_client_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_handshake_process_initial_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_handshake_process_handshake_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_connection_established_process_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_common_receive_packet();

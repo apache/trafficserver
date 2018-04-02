@@ -53,11 +53,11 @@
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__); \
   Error("quic_net [%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
-static constexpr uint32_t MAX_PACKET_OVERHEAD                = 17; // Max long header len(17)
-static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD          = 15;
-static constexpr uint32_t MINIMUM_INITIAL_CLIENT_PACKET_SIZE = 1200;
-static constexpr ink_hrtime WRITE_READY_INTERVAL             = HRTIME_MSECONDS(20);
-static constexpr int FRAME_PER_EVENT                         = 64;
+static constexpr uint32_t MAX_PACKET_OVERHEAD         = 17; // Max long header len(17)
+static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD   = 15;
+static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
+static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(20);
+static constexpr int FRAME_PER_EVENT                  = 64;
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
@@ -335,7 +335,7 @@ QUICNetVConnection::minimum_quic_packet_size()
 {
   if (netvc_context == NET_VCONNECTION_OUT) {
     // FIXME Only the first packet need to be 1200 bytes at least
-    return MINIMUM_INITIAL_CLIENT_PACKET_SIZE;
+    return MINIMUM_INITIAL_PACKET_SIZE;
   } else {
     // FIXME This size should be configurable and should have some randomness
     // This is just for providing protection against packet analysis for protected packets
@@ -775,13 +775,13 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (packet->type()) {
   case QUICPacketType::INITIAL:
-    error = this->_state_handshake_process_initial_client_packet(std::move(packet));
+    error = this->_state_handshake_process_initial_packet(std::move(packet));
     break;
   case QUICPacketType::RETRY:
     error = this->_state_handshake_process_retry_packet(std::move(packet));
     break;
   case QUICPacketType::HANDSHAKE:
-    error = this->_state_handshake_process_client_cleartext_packet(std::move(packet));
+    error = this->_state_handshake_process_handshake_packet(std::move(packet));
     break;
   case QUICPacketType::ZERO_RTT_PROTECTED:
     error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(packet));
@@ -797,10 +797,10 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
 }
 
 QUICErrorUPtr
-QUICNetVConnection::_state_handshake_process_initial_client_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packet)
 {
-  if (packet->size() < MINIMUM_INITIAL_CLIENT_PACKET_SIZE) {
-    QUICConDebug("Packet size is smaller than the minimum initial client packet size");
+  if (packet->size() < MINIMUM_INITIAL_PACKET_SIZE) {
+    QUICConDebug("Packet size is smaller than the minimum initial packet size");
     // Ignore the packet
     return QUICErrorUPtr(new QUICNoError());
   }
@@ -834,7 +834,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
 }
 
 QUICErrorUPtr
-QUICNetVConnection::_state_handshake_process_client_cleartext_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_handshake_packet(QUICPacketUPtr packet)
 {
   return this->_recv_and_ack(std::move(packet));
 }

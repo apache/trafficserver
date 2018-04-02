@@ -32,25 +32,24 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
 
-  uint8_t client_initial_packet_header[] = {
+  uint8_t initial_packet_header[] = {
     0x82,                                           // Type
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection id
     0xaa, 0xbb, 0xcc, 0xdd,                         // Version
     0x00, 0x00, 0x00, 0x00,                         // Packet number
   };
-  uint8_t client_initial_packet_payload[] = {
+  uint8_t initial_packet_payload[] = {
     0x00 // Payload
   };
 
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::load({client_initial_packet_header, [](void *) {}}, sizeof(client_initial_packet_header), 0);
-  QUICPacket client_initial_packet(std::move(header), ats_unique_buf(client_initial_packet_payload, [](void *) {}),
-                                   sizeof(client_initial_packet_payload), 0);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::load({initial_packet_header, [](void *) {}}, sizeof(initial_packet_header), 0);
+  QUICPacket initial_packet(std::move(header), ats_unique_buf(initial_packet_payload, [](void *) {}),
+                            sizeof(initial_packet_payload), 0);
 
-  QUICPacketUPtr packet = factory.create_version_negotiation_packet(&client_initial_packet, 0);
+  QUICPacketUPtr packet = factory.create_version_negotiation_packet(&initial_packet, 0);
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);
-  CHECK(packet->connection_id() == client_initial_packet.connection_id());
-  CHECK(packet->packet_number() == client_initial_packet.packet_number());
+  CHECK(packet->connection_id() == initial_packet.connection_id());
+  CHECK(packet->packet_number() == initial_packet.packet_number());
   CHECK(packet->version() == 0x00);
   CHECK(memcmp(packet->payload(), "\xff\x00\x00\x09", 4) == 0);
 }
