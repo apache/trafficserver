@@ -316,7 +316,13 @@ QUICStreamManager::reset_recv_offset()
 bool
 QUICStreamManager::will_generate_frame()
 {
-  return this->stream_list.head;
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+    if (s->will_generate_frame()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 QUICFrameUPtr
