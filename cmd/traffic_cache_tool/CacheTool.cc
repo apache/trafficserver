@@ -290,7 +290,7 @@ Stripe::InitializeMeta()
       _meta[i][j].magic             = StripeMeta::MAGIC;
       _meta[i][j].version.ink_major = ts::CACHE_DB_MAJOR_VERSION;
       _meta[i][j].version.ink_minor = ts::CACHE_DB_MINOR_VERSION;
-      _meta[i][j].agg_pos = _meta[i][j].last_write_pos = _meta[i][j].write_pos = this->_start;
+      _meta[i][j].agg_pos = _meta[i][j].last_write_pos = _meta[i][j].write_pos = this->_content;
       _meta[i][j].phase = _meta[i][j].cycle = _meta[i][j].sync_serial = _meta[i][j].write_serial = _meta[i][j].dirty = 0;
       _meta[i][j].create_time = time(nullptr);
       _meta[i][j].sector_size = DEFAULT_HW_SECTOR_SIZE;
