@@ -235,6 +235,12 @@ QUICNetVConnection::free(EThread *t)
   this->_packet_handler->close_conenction(this);
 }
 
+void
+QUICNetVConnection::free()
+{
+  this->free(this_ethread());
+}
+
 // called by ET_UDP
 void
 QUICNetVConnection::remove_connection_ids()
