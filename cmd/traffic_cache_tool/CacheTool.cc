@@ -59,11 +59,8 @@ using ts::CacheDirEntry;
 using ts::MemSpan;
 using ts::Doc;
 
-// constexpr int STORE_BLOCK_SIZE           = 8192;
-// constexpr int STORE_BLOCK_SHIFT          = 13;
-constexpr int ESTIMATED_OBJECT_SIZE  = 8000;
-constexpr int DEFAULT_HW_SECTOR_SIZE = 512;
-// constexpr int MIN_VOL_SIZE               = 1024 * 1024 * 128;
+constexpr int ESTIMATED_OBJECT_SIZE      = 8000;
+constexpr int DEFAULT_HW_SECTOR_SIZE     = 512;
 constexpr int VOL_HASH_TABLE_SIZE        = 32707;
 int cache_config_min_average_object_size = ESTIMATED_OBJECT_SIZE;
 CacheStoreBlocks Vol_hash_alloc_size(1024);
@@ -96,9 +93,6 @@ struct Span {
   Span(FilePath const &path) : _path(path) {}
   Errata load();
   Errata loadDevice();
-  //  Errata Initialize();
-  //  Errata create_stripe(int number, off_t size_in_blocks, int scheme);
-  /// No allocated stripes on this span.
   bool isEmpty() const;
   int header_len = 0;
 
@@ -1734,55 +1728,6 @@ Cache::~Cache()
   for (auto *span : _spans)
     delete span;
 }
-/* --------------------------------------------------------------------------------------- */
-#if 0
-Errata
-Span::Initialize()
-{
-  Errata zret;
-
-  for (auto *strp : _stripes) {
-    std::cout << "strpe start=============" << strp->_start << std::endl;
-  }
-  auto skip = CacheStoreBlocks::SCALE;
-  // successive approximation to calculate start
-  auto start = skip;
-  uint64_t l;
-  for (int i = 0; i < 3; i++) {
-    l = _len - (start - skip);
-    if (l >= MIN_VOL_SIZE) {
-      header_len = sizeof(ts::SpanHeader) + (l / MIN_VOL_SIZE - 1) * sizeof(CacheStripeDescriptor);
-    } else {
-      header_len = sizeof(ts::SpanHeader);
-    }
-    start = skip + header_len;
-  }
-  // num_usable_blocks = ((_len * STORE_BLOCK_SIZE) - (start - skip)) >> STORE_BLOCK_SHIFT;
-  header_len       = ROUND_TO_STORE_BLOCK(header_len);
-  std::cout << "start " << start << "len " << _len << " header length " << header_len << std::endl;
-  num_usable_blocks = (_len - (start - skip)) >> STORE_BLOCK_SHIFT;
-  return zret;
-}
-#endif
-
-#if 0
-Errata
-Span::create_stripe(int number, off_t size_in_blocks, int scheme)
-{
-  Errata zret;
-  // initialize span header first
-  ts::SpanHeader sph;
-  sph.magic            = ts::SpanHeader::MAGIC;
-  sph.num_volumes      = 1;
-  sph.num_free         = 1;
-  sph.num_used         = 0;
-  sph.num_diskvol_blks = -1;
-  // sph.num_blocks = 0;
-
-  // initialize stripes
-  return zret;
-}
-#endif
 
 Errata
 Span::load()
@@ -2245,9 +2190,13 @@ Errata
 Clear_Spans(int argc, char *argv[])
 {
   Errata zret;
-
   Cache cache;
-  //  OPEN_RW_FLAG = O_RDWR;
+
+  if (!OPEN_RW_FLAG) {
+    zret.push(0, 1, "Writing Not Enabled.. Please use --write to enable writing to disk");
+    return zret;
+  }
+
   if ((zret = cache.loadSpan(SpanFile))) {
     for (auto *span : cache._spans) {
       span->clearPermanently();
@@ -2361,11 +2310,9 @@ Check_Freelist(std::string devicePath)
         for (auto strp : sp->_stripes) {
           strp->loadMeta();
           strp->loadDir();
-          /* what is this trying to do?
           for (int s = 0; s < strp->_segments; s++) {
-            int freelist = strp->dir_freelist_length(s);
+            strp->check_loop(s);
           }
-         */
         }
         break;
       }
@@ -2381,7 +2328,11 @@ Init_disk(FilePath const &input_file_path)
   Cache cache;
   VolumeAllocator va;
 
-  //  OPEN_RW_FLAG = O_RDWR;
+  if (!OPEN_RW_FLAG) {
+    zret.push(0, 1, "Writing Not Enabled.. Please use --write to enable writing to disk");
+    return zret;
+  }
+
   zret = va.load(SpanFile, VolumeFile);
   va.allocateSpan(input_file_path);
 
@@ -2396,11 +2347,6 @@ Get_Response(FilePath const &input_file_path)
   // user, password, are optional; scheme and host are required
 
   //  char* h= http://user:pass@IPADDRESS/path_to_file;?port      <== this is the format we need
-  //  url_matcher matcher;
-  //  if (matcher.match(h))
-  //    std::cout << h << " : is valid" << std::endl;
-  //  else
-  //    std::cout << h << " : is NOT valid" << std::endl;
 
   Errata zret;
   Cache cache;
@@ -2490,7 +2436,7 @@ main(int argc, char *argv[])
     .subCommand(std::string("span"), std::string("device path"), [&](int, char *argv[]) { return Clear_Span(inputFile); });
   Commands.add(std::string("retrieve"), std::string(" retrieve the response of the given list of URLs"),
                [&](int, char *argv[]) { return Get_Response(input_url_file); });
-  Commands.add(std::string("init"), std::string(" Initialize Span if the header is invalid"),
+  Commands.add(std::string("init"), std::string(" Initializes uninitialized span"),
                [&](int, char *argv[]) { return Init_disk(input_url_file); });
   Commands.setArgIndex(optind);
 
