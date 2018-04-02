@@ -295,6 +295,7 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
 
   // start QUIC handshake
   this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+  this->_schedule_packet_write_ready();
 
   return CONNECT_SUCCESS;
 }
