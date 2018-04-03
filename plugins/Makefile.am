@@ -32,7 +32,7 @@ include background_fetch/Makefile.inc
 include conf_remap/Makefile.inc
 include esi/Makefile.inc
 include generator/Makefile.inc
-include gzip/Makefile.inc
+include compress/Makefile.inc
 include header_rewrite/Makefile.inc
 include healthchecks/Makefile.inc
 include libloader/Makefile.inc
