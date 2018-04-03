@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip or deflate
+  Transforms content using gzip, deflate or brotli
 
   @section license License
 
@@ -112,10 +112,10 @@ data_alloc(int compression_type, int compression_algorithms)
 #if HAVE_BROTLI_ENCODE_H
   data->bstrm.br = nullptr;
   if (compression_type & COMPRESSION_TYPE_BROTLI) {
-    debug("gzip-transform: brotli compression. Create Brotli Encoder Instance.");
+    debug("brotli compression. Create Brotli Encoder Instance.");
     data->bstrm.br = BrotliEncoderCreateInstance(0, 0, 0);
     if (!data->bstrm.br) {
-      fatal("gzip-transform: ERROR: Brotli Encoder Instance Failed");
+      fatal("Brotli Encoder Instance Failed");
     }
     BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
     BrotliEncoderSetParameter(data->bstrm.br, BROTLI_PARAM_LGWIN, BROTLI_LGW);
@@ -330,7 +330,7 @@ gzip_transform_one(Data *data, const char *upstream_buffer, int64_t upstream_len
 
     if (data->zstrm.avail_out > 0) {
       if (data->zstrm.avail_in != 0) {
-        error("gzip-transform: ERROR: avail_in is (%d): should be 0", data->zstrm.avail_in);
+        error("gzip-transform: avail_in is (%d): should be 0", data->zstrm.avail_in);
       }
     }
   }
@@ -476,10 +476,11 @@ gzip_transform_finish(Data *data)
     }
 
     if (data->downstream_length != (int64_t)(data->zstrm.total_out)) {
-      error("gzip-transform: ERROR: output lengths don't match (%d, %ld)", data->downstream_length, data->zstrm.total_out);
+      error("gzip-transform: output lengths don't match (%d, %ld)", data->downstream_length, data->zstrm.total_out);
     }
+
     debug("gzip-transform: Finished gzip");
-    gzip_log_ratio(data->zstrm.total_in, data->downstream_length);
+    log_compression_ratio(data->zstrm.total_in, data->downstream_length);
   }
 }
 
@@ -504,7 +505,7 @@ brotli_transform_finish(Data *data)
   }
 
   debug("brotli-transform: Finished brotli");
-  gzip_log_ratio(data->bstrm.total_in, data->downstream_length);
+  log_compression_ratio(data->bstrm.total_in, data->downstream_length);
 }
 #endif
 
@@ -514,15 +515,15 @@ compress_transform_finish(Data *data)
 #if HAVE_BROTLI_ENCODE_H
   if (data->compression_type & COMPRESSION_TYPE_BROTLI && data->compression_algorithms & ALGORITHM_BROTLI) {
     brotli_transform_finish(data);
-    debug("brotli-transform: Brotli compression finish.");
+    debug("compress_transform_finish: brotli compression finish");
   } else
 #endif
     if ((data->compression_type & (COMPRESSION_TYPE_GZIP | COMPRESSION_TYPE_DEFLATE)) &&
         (data->compression_algorithms & (ALGORITHM_GZIP | ALGORITHM_DEFLATE))) {
     gzip_transform_finish(data);
-    debug("gzip-transform: Gzip compression finish.");
+    debug("compress_transform_finish: gzip compression finish");
   } else {
-    error("No Compression matched, shouldn't come here.");
+    error("No Compression matched, shouldn't come here");
   }
 }
 
@@ -598,7 +599,7 @@ compress_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   } else {
     switch (event) {
     case TS_EVENT_ERROR: {
-      debug("gzip_transform: TS_EVENT_ERROR starts");
+      debug("compress_transform: TS_EVENT_ERROR starts");
       TSVIO upstream_vio = TSVConnWriteVIOGet(contp);
       TSContCall(TSVIOContGet(upstream_vio), TS_EVENT_ERROR, upstream_vio);
     } break;
@@ -639,13 +640,6 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   int i, compression_acceptable, len;
   TSHttpStatus resp_status;
 
-  /*
-    // Before anything, check atleast one compression algorithm is supported
-    if (host_configuration->compression_algorithms() == ALGORITHM_DEFAULT) {
-      info("No compression algorithms configured");
-      return 0;
-    }
-  */
   if (server) {
     if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
       return 0;
@@ -891,7 +885,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     break;
 
   default:
-    fatal("gzip transform unknown event");
+    fatal("compress transform unknown event");
   }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -900,7 +894,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 }
 
 /**
- * This handles gzip request
+ * This handles a compress request
  * 1. Reads the client request header
  * 2. For global plugin, get host configuration from global config
  *    For remap plugin, get host configuration from configs populated through remap
@@ -924,7 +918,7 @@ handle_request(TSHttpTxn txnp, Configuration *config)
     bool allowed = false;
 
     if (hc->enabled()) {
-      if (hc->has_disallows() || hc->has_allows()) {
+      if (hc->has_allows()) {
         int url_len;
         char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
         allowed   = hc->is_url_allowed(url, url_len);
@@ -938,7 +932,7 @@ handle_request(TSHttpTxn txnp, Configuration *config)
 
       TSContDataSet(transform_contp, (void *)hc);
 
-      info("Kicking off gzip plugin for request");
+      info("Kicking off compress plugin for request");
       normalize_accept_encoding(txnp, req_buf, req_loc);
       TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
       TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, transform_contp); // To release the config
@@ -956,12 +950,12 @@ transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    // Handle gzip request and use the global configs
+    // Handle compress request and use the global configs
     handle_request(txnp, nullptr);
     break;
 
   default:
-    fatal("gzip global transform unknown event");
+    fatal("compress global transform unknown event");
   }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -1005,13 +999,13 @@ TSPluginInit(int argc, const char *argv[])
   const char *config_path = nullptr;
 
   if (argc > 2) {
-    fatal("the gzip plugin does not accept more than 1 plugin argument");
+    fatal("the compress plugin does not accept more than 1 plugin argument");
   } else {
     config_path = TSstrdup(2 == argc ? argv[1] : "");
   }
 
   if (!register_plugin()) {
-    fatal("The gzip plugin failed to register");
+    fatal("the compress plugin failed to register");
   }
 
   info("TSPluginInit %s", argv[0]);
@@ -1048,20 +1042,20 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  info("The gzip plugin is successfully initialized");
+  info("The compress plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
 {
-  info("Instantiating a new gzip plugin remap rule");
-  info("Reading gzip config from file = %s", argv[2]);
+  info("Instantiating a new compress plugin remap rule");
+  info("Reading config from file = %s", argv[2]);
 
   const char *config_path = nullptr;
 
   if (argc > 4) {
-    fatal("The gzip plugin does not accept more than one plugin argument");
+    fatal("The compress plugin does not accept more than one plugin argument");
   } else {
     config_path = TSstrdup(3 == argc ? argv[2] : "");
   }
@@ -1088,9 +1082,9 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (nullptr == instance) {
     info("No Rules configured, falling back to default");
   } else {
-    info("Remap Rules configured for gzip");
+    info("Remap Rules configured for compress");
     Configuration *config = (Configuration *)instance;
-    // Handle gzip request and use the configs populated from remap instance
+    // Handle compress request and use the configs populated from remap instance
     handle_request(txnp, config);
   }
   return TSREMAP_NO_REMAP;

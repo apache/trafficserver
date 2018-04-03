@@ -17,9 +17,9 @@
 
 .. include:: ../../common.defs
 
-.. _admin-plugins-gzip:
+.. _admin-plugins-compress:
 
-GZip Plugin
+Compress Plugin
 ***********
 
 This plugin adds compression and decompression options to both origin and cache
@@ -60,7 +60,7 @@ This plugin can be used as either global plugin or remap plugin.
 It can be enabled globally for |TS| by adding the following to your
 :file:`plugin.config`::
 
-    gzip.so
+    compress.so
 
 With no further options, this will enable the following default behavior:
 
@@ -74,17 +74,17 @@ With no further options, this will enable the following default behavior:
 
 -  No URLs are disallowed from compression.
 
--  Disable flush (flush gzipped content to client).
+-  Disable flush (flush compressed content to client).
 
 Alternatively, a configuration may be specified (shown here using the sample
 configuration provided with the plugin's source)::
 
-    gzip.so <path-to-plugin>/sample.gzip.config
+    compress.so <path-to-plugin>/sample.compress.config
 
 This can be used as remap plugin by pointing to config file in remap rule
 :file:`remap.config`:: (relative to the ts:cv:`proxy.config.config_dir`)
 
-    @plugin=gzip.so @pparam=sample.gzip.config
+    @plugin=compress.so @pparam=sample.compress.config
 
 The following sections detail the options you may specify in the plugin's
 configuration file. Options may be used globally, or may be specified on a
@@ -107,15 +107,6 @@ compressible-content-type
 Provides a wildcard to match against content types, determining which are to be
 considered compressible. This defaults to ``text/*``. Takes one Content-Type
 per line.
-
-disallow
---------
-
-Provides a wildcard pattern which will be applied to request URLs. Any which
-match the pattern will be considered incompressible, and only deflated versions
-of the objects will be cached and returned to clients. This may be useful for
-objects which already have their own compression built-in, to avoid the expense
-of multiple rounds of compression for trivial gains.
 
 allow
 --------
@@ -182,7 +173,7 @@ might create a configuration with the following options::
     [www.example.com]
     cache false
     remove-accept-encoding true
-    disallow /notthis/*.js
+    allow !/notthis/*.js
     allow /this/*.js
     flush true
 
@@ -200,23 +191,23 @@ might create a configuration with the following options::
     compressible-content-type text/*
     compressible-content-type application/json
     flush true
-    supported-algorithms br, gzip
+    supported-algorithms br,gzip
 
     # This origin does it all
     [bar.example.com]
     enabled false
 
-Assuming the above options are in a file at ``/etc/trafficserver/gzip.config``
+Assuming the above options are in a file at ``/etc/trafficserver/compress.config``
 the plugin would be enabled for |TS| in :file:`plugin.config` as::
 
-    gzip.so /etc/trafficserver/gzip.config
+    compress.so /etc/trafficserver/compress.config
 
-Alternatively, the gzip plugin can be used as a remap plugin: ::
+Alternatively, the compress plugin can be used as a remap plugin: ::
 
   map http://www.example.com http://origin.example.com \
-    @plugin=gzip.so @pparam=gzip.config
+    @plugin=compress.so @pparam=compress.config
 
-    $ cat /etc/trafficserver/gzip.config
+    $ cat /etc/trafficserver/compress.config
     enabled true
     cache true
     compressible-content-type *xml

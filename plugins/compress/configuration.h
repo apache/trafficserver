@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip or deflate
+  Transforms content using gzip, deflate or brotli
 
   @section license License
 
@@ -100,11 +100,6 @@ public:
   {
     return host_;
   }
-  bool
-  has_disallows() const
-  {
-    return !disallows_.empty();
-  }
 
   bool
   has_allows() const
@@ -123,7 +118,6 @@ public:
   }
 
   void update_defaults();
-  void add_disallow(const std::string &disallow);
   void add_allow(const std::string &allow);
   void add_compressible_content_type(const std::string &content_type);
   void add_compressible_status_codes(std::string &status_codes);
@@ -159,7 +153,6 @@ private:
   int ref_count_;
 
   StringContainer compressible_content_types_;
-  StringContainer disallows_;
   StringContainer allows_;
   // maintain backwards compatibility/usability out of the box
   std::set<TSHttpStatus> compressible_status_codes_ = {TS_HTTP_STATUS_OK, TS_HTTP_STATUS_PARTIAL_CONTENT,

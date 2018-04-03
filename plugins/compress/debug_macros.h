@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip or deflate
+  Transforms content using gzip, deflate or brotli
 
   @section license License
 
@@ -26,7 +26,7 @@
 
 #include <ts/ts.h>
 
-#define TAG "gzip"
+#define TAG "compress"
 
 #define debug(fmt, args...)                                                             \
   do {                                                                                  \

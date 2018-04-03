@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip or deflate
+  Transforms content using gzip, deflate or brotli
 
   @section license License
 
@@ -151,7 +151,7 @@ register_plugin()
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = (char *)"gzip";
+  info.plugin_name   = (char *)"compress";
   info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
@@ -162,7 +162,7 @@ register_plugin()
 }
 
 void
-gzip_log_ratio(int64_t in, int64_t out)
+log_compression_ratio(int64_t in, int64_t out)
 {
   if (in) {
     info("Compressed size %" PRId64 " (bytes), Original size %" PRId64 ", ratio: %f", out, in, ((float)(in - out) / in));

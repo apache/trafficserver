@@ -51,7 +51,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
    ESI <esi.en>
-   GZip <gzip.en>
+   Compress <compress.en>
    Generator <generator.en>
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
