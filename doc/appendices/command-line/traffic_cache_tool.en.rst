@@ -68,6 +68,10 @@ be abbreviated to any unique initial substring (e.g. "--sp" for "--span").
    Specific the average object size in bytes. This is used in various computations. It is identical
    to :ts:cv:`proxy.config.cache.min_average_object_size`.
 
+.. option:: --input
+
+    Specify the input file or disk.
+
 ===========
 Commands
 ===========
@@ -80,7 +84,10 @@ Commands
       Print internal stripe metadata.
 
 ``clear``
-   Clear spans by writing updated span headers.
+   Clear all the spans by writing updated span headers.
+   
+   ``span``
+     Clears an specific span and it's stripes. The span to be cleared is specified via ``--device``
 
 ``dir_check``
    Perform diagnostics on the stripe directories.
@@ -103,7 +110,14 @@ Commands
    ``free``
       Allocate only free (unused) storage to volumes, updating span and stripe headers as needed.
 
+``init``
+   Initializes an uninitialized span and creates stripes on that span according to the volume and storage configuration
+   The span to be initialized can be passed via ``--input``
 
+``find``
+  Determines the stripe in disk cache where the content corresponding to the provided URL may be cached. 
+  This command takes an input file which lists all the urls for which the stripe assignment needs to be determined.
+  
 ========
 Examples
 ========
@@ -119,6 +133,34 @@ Allocate unused storage space.::
       --volumes=/usr/local/etc/trafficserver/volume.config \
       alloc free
 
+Clear all spans.::
+
+     traffic_cache_tool \
+      --spans=/usr/local/etc/trafficserver/storage.config \
+      --volumes=/usr/local/etc/trafficserver/volume.config \
+      clear
+
+Clear a single span.:: 
+
+    traffic_cache_tool \
+    --span /opt/etc/trafficserver/storage.config \
+    --volume /opt/etc/trafficserver/volume.config \
+    clear span --device "/dev/sdb3" --write
+    
+Initialize a new span.::
+ 
+    traffic_cache_tool \
+    --span /opt/etc/trafficserver/storage.config \
+    --volume /opt/etc/trafficserver/volume.config \
+    init --input "/dev/sdb3" --write
+    
+Find Stripe Assignment.::
+ 
+    traffic_cache_tool \
+    --span /opt/etc/trafficserver/storage.config \
+    --volume /opt/etc/trafficserver/volume.config \
+    init --input "/home/user/urls.txt"
+    
 ========
 See also
 ========

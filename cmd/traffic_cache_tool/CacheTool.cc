@@ -263,7 +263,7 @@ Stripe::Chunk::clear()
 
 Stripe::Stripe(Span *span, Bytes start, CacheStoreBlocks len) : _span(span), _start(start), _len(len)
 {
-  ts::bwprint(hashText, "{} {}:{}", span->_path.path(), _start, _len.count());
+  ts::bwprint(hashText, "{} {}:{}", span->_path.path(), _start.count(), _len.count());
   printf("hash id of stripe is hash of %.*s\n", static_cast<int>(hashText.size()), hashText.data());
 }
 
@@ -2187,7 +2187,7 @@ Simulate_Span_Allocation(int argc, char *argv[])
 }
 
 Errata
-Clear_Spans(int argc, char *argv[])
+Clear_Spans()
 {
   Errata zret;
   Cache cache;
@@ -2420,7 +2420,10 @@ main(int argc, char *argv[])
   Commands.add("list", "List elements of the cache", []() { return List_Stripes(Cache::SpanDumpDepth::SPAN); })
     .subCommand(std::string("stripes"), std::string("List the stripes"),
                 []() { return List_Stripes(Cache::SpanDumpDepth::STRIPE); });
-  Commands.add(std::string("clear"), std::string("Clear spans"), &Clear_Spans);
+  Commands.add(std::string("clear"), std::string("Clear spans"), []() { return Clear_Spans(); })
+    .subCommand(std::string("span"), std::string("clear an specific span"),
+                [&](int, char *argv[]) { return Clear_Span(inputFile); });
+
   auto &c = Commands.add(std::string("dir_check"), std::string("cache check"));
   c.subCommand(std::string("full"), std::string("Full report of the cache storage"), &dir_check);
   c.subCommand(std::string("freelist"), std::string("check the freelist for loop"),
@@ -2430,8 +2433,8 @@ main(int argc, char *argv[])
   Commands.add(std::string("volumes"), std::string("Volumes"), &Simulate_Span_Allocation);
   Commands.add(std::string("alloc"), std::string("Storage allocation"))
     .subCommand(std::string("free"), std::string("Allocate storage on free (empty) spans"), &Cmd_Allocate_Empty_Spans);
-  Commands.add(std::string("find"), std::string("Find Stripe Assignment"))
-    .subCommand(std::string("url"), std::string("URL"), [&](int, char *argv[]) { return Find_Stripe(input_url_file); });
+  Commands.add(std::string("find"), std::string("Find Stripe Assignment"),
+               [&](int, char *argv[]) { return Find_Stripe(input_url_file); });
   Commands.add(std::string("clearspan"), std::string("clear specific span"))
     .subCommand(std::string("span"), std::string("device path"), [&](int, char *argv[]) { return Clear_Span(inputFile); });
   Commands.add(std::string("retrieve"), std::string(" retrieve the response of the given list of URLs"),
