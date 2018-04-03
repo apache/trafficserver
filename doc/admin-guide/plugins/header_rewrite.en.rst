@@ -682,6 +682,16 @@ When invoked, sets the client side `DSCP
 <https://en.wikipedia.org/wiki/Differentiated_services>`_ value for the current
 transaction.  The ``<value>`` should be specified as a decimal integer.
 
+set-conn-mark
+~~~~~~~~~~~~~
+::
+
+  set-conn-mark <value>
+
+When invoked, sets the client side MARK value for the current
+transaction.  The ``<value>`` should be specified as a decimal integer.
+Requires at least Linux 2.6.25.
+
 set-debug
 ~~~~~~~~~
 ::
