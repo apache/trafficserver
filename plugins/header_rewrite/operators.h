@@ -312,6 +312,22 @@ private:
   Value _ds_value;
 };
 
+class OperatorSetConnMark : public Operator
+{
+public:
+  OperatorSetConnMark() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConnMark"); }
+  void initialize(Parser &p);
+
+protected:
+  void initialize_hooks();
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetConnMark);
+
+  Value _ds_value;
+};
+
 class OperatorSetDebug : public Operator
 {
 public:

@@ -64,6 +64,8 @@ operator_factory(const std::string &op)
     o = new OperatorAddCookie();
   } else if (op == "set-conn-dscp") {
     o = new OperatorSetConnDSCP();
+  } else if (op == "set-conn-mark") {
+    o = new OperatorSetConnMark();
   } else if (op == "set-debug") {
     o = new OperatorSetDebug();
   } else {
