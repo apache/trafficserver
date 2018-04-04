@@ -340,8 +340,8 @@ public:
 
   QUICPacketUPtr create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result);
   QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client);
-  QUICPacketUPtr create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, QUICVersion version,
-                                       ats_unique_buf payload, size_t len);
+  QUICPacketUPtr create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, ats_unique_buf payload,
+                                       size_t len);
   QUICPacketUPtr create_retry_packet(QUICConnectionId connection_id, QUICPacketNumber packet_number, ats_unique_buf payload,
                                      size_t len, bool retransmittable);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,

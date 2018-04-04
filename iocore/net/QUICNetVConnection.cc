@@ -1228,7 +1228,7 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   case QUICPacketType::INITIAL:
     ink_assert(this->get_context() == NET_VCONNECTION_OUT);
     packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->largest_acked_packet_number(),
-                                                         QUIC_SUPPORTED_VERSIONS[0], std::move(buf), len);
+                                                         std::move(buf), len);
     this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
 
     break;

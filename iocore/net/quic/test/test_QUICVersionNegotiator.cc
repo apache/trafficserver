@@ -39,8 +39,8 @@ TEST_CASE("QUICVersionNegotiator", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    QUICPacketUPtr initial_packet =
-      packet_factory.create_initial_packet({}, 0, QUIC_SUPPORTED_VERSIONS[0], ats_unique_malloc(0), 0);
+    packet_factory.set_version(QUIC_SUPPORTED_VERSIONS[0]);
+    QUICPacketUPtr initial_packet = packet_factory.create_initial_packet({}, 0, ats_unique_malloc(0), 0);
     vn.negotiate(initial_packet.get());
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
@@ -57,8 +57,8 @@ TEST_CASE("QUICVersionNegotiator", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    QUICPacketUPtr initial_packet =
-      packet_factory.create_initial_packet({}, 0, QUIC_SUPPORTED_VERSIONS[0], ats_unique_malloc(0), 0);
+    packet_factory.set_version(QUIC_SUPPORTED_VERSIONS[0]);
+    QUICPacketUPtr initial_packet = packet_factory.create_initial_packet({}, 0, ats_unique_malloc(0), 0);
     vn.negotiate(initial_packet.get());
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
@@ -75,7 +75,8 @@ TEST_CASE("QUICVersionNegotiator", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    QUICPacketUPtr initial_packet = packet_factory.create_initial_packet({}, 0, 0xbabababa, ats_unique_malloc(0), 0);
+    packet_factory.set_version(0xbabababa);
+    QUICPacketUPtr initial_packet = packet_factory.create_initial_packet({}, 0, ats_unique_malloc(0), 0);
     vn.negotiate(initial_packet.get());
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 

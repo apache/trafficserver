@@ -800,12 +800,12 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, QUICVersion version,
+QUICPacketFactory::create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                          ats_unique_buf payload, size_t len)
 {
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::INITIAL, connection_id, this->_packet_number_generator.next(), base_packet_number,
-                            version, std::move(payload), len);
+                            this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), true);
 }
 
