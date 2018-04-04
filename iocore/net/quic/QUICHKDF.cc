@@ -38,8 +38,6 @@ QUICHKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t se
   // "QUIC " + Label
   hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%cQUIC %.*s", static_cast<int>(5 + label_len),
                             static_cast<int>(label_len), label);
-  // Hash Value
-  hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%c%.*s", 0, 0, "");
 
   HKDF::expand(dst, dst_len, secret, secret_len, hkdf_label, hkdf_label_len, length);
   return 1;

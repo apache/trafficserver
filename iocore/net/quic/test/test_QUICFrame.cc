@@ -42,10 +42,9 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0a")) == QUICFrameType::STREAM_ID_BLOCKED);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0b")) == QUICFrameType::NEW_CONNECTION_ID);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0c")) == QUICFrameType::STOP_SENDING);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::PONG);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0e")) == QUICFrameType::ACK);
-  // Undefined ragne
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0f")) == QUICFrameType::UNKNOWN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::ACK);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0e")) == QUICFrameType::PATH_CHALLENGE);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0f")) == QUICFrameType::PATH_RESPONSE);
   // Range of STREAM
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x10")) == QUICFrameType::STREAM);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x17")) == QUICFrameType::STREAM);
@@ -328,7 +327,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x0e,       // Type
+      0x0d,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -347,7 +346,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x0e,                   // Type
+      0x0d,                   // Type
       0x80, 0x00, 0x00, 0x01, // Largest Acknowledged
       0x41, 0x71,             // Ack Delay
       0x00,                   // Ack Block Count
@@ -370,7 +369,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x0e,                                           // Type
+      0x0d,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
@@ -413,7 +412,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x0e,       // Type
+      0x0d,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -434,7 +433,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x0e,                                           // Type
+      0x0d,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
@@ -496,18 +495,14 @@ TEST_CASE("Store RST_STREAM Frame", "[quic]")
 TEST_CASE("Load Ping Frame", "[quic]")
 {
   uint8_t buf[] = {
-    0x07,                                           // Type
-    0x08,                                           // Length
-    0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+    0x07, // Type
   };
   std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
   CHECK(frame->type() == QUICFrameType::PING);
-  CHECK(frame->size() == 10);
+  CHECK(frame->size() == 1);
 
   std::shared_ptr<const QUICPingFrame> ping_frame = std::dynamic_pointer_cast<const QUICPingFrame>(frame);
   CHECK(ping_frame != nullptr);
-  CHECK(ping_frame->data_length() == 8);
-  CHECK(memcmp(ping_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", 8) == 0);
 }
 
 TEST_CASE("Store Ping Frame", "[quic]")
@@ -516,21 +511,14 @@ TEST_CASE("Store Ping Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x07,                                           // Type
-    0x08,                                           // Length
-    0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+    0x07, // Type
   };
 
-  uint8_t raw[]       = "\x01\x23\x45\x67\x89\xab\xcd\xef";
-  size_t raw_len      = sizeof(raw) - 1;
-  ats_unique_buf data = ats_unique_malloc(raw_len);
-  memcpy(data.get(), raw, raw_len);
-
-  QUICPingFrame frame(std::move(data), 8);
-  CHECK(frame.size() == 10);
+  QUICPingFrame frame(true);
+  CHECK(frame.size() == 1);
 
   frame.store(buf, &len);
-  CHECK(len == 10);
+  CHECK(len == 1);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
@@ -989,31 +977,29 @@ TEST_CASE("Store STOP_SENDING Frame", "[quic]")
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
-TEST_CASE("Load Pong Frame", "[quic]")
+TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
 {
   uint8_t buf[] = {
-    0x0d,                                           // Type
-    0x08,                                           // Length
+    0x0e,                                           // Type
     0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
   };
   std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
-  CHECK(frame->type() == QUICFrameType::PONG);
-  CHECK(frame->size() == 10);
+  CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
+  CHECK(frame->size() == 9);
 
-  std::shared_ptr<const QUICPongFrame> pong_frame = std::dynamic_pointer_cast<const QUICPongFrame>(frame);
-  CHECK(pong_frame != nullptr);
-  CHECK(pong_frame->data_length() == 8);
-  CHECK(memcmp(pong_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", 8) == 0);
+  std::shared_ptr<const QUICPathChallengeFrame> path_challenge_frame =
+    std::dynamic_pointer_cast<const QUICPathChallengeFrame>(frame);
+  CHECK(path_challenge_frame != nullptr);
+  CHECK(memcmp(path_challenge_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathChallengeFrame::DATA_LEN) == 0);
 }
 
-TEST_CASE("Store Pong Frame", "[quic]")
+TEST_CASE("Store PATH_CHALLENGE Frame", "[quic]")
 {
   uint8_t buf[16];
   size_t len;
 
   uint8_t expected[] = {
-    0x0d,                                           // Type
-    0x08,                                           // Length
+    0x0e,                                           // Type
     0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
   };
 
@@ -1022,18 +1008,56 @@ TEST_CASE("Store Pong Frame", "[quic]")
   ats_unique_buf data = ats_unique_malloc(raw_len);
   memcpy(data.get(), raw, raw_len);
 
-  QUICPongFrame frame(std::move(data), 8);
-  CHECK(frame.size() == 10);
+  QUICPathChallengeFrame frame(std::move(data), QUICPathChallengeFrame::DATA_LEN);
+  CHECK(frame.size() == 9);
 
   frame.store(buf, &len);
-  CHECK(len == 10);
+  CHECK(len == 9);
+  CHECK(memcmp(buf, expected, len) == 0);
+}
+
+TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
+{
+  uint8_t buf[] = {
+    0x0f,                                           // Type
+    0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+  };
+  std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+  CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
+  CHECK(frame->size() == 9);
+
+  std::shared_ptr<const QUICPathResponseFrame> path_response_frame = std::dynamic_pointer_cast<const QUICPathResponseFrame>(frame);
+  CHECK(path_response_frame != nullptr);
+  CHECK(memcmp(path_response_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathResponseFrame::DATA_LEN) == 0);
+}
+
+TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
+{
+  uint8_t buf[16];
+  size_t len;
+
+  uint8_t expected[] = {
+    0x0f,                                           // Type
+    0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+  };
+
+  uint8_t raw[]       = "\x01\x23\x45\x67\x89\xab\xcd\xef";
+  size_t raw_len      = sizeof(raw) - 1;
+  ats_unique_buf data = ats_unique_malloc(raw_len);
+  memcpy(data.get(), raw, raw_len);
+
+  QUICPathResponseFrame frame(std::move(data), QUICPathResponseFrame::DATA_LEN);
+  CHECK(frame.size() == 9);
+
+  frame.store(buf, &len);
+  CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
 TEST_CASE("QUICFrameFactory Create Unknown Frame", "[quic]")
 {
   uint8_t buf1[] = {
-    0x0f, // Type
+    0x20, // Type
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1 == nullptr);
@@ -1073,7 +1097,7 @@ TEST_CASE("QUICFrameFactory Fast Create Unknown Frame", "[quic]")
   QUICFrameFactory factory;
 
   uint8_t buf1[] = {
-    0x0f, // Type
+    0x20, // Type
   };
   std::shared_ptr<const QUICFrame> frame1 = factory.fast_create(buf1, sizeof(buf1));
   CHECK(frame1 == nullptr);
@@ -1255,9 +1279,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
   SECTION("PING frame")
   {
     uint8_t frame_buf[] = {
-      0x07,                                           // Type
-      0x08,                                           // Length
-      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+      0x07, // Type
     };
 
     QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
@@ -1267,7 +1289,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     size_t len;
     frame->store(buf, &len);
 
-    CHECK(len == 10);
+    CHECK(len == 1);
     CHECK(memcmp(buf, frame_buf, len) == 0);
   }
 
@@ -1366,11 +1388,10 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     CHECK(memcmp(buf, frame_buf, len) == 0);
   }
 
-  SECTION("PONG frame")
+  SECTION("PATH_CHALLENGE frame")
   {
     uint8_t frame_buf[] = {
-      0x0d,                                           // Type
-      0x08,                                           // Length
+      0x0e,                                           // Type
       0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
     };
 
@@ -1381,7 +1402,25 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     size_t len;
     frame->store(buf, &len);
 
-    CHECK(len == 10);
+    CHECK(len == 9);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("PATH_RESPONSE frame")
+  {
+    uint8_t frame_buf[] = {
+      0x0f,                                           // Type
+      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len);
+
+    CHECK(len == 9);
     CHECK(memcmp(buf, frame_buf, len) == 0);
   }
 }

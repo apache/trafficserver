@@ -109,7 +109,7 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
   SECTION("Short Header (load)")
   {
     const uint8_t input[] = {
-      0x1D,                                           // Short header with (C=0, K=0, Type=0x1D)
+      0x12,                                           // Short header with (C=0, K=0, Type=0x2)
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection ID
       0x12, 0x34, 0x56, 0x78,                         // Packet number
       0xff, 0xff,                                     // Payload (dummy)
@@ -132,7 +132,7 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
     size_t len      = 0;
 
     const uint8_t expected[] = {
-      0x1D,                                           // Short header with (C=0, K=0, Type=0x1D)
+      0x12,                                           // Short header with (C=0, K=0, Type=0x2)
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection ID
       0x12, 0x34, 0x56, 0x78,                         // Packet number
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Protected Payload

@@ -363,7 +363,7 @@ QUICPacketShortHeader::_packet_number_len() const
 {
   QUICPacketShortHeaderType type;
   if (this->_buf) {
-    type = static_cast<QUICPacketShortHeaderType>(this->_buf.get()[0] & 0x1F);
+    type = static_cast<QUICPacketShortHeaderType>(this->_buf.get()[0] & 0x07);
   } else {
     type = this->_packet_number_type;
   }
@@ -463,6 +463,7 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
   if (this->_key_phase == QUICKeyPhase::PHASE_1) {
     buf[0] += 0x20;
   }
+  buf[0] += 0x10;
   buf[0] += static_cast<uint8_t>(this->_packet_number_type);
   *len += 1;
   if (this->_has_connection_id) {

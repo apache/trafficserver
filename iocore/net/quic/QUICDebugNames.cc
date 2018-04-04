@@ -58,6 +58,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "RST_STREAM";
   case QUICFrameType::CONNECTION_CLOSE:
     return "CONNECTION_CLOSE";
+  case QUICFrameType::APPLICATION_CLOSE:
+    return "APPLICATION_CLOSE";
   case QUICFrameType::MAX_DATA:
     return "MAX_DATA";
   case QUICFrameType::MAX_STREAM_DATA:
@@ -74,12 +76,16 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "STREAM_ID_BLOCKED";
   case QUICFrameType::NEW_CONNECTION_ID:
     return "NEW_CONNECTION_ID";
+  case QUICFrameType::STOP_SENDING:
+    return "STOP_SENDING";
   case QUICFrameType::ACK:
     return "ACK";
+  case QUICFrameType::PATH_CHALLENGE:
+    return "PATH_CHALLENGE";
+  case QUICFrameType::PATH_RESPONSE:
+    return "PATH_RESPONSE";
   case QUICFrameType::STREAM:
     return "STREAM";
-  case QUICFrameType::PONG:
-    return "PONG";
   case QUICFrameType::UNKNOWN:
   default:
     return "UNKNOWN";
