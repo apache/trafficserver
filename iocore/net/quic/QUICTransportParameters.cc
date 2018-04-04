@@ -439,6 +439,18 @@ QUICTransportParametersInEncryptedExtensions::add_version(QUICVersion version)
   this->_versions[this->_n_versions++] = version;
 }
 
+bool
+QUICTransportParametersInEncryptedExtensions::is_valid_negotiated_version() const
+{
+  for (int i = 0; QUICVersion v = this->_versions[i]; i++) {
+    if (this->_negotiated_version == v) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 std::ptrdiff_t
 QUICTransportParametersInEncryptedExtensions::_parameters_offset(const uint8_t *buf) const
 {

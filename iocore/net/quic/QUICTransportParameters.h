@@ -136,6 +136,7 @@ public:
   QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len);
   QUICVersion negotiated_version() const;
   void add_version(QUICVersion version);
+  bool is_valid_negotiated_version() const;
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;

@@ -153,6 +153,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
 
     QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
     CHECK(params_in_ee.is_valid());
+    CHECK(params_in_ee.is_valid_negotiated_version());
     CHECK(params_in_ee.negotiated_version() == 0x01020304);
 
     uint16_t len        = 0;

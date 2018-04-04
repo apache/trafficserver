@@ -49,6 +49,8 @@ using QUICOffset       = uint64_t;
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff000009,
 };
+constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
+
 constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
 enum class QUICHandshakeMsgType {
