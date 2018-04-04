@@ -30,6 +30,11 @@
 #include <ts/Regex.h>
 #include <tsconfig/Errata.h>
 #include <ts/TextView.h>
+#include <ts/ink_file.h>
+#include <list>
+
+#include "Command.h"
+#include "File.h"
 
 #if defined(MAGIC)
 #undef MAGIC
@@ -454,3 +459,162 @@ private:
   DFA port;
   DFA regex;
 };
+
+using ts::Bytes;
+using ts::Megabytes;
+using ts::CacheStoreBlocks;
+using ts::CacheStripeBlocks;
+using ts::StripeMeta;
+using ts::CacheStripeDescriptor;
+using ts::Errata;
+using ts::FilePath;
+using ts::CacheDirEntry;
+using ts::MemSpan;
+using ts::Doc;
+
+constexpr int ESTIMATED_OBJECT_SIZE     = 8000;
+constexpr int DEFAULT_HW_SECTOR_SIZE    = 512;
+constexpr int VOL_HASH_TABLE_SIZE       = 32707;
+constexpr unsigned short VOL_HASH_EMPTY = 65535;
+constexpr int DIR_TAG_WIDTH             = 12;
+constexpr int DIR_DEPTH                 = 4;
+constexpr int SIZEOF_DIR                = 10;
+constexpr int MAX_ENTRIES_PER_SEGMENT   = (1 << 16);
+constexpr int DIR_SIZE_WIDTH            = 6;
+constexpr int DIR_BLOCK_SIZES           = 4;
+constexpr int CACHE_BLOCK_SHIFT         = 9;
+constexpr int CACHE_BLOCK_SIZE          = (1 << CACHE_BLOCK_SHIFT); // 512, smallest sector size
+
+namespace ct
+{
+struct Stripe;
+struct Span {
+  Span(FilePath const &path) : _path(path) {}
+  Errata load();
+  Errata loadDevice();
+  bool isEmpty() const;
+  int header_len = 0;
+
+  /// Replace all existing stripes with a single unallocated stripe covering the span.
+  Errata clear();
+
+  /// This is broken and needs to be cleaned up.
+  void clearPermanently();
+
+  ts::Rv<Stripe *> allocStripe(int vol_idx, CacheStripeBlocks len);
+  Errata updateHeader(); ///< Update serialized header and write to disk.
+
+  FilePath _path;           ///< File system location of span.
+  ats_scoped_fd _fd;        ///< Open file descriptor for span.
+  int _vol_idx = 0;         ///< Forced volume.
+  CacheStoreBlocks _base;   ///< Offset to first usable byte.
+  CacheStoreBlocks _offset; ///< Offset to first content byte.
+  // The space between _base and _offset is where the span information is stored.
+  CacheStoreBlocks _len;         ///< Total length of span.
+  CacheStoreBlocks _free_space;  ///< Total size of free stripes.
+  ink_device_geometry _geometry; ///< Geometry of span.
+  uint64_t num_usable_blocks;    // number of usable blocks for stripes i.e., after subtracting the skip and the disk header.
+  /// Local copy of serialized header data stored on in the span.
+  std::unique_ptr<ts::SpanHeader> _header;
+  /// Live information about stripes.
+  /// Seeded from @a _header and potentially agumented with direct probing.
+  std::list<Stripe *> _stripes;
+};
+/* --------------------------------------------------------------------------------------- */
+struct Stripe {
+  /// Meta data is stored in 4 copies A/B and Header/Footer.
+  enum Copy { A = 0, B = 1 };
+  enum { HEAD = 0, FOOT = 1 };
+
+  /// Piece wise memory storage for the directory.
+  struct Chunk {
+    Bytes _start; ///< Starting offset relative to physical device of span.
+    Bytes _skip;  ///< # of bytes not valid at the start of the first block.
+    Bytes _clip;  ///< # of bytes not valid at the end of the last block.
+
+    typedef std::vector<MemSpan> Chain;
+    Chain _chain; ///< Chain of blocks.
+
+    ~Chunk();
+
+    void append(MemSpan m);
+    void clear();
+  };
+
+  /// Construct from span header data.
+  Stripe(Span *span, Bytes start, CacheStoreBlocks len);
+
+  /// Is stripe unallocated?
+  bool isFree() const;
+
+  /** Probe a chunk of memory @a mem for stripe metadata.
+
+      @a mem is updated to remove memory that has been probed. If @a
+      meta is not @c nullptr then it is used for additional cross
+      checking.
+
+      @return @c true if @a mem has valid data, @c false otherwise.
+  */
+  bool probeMeta(MemSpan &mem, StripeMeta const *meta = nullptr);
+
+  /// Check a buffer for being valid stripe metadata.
+  /// @return @c true if valid, @c false otherwise.
+  static bool validateMeta(StripeMeta const *meta);
+
+  /// Load metadata for this stripe.
+  Errata loadMeta();
+  Errata loadDir();
+  int check_loop(int s);
+  void dir_check();
+  bool walk_bucket_chain(int s); // returns true if there is a loop
+  void walk_all_buckets();
+
+  /// Initialize the live data from the loaded serialized data.
+  void updateLiveData(enum Copy c);
+
+  Span *_span;           ///< Hosting span.
+  INK_MD5 hash_id;       /// hash_id
+  Bytes _start;          ///< Offset of first byte of stripe metadata.
+  Bytes _content;        ///< Start of content.
+  CacheStoreBlocks _len; ///< Length of stripe.
+  uint8_t _vol_idx = 0;  ///< Volume index.
+  uint8_t _type    = 0;  ///< Stripe type.
+  int8_t _idx      = -1; ///< Stripe index in span.
+  int agg_buf_pos  = 0;
+
+  int64_t _buckets;  ///< Number of buckets per segment.
+  int64_t _segments; ///< Number of segments.
+
+  std::string hashText;
+
+  /// Meta copies, indexed by A/B then HEAD/FOOT.
+  StripeMeta _meta[2][2];
+  /// Locations for the meta data.
+  CacheStoreBlocks _meta_pos[2][2];
+  /// Directory.
+  Chunk _directory;
+  CacheDirEntry const *dir = nullptr; // the big buffer that will hold the whole directory of stripe header.
+  uint16_t *freelist       = nullptr; // using this freelist instead of the one in StripeMeta.
+                                      // This is because the freelist is not being copied to _metap[2][2] correctly.
+  // need to do something about it .. hmmm :-?
+  int dir_freelist_length(int s);
+  TS_INLINE CacheDirEntry *dir_segment(int s);
+  TS_INLINE CacheDirEntry *vol_dir_segment(int s);
+  int64_t stripe_offset(CacheDirEntry *e); // offset of e w.r.t the stripe
+  size_t vol_dirlen();
+  TS_INLINE int vol_headerlen();
+  void vol_init_data_internal();
+  void vol_init_data();
+  void dir_init_segment(int s);
+  void dir_free_entry(CacheDirEntry *e, int s);
+  CacheDirEntry *dir_delete_entry(CacheDirEntry *e, CacheDirEntry *p, int s);
+  //  int dir_bucket_length(CacheDirEntry *b, int s);
+  int dir_probe(INK_MD5 *key, CacheDirEntry *result, CacheDirEntry **last_collision);
+  bool dir_valid(CacheDirEntry *e);
+  bool validate_sync_serial();
+  Errata updateHeaderFooter();
+  Errata InitializeMeta();
+  void init_dir();
+  Errata clear(); // clears striped headers and footers
+};
+} // end ct
