@@ -253,15 +253,17 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
   SECTION("iterators: begin, end, rbegin, rend")
   {
     ts::string_view sv("abcde");
+    ts::string_view::iterator spot;
+    ts::string_view::reverse_iterator rspot;
 
     REQUIRE(*sv.begin() == 'a');
     REQUIRE(*sv.cbegin() == 'a');
-    REQUIRE(*(--sv.end()) == 'e');
-    REQUIRE(*(--sv.cend()) == 'e');
+    REQUIRE(*(--(spot = sv.end())) == 'e');
+    REQUIRE(*(--(spot = sv.cend())) == 'e');
     REQUIRE(*sv.rbegin() == 'e');
     REQUIRE(*sv.crbegin() == 'e');
-    REQUIRE(*(--sv.rend()) == 'a');
-    REQUIRE(*(--sv.crend()) == 'a');
+    REQUIRE(*(--(rspot = sv.rend())) == 'a');
+    REQUIRE(*(--(rspot = sv.crend())) == 'a');
 
     int n = 0;
     for (auto it : sv) {
@@ -292,7 +294,7 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
     REQUIRE_THROWS_AS(sv.at(100), std::out_of_range);
     REQUIRE_THROWS_AS(sv.at(-1), std::out_of_range);
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && __cplusplus <= 201103L
     REQUIRE_THROWS_AS(sv[100], std::out_of_range);
     REQUIRE_THROWS_AS(sv[-1], std::out_of_range);
 #else
@@ -310,7 +312,7 @@ TEST_CASE("Capacity", "[string_view] [capacity]")
     REQUIRE(sv.size() == 0);
     REQUIRE(sv.length() == 0);
     REQUIRE(sv.empty() == true);
-    REQUIRE(sv.max_size() == 0xfffffffffffffffe);
+    REQUIRE(sv.max_size() >= 0x3ffffffffffffffb);
   }
 
   SECTION("literal string")
@@ -319,7 +321,7 @@ TEST_CASE("Capacity", "[string_view] [capacity]")
     REQUIRE(sv.size() == 5);
     REQUIRE(sv.length() == 5);
     REQUIRE(sv.empty() == false);
-    REQUIRE(sv.max_size() == 0xfffffffffffffffe);
+    REQUIRE(sv.max_size() >= 0x3ffffffffffffffb);
   }
 }
 
@@ -349,8 +351,8 @@ TEST_CASE("Modifier", "[string_view] [modifier]")
     sv.remove_suffix(3);
     REQUIRE(sv == "ab");
 
-    sv.remove_suffix(100);
-    REQUIRE(sv == "");
+    sv.remove_suffix(2);
+    REQUIRE(sv.size() == 0);
   }
 
   SECTION("swap")
