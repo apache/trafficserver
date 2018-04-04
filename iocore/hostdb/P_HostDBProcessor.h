@@ -121,7 +121,7 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 #define HOST_DB_IP_FAIL_TIMEOUT (60 * 60)
 
 //#define HOST_DB_MAX_INTERVAL                 (0x7FFFFFFF)
-#define HOST_DB_MAX_TTL (0x1FFFFF) // 24 days
+const unsigned int HOST_DB_MAX_TTL = (0x1FFFFF); // 24 days
 
 //
 // Constants
