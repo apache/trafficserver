@@ -33,7 +33,7 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager")
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\n\r\n",
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: txn.test\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
@@ -52,7 +52,7 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.remap_config.AddLine(
-    'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(
+    'map http://txn.test:{0} http://127.0.0.1:{1}'.format(
         ts.Variables.port, server.Variables.Port)
 )
 
@@ -60,7 +60,7 @@ numberOfRequests = randint(1000, 1500)
 
 # Make a *ton* of calls to the proxy!
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'ab -n {0} -c 10 http://127.0.0.1:{1}/;sleep 5'.format(
+tr.Processes.Default.Command = 'ab -n {0} -c 10 -X 127.0.0.1:{1} http://txn.test/;sleep 5'.format(
     numberOfRequests, ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken

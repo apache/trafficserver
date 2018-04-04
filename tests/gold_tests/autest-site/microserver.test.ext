@@ -16,8 +16,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from autest.api import AddWhenFunction
 from ports import get_port
 import json
+import socket
+import ssl
+import time
 
 
 def addMethod(self, testName, request_header, functionName):
@@ -32,22 +36,6 @@ def httpObject(self, header, data):
     r["headers"] = header
     r["body"] = data
     return r
-
-# addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
-
-
-def addResponse(self, filename, testName, request_header, response_header):
-
-    txn = dict()
-    txn["timestamp"] = ""
-    txn["uuid"] = testName
-    txn["request"] = request_header
-    txn["response"] = response_header
-
-    addTransactionToSession(txn, filename)
-    absFilepath = os.path.abspath(filename)
-    self.Setup.CopyAs(absFilepath, self.Variables.DataDir)
-    return
 
 
 def getHeaderFieldVal(request_header, field):
@@ -79,7 +67,6 @@ def addResponse(self, filename, request_header, response_header):
                 path_ = url_part[1].split("/", 1)[1]
 
     kpath = ""
-    #print("Format of lookup key",self.Variables.lookup_key)
 
     argsList = []
     keyslist = self.Variables.lookup_key.split("}")
@@ -124,7 +111,7 @@ def addTransactionToSession(txn, JFile):
 
     if jsondata == None:
         jsondata = dict()
-        jsondata["version"] = '0.1'
+        jsondata["version"] = '0.2'
         jsondata["timestamp"] = "1234567890.098"
         jsondata["encoding"] = "url_encoded"
         jsondata["txns"] = list()
@@ -144,6 +131,36 @@ def makeHeader(self, requestString, **kwargs):
     return headerStr
 
 
+def uServerUpAndRunning(host, port, isSsl):
+    plain_sock = socket.socket(socket.AF_INET)
+    sock = ssl.wrap_socket(plain_sock) if isSsl else plain_sock
+    try:
+        sock.connect((host, port))
+    except ConnectionRefusedError:
+        return False
+
+    sock.sendall("GET /ruok HTTP/1.1\r\nHost: {}\r\n\r\n".format(host).encode())
+    decoded_output=''
+    while True:
+        output = sock.recv(4096)  # suggested bufsize from docs.python.org
+        if len(output) <= 0:
+            break
+        else:
+            decoded_output+=output.decode()
+    sock.close()
+    sock = None
+
+    expected_response="HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 4\r\n\r\nimok"
+    if decoded_output == expected_response:
+        return True
+    raise RuntimeError('\n'.join([
+            'Got invalid response from microserver:',
+            '----',
+            decoded_output,
+            '----']))
+AddWhenFunction(uServerUpAndRunning)
+
+
 def MakeOriginServer(obj, name, port=False, ip=False, delay=False, ssl=False, lookup_key='{PATH}', mode='test', options={}):
     server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microServer/uWServer.py')
     data_dir = os.path.join(obj.RunDirectory, name)
@@ -160,15 +177,27 @@ def MakeOriginServer(obj, name, port=False, ip=False, delay=False, ssl=False, lo
     for flag, value in options.items():
         command += " {} {}".format(flag, value)
 
-    # create process
     p.Command = command
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
     p.Variables.lookup_key = lookup_key
-    p.Ready = When.PortOpen(port, ip)
-    p.ReturnCode = Any(None, 0)
     AddMethodToInstance(p, addResponse)
     AddMethodToInstance(p, addTransactionToSession)
+
+    # Set up health check.
+    addResponse(p, "healthcheck.json", {
+        "headers": "GET /ruok HTTP/1.1\r\nHost: {}\r\n\r\n".format(ip),
+        "timestamp": "1469733493.993",
+        "body": ""
+    }, {
+        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": "imok",
+        "options": "skipHooks"
+    })
+
+    p.Ready = When.uServerUpAndRunning(ip, port, ssl)
+    p.ReturnCode = Any(None, 0)
 
     return p
 

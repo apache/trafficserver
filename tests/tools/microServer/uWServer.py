@@ -36,7 +36,7 @@ import importlib.util
 import time
 test_mode_enabled = True
 lookup_key_ = "{PATH}"
-__version__ = "1.0"
+__version__ = "1.1"
 
 
 sys.path.append(
@@ -160,10 +160,6 @@ class MyHandler(BaseHTTPRequestHandler):
     def handleExpect100Continue(self, contentLength, chunked=False):
         print("....expect", contentLength)
         self.wfile.write(bytes('HTTP/1.1 100 Continue\r\n\r\n', 'UTF-8'))
-        # self.send_response(HTTPStatus.CONTINUE)
-        # self.send_header('Server','blablabla')
-        #self.send_header('Connection', 'keep-alive')
-        # self.end_headers()
         if(not chunked):
             message = self.rfile.read(contentLength)
         else:
@@ -232,7 +228,6 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def send_response(self, code, message=None):
         ''' Override `send_response()`'s tacking on of server and date header lines. '''
-        # self.log_request(code)
         self.send_response_only(code, message)
 
     def createDummyBodywithLength(self, numberOfbytes):
@@ -258,14 +253,11 @@ class MyHandler(BaseHTTPRequestHandler):
         # print("==========================================>",size)
         size = int(size, 16)
         while size > 0:
-            #print("reading bytes",raw_size)
             chunk = self.rfile.read(size + 2)  # 2 for reading /r/n
-            #print("cuhnk: ",chunk)
             raw_data += chunk
             raw_size = self.rfile.readline(65537)
             size = str(raw_size, 'UTF-8').rstrip('\r\n')
             size = int(size, 16)
-        #print("full chunk",raw_data)
         chunk = self.rfile.readline(65537)  # read the extra blank newline \r\n after the last chunk
 
     def send_header(self, keyword, value):
@@ -287,20 +279,19 @@ class MyHandler(BaseHTTPRequestHandler):
 
         The request should be stored in self.raw_requestline; the results
         are in self.command, self.path, self.request_version and
-        self.headers.
+        self.headers. Any matching response is in self.response.
 
         Return True for success, False for failure; on failure, an
         error is sent back.
 
         """
 
-        global count, test_mode_enabled
+        global count, test_mode_enabled, G_replay_dict
 
         self.command = None  # set in case of error on the first line
         self.request_version = version = self.default_request_version
         self.close_connection = True
         requestline = str(self.raw_requestline, 'UTF-8')
-        # print("request",requestline)
         requestline = requestline.rstrip('\r\n')
         self.requestline = requestline
 
@@ -308,8 +299,14 @@ class MyHandler(BaseHTTPRequestHandler):
         try:
             self.headers = http.client.parse_headers(self.rfile,
                                                      _class=self.MessageClass)
-            self.server.hook_set.invoke(HookSet.ReadRequestHook, self.headers)
+            if test_mode_enabled:
+                key = self.getLookupKey(self.requestline)
+            else:
+                key, __ = cgi.parse_header(self.headers.get('Content-MD5'))
+            self.resp = G_replay_dict[key] if key in G_replay_dict else None
 
+            if self.resp is None or 'skipHooks' not in self.resp.getOptions():
+                self.server.hook_set.invoke(HookSet.ReadRequestHook, self.headers)
             # read message body
             if self.headers.get('Content-Length') != None:
                 bodysize = int(self.headers.get('Content-Length'))
@@ -396,22 +393,19 @@ class MyHandler(BaseHTTPRequestHandler):
         global G_replay_dict, test_mode_enabled
         if test_mode_enabled:
             time.sleep(time_delay)
-            request_hash = self.getLookupKey(self.requestline)
-        else:
-            request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
-        # print("key:",request_hash)
+
         try:
             response_string = None
             chunkedResponse = False
-            if request_hash not in G_replay_dict:
+            if self.resp is None:
                 self.send_response(404)
                 self.send_header('Server', 'MicroServer')
                 self.send_header('Connection', 'close')
                 self.end_headers()
+                return
 
             else:
-                resp = G_replay_dict[request_hash]
-                headers = resp.getHeaders().split('\r\n')
+                headers = self.resp.getHeaders().split('\r\n')
 
                 # set status codes
                 status_code = self.get_response_code(headers[0])
@@ -431,7 +425,7 @@ class MyHandler(BaseHTTPRequestHandler):
                         lengthSTR = header.split(':')[1]
                         length = lengthSTR.strip(' ')
                         if test_mode_enabled:  # the length of the body is given priority in test mode rather than the value in Content-Length. But in replay mode Content-Length gets the priority
-                            if not (resp and resp.getBody()):  # Don't attach content-length yet if body is present in the response specified by tester
+                            if not (self.resp.getBody()):  # Don't attach content-length yet if body is present in the response specified by tester
                                 self.send_header('Content-Length', str(length))
                         else:
                             self.send_header('Content-Length', str(length))
@@ -446,13 +440,12 @@ class MyHandler(BaseHTTPRequestHandler):
                     header_parts = header.split(':', 1)
                     header_field = str(header_parts[0].strip())
                     header_field_val = str(header_parts[1].strip())
-                    # print("{0} === >{1}".format(header_field, header_field_val))
                     self.send_header(header_field, header_field_val)
                 # End for
                 if test_mode_enabled:
-                    if resp and resp.getBody():
-                        length = len(bytes(resp.getBody(), 'UTF-8'))
-                        response_string = resp.getBody()
+                    if self.resp.getBody():
+                        length = len(bytes(self.resp.getBody(), 'UTF-8'))
+                        response_string = self.resp.getBody()
                         self.send_header('Content-Length', str(length))
                 self.end_headers()
 
@@ -460,7 +453,6 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.writeChunkedData()
                 elif response_string != None and response_string != '':
                     self.wfile.write(bytes(response_string, 'UTF-8'))
-            return
         except:
             e = sys.exc_info()
             print("Error", e, self.headers)
@@ -469,59 +461,46 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_HEAD(self):
-        global G_replay_dict, test_mode_enabled
-        if test_mode_enabled:
-            request_hash = self.getLookupKey(self.requestline)
-        else:
-            request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
-
-        if request_hash not in G_replay_dict:
+        if self.resp is None:
             self.send_response(404)
             self.send_header('Connection', 'close')
             self.end_headers()
+            return
 
-        else:
-            resp = G_replay_dict[request_hash]
-            headers = resp.getHeaders().split('\r\n')
+        headers = self.resp.getHeaders().split('\r\n')
 
-            # set status codes
-            status_code = self.get_response_code(headers[0])
-            self.send_response(status_code)
+        # set status codes
+        status_code = self.get_response_code(headers[0])
+        self.send_response(status_code)
 
-            # set headers
-            for header in headers[1:]:  # skip first one b/c it's response code
-                if header == '':
-                    continue
-                elif 'Content-Length' in header:
-                    self.send_header('Content-Length', '0')
-                    continue
+        # set headers
+        for header in headers[1:]:  # skip first one b/c it's response code
+            if header == '':
+                continue
+            elif 'Content-Length' in header:
+                self.send_header('Content-Length', '0')
+                continue
 
-                header_parts = header.split(':', 1)
-                header_field = str(header_parts[0].strip())
-                header_field_val = str(header_parts[1].strip())
-                #print("{0} === >{1}".format(header_field, header_field_val))
-                self.send_header(header_field, header_field_val)
+            header_parts = header.split(':', 1)
+            header_field = str(header_parts[0].strip())
+            header_field_val = str(header_parts[1].strip())
+            self.send_header(header_field, header_field_val)
 
-            self.end_headers()
+        self.end_headers()
 
     def do_POST(self):
         response_string = None
         chunkedResponse = False
-        global G_replay_dict, test_mode_enabled
-        if test_mode_enabled:
-            request_hash = self.getLookupKey(self.requestline)
-        else:
-            request_hash, __ = cgi.parse_header(self.headers.get('Content-MD5'))
+        global test_mode_enabled
         try:
 
-            if request_hash not in G_replay_dict:
+            if self.resp is None:
                 self.send_response(404)
                 self.send_header('Connection', 'close')
                 self.end_headers()
-                resp = None
+                return
             else:
-                resp = G_replay_dict[request_hash]
-                resp_headers = resp.getHeaders().split('\r\n')
+                resp_headers = self.resp.getHeaders().split('\r\n')
                 # set status codes
                 status_code = self.get_response_code(resp_headers[0])
                 #print("response code",status_code)
@@ -543,7 +522,7 @@ class MyHandler(BaseHTTPRequestHandler):
                         lengthSTR = header.split(':')[1]
                         length = lengthSTR.strip(' ')
                         if test_mode_enabled:  # the length of the body is given priority in test mode rather than the value in Content-Length. But in replay mode Content-Length gets the priority
-                            if not (resp and resp.getBody()):  # Don't attach content-length yet if body is present in the response specified by tester
+                            if not (self.resp.getBody()):  # Don't attach content-length yet if body is present in the response specified by tester
                                 self.send_header('Content-Length', str(length))
                         else:
                             self.send_header('Content-Length', str(length))
@@ -562,9 +541,9 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.send_header(header_field, header_field_val)
                 # End for loop
                 if test_mode_enabled:
-                    if resp and resp.getBody():
-                        length = len(bytes(resp.getBody(), 'UTF-8'))
-                        response_string = resp.getBody()
+                    if self.resp.getBody():
+                        length = len(bytes(self.resp.getBody(), 'UTF-8'))
+                        response_string = self.resp.getBody()
                         self.send_header('Content-Length', str(length))
                 self.end_headers()
 
@@ -572,7 +551,6 @@ class MyHandler(BaseHTTPRequestHandler):
                 self.writeChunkedData()
             elif response_string != None and response_string != '':
                 self.wfile.write(bytes(response_string, 'UTF-8'))
-            return
         except:
             e = sys.exc_info()
             print("Error", e, self.headers)
@@ -608,9 +586,9 @@ def _path(exists, arg):
 def _bool(arg):
 
     opt_true_values = set(['y', 'yes', 'true', 't', '1', 'on', 'all'])
-    opt_false_values = set(['n', 'no', 'false', 'f', '0', 'off', 'none'])
+    opt_false_values = set(['n', 'no', 'false', 'f', '0', 'off', 'none', None])
 
-    tmp = arg.lower()
+    tmp = arg.lower() if arg is not None else None
     if tmp in opt_true_values:
         return True
     elif tmp in opt_false_values:
@@ -618,7 +596,13 @@ def _bool(arg):
     else:
         msg = 'Invalid value Boolean value : "{0}"\n Valid options are {0}'.format(arg,
                                                                                    opt_true_values | opt_false_values)
-        raise argparse.ArgumentTypeError(msg)
+        raise ValueError(msg)
+
+def _argparse_bool():
+    try:
+        _bool
+    except ValueError as ve:
+        raise argparse.ArgumentTypeError(ve)
 
 
 def main():
@@ -671,7 +655,7 @@ def main():
                         default="ssl/server.crt",
                         help="certificate")
     parser.add_argument("--clientverify", "-cverify",
-                        type=bool,
+                        type=_argparse_bool,
                         default=False,
                         help="verify client cert")
     parser.add_argument("--load",

@@ -75,7 +75,6 @@ class SessionValidator(object):
                     session_version = sesh['version']
                     session_txns = list()
                     for txn in sesh['txns']:
-                        # print("PERSIA____________________________________________________________",txn)
                         # create transaction Request object
                         txn_request = txn['request']
 
@@ -88,12 +87,12 @@ class SessionValidator(object):
                         txn_response_body = ''
                         if 'body' in txn_response:
                             txn_response_body = txn_response['body']
-                        txn_response_obj = response.Response(txn_response['timestamp'], txn_response['headers'], txn_response_body)
+                        txn_response_obj = response.Response(txn_response['timestamp'], txn_response['headers'], txn_response_body,
+                                txn_response.get('options'))
 
                         # create Transaction object
                         txn_obj = transaction.Transaction(txn_request_obj, txn_response_obj, txn['uuid'])
                         session_txns.append(txn_obj)
-                        # print(txn_request['timestamp'])
                     session_obj = session.Session(fname, session_version, session_timestamp, session_txns)
 
                 except KeyError as e:
@@ -195,11 +194,6 @@ class SessionValidator(object):
             if not found_host:
                 print("missing host", txn_req)
                 _verbose_print("transaction request Host header doesn't have specified host")
-                retval = False
-
-            # reject if the host is localhost (since ATS seems to ignore remap rules for localhost requests)
-            if "127.0.0.1" in txn_req.getHeaders() or "localhost" in txn_req.getHeaders():
-                _verbose_print("transaction request Host is localhost, we must reject because ATS ignores remap rules for localhost requests")
                 retval = False
 
             # now validate response
