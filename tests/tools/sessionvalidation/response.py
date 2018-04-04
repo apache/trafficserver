@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import re
+
 
 class Response(object):
     ''' Response encapsulates a single request from the UA '''
@@ -29,12 +31,19 @@ class Response(object):
     def getBody(self):
         return self._body
 
+    def getOptions(self):
+        return self._options
+
     def __repr__(self):
-        return "<Response: {{'timestamp': {0}, 'headers': {1}, 'body': {2}}}>".format(
-            self._timestamp, self._headers, self._body
+        return "<Response: {{'timestamp': {0}, 'headers': {1}, 'body': {2}, 'options': {3}}}>".format(
+            self._timestamp, self._headers, self._body, self._options
         )
 
-    def __init__(self, timestamp, headers, body):
+    def __init__(self, timestamp, headers, body, options_string):
         self._timestamp = timestamp
         self._headers = headers
         self._body = body
+        if options_string:
+            self._options = re.compile(r'\s*,\s*').split(options_string)
+        else:
+            self._options = list()

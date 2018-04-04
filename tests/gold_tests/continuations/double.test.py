@@ -32,7 +32,7 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager")
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: double.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -47,7 +47,7 @@ ts.Disk.records_config.update({
     'proxy.config.cache.enable_read_while_writer' : 0
 })
 ts.Disk.remap_config.AddLine(
-    'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
+    'map http://double.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
 )
 
 numberOfRequests = randint(1000, 1500)
