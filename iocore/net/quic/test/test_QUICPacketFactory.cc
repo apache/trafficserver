@@ -46,12 +46,14 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   QUICPacket initial_packet(std::move(header), ats_unique_buf(initial_packet_payload, [](void *) {}),
                             sizeof(initial_packet_payload), 0);
 
-  QUICPacketUPtr packet = factory.create_version_negotiation_packet(&initial_packet, 0);
+  QUICPacketUPtr packet = factory.create_version_negotiation_packet(&initial_packet);
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);
   CHECK(packet->connection_id() == initial_packet.connection_id());
   CHECK(packet->packet_number() == initial_packet.packet_number());
   CHECK(packet->version() == 0x00);
-  CHECK(memcmp(packet->payload(), "\xff\x00\x00\x09", 4) == 0);
+
+  QUICVersion supported_version = QUICTypeUtil::read_QUICVersion(packet->payload());
+  CHECK(supported_version == QUIC_SUPPORTED_VERSIONS[0]);
 }
 
 TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")

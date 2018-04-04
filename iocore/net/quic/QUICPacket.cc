@@ -196,7 +196,11 @@ const uint8_t *
 QUICPacketLongHeader::payload() const
 {
   if (this->_buf) {
-    return this->_buf.get() + LONG_HDR_OFFSET_PAYLOAD;
+    if (this->type() == QUICPacketType::VERSION_NEGOTIATION) {
+      return this->_buf.get() + VERSION_NEGOTIATION_PKT_HEADER_LENGTH;
+    } else {
+      return this->_buf.get() + LONG_HDR_OFFSET_PAYLOAD;
+    }
   } else {
     return this->_payload.get();
   }
@@ -253,11 +257,13 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 
-  QUICPacketNumber dst = 0;
-  size_t dst_len       = 4;
-  QUICPacket::encode_packet_number(dst, this->_packet_number, dst_len);
-  QUICTypeUtil::write_QUICPacketNumber(dst, dst_len, buf + *len, &n);
-  *len += n;
+  if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
+    QUICPacketNumber dst = 0;
+    size_t dst_len       = 4;
+    QUICPacket::encode_packet_number(dst, this->_packet_number, dst_len);
+    QUICTypeUtil::write_QUICPacketNumber(dst, dst_len, buf + *len, &n);
+    *len += n;
+  }
 }
 
 //
@@ -667,14 +673,20 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
   QUICPacketHeaderUPtr header = QUICPacketHeader::load(std::move(buf), len, base_packet_number);
 
   if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
-    // We can't decrypt packets that have unknown versions
-    result = QUICPacketCreationResult::UNSUPPORTED;
+    if (header->type() == QUICPacketType::VERSION_NEGOTIATION) {
+      // version of VN packet is 0x00000000
+      // This packet is unprotected. Just copy the payload
+      result = QUICPacketCreationResult::SUCCESS;
+    } else {
+      // We can't decrypt packets that have unknown versions
+      result = QUICPacketCreationResult::UNSUPPORTED;
+    }
+
     memcpy(plain_txt.get(), header->payload(), header->payload_size());
     plain_txt_len = header->payload_size();
   } else {
     Debug("quic_packet", "Decrypting %s packet #%" PRIu64, QUICDebugNames::packet_type(header->type()), header->packet_number());
     switch (header->type()) {
-    case QUICPacketType::VERSION_NEGOTIATION:
     case QUICPacketType::STATELESS_RESET:
       // These packets are unprotected. Just copy the payload
       memcpy(plain_txt.get(), header->payload(), header->payload_size());
@@ -768,7 +780,7 @@ QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_sent_by_client, QUICPacketNumber base_packet_number)
+QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_sent_by_client)
 {
   size_t len = sizeof(QUICVersion) * countof(QUIC_SUPPORTED_VERSIONS);
   ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)), [](void *p) { ats_free(p); });
@@ -780,9 +792,9 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
     p += n;
   }
 
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
-                            packet_sent_by_client->packet_number(), base_packet_number, 0x00, std::move(versions), len);
+  // VN packet dosen't have packet number field and version field is always 0x00000000
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->connection_id(),
+                                                        0x00, 0x00, 0x00, std::move(versions), len);
 
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }
