@@ -228,7 +228,7 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
   bwprint(s, fmt, 99999, text);
   REQUIRE(s == "99999 -- e99a18c428cb38d5f260853678922e03");
 
-  bwprint(s, "{} .. |{:,20}|", 32767, text);
+  bwprint(s, ts::TextView("{} .. |{:,20}|"), 32767, text);
   REQUIRE(s == "32767 .. |e99a18c428cb38d5f260|");
 }
 
