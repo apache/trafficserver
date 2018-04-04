@@ -260,23 +260,13 @@ class QUICPingFrame : public QUICFrame
 public:
   QUICPingFrame() : QUICFrame() {}
   QUICPingFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICPingFrame(ats_unique_buf data, size_t data_len, bool protection = true)
-    : QUICFrame(protection), _data(std::move(data)), _data_len(data_len)
-  {
-  }
+  QUICPingFrame(bool protection) : QUICFrame(protection) {}
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
 
-  const uint8_t *data() const;
-  uint8_t data_length() const;
-
 private:
-  const size_t _data_offset() const;
-
-  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
-  uint8_t _data_len    = 0;
 };
 
 // PADDING
@@ -541,37 +531,57 @@ private:
   QUICAppErrorCode _error_code = 0;
 };
 
-using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
-using QUICFrameUPtr        = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
-using QUICStreamFrameUPtr  = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
-
 //
-// PONG
+// PATH_CHALLENGE
 //
 
-class QUICPongFrame : public QUICFrame
+class QUICPathChallengeFrame : public QUICFrame
 {
 public:
-  QUICPongFrame() : QUICFrame() {}
-  QUICPongFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICPongFrame(ats_unique_buf data, size_t data_len, bool protection = true)
-    : QUICFrame(protection), _data(std::move(data)), _data_len(data_len)
-  {
-  }
+  static constexpr uint8_t DATA_LEN = 8;
+  QUICPathChallengeFrame() : QUICFrame() {}
+  QUICPathChallengeFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
+  QUICPathChallengeFrame(ats_unique_buf data, bool protection = true) : QUICFrame(protection), _data(std::move(data)) {}
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
 
   const uint8_t *data() const;
-  uint8_t data_length() const;
 
 private:
   const size_t _data_offset() const;
 
   ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
-  uint8_t _data_len    = 0;
 };
+
+//
+// PATH_RESPONSE
+//
+
+class QUICPathResponseFrame : public QUICFrame
+{
+public:
+  static constexpr uint8_t DATA_LEN = 8;
+  QUICPathResponseFrame() : QUICFrame() {}
+  QUICPathResponseFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
+  QUICPathResponseFrame(ats_unique_buf data, bool protection = true) : QUICFrame(protection), _data(std::move(data)) {}
+
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual void store(uint8_t *buf, size_t *len) const override;
+
+  const uint8_t *data() const;
+
+private:
+  const size_t _data_offset() const;
+
+  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+};
+
+using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
+using QUICFrameUPtr        = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
+using QUICStreamFrameUPtr  = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
 
 //
 // Retransmission Frame
@@ -608,7 +618,8 @@ extern ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator;
 extern ClassAllocator<QUICStreamIdBlockedFrame> quicStreamIdBlockedFrameAllocator;
 extern ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator;
 extern ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator;
-extern ClassAllocator<QUICPongFrame> quicPongFrameAllocator;
+extern ClassAllocator<QUICPathChallengeFrame> quicPathChallengeFrameAllocator;
+extern ClassAllocator<QUICPathResponseFrame> quicPathResponseFrameAllocator;
 extern ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator;
 
 class QUICFrameDeleter
@@ -727,10 +738,17 @@ public:
   }
 
   static void
-  delete_pong_frame(QUICFrame *frame)
+  delete_path_challenge_frame(QUICFrame *frame)
   {
     frame->~QUICFrame();
-    quicPongFrameAllocator.free(static_cast<QUICPongFrame *>(frame));
+    quicPathChallengeFrameAllocator.free(static_cast<QUICPathChallengeFrame *>(frame));
+  }
+
+  static void
+  delete_path_response_frame(QUICFrame *frame)
+  {
+    frame->~QUICFrame();
+    quicPathResponseFrameAllocator.free(static_cast<QUICPathResponseFrame *>(frame));
   }
 
   static void
@@ -809,12 +827,18 @@ public:
   /*
    * Creates a PING frame
    */
-  static std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc> create_ping_frame(const uint8_t *data, size_t data_len);
+  static std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc> create_ping_frame();
 
   /*
-   * Creates a PONG frame
+   * Creates a PATH_CHALLENGE frame
    */
-  static std::unique_ptr<QUICPongFrame, QUICFrameDeleterFunc> create_pong_frame(const QUICPingFrame &ping_frame);
+  static std::unique_ptr<QUICPathChallengeFrame, QUICFrameDeleterFunc> create_path_challenge_frame(const uint8_t *data);
+
+  /*
+   * Creates a PATH_RESPONSE frame
+   */
+  static std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc> create_path_response_frame(
+    const QUICPathChallengeFrame &path_challenge_frame);
 
   /*
    * Creates a BLOCKED frame.

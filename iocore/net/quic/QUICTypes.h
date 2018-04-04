@@ -47,7 +47,7 @@ using QUICOffset       = uint64_t;
 // Note: You also need to update tests for VersionNegotiationPacket creation, if you change the number of versions
 // Prefix for drafts (0xff000000) + draft number
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff000009,
+  0xff00000a,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 
@@ -74,10 +74,10 @@ enum class QUICPacketType : uint8_t {
 
 // To detect length of Packet Number
 enum class QUICPacketShortHeaderType : int {
-  ONE           = 0x1F,
-  TWO           = 0x1E,
-  THREE         = 0x1D,
-  UNINITIALIZED = 0x1C,
+  ONE           = 0x0,
+  TWO           = 0x1,
+  THREE         = 0x2,
+  UNINITIALIZED = 0x3,
 };
 
 // XXX If you add or remove QUICFrameType, you might also need to change QUICFrame::type(const uint8_t *)
@@ -95,8 +95,9 @@ enum class QUICFrameType : uint8_t {
   STREAM_ID_BLOCKED,
   NEW_CONNECTION_ID,
   STOP_SENDING,
-  PONG,
   ACK,
+  PATH_CHALLENGE,
+  PATH_RESPONSE,
   STREAM  = 0x10, // 0x10 - 0x17
   UNKNOWN = 0x18,
 };
