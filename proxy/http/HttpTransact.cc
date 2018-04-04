@@ -3430,8 +3430,8 @@ HttpTransact::handle_response_from_parent(State *s)
       TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       break;
     case ORIGIN_SERVER:
-      // Next lookup is Origin Server, try DNS for Origin Server
-      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+      // Next lookup is Origin Server, open connection directly as DNS lookup is done on earlier stage
+      TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_OPEN, NULL);
       break;
     case HOST_NONE:
       handle_parent_died(s);
