@@ -244,7 +244,7 @@ struct HostDBInfo : public RefCountObj {
   bool
   is_ip_timeout() const
   {
-    return ip_timeout_interval && ip_interval() >= ip_timeout_interval;
+    return ip_interval() >= ip_timeout_interval;
   }
 
   bool
@@ -339,9 +339,8 @@ struct HostDBInfo : public RefCountObj {
   unsigned int hostname_offset; // always maintain a permanent copy of the hostname for non-rev dns records.
 
   unsigned int ip_timestamp;
-  // limited to HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
-  // if this is 0 then no timeout.
-  unsigned int ip_timeout_interval;
+
+  unsigned int ip_timeout_interval; // bounded between 1 and HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
 
   unsigned int is_srv : 1;
   unsigned int reverse_dns : 1;
