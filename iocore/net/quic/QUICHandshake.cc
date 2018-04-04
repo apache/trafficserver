@@ -116,10 +116,16 @@ QUICHandshake::~QUICHandshake()
 }
 
 QUICErrorUPtr
-QUICHandshake::start(QUICPacketFactory *packet_factory)
+QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled)
 {
-  this->_load_local_client_transport_parameters(QUIC_SUPPORTED_VERSIONS[0]);
-  packet_factory->set_version(QUIC_SUPPORTED_VERSIONS[0]);
+  QUICVersion initital_version = QUIC_SUPPORTED_VERSIONS[0];
+  if (vn_exercise_enabled) {
+    initital_version = QUIC_EXERCISE_VERSIONS;
+  }
+
+  this->_load_local_client_transport_parameters(initital_version);
+  packet_factory->set_version(initital_version);
+
   return QUICErrorUPtr(new QUICNoError());
 }
 
@@ -144,6 +150,36 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
       return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
     }
   }
+  return QUICErrorUPtr(new QUICNoError());
+}
+
+QUICErrorUPtr
+QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet_factory)
+{
+  // Client side only
+  ink_assert(this->_netvc_context == NET_VCONNECTION_OUT);
+
+  // If already negotiated, just ignore it
+  if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NEGOTIATED ||
+      this->_version_negotiator->status() == QUICVersionNegotiationStatus::VALIDATED) {
+    QUICHSDebug("Ignore Version Negotiation packet");
+    return QUICErrorUPtr(new QUICNoError());
+  }
+
+  if (vn->version() != 0x00) {
+    QUICHSDebug("Version field must be 0x00000000");
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
+  }
+
+  if (this->_version_negotiator->negotiate(vn) == QUICVersionNegotiationStatus::NEGOTIATED) {
+    QUICVersion version = this->_version_negotiator->negotiated_version();
+    QUICHSDebug("Version negotiation succeeded: 0x%x", version);
+    packet_factory->set_version(version);
+  } else {
+    QUICHSDebug("Version negotiation failed");
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR));
+  }
+
   return QUICErrorUPtr(new QUICNoError());
 }
 
@@ -235,7 +271,12 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersI
 
   this->_remote_transport_parameters = tp;
 
-  // TODO Add client side implementation
+  // Version revalidation
+  if (this->_version_negotiator->validate(tp.get()) != QUICVersionNegotiationStatus::VALIDATED) {
+    QUICHSDebug("Version revalidation failed");
+    this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
+    return;
+  }
 
   return;
 }

@@ -186,7 +186,7 @@ QUICNetVConnection::start()
     this->_handshake_handler = new QUICHandshake(this, params->server_ssl_ctx(), this->_reset_token, params->stateless_retry());
   } else {
     this->_handshake_handler = new QUICHandshake(this, params->client_ssl_ctx());
-    this->_handshake_handler->start(&this->_packet_factory);
+    this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
   }
   this->_application_map = new QUICApplicationMap();
   this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
@@ -783,6 +783,9 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (packet->type()) {
+  case QUICPacketType::VERSION_NEGOTIATION:
+    error = this->_state_handshake_process_version_negotiation_packet(std::move(packet));
+    break;
   case QUICPacketType::INITIAL:
     error = this->_state_handshake_process_initial_packet(std::move(packet));
     break;
@@ -802,6 +805,22 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
     error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
     break;
   }
+  return error;
+}
+
+QUICErrorUPtr
+QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPacketUPtr packet)
+{
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+
+  if (packet->connection_id() != this->connection_id()) {
+    QUICConDebug("Ignore Version Negotiation packet");
+    return error;
+  }
+
+  error = this->_handshake_handler->negotiate_version(packet.get(), &this->_packet_factory);
+  // Initial packet will be retransmited with negotiated version
+
   return error;
 }
 

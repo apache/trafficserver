@@ -52,7 +52,9 @@ public:
   ~QUICHandshake();
 
   // for client side
-  QUICErrorUPtr start(QUICPacketFactory *packet_factory);
+  QUICErrorUPtr start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
+  QUICErrorUPtr negotiate_version(const QUICPacket *packet, QUICPacketFactory *packet_factory);
+
   // for server side
   QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
 

@@ -285,6 +285,7 @@ private:
   QUICErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
 
   QUICErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_handshake_process_version_negotiation_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_initial_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_handshake_packet(QUICPacketUPtr packet);

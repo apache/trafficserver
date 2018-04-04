@@ -1330,6 +1330,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.stateless_retry", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.quic.client.vn_exercise_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.quic.server.supported_groups", RECD_STRING, "P-256:X25519:P-384:P-521" , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.client.supported_groups", RECD_STRING, "P-256:X25519:P-384:P-521" , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

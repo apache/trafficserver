@@ -46,6 +46,8 @@ public:
   uint32_t server_id() const;
   static int connection_table_size();
   uint32_t stateless_retry() const;
+  uint32_t vn_exercise_enabled() const;
+
   const char *server_supported_groups() const;
   const char *client_supported_groups() const;
 
@@ -76,6 +78,7 @@ private:
   uint32_t _initial_max_stream_data = 0;
   uint32_t _server_id               = 0;
   uint32_t _stateless_retry         = 0;
+  uint32_t _vn_exercise_enabled     = 0;
 
   uint32_t _initial_max_stream_id_bidi_in  = 100;
   uint32_t _initial_max_stream_id_bidi_out = 101;
