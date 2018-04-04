@@ -1550,7 +1550,7 @@ HTTPInfo::compare_object_key(const CryptoHash *hash)
 inline int64_t
 HTTPInfo::object_size_get()
 {
-  int64_t val;
+  int64_t val = 0; // make gcc shut up.
   int32_t *pi = reinterpret_cast<int32_t *>(&val);
 
   pi[0] = m_alt->m_object_size[0];
