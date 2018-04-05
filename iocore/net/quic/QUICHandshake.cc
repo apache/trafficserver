@@ -374,6 +374,16 @@ QUICHandshake::msg_type() const
   }
 }
 
+/**
+ * reset states for starting over
+ */
+void
+QUICHandshake::reset()
+{
+  this->_initial = true;
+  SSL_clear(this->_ssl);
+}
+
 void
 QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_version)
 {

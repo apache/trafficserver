@@ -819,7 +819,16 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
   }
 
   error = this->_handshake_handler->negotiate_version(packet.get(), &this->_packet_factory);
-  // Initial packet will be retransmited with negotiated version
+
+  // discard all transport state except packet number
+  this->_stream_manager->reset_send_offset();
+  this->_stream_manager->reset_recv_offset();
+  this->_loss_detector->reset();
+
+  // start handshake over
+  this->_handshake_handler->reset();
+  this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+  this->_schedule_packet_write_ready();
 
   return error;
 }
@@ -1234,6 +1243,7 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   // TODO: support NET_VCONNECTION_IN
   if (this->get_context() == NET_VCONNECTION_OUT && type == QUICPacketType::UNINITIALIZED) {
     if (this->_last_received_packet_type == QUICPacketType::UNINITIALIZED ||
+        this->_last_received_packet_type == QUICPacketType::VERSION_NEGOTIATION ||
         this->_last_received_packet_type == QUICPacketType::RETRY) {
       type = QUICPacketType::INITIAL;
     } else if (_last_received_packet_type == QUICPacketType::HANDSHAKE) {
@@ -1377,9 +1387,15 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     QUICConDebug("Unsupported version");
     break;
   case QUICPacketCreationResult::SUCCESS:
-    QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
-                 quic_packet->packet_number(), quic_packet->size());
     this->_last_received_packet_type = quic_packet->type();
+
+    if (quic_packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
+      QUICConDebug("Dequeue %s size=%u", QUICDebugNames::packet_type(quic_packet->type()), quic_packet->size());
+    } else {
+      QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
+                   quic_packet->packet_number(), quic_packet->size());
+    }
+
     break;
   default:
     QUICConDebug("Failed to decrypt the packet");
