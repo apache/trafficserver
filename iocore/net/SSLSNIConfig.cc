@@ -82,6 +82,8 @@ SNIConfigParams::loadSNIConfig()
       TunnelMap.emplace(item.fqdn.data(), item.tunnel_destination);
     }
 
+    auto ai3 = new SNI_IpAllow(item.ip_allow, servername);
+    aiVec->push_back(ai3);
     // set the next hop properties
     SSLConfig::scoped_config params;
     auto clientCTX  = params->getCTX(servername);

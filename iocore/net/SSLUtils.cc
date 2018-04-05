@@ -448,12 +448,16 @@ extern SNIActionPerformer sni_action_performer;
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
+  int ret                  = SSL_TLSEXT_ERR_OK;
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   Debug("ssl", "Requested servername is %s", servername);
   if (servername != nullptr) {
-    sni_action_performer.PerformAction(netvc, servername);
+    ret = sni_action_performer.PerformAction(netvc, servername);
   }
+  if (ret != SSL_TLSEXT_ERR_OK)
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
   return SSL_TLSEXT_ERR_OK;
 }

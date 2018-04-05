@@ -37,7 +37,7 @@
 
 extern Map<int, SSLNextProtocolSet *> snpsMap;
 
-void
+int
 SNIActionPerformer::PerformAction(Continuation *cont, cchar *servername)
 {
   SNIConfig::scoped_config params;
@@ -47,8 +47,12 @@ SNIActionPerformer::PerformAction(Continuation *cont, cchar *servername)
   } else {
     for (auto it : *actionvec) {
       if (it) {
-        it->SNIAction(cont);
+        auto ret = it->SNIAction(cont);
+        if (ret != SSL_TLSEXT_ERR_OK) {
+          return ret;
+        }
       }
     }
   }
+  return SSL_TLSEXT_ERR_OK;
 }
