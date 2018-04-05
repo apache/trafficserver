@@ -837,8 +837,7 @@ public:
   /*
    * Creates a PATH_RESPONSE frame
    */
-  static std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc> create_path_response_frame(
-    const QUICPathChallengeFrame &path_challenge_frame);
+  static std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc> create_path_response_frame(const uint8_t *data);
 
   /*
    * Creates a BLOCKED frame.

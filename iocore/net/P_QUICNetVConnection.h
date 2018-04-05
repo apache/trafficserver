@@ -57,6 +57,7 @@
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
 #include "quic/QUICAltConnectionManager.h"
+#include "quic/QUICPathValidator.h"
 #include "quic/QUICApplicationMap.h"
 
 // These are included here because older OpenQUIC libraries don't have them.
@@ -252,6 +253,7 @@ private:
   QUICLocalFlowController *_local_flow_controller   = nullptr;
   QUICConnectionTable *_ctable                      = nullptr;
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
+  QUICPathValidator *_path_validator                = nullptr;
 
   CountQueue<UDPPacket> _packet_recv_queue;
   CountQueue<QUICPacket> _packet_send_queue;

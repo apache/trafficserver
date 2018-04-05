@@ -1990,10 +1990,10 @@ QUICFrameFactory::create_path_challenge_frame(const uint8_t *data)
 }
 
 std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_path_response_frame(const QUICPathChallengeFrame &path_challenge_frame)
+QUICFrameFactory::create_path_response_frame(const uint8_t *data)
 {
   ats_unique_buf buf = ats_unique_malloc(QUICPathResponseFrame::DATA_LEN);
-  memcpy(buf.get(), path_challenge_frame.data(), QUICPathResponseFrame::DATA_LEN);
+  memcpy(buf.get(), data, QUICPathResponseFrame::DATA_LEN);
 
   QUICPathResponseFrame *frame = quicPathResponseFrameAllocator.alloc();
   new (frame) QUICPathResponseFrame(std::move(buf));

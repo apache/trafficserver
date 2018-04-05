@@ -75,6 +75,7 @@ libquic_a_SOURCES = \
   QUICApplicationMap.cc \
   QUICIncomingFrameBuffer.cc \
   QUICPacketRetransmitter.cc \
+  QUICPathValidator.cc \
   QUICStatelessRetry.cc
 
 include $(top_srcdir)/build/tidy.mk

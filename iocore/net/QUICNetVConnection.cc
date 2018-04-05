@@ -201,10 +201,12 @@ QUICNetVConnection::start()
   this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(0);
+  this->_path_validator         = new QUICPathValidator();
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
+  this->_frame_dispatcher->add_handler(this->_path_validator);
 }
 
 void
@@ -1117,6 +1119,20 @@ QUICNetVConnection::_packetize_frames()
   if (frame != nullptr) {
     ++frame_count;
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+  }
+
+  // PATH_CHALLENGE, PATH_RESPOSNE
+  frame = this->_path_validator->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+  while (frame) {
+    ++frame_count;
+    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+    if (this->_the_final_packet) {
+      return;
+    }
+    if (frame_count >= FRAME_PER_EVENT) {
+      break;
+    }
+    frame = this->_path_validator->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
   }
 
   // CONNECTION_CLOSE, APPLICATION_CLOSE
