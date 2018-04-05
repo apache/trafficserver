@@ -256,8 +256,8 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
 
     REQUIRE(*sv.begin() == 'a');
     REQUIRE(*sv.cbegin() == 'a');
-    REQUIRE(*(--sv.end()) == 'e');
-    REQUIRE(*(--sv.cend()) == 'e');
+    REQUIRE(*(sv.end() - 1) == 'e');
+    REQUIRE(*(sv.cend() - 1) == 'e');
     REQUIRE(*sv.rbegin() == 'e');
     REQUIRE(*sv.crbegin() == 'e');
     REQUIRE(*(--sv.rend()) == 'a');
@@ -310,7 +310,11 @@ TEST_CASE("Capacity", "[string_view] [capacity]")
     REQUIRE(sv.size() == 0);
     REQUIRE(sv.length() == 0);
     REQUIRE(sv.empty() == true);
+#if __cplusplus >= 201703L
+    REQUIRE(sv.max_size() == 0x3ffffffffffffffb);
+#else
     REQUIRE(sv.max_size() == 0xfffffffffffffffe);
+#endif
   }
 
   SECTION("literal string")
@@ -319,7 +323,11 @@ TEST_CASE("Capacity", "[string_view] [capacity]")
     REQUIRE(sv.size() == 5);
     REQUIRE(sv.length() == 5);
     REQUIRE(sv.empty() == false);
+#if __cplusplus >= 201703L
+    REQUIRE(sv.max_size() == 0x3ffffffffffffffb);
+#else
     REQUIRE(sv.max_size() == 0xfffffffffffffffe);
+#endif
   }
 }
 
@@ -349,7 +357,7 @@ TEST_CASE("Modifier", "[string_view] [modifier]")
     sv.remove_suffix(3);
     REQUIRE(sv == "ab");
 
-    sv.remove_suffix(100);
+    sv.remove_suffix(2);
     REQUIRE(sv == "");
   }
 
