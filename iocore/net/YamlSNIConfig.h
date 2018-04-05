@@ -32,6 +32,7 @@ constexpr char TS_verify_client[]        = "verify_client";
 constexpr char TS_tunnel_route[]         = "tunnel_route";
 constexpr char TS_verify_origin_server[] = "verify_origin_server";
 constexpr char TS_client_cert[]          = "client_cert";
+constexpr char TS_ip_allow[]             = "ip_allow";
 
 const int start = 0;
 struct YamlSNIConfig {
@@ -54,6 +55,7 @@ struct YamlSNIConfig {
     std::string tunnel_destination;
     uint8_t verify_origin_server = 0;
     std::string client_cert;
+    std::string ip_allow;
   };
 
   ts::Errata loader(const char *cfgFilename);
