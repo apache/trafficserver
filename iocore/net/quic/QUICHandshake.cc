@@ -186,7 +186,8 @@ QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet
 bool
 QUICHandshake::is_version_negotiated() const
 {
-  return (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NEGOTIATED);
+  return (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NEGOTIATED ||
+          this->_version_negotiator->status() == QUICVersionNegotiationStatus::VALIDATED);
 }
 
 bool

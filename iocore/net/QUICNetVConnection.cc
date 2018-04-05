@@ -844,13 +844,12 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
 
   // Start handshake
   QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
+
+  // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
   if (this->_handshake_handler->is_version_negotiated()) {
     error = this->_recv_and_ack(std::move(packet));
-  } else {
-    // Perhaps response packets for initial packet were lost. Pass packet to _recv_and_ack to send ack to the initial packet.
-    // Stream data will be discarded by offset mismatch.
-    error = this->_recv_and_ack(std::move(packet));
   }
+
   return error;
 }
 
