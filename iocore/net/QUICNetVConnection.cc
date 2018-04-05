@@ -544,15 +544,6 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         this->_switch_to_close_state();
       }
     } else {
-      if (this->get_context() == NET_VCONNECTION_OUT && (this->_last_received_packet_type == QUICPacketType::RETRY)) {
-        QUICConnectionId tmp = this->_original_quic_connection_id;
-        this->_original_quic_connection_id.randomize();
-        QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(tmp),
-                     static_cast<uint64_t>(this->_original_quic_connection_id));
-
-        this->_hs_protocol->initialize_key_materials(this->_original_quic_connection_id);
-      }
-
       error = this->_state_common_send_packet();
     }
     // Reschedule WRITE_READY
@@ -1255,6 +1246,16 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   switch (type) {
   case QUICPacketType::INITIAL:
     ink_assert(this->get_context() == NET_VCONNECTION_OUT);
+
+    if (this->_last_received_packet_type == QUICPacketType::RETRY) {
+      QUICConnectionId tmp = this->_original_quic_connection_id;
+      this->_original_quic_connection_id.randomize();
+      QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(tmp),
+                   static_cast<uint64_t>(this->_original_quic_connection_id));
+
+      this->_hs_protocol->initialize_key_materials(this->_original_quic_connection_id);
+    }
+
     packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->largest_acked_packet_number(),
                                                          std::move(buf), len);
     this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
