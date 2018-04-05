@@ -30,7 +30,7 @@
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
 #include "ExpandingArray.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 
 #include <vector>
 #include <algorithm>

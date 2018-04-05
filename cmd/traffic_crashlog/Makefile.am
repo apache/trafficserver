@@ -35,13 +35,14 @@ traffic_crashlog_SOURCES = \
 	traffic_crashlog.h
 
 traffic_crashlog_LDADD = \
-	$(top_builddir)/lib/records/librecords_p.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/api/libtsmgmt.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	@LIBTCL@ @HWLOC_LIBS@
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/mgmt/api/libtsmgmt.la \
+  $(top_builddir)/lib/rpc/librpc_c.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBTCL@ @HWLOC_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 

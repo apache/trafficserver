@@ -2038,6 +2038,8 @@ AC_CONFIG_FILES([
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
+  lib/rpc/Makefile
+  lib/rpc/utils/Makefile
   lib/ts/Makefile
   lib/ts/apidefs.h
   lib/ts/ink_config.h

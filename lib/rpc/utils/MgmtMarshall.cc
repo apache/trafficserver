@@ -25,9 +25,8 @@
 #include "ts/ink_memory.h"
 #include "ts/ink_assert.h"
 #include "ts/Diags.h"
-
-#include "MgmtMarshall.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtMarshall.h"
+#include "rpc/utils/MgmtSocket.h"
 
 union MgmtMarshallAnyPtr {
   MgmtMarshallInt *m_int;

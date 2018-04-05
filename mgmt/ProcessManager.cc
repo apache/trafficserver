@@ -28,7 +28,7 @@
 #include "ProcessManager.h"
 
 #include "ts/ink_apidefs.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 #include "ts/I_Layout.h"
 
 /*

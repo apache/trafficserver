@@ -18,34 +18,39 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/api/include \
-	$(TS_INCLUDES)
+  -I$(abs_top_srcdir)/iocore/utils \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/api \
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  -I$(abs_top_srcdir)/lib/tsconfig \
+  -I$(abs_top_srcdir)/proxy \
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/lib \
+  $(TS_INCLUDES) \
+  @OPENSSL_INCLUDES@
 
-bin_PROGRAMS = traffic_ctl
+# header files used by other libraries
+EXTRA_DIST = MgmtMarshall.h MgmtSocket.h
 
-traffic_ctl_SOURCES = \
-	alarm.cc \
-	config.cc \
-	metric.cc \
-	plugin.cc \
-	server.cc \
-	storage.cc \
-	host.cc \
-	traffic_ctl.cc
+noinst_LTLIBRARIES = librpc_utils.la 
+check_PROGRAMS = test_marshall
 
-traffic_ctl_LDADD = \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/rpc/librpc_c.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @HWLOC_LIBS@
+TESTS = $(check_PROGRAMS)
+
+librpc_utils_la_SOURCES = \
+  MgmtMarshall.cc \
+  MgmtMarshall.h \
+  MgmtSocket.cc \
+  MgmtSocket.h 
+
+test_marshall_LDFLAGS = \
+  @AM_LDFLAGS@ \
+  @OPENSSL_LDFLAGS@
+
+test_marshall_SOURCES = test_marshall.cc
+test_marshall_LDADD = \
+  librpc_utils.la \
+  $(top_builddir)/lib/ts/libtsutil.la
 
 include $(top_srcdir)/build/tidy.mk
 

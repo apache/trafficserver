@@ -2087,11 +2087,10 @@ mgmt_lifecycle_msg_callback(void *, char *data, int len)
 {
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
   TSPluginMsg msg;
-  MgmtInt op;
   MgmtMarshallString tag;
   MgmtMarshallData payload;
 
-  if (mgmt_message_parse(data, len, &op, &tag, &payload) == -1) {
+  if (mgmt_message_parse(data, len, &tag, &payload) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
   } else {
     msg.tag       = tag;

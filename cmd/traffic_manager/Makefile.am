@@ -49,13 +49,15 @@ traffic_manager_SOURCES = \
 	traffic_manager.cc
 
 traffic_manager_LDADD = \
-	$(top_builddir)/mgmt/api/libmgmtapilocal.la \
-	$(top_builddir)/mgmt/libmgmt_lm.la \
-	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/records/librecords_lm.a \
-	$(top_builddir)/proxy/shared/libdiagsconfig.a
+  $(top_builddir)/mgmt/api/libmgmtapilocal.la \
+  $(top_builddir)/mgmt/libmgmt_lm.la \
+  $(top_builddir)/lib/rpc/librpc_s.la \
+  $(top_builddir)/proxy/hdrs/libhdrs.a \
+  $(top_builddir)/lib/rpc/librpc_s.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_lm.a \
+  $(top_builddir)/proxy/shared/libdiagsconfig.a
 
 AM_LDFLAGS += \
 	$(LUAJIT_LDFLAGS)
@@ -83,13 +85,14 @@ traffic_manager_LDADD +=\
 
 test_metrics_SOURCES = test_metrics.cc metrics.cc
 test_metrics_LDADD = \
-	$(top_builddir)/mgmt/libmgmt_lm.la \
-	$(top_builddir)/lib/records/librecords_lm.a \
-	$(top_builddir)/lib/bindings/libbindings.la \
-	$(top_builddir)/lib/luajit/src/libluajit.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	@LIBTCL@ @LIBPCRE@
+  $(top_builddir)/mgmt/libmgmt_lm.la \
+  $(top_builddir)/lib/records/librecords_lm.a \
+  $(top_builddir)/lib/bindings/libbindings.la \
+  $(top_builddir)/lib/luajit/src/libluajit.a \
+  $(top_builddir)/lib/rpc/librpc_s.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @LIBTCL@ @LIBPCRE@
 
 # Must do it this way or the dependencies aren't detected.
 if BUILD_WCCP

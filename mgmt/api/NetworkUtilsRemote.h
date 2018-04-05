@@ -26,7 +26,8 @@
  * Purpose: This file contains functions used by remote api client to
  *          marshal requests to TM and unmarshal replies from TM.
  *          Also contains functions used to store information specific
- *          to a remote client connection.
+ *          to a remote client connection. It helps to set up the necessary
+ *          paths and fds for CoreAPIRemote.cc
  * Created: 8/9/00
  * Created by: lant
  *
@@ -35,11 +36,16 @@
 #pragma once
 
 #include "mgmtapi.h"
-#include "NetworkMessage.h"
+#include "TSControlMain.h"
 #include "EventCallback.h"
+#include "rpc/ClientControl.h"
 
 extern int main_socket_fd;
 extern int event_socket_fd;
+
+extern char *main_socket_path;
+extern char *event_socket_path;
+
 extern CallbackTable *remote_event_callbacks;
 
 // From CoreAPIRemote.cc
@@ -63,20 +69,6 @@ TSMgmtError reconnect_loop(int num_attempts);
 void *socket_test_thread(void *arg);
 void *event_poll_thread_main(void *arg);
 
-struct mgmtapi_sender : public mgmt_message_sender {
-  explicit mgmtapi_sender(int _fd) : fd(_fd) {}
-  TSMgmtError send(void *msg, size_t msglen) const override;
-  bool
-  is_connected() const override
-  {
-    return fd != ts::NO_FD;
-  }
-
-  int fd;
-};
-
-#define MGMTAPI_SEND_MESSAGE(fd, optype, ...) send_mgmt_request(mgmtapi_sender(fd), (optype), __VA_ARGS__)
-
 #define MGMTAPI_MGMT_SOCKET_NAME "mgmtapi.sock"
 #define MGMTAPI_EVENT_SOCKET_NAME "eventapi.sock"
 
@@ -84,10 +76,5 @@ struct mgmtapi_sender : public mgmt_message_sender {
  * Marshalling (create requests)
  *****************************************************************************/
 
-TSMgmtError send_register_all_callbacks(int fd, CallbackTable *cb_table);
-TSMgmtError send_unregister_all_callbacks(int fd, CallbackTable *cb_table);
-
-/*****************************************************************************
- * Un-marshalling (parse responses)
- *****************************************************************************/
-TSMgmtError parse_generic_response(OpType optype, int fd);
+TSMgmtError send_register_all_callbacks(int fd, const char *path, CallbackTable *cb_table);
+TSMgmtError send_unregister_all_callbacks(int fd, const char *path, CallbackTable *cb_table);

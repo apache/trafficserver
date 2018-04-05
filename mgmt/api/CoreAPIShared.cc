@@ -27,7 +27,7 @@
 #include "ts/ink_memory.h"
 
 #include "CoreAPIShared.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 
 // Forward declarations, used to be in the CoreAPIShared.h include file but
 // that doesn't make any sense since these are both statically declared. /leif

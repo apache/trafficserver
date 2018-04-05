@@ -33,7 +33,7 @@
 #include "LocalManager.h"
 #include "Alarms.h"
 #include "MgmtUtils.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 #include "NetworkUtilsRemote.h"
 #include "MIME.h"
 #include "Cop.h"

@@ -28,7 +28,7 @@
 #include "MgmtUtils.h"
 #include "ts/I_Layout.h"
 #include "LocalManager.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "FileManager.h"
 #include <ts/string_view.h>
