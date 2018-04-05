@@ -52,8 +52,8 @@ YamlSNIConfig::loader(const char *cfgFilename)
 
 TsEnumDescriptor LEVEL_DESCRIPTOR = {{{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
 
-std::set<std::string> valid_sni_config_keys = {TS_fqdn,         TS_disable_H2,           TS_verify_client,
-                                               TS_tunnel_route, TS_verify_origin_server, TS_client_cert};
+std::set<std::string> valid_sni_config_keys = {
+  TS_fqdn, TS_disable_H2, TS_verify_client, TS_tunnel_route, TS_verify_origin_server, TS_client_cert, TS_ip_allow};
 
 namespace YAML
 {
@@ -70,6 +70,8 @@ template <> struct convert<YamlSNIConfig::Item> {
 
     if (node[TS_fqdn]) {
       item.fqdn = node[TS_fqdn].as<std::string>();
+    } else {
+      return false; // servername must be present
     }
     if (node[TS_disable_H2]) {
       item.fqdn = node[TS_disable_H2].as<bool>();
@@ -100,6 +102,10 @@ template <> struct convert<YamlSNIConfig::Item> {
 
     if (node[TS_client_cert]) {
       item.client_cert = node[TS_client_cert].as<std::string>();
+    }
+
+    if (node[TS_ip_allow]) {
+      item.ip_allow = node[TS_ip_allow].as<std::string>();
     }
     return true;
   }
