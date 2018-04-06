@@ -83,6 +83,16 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
     X &clip(size_t) override { return *this; }
     X &extend(size_t) override { return *this; }
+    std::ostream &
+    operator>>(std::ostream &stream) const override
+    {
+      return stream;
+    }
+    ssize_t
+    operator>>(int fd) const override
+    {
+      return 0;
+    }
   };
 
   X x;
@@ -276,7 +286,7 @@ TEST_CASE("Concrete Buffer Writers 2", "[BWC2]")
   REQUIRE(bw20.extent() == 10);
   REQUIRE(bw20.size() == 10);
 
-  auto abw = bw20.auxWriter();
+  ts::FixedBufferWriter abw{bw20.auxWriter()};
   REQUIRE(abw.remaining() == 10);
   abw.write("abcdefghijklmnopqrstuvwxyz");
   bw20.fill(abw.extent());
