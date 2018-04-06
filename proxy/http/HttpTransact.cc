@@ -6596,7 +6596,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
     }
     TxnDebug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
   } else {
-    // No content length header
+    // No content length header.
     if (s->source == SOURCE_CACHE) {
       // If there is no content-length header, we can
       //   insert one since the cache knows definately
@@ -6618,6 +6618,12 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         header->set_content_length(cl);
         s->hdr_info.trust_response_cl = true;
       }
+    } else if (s->source == SOURCE_HTTP_ORIGIN_SERVER && s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED &&
+               s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
+      // In this case, we had a cached object, possibly chunked encoded (so we don't have a CL: header), but the origin did a
+      // 304 Not Modified response. We can still turn this into a proper Range response from the cached object.
+      change_response_header_because_of_range_request(s, header);
+      s->hdr_info.trust_response_cl = true;
     } else {
       // Check to see if there is no content length
       //  header because the response precludes a
