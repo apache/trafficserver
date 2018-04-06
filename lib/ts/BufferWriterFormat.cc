@@ -334,9 +334,8 @@ namespace bw_fmt
   BufferWriter &
   Format_Integer(BufferWriter &w, BWFSpec const &spec, uintmax_t i, bool neg_p)
   {
-    size_t n  = 0;
-    int width = static_cast<int>(spec._min); // amount left to fill.
-    string_view prefix;
+    size_t n     = 0;
+    int width    = static_cast<int>(spec._min); // amount left to fill.
     char neg     = 0;
     char prefix1 = spec._radix_lead_p ? '0' : 0;
     char prefix2 = 0;

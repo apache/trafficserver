@@ -104,8 +104,6 @@ URLparser::getPort(std::string &fullURL, int &port_ptr, int &port_len)
   }
   if (u_pos != -1) {
     fullURL.insert(u_pos, ":@");
-    static const TextView HTTP("http");
-    static const TextView HTTPS("https");
     TextView url(fullURL.data(), (int)fullURL.size());
 
     url += 9;
