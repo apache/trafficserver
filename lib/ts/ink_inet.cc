@@ -29,6 +29,7 @@
 #include "ts/ink_assert.h"
 #include <fstream>
 #include <ts/TextView.h>
+#include <ts/BufferWriter.h>
 
 IpAddr const IpAddr::INVALID;
 
@@ -44,6 +45,8 @@ const ts::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"_sv);
 const ts::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"_sv);
 const ts::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"_sv);
 const ts::string_view IP_PROTO_TAG_HTTP_2_0("h2"_sv); // HTTP/2 over TLS
+
+const ts::string_view UNIX_PROTO_TAG("unix"_sv); // UNIX domain socket (file system)
 
 uint32_t
 ink_inet_addr(const char *s)
@@ -141,7 +144,18 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
 ts::string_view
 ats_ip_family_name(int family)
 {
-  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : "Unspec"_sv;
+  switch (family) {
+  case AF_INET:
+    return IP_PROTO_TAG_IPV4;
+  case AF_INET6:
+    return IP_PROTO_TAG_IPV6;
+  case AF_UNIX:
+    return UNIX_PROTO_TAG;
+  case AF_UNSPEC:
+    return "unspec"_sv;
+  default:
+    return "unknown"_sv;
+  }
 }
 
 const char *
@@ -586,3 +600,133 @@ ats_tcp_somaxconn()
 
   return value;
 }
+
+namespace ts
+{
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, in_addr_t addr)
+{
+  uint8_t *ptr = reinterpret_cast<uint8_t *>(&addr);
+  BWFSpec local_spec{spec}; // Format for address elements.
+  if (local_spec._fill)
+    local_spec._min = 3;
+  else
+    local_spec._min = 0;
+  bwformat(w, local_spec, ptr[0]);
+  w.write('.');
+  bwformat(w, local_spec, ptr[1]);
+  w.write('.');
+  bwformat(w, local_spec, ptr[2]);
+  w.write('.');
+  bwformat(w, local_spec, ptr[3]);
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, in6_addr const &addr)
+{
+  using QUAD = uint16_t const;
+  BWFSpec local_spec{spec}; // Format for address elements.
+  uint8_t const *ptr   = addr.s6_addr;
+  uint8_t const *limit = ptr + sizeof(addr.s6_addr);
+  QUAD *lower          = nullptr; // the best zero range
+  QUAD *upper          = nullptr;
+
+  local_spec._fill = 0;
+  if (local_spec._fill) {
+    local_spec._min = 4;
+  } else {
+    local_spec._min = 0;
+    // do 0 compression if there's no fill.
+    for (QUAD *spot = reinterpret_cast<QUAD *>(ptr)
+            , *last = reinterpret_cast<QUAD *>(limit)
+            , *current = nullptr
+            ; spot < last
+            ; ++spot) {
+      if (0 == *spot) {
+        if (current) {
+          // If there's no best, or this is better, remember it.
+          if (!lower || (upper - lower < spot - current)) {
+            lower = current;
+            upper = spot;
+          }
+        } else {
+          current = spot;
+        }
+      }
+    }
+  }
+  if (!local_spec.has_numeric_type())
+    local_spec._type = 'x';
+
+  for (; ptr < limit; ptr += 2) {
+    if (reinterpret_cast<uint8_t const *>(lower) <= ptr && ptr <= reinterpret_cast<uint8_t const *>(upper)) {
+      if (ptr == addr.s6_addr) {
+        w.write(':'); // only if this is the first quad.
+      }
+      if (ptr == reinterpret_cast<uint8_t const *>(upper)) {
+        w.write(':');
+      }
+    } else {
+      uint16_t f = (ptr[0] << 8) + ptr[1];
+      bwformat(w, local_spec, f);
+      if (ptr != limit - 2)
+        w.write(':');
+    }
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
+{
+  BWFSpec local_spec{spec}; // Format for address elements and port.
+  bool port_p   = true;
+  bool addr_p   = true;
+  bool family_p = false;
+  if (spec._ext.size()) {
+    port_p   = spec._ext.find('p') != spec._ext.npos;
+    addr_p   = spec._ext.find('a') != spec._ext.npos;
+    family_p = spec._ext.find('f') != spec._ext.npos;
+  }
+  if (addr_p) {
+    bool bracket_p = false;
+    ip_text_buffer b;
+    switch (addr->sa_family) {
+    case AF_INET:
+      bwformat(w, spec, ats_ip4_addr_cast(addr));
+      break;
+    case AF_INET6:
+      if (port_p) {
+        w.write('[');
+        bracket_p = true; // take a note - put in the trailing bracket.
+      }
+      bwformat(w, spec, ats_ip6_addr_cast(addr));
+      break;
+    default:
+      FixedBufferWriter(b, sizeof(b)).print("*Not IP address [{}]*\0"_sv, addr->sa_family);
+      break;
+    }
+    w.write(b, strlen(b));
+    if (bracket_p)
+      w.write(']');
+    if (port_p)
+      w.write(':');
+  }
+  if (port_p) {
+    local_spec._min = spec._fill ? std::numeric_limits<in_port_t>::digits10 + 1 : 0;
+    bwformat(w, local_spec, static_cast<uintmax_t>(ats_ip_port_host_order(addr)));
+  }
+  if (family_p) {
+    local_spec._min = 0;
+    if (addr_p || port_p)
+      w.write(' ');
+    if (spec.has_numeric_type()) {
+      bwformat(w, local_spec, static_cast<uintmax_t>(addr->sa_family));
+    } else {
+      bwformat(w, local_spec, ats_ip_family_name(addr->sa_family));
+    }
+  }
+  return w;
+}
+} // ts

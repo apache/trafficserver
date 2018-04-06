@@ -198,6 +198,7 @@ public:
 class FixedBufferWriter : public BufferWriter
 {
   using super_type = BufferWriter;
+  using self_type  = FixedBufferWriter;
 
 public:
   /** Construct a buffer writer on a fixed @a buffer of size @a capacity.
@@ -319,13 +320,28 @@ public:
 
   /// Reduce extent to @a n.
   /// If @a n is less than the capacity the error condition, if any, is cleared.
-  /// This can be used to clear the output by calling @c reduce(0)
-  void
+  /// This can be used to clear the output by calling @c reduce(0). In contrast
+  /// to @c clip this reduces the data in the buffer, rather than the capacity.
+  self_type &
   reduce(size_t n)
   {
     ink_assert(n <= _attempted);
 
     _attempted = n;
+    return *this;
+  }
+
+  /// Clear the buffer, reset to empty (no data).
+  /// This is a convenience for reusing a buffer. For instance
+  /// @code
+  ///   bw.reset().print("....."); // clear old data and print new data.
+  /// @endcode
+  /// This is equivalent to @c reduce(0) but clearer for that case.
+  self_type &
+  reset()
+  {
+    _attempted = 0;
+    return *this;
   }
 
   /// Provide a string_view of all successfully written characters.
@@ -447,10 +463,14 @@ protected:
         // generate output on @a w
       }
     @endcode
+
+    The argument can be passed by value if that would be more efficient.
   */
 
 namespace bw_fmt
 {
+  /// Internal signature for template generated formatting.
+  /// @a args is a forwarded tuple of arguments to be processed.
   template <typename TUPLE> using ArgFormatterSignature = BufferWriter &(*)(BufferWriter &w, BWFSpec const &, TUPLE const &args);
 
   /// Internal error / reporting message generators
@@ -461,7 +481,7 @@ namespace bw_fmt
   /// This selects the @a I th argument in the @a TUPLE arg pack and calls the formatter on it. This
   /// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
   /// signature, not vary per argument. Effectively this indirection erases the type of the specific
-  /// argument being formatter.
+  /// argument being formatted. Instances of this have the signature @c ArgFormatterSignature.
   template <typename TUPLE, size_t I>
   BufferWriter &
   Arg_Formatter(BufferWriter &w, BWFSpec const &spec, TUPLE const &args)
@@ -471,7 +491,7 @@ namespace bw_fmt
 
   /// This exists only to expand the index sequence into an array of formatters for the tuple type
   /// @a TUPLE.  Due to langauge limitations it cannot be done directly. The formatters can be
-  /// access via standard array access in constrast to templated tuple access. The actual array is
+  /// accessed via standard array access in constrast to templated tuple access. The actual array is
   /// static and therefore at run time the only operation is loading the address of the array.
   template <typename TUPLE, size_t... N>
   ArgFormatterSignature<TUPLE> *
@@ -482,6 +502,8 @@ namespace bw_fmt
   }
 
   /// Perform alignment adjustments / fill on @a w of the content in @a lw.
+  /// This is the normal mechanism, but a number of the builtin types handle this internally
+  /// for performance reasons.
   void Do_Alignment(BWFSpec const &spec, BufferWriter &w, BufferWriter &lw);
 
   /// Global named argument table.
@@ -498,7 +520,10 @@ namespace bw_fmt
 
 } // bw_fmt
 
-/** Compiled BufferWriter format
+/** Compiled BufferWriter format.
+
+    @note This is not as useful as hoped, the performance is not much better using this than parsing
+    on the fly (about 30% better, which is fine for tight loops but not for general use).
  */
 class BWFormat
 {
@@ -546,12 +571,14 @@ template <typename... Rest>
 BufferWriter &
 BufferWriter::print(TextView fmt, Rest... rest)
 {
-  static constexpr int N = sizeof...(Rest);
-  auto args(std::forward_as_tuple(rest...));
-  auto fa     = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Rest...>{});
-  int arg_idx = 0;
+  static constexpr int N = sizeof...(Rest);  // used as loop limit
+  auto args(std::forward_as_tuple(rest...)); // gather the arguments for easy access.
+  static const auto fa = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Rest...>{});
+  int arg_idx          = 0; // the next argument index to be processed.
 
   while (fmt.size()) {
+    // Next string piece of interest is an (optional) literal and then an (optinal) format specifier.
+    // There will always be a specifier except for the possible trailing literal.
     string_view lit_v;
     string_view spec_v;
     bool spec_p = BWFormat::parse(fmt, lit_v, spec_v);
@@ -559,8 +586,9 @@ BufferWriter::print(TextView fmt, Rest... rest)
     if (lit_v.size()) {
       this->write(lit_v);
     }
+
     if (spec_p) {
-      BWFSpec spec{spec_v};
+      BWFSpec spec{spec_v}; // parse the specifier.
       size_t width = this->remaining();
       if (spec._max < width) {
         width = spec._max;
@@ -631,7 +659,7 @@ operator<<(BufferWriter &w, V &&v)
   return bwformat(w, BWFSpec::DEFAULT, std::forward<V>(v));
 }
 
-// Pointers
+// Pointers that are not specialized.
 inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
 {

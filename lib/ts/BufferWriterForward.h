@@ -68,6 +68,17 @@ struct BWFSpec {
 
   static const self_type DEFAULT;
 
+  /// Validate @a c is a specifier type indicator.
+  static bool is_type(char c);
+  /// Check if the type flag is numeric.
+  static bool is_numeric_type(char c);
+  /// Check if the type is an upper case variant.
+  static bool is_upper_case_type(char c);
+  /// Check if the type @a in @a this is numeric.
+  bool has_numeric_type() const;
+  /// Check if the type in @a this is an upper case variant.
+  bool has_upper_case_type() const;
+
 protected:
   /// Validate character is alignment character and return the appropriate enum value.
   Align align_of(char c);
@@ -75,8 +86,11 @@ protected:
   /// Validate is sign indicator.
   bool is_sign(char c);
 
-  /// Validate @a c is a specifier type indicator.
-  bool is_type(char c);
+  static constexpr uint8_t TYPE_FLAG_VALID   = 0x01; ///< A valid type character.
+  static constexpr uint8_t TYPE_FLAG_NUMERIC = 0x02; ///< Numeric output.
+  static constexpr uint8_t TYPE_FLAG_UPPER   = 0x04; ///< Upper case flag.
+  /// Type character properties.
+  static const uint8_t TYPE_FLAG[0x100];
 };
 
 inline BWFSpec::Align
@@ -94,7 +108,25 @@ BWFSpec::is_sign(char c)
 inline bool
 BWFSpec::is_type(char c)
 {
-  return 'x' == c || 'X' == c || 'o' == c || 'b' == c || 'B' == c || 'd' == c;
+  return TYPE_FLAG[static_cast<int>(c)] & TYPE_FLAG_VALID;
+}
+
+inline bool
+BWFSpec::is_upper_case_type(char c)
+{
+  return TYPE_FLAG[static_cast<int>(c)] & TYPE_FLAG_UPPER;
+}
+
+inline bool
+BWFSpec::has_numeric_type() const
+{
+  return TYPE_FLAG[static_cast<int>(_type)] & TYPE_FLAG_NUMERIC;
+}
+
+inline bool
+BWFSpec::has_upper_case_type() const
+{
+  return TYPE_FLAG[static_cast<int>(_type)] & TYPE_FLAG_UPPER;
 }
 
 class BWFormat;

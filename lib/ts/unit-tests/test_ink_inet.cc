@@ -25,6 +25,7 @@
 #include <ts/ink_inet.h>
 #include <catch.hpp>
 #include <iostream>
+#include <ts/BufferWriter.h>
 
 TEST_CASE("ink_inet", "[libts][inet][ink_inet]")
 {
@@ -79,4 +80,34 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
     break;
   default:;
   }
+}
+
+TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
+{
+  IpEndpoint ep;
+  ts::string_view addr_1{"[ffee::24c3:3349:3cee:143]:8080"};
+  ts::string_view addr_2{"172.17.99.231:23995"};
+  ts::LocalBufferWriter<1024> w;
+
+  REQUIRE(0 == ats_ip_pton(addr_1, &ep.sa));
+  w.print("{}", ep);
+  REQUIRE(w.view() == addr_1);
+  w.reduce(0).print("{::p}", ep);
+  REQUIRE(w.view() == "8080");
+  w.reduce(0).print("{::a}", ep);
+  REQUIRE(w.view() == addr_1.substr(1, 24)); // check the brackets are dropped.
+  w.reduce(0).print("[{::a}]", ep);
+  REQUIRE(w.view() == addr_1.substr(0, 26)); // check the brackets are dropped.
+  w.reduce(0).print("[{0::a}]:{0::p}", ep);
+  REQUIRE(w.view() == addr_1); // check the brackets are dropped.
+
+  REQUIRE(0 == ats_ip_pton(addr_2, &ep.sa));
+  w.reduce(0).print("{::a}", ep);
+  REQUIRE(w.view() == addr_2.substr(0, 13));
+  w.reduce(0).print("{::ap}", ep);
+  REQUIRE(w.view() == addr_2);
+  w.reduce(0).print("{::f}", ep);
+  REQUIRE(w.view() == IP_PROTO_TAG_IPV4);
+  w.reduce(0).print("{::fpa}", ep);
+  REQUIRE(w.view() == "172.17.99.231:23995 ipv4");
 }
