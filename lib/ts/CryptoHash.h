@@ -100,7 +100,7 @@ union CryptoHash {
   }
 
   /// Fast conversion to hex in fixed sized string.
-  char *toHexStr(char buffer[(CRYPTO_HASH_SIZE * 2) + 1]);
+  char *toHexStr(char buffer[(CRYPTO_HASH_SIZE * 2) + 1]) const;
 };
 
 extern CryptoHash const CRYPTO_HASH_ZERO;
