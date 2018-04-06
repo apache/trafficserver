@@ -60,12 +60,40 @@ tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
 
 namespace ts
 {
-const ts::BWFSpec ts::BWFSpec::DEFAULT;
+const BWFSpec BWFSpec::DEFAULT;
+
+const BWFSpec::Property BWFSpec::_prop;
+
+#pragma GCC diagnostic ignored "-Wchar-subscripts"
+BWFSpec::Property::Property()
+{
+  memset(_data, 0, sizeof(_data));
+  _data['b'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['B'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['d'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['g'] = TYPE_CHAR;
+  _data['o'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['p'] = TYPE_CHAR;
+  _data['P'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['s'] = TYPE_CHAR;
+  _data['S'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['x'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['X'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+
+  _data[' '] = SIGN_CHAR;
+  _data['-'] = SIGN_CHAR;
+  _data['+'] = SIGN_CHAR;
+
+  _data['<'] = static_cast<uint8_t>(BWFSpec::Align::LEFT);
+  _data['>'] = static_cast<uint8_t>(BWFSpec::Align::RIGHT);
+  _data['^'] = static_cast<uint8_t>(BWFSpec::Align::SIGN);
+  _data['='] = static_cast<uint8_t>(BWFSpec::Align::CENTER);
+}
 
 /// Parse a format specification.
 BWFSpec::BWFSpec(TextView fmt)
 {
-  TextView num;
+  TextView num; // temporary for number parsing.
   intmax_t n;
 
   _name = fmt.take_prefix_at(':');
