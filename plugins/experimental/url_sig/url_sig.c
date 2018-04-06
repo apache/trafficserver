@@ -509,17 +509,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const char *query = strchr(url, '?');
 
   if (cfg->regex) {
-    int offset = 0, options = 0;
+    const int offset = 0, options = 0;
     int ovector[30];
-    int len            = url_len;
-    const char *anchor = strchr(url, '#');
-    if (query && !anchor) {
-      len -= (query - url);
-    } else if (anchor && !query) {
-      len -= (anchor - url);
-    } else if (anchor && query) {
-      len -= ((query < anchor ? query : anchor) - url);
-    }
+
+    /* Only search up to the first ? or # */
+    const char *base_url_end = url;
+    while (*base_url_end && !(*base_url_end == '?' || *base_url_end == '#'))
+      ++base_url_end;
+    const int len = base_url_end - url;
+
     if (pcre_exec(cfg->regex, cfg->regex_extra, url, len, offset, options, ovector, 30) >= 0) {
       goto allow;
     }
