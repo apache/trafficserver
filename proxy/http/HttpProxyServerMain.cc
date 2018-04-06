@@ -58,6 +58,28 @@ bool et_net_threads_ready = false;
 extern int num_of_net_threads;
 extern int num_accept_threads;
 
+/// Global BufferWriter format name functions.
+namespace
+{
+void
+TS_bwf_thread(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, this_thread());
+}
+void
+TS_bwf_ethread(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, this_ethread());
+}
+} // namespace
+
+// File / process scope initializations
+static bool HTTP_SERVER_INITIALIZED __attribute__((unused)) = []() -> bool {
+  ts::bwf_register_global("ts-thread", &TS_bwf_thread);
+  ts::bwf_register_global("ts-ethread", &TS_bwf_ethread);
+  return true;
+}();
+
 bool
 ssl_register_protocol(const char *protocol, Continuation *contp)
 {

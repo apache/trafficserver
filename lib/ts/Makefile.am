@@ -212,6 +212,8 @@ libtsutil_la_SOURCES = \
 	X509HostnameValidator.cc \
 	X509HostnameValidator.h
 
+BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
+
 #test_UNUSED_SOURCES = \
 #  load_http_hdr.cc \
 #  IntrusivePtrTest.cc \

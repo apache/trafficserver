@@ -1150,6 +1150,7 @@ add_library(libtsutil SHARED
         lib/ts/BaseLogFile.h
         lib/ts/Bitops.cc
         lib/ts/Bitops.h
+        lib/ts/bwf_std_format.h
         lib/ts/BufferWriter.h
         lib/ts/BufferWriterForward.h
         lib/ts/BufferWriterFormat.cc
