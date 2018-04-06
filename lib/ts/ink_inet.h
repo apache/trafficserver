@@ -30,6 +30,7 @@
 #include <ts/ink_memory.h>
 #include <ts/ink_apidefs.h>
 #include <ts/string_view.h>
+#include <ts/BufferWriterForward.h>
 
 #if !TS_HAS_IN6_IS_ADDR_UNSPECIFIED
 #if defined(IN6_IS_ADDR_UNSPECIFIED)
@@ -1545,3 +1546,15 @@ IpEndpoint::setToLoopback(int family)
   }
   return *this;
 }
+
+// BufferWriter formatting support.
+namespace ts
+{
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, IpAddr const &addr);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr);
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, IpEndpoint const &addr)
+{
+  return bwformat(w, spec, &addr.sa);
+}
+} // namespace ts

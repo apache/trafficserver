@@ -22,11 +22,14 @@
  */
 
 #include <ts/BufferWriter.h>
+#include <unistd.h>
+#include <sys/param.h>
 #include <cctype>
 #include <ctime>
 #include <cmath>
 #include <cmath>
 #include <array>
+#include <chrono>
 
 namespace
 {
@@ -60,12 +63,40 @@ tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
 
 namespace ts
 {
-const ts::BWFSpec ts::BWFSpec::DEFAULT;
+const BWFSpec BWFSpec::DEFAULT;
+
+const BWFSpec::Property BWFSpec::_prop;
+
+#pragma GCC diagnostic ignored "-Wchar-subscripts"
+BWFSpec::Property::Property()
+{
+  memset(_data, 0, sizeof(_data));
+  _data['b'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['B'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['d'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['g'] = TYPE_CHAR;
+  _data['o'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['p'] = TYPE_CHAR;
+  _data['P'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['s'] = TYPE_CHAR;
+  _data['S'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['x'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['X'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+
+  _data[' '] = SIGN_CHAR;
+  _data['-'] = SIGN_CHAR;
+  _data['+'] = SIGN_CHAR;
+
+  _data['<'] = static_cast<uint8_t>(BWFSpec::Align::LEFT);
+  _data['>'] = static_cast<uint8_t>(BWFSpec::Align::RIGHT);
+  _data['^'] = static_cast<uint8_t>(BWFSpec::Align::CENTER);
+  _data['='] = static_cast<uint8_t>(BWFSpec::Align::SIGN);
+}
 
 /// Parse a format specification.
 BWFSpec::BWFSpec(TextView fmt)
 {
-  TextView num;
+  TextView num; // temporary for number parsing.
   intmax_t n;
 
   _name = fmt.take_prefix_at(':');
@@ -623,46 +654,54 @@ BWFormat::BWFormat(ts::TextView fmt)
     if (spec_p) {
       bw_fmt::GlobalSignature gf = nullptr;
       BWFSpec parsed_spec{spec_str};
-      if (parsed_spec._name.size() == 0) {
+      if (parsed_spec._name.size() == 0) { // no name provided, use implicit index.
         parsed_spec._idx = arg_idx;
       }
-      if (parsed_spec._idx < 0) {
+      if (parsed_spec._idx < 0) { // name wasn't missing or a valid index, assume global name.
         gf = bw_fmt::Global_Table_Find(parsed_spec._name);
+      } else {
+        ++arg_idx; // bump this if not a global name.
       }
       _items.emplace_back(parsed_spec, gf);
-      ++arg_idx;
     }
   }
 }
 
 BWFormat::~BWFormat() {}
 
+/// Parse out the next literal and/or format specifier from the format string.
+/// Pass the results back in @a literal and @a specifier as appropriate.
+/// Update @a fmt to strip the parsed text.
 bool
 BWFormat::parse(ts::TextView &fmt, string_view &literal, string_view &specifier)
 {
   TextView::size_type off;
 
+  // Check for brace delimiters.
   off = fmt.find_if([](char c) { return '{' == c || '}' == c; });
   if (off == TextView::npos) {
+    // not found, it's a literal, ship it.
     literal = fmt;
     fmt.remove_prefix(literal.size());
     return false;
   }
 
+  // Processing for braces that don't enclose specifiers.
   if (fmt.size() > off + 1) {
     char c1 = fmt[off];
     char c2 = fmt[off + 1];
     if (c1 == c2) {
+      // double braces count as literals, but must tweak to out only 1 brace.
       literal = fmt.take_prefix_at(off + 1);
       return false;
     } else if ('}' == c1) {
-      throw std::invalid_argument("Unopened }");
+      throw std::invalid_argument("BWFormat:: Unopened } in format string.");
     } else {
       literal = string_view{fmt.data(), off};
       fmt.remove_prefix(off + 1);
     }
   } else {
-    throw std::invalid_argument("Invalid trailing character");
+    throw std::invalid_argument("BWFormat: Invalid trailing character in format string.");
   }
 
   if (fmt.size()) {
@@ -670,7 +709,7 @@ BWFormat::parse(ts::TextView &fmt, string_view &literal, string_view &specifier)
     // take_prefix_at failed to find the delimiter or found it as the first byte.
     off = fmt.find('}');
     if (off == TextView::npos) {
-      throw std::invalid_argument("Unclosed {");
+      throw std::invalid_argument("BWFormat: Unclosed { in format string");
     }
     specifier = fmt.take_prefix_at(off);
     return true;
@@ -696,19 +735,84 @@ bw_fmt::Global_Table_Find(string_view name)
   return nullptr;
 }
 
+std::ostream &
+FixedBufferWriter::operator>>(std::ostream &s) const
+{
+  return s << this->view();
+}
+
+ssize_t
+FixedBufferWriter::operator>>(int fd) const
+{
+  return ::write(fd, this->data(), this->size());
+}
+
+bool
+bwf_register_global(string_view name, BWGlobalNameSignature formatter)
+{
+  return ts::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
+}
+
 } // namespace ts
 
 namespace
 {
 void
+BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  // Unfortunately need to write to a temporary buffer or the sizing isn't correct if @a w is clipped
+  // because @c strftime returns 0 if the buffer isn't large enough.
+  char buff[32];
+  std::time_t t = std::time(nullptr);
+  auto n        = strftime(buff, sizeof(buff), "%Y %b %d %H:%M:%S", std::localtime(&t));
+  w.write(ts::string_view{buff, n});
+}
+
+void
 BWF_Now(ts::BufferWriter &w, ts::BWFSpec const &spec)
 {
-  std::time_t t = std::time(nullptr);
-  w.fill(std::strftime(w.auxBuffer(), w.remaining(), "%Y%b%d:%H%M%S", std::localtime(&t)));
+  bwformat(w, spec, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+}
+
+void
+BWF_Tick(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, std::chrono::high_resolution_clock::now().time_since_epoch().count());
+}
+
+void
+BWF_ThreadID(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, pthread_self());
+}
+
+void
+BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+#if defined(__FreeBSD_version)
+  bwformat(w, spec, "thread"_sv); // no thread names in FreeBSD.
+#else
+  char name[32]; // manual says at least 16, bump that up a bit.
+  pthread_getname_np(pthread_self(), name, sizeof(name));
+  bwformat(w, spec, ts::string_view{name});
+#endif
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
   ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("tick", &BWF_Tick);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("timestamp", &BWF_Timestamp);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-id", &BWF_ThreadID);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
   return true;
 }();
 } // namespace
+
+namespace std
+{
+ostream &
+operator<<(ostream &s, ts::FixedBufferWriter &w)
+{
+  return s << w.view();
+}
+} // namespace std
