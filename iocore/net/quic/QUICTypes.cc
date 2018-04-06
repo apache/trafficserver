@@ -61,8 +61,7 @@ QUICTypeUtil::detect_stream_type(QUICStreamId id)
 QUICConnectionId
 QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
 {
-  // Should be QUICConnectionId(read_nbytes_as_uint(buf, len));
-  return static_cast<QUICPacketNumber>(QUICIntUtil::read_nbytes_as_uint(buf, len));
+  return {buf, len};
 }
 
 QUICPacketNumber
@@ -110,7 +109,8 @@ QUICTypeUtil::read_QUICMaxData(const uint8_t *buf)
 void
 QUICTypeUtil::write_QUICConnectionId(QUICConnectionId connection_id, uint8_t n, uint8_t *buf, size_t *len)
 {
-  QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(connection_id), n, buf, len);
+  memcpy(buf, connection_id, n);
+  *len = n;
 }
 
 void
@@ -211,4 +211,56 @@ int
 QUICFiveTuple::protocol() const
 {
   return this->_protocol;
+}
+
+//
+// QUICConnectionId
+//
+QUICConnectionId
+QUICConnectionId::ZERO()
+{
+  uint8_t zero[] = {0, 0, 0, 0, 0, 0, 0, 0};
+  return QUICConnectionId(zero, sizeof(zero));
+}
+
+QUICConnectionId::QUICConnectionId()
+{
+  this->randomize();
+}
+
+QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len)
+{
+  memcpy(this->_id, buf, len);
+}
+
+bool
+QUICConnectionId::is_zero() const
+{
+  for (int i = sizeof(this->_id) - 1; i >= 0; --i) {
+    if (this->_id[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void
+QUICConnectionId::randomize()
+{
+  std::random_device rnd;
+  uint32_t x;
+  for (int i = sizeof(this->_id) - 1; i >= 0; --i) {
+    if (i % 4 == 0) {
+      x = rnd();
+    }
+    this->_id[i] = (x >> (8 * (i % 4))) & 0xFF;
+  }
+}
+
+uint64_t
+QUICConnectionId::_hashcode() const
+{
+  return (static_cast<uint64_t>(this->_id[0]) << 56) + (static_cast<uint64_t>(this->_id[1]) << 48) +
+         (static_cast<uint64_t>(this->_id[2]) << 40) + (static_cast<uint64_t>(this->_id[3]) << 32) + (this->_id[4] << 24) +
+         (this->_id[5] << 16) + (this->_id[6] << 8) + this->_id[7];
 }

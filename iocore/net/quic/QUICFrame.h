@@ -505,7 +505,7 @@ private:
   size_t _get_connection_id_field_offset() const;
 
   uint64_t _sequence              = 0;
-  QUICConnectionId _connection_id = 0;
+  QUICConnectionId _connection_id = QUICConnectionId::ZERO();
   QUICStatelessResetToken _stateless_reset_token;
 };
 

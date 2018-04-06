@@ -86,7 +86,7 @@ private:
   QUICPacketNumber _end_of_recovery = 0;
   uint32_t _ssthresh                = UINT32_MAX;
 
-  QUICConnectionId _connection_id = 0;
+  QUICConnectionId _connection_id = QUICConnectionId::ZERO();
 
   bool _in_recovery(QUICPacketNumber packet_number);
 };
@@ -110,7 +110,7 @@ public:
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;
 
-  QUICConnectionId _connection_id = 0;
+  QUICConnectionId _connection_id = QUICConnectionId::ZERO();
 
   // TODO QUICCongestionController *cc = nullptr;
 

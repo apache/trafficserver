@@ -108,7 +108,7 @@ private:
   QUICStreamState _state;
   bool _fin                         = false;
   QUICStreamErrorUPtr _reset_reason = nullptr;
-  QUICConnectionId _connection_id   = 0;
+  QUICConnectionId _connection_id   = QUICConnectionId::ZERO();
   QUICStreamId _id                  = 0;
   QUICOffset _send_offset           = 0;
 

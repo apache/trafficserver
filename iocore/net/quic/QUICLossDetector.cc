@@ -132,7 +132,7 @@ QUICLossDetector::largest_acked_packet_number()
 void
 QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
 {
-  if (this->_connection_id == 0 && packet->type() != QUICPacketType::VERSION_NEGOTIATION) {
+  if (this->_connection_id.is_zero() && packet->type() != QUICPacketType::VERSION_NEGOTIATION) {
     this->_connection_id = packet->connection_id();
   }
 

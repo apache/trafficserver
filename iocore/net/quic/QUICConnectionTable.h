@@ -56,5 +56,5 @@ public:
   QUICConnection *lookup(const uint8_t *packet, QUICFiveTuple endpoint);
 
 private:
-  MTHashTable<uint64_t, QUICConnection *> _connections;
+  MTHashTable<QUICConnectionId, QUICConnection *> _connections;
 };

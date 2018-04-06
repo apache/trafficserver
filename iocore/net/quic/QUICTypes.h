@@ -209,20 +209,35 @@ using QUICStreamErrorUPtr     = std::unique_ptr<QUICStreamError>;
 class QUICConnectionId
 {
 public:
-  explicit operator bool() const { return true; }
-  operator uint64_t() const { return _id; };
-  QUICConnectionId() { this->randomize(); };
-  QUICConnectionId(uint64_t id) : _id(id){};
+  static QUICConnectionId ZERO();
+  QUICConnectionId();
+  QUICConnectionId(const uint8_t *buf, uint8_t len);
 
-  void
-  randomize()
+  explicit operator bool() const { return true; }
+  /**
+   * Note that this returns a kind of hash code so we can use a ConnectionId as a key for a hashtable.
+   */
+  operator uint64_t() const { return this->_hashcode(); }
+  operator const uint8_t *() const { return this->_id; }
+
+  bool
+  operator==(const QUICConnectionId &x) const
   {
-    std::random_device rnd;
-    this->_id = (static_cast<uint64_t>(rnd()) << 32) + rnd();
-  };
+    return memcmp(this->_id, x._id, sizeof(this->_id)) == 0;
+  }
+
+  bool
+  operator!=(const QUICConnectionId &x) const
+  {
+    return memcmp(this->_id, x._id, sizeof(this->_id)) != 0;
+  }
+
+  bool is_zero() const;
+  void randomize();
 
 private:
-  uint64_t _id;
+  uint64_t _hashcode() const;
+  uint8_t _id[8];
 };
 
 class QUICStatelessResetToken

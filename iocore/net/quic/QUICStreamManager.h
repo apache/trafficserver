@@ -77,7 +77,7 @@ private:
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
 
-  QUICConnectionId _connection_id                           = 0;
+  QUICConnectionId _connection_id                           = QUICConnectionId::ZERO();
   QUICApplicationMap *_app_map                              = nullptr;
   NetVConnectionContext_t _netvc_context                    = NET_VCONNECTION_UNSET;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
