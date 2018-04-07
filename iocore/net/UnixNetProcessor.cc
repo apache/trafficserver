@@ -204,8 +204,8 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 void
 NetProcessor::stop_accept()
 {
-  for (auto na = naVec.begin(); na != naVec.end(); ++na) {
-    (*na)->stop_accept();
+  for (auto &na : naVec) {
+    na->stop_accept();
   }
 }
 

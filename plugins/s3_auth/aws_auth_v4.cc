@@ -82,20 +82,20 @@ uriEncode(const String &in, bool isObjectName)
 {
   std::stringstream result;
 
-  for (std::string::size_type i = 0; i < in.length(); i++) {
-    if (isalnum(in[i]) || in[i] == '-' || in[i] == '_' || in[i] == '.' || in[i] == '~') {
+  for (char i : in) {
+    if (isalnum(i) || i == '-' || i == '_' || i == '.' || i == '~') {
       /* URI encode every byte except the unreserved characters:
        * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~'. */
-      result << in[i];
-    } else if (in[i] == ' ') {
+      result << i;
+    } else if (i == ' ') {
       /* The space character is a reserved character and must be encoded as "%20" (and not as "+"). */
       result << "%20";
-    } else if (isObjectName && in[i] == '/') {
+    } else if (isObjectName && i == '/') {
       /* Encode the forward slash character, '/', everywhere except in the object key name. */
       result << "/";
     } else {
       /* Letters in the hexadecimal value must be upper-case, for example "%1A". */
-      result << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << (int)in[i];
+      result << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << (int)i;
     }
   }
 
@@ -304,12 +304,12 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   }
 
   String queryStr;
-  for (StringSet::iterator it = paramNames.begin(); it != paramNames.end(); it++) {
+  for (const auto &paramName : paramNames) {
     if (!queryStr.empty()) {
       queryStr.append("&");
     }
-    queryStr.append(*it);
-    queryStr.append("=").append(paramsMap[*it]);
+    queryStr.append(paramName);
+    queryStr.append("=").append(paramsMap[paramName]);
   }
   sha256Update(&canonicalRequestSha256Ctx, queryStr);
   sha256Update(&canonicalRequestSha256Ctx, "\n");
@@ -364,19 +364,19 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     headersMap[lowercaseName] = String(trimValue, trimValueLen);
   }
 
-  for (StringSet::iterator it = signedHeadersSet.begin(); it != signedHeadersSet.end(); it++) {
-    sha256Update(&canonicalRequestSha256Ctx, *it);
+  for (const auto &it : signedHeadersSet) {
+    sha256Update(&canonicalRequestSha256Ctx, it);
     sha256Update(&canonicalRequestSha256Ctx, ":");
-    sha256Update(&canonicalRequestSha256Ctx, headersMap[*it]);
+    sha256Update(&canonicalRequestSha256Ctx, headersMap[it]);
     sha256Update(&canonicalRequestSha256Ctx, "\n");
   }
   sha256Update(&canonicalRequestSha256Ctx, "\n");
 
-  for (StringSet::iterator it = signedHeadersSet.begin(); it != signedHeadersSet.end(); ++it) {
+  for (const auto &it : signedHeadersSet) {
     if (!signedHeaders.empty()) {
       signedHeaders.append(";");
     }
-    signedHeaders.append(*it);
+    signedHeaders.append(it);
   }
 
   sha256Update(&canonicalRequestSha256Ctx, signedHeaders);

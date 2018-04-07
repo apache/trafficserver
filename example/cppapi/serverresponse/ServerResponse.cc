@@ -103,11 +103,10 @@ private:
   void
   printHeadersManual(Headers &headers)
   {
-    for (Headers::iterator header_iter = headers.begin(), header_end = headers.end(); header_iter != header_end; ++header_iter) {
-      cout << "Header " << (*header_iter).name() << ": " << endl;
+    for (auto &&header : headers) {
+      cout << "Header " << header.name() << ": " << endl;
 
-      for (HeaderField::iterator value_iter = (*header_iter).begin(), values_end = (*header_iter).end(); value_iter != values_end;
-           ++value_iter) {
+      for (HeaderField::iterator value_iter = header.begin(), values_end = header.end(); value_iter != values_end; ++value_iter) {
         cout << "\t" << *value_iter << endl;
       }
     }

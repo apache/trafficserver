@@ -1975,8 +1975,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     ctx = nullptr;
   }
 
-  for (unsigned int i = 0; i < cert_list.size(); i++) {
-    X509_free(cert_list[i]);
+  for (auto &i : cert_list) {
+    X509_free(i);
   }
 
   return ctx;
