@@ -187,8 +187,13 @@ becomes
    }
    w << ']';
 
-Note that in addition there will be no overrun on the memory buffer in :arg:`w`, in strong contrast
+In addition there will be no overrun on the memory buffer in :arg:`w`, in strong contrast
 to the original code.
+
+.. note::
+
+   Work is ongoing to provide formatted output for increased ease of use, particulary with types that
+   are commonly printed but hard to format well, such as IP addresses.
 
 Reference
 +++++++++
@@ -448,7 +453,7 @@ Specialized Types
 
 :code:`sockaddr const*`
    The IP address is printed. Fill is used to fill in address segments if provided, not to the
-   minimum width if specified.
+   minimum width if specified. :class:`IpEndpoint` is also supported with the same formatting.
 
    'x' or 'X'
       The address is printed in raw hex format.
@@ -457,7 +462,8 @@ Specialized Types
       The address is printed as a pointer.
 
    The extension can be used to control which parts of the address are printed. These can be in any order,
-   the output is always address, port, family. The default is the equivalent of "ap".
+   the output is always address, port, family. The default is the equivalent of "ap". In addition, the
+   character '^' ("numeric align") can be used to internally right justify the elements.
 
    'a'
       The address.
@@ -468,13 +474,25 @@ Specialized Types
    'f'
       The IP address family.
 
+   '^'
+      Internally justify the numeric values. This must be the first or second character. If it is the second
+      the first character is treated as the internal fill character. If omitted '0' (zero) is used.
+
    E.g.
 
-   .. code-block: cpp
+   .. code-block:: cpp
 
       sockaddr const* addr;
+      bw.print("Connecting to {}", addr); // -> "Connecting to 172.19.3.105:49951"
       bw.print("Connecting to {0::a} on port {0::p}", addr); // no need to pass the argument twice.
       bw.print("Using address family {::f}", addr);
+      bw.print("{::a}",addr);      // -> "172.19.3.105"
+      bw.print("{::^a}",addr);     // -> "172.019.003.105"
+      bw.print("{::0^a}",addr);    // -> "172.019.003.105"
+      bw.print("{:: ^a}",addr);    // -> "172. 19.  3.105"
+      bw.print("{:>20:a}",addr);   // -> "        172.19.3.105"
+      bw.print("{:>20:^a}",addr);  // -> "     172.019.003.105"
+      bw.print("{:>20: ^a}",addr); // -> "     172. 19.  3.105"
 
 Futures
 +++++++

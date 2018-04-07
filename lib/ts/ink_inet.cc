@@ -608,10 +608,25 @@ bwformat(BufferWriter &w, BWFSpec const &spec, in_addr_t addr)
 {
   uint8_t *ptr = reinterpret_cast<uint8_t *>(&addr);
   BWFSpec local_spec{spec}; // Format for address elements.
-  if (local_spec._fill)
-    local_spec._min = 3;
-  else
+  bool align_p = false;
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '^') {
+      align_p          = true;
+      local_spec._fill = '0';
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '^') {
+      align_p          = true;
+      local_spec._fill = spec._ext[0];
+    }
+  }
+
+  if (align_p) {
+    local_spec._min   = 3;
+    local_spec._align = BWFSpec::Align::RIGHT;
+  } else {
     local_spec._min = 0;
+  }
+
   bwformat(w, local_spec, ptr[0]);
   w.write('.');
   bwformat(w, local_spec, ptr[1]);
@@ -631,18 +646,26 @@ bwformat(BufferWriter &w, BWFSpec const &spec, in6_addr const &addr)
   uint8_t const *limit = ptr + sizeof(addr.s6_addr);
   QUAD *lower          = nullptr; // the best zero range
   QUAD *upper          = nullptr;
+  bool align_p         = false;
 
-  local_spec._fill = 0;
-  if (local_spec._fill) {
-    local_spec._min = 4;
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '^') {
+      align_p          = true;
+      local_spec._fill = '0';
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '^') {
+      align_p          = true;
+      local_spec._fill = spec._ext[0];
+    }
+  }
+
+  if (align_p) {
+    local_spec._min   = 4;
+    local_spec._align = BWFSpec::Align::RIGHT;
   } else {
     local_spec._min = 0;
-    // do 0 compression if there's no fill.
-    for (QUAD *spot = reinterpret_cast<QUAD *>(ptr)
-            , *last = reinterpret_cast<QUAD *>(limit)
-            , *current = nullptr
-            ; spot < last
-            ; ++spot) {
+    // do 0 compression if there's no internal fill.
+    for (QUAD *spot = reinterpret_cast<QUAD *>(ptr), *last = reinterpret_cast<QUAD *>(limit), *current = nullptr; spot < last;
+         ++spot) {
       if (0 == *spot) {
         if (current) {
           // If there's no best, or this is better, remember it.
@@ -653,9 +676,12 @@ bwformat(BufferWriter &w, BWFSpec const &spec, in6_addr const &addr)
         } else {
           current = spot;
         }
+      } else {
+        current = nullptr;
       }
     }
   }
+
   if (!local_spec.has_numeric_type())
     local_spec._type = 'x';
 
@@ -684,14 +710,34 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
   bool port_p   = true;
   bool addr_p   = true;
   bool family_p = false;
-  if (spec._ext.size()) {
-    port_p   = spec._ext.find('p') != spec._ext.npos;
-    addr_p   = spec._ext.find('a') != spec._ext.npos;
-    family_p = spec._ext.find('f') != spec._ext.npos;
+
+  if (spec._type == 'p' || spec._type == 'P') {
+    bwformat(w, spec, static_cast<void const *>(addr));
+    return w;
   }
+
+  if (spec._ext.size()) {
+    // internal alignment must be first or second, if second first is fill char.
+    if (spec._ext.size() >= 2 && spec._ext[1] == '^')
+      local_spec._ext.remove_prefix(2);
+    addr_p = port_p = false;
+    for (char c : local_spec._ext) {
+      switch (c) {
+      case 'a':
+        addr_p = true;
+        break;
+      case 'p':
+        port_p = true;
+        break;
+      case 'f':
+        family_p = true;
+        break;
+      }
+    }
+  }
+
   if (addr_p) {
     bool bracket_p = false;
-    ip_text_buffer b;
     switch (addr->sa_family) {
     case AF_INET:
       bwformat(w, spec, ats_ip4_addr_cast(addr));
@@ -704,10 +750,9 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
       bwformat(w, spec, ats_ip6_addr_cast(addr));
       break;
     default:
-      FixedBufferWriter(b, sizeof(b)).print("*Not IP address [{}]*\0"_sv, addr->sa_family);
+      w.print("*Not IP address [{}]*", addr->sa_family);
       break;
     }
-    w.write(b, strlen(b));
     if (bracket_p)
       w.write(']');
     if (port_p)
