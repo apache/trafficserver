@@ -137,7 +137,7 @@ template <typename... T> using index_sequence_for = make_index_sequence<sizeof..
 #endif // C++ 14 compatibility
 
 //
-#if __cplusplus < 201700L
+#if __cplusplus < 201700L && !__apple_build_version__
 //
 // C++ 17 compatibility
 //
