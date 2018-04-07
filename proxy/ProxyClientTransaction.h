@@ -154,28 +154,37 @@ public:
   virtual void release(IOBufferReader *r);
 
   // outbound values Set via the server port definition.  Really only used for Http1 at the moment
-  virtual uint16_t
+  virtual in_port_t
   get_outbound_port() const
   {
-    return 0;
+    return outbound_port;
   }
   virtual IpAddr
   get_outbound_ip4() const
   {
-    return IpAddr();
+    return outbound_ip4;
   }
   virtual IpAddr
   get_outbound_ip6() const
   {
-    return IpAddr();
+    return outbound_ip6;
   }
   virtual void
-  set_outbound_port(uint16_t new_port)
+  set_outbound_port(in_port_t port)
   {
+    outbound_port = port;
   }
   virtual void
   set_outbound_ip(const IpAddr &new_addr)
   {
+    if (new_addr.isIp4()) {
+      outbound_ip4 = new_addr;
+    } else if (new_addr.isIp6()) {
+      outbound_ip6 = new_addr;
+    } else {
+      outbound_ip4.invalidate();
+      outbound_ip6.invalidate();
+    }
   }
   virtual bool
   is_outbound_transparent() const
@@ -269,6 +278,10 @@ protected:
 
   /// DNS resolution preferences.
   HostResStyle host_res_style;
+  /// Local outbound address control.
+  in_port_t outbound_port{0};
+  IpAddr outbound_ip4;
+  IpAddr outbound_ip6;
 
   bool restart_immediate;
 

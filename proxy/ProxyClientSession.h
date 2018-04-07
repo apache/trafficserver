@@ -161,6 +161,24 @@ public:
   // Indicate we are done with a transaction.
   virtual void release(ProxyClientTransaction *trans) = 0;
 
+  virtual in_port_t
+  get_outbound_port() const
+  {
+    return outbound_port;
+  }
+
+  virtual IpAddr
+  get_outbound_ip4() const
+  {
+    return outbound_ip4;
+  }
+
+  virtual IpAddr
+  get_outbound_ip6() const
+  {
+    return outbound_ip6;
+  }
+
   int64_t
   connection_id() const
   {
@@ -239,6 +257,13 @@ public:
 
   /// acl record - cache IpAllow::match() call
   const AclRecord *acl_record = nullptr;
+
+  /// Local address for outbound connection.
+  IpAddr outbound_ip4;
+  /// Local address for outbound connection.
+  IpAddr outbound_ip6;
+  /// Local port for outbound connection.
+  in_port_t outbound_port{0};
 
   /// DNS resolution preferences.
   HostResStyle host_res_style = HOST_RES_IPV4;
