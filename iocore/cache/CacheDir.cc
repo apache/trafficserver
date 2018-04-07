@@ -1033,7 +1033,7 @@ int
 CacheSync::mainEvent(int event, Event *e)
 {
   if (trigger) {
-    trigger->cancel_action();
+    trigger->cancel();
     trigger = nullptr;
   }
 

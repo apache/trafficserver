@@ -58,6 +58,7 @@ HttpCacheAction::cancel(Continuation *c)
   this->cancelled = 1;
   if (sm->pending_action) {
     sm->pending_action->cancel();
+    sm->pending_action = nullptr;
   }
 }
 
