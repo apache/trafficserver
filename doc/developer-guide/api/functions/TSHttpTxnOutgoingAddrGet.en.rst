@@ -14,11 +14,13 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+.. include:: ../../../common.defs
+.. default-domain:: c
 
-TSHttpTxnOutgoingAddrGet
+Local outbound address
 ========================
 
-Get the outgoing address used in origin connection.
+Get or set the local IP address for outbound connections.
 
 
 Synopsis
@@ -27,13 +29,26 @@ Synopsis
 `#include <ts/ts.h>`
 
 .. c:function:: sockaddr const* TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
+.. c:function:: TSReturnCode TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, sockaddr const* addr)
 
 
 Description
 -----------
 
-.. note::
+These functions concern the local IP address and port, that is the address and port on the |TS| side
+of outbound connections (network connections *from* |TS| *to* another socket).
 
-   The pointer is valid only for the current callback.  Clients that
-   need to keep the value across callbacks must maintain their own
-   storage.
+The address and optional the port can be set with :func:`TSHttpTxnOutgoingAddrSet`. This must be
+done before the outbound connection is made, that is in the :macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK` or earlier.
+The :arg:`addr` must be populated with the IP address and port to be used. If the port is not
+relevant it can be set to zero, which means use any available local port. This function returns
+:macro:`TS_SUCCESS` on success and :macro:`TS_ERROR` on failure.
+
+Even on a successful call to :func:`TSHttpTxnOutgoingAddrSet`, the local IP address may not match
+what was passing :arg:`addr` if :ts:cv:`session sharing <proxy.config.http.server_session_sharing.match>` is enabled.
+
+Conversely :func:`TSHttpTxnOutgoingAddrGet` retrieves the local address and must be called after
+:macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK`, after the outbound connection has been established. It returns a
+pointer to a :code:`sockaddr` which contains the local IP address and port. If there is no valid
+outbound connection, :arg:`addr` will be :code:`NULL`. The returned pointer is a transient pointer
+and must not be referenced after the callback in which :func:`TSHttpTxnOutgoingAddrGet` was called.

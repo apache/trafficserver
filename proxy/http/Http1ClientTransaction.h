@@ -31,9 +31,9 @@ class Continuation;
 class Http1ClientTransaction : public ProxyClientTransaction
 {
 public:
-  typedef ProxyClientTransaction super;
+  using super_type = ProxyClientTransaction;
 
-  Http1ClientTransaction() : super(), outbound_port(0), outbound_transparent(false) {}
+  Http1ClientTransaction() {}
   // Implement VConnection interface.
   VIO *
   do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override
@@ -96,47 +96,6 @@ public:
 
   void set_parent(ProxyClientSession *new_parent) override;
 
-  uint16_t
-  get_outbound_port() const override
-  {
-    return outbound_port;
-  }
-
-  IpAddr
-  get_outbound_ip4() const override
-  {
-    return outbound_ip4;
-  }
-
-  IpAddr
-  get_outbound_ip6() const override
-  {
-    return outbound_ip6;
-  }
-
-  void
-  set_outbound_port(uint16_t new_port) override
-  {
-    outbound_port = new_port;
-  }
-
-  void
-  set_outbound_ip(const IpAddr &new_addr) override
-  {
-    if (new_addr.isIp4()) {
-      outbound_ip4 = new_addr;
-    } else if (new_addr.isIp6()) {
-      outbound_ip6 = new_addr;
-    } else {
-      clear_outbound_ip();
-    }
-  }
-  void
-  clear_outbound_ip()
-  {
-    outbound_ip4.invalidate();
-    outbound_ip6.invalidate();
-  }
   bool
   is_outbound_transparent() const override
   {
@@ -180,10 +139,7 @@ public:
   }
 
 protected:
-  uint16_t outbound_port;
-  IpAddr outbound_ip4;
-  IpAddr outbound_ip6;
-  bool outbound_transparent;
+  bool outbound_transparent{false};
 };
 
 #endif

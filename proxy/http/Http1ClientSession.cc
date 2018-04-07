@@ -76,7 +76,6 @@ Http1ClientSession::Http1ClientSession()
     slave_ka_vio(nullptr),
     bound_ss(nullptr),
     released_transactions(0),
-    outbound_port(0),
     f_outbound_transparent(false),
     f_transparent_passthrough(false)
 {
@@ -134,7 +133,7 @@ Http1ClientSession::free()
   this->do_io_write(nullptr, 0, nullptr);
 
   // Free the transaction resources
-  this->trans.super::destroy();
+  this->trans.super_type::destroy();
 
   super::free();
   THREAD_FREE(this, http1ClientSessionAllocator, this_thread());
