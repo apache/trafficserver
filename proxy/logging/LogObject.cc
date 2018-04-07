@@ -859,15 +859,15 @@ LogObjectManager::LogObjectManager()
 
 LogObjectManager::~LogObjectManager()
 {
-  for (unsigned i = 0; i < _objects.size(); ++i) {
-    if (_objects[i]->refcount_dec() == 0) {
-      delete _objects[i];
+  for (auto &_object : _objects) {
+    if (_object->refcount_dec() == 0) {
+      delete _object;
     }
   }
 
-  for (unsigned i = 0; i < _APIobjects.size(); ++i) {
-    if (_APIobjects[i]->refcount_dec() == 0) {
-      delete _APIobjects[i];
+  for (auto &_APIobject : _APIobjects) {
+    if (_APIobject->refcount_dec() == 0) {
+      delete _APIobject;
     }
   }
 
@@ -1046,13 +1046,13 @@ LogObjectManager::_filename_resolution_abort(const char *filename)
 bool
 LogObjectManager::_has_internal_filename_conflict(const char *filename, LogObjectList &objects)
 {
-  for (unsigned i = 0; i < objects.size(); i++) {
-    if (!objects[i]->is_collation_client()) {
+  for (auto &object : objects) {
+    if (!object->is_collation_client()) {
       // an internal conflict exists if two objects request the
       // same filename, regardless of the object signatures, since
       // two objects writing to the same file would produce a
       // log with duplicate entries and non monotonic timestamps
-      if (strcmp(objects[i]->get_full_filename(), filename) == 0) {
+      if (strcmp(object->get_full_filename(), filename) == 0) {
         return true;
       }
     }
@@ -1087,9 +1087,7 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int 
 LogObject *
 LogObjectManager::get_object_with_signature(uint64_t signature)
 {
-  for (unsigned i = 0; i < this->_objects.size(); i++) {
-    LogObject *obj = this->_objects[i];
-
+  for (auto obj : this->_objects) {
     if (obj->get_signature() == signature) {
       return obj;
     }
@@ -1100,14 +1098,14 @@ LogObjectManager::get_object_with_signature(uint64_t signature)
 void
 LogObjectManager::check_buffer_expiration(long time_now)
 {
-  for (unsigned i = 0; i < this->_objects.size(); i++) {
-    this->_objects[i]->check_buffer_expiration(time_now);
+  for (auto &_object : this->_objects) {
+    _object->check_buffer_expiration(time_now);
   }
 
   ACQUIRE_API_MUTEX("A LogObjectManager::check_buffer_expiration");
 
-  for (unsigned i = 0; i < this->_APIobjects.size(); i++) {
-    this->_APIobjects[i]->check_buffer_expiration(time_now);
+  for (auto &_APIobject : this->_APIobjects) {
+    _APIobject->check_buffer_expiration(time_now);
   }
 
   RELEASE_API_MUTEX("R LogObjectManager::check_buffer_expiration");
@@ -1118,14 +1116,14 @@ LogObjectManager::preproc_buffers(int idx)
 {
   size_t buffers_preproced = 0;
 
-  for (unsigned i = 0; i < this->_objects.size(); i++) {
-    buffers_preproced += this->_objects[i]->preproc_buffers(idx);
+  for (auto &_object : this->_objects) {
+    buffers_preproced += _object->preproc_buffers(idx);
   }
 
   ACQUIRE_API_MUTEX("A LogObjectManager::preproc_buffers");
 
-  for (unsigned i = 0; i < this->_APIobjects.size(); i++) {
-    buffers_preproced += this->_APIobjects[i]->preproc_buffers(idx);
+  for (auto &_APIobject : this->_APIobjects) {
+    buffers_preproced += _APIobject->preproc_buffers(idx);
   }
 
   RELEASE_API_MUTEX("R LogObjectManager::preproc_buffers");
@@ -1189,8 +1187,8 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
 
   if (is_debug_tag_set("log-config-transfer")) {
     Debug("log-config-transfer", "TRANSFER OBJECTS: list of old objects");
-    for (unsigned i = 0; i < old_mgr._objects.size(); i++) {
-      Debug("log-config-transfer", "%s", old_mgr._objects[i]->get_original_filename());
+    for (auto &_object : old_mgr._objects) {
+      Debug("log-config-transfer", "%s", _object->get_original_filename());
     }
 
     Debug("log-config-transfer", "TRANSFER OBJECTS : list of new objects");
@@ -1200,12 +1198,11 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
   }
 
   // Transfer the API objects from the old manager. The old manager will retain its refcount.
-  for (unsigned i = 0; i < old_mgr._APIobjects.size(); ++i) {
-    manage_api_object(old_mgr._APIobjects[i]);
+  for (auto &_APIobject : old_mgr._APIobjects) {
+    manage_api_object(_APIobject);
   }
 
-  for (unsigned i = 0; i < old_mgr._objects.size(); ++i) {
-    LogObject *old_obj = old_mgr._objects[i];
+  for (auto old_obj : old_mgr._objects) {
     LogObject *new_obj;
 
     Debug("log-config-transfer", "examining existing object %s", old_obj->get_base_filename());
@@ -1245,14 +1242,14 @@ LogObjectManager::roll_files(long time_now)
 {
   int num_rolled = 0;
 
-  for (unsigned i = 0; i < this->_objects.size(); i++) {
-    num_rolled += this->_objects[i]->roll_files(time_now);
+  for (auto &_object : this->_objects) {
+    num_rolled += _object->roll_files(time_now);
   }
 
   ACQUIRE_API_MUTEX("A LogObjectManager::roll_files");
 
-  for (unsigned i = 0; i < this->_APIobjects.size(); i++) {
-    num_rolled += this->_APIobjects[i]->roll_files(time_now);
+  for (auto &_APIobject : this->_APIobjects) {
+    num_rolled += _APIobject->roll_files(time_now);
   }
 
   RELEASE_API_MUTEX("R LogObjectManager::roll_files");
@@ -1277,9 +1274,9 @@ LogObjectManager::display(FILE *str)
 LogObject *
 LogObjectManager::find_by_format_name(const char *name) const
 {
-  for (unsigned i = 0; i < this->_objects.size(); ++i) {
-    if (this->_objects[i] && this->_objects[i]->m_format->name_id() == LogFormat::id_from_name(name)) {
-      return this->_objects[i];
+  for (auto _object : this->_objects) {
+    if (_object && _object->m_format->name_id() == LogFormat::id_from_name(name)) {
+      return _object;
     }
   }
   return nullptr;
@@ -1290,8 +1287,8 @@ LogObjectManager::get_num_collation_clients() const
 {
   unsigned coll_clients = 0;
 
-  for (unsigned i = 0; i < this->_objects.size(); ++i) {
-    if (this->_objects[i] && this->_objects[i]->is_collation_client()) {
+  for (auto _object : this->_objects) {
+    if (_object && _object->is_collation_client()) {
       ++coll_clients;
     }
   }
@@ -1342,14 +1339,14 @@ LogObjectManager::log(LogAccess *lad)
 void
 LogObjectManager::flush_all_objects()
 {
-  for (unsigned i = 0; i < this->_objects.size(); ++i) {
-    this->_objects[i]->force_new_buffer();
+  for (auto &_object : this->_objects) {
+    _object->force_new_buffer();
   }
 
   ACQUIRE_API_MUTEX("A LogObjectManager::flush_all_objects");
 
-  for (unsigned i = 0; i < this->_APIobjects.size(); ++i) {
-    this->_APIobjects[i]->force_new_buffer();
+  for (auto &_APIobject : this->_APIobjects) {
+    _APIobject->force_new_buffer();
   }
 
   RELEASE_API_MUTEX("R LogObjectManager::flush_all_objects");

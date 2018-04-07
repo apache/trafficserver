@@ -291,8 +291,7 @@ HttpProxyPort::processOptions(const char *opts)
     return zret;
   }
 
-  for (int i = 0, n_items = values.size(); i < n_items; ++i) {
-    const char *item = values[i];
+  for (auto item : values) {
     if (isdigit(item[0])) { // leading digit -> port value
       char *ptr;
       int port = strtoul(item, &ptr, 10);

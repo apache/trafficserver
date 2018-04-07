@@ -919,8 +919,7 @@ LocalManager::startProxy(const char *onetime_options)
       bool need_comma_p = false;
 
       ink_strlcat(real_proxy_options, " --httpport ", OPTIONS_SIZE);
-      for (int i = 0, limit = m_proxy_ports.size(); i < limit; ++i) {
-        HttpProxyPort &p = m_proxy_ports[i];
+      for (auto &p : m_proxy_ports) {
         if (ts::NO_FD != p.m_fd) {
           if (need_comma_p) {
             ink_strlcat(real_proxy_options, ",", OPTIONS_SIZE);
@@ -957,8 +956,7 @@ LocalManager::startProxy(const char *onetime_options)
 void
 LocalManager::closeProxyPorts()
 {
-  for (int i = 0, n = lmgmt->m_proxy_ports.size(); i < n; ++i) {
-    HttpProxyPort &p = lmgmt->m_proxy_ports[i];
+  for (auto &p : lmgmt->m_proxy_ports) {
     if (ts::NO_FD != p.m_fd) {
       close_socket(p.m_fd);
       p.m_fd = ts::NO_FD;
@@ -977,8 +975,7 @@ LocalManager::listenForProxy()
   }
 
   // We are not already bound, bind the port
-  for (int i = 0, n = lmgmt->m_proxy_ports.size(); i < n; ++i) {
-    HttpProxyPort &p = lmgmt->m_proxy_ports[i];
+  for (auto &p : lmgmt->m_proxy_ports) {
     if (ts::NO_FD == p.m_fd) {
       this->bindProxyPort(p);
     }

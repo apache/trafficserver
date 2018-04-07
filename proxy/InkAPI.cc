@@ -9147,8 +9147,7 @@ TSPluginDescriptorAccept(TSCont contp)
   Action *action = nullptr;
 
   HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
-  for (int i = 0, n = proxy_ports.size(); i < n; ++i) {
-    HttpProxyPort &port = proxy_ports[i];
+  for (auto &port : proxy_ports) {
     if (port.isPlugin()) {
       NetProcessor::AcceptOptions net(make_net_accept_options(&port, -1 /* nthreads */));
       action = netProcessor.main_accept((INKContInternal *)contp, port.m_fd, net);

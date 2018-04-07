@@ -37,11 +37,10 @@ void
 IpMapTestPrint(IpMap &map)
 {
   printf("IpMap Dump\n");
-  for (IpMap::iterator spot(map.begin()), limit(map.end()); spot != limit; ++spot) {
+  for (auto &spot : map) {
     ip_text_buffer ipb1, ipb2;
 
-    printf("%s - %s : %p\n", ats_ip_ntop(spot->min(), ipb1, sizeof ipb1), ats_ip_ntop(spot->max(), ipb2, sizeof(ipb2)),
-           spot->data());
+    printf("%s - %s : %p\n", ats_ip_ntop(spot.min(), ipb1, sizeof ipb1), ats_ip_ntop(spot.max(), ipb2, sizeof(ipb2)), spot.data());
   }
   printf("\n");
 }

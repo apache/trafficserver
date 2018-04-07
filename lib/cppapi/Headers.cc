@@ -693,8 +693,8 @@ std::string
 Headers::wireStr()
 {
   string retval;
-  for (iterator iter = begin(), last = end(); iter != last; ++iter) {
-    HeaderField hf = *iter;
+  for (auto &&iter : *this) {
+    HeaderField hf = iter;
     retval += hf.name().str();
     retval += ": ";
     retval += hf.values(", ");
