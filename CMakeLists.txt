@@ -27,7 +27,7 @@
 #
 #######################
 
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.7)
 project(ats)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -404,7 +404,6 @@ add_executable(ats
         lib/luajit/dynasm/dasm_x86.h
         lib/luajit/src/host/buildvm.c
         lib/luajit/src/host/buildvm.h
-        lib/luajit/src/host/buildvm_arch.h
         lib/luajit/src/host/buildvm_asm.c
         lib/luajit/src/host/buildvm_fold.c
         lib/luajit/src/host/buildvm_lib.c
@@ -436,7 +435,6 @@ add_executable(ats
         lib/luajit/src/lj_asm_x86.h
         lib/luajit/src/lj_bc.c
         lib/luajit/src/lj_bc.h
-        lib/luajit/src/lj_bcdef.h
         lib/luajit/src/lj_bcdump.h
         lib/luajit/src/lj_bcread.c
         lib/luajit/src/lj_bcwrite.c
@@ -473,10 +471,8 @@ add_executable(ats
         lib/luajit/src/lj_err.h
         lib/luajit/src/lj_errmsg.h
         lib/luajit/src/lj_ff.h
-        lib/luajit/src/lj_ffdef.h
         lib/luajit/src/lj_ffrecord.c
         lib/luajit/src/lj_ffrecord.h
-        lib/luajit/src/lj_folddef.h
         lib/luajit/src/lj_frame.h
         lib/luajit/src/lj_func.c
         lib/luajit/src/lj_func.h
@@ -493,7 +489,6 @@ add_executable(ats
         lib/luajit/src/lj_lex.h
         lib/luajit/src/lj_lib.c
         lib/luajit/src/lj_lib.h
-        lib/luajit/src/lj_libdef.h
         lib/luajit/src/lj_load.c
         lib/luajit/src/lj_mcode.c
         lib/luajit/src/lj_mcode.h
@@ -510,7 +505,6 @@ add_executable(ats
         lib/luajit/src/lj_opt_split.c
         lib/luajit/src/lj_parse.c
         lib/luajit/src/lj_parse.h
-        lib/luajit/src/lj_recdef.h
         lib/luajit/src/lj_record.c
         lib/luajit/src/lj_record.h
         lib/luajit/src/lj_snap.c
@@ -591,7 +585,6 @@ add_executable(ats
         lib/tsconfig/TsBuilder.h
         lib/tsconfig/TsConfigGrammar.c
         lib/tsconfig/TsConfigGrammar.h
-        lib/tsconfig/TsConfigGrammar.hpp
         lib/tsconfig/TsConfigLexer.h
         lib/tsconfig/TsConfigLua.cc
         lib/tsconfig/TsConfigLua.h
