@@ -42,10 +42,12 @@
 #include <ts/ink_file.h>
 #include <ts/BufferWriter.h>
 #include <ts/CryptoHash.h>
+#include <thread>
 
 #include "File.h"
 #include "CacheDefs.h"
 #include "Command.h"
+#include "CacheScan.h"
 
 using ts::Bytes;
 using ts::Megabytes;
@@ -1348,6 +1350,37 @@ Get_Response(FilePath const &input_file_path)
   return zret;
 }
 
+void static scan_span(Span *span)
+{
+  for (auto strp : span->_stripes) {
+    strp->loadMeta();
+    strp->loadDir();
+    strp->walk_all_buckets();
+    CacheScan cs(strp);
+    cs.Scan();
+
+    // break; // to be removed
+  }
+}
+
+Errata
+Scan_Cache()
+{
+  Errata zret;
+  Cache cache;
+  std::vector<std::thread> threadPool;
+  if ((zret = cache.loadSpan(SpanFile))) {
+    cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
+    for (auto sp : cache._spans) {
+      threadPool.emplace_back(scan_span, sp); // move constructor is necessary since std::thread is non copyable
+      // break; // to be removed
+    }
+    for (auto &th : threadPool)
+      th.join();
+  }
+  return zret;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1412,6 +1445,8 @@ main(int argc, char *argv[])
                [&](int, char *argv[]) { return Get_Response(input_url_file); });
   Commands.add(std::string("init"), std::string(" Initializes uninitialized span"),
                [&](int, char *argv[]) { return Init_disk(input_url_file); });
+  Commands.add(std::string("scan"), std::string(" Scans the whole cache and lists the urls of the cached contents"),
+               [&](int, char *argv[]) { return Scan_Cache(); });
   Commands.setArgIndex(optind);
 
   if (help) {

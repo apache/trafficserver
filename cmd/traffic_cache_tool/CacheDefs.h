@@ -25,7 +25,6 @@
 #include <netinet/in.h>
 #include <iostream>
 #include <ts/I_Version.h>
-#include <ts/INK_MD5.h>
 #include <ts/Scalar.h>
 #include <ts/Regex.h>
 #include <tsconfig/Errata.h>
@@ -53,6 +52,9 @@ using ts::round_up;
 
 namespace ts
 {
+/* INK_ALIGN() is only to be used to align on a power of 2 boundary */
+#define INK_ALIGN(size, boundary) (((size) + ((boundary)-1)) & ~((boundary)-1))
+#define ROUND_TO_STORE_BLOCK(_x) INK_ALIGN((_x), 8192)
 #define dir_clear(_e) \
   do {                \
     (_e)->w[0] = 0;   \
@@ -164,162 +166,19 @@ public:
   uint16_t freelist[1];
 };
 
-// struct HTTPCacheAlt
-struct HTTPCacheAlt {
-  HTTPCacheAlt();
-  void copy(HTTPCacheAlt *to_copy);
-  void copy_frag_offsets_from(HTTPCacheAlt *src);
-  void destroy();
-
-  uint32_t m_magic;
-
-  // Writeable is set to true is we reside
-  //  in a buffer owned by this structure.
-  // INVARIANT: if own the buffer this HttpCacheAlt
-  //   we also own the buffers for the request &
-  //   response headers
-  int32_t m_writeable;
-  int32_t m_unmarshal_len;
-
-  int32_t m_id;
-  int32_t m_rid;
-
-  int32_t m_object_key[4];
-  int32_t m_object_size[2];
-
-  // HTTPHdr m_request_hdr;
-  // HTTPHdr m_response_hdr;
-
-  time_t m_request_sent_time;
-  time_t m_response_received_time;
-
-  /// # of fragment offsets in this alternate.
-  /// @note This is one less than the number of fragments.
-  int m_frag_offset_count;
-  /// Type of offset for a fragment.
-  typedef uint64_t FragOffset;
-  /// Table of fragment offsets.
-  /// @note The offsets are forward looking so that frag[0] is the
-  /// first byte past the end of fragment 0 which is also the first
-  /// byte of fragment 1. For this reason there is no fragment offset
-  /// for the last fragment.
-  FragOffset *m_frag_offsets;
-  /// # of fragment offsets built in to object.
-  static int constexpr N_INTEGRAL_FRAG_OFFSETS = 4;
-  /// Integral fragment offset table.
-  FragOffset m_integral_frag_offsets[N_INTEGRAL_FRAG_OFFSETS];
-
-  // With clustering, our alt may be in cluster
-  //  incoming channel buffer, when we are
-  //  destroyed we decrement the refcount
-  //  on that buffer so that it gets destroyed
-  // We don't want to use a ref count ptr (Ptr<>)
-  //  since our ownership model requires explicit
-  //  destroys and ref count pointers defeat this
-  // RefCountObj *m_ext_buffer;
-};
-
-//
-// HTTPCacheAlt::HTTPCacheAlt()
-//  : m_magic(CACHE_ALT_MAGIC_ALIVE),
-//    m_writeable(1),
-//    m_unmarshal_len(-1),
-//    m_id(-1),
-//    m_rid(-1),
-//    m_request_hdr(),
-//    m_response_hdr(),
-//    m_request_sent_time(0),
-//    m_response_received_time(0),
-//    m_frag_offset_count(0),
-//    m_frag_offsets(nullptr),
-//    m_ext_buffer(nullptr)
-//{
-//  m_object_key[0]  = 0;
-//  m_object_key[1]  = 0;
-//  m_object_key[2]  = 0;
-//  m_object_key[3]  = 0;
-//  m_object_size[0] = 0;
-//  m_object_size[1] = 0;
-//}
-//
-// void
-// HTTPCacheAlt::destroy()
-//{
-//  ink_assert(m_magic == CACHE_ALT_MAGIC_ALIVE);
-//  ink_assert(m_writeable);
-//  m_magic     = CACHE_ALT_MAGIC_DEAD;
-//  m_writeable = 0;
-//  m_request_hdr.destroy();
-//  m_response_hdr.destroy();
-//  m_frag_offset_count = 0;
-//  if (m_frag_offsets && m_frag_offsets != m_integral_frag_offsets) {
-//    ats_free(m_frag_offsets);
-//    m_frag_offsets = nullptr;
-//  }
-//  httpCacheAltAllocator.free(this);
-//}
-//
-// void
-// HTTPCacheAlt::copy(HTTPCacheAlt *to_copy)
-//{
-//  m_magic = to_copy->m_magic;
-//  // m_writeable =      to_copy->m_writeable;
-//  m_unmarshal_len  = to_copy->m_unmarshal_len;
-//  m_id             = to_copy->m_id;
-//  m_rid            = to_copy->m_rid;
-//  m_object_key[0]  = to_copy->m_object_key[0];
-//  m_object_key[1]  = to_copy->m_object_key[1];
-//  m_object_key[2]  = to_copy->m_object_key[2];
-//  m_object_key[3]  = to_copy->m_object_key[3];
-//  m_object_size[0] = to_copy->m_object_size[0];
-//  m_object_size[1] = to_copy->m_object_size[1];
-//
-//  if (to_copy->m_request_hdr.valid()) {
-//    m_request_hdr.copy(&to_copy->m_request_hdr);
-//  }
-//
-//  if (to_copy->m_response_hdr.valid()) {
-//    m_response_hdr.copy(&to_copy->m_response_hdr);
-//  }
-//
-//  m_request_sent_time      = to_copy->m_request_sent_time;
-//  m_response_received_time = to_copy->m_response_received_time;
-//  this->copy_frag_offsets_from(to_copy);
-//}
-//
-// void
-// HTTPCacheAlt::copy_frag_offsets_from(HTTPCacheAlt *src)
-//{
-//  m_frag_offset_count = src->m_frag_offset_count;
-//  if (m_frag_offset_count > 0) {
-//    if (m_frag_offset_count > N_INTEGRAL_FRAG_OFFSETS) {
-//      /* Mixed feelings about this - technically we don't need it to be a
-//         power of two when copied because currently that means it is frozen.
-//         But that could change later and it would be a nasty bug to find.
-//         So we'll do it for now. The relative overhead is tiny.
-//      */
-//      int bcount = HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS * 2;
-//      while (bcount < m_frag_offset_count) {
-//        bcount *= 2;
-//      }
-//      m_frag_offsets = static_cast<FragOffset *>(ats_malloc(sizeof(FragOffset) * bcount));
-//    } else {
-//      m_frag_offsets = m_integral_frag_offsets;
-//    }
-//    memcpy(m_frag_offsets, src->m_frag_offsets, sizeof(FragOffset) * m_frag_offset_count);
-//  }
-//}
-
-/*
- @internal struct Doc
- */
-
 struct Doc {
-  uint32_t magic;        // DOC_MAGIC
-  uint32_t len;          // length of this fragment (including hlen & sizeof(Doc), unrounded)
-  uint64_t total_len;    // total length of document
-  INK_MD5 first_key;     ///< first key in object.
-  INK_MD5 key;           ///< Key for this doc.
+  uint32_t magic;     // DOC_MAGIC
+  uint32_t len;       // length of this fragment (including hlen & sizeof(Doc), unrounded)
+  uint64_t total_len; // total length of document
+#if TS_ENABLE_FIPS == 1
+  // For FIPS CryptoHash is 256 bits vs. 128, and the 'first_key' must be checked first, so
+  // ensure that the new 'first_key' overlaps the old 'first_key' and that the rest of the data layout
+  // is the same by putting 'key' at the ned.
+  CryptoHash first_key; ///< first key in object.
+#else
+  CryptoHash first_key; ///< first key in object.
+  CryptoHash key;       ///< Key for this doc.
+#endif
   uint32_t hlen;         ///< Length of this header.
   uint32_t doc_type : 8; ///< Doc type - indicates the format of this structure and its content.
   uint32_t v_major : 8;  ///< Major version number.
@@ -329,7 +188,9 @@ struct Doc {
   uint32_t write_serial;
   uint32_t pinned; // pinned until
   uint32_t checksum;
-
+#if TS_ENABLE_FIPS == 1
+  CryptoHash key; ///< Key for this doc.
+#endif
   uint32_t data_len();
   uint32_t prefix_len();
   int single_fragment();
@@ -490,6 +351,76 @@ constexpr int CACHE_BLOCK_SIZE          = (1 << CACHE_BLOCK_SHIFT); // 512, smal
 
 namespace ct
 {
+#define dir_big(_e) ((uint32_t)((((_e)->w[1]) >> 8) & 0x3))
+#define dir_bit(_e, _w, _b) ((uint32_t)(((_e)->w[_w] >> (_b)) & 1))
+#define dir_size(_e) ((uint32_t)(((_e)->w[1]) >> 10))
+#define dir_approx_size(_e) ((dir_size(_e) + 1) * DIR_BLOCK_SIZE(dir_big(_e)))
+#define dir_head(_e) dir_bit(_e, 2, 13)
+#define DIR_MASK_TAG(_t) ((_t) & ((1 << DIR_TAG_WIDTH) - 1))
+#define dir_tag(_e) ((uint32_t)((_e)->w[2] & ((1 << DIR_TAG_WIDTH) - 1)))
+#define dir_offset(_e) \
+  ((int64_t)(((uint64_t)(_e)->w[0]) | (((uint64_t)((_e)->w[1] & 0xFF)) << 16) | (((uint64_t)(_e)->w[4]) << 24)))
+
+#define dir_set_offset(_e, _o)                                              \
+  do {                                                                      \
+    (_e)->w[0] = (uint16_t)_o;                                              \
+    (_e)->w[1] = (uint16_t)((((_o) >> 16) & 0xFF) | ((_e)->w[1] & 0xFF00)); \
+    (_e)->w[4] = (uint16_t)((_o) >> 24);                                    \
+  } while (0)
+
+#define dir_next(_e) (_e)->w[3]
+#define dir_phase(_e) dir_bit(_e, 2, 12)
+#define DIR_BLOCK_SHIFT(_i) (3 * (_i))
+#define DIR_BLOCK_SIZE(_i) (CACHE_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
+#define dir_set_prev(_e, _o) (_e)->w[2] = (uint16_t)(_o)
+#define dir_set_next(_e, _o) (_e)->w[3] = (uint16_t)(_o)
+
+#define dir_in_seg(_s, _i) ((CacheDirEntry *)(((char *)(_s)) + (SIZEOF_DIR * (_i))))
+
+TS_INLINE CacheDirEntry *
+dir_from_offset(int64_t i, CacheDirEntry *seg)
+{
+#if DIR_DEPTH < 5
+  if (!i)
+    return 0;
+  return dir_in_seg(seg, i);
+#else
+  i = i + ((i - 1) / (DIR_DEPTH - 1));
+  return dir_in_seg(seg, i);
+#endif
+}
+
+TS_INLINE CacheDirEntry *
+dir_bucket(int64_t b, CacheDirEntry *seg)
+{
+  return dir_in_seg(seg, b * DIR_DEPTH);
+}
+
+TS_INLINE CacheDirEntry *
+next_dir(CacheDirEntry *d, CacheDirEntry *seg)
+{
+  int i = dir_next(d);
+  return dir_from_offset(i, seg);
+}
+
+TS_INLINE CacheDirEntry *
+dir_bucket_row(CacheDirEntry *b, int64_t i)
+{
+  return dir_in_seg(b, i);
+}
+
+TS_INLINE int64_t
+dir_to_offset(const CacheDirEntry *d, const CacheDirEntry *seg)
+{
+#if DIR_DEPTH < 5
+  return (((char *)d) - ((char *)seg)) / SIZEOF_DIR;
+#else
+  int64_t i = (int64_t)((((char *)d) - ((char *)seg)) / SIZEOF_DIR);
+  i         = i - (i / DIR_DEPTH);
+  return i;
+#endif
+}
+
 struct Stripe;
 struct Span {
   Span(FilePath const &path) : _path(path) {}
@@ -601,11 +532,24 @@ struct Stripe {
                                       // This is because the freelist is not being copied to _metap[2][2] correctly.
   // need to do something about it .. hmmm :-?
   int dir_freelist_length(int s);
-  TS_INLINE CacheDirEntry *dir_segment(int s);
-  TS_INLINE CacheDirEntry *vol_dir_segment(int s);
-  int64_t stripe_offset(CacheDirEntry *e); // offset of e w.r.t the stripe
+  TS_INLINE CacheDirEntry *
+  vol_dir_segment(int s)
+  {
+    return (CacheDirEntry *)(((char *)this->dir) + (s * this->_buckets) * DIR_DEPTH * SIZEOF_DIR);
+  }
+  TS_INLINE CacheDirEntry *
+  dir_segment(int s)
+  {
+    return vol_dir_segment(s);
+  }
+
+  Bytes stripe_offset(CacheDirEntry *e); // offset w.r.t the stripe content
   size_t vol_dirlen();
-  TS_INLINE int vol_headerlen();
+  TS_INLINE int
+  vol_headerlen()
+  {
+    return ROUND_TO_STORE_BLOCK(sizeof(StripeMeta) + sizeof(uint16_t) * (this->_segments - 1));
+  }
   void vol_init_data_internal();
   void vol_init_data();
   void dir_init_segment(int s);
