@@ -42,12 +42,13 @@ SNIActionPerformer::PerformAction(Continuation *cont, cchar *servername)
 {
   SNIConfig::scoped_config params;
   auto actionvec = params->get(servername);
-  if (!actionvec)
+  if (!actionvec) {
     Debug("ssl_sni", "%s not available in the map", servername);
-  else {
+  } else {
     for (auto it : *actionvec) {
-      if (it)
+      if (it) {
         it->SNIAction(cont);
+      }
     }
   }
 }

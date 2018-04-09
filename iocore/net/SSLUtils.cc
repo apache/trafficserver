@@ -1851,12 +1851,14 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   return ctx;
 
 fail:
-  if (digest)
+  if (digest) {
     EVP_MD_CTX_free(digest);
+  }
   SSL_CLEAR_PW_REFERENCES(ctx)
   SSLReleaseContext(ctx);
-  for (auto cert : certList)
+  for (auto cert : certList) {
     X509_free(cert);
+  }
 
   return nullptr;
 }

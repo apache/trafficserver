@@ -652,8 +652,9 @@ HttpTransact::StartRemapRequest(State *s)
 
   if (s->http_config_param->referer_filter_enabled) {
     s->filter_mask = URL_REMAP_FILTER_REFERER;
-    if (s->http_config_param->referer_format_redirect)
+    if (s->http_config_param->referer_format_redirect) {
       s->filter_mask |= URL_REMAP_FILTER_REDIRECT_FMT;
+    }
   }
 
   TxnDebug("http_trans", "END HttpTransact::StartRemapRequest");

@@ -1134,8 +1134,9 @@ LogObjectManager::preproc_buffers(int idx)
 bool
 LogObjectManager::unmanage_api_object(LogObject *logObject)
 {
-  if (!logObject)
+  if (!logObject) {
     return false;
+  }
 
   ACQUIRE_API_MUTEX("A LogObjectManager::unmanage_api_object");
 

@@ -177,8 +177,9 @@ SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &le
     if (ssl_rsb) {
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
     }
-    if (SSLConfigParams::session_cache_skip_on_lock_contention)
+    if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return true_len;
+    }
 
     lock.acquire(this_ethread());
   }
@@ -190,8 +191,9 @@ SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &le
       true_len = node->len_asn1_data;
       if (buffer) {
         const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
-        if (true_len < len)
+        if (true_len < len) {
           len = true_len;
+        }
         memcpy(buffer, loc, len);
         return true_len;
       }

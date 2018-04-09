@@ -54,10 +54,12 @@ check_force()
     std::cout << "Are you sure to overwrite and force creating/removing runroot? (irreversible) Y/N: ";
     std::string input;
     std::cin >> input;
-    if (input == "Y" || input == "y")
+    if (input == "Y" || input == "y") {
       return true;
-    if (input == "N" || input == "n")
+    }
+    if (input == "N" || input == "n") {
       return false;
+    }
   }
   ink_error("Invalid input Y/N");
   exit(70);
@@ -539,8 +541,9 @@ RunrootEngine::verify_runroot()
     std::string name  = it.first;
     std::string value = it.second;
 
-    if (name == "prefix" || name == "exec_prefix")
+    if (name == "prefix" || name == "exec_prefix") {
       continue;
+    }
 
     permission_map[name] = "000"; // default rwx all 0
 

@@ -1393,8 +1393,9 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
     }
     s.reserve(len);
     for (int i = 0; i < count; ++i) {
-      if (i)
+      if (i) {
         s += ',';
+      }
       s += tags[i];
     }
   } break;

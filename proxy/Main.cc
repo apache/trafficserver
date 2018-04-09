@@ -445,10 +445,11 @@ private:
 void
 set_debug_ip(const char *ip_string)
 {
-  if (ip_string)
+  if (ip_string) {
     diags->debug_client_ip.load(ip_string);
-  else
+  } else {
     diags->debug_client_ip.invalidate();
+  }
 }
 
 static int

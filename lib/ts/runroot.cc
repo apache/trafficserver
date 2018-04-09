@@ -69,8 +69,9 @@ std::string
 check_parent_path(const std::string &path)
 {
   std::string whole_path = path;
-  if (whole_path.back() == '/')
+  if (whole_path.back() == '/') {
     whole_path.pop_back();
+  }
 
   // go up to 4 level of parent directories
   for (int i = 0; i < 4; i++) {
@@ -121,13 +122,15 @@ runroot_handler(const char **argv, bool json)
     prefix += "=";
     path = check_path(arg.substr(prefix.size(), arg.size() - 1));
     if (!path.empty()) {
-      if (!json)
+      if (!json) {
         ink_notice("using command line path as RUNROOT");
+      }
       using_runroot = path;
       return;
     } else {
-      if (!json)
+      if (!json) {
         ink_warning("bad RUNROOT passed in");
+      }
     }
   }
 
@@ -137,12 +140,14 @@ runroot_handler(const char **argv, bool json)
     path = check_path(env_val);
     if (!path.empty()) {
       using_runroot = env_val;
-      if (!json)
+      if (!json) {
         ink_notice("using the environment variable TS_RUNROOT");
+      }
       return;
     } else {
-      if (!json)
+      if (!json) {
         ink_warning("bad Environment var: $TS_RUNROOT");
+      }
     }
   }
 
@@ -152,8 +157,9 @@ runroot_handler(const char **argv, bool json)
     path = check_parent_path(cwd);
     if (!path.empty()) {
       using_runroot = path;
-      if (!json)
+      if (!json) {
         ink_notice("using cwd as TS_RUNROOT");
+      }
       return;
     }
   }
@@ -166,8 +172,9 @@ runroot_handler(const char **argv, bool json)
     path               = check_parent_path(bindir);
     if (!path.empty()) {
       using_runroot = path;
-      if (!json)
+      if (!json) {
         ink_notice("using the installed dir as TS_RUNROOT");
+      }
       return;
     }
   }

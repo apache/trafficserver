@@ -818,8 +818,9 @@ Diags::set_std_output(StdStream stream, const char *file)
   unlock();
 
   // Free the BaseLogFile we rotated out
-  if (old_log)
+  if (old_log) {
     delete old_log;
+  }
 
   // "this should never happen"^{TM}
   ink_release_assert(ret);
@@ -848,9 +849,9 @@ Diags::rebind_std_stream(StdStream stream, int new_fd)
   }
   (void)target_stream; // silence clang-analyzer for now
 
-  if (new_fd < 0)
+  if (new_fd < 0) {
     log_log_error("[Warning]: TS unable to bind %s to new file descriptor=%d", target_stream, new_fd);
-  else {
+  } else {
     dup2(new_fd, stream_fd);
     return true;
   }

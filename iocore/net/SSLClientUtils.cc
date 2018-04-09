@@ -58,10 +58,10 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     // Don't bother to check the hostname if we failed openssl's verification
     SSLDebug("verify error:num=%d:%s:depth=%d", err, X509_verify_cert_error_string(err), depth);
     if (netvc && netvc->options.clientVerificationFlag == 2) {
-      if (netvc->options.sni_servername)
+      if (netvc->options.sni_servername) {
         Warning("Hostname verification failed for (%s) but still continuing with the connection establishment",
                 netvc->options.sni_servername.get());
-      else {
+      } else {
         char buff[INET6_ADDRSTRLEN];
         ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
         Warning("Server certificate verification failed for %s but still continuing with the connection establishment", buff);

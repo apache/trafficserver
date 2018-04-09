@@ -51,8 +51,9 @@ ConnectionCount::dumpToJSON()
     appendJSONPair(oss, "connection_count", _hostCount.get(keys[i]));
     oss << "}";
 
-    if (i < keys.n - 1)
+    if (i < keys.n - 1) {
       oss << ',';
+    }
   }
   ink_mutex_release(&_mutex);
   oss << "]}";

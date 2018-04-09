@@ -362,8 +362,9 @@ SSLNetVConnection::read_raw_data()
     total_read += rattempted;
 
     // last read failed or was incomplete
-    if (r != rattempted || !b)
+    if (r != rattempted || !b) {
       break;
+    }
 
     rattempted = b->write_avail();
   }
