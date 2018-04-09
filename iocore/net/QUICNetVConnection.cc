@@ -590,6 +590,10 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     this->_schedule_packet_write_ready(true);
     break;
   }
+  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
+    this->_close_path_validation_timeout(data);
+    this->_switch_to_close_state();
+    break;
   case EVENT_IMMEDIATE: {
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
@@ -623,6 +627,10 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
+  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
+    this->_close_path_validation_timeout(data);
+    this->_switch_to_close_state();
+    break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
@@ -649,6 +657,10 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     // Do not send any packets in this state.
     // This should be the only difference between this and closing_state.
     this->_close_packet_write_ready(data);
+    break;
+  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
+    this->_close_path_validation_timeout(data);
+    this->_switch_to_close_state();
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
@@ -925,6 +937,11 @@ QUICNetVConnection::_state_common_receive_packet()
           Connection con;
           con.setRemote(&p->from().sa);
           this->con.move(con);
+          this->_path_validator->validate();
+          // Not sure how long we should wait. The spec says just "enough time".
+          // Use the same time amount as the closing timeout.
+          ink_hrtime rto = this->_loss_detector->current_rto_period();
+          this->_schedule_path_validation_timeout(3 * rto);
         } else {
           // TODO Send some error?
         }
@@ -1529,6 +1546,31 @@ QUICNetVConnection::_complete_handshake_if_possible()
   this->_start_application();
 
   return 0;
+}
+
+void
+QUICNetVConnection::_schedule_path_validation_timeout(ink_hrtime interval)
+{
+  if (!this->_path_validation_timeout) {
+    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT));
+    this->_path_validation_timeout = this_ethread()->schedule_in_local(this, interval, QUIC_EVENT_PATH_VALIDATION_TIMEOUT);
+  }
+}
+
+void
+QUICNetVConnection::_unschedule_path_validation_timeout()
+{
+  if (this->_path_validation_timeout) {
+    this->_path_validation_timeout->cancel();
+    this->_path_validation_timeout = nullptr;
+  }
+}
+
+void
+QUICNetVConnection::_close_path_validation_timeout(Event *data)
+{
+  ink_assert(this->_path_validation_timeout == data);
+  this->_path_validation_timeout = nullptr;
 }
 
 void

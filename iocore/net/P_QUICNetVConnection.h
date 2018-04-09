@@ -276,6 +276,11 @@ private:
   void _close_closed_event(Event *data);
   Event *_closed_event = nullptr;
 
+  void _schedule_path_validation_timeout(ink_hrtime interval);
+  void _unschedule_path_validation_timeout();
+  void _close_path_validation_timeout(Event *data);
+  Event *_path_validation_timeout = nullptr;
+
   uint32_t _maximum_stream_frame_data_size();
   uint32_t _transmit_packet(QUICPacketUPtr packet);
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,

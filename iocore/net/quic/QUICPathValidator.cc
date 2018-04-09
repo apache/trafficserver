@@ -35,6 +35,7 @@ QUICPathValidator::validate()
   if (this->_state == ValidationState::VALIDATING) {
     // Do nothing
   } else {
+    this->_state = ValidationState::VALIDATING;
     this->_generate_challenge();
   }
 }
