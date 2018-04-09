@@ -214,8 +214,8 @@ ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, 
       ts::TextView tmp{src};
       src.ltrim_if(&ParseRules::is_digit);
 
-      if (tmp.data() == src.data()) {                 // no digits at all
-        src.set_view(tmp.data() - 1, tmp.size() + 1); // back up to include colon
+      if (tmp.data() == src.data()) {               // no digits at all
+        src.assign(tmp.data() - 1, tmp.size() + 1); // back up to include colon
       } else {
         *port = ts::string_view(tmp.data(), src.data() - tmp.data());
       }

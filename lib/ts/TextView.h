@@ -160,10 +160,10 @@ public:
   template <size_t N> self_type &operator=(const char (&s)[N]);
 
   /// Explicitly set the view.
-  self_type &set_view(char const *ptr, size_t n);
+  self_type &assign(char const *ptr, size_t n);
 
   /// Explicitly set the view to the range [ @a b , @a e )
-  self_type &set_view(char const *b, char const *e);
+  self_type &assign(char const *b, char const *e);
 
   /// @return The first byte in the view.
   char operator*() const;
@@ -589,14 +589,14 @@ TextView::operator=(super_type const &that)
 }
 
 inline TextView &
-TextView::set_view(char const *ptr, size_t n)
+TextView::assign(char const *ptr, size_t n)
 {
   *this = super_type(ptr, n);
   return *this;
 }
 
 inline TextView &
-TextView::set_view(char const *b, char const *e)
+TextView::assign(char const *b, char const *e)
 {
   *this = super_type(b, e - b);
   return *this;
