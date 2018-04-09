@@ -2330,8 +2330,9 @@ ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval)
   }
 
   // Swap the pointer
-  if (parsed_hosts_file_ptr != nullptr)
+  if (parsed_hosts_file_ptr != nullptr) {
     hostDB.hosts_file_ptr = parsed_hosts_file_ptr;
+  }
   // Mark this one as completed, so we can allow another update to happen
   HostDBFileUpdateActive = 0;
 }

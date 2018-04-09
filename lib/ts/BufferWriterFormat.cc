@@ -71,8 +71,9 @@ BWFSpec::BWFSpec(TextView fmt)
   _name = fmt.take_prefix_at(':');
   // if it's parsable as a number, treat it as an index.
   n = tv_to_positive_decimal(_name, &num);
-  if (num.size())
+  if (num.size()) {
     _idx = static_cast<decltype(_idx)>(n);
+  }
 
   if (fmt.size()) {
     TextView sz = fmt.take_prefix_at(':'); // the format specifier.
@@ -99,33 +100,38 @@ BWFSpec::BWFSpec(TextView fmt)
       } else if (Align::NONE != (_align = align_of(*sz))) {
         ++sz;
       }
-      if (!sz.size())
+      if (!sz.size()) {
         return;
+      }
       // sign
       if (is_sign(*sz)) {
         _sign = *sz;
-        if (!(++sz).size())
+        if (!(++sz).size()) {
           return;
+        }
       }
       // radix prefix
       if ('#' == *sz) {
         _radix_lead_p = true;
-        if (!(++sz).size())
+        if (!(++sz).size()) {
           return;
+        }
       }
       // 0 fill for integers
       if ('0' == *sz) {
-        if (Align::NONE == _align)
+        if (Align::NONE == _align) {
           _align = Align::SIGN;
-        _fill    = '0';
+        }
+        _fill = '0';
         ++sz;
       }
       n = tv_to_positive_decimal(sz, &num);
       if (num.size()) {
         _min = static_cast<decltype(_min)>(n);
         sz.remove_prefix(num.size());
-        if (!sz.size())
+        if (!sz.size()) {
           return;
+        }
       }
       // precision
       if ('.' == *sz) {
@@ -133,8 +139,9 @@ BWFSpec::BWFSpec(TextView fmt)
         if (num.size()) {
           _prec = static_cast<decltype(_prec)>(n);
           sz.remove_prefix(num.size());
-          if (!sz.size())
+          if (!sz.size()) {
             return;
+          }
         } else {
           throw std::invalid_argument("Precision mark without precision");
         }
@@ -142,8 +149,9 @@ BWFSpec::BWFSpec(TextView fmt)
       // style (type). Hex, octal, etc.
       if (is_type(*sz)) {
         _type = *sz;
-        if (!(++sz).size())
+        if (!(++sz).size()) {
           return;
+        }
       }
       // maximum width
       if (',' == *sz) {
@@ -151,16 +159,18 @@ BWFSpec::BWFSpec(TextView fmt)
         if (num.size()) {
           _max = static_cast<decltype(_max)>(n);
           sz.remove_prefix(num.size());
-          if (!sz.size())
+          if (!sz.size()) {
             return;
+          }
         } else {
           throw std::invalid_argument("Maximum width mark without width");
         }
         // Can only have a type indicator here if there was a max width.
         if (is_type(*sz)) {
           _type = *sz;
-          if (!(++sz).size())
+          if (!(++sz).size()) {
             return;
+          }
         }
       }
     }
@@ -202,16 +212,19 @@ namespace bw_fmt
         dst = base + delta; // move existing content to here.
         if (dst < limit) {
           last = dst + size; // amount of data to move.
-          if (last > limit)
+          if (last > limit) {
             last = limit;
+          }
           std::memmove(dst, base, last - dst);
         }
         dst  = base;
         last = base + delta;
-        if (last > limit)
+        if (last > limit) {
           last = limit;
-        while (dst < last)
+        }
+        while (dst < last) {
           *dst++ = spec._fill;
+        }
         break;
       case BWFSpec::Align::CENTER:
         d2 = (delta + 1) / 2;
@@ -219,40 +232,48 @@ namespace bw_fmt
           dst = base + d2; // move existing content to here.
           if (dst < limit) {
             last = dst + size; // amount of data to move.
-            if (last > limit)
+            if (last > limit) {
               last = limit;
+            }
             std::memmove(dst, base, last - dst);
           }
           dst  = base + size + d2;
           last = base + delta / 2;
-          if (last > limit)
+          if (last > limit) {
             last = limit;
-          while (dst < last)
+          }
+          while (dst < last) {
             *dst++ = spec._fill;
+          }
         }
         dst  = base;
         last = base + d2;
-        if (last > limit)
+        if (last > limit) {
           last = limit;
-        while (dst < last)
+        }
+        while (dst < last) {
           *dst++ = spec._fill;
+        }
         break;
       default:
         // Everything else is equivalent to LEFT - distinction is for more specialized
         // types such as integers.
         dst  = base + size;
         last = dst + delta;
-        if (last > limit)
+        if (last > limit) {
           last = limit;
-        while (dst < last)
+        }
+        while (dst < last) {
           *dst++ = spec._fill;
+        }
         break;
       }
       w.fill(min);
     } else {
       size_t max = spec._max;
-      if (max < extent)
+      if (max < extent) {
         extent = max;
+      }
       w.fill(extent);
     }
   }
@@ -294,38 +315,48 @@ namespace bw_fmt
   {
     switch (align) {
     case BWFSpec::Align::LEFT:
-      if (neg)
+      if (neg) {
         w.write(neg);
+      }
       f();
-      while (width-- > 0)
+      while (width-- > 0) {
         w.write(fill);
+      }
       break;
     case BWFSpec::Align::RIGHT:
-      while (width-- > 0)
+      while (width-- > 0) {
         w.write(fill);
-      if (neg)
+      }
+      if (neg) {
         w.write(neg);
+      }
       f();
       break;
     case BWFSpec::Align::CENTER:
-      for (int i = width / 2; i > 0; --i)
+      for (int i = width / 2; i > 0; --i) {
         w.write(fill);
-      if (neg)
+      }
+      if (neg) {
         w.write(neg);
+      }
       f();
-      for (int i = (width + 1) / 2; i > 0; --i)
+      for (int i = (width + 1) / 2; i > 0; --i) {
         w.write(fill);
+      }
       break;
     case BWFSpec::Align::SIGN:
-      if (neg)
+      if (neg) {
         w.write(neg);
-      while (width-- > 0)
+      }
+      while (width-- > 0) {
         w.write(fill);
+      }
       f();
       break;
     default:
-      if (neg)
+      if (neg) {
         w.write(neg);
+      }
       f();
       break;
     }
@@ -373,34 +404,40 @@ namespace bw_fmt
       break;
     }
     // Clip fill width by stuff that's already committed to be written.
-    if (neg)
+    if (neg) {
       --width;
+    }
     if (prefix1) {
       --width;
-      if (prefix2)
+      if (prefix2) {
         --width;
+      }
     }
     width -= static_cast<int>(n);
     string_view digits{buff + sizeof(buff) - n, n};
 
     if (spec._align == BWFSpec::Align::SIGN) { // custom for signed case because prefix and digits are seperated.
-      if (neg)
+      if (neg) {
         w.write(neg);
+      }
       if (prefix1) {
         w.write(prefix1);
-        if (prefix2)
+        if (prefix2) {
           w.write(prefix2);
+        }
       }
-      while (width-- > 0)
+      while (width-- > 0) {
         w.write(spec._fill);
+      }
       w.write(digits);
     } else { // use generic Write_Aligned
       Write_Aligned(w,
                     [&]() {
                       if (prefix1) {
                         w.write(prefix1);
-                        if (prefix2)
+                        if (prefix2) {
                           w.write(prefix2);
+                        }
                       }
                       w.write(digits);
                     },
@@ -491,8 +528,9 @@ namespace bw_fmt
     r = bw_fmt::To_Radix<10>(frac_part, fraction, sizeof(fraction), bw_fmt::LOWER_DIGITS);
 
     // Clip fill width
-    if (neg)
+    if (neg) {
       --width;
+    }
     width -= static_cast<int>(l);
     --width; // '.'
     width -= static_cast<int>(r);
@@ -529,8 +567,9 @@ BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
 {
   int width = static_cast<int>(spec._min); // amount left to fill.
-  if (spec._prec > 0)
+  if (spec._prec > 0) {
     sv.remove_prefix(spec._prec);
+  }
 
   if ('x' == spec._type || 'X' == spec._type) {
     const char *digits = 'x' == spec._type ? bw_fmt::LOWER_DIGITS : bw_fmt::UPPER_DIGITS;
@@ -651,8 +690,9 @@ bw_fmt::Global_Table_Find(string_view name)
 {
   if (name.size()) {
     auto spot = bw_fmt::BWF_GLOBAL_TABLE.find(name);
-    if (spot != bw_fmt::BWF_GLOBAL_TABLE.end())
+    if (spot != bw_fmt::BWF_GLOBAL_TABLE.end()) {
       return spot->second;
+    }
   }
   return nullptr;
 }

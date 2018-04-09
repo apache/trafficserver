@@ -262,12 +262,14 @@ Bridge::read_ready(TSVIO vio)
     case EOS:
       break;
     case OPEN:
-      if (!this->check_outbound_OK() || _out_resp_state != OK)
+      if (!this->check_outbound_OK() || _out_resp_state != OK) {
         break;
+      }
     // FALL THROUGH
     case OK:
-      if (!this->check_outbound_terminal() || _out_resp_state != READY)
+      if (!this->check_outbound_terminal() || _out_resp_state != READY) {
         break;
+      }
     // FALL THROUGH
     case READY:
       // Do setup for flowing upstream data to user agent.
@@ -342,10 +344,11 @@ Bridge::check_outbound_terminal()
     while (block) {
       char c = *block;
       if ('\r' == c) {
-        if (_out_terminal_pos == 2)
+        if (_out_terminal_pos == 2) {
           _out_terminal_pos = 3;
-        else
+        } else {
           _out_terminal_pos = 1;
+        }
       } else if ('\n' == c) {
         if (_out_terminal_pos == 3) {
           _out_terminal_pos = 4;
@@ -413,8 +416,9 @@ Bridge::eos(TSVIO vio)
   _out.do_close();
   _ua.do_close();
   _out_resp_state = EOS;
-  if (_ua_response_suspended)
+  if (_ua_response_suspended) {
     TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
+  }
 }
 
 void
@@ -444,8 +448,9 @@ Bridge::update_ua_response()
     TSHttpStatus status = TSHttpHdrStatusGet(mbuf, hdr_loc);
     if (TS_HTTP_STATUS_OK == status && TS_HTTP_STATUS_OK != _out_response_code) {
       TSHttpHdrStatusSet(mbuf, hdr_loc, _out_response_code);
-      if (!_out_response_reason.empty())
+      if (!_out_response_reason.empty()) {
         TSHttpHdrReasonSet(mbuf, hdr_loc, _out_response_reason.data(), _out_response_reason.size());
+      }
     }
     // TS insists on adding these fields, despite it being a CONNECT.
     Hdr_Remove_Field(mbuf, hdr_loc, {TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING});
@@ -618,12 +623,14 @@ TSPluginInit(int argc, char const *argv[])
 {
   TSPluginRegistrationInfo info{PLUGIN_NAME, "Oath:", "solidwallofcode@oath.com"};
 
-  if (TSPluginRegister(&info) != TS_SUCCESS)
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError(PLUGIN_NAME ": plugin registration failed.");
+  }
 
   Config.load_config(argc - 1, argv + 1);
-  if (Config.count() <= 0)
+  if (Config.count() <= 0) {
     TSError("%s: No destinations defined, plugin disabled", PLUGIN_TAG);
+  }
 
   TSCont contp = TSContCreate(CB_Read_Request_Hdr, TSMutexCreate());
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);

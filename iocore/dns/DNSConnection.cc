@@ -183,8 +183,9 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
+  }
 #endif
 
   ats_ip_copy(&ip.sa, addr);

@@ -70,7 +70,8 @@ inline Errata::Errata(ImpPtr const& ptr)
 Errata::Data::~Data() {
   if (m_log_on_delete) {
     Errata tmp(this); // because client API requires a wrapper.
-    for ( auto& f : Sink_List ) (*f)(tmp);
+    for ( auto& f : Sink_List ) { (*f)(tmp);
+}
     tmp.m_data.release(); // don't delete this again.
   }
 }
@@ -239,8 +240,9 @@ Errata::write(
     out << m.m_id << " [" << m.m_code << "]: " << m.m_text
         << std::endl
       ;
-    if (m.getErrata().size())
+    if (m.getErrata().size()) {
       m.getErrata().write(out, offset, indent+shift, shift, lead);
+}
 
   }
   return out;

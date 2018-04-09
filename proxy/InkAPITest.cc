@@ -6540,8 +6540,9 @@ struct AppendTransformTestData {
 
   ~AppendTransformTestData()
   {
-    if (output_buffer)
+    if (output_buffer) {
       TSIOBufferDestroy(output_buffer);
+    }
   }
 };
 

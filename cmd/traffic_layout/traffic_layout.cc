@@ -164,8 +164,9 @@ main(int argc, const char **argv)
 
   // with command (info, init, remove)
   for (unsigned i = 0; i < countof(commands); ++i) {
-    if (!argv[1])
+    if (!argv[1]) {
       break;
+    }
     if (strcmp(argv[1], commands[i].name.c_str()) == 0) {
       return commands[i].handler(argc, argv);
     }

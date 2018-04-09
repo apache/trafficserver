@@ -514,8 +514,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
     /* Only search up to the first ? or # */
     const char *base_url_end = url;
-    while (*base_url_end && !(*base_url_end == '?' || *base_url_end == '#'))
+    while (*base_url_end && !(*base_url_end == '?' || *base_url_end == '#')) {
       ++base_url_end;
+    }
     const int len = base_url_end - url;
 
     if (pcre_exec(cfg->regex, cfg->regex_extra, url, len, offset, options, ovector, 30) >= 0) {

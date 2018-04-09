@@ -5936,9 +5936,10 @@ TSHttpArgIndexReserve(UserArg::Type type, const char *name, const char *descript
   if (idx < limit) {
     UserArg &arg(UserArgTable[type][idx]);
     arg.name = name;
-    if (description)
+    if (description) {
       arg.description = description;
-    *ptr_idx          = idx;
+    }
+    *ptr_idx = idx;
 
     return TS_SUCCESS;
   }
