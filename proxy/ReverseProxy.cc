@@ -42,9 +42,6 @@
 #include "UrlRewrite.h"
 #include "UrlMapping.h"
 
-/** Time till we free the old stuff after a reconfiguration. */
-#define URL_REWRITE_TIMEOUT (HRTIME_SECOND * 300)
-
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
 UrlRewrite *rewrite_table = nullptr;
@@ -79,6 +76,10 @@ init_reverse_proxy()
   REC_RegisterConfigUpdateFunc("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.admin.synthetic_port", url_rewrite_CB, (void *)SYNTH_PORT_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
+
+  // Hold at least one lease, until we reload the configuration
+  rewrite_table->acquire();
+
   return 0;
 }
 
@@ -87,15 +88,15 @@ init_reverse_proxy()
    according to the rules in remap.config.
 */
 mapping_type
-request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url)
+request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url, UrlRewrite *table)
 {
-  return rewrite_table ? rewrite_table->Remap_redirect(request_header, redirect_url) : NONE;
+  return table ? table->Remap_redirect(request_header, redirect_url) : NONE;
 }
 
 bool
-response_url_remap(HTTPHdr *response_header)
+response_url_remap(HTTPHdr *response_header, UrlRewrite *table)
 {
-  return rewrite_table ? rewrite_table->ReverseMap(response_header) : false;
+  return table ? table->ReverseMap(response_header) : false;
 }
 
 //
@@ -134,14 +135,18 @@ reloadUrlRewrite()
   Debug("url_rewrite", "remap.config updated, reloading...");
   newTable = new UrlRewrite();
   if (newTable->is_valid()) {
-    new_Deleter(rewrite_table, URL_REWRITE_TIMEOUT);
     static const char *msg = "remap.config done reloading!";
-    ink_atomic_swap(&rewrite_table, newTable);
+
+    // Hold at least one lease, until we reload the configuration
+    newTable->acquire();
+
+    ink_atomic_swap(&rewrite_table, newTable)->release(); // Swap configurations, and release the old one
     Debug("url_rewrite", "%s", msg);
     Note("%s", msg);
     return true;
   } else {
     static const char *msg = "failed to reload remap.config, not replacing!";
+
     delete newTable;
     Debug("url_rewrite", "%s", msg);
     Warning("%s", msg);

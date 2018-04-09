@@ -493,6 +493,9 @@ namespace bw_fmt
   /// Generic integral conversion.
   BufferWriter &Format_Integer(BufferWriter &w, BWFSpec const &spec, uintmax_t n, bool negative_p);
 
+  /// Generic floating point conversion.
+  BufferWriter &Format_Floating(BufferWriter &w, BWFSpec const &spec, double n, bool negative_p);
+
 } // bw_fmt
 
 /** Compiled BufferWriter format
@@ -676,36 +679,44 @@ bwformat(BufferWriter &w, BWFSpec const &spec, TextView const &tv)
   return bwformat(w, spec, static_cast<string_view>(tv));
 }
 
-//-- Integral types
 inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, uintmax_t const &i)
+bwformat(BufferWriter &w, BWFSpec const &spec, double const &d)
+{
+  return d < 0 ? bw_fmt::Format_Floating(w, spec, -d, true) : bw_fmt::Format_Floating(w, spec, d, false);
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, float const &f)
+{
+  return f < 0 ? bw_fmt::Format_Floating(w, spec, -f, true) : bw_fmt::Format_Floating(w, spec, f, false);
+}
+
+/* Integer types.
+
+   Due to some oddities for MacOS building, need a bit more template magic here. The underlying
+   integer rendering is in @c Format_Integer which takes @c intmax_t or @c uintmax_t. For @c
+   bwformat templates are defined, one for signed and one for unsigned. These forward their argument
+   to the internal renderer. To avoid additional ambiguity the template argument is checked with @c
+   std::enable_if to invalidate the overload if the argument type isn't a signed / unsigned
+   integer. One exception to this is @c char which is handled by a previous overload in order to
+   treat the value as a character and not an integer. The overall benefit is this works for any set
+   of integer types, rather tuning and hoping to get just the right set of overloads.
+ */
+
+template <typename I>
+auto
+bwformat(BufferWriter &w, BWFSpec const &spec, I const &i) ->
+  typename std::enable_if<std::is_unsigned<I>::value, BufferWriter &>::type
 {
   return bw_fmt::Format_Integer(w, spec, i, false);
 }
 
-inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, intmax_t const &i)
+template <typename I>
+auto
+bwformat(BufferWriter &w, BWFSpec const &spec, I const &i) ->
+  typename std::enable_if<std::is_signed<I>::value, BufferWriter &>::type
 {
   return i < 0 ? bw_fmt::Format_Integer(w, spec, -i, true) : bw_fmt::Format_Integer(w, spec, i, false);
-}
-
-inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, unsigned int const &i)
-{
-  return bw_fmt::Format_Integer(w, spec, i, false);
-}
-
-inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, int const &i)
-{
-  return i < 0 ? bw_fmt::Format_Integer(w, spec, -i, true) : bw_fmt::Format_Integer(w, spec, i, false);
-}
-
-// Annoying but otherwise ambiguous with char
-inline BufferWriter &
-operator<<(BufferWriter &w, int const &i)
-{
-  return bwformat(w, BWFSpec::DEFAULT, static_cast<intmax_t>(i));
 }
 
 // std::string support

@@ -422,7 +422,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
   const char *argptr;
   char tmpbuf[1024];
   src_ip_info_t *ipi;
-  int i, j, m;
+  int i, j;
   bool new_rule_flg = false;
 
   if (!rule_pp) {
@@ -478,31 +478,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
 
     if (ul & REMAP_OPTFLG_METHOD) { /* "method=" option */
       // Please remember that the order of hash idx creation is very important and it is defined
-      // in HTTP.cc file
-      m = -1;
-      if (!strcasecmp(argptr, "CONNECT")) {
-        m = HTTP_WKSIDX_CONNECT;
-      } else if (!strcasecmp(argptr, "DELETE")) {
-        m = HTTP_WKSIDX_DELETE;
-      } else if (!strcasecmp(argptr, "GET")) {
-        m = HTTP_WKSIDX_GET;
-      } else if (!strcasecmp(argptr, "HEAD")) {
-        m = HTTP_WKSIDX_HEAD;
-      } else if (!strcasecmp(argptr, "OPTIONS")) {
-        m = HTTP_WKSIDX_OPTIONS;
-      } else if (!strcasecmp(argptr, "POST")) {
-        m = HTTP_WKSIDX_POST;
-      } else if (!strcasecmp(argptr, "PURGE")) {
-        m = HTTP_WKSIDX_PURGE;
-      } else if (!strcasecmp(argptr, "PUT")) {
-        m = HTTP_WKSIDX_PUT;
-      } else if (!strcasecmp(argptr, "TRACE")) {
-        m = HTTP_WKSIDX_TRACE;
-      } else if (!strcasecmp(argptr, "PUSH")) {
-        m = HTTP_WKSIDX_PUSH;
-      }
-      if (m != -1) {
-        m                               = m - HTTP_WKSIDX_CONNECT; // get method index
+      // in HTTP.cc file. 0 in our array is the first method, CONNECT
+      int m = hdrtoken_tokenize(argptr, strlen(argptr), nullptr) - HTTP_WKSIDX_CONNECT;
+
+      if (m >= 0 && m < HTTP_WKSIDX_METHODS_CNT) {
         rule->standard_method_lookup[m] = true;
       } else {
         Debug("url_rewrite", "[validate_filter_args] Using nonstandard method [%s]", argptr);

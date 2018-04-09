@@ -16,9 +16,10 @@
 #  limitations under the License.
 
 SUBDIRS = \
+  traffic_cache_tool \
   traffic_cop \
-  traffic_ctl \
   traffic_crashlog \
+  traffic_ctl \
   traffic_layout \
   traffic_manager \
   traffic_top \

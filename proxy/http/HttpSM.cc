@@ -268,6 +268,7 @@ HttpSM::cleanup()
   // t_state.content_control.cleanup();
 
   HttpConfig::release(t_state.http_config_param);
+  m_remap->release();
 
   mutex.clear();
   tunnel.mutex.clear();
@@ -309,6 +310,8 @@ HttpSM::init()
   t_state.state_machine    = this;
 
   t_state.http_config_param = HttpConfig::acquire();
+  // Acquire a lease on the global remap / rewrite table (stupid global name ...)
+  m_remap = rewrite_table->acquire();
 
   // Simply point to the global config for the time being, no need to copy this
   // entire struct if nothing is going to change it.
@@ -1983,6 +1986,8 @@ HttpSM::state_send_server_request_header(int event, void *data)
         setup_transform_to_server_transfer();
       } else {
         do_setup_post_tunnel(HTTP_SERVER_VC);
+        // Start up read response in parallel in case of early error response
+        setup_server_read_response_header();
       }
     } else {
       // It's time to start reading the response
@@ -2715,7 +2720,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::HandleRequestBufferDone);
       break;
     }
-    setup_server_read_response_header();
+    // Read reasponse already setup
     break;
   default:
     ink_release_assert(0);
@@ -3929,7 +3934,7 @@ HttpSM::state_remap_request(int event, void * /* data ATS_UNUSED */)
   case EVENT_REMAP_COMPLETE: {
     pending_action = nullptr;
     SMDebug("url_rewrite", "completed processor-based remapping request for [%" PRId64 "]", sm_id);
-    t_state.url_remap_success = remapProcessor.finish_remap(&t_state);
+    t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap);
     call_transact_and_set_next_state(nullptr);
     break;
   }
@@ -3949,7 +3954,7 @@ HttpSM::do_remap_request(bool run_inline)
   SMDebug("url_rewrite", "Starting a possible remapping for request [%" PRId64 "]", sm_id);
   bool ret = false;
   if (t_state.cop_test_page == false) {
-    ret = remapProcessor.setup_for_remap(&t_state);
+    ret = remapProcessor.setup_for_remap(&t_state, m_remap);
   }
 
   // Preserve effective url before remap
@@ -4869,15 +4874,17 @@ HttpSM::do_http_server_open(bool raw)
 
     CryptoHash hostname_hash;
     CryptoContext().hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
-                                   strlen(t_state.current.server->name));
+                                   static_cast<int>(strlen(t_state.current.server->name)));
 
-    if (connections->getCount(t_state.current.server->dst_addr, hostname_hash,
-                              (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match) >=
-        t_state.txn_conf->origin_max_connections) {
+    auto ccount = connections->getCount(t_state.current.server->dst_addr, hostname_hash,
+                                        (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match);
+    if (ccount >= t_state.txn_conf->origin_max_connections) {
       ip_port_text_buffer addrbuf;
       ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
-      SMDebug("http", "[%" PRId64 "] over the number of connection for this host: %s", sm_id, addrbuf);
-      Warning("[%" PRId64 "] over the max number of connections for this host: %s", sm_id, addrbuf);
+      SMDebug("http", "[%" PRId64 "] too many connections (%d) for this host (%" PRId64 "): %s", sm_id, ccount,
+              t_state.txn_conf->origin_max_connections, addrbuf);
+      Warning("[%" PRId64 "] too many connections (%d) for this host (%" PRId64 "): %s", sm_id, ccount,
+              t_state.txn_conf->origin_max_connections, addrbuf);
       ink_assert(pending_action == nullptr);
 
       // if we were previously queued, or the queue is disabled-- just reschedule
@@ -5325,7 +5332,7 @@ HttpSM::handle_post_failure()
     tunnel.deallocate_buffers();
     tunnel.reset();
     // There's data from the server so try to read the header
-    setup_server_read_response_header();
+    // Read response is already set up
   } else {
     tunnel.deallocate_buffers();
     tunnel.reset();
@@ -5380,6 +5387,8 @@ HttpSM::handle_http_server_open()
       (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
       do_post_transform_open()) {
     do_setup_post_tunnel(HTTP_TRANSFORM_VC);
+    // Start up read response in parallel in case of early error response
+    setup_server_read_response_header();
   } else {
     setup_server_send_request_api();
   }
@@ -7204,7 +7213,7 @@ HttpSM::set_next_state()
     if (!remapProcessor.using_separate_thread()) {
       do_remap_request(true); /* run inline */
       SMDebug("url_rewrite", "completed inline remapping request for [%" PRId64 "]", sm_id);
-      t_state.url_remap_success = remapProcessor.finish_remap(&t_state);
+      t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap);
       if (t_state.next_action == HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP && t_state.transact_return_point == nullptr) {
         // It appears that we can now set the next_action to error and transact_return_point to nullptr when
         // going through do_remap_request presumably due to a plugin setting an error.  In that case, it seems

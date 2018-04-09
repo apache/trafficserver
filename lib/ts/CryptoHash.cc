@@ -103,7 +103,7 @@ ink_code_to_hex_str(char *dest, uint8_t const *hash)
 }
 
 char *
-CryptoHash::toHexStr(char buffer[(CRYPTO_HASH_SIZE * 2) + 1])
+CryptoHash::toHexStr(char buffer[(CRYPTO_HASH_SIZE * 2) + 1]) const
 {
   return ink_code_to_hex_str(buffer, u8);
 }

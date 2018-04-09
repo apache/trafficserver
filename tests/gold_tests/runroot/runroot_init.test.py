@@ -21,27 +21,33 @@ import sys
 import time
 
 Test.Summary = '''
-Test that use for runroot from traffic_layout is all functional.
+Test for init of runroot from traffic_layout.
 '''
 Test.ContinueOnFail = True
 
 p = Test.MakeATSProcess("ts")
-path = os.path.join(p.Env['TS_ROOT'], "runroot")
+ts_root = p.Env['TS_ROOT']
 
-# normal init from pass in path
-tr = Test.AddTestRun("Test traffic_layout init")
-tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path
+# init from pass in path
+path1 = os.path.join(ts_root, "runroot1")
+tr = Test.AddTestRun("Test traffic_layout init #1")
+tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path1
 tr.Processes.Default.ReturnCode = 0
-d = tr.Disk.Directory(path)
-d.Exists = True
-f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
+f = tr.Disk.File(os.path.join(path1, "runroot_path.yml"))
 f.Exists = True
 
-# remove from pass in path
-tr = Test.AddTestRun("Test traffic_layout remove")
-tr.Processes.Default.Command = "$ATS_BIN/traffic_layout remove --path " + path
+# init to relative directory
+path2 = os.path.join(ts_root, "runroot2")
+tr = Test.AddTestRun("Test traffic_layout init #2")
+tr.Processes.Default.Command = "cd " + ts_root + "; " + "$ATS_BIN/traffic_layout init --path runroot2"
 tr.Processes.Default.ReturnCode = 0
-d = tr.Disk.Directory(path)
-d.Exists = False
-f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
-f.Exists = False
+f = tr.Disk.File(os.path.join(path2, "runroot_path.yml"))
+f.Exists = True
+
+# init to cwd
+path3 = os.path.join(ts_root, "runroot3")
+tr = Test.AddTestRun("Test traffic_layout init #3")
+tr.Processes.Default.Command = "mkdir " + path3 + "; cd " + path3 + "; " + "$ATS_BIN/traffic_layout init"
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File(os.path.join(path3, "runroot_path.yml"))
+f.Exists = True

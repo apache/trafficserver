@@ -55,6 +55,8 @@ enum class OpType : MgmtMarshallInt {
   SERVER_BACKTRACE,
   RECORD_DESCRIBE_CONFIG,
   LIFECYCLE_MESSAGE,
+  HOST_STATUS_UP,
+  HOST_STATUS_DOWN,
   UNDEFINED_OP /* This must be last */
 };
 

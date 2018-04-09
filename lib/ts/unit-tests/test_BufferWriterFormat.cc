@@ -221,15 +221,206 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
   ts::TextView fmt("{} -- {}");
   ts::string_view text{"e99a18c428cb38d5f260853678922e03"};
 
-  bwprint(s, fmt, "string", 956);
+  ts::bwprint(s, fmt, "string", 956);
   REQUIRE(s.size() == 13);
   REQUIRE(s == "string -- 956");
 
-  bwprint(s, fmt, 99999, text);
+  ts::bwprint(s, fmt, 99999, text);
   REQUIRE(s == "99999 -- e99a18c428cb38d5f260853678922e03");
 
-  bwprint(s, "{} .. |{:,20}|", 32767, text);
+  ts::bwprint(s, "{} .. |{:,20}|", 32767, text);
   REQUIRE(s == "32767 .. |e99a18c428cb38d5f260|");
+}
+
+TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
+{
+  ts::LocalBufferWriter<256> bw;
+  ts::BWFSpec spec;
+  uint32_t num = 30;
+  int num_neg  = -30;
+
+  // basic
+  bwformat(bw, spec, num);
+  REQUIRE(bw.view() == "30");
+  bw.reduce(0);
+  bwformat(bw, spec, num_neg);
+  REQUIRE(bw.view() == "-30");
+  bw.reduce(0);
+
+  // radix
+  ts::BWFSpec spec_hex;
+  spec_hex._radix_lead_p = true;
+  spec_hex._type         = 'x';
+  bwformat(bw, spec_hex, num);
+  REQUIRE(bw.view() == "0x1e");
+  bw.reduce(0);
+
+  ts::BWFSpec spec_dec;
+  spec_dec._type = '0';
+  bwformat(bw, spec_dec, num);
+  REQUIRE(bw.view() == "30");
+  bw.reduce(0);
+
+  ts::BWFSpec spec_bin;
+  spec_bin._radix_lead_p = true;
+  spec_bin._type         = 'b';
+  bwformat(bw, spec_bin, num);
+  REQUIRE(bw.view() == "0b11110");
+  bw.reduce(0);
+
+  int one     = 1;
+  int two     = 2;
+  int three_n = -3;
+  // alignment
+  ts::BWFSpec left;
+  left._align = ts::BWFSpec::Align::LEFT;
+  left._min   = 5;
+  ts::BWFSpec right;
+  right._align = ts::BWFSpec::Align::RIGHT;
+  right._min   = 5;
+  ts::BWFSpec center;
+  center._align = ts::BWFSpec::Align::CENTER;
+  center._min   = 5;
+
+  bwformat(bw, left, one);
+  bwformat(bw, right, two);
+  REQUIRE(bw.view() == "1        2");
+  bwformat(bw, right, two);
+  REQUIRE(bw.view() == "1        2    2");
+  bwformat(bw, center, three_n);
+  REQUIRE(bw.view() == "1        2    2 -3  ");
+}
+
+TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
+{
+  ts::LocalBufferWriter<256> bw;
+  ts::BWFSpec spec;
+
+  bw.reduce(0);
+  bw.print("{}", 3.14);
+  REQUIRE(bw.view() == "3.14");
+  bw.reduce(0);
+  bw.print("{} {:.2} {:.0} ", 32.7, 32.7, 32.7);
+  REQUIRE(bw.view() == "32.70 32.70 32 ");
+  bw.reduce(0);
+  bw.print("{} neg {:.3}", -123.2, -123.2);
+  REQUIRE(bw.view() == "-123.20 neg -123.200");
+  bw.reduce(0);
+  bw.print("zero {} quarter {} half {} 3/4 {}", 0, 0.25, 0.50, 0.75);
+  REQUIRE(bw.view() == "zero 0 quarter 0.25 half 0.50 3/4 0.75");
+  bw.reduce(0);
+  bw.print("long {:.11}", 64.9);
+  REQUIRE(bw.view() == "long 64.90000000000");
+  bw.reduce(0);
+
+  double n   = 180.278;
+  double neg = -238.47;
+  bwformat(bw, spec, n);
+  REQUIRE(bw.view() == "180.28");
+  bw.reduce(0);
+  bwformat(bw, spec, neg);
+  REQUIRE(bw.view() == "-238.47");
+  bw.reduce(0);
+
+  spec._prec = 5;
+  bwformat(bw, spec, n);
+  REQUIRE(bw.view() == "180.27800");
+  bw.reduce(0);
+  bwformat(bw, spec, neg);
+  REQUIRE(bw.view() == "-238.47000");
+  bw.reduce(0);
+
+  float f    = 1234;
+  float fneg = -1;
+  bwformat(bw, spec, f);
+  REQUIRE(bw.view() == "1234");
+  bw.reduce(0);
+  bwformat(bw, spec, fneg);
+  REQUIRE(bw.view() == "-1");
+  bw.reduce(0);
+  f          = 1234.5667;
+  spec._prec = 4;
+  bwformat(bw, spec, f);
+  REQUIRE(bw.view() == "1234.5667");
+  bw.reduce(0);
+
+  bw << 1234 << .567;
+  REQUIRE(bw.view() == "12340.57");
+  bw.reduce(0);
+  bw << f;
+  REQUIRE(bw.view() == "1234.57");
+  bw.reduce(0);
+  bw << n;
+  REQUIRE(bw.view() == "180.28");
+  bw.reduce(0);
+  bw << f << n;
+  REQUIRE(bw.view() == "1234.57180.28");
+  bw.reduce(0);
+
+  double edge = 0.345;
+  spec._prec  = 3;
+  bwformat(bw, spec, edge);
+  REQUIRE(bw.view() == "0.345");
+  bw.reduce(0);
+  edge = .1234;
+  bwformat(bw, spec, edge);
+  REQUIRE(bw.view() == "0.123");
+  bw.reduce(0);
+  edge = 1.0;
+  bwformat(bw, spec, edge);
+  REQUIRE(bw.view() == "1");
+  bw.reduce(0);
+
+  // alignment
+  double first  = 1.23;
+  double second = 2.35;
+  double third  = -3.5;
+  ts::BWFSpec left;
+  left._align = ts::BWFSpec::Align::LEFT;
+  left._min   = 5;
+  ts::BWFSpec right;
+  right._align = ts::BWFSpec::Align::RIGHT;
+  right._min   = 5;
+  ts::BWFSpec center;
+  center._align = ts::BWFSpec::Align::CENTER;
+  center._min   = 5;
+
+  bwformat(bw, left, first);
+  bwformat(bw, right, second);
+  REQUIRE(bw.view() == "1.23  2.35");
+  bwformat(bw, right, second);
+  REQUIRE(bw.view() == "1.23  2.35 2.35");
+  bwformat(bw, center, third);
+  REQUIRE(bw.view() == "1.23  2.35 2.35-3.50");
+  bw.reduce(0);
+
+  double over = 1.4444444;
+  ts::BWFSpec over_min;
+  over_min._prec = 7;
+  over_min._min  = 5;
+  bwformat(bw, over_min, over);
+  REQUIRE(bw.view() == "1.4444444");
+  bw.reduce(0);
+
+  // Edge
+  bw.print("{}", (1.0 / 0.0));
+  REQUIRE(bw.view() == "Inf");
+  bw.reduce(0);
+
+  double inf = std::numeric_limits<double>::infinity();
+  bw.print("  {} ", inf);
+  REQUIRE(bw.view() == "  Inf ");
+  bw.reduce(0);
+
+  double nan_1 = std::nan("1");
+  bw.print("{} {}", nan_1, nan_1);
+  REQUIRE(bw.view() == "NaN NaN");
+  bw.reduce(0);
+
+  double z = 0.0;
+  bw.print("{}  ", z);
+  REQUIRE(bw.view() == "0  ");
+  bw.reduce(0);
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

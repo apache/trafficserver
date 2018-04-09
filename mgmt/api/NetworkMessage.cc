@@ -61,6 +61,8 @@ static const struct NetCmdOperation requests[] = {
   /* SERVER_BACKTRACE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* RECORD_DESCRIBE_CONFIG     */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT}},
   /* LIFECYCLE_MESSAGE          */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
+  /* HOST_STATUS_HOST_UP        */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
+  /* HOST_STATUS_HOST_DOWN      */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
 };
 
 // Responses always begin with a TSMgmtError code, followed by additional fields.
@@ -95,6 +97,8 @@ static const struct NetCmdOperation responses[] = {
     MGMT_MARSHALL_INT /* updatetype */, MGMT_MARSHALL_INT /* checktype */, MGMT_MARSHALL_INT /* source */,
     MGMT_MARSHALL_STRING /* checkexpr */}},
   /* LIFECYCLE_MESSAGE          */ {1, {MGMT_MARSHALL_INT}},
+  /* HOST_STATUS_UP             */ {1, {MGMT_MARSHALL_INT}},
+  /* HOST_STATUS_DOWN           */ {1, {MGMT_MARSHALL_INT}},
 };
 
 #define GETCMD(ops, optype, cmd)                           \
@@ -202,6 +206,8 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   case OpType::RECONFIGURE:
   case OpType::RESTART:
   case OpType::STATS_RESET_NODE:
+  case OpType::HOST_STATUS_UP:
+  case OpType::HOST_STATUS_DOWN:
   case OpType::STORAGE_DEVICE_CMD_OFFLINE:
     ink_release_assert(responses[static_cast<unsigned>(optype)].nfields == 1);
     return send_mgmt_response(fd, optype, &ecode);

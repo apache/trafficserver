@@ -177,7 +177,9 @@ Enumeration Members
 
 .. c:macro:: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
 
-.. c:macro:: TS_EVENT_VCONN_PRE_ACCEPT
+.. c:macro:: TS_EVENT_VCONN_START
+
+.. c:macro:: TS_EVENT_VCONN_CLOSE
 
 .. c:macro:: TS_EVENT_MGMT_UPDATE
 

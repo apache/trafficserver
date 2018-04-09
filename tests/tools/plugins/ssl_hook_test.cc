@@ -51,7 +51,7 @@ CB_Pre_Accept(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Pre accept callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad");
+  TSDebug(PN, "Pre accept callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_START ? "good" : "bad");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -65,7 +65,7 @@ CB_Pre_Accept_Delay(TSCont cont, TSEvent event, void *edata)
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  TSDebug(PN, "Pre accept delay callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad");
+  TSDebug(PN, "Pre accept delay callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_START ? "good" : "bad");
 
   TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
 
@@ -180,18 +180,18 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     cb = TSContCreate(&CB_Pre_Accept, TSMutexCreate());
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
-      TSHttpTxnHookAdd(txn, TS_VCONN_PRE_ACCEPT_HOOK, cb);
+      TSHttpTxnHookAdd(txn, TS_VCONN_START_HOOK, cb);
     } else {
-      TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb);
+      TSHttpHookAdd(TS_VCONN_START_HOOK, cb);
     }
   }
   for (i = 0; i < preaccept_count_delay; i++) {
     cb = TSContCreate(&CB_Pre_Accept_Delay, TSMutexCreate());
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
-      TSHttpTxnHookAdd(txn, TS_VCONN_PRE_ACCEPT_HOOK, cb);
+      TSHttpTxnHookAdd(txn, TS_VCONN_START_HOOK, cb);
     } else {
-      TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb);
+      TSHttpHookAdd(TS_VCONN_START_HOOK, cb);
     }
   }
   for (i = 0; i < sni_count; i++) {

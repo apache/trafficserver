@@ -1,6 +1,6 @@
 /** @file
 
-  Private RecFile and RecPipe declarations
+  Private RecFile declarations
 
   @section license License
 
@@ -43,15 +43,5 @@ int RecFileWrite(RecHandle h_file, char *buf, int size, int *bytes_written);
 int RecFileGetSize(RecHandle h_file);
 int RecFileExists(const char *file);
 int RecFileSync(RecHandle h_file);
-
-//-------------------------------------------------------------------------
-// RecPipe
-//-------------------------------------------------------------------------
-
-RecHandle RecPipeCreate(const char *base_path, const char *name);
-RecHandle RecPipeConnect(const char *base_path, const char *name);
-int RecPipeClose(RecHandle h_pipe);
-int RecPipeRead(RecHandle h_pipe, char *buf, int size);
-int RecPipeWrite(RecHandle h_pipe, char *buf, int size);
 
 #endif

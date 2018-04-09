@@ -204,6 +204,7 @@ int subcommand_metric(unsigned argc, const char **argv);
 int subcommand_server(unsigned argc, const char **argv);
 int subcommand_storage(unsigned argc, const char **argv);
 int subcommand_plugin(unsigned argc, const char **argv);
+int subcommand_host(unsigned argc, const char **argv);
 
 // Exit status codes, following BSD's sysexits(3)
 #define CTRL_EX_OK 0

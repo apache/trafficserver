@@ -925,6 +925,32 @@ OperatorSetConnDSCP::exec(const Resources &res) const
   }
 }
 
+// OperatorSetConnMark
+void
+OperatorSetConnMark::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _ds_value.set_value(p.get_arg());
+}
+
+void
+OperatorSetConnMark::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+}
+
+void
+OperatorSetConnMark::exec(const Resources &res) const
+{
+  if (res.txnp) {
+    TSHttpTxnClientPacketMarkSet(res.txnp, _ds_value.get_int_value());
+    TSDebug(PLUGIN_NAME, "   Setting MARK to %d", _ds_value.get_int_value());
+  }
+}
+
 // OperatorSetDebug
 void
 OperatorSetDebug::initialize(Parser &p)

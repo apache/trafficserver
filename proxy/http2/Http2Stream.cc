@@ -528,7 +528,8 @@ Http2Stream::restart_sending()
 void
 Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
 {
-  if (!this->is_client_state_writeable() || closed || parent == nullptr || write_vio.mutex == nullptr) {
+  if (!this->is_client_state_writeable() || closed || parent == nullptr || write_vio.mutex == nullptr ||
+      (buf_reader == nullptr && write_len == 0)) {
     return;
   }
   if (this->get_thread() != this_ethread()) {
@@ -556,6 +557,9 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     }
   }
 
+  if (this->response_get_data_reader() == nullptr) {
+    return;
+  }
   int64_t bytes_avail = this->response_get_data_reader()->read_avail();
   if (write_vio.nbytes > 0 && write_vio.ntodo() > 0) {
     int64_t num_to_write = write_vio.ntodo();

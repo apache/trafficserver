@@ -150,7 +150,7 @@ public:
 
   /// Construct from @c std::string, referencing the entire string contents.
   /// @internal Not all compilers make @c std::string methods called @c constexpr
-  constexpr TextView(std::string const &str);
+  TextView(std::string const &str);
 
   /// Pointer to byte past the last byte in the view.
   const char *data_end() const;
@@ -515,7 +515,7 @@ inline constexpr TextView::TextView(const char *start, const char *end) : super_
 inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0)
 {
 }
-inline constexpr TextView::TextView(std::string const &str) : super_type(str)
+inline TextView::TextView(std::string const &str) : super_type(str)
 {
 }
 inline constexpr TextView::TextView(super_type const &that) : super_type(that)
@@ -663,7 +663,7 @@ TextView::split_prefix_at(size_t n)
   self_type zret; // default to empty return.
   if (n < this->size()) {
     zret = this->prefix(n);
-    this->remove_prefix(n + 1);
+    this->remove_prefix(std::min(n + 1, this->size()));
   }
   return zret;
 }
@@ -698,7 +698,7 @@ TextView::take_prefix_at(size_t n)
 {
   n              = std::min(n, this->size());
   self_type zret = this->prefix(n);
-  this->remove_prefix(n + 1);
+  this->remove_prefix(std::min(n + 1, this->size()));
   return zret;
 }
 
@@ -972,6 +972,22 @@ TextView::trim_if(F const &pred)
 {
   return this->ltrim_if(pred).rtrim_if(pred);
 }
+
+#if __GNUC__ == 6
+// The super class operators are ambiguous in GCC 6, but not in 5 or 7.
+// As best I can tell, TextView isn't recognized as a subclass of string_view in template deduction.
+bool inline
+operator==(TextView lhs, TextView rhs)
+{
+  return lhs.size() == rhs.size() && 0 == memcmp(lhs.data(), rhs.data(), lhs.size());
+}
+
+bool inline
+operator!=(TextView lhs, TextView rhs)
+{
+  return lhs.size() != rhs.size() || 0 != memcmp(lhs.data(), rhs.data(), lhs.size());
+}
+#endif
 
 inline bool
 TextView::isPrefixOf(super_type const &that) const

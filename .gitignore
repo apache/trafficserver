@@ -58,6 +58,7 @@ cmd/traffic_quic/traffic_quic
 cmd/traffic_top/traffic_top
 cmd/traffic_via/traffic_via
 cmd/traffic_wccp/traffic_wccp
+cmd/traffic_cache_tool/traffic_cache_tool
 
 lib/stamp-h1
 lib/ink_autoconf.h

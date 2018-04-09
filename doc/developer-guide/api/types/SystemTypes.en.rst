@@ -49,6 +49,10 @@ These types are provided by the compiler ("built-in") or from a required operati
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
 
+.. cpp:type:: int64_t
+
+   64 bit signed integer.
+
 .. cpp:type:: uint32_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
@@ -56,17 +60,22 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: uint16_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
+
 .. cpp:type:: uint8_t
-
-   `Reference <https://linux.die.net/include/stdint.h>`__.
-
-.. cpp:type:: size_t
 
    `Reference <https://linux.die.net/include/stdint.h>`__.
 
 .. cpp:type:: intmax_t
 
    The largest native signed integer type.
+
+.. cpp:type:: size_t
+
+   Unsigned integral type.
+
+.. cpp:type:: ssize_t
+
+   Signed integral type.
 
 .. cpp:type:: unspecified_type
 
@@ -75,3 +84,16 @@ These types are provided by the compiler ("built-in") or from a required operati
 .. cpp:type:: time_t
 
    Epoch time, in seconds.
+
+.. cpp:type:: va_list
+
+   Variable Argument List.
+
+.. cpp:namespace-push:: std
+
+.. cpp:class:: template < typename T > vector
+
+   See `std::vector <http://en.cppreference.com/w/cpp/container/vector>`__.
+
+.. cpp:namespace-pop::
+

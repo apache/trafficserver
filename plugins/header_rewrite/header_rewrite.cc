@@ -67,13 +67,21 @@ static int cont_rewrite_headers(TSCont, TSEvent, void *);
 class RulesConfig
 {
 public:
-  RulesConfig() : _ref_count(0)
+  RulesConfig()
   {
     memset(_rules, 0, sizeof(_rules));
     memset(_resids, 0, sizeof(_resids));
 
     _cont = TSContCreate(cont_rewrite_headers, nullptr);
     TSContDataSet(_cont, static_cast<void *>(this));
+  }
+
+  ~RulesConfig()
+  {
+    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+      delete _rules[i];
+    }
+    TSContDestroy(_cont);
   }
 
   TSCont
@@ -95,32 +103,10 @@ public:
 
   bool parse_config(const std::string &fname, TSHttpHookID default_hook);
 
-  void
-  hold()
-  {
-    ink_atomic_increment(&_ref_count, 1);
-  }
-  void
-  release()
-  {
-    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
-      delete this;
-    }
-  }
-
 private:
-  ~RulesConfig()
-  {
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
-      delete _rules[i];
-    }
-    TSContDestroy(_cont);
-  }
-
   bool add_rule(RuleSet *rule);
 
   TSCont _cont;
-  int _ref_count;
   RuleSet *_rules[TS_HTTP_LAST_HOOK + 1];
   ResourceIDs _resids[TS_HTTP_LAST_HOOK + 1];
 };
@@ -281,9 +267,6 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     hook = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     break;
-  case TS_EVENT_HTTP_TXN_CLOSE:
-    conf->release();
-    break;
   default:
     TSError("[%s] unknown event for this plugin", PLUGIN_NAME);
     TSDebug(PLUGIN_NAME, "unknown event for this plugin");
@@ -336,7 +319,6 @@ TSPluginInit(int argc, const char *argv[])
   bool got_config   = false;
 
   initGeoIP();
-  conf->hold();
 
   for (int i = 1; i < argc; ++i) {
     // Parse the config file(s). Note that multiple config files are
@@ -363,7 +345,7 @@ TSPluginInit(int argc, const char *argv[])
   } else {
     // Didn't get anything, nuke it.
     TSError("[%s] failed to parse any configuration file", PLUGIN_NAME);
-    conf->release();
+    delete conf;
   }
 }
 
@@ -407,12 +389,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   RulesConfig *conf = new RulesConfig;
 
-  conf->hold();
-
   for (int i = 2; i < argc; ++i) {
     TSDebug(PLUGIN_NAME, "Loading remap configuration file %s", argv[i]);
     if (!conf->parse_config(argv[i], TS_REMAP_PSEUDO_HOOK)) {
       TSError("[%s] Unable to create remap instance", PLUGIN_NAME);
+      delete conf;
       return TS_ERROR;
     } else {
       TSDebug(PLUGIN_NAME, "Succesfully loaded remap config file %s", argv[i]);
@@ -436,7 +417,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 void
 TSRemapDeleteInstance(void *ih)
 {
-  static_cast<RulesConfig *>(ih)->release();
+  delete static_cast<RulesConfig *>(ih);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -445,8 +426,6 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  bool hooked_p = false;
-
   // Make sure things are properly setup (this should never happen)
   if (nullptr == ih) {
     TSDebug(PLUGIN_NAME, "No Rules configured, falling back to default");
@@ -459,16 +438,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // Go through all hooks we support, and setup the txn hook(s) as necessary
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
     if (conf->rule(i)) {
-      hooked_p = true;
       TSHttpTxnHookAdd(rh, static_cast<TSHttpHookID>(i), conf->continuation());
       TSDebug(PLUGIN_NAME, "Added remapped TXN hook=%s", TSHttpHookNameLookup((TSHttpHookID)i));
     }
-  }
-
-  // Two assumptions - configuration never uses this hook nor uses TS_HTTP_SSN_CLOSE_HOOK.
-  if (hooked_p) {
-    conf->hold();                                                       // mark as in use.
-    TSHttpTxnHookAdd(rh, TS_HTTP_TXN_CLOSE_HOOK, conf->continuation()); // clean up after.
   }
 
   // Now handle the remap specific rules for the "remap hook" (which is not a real hook).

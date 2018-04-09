@@ -654,8 +654,18 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
   }
 
   // create and send request
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECORD_GET, &optype, &record);
-  return (ret == TS_ERR_OKAY) ? mgmt_record_get_reply(OpType::RECORD_GET, rec_ele) : ret;
+  if ((ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECORD_GET, &optype, &record)) != TS_ERR_OKAY) {
+    return ret;
+  }
+
+  // drop the response if the record name doesn't match
+  // we need to do this because there might be left over data on the socket
+  // when restarting traffic_server, even though it can't be recreated in a
+  // test environment, it has been observed in production the names doesn't
+  // match and caused traffic_cop to crash due to type mismatch.
+  while ((ret = mgmt_record_get_reply(OpType::RECORD_GET, rec_ele)) == TS_ERR_OKAY && strcmp(rec_name, rec_ele->rec_name) != 0) {
+  }
+  return ret;
 }
 
 TSMgmtError
@@ -1020,6 +1030,28 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
   }
 
   return TS_ERR_OKAY;
+}
+
+TSMgmtError
+HostStatusSetDown(const char *host_name)
+{
+  TSMgmtError ret         = TS_ERR_PARAMS;
+  OpType op               = OpType::HOST_STATUS_DOWN;
+  MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
+
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+}
+
+TSMgmtError
+HostStatusSetUp(const char *host_name)
+{
+  TSMgmtError ret         = TS_ERR_PARAMS;
+  OpType op               = OpType::HOST_STATUS_UP;
+  MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
+
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
 }
 
 TSMgmtError

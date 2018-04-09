@@ -24,6 +24,9 @@
 #include <ts/BufferWriter.h>
 #include <ctype.h>
 #include <ctime>
+#include <cmath>
+#include <math.h>
+#include <array>
 
 namespace
 {
@@ -260,6 +263,8 @@ namespace bw_fmt
   {
     char UPPER_DIGITS[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     char LOWER_DIGITS[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    static const std::array<uint64_t, 11> POWERS_OF_TEN = {
+      {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}};
   }
 
   /// Templated radix based conversions. Only a small number of radix are supported
@@ -283,12 +288,54 @@ namespace bw_fmt
     return (buff + width) - out;
   }
 
+  template <typename F>
+  void
+  Write_Aligned(BufferWriter &w, F const &f, BWFSpec::Align align, int width, char fill, char neg)
+  {
+    switch (align) {
+    case BWFSpec::Align::LEFT:
+      if (neg)
+        w.write(neg);
+      f();
+      while (width-- > 0)
+        w.write(fill);
+      break;
+    case BWFSpec::Align::RIGHT:
+      while (width-- > 0)
+        w.write(fill);
+      if (neg)
+        w.write(neg);
+      f();
+      break;
+    case BWFSpec::Align::CENTER:
+      for (int i = width / 2; i > 0; --i)
+        w.write(fill);
+      if (neg)
+        w.write(neg);
+      f();
+      for (int i = (width + 1) / 2; i > 0; --i)
+        w.write(fill);
+      break;
+    case BWFSpec::Align::SIGN:
+      if (neg)
+        w.write(neg);
+      while (width-- > 0)
+        w.write(fill);
+      f();
+      break;
+    default:
+      if (neg)
+        w.write(neg);
+      f();
+      break;
+    }
+  }
+
   BufferWriter &
   Format_Integer(BufferWriter &w, BWFSpec const &spec, uintmax_t i, bool neg_p)
   {
-    size_t n  = 0;
-    int width = static_cast<int>(spec._min); // amount left to fill.
-    string_view prefix;
+    size_t n     = 0;
+    int width    = static_cast<int>(spec._min); // amount left to fill.
     char neg     = 0;
     char prefix1 = spec._radix_lead_p ? '0' : 0;
     char prefix2 = 0;
@@ -336,48 +383,7 @@ namespace bw_fmt
     width -= static_cast<int>(n);
     string_view digits{buff + sizeof(buff) - n, n};
 
-    // The idea here is the various pieces have all been assembled, the only difference
-    // is the order in which they are written to the output.
-    switch (spec._align) {
-    case BWFSpec::Align::LEFT:
-      if (neg)
-        w.write(neg);
-      if (prefix1) {
-        w.write(prefix1);
-        if (prefix2)
-          w.write(prefix2);
-      }
-      w.write(digits);
-      while (width-- > 0)
-        w.write(spec._fill);
-      break;
-    case BWFSpec::Align::RIGHT:
-      while (width-- > 0)
-        w.write(spec._fill);
-      if (neg)
-        w.write(neg);
-      if (prefix1) {
-        w.write(prefix1);
-        if (prefix2)
-          w.write(prefix2);
-      }
-      w.write(digits);
-      break;
-    case BWFSpec::Align::CENTER:
-      for (int i = width / 2; i > 0; --i)
-        w.write(spec._fill);
-      if (neg)
-        w.write(neg);
-      if (prefix1) {
-        w.write(prefix1);
-        if (prefix2)
-          w.write(prefix2);
-      }
-      w.write(digits);
-      for (int i = (width + 1) / 2; i > 0; --i)
-        w.write(spec._fill);
-      break;
-    case BWFSpec::Align::SIGN:
+    if (spec._align == BWFSpec::Align::SIGN) { // custom for signed case because prefix and digits are seperated.
       if (neg)
         w.write(neg);
       if (prefix1) {
@@ -388,18 +394,120 @@ namespace bw_fmt
       while (width-- > 0)
         w.write(spec._fill);
       w.write(digits);
-      break;
-    default:
-      if (neg)
-        w.write(neg);
-      if (prefix1) {
-        w.write(prefix1);
-        if (prefix2)
-          w.write(prefix2);
-      }
-      w.write(digits);
-      break;
+    } else { // use generic Write_Aligned
+      Write_Aligned(w,
+                    [&]() {
+                      if (prefix1) {
+                        w.write(prefix1);
+                        if (prefix2)
+                          w.write(prefix2);
+                      }
+                      w.write(digits);
+                    },
+                    spec._align, width, spec._fill, neg);
     }
+    return w;
+  }
+
+  /// Format for floating point values. Seperates floating point into a whole number and a
+  /// fraction. The fraction is converted into an unsigned integer based on the specified
+  /// precision, spec._prec. ie. 3.1415 with precision two is seperated into two unsigned
+  /// integers 3 and 14. The different pieces are assembled and placed into the BufferWriter.
+  /// The default is two decimal places. ie. X.XX. The value is always written in base 10.
+  ///
+  /// format: whole.fraction
+  ///     or: left.right
+  BufferWriter &
+  Format_Floating(BufferWriter &w, BWFSpec const &spec, double f, bool neg_p)
+  {
+    static const ts::string_view infinity_bwf{"Inf"};
+    static const ts::string_view nan_bwf{"NaN"};
+    static const ts::string_view zero_bwf{"0"};
+    static const ts::string_view subnormal_bwf{"subnormal"};
+    static const ts::string_view unknown_bwf{"unknown float"};
+
+    // Handle floating values that are not normal
+    if (!std::isnormal(f)) {
+      ts::string_view unnormal;
+      switch (std::fpclassify(f)) {
+      case FP_INFINITE:
+        unnormal = infinity_bwf;
+        break;
+      case FP_NAN:
+        unnormal = nan_bwf;
+        break;
+      case FP_ZERO:
+        unnormal = zero_bwf;
+        break;
+      case FP_SUBNORMAL:
+        unnormal = subnormal_bwf;
+        break;
+      default:
+        unnormal = unknown_bwf;
+      }
+
+      w.write(unnormal);
+      return w;
+    }
+
+    uint64_t whole_part = static_cast<uint64_t>(f);
+    if (whole_part == f || spec._prec == 0) { // integral
+      return Format_Integer(w, spec, whole_part, neg_p);
+    }
+
+    static constexpr char dec = '.';
+    double frac;
+    size_t l = 0;
+    size_t r = 0;
+    char whole[std::numeric_limits<double>::digits10 + 1];
+    char fraction[std::numeric_limits<double>::digits10 + 1];
+    char neg               = 0;
+    int width              = static_cast<int>(spec._min);                             // amount left to fill.
+    unsigned int precision = (spec._prec == BWFSpec::DEFAULT._prec) ? 2 : spec._prec; // default precision 2
+
+    frac = f - whole_part; // split the number
+
+    if (neg_p) {
+      neg = '-';
+    } else if (spec._sign != '-') {
+      neg = spec._sign;
+    }
+
+    // Shift the floating point based on the precision. Used to convert
+    //  trailing fraction into an integer value.
+    uint64_t shift;
+    if (precision < POWERS_OF_TEN.size()) {
+      shift = POWERS_OF_TEN[precision];
+    } else { // not precomputed.
+      shift = POWERS_OF_TEN.back();
+      for (precision -= (POWERS_OF_TEN.size() - 1); precision > 0; --precision) {
+        shift *= 10;
+      }
+    }
+
+    uint64_t frac_part = static_cast<uint64_t>(frac * shift + 0.5 /* rounding */);
+
+    l = bw_fmt::To_Radix<10>(whole_part, whole, sizeof(whole), bw_fmt::LOWER_DIGITS);
+    r = bw_fmt::To_Radix<10>(frac_part, fraction, sizeof(fraction), bw_fmt::LOWER_DIGITS);
+
+    // Clip fill width
+    if (neg)
+      --width;
+    width -= static_cast<int>(l);
+    --width; // '.'
+    width -= static_cast<int>(r);
+
+    string_view whole_digits{whole + sizeof(whole) - l, l};
+    string_view frac_digits{fraction + sizeof(fraction) - r, r};
+
+    Write_Aligned(w,
+                  [&]() {
+                    w.write(whole_digits);
+                    w.write(dec);
+                    w.write(frac_digits);
+                  },
+                  spec._align, width, spec._fill, neg);
+
     return w;
   }
 
@@ -412,35 +520,6 @@ namespace bw_fmt
       char c = *ptr++;
       w.write(digits[(c >> 4) & 0xF]);
       w.write(digits[c & 0xf]);
-    }
-  }
-
-  template <typename F>
-  void
-  Write_Aligned(BufferWriter &w, F const &f, BWFSpec::Align align, int width, char fill)
-  {
-    switch (align) {
-    case BWFSpec::Align::LEFT:
-    case BWFSpec::Align::SIGN:
-      f();
-      while (width-- > 0)
-        w.write(fill);
-      break;
-    case BWFSpec::Align::RIGHT:
-      while (width-- > 0)
-        w.write(fill);
-      f();
-      break;
-    case BWFSpec::Align::CENTER:
-      for (int i = width / 2; i > 0; --i)
-        w.write(fill);
-      f();
-      for (int i = (width + 1) / 2; i > 0; --i)
-        w.write(fill);
-      break;
-    default:
-      f();
-      break;
     }
   }
 
@@ -461,10 +540,10 @@ bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
       w.write(spec._type);
       width -= 2;
     }
-    bw_fmt::Write_Aligned(w, [&w, &sv, digits]() { bw_fmt::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill);
+    bw_fmt::Write_Aligned(w, [&w, &sv, digits]() { bw_fmt::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
   } else {
     width -= sv.size();
-    bw_fmt::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill);
+    bw_fmt::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
   }
   return w;
 }
@@ -589,7 +668,7 @@ BWF_Now(ts::BufferWriter &w, ts::BWFSpec const &spec)
   w.fill(std::strftime(w.auxBuffer(), w.remaining(), "%Y%b%d:%H%M%S", std::localtime(&t)));
 }
 
-static bool BW_INITIALIZED = []() -> bool {
+static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
   ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
   return true;
 }();

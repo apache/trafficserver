@@ -218,6 +218,7 @@ static const subcommand commands[] = {
   {subcommand_server, "server", "Stop, restart and examine the server"},
   {subcommand_storage, "storage", "Manipulate cache storage"},
   {subcommand_plugin, "plugin", "Interact with plugins"},
+  {subcommand_host, "host", "Interact with host status"},
 };
 
 int

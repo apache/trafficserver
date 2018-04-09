@@ -860,13 +860,13 @@ LogObjectManager::LogObjectManager()
 LogObjectManager::~LogObjectManager()
 {
   for (unsigned i = 0; i < _objects.size(); ++i) {
-    if (REF_COUNT_OBJ_REFCOUNT_DEC(_objects[i]) == 0) {
+    if (_objects[i]->refcount_dec() == 0) {
       delete _objects[i];
     }
   }
 
   for (unsigned i = 0; i < _APIobjects.size(); ++i) {
-    if (REF_COUNT_OBJ_REFCOUNT_DEC(_APIobjects[i]) == 0) {
+    if (_APIobjects[i]->refcount_dec() == 0) {
       delete _APIobjects[i];
     }
   }
@@ -894,7 +894,7 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
       {
         // no conflicts, add object to the list of managed objects
         //
-        REF_COUNT_OBJ_REFCOUNT_INC(log_object);
+        log_object->refcount_inc();
         if (is_api_object) {
           _APIobjects.push_back(log_object);
         } else {
@@ -1222,10 +1222,10 @@ LogObjectManager::transfer_objects(LogObjectManager &old_mgr)
       if (*new_obj == *old_obj) {
         Debug("log-config-transfer", "keeping existing object %s", old_obj->get_base_filename());
 
-        REF_COUNT_OBJ_REFCOUNT_INC(old_obj);
+        old_obj->refcount_inc();
         this->_objects[j] = old_obj;
 
-        if (REF_COUNT_OBJ_REFCOUNT_DEC(new_obj) == 0) {
+        if (new_obj->refcount_dec() == 0) {
           delete new_obj;
         }
         ++num_kept_objects;

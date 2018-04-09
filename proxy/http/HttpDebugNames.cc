@@ -460,8 +460,10 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_HTTP_RESPONSE_CLIENT_HOOK";
   case TS_HTTP_LAST_HOOK:
     return "TS_HTTP_LAST_HOOK";
-  case TS_VCONN_PRE_ACCEPT_HOOK:
-    return "TS_VCONN_PRE_ACCEPT_HOOK";
+  case TS_VCONN_START_HOOK:
+    return "TS_VCONN_START_HOOK";
+  case TS_VCONN_CLOSE_HOOK:
+    return "TS_VCONN_CLOSE_HOOK";
   case TS_SSL_CERT_HOOK:
     return "TS_SSL_CERT_HOOK";
   case TS_SSL_SERVERNAME_HOOK:

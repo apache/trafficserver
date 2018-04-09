@@ -31,6 +31,10 @@ Data Structures
    CacheHostRecord *-- "*" CacheVol : cp >
    CacheVol *-- "*" Stripe : Vol >
 
+.. var:: size_t STORE_BLOCK_SIZE = 8192
+
+   The storage unit for span and stripe metadata.
+
 .. class:: CacheHostTable
 
    A container that maps from a FQDN to a :class:`CacheHostRecord`. This is constructed from

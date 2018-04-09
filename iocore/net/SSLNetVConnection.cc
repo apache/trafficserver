@@ -122,11 +122,16 @@ public:
        )
   {
     EThread *eth = this_ethread();
-    MUTEX_TRY_LOCK(lock, target->mutex, eth);
-    if (lock.is_locked()) {
+    if (!target->mutex) {
+      // If there's no mutex, plugin doesn't care about locking so why should we?
       target->handleEvent(eventId, edata);
     } else {
-      eventProcessor.schedule_imm(new ContWrapper(mutex, target, eventId, edata), ET_NET);
+      MUTEX_TRY_LOCK(lock, target->mutex, eth);
+      if (lock.is_locked()) {
+        target->handleEvent(eventId, edata);
+      } else {
+        eventProcessor.schedule_imm(new ContWrapper(mutex, target, eventId, edata), ET_NET);
+      }
     }
   }
 
@@ -820,6 +825,7 @@ void
 SSLNetVConnection::do_io_close(int lerrno)
 {
   if (this->ssl != nullptr && sslHandShakeComplete) {
+    callHooks(TS_EVENT_VCONN_CLOSE);
     int shutdown_mode = SSL_get_shutdown(ssl);
     Debug("ssl-shutdown", "previous shutdown state 0x%x", shutdown_mode);
     int new_shutdown_mode = shutdown_mode | SSL_RECEIVED_SHUTDOWN;
@@ -1042,7 +1048,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
     if (!curHook) {
       Debug("ssl", "Initialize preaccept curHook from NULL");
-      curHook = ssl_hooks->get(TS_VCONN_PRE_ACCEPT_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TS_VCONN_START_INTERNAL_HOOK);
     } else {
       curHook = curHook->next();
     }
@@ -1051,7 +1057,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
     } else {
       sslHandshakeHookState = HANDSHAKE_HOOKS_PRE_INVOKE;
-      ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_PRE_ACCEPT, this);
+      ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_START, this);
       return SSL_WAIT_FOR_HOOK;
     }
   }
@@ -1470,7 +1476,7 @@ SSLNetVConnection::reenable(NetHandler *nh)
     } else if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
       Debug("ssl", "Reenable preaccept");
       sslHandshakeHookState = HANDSHAKE_HOOKS_PRE_INVOKE;
-      ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_PRE_ACCEPT, this);
+      ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_START, this);
     }
     return;
   } else {
@@ -1518,7 +1524,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
 {
   // Only dealing with the SNI/CERT hook so far.
   ink_assert(eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME || eventId == TS_EVENT_SSL_SERVER_VERIFY_HOOK ||
-             eventId == TS_EVENT_SSL_VERIFY_CLIENT);
+             eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE);
   Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
 
   // Move state if it is appropriate
@@ -1578,6 +1584,11 @@ SSLNetVConnection::callHooks(TSEvent eventId)
       curHook = ssl_hooks->get(TS_SSL_VERIFY_CLIENT_INTERNAL_HOOK);
     } else {
       curHook = curHook->next();
+    }
+  // fallthrough
+  case HANDSHAKE_HOOKS_DONE:
+    if (eventId == TS_EVENT_VCONN_CLOSE) {
+      curHook = ssl_hooks->get(TS_VCONN_CLOSE_INTERNAL_HOOK);
     }
     break;
   default:

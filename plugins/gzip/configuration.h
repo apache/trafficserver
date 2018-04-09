@@ -24,6 +24,7 @@
 #ifndef GZIP_CONFIGURATION_H_
 #define GZIP_CONFIGURATION_H_
 
+#include <set>
 #include <string>
 #include <vector>
 #include "debug_macros.h"
@@ -50,6 +51,7 @@ public:
       remove_accept_encoding_(false),
       flush_(false),
       compression_algorithms_(ALGORITHM_GZIP),
+      minimum_content_length_(1024),
       ref_count_(0)
   {
   }
@@ -110,12 +112,25 @@ public:
   {
     return !allows_.empty();
   }
+  unsigned int
+  minimum_content_length() const
+  {
+    return minimum_content_length_;
+  }
+  void
+  set_minimum_content_length(unsigned int x)
+  {
+    minimum_content_length_ = x;
+  }
 
+  void update_defaults();
   void add_disallow(const std::string &disallow);
   void add_allow(const std::string &allow);
   void add_compressible_content_type(const std::string &content_type);
+  void add_compressible_status_codes(std::string &status_codes);
   bool is_url_allowed(const char *url, int url_len);
   bool is_content_type_compressible(const char *content_type, int content_type_length);
+  bool is_status_code_compressible(const TSHttpStatus status_code) const;
   void add_compression_algorithms(std::string &algorithms);
   int compression_algorithms();
 
@@ -141,11 +156,15 @@ private:
   bool remove_accept_encoding_;
   bool flush_;
   int compression_algorithms_;
+  unsigned int minimum_content_length_;
   int ref_count_;
 
   StringContainer compressible_content_types_;
   StringContainer disallows_;
   StringContainer allows_;
+  // maintain backwards compatibility/usability out of the box
+  std::set<TSHttpStatus> compressible_status_codes_ = {TS_HTTP_STATUS_OK, TS_HTTP_STATUS_PARTIAL_CONTENT,
+                                                       TS_HTTP_STATUS_NOT_MODIFIED};
 
   DISALLOW_COPY_AND_ASSIGN(HostConfiguration);
 };

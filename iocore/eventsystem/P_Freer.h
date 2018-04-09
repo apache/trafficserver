@@ -47,11 +47,18 @@ public: // Needed by WinNT compiler (compiler bug)
   DeleterContinuation(C *ap) : Continuation(new_ProxyMutex()), p(ap) { SET_HANDLER(&DeleterContinuation::dieEvent); }
 };
 
+// This can be useful for two things (or both):
+//    1. Make sure to schedule a delete on an ET_TASK thread
+//    2. Delay the delete (this should be used sparingly)
 template <class C>
 TS_INLINE void
 new_Deleter(C *ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(new DeleterContinuation<C>(ap), t, ET_TASK);
+  if (t > 0) {
+    eventProcessor.schedule_in(new DeleterContinuation<C>(ap), t, ET_TASK);
+  } else {
+    eventProcessor.schedule_imm(new DeleterContinuation<C>(ap), ET_TASK);
+  }
 }
 
 template <class C> struct FreeCallContinuation : public Continuation {
@@ -108,7 +115,7 @@ template <class C> struct DereferContinuation : public Continuation {
   dieEvent(int, Event *)
   {
     p->refcount_dec();
-    if (REF_COUNT_OBJ_REFCOUNT_DEC(p) == 0) {
+    if (p->refcount_dec() == 0) {
       delete p;
     }
 

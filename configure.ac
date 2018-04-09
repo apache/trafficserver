@@ -627,7 +627,9 @@ CXXFLAGS="${_ts_saved_CXXFLAGS}"
 
 # All compilers we support have 'gnu99' as an available C standard
 TS_ADDTO(AM_CFLAGS, [-std=gnu99])
-TS_ADDTO(AM_CXXFLAGS, [-std=c++11])
+
+AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
+AX_CXX_COMPILE_STDCXX(17, noext, optional)
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
 dnl 5.9 still has an ancient version, but we have macros that require
@@ -847,10 +849,10 @@ case $host_os_def in
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Wconversion -Wno-sign-conversion -Wno-format-truncation"
-      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-format-truncation -Wno-noexcept-type"
+      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-format-truncation"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof"
+      cxx_opt="-Wno-invalid-offsetof -Wno-noexcept-type"
       # Special options for flex generated .c files
       flex_cflags="-Wno-unused-parameter"
     ])
@@ -2037,6 +2039,7 @@ AS_IF([test "x$RPATH" != "x"], [
 AC_CONFIG_FILES([
   Makefile
   cmd/Makefile
+  cmd/traffic_cache_tool/Makefile
   cmd/traffic_cop/Makefile
   cmd/traffic_crashlog/Makefile
   cmd/traffic_ctl/Makefile

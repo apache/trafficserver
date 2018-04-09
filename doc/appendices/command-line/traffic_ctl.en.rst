@@ -50,6 +50,8 @@ of subcommands that control different aspects of Traffic Server:
     Manipulate cache storage
 :program:`traffic_ctl plugin`
     Interact with plugins.
+:program:`traffic_ctl host`
+    Manipulate host status.  parents for now but will be expanded to origins.
 
 To use :program:`traffic_ctl`, :ref:`traffic_manager` needs to be running.
 
@@ -270,6 +272,23 @@ traffic_ctl plugin
     will receive a callback for that hook. The :arg:`TAG` and :arg:`DATA` will be available to the
     plugin hook processing. It is expected that plugins will use :arg:`TAG` to select relevant messages
     and determine the format of the :arg:`DATA`.
+
+traffic_ctl host
+----------------
+.. program:: traffic_ctl host
+.. option:: status HOSTNAME [HOSTNAME ...]
+
+    Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache heirarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
+
+.. program:: traffic_ctl host
+.. option:: down HOSTNAME [HOSTNAME ...]
+
+    Marks the listed hosts as down so that they will not be chosen as a next hop parent.
+
+.. program:: traffic_ctl host
+.. option:: up HOSTNAME [HOSTNAME ...]
+
+    Marks the listed hosts as up so that they will be available for use as a next hop parent.
 
 Examples
 ========

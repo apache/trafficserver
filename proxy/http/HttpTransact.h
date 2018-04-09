@@ -36,11 +36,10 @@
 #include "ProxyConfig.h"
 #include "Transform.h"
 #include "Milestones.h"
-//#include "HttpAuthParams.h"
 #include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
-#include <records/I_RecHttp.h>
+#include "records/I_RecHttp.h"
 
 #define MAX_DNS_LOOKUPS 2
 

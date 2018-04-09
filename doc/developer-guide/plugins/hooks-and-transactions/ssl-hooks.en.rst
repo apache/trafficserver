@@ -22,10 +22,10 @@
 TLS User Agent Hooks
 ********************
 
-In addition to the HTTP oriented hooks, a plugin can add hooks to trigger code 
+In addition to the HTTP oriented hooks, a plugin can add hooks to trigger code
 during the TLS handshake with the user agent.  This TLS handshake occurs well before
 the HTTP transaction is available, so a separate state machine is required to track the
-TLS hooks.  
+TLS hooks.
 
 TLS Hooks
 ---------
@@ -45,7 +45,7 @@ The following actions are valid from these callbacks.
   * Find SSL context by address - :c:func:`TSSslContextFindByAddr`
   * Determine whether the TSVConn is really representing a SSL connection - :c:func:`TSVConnIsSsl`
 
-TS_VCONN_PRE_ACCEPT_HOOK
+TS_VCONN_START_HOOK
 ------------------------
 
 This hook is invoked after the client has connected to ATS and before the SSL handshake is started, i.e., before any bytes have been read from the client. The data for the callback is a TSVConn instance which represents the client connection. There is no HTTP transaction as no headers have been read.
@@ -55,10 +55,15 @@ In theory this hook could apply and be useful for non-SSL connections as well, b
 The TLS handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is called either from within the hook
 callback or from another piece of code.
 
+TS_VCONN_CLOSE_HOOK
+------------------------
+
+This hook is invoked after the SSL handshake is done and when the IO is closing. The TSVConnArgs should be cleaned up here.
+
 TS_SSL_SERVERNAME_HOOK
 ----------------------
 
-This hook is called if the client provides SNI information in the SSL handshake. If called it will always be called after TS_VCONN_PRE_ACCEPT_HOOK.
+This hook is called if the client provides SNI information in the SSL handshake. If called it will always be called after TS_VCONN_START_HOOK.
 
 The Traffic Server core first evaluates the settings in the ssl_multicert.config file based on the server name. Then the core SNI callback executes the plugin registered SNI callback code. The plugin callback can access the servername by calling the openssl function SSL_get_servername().
 
@@ -72,12 +77,12 @@ This hook is called as the server certificate is selected for the TLS handshake.
 code to create or select the certificate that should be used for the TLS handshake.  This will override the default
 Traffic Server certificate selection.
 
-If you are running with openssl 1.0.2 or later, you can control whether the TLS handshake processing will 
-continue after the certificate hook callback execute by calling :c:func:`TSSslVConnReenable()` or not.  The TLS 
+If you are running with openssl 1.0.2 or later, you can control whether the TLS handshake processing will
+continue after the certificate hook callback execute by calling :c:func:`TSSslVConnReenable()` or not.  The TLS
 handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is called.
 
 It may be useful to delay the TLS handshake processing if other resources must be consulted to select or create
-a certificate. 
+a certificate.
 
 TLS Hook State Diagram
 ----------------------
@@ -86,11 +91,11 @@ TLS Hook State Diagram
    :alt: TLS Hook State Diagram
 
    digraph tls_hook_state_diagram{
-     HANDSHAKE_HOOKS_PRE -> TS_VCONN_PRE_ACCEPT_HOOK;
+     HANDSHAKE_HOOKS_PRE -> TS_VCONN_START_HOOK;
      HANDSHAKE_HOOKS_PRE -> TS_SSL_CERT_HOOK;
      HANDSHAKE_HOOKS_PRE -> TS_SSL_SERVERNAME_HOOK;
      HANDSHAKE_HOOKS_PRE -> HANDSHAKE_HOOKS_DONE;
-     TS_VCONN_PRE_ACCEPT_HOOK -> HANDSHAKE_HOOKS_PRE_INVOKE;
+     TS_VCONN_START_HOOK -> HANDSHAKE_HOOKS_PRE_INVOKE;
      HANDSHAKE_HOOKS_PRE_INVOKE -> TSSslVConnReenable;
      TSSslVConnReenable -> HANDSHAKE_HOOKS_PRE;
      TS_SSL_SERVERNAME_HOOK -> HANDSHAKE_HOOKS_SNI;
@@ -102,6 +107,7 @@ TLS Hook State Diagram
      HANDSHAKE_HOOKS_CERT_INVOKE -> TSSslVConnReenable2;
      TSSslVConnReenable2 -> HANDSHAKE_HOOKS_CERT;
      HANDSHAKE_HOOKS_CERT -> HANDSHAKE_HOOKS_DONE;
+     HANDSHAKE_HOOKS_DONE -> TS_VCONN_CLOSE_HOOK;
 
      HANDSHAKE_HOOKS_PRE [shape=box];
      HANDSHAKE_HOOKS_PRE_INVOKE [shape=box];

@@ -1529,6 +1529,8 @@ tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
 tsapi void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
 tsapi void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
 tsapi void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
+tsapi void TSVConnArgSet(TSVConn connp, int arg_idx, void *arg);
+tsapi void *TSVConnArgGet(TSVConn connp, int arg_idx);
 
 /* The reserve API should only be use in TSAPI plugins, during plugin initialization! */
 /* The lookup methods can be used anytime, but are best used during initialization as well,
@@ -1539,6 +1541,9 @@ tsapi TSReturnCode TSHttpTxnArgIndexLookup(int arg_idx, const char **name, const
 tsapi TSReturnCode TSHttpSsnArgIndexReserve(const char *name, const char *description, int *arg_idx);
 tsapi TSReturnCode TSHttpSsnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
 tsapi TSReturnCode TSHttpSsnArgIndexLookup(int arg_idx, const char **name, const char **description);
+tsapi TSReturnCode TSVConnArgIndexReserve(const char *name, const char *description, int *arg_idx);
+tsapi TSReturnCode TSVConnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
+tsapi TSReturnCode TSVConnArgIndexLookup(int arg_idx, const char **name, const char **description);
 
 /* ToDo: This is a leftover from olden days, can we eliminate? */
 tsapi void TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus);

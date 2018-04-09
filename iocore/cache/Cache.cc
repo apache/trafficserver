@@ -1396,6 +1396,7 @@ Vol::handle_dir_read(int event, void *data)
 
   if (event == AIO_EVENT_DONE) {
     if ((size_t)op->aio_result != (size_t)op->aiocb.aio_nbytes) {
+      Note("Directory read failed: clearing cache directory %s", this->hash_text.get());
       clear_dir();
       return EVENT_DONE;
     }
@@ -1752,6 +1753,7 @@ Vol::handle_header_read(int event, void *data)
       ink_assert(op != nullptr);
       i = (VolHeaderFooter *)(op->aiocb.aio_buf);
       if ((size_t)op->aio_result != (size_t)op->aiocb.aio_nbytes) {
+        Note("Header read failed: clearing cache directory %s", this->hash_text.get());
         clear_dir();
         return EVENT_DONE;
       }

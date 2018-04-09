@@ -104,7 +104,8 @@ enum ParserState {
   kParseCache,
   kParseDisallow,
   kParseFlush,
-  kParseAllow
+  kParseAllow,
+  kParseMinimumContentLength
 };
 
 void
@@ -112,6 +113,15 @@ Configuration::add_host_configuration(HostConfiguration *hc)
 {
   hc->hold(); // We hold a lease on the HostConfig while it's in this container
   host_configurations_.push_back(hc);
+}
+
+void
+HostConfiguration::update_defaults()
+{
+  // maintain backwards compatibility/usability out of the box
+  if (compressible_status_codes_.empty()) {
+    compressible_status_codes_ = {TS_HTTP_STATUS_OK, TS_HTTP_STATUS_PARTIAL_CONTENT, TS_HTTP_STATUS_NOT_MODIFIED};
+  }
 }
 
 void
@@ -194,6 +204,14 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
 }
 
 bool
+HostConfiguration::is_status_code_compressible(const TSHttpStatus status_code) const
+{
+  std::set<TSHttpStatus>::const_iterator it = compressible_status_codes_.find(status_code);
+
+  return it != compressible_status_codes_.end();
+}
+
+bool
 HostConfiguration::is_content_type_compressible(const char *content_type, int content_type_length)
 {
   string scontent_type(content_type, content_type_length);
@@ -245,6 +263,25 @@ HostConfiguration::add_compression_algorithms(string &line)
   }
 }
 
+void
+HostConfiguration::add_compressible_status_codes(string &line)
+{
+  for (;;) {
+    string token = extractFirstToken(line, isCommaOrSpace);
+    if (token.empty()) {
+      break;
+    }
+
+    uint status_code = strtoul(token.c_str(), nullptr, 10);
+    if (status_code == 0) {
+      error("Invalid status code %s", token.c_str());
+      continue;
+    }
+
+    compressible_status_codes_.insert(static_cast<TSHttpStatus>(status_code));
+  }
+}
+
 int
 HostConfiguration::compression_algorithms()
 {
@@ -268,6 +305,7 @@ Configuration::Parse(const char *path)
 
   Configuration *c                              = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
+
   c->add_host_configuration(current_host_configuration);
 
   if (pathstring.empty()) {
@@ -314,7 +352,10 @@ Configuration::Parse(const char *path)
       switch (state) {
       case kParseStart:
         if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-          std::string current_host   = token.substr(1, token.size() - 2);
+          std::string current_host = token.substr(1, token.size() - 2);
+
+          // Makes sure that any default settings are properly set, when not explicitly set via configs
+          current_host_configuration->update_defaults();
           current_host_configuration = new HostConfiguration(current_host);
           c->add_host_configuration(current_host_configuration);
         } else if (token == "compressible-content-type") {
@@ -334,6 +375,11 @@ Configuration::Parse(const char *path)
           state = kParseStart;
         } else if (token == "allow") {
           state = kParseAllow;
+        } else if (token == "compressible-status-code") {
+          current_host_configuration->add_compressible_status_codes(line);
+          state = kParseStart;
+        } else if (token == "minimum-content-length") {
+          state = kParseMinimumContentLength;
         } else {
           warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
         }
@@ -366,9 +412,16 @@ Configuration::Parse(const char *path)
         current_host_configuration->add_allow(token);
         state = kParseStart;
         break;
+      case kParseMinimumContentLength:
+        current_host_configuration->set_minimum_content_length(strtoul(token.c_str(), nullptr, 10));
+        state = kParseStart;
+        break;
       }
     }
   }
+
+  // Update the defaults for the last host configuration too, if needed.
+  current_host_configuration->update_defaults();
 
   if (state != kParseStart) {
     warning("the parser state indicates that data was expected when it reached the end of the file (%d)", state);
