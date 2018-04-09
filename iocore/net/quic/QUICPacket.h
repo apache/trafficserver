@@ -52,12 +52,15 @@ using QUICPacketHeaderUPtr        = std::unique_ptr<QUICPacketHeader, QUICPacket
 class QUICPacketHeader
 {
 public:
-  QUICPacketHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base)
-    : _buf(std::move(buf)), _buf_len(len), _base_packet_number(base)
+  QUICPacketHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+    : _from(from), _buf(std::move(buf)), _buf_len(len), _base_packet_number(base)
   {
   }
   ~QUICPacketHeader() {}
   const uint8_t *buf();
+
+  const IpEndpoint &from() const;
+
   virtual QUICPacketType type() const            = 0;
   virtual QUICConnectionId connection_id() const = 0;
   virtual QUICPacketNumber packet_number() const = 0;
@@ -108,7 +111,7 @@ public:
    *
    * This creates either a QUICPacketShortHeader or a QUICPacketLongHeader.
    */
-  static QUICPacketHeaderUPtr load(ats_unique_buf buf, size_t len, QUICPacketNumber base);
+  static QUICPacketHeaderUPtr load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
 
   /*
    * Build a QUICPacketHeader
@@ -138,6 +141,8 @@ public:
 protected:
   QUICPacketHeader(){};
 
+  const IpEndpoint _from = {};
+
   // These two are used only if the instance was created with a buffer
   ats_unique_buf _buf = {nullptr, [](void *p) { ats_free(p); }};
   size_t _buf_len     = 0;
@@ -162,7 +167,10 @@ class QUICPacketLongHeader : public QUICPacketHeader
 public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketLongHeader(){};
-  QUICPacketLongHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(std::move(buf), len, base) {}
+  QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+    : QUICPacketHeader(from, std::move(buf), len, base)
+  {
+  }
   QUICPacketLongHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                        QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf, size_t len);
   QUICPacketType type() const;
@@ -183,7 +191,10 @@ class QUICPacketShortHeader : public QUICPacketHeader
 public:
   QUICPacketShortHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketShortHeader(){};
-  QUICPacketShortHeader(ats_unique_buf buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(std::move(buf), len, base) {}
+  QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+    : QUICPacketHeader(from, std::move(buf), len, base)
+  {
+  }
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
@@ -258,6 +269,7 @@ public:
 
   ~QUICPacket();
 
+  const IpEndpoint &from() const;
   QUICPacketType type() const;
   QUICConnectionId connection_id() const;
   QUICPacketNumber packet_number() const;
@@ -338,7 +350,8 @@ class QUICPacketFactory
 public:
   static QUICPacketUPtr create_null_packet();
 
-  QUICPacketUPtr create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result);
+  QUICPacketUPtr create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
+                        QUICPacketCreationResult &result);
   QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client);
   QUICPacketUPtr create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, ats_unique_buf payload,
                                        size_t len);

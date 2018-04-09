@@ -56,6 +56,12 @@ QUICPacketHeader::buf()
   }
 }
 
+const IpEndpoint &
+QUICPacketHeader::from() const
+{
+  return this->_from;
+}
+
 uint16_t
 QUICPacketHeader::packet_size() const
 {
@@ -63,16 +69,16 @@ QUICPacketHeader::packet_size() const
 }
 
 QUICPacketHeaderUPtr
-QUICPacketHeader::load(ats_unique_buf buf, size_t len, QUICPacketNumber base)
+QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
 {
   QUICPacketHeaderUPtr header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
   if (QUICTypeUtil::has_long_header(buf.get())) {
     QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
-    new (long_header) QUICPacketLongHeader(std::move(buf), len, base);
+    new (long_header) QUICPacketLongHeader(from, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
   } else {
     QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
-    new (short_header) QUICPacketShortHeader(std::move(buf), len, base);
+    new (short_header) QUICPacketShortHeader(from, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
   }
   return header;
@@ -507,6 +513,12 @@ QUICPacket::~QUICPacket()
   this->_header = nullptr;
 }
 
+const IpEndpoint &
+QUICPacket::from() const
+{
+  return this->_header->from();
+}
+
 /**
  * When packet is "Short Header Packet", QUICPacket::type() will return 1-RTT Protected (key phase 0)
  * or 1-RTT Protected (key phase 1)
@@ -665,13 +677,14 @@ QUICPacketFactory::create_null_packet()
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create(ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result)
+QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
+                          QUICPacketCreationResult &result)
 {
   size_t max_plain_txt_len = 2048;
   ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
   size_t plain_txt_len     = 0;
 
-  QUICPacketHeaderUPtr header = QUICPacketHeader::load(std::move(buf), len, base_packet_number);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number);
 
   if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
     if (header->type() == QUICPacketType::VERSION_NEGOTIATION) {

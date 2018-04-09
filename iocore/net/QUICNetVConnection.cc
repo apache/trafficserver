@@ -922,6 +922,9 @@ QUICNetVConnection::_state_common_receive_packet()
           // TODO Address Validation
           // TODO Adjust expected packet number with a gap computed based on info.seq_num
           this->_quic_connection_id = p->connection_id();
+          Connection con;
+          con.setRemote(&p->from().sa);
+          this->con.move(con);
         } else {
           // TODO Send some error?
         }
@@ -1392,7 +1395,8 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   }
   udp_packet->free();
 
-  quic_packet = this->_packet_factory.create(std::move(pkt), written, this->largest_received_packet_number(), result);
+  quic_packet =
+    this->_packet_factory.create(udp_packet->from, std::move(pkt), written, this->largest_received_packet_number(), result);
   switch (result) {
   case QUICPacketCreationResult::NOT_READY:
     QUICConDebug("Not ready to decrypt the packet");
