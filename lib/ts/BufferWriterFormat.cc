@@ -51,7 +51,7 @@ tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
       ++start;
     }
     if (out && (start > src.data())) {
-      out->set_view(src.data(), start);
+      out->assign(src.data(), start);
     }
   }
   return zret;
