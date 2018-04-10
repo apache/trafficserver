@@ -973,22 +973,6 @@ TextView::trim_if(F const &pred)
   return this->ltrim_if(pred).rtrim_if(pred);
 }
 
-#if __GNUC__ == 6
-// The super class operators are ambiguous in GCC 6, but not in 5 or 7.
-// As best I can tell, TextView isn't recognized as a subclass of string_view in template deduction.
-bool inline
-operator==(TextView lhs, TextView rhs)
-{
-  return lhs.size() == rhs.size() && 0 == memcmp(lhs.data(), rhs.data(), lhs.size());
-}
-
-bool inline
-operator!=(TextView lhs, TextView rhs)
-{
-  return lhs.size() != rhs.size() || 0 != memcmp(lhs.data(), rhs.data(), lhs.size());
-}
-#endif
-
 inline bool
 TextView::isPrefixOf(super_type const &that) const
 {
