@@ -50,5 +50,5 @@ libhttp_remap_a_SOURCES = \
   UrlRewrite.cc \
   UrlRewrite.h
 
-tidy-local: $(libhttp_remap_a_SOURCES)
+clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)

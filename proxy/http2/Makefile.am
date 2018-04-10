@@ -99,6 +99,6 @@ test_HPACK_SOURCES = \
   HPACK.cc \
   HPACK.h
 
-tidy-local: $(libhttp2_a_SOURCES) $(test_Huffmancode_SOURCES) \
+clang-tidy-local: $(libhttp2_a_SOURCES) $(test_Huffmancode_SOURCES) \
 		$(test_Http2DependencyTree_SOURCES) $(test_HPACK_SOURCES)
 	$(CXX_Clang_Tidy)

@@ -44,5 +44,5 @@ libdiagsconfig_a_SOURCES = \
 libUglyLogStubs_a_SOURCES = \
   UglyLogStubs.cc
 
-tidy-local: $(libdiagsconfig_a_SOURCES) $(libUglyLogStubs_a_SOURCES)
+clang-tidy-local: $(libdiagsconfig_a_SOURCES) $(libUglyLogStubs_a_SOURCES)
 	$(CXX_Clang_Tidy)

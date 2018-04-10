@@ -71,5 +71,5 @@ librecords_cop_a_SOURCES = \
   RecFile.cc \
   RecDebug.cc
 
-tidy-local: $(sort $(DIST_SOURCES))
+clang-tidy-local: $(sort $(DIST_SOURCES))
 	$(CXX_Clang_Tidy)
