@@ -202,7 +202,7 @@ acme_process_write(TSCont contp, TSEvent event, AcmeState *my_state)
     char buf[64]; /* Plenty of space for CL: header */
     int len;
 
-    len = snprintf(buf, sizeof(buf), "Content-Length: %zd\r\n\r\n", my_state->stat_buf.st_size);
+    len = snprintf(buf, sizeof(buf), "Content-Length: %zd\r\n\r\n", (size_t)my_state->stat_buf.st_size);
     my_state->output_bytes += add_data_to_resp(buf, len, my_state);
     my_state->output_bytes += add_file_to_resp(my_state);
 
