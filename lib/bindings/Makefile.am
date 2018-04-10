@@ -36,5 +36,5 @@ libbindings_la_SOURCES = \
   repl.cc \
   repl.h
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

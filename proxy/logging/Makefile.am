@@ -96,5 +96,5 @@ test_LogUtils_LDADD = \
 test_LogUtils_SOURCES = \
   test_LogUtils.cc
 
-tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
+clang-tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)

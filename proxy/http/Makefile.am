@@ -97,7 +97,7 @@ test_ForwardedConfig_SOURCES = \
 test_ForwardedConfig_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la
 
-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
+clang-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)
 
 #test_UNUSED_SOURCES = \

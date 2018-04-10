@@ -277,7 +277,7 @@ endif
 
 versiondir = $(pkgsysconfdir)
 
-tidy-local: $(noinst_HEADERS) $(traffic_server_SOURCES)
+clang-tidy-local: $(noinst_HEADERS) $(traffic_server_SOURCES)
 	$(CXX_Clang_Tidy)
 
 install-data-local:

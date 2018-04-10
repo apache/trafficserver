@@ -84,5 +84,5 @@ traffic_api_cli_remote_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTCL@ @OPENSSL_LIBS@
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
