@@ -937,7 +937,7 @@ QUICPacketNumber
 QUICPacketNumberGenerator::randomize()
 {
   std::random_device rnd;
-  this->_current = rnd() & 0x7FFFFFFF;
+  this->_current = (rnd() & 0xFFFFFFFF) - 1024;
 
   return this->_current;
 }
