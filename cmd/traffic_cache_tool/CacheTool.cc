@@ -730,7 +730,7 @@ Span::loadDevice()
           }
           _len = _header->num_blocks;
         } else {
-          zret = Errata::Message(0, 0, "Span header for ", _path, " is invalid");
+          std::cout << "Span: " << _path << " header is uninitialized or invalid" << std::endl;
           _len = round_down(_geometry.totalsz) - _base;
         }
         // valid FD means the device is accessible and has enough storage to be configured.
