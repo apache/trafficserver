@@ -147,6 +147,7 @@ Cache Details
 
 .. _cluc:
 .. _crc:
+.. _crsc:
 .. _chm:
 .. _cwr:
 .. _cwtr:
@@ -162,6 +163,8 @@ cluc  Client Request Cache Lookup URL, also known as the :term:`cache key`,
                      URL.
 crc   Proxy Cache    Cache Result Code. The result of |TS| attempting to obtain
                      the object from cache; :ref:`admin-logging-cache-results`.
+crsc  Proxy Cache    Cache Result Sub-Code. More specific code to complement the
+                     Cache Result Code.
 chm   Proxy Cache    Cache Hit-Miss status. Specifies the level of cache from
                      which this request was served by |TS|. Currently supports
                      only RAM (``HIT_RAM``) vs disk (``HIT_DISK``).
