@@ -146,6 +146,8 @@ char *_xstrdup(const char *str, int length, const char *path);
 
 #ifdef __cplusplus
 
+#include <memory>
+
 // this is to help with migration to a std::string issue with older code that
 // expects char* being copied. As more code moves to std::string, this can be
 // removed to avoid these extra copies.
