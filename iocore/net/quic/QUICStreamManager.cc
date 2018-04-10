@@ -345,7 +345,20 @@ QUICStreamManager::generate_frame(uint16_t connection_credit, uint16_t maximum_f
 {
   // FIXME We should pick a stream based on priority
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  // Stream 0 must be prioritized over other streams
+  QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
+  if (stream) {
+    frame = stream->generate_frame(connection_credit, maximum_frame_size);
+    if (frame) {
+      return frame;
+    }
+  }
+
   for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+    if (s->id() == STREAM_ID_FOR_HANDSHAKE) {
+      continue;
+    }
     frame = s->generate_frame(connection_credit, maximum_frame_size);
     if (frame) {
       break;
