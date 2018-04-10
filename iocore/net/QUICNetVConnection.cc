@@ -624,8 +624,6 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
     this->_state_closing_send_packet();
-    // Reschedule WRITE_READY
-    this->_schedule_packet_write_ready(true);
     break;
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_close_path_validation_timeout(data);
@@ -1045,6 +1043,10 @@ QUICNetVConnection::_state_handshake_send_retry_packet()
 QUICErrorUPtr
 QUICNetVConnection::_state_closing_send_packet()
 {
+  this->_packetize_closing_frame();
+
+  // TODO: should credit of congestion controller be checked?
+
   // During the closing period, an endpoint that sends a
   // closing frame SHOULD respond to any packet that it receives with
   // another packet containing a closing frame.  To minimize the state
@@ -1094,22 +1096,9 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   frame->store(buf.get() + len, &l);
   len += l;
 
-  if (frame->type() == QUICFrameType::CONNECTION_CLOSE || frame->type() == QUICFrameType::APPLICATION_CLOSE) {
-    this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
-    retransmittable = false;
-    len             = 0;
-    buf             = ats_unique_malloc(max_size);
-    frame->store(buf.get(), &l);
-    this->_the_final_packet = this->_build_packet(std::move(buf), l, false);
-  }
-
   return;
 }
 
-// 1. Dequeue frame from _stream_frame_send_queue and _frame_send_queue
-// 2. Put frames into buffer as many as possible
-// 3. Build packet with the buffer
-// 4. Enqueue the packet via transmit_packet
 void
 QUICNetVConnection::_packetize_frames()
 {
@@ -1146,25 +1135,10 @@ QUICNetVConnection::_packetize_frames()
   while (frame) {
     ++frame_count;
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
-    if (this->_the_final_packet) {
-      return;
-    }
     if (frame_count >= FRAME_PER_EVENT) {
       break;
     }
     frame = this->_path_validator->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
-  }
-
-  // CONNECTION_CLOSE, APPLICATION_CLOSE
-  if (this->_connection_error) {
-    QUICFrameUPtr frame = QUICFrameFactory::create_null_ack_frame();
-    if (this->_connection_error->cls == QUICErrorClass::APPLICATION) {
-      frame = QUICFrameFactory::create_application_close_frame(std::move(this->_connection_error));
-    } else {
-      frame = QUICFrameFactory::create_connection_close_frame(std::move(this->_connection_error));
-    }
-    ++frame_count;
-    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
   }
 
   // NEW_CONNECTION_ID
@@ -1174,9 +1148,6 @@ QUICNetVConnection::_packetize_frames()
     while (frame) {
       ++frame_count;
       this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
-      if (this->_the_final_packet) {
-        return;
-      }
       if (frame_count >= FRAME_PER_EVENT) {
         break;
       }
@@ -1191,9 +1162,6 @@ QUICNetVConnection::_packetize_frames()
   while (frame) {
     ++frame_count;
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
-    if (this->_the_final_packet) {
-      return;
-    }
     if (frame_count >= FRAME_PER_EVENT) {
       break;
     }
@@ -1215,9 +1183,7 @@ QUICNetVConnection::_packetize_frames()
       this->_stream_manager->add_total_offset_sent(frame_size);
     }
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
-    if (this->_the_final_packet) {
-      return;
-    }
+
     if (frame_count >= FRAME_PER_EVENT) {
       break;
     }
@@ -1235,6 +1201,32 @@ QUICNetVConnection::_packetize_frames()
     }
     this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, current_packet_type));
   }
+}
+
+void
+QUICNetVConnection::_packetize_closing_frame()
+{
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
+
+  if (this->_connection_error == nullptr) {
+    return;
+  }
+
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_ack_frame();
+  if (this->_connection_error->cls == QUICErrorClass::APPLICATION) {
+    frame = QUICFrameFactory::create_application_close_frame(std::move(this->_connection_error));
+  } else {
+    frame = QUICFrameFactory::create_connection_close_frame(std::move(this->_connection_error));
+  }
+
+  ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
+  size_t len                         = 0;
+  bool retransmittable               = false;
+  QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
+  this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+
+  this->_the_final_packet = this->_build_packet(std::move(buf), len, false);
 }
 
 QUICErrorUPtr
@@ -1635,6 +1627,7 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
     QUICConDebug("Reason was not provided");
   }
   this->_connection_error = std::move(error);
+  this->_schedule_packet_write_ready();
 
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
@@ -1647,7 +1640,6 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   // This states SHOULD persist for three times the
   // current Retransmission Timeout (RTO) interval as defined in
   // [QUIC-RECOVERY].
-
   this->_schedule_closing_timeout(3 * rto);
 }
 

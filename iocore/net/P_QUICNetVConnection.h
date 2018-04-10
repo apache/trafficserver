@@ -286,6 +286,7 @@ private:
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                     QUICFrameUPtr frame);
   void _packetize_frames();
+  void _packetize_closing_frame();
   QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
 
