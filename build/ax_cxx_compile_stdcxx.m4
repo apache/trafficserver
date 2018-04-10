@@ -60,38 +60,6 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX], [dnl
         [m4_fatal([invalid third argument `$3' to AX_CXX_COMPILE_STDCXX])])
   AC_LANG_PUSH([C++])dnl
   ac_success=no
-  AC_CACHE_CHECK(whether $CXX supports C++$1 features by default,
-  ax_cv_cxx_compile_cxx$1,
-  [AC_COMPILE_IFELSE([AC_LANG_SOURCE([_AX_CXX_COMPILE_STDCXX_testbody_$1])],
-    [ax_cv_cxx_compile_cxx$1=yes],
-    [ax_cv_cxx_compile_cxx$1=no])])
-  if test x$ax_cv_cxx_compile_cxx$1 = xyes; then
-    ac_success=yes
-  fi
-
-  m4_if([$2], [noext], [], [dnl
-  if test x$ac_success = xno; then
-    for alternative in ${ax_cxx_compile_alternatives}; do
-      switch="-std=gnu++${alternative}"
-      cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx$1_$switch])
-      AC_CACHE_CHECK(whether $CXX supports C++$1 features with $switch,
-                     $cachevar,
-        [ac_save_CXX="$CXX"
-         CXX="$CXX $switch"
-         AC_COMPILE_IFELSE([AC_LANG_SOURCE([_AX_CXX_COMPILE_STDCXX_testbody_$1])],
-          [eval $cachevar=yes],
-          [eval $cachevar=no])
-         CXX="$ac_save_CXX"])
-      if eval test x\$$cachevar = xyes; then
-        CXX="$CXX $switch"
-        if test -n "$CXXCPP" ; then
-          CXXCPP="$CXXCPP $switch"
-        fi
-        ac_success=yes
-        break
-      fi
-    done
-  fi])
 
   m4_if([$2], [ext], [], [dnl
   if test x$ac_success = xno; then
