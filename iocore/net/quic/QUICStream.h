@@ -75,6 +75,7 @@ public:
   QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamFrame> frame);
   QUICErrorUPtr recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
   QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
+  QUICErrorUPtr recv(const std::shared_ptr<const QUICStopSendingFrame> frame);
 
   void reset(QUICStreamErrorUPtr error);
   void shutdown();

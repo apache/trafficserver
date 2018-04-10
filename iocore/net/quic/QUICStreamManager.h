@@ -68,6 +68,7 @@ private:
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &);
+  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStopSendingFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);

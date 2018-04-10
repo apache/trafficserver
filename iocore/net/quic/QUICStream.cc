@@ -357,6 +357,15 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame)
   return QUICErrorUPtr(new QUICNoError());
 }
 
+QUICErrorUPtr
+QUICStream::recv(const std::shared_ptr<const QUICStopSendingFrame> frame)
+{
+  this->_state.update_with_received_frame(*frame);
+  this->_reset_reason = QUICStreamErrorUPtr(new QUICStreamError(this, QUIC_APP_ERROR_CODE_STOPPING));
+  // We received and processed STOP_SENDING frame, so return NO_ERROR here
+  return QUICErrorUPtr(new QUICNoError());
+}
+
 bool
 QUICStream::will_generate_frame()
 {

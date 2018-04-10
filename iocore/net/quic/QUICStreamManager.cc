@@ -40,7 +40,8 @@ std::vector<QUICFrameType>
 QUICStreamManager::interests()
 {
   return {
-    QUICFrameType::STREAM, QUICFrameType::RST_STREAM, QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAM_ID,
+    QUICFrameType::STREAM,          QUICFrameType::RST_STREAM,    QUICFrameType::STOP_SENDING,
+    QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAM_ID,
   };
 }
 
@@ -124,6 +125,9 @@ QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
   case QUICFrameType::STREAM:
     error = this->_handle_frame(std::static_pointer_cast<const QUICStreamFrame>(frame));
     break;
+  case QUICFrameType::STOP_SENDING:
+    error = this->_handle_frame(std::static_pointer_cast<const QUICStopSendingFrame>(frame));
+    break;
   case QUICFrameType::RST_STREAM:
     error = this->_handle_frame(std::static_pointer_cast<const QUICRstStreamFrame>(frame));
     break;
@@ -186,6 +190,17 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICRstStreamFrame>
   if (stream) {
     // TODO Reset the stream
     return QUICErrorUPtr(new QUICNoError());
+  } else {
+    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+  }
+}
+
+QUICErrorUPtr
+QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStopSendingFrame> &frame)
+{
+  QUICStream *stream = this->_find_or_create_stream(frame->stream_id());
+  if (stream) {
+    return stream->recv(frame);
   } else {
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
   }
