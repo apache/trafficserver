@@ -50,7 +50,9 @@
 
 HQClientTransaction::HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
 {
-  this->mutex = new_ProxyMutex();
+  this->mutex   = new_ProxyMutex();
+  this->_thread = this_ethread();
+
   this->set_parent(session);
   this->sm_reader = this->_read_vio_buf.alloc_reader();
   static_cast<HQClientSession *>(this->parent)->add_transaction(this);
@@ -119,6 +121,21 @@ HQClientTransaction::state_stream_open(int event, void *edata)
 {
   // TODO: should check recursive call?
   HQTransDebug("%s (%d)", get_vc_event_name(event), event);
+
+  if (this->_thread != this_ethread()) {
+    // Send on to the owning thread
+    if (this->_cross_thread_event == nullptr) {
+      this->_cross_thread_event = this->_thread->schedule_imm(this, event, edata);
+    }
+    return 0;
+  }
+
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+
+  Event *e = static_cast<Event *>(edata);
+  if (e == this->_cross_thread_event) {
+    this->_cross_thread_event = nullptr;
+  }
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -374,6 +391,15 @@ HQClientTransaction::_process_read_vio()
     return 0;
   }
 
+  if (this->_thread != this_ethread()) {
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    if (this->_cross_thread_event == nullptr) {
+      // Send to the right thread
+      this->_cross_thread_event = this->_thread->schedule_imm(this, VC_EVENT_READ_READY, nullptr);
+    }
+    return 0;
+  }
+
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
 
   IOBufferReader *client_vio_reader = this->_stream_io->get_read_buffer_reader();
@@ -441,6 +467,15 @@ int64_t
 HQClientTransaction::_process_write_vio()
 {
   if (this->_write_vio._cont == nullptr || this->_write_vio.op == VIO::NONE) {
+    return 0;
+  }
+
+  if (this->_thread != this_ethread()) {
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    if (this->_cross_thread_event == nullptr) {
+      // Send to the right thread
+      this->_cross_thread_event = this->_thread->schedule_imm(this, VC_EVENT_WRITE_READY, nullptr);
+    }
     return 0;
   }
 

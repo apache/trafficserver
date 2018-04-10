@@ -74,6 +74,9 @@ private:
   int64_t _process_read_vio();
   int64_t _process_write_vio();
 
+  EThread *_thread           = nullptr;
+  Event *_cross_thread_event = nullptr;
+
   MIOBuffer _read_vio_buf  = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   QUICStreamIO *_stream_io = nullptr;
 
