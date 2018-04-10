@@ -59,6 +59,9 @@ static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
 static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(20);
 static constexpr int FRAME_PER_EVENT                  = 64;
 
+static constexpr uint32_t STATE_CLOSING_MAX_SEND_PKT_NUM  = 8; // Max number of sending packets which contain a closing frame.
+static constexpr uint32_t STATE_CLOSING_MAX_RECV_PKT_WIND = 1 << STATE_CLOSING_MAX_SEND_PKT_NUM;
+
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 // XXX This might be called on ET_UDP thread
@@ -619,7 +622,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
-    error = this->_state_connection_closing_and_draining_receive_packet();
+    error = this->_state_closing_receive_packet();
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
@@ -649,7 +652,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY:
-    error = this->_state_connection_closing_and_draining_receive_packet();
+    error = this->_state_draining_receive_packet();
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     // Do not send any packets in this state.
@@ -964,18 +967,40 @@ QUICNetVConnection::_state_common_receive_packet()
 }
 
 QUICErrorUPtr
-QUICNetVConnection::_state_connection_closing_and_draining_receive_packet()
+QUICNetVConnection::_state_closing_receive_packet()
 {
-  QUICPacketCreationResult result;
-  QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
-  if (result == QUICPacketCreationResult::SUCCESS) {
-    this->_recv_and_ack(std::move(packet));
-    this->_schedule_packet_write_ready(true);
+  while (this->_packet_recv_queue.size > 0) {
+    QUICPacketCreationResult result;
+    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+    if (result == QUICPacketCreationResult::SUCCESS) {
+      this->_recv_and_ack(std::move(packet));
+    }
+    ++this->_state_closing_recv_packet_count;
+
+    if (this->_state_closing_recv_packet_window < STATE_CLOSING_MAX_RECV_PKT_WIND &&
+        this->_state_closing_recv_packet_count >= this->_state_closing_recv_packet_window) {
+      this->_state_closing_recv_packet_count = 0;
+      this->_state_closing_recv_packet_window <<= 1;
+
+      this->_schedule_packet_write_ready(true);
+      break;
+    }
   }
 
-  if (this->_packet_recv_queue.size > 0) {
-    // FIXME: scheduling new event to ensure the closed frame could be sent.
-    this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10), QUIC_EVENT_PACKET_READ_READY);
+  return QUICErrorUPtr(new QUICNoError());
+}
+
+QUICErrorUPtr
+QUICNetVConnection::_state_draining_receive_packet()
+{
+  while (this->_packet_recv_queue.size > 0) {
+    QUICPacketCreationResult result;
+    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+    if (result == QUICPacketCreationResult::SUCCESS) {
+      this->_recv_and_ack(std::move(packet));
+      // Do NOT schedule WRITE_READY event from this point.
+      // An endpoint in the draining state MUST NOT send any packets.
+    }
   }
 
   return QUICErrorUPtr(new QUICNoError());

@@ -259,7 +259,9 @@ private:
   CountQueue<QUICPacket> _packet_send_queue;
   std::queue<QUICPacketUPtr> _quic_packet_recv_queue;
 
-  QUICConnectionErrorUPtr _connection_error = nullptr;
+  QUICConnectionErrorUPtr _connection_error  = nullptr;
+  uint32_t _state_closing_recv_packet_count  = 0;
+  uint32_t _state_closing_recv_packet_window = 1;
 
   void _schedule_packet_write_ready(bool delay = false);
   void _unschedule_packet_write_ready();
@@ -300,7 +302,8 @@ private:
   QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_connection_established_process_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_common_receive_packet();
-  QUICErrorUPtr _state_connection_closing_and_draining_receive_packet();
+  QUICErrorUPtr _state_closing_receive_packet();
+  QUICErrorUPtr _state_draining_receive_packet();
   QUICErrorUPtr _state_common_send_packet();
   QUICErrorUPtr _state_handshake_send_retry_packet();
   QUICErrorUPtr _state_closing_send_packet();
