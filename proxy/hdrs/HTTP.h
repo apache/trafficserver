@@ -160,6 +160,12 @@ enum SquidLogCode {
   SQUID_LOG_ERR_UNKNOWN               = 'Z'
 };
 
+// squild log subcodes
+enum SquidSubcode {
+  SQUID_SUBCODE_EMPTY                     = '0',
+  SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED = '1',
+};
+
 /* squid hieratchy codes */
 enum SquidHierarchyCode {
   SQUID_HIER_EMPTY                           = '0',

@@ -26,7 +26,8 @@ In addition to recording information about client and origin requests and
 responses, |TS| exposes detailed information about cache interactions for every
 request which passes through a node. This information is incredibly important
 to establishing an efficient caching configuration, though it is only present
-in your logging output if the :ref:`crc <crc>` logging field is used.
+in your logging output if the :ref:`crc <crc>` logging field is used. For even
+more detail, see :ref:`crsc <crsc>`.
 
 Interpreting Cache Results
 ==========================
@@ -239,3 +240,21 @@ ERR_UNKNOWN
 
 The client connected, but subsequently disconnected without sending
 a request.
+
+.. _admin-logging-crsc:
+
+Cache Result Sub-Codes
+======================
+
+The following are all possible cache result sub-codes you will currently
+encounter in |TS| logging output, and what each one means. These sub-codes can
+offer more specific details that are not exposed in cache result codes.
+
+.. _crsc-num-redirects-exceeded:
+
+NUM_REDIRECTIONS_EXCEEDED
+-------------------------
+
+The origin server responded with a redirect, but following this redirect would
+exceed the configured maximum number of redirects allowed:
+:ts:cv:`proxy.config.http.number_of_redirections`

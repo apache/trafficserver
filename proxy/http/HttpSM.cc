@@ -1610,6 +1610,8 @@ HttpSM::handle_api_return()
         (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
       ++redirection_tries;
       do_redirect();
+    } else if (redirection_tries > t_state.txn_conf->number_of_redirections) {
+      t_state.squid_codes.subcode = SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED;
     }
     // we have further processing to do
     //  based on what t_state.next_action is

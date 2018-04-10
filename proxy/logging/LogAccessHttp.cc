@@ -971,6 +971,19 @@ LogAccessHttp::marshal_cache_result_code(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_cache_result_subcode(char *buf)
+{
+  if (buf) {
+    SquidSubcode code = m_http_sm->t_state.squid_codes.subcode;
+    marshal_int(buf, (int64_t)code);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_cache_hit_miss(char *buf)
 {
   if (buf) {

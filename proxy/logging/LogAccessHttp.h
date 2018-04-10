@@ -93,6 +93,7 @@ public:
   int marshal_proxy_resp_status_code(char *) override;   // INT
   int marshal_proxy_finish_status_code(char *) override; // INT
   int marshal_cache_result_code(char *) override;        // INT
+  int marshal_cache_result_subcode(char *) override;     // INT
   int marshal_cache_hit_miss(char *) override;           // INT
 
   //
