@@ -43,7 +43,7 @@ enum MatcherOps {
 class Matcher
 {
 public:
-  explicit Matcher(const MatcherOps op) : _pdata(NULL), _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
+  explicit Matcher(const MatcherOps op) : _pdata(nullptr), _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
   virtual ~Matcher()
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher");
@@ -64,7 +64,7 @@ public:
   free_pdata()
   {
     TSfree(_pdata);
-    _pdata = NULL;
+    _pdata = nullptr;
   }
 
 protected:

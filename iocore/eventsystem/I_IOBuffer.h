@@ -935,7 +935,7 @@ public:
   buf()
   {
     IOBufferBlock *b = first_write_block();
-    return b ? b->buf() : 0;
+    return b ? b->buf() : nullptr;
   }
 
   char *

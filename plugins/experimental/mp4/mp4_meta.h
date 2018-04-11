@@ -311,18 +311,18 @@ typedef struct {
 class BufferHandle
 {
 public:
-  BufferHandle() : buffer(NULL), reader(NULL){};
+  BufferHandle() : buffer(nullptr), reader(nullptr){};
 
   ~BufferHandle()
   {
     if (reader) {
       TSIOBufferReaderFree(reader);
-      reader = NULL;
+      reader = nullptr;
     }
 
     if (buffer) {
       TSIOBufferDestroy(buffer);
-      buffer = NULL;
+      buffer = nullptr;
     }
   }
 
@@ -426,12 +426,12 @@ public:
 
     if (meta_reader) {
       TSIOBufferReaderFree(meta_reader);
-      meta_reader = NULL;
+      meta_reader = nullptr;
     }
 
     if (meta_buffer) {
       TSIOBufferDestroy(meta_buffer);
-      meta_buffer = NULL;
+      meta_buffer = nullptr;
     }
   }
 

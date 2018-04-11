@@ -68,8 +68,9 @@ public:
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) override;
 
   // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
 
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
@@ -105,10 +106,10 @@ public:
     // Make sure the vio's are also released to avoid
     // later surprises in inactivity timeout
     if (client_vc) {
-      client_vc->do_io_read(NULL, 0, NULL);
-      client_vc->do_io_write(NULL, 0, NULL);
-      client_vc->set_action(NULL);
-      client_vc = NULL;
+      client_vc->do_io_read(nullptr, 0, nullptr);
+      client_vc->do_io_write(nullptr, 0, nullptr);
+      client_vc->set_action(nullptr);
+      client_vc = nullptr;
     }
   }
 

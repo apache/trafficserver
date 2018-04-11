@@ -197,7 +197,7 @@ public:
       initialization order issues. It is important to pick up data that is read
       from the config file and a static is initialized long before that point.
   */
-  HttpSessionAccept(Options const &opt = Options()) : SessionAccept(NULL), detail::HttpSessionAcceptOptions(opt) // copy these.
+  HttpSessionAccept(Options const &opt = Options()) : SessionAccept(nullptr), detail::HttpSessionAcceptOptions(opt) // copy these.
   {
     SET_HANDLER(&HttpSessionAccept::mainEvent);
     return;

@@ -39,7 +39,7 @@ struct ProtocolProbeSessionAcceptEnums {
 class ProtocolProbeSessionAccept : public SessionAccept, public ProtocolProbeSessionAcceptEnums
 {
 public:
-  ProtocolProbeSessionAccept() : SessionAccept(NULL)
+  ProtocolProbeSessionAccept() : SessionAccept(nullptr)
   {
     memset(endpoint, 0, sizeof(endpoint));
     SET_HANDLER(&ProtocolProbeSessionAccept::mainEvent);

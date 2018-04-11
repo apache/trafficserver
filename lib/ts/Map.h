@@ -242,7 +242,7 @@ const uintptr_t open_hash_primes[256] = {
 
 /* IMPLEMENTATION */
 
-template <class C, class A, int S> inline Vec<C, A, S>::Vec() : n(0), i(0), v(0)
+template <class C, class A, int S> inline Vec<C, A, S>::Vec() : n(0), i(0), v(nullptr)
 {
   memset(static_cast<void *>(&e[0]), 0, sizeof(e));
 }
@@ -332,7 +332,7 @@ Vec<C, A, S>::set_add(C a)
   if (n < SET_LINEAR_SIZE) {
     for (C *c = v; c < v + n; c++)
       if (*c == a)
-        return 0;
+        return nullptr;
     add(a);
     return &v[n - 1];
   }
@@ -375,7 +375,7 @@ Vec<C, A, S>::in(C a)
   for (C *c = v; c < v + n; c++)
     if (*c == a)
       return c;
-  return NULL;
+  return nullptr;
 }
 
 template <class C, class A, int S>
@@ -438,7 +438,7 @@ inline void
 Vec<C, A, S>::move(Vec<C, A, S> &vv)
 {
   move_internal(vv);
-  vv.v = 0;
+  vv.v = nullptr;
   vv.clear();
 }
 
@@ -455,7 +455,7 @@ Vec<C, A, S>::copy(const Vec<C, A, S> &vv)
     if (vv.v)
       copy_internal(vv);
     else
-      v = 0;
+      v = nullptr;
   }
 }
 
@@ -529,7 +529,7 @@ Vec<C, A, S>::set_add_internal(C c)
         v[k] = c;
         return &v[k];
       } else if (v[k] == c) {
-        return 0;
+        return nullptr;
       }
       k = (k + open_hash_primes[j]) % n;
     }
@@ -553,13 +553,13 @@ Vec<C, A, S>::set_in_internal(C c)
     h           = h % n;
     for (k = h, j = 0; j < i + 3; j++) {
       if (!v[k])
-        return 0;
+        return nullptr;
       else if (v[k] == c)
         return &v[k];
       k = (k + open_hash_primes[j]) % n;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 template <class C, class A, int S>
@@ -846,7 +846,7 @@ template <class C, class A, int S>
 inline void
 Vec<C, A, S>::reset()
 {
-  v = NULL;
+  v = nullptr;
   n = 0;
   i = 0;
 }
@@ -1125,7 +1125,7 @@ typedef const char cchar;
 
 template <class A>
 static inline char *
-_dupstr(cchar *s, cchar *e = 0)
+_dupstr(cchar *s, cchar *e = nullptr)
 {
   int l    = e ? e - s : strlen(s);
   char *ss = (char *)A::alloc(l + 1);
@@ -1573,24 +1573,24 @@ inline MapElem<K, C> *
 HashMap<K, AHashFns, C, A>::get_internal(K akey) const
 {
   if (!n)
-    return 0;
+    return nullptr;
   if (n <= MAP_INTEGRAL_SIZE) {
     for (MapElem<K, C> *c = v; c < v + n; c++)
       if (c->key)
         if (AHashFns::equal(akey, c->key))
           return c;
-    return 0;
+    return nullptr;
   }
   uintptr_t h = AHashFns::hash(akey);
   h           = h % n;
   for (size_t k = h, j = 0; j < i + 3; j++) {
     if (!v[k].key)
-      return 0;
+      return nullptr;
     else if (AHashFns::equal(akey, v[k].key))
       return &v[k];
     k = (k + open_hash_primes[j]) % n;
   }
-  return 0;
+  return nullptr;
 }
 
 template <class K, class AHashFns, class C, class A>
@@ -1813,7 +1813,7 @@ public:
     size_t m_distance; ///< How many values in the chain we've gone past to get here.
 
     /// Default constructor - empty location.
-    Location() : m_value(nullptr), m_bucket(NULL), m_id(0), m_distance(0) {}
+    Location() : m_value(nullptr), m_bucket(nullptr), m_id(0), m_distance(0) {}
     /// Check for location being valid (referencing a value).
     bool
     isValid() const
@@ -2028,7 +2028,7 @@ template <typename H>
 typename TSHashTable<H>::iterator
 TSHashTable<H>::end()
 {
-  return iterator(0, 0);
+  return iterator(nullptr, nullptr);
 }
 
 template <typename H> typename TSHashTable<H>::iterator &TSHashTable<H>::iterator::operator++()
@@ -2094,7 +2094,7 @@ TSHashTable<H>::find(Key key)
   this->findBucket(key, zret); // zret gets updated to match the bucket.
   v = zret.m_bucket->m_chain.head;
   // Search for first matching key.
-  while (0 != v && !Hasher::equal(key, Hasher::key(v)))
+  while (nullptr != v && !Hasher::equal(key, Hasher::key(v)))
     v          = ListHead::next(v);
   zret.m_value = v;
   return zret;

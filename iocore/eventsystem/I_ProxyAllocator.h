@@ -41,7 +41,7 @@ struct ProxyAllocator {
   int allocated;
   void *freelist;
 
-  ProxyAllocator() : allocated(0), freelist(0) {}
+  ProxyAllocator() : allocated(0), freelist(nullptr) {}
 };
 
 template <class C>

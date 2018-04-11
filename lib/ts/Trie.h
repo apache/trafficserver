@@ -169,7 +169,7 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
 {
   _CheckArgs(key, key_len);
 
-  const Node *found_node = 0;
+  const Node *found_node = nullptr;
   const Node *curr_node  = &m_root;
   int i                  = 0;
 

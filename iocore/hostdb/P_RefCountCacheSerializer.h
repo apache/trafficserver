@@ -117,7 +117,7 @@ template <class C> RefCountCacheSerializer<C>::~RefCountCacheSerializer()
 
   // Note that we have to do the unlink before we send the completion event, otherwise
   // we could unlink the sync file out from under another serializer.
-  cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, 0);
+  cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, nullptr);
 }
 
 template <class C>

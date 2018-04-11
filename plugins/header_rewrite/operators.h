@@ -57,7 +57,7 @@ private:
 class OperatorSetStatus : public Operator
 {
 public:
-  OperatorSetStatus() : _reason(NULL), _reason_len(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatus"); }
+  OperatorSetStatus() : _reason(nullptr), _reason_len(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatus"); }
   void initialize(Parser &p);
 
 protected:

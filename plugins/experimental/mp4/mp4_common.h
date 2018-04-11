@@ -33,18 +33,18 @@
 class IOHandle
 {
 public:
-  IOHandle() : vio(NULL), buffer(NULL), reader(NULL){};
+  IOHandle() : vio(nullptr), buffer(nullptr), reader(nullptr){};
 
   ~IOHandle()
   {
     if (reader) {
       TSIOBufferReaderFree(reader);
-      reader = NULL;
+      reader = nullptr;
     }
 
     if (buffer) {
       TSIOBufferDestroy(buffer);
-      buffer = NULL;
+      buffer = nullptr;
     }
   }
 
@@ -103,13 +103,13 @@ public:
 class Mp4Context
 {
 public:
-  Mp4Context(float s) : start(s), cl(0), mtc(NULL), transform_added(false){};
+  Mp4Context(float s) : start(s), cl(0), mtc(nullptr), transform_added(false){};
 
   ~Mp4Context()
   {
     if (mtc) {
       delete mtc;
-      mtc = NULL;
+      mtc = nullptr;
     }
   }
 

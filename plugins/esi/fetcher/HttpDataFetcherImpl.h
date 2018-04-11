@@ -42,7 +42,7 @@ public:
 
   void useHeaders(const EsiLib::HttpHeaderList &headers);
 
-  bool addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = 0);
+  bool addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = nullptr);
 
   bool handleFetchEvent(TSEvent event, void *edata);
 
@@ -74,12 +74,12 @@ public:
     TSMBuffer bufp;
     TSMLoc hdr_loc;
     TSHttpStatus status;
-    ResponseData() { set(0, 0, 0, 0, TS_HTTP_STATUS_NONE); }
+    ResponseData() { set(nullptr, 0, nullptr, nullptr, TS_HTTP_STATUS_NONE); }
     inline void set(const char *c, int clen, TSMBuffer b, TSMLoc loc, TSHttpStatus s);
     void
     clear()
     {
-      set(0, 0, 0, 0, TS_HTTP_STATUS_NONE);
+      set(nullptr, 0, nullptr, nullptr, TS_HTTP_STATUS_NONE);
     }
   };
 
@@ -119,7 +119,9 @@ private:
     TSMBuffer bufp;
     TSMLoc hdr_loc;
 
-    RequestData() : body(0), body_len(0), resp_status(TS_HTTP_STATUS_NONE), complete(false), bufp(0), hdr_loc(0) {}
+    RequestData() : body(nullptr), body_len(0), resp_status(TS_HTTP_STATUS_NONE), complete(false), bufp(nullptr), hdr_loc(nullptr)
+    {
+    }
   };
 
   typedef __gnu_cxx::hash_map<std::string, RequestData, EsiLib::StringHasher> UrlToContentMap;

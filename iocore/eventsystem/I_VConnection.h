@@ -200,7 +200,7 @@ public:
     @return VIO representing the scheduled IO operation.
 
   */
-  virtual VIO *do_io_read(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) = 0;
+  virtual VIO *do_io_read(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) = 0;
 
   /**
     Write data to the VConnection.
@@ -250,7 +250,8 @@ public:
     @return VIO representing the scheduled IO operation.
 
   */
-  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
+  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                           bool owner = false) = 0;
 
   /**
     Indicate that the VConnection is no longer needed.

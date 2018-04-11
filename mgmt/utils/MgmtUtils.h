@@ -51,7 +51,7 @@ void mgmt_use_syslog();
 void mgmt_cleanup();
 
 struct in_addr *mgmt_sortipaddrs(int num, struct in_addr **list);
-bool mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu = 0);
+bool mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu = nullptr);
 
 /* the following functions are all DEPRECATED.  The Diags
    interface should be used exclusively in the future */

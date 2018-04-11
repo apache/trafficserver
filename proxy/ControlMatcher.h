@@ -138,15 +138,15 @@ public:
   inkcoreapi sockaddr const *get_client_ip();
 
   HttpRequestData()
-    : hdr(NULL),
-      hostname_str(NULL),
-      api_info(NULL),
+    : hdr(nullptr),
+      hostname_str(nullptr),
+      api_info(nullptr),
       xact_start(0),
       incoming_port(0),
-      tag(NULL),
+      tag(nullptr),
       internal_txn(false),
-      cache_info_lookup_url(NULL),
-      cache_info_parent_selection_url(NULL)
+      cache_info_lookup_url(nullptr),
+      cache_info_parent_selection_url(nullptr)
   {
     ink_zero(src_ip);
     ink_zero(dest_ip);

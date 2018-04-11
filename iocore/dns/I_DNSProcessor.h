@@ -115,7 +115,7 @@ struct DNSProcessor : public Processor {
 
   // Open/close a link to a 'named' (done in start())
   //
-  void open(sockaddr const *ns = 0);
+  void open(sockaddr const *ns = nullptr);
 
   DNSProcessor();
 
@@ -172,7 +172,7 @@ DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options cons
   return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
 }
 
-inline DNSProcessor::Options::Options() : handler(0), timeout(0), host_res_style(HOST_RES_IPV4)
+inline DNSProcessor::Options::Options() : handler(nullptr), timeout(0), host_res_style(HOST_RES_IPV4)
 {
 }
 

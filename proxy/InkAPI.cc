@@ -9404,7 +9404,7 @@ extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 TSSslSession
 TSSslSessionGet(const TSSslSessionID *session_id)
 {
-  SSL_SESSION *session = NULL;
+  SSL_SESSION *session = nullptr;
   if (session_id && session_cache) {
     session_cache->getSession(reinterpret_cast<const SSLSessionID &>(*session_id), &session);
   }

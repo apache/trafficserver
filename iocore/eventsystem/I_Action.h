@@ -176,7 +176,7 @@ public:
     if (acont)
       mutex = acont->mutex;
     else
-      mutex = 0;
+      mutex = nullptr;
     return acont;
   }
 

@@ -342,7 +342,7 @@ MemSpan::assign(void *ptr, void const *limit)
 inline MemSpan &
 MemSpan::clear()
 {
-  _data = 0;
+  _data = nullptr;
   _size = 0;
   return *this;
 }

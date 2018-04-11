@@ -68,7 +68,7 @@ struct RegressionSM : public Continuation {
   void child_done(int status);
   void xrun(RegressionSM *parent);
 
-  RegressionSM(RegressionTest *at = NULL) : t(at) { mutex = new_ProxyMutex(); }
+  RegressionSM(RegressionTest *at = nullptr) : t(at) { mutex = new_ProxyMutex(); }
 
   RegressionSM(const RegressionSM &);
 };

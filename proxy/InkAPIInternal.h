@@ -62,7 +62,7 @@ struct CacheInfo {
   CacheInfo()
   {
     frag_type    = CACHE_FRAG_TYPE_NONE;
-    hostname     = NULL;
+    hostname     = nullptr;
     len          = 0;
     pin_in_cache = 0;
     magic        = CACHE_INFO_MAGIC_ALIVE;
@@ -144,13 +144,13 @@ private:
 inline bool
 APIHooks::is_empty() const
 {
-  return NULL == m_hooks.head;
+  return nullptr == m_hooks.head;
 }
 
 inline void
 APIHooks::invoke(int event, void *data)
 {
-  for (APIHook *hook = m_hooks.head; NULL != hook; hook = hook->next())
+  for (APIHook *hook = m_hooks.head; nullptr != hook; hook = hook->next())
     hook->invoke(event, data);
 }
 
@@ -245,7 +245,7 @@ template <typename ID, ID N>
 APIHook *
 FeatureAPIHooks<ID, N>::get(ID id) const
 {
-  return likely(is_valid(id)) ? m_hooks[id].get() : NULL;
+  return likely(is_valid(id)) ? m_hooks[id].get() : nullptr;
 }
 
 template <typename ID, ID N>
@@ -311,11 +311,11 @@ public:
       if (!trylock.is_locked()) {
         eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_TASK);
       } else {
-        m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, NULL);
+        m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, nullptr);
         delete this;
       }
     } else {
-      m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, NULL);
+      m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, nullptr);
       delete this;
     }
 

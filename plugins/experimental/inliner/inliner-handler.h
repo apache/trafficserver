@@ -42,7 +42,7 @@ namespace inliner
 
     ~Handler()
     {
-      assert(reader_ != NULL);
+      assert(reader_ != nullptr);
       if (!abort_) {
         const int64_t available = TSIOBufferReaderAvail(reader_);
         if (available > 0) {

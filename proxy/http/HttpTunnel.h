@@ -298,7 +298,7 @@ public:
   HttpTunnelProducer *get_producer(VConnection *vc);
   HttpTunnelConsumer *get_consumer(VConnection *vc);
   HttpTunnelProducer *get_producer(HttpTunnelType_t type);
-  void tunnel_run(HttpTunnelProducer *p = NULL);
+  void tunnel_run(HttpTunnelProducer *p = nullptr);
 
   int main_handler(int event, void *data);
   void consumer_reenable(HttpTunnelConsumer *c);
@@ -421,7 +421,7 @@ HttpTunnel::get_producer(VConnection *vc)
       return producers + i;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 inline HttpTunnelProducer *
@@ -432,7 +432,7 @@ HttpTunnel::get_producer(HttpTunnelType_t type)
       return producers + i;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 inline HttpTunnelConsumer *
@@ -474,7 +474,7 @@ HttpTunnel::get_producer(VIO *vio)
       return producers + i;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 inline HttpTunnelConsumer *
@@ -487,13 +487,13 @@ HttpTunnel::get_consumer(VIO *vio)
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 inline void
 HttpTunnel::append_message_to_producer_buffer(HttpTunnelProducer *p, const char *msg, int64_t msg_len)
 {
-  if (p == NULL || p->read_buffer == NULL)
+  if (p == nullptr || p->read_buffer == nullptr)
     return;
 
   p->read_buffer->write(msg, msg_len);
@@ -524,7 +524,7 @@ HttpTunnelConsumer::is_downstream_from(VConnection *vc)
     // of a blind tunnel so give up if we find ourself (the original
     // consumer).
     c = p->self_consumer;
-    p = (c && c != this) ? c->producer : 0;
+    p = (c && c != this) ? c->producer : nullptr;
   }
   return false;
 }
@@ -554,7 +554,7 @@ HttpTunnelProducer::update_state_if_not_set(int new_handler_state)
 inline bool
 HttpTunnelProducer::is_throttled() const
 {
-  return 0 != flow_control_source;
+  return nullptr != flow_control_source;
 }
 
 inline void
@@ -568,7 +568,7 @@ inline void
 HttpTunnelProducer::unthrottle()
 {
   if (this->is_throttled())
-    this->set_throttle_src(0);
+    this->set_throttle_src(nullptr);
 }
 
 inline HttpTunnel::FlowControl::FlowControl() : high_water(DEFAULT_WATER_MARK), low_water(DEFAULT_WATER_MARK), enabled_p(false)

@@ -180,7 +180,7 @@ private:
     const char *start, *last, *end;
 
     // Sanity
-    if (buf == NULL || name == NULL || value == NULL || value_len == NULL) {
+    if (buf == nullptr || name == nullptr || value == nullptr || value_len == nullptr) {
       return TS_ERROR;
     }
 

@@ -144,7 +144,7 @@ public:
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
 TS_INLINE
-DNSRequestData::DNSRequestData() : m_pHost(0)
+DNSRequestData::DNSRequestData() : m_pHost(nullptr)
 {
 }
 

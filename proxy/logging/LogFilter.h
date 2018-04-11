@@ -159,7 +159,7 @@ private:
     // return 0 if s1 is substring of s0 and 1 otherwise
     // this reverse behavior is to conform to the behavior of strcmp
     // which returns 0 if strings match
-    return (strstr(s0, s1) == NULL ? 1 : 0);
+    return (strstr(s0, s1) == nullptr ? 1 : 0);
   }
 
   enum LengthCondition {

@@ -439,7 +439,7 @@ struct SCOPED_MALLOC_TRAITS {
   static bool
   isValid(T *t)
   {
-    return 0 != t;
+    return nullptr != t;
   }
   static void
   destroy(T *t)
@@ -461,7 +461,7 @@ struct SCOPED_OBJECT_TRAITS {
   static bool
   isValid(T *t)
   {
-    return 0 != t;
+    return nullptr != t;
   }
   static void
   destroy(T *t)

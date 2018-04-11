@@ -68,7 +68,7 @@ public:
     if (_html.size() > 0) {
       char *msg = TSstrdup(_html.c_str());
 
-      TSHttpTxnErrorBodySet(txnp, msg, _html.size(), NULL); // Defaults to text/html
+      TSHttpTxnErrorBodySet(txnp, msg, _html.size(), nullptr); // Defaults to text/html
     }
   }
 
@@ -93,7 +93,7 @@ protected:
 class RegexAcl
 {
 public:
-  RegexAcl(Acl *acl) : _rex(NULL), _extra(NULL), _next(NULL), _acl(acl) {}
+  RegexAcl(Acl *acl) : _rex(nullptr), _extra(nullptr), _next(nullptr), _acl(acl) {}
   const std::string &
   get_regex() const
   {
@@ -117,7 +117,7 @@ public:
       return false;
     }
 
-    return (pcre_exec(_rex, _extra, str, len, 0, PCRE_NOTEMPTY, NULL, 0) != -1);
+    return (pcre_exec(_rex, _extra, str, len, 0, PCRE_NOTEMPTY, nullptr, 0) != -1);
   }
 
   void append(RegexAcl *ra);
@@ -136,7 +136,7 @@ private:
 class CountryAcl : public Acl
 {
 public:
-  CountryAcl() : _regexes(NULL) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
+  CountryAcl() : _regexes(nullptr) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
   void read_regex(const char *fn, int &tokens);
   int process_args(int argc, char *argv[]);
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;

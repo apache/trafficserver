@@ -107,7 +107,7 @@ struct CacheTestSM : public RegressionSM {
   {
     if (timeout)
       timeout->cancel();
-    timeout = 0;
+    timeout = nullptr;
   }
 
   // RegressionSM API

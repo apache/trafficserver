@@ -47,7 +47,7 @@ enum CondModifiers {
 class Condition : public Statement
 {
 public:
-  Condition() : _qualifier(""), _cond_op(MATCH_EQUAL), _matcher(NULL), _mods(COND_NONE)
+  Condition() : _qualifier(""), _cond_op(MATCH_EQUAL), _matcher(nullptr), _mods(COND_NONE)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition");
   }

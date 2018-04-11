@@ -43,7 +43,7 @@ class HttpCacheSM;
 
 struct HttpCacheAction : public Action {
   HttpCacheAction();
-  virtual void cancel(Continuation *c = NULL);
+  virtual void cancel(Continuation *c = nullptr);
   void
   init(HttpCacheSM *sm_arg)
   {
@@ -143,7 +143,7 @@ public:
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_read_vc->do_io_close(); // abort
-      cache_read_vc = NULL;
+      cache_read_vc = nullptr;
     }
   }
   inline void
@@ -152,7 +152,7 @@ public:
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_write_vc->do_io_close(); // abort
-      cache_write_vc = NULL;
+      cache_write_vc = nullptr;
     }
   }
   inline void
@@ -161,7 +161,7 @@ public:
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_write_vc->do_io_close();
-      cache_write_vc = NULL;
+      cache_write_vc = nullptr;
     }
   }
   inline void
@@ -170,7 +170,7 @@ public:
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_read_vc->do_io_close();
-      cache_read_vc = NULL;
+      cache_read_vc = nullptr;
     }
   }
   inline void

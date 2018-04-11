@@ -103,7 +103,7 @@ public:
   LogConfig();
   ~LogConfig();
 
-  void init(LogConfig *previous_config = 0);
+  void init(LogConfig *previous_config = nullptr);
   void display(FILE *fd = stdout);
   void setup_log_objects();
 

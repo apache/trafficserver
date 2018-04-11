@@ -90,7 +90,7 @@ struct OOB_callback : public Continuation {
   int retry_OOB_send(int, Event *);
 
   OOB_callback(Ptr<ProxyMutex> &m, NetVConnection *vc, Continuation *cont, char *buf, int len)
-    : Continuation(m), data(buf), length(len), trigger(0)
+    : Continuation(m), data(buf), length(len), trigger(nullptr)
   {
     server_vc   = (UnixNetVConnection *)vc;
     server_cont = cont;

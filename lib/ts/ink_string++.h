@@ -46,7 +46,7 @@ struct Str {
   struct Str *next; // next in list
   struct Str *prev; // prev in list
 
-  Str() : str(nullptr), len(0), next(NULL), prev(NULL) {}
+  Str() : str(nullptr), len(0), next(nullptr), prev(nullptr) {}
   Str(char *s)
   {
     str  = s;
@@ -261,7 +261,7 @@ StrList::prepend(Str *str)
 inline void
 StrList::add_after(Str *prev, Str *str)
 {
-  if (str == nullptr || prev == NULL)
+  if (str == nullptr || prev == nullptr)
     return;
   ++count;
   str->next  = prev->next;

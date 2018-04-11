@@ -399,7 +399,7 @@ IntrusivePtrPolicy<T>::Order::operator()(IntrusivePtr<T> const &lhs, IntrusivePt
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
-template <typename T> IntrusivePtr<T>::IntrusivePtr() : m_obj(0)
+template <typename T> IntrusivePtr<T>::IntrusivePtr() : m_obj(nullptr)
 {
 }
 
@@ -500,7 +500,7 @@ template <typename T>
 void
 IntrusivePtr<T>::unset()
 {
-  if (0 != m_obj) {
+  if (nullptr != m_obj) {
     /* magic: our target is required to inherit from IntrusivePtrCounter,
      * which provides a protected counter variable and access via our
      * super class. We call the super class method to get a raw pointer
@@ -518,7 +518,7 @@ IntrusivePtr<T>::unset()
     if (0 == --*cp) {
       IntrusivePtrPolicy<T>::finalize(m_obj);
     }
-    m_obj = 0;
+    m_obj = nullptr;
   }
 }
 
@@ -527,7 +527,7 @@ void
 IntrusivePtr<T>::set(T *obj)
 {
   m_obj = obj;    /* update to new object */
-  if (0 != m_obj) /* if a real object, bump the ref count */
+  if (nullptr != m_obj) /* if a real object, bump the ref count */
     ++(*(this->getCounter()));
 }
 
@@ -553,7 +553,7 @@ IntrusivePtr<T>::release()
     // so be extra careful with the reference count.
     if (*cp > 0)
       --*cp;
-    m_obj = 0;
+    m_obj = nullptr;
   }
   return zret;
 }
@@ -601,7 +601,7 @@ bool
 operator==(int lhs, IntrusivePtr<T> const &rhs)
 {
   assert(0 == lhs);
-  return rhs.get() == 0;
+  return rhs.get() == nullptr;
 }
 
 template <typename T>

@@ -97,7 +97,7 @@ private:
 template <class T> class Ptr
 {
 public:
-  explicit Ptr(T *p = 0);
+  explicit Ptr(T *p = nullptr);
   Ptr(const Ptr<T> &);
   ~Ptr();
 
@@ -156,7 +156,7 @@ public:
   detach()
   {
     T *tmp = m_ptr;
-    m_ptr  = NULL;
+    m_ptr  = nullptr;
     return tmp;
   }
 
@@ -238,7 +238,7 @@ Ptr<T>::clear()
   if (m_ptr) {
     if (!m_ptr->refcount_dec())
       m_ptr->free();
-    m_ptr = NULL;
+    m_ptr = nullptr;
   }
 }
 

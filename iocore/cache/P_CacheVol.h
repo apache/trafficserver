@@ -276,7 +276,7 @@ struct CacheVol {
   // per volume stats
   RecRawStatBlock *vol_rsb;
 
-  CacheVol() : vol_number(-1), scheme(0), size(0), num_vols(0), vols(nullptr), disk_vols(0), vol_rsb(0) {}
+  CacheVol() : vol_number(-1), scheme(0), size(0), num_vols(0), vols(nullptr), disk_vols(nullptr), vol_rsb(nullptr) {}
 };
 
 // Note : hdr() needs to be 8 byte aligned.
@@ -446,7 +446,7 @@ evacuation_block_exists(Dir *dir, Vol *p)
   for (; b; b = b->link.next)
     if (dir_offset(&b->dir) == dir_offset(dir))
       return b;
-  return 0;
+  return nullptr;
 }
 
 TS_INLINE void
@@ -464,8 +464,8 @@ new_EvacuationBlock(EThread *t)
   EvacuationBlock *b      = THREAD_ALLOC(evacuationBlockAllocator, t);
   b->init                 = 0;
   b->readers              = 0;
-  b->earliest_evacuator   = 0;
-  b->evac_frags.link.next = 0;
+  b->earliest_evacuator   = nullptr;
+  b->evac_frags.link.next = nullptr;
   return b;
 }
 

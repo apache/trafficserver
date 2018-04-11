@@ -51,12 +51,12 @@ public:
   explicit Resources(TSHttpTxn txnptr, TSCont contptr)
     : txnp(txnptr),
       contp(contptr),
-      bufp(NULL),
-      hdr_loc(NULL),
-      client_bufp(NULL),
-      client_hdr_loc(NULL),
+      bufp(nullptr),
+      hdr_loc(nullptr),
+      client_bufp(nullptr),
+      client_hdr_loc(nullptr),
       resp_status(TS_HTTP_STATUS_NONE),
-      _rri(NULL),
+      _rri(nullptr),
       changed_url(false),
       _ready(false)
   {
@@ -65,11 +65,11 @@ public:
 
   Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri)
     : txnp(txnptr),
-      contp(NULL),
-      bufp(NULL),
-      hdr_loc(NULL),
-      client_bufp(NULL),
-      client_hdr_loc(NULL),
+      contp(nullptr),
+      bufp(nullptr),
+      hdr_loc(nullptr),
+      client_bufp(nullptr),
+      client_hdr_loc(nullptr),
       resp_status(TS_HTTP_STATUS_NONE),
       _rri(rri),
       changed_url(false),

@@ -33,7 +33,7 @@ struct Attribute {
   int32_t name_len;
   const char *value;
   int32_t value_len;
-  Attribute(const char *n = 0, int32_t n_len = 0, const char *v = 0, int32_t v_len = 0)
+  Attribute(const char *n = nullptr, int32_t n_len = 0, const char *v = nullptr, int32_t v_len = 0)
     : name(n), name_len(n_len), value(v), value_len(v_len){};
 };
 

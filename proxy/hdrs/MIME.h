@@ -267,7 +267,7 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
   void check_strings(HeapCheck *heaps, int num_heaps);
 
   // Cooked values
-  void recompute_cooked_stuff(MIMEField *changing_field_or_null = NULL);
+  void recompute_cooked_stuff(MIMEField *changing_field_or_null = nullptr);
   void recompute_accelerators_and_presence_bits();
 };
 
@@ -621,7 +621,7 @@ void mime_init_date_format_table();
 
 MIMEHdrImpl *mime_hdr_create(HdrHeap *heap);
 void _mime_hdr_field_block_init(MIMEFieldBlockImpl *fblock);
-void mime_hdr_cooked_stuff_init(MIMEHdrImpl *mh, MIMEField *changing_field_or_null = NULL);
+void mime_hdr_cooked_stuff_init(MIMEHdrImpl *mh, MIMEField *changing_field_or_null = nullptr);
 void mime_hdr_init(MIMEHdrImpl *mh);
 MIMEFieldBlockImpl *_mime_field_block_copy(MIMEFieldBlockImpl *s_fblock, HdrHeap *s_heap, HdrHeap *d_heap);
 void _mime_field_block_destroy(HdrHeap *heap, MIMEFieldBlockImpl *fblock);
@@ -721,11 +721,11 @@ void mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, i
 void mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
 int mime_format_date(char *buffer, time_t value);
 
-int32_t mime_parse_int(const char *buf, const char *end = NULL);
-uint32_t mime_parse_uint(const char *buf, const char *end = NULL);
-int64_t mime_parse_int64(const char *buf, const char *end = NULL);
+int32_t mime_parse_int(const char *buf, const char *end = nullptr);
+uint32_t mime_parse_uint(const char *buf, const char *end = nullptr);
+int64_t mime_parse_int64(const char *buf, const char *end = nullptr);
 int mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp);
-time_t mime_parse_date(const char *buf, const char *end = NULL);
+time_t mime_parse_date(const char *buf, const char *end = nullptr);
 int mime_parse_day(const char *&buf, const char *end, int *day);
 int mime_parse_month(const char *&buf, const char *end, int *month);
 int mime_parse_mday(const char *&buf, const char *end, int *mday);
@@ -893,7 +893,7 @@ MIMEField::value_is_valid() const
 inline int
 MIMEField::has_dups() const
 {
-  return (m_next_dup != NULL);
+  return (m_next_dup != nullptr);
 }
 
 /***********************************************************************
@@ -903,7 +903,7 @@ MIMEField::has_dups() const
  ***********************************************************************/
 
 struct MIMEFieldIter {
-  MIMEFieldIter() : m_slot(0), m_block(NULL) {}
+  MIMEFieldIter() : m_slot(0), m_block(nullptr) {}
   uint32_t m_slot;
   MIMEFieldBlockImpl *m_block;
 };
@@ -926,7 +926,7 @@ public:
 
   int valid() const;
 
-  void create(HdrHeap *heap = NULL);
+  void create(HdrHeap *heap = nullptr);
   void copy(const MIMEHdr *hdr);
 
   int length_get();
@@ -934,7 +934,7 @@ public:
   void fields_clear();
   int fields_count();
 
-  MIMEField *field_create(const char *name = NULL, int length = -1);
+  MIMEField *field_create(const char *name = nullptr, int length = -1);
   MIMEField *field_find(const char *name, int length);
   const MIMEField *field_find(const char *name, int length) const;
   void field_attach(MIMEField *field);
@@ -1133,7 +1133,7 @@ MIMEHdr::field_find(const char *name, int length) const
 inline void
 MIMEHdr::field_attach(MIMEField *field)
 {
-  mime_hdr_field_attach(m_mime, field, 1, NULL);
+  mime_hdr_field_attach(m_mime, field, 1, nullptr);
 }
 
 /*-------------------------------------------------------------------------
@@ -1191,8 +1191,8 @@ MIMEHdr::iter_get(MIMEFieldIter *iter)
     slot = 0;
   }
 
-  iter->m_block = NULL;
-  return NULL;
+  iter->m_block = nullptr;
+  return nullptr;
 }
 
 inline MIMEField *
@@ -1259,7 +1259,7 @@ MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) 
   if (field)
     return (mime_field_value_get(field, value_length_return));
   else
-    return (NULL);
+    return (nullptr);
 }
 
 inline int32_t

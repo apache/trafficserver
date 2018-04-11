@@ -75,8 +75,8 @@ struct Machine {
       @note This must be called before called @c instance so that the
       singleton is not @em inadvertently default initialized.
   */
-  static self *init(char const *name     = 0, ///< Host name of the machine.
-                    sockaddr const *addr = 0  ///< Primary IP address of the machine.
+  static self *init(char const *name     = nullptr, ///< Host name of the machine.
+                    sockaddr const *addr = nullptr  ///< Primary IP address of the machine.
                     );
   /// @return The global instance of this class.
   static self *instance();

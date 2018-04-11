@@ -181,7 +181,7 @@ public:
 private:
   char *fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
                   int64_t *resulting_buffer_length, const char **content_language_return, const char **content_charset_return,
-                  const char **set_return = NULL);
+                  const char **set_return = nullptr);
 
   const char *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
   const char *determine_set_by_host(HttpTransact::State *context);

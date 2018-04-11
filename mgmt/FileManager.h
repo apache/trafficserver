@@ -88,7 +88,7 @@ class FileManager
 public:
   FileManager();
   ~FileManager();
-  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = NULL, unsigned flags = 0);
+  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = nullptr, unsigned flags = 0);
   bool getRollbackObj(const char *fileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
   void fileChanged(const char *fileName, bool incVersion);

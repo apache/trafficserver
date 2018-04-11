@@ -61,7 +61,7 @@ struct CacheHostRecord {
       good_num_vols(0),
       num_vols(0),
       num_initialized(0),
-      vol_hash_table(0),
+      vol_hash_table(nullptr),
       cp(nullptr),
       num_cachevols(0)
   {
