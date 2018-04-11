@@ -27,10 +27,34 @@
 #include "quic/Mock.h"
 #include <memory>
 
+static constexpr int DEFAULT_RTT = 1 * HRTIME_SECOND;
+
+class MockRTTProvider : public QUICRTTProvider
+{
+public:
+  ink_hrtime
+  smoothed_rtt() const override
+  {
+    return this->_smoothed_rtt;
+  }
+
+  MockRTTProvider(ink_hrtime rtt) : _smoothed_rtt(rtt) {}
+
+  void
+  set_smoothed_rtt(ink_hrtime rtt)
+  {
+    this->_smoothed_rtt = rtt;
+  }
+
+private:
+  ink_hrtime _smoothed_rtt = 0;
+};
+
 TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
 {
   int ret = 0;
-  QUICLocalConnectionFlowController fc(1024);
+  MockRTTProvider rp(DEFAULT_RTT);
+  QUICLocalConnectionFlowController fc(&rp, 1024);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -62,6 +86,7 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
+  Thread::get_hrtime_updated();
 
   // Exceed limit
   ret = fc.update(1280);
@@ -142,7 +167,8 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
 TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
 {
   int ret = 0;
-  QUICLocalStreamFlowController fc(1024, 0);
+  MockRTTProvider rp(DEFAULT_RTT);
+  QUICLocalStreamFlowController fc(&rp, 1024, 0);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -174,6 +200,7 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
+  Thread::get_hrtime_updated();
 
   // Exceed limit
   ret = fc.update(1280);

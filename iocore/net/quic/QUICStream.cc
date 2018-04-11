@@ -35,12 +35,13 @@
   Debug("quic_flow_ctrl", "[%" PRIx64 "] [%" PRIx64 "] [%s] " fmt, static_cast<uint64_t>(this->_connection_id), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
-QUICStream::QUICStream(QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
+QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data,
+                       uint64_t send_max_stream_data)
   : VConnection(nullptr),
     _connection_id(cid),
     _id(sid),
     _remote_flow_controller(send_max_stream_data, _id),
-    _local_flow_controller(recv_max_stream_data, _id),
+    _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _received_stream_frame_buffer(this)
 {
   SET_HANDLER(&QUICStream::state_stream_open);

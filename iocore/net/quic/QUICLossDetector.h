@@ -37,6 +37,8 @@
 #include "QUICFrameHandler.h"
 #include "QUICPacketTransmitter.h"
 
+class QUICLossDetector;
+
 struct PacketInfo {
   QUICPacketNumber packet_number;
   ink_hrtime time;
@@ -44,6 +46,12 @@ struct PacketInfo {
   bool handshake;
   size_t bytes;
   QUICPacketUPtr packet;
+};
+
+class QUICRTTProvider
+{
+public:
+  virtual ink_hrtime smoothed_rtt() const = 0;
 };
 
 class QUICCongestionController
@@ -83,7 +91,7 @@ private:
   bool _in_recovery(QUICPacketNumber packet_number);
 };
 
-class QUICLossDetector : public Continuation, public QUICFrameHandler
+class QUICLossDetector : public Continuation, public QUICFrameHandler, public QUICRTTProvider
 {
 public:
   QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc);
@@ -97,6 +105,7 @@ public:
   QUICPacketNumber largest_acked_packet_number();
   void reset();
   ink_hrtime current_rto_period();
+  ink_hrtime smoothed_rtt() const override;
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;

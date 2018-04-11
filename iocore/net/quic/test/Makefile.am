@@ -76,7 +76,7 @@ test_LDADD = \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ \
+  @LIBTCL@ @OPENSSL_LIBS@ \
   @HWLOC_LIBS@
 
 #
@@ -514,7 +514,8 @@ test_QUICFlowController_SOURCES = \
   ../QUICHandshakeProtocol.cc \
   ../QUICTLS.cc \
   $(QUICTLS_impl) \
-  ../QUICFrame.cc
+  ../QUICFrame.cc \
+  ../QUICLossDetector.cc
 
 #
 # test_QUICIncomingFrameBuffer

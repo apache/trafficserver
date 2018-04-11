@@ -25,6 +25,24 @@
 #include "QUICFrame.h"
 
 //
+// QUICRateAnalyzer
+//
+void
+QUICRateAnalyzer::update(QUICOffset offset)
+{
+  ink_hrtime now = Thread::get_hrtime();
+  if (offset > 0 && now > this->_start_time) {
+    this->_rate = static_cast<double>(offset) / (now - this->_start_time);
+  }
+}
+
+uint64_t
+QUICRateAnalyzer::expect_recv_bytes(ink_hrtime time)
+{
+  return static_cast<uint64_t>(time * this->_rate);
+}
+
+//
 // QUICFlowController
 //
 uint64_t
@@ -126,9 +144,27 @@ QUICLocalFlowController::forward_limit(QUICOffset offset)
   QUICFlowController::forward_limit(offset);
 
   // Send MAX_(STREAM_)DATA frame
-  if (this->_limit - this->_offset <= this->_threshold) {
+  if (this->_need_to_gen_frame()) {
     this->_frame = this->_create_frame();
   }
+}
+
+int
+QUICLocalFlowController::update(QUICOffset offset)
+{
+  this->_analyzer.update(offset);
+  return QUICFlowController::update(offset);
+}
+
+bool
+QUICLocalFlowController::_need_to_gen_frame()
+{
+  this->_threshold = this->_analyzer.expect_recv_bytes(2 * this->_rtt_provider->smoothed_rtt());
+  if (this->_offset + this->_threshold > this->_limit) {
+    return true;
+  }
+
+  return false;
 }
 
 //

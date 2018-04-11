@@ -550,3 +550,9 @@ QUICLossDetector::current_rto_period()
   alarm_duration = alarm_duration * (1 << this->_rto_count);
   return alarm_duration;
 }
+
+ink_hrtime
+QUICLossDetector::smoothed_rtt() const
+{
+  return this->_smoothed_rtt;
+}
