@@ -294,7 +294,7 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
     REQUIRE_THROWS_AS(sv.at(100), std::out_of_range);
     REQUIRE_THROWS_AS(sv.at(-1), std::out_of_range);
 
-#if defined(_DEBUG) && __cplusplus <= 201103L
+#if defined(_DEBUG) && __cplusplus <= 201402L
     REQUIRE_THROWS_AS(sv[100], std::out_of_range);
     REQUIRE_THROWS_AS(sv[-1], std::out_of_range);
 #else
