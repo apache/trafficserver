@@ -432,6 +432,17 @@ Thread Variables
    HTTP/2 graceful shutdown for now. Stopping Traffic Server here means sending
    `traffic_server` a signal either by `bin/trafficserver stop` or `kill`.
 
+.. ts:cv:: CONFIG proxy.config.thread.max_heartbeat_mseconds INT 60
+   :unit: milliseconds
+
+   Set the maximum heartbeat in milliseconds for threads, ranges from 0 to 1000.
+
+   This controls the maximum amount of time the event loop will wait for I/O activity.
+   On a system that is not busy, this option can be set to a higher value to decrease
+   the spin around overhead. If experiencing unexpected delays, setting a lower value
+   should improve the situation. Note that this setting should only be used by expert
+   system tuners, and will not be beneficial with random fiddling.
+
 Network
 =======
 
@@ -3432,7 +3443,7 @@ Client-Related Configuration
    thread will be rescheduled for other work until the crypto engine operation
    completes. A test crypto engine that inserts a 5 second delay on private key
    operations can be found at :ts:git:`contrib/openssl/async_engine.c`.
-   
+
 .. ts:cv:: CONFIG proxy.config.ssl.engine.conf_file STRING NULL
 
    Specify the location of the openssl config file used to load dynamic crypto

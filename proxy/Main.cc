@@ -1789,6 +1789,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     net_config_poll_timeout = 10; // Default value for all platform.
   }
 
+  REC_ReadConfigInteger(thread_max_heartbeat_mseconds, "proxy.config.thread.max_heartbeat_mseconds");
+
   ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_aio_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
