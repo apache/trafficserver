@@ -473,3 +473,5 @@ operator new(size_t, ink_dummy_for_new *p)
 #define ETHREAD_GET_PTR(thread, offset) ((void *)((char *)(thread) + (offset)))
 
 extern EThread *this_ethread();
+
+extern int thread_max_heartbeat_mseconds;
