@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_mutex_h_
-#define _ink_mutex_h_
+#pragma once
 
 /***********************************************************************
 
@@ -109,4 +108,3 @@ ink_mutex_try_acquire(ink_mutex *m)
 }
 
 #endif /* #if defined(POSIX_THREAD) */
-#endif /* _ink_mutex_h_ */

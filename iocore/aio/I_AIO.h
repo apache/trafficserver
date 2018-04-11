@@ -28,8 +28,7 @@
 
 
  ****************************************************************************/
-#if !defined(_I_AIO_h_)
-#define _I_AIO_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
@@ -153,4 +152,3 @@ int ink_aio_readv(AIOCallback *op,
                   int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
 int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
 AIOCallback *new_AIOCallback(void);
-#endif

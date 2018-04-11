@@ -28,8 +28,7 @@
 
 
  ****************************************************************************/
-#ifndef __UNIXUDPCONNECTION_H_
-#define __UNIXUDPCONNECTION_H_
+#pragma once
 
 #include "P_UDPConnection.h"
 #include "P_UDPPacket.h"
@@ -112,5 +111,3 @@ new_UDPConnection(int fd)
 {
   return (fd >= 0) ? new UnixUDPConnection(fd) : 0;
 }
-
-#endif //__UNIXUDPCONNECTION_H_

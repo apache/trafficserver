@@ -22,7 +22,7 @@
 
  */
 
-#if !defined(I_VIO_h)
+#pragma once
 #define I_VIO_h
 
 #include "ts/ink_platform.h"
@@ -222,4 +222,3 @@ public:
 };
 
 #include "I_VConnection.h"
-#endif

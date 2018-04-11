@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef RAFT_H_
-#define RAFT_H_
+#pragma once
 // An implementation of the RAFT consensus algorithm:
 //   https://ramcloud.stanford.edu/raft.pdf
 //
@@ -132,4 +131,3 @@ public:
   void ConfigChange(RaftClass *raft, const Config &config);
 };
 } // namespace raft
-#endif // RAFT_H_

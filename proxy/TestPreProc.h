@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_TestPreProc_h_)
-#define _TestPreProc_h_
+#pragma once
 
 class IOBuffer;
 
@@ -47,5 +46,3 @@ private:
   unsigned m_len;
   IOBuffer *m_cb;
 };
-
-#endif

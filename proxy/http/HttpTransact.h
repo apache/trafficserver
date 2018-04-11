@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_HttpTransact_h_)
-#define _HttpTransact_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_HostDB.h"
@@ -1378,5 +1377,3 @@ is_response_body_precluded(HTTPStatus status_code, int method)
 }
 
 inkcoreapi extern ink_time_t ink_cluster_time(void);
-
-#endif

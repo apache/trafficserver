@@ -30,8 +30,7 @@
  *
  ***************************************************************************/
 
-#ifndef _CORE_API_SHARED_H_
-#define _CORE_API_SHARED_H_
+#pragma once
 
 #include "mgmtapi.h"
 
@@ -83,5 +82,3 @@ int connectDirect(const char *host, int port, uint64_t timeout);
 // used for Events
 int get_event_id(const char *event_name);
 char *get_event_name(int id);
-
-#endif

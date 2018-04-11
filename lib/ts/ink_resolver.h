@@ -66,8 +66,7 @@
   limitations under the License.
 */
 
-#ifndef _ink_resolver_h_
-#define _ink_resolver_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
@@ -286,5 +285,3 @@ int ts_host_res_order_to_string(HostResPreferenceOrder const &order, ///< order 
                                 char *out,                           ///< Target buffer for string.
                                 int size                             ///< Size of buffer.
                                 );
-
-#endif /* _ink_resolver_h_ */

@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _IP_ALLOW_H_
-#define _IP_ALLOW_H_
+#pragma once
 
 #include "Main.h"
 #include "hdrs/HTTP.h"
@@ -186,5 +185,3 @@ IpAllow::match(sockaddr const *ip, match_key_t key) const
   map.contains(ip, &raw);
   return static_cast<AclRecord *>(raw);
 }
-
-#endif

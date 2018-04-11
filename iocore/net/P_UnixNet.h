@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __P_UNIXNET_H__
-#define __P_UNIXNET_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -633,5 +632,3 @@ EventIO::stop()
   }
   return 0;
 }
-
-#endif

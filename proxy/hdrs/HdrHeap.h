@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HDR_HEAP_H_
-#define _HDR_HEAP_H_
+#pragma once
 
 #include "ts/Ptr.h"
 #include "ts/ink_defs.h"
@@ -481,4 +480,3 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle *from)
 inkcoreapi HdrHeap *new_HdrHeap(int size = HDR_HEAP_DEFAULT_SIZE);
 
 void hdr_heap_test();
-#endif

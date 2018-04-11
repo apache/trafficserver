@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_P_IOBuffer_h)
-#define _P_IOBuffer_h
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/ink_resource.h"
@@ -1202,5 +1201,3 @@ TS_INLINE
 MIOBufferAccessor::~MIOBufferAccessor()
 {
 }
-
-#endif

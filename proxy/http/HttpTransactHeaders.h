@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_HttpTransactHeaders_h_)
-#define _HttpTransactHeaders_h_
+#pragma once
 
 #define ink_time_t time_t
 
@@ -131,5 +130,3 @@ HttpTransactHeaders::is_request_proxy_authorized(HTTPHdr *incoming_hdr)
   // TODO: What do we need to do here?
   return true;
 }
-
-#endif

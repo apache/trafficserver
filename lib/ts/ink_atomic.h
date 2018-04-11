@@ -34,8 +34,7 @@
 
  ****************************************************************************/
 
-#ifndef _ink_atomic_h_
-#define _ink_atomic_h_
+#pragma once
 
 #include <stdio.h>
 #include <string.h>
@@ -192,5 +191,3 @@ ink_atomic_decrement(pvuint64 mem, Amount value)
 #else /* not gcc > v4.1.2 */
 #error Need a compiler / libc that supports atomic operations, e.g. gcc v4.1.2 or later
 #endif
-
-#endif /* _ink_atomic_h_ */

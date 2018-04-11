@@ -25,8 +25,7 @@
   Currently implemented FNV-1a 32bit and FNV-1a 64bit
  */
 
-#ifndef __HASH_FNV_H__
-#define __HASH_FNV_H__
+#pragma once
 
 #include "ts/Hash.h"
 #include <stdint.h>
@@ -92,5 +91,3 @@ ATSHash64FNV1a::update(const void *data, size_t len, Transform xfrm)
     hval += (hval << 1) + (hval << 4) + (hval << 5) + (hval << 7) + (hval << 8) + (hval << 40);
   }
 }
-
-#endif

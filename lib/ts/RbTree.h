@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef RBTREE_H_
-#define RBTREE_H_
+#pragma once
 
 namespace ts
 {
@@ -218,5 +217,3 @@ namespace detail
 } /* namespace detail */
 
 } /* namespace ts */
-
-#endif /* RBTREE_H_ */

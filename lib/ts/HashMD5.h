@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef __HASH_MD5_H__
-#define __HASH_MD5_H__
+#pragma once
 
 #include "ts/Hash.h"
 #include <openssl/evp.h>
@@ -40,5 +39,3 @@ private:
   unsigned int md_len;
   bool finalized;
 };
-
-#endif

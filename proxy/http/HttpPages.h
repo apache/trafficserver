@@ -31,8 +31,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_PAGES_H_
-#define _HTTP_PAGES_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_EventSystem.h"
@@ -86,5 +85,3 @@ private:
 };
 
 void http_pages_init();
-
-#endif

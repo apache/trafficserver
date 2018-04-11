@@ -29,8 +29,7 @@
  *   Traffic Server, DO NOT USE anything in this file.
  */
 
-#ifndef __TS_API_EXPERIMENTAL_H__
-#define __TS_API_EXPERIMENTAL_H__
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -574,4 +573,3 @@ tsapi TSMLoc TSFetchRespHdrMLocGet(TSFetchSM fetch_sm);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-#endif /* __TS_API_EXPERIMENTAL_H__ */

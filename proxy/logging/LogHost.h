@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef LOG_HOST_H
-#define LOG_HOST_H
+#pragma once
 
 class LogSock;
 class LogBuffer;
@@ -170,5 +169,3 @@ private:
   LogHostList(const LogHostList &);
   LogHostList &operator=(const LogHostList &);
 };
-
-#endif

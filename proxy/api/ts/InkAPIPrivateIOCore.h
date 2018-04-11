@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#ifndef __INK_API_PRIVATE_IOCORE_H__
-#define __INK_API_PRIVATE_IOCORE_H__
+#pragma once
 #include "ts.h"
+
 #if !defined(__GNUC__)
 #include "I_EventSystem.h"
 #include "I_Cache.h"
@@ -202,5 +202,3 @@ tsapi INKUDPPacket INKUDPPacketGet(INKUDPacketQueue queuep);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __INK_API_PRIVATE_IOCORE_H__ */

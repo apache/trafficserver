@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TRANSFORM_H__
-#define __TRANSFORM_H__
+#pragma once
 
 #include "P_EventSystem.h"
 #include "HTTP.h"
@@ -106,5 +105,3 @@ num_chars_for_int(int64_t i)
 }
 
 extern TransformProcessor transformProcessor;
-
-#endif /* __TRANSFORM_H__ */

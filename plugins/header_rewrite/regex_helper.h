@@ -15,8 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#ifndef REGEX_HELPER_H
-#define REGEX_HELPER_H
+#pragma once
 
 #include "ts/ink_defs.h"
 
@@ -51,5 +50,3 @@ private:
   std::string regexString;
   int regexCcount;
 };
-
-#endif

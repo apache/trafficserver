@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __OPERATORS_H__
-#define __OPERATORS_H__ 1
+#pragma once
 
 #include <string>
 
@@ -313,5 +312,3 @@ private:
 
   Value _ds_value;
 };
-
-#endif // __OPERATORS_H

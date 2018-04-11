@@ -26,8 +26,7 @@
 #include <list>
 #include <utility>
 
-#ifndef ATS_COLLAPSED_CONNECTION_PLUGIN_H_
-#define ATS_COLLAPSED_CONNECTION_PLUGIN_H_
+#pragma once
 
 #define PLUGIN_NAME "collapsed_connection"
 #define PLUGIN_VENDOR "Apache Software Foundation"
@@ -112,5 +111,3 @@ const unsigned int c_hashSeed = 27240313;
 
 static CcPluginData *getCcPlugin();
 static int collapsedConnectionMainHandler(TSCont contp, TSEvent event, void *edata);
-
-#endif // ATS_COLLAPSED_CONNECTION_PLUGIN_H_

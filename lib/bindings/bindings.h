@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef BINDINGS_H_02DF784C_94BD_4A5C_B57A_F986F5493C6A
-#define BINDINGS_H_02DF784C_94BD_4A5C_B57A_F986F5493C6A
+#pragma once
 
 #include <string>
 #include <map>
@@ -71,5 +70,3 @@ private:
   BindingInstance(const BindingInstance &);            // noncopyable
   BindingInstance &operator=(const BindingInstance &); // noncopyable
 };
-
-#endif /* BINDINGS_H_02DF784C_94BD_4A5C_B57A_F986F5493C6A */

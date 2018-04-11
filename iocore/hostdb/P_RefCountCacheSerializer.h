@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef P_REFCOUNTCACHESERIALIZER_H_07545391_276D_4BD3_B0DD_EF6B0007071D
-#define P_REFCOUNTCACHESERIALIZER_H_07545391_276D_4BD3_B0DD_EF6B0007071D
+#pragma once
 
 #include "P_RefCountCache.h"
 
@@ -320,5 +319,3 @@ RefCountCacheSerializer<C>::write_to_disk(const void *ptr, size_t n_bytes)
   }
   return 0;
 }
-
-#endif /* P_REFCOUNTCACHESERIALIZER_H_07545391_276D_4BD3_B0DD_EF6B0007071D */

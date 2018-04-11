@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _SRV_h_
-#define _SRV_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_HostDBProcessor.h"
@@ -59,5 +58,3 @@ struct SRVHosts {
   ~SRVHosts() {}
   SRVHosts() : srv_host_count(0), srv_hosts_length(0) {}
 };
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_FILTER_H
-#define LOG_FILTER_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/IpMap.h"
@@ -498,5 +497,3 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
   }
   return retVal;
 }
-
-#endif

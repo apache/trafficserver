@@ -26,8 +26,7 @@
 
 **************************************************************************/
 
-#ifndef _INOUT_H
-#define _INOUT_H
+#pragma once
 
 // source of good macros..
 #ifdef __cplusplus
@@ -81,5 +80,3 @@ extern "C" {
     (cp)[0] = l >> 8;      \
     (cp) += 8;             \
   }
-
-#endif /* #ifndef _INOUT_H */

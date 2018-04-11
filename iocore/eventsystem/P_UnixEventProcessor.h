@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_UnixEventProcessor_h_
-#define _P_UnixEventProcessor_h_
+#pragma once
 
 #include "ts/ink_align.h"
 #include "I_EventProcessor.h"
@@ -146,5 +145,3 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
   else
     return schedule(e->init(cont, Thread::get_hrtime() + t, t), et);
 }
-
-#endif

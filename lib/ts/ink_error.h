@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef _ink_error_h_
-#define _ink_error_h_
+#pragma once
 
 #include <stdarg.h>
 #include "ts/ink_platform.h"
@@ -56,5 +55,3 @@ void ink_eprintf(const char *message_format, ...) TS_PRINTFLIKE(1, 2);
 void ink_error(const char *message_format, ...) TS_PRINTFLIKE(1, 2);
 
 int ink_set_dprintf_level(int debug_level);
-
-#endif

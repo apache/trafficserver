@@ -28,8 +28,7 @@
   struct DNSConnection
   **************************************************************************/
 
-#ifndef __P_DNSCONNECTION_H__
-#define __P_DNSCONNECTION_H__
+#pragma once
 
 #include "I_EventSystem.h"
 
@@ -135,5 +134,3 @@ DNSConnection::Options::setLocalIpv6(sockaddr const *ip)
   _local_ipv6 = ip;
   return *this;
 }
-
-#endif /*_P_DNSConnection_h*/

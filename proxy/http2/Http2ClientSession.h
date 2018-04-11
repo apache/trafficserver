@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_CLIENT_SESSION_H__
-#define __HTTP2_CLIENT_SESSION_H__
+#pragma once
 
 #include "HTTP2.h"
 #include "Plugin.h"
@@ -348,5 +347,3 @@ private:
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
-
-#endif // __HTTP2_CLIENT_SESSION_H__

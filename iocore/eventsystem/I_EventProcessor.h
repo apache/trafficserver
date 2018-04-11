@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_EventProcessor_h_
-#define _I_EventProcessor_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Continuation.h"
@@ -312,5 +311,3 @@ public:
 };
 
 extern inkcoreapi class EventProcessor eventProcessor;
-
-#endif /*_EventProcessor_h_*/

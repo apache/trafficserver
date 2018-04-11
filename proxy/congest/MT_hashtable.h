@@ -29,8 +29,7 @@
 
 
  ****************************************************************************/
-#ifndef MT_HASHTABLE_H_
-#define MT_HASHTABLE_H_
+#pragma once
 //#include "Lock.h"
 
 #define MT_HASHTABLE_PARTITION_BITS 6
@@ -429,5 +428,3 @@ private:
   // int last_GC_time[MT_HASHTABLE_PARTITIONS];
   // int32_t cur_items;
 };
-
-#endif /* MT_HASHTABLE_H_ */

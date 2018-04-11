@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __P_CACHE_HOSTING_H__
-#define __P_CACHE_HOSTING_H__
+#pragma once
 #include "P_Cache.h"
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
@@ -206,5 +205,3 @@ struct ConfigVolumes {
     num_stream_volumes = 0;
   }
 };
-
-#endif

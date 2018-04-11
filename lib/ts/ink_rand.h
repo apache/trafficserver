@@ -58,8 +58,7 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
 */
 
-#ifndef __INK_RAND_H__
-#define __INK_RAND_H__
+#pragma once
 
 #include "ts/ink_defs.h"
 #include "ts/ink_apidefs.h"
@@ -83,5 +82,3 @@ ink_rand_r(uint32_t *p)
 {
   return (((*p) = (*p) * 1103515245 + 12345) % ((uint32_t)0x7fffffff + 1));
 }
-
-#endif /* __INK_RAND_H__ */

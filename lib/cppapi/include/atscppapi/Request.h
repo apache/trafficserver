@@ -20,8 +20,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_REQUEST_H_
-#define ATSCPPAPI_REQUEST_H_
 
 #include <atscppapi/Headers.h>
 #include <atscppapi/HttpVersion.h>
@@ -82,5 +80,3 @@ private:
   friend class ClientRequest;
 };
 }
-
-#endif

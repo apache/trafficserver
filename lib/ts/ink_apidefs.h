@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_apidefs_h_
-#define _ink_apidefs_h_
+#pragma once
 
 #define inkliapi
 #define inkcoreapi
@@ -73,6 +72,4 @@
 
 #if !defined(TS_INLINE)
 #define TS_INLINE inline
-#endif
-
 #endif

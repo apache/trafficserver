@@ -23,8 +23,7 @@
 
 /***************************************/
 
-#ifndef _TOKENIZER_H_
-#define _TOKENIZER_H_
+#pragma once
 
 /****************************************************************************
  *
@@ -166,5 +165,3 @@ private:
   tok_node *add_node;
   int add_index;
 };
-
-#endif

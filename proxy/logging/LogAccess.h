@@ -26,8 +26,7 @@
 
 
  ***************************************************************************/
-#ifndef LOG_ACCESS_H
-#define LOG_ACCESS_H
+#pragma once
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
 #include "ts/ink_align.h"
@@ -405,5 +404,3 @@ LogAccess::marshal_int(char *dest, int64_t source)
   -------------------------------------------------------------------------*/
 
 char *resolve_logfield_string(LogAccess *context, const char *format_str);
-
-#endif

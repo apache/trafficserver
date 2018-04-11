@@ -19,8 +19,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Public interface for the Variable Expander
 //
-#ifndef __EXPANDER_H__
-#define __EXPANDER_H__ 1
+#pragma once
 
 #include <string>
 
@@ -36,5 +35,3 @@ public:
 private:
   std::string _source;
 };
-
-#endif // __EXPANDER_H

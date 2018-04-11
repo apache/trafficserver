@@ -37,8 +37,7 @@
 
  */
 
-#ifndef _Allocator_h_
-#define _Allocator_h_
+#pragma once
 
 #include <new>
 #include <stdlib.h>
@@ -251,5 +250,3 @@ private:
   uint64_t allocations;
   ink_mutex trackerLock;
 };
-
-#endif // _Allocator_h_

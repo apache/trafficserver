@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef __HASH_SIP_H__
-#define __HASH_SIP_H__
+#pragma once
 
 #include "ts/Hash.h"
 #include <stdint.h>
@@ -48,5 +47,3 @@ private:
   size_t total_len;
   bool finalized;
 };
-
-#endif

@@ -20,8 +20,7 @@
     limitations under the License.
  */
 
-#if !defined CRYPTO_HASH_HEADER
-#define CRYPTO_HASH_HEADER
+#pragma once
 
 /// Apache Traffic Server commons.
 
@@ -141,5 +140,3 @@ CryptoContext::finalize(CryptoHash *hash)
 using ats::CryptoHash;
 using ats::CryptoContext;
 using ats::CRYPTO_HASH_ZERO;
-
-#endif // CRYPTO_HASH_HEADER

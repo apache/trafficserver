@@ -1,6 +1,3 @@
-#if !defined(TS_WCCP_META_HEADER)
-#define TS_WCCP_META_HEADER
-
 /** @file
     Meta programming support for WCCP.
 
@@ -22,6 +19,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+
+#pragma once
 
 #include <algorithm>
 

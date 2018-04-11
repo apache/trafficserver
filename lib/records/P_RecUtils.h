@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_UTILS_H_
-#define _P_REC_UTILS_H_
+#pragma once
 
 #include "ts/Diags.h"
 #include "ts/ink_atomic.h"
@@ -78,5 +77,3 @@ void RecDebugOff();
 
 #define RecLog(level, fmt, ...) _RecLog(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
 #define RecDebug(level, fmt, ...) _RecDebug(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
-
-#endif

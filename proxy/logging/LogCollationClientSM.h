@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_COLLATION_CLIENT_SM_H
-#define LOG_COLLATION_CLIENT_SM_H
+#pragma once
 
 //-------------------------------------------------------------------------
 // includes
@@ -114,5 +113,3 @@ private:
 };
 
 typedef int (LogCollationClientSM::*LogCollationClientSMHandler)(int, void *);
-
-#endif // LOG_COLLATION_CLIENT_SM_H

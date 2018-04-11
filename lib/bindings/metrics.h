@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef METRICS_H_FED1F5EA_9EDE_48E6_B05A_5DCAFD8DC319
-#define METRICS_H_FED1F5EA_9EDE_48E6_B05A_5DCAFD8DC319
+#pragma once
 
 // Create a new metrics binding userdata object.
 int lua_metrics_new(const char *prefix, lua_State *L);
@@ -36,5 +35,3 @@ void lua_metrics_register(lua_State *L);
 // if the metric is named "proxy.my.great.counter", it would install
 // a metrics object at the global name "proxy.my.great".
 int lua_metrics_install(lua_State *L);
-
-#endif /* METRICS_H_FED1F5EA_9EDE_48E6_B05A_5DCAFD8DC319 */

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _URL_MAPPING_H_
-#define _URL_MAPPING_H_
+#pragma once
 
 #include <vector>
 
@@ -207,5 +206,3 @@ private:
   UrlMappingContainer(const UrlMappingContainer &orig);
   UrlMappingContainer &operator=(const UrlMappingContainer &rhs);
 };
-
-#endif

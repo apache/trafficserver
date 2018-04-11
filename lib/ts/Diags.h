@@ -31,8 +31,7 @@
 
  ****************************************************************************/
 
-#ifndef __DIAGS_H___
-#define __DIAGS_H___
+#pragma once
 
 #include <stdarg.h>
 #include "ink_mutex.h"
@@ -353,4 +352,3 @@ extern inkcoreapi Diags *diags;
 #define is_diags_on(_t) 0
 
 #endif // TS_USE_DIAGS
-#endif /*_Diags_h_*/

@@ -24,8 +24,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_PLUGIN_H_
-#define ATSCPPAPI_PLUGIN_H_
 
 #include <atscppapi/Transaction.h>
 #include <atscppapi/noncopyable.h>
@@ -169,5 +167,3 @@ extern const std::string HOOK_TYPE_STRINGS[];
 void RegisterGlobalPlugin(const std::string &name, const std::string &vendor, const std::string &email);
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_GLOBALPLUGIN_H_ */

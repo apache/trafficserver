@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_CLIENT_TRANSACTION_H_
-#define __HTTP_CLIENT_TRANSACTION_H_
+#pragma once
 
 #include "../ProxyClientTransaction.h"
 
@@ -185,5 +184,3 @@ protected:
   IpAddr outbound_ip6;
   bool outbound_transparent;
 };
-
-#endif

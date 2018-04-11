@@ -32,8 +32,7 @@
  at least a 32 bit architecture, so the rawflags size is 32 bits.
  ****************************************************************************/
 
-#ifndef _CONT_FLAGS_H
-#define _CONT_FLAGS_H
+#pragma once
 
 #include "ink_thread.h"
 
@@ -90,5 +89,3 @@ void set_cont_flags(const ContFlags &flags);
 void set_cont_flag(ContFlags::flags flag_bit, bool value);
 ContFlags get_cont_flags();
 bool get_cont_flag(ContFlags::flags flag_bit);
-
-#endif // _CONT_FLAGS_H

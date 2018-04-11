@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __UNIXNETPROCESSOR_H__
-#define __UNIXNETPROCESSOR_H__
+#pragma once
 #include "I_Net.h"
 #include "P_NetAccept.h"
 
@@ -72,4 +71,3 @@ extern UnixNetProcessor unix_netProcessor;
 extern void initialize_thread_for_net(EThread *thread);
 
 //#include "UnixNet.h"
-#endif

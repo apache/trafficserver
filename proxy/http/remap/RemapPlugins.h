@@ -25,8 +25,7 @@
  * Remap plugins class
 **/
 
-#if !defined(_REMAPPLUGINS_h_)
-#define _REMAPPLUGINS_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
@@ -83,5 +82,3 @@ private:
   HTTPHdr *_request_header;
   host_hdr_info *_hh_ptr;
 };
-
-#endif

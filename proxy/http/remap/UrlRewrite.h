@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _URL_REWRITE_H_
-#define _URL_REWRITE_H_
+#pragma once
 
 #include "ts/ink_config.h"
 #include "UrlMapping.h"
@@ -192,5 +191,3 @@ private:
 };
 
 void url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int scheme = -1);
-
-#endif

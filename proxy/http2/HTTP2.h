@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef __HTTP2_H__
-#define __HTTP2_H__
+#pragma once
 
 #include "ts/ink_defs.h"
 #include "ts/ink_memory.h"
@@ -381,5 +380,3 @@ public:
 
   static void init();
 };
-
-#endif /* __HTTP2_H__ */

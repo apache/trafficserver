@@ -22,8 +22,7 @@
  * @see aws_auth_v4.h
  */
 
-#ifndef PLUGINS_S3_AUTH_AWS_AUTH_V4_WRAP_H_
-#define PLUGINS_S3_AUTH_AWS_AUTH_V4_WRAP_H_
+#pragma once
 
 /* Define a header iterator to be used in the plugin using ATS API */
 class HeaderIterator
@@ -125,5 +124,3 @@ public:
   TSMLoc _hdrs;
   TSMLoc _url;
 };
-
-#endif /* PLUGINS_S3_AUTH_AWS_AUTH_V4_WRAP_H_ */

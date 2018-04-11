@@ -26,8 +26,7 @@ Process arguments
 
 ****************************************************************************/
 
-#ifndef _INK_ARGS_H
-#define _INK_ARGS_H
+#pragma once
 #include "ts/ink_defs.h"
 #include "ts/ink_apidefs.h"
 
@@ -99,5 +98,3 @@ void process_args(const AppVersionInfo *appinfo, const ArgumentDescription *argu
 
 bool process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argument_descriptions,
                      unsigned n_argument_descriptions, const char **argv);
-
-#endif /*_INK_ARGS_H*/

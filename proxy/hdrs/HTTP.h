@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_H__
-#define __HTTP_H__
+#pragma once
 
 #include <assert.h>
 #include "ts/Arena.h"
@@ -1607,5 +1606,3 @@ HTTPInfo::get_frag_offset_count()
 {
   return m_alt ? m_alt->m_frag_offset_count : 0;
 }
-
-#endif /* __HTTP_H__ */

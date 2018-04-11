@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _I_SocketManager_h_
-#define _I_SocketManager_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
@@ -152,5 +151,3 @@ private:
 };
 
 extern SocketManager socketManager;
-
-#endif /*_SocketManager_h_*/

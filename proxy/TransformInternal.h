@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TRANSFORM_INTERNAL_H__
-#define __TRANSFORM_INTERNAL_H__
+#pragma once
 
 #include "HttpSM.h"
 #include "MIME.h"
@@ -153,5 +152,3 @@ public:
 
 extern PrefetchProcessor prefetchProcessor;
 #endif // PREFETCH
-
-#endif /* __TRANSFORM_INTERNAL_H__ */

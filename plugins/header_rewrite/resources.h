@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __RESOURCES_H__
-#define __RESOURCES_H__ 1
+#pragma once
 
 #include <string>
 
@@ -103,5 +102,3 @@ private:
 
   bool _ready;
 };
-
-#endif // __RESOURCES_H

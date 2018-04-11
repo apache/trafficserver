@@ -22,8 +22,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_GLOBALPLUGIN_H_
-#define ATSCPPAPI_GLOBALPLUGIN_H_
 
 #include <atscppapi/Plugin.h>
 
@@ -88,5 +86,3 @@ private:
 };
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_GLOBALPLUGIN_H_ */

@@ -1,6 +1,3 @@
-#if !defined(ATS_WCCP_API_HEADER)
-#define ATS_WCCP_API_HEADER
-
 /** @file
     WCCP (v2) support API.
 
@@ -22,6 +19,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+
+#pragma once
 
 #include <ts/TsBuffer.h>
 #include <tsconfig/Errata.h>
@@ -516,4 +515,3 @@ EndPoint::useMD5Security(char const *key)
 // ------------------------------------------------------
 
 } // namespace Wccp
-#endif // include guard.

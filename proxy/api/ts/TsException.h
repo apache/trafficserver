@@ -21,8 +21,7 @@
     limitations under the License.
 */
 
-#if !defined(TS_EXCEPTION_HEADER)
-#define TS_EXCEPTION_HEADER
+#pragma once
 
 /** @file
     Apache Traffic Server Exceptions.
@@ -63,5 +62,3 @@ inline Exception::Exception(const char *text) : m_text(text)
 {
 }
 }
-
-#endif // TS_EXCEPTION_HEADER

@@ -28,8 +28,7 @@
 
  */
 
-#if !defined(_I_OneWayTunnel_h_)
-#define _I_OneWayTunnel_h_
+#pragma once
 
 #include "I_EventSystem.h"
 
@@ -210,5 +209,3 @@ private:
   OneWayTunnel(const OneWayTunnel &);
   OneWayTunnel &operator=(const OneWayTunnel &);
 };
-
-#endif

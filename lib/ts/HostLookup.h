@@ -28,8 +28,8 @@
  *
  ****************************************************************************/
 
-#ifndef _HOST_LOOKUP_H_
-#define _HOST_LOOKUP_H_
+#pragma once
+
 // HostLookup  constantss
 const int HOST_TABLE_DEPTH = 3; // Controls the max number of levels in the logical tree
 const int HOST_ARRAY_MAX   = 8; // Sets the fixed array size
@@ -125,5 +125,3 @@ private:
   int num_el;               // the numbe of itmems in the tree
   const char *matcher_name; // Used for Debug/Warning/Error messages
 };
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_CACHE_H__
-#define _I_CACHE_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
@@ -231,5 +230,3 @@ struct CacheVConnection : public VConnection {
 void ink_cache_init(ModuleVersion version);
 extern inkcoreapi CacheProcessor cacheProcessor;
 extern Continuation *cacheRegexDeleteCont;
-
-#endif /* _I_CACHE_H__ */

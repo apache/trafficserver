@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ACL_FILTERING_H_
-#define _ACL_FILTERING_H_
+#pragma once
 
 #include "Main.h"
 #include "ts/ink_inet.h"
@@ -106,5 +105,3 @@ public:
   static void requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp);
   static void requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp);
 };
-
-#endif

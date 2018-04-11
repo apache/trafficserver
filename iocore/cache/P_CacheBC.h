@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_BC_H__
-#define _P_CACHE_BC_H__
+#pragma once
 
 namespace cache_bc
 {
@@ -137,5 +136,3 @@ Doc_v23::hdr()
 }
 
 } // namespace cache_bc
-
-#endif /* _P_CACHE_BC_H__ */

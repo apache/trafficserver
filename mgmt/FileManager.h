@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _FILE_MANAGER_H_
-#define _FILE_MANAGER_H_
+#pragma once
 
 /****************************************************************************
  *
@@ -155,5 +154,3 @@ private:
 int snapEntryCmpFunc(const void *e1, const void *e2);
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc
-
-#endif

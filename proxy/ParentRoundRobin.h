@@ -27,8 +27,7 @@
  *
  *****************************************************************************/
 
-#ifndef _PARENT_ROUND_ROBIN_H
-#define _PARENT_ROUND_ROBIN_H
+#pragma once
 
 #include "ParentSelection.h"
 
@@ -45,5 +44,3 @@ public:
   uint32_t numParents(ParentResult *result) const;
   void markParentUp(ParentResult *result);
 };
-
-#endif

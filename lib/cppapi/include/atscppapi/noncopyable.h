@@ -23,8 +23,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_NONCOPYABLE_H_
-#define ATSCPPAPI_NONCOPYABLE_H_
 
 namespace atscppapi
 {
@@ -59,5 +57,3 @@ private:
 };
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_NONCOPYABLE_H_ */

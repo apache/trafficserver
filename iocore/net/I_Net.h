@@ -38,8 +38,7 @@
   has socks and ssl support.
 
  */
-#ifndef __I_NET_H_
-#define __I_NET_H_
+#pragma once
 
 #include "ts/I_Version.h"
 #include "I_EventSystem.h"
@@ -95,4 +94,3 @@ extern int net_throttle_delay;
 #include "I_SessionAccept.h"
 
 void ink_net_init(ModuleVersion version);
-#endif

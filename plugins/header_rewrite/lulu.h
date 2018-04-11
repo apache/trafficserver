@@ -20,8 +20,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __LULU_H__
-#define __LULU_H__ 1
+#pragma once
 
 #include <string>
 
@@ -74,5 +73,3 @@ extern const char PLUGIN_NAME_DBG[];
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName &);              \
   void operator=(const TypeName &)
-
-#endif // __LULU_H__

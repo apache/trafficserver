@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _CORE_API_H
-#define _CORE_API_H
+#pragma once
 
 #include <stdarg.h> // for va_list
 
@@ -92,5 +91,3 @@ TSMgmtError SnapshotRemove(const char *snapshot_name);
 TSMgmtError SnapshotGetMlt(LLQ *snapshots);
 
 TSMgmtError StatsReset(bool cluster, const char *name = NULL);
-
-#endif

@@ -22,8 +22,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_HTTP_STATUS_H_
-#define ATSCPPAPI_HTTP_STATUS_H_
 
 #include <string>
 
@@ -99,5 +97,3 @@ enum HttpStatus {
 
 };
 }
-
-#endif

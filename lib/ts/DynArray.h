@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __DYN_ARRAY_H__
-#define __DYN_ARRAY_H__
+#pragma once
 
 template <class T> class DynArray
 {
@@ -188,5 +187,3 @@ DynArray<T>::resize(intptr_t new_size)
     size = new_size;
   }
 }
-
-#endif /* __DYN_ARRAY_H__ */

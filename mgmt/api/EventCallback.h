@@ -35,8 +35,7 @@
  * specific events. Used by both local api and remote api.
  */
 
-#ifndef _EVENT_CALLBACK_H_
-#define _EVENT_CALLBACK_H_
+#pragma once
 
 #include "ts/ink_llqueue.h"
 
@@ -77,5 +76,3 @@ TSMgmtError cb_table_unregister(CallbackTable *cb_table, const char *event_name,
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif

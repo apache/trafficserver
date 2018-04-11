@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HPACK_HUFFMAN_H__
-#define __HPACK_HUFFMAN_H__
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -32,5 +31,3 @@ void hpack_huffman_fin();
 int64_t huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len);
 uint8_t *huffman_encode_append(uint8_t *dst, uint32_t src, int n);
 int64_t huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len);
-
-#endif /* __HPACK_Huffman_H__ */

@@ -36,8 +36,7 @@
 
 
  ****************************************************************************/
-#ifndef __P_NETACCEPT_H__
-#define __P_NETACCEPT_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_Connection.h"
@@ -112,5 +111,3 @@ struct NetAccept : public Continuation {
   explicit NetAccept(const NetProcessor::AcceptOptions &);
   virtual ~NetAccept() { action_ = nullptr; }
 };
-
-#endif

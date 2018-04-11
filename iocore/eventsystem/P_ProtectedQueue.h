@@ -27,8 +27,7 @@
 
 
  ****************************************************************************/
-#ifndef _P_ProtectedQueue_h_
-#define _P_ProtectedQueue_h_
+#pragma once
 
 #include "I_EventSystem.h"
 
@@ -91,5 +90,3 @@ ProtectedQueue::dequeue_local()
   }
   return e;
 }
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __INK_LOCKFILE_H__
-#define __INK_LOCKFILE_H__
+#pragma once
 
 #include "ts/ink_defs.h"
 #include "ts/ink_string.h"
@@ -89,5 +88,3 @@ private:
   char fname[PATH_NAME_MAX];
   int fd;
 };
-
-#endif // __LOCK_FILE_H__

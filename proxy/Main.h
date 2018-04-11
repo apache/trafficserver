@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef _Main_h_
-#define _Main_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/ink_apidefs.h"
@@ -82,5 +81,3 @@ extern AppVersionInfo appVersionInfo;
 
 void crash_logger_init();
 void crash_logger_invoke(int signo, siginfo_t *info, void *ctx);
-
-#endif /* _Main_h_ */
