@@ -28,6 +28,7 @@
 #include "QUICApplicationMap.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrame.h"
+#include "QUICLossDetector.h"
 
 extern ClassAllocator<QUICStream> quicStreamAllocator;
 
@@ -37,7 +38,7 @@ class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   QUICStreamManager(){};
-  QUICStreamManager(QUICConnectionId cid, QUICApplicationMap *app_map);
+  QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICApplicationMap *app_map);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
@@ -82,4 +83,5 @@ private:
   QUICStreamId _remote_maximum_stream_id_bidi               = 0;
   QUICStreamId _remote_maximum_stream_id_uni                = 0;
   uint64_t _total_offset_sent                               = 0;
+  QUICRTTProvider *_rtt_provider                            = nullptr;
 };

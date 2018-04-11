@@ -33,6 +33,7 @@
 #include "QUICFlowController.h"
 #include "QUICIncomingFrameBuffer.h"
 #include "QUICFrameGenerator.h"
+#include "QUICLossDetector.h"
 
 class QUICNetVConnection;
 class QUICStreamState;
@@ -46,10 +47,14 @@ class QUICStream : public VConnection, public QUICFrameGenerator
 {
 public:
   QUICStream()
-    : VConnection(nullptr), _remote_flow_controller(0, 0), _local_flow_controller(0, 0), _received_stream_frame_buffer(this)
+    : VConnection(nullptr),
+      _remote_flow_controller(0, 0),
+      _local_flow_controller(nullptr, 0, 0),
+      _received_stream_frame_buffer(this)
   {
   }
-  QUICStream(QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data = 0, uint64_t send_max_stream_data = 0);
+  QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data = 0,
+             uint64_t send_max_stream_data = 0);
   ~QUICStream();
   // void start();
   int state_stream_open(int event, void *data);

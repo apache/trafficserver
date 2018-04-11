@@ -23,8 +23,21 @@
 
 #pragma once
 
+#include "../../eventsystem/I_EventSystem.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"
+#include "QUICLossDetector.h"
+
+class QUICRateAnalyzer
+{
+public:
+  void update(QUICOffset offset);
+  uint64_t expect_recv_bytes(ink_hrtime time);
+
+private:
+  double _rate           = 0.0;
+  ink_hrtime _start_time = Thread::get_hrtime();
+};
 
 class QUICFlowController
 {
@@ -73,8 +86,18 @@ private:
 class QUICLocalFlowController : public QUICFlowController
 {
 public:
-  QUICLocalFlowController(uint64_t initial_limit) : QUICFlowController(initial_limit) {}
+  QUICLocalFlowController(QUICRTTProvider *rtt_provider, uint64_t initial_limit)
+    : QUICFlowController(initial_limit), _rtt_provider(rtt_provider)
+  {
+  }
   void forward_limit(QUICOffset limit) override;
+  int update(QUICOffset offset) override;
+
+private:
+  bool _need_to_gen_frame();
+  QUICRateAnalyzer _analyzer;
+
+  QUICRTTProvider *_rtt_provider = nullptr;
 };
 
 class QUICRemoteConnectionFlowController : public QUICRemoteFlowController
@@ -87,7 +110,10 @@ public:
 class QUICLocalConnectionFlowController : public QUICLocalFlowController
 {
 public:
-  QUICLocalConnectionFlowController(uint64_t initial_limit) : QUICLocalFlowController(initial_limit) {}
+  QUICLocalConnectionFlowController(QUICRTTProvider *rtt_provider, uint64_t initial_limit)
+    : QUICLocalFlowController(rtt_provider, initial_limit)
+  {
+  }
   QUICFrameUPtr _create_frame() override;
 };
 
@@ -107,8 +133,8 @@ private:
 class QUICLocalStreamFlowController : public QUICLocalFlowController
 {
 public:
-  QUICLocalStreamFlowController(uint64_t initial_limit, QUICStreamId stream_id)
-    : QUICLocalFlowController(initial_limit), _stream_id(stream_id)
+  QUICLocalStreamFlowController(QUICRTTProvider *rtt_provider, uint64_t initial_limit, QUICStreamId stream_id)
+    : QUICLocalFlowController(rtt_provider, initial_limit), _stream_id(stream_id)
   {
   }
   QUICFrameUPtr _create_frame() override;

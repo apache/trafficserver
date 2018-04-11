@@ -199,12 +199,12 @@ QUICNetVConnection::start()
   this->_packet_factory.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
-  this->_stream_manager         = new QUICStreamManager(this->connection_id(), this->_application_map);
   this->_congestion_controller  = new QUICCongestionController(this->connection_id());
   this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
-  this->_local_flow_controller  = new QUICLocalConnectionFlowController(UINT64_MAX);
+  this->_local_flow_controller  = new QUICLocalConnectionFlowController(this->_loss_detector, UINT64_MAX);
   this->_path_validator         = new QUICPathValidator();
+  this->_stream_manager         = new QUICStreamManager(this->_loss_detector, this->connection_id(), this->_application_map);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
