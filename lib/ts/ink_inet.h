@@ -1448,6 +1448,8 @@ ats_ip_pton(const char *text, ///< [in] text.
   return addr.load(text) ? 0 : -1;
 }
 
+int ats_ip_range_parse(ts::string_view src, IpAddr &lower, IpAddr &upper);
+
 inline IpEndpoint &
 IpEndpoint::assign(IpAddr const &addr, in_port_t port)
 {
