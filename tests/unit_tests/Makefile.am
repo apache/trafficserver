@@ -26,4 +26,4 @@ bin_PROGRAMS = unit_tests
 unit_tests_SOURCES = main.cpp
 
 clang-tidy-local: $(DIST_SOURCES)
-  $(CXX_Clang_Tidy)
+	$(CXX_Clang_Tidy)
