@@ -124,13 +124,13 @@ public:
   };
 
   SimpleTokenizer(char delimiter = ' ', unsigned mode = 0, char escape = '\\')
-    : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape), _start(0), _length(0)
+    : _data(nullptr), _delimiter(delimiter), _mode(mode), _escape(escape), _start(0), _length(0)
   {
   }
 
   // NOTE: The input strring 's' is overwritten for mode OVERWRITE_INPUT_STRING.
   SimpleTokenizer(const char *s, char delimiter = ' ', unsigned mode = 0, char escape = '\\')
-    : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape)
+    : _data(nullptr), _delimiter(delimiter), _mode(mode), _escape(escape)
   {
     setString(s);
   }
@@ -209,7 +209,7 @@ private:
   char *
   _getNext(char delimiter, bool countOnly = false, int numTokens = 1)
   {
-    char *next = NULL;
+    char *next = nullptr;
 
     if (_start < _length) {
       // set start

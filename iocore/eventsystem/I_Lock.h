@@ -282,7 +282,7 @@ Mutex_trylock(
 #endif
   ProxyMutex *m, EThread *t)
 {
-  ink_assert(t != 0);
+  ink_assert(t != nullptr);
   ink_assert(t == (EThread *)this_thread());
   if (m->thread_holding != t) {
     if (!ink_mutex_try_acquire(&m->the_mutex)) {
@@ -340,7 +340,7 @@ Mutex_trylock_spin(
 #endif
   ProxyMutex *m, EThread *t, int spincnt = 1)
 {
-  ink_assert(t != 0);
+  ink_assert(t != nullptr);
   if (m->thread_holding != t) {
     int locked;
     do {
@@ -403,7 +403,7 @@ Mutex_lock(
 #endif
   ProxyMutex *m, EThread *t)
 {
-  ink_assert(t != 0);
+  ink_assert(t != nullptr);
   if (m->thread_holding != t) {
     ink_mutex_acquire(&m->the_mutex);
     m->thread_holding = t;
@@ -460,7 +460,7 @@ Mutex_unlock(ProxyMutex *m, EThread *t)
       m->handler = nullptr;
 #endif // DEBUG
       ink_assert(m->thread_holding);
-      m->thread_holding = 0;
+      m->thread_holding = nullptr;
       ink_mutex_release(&m->the_mutex);
     }
   }

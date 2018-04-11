@@ -47,12 +47,12 @@ debug_certificate(const char *msg, X509_NAME *name)
 {
   BIO *bio;
 
-  if (name == NULL) {
+  if (name == nullptr) {
     return;
   }
 
   bio = BIO_new(BIO_s_mem());
-  if (bio == NULL) {
+  if (bio == nullptr) {
     return;
   }
 

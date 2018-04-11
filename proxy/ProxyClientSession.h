@@ -192,7 +192,7 @@ public:
   virtual HttpServerSession *
   get_server_session() const
   {
-    return NULL;
+    return nullptr;
   }
 
   TSHttpHookID
@@ -219,7 +219,7 @@ public:
   bool
   is_client_closed() const
   {
-    return get_netvc() == NULL;
+    return get_netvc() == nullptr;
   }
 
   virtual int

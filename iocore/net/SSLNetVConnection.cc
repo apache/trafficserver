@@ -953,7 +953,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
           this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
           sslHandShakeComplete = 1;
           SSL_free(this->ssl);
-          this->ssl = NULL;
+          this->ssl = nullptr;
           return EVENT_DONE;
         } else {
           SSLConfig::scoped_config params;

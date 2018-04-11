@@ -92,6 +92,6 @@ private:
     if (group_iter != m_tries.end()) {
       return group_iter->second;
     }
-    return 0;
+    return nullptr;
   }
 };

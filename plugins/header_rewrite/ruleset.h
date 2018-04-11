@@ -36,9 +36,9 @@ class RuleSet
 {
 public:
   RuleSet()
-    : next(NULL),
-      _cond(NULL),
-      _oper(NULL),
+    : next(nullptr),
+      _cond(nullptr),
+      _oper(nullptr),
       _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK),
       _ids(RSRC_NONE),
       _opermods(OPER_NONE),
@@ -53,13 +53,13 @@ public:
   bool
   has_operator() const
   {
-    return NULL != _oper;
+    return nullptr != _oper;
   }
 
   bool
   has_condition() const
   {
-    return NULL != _cond;
+    return nullptr != _cond;
   }
 
   void
@@ -83,7 +83,7 @@ public:
   bool
   eval(const Resources &res) const
   {
-    if (NULL == _cond) {
+    if (nullptr == _cond) {
       return true;
     } else {
       return _cond->do_eval(res);

@@ -305,7 +305,7 @@ inline Buffer::Buffer(char *start, char *end) : _ptr(start), _size(end - start)
 inline Buffer &
 Buffer::reset()
 {
-  _ptr  = 0;
+  _ptr  = nullptr;
   _size = 0;
   return *this;
 }
@@ -335,7 +335,7 @@ inline bool Buffer::operator!() const
 }
 inline Buffer::operator pseudo_bool() const
 {
-  return _ptr && _size ? &self::operator! : 0;
+  return _ptr && _size ? &self::operator! : nullptr;
 }
 inline char Buffer::operator*() const
 {
@@ -389,7 +389,7 @@ ConstBuffer::set(char const *start, char const *end)
 inline ConstBuffer &
 ConstBuffer::reset()
 {
-  _ptr  = 0;
+  _ptr  = nullptr;
   _size = 0;
   return *this;
 }
@@ -426,7 +426,7 @@ inline bool ConstBuffer::operator!() const
 }
 inline ConstBuffer::operator pseudo_bool() const
 {
-  return _ptr && _size ? &self::operator! : 0;
+  return _ptr && _size ? &self::operator! : nullptr;
 }
 inline char ConstBuffer::operator*() const
 {

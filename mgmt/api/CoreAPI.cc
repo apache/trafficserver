@@ -215,8 +215,8 @@ typedef std::vector<pid_t> threadlist;
 static threadlist
 threads_for_process(pid_t proc)
 {
-  DIR *dir             = NULL;
-  struct dirent *entry = NULL;
+  DIR *dir             = nullptr;
+  struct dirent *entry = nullptr;
 
   char path[64];
   threadlist threads;
@@ -226,7 +226,7 @@ threads_for_process(pid_t proc)
   }
 
   dir = opendir(path);
-  if (dir == NULL) {
+  if (dir == nullptr) {
     goto done;
   }
 
@@ -237,7 +237,7 @@ threads_for_process(pid_t proc)
       continue;
     }
 
-    threadid = strtol(entry->d_name, NULL, 10);
+    threadid = strtol(entry->d_name, nullptr, 10);
     if (threadid > 0) {
       threads.push_back(threadid);
       Debug("backtrace", "found thread %ld", (long)threadid);
@@ -256,9 +256,9 @@ static void
 backtrace_for_thread(pid_t threadid, TextBuffer &text)
 {
   int status;
-  unw_addr_space_t addr_space = NULL;
+  unw_addr_space_t addr_space = nullptr;
   unw_cursor_t cursor;
-  void *ap       = NULL;
+  void *ap       = nullptr;
   pid_t target   = -1;
   unsigned level = 0;
 
@@ -279,13 +279,13 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
 
   ap = _UPT_create(threadid);
   Debug("backtrace", "created UPT %p", ap);
-  if (ap == NULL) {
+  if (ap == nullptr) {
     goto done;
   }
 
   addr_space = unw_create_addr_space(&_UPT_accessors, 0 /* byteorder */);
   Debug("backtrace", "created address space %p", addr_space);
-  if (addr_space == NULL) {
+  if (addr_space == nullptr) {
     goto done;
   }
 
@@ -304,7 +304,7 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
 
     if (unw_get_proc_name(&cursor, buf, sizeof(buf), &offset) == 0) {
       int status;
-      char *name = abi::__cxa_demangle(buf, NULL, NULL, &status);
+      char *name = abi::__cxa_demangle(buf, nullptr, nullptr, &status);
       text.format("%-4u 0x%016llx %s + %p\n", level, (unsigned long long)ip, name ? name : buf, (void *)offset);
       free(name);
     } else {
@@ -330,7 +330,7 @@ done:
 TSMgmtError
 ServerBacktrace(unsigned /* options */, char **trace)
 {
-  *trace = NULL;
+  *trace = nullptr;
 
   // Unfortunately, we need to be privileged here. We either need to be root or to be holding
   // the CAP_SYS_PTRACE capability. Even though we are the parent traffic_manager, it is not

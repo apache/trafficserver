@@ -140,7 +140,7 @@ struct HttpTransformInfo {
   HttpVCTableEntry *entry;
   VConnection *vc;
 
-  HttpTransformInfo() : entry(NULL), vc(NULL) {}
+  HttpTransformInfo() : entry(nullptr), vc(nullptr) {}
 };
 
 enum {
@@ -648,7 +648,7 @@ inline void
 HttpSM::remove_ua_entry()
 {
   vc_table.remove_entry(ua_entry);
-  ua_entry = NULL;
+  ua_entry = nullptr;
 }
 
 inline void
@@ -656,7 +656,7 @@ HttpSM::remove_server_entry()
 {
   if (server_entry) {
     vc_table.remove_entry(server_entry);
-    server_entry = NULL;
+    server_entry = nullptr;
   }
 }
 
@@ -699,15 +699,15 @@ HttpSM::txn_hook_get(TSHttpHookID id)
 inline void
 HttpSM::add_cache_sm()
 {
-  if (second_cache_sm == NULL) {
+  if (second_cache_sm == nullptr) {
     second_cache_sm = new HttpCacheSM;
     second_cache_sm->init(this, mutex);
-    if (t_state.cache_info.object_read != NULL) {
+    if (t_state.cache_info.object_read != nullptr) {
       second_cache_sm->cache_read_vc        = cache_sm.cache_read_vc;
-      cache_sm.cache_read_vc                = NULL;
+      cache_sm.cache_read_vc                = nullptr;
       second_cache_sm->read_locked          = cache_sm.read_locked;
       t_state.cache_info.second_object_read = t_state.cache_info.object_read;
-      t_state.cache_info.object_read        = NULL;
+      t_state.cache_info.object_read        = nullptr;
     }
   }
 }

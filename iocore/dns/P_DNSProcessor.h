@@ -316,10 +316,10 @@ DNSHandler::DNSHandler()
     in_flight(0),
     name_server(0),
     in_write_dns(0),
-    hostent_cache(0),
+    hostent_cache(nullptr),
     last_primary_retry(0),
     last_primary_reopen(0),
-    m_res(0),
+    m_res(nullptr),
     txn_lookup_timeout(0),
     generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
 {

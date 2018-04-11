@@ -51,7 +51,7 @@ public:
   do_exec(const Resources &res) const
   {
     exec(res);
-    if (NULL != _next) {
+    if (nullptr != _next) {
       static_cast<Operator *>(_next)->do_exec(res);
     }
   }

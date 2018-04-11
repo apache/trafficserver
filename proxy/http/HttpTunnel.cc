@@ -1247,7 +1247,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
       p->bytes_read = p->read_vio->ndone;
       // Clear any outstanding reads so they don't
       // collide with future tunnel IO's
-      p->vc->do_io_read(nullptr, 0, 0);
+      p->vc->do_io_read(nullptr, 0, nullptr);
       // Interesting tunnel event, call SM
       jump_point = p->vc_handler;
       (sm->*jump_point)(event, p);

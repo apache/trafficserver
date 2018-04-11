@@ -238,7 +238,7 @@ public:
   /// Schedule an @a event on continuation @a c when a thread of type @a ev_type is spawned.
   /// The @a cookie is attached to the event instance passed to the continuation.
   /// @return The scheduled event.
-  Event *schedule_spawn(Continuation *c, EventType ev_type, int event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_spawn(Continuation *c, EventType ev_type, int event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /// Schedule the function @a f to be called in a thread of type @a ev_type when it is spawned.
   Event *schedule_spawn(void (*f)(EThread *), EventType ev_type);

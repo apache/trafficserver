@@ -65,7 +65,7 @@ struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
       max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      cb_after_init(0),
+      cb_after_init(nullptr),
       wait_for_cache(0)
   {
   }
@@ -78,15 +78,15 @@ struct CacheProcessor : public Processor {
   int db_check(bool fix);
 
   inkcoreapi Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                            const char *hostname = 0, int host_len = 0);
+                            const char *hostname = nullptr, int host_len = 0);
   inkcoreapi Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                               const char *hostname = 0, int host_len = 0);
+                               const char *hostname = nullptr, int host_len = 0);
   inkcoreapi Action *open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                                 int expected_size = CACHE_EXPECTED_SIZE, int options = 0, time_t pin_in_cache = (time_t)0,
-                                char *hostname = 0, int host_len = 0);
+                                char *hostname = nullptr, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                            const char *hostname = 0, int host_len = 0);
-  Action *scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
+                            const char *hostname = nullptr, int host_len = 0);
+  Action *scan(Continuation *cont, char *hostname = nullptr, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   inkcoreapi Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request,
                                OverridableHttpConfigParams *params, time_t pin_in_cache = (time_t)0,
@@ -94,10 +94,10 @@ struct CacheProcessor : public Processor {
   Action *open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
                      time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *link(Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = 0,
-               int host_len = 0);
+  Action *link(Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP,
+               char *hostname = nullptr, int host_len = 0);
 
-  Action *deref(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = 0,
+  Action *deref(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = nullptr,
                 int host_len = 0);
 
   /** Mark physical disk/device/file as offline.

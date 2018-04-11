@@ -1841,7 +1841,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Translate string to IpAddr
     set_debug_ip(p);
   }
-  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
 
   // log initialization moved down
 

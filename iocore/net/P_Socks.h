@@ -160,6 +160,6 @@ SocksAddrType::reset()
     ats_free(addr.buf);
   }
 
-  addr.buf = 0;
+  addr.buf = nullptr;
   type     = SOCKS_ATYPE_NONE;
 }

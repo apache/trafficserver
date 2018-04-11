@@ -474,7 +474,7 @@ struct HostDBProcessor : public Processor {
   void
   setbyaddr_appinfo(sockaddr const *addr, HostDBApplicationInfo *app)
   {
-    this->setby(0, 0, addr, app);
+    this->setby(nullptr, 0, addr, app);
   }
 
   void
@@ -482,7 +482,7 @@ struct HostDBProcessor : public Processor {
   {
     sockaddr_in addr;
     ats_ip4_set(&addr, ip);
-    this->setby(0, 0, ats_ip_sa_cast(&addr), app);
+    this->setby(nullptr, 0, ats_ip_sa_cast(&addr), app);
   }
 
   /** Configuration. */

@@ -40,7 +40,7 @@
 class Value : Statement
 {
 public:
-  Value() : _need_expander(false), _value(""), _int_value(0), _float_value(0.0), _cond_val(NULL)
+  Value() : _need_expander(false), _value(""), _int_value(0), _float_value(0.0), _cond_val(nullptr)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value");
   }
@@ -61,8 +61,8 @@ public:
       // TODO: This is still not optimal, we should pre-parse the _value string here,
       // and perhaps populate a per-Value VariableExpander that holds state.
     } else {
-      _int_value   = strtol(_value.c_str(), NULL, 10);
-      _float_value = strtod(_value.c_str(), NULL);
+      _int_value   = strtol(_value.c_str(), nullptr, 10);
+      _float_value = strtod(_value.c_str(), nullptr);
     }
   }
 

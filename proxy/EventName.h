@@ -32,4 +32,4 @@
 
 #include <unistd.h>
 
-const char *event_int_to_string(int event, int blen = 0, char *buffer = NULL);
+const char *event_int_to_string(int event, int blen = 0, char *buffer = nullptr);

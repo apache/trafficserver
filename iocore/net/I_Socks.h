@@ -64,6 +64,6 @@ struct SocksAddrType {
   } addr;
 
   void reset();
-  SocksAddrType() : type(SOCKS_ATYPE_NONE) { addr.buf = 0; }
+  SocksAddrType() : type(SOCKS_ATYPE_NONE) { addr.buf = nullptr; }
   ~SocksAddrType() { reset(); }
 };

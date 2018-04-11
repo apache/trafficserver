@@ -56,7 +56,7 @@ public:
    *
    * Output nodes contain pointers to internal data; use with care. */
   bool
-  completeParse(EsiLib::DocNodeList &node_list, const char *data = 0, int data_len = -1)
+  completeParse(EsiLib::DocNodeList &node_list, const char *data = nullptr, int data_len = -1)
   {
     return _completeParse(_data, _parse_start_pos, _orig_output_list_size, node_list, data, data_len);
   }
@@ -141,7 +141,7 @@ private:
               const char *data_ptr, int &data_len) const;
 
   bool _completeParse(std::string &data, int &parse_start_pos, size_t &orig_output_list_size, EsiLib::DocNodeList &node_list,
-                      const char *data_ptr = 0, int data_len = -1) const;
+                      const char *data_ptr = nullptr, int data_len = -1) const;
 
   inline void _adjustPointers(EsiLib::DocNodeList::iterator node_iter, EsiLib::DocNodeList::iterator end, const char *ext_data_ptr,
                               const char *int_data_start) const;

@@ -40,7 +40,7 @@ public:
   virtual NetVConnection *
   get_netvc() const
   {
-    return (parent) ? parent->get_netvc() : NULL;
+    return (parent) ? parent->get_netvc() : nullptr;
   }
 
   virtual void set_active_timeout(ink_hrtime timeout_in)     = 0;
@@ -106,7 +106,7 @@ public:
   APIHook *
   ssn_hook_get(TSHttpHookID id) const
   {
-    return parent ? parent->ssn_hook_get(id) : NULL;
+    return parent ? parent->ssn_hook_get(id) : nullptr;
   }
 
   bool
@@ -146,7 +146,7 @@ public:
   const AclRecord *
   get_acl_record() const
   {
-    return parent ? parent->acl_record : NULL;
+    return parent ? parent->acl_record : nullptr;
   }
 
   // Indicate we are done with this transaction
@@ -225,7 +225,7 @@ public:
   HttpServerSession *
   get_server_session() const
   {
-    return parent ? parent->get_server_session() : NULL;
+    return parent ? parent->get_server_session() : nullptr;
   }
 
   HttpSM *
@@ -239,7 +239,7 @@ public:
   virtual const char *
   get_protocol_string()
   {
-    return parent ? parent->get_protocol_string() : NULL;
+    return parent ? parent->get_protocol_string() : nullptr;
   }
 
   void

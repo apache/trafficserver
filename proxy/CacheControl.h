@@ -137,7 +137,7 @@ struct HttpConfigParams;
 struct OverridableHttpConfigParams;
 
 inkcoreapi void getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableHttpConfigParams *h_txn_conf,
-                                char *tag = NULL);
+                                char *tag = nullptr);
 inkcoreapi bool host_rule_in_CacheControlTable();
 inkcoreapi bool ip_rule_in_CacheControlTable();
 

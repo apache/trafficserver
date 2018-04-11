@@ -111,7 +111,12 @@ struct DNSConnection {
 };
 
 inline DNSConnection::Options::Options()
-  : _non_blocking_connect(true), _non_blocking_io(true), _use_tcp(false), _bind_random_port(true), _local_ipv6(0), _local_ipv4(0)
+  : _non_blocking_connect(true),
+    _non_blocking_io(true),
+    _use_tcp(false),
+    _bind_random_port(true),
+    _local_ipv6(nullptr),
+    _local_ipv4(nullptr)
 {
 }
 

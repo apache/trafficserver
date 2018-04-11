@@ -319,7 +319,7 @@ IOBufferData::dealloc()
       ats_free(_data);
     break;
   }
-  _data       = 0;
+  _data       = nullptr;
   _size_index = BUFFER_SIZE_NOT_ALLOCATED;
   _mem_type   = NO_ALLOC;
 }
@@ -368,12 +368,12 @@ new_IOBufferBlock_internal(
 
 TS_INLINE
 IOBufferBlock::IOBufferBlock()
-  : _start(0),
-    _end(0),
-    _buf_end(0)
+  : _start(nullptr),
+    _end(nullptr),
+    _buf_end(nullptr)
 #ifdef TRACK_BUFFER_USER
     ,
-    _location(0)
+    _location(nullptr)
 #endif
 {
   return;
@@ -578,7 +578,7 @@ TS_INLINE char *
 IOBufferReader::start()
 {
   if (!block) {
-    return 0;
+    return nullptr;
   }
 
   skip_empty_blocks();
@@ -589,7 +589,7 @@ TS_INLINE char *
 IOBufferReader::end()
 {
   if (!block) {
-    return 0;
+    return nullptr;
   }
 
   skip_empty_blocks();

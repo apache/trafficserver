@@ -119,7 +119,7 @@ public:
     bool
     empty()
     {
-      return ((hash_lookup == NULL) && regex_list.empty());
+      return ((hash_lookup == nullptr) && regex_list.empty());
     }
   };
 

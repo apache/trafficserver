@@ -108,7 +108,7 @@ namespace detail
     int validate();
 
     /// Default constructor.
-    RBNode() : _color(RED), _parent(0), _left(0), _right(0), _next(0), _prev(0) {}
+    RBNode() : _color(RED), _parent(nullptr), _left(nullptr), _right(nullptr), _next(nullptr), _prev(nullptr) {}
     /// Destructor (force virtual).
     virtual ~RBNode() {}
     /** Rotate the subtree rooted at this node.
@@ -149,9 +149,9 @@ namespace detail
     clearChild(Direction dir)
     {
       if (LEFT == dir)
-        _left = 0;
+        _left = nullptr;
       else if (RIGHT == dir)
-        _right = 0;
+        _right = nullptr;
     }
 
     /** @name Subclass hook methods */

@@ -78,7 +78,7 @@ public:
   void signalFileChange(const char *var_name, bool incVersion = true);
   void signalEvent(int msg_id, const char *data_str);
   void signalEvent(int msg_id, const char *data_raw, int data_len);
-  void signalAlarm(int alarm_id, const char *desc = NULL, const char *ip = NULL);
+  void signalAlarm(int alarm_id, const char *desc = nullptr, const char *ip = nullptr);
 
   void processEventQueue();
   bool startProxy(const char *onetime_options);
@@ -93,7 +93,7 @@ public:
   void processBounce();
   void processDrain(int to_drain = 1);
   void rollLogFiles();
-  void clearStats(const char *name = NULL);
+  void clearStats(const char *name = nullptr);
   void hostStatusSetDown(const char *name);
   void hostStatusSetUp(const char *name);
 

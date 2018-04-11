@@ -238,7 +238,7 @@ struct Http2FrameHeader {
 // [RFC 7540] 5.4. Error Handling
 struct Http2Error {
   Http2Error(const Http2ErrorClass error_class = Http2ErrorClass::HTTP2_ERROR_CLASS_NONE,
-             const Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_NO_ERROR, const char *err_msg = NULL)
+             const Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_NO_ERROR, const char *err_msg = nullptr)
   {
     cls  = error_class;
     code = error_code;

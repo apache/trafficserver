@@ -633,7 +633,7 @@ CacheVC::callcont(int event)
   if (closed)
     die();
   else if (vio.vc_server)
-    handleEvent(EVENT_IMMEDIATE, 0);
+    handleEvent(EVENT_IMMEDIATE, nullptr);
   return EVENT_DONE;
 }
 
@@ -644,14 +644,14 @@ CacheVC::do_read_call(CacheKey *akey)
   read_key            = akey;
   io.aiocb.aio_nbytes = dir_approx_size(&dir);
   PUSH_HANDLER(&CacheVC::handleRead);
-  return handleRead(EVENT_CALL, 0);
+  return handleRead(EVENT_CALL, nullptr);
 }
 
 TS_INLINE int
 CacheVC::do_write_call()
 {
   PUSH_HANDLER(&CacheVC::handleWrite);
-  return handleWrite(EVENT_CALL, 0);
+  return handleWrite(EVENT_CALL, nullptr);
 }
 
 TS_INLINE void
@@ -703,7 +703,7 @@ CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
     ret = handleWrite(EVENT_CALL, e);
   }
   if (ret == EVENT_RETURN)
-    return handleEvent(AIO_EVENT_DONE, 0);
+    return handleEvent(AIO_EVENT_DONE, nullptr);
   return EVENT_CONT;
 }
 
@@ -711,14 +711,14 @@ TS_INLINE int
 CacheVC::do_write_lock()
 {
   PUSH_HANDLER(&CacheVC::handleWriteLock);
-  return handleWriteLock(EVENT_NONE, 0);
+  return handleWriteLock(EVENT_NONE, nullptr);
 }
 
 TS_INLINE int
 CacheVC::do_write_lock_call()
 {
   PUSH_HANDLER(&CacheVC::handleWriteLock);
-  return handleWriteLock(EVENT_CALL, 0);
+  return handleWriteLock(EVENT_CALL, nullptr);
 }
 
 TS_INLINE bool
@@ -958,15 +958,15 @@ struct Cache {
   Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len);
   inkcoreapi Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int len);
   inkcoreapi Action *open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options = 0,
-                                time_t pin_in_cache = (time_t)0, const char *hostname = 0, int host_len = 0);
+                                time_t pin_in_cache = (time_t)0, const char *hostname = nullptr, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP,
-                            const char *hostname = 0, int host_len = 0);
-  Action *scan(Continuation *cont, const char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
+                            const char *hostname = nullptr, int host_len = 0);
+  Action *scan(Continuation *cont, const char *hostname = nullptr, int host_len = 0, int KB_per_second = 2500);
 
   Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
                     CacheFragType type, const char *hostname, int host_len);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
-                     const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0,
+                     const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
                      int host_len = 0);
   static void generate_key(CryptoHash *hash, CacheURL *url);
   static void generate_key(HttpCacheKey *hash, CacheURL *url, cache_generation_t generation = -1);

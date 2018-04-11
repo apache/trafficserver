@@ -306,7 +306,7 @@ private:
   -------------------------------------------------------------------------*/
 
 inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_network_order)
-  : m_in_network_order(in_network_order), m_next(0), m_iter_entry_count(0), m_buffer_entry_count(0)
+  : m_in_network_order(in_network_order), m_next(nullptr), m_iter_entry_count(0), m_buffer_entry_count(0)
 {
   ink_assert(header);
 

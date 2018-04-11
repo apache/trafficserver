@@ -35,12 +35,12 @@ public:
   Http1ClientTransaction() {}
   // Implement VConnection interface.
   VIO *
-  do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override
+  do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override
   {
     return parent->do_io_read(c, nbytes, buf);
   }
   VIO *
-  do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override
+  do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr, bool owner = false) override
   {
     return parent->do_io_write(c, nbytes, buf, owner);
   }

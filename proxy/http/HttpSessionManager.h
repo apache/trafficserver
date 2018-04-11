@@ -149,7 +149,7 @@ public:
 class HttpSessionManager
 {
 public:
-  HttpSessionManager() : m_g_pool(NULL) {}
+  HttpSessionManager() : m_g_pool(nullptr) {}
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyClientTransaction *ua_txn,
                               HttpSM *sm);

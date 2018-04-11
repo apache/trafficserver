@@ -107,10 +107,10 @@ public:
   ~Alarms();
 
   void registerCallback(AlarmCallbackFunc func);
-  bool isCurrentAlarm(alarm_t a, char *ip = NULL);
+  bool isCurrentAlarm(alarm_t a, char *ip = nullptr);
 
-  void signalAlarm(alarm_t t, const char *desc, const char *ip = NULL);
-  void resolveAlarm(alarm_t a, char *ip = NULL);
+  void signalAlarm(alarm_t t, const char *desc, const char *ip = nullptr);
+  void resolveAlarm(alarm_t a, char *ip = nullptr);
 
   void constructAlarmMessage(const AppVersionInfo &version, char *ip, char *message, int max);
   void resetSeenFlag(char *ip);

@@ -36,17 +36,17 @@ namespace cache
   struct Key {
     ~Key()
     {
-      assert(key_ != NULL);
+      assert(key_ != nullptr);
       TSCacheKeyDestroy(key_);
     }
 
-    Key(void) : key_(TSCacheKeyCreate()) { assert(key_ != NULL); }
+    Key(void) : key_(TSCacheKeyCreate()) { assert(key_ != nullptr); }
     Key(const Key &) = delete;
     Key &operator=(const Key &) = delete;
 
     explicit Key(const std::string &s) : key_(TSCacheKeyCreate())
     {
-      assert(key_ != NULL);
+      assert(key_ != nullptr);
       CHECK(TSCacheKeyDigestSet(key_, s.c_str(), s.size()));
     }
 
@@ -69,10 +69,10 @@ namespace cache
     handle(TSCont c, TSEvent e, void *d)
     {
       Self *const self = static_cast<Self *const>(TSContDataGet(c));
-      assert(self != NULL);
+      assert(self != nullptr);
       switch (e) {
       case TS_EVENT_CACHE_OPEN_READ:
-        assert(d != NULL);
+        assert(d != nullptr);
         self->t_.hit(static_cast<TSVConn>(d));
         break;
       case TS_EVENT_CACHE_OPEN_READ_FAILED:
@@ -83,7 +83,7 @@ namespace cache
         break;
       }
       delete self;
-      TSContDataSet(c, NULL);
+      TSContDataSet(c, nullptr);
       TSContDestroy(c);
       return TS_SUCCESS;
     }
@@ -95,7 +95,7 @@ namespace cache
   {
     const Key key(k);
     const TSCont continuation = TSContCreate(Read<T>::handle, TSMutexCreate());
-    assert(continuation != NULL);
+    assert(continuation != nullptr);
     TSContDataSet(continuation, new Read<T>(std::forward<A>(a)...));
     TSCacheRead(continuation, key.key());
   }
@@ -107,12 +107,12 @@ namespace cache
 
     ~Write()
     {
-      if (out_ != NULL) {
+      if (out_ != nullptr) {
         delete out_;
       }
     }
 
-    Write(std::string &&s) : content_(std::move(s)), out_(NULL), vconnection_(NULL) {}
+    Write(std::string &&s) : content_(std::move(s)), out_(nullptr), vconnection_(nullptr) {}
     static int handle(TSCont, TSEvent, void *);
   };
 

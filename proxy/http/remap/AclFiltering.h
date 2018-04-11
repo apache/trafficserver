@@ -96,7 +96,7 @@ public:
 
   acl_filter_rule();
   ~acl_filter_rule();
-  void name(const char *_name = NULL);
+  void name(const char *_name = nullptr);
   int add_argv(int _argc, char *_argv[]);
   void print(void);
 

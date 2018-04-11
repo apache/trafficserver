@@ -87,7 +87,7 @@ public:
   };
 
   virtual int asInt(char *key, IntType *val, bool case_sensitive = 0) const = 0;
-  virtual int asString(IntType key, char *buf, size_t bufLen, size_t *numChars = 0) const = 0;
+  virtual int asString(IntType key, char *buf, size_t bufLen, size_t *numChars = nullptr) const = 0;
 };
 
 /*****************************************************************************
@@ -107,7 +107,7 @@ struct LogFieldAliasTableEntry {
   char *name;    // the string equivalent
   size_t length; // the length of the string
 
-  LogFieldAliasTableEntry() : valid(false), name(NULL), length(0) {}
+  LogFieldAliasTableEntry() : valid(false), name(nullptr), length(0) {}
   ~LogFieldAliasTableEntry()
   {
     if (name) {
@@ -125,7 +125,7 @@ private:
   LogFieldAliasTableEntry *m_table; // array of table entries
 
 public:
-  LogFieldAliasTable() : m_min(0), m_max(0), m_entries(0), m_table(0) {}
+  LogFieldAliasTable() : m_min(0), m_max(0), m_entries(0), m_table(nullptr) {}
   ~LogFieldAliasTable() { delete[] m_table; }
   void init(size_t numPairs, ...);
 
@@ -156,7 +156,7 @@ public:
   }
 
   int
-  asString(IntType key, char *buf, size_t bufLen, size_t *numCharsPtr = 0) const
+  asString(IntType key, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const
   {
     int retVal;
     size_t numChars;
@@ -207,7 +207,7 @@ public:
   }
 
   int
-  asString(IntType time, char *buf, size_t bufLen, size_t *numCharsPtr = 0) const
+  asString(IntType time, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const
   {
     return (LogUtils::timestamp_to_hex_str(time, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
   }

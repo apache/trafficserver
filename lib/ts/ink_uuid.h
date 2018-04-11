@@ -47,7 +47,7 @@ public:
   const char *
   getString() const
   {
-    return valid() ? _string : NULL;
+    return valid() ? _string : nullptr;
   }
 
   const char *
