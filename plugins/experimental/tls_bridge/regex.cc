@@ -120,10 +120,10 @@ Regex::~Regex()
   if (regex_extra) {
 #ifdef PCRE_CONFIG_JIT
     pcre_free_study(regex_extra);
-  }
 #else
     pcre_free(regex_extra);
 #endif
+  }
   if (regex) {
     pcre_free(regex);
   }
