@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef GZIP_CONFIGURATION_H_
-#define GZIP_CONFIGURATION_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -171,5 +170,3 @@ private:
 }; // class Configuration
 
 } // namespace
-
-#endif

@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef IOCORE_NET_P_SSLCLIENTUTILS_H_
-#define IOCORE_NET_P_SSLCLIENTUTILS_H_
+#pragma once
 
 #include "ts/ink_config.h"
 #include "ts/Diags.h"
@@ -38,5 +37,3 @@
 SSL_CTX *SSLInitClientContext(const struct SSLConfigParams *param);
 
 int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
-
-#endif /* IOCORE_NET_P_SSLCLIENTUTILS_H_ */

@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _P_HostDB_h_
-#define _P_HostDB_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -52,4 +51,3 @@
 Ptr<HostDBInfo> probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout);
 
 void make_md5(INK_MD5 &md5, const char *hostname, int len, int port, const char *pDNSServers, HostDBMark mark);
-#endif

@@ -19,8 +19,7 @@
 // Public interface for creating all operators. Don't user the operator.h interface
 // directly!
 //
-#ifndef __OPERATOR_H__
-#define __OPERATOR_H__ 1
+#pragma once
 
 #include <string>
 
@@ -99,5 +98,3 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorCookies);
 };
-
-#endif // __OPERATOR_H

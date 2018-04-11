@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _TimeTrace_h_
-#define _TimeTrace_h_
+#pragma once
 
 // #define ENABLE_TIME_TRACE
 
@@ -79,7 +78,3 @@ extern int cluster_send_events;
 #else // !ENABLE_TIME_TRACE
 #define LOG_EVENT_TIME(_start_time, _time_dist, _time_cnt)
 #endif // !ENABLE_TIME_TRACE
-
-#endif // _TimeTrace_h_
-
-// End of TimeTrace.h

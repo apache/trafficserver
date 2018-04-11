@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#if !defined(_ink_string_pp_h_)
-#define _ink_string_pp_h_
+#pragma once
 #include <stdio.h>
 #include <strings.h>
 
@@ -298,5 +297,3 @@ StrList::append_string(const char *s, int len_not_counting_nul)
   append(cell);
   return (cell);
 }
-
-#endif

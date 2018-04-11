@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_ASYNCTIMER_H_
-#define ATSCPPAPI_ASYNCTIMER_H_
 
 #include <string>
 #include <memory>
@@ -79,5 +77,3 @@ private:
 };
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_ASYNCTIMER_H_ */

@@ -27,8 +27,7 @@
 // will not work if used in conjunction with ink_thread_cancel().
 //-------------------------------------------------------------------------
 
-#ifndef _INK_RWLOCK_H_
-#define _INK_RWLOCK_H_
+#pragma once
 
 #include "ts/ink_mutex.h"
 #include "ts/ink_thread.h"
@@ -50,5 +49,3 @@ int ink_rwlock_destroy(ink_rwlock *rw);
 int ink_rwlock_rdlock(ink_rwlock *rw);
 int ink_rwlock_wrlock(ink_rwlock *rw);
 int ink_rwlock_unlock(ink_rwlock *rw);
-
-#endif

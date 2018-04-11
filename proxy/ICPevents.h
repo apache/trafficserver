@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ICPEvents_h_
-#define _ICPEvents_h_
-
+#pragma once
 #include "I_EventSystem.h"
 
 /** Events specific to ICP. */
@@ -38,5 +36,3 @@ typedef enum {
   ICP_STALE_OBJECT = ICP_EVENT_EVENTS_START + 10,
   ICP_FRESH_OBJECT = ICP_EVENT_EVENTS_START + 11
 } ICPreturn_t;
-
-#endif // _ICPevents_h_

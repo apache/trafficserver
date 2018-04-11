@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __CONDITION_H__
-#define __CONDITION_H__ 1
+#pragma once
 
 #include <string>
 
@@ -130,5 +129,3 @@ private:
 
   CondModifiers _mods;
 };
-
-#endif // __CONDITION_H

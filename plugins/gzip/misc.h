@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _GZIP_MISC_H_
-#define _GZIP_MISC_H_
+#pragma once
 
 #include <zlib.h>
 #include <ts/ts.h>
@@ -98,5 +97,3 @@ const char *init_hidden_header_name();
 int check_ts_version();
 int register_plugin();
 void gzip_log_ratio(int64_t in, int64_t out);
-
-#endif

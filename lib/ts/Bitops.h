@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __BITOPS_H__
-#define __BITOPS_H__
+#pragma once
 
 #include <strings.h>
 
@@ -271,5 +270,3 @@ bitops_isset(unsigned char *val, int bit)
   int idx = bit % 8;
   return ((val[pos] & (1 << idx)) != 0);
 }
-
-#endif /* __BITOPS_H__ */

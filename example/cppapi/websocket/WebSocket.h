@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef WEBSOCKET_H_3AE11C09_90DC_4BC6_A297_B38C3B8AEFBF
-#define WEBSOCKET_H_3AE11C09_90DC_4BC6_A297_B38C3B8AEFBF
+#pragma once
 
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/InterceptPlugin.h>
@@ -65,5 +64,3 @@ public:
 
   void handleReadRequestHeadersPreRemap(Transaction &transaction);
 };
-
-#endif /* WEBSOCKET_H_3AE11C09_90DC_4BC6_A297_B38C3B8AEFBF */

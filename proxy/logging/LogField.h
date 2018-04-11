@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_FIELD_H
-#define LOG_FIELD_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/List.h"
@@ -277,5 +276,3 @@ union LogFieldIpStorage {
   LogFieldIp4 _ip4;
   LogFieldIp6 _ip6;
 };
-
-#endif

@@ -28,8 +28,7 @@
 
  */
 
-#if !defined(_I_OneWayMultiTunnel_h_)
-#define _I_OneWayMultiTunnel_h_
+#pragma once
 
 #include "I_OneWayTunnel.h"
 
@@ -149,4 +148,3 @@ struct OneWayMultiTunnel : public OneWayTunnel {
 };
 
 extern ClassAllocator<OneWayMultiTunnel> OneWayMultiTunnelAllocator;
-#endif

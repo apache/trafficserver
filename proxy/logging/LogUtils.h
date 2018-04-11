@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef LOG_UTILS_H
-#define LOG_UTILS_H
+#pragma once
 
 #include "time.h"
 
@@ -61,4 +60,3 @@ int seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_interv
 int file_is_writeable(const char *full_filename, off_t *size_bytes = 0, bool *has_size_limit = 0,
                       uint64_t *current_size_limit_bytes = 0);
 };
-#endif

@@ -22,8 +22,7 @@
 
  */
 
-#ifndef _I_Processor_h_
-#define _I_Processor_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -115,5 +114,3 @@ private:
   Processor(const Processor &);
   Processor &operator=(const Processor &);
 };
-
-#endif //_I_Processor_h_

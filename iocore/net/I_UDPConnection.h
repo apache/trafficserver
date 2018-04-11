@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef __I_UDPCONNECTION_H_
-#define __I_UDPCONNECTION_H_
+#pragma once
 
 #include "I_EventSystem.h"
 #define INK_ETHERNET_MTU_SIZE 1472
@@ -105,4 +104,3 @@ public:
 };
 
 extern UDPConnection *new_UDPConnection(int fd);
-#endif //__I_UDPCONNECTION_H_

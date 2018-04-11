@@ -1,6 +1,3 @@
-#if !defined(TS_INTRUSIVE_DOUBLE_LIST_HEADER)
-#define TS_INTRUSIVE_DOUBLE_LIST_HEADER
-
 /** @file
 
     Intrusive double linked list container.
@@ -41,6 +38,8 @@
     limitations under the License.
 
  */
+
+#pragma once
 
 /// FreeBSD doesn't like just declaring the tag struct we need so we have to include the file.
 #include <iterator>
@@ -375,5 +374,3 @@ protected:
   T *_tail;      ///< Last element in list.
   size_t _count; ///< # of elements in list.
 };
-
-#endif // TS_INTRUSIVE_DOUBLE_LIST_HEADER

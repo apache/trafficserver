@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _THREAD_H_
-#define _THREAD_H_
+#pragma once
 
 #define MAGIC_ALIVE 0xfeedbabe
 #define MAGIC_DEAD 0xdeadbeef
@@ -77,5 +76,3 @@ void thread_signal_job();
 void thread_init();
 
 void thread_loop(void *arg);
-
-#endif

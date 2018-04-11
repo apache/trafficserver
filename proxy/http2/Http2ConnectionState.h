@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_CONNECTION_STATE_H__
-#define __HTTP2_CONNECTION_STATE_H__
+#pragma once
 
 #include "HTTP2.h"
 #include "HPACK.h"
@@ -312,5 +311,3 @@ private:
   int recursion;
   Event *fini_event;
 };
-
-#endif // __HTTP2_CONNECTION_STATE_H__

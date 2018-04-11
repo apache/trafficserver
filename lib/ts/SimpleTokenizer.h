@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _SIMPLE_TOKENIZER_H_
-#define _SIMPLE_TOKENIZER_H_
+#pragma once
 
 #include <stdlib.h>
 #include <string.h>
@@ -295,5 +294,3 @@ private:
     return count;
   };
 };
-
-#endif

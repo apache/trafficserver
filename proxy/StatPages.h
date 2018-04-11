@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _StatPages_h_
-#define _StatPages_h_
+#pragma once
 #include "P_EventSystem.h"
 
 #include "HTTP.h"
@@ -118,5 +117,3 @@ protected:
   int response_size;
   int response_length;
 };
-
-#endif

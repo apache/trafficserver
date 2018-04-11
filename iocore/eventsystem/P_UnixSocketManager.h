@@ -29,8 +29,7 @@
 
 
 ****************************************************************************/
-#ifndef _P_UnixSocketManager_h_
-#define _P_UnixSocketManager_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/ink_sock.h"
@@ -516,5 +515,3 @@ SocketManager::dup(int s)
   } while (res == -EINTR);
   return res;
 }
-
-#endif /*P_UnixSocketManager_h_ */

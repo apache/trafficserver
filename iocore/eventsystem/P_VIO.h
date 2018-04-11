@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(P_VIO_h)
-#define P_VIO_h
+#pragma once
 #include "I_VIO.h"
 
 TS_INLINE
@@ -122,5 +121,3 @@ VIO::reenable_re()
   if (vc_server)
     vc_server->reenable_re(this);
 }
-
-#endif /* #if !defined ( P_VIO_h) */

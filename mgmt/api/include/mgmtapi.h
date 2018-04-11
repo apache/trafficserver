@@ -25,8 +25,7 @@
   limitations under the License.
  */
 
-#ifndef __TS_MGMT_API_H__
-#define __TS_MGMT_API_H__
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -1261,5 +1260,3 @@ tsapi TSMgmtError TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString *li
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __TS_MGMT_API_H__ */

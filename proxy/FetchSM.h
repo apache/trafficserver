@@ -27,8 +27,7 @@
  *
  ****************************************************************************/
 
-#ifndef _FETCH_SM_H
-#define _FETCH_SM_H
+#pragma once
 
 #include "P_Net.h"
 #include "ts.h"
@@ -187,5 +186,3 @@ private:
   int64_t resp_content_length;
   int64_t resp_received_body_len;
 };
-
-#endif

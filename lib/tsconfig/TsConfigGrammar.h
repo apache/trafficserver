@@ -30,8 +30,7 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_TSCONFIG_TSCONFIGGRAMMAR_H_INCLUDED
-# define YY_TSCONFIG_TSCONFIGGRAMMAR_H_INCLUDED
+#pragma once
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -127,5 +126,3 @@ int tsconfigparse (yyscan_t lexer, struct TsConfigHandlers* handlers);
 int tsconfigparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
-
-#endif /* !YY_TSCONFIG_TSCONFIGGRAMMAR_H_INCLUDED  */

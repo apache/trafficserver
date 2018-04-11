@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_H__
-#define _P_CACHE_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_EventSystem.h"
@@ -43,4 +42,3 @@
 #include "P_CacheInternal.h"
 #include "P_CacheHosting.h"
 #include "P_CacheHttp.h"
-#endif /* _P_CACHE_H */

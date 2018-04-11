@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_ACCESS_HTTP_H
-#define LOG_ACCESS_HTTP_H
+#pragma once
 
 #include "ts/Arena.h"
 #include "HTTP.h"
@@ -213,5 +212,3 @@ private:
   LogAccessHttp(const LogAccessHttp &rhs);
   LogAccessHttp &operator=(LogAccessHttp &rhs);
 };
-
-#endif

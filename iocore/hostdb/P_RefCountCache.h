@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef _P_RefCountCache_h_
-#define _P_RefCountCache_h_
+#pragma once
 
 #include <I_EventSystem.h>
 #include <P_EventSystem.h> // TODO: less? just need ET_TASK
@@ -618,5 +617,3 @@ LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, std::string dirn
   socketManager.close(fd);
   return 0;
 }
-
-#endif /* _P_RefCountCache_h_ */

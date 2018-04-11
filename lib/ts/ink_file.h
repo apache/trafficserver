@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef _ink_file_h_
-#define _ink_file_h_
+#pragma once
 
 #include "ts/ink_config.h"
 
@@ -139,5 +138,3 @@ isdotdot(const char *path)
 {
   return path[0] == '.' && path[1] == '.' && path[2] == '\0';
 }
-
-#endif // _ink_file_h_

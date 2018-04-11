@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __RULESET_H__
-#define __RULESET_H__ 1
+#pragma once
 
 #include <string>
 
@@ -118,5 +117,3 @@ private:
   OperModifiers _opermods;
   bool _last;
 };
-
-#endif // __RULESET_H

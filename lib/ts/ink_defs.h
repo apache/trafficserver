@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_defs_h
-#define _ink_defs_h
+#pragma once
 
 #include "ts/ink_config.h"
 #include <stddef.h>
@@ -140,5 +139,3 @@ namespace ts
 static const int NO_FD = -1; ///< No or invalid file descriptor.
 }
 #endif
-
-#endif /*__ink_defs_h*/

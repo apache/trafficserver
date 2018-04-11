@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef _ink_memory_h_
-#define _ink_memory_h_
+#pragma once
 
 #include <ctype.h>
 #include <string.h>
@@ -570,5 +569,3 @@ path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
   return x.release();
 }
 #endif /* __cplusplus */
-
-#endif

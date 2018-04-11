@@ -22,8 +22,7 @@
 
  */
 
-#if !defined(I_Tasks_h)
-#define I_Tasks_h
+#pragma once
 
 #include "I_EventSystem.h"
 
@@ -36,5 +35,3 @@ public:
 };
 
 extern TasksProcessor tasksProcessor;
-
-#endif

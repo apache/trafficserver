@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_FILE_H_
-#define _P_REC_FILE_H_
+#pragma once
 
 //-------------------------------------------------------------------------
 // types/defines
@@ -53,5 +52,3 @@ RecHandle RecPipeConnect(const char *base_path, const char *name);
 int RecPipeClose(RecHandle h_pipe);
 int RecPipeRead(RecHandle h_pipe, char *buf, int size);
 int RecPipeWrite(RecHandle h_pipe, char *buf, int size);
-
-#endif

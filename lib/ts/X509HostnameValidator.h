@@ -21,8 +21,7 @@
     limitations under the License.
 */
 
-#ifndef LIB_TS_X509HOSTNAMEVALIDATOR_H_
-#define LIB_TS_X509HOSTNAMEVALIDATOR_H_
+#pragma once
 
 #include <openssl/x509.h>
 
@@ -36,5 +35,3 @@
  */
 
 bool validate_hostname(X509 *cert, const unsigned char *hostname, bool is_ip, char **peername);
-
-#endif /* LIB_TS_X509HOSTNAMEVALIDATOR_H_ */

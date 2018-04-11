@@ -22,8 +22,7 @@
  * @see test_aws_auth_v4.cc
  */
 
-#ifndef PLUGINS_S3_AUTH_UNIT_TESTS_TEST_AWS_AUTH_V4_H_
-#define PLUGINS_S3_AUTH_UNIT_TESTS_TEST_AWS_AUTH_V4_H_
+#pragma once
 
 #include <string> /* std::string */
 
@@ -142,5 +141,3 @@ size_t getIso8601Time(time_t *now, char *dateTime, size_t dateTimeLen);
 extern const StringMap defaultDefaultRegionMap;
 extern const StringSet defaultExcludeHeaders;
 extern const StringSet defaultIncludeHeaders;
-
-#endif /* PLUGINS_S3_AUTH_UNIT_TESTS_TEST_AWS_AUTH_V4_H_ */

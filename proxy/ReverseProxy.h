@@ -30,8 +30,7 @@
  *
  ****************************************************************************/
 
-#ifndef _REVERSE_PROXY_H_
-#define _REVERSE_PROXY_H_
+#pragma once
 
 #include "P_RecProcess.h"
 
@@ -68,5 +67,3 @@ bool response_url_remap(HTTPHdr *response_header);
 bool reloadUrlRewrite();
 
 int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
-
-#endif

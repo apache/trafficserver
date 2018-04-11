@@ -28,11 +28,8 @@
    Description:  Stringifying Events
  ****************************************************************************/
 
-#ifndef _EVENT_NAME_H_
-#define _EVENT_NAME_H_
+#pragma once
 
 #include <unistd.h>
 
 const char *event_int_to_string(int event, int blen = 0, char *buffer = NULL);
-
-#endif /* _event_name_h_ */

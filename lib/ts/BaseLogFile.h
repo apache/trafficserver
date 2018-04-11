@@ -22,8 +22,7 @@
 
  */
 
-#ifndef BASE_LOG_FILE_H
-#define BASE_LOG_FILE_H
+#pragma once
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -240,4 +239,3 @@ private:
   bool m_is_init;
   BaseMetaInfo *m_meta_info;
 };
-#endif

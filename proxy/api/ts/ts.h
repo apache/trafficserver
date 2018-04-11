@@ -27,8 +27,7 @@
 
  */
 
-#ifndef __TS_API_H__
-#define __TS_API_H__
+#pragma once
 
 #include <ts/apidefs.h>
 
@@ -2438,5 +2437,3 @@ tsapi const char *TSRegisterProtocolTag(char const *tag);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __TS_API_H__ */

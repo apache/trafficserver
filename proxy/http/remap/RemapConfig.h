@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef REMAPCONFIG_H_E862FB4C_EFFC_4F2A_8BF2_9AB6E1E5E9CF
-#define REMAPCONFIG_H_E862FB4C_EFFC_4F2A_8BF2_9AB6E1E5E9CF
+#pragma once
 
 #include "AclFiltering.h"
 
@@ -75,5 +74,3 @@ unsigned long remap_check_option(const char **argv, int argc, unsigned long find
                                  const char **argptr = NULL);
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);
-
-#endif /* REMAPCONFIG_H_E862FB4C_EFFC_4F2A_8BF2_9AB6E1E5E9CF */

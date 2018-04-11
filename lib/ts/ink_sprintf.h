@@ -31,8 +31,7 @@
 
   ****************************************************************************/
 
-#ifndef _ink_sprintf_h_
-#define _ink_sprintf_h_
+#pragma once
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -41,5 +40,3 @@
 
 int ink_bsprintf(char *buffer, const char *format, ...) TS_PRINTFLIKE(2, 3);
 int ink_bvsprintf(char *buffer, const char *format, va_list ap);
-
-#endif

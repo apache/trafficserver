@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __PROXY_CLIENT_TRANSACTION_H__
-#define __PROXY_CLIENT_TRANSACTION_H__
+#pragma once
 
 #include "ProxyClientSession.h"
 #include <ts/MemView.h>
@@ -269,5 +268,3 @@ protected:
 
 private:
 };
-
-#endif /* __PROXY_CLIENT_TRANSACTION_H__ */

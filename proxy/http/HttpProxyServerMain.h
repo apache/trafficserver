@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#pragma once
+
 struct HttpProxyPort;
 
 /** Initialize all HTTP proxy port data structures needed to run.

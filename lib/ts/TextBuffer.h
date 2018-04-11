@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _TEXT_BUFFER
-#define _TEXT_BUFFER
+#pragma once
 
 /****************************************************************************
  *
@@ -82,5 +81,3 @@ private:
   char *bufferStart;
   char *nextAdd;
 };
-
-#endif

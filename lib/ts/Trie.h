@@ -20,8 +20,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#ifndef _TRIE_H
-#define _TRIE_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -250,5 +249,3 @@ Trie<T>::Node::Print(const char *debug_tag) const
     }
   }
 }
-
-#endif // _TRIE_H

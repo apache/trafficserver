@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TS_REMAP_H__
-#define __TS_REMAP_H__
+#pragma once
 
 #ifndef tsapi
 #define tsapi
@@ -122,4 +121,3 @@ tsapi void TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-#endif /* #ifndef __TS_REMAP_H__ */

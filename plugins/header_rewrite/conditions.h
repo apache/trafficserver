@@ -19,8 +19,7 @@
 //
 // Declarations for all conditionals / conditional values we support.
 //
-#ifndef __CONDITIONS_H__
-#define __CONDITIONS_H__ 1
+#pragma once
 
 #include <string>
 #include <cstring>
@@ -479,5 +478,3 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionId);
   IdQualifiers _id_qual;
 };
-
-#endif // __CONDITIONS_H

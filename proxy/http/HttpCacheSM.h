@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_CACHE_SM_H_
-#define _HTTP_CACHE_SM_H_
+#pragma once
 
 #include "P_Cache.h"
 #include "ProxyConfig.h"
@@ -213,5 +212,3 @@ private:
   int lookup_max_recursive;
   int current_lookup_level;
 };
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef ProtocolProbeSessionAccept_H_
-#define ProtocolProbeSessionAccept_H_
+#pragma once
 
 #include "I_SessionAccept.h"
 
@@ -65,5 +64,3 @@ private:
 
   friend struct ProtocolProbeTrampoline;
 };
-
-#endif /* ProtocolProbeSessionAccept_H_ */

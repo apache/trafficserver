@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __PLUGIN_H__
-#define __PLUGIN_H__
+#pragma once
 
 #include "ts/List.h"
 
@@ -86,5 +85,3 @@ public:
     return 0;
   }
 };
-
-#endif /* __PLUGIN_H__ */

@@ -19,8 +19,7 @@
 // Public interface for creating all values.
 //
 //
-#ifndef __VALUE_H__
-#define __VALUE_H__ 1
+#pragma once
 
 #include <string>
 
@@ -122,5 +121,3 @@ private:
   double _float_value;
   Condition *_cond_val;
 };
-
-#endif // __VALUE_H

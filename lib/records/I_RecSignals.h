@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_SIGNALS_H_
-#define _I_REC_SIGNALS_H_
+#pragma once
 
 // copy from mgmt/BaseManager.h
 #define REC_SIGNAL_PID 0
@@ -44,5 +43,3 @@
 #define REC_SIGNAL_LIBRECORDS 16
 #define REC_SIGNAL_HTTP_CONGESTED_SERVER 20
 #define REC_SIGNAL_HTTP_ALLEVIATED_SERVER 21
-
-#endif

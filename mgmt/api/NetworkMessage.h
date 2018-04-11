@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _NETWORK_MESSAGE_H_
-#define _NETWORK_MESSAGE_H_
+#pragma once
 
 #include "MgmtMarshall.h"
 
@@ -93,5 +92,3 @@ TSMgmtError recv_mgmt_message(int fd, MgmtMarshallData &msg);
 
 // Extract the first MGMT_MARSHALL_INT from the buffered message. This is the OpType.
 OpType extract_mgmt_request_optype(void *msg, size_t msglen);
-
-#endif /* _NETWORK_MESSAGE_H_ */

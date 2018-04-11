@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_SM_H_
-#define _HTTP_SM_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_EventSystem.h"
@@ -725,5 +724,3 @@ HttpSM::postbuf_init(IOBufferReader *ua_reader)
 {
   this->_postbuf.init(ua_reader);
 }
-
-#endif

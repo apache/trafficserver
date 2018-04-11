@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _Store_h_
-#define _Store_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -273,5 +272,3 @@ struct Store {
 
 // store either free or in the cache, can be stolen for reconfiguration
 void stealStore(Store &s, int blocks);
-
-#endif

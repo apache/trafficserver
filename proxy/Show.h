@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _Show_h_
-#define _Show_h_
+#pragma once
 
 #include "StatPages.h"
 
@@ -162,5 +161,3 @@ public:
     ats_free(start);
   }
 };
-
-#endif

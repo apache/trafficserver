@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TS_REGEX_H__
-#define __TS_REGEX_H__
+#pragma once
 
 #include "ts/ink_config.h"
 
@@ -79,5 +78,3 @@ private:
 
   dfa_pattern *_my_patterns;
 };
-
-#endif /* __TS_REGEX_H__ */

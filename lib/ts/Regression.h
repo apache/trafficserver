@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _Regression_h
-#define _Regression_h
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Regex.h"
@@ -104,5 +103,3 @@ struct RegressionTest {
 int rprintf(RegressionTest *t, const char *format, ...);
 int rperf(RegressionTest *t, const char *tag, double val);
 char *regression_status_string(int status);
-
-#endif /* _Regression_h */

@@ -1,13 +1,3 @@
-#if !defined(TS_IP_MAP_HEADER)
-#define TS_IP_MAP_HEADER
-
-#include "ts/ink_platform.h"
-#include "ts/ink_defs.h"
-#include "ts/RbTree.h"
-#include "ts/ink_inet.h"
-#include "ts/IntrusiveDList.h"
-#include "ts/ink_assert.h"
-
 /** @file
 
     Map of IP addresses to client data.
@@ -30,6 +20,15 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+
+#pragma once
+
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/RbTree.h"
+#include "ts/ink_inet.h"
+#include "ts/IntrusiveDList.h"
+#include "ts/ink_assert.h"
 
 namespace ts
 {
@@ -449,5 +448,3 @@ inline IpMap::iterator::pointer IpMap::iterator::operator->() const
 inline IpMap::IpMap() : _m4(0), _m6(0)
 {
 }
-
-#endif // TS_IP_MAP_HEADER

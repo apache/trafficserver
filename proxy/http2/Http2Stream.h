@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_STREAM_H__
-#define __HTTP2_STREAM_H__
+#pragma once
 
 #include "HTTP2.h"
 #include "../ProxyClientTransaction.h"
@@ -328,5 +327,3 @@ extern ClassAllocator<Http2Stream> http2StreamAllocator;
 
 extern bool check_continuation(Continuation *cont);
 extern bool check_stream_thread(Continuation *cont);
-
-#endif

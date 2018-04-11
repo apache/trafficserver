@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_MUTEX_H_
-#define _I_REC_MUTEX_H_
+#pragma once
 
 #include "ts/ink_mutex.h"
 #include "ts/ink_thread.h"
@@ -42,5 +41,3 @@ int rec_mutex_init(RecMutex *m, const char *name = nullptr);
 int rec_mutex_destroy(RecMutex *m);
 int rec_mutex_acquire(RecMutex *m);
 int rec_mutex_release(RecMutex *m);
-
-#endif

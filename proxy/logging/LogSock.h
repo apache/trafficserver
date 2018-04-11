@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_SOCK_H
-#define LOG_SOCK_H
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -130,5 +129,3 @@ private:
   LogSock(const LogSock &);
   LogSock &operator=(const LogSock &);
 };
-
-#endif

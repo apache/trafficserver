@@ -21,13 +21,10 @@
  *  limitations under the License.
  */
 
-#ifndef LOGBINDINGS_H_B54572F3_71A3_4665_A66C_4EEA311CCE15
-#define LOGBINDINGS_H_B54572F3_71A3_4665_A66C_4EEA311CCE15
+#pragma once
 
 #include "bindings/bindings.h"
 
 class LogConfig;
 
 bool MakeLogBindings(BindingInstance &binding, LogConfig *conf);
-
-#endif /* LOGBINDINGS_H_B54572F3_71A3_4665_A66C_4EEA311CCE15 */

@@ -29,9 +29,6 @@
  *
  ****************************************************************************/
 
-#ifndef _INK_SYSLOG_H_
-#define _INK_SYSLOG_H_
+#pragma once
 
 int facility_string_to_int(const char *str);
-
-#endif

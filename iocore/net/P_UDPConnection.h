@@ -28,8 +28,7 @@
 
 
  ****************************************************************************/
-#ifndef __P_UDPCONNECTION_H_
-#define __P_UDPCONNECTION_H_
+#pragma once
 
 #include "I_UDPNet.h"
 
@@ -160,5 +159,3 @@ UDPConnection::setContinuation(Continuation *c)
   mutex                                         = c->mutex;
   ((UDPConnectionInternal *)this)->continuation = c;
 }
-
-#endif //__P_UDPCONNECTION_H_

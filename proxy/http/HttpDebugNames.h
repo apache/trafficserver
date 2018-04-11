@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_HttpDebugNames_h_)
-#define _HttpDebugNames_h_
+#pragma once
 
 #include "HttpTransact.h"
 #include "api/ts/ts.h"
@@ -37,5 +36,3 @@ public:
   static const char *get_api_hook_name(TSHttpHookID t);
   static const char *get_server_state_name(HttpTransact::ServerState_t state);
 };
-
-#endif

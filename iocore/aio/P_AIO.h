@@ -28,8 +28,7 @@
 
 
  ****************************************************************************/
-#ifndef _P_AIO_h_
-#define _P_AIO_h_
+#pragma once
 
 #include "P_EventSystem.h"
 #include "I_AIO.h"
@@ -161,5 +160,3 @@ enum aio_stat_enum {
   AIO_STAT_COUNT
 };
 extern RecRawStatBlock *aio_rsb;
-
-#endif

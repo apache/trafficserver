@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __ARENA_H__
-#define __ARENA_H__
+#pragma once
 
 #include <sys/types.h>
 #include <memory.h>
@@ -165,5 +164,3 @@ Arena::str_store(const char *str, size_t len)
 
   return mem;
 }
-
-#endif /* __ARENA_H__ */

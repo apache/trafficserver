@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_ASYNCHTTPFETCH_H_
-#define ATSCPPAPI_ASYNCHTTPFETCH_H_
 
 #include <string>
 #include <memory>
@@ -135,5 +133,3 @@ private:
 };
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_ASYNCHTTPFETCH_H_ */

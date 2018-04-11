@@ -31,8 +31,7 @@
 #include "ts/ink_config.h"
 #include "HttpProxyAPIEnums.h"
 
-#ifndef _HTTP_CONNECTION_COUNT_H_
-#define _HTTP_CONNECTION_COUNT_H_
+#pragma once
 
 /**
  * Singleton class to keep track of the number of connections per host
@@ -215,5 +214,3 @@ public:
 private:
   static ConnectionCountQueue _connectionCount;
 };
-
-#endif

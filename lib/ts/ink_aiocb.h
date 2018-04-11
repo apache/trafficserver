@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef _ink_aiocb_h_
-#define _ink_aiocb_h_
+#pragma once
 
 #include "ts/ink_defs.h"
 
@@ -58,5 +57,3 @@ struct ink_aiocb {
   int aio_state;   /* state flag for List I/O */
   int aio__pad[1]; /* extension padding */
 };
-
-#endif

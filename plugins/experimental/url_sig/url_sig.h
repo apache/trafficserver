@@ -16,8 +16,7 @@
   limitations under the License.
  */
 
-#ifndef URL_SIG_H_
-#define URL_SIG_H_
+#pragma once
 
 /* in the query string that we add to sign the url: */
 #define CIP_QSTRING "C" /* C=24.0.33.12 designates the client IP address */
@@ -50,5 +49,3 @@
 
 #define USIG_HMAC_SHA1 1
 #define USIG_HMAC_MD5 2
-
-#endif /* URL_SIG_H_ */

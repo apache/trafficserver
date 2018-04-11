@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_FILE_H
-#define LOG_FILE_H
+#pragma once
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -142,5 +141,3 @@ private:
 /***************************************************************************
  LogFileList IS NOT USED
 ****************************************************************************/
-
-#endif

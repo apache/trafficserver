@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _PARENT_SELECTION_H_
-#define _PARENT_SELECTION_H_
+#pragma once
 
 #include "Main.h"
 #include "ProxyConfig.h"
@@ -439,5 +438,3 @@ struct SocksServerConfig {
 
   static int m_id;
 };
-
-#endif

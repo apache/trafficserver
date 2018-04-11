@@ -21,8 +21,7 @@
  * @brief PRCE related classes (header file).
  */
 
-#ifndef PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_
-#define PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_
+#pragma once
 
 #include "ts/ink_defs.h"
 
@@ -138,5 +137,3 @@ private:
   Classifier(const Classifier &);            // disallow
   Classifier &operator=(const Classifier &); // disallow
 };
-
-#endif /* PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_ */

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_REMAPPLUGININFO_h_)
-#define _REMAPPLUGININFO_h_
+#pragma once
 #include "ts/ink_platform.h"
 #include "api/ts/ts.h"
 #include "api/ts/remap.h"
@@ -77,5 +76,3 @@ struct host_hdr_info {
   int host_len;
   int request_port;
 };
-
-#endif
