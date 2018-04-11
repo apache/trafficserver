@@ -215,5 +215,3 @@ template <
 #endif
 
 } // namespace ts
-
-#endif // TS_WCCP_META_HEADER
