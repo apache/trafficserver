@@ -94,7 +94,7 @@ TEST_CASE("QUICStream", "[quic]")
     MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *reader = read_buffer->alloc_reader();
 
-    std::unique_ptr<QUICStream> stream(new QUICStream(0, stream_id));
+    std::unique_ptr<QUICStream> stream(new QUICStream(0, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, 0, read_buffer);
 
     stream->recv(frame_8);
@@ -119,7 +119,7 @@ TEST_CASE("QUICStream", "[quic]")
     MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *reader = read_buffer->alloc_reader();
 
-    std::unique_ptr<QUICStream> stream(new QUICStream(0, stream_id));
+    std::unique_ptr<QUICStream> stream(new QUICStream(0, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, 0, read_buffer);
 
     stream->recv(frame_8);
