@@ -1,6 +1,3 @@
-#if !defined TS_BUFFER_HEADER
-#define TS_BUFFER_HEADER
-
 /** @file
     Definitions for a buffer type, to carry a reference to a chunk of memory.
 
@@ -25,6 +22,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+
+#pragma once
 
 #if defined _MSC_VER
 #include <stddef.h>
@@ -514,5 +513,3 @@ ConstBuffer::clip(char const *p)
 
 typedef ts::Buffer TsBuffer;
 typedef ts::ConstBuffer TsConstBuffer;
-
-#endif // TS_BUFFER_HEADER

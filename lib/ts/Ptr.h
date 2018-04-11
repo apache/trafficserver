@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F
-#define PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F
+#pragma once
 
 #include "ts/ink_atomic.h"
 
@@ -249,5 +248,3 @@ Ptr<T>::operator=(const Ptr<T> &src)
 {
   return (operator=(src.m_ptr));
 }
-
-#endif /* PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F */

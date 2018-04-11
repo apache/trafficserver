@@ -1,6 +1,3 @@
-#if !defined(TS_WCCP_LOCAL_HEADER)
-#define TS_WCCP_LOCAL_HEADER
-
 /** @file
     WCCP (v2) support for Apache Traffic Server.
 
@@ -22,6 +19,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+
+#pragma once
 
 #include "Wccp.h"
 #include "WccpUtil.h"
@@ -3747,5 +3746,3 @@ RouterImpl::RouterData::resize(size_t n)
 // ------------------------------------------------------
 
 } // namespace wccp
-
-#endif // TS_WCCP_LOCAL_HEADER

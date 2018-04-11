@@ -28,8 +28,7 @@
 
 
 *****************************************************************************/
-#ifndef _P_UnixEThread_h_
-#define _P_UnixEThread_h_
+#pragma once
 
 #include "I_EThread.h"
 #include "I_EventProcessor.h"
@@ -191,5 +190,3 @@ EThread::set_tail_handler(LoopTailHandler *handler)
 {
   ink_atomic_swap(&tail_cb, handler);
 }
-
-#endif /*_EThread_h_*/

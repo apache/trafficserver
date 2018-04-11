@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __P_SOCKS_H__
-#define __P_SOCKS_H__
+#pragma once
 #include "P_EventSystem.h"
 #include "I_Socks.h"
 
@@ -164,5 +163,3 @@ SocksAddrType::reset()
   addr.buf = 0;
   type     = SOCKS_ATYPE_NONE;
 }
-
-#endif

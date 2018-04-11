@@ -25,8 +25,7 @@
   P_HostDBProcessor.h
  ****************************************************************************/
 
-#ifndef _P_HostDBProcessor_h_
-#define _P_HostDBProcessor_h_
+#pragma once
 
 #include "I_HostDBProcessor.h"
 #include <ts/TsBuffer.h>
@@ -534,5 +533,3 @@ HostDBContinuation::key_partition()
 {
   return hostDB.refcountcache->partition_for_key(hash.hash.fold());
 }
-
-#endif /* _P_HostDBProcessor_h_ */

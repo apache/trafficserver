@@ -33,8 +33,7 @@
 
  */
 
-#ifndef _I_Continuation_h_
-#define _I_Continuation_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/List.h"
@@ -212,5 +211,3 @@ inline Continuation::Continuation(ProxyMutex *amutex) : mutex(amutex)
   // Pick up the control flags from the creating thread
   this->control_flags.set_flags(get_cont_flags().get_flags());
 }
-
-#endif /*_Continuation_h_*/

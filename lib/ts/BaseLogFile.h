@@ -22,8 +22,7 @@
 
  */
 
-#ifndef BASE_LOG_FILE_H
-#define BASE_LOG_FILE_H
+#pragma once
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -237,4 +236,3 @@ private:
   uint64_t m_signature      = 0;
   bool m_has_signature      = false;
 };
-#endif

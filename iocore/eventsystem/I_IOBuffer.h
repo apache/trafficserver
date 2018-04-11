@@ -36,7 +36,7 @@
 
  */
 
-#if !defined(I_IOBuffer_h)
+#pragma once
 #define I_IOBuffer_h
 
 #include "ts/ink_platform.h"
@@ -1401,4 +1401,3 @@ extern IOBufferBlock *iobufferblock_clone(IOBufferBlock *b, int64_t offset, int6
 
 */
 extern IOBufferBlock *iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t write);
-#endif

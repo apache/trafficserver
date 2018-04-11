@@ -28,8 +28,7 @@
 #include <memory.h>
 #include <tsconfig/Errata.h>
 
-#if !defined(CACHE_TOOL_COMMAND_H)
-#define CACHE_TOOL_COMMAND_H
+#pragma once
 namespace ts
 {
 // Because in C+11 std::max is not constexpr
@@ -231,4 +230,3 @@ CommandTable::setArgIndex(int n)
   return *this;
 }
 }
-#endif

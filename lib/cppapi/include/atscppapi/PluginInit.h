@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_PLUGININIT_H_
-#define ATSCPPAPI_PLUGININIT_H_
 #include <ts/apidefs.h>
 #include <atscppapi/utils.h>
 extern "C" {
@@ -47,5 +45,3 @@ void TSPluginInit(int argc, const char *argv[]);
  */
 TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance_handle, char *errbuf, int errbuf_size);
 }
-
-#endif /* ATSCPPAPI_PLUGININIT_H_ */

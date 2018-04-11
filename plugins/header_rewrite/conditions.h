@@ -19,8 +19,7 @@
 //
 // Declarations for all conditionals / conditional values we support.
 //
-#ifndef __CONDITIONS_H__
-#define __CONDITIONS_H__ 1
+#pragma once
 
 #include <string>
 #include <cstring>
@@ -554,5 +553,3 @@ protected:
 private:
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
 };
-
-#endif // __CONDITIONS_H

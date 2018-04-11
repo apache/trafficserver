@@ -28,8 +28,7 @@
    Description:
    SNI based Configuration in ATS
  ****************************************************************************/
-#ifndef __P_ACTIONPROCESSOR_H__
-#define __P_ACTIONPROCESSOR_H__
+#pragma once
 
 #include "I_EventSystem.h"
 #include "ts/Map.h"
@@ -96,5 +95,3 @@ public:
   SNIActionPerformer() = default;
   static void PerformAction(Continuation *cont, cchar *servername);
 };
-
-#endif

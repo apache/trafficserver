@@ -34,8 +34,7 @@
 
  ****************************************************************************/
 
-#ifndef _P_NET_VC_TEST_H_
-#define _P_NET_VC_TEST_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -141,5 +140,3 @@ public:
   const char *module_name;
   const char *debug_tag;
 };
-
-#endif

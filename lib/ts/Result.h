@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef RESULT_H_77147E59_67CF_4DD7_A58D_ED3502981E87
-#define RESULT_H_77147E59_67CF_4DD7_A58D_ED3502981E87
+#pragma once
 
 #include "TextBuffer.h"
 
@@ -81,5 +80,3 @@ struct Result {
 private:
   TextBuffer buf;
 };
-
-#endif /* RESULT_H_77147E59_67CF_4DD7_A58D_ED3502981E87 */

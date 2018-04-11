@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _SRV_h_
-#define _SRV_h_
+#pragma once
 
 #include <vector>
 #include "ts/ink_platform.h"
@@ -53,5 +52,3 @@ struct SRVHosts {
   unsigned int srv_hosts_length = 0;
   std::vector<SRV> hosts;
 };
-
-#endif

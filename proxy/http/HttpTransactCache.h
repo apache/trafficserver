@@ -28,8 +28,7 @@
 
 
  ****************************************************************************/
-#if !defined(_HttpTransactCache_h_)
-#define _HttpTransactCache_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "HttpConfig.h"
@@ -82,5 +81,3 @@ public:
   static HTTPStatus match_response_to_request_conditionals(HTTPHdr *ua_request, HTTPHdr *c_response,
                                                            ink_time_t response_received_time);
 };
-
-#endif

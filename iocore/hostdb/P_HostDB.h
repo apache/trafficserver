@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _P_HostDB_h_
-#define _P_HostDB_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -51,4 +50,3 @@
 Ptr<HostDBInfo> probe(ProxyMutex *mutex, CryptoHash const &hash, bool ignore_timeout);
 
 void make_crypto_hash(CryptoHash &hash, const char *hostname, int len, int port, const char *pDNSServers, HostDBMark mark);
-#endif

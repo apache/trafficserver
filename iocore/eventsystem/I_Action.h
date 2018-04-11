@@ -22,8 +22,7 @@
 
  */
 
-#ifndef _I_Action_h_
-#define _I_Action_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Thread.h"
@@ -201,5 +200,3 @@ public:
 //   MAKE_ACTION_RESULT(ACTION_RESULT_HOST_DB_BASE + 0)
 
 #define MAKE_ACTION_RESULT(_x) (Action *)(((uintptr_t)((_x << 1) + 1)))
-
-#endif /*_Action_h_*/

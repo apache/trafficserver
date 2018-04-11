@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_SERVER_SESSION_H_
-#define _HTTP_SERVER_SESSION_H_
+#pragma once
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
 * are actually required.
 * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
@@ -212,4 +211,3 @@ HttpServerSession::attach_hostname(const char *hostname)
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
 }
-#endif

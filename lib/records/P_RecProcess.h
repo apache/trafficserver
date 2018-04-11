@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_PROCESS_H_
-#define _P_REC_PROCESS_H_
+#pragma once
 
 // Must include 'P_EventSystem.h' before 'I_EventSystem.h' (which is
 // included in 'I_RecProcess.h') to prevent multiple-symbol-definition
@@ -38,5 +37,3 @@
 //-------------------------------------------------------------------------
 
 int RecExecRawStatSyncCbs();
-
-#endif

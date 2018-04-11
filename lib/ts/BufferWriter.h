@@ -21,8 +21,7 @@
     limitations under the License.
  */
 
-#if !defined TS_BUFFERWRITER_H_
-#define TS_BUFFERWRITER_H_
+#pragma once
 
 #include <stdlib.h>
 #include <utility>
@@ -738,5 +737,3 @@ bwprint(std::string &s, ts::TextView fmt, Rest &&... rest)
 }
 
 } // end namespace ts
-
-#endif // include once

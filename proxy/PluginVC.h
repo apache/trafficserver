@@ -33,8 +33,7 @@
 
  ****************************************************************************/
 
-#ifndef _PLUGIN_VC_H_
-#define _PLUGIN_VC_H_
+#pragma once
 
 #include "Plugin.h"
 #include "P_Net.h"
@@ -281,5 +280,3 @@ inline PluginVCCore::PluginVCCore()
 
   id = ink_atomic_increment(&nextid, 1);
 }
-
-#endif

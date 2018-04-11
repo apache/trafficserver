@@ -20,8 +20,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_STAT_H_
-#define ATSCPPAPI_STAT_H_
 
 #include <atscppapi/noncopyable.h>
 #include <stdint.h>
@@ -103,5 +101,3 @@ private:
 };
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_STAT_H_ */

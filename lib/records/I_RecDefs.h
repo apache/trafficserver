@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_DEFS_H_
-#define _I_REC_DEFS_H_
+#pragma once
 
 #include "ts/ink_mutex.h"
 #include "ts/ink_rwlock.h"
@@ -182,5 +181,3 @@ struct RecRawStatBlock {
 typedef int (*RecConfigUpdateCb)(const char *name, RecDataT data_type, RecData data, void *cookie);
 typedef int (*RecStatUpdateFunc)(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id, void *cookie);
 typedef int (*RecRawStatSyncCb)(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id);
-
-#endif

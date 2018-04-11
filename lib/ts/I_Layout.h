@@ -28,8 +28,7 @@
 
  */
 
-#ifndef _I_Layout_h
-#define _I_Layout_h
+#pragma once
 
 // use std string and string view for layout
 #include <string>
@@ -99,5 +98,3 @@ struct Layout {
   std::string mandir;
   std::string cachedir;
 };
-
-#endif

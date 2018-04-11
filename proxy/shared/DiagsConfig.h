@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#ifndef __DIAGSCONFIG_H__
-#define __DIAGSCONFIG_H__
+#pragma once
+
 #include "ts/Diags.h"
 #include "ts/BaseLogFile.h"
 
@@ -43,5 +43,3 @@ private:
 public:
   Diags *diags;
 };
-
-#endif

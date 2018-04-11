@@ -21,8 +21,7 @@
  * @brief Plugin configuration (header file).
  */
 
-#ifndef PLUGINS_EXPERIMENTAL_CACHEKEY_CONFIGS_H_
-#define PLUGINS_EXPERIMENTAL_CACHEKEY_CONFIGS_H_
+#pragma once
 
 #include "pattern.h"
 #include "common.h"
@@ -198,5 +197,3 @@ private:
   String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
   CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
 };
-
-#endif // PLUGINS_EXPERIMENTAL_CACHEKEY_CONFIGS_H_

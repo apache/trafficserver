@@ -29,8 +29,7 @@
 
 
  ****************************************************************************/
-#if !defined(_SSLNetVConnection_h_)
-#define _SSLNetVConnection_h_
+#pragma once
 
 #include <ts/ink_platform.h>
 #include <ts/apidefs.h>
@@ -360,5 +359,3 @@ private:
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
-
-#endif /* _SSLNetVConnection_h_ */

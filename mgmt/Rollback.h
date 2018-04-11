@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ROLLBACK_H_
-#define _ROLLBACK_H_
+#pragma once
 
 /****************************************************************************
  *
@@ -263,4 +262,3 @@ private:
 // qSort comptable function to sort versionInfo*
 //   based on version number
 int versionCmp(const void *i1, const void *i2);
-#endif

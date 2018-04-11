@@ -22,11 +22,8 @@
     limitations under the License.
 */
 
-#ifndef HEADERS_H_9E78B01C_90CA_4E2D_9346_B17740751B9F
-#define HEADERS_H_9E78B01C_90CA_4E2D_9346_B17740751B9F
+#pragma once
 
 int remove_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len);
 bool set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const char *val, int val_len);
 void dump_headers(TSMBuffer bufp, TSMLoc hdr_loc);
-
-#endif /* HEADERS_H_9E78B01C_90CA_4E2D_9346_B17740751B9F */

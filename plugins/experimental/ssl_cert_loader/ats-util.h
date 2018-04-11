@@ -22,8 +22,7 @@
 
 */
 
-#if !defined(_ats_util_h)
-#define _ats_util_h
+#pragma once
 
 #if defined(__cplusplus)
 /** Set data to zero.
@@ -61,5 +60,3 @@ ink_zero(T &t ///< Object to zero.
   memset(&t, 0, sizeof(t));
 }
 #endif /* __cplusplus */
-
-#endif // ats-util.h

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_mutex_h_
-#define _ink_mutex_h_
+#pragma once
 
 /***********************************************************************
 
@@ -90,5 +89,3 @@ public:
   ink_scoped_mutex_lock(ink_mutex &m) : _m(m) { ink_mutex_acquire(&_m); }
   ~ink_scoped_mutex_lock() { ink_mutex_release(&_m); }
 };
-
-#endif /* _ink_mutex_h_ */

@@ -24,8 +24,7 @@
 /**
  * Remap plugin processor
 **/
-#if !defined(_REMAPPROCESSOR_h_)
-#define _REMAPPROCESSOR_h_
+#pragma once
 
 #include "I_EventSystem.h"
 #include "RemapPlugins.h"
@@ -71,5 +70,3 @@ private:
  * the global remapProcessor that everyone uses
 **/
 extern RemapProcessor remapProcessor;
-
-#endif

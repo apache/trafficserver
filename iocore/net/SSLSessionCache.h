@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef __SSLSESSIONCACHE_H__
-#define __SSLSESSIONCACHE_H__
+#pragma once
 
 #include "ts/Map.h"
 #include "ts/List.h"
@@ -161,5 +160,3 @@ private:
   SSLSessionBucket *session_bucket;
   size_t nbuckets;
 };
-
-#endif /* __SSLSESSIONCACHE_H__ */

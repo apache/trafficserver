@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_PROCESS_H_
-#define _I_REC_PROCESS_H_
+#pragma once
 
 #include "I_RecCore.h"
 #include "I_EventSystem.h"
@@ -156,5 +155,3 @@ RecIncrRawStatCount(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr
   tlp->count += incr;
   return REC_ERR_OKAY;
 }
-
-#endif /* !_I_REC_PROCESS_H_ */

@@ -21,12 +21,9 @@
   limitations under the License.
  */
 
-#ifndef _INK_SYS_CONTROL_H
-#define _INK_SYS_CONTROL_H
+#pragma once
 
 #include <sys/resource.h>
 
 rlim_t ink_max_out_rlimit(int which);
 rlim_t ink_get_max_files();
-
-#endif /*_INK_SYS_CONTROL_H*/

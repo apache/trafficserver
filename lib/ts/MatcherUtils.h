@@ -29,8 +29,7 @@
  *
  ****************************************************************************/
 
-#ifndef _MATCHER_UTILS_H_
-#define _MATCHER_UTILS_H_
+#pragma once
 
 #include "ts/ParseRules.h"
 #include "ts/Result.h"
@@ -130,5 +129,3 @@ LowerCaseStr(char *str)
     str++;
   }
 }
-
-#endif

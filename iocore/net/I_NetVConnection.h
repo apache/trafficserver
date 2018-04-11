@@ -22,8 +22,7 @@
 
  */
 
-#ifndef __NETVCONNECTION_H__
-#define __NETVCONNECTION_H__
+#pragma once
 
 #include "ts/ink_inet.h"
 #include "I_Action.h"
@@ -680,5 +679,3 @@ NetVConnection::trapWriteBufferEmpty(int event)
 {
   write_buffer_empty_event = event;
 }
-
-#endif

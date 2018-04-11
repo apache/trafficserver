@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#pragma once
 #include "api/include/experimental.h"
 
 void UDPClientTestInit();

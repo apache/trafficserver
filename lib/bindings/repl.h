@@ -21,10 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef REPL_H_DB690467_F8FE_4797_8B08_7FD1F090DBA2
-#define REPL_H_DB690467_F8FE_4797_8B08_7FD1F090DBA2
+#pragma once
 
 // Drop this binding instance into a Lua REPL (and never come out).
 void repl(BindingInstance &binding) TS_NORETURN;
-
-#endif /* REPL_H_DB690467_F8FE_4797_8B08_7FD1F090DBA2 */

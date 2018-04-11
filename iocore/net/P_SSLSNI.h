@@ -28,8 +28,7 @@
    Description:
    SNI based Configuration in ATS
  ****************************************************************************/
-#ifndef __P_SSL_SNI_H__
-#define __P_SSL_SNI_H__
+#pragma once
 
 #include "ProxyConfig.h"
 #include "ts/Map.h"
@@ -81,5 +80,3 @@ struct SNIConfig {
 private:
   static int configid;
 };
-
-#endif

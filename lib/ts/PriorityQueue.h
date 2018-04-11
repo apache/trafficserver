@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __PRIORITY_QUEUE_H__
-#define __PRIORITY_QUEUE_H__
+#pragma once
 
 #include "ts/ink_assert.h"
 #include <vector>
@@ -259,5 +258,3 @@ PriorityQueue<T, Comp>::_bubble_down(uint32_t index)
     break;
   }
 }
-
-#endif // __PRIORITY_QUEUE_H__

@@ -21,8 +21,7 @@
     limitations under the License.
  */
 
-#ifndef _MEM_ARENA_H_
-#define _MEM_ARENA_H_
+#pragma once
 
 #include <mutex>
 #include <memory>
@@ -152,5 +151,3 @@ private:
   std::shared_ptr<Block> current    = nullptr; ///< Head of allocations list. Allocate from this.
 };
 } // ts namespace
-
-#endif /* _MEM_ARENA_H_ */

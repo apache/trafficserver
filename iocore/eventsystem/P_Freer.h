@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_P_Freer_h_)
-#define _P_Freer_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Tasks.h"
@@ -132,5 +131,3 @@ new_Derefer(C *ap, ink_hrtime t)
 {
   eventProcessor.schedule_in(new DereferContinuation<C>(ap), t, ET_TASK);
 }
-
-#endif /* _Freer_h_ */

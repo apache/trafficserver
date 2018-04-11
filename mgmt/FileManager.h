@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _FILE_MANAGER_H_
-#define _FILE_MANAGER_H_
+#pragma once
 
 /****************************************************************************
  *
@@ -106,5 +105,3 @@ private:
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc
-
-#endif

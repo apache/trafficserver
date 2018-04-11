@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_SOCK_H
-#define LOG_SOCK_H
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -127,5 +126,3 @@ private:
   bool m_accept_connections; // do we accept new connections?
   int m_max_connections;     // max size of all tables
 };
-
-#endif

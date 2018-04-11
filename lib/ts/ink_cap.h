@@ -21,8 +21,7 @@
   limitations under the License.
 
  */
-#if !defined(_ink_cap_h_)
-#define _ink_cap_h_
+#pragma once
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -105,5 +104,3 @@ private:
   void *cap_state; ///< Original capabilities state to restore.
 #endif
 };
-
-#endif

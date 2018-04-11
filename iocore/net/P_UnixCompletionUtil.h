@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _UNIX_COMPLETION_UTIL_H_
-#define _UNIX_COMPLETION_UTIL_H_
+#pragma once
 
 // platform specific wrappers for dealing with I/O completion events
 // passed into and back from the I/O core.
@@ -101,4 +100,3 @@ completionUtil::getError(Event *e)
   UDPIOEvent *u = (UDPIOEvent *)e;
   return u->getError();
 }
-#endif

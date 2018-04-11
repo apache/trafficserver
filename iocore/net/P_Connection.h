@@ -47,8 +47,7 @@
 
   **************************************************************************/
 
-#ifndef __CONNECTION_H__
-#define __CONNECTION_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -176,5 +175,3 @@ struct Server : public Connection {
 
   Server() : Connection(), http_accept_filter(false) { ink_zero(accept_addr); }
 };
-
-#endif /*_Connection_h*/

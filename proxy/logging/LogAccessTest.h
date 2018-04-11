@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_ACCESS_TEST_H
-#define LOG_ACCESS_TEST_H
+#pragma once
 
 #include "LogAccess.h"
 
@@ -101,5 +100,3 @@ public:
   LogAccessTest(const LogAccessTest &rhs) = delete;
   LogAccessTest &operator=(LogAccessTest &rhs) = delete;
 };
-
-#endif

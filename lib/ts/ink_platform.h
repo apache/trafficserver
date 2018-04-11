@@ -22,8 +22,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_platform_h
-#define _ink_platform_h
+#pragma once
 
 #include "ts/ink_config.h"
 
@@ -195,5 +194,3 @@ typedef unsigned int in_addr_t;
                            // on various OSs (linux-4096,osx/bsd-1024,
                            //                 windows-260,etc)
 #endif
-
-#endif /* _ink_platform_h */

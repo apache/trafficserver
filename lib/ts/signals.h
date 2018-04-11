@@ -26,8 +26,7 @@
 
 **************************************************************************/
 
-#ifndef __SIGNALS_H__
-#define __SIGNALS_H__
+#pragma once
 
 typedef void (*signal_handler_t)(int signo, siginfo_t *info, void *ctx);
 
@@ -54,5 +53,3 @@ bool signal_check_handler(int signo, signal_handler_t handler);
 // Start a thread to test whether signals have the expected handler. Apparantly useful for
 // finding pthread bugs in some version of DEC Unix.
 void signal_start_check_thread(signal_handler_t handler);
-
-#endif /* __SIGNALS_H__ */

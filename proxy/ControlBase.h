@@ -29,8 +29,7 @@
  *
  ****************************************************************************/
 
-#ifndef _CONTROL_BASE_H_
-#define _CONTROL_BASE_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "vector"
@@ -107,5 +106,3 @@ ControlBase::CheckForMatch(HttpRequestData *request_data, int last_number)
 {
   return (last_number < 0 || last_number > this->line_num) && this->CheckModifiers(request_data);
 }
-
-#endif

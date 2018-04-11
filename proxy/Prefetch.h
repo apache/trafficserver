@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _PREFETCH_H_
-#define _PREFETCH_H_
+#pragma once
 
 #include <ts/IpMap.h>
 #include "TransformInternal.h"
@@ -431,5 +430,3 @@ public:
 #define PREFETCH_CONFIG_UPDATE_TIMEOUT (HRTIME_SECOND * 60)
 
 #endif // PREFETCH
-
-#endif // _PREFETCH_H_

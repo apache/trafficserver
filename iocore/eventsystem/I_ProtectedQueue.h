@@ -32,8 +32,7 @@
 
 
  ****************************************************************************/
-#ifndef _I_ProtectedQueue_h_
-#define _I_ProtectedQueue_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Event.h"
@@ -57,5 +56,3 @@ struct ProtectedQueue {
 };
 
 void flush_signals(EThread *t);
-
-#endif

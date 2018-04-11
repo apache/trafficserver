@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _TRAFFIC_CTRL_H_
-#define _TRAFFIC_CTRL_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Diags.h"
@@ -212,5 +211,3 @@ int subcommand_host(unsigned argc, const char **argv);
 #define CTRL_EX_UNIMPLEMENTED 3
 #define CTRL_EX_USAGE EX_USAGE
 #define CTRL_EX_UNAVAILABLE 69
-
-#endif /* _TRAFFIC_CTRL_H_ */

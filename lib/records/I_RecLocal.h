@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_LOCAL_H_
-#define _I_REC_LOCAL_H_
+#pragma once
 
 #include "I_RecCore.h"
 
@@ -35,5 +34,3 @@ class FileManager;
 int RecLocalInit(Diags *diags = nullptr);
 int RecLocalInitMessage();
 int RecLocalStart(FileManager *);
-
-#endif

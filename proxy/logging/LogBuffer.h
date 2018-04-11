@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_BUFFER_H
-#define LOG_BUFFER_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Diags.h"
@@ -331,4 +330,3 @@ inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_net
 inline LogBufferIterator::~LogBufferIterator()
 {
 }
-#endif

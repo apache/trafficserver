@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_ParseRules_h_)
-#define _ParseRules_h_
+#pragma once
 
 #include <string.h>
 
@@ -866,5 +865,3 @@ ink_atoui(const char *str)
   else
     return static_cast<int>(val);
 }
-
-#endif /* #if !defined (_ParseRules_h_) */

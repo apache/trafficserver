@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_OBJECT_H
-#define LOG_OBJECT_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "Log.h"
@@ -452,5 +451,3 @@ LogObject::get_file_size_bytes()
     return max_size;
   }
 }
-
-#endif

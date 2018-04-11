@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_INTERNAL_H__
-#define _P_CACHE_INTERNAL_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/InkErrno.h"
@@ -1021,5 +1020,3 @@ cache_hash(const CryptoHash &hash)
 }
 
 LINK_DEFINITION(CacheVC, opendir_link)
-
-#endif /* _P_CACHE_INTERNAL_H__ */

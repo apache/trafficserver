@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __PROXY_CLIENT_SESSION_H__
-#define __PROXY_CLIENT_SESSION_H__
+#pragma once
 
 #include <ts/ink_platform.h>
 #include <ts/ink_resolver.h>
@@ -303,5 +302,3 @@ private:
   // aborts.
   bool m_active = false;
 };
-
-#endif // __PROXY_CLIENT_SESSION_H__

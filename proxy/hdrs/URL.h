@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __URL_H__
-#define __URL_H__
+#pragma once
 
 #include "ts/Arena.h"
 #include "HdrToken.h"
@@ -723,5 +722,3 @@ URL::unescapify(Arena *arena, const char *str, int length)
 {
   return url_unescapify(arena, str, length);
 }
-
-#endif /* __URL_H__ */

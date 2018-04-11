@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_DISK_H__
-#define _P_CACHE_DISK_H__
+#pragma once
 
 #include "I_Cache.h"
 
@@ -122,5 +121,3 @@ struct CacheDisk : public Continuation {
   DiskVol *get_diskvol(int vol_number);
   void incrErrors(const AIOCallback *io);
 };
-
-#endif

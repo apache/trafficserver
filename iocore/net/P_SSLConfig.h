@@ -28,8 +28,7 @@
    Description:
    SSL Configurations
  ****************************************************************************/
-#ifndef __P_SSLCONFIG_H__
-#define __P_SSLCONFIG_H__
+#pragma once
 
 #include "ProxyConfig.h"
 #include "SSLSessionCache.h"
@@ -199,5 +198,3 @@ private:
 };
 
 extern SSLSessionCache *session_cache;
-
-#endif

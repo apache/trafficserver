@@ -28,8 +28,7 @@
 
 */
 
-#ifndef _RawHashTable_h_
-#define _RawHashTable_h_
+#pragma once
 
 #include "ts/ink_apidefs.h"
 #include "ts/ink_hash_table.h"
@@ -379,5 +378,3 @@ inline RawHashTableIter::~RawHashTableIter()
 {
   return;
 }
-
-#endif /*_RawHashTable_h_*/

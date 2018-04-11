@@ -24,8 +24,7 @@
   THE SOFTWARE.
 */
 
-#ifndef FASTLZ_H
-#define FASTLZ_H
+#pragma once
 
 #define FASTLZ_VERSION 0x000100
 
@@ -96,5 +95,3 @@ int fastlz_compress_level(int level, const void *input, int length, void *output
 #if defined(__cplusplus)
 }
 #endif
-
-#endif /* FASTLZ_H */

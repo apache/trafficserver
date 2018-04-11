@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(P_VConnection_h)
-#define P_VConnection_h
+#pragma once
 #include "I_EventSystem.h"
 
 TS_INLINE const char *
@@ -95,4 +94,3 @@ VConnection::reenable_re(VIO *vio)
 {
   reenable(vio);
 }
-#endif

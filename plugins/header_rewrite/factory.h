@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __FACTORY_H__
-#define __FACTORY_H__ 1
+#pragma once
 
 #include <string>
 
@@ -29,5 +28,3 @@
 
 Operator *operator_factory(const std::string &op);
 Condition *condition_factory(const std::string &cond);
-
-#endif

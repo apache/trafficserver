@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef P_SSLNextProtocolAccept_H_
-#define P_SSLNextProtocolAccept_H_
+#pragma once
 
 #include "P_Net.h"
 #include "P_EventSystem.h"
@@ -66,5 +65,3 @@ private:
 
   friend struct SSLNextProtocolTrampoline;
 };
-
-#endif /* P_SSLNextProtocolAccept_H_ */

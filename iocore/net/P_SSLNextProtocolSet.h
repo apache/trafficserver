@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef P_SSLNextProtocolSet_H_
-#define P_SSLNextProtocolSet_H_
+#pragma once
 
 #include "ts/List.h"
 #include "I_Net.h"
@@ -66,5 +65,3 @@ private:
 
   NextProtocolEndpoint::list_type endpoints;
 };
-
-#endif /* P_SSLNextProtocolSet_H_ */

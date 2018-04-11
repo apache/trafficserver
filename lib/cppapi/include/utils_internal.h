@@ -24,8 +24,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_ATSUTILS_H_
-#define ATSCPPAPI_ATSUTILS_H_
 
 #include <ts/ts.h>
 #include <string>
@@ -106,5 +104,3 @@ namespace utils
 
 } /* utils */
 }
-
-#endif /* ATSCPPAPI_ATSUTILS_H_ */

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_FORMAT_H
-#define LOG_FORMAT_H
+#pragma once
 
 #define LOG_FIELD_MARKER '\377'
 
@@ -216,5 +215,3 @@ public:
 private:
   Queue<LogFormat> m_format_list;
 };
-
-#endif

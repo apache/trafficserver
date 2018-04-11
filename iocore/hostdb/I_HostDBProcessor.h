@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_HostDBProcessor_h_
-#define _I_HostDBProcessor_h_
+#pragma once
 
 #include "ts/HashFNV.h"
 #include "ts/ink_time.h"
@@ -523,5 +522,3 @@ void run_HostDBTest();
 extern inkcoreapi HostDBProcessor hostDBProcessor;
 
 void ink_hostdb_init(ModuleVersion version);
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TS_REGEX_H__
-#define __TS_REGEX_H__
+#pragma once
 
 #include <pcre.h>
 #include <algorithm>
@@ -59,5 +58,3 @@ inline Regex::Regex(self_type &&that)
   std::swap(regex, that.regex);
   std::swap(regex_extra, that.regex_extra);
 }
-
-#endif /* __TS_REGEX_H__ */

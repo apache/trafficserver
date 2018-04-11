@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _THREAD_H_
-#define _THREAD_H_
+#pragma once
 
 #define PLUGIN_NAME "psi"
 
@@ -79,5 +78,3 @@ void thread_signal_job();
 void thread_init();
 
 void thread_loop(void *arg);
-
-#endif

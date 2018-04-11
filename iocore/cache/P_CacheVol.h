@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_VOL_H__
-#define _P_CACHE_VOL_H__
+#pragma once
 
 #define CACHE_BLOCK_SHIFT 9
 #define CACHE_BLOCK_SIZE (1 << CACHE_BLOCK_SHIFT) // 512, smallest sector size
@@ -506,5 +505,3 @@ Vol::round_to_approx_size(uint32_t l)
   uint32_t ll = round_to_approx_dir_size(l);
   return ROUND_TO_SECTOR(this, ll);
 }
-
-#endif /* _P_CACHE_VOL_H__ */
