@@ -817,7 +817,9 @@ UnixNetVConnection::reenable(VIO *vio)
           nh->write_enable_list.push(this);
         }
       }
-      if (nh->trigger_event) {
+      if (likely(nh->thread)) {
+        nh->thread->tail_cb->signalActivity();
+      } else if (nh->trigger_event) {
         nh->trigger_event->ethread->tail_cb->signalActivity();
       }
     } else {
