@@ -21,14 +21,18 @@
   limitations under the License.
  */
 
+#include <fstream>
+
 #include "ts/ink_platform.h"
 #include "ts/ink_defs.h"
 #include "ts/ink_inet.h"
 #include "ts/ParseRules.h"
 #include "ts/CryptoHash.h"
 #include "ts/ink_assert.h"
-#include <fstream>
-#include <ts/TextView.h>
+#include "ts/apidefs.h"
+#include "ts/TextView.h"
+#include "ts/ink_inet.h"
+#include "ink_inet.h"
 
 IpAddr const IpAddr::INVALID;
 
@@ -259,6 +263,90 @@ ats_ip_pton(const ts::string_view &src, sockaddr *ip)
     }
   }
 
+  return zret;
+}
+
+int
+ats_ip_range_parse(ts::string_view src, IpAddr &lower, IpAddr &upper)
+{
+  int zret = TS_ERROR;
+  IpAddr addr, addr2;
+  static const IpAddr ZERO_ADDR4{INADDR_ANY};
+  static const IpAddr MAX_ADDR4{INADDR_BROADCAST};
+  static const IpAddr ZERO_ADDR6{in6addr_any};
+  // I can't find a clean way to static const initialize an IPv6 address to all ones.
+  // This is the best I can find that's portable.
+  static const uint64_t ones[]{UINT64_MAX, UINT64_MAX};
+  static const IpAddr MAX_ADDR6{reinterpret_cast<in6_addr const &>(ones)};
+
+  auto idx = src.find_first_of("/-"_sv);
+  if (idx != src.npos) {
+    if (idx + 1 >= src.size()) { // must have something past the separator or it's bogus.
+      zret = TS_ERROR;
+    } else if ('/' == src[idx]) {
+      if (TS_SUCCESS == addr.load(src.substr(0, idx))) { // load the address
+        ts::TextView parsed;
+        src.remove_prefix(idx + 1); // drop address and separator.
+        int cidr = ts::svtoi(src, &parsed);
+        if (parsed.size() && 0 <= cidr) { // a cidr that's a positive integer.
+          // Special case the cidr sizes for 0, maximum, and for IPv6 64 bit boundaries.
+          if (addr.isIp4()) {
+            zret = TS_SUCCESS;
+            if (0 == cidr) {
+              lower = ZERO_ADDR4;
+              upper = MAX_ADDR4;
+            } else if (cidr <= 32) {
+              lower = upper = addr;
+              if (cidr < 32) {
+                in_addr_t mask = htonl(INADDR_BROADCAST << (32 - cidr));
+                lower._addr._ip4 &= mask;
+                upper._addr._ip4 |= ~mask;
+              }
+            } else {
+              zret = TS_ERROR;
+            }
+          } else if (addr.isIp6()) {
+            uint64_t mask;
+            zret = TS_SUCCESS;
+            if (cidr == 0) {
+              lower = ZERO_ADDR6;
+              upper = MAX_ADDR6;
+            } else if (cidr < 64) { // only upper bytes affected, lower bytes are forced.
+              mask          = htobe64(~static_cast<uint64_t>(0) << (64 - cidr));
+              lower._family = upper._family = addr._family;
+              lower._addr._u64[0]           = addr._addr._u64[0] & mask;
+              lower._addr._u64[1]           = 0;
+              upper._addr._u64[0]           = addr._addr._u64[0] | ~mask;
+              upper._addr._u64[1]           = ~static_cast<uint64_t>(0);
+            } else if (cidr == 64) {
+              lower._family = upper._family = addr._family;
+              lower._addr._u64[0] = upper._addr._u64[0] = addr._addr._u64[0];
+              lower._addr._u64[1]                       = 0;
+              upper._addr._u64[1]                       = ~static_cast<uint64_t>(0);
+            } else if (cidr <= 128) { // lower bytes changed, upper bytes unaffected.
+              lower = upper = addr;
+              if (cidr < 128) {
+                mask = htobe64(~static_cast<uint64_t>(0) << (128 - cidr));
+                lower._addr._u64[1] &= mask;
+                upper._addr._u64[1] |= ~mask;
+              }
+            } else {
+              zret = TS_ERROR;
+            }
+          }
+        }
+      }
+    } else if (TS_SUCCESS == addr.load(src.substr(0, idx)) && TS_SUCCESS == addr2.load(src.substr(idx + 1)) &&
+               addr.family() == addr2.family()) {
+      zret = TS_SUCCESS;
+      // not '/' so must be '-'
+      lower = addr;
+      upper = addr2;
+    }
+  } else if (TS_SUCCESS == addr.load(src)) {
+    zret  = TS_SUCCESS;
+    lower = upper = addr;
+  }
   return zret;
 }
 
