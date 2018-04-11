@@ -29,7 +29,7 @@
 class QUICFlowController
 {
 public:
-  uint32_t credit();
+  uint64_t credit();
   QUICOffset current_offset();
   QUICOffset current_limit();
 
@@ -38,7 +38,15 @@ public:
    */
   virtual int update(QUICOffset offset);
   virtual void forward_limit(QUICOffset limit);
+
   void set_threshold(uint64_t threshold);
+
+  /**
+   * This is only for flow controllers initialized without a limit (== UINT64_MAX).
+   * Once a limit is set, it should be updated with forward_limit().
+   */
+  void set_limit(QUICOffset limit);
+
   QUICFrameUPtr generate_frame();
 
 protected:

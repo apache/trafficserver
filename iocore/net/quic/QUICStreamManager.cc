@@ -55,15 +55,7 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
   // Setup a stream for Handshake
   QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
   if (stream) {
-    uint32_t local_initial_max_stream_data  = 0;
-    uint32_t remote_initial_max_stream_data = 0;
-    if (this->_local_tp) {
-      local_initial_max_stream_data = local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
-    }
-    if (this->_remote_tp) {
-      remote_initial_max_stream_data = remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
-    }
-    stream->init_flow_control_params(local_initial_max_stream_data, remote_initial_max_stream_data);
+    stream->init_flow_control_params(UINT64_MAX, UINT64_MAX);
   }
 
   if (this->_local_tp) {
@@ -249,9 +241,12 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
       return nullptr;
     }
 
-    uint32_t local_max_stream_data  = 0;
-    uint32_t remote_max_stream_data = 0;
-    if (this->_local_tp) {
+    uint64_t local_max_stream_data  = 0;
+    uint64_t remote_max_stream_data = 0;
+    if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
+      local_max_stream_data  = UINT64_MAX;
+      remote_max_stream_data = UINT64_MAX;
+    } else if (this->_local_tp) {
       local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA),
       remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
     } else {

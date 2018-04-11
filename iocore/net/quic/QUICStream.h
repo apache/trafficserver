@@ -55,7 +55,7 @@ public:
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);
 
-  void init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data);
+  void init_flow_control_params(uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
 
   QUICStreamId id() const;
   QUICOffset final_offset();

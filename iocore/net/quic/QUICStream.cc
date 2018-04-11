@@ -63,7 +63,7 @@ QUICStream::~QUICStream()
 }
 
 void
-QUICStream::init_flow_control_params(uint32_t recv_max_stream_data, uint32_t send_max_stream_data)
+QUICStream::init_flow_control_params(uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
 {
   this->_flow_control_buffer_size = recv_max_stream_data;
   this->_local_flow_controller.forward_limit(recv_max_stream_data);
@@ -400,8 +400,8 @@ QUICStream::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_si
   bool fin         = false;
 
   len = std::min(data_len, static_cast<int64_t>(
-                             std::min(static_cast<uint32_t>(maximum_frame_size),
-                                      std::min(this->_remote_flow_controller.credit(), static_cast<uint32_t>(connection_credit)))));
+                             std::min(static_cast<uint64_t>(maximum_frame_size),
+                                      std::min(this->_remote_flow_controller.credit(), static_cast<uint64_t>(connection_credit)))));
   if (len >= bytes_avail) {
     fin = this->_fin;
   }
@@ -429,7 +429,7 @@ QUICStream::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_si
     this->_write_vio.ndone += len;
     this->_signal_write_event();
     this->_state.update_with_sent_frame(*frame);
-  } else {
+  } else if (ret != 0) {
     QUICStreamDebug("Flow Controller blocked sending a STREAM frame");
     frame = this->_remote_flow_controller.generate_frame();
   }

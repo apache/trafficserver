@@ -27,7 +27,7 @@
 //
 // QUICFlowController
 //
-uint32_t
+uint64_t
 QUICFlowController::credit()
 {
   return this->current_limit() - this->current_offset();
@@ -42,20 +42,14 @@ QUICFlowController::current_offset()
 QUICOffset
 QUICFlowController::current_limit()
 {
-  // if _limit is 0, the limit is not set yet.
-  if (this->_limit) {
-    return this->_limit;
-  } else {
-    return UINT64_MAX;
-  }
+  return this->_limit;
 }
 
 int
 QUICFlowController::update(QUICOffset offset)
 {
   if (this->_offset <= offset) {
-    // Assume flow control is not initialized if the limit was 0
-    if (this->_limit != 0 && offset > this->_limit) {
+    if (offset > this->_limit) {
       return -1;
     }
     this->_offset = offset;
@@ -79,6 +73,13 @@ void
 QUICFlowController::set_threshold(uint64_t threshold)
 {
   this->_threshold = threshold;
+}
+
+void
+QUICFlowController::set_limit(QUICOffset limit)
+{
+  ink_assert(this->_limit == UINT64_MAX || this->_limit == limit);
+  this->_limit = limit;
 }
 
 QUICFrameUPtr
@@ -106,11 +107,6 @@ int
 QUICRemoteFlowController::update(QUICOffset offset)
 {
   int ret = QUICFlowController::update(offset);
-
-  // Assume flow control is not initialized if the limit was 0
-  if (this->_limit == 0) {
-    return ret;
-  }
 
   // Send BLOCKED(_STREAM) frame
   if (!this->_blocked && offset > this->_limit) {

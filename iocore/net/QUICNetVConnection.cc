@@ -202,8 +202,8 @@ QUICNetVConnection::start()
   this->_stream_manager         = new QUICStreamManager(this->connection_id(), this->_application_map);
   this->_congestion_controller  = new QUICCongestionController(this->connection_id());
   this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
-  this->_remote_flow_controller = new QUICRemoteConnectionFlowController(0);
-  this->_local_flow_controller  = new QUICLocalConnectionFlowController(0);
+  this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
+  this->_local_flow_controller  = new QUICLocalConnectionFlowController(UINT64_MAX);
   this->_path_validator         = new QUICPathValidator();
 
   this->_frame_dispatcher->add_handler(this);
@@ -897,6 +897,8 @@ QUICNetVConnection::_state_handshake_process_handshake_packet(QUICPacketUPtr pac
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet)
 {
+  this->_stream_manager->init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
+                                                  this->_handshake_handler->remote_transport_parameters());
   this->_start_application();
   return this->_recv_and_ack(std::move(packet));
 }
@@ -1365,8 +1367,8 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
     remote_initial_max_data = remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);
   }
 
-  this->_local_flow_controller->forward_limit(local_initial_max_data * 1024);
-  this->_remote_flow_controller->forward_limit(remote_initial_max_data * 1024);
+  this->_local_flow_controller->set_limit(local_initial_max_data);
+  this->_remote_flow_controller->set_limit(remote_initial_max_data);
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
         this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
   Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
