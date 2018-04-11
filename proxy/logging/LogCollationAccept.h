@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_COLLATION_ACCEPT_H
-#define LOG_COLLATION_ACCEPT_H
+#pragma once
 
 #include "P_EventSystem.h"
 #include "P_Net.h"
@@ -41,5 +40,3 @@ private:
 };
 
 typedef int (LogCollationAccept::*LogCollationAcceptHandler)(int, void *);
-
-#endif /* LOG_COLLATION_ACCEPT_H */

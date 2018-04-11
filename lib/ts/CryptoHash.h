@@ -20,8 +20,7 @@
     limitations under the License.
  */
 
-#if !defined CRYPTO_HASH_HEADER
-#define CRYPTO_HASH_HEADER
+#pragma once
 
 #include <ts/BufferWriter.h>
 #include <ts/string_view.h>
@@ -196,5 +195,3 @@ bwformat(BufferWriter &w, BWFSpec const &spec, ats::CryptoHash const &hash)
 using ats::CryptoHash;
 using ats::CryptoContext;
 using ats::CRYPTO_HASH_ZERO;
-
-#endif // CRYPTO_HASH_HEADER

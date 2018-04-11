@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(ATS_FILE_HEADER)
-#define ATS_FILE_HEADER
+#pragma once
 
 #include <ts/ink_memory.h>
 #include <sys/stat.h>
@@ -212,5 +211,3 @@ inline BulkFile::BulkFile(super &&that) : super(that)
 /* ------------------------------------------------------------------- */
 } // namespace
 /* ------------------------------------------------------------------- */
-
-#endif

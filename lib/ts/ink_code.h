@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_code_h_
-#define _ink_code_h_
+#pragma once
 
 #include "ts/ink_apidefs.h"
 #include "ts/ink_defs.h"
@@ -40,5 +39,4 @@ inkcoreapi int ink_code_md5(unsigned const char *input, int input_length, unsign
 inkcoreapi int ink_code_incr_md5_init(INK_DIGEST_CTX *context);
 inkcoreapi int ink_code_incr_md5_update(INK_DIGEST_CTX *context, const char *input, int input_length);
 inkcoreapi int ink_code_incr_md5_final(char *sixteen_byte_hash_pointer, INK_DIGEST_CTX *context);
-#endif
 #endif

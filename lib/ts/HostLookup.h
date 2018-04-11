@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _HOST_LOOKUP_H_
-#define _HOST_LOOKUP_H_
+#pragma once
 
 #include "DynArray.h"
 
@@ -128,5 +127,3 @@ private:
   int num_el;               // the numbe of itmems in the tree
   const char *matcher_name; // Used for Debug/Warning/Error messages
 };
-
-#endif

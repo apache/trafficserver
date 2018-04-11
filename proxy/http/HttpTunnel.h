@@ -30,8 +30,7 @@
 
 ****************************************************************************/
 
-#ifndef _HTTP_TUNNEL_H_
-#define _HTTP_TUNNEL_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_EventSystem.h"
@@ -575,5 +574,3 @@ HttpTunnelProducer::unthrottle()
 inline HttpTunnel::FlowControl::FlowControl() : high_water(DEFAULT_WATER_MARK), low_water(DEFAULT_WATER_MARK), enabled_p(false)
 {
 }
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_DIR_H__
-#define _P_CACHE_DIR_H__
+#pragma once
 
 #include "P_CacheHttp.h"
 
@@ -353,5 +352,3 @@ dir_bucket_row(Dir *b, int64_t i)
 {
   return dir_in_seg(b, i);
 }
-
-#endif /* _P_CACHE_DIR_H__ */

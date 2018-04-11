@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef I_SessionAccept_H_
-#define I_SessionAccept_H_
+#pragma once
 
 #include "I_Net.h"
 #include "I_VConnection.h"
@@ -79,5 +78,3 @@ public:
 private:
   virtual int mainEvent(int event, void *netvc) = 0;
 };
-
-#endif /* I_SessionAccept_H_ */

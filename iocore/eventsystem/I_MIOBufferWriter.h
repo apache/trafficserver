@@ -1,6 +1,3 @@
-#if !defined I_MIOBUFFERWRITER_H_
-#define I_MIOBUFFERWRITER_H_
-
 /** @file
 
     Buffer Writer for an MIOBuffer.
@@ -23,6 +20,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+
+#pragma once
 
 #include <cstring>
 
@@ -172,5 +171,3 @@ private:
   // INTERNAL - Overload removed, make sure it's not used.
   MIOBufferWriter &write(size_t n);
 };
-
-#endif // include once

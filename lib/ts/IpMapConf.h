@@ -23,6 +23,8 @@
 
 // Copied from IPRange.cc for backwards compatibility.
 
+#pragma once
+
 class IpMap; // declare in name only.
 
 // Returns 0 if successful, error string otherwise

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_FILE_H_
-#define _P_REC_FILE_H_
+#pragma once
 
 //-------------------------------------------------------------------------
 // types/defines
@@ -43,5 +42,3 @@ int RecFileWrite(RecHandle h_file, char *buf, int size, int *bytes_written);
 int RecFileGetSize(RecHandle h_file);
 int RecFileExists(const char *file);
 int RecFileSync(RecHandle h_file);
-
-#endif

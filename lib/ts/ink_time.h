@@ -31,8 +31,7 @@
 
  ****************************************************************************/
 
-#ifndef _ink_time_h_
-#define _ink_time_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/ink_defs.h"
@@ -91,5 +90,3 @@ ink_timezone()
 }
 
 #endif /* #if defined(freebsd) || defined(openbsd) */
-
-#endif /* #ifndef _ink_time_h_ */

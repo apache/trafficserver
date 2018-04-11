@@ -27,8 +27,7 @@
 
 */
 
-#if !defined(_Errno_h_)
-#define _Errno_h_
+#pragma once
 #include <errno.h>
 
 #define INK_START_ERRNO 20000
@@ -60,5 +59,3 @@
 #define EHTTP_ERROR (HTTP_ERRNO + 0)
 
 const char *InkStrerror(int ink_errno);
-
-#endif

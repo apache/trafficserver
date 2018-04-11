@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HDRTOKEN_H__
-#define __HDRTOKEN_H__
+#pragma once
 
 #include <assert.h>
 #include <sys/types.h>
@@ -384,5 +383,3 @@ hdrtoken_wks_to_flags(const char *wks)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
-#endif /* __HDRTOKEN_H__ */

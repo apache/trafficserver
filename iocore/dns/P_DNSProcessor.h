@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_P_DNSProcessor_h_)
-#define _P_DNSProcessor_h_
+#pragma once
 
 /*
   #include "I_DNS.h"
@@ -341,5 +340,3 @@ DNSHandler::DNSHandler()
 
 #define DOT_SEPARATED(_x) \
   ((unsigned char *)&(_x))[0], ((unsigned char *)&(_x))[1], ((unsigned char *)&(_x))[2], ((unsigned char *)&(_x))[3]
-
-#endif

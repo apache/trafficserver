@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __INK_RESOURCE_H__
-#define __INK_RESOURCE_H__
+#pragma once
 
 #include "ts/ink_mutex.h"
 #include <map>
@@ -55,5 +54,3 @@ private:
   static std::map<const char *, Resource *> _resourceMap;
   static ink_mutex resourceLock;
 };
-
-#endif /* __INK_RESOURCE_H__ */

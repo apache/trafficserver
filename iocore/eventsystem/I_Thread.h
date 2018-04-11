@@ -56,8 +56,7 @@
 
  */
 
-#ifndef _I_Thread_h
-#define _I_Thread_h
+#pragma once
 
 #if !defined(_I_EventSystem_h) && !defined(_P_EventSystem_h)
 #error "include I_EventSystem.h or P_EventSystem.h"
@@ -187,5 +186,3 @@ Thread::get_hrtime_updated()
 {
   return cur_time = ink_get_hrtime_internal();
 }
-
-#endif /*_I_Thread_h*/

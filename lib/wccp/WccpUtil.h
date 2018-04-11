@@ -20,8 +20,7 @@
     limitations under the License.
  */
 
-#if !defined(ATS_WCCP_UTIL_HEADER)
-#define ATS_WCCP_UTIL_HEADER
+#pragma once
 
 #include <vector>
 
@@ -221,5 +220,3 @@ char const *ip_addr_to_str(uint32_t addr ///< Address to convert.
 // ------------------------------------------------------
 
 } // namespace Wccp
-
-#endif // define ATS_WCCP_UTIL_HEADER

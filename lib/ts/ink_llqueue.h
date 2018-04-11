@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _INK_LLQUEUE_H
-#define _INK_LLQUEUE_H
+#pragma once
 
 /****************************************************************************
 
@@ -52,5 +51,3 @@ uint64_t queue_len(LLQ *Q);
 uint64_t queue_highwater(LLQ *Q);
 void delete_queue(LLQ *Q); /* only deletes an empty queue but
                               provides symmetry. */
-
-#endif

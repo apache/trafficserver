@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_DNSProcessor_h_
-#define _I_DNSProcessor_h_
+#pragma once
 
 #include "SRV.h"
 
@@ -206,5 +205,3 @@ DNSProcessor::Options::reset()
 }
 
 void ink_dns_init(ModuleVersion version);
-
-#endif

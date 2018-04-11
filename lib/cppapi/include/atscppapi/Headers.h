@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_HEADERS_H_
-#define ATSCPPAPI_HEADERS_H_
 
 #include <atscppapi/noncopyable.h>
 #include <string>
@@ -603,5 +601,3 @@ private:
   friend class Response;
 };
 }
-
-#endif

@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef _ink_string_h_
-#define _ink_string_h_
+#pragma once
 
 #include <stdio.h>
 #include <memory.h>
@@ -384,5 +383,3 @@ ink_fast_ltoa(int64_t val, char *buf, int buf_len)
 
   return ink_small_itoa((int)val, buf, buf_len);
 }
-
-#endif

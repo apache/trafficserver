@@ -26,8 +26,7 @@
   easily remembered names can be used to refer to log fields of integer type.
  */
 
-#ifndef LOG_FIELD_ALIAS_MAP_H
-#define LOG_FIELD_ALIAS_MAP_H
+#pragma once
 
 #include <stdarg.h>
 #include <string.h>
@@ -215,4 +214,3 @@ public:
 };
 
 // LOG_FIELD_ALIAS_MAP_H
-#endif

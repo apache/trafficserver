@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_COLLATION_BASE_H
-#define LOG_COLLATION_BASE_H
+#pragma once
 
 //-------------------------------------------------------------------------
 // LogCollationBase
@@ -44,5 +43,3 @@ protected:
     LOG_COLL_EVENT_ERROR
   };
 };
-
-#endif // LOG_COLLATION_BASE_H

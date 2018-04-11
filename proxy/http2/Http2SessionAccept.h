@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_SESSION_ACCEPT_H__
-#define __HTTP2_SESSION_ACCEPT_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Net.h"
@@ -53,5 +52,3 @@ struct Http2SessionAccept : public SessionAccept {
 private:
   HttpSessionAccept::Options options;
 };
-
-#endif // __HTTP2_SESSION_ACCEPT_H__

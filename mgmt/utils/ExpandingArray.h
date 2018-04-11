@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _EXPANDING_ARRAY_H_
-#define _EXPANDING_ARRAY_H_
+#pragma once
 
 /****************************************************************************
  *
@@ -61,5 +60,3 @@ private:
   int numValidValues;
   bool freeContentsOnDestruct;
 };
-
-#endif

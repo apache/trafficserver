@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _I_SPLIT_DNSProcessor_H_
-#define _I_SPLIT_DNSProcessor_H_
+#pragma once
 
 struct SplitDNS;
 
@@ -53,5 +52,3 @@ struct SplitDNSConfig {
 
   static int gsplit_dns_enabled;
 };
-
-#endif

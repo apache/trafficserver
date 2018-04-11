@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _MGMT_SOCKET_H_
-#define _MGMT_SOCKET_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -99,5 +98,3 @@ bool mgmt_has_peereid(void);
 
 // Get the Unix domain peer credentials.
 int mgmt_get_peereid(int fd, uid_t *euid, gid_t *egid);
-
-#endif // _MGMT_SOCKET_H_

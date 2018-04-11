@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __CACHE_ARRAY_H__
-#define __CACHE_ARRAY_H__
+#pragma once
 
 #define FAST_DATA_SIZE 4
 
@@ -183,5 +182,3 @@ CacheArray<T>::resize(int new_size)
     size = new_size;
   }
 }
-
-#endif /* __CACHE_ARRAY_H__ */

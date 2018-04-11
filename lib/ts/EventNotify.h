@@ -28,8 +28,7 @@
 
 **************************************************************************/
 
-#ifndef EVENT_NOTIFY_H
-#define EVENT_NOTIFY_H
+#pragma once
 
 #include "ts/ink_thread.h"
 
@@ -54,6 +53,4 @@ private:
   ink_mutex m_mutex;
 #endif
 };
-
-#endif /* EVENT_NOTIFY_H */
 /* vim: set sw=4 ts=4 tw=79 et : */

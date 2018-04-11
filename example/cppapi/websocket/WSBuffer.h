@@ -22,8 +22,6 @@
  */
 
 #pragma once
-#ifndef WSBUFFER_H_20F6C829_0736_47D3_A5D2_7130D4D99CC0
-#define WSBUFFER_H_20F6C829_0736_47D3_A5D2_7130D4D99CC0
 
 #include <string>
 
@@ -89,5 +87,3 @@ private:
   int frame_;           // frame type of current message
   std::string msg_buf_; // decoded message data
 };
-
-#endif /* WSBUFFER_H_20F6C829_0736_47D3_A5D2_7130D4D99CC0 */

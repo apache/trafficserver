@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __P_UNIXNET_H__
-#define __P_UNIXNET_H__
+#pragma once
 
 #include <bitset>
 
@@ -815,5 +814,3 @@ NetHandler::stopCop(UnixNetVConnection *netvc)
   remove_from_keep_alive_queue(netvc);
   remove_from_active_queue(netvc);
 }
-
-#endif

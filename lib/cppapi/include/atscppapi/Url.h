@@ -20,8 +20,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_URL_H_
-#define ATSCPPAPI_URL_H_
 
 #include <string>
 #include <stdint.h>
@@ -146,5 +144,3 @@ private:
   friend class RemapPlugin;
 };
 }
-
-#endif /* ATSCPPAPI_URL_H_ */

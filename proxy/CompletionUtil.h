@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _COMPLETION_UTIL_H_
-#define _COMPLETION_UTIL_H_
+#pragma once
 // interface
 class completionUtil
 {
@@ -43,5 +42,3 @@ public:
 };
 
 #include "UnixCompletionUtil.h"
-
-#endif

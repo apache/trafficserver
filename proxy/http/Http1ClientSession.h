@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP1_CLIENT_SESSION_H_
-#define _HTTP1_CLIENT_SESSION_H_
+#pragma once
 
 //#include "libts.h"
 #include "P_Net.h"
@@ -219,5 +218,3 @@ public:
 };
 
 extern ClassAllocator<Http1ClientSession> http1ClientSessionAllocator;
-
-#endif

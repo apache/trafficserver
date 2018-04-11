@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef __P_SSLUTILS_H__
-#define __P_SSLUTILS_H__
+#pragma once
 
 #include "ts/ink_config.h"
 #include "ts/Diags.h"
@@ -280,5 +279,3 @@ public:
 
 typedef ats_scoped_resource<ssl::detail::SCOPED_X509_TRAITS> scoped_X509;
 typedef ats_scoped_resource<ssl::detail::SCOPED_BIO_TRAITS> scoped_BIO;
-
-#endif /* __P_SSLUTILS_H__ */

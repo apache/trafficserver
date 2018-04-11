@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _UDP_IO_EVENT_H_
-#define _UDP_IO_EVENT_H_
+#pragma once
 // ugly -- just encapsulate the I/O result so that it can be passed
 // back to the caller via continuation handler.
 
@@ -107,4 +106,3 @@ UDPIOEvent::free(UDPIOEvent *e)
   e->mutex = nullptr;
   UDPIOEventAllocator.free(e);
 }
-#endif

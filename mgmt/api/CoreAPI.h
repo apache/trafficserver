@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _CORE_API_H
-#define _CORE_API_H
+#pragma once
 
 #include <stdarg.h> // for va_list
 
@@ -86,5 +85,3 @@ TSMgmtError EventSignalCbUnregister(const char *event_name, TSEventSignalFunc fu
 TSMgmtError HostStatusSetDown(const char *name);
 TSMgmtError HostStatusSetUp(const char *name);
 TSMgmtError StatsReset(const char *name = NULL);
-
-#endif

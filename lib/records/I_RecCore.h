@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_CORE_H_
-#define _I_REC_CORE_H_
+#pragma once
 
 #include "ts/Diags.h"
 
@@ -312,5 +311,3 @@ RecErrT RecSetSyncRequired(char *name, bool lock = true);
 //------------------------------------------------------------------------
 typedef void *(*RecManagerCb)(void *opaque_cb_data, char *data_raw, int data_len);
 int RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data = nullptr);
-
-#endif

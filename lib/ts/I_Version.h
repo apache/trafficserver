@@ -28,8 +28,7 @@
 
   **************************************************************************/
 
-#ifndef _Version_h
-#define _Version_h
+#pragma once
 
 struct VersionNumber {
   short int ink_major; // incompatible change
@@ -114,5 +113,3 @@ public:
   void setup(const char *pkg_name, const char *app_name, const char *app_version, const char *build_date, const char *build_time,
              const char *build_machine, const char *build_person, const char *build_cflags);
 };
-
-#endif /*_Version_h*/

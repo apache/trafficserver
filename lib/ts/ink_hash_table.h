@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _ink_hash_table_h_
-#define _ink_hash_table_h_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,4 +143,3 @@ ink_hash_table_iterator_next(InkHashTable *ht_ptr, InkHashTableIteratorState *st
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-#endif /* #ifndef _ink_hash_table_h_ */

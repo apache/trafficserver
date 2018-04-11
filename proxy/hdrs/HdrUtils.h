@@ -31,8 +31,7 @@
 
  ****************************************************************************/
 
-#ifndef _HDR_UTILS_H_
-#define _HDR_UTILS_H_
+#pragma once
 
 #include "ts/ParseRules.h"
 #include "MIME.h"
@@ -182,5 +181,3 @@ HdrCsvIter::get_next_int(int *valid)
     return 0;
   }
 }
-
-#endif

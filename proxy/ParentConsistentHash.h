@@ -27,8 +27,7 @@
  *
  ****************************************************************************/
 
-#ifndef _PARENT_CONSISTENT_HASH_H
-#define _PARENT_CONSISTENT_HASH_H
+#pragma once
 
 #include "ts/HashSip.h"
 #include "ParentSelection.h"
@@ -63,5 +62,3 @@ public:
   uint32_t numParents(ParentResult *result) const;
   void markParentUp(ParentResult *result);
 };
-
-#endif

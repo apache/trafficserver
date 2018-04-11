@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _I_HostDB_h_
-#define _I_HostDB_h_
+#pragma once
 
 #include "I_EventSystem.h"
 #include "I_Net.h"
@@ -44,5 +43,3 @@
 #define HOSTDB_MODULE_MINOR_VERSION 1
 
 #define HOSTDB_MODULE_VERSION makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
-
-#endif /* _I_HostDB_h_ */

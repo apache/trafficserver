@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_CLIENT_TRANSACTION_H_
-#define __HTTP_CLIENT_TRANSACTION_H_
+#pragma once
 
 #include "../ProxyClientTransaction.h"
 
@@ -141,5 +140,3 @@ public:
 protected:
   bool outbound_transparent{false};
 };
-
-#endif

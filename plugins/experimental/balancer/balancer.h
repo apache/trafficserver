@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef BALANCER_H_29177589_32F1_4D93_AE4F_1E140EDCC273
-#define BALANCER_H_29177589_32F1_4D93_AE4F_1E140EDCC273
+#pragma once
 
 #include <ts/ts.h>
 #include <ts/remap.h>
@@ -49,5 +48,3 @@ struct BalancerInstance {
 
 BalancerInstance *MakeHashBalancer(const char *);
 BalancerInstance *MakeRoundRobinBalancer(const char *);
-
-#endif /* BALANCER_H_29177589_32F1_4D93_AE4F_1E140EDCC273 */

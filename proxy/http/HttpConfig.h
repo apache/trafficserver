@@ -31,8 +31,7 @@
 
 
  ****************************************************************************/
-#ifndef _HttpConfig_h_
-#define _HttpConfig_h_
+#pragma once
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -928,4 +927,3 @@ inline HttpConfigParams::~HttpConfigParams()
     delete connect_ports;
   }
 }
-#endif /* #ifndef _HttpConfig_h_ */

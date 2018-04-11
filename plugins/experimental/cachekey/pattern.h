@@ -21,8 +21,7 @@
  * @brief PRCE related classes (header file).
  */
 
-#ifndef PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_
-#define PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_
+#pragma once
 
 #include "ts/ink_defs.h"
 
@@ -137,5 +136,3 @@ public:
 private:
   std::vector<MultiPattern *> _list; /**< @brief vector which dictates the multi-pattern evaluation order */
 };
-
-#endif /* PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_ */

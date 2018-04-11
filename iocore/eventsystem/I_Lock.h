@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_Lock_h_
-#define _I_Lock_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Diags.h"
@@ -655,5 +654,3 @@ new_ProxyMutex()
   m->init();
   return m;
 }
-
-#endif // _Lock_h_

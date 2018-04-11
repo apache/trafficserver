@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef HISTORY_H_84E66E8E_1D2A_438B_A09A_2CD8FB51B209
-#define HISTORY_H_84E66E8E_1D2A_438B_A09A_2CD8FB51B209
+#pragma once
 
 #include "ts/SourceLocation.h"
 
@@ -74,5 +73,3 @@ private:
 
   unsigned int history_pos = 0;
 };
-
-#endif /* HISTORY_H_84E66E8E_1D2A_438B_A09A_2CD8FB51B209 */

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef ink_stack_trace_h
-#define ink_stack_trace_h
+#pragma once
 
 // The max number of levels in the stack trace
 #define INK_STACK_TRACE_MAX_LEVELS 100
@@ -35,5 +34,3 @@ void ink_stack_trace_dump();
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* ink_stack_trace_h */

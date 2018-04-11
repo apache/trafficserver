@@ -1,6 +1,3 @@
-#if !defined(TS_TEST_BOX_HEADER)
-#define TS_TEST_BOX_HEADER
-
 /** @file
 
     Regression testing support class.
@@ -23,6 +20,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+
+#pragma once
 
 #include <stdarg.h>
 #include "ts/ink_apidefs.h"
@@ -71,4 +70,3 @@ TestBox::check(bool result, char const *fmt, ...)
   return result;
 }
 }
-#endif // TS_TEST_BOX_HEADER

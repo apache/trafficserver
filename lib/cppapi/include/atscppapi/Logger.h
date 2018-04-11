@@ -27,8 +27,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_LOGGER_H_
-#define ATSCPPAPI_LOGGER_H_
 
 #include <string>
 #include <atscppapi/noncopyable.h>
@@ -263,5 +261,3 @@ private:
 };
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_LOGGER_H_ */

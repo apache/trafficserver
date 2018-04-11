@@ -84,8 +84,7 @@
 //     ControlMatcher.cc
 //
 
-#ifndef _CONTROL_MATCHER_H_
-#define _CONTROL_MATCHER_H_
+#pragma once
 
 #include "ts/DynArray.h"
 #include "ts/ink_hash_table.h"
@@ -367,5 +366,3 @@ public:
   int m_numEntries         = 0;
   const char *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
 };
-
-#endif /* _CONTROL_MATCHER_H_ */

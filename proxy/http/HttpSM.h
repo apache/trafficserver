@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_SM_H_
-#define _HTTP_SM_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_EventSystem.h"
@@ -779,4 +778,3 @@ HttpSM::get_postbuf_clone_reader()
 {
   return this->_postbuf.get_post_data_buffer_clone_reader();
 }
-#endif

@@ -36,8 +36,7 @@
         $Revision: 1.24 $
 */
 
-#ifndef _INIPARSER_H_
-#define _INIPARSER_H_
+#pragma once
 
 /*---------------------------------------------------------------------------
                                                                 Includes
@@ -294,5 +293,3 @@ dictionary *iniparser_load(const char *ininame);
  */
 /*--------------------------------------------------------------------------*/
 void iniparser_freedict(dictionary *d);
-
-#endif

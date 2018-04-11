@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(CACHE_STORE_H)
-#define CACHE_STORE_H
+#pragma once
 
 #include <vector>
 
@@ -47,5 +46,3 @@ class CacheStore
   };
 };
 }
-
-#endif // CACHE_STORE_H

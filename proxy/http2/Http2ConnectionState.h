@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_CONNECTION_STATE_H__
-#define __HTTP2_CONNECTION_STATE_H__
+#pragma once
 
 #include "HTTP2.h"
 #include "HPACK.h"
@@ -313,5 +312,3 @@ private:
   Event *shutdown_cont_event        = nullptr;
   Event *fini_event                 = nullptr;
 };
-
-#endif // __HTTP2_CONNECTION_STATE_H__

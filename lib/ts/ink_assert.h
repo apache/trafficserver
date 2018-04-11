@@ -25,8 +25,7 @@
 Assertions
 
 ***************************************************************************/
-#ifndef _INK_ASSERT_H
-#define _INK_ASSERT_H
+#pragma once
 
 #include "ts/ink_apidefs.h"
 #include "ts/ink_error.h"
@@ -56,8 +55,6 @@ inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /*_INK_ASSERT_H*/
 
 /* workaround a bug in the  stupid Sun preprocessor
 

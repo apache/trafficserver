@@ -27,8 +27,7 @@
 
 
  ****************************************************************************/
-#if !defined(_P_DNS_h_)
-#define _P_DNS_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_DNS.h"
@@ -38,5 +37,3 @@
 #include "P_DNSConnection.h"
 #include "P_DNSProcessor.h"
 #include "SRV.h"
-
-#endif // _P_DNS_h_

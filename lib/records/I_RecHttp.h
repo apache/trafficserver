@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_HTTP_H
-#define _I_REC_HTTP_H
+#pragma once
 
 #include <ts/ink_inet.h>
 #include <ts/ink_resolver.h>
@@ -475,5 +474,3 @@ HttpProxyPort::findHttp(uint16_t family)
     This must be called before any proxy port parsing is done.
 */
 extern void ts_session_protocol_well_known_name_indices_init();
-
-#endif // I_REC_HTTP_H

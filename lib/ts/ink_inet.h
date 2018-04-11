@@ -22,8 +22,7 @@
 
  */
 
-#if !defined(_ink_inet_h_)
-#define _ink_inet_h_
+#pragma once
 
 #include <netinet/in.h>
 #include <netdb.h>
@@ -1541,5 +1540,3 @@ IpEndpoint::setToLoopback(int family)
   }
   return *this;
 }
-
-#endif // _ink_inet.h

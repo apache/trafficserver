@@ -24,8 +24,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_PLUGIN_H_
-#define ATSCPPAPI_PLUGIN_H_
 
 #include <atscppapi/Request.h>
 #include <atscppapi/Transaction.h>
@@ -172,5 +170,3 @@ RegisterGlobalPlugin(std::string const &name, std::string const &vendor, std::st
 }
 
 } /* atscppapi */
-
-#endif /* ATSCPPAPI_GLOBALPLUGIN_H_ */

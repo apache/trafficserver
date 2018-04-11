@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __MIME_H__
-#define __MIME_H__
+#pragma once
 
 #include <sys/time.h>
 
@@ -1723,5 +1722,3 @@ MIMEHdr::set_server(const char *server_id_tag, int server_id_tag_size)
 {
   value_set(MIME_FIELD_SERVER, MIME_LEN_SERVER, server_id_tag, server_id_tag_size);
 }
-
-#endif /* __MIME_H__ */

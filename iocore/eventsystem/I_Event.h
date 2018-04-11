@@ -22,8 +22,7 @@
 
  */
 
-#ifndef _Event_h_
-#define _Event_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Action.h"
@@ -278,5 +277,3 @@ extern ClassAllocator<Event> eventAllocator;
     ::_a.free(_p);             \
   else                         \
     THREAD_FREE(_p, _a, _t)
-
-#endif /*_Event_h_*/

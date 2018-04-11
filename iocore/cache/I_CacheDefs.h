@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_CACHE_DEFS_H__
-#define _I_CACHE_DEFS_H__
+#pragma once
 
 #include "ts/CryptoHash.h"
 
@@ -139,4 +138,3 @@ struct HttpCacheKey {
    word(2) - tag (lower bits), hosttable hash (upper bits)
    word(3) - ram cache hash, lookaside cache
  */
-#endif // __CACHE_DEFS_H__

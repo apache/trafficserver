@@ -21,8 +21,7 @@
  * @brief Cache key manipulation (header file).
  */
 
-#ifndef PLUGINS_EXPERIMENTAL_CACHEKEY_CACHEKEY_H_
-#define PLUGINS_EXPERIMENTAL_CACHEKEY_CACHEKEY_H_
+#pragma once
 
 #include "common.h"
 #include "configs.h"
@@ -80,5 +79,3 @@ private:
   String _key;       /**< @brief cache key */
   String _separator; /**< @brief a separator used to separate the cache key elements extracted from the URI */
 };
-
-#endif /* PLUGINS_EXPERIMENTAL_CACHEKEY_CACHEKEY_H_ */

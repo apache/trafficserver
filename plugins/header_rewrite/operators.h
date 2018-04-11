@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __OPERATORS_H__
-#define __OPERATORS_H__ 1
+#pragma once
 
 #include <string>
 
@@ -341,5 +340,3 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetDebug);
 };
-
-#endif // __OPERATORS_H

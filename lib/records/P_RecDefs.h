@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_DEFS_H_
-#define _P_REC_DEFS_H_
+#pragma once
 
 #include "I_RecDefs.h"
 
@@ -156,5 +155,3 @@ typedef RecMessageHdr RecMessage;
 typedef void (*RecDumpEntryCb)(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum);
 
 typedef RecErrT (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);
-
-#endif

@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef __P_UNIXNETVCONNECTION_H__
-#define __P_UNIXNETVCONNECTION_H__
+#pragma once
 
 #include "ts/ink_sock.h"
 #include "I_NetVConnection.h"
@@ -436,5 +435,3 @@ UnixNetVConnection::set_action(Continuation *c)
 
 void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
-
-#endif

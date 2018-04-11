@@ -28,8 +28,7 @@
    Description:  Automated processing of core files on Sparc & Linux
  ****************************************************************************/
 
-#ifndef _CORE_UTILS_H_
-#define _CORE_UTILS_H_
+#pragma once
 
 #if defined(linux)
 #include <stdio.h>
@@ -198,5 +197,3 @@ public:
 
 // parses the core file
 void process_core(char *fname);
-
-#endif /* _core_utils_h_ */

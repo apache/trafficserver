@@ -27,8 +27,7 @@
 
  */
 
-#ifndef __TS_API_H__
-#define __TS_API_H__
+#pragma once
 
 #include <ts/apidefs.h>
 
@@ -2473,5 +2472,3 @@ tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __TS_API_H__ */

@@ -26,8 +26,7 @@
 
 
  ***************************************************************************/
-#ifndef _GENERIC_PARSER_H_
-#define _GENERIC_PARSER_H_
+#pragma once
 
 #include <string.h>
 #include "ts/ink_assert.h"
@@ -320,5 +319,3 @@ private:
  *****************************************************************************************/
 // char *strtrim(char *);
 const char *strtrim(const char *, char chr = ' ');
-
-#endif /* _GENERIC_PARSER_H_ */

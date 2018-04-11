@@ -52,8 +52,7 @@
 
  ****************************************************************************/
 
-#ifndef _HttpBodyFactory_h_
-#define _HttpBodyFactory_h_
+#pragma once
 
 #include <strings.h>
 #include <sys/types.h>
@@ -236,5 +235,3 @@ private:
   bool callbacks_established  = false;          // all config variables present
   RawHashTable *table_of_sets = nullptr;        // sets of template hash tables
 };
-
-#endif

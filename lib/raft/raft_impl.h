@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef CONSENSUS_IMPL_H_
-#define CONSENSUS_IMPL_H_
+#pragma once
 #include <stdlib.h>
 #include <algorithm>
 #include <deque>
@@ -617,4 +616,3 @@ NewRaft(Server *server, const ::std::string &node)
   return new RaftImpl<Server>(server, node);
 }
 } // namespace raft
-#endif // CONSENSUS_IMPL_H_

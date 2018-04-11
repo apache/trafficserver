@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_HttpSessionAccept_h_)
-#define _HttpSessionAccept_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "records/I_RecHttp.h"
@@ -212,5 +211,3 @@ public:
   HttpSessionAccept(const HttpSessionAccept &) = delete;
   HttpSessionAccept &operator=(const HttpSessionAccept &) = delete;
 };
-
-#endif

@@ -49,8 +49,7 @@
 
 */
 
-#ifndef LOG_H
-#define LOG_H
+#pragma once
 
 #include <stdarg.h>
 #include "ts/ink_platform.h"
@@ -256,5 +255,3 @@ LogRollingEnabledIsValid(int enabled)
     if (unlikely(flag))            \
       Log::trace_out(__VA_ARGS__); \
   } while (0)
-
-#endif

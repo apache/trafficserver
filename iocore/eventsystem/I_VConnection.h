@@ -22,8 +22,7 @@
 
  */
 
-#if !defined(_I_VConnection_h_)
-#define _I_VConnection_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
@@ -442,5 +441,3 @@ struct DummyVConnection : public AnnotatedVConnection {
 
   DummyVConnection(ProxyMutex *m) : AnnotatedVConnection(m) {}
 };
-
-#endif /*_I_VConnection_h_*/

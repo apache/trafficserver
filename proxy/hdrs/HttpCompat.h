@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_COMPAT_H__
-#define __HTTP_COMPAT_H__
+#pragma once
 
 #include "ts/ink_string++.h"
 #include "MIME.h"
@@ -91,5 +90,3 @@ public:
     parse_tok_list(list, 1, comma_list_str, comma_list_len, ';');
   }
 };
-
-#endif /* __HTTP_COMPAT_H__ */

@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _P_SPLIT_DNSProcessor_H_
-#define _P_SPLIT_DNSProcessor_H_
+#pragma once
 
 /*
 #include "P_DNS.h"
@@ -232,5 +231,3 @@ TS_INLINE SplitDNSRecord::~SplitDNSRecord()
 SplitDNSRecord *createDefaultServer();
 void reloadDefaultParent(char *val);
 void reloadParentFile();
-
-#endif

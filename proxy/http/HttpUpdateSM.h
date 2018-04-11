@@ -32,8 +32,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_SM_UPDATE_H_
-#define _HTTP_SM_UPDATE_H_
+#pragma once
 
 #include "P_EventSystem.h"
 #include "HttpSM.h"
@@ -76,5 +75,3 @@ HttpUpdateSM::allocate()
 
 // Regression/Testing Routing
 void init_http_update_test();
-
-#endif

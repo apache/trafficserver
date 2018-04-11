@@ -17,8 +17,7 @@
 // https://github.com/jemalloc/jemalloc/releases
 // Requires jemalloc 5.0.0 or above.
 
-#ifndef _jeallocator_h_
-#define _jeallocator_h_
+#pragma once
 
 #include "ts/ink_config.h"
 #include "ts/ink_queue.h"
@@ -84,5 +83,3 @@ private:
 JemallocNodumpAllocator &globalJemallocNodumpAllocator();
 
 } /* namespace jearena */
-
-#endif /* _jeallocator_h_ */

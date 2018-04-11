@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_REMAP_PLUGIN_H_
-#define ATSCPPAPI_REMAP_PLUGIN_H_
 
 #include "atscppapi/Transaction.h"
 #include "atscppapi/Url.h"
@@ -73,5 +71,3 @@ public:
   virtual ~RemapPlugin() {}
 };
 }
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_COLLATION_HOST_SM_H
-#define LOG_COLLATION_HOST_SM_H
+#pragma once
 
 //-------------------------------------------------------------------------
 // includes
@@ -108,5 +107,3 @@ private:
 };
 
 typedef int (LogCollationHostSM::*LogCollationHostSMHandler)(int, void *);
-
-#endif // LOG_COLLATION_HOST_SM_H

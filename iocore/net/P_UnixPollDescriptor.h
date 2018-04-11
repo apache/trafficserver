@@ -27,8 +27,7 @@
 
 
 *****************************************************************************/
-#ifndef __P_UNIXPOLLDESCRIPTOR_H__
-#define __P_UNIXPOLLDESCRIPTOR_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -138,5 +137,3 @@ private:
 #endif
   }
 };
-
-#endif

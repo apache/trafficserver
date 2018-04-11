@@ -27,6 +27,8 @@
 
  */
 
+#pragma once
+
 #ifndef _HTTP_PROXY_API_ENUMS_H_
 #define _HTTP_PROXY_API_ENUMS_H_
 
@@ -43,5 +45,4 @@ typedef enum {
   TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
   TS_SERVER_SESSION_SHARING_POOL_THREAD,
 } TSServerSessionSharingPoolType;
-
-#endif // _HTTP_PROXY_API_ENUMS_H_
+#endif

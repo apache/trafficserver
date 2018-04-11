@@ -22,8 +22,7 @@
  */
 
 //-*-c++-*-
-#ifndef _ink_align_h_
-#define _ink_align_h_
+#pragma once
 
 #include "ts/ink_time.h"
 
@@ -94,5 +93,3 @@ align_pointer_forward_and_zero(const void *pointer_, size_t alignment)
 // We could handle this using casts, but that's more prone to
 // errors during porting.
 //
-
-#endif

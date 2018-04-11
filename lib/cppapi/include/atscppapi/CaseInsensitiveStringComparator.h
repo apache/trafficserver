@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_CASE_INSENSITIVE_STRING_COMPARATOR_H_
-#define ATSCPPAPI_CASE_INSENSITIVE_STRING_COMPARATOR_H_
 
 #include <string>
 
@@ -47,5 +45,3 @@ public:
   int compare(const std::string &lhs, const std::string &rhs) const;
 };
 }
-
-#endif

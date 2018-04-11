@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef __CONSISTENT_HASH_H__
-#define __CONSISTENT_HASH_H__
+#pragma once
 
 #include "Hash.h"
 #include <stdint.h>
@@ -60,5 +59,3 @@ private:
   ATSHash64 *hash;
   std::map<uint64_t, ATSConsistentHashNode *> NodeMap;
 };
-
-#endif
