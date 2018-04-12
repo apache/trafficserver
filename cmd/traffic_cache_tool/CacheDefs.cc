@@ -214,6 +214,7 @@ Stripe::Chunk::clear()
 Stripe::Stripe(Span *span, Bytes start, CacheStoreBlocks len) : _span(span), _start(start), _len(len)
 {
   ts::bwprint(hashText, "{} {}:{}", span->_path.path(), _start.count(), _len.count());
+  CryptoContext().hash_immediate(hash_id, hashText.data(), static_cast<int>(hashText.size()));
   printf("hash id of stripe is hash of %.*s\n", static_cast<int>(hashText.size()), hashText.data());
 }
 
@@ -525,7 +526,7 @@ Stripe::stripe_offset(CacheDirEntry *e)
 }
 
 int
-Stripe::dir_probe(INK_MD5 *key, CacheDirEntry *result, CacheDirEntry **last_collision)
+Stripe::dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_collision)
 {
   int segment = key->slice32(0) % this->_segments;
   int bucket  = key->slice32(1) % this->_buckets;

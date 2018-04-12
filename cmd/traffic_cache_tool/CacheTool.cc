@@ -199,7 +199,7 @@ struct Cache {
   void dumpSpans(SpanDumpDepth depth);
   void dumpVolumes();
   void build_stripe_hash_table();
-  Stripe *key_to_stripe(INK_MD5 *key, const char *hostname, int host_len);
+  Stripe *key_to_stripe(CryptoHash *key, const char *hostname, int host_len);
   //  ts::CacheStripeBlocks calcTotalSpanPhysicalSize();
   ts::CacheStripeBlocks calcTotalSpanConfiguredSize();
 
@@ -992,7 +992,7 @@ Cache::build_stripe_hash_table()
 }
 
 Stripe *
-Cache::key_to_stripe(INK_MD5 *key, const char *hostname, int host_len)
+Cache::key_to_stripe(CryptoHash *key, const char *hostname, int host_len)
 {
   uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
   return globalVec_stripe[stripes_hash_table[h]];
@@ -1174,8 +1174,8 @@ Find_Stripe(FilePath const &input_file_path)
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
     cache.build_stripe_hash_table();
     for (auto host : cache.URLset) {
-      MD5Context ctx;
-      INK_MD5 hashT;
+      CryptoContext ctx;
+      CryptoHash hashT;
       ts::LocalBufferWriter<33> w;
       ctx.update(host->url.data(), host->url.size());
       ctx.update(&host->port, sizeof(host->port));
@@ -1302,8 +1302,8 @@ Get_Response(FilePath const &input_file_path)
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
     cache.build_stripe_hash_table();
     for (auto host : cache.URLset) {
-      MD5Context ctx;
-      INK_MD5 hashT;
+      CryptoContext ctx;
+      CryptoHash hashT;
       ts::LocalBufferWriter<33> w;
       ctx.update(host->url.data(), host->url.size());
       ctx.update(&host->port, sizeof(host->port));
