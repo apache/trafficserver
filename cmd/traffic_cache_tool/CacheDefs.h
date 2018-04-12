@@ -32,6 +32,7 @@
 #include <ts/TextView.h>
 #include <ts/ink_file.h>
 #include <list>
+#include <ts/CryptoHash.h>
 
 #include "Command.h"
 #include "File.h"
@@ -573,7 +574,7 @@ struct Stripe {
   void updateLiveData(enum Copy c);
 
   Span *_span;           ///< Hosting span.
-  INK_MD5 hash_id;       /// hash_id
+  CryptoHash hash_id;    /// hash_id
   Bytes _start;          ///< Offset of first byte of stripe metadata.
   Bytes _content;        ///< Start of content.
   CacheStoreBlocks _len; ///< Length of stripe.
@@ -609,7 +610,7 @@ struct Stripe {
   void dir_free_entry(CacheDirEntry *e, int s);
   CacheDirEntry *dir_delete_entry(CacheDirEntry *e, CacheDirEntry *p, int s);
   //  int dir_bucket_length(CacheDirEntry *b, int s);
-  int dir_probe(INK_MD5 *key, CacheDirEntry *result, CacheDirEntry **last_collision);
+  int dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_collision);
   bool dir_valid(CacheDirEntry *e);
   bool validate_sync_serial();
   Errata updateHeaderFooter();
