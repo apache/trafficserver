@@ -48,10 +48,10 @@ QUICAckFrameCreator::update(QUICPacketNumber packet_number, bool protection, boo
   return 0;
 }
 
-std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
-QUICAckFrameCreator::create()
+QUICFrameUPtr
+QUICAckFrameCreator::_create_frame()
 {
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
+  QUICFrameUPtr ack_frame = QUICFrameFactory::create_null_frame();
   if (this->_can_send) {
     ack_frame           = this->_create_ack_frame();
     this->_can_send     = false;
@@ -63,23 +63,13 @@ QUICAckFrameCreator::create()
   return ack_frame;
 }
 
-std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
-QUICAckFrameCreator::create_if_needed()
-{
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
-  if (this->_should_send) {
-    ack_frame = this->create();
-  }
-  return ack_frame;
-}
-
 void
 QUICAckFrameCreator::_sort_packet_numbers()
 {
   // TODO Find more smart way
 }
 
-std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
+QUICFrameUPtr
 QUICAckFrameCreator::_create_ack_frame()
 {
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
@@ -124,6 +114,19 @@ QUICAckFrameCreator::_create_ack_frame()
     ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, protection);
   }
   return ack_frame;
+}
+
+bool
+QUICAckFrameCreator::will_generate_frame()
+{
+  return this->_should_send;
+}
+
+QUICFrameUPtr
+QUICAckFrameCreator::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
+{
+  // FIXME fix size
+  return this->_create_frame();
 }
 
 uint64_t

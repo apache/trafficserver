@@ -1148,9 +1148,11 @@ QUICNetVConnection::_packetize_frames()
 
   // ACK
   if (will_be_ack_only) {
-    frame = this->_ack_frame_creator.create_if_needed();
+    if (this->_ack_frame_creator.will_generate_frame()) {
+      frame = this->_ack_frame_creator.generate_frame(UINT16_MAX, this->_maximum_stream_frame_data_size());
+    }
   } else {
-    frame = this->_ack_frame_creator.create();
+    frame = this->_ack_frame_creator.generate_frame(UINT16_MAX, this->_maximum_stream_frame_data_size());
   }
   if (frame != nullptr) {
     ++frame_count;
@@ -1240,7 +1242,7 @@ QUICNetVConnection::_packetize_closing_frame()
     return;
   }
 
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_ack_frame();
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
   if (this->_connection_error->cls == QUICErrorClass::APPLICATION) {
     frame = QUICFrameFactory::create_application_close_frame(std::move(this->_connection_error));
   } else {
