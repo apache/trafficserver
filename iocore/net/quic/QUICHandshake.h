@@ -57,7 +57,7 @@ public:
   void reset();
 
   // for server side
-  QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
+  QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory, bool &need_challege);
 
   // States
   int state_handshake(int event, Event *data);
@@ -94,6 +94,8 @@ private:
   QUICStatelessResetToken _reset_token;
   bool _initial         = false;
   bool _stateless_retry = false;
+
+  int _initial_packet_count = 0;
 
   void _load_local_server_transport_parameters(QUICVersion negotiated_version);
   void _load_local_client_transport_parameters(QUICVersion initial_version);

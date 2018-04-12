@@ -565,6 +565,11 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;
+  // path challenge failed
+  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
+    this->_close_path_validation_timeout(data);
+    this->_switch_to_close_state();
+    break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
@@ -853,14 +858,19 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
     return QUICErrorUPtr(new QUICNoError());
   }
 
+  bool need_challege = false;
   // Start handshake
-  QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
+  QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory, need_challege);
 
   // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
   if (this->_handshake_handler->is_version_negotiated()) {
     error = this->_recv_and_ack(std::move(packet));
+    if (need_challege) {
+      this->_path_validator->validate();
+      ink_hrtime rto = this->_loss_detector->current_rto_period();
+      this->_schedule_path_validation_timeout(3 * rto);
+    }
   }
-
   return error;
 }
 
