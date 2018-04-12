@@ -106,8 +106,8 @@ private:
     for (auto &&header : headers) {
       cout << "Header " << header.name() << ": " << endl;
 
-      for (HeaderField::iterator value_iter = header.begin(), values_end = header.end(); value_iter != values_end; ++value_iter) {
-        cout << "\t" << *value_iter << endl;
+      for (auto &&value_iter : header) {
+        cout << "\t" << value_iter << endl;
       }
     }
 

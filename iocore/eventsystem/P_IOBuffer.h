@@ -1036,9 +1036,9 @@ TS_INLINE int
 MIOBuffer::max_block_count()
 {
   int maxb = 0;
-  for (int i = 0; i < MAX_MIOBUFFER_READERS; i++) {
-    if (readers[i].allocated()) {
-      int c = readers[i].block_count();
+  for (auto &reader : readers) {
+    if (reader.allocated()) {
+      int c = reader.block_count();
       if (c > maxb) {
         maxb = c;
       }
@@ -1052,9 +1052,9 @@ MIOBuffer::max_read_avail()
 {
   int64_t s = 0;
   int found = 0;
-  for (int i = 0; i < MAX_MIOBUFFER_READERS; i++) {
-    if (readers[i].allocated()) {
-      int64_t ss = readers[i].read_avail();
+  for (auto &reader : readers) {
+    if (reader.allocated()) {
+      int64_t ss = reader.read_avail();
       if (ss > s) {
         s = ss;
       }
@@ -1160,9 +1160,9 @@ IOBufferReader::dealloc()
 TS_INLINE void
 MIOBuffer::dealloc_all_readers()
 {
-  for (int i = 0; i < MAX_MIOBUFFER_READERS; i++)
-    if (readers[i].allocated())
-      dealloc_reader(&readers[i]);
+  for (auto &reader : readers)
+    if (reader.allocated())
+      dealloc_reader(&reader);
 }
 
 TS_INLINE void

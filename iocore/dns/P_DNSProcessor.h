@@ -165,8 +165,8 @@ struct DNSEntry : public Continuation {
 
   DNSEntry()
   {
-    for (int i = 0; i < MAX_DNS_RETRIES; i++)
-      id[i]    = -1;
+    for (int &i : id)
+      i = -1;
     memset(qname, 0, MAXDNAME);
   }
 };

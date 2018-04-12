@@ -128,8 +128,8 @@ private:
 inline bool
 HttpVCTable::is_table_clear() const
 {
-  for (int i = 0; i < vc_table_max_entries; i++) {
-    if (vc_table[i].vc != nullptr) {
+  for (const auto &i : vc_table) {
+    if (i.vc != nullptr) {
       return false;
     }
   }

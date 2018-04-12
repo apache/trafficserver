@@ -395,15 +395,15 @@ HttpTunnel::is_tunnel_alive() const
 {
   bool tunnel_alive = false;
 
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
-    if (producers[i].alive == true) {
+  for (const auto &producer : producers) {
+    if (producer.alive == true) {
       tunnel_alive = true;
       break;
     }
   }
   if (!tunnel_alive) {
-    for (int i = 0; i < MAX_CONSUMERS; i++) {
-      if (consumers[i].alive == true) {
+    for (const auto &consumer : consumers) {
+      if (consumer.alive == true) {
         tunnel_alive = true;
         break;
       }
@@ -504,8 +504,8 @@ HttpTunnel::append_message_to_producer_buffer(HttpTunnelProducer *p, const char 
 inline bool
 HttpTunnel::has_cache_writer() const
 {
-  for (int i = 0; i < MAX_CONSUMERS; i++) {
-    if (consumers[i].vc_type == HT_CACHE_WRITE && consumers[i].vc != nullptr) {
+  for (const auto &consumer : consumers) {
+    if (consumer.vc_type == HT_CACHE_WRITE && consumer.vc != nullptr) {
       return true;
     }
   }
