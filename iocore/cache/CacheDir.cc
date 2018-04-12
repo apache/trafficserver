@@ -208,7 +208,7 @@ dir_init_segment(int s, Vol *d)
   d->header->freelist[s] = 0;
   Dir *seg               = dir_segment(s, d);
   int l, b;
-  memset(seg, 0, SIZEOF_DIR * DIR_DEPTH * d->buckets);
+  memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * d->buckets);
   for (l = 1; l < DIR_DEPTH; l++) {
     for (b = 0; b < d->buckets; b++) {
       Dir *bucket = dir_bucket(b, seg);
@@ -1447,7 +1447,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   }
 
   Dir dir1;
-  memset(&dir1, 0, sizeof(dir1));
+  memset(static_cast<void *>(&dir1), 0, sizeof(dir1));
   int s1, b1;
 
   rprintf(t, "corrupt_bucket test\n");

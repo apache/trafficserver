@@ -1018,7 +1018,7 @@ Lagain:
     int l       = round_to_approx_size(sizeof(Doc));
     agg_buf_pos = l;
     Doc *d      = (Doc *)agg_buffer;
-    memset(d, 0, sizeof(Doc));
+    memset(static_cast<void *>(d), 0, sizeof(Doc));
     d->magic        = DOC_MAGIC;
     d->len          = l;
     d->sync_serial  = header->sync_serial;
