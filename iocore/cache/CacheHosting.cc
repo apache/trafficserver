@@ -164,7 +164,7 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
 
   if (errNo) {
     // There was a problem so undo the effects this function
-    memset(cur_d, 0, sizeof(CacheHostRecord));
+    memset(static_cast<void *>(cur_d), 0, sizeof(CacheHostRecord));
     return;
   }
   Debug("cache_hosting", "hostname: %s, host record: %p", match_data, cur_d);
@@ -1076,8 +1076,8 @@ save_state()
   saved_cp_list_len = cp_list_len;
   memcpy(&saved_config_volumes, &config_volumes, sizeof(ConfigVolumes));
   saved_gnvol = gnvol;
-  memset(&cp_list, 0, sizeof(Queue<CacheVol>));
-  memset(&config_volumes, 0, sizeof(ConfigVolumes));
+  memset(static_cast<void *>(&cp_list), 0, sizeof(Queue<CacheVol>));
+  memset(static_cast<void *>(&config_volumes), 0, sizeof(ConfigVolumes));
   gnvol = 0;
 }
 
