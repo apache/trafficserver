@@ -28,8 +28,8 @@ QUICClient::~QUICClient()
   freeaddrinfo(this->_remote_addr_info);
 }
 
-void
-QUICClient::start()
+int
+QUICClient::start(int, void *)
 {
   SET_HANDLER(&QUICClient::state_http_server_open);
 
@@ -44,7 +44,7 @@ QUICClient::start()
   int res = getaddrinfo(this->_remote_addr, this->_remote_port, &hints, &this->_remote_addr_info);
   if (res < 0) {
     Debug("quic_client", "Error: %s (%d)", strerror(errno), errno);
-    return;
+    return EVENT_DONE;
   }
 
   for (struct addrinfo *info = this->_remote_addr_info; info != nullptr; info = info->ai_next) {
@@ -62,6 +62,7 @@ QUICClient::start()
       break;
     }
   }
+  return EVENT_CONT;
 }
 
 // Similar to HttpSM::state_http_server_open(int event, void *data)

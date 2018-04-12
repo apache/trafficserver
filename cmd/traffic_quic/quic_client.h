@@ -37,7 +37,7 @@ public:
   };
   ~QUICClient();
 
-  void start();
+  int start(int, void *);
   int state_http_server_open(int event, void *data);
 
 private:
