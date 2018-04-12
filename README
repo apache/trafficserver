@@ -113,9 +113,9 @@ plugins to build large scale web applications.
   OSX (we recommend HomeBrew):
     autoconf
     automake
-    pkgconfig
+    pkg-config
     libtool
-    tcl
+    tcl-tk (or tcl from Homebrew-Cask)
     openssl
     pcre
 
