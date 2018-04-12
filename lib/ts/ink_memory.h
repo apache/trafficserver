@@ -205,7 +205,7 @@ template <typename T>
 inline void
 ink_zero(T &t)
 {
-  memset(&t, 0, sizeof(t));
+  memset(static_cast<void *>(&t), 0, sizeof(t));
 }
 
 /** Scoped resources.

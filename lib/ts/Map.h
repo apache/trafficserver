@@ -244,7 +244,7 @@ const uintptr_t open_hash_primes[256] = {
 
 template <class C, class A, int S> inline Vec<C, A, S>::Vec() : n(0), i(0), v(0)
 {
-  memset(&e[0], 0, sizeof(e));
+  memset(static_cast<void *>(&e[0]), 0, sizeof(e));
 }
 
 template <class C, class A, int S> inline Vec<C, A, S>::Vec(const Vec<C, A, S> &vv)
@@ -774,8 +774,8 @@ Vec<C, A, S>::copy_internal(const Vec<C, A, S> &vv)
   }
   nl = 1 << nl;
   v  = (C *)A::alloc(nl * sizeof(C));
-  memcpy(v, vv.v, n * sizeof(C));
-  memset(v + n, 0, (nl - n) * sizeof(C));
+  memcpy(static_cast<void *>(v), vv.v, n * sizeof(C));
+  memset(static_cast<void *>(v + n), 0, (nl - n) * sizeof(C));
   if (i > n) // reset reserve
     i = 0;
 }
@@ -790,7 +790,7 @@ Vec<C, A, S>::set_expand()
     i = i + 1;
   n   = prime2[i];
   v   = (C *)A::alloc(n * sizeof(C));
-  memset(v, 0, n * sizeof(C));
+  memset(static_cast<void *>(v), 0, n * sizeof(C));
 }
 
 template <class C, class A, int S>
@@ -822,9 +822,9 @@ Vec<C, A, S>::addx()
   }
   if (v == e) {
     v = (C *)A::alloc(VEC_INITIAL_SIZE * sizeof(C));
-    memcpy(v, &e[0], n * sizeof(C));
+    memcpy(static_cast<void *>(v), &e[0], n * sizeof(C));
     ink_assert(n < VEC_INITIAL_SIZE);
-    memset(&v[n], 0, (VEC_INITIAL_SIZE - n) * sizeof(C));
+    memset(static_cast<void *>(&v[n]), 0, (VEC_INITIAL_SIZE - n) * sizeof(C));
   } else {
     if ((n & (n - 1)) == 0) {
       size_t nl = n * 2;
@@ -835,8 +835,8 @@ Vec<C, A, S>::addx()
       }
       void *vv = (void *)v;
       v        = (C *)A::alloc(nl * sizeof(C));
-      memcpy(v, vv, n * sizeof(C));
-      memset(&v[n], 0, n * sizeof(C));
+      memcpy(static_cast<void *>(v), vv, n * sizeof(C));
+      memset(static_cast<void *>(&v[n]), 0, n * sizeof(C));
       A::free(vv);
     }
   }

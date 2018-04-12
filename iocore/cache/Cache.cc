@@ -1305,7 +1305,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate_size = (int)(len / EVACUATION_BUCKET_SIZE) + 2;
   int evac_len  = (int)evacuate_size * sizeof(DLL<EvacuationBlock>);
   evacuate      = (DLL<EvacuationBlock> *)ats_malloc(evac_len);
-  memset(evacuate, 0, evac_len);
+  memset(static_cast<void *>(evacuate), 0, evac_len);
 
   Debug("cache_init", "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
         (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
@@ -3418,7 +3418,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   if (hdr_size > length) {
     return false;
   }
-  memcpy(d_hdr, s_hdr, hdr_size);
+  memcpy(static_cast<void *>(d_hdr), s_hdr, hdr_size);
   d_alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(d_hdr) - reinterpret_cast<char *>(d_alt));
   dst += hdr_size;
   length -= hdr_size;
@@ -3430,7 +3430,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   if (hdr_size > length) {
     return false;
   }
-  memcpy(d_hdr, s_hdr, hdr_size);
+  memcpy(static_cast<void *>(d_hdr), s_hdr, hdr_size);
   d_alt->m_response_hdr.m_heap = reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(d_hdr) - reinterpret_cast<char *>(d_alt));
   dst += hdr_size;
   length -= hdr_size;
