@@ -273,6 +273,8 @@ public:
   /// Fill addresses (overload).
   self &fill(IpEndpoint const *min, IpEndpoint const *max, void *data = nullptr);
   /// Fill addresses (overload).
+  self &fill(IpAddr const &min, IpAddr const &max, void *data = nullptr);
+  /// Fill addresses (overload).
   self &fill(in_addr_t min, in_addr_t max, void *data = nullptr);
 
   /** Test for membership.
@@ -393,6 +395,15 @@ inline IpMap &
 IpMap::fill(IpEndpoint const *min, IpEndpoint const *max, void *data)
 {
   return this->fill(&min->sa, &max->sa, data);
+}
+
+inline IpMap &
+IpMap::fill(IpAddr const &min, IpAddr const &max, void *data)
+{
+  IpEndpoint x, y;
+  x.assign(min);
+  y.assign(max);
+  return this->fill(&x.sa, &y.sa, data);
 }
 
 inline bool
