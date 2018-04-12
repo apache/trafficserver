@@ -1,4 +1,5 @@
 #include "ts/IpMap.h"
+#include "ink_inet.h"
 
 /** @file
     IP address map support.
