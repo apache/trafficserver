@@ -908,8 +908,9 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
 Lcallreturn:
   return handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
 Lsuccess:
-  if (write_vc)
+  if (write_vc) {
     CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
+  }
   SET_HANDLER(&CacheVC::openReadMain);
   return callcont(CACHE_EVENT_OPEN_READ);
 }
