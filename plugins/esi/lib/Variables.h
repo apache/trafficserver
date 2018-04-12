@@ -55,8 +55,8 @@ public:
   void
   populate(const HttpHeaderList &headers)
   {
-    for (HttpHeaderList::const_iterator iter = headers.begin(); iter != headers.end(); ++iter) {
-      populate(*iter);
+    for (const auto &header : headers) {
+      populate(header);
     }
   };
 

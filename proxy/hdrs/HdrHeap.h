@@ -279,9 +279,9 @@ public:
       if (heap->m_read_write_heap && heap->m_read_write_heap->contains(str)) {
         m_ptr = heap->m_read_write_heap.get();
       } else {
-        for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-          if (heap->m_ronly_heap[i].contains(str)) {
-            m_ptr = heap->m_ronly_heap[i].m_ref_count_ptr;
+        for (auto &i : heap->m_ronly_heap) {
+          if (i.contains(str)) {
+            m_ptr = i.m_ref_count_ptr;
             break;
           }
         }

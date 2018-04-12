@@ -1100,18 +1100,18 @@ public:
     if (_writer) {
       _writer->reset();
     }
-    for (int j = 0; j < MAX_MIOBUFFER_READERS; j++)
-      if (readers[j].allocated()) {
-        readers[j].reset();
+    for (auto &reader : readers)
+      if (reader.allocated()) {
+        reader.reset();
       }
   }
 
   void
   init_readers()
   {
-    for (int j = 0; j < MAX_MIOBUFFER_READERS; j++)
-      if (readers[j].allocated() && !readers[j].block)
-        readers[j].block = _writer;
+    for (auto &reader : readers)
+      if (reader.allocated() && !reader.block)
+        reader.block = _writer;
   }
 
   void
