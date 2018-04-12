@@ -24,6 +24,7 @@
 #pragma once
 
 #include "ts/ink_hrtime.h"
+#include "QUICFrameGenerator.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"
 #include <vector>
@@ -51,7 +52,7 @@ private:
   std::vector<QUICPacketNumber> _packet_numbers;
 };
 
-class QUICAckFrameCreator
+class QUICAckFrameCreator : public QUICFrameGenerator
 {
 public:
   static constexpr int MAXIMUM_PACKET_COUNT = 256;
@@ -64,19 +65,22 @@ public:
   int update(QUICPacketNumber packet_number, bool protection, bool should_send);
 
   /*
+   * Returns true only if should send ack.
+   */
+  bool will_generate_frame() override;
+
+  /*
+   * Calls create directly.
+   */
+  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size) override;
+
+private:
+  /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.
    * Caller must send the ACK frame to the peer if it was returned.
    */
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create();
+  QUICFrameUPtr _create_frame();
 
-  /*
-   * Returns QUICAckFrame only if ACK frame need to be sent,
-   * because sending an ACK only packet against an ACK only packet is prohibited.
-   * Caller must send the ACK frame to the peer if it was returned.
-   */
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_if_needed();
-
-private:
   bool _can_send    = false;
   bool _should_send = false;
 
@@ -85,6 +89,6 @@ private:
   std::set<QUICPacketNumber> _unprotected_packets;
 
   void _sort_packet_numbers();
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame();
+  QUICFrameUPtr _create_ack_frame();
   uint64_t _calculate_delay();
 };

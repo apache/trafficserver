@@ -29,21 +29,23 @@
 TEST_CASE("QUICAckFrameCreator", "[quic]")
 {
   QUICAckFrameCreator creator;
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> frame = {nullptr, nullptr};
 
   // Initial state
-  frame = creator.create();
+  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
   // One packet
   creator.update(1, false, true);
-  frame = creator.create();
+  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 1);
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
 
-  frame = creator.create();
+  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
   // Not sequential
@@ -51,7 +53,8 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   creator.update(5, false, true);
   creator.update(3, false, true);
   creator.update(4, false, true);
-  frame = creator.create();
+  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 5);
@@ -61,7 +64,8 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   creator.update(6, false, true);
   creator.update(7, false, true);
   creator.update(10, false, true);
-  frame = creator.create();
+  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
   CHECK(frame->largest_acknowledged() == 10);
@@ -72,10 +76,10 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
 TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
 {
   QUICAckFrameCreator creator;
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> frame = {nullptr, nullptr};
 
   // Initial state
-  frame = creator.create();
+  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
   creator.update(2, false, true);
@@ -84,19 +88,22 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   creator.update(8, false, true);
   creator.update(9, false, true);
 
-  frame = creator.create();
+  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
   CHECK(frame->largest_acknowledged() == 9);
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  frame = creator.create();
+  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
   creator.update(7, false, true);
   creator.update(4, false, true);
-  frame = creator.create();
+  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
   CHECK(frame->largest_acknowledged() == 7);
