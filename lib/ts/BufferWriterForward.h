@@ -53,8 +53,8 @@ struct BWFSpec {
     NONE,                            ///< No alignment.
     LEFT,                            ///< Left alignment '<'.
     RIGHT,                           ///< Right alignment '>'.
-    CENTER,                          ///< Center alignment '='.
-    SIGN                             ///< Align plus/minus sign before numeric fill. '^'
+    CENTER,                          ///< Center alignment '^'.
+    SIGN                             ///< Align plus/minus sign before numeric fill. '='
   } _align           = Align::NONE;  ///< Output field alignment.
   char _type         = DEFAULT_TYPE; ///< Type / radix indicator.
   bool _radix_lead_p = false;        ///< Print leading radix indication.
@@ -78,6 +78,8 @@ struct BWFSpec {
   bool has_numeric_type() const;
   /// Check if the type in @a this is an upper case variant.
   bool has_upper_case_type() const;
+  /// Check if the type is a raw pointer.
+  bool has_pointer_type() const;
 
 protected:
   /// Validate character is alignment character and return the appropriate enum value.
@@ -134,6 +136,12 @@ inline bool
 BWFSpec::has_upper_case_type() const
 {
   return _prop._data[static_cast<unsigned>(_type)] & Property::UPPER_TYPE_CHAR;
+}
+
+inline bool
+BWFSpec::has_pointer_type() const
+{
+  return _type == 'p' || _type == 'P';
 }
 
 class BWFormat;

@@ -169,7 +169,11 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
-nitpicky = 1
+nitpicky = True
+nitpick_ignore = [ ('cpp:typeOrConcept', 'std')
+                 , ('cpp:typeOrConcept', 'std::shared_ptr')
+                 , ('cpp:typeOrConcept', 'std::ostream')
+                 ]
 
 # Autolink issue references.
 # See Customizing the Parser in the docutils.parsers.rst module.

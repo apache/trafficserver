@@ -685,10 +685,10 @@ bwformat(BufferWriter &w, BWFSpec const &spec, in_addr_t addr)
   bool align_p = false;
 
   if (spec._ext.size()) {
-    if (spec._ext.front() == '^') {
+    if (spec._ext.front() == '=') {
       align_p          = true;
       local_spec._fill = '0';
-    } else if (spec._ext.size() > 1 && spec._ext[1] == '^') {
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
       align_p          = true;
       local_spec._fill = spec._ext[0];
     }
@@ -723,10 +723,10 @@ bwformat(BufferWriter &w, BWFSpec const &spec, in6_addr const &addr)
   bool align_p         = false;
 
   if (spec._ext.size()) {
-    if (spec._ext.front() == '^') {
+    if (spec._ext.front() == '=') {
       align_p          = true;
       local_spec._fill = '0';
-    } else if (spec._ext.size() > 1 && spec._ext[1] == '^') {
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
       align_p          = true;
       local_spec._fill = spec._ext[0];
     }
@@ -756,8 +756,9 @@ bwformat(BufferWriter &w, BWFSpec const &spec, in6_addr const &addr)
     }
   }
 
-  if (!local_spec.has_numeric_type())
+  if (!local_spec.has_numeric_type()) {
     local_spec._type = 'x';
+  }
 
   for (; ptr < limit; ptr += 2) {
     if (reinterpret_cast<uint8_t const *>(lower) <= ptr && ptr <= reinterpret_cast<uint8_t const *>(upper)) {
@@ -770,8 +771,63 @@ bwformat(BufferWriter &w, BWFSpec const &spec, in6_addr const &addr)
     } else {
       uint16_t f = (ptr[0] << 8) + ptr[1];
       bwformat(w, local_spec, f);
-      if (ptr != limit - 2)
+      if (ptr != limit - 2) {
         w.write(':');
+      }
+    }
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, IpAddr const &addr)
+{
+  BWFSpec local_spec{spec}; // Format for address elements and port.
+  bool addr_p{true};
+  bool family_p{false};
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      local_spec._ext.remove_prefix(1);
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      local_spec._ext.remove_prefix(2);
+    }
+  }
+  if (local_spec._ext.size()) {
+    addr_p = false;
+    for (char c : local_spec._ext) {
+      switch (c) {
+      case 'a':
+      case 'A':
+        addr_p = true;
+        break;
+      case 'f':
+      case 'F':
+        family_p = true;
+        break;
+      }
+    }
+  }
+
+  if (addr_p) {
+    if (addr.isIp4()) {
+      bwformat(w, spec, addr._addr._ip4);
+    } else if (addr.isIp6()) {
+      bwformat(w, spec, addr._addr._ip6);
+    } else {
+      w.print("*Not IP address [{}]*", addr.family());
+    }
+  }
+
+  if (family_p) {
+    local_spec._min = 0;
+    if (addr_p) {
+      w.write(' ');
+    }
+    if (spec.has_numeric_type()) {
+      bwformat(w, local_spec, static_cast<uintmax_t>(addr.family()));
+    } else {
+      bwformat(w, local_spec, addr.family());
     }
   }
   return w;
@@ -781,9 +837,11 @@ BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
 {
   BWFSpec local_spec{spec}; // Format for address elements and port.
-  bool port_p   = true;
-  bool addr_p   = true;
-  bool family_p = false;
+  bool port_p{true};
+  bool addr_p{true};
+  bool family_p{false};
+  bool local_numeric_fill_p{false};
+  char local_numeric_fill_char{'0'};
 
   if (spec._type == 'p' || spec._type == 'P') {
     bwformat(w, spec, static_cast<void const *>(addr));
@@ -791,19 +849,29 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
   }
 
   if (spec._ext.size()) {
-    // internal alignment must be first or second, if second first is fill char.
-    if (spec._ext.size() >= 2 && spec._ext[1] == '^')
+    if (spec._ext.front() == '=') {
+      local_numeric_fill_p = true;
+      local_spec._ext.remove_prefix(1);
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      local_numeric_fill_p    = true;
+      local_numeric_fill_char = spec._ext.front();
       local_spec._ext.remove_prefix(2);
+    }
+  }
+  if (local_spec._ext.size()) {
     addr_p = port_p = false;
     for (char c : local_spec._ext) {
       switch (c) {
       case 'a':
+      case 'A':
         addr_p = true;
         break;
       case 'p':
+      case 'P':
         port_p = true;
         break;
       case 'f':
+      case 'F':
         family_p = true;
         break;
       }
@@ -833,7 +901,13 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
       w.write(':');
   }
   if (port_p) {
-    local_spec._min = spec._fill ? std::numeric_limits<in_port_t>::digits10 + 1 : 0;
+    if (local_numeric_fill_p) {
+      local_spec._min   = 5;
+      local_spec._fill  = local_numeric_fill_char;
+      local_spec._align = BWFSpec::Align::RIGHT;
+    } else {
+      local_spec._min = 0;
+    }
     bwformat(w, local_spec, static_cast<uintmax_t>(ats_ip_port_host_order(addr)));
   }
   if (family_p) {
@@ -848,4 +922,5 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
   }
   return w;
 }
+
 } // ts

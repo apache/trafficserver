@@ -278,6 +278,15 @@ Reference
 
       Print the arguments according to the format. See `bw-formatting`_.
 
+   .. function:: std::ostream & operator >> (std::ostream & stream) const
+
+      Write the contents of the buffer to :arg:`stream` and return :arg:`stream`.
+
+   .. function:: ssize_t operator >> (int fd)
+
+      Write the contents of the buffer to file descriptor :arg:`fd` and return the number of bytes
+      write (the results of the call to file :code:`write()`).
+
 .. class:: FixedBufferWriter : public BufferWriter
 
    This is a class that implements :class:`BufferWriter` on a fixed buffer, passed in to the constructor.
@@ -366,10 +375,10 @@ arguments in generating out in the buffer. The basic format is divided in to thr
       URI-char: "%" hex-digit hex-digit
       align: "<" | ">" | "=" | "^"
       sign: "+" | "-" | " "
-      min: integer
-      precision: integer
-      max: integer
-      type: "g" | "s" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
+      min: non-negative integer
+      precision: positive integer
+      max: non-negative integer
+      type: type: "g" | "s" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
 
    The output is placed in a field that is at least :token:`min` wide and no more than :token:`max` wide. If
    the output is less than :token:`min` then
@@ -399,6 +408,7 @@ arguments in generating out in the buffer. The basic format is divided in to thr
    lower cased hexadecimal (:code:`0x1337beef`) while 'X' prints in upper case hexadecimal (:code:`0X1337BEEF`).
 
       = ===============
+      g generic, default.
       b binary
       B Binary
       d decimal
@@ -406,14 +416,20 @@ arguments in generating out in the buffer. The basic format is divided in to thr
       x hexadecimal
       X Hexadecimal
       p pointer (hexadecimal address)
-      P Pointer (Hexidecimal address)
+      P Pointer (Hexadecimal address)
       s string
+      S String (upper case)
       = ===============
 
    For several specializations the hexadecimal format is taken to indicate printing the value as if
    it were a hexidecimal value, in effect providing a hex dump of the value. This is the case for
    :class:`string_view` and therefore a hex dump of an object can be done by creating a
    :class:`string_view` covering the data and then printing it with :code:`{:x}`.
+
+   The string type ('s' or 'S') is generally used to cause alphanumeric output for a valud that would
+   normally use numeric output. For instance, a :code:`bool` is normally ``0`` or ``1``. Using the
+   type 's' yields ``true` or ``false``. The upper case form, 'S', applies only in these cases where the
+   formatter generates the text, it does not apply to normally text based values unless specifically noted.
 
 :arg:`extension`
    Text (excluding braces) that is passed to the formatting function. This can be used to provide
@@ -478,21 +494,90 @@ Specialized Types
 
    .. code-block:: cpp
 
-      sockaddr const* addr;
-      bw.print("Connecting to {}", addr); // -> "Connecting to 172.19.3.105:49951"
-      bw.print("Connecting to {0::a} on port {0::p}", addr); // no need to pass the argument twice.
-      bw.print("Using address family {::f}", addr);
-      bw.print("{::a}",addr);      // -> "172.19.3.105"
-      bw.print("{::^a}",addr);     // -> "172.019.003.105"
-      bw.print("{::0^a}",addr);    // -> "172.019.003.105"
-      bw.print("{:: ^a}",addr);    // -> "172. 19.  3.105"
-      bw.print("{:>20:a}",addr);   // -> "        172.19.3.105"
-      bw.print("{:>20:^a}",addr);  // -> "     172.019.003.105"
-      bw.print("{:>20: ^a}",addr); // -> "     172. 19.  3.105"
+      void func(sockaddr const* addr) {
+        bw.print("To {}", addr); // -> "To 172.19.3.105:4951"
+        bw.print("To {0::a} on port {0::p}", addr); // -> "To 172.19.3.105 on port 4951"
+        bw.print("To {::=}", addr); // -> "To 127.019.003.105:04951"
+        bw.print("Using address family {::f}", addr);
+        bw.print("{::a}",addr);      // -> "172.19.3.105"
+        bw.print("{::=a}",addr);     // -> "172.019.003.105"
+        bw.print("{::0=a}",addr);    // -> "172.019.003.105"
+        bw.print("{:: =a}",addr);    // -> "172. 19.  3.105"
+        bw.print("{:>20:a}",addr);   // -> "        172.19.3.105"
+        bw.print("{:>20:=a}",addr);  // -> "     172.019.003.105"
+        bw.print("{:>20: =a}",addr); // -> "     172. 19.  3.105"
+      }
 
-Futures
-+++++++
+Global Names
+++++++++++++
 
-A planned future extension is a variant of :class:`BufferWriter` that operates on a
-:code:`MIOBuffer`. This would be very useful in many places that work with :code:`MIOBuffer`
-instances, most specifically in the body factory logic.
+There are predefined global names that can be used to generate output. These do not take any
+arguments to :func:`BufferWriter::print`, the data needed for output is either process or thread
+global and is retrieved directly.
+
+now
+   The epoch time in seconds.
+
+tick
+   The high resolution clock tick.
+
+timestamp
+   UTC time in the format "Year Month Data Hour:Minute:Second", e.g. "2018 Apr 17 14:23:47".
+
+thread-id
+   The id of the current thread.
+
+thread-name
+   The name of the current thread.
+
+ts-thread
+   A pointer to the |TS| :class:`Thread` object for the current thread. This is useful for comparisons.
+
+ts-ethread
+   A pointer to the |TS| :class:`EThread` object for the current thread. This is useful for comparisons
+   or to indicate if the thread is an :class:`EThread` (if not, the value will be :code:`nullptr`).
+
+For example, to have the same output as the normal diagnostic messages with a timestamp and the current thread::
+
+   bw.print("{timestamp} {ts-thread} Counter is {}", counter);
+
+Note that even though no argument is provided the global names do not count as part of the argument
+indexing, therefore the preceeding example could be written as::
+
+   bw.print("{timestamp} {ts-thread} Counter is {0}", counter);
+
+Working with standard I/O
++++++++++++++++++++++++++
+
+:class:`BufferWriter` can be used with some of the basic I/O functionality of a C++ environment. At the lowest
+level the output stream operator can be used with a file descriptor or a :code:`std::ostream`. For these
+examples assume :code:`bw` is an instance of :class:`BufferWriter` with data in it.
+
+.. code-block:: cpp
+
+   int fd = open("some_file", O_RDWR);
+   bw >> std::cout; // write to standard out.
+   bw >> fd; // Write to file.
+
+For convenience a stream operator for :code:`std::stream` is provided to make the use more natural.
+
+.. code-block:: cpp
+
+   std::cout << bw;
+
+Using a :class:`BufferWriter` with :code:`printf` is straight forward by use of the sized string format code.
+
+.. code-block:: cpp
+
+   printf("%.*s", static_cast<int>(bw.size()), bw.data());
+
+In C++, writing to a stream can be done without any local variables at all.
+
+.. code-block:: cpp
+
+   std::cout << ts::LocalBufferWriter<256>().print("Failed to connect to {}\n", addr1);
+
+This is quite handy for temporary debugging messages as it avoids having to clean up local variable
+declarations later, particularly when the types involved themselves require additional local
+declarations (such as in this example, an IP address which would normally require a local text
+buffer for conversion before printing).

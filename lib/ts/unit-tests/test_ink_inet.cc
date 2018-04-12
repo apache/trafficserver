@@ -22,6 +22,7 @@
 */
 
 #include <ts/TextView.h>
+#include <ts/BufferWriter.h>
 #include <ts/ink_inet.h>
 #include <catch.hpp>
 #include <iostream>
@@ -154,7 +155,7 @@ TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
   ts::string_view addr_4{"[1337::ded:BEEF]:53874"};
   ts::string_view addr_5{"[1337:0:0:ded:BEEF:0:0:956]:53874"};
   ts::string_view addr_6{"[1337:0:0:ded:BEEF:0:0:0]:53874"};
-  ts::string_view addr_7{"172.19.3.105:49951"};
+  ts::string_view addr_7{"172.19.3.105:4951"};
   ts::string_view addr_null{"[::]:53874"};
   ts::LocalBufferWriter<1024> w;
 
@@ -169,9 +170,9 @@ TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
   REQUIRE(w.view() == addr_1.substr(0, 26)); // check the brackets are dropped.
   w.reset().print("[{0::a}]:{0::p}", ep);
   REQUIRE(w.view() == addr_1); // check the brackets are dropped.
-  w.reset().print("{::^a}", ep);
+  w.reset().print("{::=a}", ep);
   REQUIRE(w.view() == "ffee:0000:0000:0000:24c3:3349:3cee:0143");
-  w.reset().print("{:: ^a}", ep);
+  w.reset().print("{:: =a}", ep);
   REQUIRE(w.view() == "ffee:   0:   0:   0:24c3:3349:3cee: 143");
   ep.setToLoopback(AF_INET6);
   w.reset().print("{::a}", ep);
@@ -198,34 +199,46 @@ TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
   REQUIRE(0 == ats_ip_pton(addr_2, &ep.sa));
   w.reset().print("{::a}", ep);
   REQUIRE(w.view() == addr_2.substr(0, 13));
+  w.reset().print("{0::a}", ep);
+  REQUIRE(w.view() == addr_2.substr(0, 13));
   w.reset().print("{::ap}", ep);
   REQUIRE(w.view() == addr_2);
   w.reset().print("{::f}", ep);
   REQUIRE(w.view() == IP_PROTO_TAG_IPV4);
   w.reset().print("{::fpa}", ep);
   REQUIRE(w.view() == "172.17.99.231:23995 ipv4");
-  w.reset().print("{:: ^a}", ep);
+  w.reset().print("{0::a} .. {0::p}", ep);
+  REQUIRE(w.view() == "172.17.99.231 .. 23995");
+  w.reset().print("<+> {0::a} <+> {0::p}", ep);
+  REQUIRE(w.view() == "<+> 172.17.99.231 <+> 23995");
+  w.reset().print("<+> {0::a} <+> {0::p} <+>", ep);
+  REQUIRE(w.view() == "<+> 172.17.99.231 <+> 23995 <+>");
+  w.reset().print("{:: =a}", ep);
   REQUIRE(w.view() == "172. 17. 99.231");
-  w.reset().print("{::^a}", ep);
+  w.reset().print("{::=a}", ep);
   REQUIRE(w.view() == "172.017.099.231");
 
   // Documentation examples
   REQUIRE(0 == ats_ip_pton(addr_7, &ep.sa));
-  w.reset().print("Connecting to {}", ep);
-  REQUIRE(w.view() == "Connecting to 172.19.3.105:49951");
+  w.reset().print("To {}", ep);
+  REQUIRE(w.view() == "To 172.19.3.105:4951");
+  w.reset().print("To {0::a} on port {0::p}", ep); // no need to pass the argument twice.
+  REQUIRE(w.view() == "To 172.19.3.105 on port 4951");
+  w.reset().print("To {::=}", ep);
+  REQUIRE(w.view() == "To 172.019.003.105:04951");
   w.reset().print("{::a}", ep);
   REQUIRE(w.view() == "172.19.3.105");
-  w.reset().print("{::^a}", ep);
+  w.reset().print("{::=a}", ep);
   REQUIRE(w.view() == "172.019.003.105");
-  w.reset().print("{::0^a}", ep);
+  w.reset().print("{::0=a}", ep);
   REQUIRE(w.view() == "172.019.003.105");
-  w.reset().print("{:: ^a}", ep);
+  w.reset().print("{:: =a}", ep);
   REQUIRE(w.view() == "172. 19.  3.105");
   w.reset().print("{:>20:a}", ep);
   REQUIRE(w.view() == "        172.19.3.105");
-  w.reset().print("{:>20:^a}", ep);
+  w.reset().print("{:>20:=a}", ep);
   REQUIRE(w.view() == "     172.019.003.105");
-  w.reset().print("{:>20: ^a}", ep);
+  w.reset().print("{:>20: =a}", ep);
   REQUIRE(w.view() == "     172. 19.  3.105");
   w.reset().print("{:<20:a}", ep);
   REQUIRE(w.view() == "172.19.3.105        ");

@@ -1547,6 +1547,7 @@ IpEndpoint::setToLoopback(int family)
 // BufferWriter formatting support.
 namespace ts
 {
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, IpAddr const &addr);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr);
 inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, IpEndpoint const &addr)
