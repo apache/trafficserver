@@ -721,7 +721,7 @@ Span::loadDevice()
           span_hdr_size = round_up(sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor));
           _header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
           if (span_hdr_size <= BUFF_SIZE) {
-            memcpy(_header.get(), buff, span_hdr_size);
+            memcpy(static_cast<void *>(_header.get()), buff, span_hdr_size);
           } else {
             // TODO - check the pread return
             ssize_t n = pread(fd, _header.get(), span_hdr_size, offset);

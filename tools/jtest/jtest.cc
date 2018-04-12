@@ -3641,7 +3641,7 @@ main(int argc __attribute__((unused)), const char *argv[])
   setvbuf(stdout, (char *)nullptr, _IOLBF, 0);
 
   fd = (FD *)malloc(MAXFDS * sizeof(FD));
-  memset(fd, 0, MAXFDS * sizeof(FD));
+  memset(static_cast<void *>(fd), 0, MAXFDS * sizeof(FD));
   process_args(&appVersionInfo, argument_descriptions, n_argument_descriptions, argv);
 
   if (!drand_seed) {
