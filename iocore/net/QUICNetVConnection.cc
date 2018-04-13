@@ -1203,13 +1203,11 @@ QUICNetVConnection::_packetize_frames()
   while (frame) {
     ++frame_count;
     if (frame->type() == QUICFrameType::STREAM) {
-      uint16_t frame_size = frame->size();
-      int ret             = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent() + frame_size);
+      int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
       Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
             static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
             this->_remote_flow_controller->current_limit());
       ink_assert(ret == 0);
-      this->_stream_manager->add_total_offset_sent(frame_size);
     }
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
 
