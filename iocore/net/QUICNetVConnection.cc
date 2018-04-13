@@ -204,7 +204,8 @@ QUICNetVConnection::start()
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(this->_loss_detector, UINT64_MAX);
   this->_path_validator         = new QUICPathValidator();
-  this->_stream_manager         = new QUICStreamManager(this->_loss_detector, this->connection_id(), this->_application_map);
+  this->_stream_manager =
+    new QUICStreamManager(this->_loss_detector, this->connection_id(), this->_application_map, this->netvc_context);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);

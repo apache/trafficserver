@@ -38,7 +38,8 @@ class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   QUICStreamManager(){};
-  QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICApplicationMap *app_map);
+  QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICApplicationMap *app_map,
+                    NetVConnectionContext_t context);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
@@ -49,6 +50,8 @@ public:
 
   uint32_t stream_count() const;
   QUICErrorUPtr create_stream(QUICStreamId stream_id);
+  QUICErrorUPtr create_uni_stream(QUICStreamId &new_stream_id);
+  QUICErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id);
 
   void set_default_application(QUICApplication *app);
   void reset_send_offset();
@@ -76,12 +79,15 @@ private:
 
   QUICConnectionId _connection_id                           = 0;
   QUICApplicationMap *_app_map                              = nullptr;
+  NetVConnectionContext_t _netvc_context                    = NET_VCONNECTION_UNSET;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
   QUICStreamId _local_maximum_stream_id_bidi                = 0;
   QUICStreamId _local_maximum_stream_id_uni                 = 0;
   QUICStreamId _remote_maximum_stream_id_bidi               = 0;
   QUICStreamId _remote_maximum_stream_id_uni                = 0;
+  QUICStreamId _next_stream_id_uni                          = 0;
+  QUICStreamId _next_stream_id_bidi                         = 0;
   uint64_t _total_offset_sent                               = 0;
   QUICRTTProvider *_rtt_provider                            = nullptr;
 };

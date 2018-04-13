@@ -32,9 +32,18 @@ static constexpr char tag[] = "quic_stream_manager";
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
 ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
 
-QUICStreamManager::QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICApplicationMap *app_map)
-  : _connection_id(cid), _app_map(app_map), _rtt_provider(rtt_provider)
+QUICStreamManager::QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICApplicationMap *app_map,
+                                     NetVConnectionContext_t context)
+  : _connection_id(cid), _app_map(app_map), _netvc_context(context), _rtt_provider(rtt_provider)
 {
+  if (this->_netvc_context == NET_VCONNECTION_OUT) {
+    // stream 0 is for handshake, smallest client bidi stream id is 4
+    this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::CLIENT_BIDI) + 4;
+    this->_next_stream_id_uni  = static_cast<uint32_t>(QUICStreamType::CLIENT_UNI);
+  } else {
+    this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::SERVER_BIDI);
+    this->_next_stream_id_uni  = static_cast<uint32_t>(QUICStreamType::SERVER_UNI);
+  }
 }
 
 std::vector<QUICFrameType>
@@ -100,6 +109,30 @@ QUICStreamManager::create_stream(QUICStreamId stream_id)
   }
 
   return QUICErrorUPtr(new QUICNoError());
+}
+
+QUICErrorUPtr
+QUICStreamManager::create_uni_stream(QUICStreamId &new_stream_id)
+{
+  QUICErrorUPtr error = this->create_stream(this->_next_stream_id_uni);
+  if (error->cls == QUICErrorClass::NONE) {
+    new_stream_id = this->_next_stream_id_uni;
+    this->_next_stream_id_uni += 2;
+  }
+
+  return error;
+}
+
+QUICErrorUPtr
+QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
+{
+  QUICErrorUPtr error = this->create_stream(this->_next_stream_id_bidi);
+  if (error->cls == QUICErrorClass::NONE) {
+    new_stream_id = this->_next_stream_id_bidi;
+    this->_next_stream_id_bidi += 2;
+  }
+
+  return error;
 }
 
 QUICErrorUPtr
