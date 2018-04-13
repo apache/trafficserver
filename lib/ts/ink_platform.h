@@ -137,15 +137,7 @@ struct ifafilt;
 #include <stropts.h>
 #endif
 
-#ifdef HAVE_MACHINE_ENDIAN_H
-#include <machine/endian.h>
-#endif
-#ifdef HAVE_ENDIAN_H
-#include <endian.h>
-#endif
-#ifdef HAVE_SYS_BYTEORDER_H
-#include <sys/byteorder.h>
-#endif
+#include "ink_endian.h"
 
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>

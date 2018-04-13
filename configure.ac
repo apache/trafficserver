@@ -1638,6 +1638,7 @@ AC_CHECK_HEADERS([sys/types.h \
                   sys/pset.h \
                   sched.h \
                   pthread.h \
+                  sys/endian.h \
                   machine/endian.h \
                   endian.h \
                   sys/sysinfo.h \
