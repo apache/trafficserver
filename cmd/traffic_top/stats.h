@@ -454,7 +454,7 @@ public:
     pos += sizeof(constant::global) - 1;
 
     // find parts of the line
-    while (1) {
+    while (true) {
       size_t start     = response.find(constant::start, pos);
       size_t separator = response.find(constant::separator, pos);
       size_t end       = response.find(constant::end, pos);

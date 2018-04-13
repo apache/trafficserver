@@ -98,13 +98,13 @@ public:
   bool
   is_ram_cache_hit()
   {
-    return cache_read_vc ? (cache_read_vc->is_ram_cache_hit()) : 0;
+    return cache_read_vc ? (cache_read_vc->is_ram_cache_hit()) : false;
   }
 
   bool
   is_compressed_in_ram()
   {
-    return cache_read_vc ? (cache_read_vc->is_compressed_in_ram()) : 0;
+    return cache_read_vc ? (cache_read_vc->is_compressed_in_ram()) : false;
   }
 
   inline void
