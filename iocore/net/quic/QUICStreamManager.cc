@@ -346,19 +346,23 @@ QUICStreamManager::generate_frame(uint16_t connection_credit, uint16_t maximum_f
   QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
   if (stream) {
     frame = stream->generate_frame(connection_credit, maximum_frame_size);
-    if (frame) {
-      return frame;
+  }
+
+  if (frame == nullptr) {
+    for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+      if (s->id() == STREAM_ID_FOR_HANDSHAKE) {
+        continue;
+      }
+      frame = s->generate_frame(connection_credit, maximum_frame_size);
+      if (frame) {
+        break;
+      }
     }
   }
 
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
-    if (s->id() == STREAM_ID_FOR_HANDSHAKE) {
-      continue;
-    }
-    frame = s->generate_frame(connection_credit, maximum_frame_size);
-    if (frame) {
-      break;
-    }
+  if (frame != nullptr && frame->type() == QUICFrameType::STREAM) {
+    this->add_total_offset_sent(frame->size());
   }
+
   return frame;
 }
