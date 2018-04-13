@@ -52,10 +52,10 @@ reconfigure_diags()
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
-    c.outputs[i].to_stdout = 0;
-    c.outputs[i].to_stderr = 1;
-    c.outputs[i].to_syslog = 1;
-    c.outputs[i].to_diagslog = 1;
+    c.outputs[i].to_stdout = false;
+    c.outputs[i].to_stderr = true;
+    c.outputs[i].to_syslog = true;
+    c.outputs[i].to_diagslog = true;
   }
 
   //////////////////////////////

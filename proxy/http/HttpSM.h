@@ -680,14 +680,14 @@ inline void
 HttpSM::txn_hook_append(TSHttpHookID id, INKContInternal *cont)
 {
   api_hooks.append(id, cont);
-  hooks_set = 1;
+  hooks_set = true;
 }
 
 inline void
 HttpSM::txn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
 {
   api_hooks.prepend(id, cont);
-  hooks_set = 1;
+  hooks_set = true;
 }
 
 inline APIHook *

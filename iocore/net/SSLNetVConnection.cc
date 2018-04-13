@@ -514,7 +514,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // the client hello message back into the standard read.vio
         // so it will get forwarded onto the origin server
         if (!this->getSSLHandShakeComplete()) {
-          this->sslHandShakeComplete = 1;
+          this->sslHandShakeComplete = true;
 
           // Copy over all data already read in during the SSL_accept
           // (the client hello message)
@@ -951,7 +951,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       if (cc && SSLCertContext::OPT_TUNNEL == cc->opt) {
         if (this->is_transparent) {
           this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-          sslHandShakeComplete = 1;
+          sslHandShakeComplete = true;
           SSL_free(this->ssl);
           this->ssl = nullptr;
           return EVENT_DONE;

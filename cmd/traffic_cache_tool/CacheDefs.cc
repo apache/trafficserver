@@ -632,7 +632,7 @@ Stripe::walk_bucket_chain(int s)
                   << "seg " << s << " bucket " << b << std::endl;
       }
       if (i > 0) // i.e., not the first dir in the segment
-        b_bitset[i] = 1;
+        b_bitset[i] = true;
 
 #if 1
       if (!dir_valid(e) || !dir_offset(e)) {
@@ -781,7 +781,7 @@ Stripe::check_loop(int s)
       this->dir_init_segment(s);
       return 1;
     }
-    f_bitset[i] = 1;
+    f_bitset[i] = true;
     e           = dir_from_offset(i, seg);
   }
 

@@ -62,7 +62,7 @@ NetVConnection::get_local_addr()
     if ((ats_is_ip(&local_addr) && ats_ip_port_cast(&local_addr))                    // IP and has a port.
         || (ats_is_ip4(&local_addr) && INADDR_ANY != ats_ip4_addr_cast(&local_addr)) // IPv4
         || (ats_is_ip6(&local_addr) && !IN6_IS_ADDR_UNSPECIFIED(&local_addr.sin6.sin6_addr))) {
-      got_local_addr = 1;
+      got_local_addr = true;
     }
   }
   return &local_addr.sa;
