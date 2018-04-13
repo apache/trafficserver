@@ -28,10 +28,13 @@
 #include "I_NetVConnection.h"
 #include "P_QUICNetProcessor.h"
 
+#include "QUICApplication.h"
+
 class QUICClient : public Continuation
 {
 public:
-  QUICClient(const char *addr, const char *port) : Continuation(new_ProxyMutex()), _remote_addr(addr), _remote_port(port)
+  QUICClient(const char *addr, const char *port, const char *path)
+    : Continuation(new_ProxyMutex()), _remote_addr(addr), _remote_port(port), _path(path)
   {
     SET_HANDLER(&QUICClient::start);
   };
@@ -41,7 +44,17 @@ public:
   int state_http_server_open(int event, void *data);
 
 private:
-  const char *_remote_addr;
-  const char *_remote_port;
+  const char *_remote_addr           = nullptr;
+  const char *_remote_port           = nullptr;
   struct addrinfo *_remote_addr_info = nullptr;
+  const char *_path                  = nullptr;
+};
+
+class QUICClientApp : public QUICApplication
+{
+public:
+  QUICClientApp(QUICNetVConnection *qvc);
+
+  void start(const char *path);
+  int main_event_handler(int event, Event *data);
 };

@@ -51,11 +51,13 @@ main(int argc, const char **argv)
 
   char addr[1024]       = "127.0.0.1";
   char port[16]         = "4433";
-  char debug_tags[1024] = "quic|udp";
+  char path[1018]       = "/";
+  char debug_tags[1024] = "quic";
 
   const ArgumentDescription argument_descriptions[] = {
     {"addr", 'a', "Address", "S1023", addr, nullptr, nullptr},
     {"port", 'p', "Port", "S15", port, nullptr, nullptr},
+    {"path", 'P', "Path", "S1017", path, nullptr, nullptr},
     {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
@@ -87,7 +89,7 @@ main(int argc, const char **argv)
   udpNet.start(1, stacksize);
   quic_NetProcessor.start(-1, stacksize);
 
-  QUICClient client(addr, port);
+  QUICClient client(addr, port, path);
   eventProcessor.schedule_in(&client, 1, ET_NET);
 
   this_thread()->execute();
