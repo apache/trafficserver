@@ -86,7 +86,7 @@ protected:
   QUICStreamIO *_find_stream_io(QUICStreamId id);
   QUICStreamIO *_find_stream_io(VIO *vio);
 
-  QUICConnection *_client_qc = nullptr;
+  QUICConnection *_qc = nullptr;
 
 private:
   std::map<QUICStreamId, QUICStreamIO *> _stream_map;

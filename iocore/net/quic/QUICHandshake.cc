@@ -37,7 +37,7 @@
 static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 
 #define QUICHSDebug(fmt, ...) \
-  Debug("quic_handshake", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_client_qc->connection_id()), ##__VA_ARGS__)
+  Debug("quic_handshake", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_qc->connection_id()), ##__VA_ARGS__)
 
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                            \
   {                                                                                                                                \
@@ -101,7 +101,7 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
 {
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
-  this->_hs_protocol->initialize_key_materials(this->_client_qc->original_connection_id());
+  this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id());
 
   if (this->_netvc_context == NET_VCONNECTION_OUT) {
     this->_initial = true;
@@ -143,7 +143,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         this->_load_local_server_transport_parameters(initial_packet->version());
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
-        this->_client_qc->transmit_packet(packet_factory->create_version_negotiation_packet(initial_packet));
+        this->_qc->transmit_packet(packet_factory->create_version_negotiation_packet(initial_packet));
         QUICHSDebug("Version negotiation failed: %x", initial_packet->version());
       }
     } else {
@@ -525,7 +525,7 @@ QUICHandshake::_complete_handshake()
 void
 QUICHandshake::_abort_handshake(QUICTransErrorCode code)
 {
-  this->_client_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
+  this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
 
   QUICHSDebug("Enter state_closed");
   SET_HANDLER(&QUICHandshake::state_closed);

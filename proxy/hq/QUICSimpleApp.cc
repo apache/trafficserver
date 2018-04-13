@@ -42,7 +42,7 @@ QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc) : QUICApplication(cl
   this->_client_session->acl_record = session_acl_record;
   this->_client_session->new_connection(client_vc, nullptr, nullptr, false);
 
-  this->_client_qc->stream_manager()->set_default_application(this);
+  this->_qc->stream_manager()->set_default_application(this);
 
   SET_HANDLER(&QUICSimpleApp::main_event_handler);
 }
@@ -55,13 +55,13 @@ QUICSimpleApp::~QUICSimpleApp()
 int
 QUICSimpleApp::main_event_handler(int event, Event *data)
 {
-  Debug(tag, "[%" PRIx64 "] %s (%d)", static_cast<uint64_t>(this->_client_qc->connection_id()), get_vc_event_name(event), event);
+  Debug(tag, "[%" PRIx64 "] %s (%d)", static_cast<uint64_t>(this->_qc->connection_id()), get_vc_event_name(event), event);
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);
 
   if (stream_io == nullptr) {
-    Debug(tag, "[%" PRIx64 "] Unknown Stream", static_cast<uint64_t>(this->_client_qc->connection_id()));
+    Debug(tag, "[%" PRIx64 "] Unknown Stream", static_cast<uint64_t>(this->_qc->connection_id()));
     return -1;
   }
 
