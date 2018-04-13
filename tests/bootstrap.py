@@ -26,7 +26,7 @@ import platform
 import sys
 
 pip_packages = [
-    "autest",
+    "autest==1.4.2",
     "hyper",
     "requests",
     "dnslib",
