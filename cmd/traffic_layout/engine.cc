@@ -42,28 +42,8 @@
 #include <ftw.h>
 #include <pwd.h>
 
+// for nftw check_directory
 std::string directory_check = "";
-
-// check if user want to force create the ts_runroot
-// return true if user replies Y
-static bool
-check_force()
-{
-  // check for Y/N 3 times
-  for (int i = 0; i < 3; i++) {
-    std::cout << "Are you sure to overwrite and force creating/removing runroot? (irreversible) Y/N: ";
-    std::string input;
-    std::cin >> input;
-    if (input == "Y" || input == "y") {
-      return true;
-    }
-    if (input == "N" || input == "n") {
-      return false;
-    }
-  }
-  ink_error("Invalid input Y/N");
-  exit(70);
-}
 
 // check if we can create the runroot using path
 // return true if the path is good to use
@@ -75,13 +55,7 @@ check_run_path(const std::string &arg, const bool forceflag)
   }
   // the condition of force create
   if (exists(arg) && is_directory(arg) && forceflag) {
-    if (!check_force()) {
-      std::cout << "Force create terminated" << std::endl;
-      exit(0);
-    }
     std::cout << "Forcing creating runroot ..." << std::endl;
-    // directory_remove = arg;
-    // nftw(arg.c_str(), remove_inside_directory, OPEN_MAX_FILE, FTW_DEPTH);
     return true;
   }
 
@@ -295,11 +269,31 @@ RunrootEngine::sanity_check()
   }
 }
 
+// check if user want to force remove the ts_runroot
+// return true if user replies Y
+static bool
+check_remove_force()
+{
+  // check for Y/N 3 times
+  for (int i = 0; i < 3; i++) {
+    std::cout << "Are you sure to force removing runroot? (irreversible) Y/N: ";
+    std::string input;
+    std::cin >> input;
+    if (input == "Y" || input == "y")
+      return true;
+    if (input == "N" || input == "n")
+      return false;
+  }
+  ink_error("Invalid input Y/N");
+  exit(70);
+}
+
 // the function for removing the runroot
 void
 RunrootEngine::clean_runroot()
 {
   std::string clean_root = path;
+  append_slash(clean_root);
 
   char cwd[PATH_MAX];
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
@@ -309,52 +303,68 @@ RunrootEngine::clean_runroot()
 
   if (force_flag) {
     // the force clean
-    if (!check_force()) {
-      std::cout << "Force remove terminated" << std::endl;
+    if (!check_remove_force()) {
       exit(0);
     }
     std::cout << "Forcing removing runroot ..." << std::endl;
-    if (cur_working_dir == clean_root) {
-      // if cwd is the runroot, keep the directory and remove everything insides
-      remove_inside_directory(clean_root);
-    } else {
-      if (!remove_directory(clean_root)) {
-        ink_warning("Failed force removing runroot '%s' - %s", clean_root.c_str(), strerror(errno));
-      }
+
+    if (!remove_directory(clean_root)) {
+      ink_warning("Failed force removing runroot '%s' - %s", clean_root.c_str(), strerror(errno));
     }
   } else {
     // handle the map and deleting of each directories specified in the yml file
     std::unordered_map<std::string, std::string> map = runroot_map(clean_root);
     map.erase("prefix");
     map.erase("exec_prefix");
-    append_slash(clean_root);
     for (auto it : map) {
       std::string dir = it.second;
       append_slash(dir);
       std::string later_dir = dir.substr(clean_root.size());
       dir                   = Layout::relative_to(clean_root, later_dir.substr(0, later_dir.find_first_of("/")));
-      remove_directory(dir);
+      if (cur_working_dir != dir) {
+        remove_directory(dir);
+      } else {
+        // if we are at this directory, remove files inside
+        remove_inside_directory(dir);
+      }
+    }
+    // remove yaml file
+    std::string yaml_file = Layout::relative_to(clean_root, "runroot_path.yml");
+    if (remove(yaml_file.c_str()) != 0) {
+      ink_notice("unable to delete runroot_path.yml - %s", strerror(errno));
     }
 
-    std::string yaml_file = Layout::relative_to(clean_root, "runroot_path.yml");
-    // remove yml file
-    if (yaml_file.size()) {
-      remove(yaml_file.c_str());
-    }
-    if (cur_working_dir != clean_root) {
-      // if the runroot is empty, remove it
-      remove(clean_root.c_str());
+    append_slash(cur_working_dir);
+    if (cur_working_dir.find(clean_root) != 0) {
+      // if cwd is not runroot and runroot is empty, remove it
+      if (remove(clean_root.c_str()) != 0) {
+        ink_notice("unable to delete %s - %s", clean_root.c_str(), strerror(errno));
+      }
     }
   }
 }
 
-// if directory is not empty, throw error
+// if directory is not empty, ask input from user Y/N
 static int
 check_directory(const char *path, const struct stat *s, int flag, struct FTW *f)
 {
   std::string checkpath = path;
   if (checkpath != directory_check) {
-    ink_fatal("directory not empty, use --force to overwrite");
+    // check for Y/N 3 times
+    for (int i = 0; i < 3; i++) {
+      std::cout << "Are you sure to create runroot inside a non-empty directory Y/N: ";
+      std::string input;
+      std::cin >> input;
+      if (input == "Y" || input == "y") {
+        // terminate nftw
+        return 1;
+      }
+      if (input == "N" || input == "n") {
+        exit(0);
+      }
+    }
+    ink_error("Invalid input Y/N");
+    exit(70);
   }
   return 0;
 }
@@ -363,29 +373,25 @@ check_directory(const char *path, const struct stat *s, int flag, struct FTW *f)
 void
 RunrootEngine::create_runroot()
 {
-  // start the runroot creating stuff
-  std::string original_root;
-  char *env_val = getenv("TS_RUNROOT");
-  if ((env_val != nullptr) && is_directory(env_val)) {
-    // from env variable
-    original_root = env_val;
-  } else {
-    // from default layout structure
-    original_root = Layout::get()->prefix;
-  }
-  std::string ts_runroot = path;
+  std::string original_root = Layout::get()->prefix;
+  std::string ts_runroot    = path;
 
-  // handle the ts_runroot
-  // ts runroot must be an accessible path
   std::ifstream check_file(Layout::relative_to(ts_runroot, "runroot_path.yml"));
+  std::cout << "creating runroot - " + ts_runroot << std::endl;
+
+  // check for existing runroot to use rather than create new one
   if (check_file.good()) {
-    // if the path already ts_runroot, use it rather than create new one
-    std::cout << "Using existing TS_RUNROOT..." << std::endl;
-    std::cout << "Please remove the old TS_RUNROOT if new runroot is needed \n(usage: traffic_layout remove --path /path/...)"
+    std::cout << "Using existing runroot...\n"
+                 "Please remove the old runroot if new runroot is needed"
               << std::endl;
     return;
-  } else if (exists(ts_runroot) && is_directory(ts_runroot) && !force_flag) {
-    // check if directory is empty
+  }
+  if (!check_parent_path(ts_runroot).empty()) {
+    ink_fatal("Cannot create runroot inside another runroot");
+  }
+
+  // check if directory is empty when --force is not used
+  if (exists(ts_runroot) && is_directory(ts_runroot) && !force_flag) {
     directory_check = ts_runroot;
     nftw(ts_runroot.c_str(), check_directory, OPEN_MAX_FILE, FTW_DEPTH);
   }

@@ -59,7 +59,7 @@ d.Exists = False
 
 # remove of relative path
 tr = Test.AddTestRun("Test traffic_layout remove #2")
-tr.Processes.Default.Command = "cd " + ts_root + "; " + "$ATS_BIN/traffic_layout remove --path runroot2"
+tr.Processes.Default.Command = "cd " + ts_root + ";$ATS_BIN/traffic_layout remove --path runroot2"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(os.path.join(path2, "runroot_path.yml"))
 f.Exists = False
@@ -68,9 +68,9 @@ d.Exists = False
 
 # remove cwd
 tr = Test.AddTestRun("Test traffic_layout remove #3")
-tr.Processes.Default.Command = "mkdir " + path3 + "; cd " + path3 + "; " + "$ATS_BIN/traffic_layout remove"
+tr.Processes.Default.Command = "mkdir " + path3 + ";cd " + path3 + ";$ATS_BIN/traffic_layout remove"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(os.path.join(path3, "runroot_path.yml"))
 f.Exists = False
-d = tr.Disk.Directory(path2)
-d.Exists = False
+d = tr.Disk.Directory(path3)
+d.Exists = True
