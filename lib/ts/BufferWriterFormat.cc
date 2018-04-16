@@ -785,9 +785,13 @@ BWF_ThreadID(ts::BufferWriter &w, ts::BWFSpec const &spec)
 void
 BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
 {
+#if defined(__FreeBSD_version)
+  bwformat(w, spec, "thread"_sv); // no thread names in FreeBSD.
+#else
   char name[32]; // manual says at least 16, bump that up a bit.
   pthread_getname_np(pthread_self(), name, sizeof(name));
   bwformat(w, spec, ts::string_view(name));
+#endif
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
