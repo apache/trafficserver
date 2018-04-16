@@ -61,17 +61,123 @@ struct MgmtMarshallData {
   size_t len;
 };
 
-MgmtMarshallInt mgmt_message_length(const MgmtMarshallType *fields, unsigned count, ...);
-MgmtMarshallInt mgmt_message_length_v(const MgmtMarshallType *fields, unsigned count, va_list ap);
+/// mgmt_message_length -------------------------------------------------------
+template <typename T>
+MgmtMarshallInt
+mgmt_message_length(T field)
+{
+  // We should always have a template specialization
+  // If we get here, it means we are marshalling an object of an invalid type.
+  errno = EINVAL;
+  return -1;
+}
+MgmtMarshallInt mgmt_message_length(MgmtMarshallInt *field);
+MgmtMarshallInt mgmt_message_length(MgmtMarshallLong *field);
+MgmtMarshallInt mgmt_message_length(MgmtMarshallString *field);
+MgmtMarshallInt mgmt_message_length(MgmtMarshallData *field);
 
-ssize_t mgmt_message_read(int fd, const MgmtMarshallType *fields, unsigned count, ...);
-ssize_t mgmt_message_read_v(int fd, const MgmtMarshallType *fields, unsigned count, va_list ap);
+template <typename T, typename... Rest>
+MgmtMarshallInt
+mgmt_message_length(T first, Rest... rest)
+{
+  MgmtMarshallInt len = mgmt_message_length(first);
+  return (len == -1) ? len + mgmt_message_length(rest...) : len;
+}
+/// end mgmt_message_length ---------------------------------------------------
 
-ssize_t mgmt_message_write(int fd, const MgmtMarshallType *fields, unsigned count, ...);
-ssize_t mgmt_message_write_v(int fd, const MgmtMarshallType *fields, unsigned count, va_list ap);
+/// mgmt_message_read ---------------------------------------------------------
+template <typename T>
+ssize_t
+mgmt_message_read(int fd, T field)
+{
+  // We should always have a template specialization
+  // If we get here, it means we are marshalling an object of an invalid type.
+  errno = EINVAL;
+  return -1;
+}
+ssize_t mgmt_message_read(int fd, MgmtMarshallInt *field);
+ssize_t mgmt_message_read(int fd, MgmtMarshallLong *field);
+ssize_t mgmt_message_read(int fd, MgmtMarshallString *field);
+ssize_t mgmt_message_read(int fd, MgmtMarshallData *field);
 
-ssize_t mgmt_message_parse(const void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, ...);
-ssize_t mgmt_message_parse_v(const void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, va_list ap);
+template <typename T, typename... Rest>
+ssize_t
+mgmt_message_read(int fd, T first, Rest... rest)
+{
+  ssize_t nbytes = mgmt_message_read(fd, first);
+  return (nbytes == -1) ? nbytes + mgmt_message_read(fd, rest...) : nbytes;
+}
+/// mgmt_message_read ---------------------------------------------------------
 
-ssize_t mgmt_message_marshall(void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, ...);
-ssize_t mgmt_message_marshall_v(void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, va_list ap);
+/// mgmt_message_write --------------------------------------------------------
+template <typename T>
+ssize_t
+mgmt_message_write(int fd, T field)
+{
+  // We should always have a template specialization
+  // If we get here, it means we are marshalling an object of an invalid type.
+  errno = EINVAL;
+  return -1;
+}
+ssize_t mgmt_message_write(int fd, MgmtMarshallInt *field);
+ssize_t mgmt_message_write(int fd, MgmtMarshallLong *field);
+ssize_t mgmt_message_write(int fd, MgmtMarshallString *field);
+ssize_t mgmt_message_write(int fd, MgmtMarshallData *field);
+
+template <typename T, typename... Rest>
+ssize_t
+mgmt_message_write(int fd, T first, Rest... rest)
+{
+  ssize_t nbytes = mgmt_message_write(fd, first);
+  return (nbytes != -1) ? nbytes + mgmt_message_write(fd, rest...) : nbytes;
+}
+/// end mgmt_message_write ----------------------------------------------------
+
+/// mgmt_message_marshall -----------------------------------------------------
+template <typename T>
+ssize_t
+mgmt_message_marshall(void *buf, size_t remain, T field)
+{
+  // We should always have a template specialization
+  // If we get here, it means we are marshalling an object of an invalid type.
+  errno = EINVAL;
+  return -1;
+}
+
+ssize_t mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallInt *field);
+ssize_t mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallLong *field);
+ssize_t mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallString *field);
+ssize_t mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallData *field);
+
+template <typename T, typename... Rest>
+ssize_t
+mgmt_message_marshall(void *buf, size_t remain, T first, Rest... rest)
+{
+  ssize_t nbytes = mgmt_message_marshall(buf, remain, first);
+  return (nbytes != -1) ? nbytes + mgmt_message_marshall(static_cast<uint8_t *>(buf) + nbytes, remain - nbytes, rest...) : nbytes;
+}
+/// end mgmt_message_marshall ---------------------------------------------------
+
+/// mgmt_message_parse ----------------------------------------------------------
+template <typename T>
+ssize_t
+mgmt_message_parse(const void *buf, size_t len, T field)
+{
+  // We should always have a template specialization
+  // If we get here, it means we are marshalling an object of an invalid type.
+  errno = EINVAL;
+  return -1;
+}
+ssize_t mgmt_message_parse(const void *buf, size_t len, MgmtMarshallInt *field);
+ssize_t mgmt_message_parse(const void *buf, size_t len, MgmtMarshallLong *field);
+ssize_t mgmt_message_parse(const void *buf, size_t len, MgmtMarshallString *field);
+ssize_t mgmt_message_parse(const void *buf, size_t len, MgmtMarshallData *field);
+
+template <typename T, typename... Rest>
+ssize_t
+mgmt_message_parse(const void *buf, size_t len, T first, Rest... rest)
+{
+  ssize_t nbytes = mgmt_message_parse(buf, len, first);
+  return (nbytes != -1) ? nbytes + mgmt_message_parse(static_cast<const uint8_t *>(buf) + nbytes, len - nbytes, rest...) : nbytes;
+}
+/// end mgmt_message_parse ------------------------------------------------------

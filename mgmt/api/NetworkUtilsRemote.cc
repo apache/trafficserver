@@ -572,7 +572,7 @@ parse_generic_response(OpType optype, int fd)
     return err;
   }
 
-  err = recv_mgmt_response(data.ptr, data.len, optype, &ival);
+  err = parse_mgmt_message(data.ptr, data.len, optype, &ival);
   ats_free(data.ptr);
 
   if (err != TS_ERR_OKAY) {
@@ -634,7 +634,7 @@ event_poll_thread_main(void *arg)
       break;
     }
 
-    ret = recv_mgmt_request(reply.ptr, reply.len, OpType::EVENT_NOTIFY, &optype, &name, &desc);
+    ret = parse_mgmt_message(reply.ptr, reply.len, OpType::EVENT_NOTIFY, &optype, &name, &desc);
     ats_free(reply.ptr);
 
     if (ret != TS_ERR_OKAY) {

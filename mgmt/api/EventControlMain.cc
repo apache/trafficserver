@@ -446,7 +446,7 @@ handle_event_reg_callback(EventClientT *client, void *req, size_t reqlen)
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_REG_CALLBACK, &optype, &name);
+  ret = parse_mgmt_message(req, reqlen, OpType::EVENT_REG_CALLBACK, &optype, &name);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
@@ -489,7 +489,7 @@ handle_event_unreg_callback(EventClientT *client, void *req, size_t reqlen)
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_UNREG_CALLBACK, &optype, &name);
+  ret = parse_mgmt_message(req, reqlen, OpType::EVENT_UNREG_CALLBACK, &optype, &name);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }

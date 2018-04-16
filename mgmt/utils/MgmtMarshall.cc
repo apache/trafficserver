@@ -54,6 +54,13 @@ data_is_nul_terminated(const MgmtMarshallData *data)
 }
 
 static ssize_t
+nospace()
+{
+  errno = EMSGSIZE;
+  return -1;
+}
+
+static ssize_t
 socket_read_bytes(int fd, void *buf, size_t needed)
 {
   size_t nread = 0;
@@ -195,337 +202,197 @@ fail:
   return -1;
 }
 
+//-----------------------------------------------------------------------
+// mgmt_message_length
+//-----------------------------------------------------------------------
 MgmtMarshallInt
-mgmt_message_length(const MgmtMarshallType *fields, unsigned count, ...)
+mgmt_message_length(MgmtMarshallInt *field)
 {
-  MgmtMarshallInt length;
-  va_list ap;
-
-  va_start(ap, count);
-  length = mgmt_message_length_v(fields, count, ap);
-  va_end(ap);
-
-  return length;
+  return 4;
 }
 
 MgmtMarshallInt
-mgmt_message_length_v(const MgmtMarshallType *fields, unsigned count, va_list ap)
+mgmt_message_length(MgmtMarshallLong *field)
 {
-  MgmtMarshallAnyPtr ptr;
-  MgmtMarshallInt nbytes = 0;
+  return 8;
+}
 
-  for (unsigned n = 0; n < count; ++n) {
-    switch (fields[n]) {
-    case MGMT_MARSHALL_INT:
-      ptr.m_int = va_arg(ap, MgmtMarshallInt *);
-      nbytes += 4;
-      break;
-    case MGMT_MARSHALL_LONG:
-      ptr.m_long = va_arg(ap, MgmtMarshallLong *);
-      nbytes += 8;
-      break;
-    case MGMT_MARSHALL_STRING:
-      nbytes += 4;
-      ptr.m_string = va_arg(ap, MgmtMarshallString *);
-      if (*ptr.m_string == nullptr) {
-        ptr.m_string = &empty;
-      }
-      nbytes += strlen(*ptr.m_string) + 1;
-      break;
-    case MGMT_MARSHALL_DATA:
-      nbytes += 4;
-      ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nbytes += ptr.m_data->len;
-      break;
-    default:
-      errno = EINVAL;
-      return -1;
-    }
+MgmtMarshallInt
+mgmt_message_length(MgmtMarshallString *field)
+{
+  if (*field == nullptr) {
+    field = &empty;
+  }
+  return 4 + strlen(*field) + 1;
+}
+
+MgmtMarshallInt
+mgmt_message_length(MgmtMarshallData *field)
+{
+  return 4 + field->len;
+}
+
+//-----------------------------------------------------------------------
+// mgmt_message_write
+//-----------------------------------------------------------------------
+ssize_t
+mgmt_message_write(int fd, MgmtMarshallInt *field)
+{
+  return socket_write_bytes(fd, field, 4);
+}
+
+ssize_t
+mgmt_message_write(int fd, MgmtMarshallLong *field)
+{
+  return socket_write_bytes(fd, field, 8);
+}
+
+ssize_t
+mgmt_message_write(int fd, MgmtMarshallString *field)
+{
+  MgmtMarshallData data;
+  if (*field == nullptr) {
+    field = &empty;
+  }
+  data.ptr = *field;
+  data.len = strlen(*field) + 1;
+  return socket_write_buffer(fd, &data);
+}
+
+ssize_t
+mgmt_message_write(int fd, MgmtMarshallData *field)
+{
+  return socket_write_buffer(fd, field);
+}
+
+//-----------------------------------------------------------------------
+// mgmgt_message_marshall
+//-----------------------------------------------------------------------
+ssize_t
+mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallInt *field)
+{
+  if (remain < 4) {
+    return nospace();
+  }
+  memcpy(buf, field, 4);
+  return 4;
+}
+
+ssize_t
+mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallLong *field)
+{
+  if (remain < 8) {
+    return nospace();
+  }
+  memcpy(buf, field, 8);
+  return 8;
+}
+
+ssize_t
+mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallString *field)
+{
+  MgmtMarshallData data;
+  if (*field == nullptr) {
+    field = &empty;
   }
 
-  return nbytes;
-}
+  data.ptr = field;
+  data.len = strlen(*field) + 1;
 
-ssize_t
-mgmt_message_write(int fd, const MgmtMarshallType *fields, unsigned count, ...)
-{
-  ssize_t nbytes;
-  va_list ap;
-
-  va_start(ap, count);
-  nbytes = mgmt_message_write_v(fd, fields, count, ap);
-  va_end(ap);
-
-  return nbytes;
-}
-
-ssize_t
-mgmt_message_write_v(int fd, const MgmtMarshallType *fields, unsigned count, va_list ap)
-{
-  MgmtMarshallAnyPtr ptr;
-  ssize_t nbytes = 0;
-
-  for (unsigned n = 0; n < count; ++n) {
-    ssize_t nwritten = 0;
-
-    switch (fields[n]) {
-    case MGMT_MARSHALL_INT:
-      ptr.m_int = va_arg(ap, MgmtMarshallInt *);
-      nwritten  = socket_write_bytes(fd, ptr.m_void, 4);
-      break;
-    case MGMT_MARSHALL_LONG:
-      ptr.m_long = va_arg(ap, MgmtMarshallLong *);
-      nwritten   = socket_write_bytes(fd, ptr.m_void, 8);
-      break;
-    case MGMT_MARSHALL_STRING: {
-      MgmtMarshallData data;
-      ptr.m_string = va_arg(ap, MgmtMarshallString *);
-      if (*ptr.m_string == nullptr) {
-        ptr.m_string = &empty;
-      }
-      data.ptr = *ptr.m_string;
-      data.len = strlen(*ptr.m_string) + 1;
-      nwritten = socket_write_buffer(fd, &data);
-      break;
-    }
-    case MGMT_MARSHALL_DATA:
-      ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nwritten   = socket_write_buffer(fd, ptr.m_data);
-      break;
-    default:
-      errno = EINVAL;
-      return -1;
-    }
-
-    if (nwritten == -1) {
-      return -1;
-    }
-
-    nbytes += nwritten;
+  if (remain < (4 + data.len)) {
+    return nospace();
   }
 
-  return nbytes;
+  memcpy(buf, &data.len, 4);
+  memcpy((uint8_t *)buf + 4, data.ptr, data.len);
+  return 4 + data.len;
 }
 
 ssize_t
-mgmt_message_read(int fd, const MgmtMarshallType *fields, unsigned count, ...)
+mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallData *field)
 {
-  ssize_t nbytes;
-  va_list ap;
+  if (remain < (4 + field->len)) {
+    return nospace();
+  }
+  memcpy(buf, &(field->len), 4);
+  memcpy((uint8_t *)buf + 4, field->ptr, field->len);
+  return 4 + field->len;
+}
 
-  va_start(ap, count);
-  nbytes = mgmt_message_read_v(fd, fields, count, ap);
-  va_end(ap);
-
-  return nbytes;
+//-----------------------------------------------------------------------
+// mgmt_message_read
+//-----------------------------------------------------------------------
+ssize_t
+mgmt_message_read(int fd, MgmtMarshallInt *field)
+{
+  return socket_read_bytes(fd, field, 4);
 }
 
 ssize_t
-mgmt_message_read_v(int fd, const MgmtMarshallType *fields, unsigned count, va_list ap)
+mgmt_message_read(int fd, MgmtMarshallLong *field)
 {
-  MgmtMarshallAnyPtr ptr;
-  ssize_t nbytes = 0;
+  return socket_read_bytes(fd, field, 8);
+}
 
-  for (unsigned n = 0; n < count; ++n) {
-    ssize_t nread;
+ssize_t
+mgmt_message_read(int fd, MgmtMarshallString *field)
+{
+  MgmtMarshallData data;
 
-    switch (fields[n]) {
-    case MGMT_MARSHALL_INT:
-      ptr.m_int = va_arg(ap, MgmtMarshallInt *);
-      nread     = socket_read_bytes(fd, ptr.m_void, 4);
-      break;
-    case MGMT_MARSHALL_LONG:
-      ptr.m_long = va_arg(ap, MgmtMarshallLong *);
-      nread      = socket_read_bytes(fd, ptr.m_void, 8);
-      break;
-    case MGMT_MARSHALL_STRING: {
-      MgmtMarshallData data;
-
-      nread = socket_read_buffer(fd, &data);
-      if (nread == -1) {
-        break;
-      }
-
-      ink_assert(data_is_nul_terminated(&data));
-      ptr.m_string  = va_arg(ap, MgmtMarshallString *);
-      *ptr.m_string = (char *)data.ptr;
-      break;
-    }
-    case MGMT_MARSHALL_DATA:
-      ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nread      = socket_read_buffer(fd, ptr.m_data);
-      break;
-    default:
-      errno = EINVAL;
-      return -1;
-    }
-
-    if (nread == -1) {
-      return -1;
-    }
-
-    nbytes += nread;
+  ssize_t nread = socket_read_buffer(fd, &data);
+  if (nread == -1) {
+    return -1;
   }
 
-  return nbytes;
+  ink_assert(data_is_nul_terminated(&data));
+  *field = (char *)data.ptr;
+  return nread;
 }
 
 ssize_t
-mgmt_message_marshall(void *buf, size_t remain, const MgmtMarshallType *fields, unsigned count, ...)
+mgmt_message_read(int fd, MgmtMarshallData *field)
 {
-  ssize_t nbytes = 0;
-  va_list ap;
-
-  va_start(ap, count);
-  nbytes = mgmt_message_marshall_v(buf, remain, fields, count, ap);
-  va_end(ap);
-
-  return nbytes;
+  return socket_read_buffer(fd, field);
 }
 
+//-----------------------------------------------------------------------
+// mgmt_message_parse
+//-----------------------------------------------------------------------
 ssize_t
-mgmt_message_marshall_v(void *buf, size_t remain, const MgmtMarshallType *fields, unsigned count, va_list ap)
+mgmt_message_parse(const void *buf, size_t len, MgmtMarshallInt *field)
 {
-  MgmtMarshallAnyPtr ptr;
-  ssize_t nbytes = 0;
-
-  for (unsigned n = 0; n < count; ++n) {
-    ssize_t nwritten = 0;
-
-    switch (fields[n]) {
-    case MGMT_MARSHALL_INT:
-      if (remain < 4) {
-        goto nospace;
-      }
-      ptr.m_int = va_arg(ap, MgmtMarshallInt *);
-      memcpy(buf, ptr.m_int, 4);
-      nwritten = 4;
-      break;
-    case MGMT_MARSHALL_LONG:
-      if (remain < 8) {
-        goto nospace;
-      }
-      ptr.m_long = va_arg(ap, MgmtMarshallLong *);
-      memcpy(buf, ptr.m_long, 8);
-      nwritten = 8;
-      break;
-    case MGMT_MARSHALL_STRING: {
-      MgmtMarshallData data;
-      ptr.m_string = va_arg(ap, MgmtMarshallString *);
-      if (*ptr.m_string == nullptr) {
-        ptr.m_string = &empty;
-      }
-
-      data.ptr = *ptr.m_string;
-      data.len = strlen(*ptr.m_string) + 1;
-
-      if (remain < (4 + data.len)) {
-        goto nospace;
-      }
-
-      memcpy(buf, &data.len, 4);
-      memcpy((uint8_t *)buf + 4, data.ptr, data.len);
-      nwritten = 4 + data.len;
-      break;
-    }
-    case MGMT_MARSHALL_DATA:
-      ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      if (remain < (4 + ptr.m_data->len)) {
-        goto nospace;
-      }
-      memcpy(buf, &(ptr.m_data->len), 4);
-      memcpy((uint8_t *)buf + 4, ptr.m_data->ptr, ptr.m_data->len);
-      nwritten = 4 + ptr.m_data->len;
-      break;
-    default:
-      errno = EINVAL;
-      return -1;
-    }
-
-    nbytes += nwritten;
-    buf = (uint8_t *)buf + nwritten;
-    remain -= nwritten;
+  if (len < 4) {
+    return nospace();
+  }
+  memcpy(field, buf, 4);
+  return 4;
+}
+ssize_t
+mgmt_message_parse(const void *buf, size_t len, MgmtMarshallLong *field)
+{
+  if (len < 8) {
+    return nospace();
+  }
+  memcpy(field, buf, 8);
+  return 8;
+}
+ssize_t
+mgmt_message_parse(const void *buf, size_t len, MgmtMarshallString *field)
+{
+  MgmtMarshallData data;
+  ssize_t nread = buffer_read_buffer((const uint8_t *)buf, len, &data);
+  if (nread == -1) {
+    return nospace();
   }
 
-  return nbytes;
+  ink_assert(data_is_nul_terminated(&data));
 
-nospace:
-  errno = EMSGSIZE;
-  return -1;
+  *field = (char *)data.ptr;
+  return nread;
 }
-
 ssize_t
-mgmt_message_parse(const void *buf, size_t len, const MgmtMarshallType *fields, unsigned count, ...)
+mgmt_message_parse(const void *buf, size_t len, MgmtMarshallData *field)
 {
-  MgmtMarshallInt nbytes = 0;
-  va_list ap;
-
-  va_start(ap, count);
-  nbytes = mgmt_message_parse_v(buf, len, fields, count, ap);
-  va_end(ap);
-
-  return nbytes;
-}
-
-ssize_t
-mgmt_message_parse_v(const void *buf, size_t len, const MgmtMarshallType *fields, unsigned count, va_list ap)
-{
-  MgmtMarshallAnyPtr ptr;
-  ssize_t nbytes = 0;
-
-  for (unsigned n = 0; n < count; ++n) {
-    ssize_t nread;
-
-    switch (fields[n]) {
-    case MGMT_MARSHALL_INT:
-      if (len < 4) {
-        goto nospace;
-      }
-      ptr.m_int = va_arg(ap, MgmtMarshallInt *);
-      memcpy(ptr.m_int, buf, 4);
-      nread = 4;
-      break;
-    case MGMT_MARSHALL_LONG:
-      if (len < 8) {
-        goto nospace;
-      }
-      ptr.m_long = va_arg(ap, MgmtMarshallLong *);
-      memcpy(ptr.m_int, buf, 8);
-      nread = 8;
-      break;
-    case MGMT_MARSHALL_STRING: {
-      MgmtMarshallData data;
-      nread = buffer_read_buffer((const uint8_t *)buf, len, &data);
-      if (nread == -1) {
-        goto nospace;
-      }
-
-      ink_assert(data_is_nul_terminated(&data));
-
-      ptr.m_string  = va_arg(ap, MgmtMarshallString *);
-      *ptr.m_string = (char *)data.ptr;
-      break;
-    }
-    case MGMT_MARSHALL_DATA:
-      ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nread      = buffer_read_buffer((const uint8_t *)buf, len, ptr.m_data);
-      if (nread == -1) {
-        goto nospace;
-      }
-      break;
-    default:
-      errno = EINVAL;
-      return -1;
-    }
-
-    nbytes += nread;
-    buf = (uint8_t *)buf + nread;
-    len -= nread;
-  }
-
-  return nbytes;
-
-nospace:
-  errno = EMSGSIZE;
-  return -1;
+  ssize_t nread = buffer_read_buffer((const uint8_t *)buf, len, field);
+  return (nread == -1) ? nospace() : nread;
 }

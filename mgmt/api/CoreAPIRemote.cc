@@ -101,7 +101,7 @@ send_and_parse_list(OpType op, LLQ *list)
     goto done;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &strval);
+  ret = parse_mgmt_message(reply.ptr, reply.len, op, &err, &strval);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
@@ -168,7 +168,7 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
     return ret;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::RECORD_SET, &err, &action);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::RECORD_SET, &err, &action);
   ats_free(reply.ptr);
 
   if (ret != TS_ERR_OKAY) {
@@ -314,7 +314,7 @@ ProxyStateGet()
     return TS_PROXY_UNDEFINED;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::PROXY_STATE_GET, &err, &state);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::PROXY_STATE_GET, &err, &state);
   ats_free(reply.ptr);
 
   if (ret != TS_ERR_OKAY || err != TS_ERR_OKAY) {
@@ -357,7 +357,7 @@ ServerBacktrace(unsigned options, char **trace)
     goto fail;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::SERVER_BACKTRACE, &err, &strval);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::SERVER_BACKTRACE, &err, &strval);
   if (ret != TS_ERR_OKAY) {
     goto fail;
   }
@@ -552,7 +552,7 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
     return ret;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &rclass, &type, &name, &value);
+  ret = parse_mgmt_message(reply.ptr, reply.len, op, &err, &rclass, &type, &name, &value);
   ats_free(reply.ptr);
   if (ret != TS_ERR_OKAY) {
     goto done;
@@ -602,7 +602,7 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   MgmtMarshallInt checktype;
   MgmtMarshallInt source;
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass,
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass,
                            &version, &rsb, &order, &access, &update, &updatetype, &checktype, &source, &expr);
 
   ats_free(reply.ptr);
@@ -941,7 +941,7 @@ EventIsActive(const char *event_name, bool *is_current)
     return ret;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::EVENT_ACTIVE, &err, &bval);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::EVENT_ACTIVE, &err, &bval);
   ats_free(reply.ptr);
 
   if (ret != TS_ERR_OKAY) {
