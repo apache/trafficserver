@@ -805,17 +805,5 @@ operator<<(ostream &s, ts::BufferWriter const &w)
 {
   return w >> s;
 }
-template <typename T> struct atomic;
-} // std
+} // end namespace std
 
-// Atomic wrapper - this should be moved elsewhere, kind of silly to have it here.
-// Oddly, rvalue-reference doesn't work here, e.g. std::atomic<T> && v leads to ambiguity.
-namespace ts
-{
-template <typename T>
-BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, std::atomic<T> const &v)
-{
-  return bwformat(w, spec, v.load());
-}
-} // ts
