@@ -1602,6 +1602,26 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.server_request.server_addr.set_outgoing_addr
+-----------------------------------------------
+**syntax:** *ts.server_request.server_addr.set_outgoing_addr()*
+
+**context:** earlier than or inside function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+
+**description**: This function can be used to set outgoing socket address for the request to origin.
+
+The ts.server_request.server_addr.set_outgoing_addr function requires three inputs, ip is a string, port and family is number.
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        ts.server_request.server_addr.set_outgoing_addr("192.168.231.17", 80, TS_LUA_AF_INET)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_request.get_url_host
 ------------------------------
 **syntax:** *host = ts.server_request.get_url_host()*
