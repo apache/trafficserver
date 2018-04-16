@@ -93,7 +93,7 @@
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_DEBUG
-            gmake -j2 V=1
+            gmake -j1 V=1 -d
             gmake check
             gmake install
             "${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}"/bin/traffic_server -R 1
