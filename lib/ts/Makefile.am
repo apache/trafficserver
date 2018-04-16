@@ -213,6 +213,7 @@ libtsutil_la_SOURCES = \
   X509HostnameValidator.h
 
 BufferWriterFormat.lo : AM_CPPFLAGS += -Wno-char-subscripts
+BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 
 #test_UNUSED_SOURCES = \
 #  load_http_hdr.cc \
