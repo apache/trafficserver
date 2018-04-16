@@ -44,9 +44,9 @@ class MIOBufferWriter : public ts::BufferWriter
 public:
   MIOBufferWriter(MIOBuffer *miob) : _miob(miob) {}
 
-  self_type& write(const void *data_, size_t length) override;
+  self_type &write(const void *data_, size_t length) override;
 
-  self_type&
+  self_type &
   write(char c) override
   {
     return this->write(&c, 1);
@@ -138,7 +138,6 @@ public:
   /// Output the buffer contents to the file for file descriptor @a fd.
   /// @return The number of bytes written.
   ssize_t operator>>(int fd) const override;
-
 
 protected:
   MIOBuffer *_miob;

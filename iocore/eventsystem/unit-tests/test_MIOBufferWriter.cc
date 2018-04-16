@@ -34,7 +34,9 @@
 #include "diags.i"
 #include "I_MIOBufferWriter.h"
 
-int main( int argc, char* argv[] ) {
+int
+main(int argc, char *argv[])
+{
   // global setup...
   Layout::create();
   init_diags("", nullptr);
@@ -47,7 +49,7 @@ int main( int argc, char* argv[] ) {
   main_thread->set_specific();
 
   std::cout << "Pre-Catch" << std::endl;
-  int result = Catch::Session().run( argc, argv );
+  int result = Catch::Session().run(argc, argv);
 
   // global clean-up...
 

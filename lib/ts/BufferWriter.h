@@ -805,7 +805,7 @@ operator<<(ostream &s, ts::BufferWriter const &w)
 {
   return w >> s;
 }
-template < typename T > struct atomic;
+template <typename T> struct atomic;
 } // std
 
 // Atomic wrapper - this should be moved elsewhere, kind of silly to have it here.
@@ -813,7 +813,7 @@ template < typename T > struct atomic;
 namespace ts
 {
 template <typename T>
-BufferWriter&
+BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, std::atomic<T> const &v)
 {
   return bwformat(w, spec, v.load());
