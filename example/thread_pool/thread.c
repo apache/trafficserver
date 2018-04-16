@@ -154,7 +154,7 @@ thread_init()
   pthread_cond_init(&cond, NULL);
 }
 
-void
+void *
 thread_loop(void *arg ATS_UNUSED)
 {
   Job *job_todo;
@@ -179,4 +179,5 @@ thread_loop(void *arg ATS_UNUSED)
       pthread_mutex_unlock(&cond_mutex);
     }
   }
+  return NULL;
 }
