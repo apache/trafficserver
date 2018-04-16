@@ -805,8 +805,7 @@ operator<<(ostream &s, ts::BufferWriter const &w)
 {
   return w >> s;
 }
-
-template <typename T> class atomic; // local forward declare.
+template < typename T > struct atomic;
 } // std
 
 // Atomic wrapper - this should be moved elsewhere, kind of silly to have it here.
@@ -814,7 +813,7 @@ template <typename T> class atomic; // local forward declare.
 namespace ts
 {
 template <typename T>
-BufferWriter &
+BufferWriter&
 bwformat(BufferWriter &w, BWFSpec const &spec, std::atomic<T> const &v)
 {
   return bwformat(w, spec, v.load());
