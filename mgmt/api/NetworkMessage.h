@@ -72,23 +72,111 @@ struct mgmt_message_sender {
 };
 
 // Marshall and send a request, prefixing the message length as a MGMT_MARSHALL_INT.
-TSMgmtError send_mgmt_request(const mgmt_message_sender &snd, OpType optype, ...);
-TSMgmtError send_mgmt_request(int fd, OpType optype, ...);
+template <typename... Params>
+TSMgmtError
+send_mgmt_request(const mgmt_message_sender &snd, OpType optype, Params... params)
+{
+  ats_scoped_mem<char> msgbuf;
+  MgmtMarshallInt msglen;
 
-// Marshall and send an error respose for this operation type.
-TSMgmtError send_mgmt_error(int fd, OpType op, TSMgmtError error);
+  if (!snd.is_connected()) {
+    return TS_ERR_NET_ESTABLISH; // no connection.
+  }
 
-// Parse a request message from a buffer.
-TSMgmtError recv_mgmt_request(void *buf, size_t buflen, OpType optype, ...);
+  msglen = mgmt_message_length(params...);
+  msgbuf = (char *)ats_malloc(msglen + MGMT_HDR_LENGTH + 4);
 
-// Marshall and send a response, prefixing the message length as a MGMT_MARSHALL_INT.
-TSMgmtError send_mgmt_response(int fd, OpType optype, ...);
+  // Add data header
+  memcpy((char *)msgbuf, &MGMT_DATA_HDR, MGMT_HDR_LENGTH);
+  memcpy((char *)msgbuf + MGMT_HDR_LENGTH, &msglen, 4);
 
-// Parse a response message from a buffer.
-TSMgmtError recv_mgmt_response(void *buf, size_t buflen, OpType optype, ...);
+  // Now marshall the message itself.
+  if (mgmt_message_marshall((char *)msgbuf + 4 + MGMT_HDR_LENGTH, msglen, params...) == -1) {
+    return TS_ERR_PARAMS;
+  }
+  return snd.send(msgbuf, msglen + 4 + MGMT_HDR_LENGTH);
+}
+
+template <typename... Params>
+TSMgmtError
+send_mgmt_request(int fd, OpType optype, Params... params)
+{
+  MgmtMarshallInt msglen;
+  MgmtMarshallData req = {nullptr, 0};
+
+  // Figure out the payload length.
+  msglen = mgmt_message_length(params...);
+
+  ink_assert(msglen >= 0);
+
+  req.ptr = (char *)ats_malloc(msglen);
+  req.len = msglen;
+
+  // Marshall the message itself.
+  if (mgmt_message_marshall(req.ptr, req.len, params...) == -1) {
+    ats_free(req.ptr);
+    return TS_ERR_PARAMS;
+  }
+
+  // Send the response as the payload of a data object.
+  if (mgmt_message_write(fd, &req) == -1) {
+    ats_free(req.ptr);
+    return TS_ERR_NET_WRITE;
+  }
+
+  ats_free(req.ptr);
+  return TS_ERR_OKAY;
+}
+
+// Parse a request or response message from a buffer.
+template <typename... Params>
+TSMgmtError
+parse_mgmt_message(void *buf, size_t buflen, OpType optype, Params... params)
+{
+  ssize_t err;
+
+  err = mgmt_message_parse(buf, buflen, params...);
+  return (err == -1) ? TS_ERR_PARAMS : TS_ERR_OKAY;
+}
 
 // Pull a management message (either request or response) off the wire.
 TSMgmtError recv_mgmt_message(int fd, MgmtMarshallData &msg);
+
+// Marshall and send a response, prefixing the message length as a MGMT_MARSHALL_INT.
+// Send a management message response. We don't need to worry about retransmitting the message if we get
+// disconnected, so this is much simpler. We can directly marshall the response as a data object.
+// Note, there is no need to send the optype as this is a response not a request.
+template <typename... Params>
+TSMgmtError
+send_mgmt_response(int fd, OpType optype, Params... params)
+{
+  MgmtMarshallInt msglen;
+  MgmtMarshallData reply = {nullptr, 0};
+
+  msglen = mgmt_message_length(params...);
+
+  ink_assert(msglen >= 0);
+
+  reply.ptr = (char *)ats_malloc(msglen);
+  reply.len = msglen;
+
+  // Marshall the message itself.
+  if (mgmt_message_marshall(reply.ptr, reply.len, params...) == -1) {
+    return TS_ERR_PARAMS;
+  }
+
+  // Send the response as the payload of a data object.
+  if (mgmt_message_write(fd, &reply) == -1) {
+    ats_free(reply.ptr);
+    return TS_ERR_NET_WRITE;
+  }
+
+  ats_free(reply.ptr);
+  return TS_ERR_OKAY;
+}
+
+// Marshall and send an error respose for this operation type.
+TSMgmtError send_mgmt_error(int fd, OpType op, TSMgmtError error);
 
 // Extract the first MGMT_MARSHALL_INT from the buffered message. This is the OpType.
 OpType extract_mgmt_request_optype(void *msg, size_t msglen);

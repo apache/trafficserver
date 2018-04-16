@@ -81,7 +81,7 @@ send_and_parse_list(OpType op, LLQ *list)
   Tokenizer tokens(REMOTE_DELIM_STR);
   tok_iter_state i_state;
 
-  OpType optype = op;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(op);
   MgmtMarshallInt err;
   MgmtMarshallData reply    = {nullptr, 0};
   MgmtMarshallString strval = nullptr;
@@ -101,7 +101,7 @@ send_and_parse_list(OpType op, LLQ *list)
     goto done;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &strval);
+  ret = parse_mgmt_message(reply.ptr, reply.len, op, &err, &strval);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
@@ -143,7 +143,7 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
 {
   TSMgmtError ret;
 
-  OpType optype            = OpType::RECORD_SET;
+  MgmtMarshallInt optype   = static_cast<MgmtMarshallInt>(OpType::RECORD_SET);
   MgmtMarshallString name  = const_cast<MgmtMarshallString>(rec_name);
   MgmtMarshallString value = const_cast<MgmtMarshallString>(rec_val);
 
@@ -168,7 +168,7 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
     return ret;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::RECORD_SET, &err, &action);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::RECORD_SET, &err, &action);
   ats_free(reply.ptr);
 
   if (ret != TS_ERR_OKAY) {
@@ -299,7 +299,7 @@ TSProxyStateT
 ProxyStateGet()
 {
   TSMgmtError ret;
-  OpType optype          = OpType::PROXY_STATE_GET;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(OpType::PROXY_STATE_GET);
   MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt state;
@@ -314,7 +314,7 @@ ProxyStateGet()
     return TS_PROXY_UNDEFINED;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::PROXY_STATE_GET, &err, &state);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::PROXY_STATE_GET, &err, &state);
   ats_free(reply.ptr);
 
   if (ret != TS_ERR_OKAY || err != TS_ERR_OKAY) {
@@ -328,7 +328,7 @@ TSMgmtError
 ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 {
   TSMgmtError ret;
-  OpType optype          = OpType::PROXY_STATE_SET;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(OpType::PROXY_STATE_SET);
   MgmtMarshallInt pstate = state;
   MgmtMarshallInt pclear = clear;
 
@@ -342,7 +342,7 @@ ServerBacktrace(unsigned options, char **trace)
   ink_release_assert(trace != nullptr);
   TSMgmtError ret;
   MgmtMarshallInt err;
-  OpType optype             = OpType::SERVER_BACKTRACE;
+  MgmtMarshallInt optype    = static_cast<MgmtMarshallInt>(OpType::SERVER_BACKTRACE);
   MgmtMarshallInt flags     = options;
   MgmtMarshallData reply    = {nullptr, 0};
   MgmtMarshallString strval = nullptr;
@@ -357,7 +357,7 @@ ServerBacktrace(unsigned options, char **trace)
     goto fail;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::SERVER_BACKTRACE, &err, &strval);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::SERVER_BACKTRACE, &err, &strval);
   if (ret != TS_ERR_OKAY) {
     goto fail;
   }
@@ -381,7 +381,7 @@ TSMgmtError
 Reconfigure()
 {
   TSMgmtError ret;
-  OpType optype = OpType::RECONFIGURE;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(OpType::RECONFIGURE);
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECONFIGURE, &optype);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::RECONFIGURE, main_socket_fd) : ret;
@@ -400,8 +400,8 @@ TSMgmtError
 Restart(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::RESTART;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(OpType::RESTART);
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RESTART, &optype, &oval);
   if (ret != TS_ERR_OKAY) {
@@ -425,8 +425,8 @@ TSMgmtError
 Bounce(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::BOUNCE;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(OpType::BOUNCE);
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::BOUNCE, &optype, &oval);
 
@@ -442,8 +442,8 @@ TSMgmtError
 Stop(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::STOP;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(OpType::STOP);
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::STOP, &optype, &oval);
 
@@ -459,8 +459,8 @@ TSMgmtError
 Drain(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::DRAIN;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt optype = static_cast<MgmtMarshallInt>(OpType::DRAIN);
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::DRAIN, &optype, &oval);
 
@@ -476,7 +476,7 @@ TSMgmtError
 StorageDeviceCmdOffline(const char *dev)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::STORAGE_DEVICE_CMD_OFFLINE;
+  MgmtMarshallInt optype  = static_cast<MgmtMarshallInt>(OpType::STORAGE_DEVICE_CMD_OFFLINE);
   MgmtMarshallString name = const_cast<MgmtMarshallString>(dev);
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::STORAGE_DEVICE_CMD_OFFLINE, &optype, &name);
@@ -492,7 +492,7 @@ TSMgmtError
 LifecycleMessage(const char *tag, void const *data, size_t data_size)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::LIFECYCLE_MESSAGE;
+  MgmtMarshallInt optype  = static_cast<MgmtMarshallInt>(OpType::LIFECYCLE_MESSAGE);
   MgmtMarshallString mtag = const_cast<MgmtMarshallString>(tag);
   MgmtMarshallData mdata  = {const_cast<void *>(data), data_size};
 
@@ -552,7 +552,7 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
     return ret;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &rclass, &type, &name, &value);
+  ret = parse_mgmt_message(reply.ptr, reply.len, op, &err, &rclass, &type, &name, &value);
   ats_free(reply.ptr);
   if (ret != TS_ERR_OKAY) {
     goto done;
@@ -602,7 +602,7 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   MgmtMarshallInt checktype;
   MgmtMarshallInt source;
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass,
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass,
                            &version, &rsb, &order, &access, &update, &updatetype, &checktype, &source, &expr);
 
   ats_free(reply.ptr);
@@ -646,7 +646,7 @@ TSMgmtError
 MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
-  OpType optype             = OpType::RECORD_GET;
+  MgmtMarshallInt optype    = static_cast<MgmtMarshallInt>(OpType::RECORD_GET);
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   if (!rec_name || !rec_ele) {
@@ -672,7 +672,7 @@ TSMgmtError
 MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList rec_vals)
 {
   TSMgmtError ret;
-  OpType optype             = OpType::RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt optype    = static_cast<MgmtMarshallInt>(OpType::RECORD_DESCRIBE_CONFIG);
   MgmtMarshallInt flags     = options | RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
@@ -718,7 +718,7 @@ TSMgmtError
 MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription *val)
 {
   TSMgmtError ret;
-  OpType optype             = OpType::RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt optype    = static_cast<MgmtMarshallInt>(OpType::RECORD_DESCRIBE_CONFIG);
   MgmtMarshallInt flags     = options & ~RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
@@ -737,7 +737,7 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
   TSMgmtError ret;
   TSRecordEle *rec_ele;
 
-  OpType optype             = OpType::RECORD_MATCH_GET;
+  MgmtMarshallInt optype    = static_cast<MgmtMarshallInt>(OpType::RECORD_MATCH_GET);
   MgmtMarshallString record = const_cast<MgmtMarshallString>(regex);
 
   if (!regex || !rec_vals) {
@@ -883,7 +883,7 @@ TSMgmtError
 EventResolve(const char *event_name)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::EVENT_RESOLVE;
+  MgmtMarshallInt optype  = static_cast<MgmtMarshallInt>(OpType::EVENT_RESOLVE);
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
   if (!event_name) {
@@ -919,7 +919,7 @@ TSMgmtError
 EventIsActive(const char *event_name, bool *is_current)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::EVENT_ACTIVE;
+  MgmtMarshallInt optype  = static_cast<MgmtMarshallInt>(OpType::EVENT_ACTIVE);
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
   MgmtMarshallData reply = {nullptr, 0};
@@ -941,7 +941,7 @@ EventIsActive(const char *event_name, bool *is_current)
     return ret;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::EVENT_ACTIVE, &err, &bval);
+  ret = parse_mgmt_message(reply.ptr, reply.len, OpType::EVENT_ACTIVE, &err, &bval);
   ats_free(reply.ptr);
 
   if (ret != TS_ERR_OKAY) {
@@ -981,7 +981,7 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
 
   // if we need to notify traffic manager of the event then send msg
   if (first_time) {
-    OpType optype           = OpType::EVENT_REG_CALLBACK;
+    MgmtMarshallInt optype  = static_cast<MgmtMarshallInt>(OpType::EVENT_REG_CALLBACK);
     MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
     ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::EVENT_REG_CALLBACK, &optype, &name);
@@ -1036,22 +1036,22 @@ TSMgmtError
 HostStatusSetDown(const char *host_name)
 {
   TSMgmtError ret         = TS_ERR_PARAMS;
-  OpType op               = OpType::HOST_STATUS_DOWN;
+  MgmtMarshallInt op      = static_cast<MgmtMarshallInt>(OpType::HOST_STATUS_DOWN);
   MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::HOST_STATUS_DOWN, &op, &name);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::HOST_STATUS_DOWN, main_socket_fd) : ret;
 }
 
 TSMgmtError
 HostStatusSetUp(const char *host_name)
 {
   TSMgmtError ret         = TS_ERR_PARAMS;
-  OpType op               = OpType::HOST_STATUS_UP;
+  MgmtMarshallInt op      = static_cast<MgmtMarshallInt>(OpType::HOST_STATUS_UP);
   MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::HOST_STATUS_UP, &op, &name);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::HOST_STATUS_UP, main_socket_fd) : ret;
 }
 
 TSMgmtError
@@ -1059,7 +1059,7 @@ StatsReset(const char *stat_name)
 {
   TSMgmtError ret;
   OpType op               = OpType::STATS_RESET_NODE;
-  OpType optype           = op;
+  MgmtMarshallInt optype  = static_cast<MgmtMarshallInt>(OpType::STATS_RESET_NODE);
   MgmtMarshallString name = const_cast<MgmtMarshallString>(stat_name);
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);

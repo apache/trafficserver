@@ -46,22 +46,6 @@
     }                                                                                                                \
   } while (0)
 
-const MgmtMarshallType inval[] = {(MgmtMarshallType)1568};
-
-const MgmtMarshallType ifields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_LONG};
-
-const MgmtMarshallType sfields[] = {
-  MGMT_MARSHALL_STRING,
-};
-
-const MgmtMarshallType dfields[] = {
-  MGMT_MARSHALL_DATA,
-};
-
-const MgmtMarshallType afields[] = {
-  MGMT_MARSHALL_DATA, MGMT_MARSHALL_INT, MGMT_MARSHALL_LONG, MGMT_MARSHALL_STRING, MGMT_MARSHALL_LONG, MGMT_MARSHALL_LONG,
-};
-
 const char alpha[]       = "abcdefghijklmnopqrstuvwxyz0123456789";
 const char *stringvals[] = {nullptr, "", "randomstring"};
 
@@ -166,25 +150,26 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
   // Check invalid Fd write. ToDo: Commented out, see TS-3052.
   // CHECK_EQ(mgmt_message_write(FD_SETSIZE - 1, ifields, countof(ifields), &mint, &mlong), -1);
 
-  CHECK_EQ(mgmt_message_write(clientfd, ifields, countof(ifields), &mint, &mlong), 12);
+  ssize_t len = mgmt_message_length(&mint, &mlong);
+  CHECK_EQ(mgmt_message_write(clientfd, &mint, &mlong), len);
 
   mint  = 0;
   mlong = 0;
-  CHECK_EQ(mgmt_message_read(serverfd, ifields, countof(ifields), &mint, &mlong), 12);
+  CHECK_EQ(mgmt_message_read(serverfd, &mint, &mlong), len);
   CHECK_VALUE(mint, 99, "%" PRId32);
   CHECK_VALUE(mlong, (MgmtMarshallLong)(&listenfd), "%" PRId64);
 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
     const char *s = stringvals[i];
-    size_t len    = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
+    len           = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */ + MGMT_HDR_LENGTH;
 
     mstring = s ? ats_strdup(s) : nullptr;
-    CHECK_EQ(mgmt_message_write(clientfd, sfields, countof(sfields), &mstring), len);
+    CHECK_EQ(mgmt_message_write(clientfd, &mstring), len);
     ats_free(mstring);
     mstring = nullptr;
 
-    CHECK_EQ(mgmt_message_read(serverfd, sfields, countof(sfields), &mstring), len);
+    CHECK_EQ(mgmt_message_read(serverfd, &mstring), len);
     CHECK_STRING(s, mstring);
     ats_free(mstring);
     mstring = nullptr;
@@ -193,11 +178,13 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
   // Marshall data.
   mdata.ptr = ats_strdup(alpha);
   mdata.len = strlen(alpha);
-  CHECK_EQ(mgmt_message_write(clientfd, dfields, countof(dfields), &mdata), 4 + strlen(alpha));
+
+  len = mgmt_message_length(&mdata);
+  CHECK_EQ(mgmt_message_write(clientfd, &mdata), len);
   ats_free(mdata.ptr);
   ink_zero(mdata);
 
-  CHECK_EQ(mgmt_message_read(serverfd, dfields, countof(dfields), &mdata), 4 + strlen(alpha));
+  CHECK_EQ(mgmt_message_read(serverfd, &mdata), len);
   CHECK_VALUE(mdata.len, strlen(alpha), "%zu");
   box.check(memcmp(mdata.ptr, alpha, strlen(alpha)) == 0, "unexpected mdata contents");
   ats_free(mdata.ptr);
@@ -219,35 +206,32 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   MgmtMarshallString mstring = nullptr;
   MgmtMarshallData mdata     = {nullptr, 0};
 
-  // Parse empty message.
-  CHECK_EQ(mgmt_message_parse(nullptr, 0, nullptr, 0), 0);
-
-  // Marshall empty message.
-  CHECK_EQ(mgmt_message_marshall(nullptr, 0, nullptr, 0), 0);
-
   // Marshall some integral types.
   mint  = -156;
   mlong = UINT32_MAX;
-  CHECK_EQ(mgmt_message_marshall(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
-  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
-  CHECK_EQ(mgmt_message_parse(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
-  CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
+
+  ssize_t len = mgmt_message_length(&mint, &mlong);
+  CHECK_EQ(mgmt_message_marshall(msgbuf, 1, &mint, &mlong), -1);
+  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), &mint, &mlong), len);
+  CHECK_EQ(mgmt_message_parse(msgbuf, 1, &mint, &mlong), -1);
+  CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), &mint, &mlong), len);
   CHECK_VALUE(mint, -156, "%" PRId32);
   CHECK_VALUE(mlong, static_cast<MgmtMarshallLong>(UINT32_MAX), "%" PRId64);
 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
     const char *s = stringvals[i];
-    size_t len    = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
+    len           = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */ + MGMT_HDR_LENGTH;
 
     mstring = s ? ats_strdup(s) : nullptr;
-    CHECK_EQ(mgmt_message_marshall(msgbuf, 1, sfields, countof(sfields), &mstring), -1);
-    CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), sfields, countof(sfields), &mstring), len);
+    CHECK_EQ(mgmt_message_marshall(msgbuf, 1, &mstring), -1);
+    CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), &mstring), len);
     ats_free(mstring);
     mstring = nullptr;
 
-    CHECK_EQ(mgmt_message_parse(msgbuf, 1, sfields, countof(sfields), &mstring), -1);
-    CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), sfields, countof(sfields), &mstring), len);
+    CHECK_EQ(mgmt_message_parse(msgbuf, 1, &mstring), -1);
+    CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), &mstring), len);
+
     CHECK_STRING(s, mstring);
     ats_free(mstring);
     mstring = nullptr;
@@ -256,24 +240,27 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   // Marshall data.
   mdata.ptr = ats_strdup(alpha);
   mdata.len = strlen(alpha);
-  CHECK_EQ(mgmt_message_marshall(msgbuf, 10, dfields, countof(dfields), &mdata), -1);
-  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), dfields, countof(dfields), &mdata), 4 + strlen(alpha));
+
+  len = mgmt_message_length(&mdata);
+  CHECK_EQ(mgmt_message_marshall(msgbuf, 10, &mdata), -1);
+  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), &mdata), len);
   ats_free(mdata.ptr);
   ink_zero(mdata);
 
-  CHECK_EQ(mgmt_message_parse(msgbuf, strlen(alpha), dfields, countof(dfields), &mdata), -1);
-  CHECK_EQ(mgmt_message_parse(msgbuf, strlen(alpha) + 4, dfields, countof(dfields), &mdata), 4 + strlen(alpha));
+  CHECK_EQ(mgmt_message_parse(msgbuf, strlen(alpha), &mdata), -1);
+  CHECK_EQ(mgmt_message_parse(msgbuf, len, &mdata), len);
   CHECK_VALUE(mdata.len, strlen(alpha), "%zu");
   box.check(memcmp(mdata.ptr, alpha, strlen(alpha)) == 0, "unexpected mdata contents");
   ats_free(mdata.ptr);
   ink_zero(mdata);
 
   // Marshall empty data.
-  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), dfields, countof(dfields), &mdata), 4);
+  len = mgmt_message_length(&mdata);
+  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), &mdata), len);
 
   mdata.ptr = (void *)99;
   mdata.len = 1000;
-  CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), dfields, countof(dfields), &mdata), 4);
+  CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), &mdata), len);
   CHECK_VALUE(mdata.ptr, (void *)nullptr, "%p");
   CHECK_VALUE(mdata.len, (size_t)0, "%zu");
 }
@@ -287,37 +274,31 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
   MgmtMarshallString mstring = nullptr;
   MgmtMarshallData mdata     = {nullptr, 0};
 
-  // Check invalid marshall type.
-  CHECK_EQ(mgmt_message_length(inval, countof(inval), NULL), -1);
-
-  // Check empty types array.
-  CHECK_EQ(mgmt_message_length(nullptr, 0), 0);
-
-  CHECK_EQ(mgmt_message_length(ifields, countof(ifields), &mint, &mlong), 12);
+  CHECK_EQ(mgmt_message_length(&mint, &mlong), MGMT_INT_LENGTH + MGMT_HDR_LENGTH + MGMT_LONG_LENGTH + MGMT_HDR_LENGTH);
 
   // string messages include a 4-byte length and the NULL
   mstring = (char *)"foo";
-  CHECK_EQ(mgmt_message_length(sfields, countof(sfields), &mstring), sizeof("foo") + 4);
+  CHECK_EQ(mgmt_message_length(&mstring), sizeof("foo") + MGMT_INT_LENGTH + MGMT_HDR_LENGTH);
 
   // NULL strings are the same as empty strings ...
   mstring = nullptr;
-  CHECK_EQ(mgmt_message_length(sfields, countof(sfields), &mstring), 4 + 1);
+  CHECK_EQ(mgmt_message_length(&mstring), 4 + 1 + MGMT_HDR_LENGTH);
   mstring = (char *)"";
-  CHECK_EQ(mgmt_message_length(sfields, countof(sfields), &mstring), 4 + 1);
+  CHECK_EQ(mgmt_message_length(&mstring), 4 + 1 + MGMT_HDR_LENGTH);
 
   // data fields include a 4-byte length. We don't go looking at the data in this case.
   mdata.len = 99;
   mdata.ptr = nullptr;
-  CHECK_EQ(mgmt_message_length(dfields, countof(dfields), &mdata), 99 + 4);
+  CHECK_EQ(mgmt_message_length(&mdata), 99 + 4 + MGMT_HDR_LENGTH);
 
   mstring   = (char *)"all fields";
   mdata.len = 31;
-  CHECK_EQ(mgmt_message_length(afields, countof(afields), &mdata, &mint, &mlong, &mstring, &mlong, &mlong),
-           31 + 4 + 4 + 8 + sizeof("all fields") + 4 + 8 + 8);
+  CHECK_EQ(mgmt_message_length(&mdata, &mint, &mlong, &mstring, &mlong, &mlong),
+           31 + 4 + 4 + 8 + sizeof("all fields") + 4 + 8 + 8 + 6 * MGMT_HDR_LENGTH);
 
   mdata.ptr = nullptr;
   mdata.len = 0;
-  CHECK_EQ(mgmt_message_length(dfields, countof(dfields), &mdata), 4);
+  CHECK_EQ(mgmt_message_length(&mdata), 4 + MGMT_HDR_LENGTH);
 }
 
 int
