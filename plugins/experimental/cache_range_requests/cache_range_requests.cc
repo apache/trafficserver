@@ -39,20 +39,20 @@ struct txndata {
   char *range_value;
 };
 
-static void handle_read_request_header(TSCont, TSEvent, void *);
+static int handle_read_request_header(TSCont, TSEvent, void *);
 static void range_header_check(TSHttpTxn txnp);
 static void handle_send_origin_request(TSCont, TSHttpTxn, struct txndata *);
 static void handle_client_send_response(TSHttpTxn, struct txndata *);
 static void handle_server_read_response(TSHttpTxn, struct txndata *);
 static int remove_header(TSMBuffer, TSMLoc, const char *, int);
 static bool set_header(TSMBuffer, TSMLoc, const char *, int, const char *, int);
-static void transaction_handler(TSCont, TSEvent, void *);
+static int transaction_handler(TSCont, TSEvent, void *);
 
 /**
  * Entry point when used as a global plugin.
  *
  */
-static void
+static int
 handle_read_request_header(TSCont txn_contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
@@ -60,6 +60,7 @@ handle_read_request_header(TSCont txn_contp, TSEvent event, void *edata)
   range_header_check(txnp);
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
 }
 
 /**
@@ -91,7 +92,7 @@ range_header_check(TSHttpTxn txnp)
       if (!hdr_value || length <= 0) {
         DEBUG_LOG("Not a range request.");
       } else {
-        if (nullptr == (txn_contp = TSContCreate((TSEventFunc)transaction_handler, nullptr))) {
+        if (nullptr == (txn_contp = TSContCreate(transaction_handler, nullptr))) {
           ERROR_LOG("failed to create the transaction handler continuation.");
         } else {
           txn_state              = (struct txndata *)TSmalloc(sizeof(struct txndata));
@@ -370,7 +371,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if (nullptr == (txnp_cont = TSContCreate((TSEventFunc)handle_read_request_header, nullptr))) {
+  if (nullptr == (txnp_cont = TSContCreate(handle_read_request_header, nullptr))) {
     ERROR_LOG("failed to create the transaction continuation handler.");
     return;
   } else {
@@ -381,7 +382,7 @@ TSPluginInit(int argc, const char *argv[])
 /**
  * Transaction event handler.
  */
-static void
+static int
 transaction_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp            = static_cast<TSHttpTxn>(edata);
@@ -411,4 +412,5 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     break;
   }
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
 }
