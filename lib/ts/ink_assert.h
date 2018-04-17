@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Support explicitly causing a core dump when invariant checks fail.
 
   @section license License
 
@@ -30,10 +30,6 @@ Assertions
 #include "ts/ink_apidefs.h"
 #include "ts/ink_error.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 /* don't use assert, no really DON'T use assert */
 #undef assert
 #define assert __DONT_USE_BARE_assert_USE_ink_assert__
@@ -41,6 +37,10 @@ extern "C" {
 #define _ASSERT_H
 #undef __ASSERT_H__
 #define __ASSERT_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 
@@ -54,6 +54,36 @@ inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 
 #ifdef __cplusplus
 }
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+
+#include <type_traits>
+
+#include "ts/debug.h"
+
+namespace ts
+{
+namespace _private_
+{
+  inline void
+  ts_assert_(std::false_type, const char *, const char *, int)
+  {
+  }
+
+  inline void
+  ts_assert_(std::true_type, const char *a, const char *f, int l)
+  {
+    _ink_assert(a, f, l);
+  }
+}
+}
+
+#define ts_assert(EX) (likely(EX) ? static_cast<void>(0) : ts::_private_::ink_assert_(ts::TestModeType(), #EX, __FILE__, __LINE__))
+
+#define ts_release_assert(EX) \
+  (likely(EX) ? static_cast<void>(0) : ts::_private_::ink_assert_(std::true_type(), #EX, __FILE__, __LINE__))
+
 #endif /* __cplusplus */
 
 /* workaround a bug in the  stupid Sun preprocessor
