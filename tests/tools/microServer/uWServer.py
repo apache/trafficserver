@@ -594,13 +594,13 @@ def _bool(arg):
     elif tmp in opt_false_values:
         return False
     else:
-        msg = 'Invalid value Boolean value : "{0}"\n Valid options are {0}'.format(arg,
+        msg = 'Invalid value Boolean value : "{0}"\n Valid options are {1}'.format(arg,
                                                                                    opt_true_values | opt_false_values)
         raise ValueError(msg)
 
-def _argparse_bool():
+def _argparse_bool(arg):
     try:
-        _bool
+        _bool(arg)
     except ValueError as ve:
         raise argparse.ArgumentTypeError(ve)
 
