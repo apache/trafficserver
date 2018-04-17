@@ -568,7 +568,6 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
       open_cons(nullptr); // use current target address.
       n_con = 1;
     }
-    e->ethread->schedule_every(this, -DNS_PERIOD);
 
     return EVENT_CONT;
   } else {
@@ -591,7 +590,6 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
   open_cons(&ip.sa, false, n_con);
   ++n_con; // TODO should n_con be zeroed?
 
-  e->schedule_every(-DNS_PERIOD);
   return EVENT_CONT;
 }
 
@@ -957,6 +955,10 @@ DNSHandler::mainEvent(int event, Event *e)
 
   if (entries.head) {
     write_dns(this);
+  }
+
+  if (std::any_of(ns_down, ns_down + n_con, [](int f) { return f != 0; })) {
+    this_ethread()->schedule_at(this, DNS_PRIMARY_RETRY_PERIOD);
   }
 
   return EVENT_CONT;

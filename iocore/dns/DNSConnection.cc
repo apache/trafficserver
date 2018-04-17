@@ -78,6 +78,14 @@ void
 DNSConnection::trigger()
 {
   handler->triggered.enqueue(this);
+
+  // Since the periodic check is removed, we need to call
+  // this when it's triggered by EVENTIO_DNS_CONNECTION.
+  // The handler should be pionting to DNSHandler::mainEvent.
+  // We can schedule an immediate event or call the handler
+  // directly, and since both arguments are not being used
+  // passing in 0 and nullptr will do the job.
+  handler->handleEvent(0, nullptr);
 }
 
 int
