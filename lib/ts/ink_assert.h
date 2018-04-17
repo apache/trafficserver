@@ -27,12 +27,11 @@ Assertions
 ***************************************************************************/
 #pragma once
 
+#include <type_traits>
+
 #include "ts/ink_apidefs.h"
 #include "ts/ink_error.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#include "ts/debug.h"
 
 /* don't use assert, no really DON'T use assert */
 #undef assert
@@ -44,17 +43,27 @@ extern "C" {
 
 inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 
-#if defined(DEBUG) || defined(__clang_analyzer__) || defined(__COVERITY__)
-#define ink_assert(EX) ((void)(likely(EX) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)))
-#else
-#define ink_assert(EX) (void)(EX)
-#endif
+namespace ts
+{
+namespace _private_
+{
+  inline void
+  ink_assert_(std::false_type, const char *, const char *, int)
+  {
+  }
 
-#define ink_release_assert(EX) ((void)(likely(EX) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)))
-
-#ifdef __cplusplus
+  inline void
+  ink_assert_(std::true_type, const char *a, const char *f, int l)
+  {
+    _ink_assert(a, f, l);
+  }
 }
-#endif /* __cplusplus */
+}
+
+#define ink_assert(EX) (likely(EX) ? static_cast<void>(0) : ts::_private_::ink_assert_(ts::TestModeType(), #EX, __FILE__, __LINE__))
+
+#define ink_release_assert(EX) \
+  (likely(EX) ? static_cast<void>(0) : ts::_private_::ink_assert_(std::true_type(), #EX, __FILE__, __LINE__))
 
 /* workaround a bug in the  stupid Sun preprocessor
 
