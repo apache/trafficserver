@@ -49,7 +49,7 @@ const ts::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"_sv);
 const ts::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"_sv);
 const ts::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"_sv);
 const ts::string_view IP_PROTO_TAG_HTTP_2_0("h2"_sv);     // HTTP/2 over TLS
-const ts::string_view IP_PROTO_TAG_HTTP_QUIC("hq-10"_sv); // HTTP over QUIC
+const ts::string_view IP_PROTO_TAG_HTTP_QUIC("hq-11"_sv); // HTTP over QUIC
 
 uint32_t
 ink_inet_addr(const char *s)
