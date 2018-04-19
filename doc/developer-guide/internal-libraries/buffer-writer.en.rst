@@ -85,7 +85,7 @@ This is changed to
 
 The remaining length is updated every time and checked every time, without having to remember. A
 series of checks, calls to :code:`memcpy`, and size updates become a simple series of calls to
-:func:`FixedBufferWriter::write`.
+:func:`BufferWriter::write`.
 
 For other types of interaction, :class:`FixedBufferWriter` provides access to the unused buffer via
 :func:`BufferWriter::auxBuffer` and :func:`BufferWriter::remaining`. This makes it possible to easily
@@ -99,7 +99,8 @@ something like (riffing off the previous example)::
 
 becomes::
 
-   bw.fill(snprintf(bw.auxBuffer(), bw.remaining(), "format string", args...));
+   bw.fill(snprintf(bw.auxBuffer(), bw.remaining(),
+           "format string", args...));
 
 By hiding the length tracking and checking, the result is a simple linear sequence of output chunks,
 making the logic much eaier to follow.
@@ -251,145 +252,6 @@ becomes
 
 In addition there will be no overrun on the memory buffer in :arg:`w`, in strong contrast
 to the original code.
-
-.. note::
-
-   Work is ongoing to provide formatted output for increased ease of use, particulary with types that
-   are commonly printed but hard to format well, such as IP addresses.
-
-Reference
-+++++++++
-
-.. class:: BufferWriter
-
-   :class:`BufferWriter` is the abstract base class which defines the basic client interface. This
-   is intended to be the reference type used when passing concrete instances rather than having to
-   support the distinct types.
-
-   .. function:: BufferWriter & write(void * data, size_t length)
-
-      Write to the buffer starting at :arg:`data` for at most :arg:`length` bytes. If there is not
-      enough room to fit all the data, none is written.
-
-   .. function:: BufferWriter & write(string_view str)
-
-      Write the string :arg:`str` to the buffer. If there is not enough room to write the string no
-      data is written.
-
-   .. function:: BufferWriter & write(char c)
-
-      Write the character :arg:`c` to the buffer. If there is no space in the buffer the character
-      is not written.
-
-   .. function:: fill(size_t n)
-
-      Increase the output size by :arg:`n` without changing the buffer contents. This is used in
-      conjuction with :func:`BufferWriter::auxBuffer` after writing output to the buffer returned by
-      that method. If this method is not called then such output will not be counted by
-      :func:`BufferWriter::size` and will be overwritten by subsequent output.
-
-   .. function:: char * data() const
-
-      Return a pointer to start of the buffer.
-
-   .. function:: size_t size() const
-
-      Return the number of valid (written) bytes in the buffer.
-
-   .. function:: string_view view() const
-
-      Return a :class:`string_view` that covers the valid data in the buffer.
-
-   .. function:: size_t remaining() const
-
-      Return the number of available remaining bytes that could be written to the buffer.
-
-   .. function:: size_t capacity() const
-
-      Return the number of bytes in the buffer.
-
-   .. function:: char * auxBuffer() const
-
-      Return a pointer to the first byte in the buffer not yet consumed.
-
-   .. function:: BufferWriter & clip(size_t n)
-
-      Reduce the available space by :arg:`n` bytes.
-
-   .. function:: BufferWriter & extend(size_t n)
-
-      Increase the available space by :arg:`n` bytes. Extreme care must be used with this method as
-      :class:`BufferWriter` will trust the argument, having no way to verify it. In general this
-      should only be used after calling :func:`BufferWriter::clip` and passing the same value.
-      Together these allow the buffer to be temporarily reduced to reserve space for the trailing
-      element of a required pair of output strings, e.g. making sure a closing quote can be written
-      even if part of the string is not.
-
-   .. function:: bool error() const
-
-      Return :code:`true` if the buffer has overflowed from writing, :code:`false` if not.
-
-   .. function:: size_t extent() const
-
-      Return the total number of bytes in all attempted writes to this buffer. This value allows a
-      successful retry in case of overflow, presuming the output data doesn't change. This works
-      well with the standard "try before you buy" approach of attempting to write output, counting
-      the characters needed, then allocating a sufficiently sized buffer and actually writing.
-
-   .. function:: BufferWriter & print(TextView fmt, ...)
-
-      Print the arguments according to the format. See `bw-formatting`_.
-
-   .. function:: std::ostream & operator >> (std::ostream & stream) const
-
-      Write the contents of the buffer to :arg:`stream` and return :arg:`stream`.
-
-   .. function:: ssize_t operator >> (int fd)
-
-      Write the contents of the buffer to file descriptor :arg:`fd` and return the number of bytes
-      write (the results of the call to file :code:`write()`).
-
-.. class:: FixedBufferWriter : public BufferWriter
-
-   This is a class that implements :class:`BufferWriter` on a fixed buffer, passed in to the constructor.
-
-   .. function:: FixedBufferWriter(void * buffer, size_t length)
-
-      Construct an instance that will write to :arg:`buffer` at most :arg:`length` bytes. If more
-      data is written, all data past the maximum size is discarded.
-
-   .. function:: reduce(size_t n)
-
-      Roll back the output to :arg:`n` bytes. This is useful primarily for clearing the buffer by
-      calling :code:`reduce(0)`.
-
-   .. function:: FixedBufferWriter auxWriter(size_t reserve = 0)
-
-      Create a new instance of :class:`FixedBufferWriter` for the remaining output buffer. If
-      :arg:`reserve` is non-zero then if possible the capacity of the returned instance is reduced
-      by :arg:`reserve` bytes, in effect reserving that amount of space at the end. Note the space will
-      not be reserved if :arg:`reserve` is larger than the remaining output space.
-
-.. class:: template < size_t N > LocalBufferWriter : public BufferWriter
-
-   This is a convenience class which is a subclass of :class:`FixedBufferWriter`. It which creates a
-   buffer as a member rather than having an external buffer that is passed to the instance. The
-   buffer is :arg:`N` bytes long.
-
-   .. function:: LocalBufferWriter::LocalBufferWriter()
-
-      Construct an instance with a capacity of :arg:`N`.
-
-.. class:: BWFSpec
-
-   This holds a format specifier. It has the parsing logic for a specifier and if the constructor is
-   passed a :class:`string_view` of a specifier, that will parse it and loaded into the class
-   members. This is useful to specialized implementations of :func:`bwformat`.
-
-.. function:: template<typename V> BufferWriter& bwformat(BufferWriter & w, BWFSpec const & spec, V const & v)
-
-   A family of overloads that perform formatted output on a :class:`BufferWriter`. The set of types
-   supported can be extended by defining an overload of this function for the types.
 
 .. _bw-formatting:
 
@@ -597,12 +459,15 @@ Enumerations ::
 
    if (len > 0) {
       auto n = snprintf(buff, len, "Unexpected event %s[%d] for '%c' to %.*s",
-         HttpDebugNames::get_event_name(event), static_cast<int>(event), current_char, static_cast<int>(host_len), host);
+         HttpDebugNames::get_event_name(event),
+         static_cast<int>(event), current_char,
+         static_cast<int>(host_len), host);
       buff += n;
       len -= n;
    }
 
-   bw.print("Unexpected event {0:s}[{0}] for '{1}' to {2}", event, current_char, string_view{host, host_len});
+   bw.print("Unexpected event {0:s}[{0}] for '{1}' to {2}",
+      event, current_char, string_view{host, host_len});
 
 Using :code:`std::string` ::
 
@@ -796,6 +661,8 @@ Using a :class:`BufferWriter` with :code:`printf` is straight forward by use of 
 
 .. code-block:: cpp
 
+   ts::LocalBufferWriter<256> bw;
+   bw.print("Failed to connect to {}\n", addr1);
    printf("%.*s", static_cast<int>(bw.size()), bw.data());
 
 In C++, writing to a stream can be done without any local variables at all.
@@ -808,3 +675,137 @@ This is quite handy for temporary debugging messages as it avoids having to clea
 declarations later, particularly when the types involved themselves require additional local
 declarations (such as in this example, an IP address which would normally require a local text
 buffer for conversion before printing).
+
+Reference
++++++++++
+
+.. class:: BufferWriter
+
+   :class:`BufferWriter` is the abstract base class which defines the basic client interface. This
+   is intended to be the reference type used when passing concrete instances rather than having to
+   support the distinct types.
+
+   .. function:: BufferWriter & write(void * data, size_t length)
+
+      Write to the buffer starting at :arg:`data` for at most :arg:`length` bytes. If there is not
+      enough room to fit all the data, none is written.
+
+   .. function:: BufferWriter & write(string_view str)
+
+      Write the string :arg:`str` to the buffer. If there is not enough room to write the string no
+      data is written.
+
+   .. function:: BufferWriter & write(char c)
+
+      Write the character :arg:`c` to the buffer. If there is no space in the buffer the character
+      is not written.
+
+   .. function:: BufferWriter & fill(size_t n)
+
+      Increase the output size by :arg:`n` without changing the buffer contents. This is used in
+      conjuction with :func:`BufferWriter::auxBuffer` after writing output to the buffer returned by
+      that method. If this method is not called then such output will not be counted by
+      :func:`BufferWriter::size` and will be overwritten by subsequent output.
+
+   .. function:: char * data() const
+
+      Return a pointer to start of the buffer.
+
+   .. function:: size_t size() const
+
+      Return the number of valid (written) bytes in the buffer.
+
+   .. function:: string_view view() const
+
+      Return a :class:`string_view` that covers the valid data in the buffer.
+
+   .. function:: size_t remaining() const
+
+      Return the number of available remaining bytes that could be written to the buffer.
+
+   .. function:: size_t capacity() const
+
+      Return the number of bytes in the buffer.
+
+   .. function:: char * auxBuffer() const
+
+      Return a pointer to the first byte in the buffer not yet consumed.
+
+   .. function:: BufferWriter & clip(size_t n)
+
+      Reduce the available space by :arg:`n` bytes.
+
+   .. function:: BufferWriter & extend(size_t n)
+
+      Increase the available space by :arg:`n` bytes. Extreme care must be used with this method as
+      :class:`BufferWriter` will trust the argument, having no way to verify it. In general this
+      should only be used after calling :func:`BufferWriter::clip` and passing the same value.
+      Together these allow the buffer to be temporarily reduced to reserve space for the trailing
+      element of a required pair of output strings, e.g. making sure a closing quote can be written
+      even if part of the string is not.
+
+   .. function:: bool error() const
+
+      Return :code:`true` if the buffer has overflowed from writing, :code:`false` if not.
+
+   .. function:: size_t extent() const
+
+      Return the total number of bytes in all attempted writes to this buffer. This value allows a
+      successful retry in case of overflow, presuming the output data doesn't change. This works
+      well with the standard "try before you buy" approach of attempting to write output, counting
+      the characters needed, then allocating a sufficiently sized buffer and actually writing.
+
+   .. function:: BufferWriter & print(TextView fmt, ...)
+
+      Print the arguments according to the format. See `bw-formatting`_.
+
+   .. function:: std::ostream & operator >> (std::ostream & stream) const
+
+      Write the contents of the buffer to :arg:`stream` and return :arg:`stream`.
+
+   .. function:: ssize_t operator >> (int fd)
+
+      Write the contents of the buffer to file descriptor :arg:`fd` and return the number of bytes
+      write (the results of the call to file :code:`write()`).
+
+.. class:: FixedBufferWriter : public BufferWriter
+
+   This is a class that implements :class:`BufferWriter` on a fixed buffer, passed in to the constructor.
+
+   .. function:: FixedBufferWriter(void * buffer, size_t length)
+
+      Construct an instance that will write to :arg:`buffer` at most :arg:`length` bytes. If more
+      data is written, all data past the maximum size is discarded.
+
+   .. function:: reduce(size_t n)
+
+      Roll back the output to :arg:`n` bytes. This is useful primarily for clearing the buffer by
+      calling :code:`reduce(0)`.
+
+   .. function:: FixedBufferWriter auxWriter(size_t reserve = 0)
+
+      Create a new instance of :class:`FixedBufferWriter` for the remaining output buffer. If
+      :arg:`reserve` is non-zero then if possible the capacity of the returned instance is reduced
+      by :arg:`reserve` bytes, in effect reserving that amount of space at the end. Note the space will
+      not be reserved if :arg:`reserve` is larger than the remaining output space.
+
+.. class:: template < size_t N > LocalBufferWriter : public BufferWriter
+
+   This is a convenience class which is a subclass of :class:`FixedBufferWriter`. It which creates a
+   buffer as a member rather than having an external buffer that is passed to the instance. The
+   buffer is :arg:`N` bytes long.
+
+   .. function:: LocalBufferWriter::LocalBufferWriter()
+
+      Construct an instance with a capacity of :arg:`N`.
+
+.. class:: BWFSpec
+
+   This holds a format specifier. It has the parsing logic for a specifier and if the constructor is
+   passed a :class:`string_view` of a specifier, that will parse it and loaded into the class
+   members. This is useful to specialized implementations of :func:`bwformat`.
+
+.. function:: template<typename V> BufferWriter& bwformat(BufferWriter & w, BWFSpec const & spec, V const & v)
+
+   A family of overloads that perform formatted output on a :class:`BufferWriter`. The set of types
+   supported can be extended by defining an overload of this function for the types.
