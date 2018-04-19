@@ -30,18 +30,82 @@ Synopsis
 
 .. code-block:: cpp
 
-   #include <ts/BufferWriterForward.h> // Forward declarations
-   #include <ts/BufferWriter.h> // Full
+   #include <ts/BufferWriterForward.h> // Custom formatter support only.
+   #include <ts/BufferWriter.h> // General usage.
 
 Description
 +++++++++++
 
-:class:`BufferWriter` is designed to make writing text to a buffer fast, convenient, and safe. It is
-easier and less error-prone than using a combination of :code:`sprintf` and :code:`memcpy` as is
-done in many places in the code.. A :class:`BufferWriter` can have a size and will prevent writing
-past the end, while tracking the theoretical output to enable buffer resizing after the fact. This
-also lets a :class:`BufferWriter` instance write into the middle of a larger buffer, making nested
-output logic easy to build.
+:class:`BufferWriter` is intended to increase code reliability and reduce complexity in the common
+circumstance of generating formatted output strings in |TS|. Current usage is a mixture of
+:code:`snprintf` and :code:`memcpy` which provides a large scope for errors and verbose code to
+check for buffer overruns. The goal is to provide a wrapper over buffer size tracking to make
+such code simpler and less vulnerable to implementation error.
+
+:class:`BufferWriter` itself is an abstract class to describe the base interface to wrappers for
+various types of output buffers. :class:`FixedBufferWriter` is a subclass designed to wrap a fixed
+size buffer. :class:`FixedBufferWriter` is constructed by passing it a buffer and a size, which it then
+tracks as data is written. Writing past the end of the buffer is clipped to the buffer preventing
+overruns.
+
+Consider current code that looks like this.
+
+.. code-block:: cpp
+
+   char buff[1024];
+   char * ptr = buff;
+   size_t len = sizeof(buff);
+   //...
+   if (len > 0) {
+     auto n = std::min(len, thing1_len);
+     memcpy(ptr, thing1, n);
+     len -= n;
+   }
+   if (len > 0) {
+     auto n = std::min(len, thing2_len);
+     memcpy(ptr, thing2, n);
+     len -= n;
+   }
+   if (len > 0) {
+     auto n = std::min(len, thing3_len);
+     memcpy(ptr, thing3, n);
+     len -= n;
+   }
+
+This is changed to
+
+.. code-block:: cpp
+
+   char buff[1024];
+   ts::FixedBufferWriter bw(buff, sizeof(buff));
+   //...
+   bw.write(thing1, thing1_len);
+   bw.write(thing2, thing2_len);
+   bw.write(thing3, thing3_len);
+
+The remaining length is updated every time and checked every time, without having to remember. A
+series of checks, calls to :code:`memcpy`, and size updates become a simple series of calls to
+:func:`FixedBufferWriter::write`.
+
+For other types of interaction, :class:`FixedBufferWriter` provides access to the unused buffer via
+:func:`BufferWriter::auxBuffer` and :func:`BufferWriter::remaining`. This makes it possible to easily
+use :code:`snprintf`, given that :code:`snprint` returns the number of bytes written.
+:func:`BufferWriter::fill` is used to indicate how much of the unused buffer was used. Therefore
+something like (riffing off the previous example)::
+
+   if (len > 0) {
+      len -= snprintf(ptr, len, "format string", args...);
+   }
+
+becomes::
+
+   bw.fill(snprintf(bw.auxBuffer(), bw.remaining(), "format string", args...));
+
+By hiding the length tracking and checking, the result is a simple linear sequence of output chunks,
+making the logic much eaier to follow.
+
+Usage
++++++
 
 The header files are divided in to two variants. :ts:git:`lib/ts/BufferWriter.h` provides the basic
 capabilities of buffer output control. :ts:git:`lib/ts/BufferWriterFormat.h` provides the basic
@@ -57,24 +121,22 @@ external to the function or already exists.
 
 :class:`LocalBufferWriter` is a templated class whose template argument is the size of an internal
 buffer. This is useful when the buffer is local to a function and the results will be transferred
-from the buffer to other storage after the output is assembled. Rather than having code like
-
-.. code-block:: cpp
+from the buffer to other storage after the output is assembled. Rather than having code like::
 
    char buff[1024];
-   ts::FixedBufferWriter w(buff, sizeof(buff));
+   ts::FixedBufferWriter bw(buff, sizeof(buff));
 
-can be more compactly and robustly done as:
+can be more compactly as::
 
-.. code-block:: cpp
-
-   ts::LocalBufferWriter<1024> w;
+   ts::LocalBufferWriter<1024> bw;
 
 In many cases, when using :class:`LocalBufferWriter` this is the only place the size of the buffer
 needs to be specified and therefore can simply be a constant without the overhead of defining a size
 to maintain consistency. The choice between :class:`LocalBufferWriter` and :class:`FixedBufferWriter`
 comes down to the owner of the buffer - the former has its own buffer while the latter operates on
-a buffer owned by some other object.
+a buffer owned by some other object. Therefore if the buffer is declared locally, use
+:class:`LocalBufferWriter` and if the buffer is recevied from an external source (such as via a
+function parameter) use :class:`FixedBufferWriter`.
 
 Writing
 -------
@@ -334,24 +396,79 @@ Reference
 Formatted Output
 ++++++++++++++++
 
+The base :class:`BufferWriter` was made to provide memory safety for formatted output. Support for
+formmatted output was made to provide *type* safety. The implementation deduces the types of the
+arguments to be formatted and handles them in a type specific and safe way.
+
+The formatting style is of the "prefix" or "printf" style - the format is specified first, and then
+all the arguments. This contrasts to the "infix" or "streaming" style where formatting, literals,
+and argument are intermixed in the order of output. There are various arguments for both styles but
+conversations within the |TS| community indicated a clear preference for the previx style. Therefore
+formatted out consists of a format string, containing *formats*, which are replaced during output
+with the values of arguments to the print function.
+
+The primary use case for formatting is formatted output to fixed buffers. This is by far the
+dominant style of output in |TS| and during the design phase I was told any performance loss must be
+minimal. While work has and will be done to extent :class:`BufferWriter` to operate on non-fixed
+buffers such use is secondary to operating directly on memory.
+
+Type safe formatting has two major benefits -
+
+*  No mismatch between the format specifier and the argument. Although some modern compilers do
+   better at catching this at run time, there is still risk (especially with non-constant format
+   strings) and divergence between operating systems such that there is no `universally correct
+   choice <https://github.com/apache/trafficserver/pull/3476/files>`__. In addition the number of
+   arguments can be verified to be correct which is often useful.
+
+*  Formatting can be customized per type or even per partial type (e.g. :code:`T *` for generic
+   :code:`T`). This enables embedding common formatting work in the format system once, rather than
+   duplicating it in many places (e.g. converting enum values to names). This makes it easier for
+   developers to make useful error messages.
+
+As a result of these benefits there exist substitutes for :code:`printf`. Unfortunately most of
+these are rather project specific and don't suit the use case in |TS|. The two best options,
+`Boost.Format <https://www.boost.org/doc/libs/1_64_0/libs/format/>`__ and `fmt
+<https://github.com/fmtlib/fmt>`__, while good, are also not quite close enough to outweight the
+benefits of a version specifically tuned for |TS|. ``Boost.Format`` is not acceptable because of the
+Boost footprint. ``fmt`` has the problem of depending on C++ stream operators and therefor not
+having the required level of performance or memory characteristics. The possibility of using C++
+stream operators was investigated but changing those to use pre-existing buffers not allocated
+internally was very difficult, judged worse than building a relatively simple implementation. The
+actual core implementation of formatted output for :class:`BufferWriter` is not very large - most of
+the overall work will be writing formatters, work which would need to be done in any case but in
+contrast to current practice, only done once.
+
 :class:`BufferWriter` supports formatting output in a style similar to Python formatting via
-:func:`BufferWriter::print`. This takes a format string which then controls the use of subsquent
-arguments in generating out in the buffer. The basic format is divided in to three parts, separated by colons.
+:func:`BufferWriter::print`. Looking at the other versions of this style of formatting, almost all
+of them have gone with this style. Boost.Format also takes basically this same approach, just using
+different paired delimiters. |TS| contains increasing amounts of native Python code which means many
+|TS| developers will already be familiar (or should become familiar) with this style of formatting.
+While not *exactly* the same at the Python version, BWF (:class:`BufferWriter` Formatting)
+tries to be as similar as language and internal needs allows.
 
-.. productionList:: BufferWriterFormat
-   Format: "{" [name] [":" [specifier] [":" extension]] "}"
-   name: index | name
-   extension: <printable character except "{}">*
+As noted previously and in the Python and even :code:`printf` way, a format string consists of
+literal text in which formats are embedded. Each format marks a place where formatted data of
+an argument will be placed, along with argument specific formatting. The format is divided in to
+three parts, separated by colons.
 
-:arg:`name`
-   The name of the argument to use. This can be a number in which case it is the zero based index of the argument to the method call. E.g. ``{0}`` means the first argument and ``{2}`` is the third argument after the format.
+.. productionList:: Format
+   format: "{" [name] [":" [specifier] [":" extension]] "}"
+   name: index | ICHAR+
+   index: non-negative integer
+   extension: ICHAR*
+   ICHAR: a printable ASCII character except for '{', '}', ':'
+
+:token:`name`
+   The :token:`name` of the argument to use. This can be a non-negative integer in which case it is the zero
+   based index of the argument to the method call. E.g. ``{0}`` means the first argument and ``{2}``
+   is the third argument after the format.
 
       ``bw.print("{0} {1}", 'a', 'b')`` => ``a b``
 
       ``bw.print("{1} {0}", 'a', 'b')`` => ``b a``
 
-   The name can be omitted in which case it is treated as an index in parallel to the position in
-   the format string. Only the position in the format string matters, not what names those other
+   The :token:`name` can be omitted in which case it is treated as an index in parallel to the position in
+   the format string. Only the position in the format string matters, not what names other
    format elements may have used.
 
       ``bw.print("{0} {2} {}", 'a', 'b', 'c')`` => ``a c c``
@@ -364,27 +481,31 @@ arguments in generating out in the buffer. The basic format is divided in to thr
 
       ``bw.print("{0} {1} {0}", 'a', 'b')`` => ``a b a``
 
-   Alphanumeric names refer to values in a global table. These will be described in more detail someday.
+   Alphanumeric names refer to values in a global table. These will be described in more detail
+   someday. Such names, however, do not count in terms of default argument indexing.
 
-:arg:`specifier`
+:token:`specifier`
    Basic formatting control.
 
    .. productionList:: specifier
       specifier: [[fill]align][sign]["#"]["0"][[min][.precision][,max][type]]
-      fill: <printable character except "{}%:"> | URI-char
+      fill: fill-char | URI-char
       URI-char: "%" hex-digit hex-digit
+      fill-char: printable character except "{", "}", ":", "%"
       align: "<" | ">" | "=" | "^"
       sign: "+" | "-" | " "
       min: non-negative integer
       precision: positive integer
       max: non-negative integer
-      type: type: "g" | "s" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
+      type: type: "g" | "s" | "S" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
+      hex-digit: "0" .. "9" | "a" .. "f" | "A" .. "F"
 
    The output is placed in a field that is at least :token:`min` wide and no more than :token:`max` wide. If
    the output is less than :token:`min` then
 
       *  The :token:`fill` character is used for the extra space required. This can be an explicit
          character or a URI encoded one (to allow otherwise reserved characters).
+
       *  The output is shifted according to the :token:`align`.
 
          <
@@ -397,15 +518,17 @@ arguments in generating out in the buffer. The basic format is divided in to thr
             Align in the middle, fill to left and right.
 
          =
-            Numerically align, putting the fill between the output and the sign character.
+            Numerically align, putting the fill between the sign character and the value.
 
-   The output is clipped by :token:`max` width characters or the end of the buffer. :token:`precision` is used by
-   floating point values to specify the number of places of precision.
+   The output is clipped by :token:`max` width characters and by the end of the buffer.
+   :token:`precision` is used by floating point values to specify the number of places of precision.
 
-   :token:`type` is used to indicate type specific formatting. For integers it indicates the output radix and
-   if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``, ``0x``). Format types of the same
-   letter are  equivalent, varying only in the character case used for output. Most common, 'x' prints values in
-   lower cased hexadecimal (:code:`0x1337beef`) while 'X' prints in upper case hexadecimal (:code:`0X1337BEEF`).
+   :token:`type` is used to indicate type specific formatting. For integers it indicates the output
+   radix and if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``, ``0x``).
+   Format types of the same letter are equivalent, varying only in the character case used for
+   output. Most commonly 'x' prints values in lower cased hexadecimal (:code:`0x1337beef`) while 'X'
+   prints in upper case hexadecimal (:code:`0X1337BEEF`). Note there is no upper case decimal or
+   octal type because case is irrelevant for those.
 
       = ===============
       g generic, default.
@@ -426,36 +549,135 @@ arguments in generating out in the buffer. The basic format is divided in to thr
    :class:`string_view` and therefore a hex dump of an object can be done by creating a
    :class:`string_view` covering the data and then printing it with :code:`{:x}`.
 
-   The string type ('s' or 'S') is generally used to cause alphanumeric output for a valud that would
+   The string type ('s' or 'S') is generally used to cause alphanumeric output for a value that would
    normally use numeric output. For instance, a :code:`bool` is normally ``0`` or ``1``. Using the
    type 's' yields ``true` or ``false``. The upper case form, 'S', applies only in these cases where the
    formatter generates the text, it does not apply to normally text based values unless specifically noted.
 
-:arg:`extension`
-   Text (excluding braces) that is passed to the formatting function. This can be used to provide
-   extensions for specific argument types (e.g., IP addresses). The base logic ignores it but passes
-   it on to the formatting function for the corresponding argument type which can then behave
-   different based on the extension.
+:token:`extension`
+   Text (excluding braces) that is passed to the type specific formatter function. This can be used
+   to provide extensions for specific argument types (e.g., IP addresses). The base logic ignores it
+   but passes it on to the formatting function which can then behave different based on the
+   extension.
+
+While this seems a bit complex, all of it is optional. If default output is acceptable, then BWF
+will work with just the format ``{}``.
+
+Some examples, comparing :code:`snprintf` and :func:`BufferWriter::print`. ::
+
+   if (len > 0) {
+      auto n = snprintf(buff, len, "count %d", count);
+      len -= n;
+      buff += n;
+   }
+
+   bw.print("count {}", count);
+
+   // --
+
+   if (len > 0) {
+      auto n = snprintf(buff, len, "Size %" PRId64 " bytes", sizeof(thing));
+      len -= n;
+      buff += n;
+   }
+
+   bw.print("Size {} bytes", sizeof(thing));
+
+   // --
+
+   if (len > 0) {
+      auto n = snprintf(buff, len, "Number of items %ld", thing->count());
+      len -= n;
+      buff += n;
+   }
+
+   bw.print("Number of items {}", thing->count());
+
+Enumerations ::
+
+   if (len > 0) {
+      auto n = snprintf(buff, len, "Unexpected event %s[%d] for '%c' to %.*s",
+         HttpDebugNames::get_event_name(event), static_cast<int>(event), current_char, static_cast<int>(host_len), host);
+      buff += n;
+      len -= n;
+   }
+
+   bw.print("Unexpected event {0:s}[{0}] for '{1}' to {2}", event, current_char, string_view{host, host_len});
+
+Using :code:`std::string` ::
+
+   if (len > 0) {
+      len -= snprintf(buff, len, "%.*s", static_cast<int>(s.size()), s.data);
+   }
+
+   bw.print("{}", s);
+
+IP addresses ::
+
+   char ip_buff1[INET6_ADDRPORTSTRLEN];
+   char ip_buff2[INET6_ADDRPRTSTRLEN];
+   ats_ip_nptop(ip_buff1, sizeof(ip_buff1), addr1);
+   ats_ip_nptop(ip_buff2, sizeof(ip_buff2), add2);
+   if (len > 0) {
+      snprintf(buff, len, "Connecting to %s from %s", ip_buff1, ip_buff2);
+   }
+
+   bw.print("Connecting to {} from {}", addr1, addr2);
 
 User Defined Formatting
 +++++++++++++++++++++++
 
-When an value needs to be formatted an overloaded function for type :code:`V` is called.
+To get the full benefit of type safe formatting it is necessary to provide type specific formatting
+functions which are called when a value of that type is formatted. This is how type specific
+knowledge such as the names of enumeration values are encoded in a single location. Additional type
+specific formatting can be provided via the :token:`extension` field. Without this, special formatting
+requires extra functions and additional work at the call site, rather than a single consolidated
+formatting function.
 
-.. code-block:: cpp
+To provide a formatter for a type :code:`V` the function :code:`bwformat` is overloaded. The signature
+would look like this::
 
    BufferWriter& ts::bwformat(BufferWriter& w, BWFSpec const& spec, V const& v)
 
-This can (and should be) overloaded for user defined types. This makes it easier and cheaper to
-build one overload on another by tweaking the :arg:`spec` as it passed through. The calling
-framework will handle basic alignment, the overload does not need to unless the alignment
-requirements are more detailed (e.g. integer alignment operations) or performance is critical.
+:arg:`w` is the output and :arg:`spec` the parsed specifier, including the extension (if any). The
+calling framework will handle basic alignment as per :arg:`spec` therfore the overload does not need
+to unless the alignment requirements are more detailed (e.g. integer alignment operations) or
+performance is critical. In the latter case the formatter should make sure to use at least the
+minimum width in order to disable any additional alignment operation.
 
-The output stream operator :code:`operator<<` is defined to call this function with a default
-constructed :code:`BWFSpec` instance.
+It is important to note that a formatter can call another formatter. For example, the formatter for
+pointers looks like::
+
+   // Pointers that are not specialized.
+   inline BufferWriter &
+   bwformat(BufferWriter &w, BWFSpec const &spec, const void * ptr)
+   {
+      BWFSpec ptr_spec{spec};
+      ptr_spec._radix_lead_p = true;
+      if (ptr_spec._type == BWFSpec::DEFAULT_TYPE || ptr_spec._type == 'p') {
+         // if default or specifically 'p', switch to lower case hex.
+         ptr_spec._type = 'x';
+      } else if (ptr_spec._type == 'P') {
+         // Incoming 'P' means upper case hex.
+         ptr_spec._type = 'X';
+      }
+      return bw_fmt::Format_Integer(w, ptr_spec,
+         reinterpret_cast<intptr_t>(ptr), false);
+   }
+
+The code checks if the type ``p`` or ``P`` was used in order to select the appropriate case, then
+delegates the actually rendering to the integer formatter with a type of ``x`` or ``X`` as
+appropriate. In turn other formatters, if given the type ``p`` or ``P`` can cast the value to
+:code:`const void*` and call :code:`bwformat` on that to output the value as a pointer.
+
+To help reduce duplication, the output stream operator :code:`operator<<` is defined to call this
+function with a default constructed :code:`BWFSpec` instance so that absent a specific overload
+a BWF formatter will also provide a C++ stream output operator.
 
 Specialized Types
 +++++++++++++++++
+
+These are types for which there exists a type specific BWF formatter.
 
 :class:`string_view`
    Generally the contents of the view.
@@ -468,14 +690,18 @@ Specialized Types
 
 :code:`sockaddr const*`
    The IP address is printed. Fill is used to fill in address segments if provided, not to the
-   minimum width if specified. :class:`IpEndpoint` is also supported with the same formatting.
+   minimum width if specified. :class:`IpEndpoint` and :class:`IpAddr` are supported with the same
+   formatting. The formatting support in this case is extensive because of the commonality and
+   importance of IP address data.
 
-   'p' or 'P'
-      The pointer address is printed as a hexadecimal pointer lower ('p') or upper ('P') case
+   Type overrides
+
+      'p' or 'P'
+         The pointer address is printed as hexadecimal lower ('p') or upper ('P') case.
 
    The extension can be used to control which parts of the address are printed. These can be in any order,
    the output is always address, port, family. The default is the equivalent of "ap". In addition, the
-   character '^' ("numeric align") can be used to internally right justify the elements.
+   character '=' ("numeric align") can be used to internally right justify the elements.
 
    'a'
       The address.
@@ -486,7 +712,7 @@ Specialized Types
    'f'
       The IP address family.
 
-   '^'
+   '='
       Internally justify the numeric values. This must be the first or second character. If it is the second
       the first character is treated as the internal fill character. If omitted '0' (zero) is used.
 
@@ -511,9 +737,9 @@ Specialized Types
 Global Names
 ++++++++++++
 
-There are predefined global names that can be used to generate output. These do not take any
-arguments to :func:`BufferWriter::print`, the data needed for output is either process or thread
-global and is retrieved directly.
+As a convenience, there are a few predefined global names that can be used to generate output. These
+do not take any arguments to :func:`BufferWriter::print`, the data needed for output is either
+process or thread global and is retrieved directly. They also are not counted for automatic indexing.
 
 now
    The epoch time in seconds.
@@ -522,7 +748,7 @@ tick
    The high resolution clock tick.
 
 timestamp
-   UTC time in the format "Year Month Data Hour:Minute:Second", e.g. "2018 Apr 17 14:23:47".
+   UTC time in the format "Year Month Date Hour:Minute:Second", e.g. "2018 Apr 17 14:23:47".
 
 thread-id
    The id of the current thread.
@@ -556,14 +782,15 @@ examples assume :code:`bw` is an instance of :class:`BufferWriter` with data in 
 .. code-block:: cpp
 
    int fd = open("some_file", O_RDWR);
-   bw >> std::cout; // write to standard out.
    bw >> fd; // Write to file.
+   bw >> std::cout; // write to standard out.
 
 For convenience a stream operator for :code:`std::stream` is provided to make the use more natural.
 
 .. code-block:: cpp
 
    std::cout << bw;
+   std::cout << bw.view(); // identical effect as the previous line.
 
 Using a :class:`BufferWriter` with :code:`printf` is straight forward by use of the sized string format code.
 
