@@ -1024,7 +1024,6 @@ struct Cache {
 };
 
 extern Cache *theCache;
-extern Cache *theStreamCache;
 inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 
 TS_INLINE void
