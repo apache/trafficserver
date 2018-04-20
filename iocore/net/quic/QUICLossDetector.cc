@@ -192,13 +192,6 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
-  QUICLDDebug("Largest Acknowledged: %" PRIu64, ack_frame->largest_acknowledged());
-  QUICLDDebug("ACK Delay: %" PRIu64, ack_frame->ack_delay());
-  QUICLDDebug("ACK Block Count: %" PRIu64, ack_frame->ack_block_count());
-  if (ack_frame->ack_block_section()) {
-    QUICLDDebug("First ACK Block: %" PRIu64, ack_frame->ack_block_section()->first_ack_block());
-  }
-
   this->_largest_acked_packet = ack_frame->largest_acknowledged();
   // If the largest acked is newly acked, update the RTT.
   auto pi = this->_sent_packets.find(ack_frame->largest_acknowledged());

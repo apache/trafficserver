@@ -58,7 +58,9 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size, bool 
 
     // TODO: check debug build
     if (type != QUICFrameType::PADDING) {
-      Debug(tag, "type=%s, size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+      char msg[1024];
+      frame->debug_msg(msg, sizeof(msg));
+      Debug(tag, "[RX] %s", msg);
     }
 
     should_send_ack |= (type != QUICFrameType::PADDING && type != QUICFrameType::ACK);

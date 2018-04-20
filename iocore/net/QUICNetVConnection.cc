@@ -1092,8 +1092,6 @@ void
 QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                                  QUICFrameUPtr frame)
 {
-  QUICConVDebug("type=%s size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
-
   uint32_t max_size = this->maximum_quic_packet_size();
 
   QUICPacketType previous_packet_type = current_packet_type;
@@ -1120,7 +1118,12 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   }
 
   size_t l = 0;
-  QUICConDebug("type=%s size=%zu", QUICDebugNames::frame_type(frame->type()), frame->size());
+
+  // TODO: check debug build
+  char msg[1024];
+  frame->debug_msg(msg, sizeof(msg));
+  QUICConDebug("[TX] %s", msg);
+
   frame->store(buf.get() + len, &l);
   len += l;
 

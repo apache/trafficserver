@@ -45,6 +45,7 @@ public:
   virtual void store(uint8_t *buf, size_t *len) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   virtual bool is_protected() const;
+  virtual int debug_msg(char *msg, size_t msg_len) const;
   LINK(QUICFrame, link);
 
 protected:
@@ -69,6 +70,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   void store(uint8_t *buf, size_t *len, bool include_length_field) const;
   QUICStreamId stream_id() const;
@@ -198,6 +200,8 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
+
   bool is_protected() const override;
 
   QUICPacketNumber largest_acknowledged() const;

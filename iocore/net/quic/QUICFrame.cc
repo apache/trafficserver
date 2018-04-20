@@ -24,6 +24,7 @@
 #include "QUICFrame.h"
 #include "QUICStream.h"
 #include "QUICIntUtil.h"
+#include "QUICDebugNames.h"
 
 ClassAllocator<QUICStreamFrame> quicStreamFrameAllocator("quicStreamFrameAllocator");
 ClassAllocator<QUICAckFrame> quicAckFrameAllocator("quicAckFrameAllocator");
@@ -75,6 +76,12 @@ QUICFrame::is_protected() const
   return this->_protection;
 }
 
+int
+QUICFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "type=%s size=%zu", QUICDebugNames::frame_type(this->type()), this->size());
+}
+
 //
 // STREAM Frame
 //
@@ -106,6 +113,13 @@ void
 QUICStreamFrame::store(uint8_t *buf, size_t *len) const
 {
   this->store(buf, len, true);
+}
+
+int
+QUICStreamFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "type=STREAM size=%zu id=%" PRIu64 " offset=%" PRIu64 " data_len=%" PRIu64 " fin=%d", this->size(),
+                  this->stream_id(), this->offset(), this->data_length(), this->has_fin_flag());
 }
 
 void
@@ -379,6 +393,20 @@ QUICAckFrame::store(uint8_t *buf, size_t *len) const
   *len = p - buf;
 
   return;
+}
+
+int
+QUICAckFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  int len = snprintf(msg, msg_len, "type=ACK size=%zu largest_acked=%" PRIu64 " delay=%" PRIu64 " block_count=%" PRIu64,
+                     this->size(), this->largest_acknowledged(), this->ack_delay(), this->ack_block_count());
+  msg_len -= len;
+
+  if (this->ack_block_section()) {
+    len += snprintf(msg + len, msg_len, " first_ack_block=%" PRIu64, this->ack_block_section()->first_ack_block());
+  }
+
+  return len;
 }
 
 bool
