@@ -63,7 +63,7 @@ static const struct NetCmdOperation requests[] = {
   /* RECORD_DESCRIBE_CONFIG     */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT}},
   /* LIFECYCLE_MESSAGE          */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
   /* HOST_STATUS_HOST_UP        */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* HOST_STATUS_HOST_DOWN      */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
+  /* HOST_STATUS_HOST_DOWN      */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT}},
 };
 
 // Responses always begin with a TSMgmtError code, followed by additional fields.
@@ -178,6 +178,15 @@ send_mgmt_request(int fd, OpType optype, ...)
   }
 
   va_end(ap);
+
+  MgmtMarshallInt op;
+  MgmtMarshallString name;
+  int down_time;
+  static const MgmtMarshallType fieldso[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+
+  if (mgmt_message_parse(static_cast<void *>(req.ptr), msglen, fieldso, countof(fieldso), &op, &name, &down_time) == -1) {
+    printf("Plugin message - RPC parsing error - message discarded.\n");
+  }
 
   // Send the response as the payload of a data object.
   if (mgmt_message_write(fd, fields, countof(fields), &req) == -1) {
