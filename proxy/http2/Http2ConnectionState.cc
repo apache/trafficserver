@@ -336,6 +336,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
     // Set up the State Machine
     if (!empty_request) {
+      SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
       stream->new_transaction();
       // Send request header to SM
       stream->send_request(cstate);
@@ -810,6 +811,7 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     // Set up the State Machine
+    SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
     stream->new_transaction();
     // Send request header to SM
     stream->send_request(cstate);
@@ -1562,6 +1564,8 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     h2_hdr.destroy();
     return;
   }
+
+  SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
   if (Http2::stream_priority_enabled) {
     Http2DependencyTree::Node *node = this->dependency_tree->find(id);
     if (node != nullptr) {
