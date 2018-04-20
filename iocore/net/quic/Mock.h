@@ -148,13 +148,13 @@ public:
   QUICConnectionId
   connection_id() override
   {
-    return 0;
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
   QUICConnectionId
   original_connection_id() override
   {
-    return 0;
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
   const QUICFiveTuple

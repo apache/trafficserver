@@ -35,7 +35,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   pf.set_hs_protocol(&hs_protocol);
 
   QUICAckFrameCreator *afc         = new QUICAckFrameCreator();
-  QUICConnectionId connection_id   = 1;
+  QUICConnectionId connection_id   = {reinterpret_cast<const uint8_t *>("\x01"), 1};
   MockQUICPacketTransmitter *tx    = new MockQUICPacketTransmitter();
   MockQUICCongestionController *cc = new MockQUICCongestionController();
   QUICLossDetector detector(tx, cc);
@@ -55,7 +55,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
     memcpy(payload.get(), raw, sizeof(raw));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::HANDSHAKE, 0xffddbb9977553311ULL, 0x00000001, 0,
+    QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::HANDSHAKE, {reinterpret_cast<const uint8_t *>("\xff\xdd\xbb\x99\x77\x55\x33\x11"), 8}, 0x00000001, 0,
                                                           0x00112233, std::move(payload), sizeof(raw));
     QUICPacketUPtr packet =
       QUICPacketUPtr(new QUICPacket(std::move(header), std::move(payload), sizeof(raw), true), [](QUICPacket *p) { delete p; });

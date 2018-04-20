@@ -37,12 +37,11 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x00, 0x00, 0x00, 0x09,                         // Supported Version 1
     };
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0, 18);
     CHECK(header->size() == 13);
     CHECK(header->packet_size() == 21);
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
-    CHECK(header->has_connection_id() == true);
-    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK((header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x00000000);
     CHECK(header->has_key_phase() == false);
@@ -58,12 +57,11 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0xff, 0xff,                                     // Payload (dummy)
     };
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0, 18);
     CHECK(header->size() == 17);
     CHECK(header->packet_size() == 19);
     CHECK(header->type() == QUICPacketType::INITIAL);
-    CHECK(header->has_connection_id() == true);
-    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK((header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
     CHECK(header->packet_number() == 0x12345678);
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x11223344);
@@ -86,14 +84,13 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     memcpy(payload.get(), expected + 17, 5);
 
     QUICPacketHeaderUPtr header =
-      QUICPacketHeader::build(QUICPacketType::INITIAL, 0x0102030405060708, 0x12345678, 0, 0x11223344, std::move(payload), 32);
+      QUICPacketHeader::build(QUICPacketType::INITIAL,{reinterpret_cast<const uint8_t*>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8}, 0x12345678, 0, 0x11223344, std::move(payload), 32);
 
     CHECK(header->size() == 17);
     CHECK(header->has_key_phase() == false);
     CHECK(header->packet_size() == 0);
     CHECK(header->type() == QUICPacketType::INITIAL);
-    CHECK(header->has_connection_id() == true);
-    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK((header->destination_cid() ==  QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
     CHECK(header->packet_number() == 0x12345678);
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x11223344);
@@ -115,13 +112,12 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
       0xff, 0xff,                                     // Payload (dummy)
     };
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0, 18);
     CHECK(header->size() == 13);
     CHECK(header->packet_size() == 15);
     CHECK(header->has_key_phase() == true);
     CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);
-    CHECK(header->has_connection_id() == true);
-    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK((header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
     CHECK(header->packet_number() == 0x12345678);
     CHECK(header->has_version() == false);
   }
@@ -140,15 +136,14 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
 
     ats_unique_buf payload = ats_unique_malloc(5);
     memcpy(payload.get(), expected + 13, 5);
-    QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, 0x0102030405060708,
+    QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
                                                           0x12345678, 0, std::move(payload), 32);
     CHECK(header->size() == 13);
     CHECK(header->packet_size() == 0);
     CHECK(header->has_key_phase() == true);
     CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);
     CHECK(header->type() == QUICPacketType::PROTECTED);
-    CHECK(header->has_connection_id() == true);
-    CHECK(header->connection_id() == 0x0102030405060708);
+    CHECK((header->destination_cid() ==  QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
     CHECK(header->packet_number() == 0x12345678);
     CHECK(header->has_version() == false);
 

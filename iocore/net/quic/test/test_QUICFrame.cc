@@ -918,7 +918,7 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
     std::dynamic_pointer_cast<const QUICNewConnectionIdFrame>(frame1);
   CHECK(new_con_id_frame != nullptr);
   CHECK(new_con_id_frame->sequence() == 0x0102);
-  CHECK(new_con_id_frame->connection_id() == 0x1122334455667788ULL);
+  CHECK((new_con_id_frame->connection_id() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8)));
   CHECK(memcmp(new_con_id_frame->stateless_reset_token().buf(), buf1 + 11, 16) == 0);
 }
 
@@ -934,7 +934,7 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Stateless Reset Token
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
   };
-  QUICNewConnectionIdFrame new_con_id_frame(0x0102, 0x1122334455667788ULL, {expected + 11});
+  QUICNewConnectionIdFrame new_con_id_frame(0x0102, { reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8}, {expected + 11});
   CHECK(new_con_id_frame.size() == 27);
 
   new_con_id_frame.store(buf, &len);
@@ -1123,7 +1123,7 @@ TEST_CASE("QUICFrameFactory Create CONNECTION_CLOSE with a QUICConnectionError",
 
 TEST_CASE("QUICFrameFactory Create RST_STREAM with a QUICStreamError", "[quic]")
 {
-  QUICStream stream(new MockQUICRTTProvider(), 0, 0x1234, 0, 0);
+  QUICStream stream(new MockQUICRTTProvider(), QUICConnectionId::ZERO(), 0x1234, 0, 0);
   std::unique_ptr<QUICStreamError> error =
     std::unique_ptr<QUICStreamError>(new QUICStreamError(&stream, static_cast<QUICAppErrorCode>(0x01)));
   std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> rst_stream_frame1 =
@@ -1139,7 +1139,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
   QUICPacketFactory factory;
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
-  QUICPacketUPtr packet = factory.create_server_protected_packet(0x01020304, 0, {nullptr, [](void *p) { ats_free(p); }}, 0, true);
+  QUICPacketUPtr packet = factory.create_server_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0, {nullptr, [](void *p) { ats_free(p); }}, 0, true);
 
   SECTION("STREAM frame")
   {

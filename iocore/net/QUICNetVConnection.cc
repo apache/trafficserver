@@ -825,7 +825,7 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
-  if (packet->connection_id() != this->connection_id()) {
+  if (packet->destination_cid() != this->connection_id()) {
     QUICConDebug("Ignore Version Negotiation packet");
     return error;
   }
@@ -932,12 +932,12 @@ QUICNetVConnection::_state_common_receive_packet()
     switch (p->type()) {
     case QUICPacketType::PROTECTED:
       // Check connection migration
-      if (this->_handshake_handler->is_completed() && p->connection_id() != this->_quic_connection_id) {
-        if (this->_alt_con_manager->migrate_to(p->connection_id(), this->_reset_token)) {
+      if (this->_handshake_handler->is_completed() && p->destination_cid() != this->_quic_connection_id) {
+        if (this->_alt_con_manager->migrate_to(p->destination_cid(), this->_reset_token)) {
           // Migrate connection
           // TODO Address Validation
           // TODO Adjust expected packet number with a gap computed based on info.seq_num
-          this->_quic_connection_id = p->connection_id();
+          this->_quic_connection_id = p->destination_cid();
           Connection con;
           con.setRemote(&p->from().sa);
           this->con.move(con);
@@ -1264,7 +1264,7 @@ QUICErrorUPtr
 QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
 {
   const uint8_t *payload      = packet->payload();
-  uint16_t size               = packet->payload_size();
+  uint16_t size               = packet->payload_length();
   QUICPacketNumber packet_num = packet->packet_number();
 
   if (packet_num > this->_largest_received_packet_number) {

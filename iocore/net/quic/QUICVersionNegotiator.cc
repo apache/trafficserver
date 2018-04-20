@@ -44,7 +44,7 @@ QUICVersionNegotiator::negotiate(const QUICPacket *packet)
   }
   case QUICPacketType::VERSION_NEGOTIATION: {
     const uint8_t *supported_versions = packet->payload();
-    uint16_t supported_versions_len   = packet->payload_size();
+    uint16_t supported_versions_len   = packet->payload_length();
     uint16_t len                      = 0;
 
     while (len < supported_versions_len) {

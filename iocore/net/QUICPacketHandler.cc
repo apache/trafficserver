@@ -74,7 +74,7 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
 
   // NOTE: p will be enqueued to udpOutQueue of UDPNetHandler
   ip_port_text_buffer ipb;
-  Debug("quic_sec", "[%" PRIx64 "] send %s packet to %s, size=%" PRId64, static_cast<uint64_t>(packet.connection_id()),
+  Debug("quic_sec", "[%" PRIx64 "] send %s packet to %s, size=%" PRId64, static_cast<uint64_t>(packet.destination_cid()),
         QUICDebugNames::packet_type(packet.type()), ats_ip_nptop(&udp_packet->to.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
 
   udp_con->send(c, udp_packet);

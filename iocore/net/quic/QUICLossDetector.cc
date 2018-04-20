@@ -133,7 +133,7 @@ void
 QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
 {
   if (this->_connection_id.is_zero() && packet->type() != QUICPacketType::VERSION_NEGOTIATION) {
-    this->_connection_id = packet->connection_id();
+    this->_connection_id = packet->destination_cid();
   }
 
   bool is_handshake   = false;

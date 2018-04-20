@@ -38,7 +38,7 @@ TEST_CASE("1-RTT handshake ", "[quic]")
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
 
-  QUICConnectionId client_conn_id = 0x12345;
+  QUICConnectionId client_conn_id = {reinterpret_cast<const uint8_t *>("\x01\x23\x45"), 3};
 
   QUICHandshake *client = new QUICHandshake(client_qc, client_ssl_ctx);
 
@@ -54,7 +54,7 @@ TEST_CASE("1-RTT handshake ", "[quic]")
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
 
-  QUICConnectionId conn_id = 0;
+  QUICConnectionId conn_id = QUICConnectionId::ZERO();
   QUICStatelessResetToken server_token;
   server_token.generate(conn_id, 0);
 

@@ -56,7 +56,7 @@ TEST_CASE("QUICKeyGenerator", "[quic]")
   {
     QUICKeyGenerator keygen(QUICKeyGenerator::Context::CLIENT);
 
-    QUICConnectionId cid          = 0x8394c8f03e515708;
+    QUICConnectionId cid          = {reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x08"), 8};
     uint8_t expected_client_key[] = {0x3a, 0xd0, 0x54, 0x2c, 0x4a, 0x85, 0x84, 0x74,
                                      0x00, 0x63, 0x04, 0x9e, 0x3b, 0x3c, 0xaa, 0xb2};
     uint8_t expected_client_iv[]  = {0xd1, 0xfd, 0x26, 0x05, 0x42, 0x75, 0x3a, 0xba, 0x38, 0x58, 0x9b, 0xad};
@@ -73,7 +73,7 @@ TEST_CASE("QUICKeyGenerator", "[quic]")
   {
     QUICKeyGenerator keygen(QUICKeyGenerator::Context::SERVER);
 
-    QUICConnectionId cid          = 0x8394c8f03e515708;
+    QUICConnectionId cid          = {reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x08"), 8};
     uint8_t expected_server_key[] = {0xbe, 0xe4, 0xc2, 0x4d, 0x2a, 0xf1, 0x33, 0x80,
                                      0xa9, 0xfa, 0x24, 0xa5, 0xe2, 0xba, 0x2c, 0xff};
     uint8_t expected_server_iv[]  = {0x25, 0xb5, 0x8e, 0x24, 0x6d, 0x9e, 0x7d, 0x5f, 0xfe, 0x43, 0x23, 0xfe};

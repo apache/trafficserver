@@ -122,8 +122,8 @@ TEST_CASE("QUICHndshakeProtocol Cleartext", "[quic]")
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
   QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
 
-  CHECK(client->initialize_key_materials(0x8394c8f03e515700));
-  CHECK(server->initialize_key_materials(0x8394c8f03e515700));
+  CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+  CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
   // encrypt - decrypt
   // client (encrypt) - server (decrypt)
@@ -173,8 +173,8 @@ TEST_CASE("QUICHandshakeProtocol 1-RTT", "[quic]")
   SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
   QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
 
-  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
-  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+  CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
@@ -269,8 +269,8 @@ TEST_CASE("QUICHandshakeProtocol 1-RTT HRR key_share mismatch", "[quic]")
 
   QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
 
-  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
-  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+  CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
@@ -384,8 +384,8 @@ TEST_CASE("QUICHandshakeProtocol 1-RTT HRR statless", "[quic]")
   bool stateless                = true;
   QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN, stateless);
 
-  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
-  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+  CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
@@ -507,8 +507,8 @@ TEST_CASE("QUICHandshakeProtocol 1-RTT HRR statless & key_share mismatch", "[qui
   bool stateless                = true;
   QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN, stateless);
 
-  CHECK(client->initialize_key_materials(0x8394c8f03e515708));
-  CHECK(server->initialize_key_materials(0x8394c8f03e515708));
+  CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+  CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
   // Client Hello
   uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
