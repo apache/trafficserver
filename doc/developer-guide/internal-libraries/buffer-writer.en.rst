@@ -30,7 +30,8 @@ Synopsis
 
 .. code-block:: cpp
 
-   #include <ts/BufferWriter.h>
+   #include <ts/BufferWriterForward.h> // Forward declarations
+   #include <ts/BufferWriter.h> // Full
 
 Description
 +++++++++++
@@ -42,9 +43,10 @@ past the end, while tracking the theoretical output to enable buffer resizing af
 also lets a :class:`BufferWriter` instance write into the middle of a larger buffer, making nested
 output logic easy to build.
 
-The header files are divided in to two variants. ``BufferWriter.h`` provides the basic capabilities
-of buffer output control. ``BufferWriterFormat.h`` provides formatted output mechanisms, primarily
-the implementation and ancillary classes for :func:`BufferWriter::print`.
+The header files are divided in to two variants. :ts:git:`lib/ts/BufferWriter.h` provides the basic
+capabilities of buffer output control. :ts:git:`lib/ts/BufferWriterFormat.h` provides the basic
+formatted output mechanisms, primarily the implementation and ancillary classes for
+:class:`BWFSpec` which is used to build formatters.
 
 :class:`BufferWriter` is an abstract base class, in the style of :code:`std::ostream`. There are
 several subclasses for various use cases. When passing around this is the common type.
@@ -68,9 +70,11 @@ can be more compactly and robustly done as:
 
    ts::LocalBufferWriter<1024> w;
 
-In many cases using :class:`LocalBufferWriter` this is the only place the size of the buffer needs
-to be specified, and therefore can simply be a constant without the overhead of defining a size to
-maintain consistency.
+In many cases, when using :class:`LocalBufferWriter` this is the only place the size of the buffer
+needs to be specified and therefore can simply be a constant without the overhead of defining a size
+to maintain consistency. The choice between :class:`LocalBufferWriter` and :class:`FixedBufferWriter`
+comes down to the owner of the buffer - the former has its own buffer while the latter operates on
+a buffer owned by some other object.
 
 Writing
 -------
@@ -86,19 +90,15 @@ There are also stream operators in the style of C++ stream I/O. The basic templa
 
    template < typename T > ts::BufferWriter& operator << (ts::BufferWriter& w, T const& t);
 
-Several basic types are overloaded and it is easy to extend to additional types. For instance, to make :code:`ts::TextView` work with :class:`BufferWriter`, the code would be
-
-.. code-block:: cpp
-
-   ts::BufferWriter & operator << (ts::BufferWriter & w, TextView const & sv) {
-      w.write(sv.data(), sv.size());
-      return w;
-   }
+The stream operators are provided as a convenience, the primary mechanism for formatted output is
+via overloading the :func:`bwformat` function. Except for a limited set of cases the stream operators
+are implemented by calling :func:`bwformat` with the Buffer Writer, the argument, and a default
+format specification.
 
 Reading
 -------
 
-The data in the buffer can be extracted using :func:`BufferWriter::data`. This and
+Data in the buffer can be extracted using :func:`BufferWriter::data`. This and
 :func:`BufferWriter::size` return a pointer to the start of the buffer and the amount of data
 written to the buffer. This is very similar to :func:`BufferWriter::view` which returns a
 :class:`string_view` which covers the output data. Calling :func:`BufferWriter::error` will indicate
@@ -187,8 +187,13 @@ becomes
    }
    w << ']';
 
-Note that in addition there will be no overrun on the memory buffer in :arg:`w`, in strong contrast
+In addition there will be no overrun on the memory buffer in :arg:`w`, in strong contrast
 to the original code.
+
+.. note::
+
+   Work is ongoing to provide formatted output for increased ease of use, particulary with types that
+   are commonly printed but hard to format well, such as IP addresses.
 
 Reference
 +++++++++
@@ -304,6 +309,17 @@ Reference
 
       Construct an instance with a capacity of :arg:`N`.
 
+.. class:: BWFSpec
+
+   This holds a format specifier. It has the parsing logic for a specifier and if the constructor is
+   passed a :class:`string_view` of a specifier, that will parse it and loaded into the class
+   members. This is useful to specialized implementations of :func:`bwformat`.
+
+.. function:: template<typename V> BufferWriter& bwformat(BufferWriter & w, BWFSpec const & spec, V const & v)
+
+   A family of overloads that perform formatted output on a :class:`BufferWriter`. The set of types
+   supported can be extended by defining an overload of this function for the types.
+
 .. _bw-formatting:
 
 Formatted Output
@@ -353,7 +369,7 @@ arguments in generating out in the buffer. The basic format is divided in to thr
       min: integer
       precision: integer
       max: integer
-      type: "x" | "o" | "b"
+      type: "g" | "s" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
 
    The output is placed in a field that is at least :token:`min` wide and no more than :token:`max` wide. If
    the output is less than :token:`min` then
@@ -375,19 +391,29 @@ arguments in generating out in the buffer. The basic format is divided in to thr
             Numerically align, putting the fill between the output and the sign character.
 
    The output is clipped by :token:`max` width characters or the end of the buffer. :token:`precision` is used by
-   floating point values to specify the number of places of precision. The precense of the ``#`` character is used for
-   integer values and causes a radix indicator to be used (one of ``0xb``, ``0``, ``0x``).
+   floating point values to specify the number of places of precision.
 
-   :token:`type` is used to indicate type specific formatting. For integers it indicates the output
-   radix. If ``#`` is present the radix is prefix is generated with case matching that of the type
-   (e.g. type ``x`` causes ``0x`` and type ``X`` causes ``0X``).
+   :token:`type` is used to indicate type specific formatting. For integers it indicates the output radix and
+   if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``, ``0x``). Format types of the same
+   letter are  equivalent, varying only in the character case used for output. Most common, 'x' prints values in
+   lower cased hexadecimal (:code:`0x1337beef`) while 'X' prints in upper case hexadecimal (:code:`0X1337BEEF`).
 
       = ===============
       b binary
+      B Binary
+      d decimal
       o octal
       x hexadecimal
+      X Hexadecimal
+      p pointer (hexadecimal address)
+      P Pointer (Hexidecimal address)
+      s string
       = ===============
 
+   For several specializations the hexadecimal format is taken to indicate printing the value as if
+   it were a hexidecimal value, in effect providing a hex dump of the value. This is the case for
+   :class:`string_view` and therefore a hex dump of an object can be done by creating a
+   :class:`string_view` covering the data and then printing it with :code:`{:x}`.
 
 :arg:`extension`
    Text (excluding braces) that is passed to the formatting function. This can be used to provide
@@ -407,10 +433,62 @@ When an value needs to be formatted an overloaded function for type :code:`V` is
 This can (and should be) overloaded for user defined types. This makes it easier and cheaper to
 build one overload on another by tweaking the :arg:`spec` as it passed through. The calling
 framework will handle basic alignment, the overload does not need to unless the alignment
-requirements are more detailed (e.g. integer alignment operations).
+requirements are more detailed (e.g. integer alignment operations) or performance is critical.
 
 The output stream operator :code:`operator<<` is defined to call this function with a default
 constructed :code:`BWFSpec` instance.
+
+Specialized Types
++++++++++++++++++
+
+:class:`string_view`
+   Generally the contents of the view.
+
+   'x' or 'X'
+      A hexadecimal dump of the contents of the view in lower ('x') or upper ('X') case.
+
+   'p' or 'P'
+      The pointer and length value of the view in lower ('p') or upper ('P') case.
+
+:code:`sockaddr const*`
+   The IP address is printed. Fill is used to fill in address segments if provided, not to the
+   minimum width if specified. :class:`IpEndpoint` is also supported with the same formatting.
+
+   'p' or 'P'
+      The pointer address is printed as a hexadecimal pointer lower ('p') or upper ('P') case
+
+   The extension can be used to control which parts of the address are printed. These can be in any order,
+   the output is always address, port, family. The default is the equivalent of "ap". In addition, the
+   character '^' ("numeric align") can be used to internally right justify the elements.
+
+   'a'
+      The address.
+
+   'p'
+      The port (host order).
+
+   'f'
+      The IP address family.
+
+   '^'
+      Internally justify the numeric values. This must be the first or second character. If it is the second
+      the first character is treated as the internal fill character. If omitted '0' (zero) is used.
+
+   E.g.
+
+   .. code-block:: cpp
+
+      sockaddr const* addr;
+      bw.print("Connecting to {}", addr); // -> "Connecting to 172.19.3.105:49951"
+      bw.print("Connecting to {0::a} on port {0::p}", addr); // no need to pass the argument twice.
+      bw.print("Using address family {::f}", addr);
+      bw.print("{::a}",addr);      // -> "172.19.3.105"
+      bw.print("{::^a}",addr);     // -> "172.019.003.105"
+      bw.print("{::0^a}",addr);    // -> "172.019.003.105"
+      bw.print("{:: ^a}",addr);    // -> "172. 19.  3.105"
+      bw.print("{:>20:a}",addr);   // -> "        172.19.3.105"
+      bw.print("{:>20:^a}",addr);  // -> "     172.019.003.105"
+      bw.print("{:>20: ^a}",addr); // -> "     172. 19.  3.105"
 
 Futures
 +++++++
