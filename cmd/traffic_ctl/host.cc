@@ -52,12 +52,19 @@ status_get(unsigned argc, const char **argv)
 static int
 status_down(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments < 1) {
-    return CtrlCommandUsage("host down HOST  value", nullptr, 0);
+  int down_time     = 0;
+  const char *usage = "host down HOST [OPTIONS]";
+
+  const ArgumentDescription opts[] = {
+    {"time", 'I', "number of seconds that a host is marked down", "I", &down_time, nullptr, nullptr}};
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
+    return CtrlCommandUsage(usage, opts, countof(opts));
   }
+
   TSMgmtError error = TS_ERR_OKAY;
   for (unsigned i = 0; i < n_file_arguments; ++i) {
-    error = TSHostStatusSetDown(file_arguments[i]);
+    error = TSHostStatusSetDown(file_arguments[i], down_time);
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to set %s", file_arguments[i]);
       return CTRL_EX_ERROR;

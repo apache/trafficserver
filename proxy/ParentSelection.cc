@@ -370,7 +370,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
         } else {
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", fqdn, line_num);
           hs.createHostStat(fqdn);
-          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN);
+          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN, 0);
         }
       }
     } else {
@@ -383,7 +383,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", token,
                 line_num);
           hs.createHostStat(token);
-          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN);
+          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN, 0);
         }
       }
     }
@@ -1429,7 +1429,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // Test 184
   // mark fuzzy down with HostStatus API.
   HostStatus &_st = HostStatus::instance();
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
 
   ST(184);
   REINIT;
@@ -1440,7 +1440,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 185
   // mark fluffy down and expect furry to be chosen
-  _st.setHostStatus("fluffy", HOST_STATUS_DOWN);
+  _st.setHostStatus("fluffy", HOST_STATUS_DOWN, 0);
 
   ST(185);
   REINIT;
@@ -1451,9 +1451,9 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 186
   // mark furry and frisky down, fuzzy up and expect fuzzy to be chosen
-  _st.setHostStatus("furry", HOST_STATUS_DOWN);
-  _st.setHostStatus("frisky", HOST_STATUS_DOWN);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+  _st.setHostStatus("furry", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("frisky", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
 
   ST(186);
   REINIT;
@@ -1471,10 +1471,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REBUILD;
 
   // mark all up.
-  _st.setHostStatus("furry", HOST_STATUS_UP);
-  _st.setHostStatus("fluffy", HOST_STATUS_UP);
-  _st.setHostStatus("frisky", HOST_STATUS_UP);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+  _st.setHostStatus("furry", HOST_STATUS_UP, 0);
+  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("frisky", HOST_STATUS_UP, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
 
   REINIT;
   br(request, "i.am.rabbit.net");
@@ -1484,7 +1484,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 188
   // mark fuzzy down and expect fluffy.
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
 
   ST(188);
   REINIT;
@@ -1495,7 +1495,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 189
   // mark fuzzy back up and expect fuzzy.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
 
   ST(189);
   REINIT;
@@ -1511,7 +1511,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // because the host status is set to down.
   params->markParentDown(result, fail_threshold, retry_time);
   // set host status down
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
   // sleep long enough so that fuzzy is retryable
   sleep(params->policy.ParentRetryTime + 1);
   ST(190);
@@ -1522,7 +1522,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // now set the host staus on fuzzy to up and it should now
   // be retried.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
   ST(191);
   REINIT;
   br(request, "i.am.rabbit.net");
@@ -1535,10 +1535,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=false go_direct=true\n");
   REBUILD;
   // mark all up.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
-  _st.setHostStatus("fluffy", HOST_STATUS_UP);
-  _st.setHostStatus("furry", HOST_STATUS_UP);
-  _st.setHostStatus("frisky", HOST_STATUS_UP);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("furry", HOST_STATUS_UP, 0);
+  _st.setHostStatus("frisky", HOST_STATUS_UP, 0);
   // fuzzy should be chosen.
   sleep(1);
   REINIT;
@@ -1553,7 +1553,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   sleep(params->policy.ParentRetryTime + 1);
   // since the host status is down even though fuzzy is
   // retryable, fluffy should be chosen
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1563,7 +1563,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // set the host status for fuzzy  back up and since its
   // retryable fuzzy should be chosen
   ST(194);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1684,7 +1684,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   T("dest_domain=rabbit.net parent=fuzzy:80|1.0;fluffy:80|1.0 secondary_parent=furry:80|1.0;frisky:80|1.0 "
     "round_robin=consistent_hash go_direct=false secondary_mode=3\n");
   REBUILD;
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
