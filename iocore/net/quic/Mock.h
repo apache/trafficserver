@@ -507,3 +507,11 @@ public:
     return EVENT_CONT;
   }
 };
+
+class MockQUICRTTProvider : public QUICRTTProvider
+{
+  ink_hrtime smoothed_rtt() const
+  {
+    return HRTIME_MSECONDS(1);
+  }
+};
