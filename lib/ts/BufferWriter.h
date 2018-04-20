@@ -806,4 +806,3 @@ operator<<(ostream &s, ts::BufferWriter const &w)
   return w >> s;
 }
 } // end namespace std
-

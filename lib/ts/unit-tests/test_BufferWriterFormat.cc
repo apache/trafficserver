@@ -24,8 +24,8 @@
 #include "catch.hpp"
 #include <chrono>
 #include <iostream>
-#include <atomic>
 #include <ts/BufferWriter.h>
+#include <ts/bwf_std_format.h>
 #include <ts/MemSpan.h>
 #include <ts/INK_MD5.h>
 #include <ts/CryptoHash.h>
