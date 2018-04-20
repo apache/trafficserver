@@ -128,6 +128,7 @@ QUICClientApp::start(const char *path)
   QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
 
   stream_io->write(reinterpret_cast<uint8_t *>(request), request_len);
+  stream_io->shutdown();
   stream_io->write_reenable();
 }
 
