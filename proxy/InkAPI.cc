@@ -5565,7 +5565,7 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
 
   sm->ua_txn->set_outbound_port(ats_ip_port_host_order(addr));
   sm->ua_txn->set_outbound_ip(IpAddr(addr));
-  return TS_ERROR;
+  return TS_SUCCESS;
 }
 
 sockaddr const *
