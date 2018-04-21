@@ -53,8 +53,8 @@ struct BWFSpec {
     NONE,                            ///< No alignment.
     LEFT,                            ///< Left alignment '<'.
     RIGHT,                           ///< Right alignment '>'.
-    CENTER,                          ///< Center alignment '='.
-    SIGN                             ///< Align plus/minus sign before numeric fill. '^'
+    CENTER,                          ///< Center alignment '^'.
+    SIGN                             ///< Align plus/minus sign before numeric fill. '='
   } _align           = Align::NONE;  ///< Output field alignment.
   char _type         = DEFAULT_TYPE; ///< Type / radix indicator.
   bool _radix_lead_p = false;        ///< Print leading radix indication.
@@ -68,6 +68,19 @@ struct BWFSpec {
 
   static const self_type DEFAULT;
 
+  /// Validate @a c is a specifier type indicator.
+  static bool is_type(char c);
+  /// Check if the type flag is numeric.
+  static bool is_numeric_type(char c);
+  /// Check if the type is an upper case variant.
+  static bool is_upper_case_type(char c);
+  /// Check if the type @a in @a this is numeric.
+  bool has_numeric_type() const;
+  /// Check if the type in @a this is an upper case variant.
+  bool has_upper_case_type() const;
+  /// Check if the type is a raw pointer.
+  bool has_pointer_type() const;
+
 protected:
   /// Validate character is alignment character and return the appropriate enum value.
   Align align_of(char c);
@@ -75,26 +88,60 @@ protected:
   /// Validate is sign indicator.
   bool is_sign(char c);
 
-  /// Validate @a c is a specifier type indicator.
-  bool is_type(char c);
+  /// Handrolled initialization the character syntactic property data.
+  static const struct Property {
+    Property(); ///< Default constructor, creates initialized flag set.
+    /// Flag storage, indexed by character value.
+    uint8_t _data[0x100];
+    /// Flag mask values.
+    static constexpr uint8_t ALIGN_MASK        = 0x0F; ///< Alignment type.
+    static constexpr uint8_t TYPE_CHAR         = 0x10; ///< A valid type character.
+    static constexpr uint8_t UPPER_TYPE_CHAR   = 0x20; ///< Upper case flag.
+    static constexpr uint8_t NUMERIC_TYPE_CHAR = 0x40; ///< Numeric output.
+    static constexpr uint8_t SIGN_CHAR         = 0x80; ///< Is sign character.
+  } _prop;
 };
 
 inline BWFSpec::Align
 BWFSpec::align_of(char c)
 {
-  return '<' == c ? Align::LEFT : '>' == c ? Align::RIGHT : '=' == c ? Align::CENTER : '^' == c ? Align::SIGN : Align::NONE;
+  return static_cast<Align>(_prop._data[static_cast<unsigned>(c)] & Property::ALIGN_MASK);
 }
 
 inline bool
 BWFSpec::is_sign(char c)
 {
-  return '+' == c || '-' == c || ' ' == c;
+  return _prop._data[static_cast<unsigned>(c)] & Property::SIGN_CHAR;
 }
 
 inline bool
 BWFSpec::is_type(char c)
 {
-  return 'x' == c || 'X' == c || 'o' == c || 'b' == c || 'B' == c || 'd' == c || 's' == c || 'S' == c;
+  return _prop._data[static_cast<unsigned>(c)] & Property::TYPE_CHAR;
+}
+
+inline bool
+BWFSpec::is_upper_case_type(char c)
+{
+  return _prop._data[static_cast<unsigned>(c)] & Property::UPPER_TYPE_CHAR;
+}
+
+inline bool
+BWFSpec::has_numeric_type() const
+{
+  return _prop._data[static_cast<unsigned>(_type)] & Property::NUMERIC_TYPE_CHAR;
+}
+
+inline bool
+BWFSpec::has_upper_case_type() const
+{
+  return _prop._data[static_cast<unsigned>(_type)] & Property::UPPER_TYPE_CHAR;
+}
+
+inline bool
+BWFSpec::has_pointer_type() const
+{
+  return _type == 'p' || _type == 'P';
 }
 
 class BWFormat;

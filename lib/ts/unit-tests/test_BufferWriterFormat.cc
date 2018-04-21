@@ -25,6 +25,7 @@
 #include <chrono>
 #include <iostream>
 #include <ts/BufferWriter.h>
+#include <ts/bwf_std_format.h>
 #include <ts/MemSpan.h>
 #include <ts/INK_MD5.h>
 #include <ts/CryptoHash.h>
@@ -68,19 +69,19 @@ TEST_CASE("bwprint basics", "[bwprint]")
   bw.print("right |{:.>10}|", "text");
   REQUIRE(bw.view() == "right |......text|");
   bw.reduce(0);
-  bw.print("center |{:.=10}|", "text");
+  bw.print("center |{:.^10}|", "text");
   REQUIRE(bw.view() == "center |...text...|");
   bw.reduce(0);
-  bw.print("center |{:.=11}|", "text");
+  bw.print("center |{:.^11}|", "text");
   REQUIRE(bw.view() == "center |...text....|");
   bw.reduce(0);
-  bw.print("center |{:==10}|", "text");
-  REQUIRE(bw.view() == "center |===text===|");
+  bw.print("center |{:^^10}|", "text");
+  REQUIRE(bw.view() == "center |^^^text^^^|");
   bw.reduce(0);
-  bw.print("center |{:%3A=10}|", "text");
+  bw.print("center |{:%3A^10}|", "text");
   REQUIRE(bw.view() == "center |:::text:::|");
   bw.reduce(0);
-  bw.print("left >{0:<9}< right >{0:>9}< center >{0:=9}<", 956);
+  bw.print("left >{0:<9}< right >{0:>9}< center >{0:^9}<", 956);
   REQUIRE(bw.view() == "left >956      < right >      956< center >   956   <");
 
   bw.reduce(0);
@@ -121,14 +122,22 @@ TEST_CASE("bwprint basics", "[bwprint]")
   bw.print("Arg {0} Arg {{{{}}}} {}", 9, 10);
   REQUIRE(bw.view() == "Arg 9 Arg {{}} 10");
   bw.reduce(0);
-  bw.print("Time is {now}");
-  //  REQUIRE(bw.view() == "Time is");
+
+  bw.reset().print("{leif}");
+  REQUIRE(bw.view() == "{~leif~}"); // expected to be missing.
+
+  bw.reset().print("Thread: {thread-name} [{thread-id:#x}] - Tick: {tick} - Epoch: {now} - timestamp: {timestamp} {0}\n", 31267);
+  // std::cout << bw;
+  /*
+  std::cout << ts::LocalBufferWriter<256>().print(
+    "Thread: {thread-name} [{thread-id:#x}] - Tick: {tick} - Epoch: {now} - timestamp: {timestamp} {0}{}", 31267, '\n');
+  */
 }
 
-TEST_CASE("BWFormat", "[bwprint][bwformat]")
+TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
 {
   ts::LocalBufferWriter<256> bw;
-  ts::BWFormat fmt("left >{0:<9}< right >{0:>9}< center >{0:=9}<");
+  ts::BWFormat fmt("left >{0:<9}< right >{0:>9}< center >{0:^9}<");
   ts::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
 
   bw.reduce(0);
@@ -195,7 +204,7 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.print("|{:>16x}|", sv);
   REQUIRE(bw.view() == "|    616263313233|");
   bw.reduce(0);
-  bw.print("|{:=16x}|", sv);
+  bw.print("|{:^16x}|", sv);
   REQUIRE(bw.view() == "|  616263313233  |");
   bw.reduce(0);
   bw.print("|{:>16.2x}|", sv);
@@ -220,15 +229,15 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.print("|{:>9s}|", false);
   REQUIRE(bw.view() == "|    false|");
   bw.reduce(0);
-  bw.print("|{:=10s}|", true);
+  bw.print("|{:^10s}|", true);
   REQUIRE(bw.view() == "|   true   |");
 
   // Test clipping a bit.
   ts::LocalBufferWriter<20> bw20;
-  bw20.print("0123456789abc|{:=10s}|", true);
+  bw20.print("0123456789abc|{:^10s}|", true);
   REQUIRE(bw20.view() == "0123456789abc|   tru");
   bw20.reduce(0);
-  bw20.print("012345|{:=10s}|6789abc", true);
+  bw20.print("012345|{:^10s}|6789abc", true);
   REQUIRE(bw20.view() == "012345|   true   |67");
 
   INK_MD5 md5;
@@ -239,6 +248,11 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.reduce(0);
   bw.print("{}", md5);
   REQUIRE(bw.view() == "e99a18c428cb38d5f260853678922e03");
+
+  bw.reset().print("Char '{}'", 'a');
+  REQUIRE(bw.view() == "Char 'a'");
+  bw.reset().print("Byte '{}'", uint8_t{'a'});
+  REQUIRE(bw.view() == "Byte '97'");
 }
 
 TEST_CASE("bwstring", "[bwprint][bwstring]")
@@ -316,6 +330,13 @@ TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "1        2    2");
   bwformat(bw, center, three_n);
   REQUIRE(bw.view() == "1        2    2 -3  ");
+
+  std::atomic<int> ax{0};
+  bw.reset().print("ax == {}", ax);
+  REQUIRE(bw.view() == "ax == 0");
+  ++ax;
+  bw.reset().print("ax == {}", ax);
+  REQUIRE(bw.view() == "ax == 1");
 }
 
 TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
