@@ -5461,16 +5461,13 @@ HttpSM::handle_server_setup_error(int event, void *data)
     }
   }
 
-  if (event == VC_EVENT_ERROR) {
-    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
-  }
-
   switch (event) {
   case VC_EVENT_EOS:
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     break;
   case VC_EVENT_ERROR:
-    t_state.current.state = HttpTransact::CONNECTION_ERROR;
+    t_state.current.state        = HttpTransact::CONNECTION_ERROR;
+    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
     break;
   case VC_EVENT_ACTIVE_TIMEOUT:
     t_state.current.state = HttpTransact::ACTIVE_TIMEOUT;
@@ -5482,13 +5479,17 @@ HttpSM::handle_server_setup_error(int event, void *data)
     //   server failed
     // In case of TIMEOUT, the iocore sends back
     // server_entry->read_vio instead of the write_vio
-    // if (vio->op == VIO::WRITE && vio->ndone == 0) {
-    if (server_entry && server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
+    if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
     } else {
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;
     }
+    break;
+  default:
+    ink_release_assert(0);
+  }
 
+  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR) {
     // Clean up the vc_table entry so any events in play to the timed out server vio
     // don't get handled.  The connection isn't there.
     if (server_entry) {
@@ -5497,9 +5498,6 @@ HttpSM::handle_server_setup_error(int event, void *data)
       server_entry   = nullptr;
       server_session = nullptr;
     }
-    break;
-  default:
-    ink_release_assert(0);
   }
 
   // Closedown server connection and deallocate buffers
