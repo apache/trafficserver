@@ -271,8 +271,11 @@ with the values of arguments to the print function.
 
 The primary use case for formatting is formatted output to fixed buffers. This is by far the
 dominant style of output in |TS| and during the design phase I was told any performance loss must be
-minimal. While work has and will be done to extent :class:`BufferWriter` to operate on non-fixed
-buffers such use is secondary to operating directly on memory.
+minimal. While work has and will be done to extend :class:`BufferWriter` to operate on non-fixed
+buffers, such use is secondary to operating directly on memory.
+
+The overriding design goal is to provide the type specific formatting and flexibility of C++ stream
+operators with the performance of :code:`snprintf` and :code:`memcpy`.
 
 Type safe formatting has two major benefits -
 
@@ -282,10 +285,11 @@ Type safe formatting has two major benefits -
    choice <https://github.com/apache/trafficserver/pull/3476/files>`__. In addition the number of
    arguments can be verified to be correct which is often useful.
 
-*  Formatting can be customized per type or even per partial type (e.g. :code:`T *` for generic
+*  Formatting can be customized per type or even per partial type (e.g. :code:`T*` for generic
    :code:`T`). This enables embedding common formatting work in the format system once, rather than
    duplicating it in many places (e.g. converting enum values to names). This makes it easier for
-   developers to make useful error messages.
+   developers to make useful error messages. See :ref:`this example <bwf-http-debug-name-example>`
+   for more detail.
 
 As a result of these benefits there exist substitutes for :code:`printf`. Unfortunately most of
 these are rather project specific and don't suit the use case in |TS|. The two best options,
@@ -312,6 +316,11 @@ As noted previously and in the Python and even :code:`printf` way, a format stri
 literal text in which formats are embedded. Each format marks a place where formatted data of
 an argument will be placed, along with argument specific formatting. The format is divided in to
 three parts, separated by colons.
+
+While this seems a bit complex, all of it is optional. If default output is acceptable, then BWF
+will work with just the format ``{}``. In a sense, ``{}`` servers the same function for output as
+:code:`auto` does for programming - the compiler knows the type, it should be able to do the appropriate
+thing without the programmer needing to be explicit.
 
 .. productionList:: Format
    format: "{" [name] [":" [specifier] [":" extension]] "}"
@@ -422,8 +431,8 @@ three parts, separated by colons.
    but passes it on to the formatting function which can then behave different based on the
    extension.
 
-While this seems a bit complex, all of it is optional. If default output is acceptable, then BWF
-will work with just the format ``{}``.
+Usage Examples
+--------------
 
 Some examples, comparing :code:`snprintf` and :func:`BufferWriter::print`. ::
 
@@ -455,19 +464,22 @@ Some examples, comparing :code:`snprintf` and :func:`BufferWriter::print`. ::
 
    bw.print("Number of items {}", thing->count());
 
-Enumerations ::
+Enumerations become easier. Note in this case argument indices are used in order to print both a
+name and a value for the enumeration. The internal implementation of this is :ref:`here
+<bwf-http-debug-name-example>` ::
 
    if (len > 0) {
-      auto n = snprintf(buff, len, "Unexpected event %s[%d] for '%c' to %.*s",
-         HttpDebugNames::get_event_name(event),
-         static_cast<int>(event), current_char,
+      auto n = snprintf(buff, len, "Unexpected event %d in state %s[%d] for %.*s",
+         event,
+         HttpDebugNames::get_server_state_name(t_state.current.state),
+         t_state.current.state,
          static_cast<int>(host_len), host);
       buff += n;
       len -= n;
    }
 
-   bw.print("Unexpected event {0:s}[{0}] for '{1}' to {2}",
-      event, current_char, string_view{host, host_len});
+   bw.print("Unexpected event {0} in state {1}[{1:d}] for {2}",
+      event, t_state.current.state, string_view{host, host_len});
 
 Using :code:`std::string` ::
 
@@ -539,8 +551,44 @@ To help reduce duplication, the output stream operator :code:`operator<<` is def
 function with a default constructed :code:`BWFSpec` instance so that absent a specific overload
 a BWF formatter will also provide a C++ stream output operator.
 
+Enum Example
+------------
+
+.. _bwf-http-debug-name-example:
+
+For a specific example of using BufferWriter formatting to make debug messages easier, consider the
+case of :code:`HttpDebugNames`. This is a class that serves as a namespace to provide various
+methods that convert state machine related data into descriptive strings. Currently this is
+undocumented (and even uncommented) and is therefore used infrequently, as that requires either
+blind cut and paste, or tracing through header files to understand the code. This can be greatly
+simplified by adding formatters to :ts:git:`proxy/http/HttpDebugNames.h` ::
+
+   inline ts::BufferWriter &
+   bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::ServerState_t state)
+   {
+      if (spec.has_numeric_type()) {
+         // allow the user to force numeric output with '{:d}' or other numeric type.
+         return bwformat(w, spec, static_cast<uintmax_t>(state));
+      } else {
+         return bwformat(w, spec, HttpDebugNames::get_server_state_name(state));
+      }
+   }
+
+With this in place, any one wanting to print the name of the server state enumeration can do ::
+
+   bw.print("state {}", t_state.current_state);
+
+There is no need to remember names like :code:`HttpDebugNames` nor which method in it does the
+conversion. The developer making the :code:`HttpDebugNames` class or equivalent can take care of
+that in the same header file that provides the type.
+
+.. note::
+
+   In actual practice, due to this method being so obscure it's not actually used as far as I
+   can determine.
+
 Specialized Types
-+++++++++++++++++
+-----------------
 
 These are types for which there exists a type specific BWF formatter.
 
