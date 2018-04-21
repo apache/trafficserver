@@ -441,8 +441,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
           if (is_debug_tag_set("url_rewrite")) {
             char buf1[128], buf2[128], buf3[128];
             ats_ip_ntop(incoming_addr, buf1, sizeof(buf1));
-            ats_ip_ntop(rp->in_ip_array[j].start, buf2, sizeof(buf2));
-            ats_ip_ntop(rp->in_ip_array[j].end, buf3, sizeof(buf3));
+            rp->in_ip_array[j].start.toString(buf2, sizeof(buf2));
+            rp->in_ip_array[j].end.toString(buf3, sizeof(buf3));
             Debug("url_rewrite", "Trying to match incoming address %s in range %s - %s.", buf1, buf2, buf3);
           }
           bool in_range = rp->in_ip_array[j].contains(incoming_addr);
