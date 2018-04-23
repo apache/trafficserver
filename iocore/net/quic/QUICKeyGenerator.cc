@@ -130,7 +130,7 @@ QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, QUIC
   uint8_t cleartext_secret[512];
   size_t cleartext_secret_len = sizeof(cleartext_secret);
 
-  QUICTypeUtil::write_QUICConnectionId(cid, 8, client_connection_id, &cid_len);
+  QUICTypeUtil::write_QUICConnectionId(cid, client_connection_id, &cid_len);
   if (hkdf.extract(cleartext_secret, &cleartext_secret_len, QUIC_VERSION_1_SALT, sizeof(QUIC_VERSION_1_SALT), client_connection_id,
                    8) != 1) {
     return -1;

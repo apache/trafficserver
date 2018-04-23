@@ -44,7 +44,6 @@ public:
   ink_hrtime largest_ack_received_time();
 
   const QUICPacketNumber &operator[](int i) const { return this->_packet_numbers[i]; }
-
 private:
   QUICPacketNumber _largest_ack_number  = 0;
   ink_hrtime _largest_ack_received_time = 0;

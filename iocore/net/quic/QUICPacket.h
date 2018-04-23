@@ -61,12 +61,13 @@ public:
 
   const IpEndpoint &from() const;
 
-  virtual QUICPacketType type() const            = 0;
+  virtual QUICPacketType type() const = 0;
 
   /*
    * Returns a connection id
    */
   virtual QUICConnectionId destination_cid() const = 0;
+  virtual QUICConnectionId source_cid() const      = 0;
 
   virtual QUICPacketNumber packet_number() const = 0;
   virtual QUICVersion version() const            = 0;
@@ -105,8 +106,8 @@ public:
 
   QUICPacketHeaderUPtr clone() const;
 
-  virtual bool has_key_phase() const     = 0;
-  virtual bool has_version() const       = 0;
+  virtual bool has_key_phase() const = 0;
+  virtual bool has_version() const   = 0;
 
   /***** STATIC members *****/
 
@@ -115,15 +116,16 @@ public:
    *
    * This creates either a QUICPacketShortHeader or a QUICPacketLongHeader.
    */
-  static QUICPacketHeaderUPtr load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base, uint8_t dcil);
+  static QUICPacketHeaderUPtr load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base, uint8_t dcil = 0);
 
   /*
    * Build a QUICPacketHeader
    *
    * This creates a QUICPacketLongHeader.
    */
-  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                                    QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len);
+  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                    QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
+                                    ats_unique_buf payload, size_t len);
 
   /*
    * Build a QUICPacketHeader
@@ -152,7 +154,7 @@ protected:
   size_t _buf_len     = 0;
 
   // These are used only if the instance was created without a buffer
-  uint8_t _serialized[17];
+  uint8_t _serialized[64];
   ats_unique_buf _payload              = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType _type                 = QUICPacketType::UNINITIALIZED;
   QUICKeyPhase _key_phase              = QUICKeyPhase::CLEARTEXT;
@@ -171,8 +173,9 @@ public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketLongHeader(){};
   QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
-  QUICPacketLongHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                       QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf, size_t len);
+  QUICPacketLongHeader(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                       QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf,
+                       size_t len);
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
   QUICConnectionId source_cid() const;
@@ -184,6 +187,7 @@ public:
   bool has_key_phase() const;
   uint16_t size() const;
   void store(uint8_t *buf, size_t *len) const;
+
 private:
   QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid;
@@ -203,7 +207,11 @@ public:
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
-  QUICConnectionId source_cid() const;
+  QUICConnectionId
+  source_cid() const
+  {
+    return QUICConnectionId::ZERO();
+  }
   QUICPacketNumber packet_number() const;
   bool has_version() const;
   QUICVersion version() const;
@@ -275,6 +283,7 @@ public:
   const IpEndpoint &from() const;
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
+  QUICConnectionId source_cid() const;
   QUICPacketNumber packet_number() const;
   QUICVersion version() const;
   const QUICPacketHeader &header() const;
@@ -356,12 +365,13 @@ public:
   QUICPacketUPtr create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
                         QUICPacketCreationResult &result);
   QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client);
-  QUICPacketUPtr create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number, ats_unique_buf payload,
-                                       size_t len);
-  QUICPacketUPtr create_retry_packet(QUICConnectionId connection_id, QUICPacketNumber packet_number, ats_unique_buf payload,
-                                     size_t len, bool retransmittable);
-  QUICPacketUPtr create_handshake_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                         ats_unique_buf payload, size_t len, bool retransmittable);
+  QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                       QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
+  QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICPacketNumber packet_number,
+                                     ats_unique_buf payload, size_t len, bool retransmittable);
+  QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
+                                         bool retransmittable);
   QUICPacketUPtr create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                 ats_unique_buf payload, size_t len, bool retransmittable);
   static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,

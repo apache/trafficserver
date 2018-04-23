@@ -907,19 +907,21 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
   uint8_t buf1[] = {
     0x0b,                                           // Type
     0x41, 0x02,                                     // Sequence
+    0x08,                                           // Length
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
     0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
     0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
   };
   std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
-  CHECK(frame1->size() == 27);
+  CHECK(frame1->size() == 28);
   std::shared_ptr<const QUICNewConnectionIdFrame> new_con_id_frame =
     std::dynamic_pointer_cast<const QUICNewConnectionIdFrame>(frame1);
   CHECK(new_con_id_frame != nullptr);
   CHECK(new_con_id_frame->sequence() == 0x0102);
-  CHECK((new_con_id_frame->connection_id() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8)));
-  CHECK(memcmp(new_con_id_frame->stateless_reset_token().buf(), buf1 + 11, 16) == 0);
+  CHECK((new_con_id_frame->connection_id() ==
+         QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8)));
+  CHECK(memcmp(new_con_id_frame->stateless_reset_token().buf(), buf1 + 12, 16) == 0);
 }
 
 TEST_CASE("Store NewConnectionId Frame", "[quic]")
@@ -930,15 +932,17 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
   uint8_t expected[] = {
     0x0b,                                           // Type
     0x41, 0x02,                                     // Sequence
+    0x08,                                           // Length
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Stateless Reset Token
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
   };
-  QUICNewConnectionIdFrame new_con_id_frame(0x0102, { reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8}, {expected + 11});
-  CHECK(new_con_id_frame.size() == 27);
+  QUICNewConnectionIdFrame new_con_id_frame(0x0102, {reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8},
+                                            {expected + 12});
+  CHECK(new_con_id_frame.size() == 28);
 
   new_con_id_frame.store(buf, &len);
-  CHECK(len == 27);
+  CHECK(len == 28);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
@@ -1139,7 +1143,8 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
   QUICPacketFactory factory;
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
-  QUICPacketUPtr packet = factory.create_server_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0, {nullptr, [](void *p) { ats_free(p); }}, 0, true);
+  QUICPacketUPtr packet = factory.create_server_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0,
+                                                                 {nullptr, [](void *p) { ats_free(p); }}, 0, true);
 
   SECTION("STREAM frame")
   {
@@ -1353,6 +1358,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     uint8_t frame_buf[] = {
       0x0b,                                           // Type
       0x41, 0x02,                                     // Sequence
+      0x08,                                           // Length
       0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
@@ -1365,7 +1371,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     size_t len;
     frame->store(buf, &len);
 
-    CHECK(len == 27);
+    CHECK(len == 28);
     CHECK(memcmp(buf, frame_buf, len) == 0);
   }
 

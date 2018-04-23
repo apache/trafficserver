@@ -37,7 +37,6 @@ public:
   QUICFrame(const uint8_t *buf, size_t len, bool protection) : _buf(buf), _len(len), _protection(protection) {}
   QUICFrame(bool protection) : _protection(protection) {}
   virtual ~QUICFrame() {}
-
   static QUICFrameType type(const uint8_t *buf);
 
   virtual QUICFrameType type() const;
@@ -131,7 +130,6 @@ public:
   public:
     AckBlock(const uint8_t *b) : _buf(b) {}
     AckBlock(uint64_t g, uint64_t l) : _gap(g), _length(l) {}
-
     uint64_t gap() const;
     uint64_t length() const;
     size_t size() const;
@@ -265,7 +263,6 @@ public:
   QUICPingFrame() : QUICFrame() {}
   QUICPingFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
   QUICPingFrame(bool protection) : QUICFrame(protection) {}
-
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
@@ -467,7 +464,6 @@ public:
   QUICStreamIdBlockedFrame() : QUICFrame() {}
   QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
   QUICStreamIdBlockedFrame(QUICStreamId s, bool protection = true) : QUICFrame(protection), _stream_id(s) {}
-
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
@@ -503,6 +499,7 @@ public:
 private:
   size_t _get_sequence_field_length() const;
   size_t _get_connection_id_field_offset() const;
+  size_t _get_connection_id_length() const;
 
   uint64_t _sequence              = 0;
   QUICConnectionId _connection_id = QUICConnectionId::ZERO();
@@ -546,7 +543,6 @@ public:
   QUICPathChallengeFrame() : QUICFrame() {}
   QUICPathChallengeFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
   QUICPathChallengeFrame(ats_unique_buf data, bool protection = true) : QUICFrame(protection), _data(std::move(data)) {}
-
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;
@@ -570,7 +566,6 @@ public:
   QUICPathResponseFrame() : QUICFrame() {}
   QUICPathResponseFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
   QUICPathResponseFrame(ats_unique_buf data, bool protection = true) : QUICFrame(protection), _data(std::move(data)) {}
-
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void store(uint8_t *buf, size_t *len) const override;

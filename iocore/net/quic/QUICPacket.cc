@@ -81,11 +81,13 @@ QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QU
 }
 
 QUICPacketHeaderUPtr
-QUICPacketHeader::build(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                        QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len)
+QUICPacketHeader::build(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
+                        ats_unique_buf payload, size_t len)
 {
   QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
-  new (long_header) QUICPacketLongHeader(type, connection_id, packet_number, base_packet_number, version, std::move(payload), len);
+  new (long_header)
+    QUICPacketLongHeader(type, destination_cid, source_cid, packet_number, base_packet_number, version, std::move(payload), len);
   return QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
 }
 
@@ -118,45 +120,52 @@ QUICPacketHeader::clone() const
 // QUICPacketLongHeader
 //
 
-QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base) : QUICPacketHeader(from, std::move(buf), len, base)
+QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+  : QUICPacketHeader(from, std::move(buf), len, base)
 {
   uint8_t *raw_buf = this->_buf.get();
 
-  uint8_t dcil = (raw_buf[1] >> 4);
+  uint8_t dcil = (raw_buf[5] >> 4);
   if (dcil) {
     dcil += 3;
   }
-  uint8_t scil = (raw_buf[1] & 0x0F);
+  uint8_t scil = (raw_buf[5] & 0x0F);
   if (scil) {
     scil += 3;
   }
-  uint8_t *offset = raw_buf + LONG_HDR_OFFSET_CONNECTION_ID;
+  uint8_t *offset        = raw_buf + LONG_HDR_OFFSET_CONNECTION_ID;
   this->_destination_cid = {offset, dcil};
   offset += dcil;
-  this->_source_cid      = {offset, scil};
+  this->_source_cid = {offset, scil};
   offset += scil;
 
   if (this->type() == QUICPacketType::VERSION_NEGOTIATION) {
-    this->_payload_start = offset;
+    this->_payload_start  = offset;
+    this->_payload_length = len - (offset - raw_buf);
   } else {
-    this->_payload_length  = QUICIntUtil::read_QUICVariableInt(offset);
+    this->_payload_length = QUICIntUtil::read_QUICVariableInt(offset);
     offset += QUICVariableInt::size(offset);
-    QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(offset, 4), 4, this->_base_packet_number);
+    QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(offset, 4), 4,
+                                     this->_base_packet_number);
     this->_payload_start = offset + 4;
   }
 }
 
-QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                                           QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf, size_t len)
+QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                           QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
+                                           ats_unique_buf buf, size_t len)
 {
   this->_type               = type;
-  this->_connection_id      = connection_id;
+  this->_destination_cid    = destination_cid;
+  this->_source_cid         = source_cid;
   this->_packet_number      = packet_number;
   this->_base_packet_number = base_packet_number;
   this->_has_version        = true;
   this->_version            = version;
   this->_payload            = std::move(buf);
-  this->_payload_length        = len;
+  this->_payload_length     = len;
+  this->_buf_len            = LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() +
+                   QUICVariableInt::size(this->_payload_length) + 4 + len;
 }
 
 QUICPacketType
@@ -241,13 +250,7 @@ QUICPacketLongHeader::key_phase() const
 uint16_t
 QUICPacketLongHeader::size() const
 {
-  ink_assert("Is this really needed?");
-  return 0;
-  // if (this->type() == QUICPacketType::VERSION_NEGOTIATION) {
-  //   return VERSION_NEGOTIATION_PKT_HEADER_LENGTH;
-  // } else {
-  //   return LONG_HDR_LENGTH;
-  // }
+  return this->_buf_len - this->_payload_length;
 }
 
 void
@@ -262,10 +265,19 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   }
   *len += 1;
 
-  QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, buf + *len, &n);
+  QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 
-  QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
+  buf[*len] = (this->_destination_cid.length() == 0 ? 0 : this->_destination_cid.length() - 3) << 4;
+  buf[*len] += this->_source_cid.length() == 0 ? 0 : this->_source_cid.length() - 3;
+  *len += 1;
+
+  QUICTypeUtil::write_QUICConnectionId(this->_destination_cid, buf + *len, &n);
+  *len += n;
+  QUICTypeUtil::write_QUICConnectionId(this->_source_cid, buf + *len, &n);
+  *len += n;
+
+  QUICIntUtil::write_QUICVariableInt(this->_payload_length, buf + *len, &n);
   *len += n;
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
@@ -281,12 +293,14 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 // QUICPacketShortHeader
 //
 
-QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base, uint8_t dcil)
-    : QUICPacketHeader(from, std::move(buf), len, base), _dcil(dcil)
+QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base,
+                                             uint8_t dcil)
+  : QUICPacketHeader(from, std::move(buf), len, base), _dcil(dcil)
 {
-  int n      = this->_packet_number_len();
-  int offset = SHORT_HDR_OFFSET_CONNECTION_ID;
+  this->_connection_id = QUICTypeUtil::read_QUICConnectionId(this->_buf.get() + 1, dcil);
 
+  int n                = this->_packet_number_len();
+  int offset           = 1 + this->_connection_id.length();
   QUICPacketNumber src = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + offset, n);
   QUICPacket::decode_packet_number(this->_packet_number, src, n, this->_base_packet_number);
 }
@@ -340,7 +354,7 @@ QUICConnectionId
 QUICPacketShortHeader::destination_cid() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICConnectionId(this->_buf.get() + SHORT_HDR_OFFSET_CONNECTION_ID, 8);
+    return QUICTypeUtil::read_QUICConnectionId(this->_buf.get() + SHORT_HDR_OFFSET_CONNECTION_ID, this->_dcil);
   } else {
     return _connection_id;
   }
@@ -421,7 +435,7 @@ QUICKeyPhase
 QUICPacketShortHeader::key_phase() const
 {
   if (this->_buf) {
-    if (this->_buf.get()[0] & 0x20) {
+    if (this->_buf.get()[0] & 0x40) {
       return QUICKeyPhase::PHASE_1;
     } else {
       return QUICKeyPhase::PHASE_0;
@@ -437,16 +451,11 @@ QUICPacketShortHeader::key_phase() const
 uint16_t
 QUICPacketShortHeader::size() const
 {
-  ink_assert("Is this really needed?");
-  // uint16_t len = 1;
-  //
-  // if (this->has_connection_id()) {
-  //   len += 8;
-  // }
-  // len += this->_packet_number_len();
-  //
-  // return len;
-  return 0;
+  uint16_t len = 1;
+  len += this->_connection_id.length();
+  len += this->_packet_number_len();
+
+  return len;
 }
 
 void
@@ -456,12 +465,12 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
   *len   = 0;
   buf[0] = 0x00;
   if (this->_key_phase == QUICKeyPhase::PHASE_1) {
-    buf[0] += 0x20;
+    buf[0] += 0x40;
   }
-  buf[0] += 0x10;
+  buf[0] += 0x30;
   buf[0] += static_cast<uint8_t>(this->_packet_number_type);
   *len += 1;
-  QUICTypeUtil::write_QUICConnectionId(this->_connection_id, 8, buf + *len, &n);
+  QUICTypeUtil::write_QUICConnectionId(this->_connection_id, buf + *len, &n);
   *len += n;
 
   QUICPacketNumber dst = 0;
@@ -518,6 +527,12 @@ QUICConnectionId
 QUICPacket::destination_cid() const
 {
   return this->_header->destination_cid();
+}
+
+QUICConnectionId
+QUICPacket::source_cid() const
+{
+  return this->_header->source_cid();
 }
 
 QUICPacketNumber
@@ -792,19 +807,20 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
   }
 
   // VN packet dosen't have packet number field and version field is always 0x00000000
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->destination_cid(),
-                                                        0x00, 0x00, 0x00, std::move(versions), len);
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->source_cid(),
+                            packet_sent_by_client->destination_cid(), 0x00, 0x00, 0x00, std::move(versions), len);
 
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_initial_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                         ats_unique_buf payload, size_t len)
+QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
   QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::INITIAL, connection_id, this->_packet_number_generator.next(), base_packet_number,
-                            this->_version, std::move(payload), len);
+    QUICPacketHeader::build(QUICPacketType::INITIAL, destination_cid, source_cid, this->_packet_number_generator.next(),
+                            base_packet_number, this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), true);
 }
 
@@ -812,21 +828,22 @@ QUICPacketFactory::create_initial_packet(QUICConnectionId connection_id, QUICPac
  * Unlike other create_*_packet, the 2nd argument is not base packet number.
  */
 QUICPacketUPtr
-QUICPacketFactory::create_retry_packet(QUICConnectionId connection_id, QUICPacketNumber packet_number, ats_unique_buf payload,
-                                       size_t len, bool retransmittable)
+QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                       QUICPacketNumber packet_number, ats_unique_buf payload, size_t len, bool retransmittable)
 {
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::RETRY, connection_id, packet_number, 0, this->_version, std::move(payload), len);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::RETRY, destination_cid, source_cid, packet_number, 0,
+                                                        this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_handshake_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                           ats_unique_buf payload, size_t len, bool retransmittable)
+QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                           QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
+                                           bool retransmittable)
 {
   QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::HANDSHAKE, connection_id, this->_packet_number_generator.next(), base_packet_number,
-                            this->_version, std::move(payload), len);
+    QUICPacketHeader::build(QUICPacketType::HANDSHAKE, destination_cid, source_cid, this->_packet_number_generator.next(),
+                            base_packet_number, this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 

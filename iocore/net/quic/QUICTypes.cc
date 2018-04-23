@@ -107,10 +107,10 @@ QUICTypeUtil::read_QUICMaxData(const uint8_t *buf)
 }
 
 void
-QUICTypeUtil::write_QUICConnectionId(QUICConnectionId connection_id, uint8_t n, uint8_t *buf, size_t *len)
+QUICTypeUtil::write_QUICConnectionId(QUICConnectionId connection_id, uint8_t *buf, size_t *len)
 {
-  memcpy(buf, connection_id, n);
-  *len = n;
+  memcpy(buf, connection_id, connection_id.length());
+  *len = connection_id.length();
 }
 
 void
@@ -219,7 +219,7 @@ QUICFiveTuple::protocol() const
 QUICConnectionId
 QUICConnectionId::ZERO()
 {
-  uint8_t zero[] = {0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t zero[18] = {0};
   return QUICConnectionId(zero, sizeof(zero));
 }
 
@@ -228,9 +228,15 @@ QUICConnectionId::QUICConnectionId()
   this->randomize();
 }
 
-QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len)
+QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len) : _len(len)
 {
   memcpy(this->_id, buf, len);
+}
+
+uint8_t
+QUICConnectionId::length() const
+{
+  return this->_len;
 }
 
 bool
@@ -255,6 +261,7 @@ QUICConnectionId::randomize()
     }
     this->_id[i] = (x >> (8 * (i % 4))) & 0xFF;
   }
+  this->_len = 18;
 }
 
 uint64_t

@@ -219,11 +219,13 @@ public:
    */
   operator uint64_t() const { return this->_hashcode(); }
   operator const uint8_t *() const { return this->_id; }
-
   bool
   operator==(const QUICConnectionId &x) const
   {
-    return memcmp(this->_id, x._id, sizeof(this->_id)) == 0;
+    if (this->_len != x._len) {
+      return false;
+    }
+    return memcmp(this->_id, x._id, sizeof(this->_len)) == 0;
   }
 
   bool
@@ -232,12 +234,14 @@ public:
     return memcmp(this->_id, x._id, sizeof(this->_id)) != 0;
   }
 
+  uint8_t length() const;
   bool is_zero() const;
   void randomize();
 
 private:
   uint64_t _hashcode() const;
-  uint8_t _id[8];
+  uint8_t _id[18];
+  uint8_t _len = 0;
 };
 
 class QUICStatelessResetToken
@@ -247,7 +251,6 @@ public:
 
   QUICStatelessResetToken() {}
   QUICStatelessResetToken(const uint8_t *buf) { memcpy(this->_token, buf, QUICStatelessResetToken::LEN); }
-
   void
   generate(QUICConnectionId conn_id, uint32_t server_id)
   {
@@ -308,7 +311,7 @@ public:
   static QUICAppErrorCode read_QUICAppErrorCode(const uint8_t *buf);
   static uint64_t read_QUICMaxData(const uint8_t *buf);
 
-  static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t n, uint8_t *buf, size_t *len);
+  static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t *buf, size_t *len);
   static void write_QUICPacketNumber(QUICPacketNumber packet_number, uint8_t n, uint8_t *buf, size_t *len);
   static void write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len);
   static void write_QUICStreamId(QUICStreamId stream_id, uint8_t *buf, size_t *len);

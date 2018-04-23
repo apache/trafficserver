@@ -59,7 +59,6 @@ class DisableH2 : public ActionItem
 public:
   DisableH2() {}
   ~DisableH2() override {}
-
   void
   SNIAction(Continuation *cont) override
   {

@@ -282,7 +282,6 @@ class MockQUICPacketTransmitter : public QUICPacketTransmitter
 {
 public:
   MockQUICPacketTransmitter() : QUICPacketTransmitter() { this->_mutex = new_ProxyMutex(); };
-
   uint32_t
   transmit_packet(QUICPacketUPtr packet) override
   {
@@ -415,7 +414,6 @@ class MockQUICStreamIO : public QUICStreamIO
 public:
   MockQUICStreamIO(QUICApplication *app, QUICStream *stream) : QUICStreamIO(app, stream) {}
   ~MockQUICStreamIO() {}
-
   int64_t
   transfer()
   {
@@ -440,7 +438,6 @@ class MockQUICHandshakeProtocol : public QUICHandshakeProtocol
 {
 public:
   MockQUICHandshakeProtocol() : QUICHandshakeProtocol() {}
-
   int
   handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) override
   {
@@ -460,7 +457,6 @@ public:
   };
 
   bool is_key_derived(QUICKeyPhase /* key_phase */) const override { return true; }
-
   int
   initialize_key_materials(QUICConnectionId cid) override
   {

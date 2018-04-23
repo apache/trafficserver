@@ -48,7 +48,6 @@ public:
   enum class Context { SERVER, CLIENT };
 
   QUICKeyGenerator(Context ctx) : _ctx(ctx) {}
-
   /*
    * Gnerate a key and an IV for Cleartext
    */

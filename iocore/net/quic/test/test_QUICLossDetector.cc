@@ -55,8 +55,10 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
     memcpy(payload.get(), raw, sizeof(raw));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::HANDSHAKE, {reinterpret_cast<const uint8_t *>("\xff\xdd\xbb\x99\x77\x55\x33\x11"), 8}, 0x00000001, 0,
-                                                          0x00112233, std::move(payload), sizeof(raw));
+    QUICPacketHeaderUPtr header =
+      QUICPacketHeader::build(QUICPacketType::HANDSHAKE, {reinterpret_cast<const uint8_t *>("\xff\xdd\xbb\x99\x77\x55\x33\x11"), 8},
+                              {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x00000001, 0, 0x00112233,
+                              std::move(payload), sizeof(raw));
     QUICPacketUPtr packet =
       QUICPacketUPtr(new QUICPacket(std::move(header), std::move(payload), sizeof(raw), true), [](QUICPacket *p) { delete p; });
     detector.on_packet_sent(std::move(packet));

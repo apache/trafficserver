@@ -61,7 +61,6 @@ struct LuaSNIConfig : public TsConfigBase {
   static TsConfigArrayDescriptor DESCRIPTOR;
 
   LuaSNIConfig() : TsConfigBase(this->DESCRIPTOR) { self::Item::Initialize(); }
-
   struct Item : public TsConfigBase {
     Item()
       : TsConfigBase(DESCRIPTOR),

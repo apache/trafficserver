@@ -39,7 +39,6 @@ public:
   }
 
   MockRTTProvider(ink_hrtime rtt) : _smoothed_rtt(rtt) {}
-
   void
   set_smoothed_rtt(ink_hrtime rtt)
   {

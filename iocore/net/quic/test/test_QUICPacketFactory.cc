@@ -33,9 +33,11 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   factory.set_hs_protocol(&hs_protocol);
 
   uint8_t initial_packet_header[] = {
-    0x82,                                           // Type
-    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Connection id
+    0xFF,                                           // Type
     0xaa, 0xbb, 0xcc, 0xdd,                         // Version
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection id
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Source Connection id
+    0x01,                                           // Payload Length
     0x00, 0x00, 0x00, 0x00,                         // Packet number
   };
   uint8_t initial_packet_payload[] = {
@@ -49,8 +51,8 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 
   QUICPacketUPtr packet = factory.create_version_negotiation_packet(&initial_packet);
   CHECK(packet->type() == QUICPacketType::VERSION_NEGOTIATION);
-  CHECK((packet->destination_cid() == initial_packet.destination_cid()));
-  CHECK(packet->packet_number() == initial_packet.packet_number());
+  CHECK((packet->source_cid() == initial_packet.destination_cid()));
+  CHECK((packet->destination_cid() == initial_packet.source_cid()));
   CHECK(packet->version() == 0x00);
 
   QUICVersion supported_version = QUICTypeUtil::read_QUICVersion(packet->payload());
@@ -68,9 +70,11 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
   memcpy(payload.get(), raw, sizeof(raw));
 
-  QUICPacketUPtr packet = factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4), 1234, std::move(payload), sizeof(raw), false);
+  QUICPacketUPtr packet = factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
+                                                      QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4),
+                                                      1234, std::move(payload), sizeof(raw), false);
   CHECK(packet->type() == QUICPacketType::RETRY);
-  CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"),4)));
+  CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
   CHECK(packet->packet_number() == 1234);
   CHECK(packet->version() == 0x11223344);
@@ -87,7 +91,9 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
   memcpy(payload.get(), raw, sizeof(raw));
 
-  QUICPacketUPtr packet = factory.create_handshake_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4), 0, std::move(payload), sizeof(raw), true);
+  QUICPacketUPtr packet = factory.create_handshake_packet(
+    QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
+    QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), 0, std::move(payload), sizeof(raw), true);
   CHECK(packet->type() == QUICPacketType::HANDSHAKE);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
@@ -112,7 +118,8 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   uint8_t output[1024];
   size_t out_len = 0;
 
-  QUICPacketUPtr packet = factory.create_stateless_reset_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4), token);
+  QUICPacketUPtr packet =
+    factory.create_stateless_reset_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4), token);
   CHECK(packet->type() == QUICPacketType::STATELESS_RESET);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
 }
