@@ -652,19 +652,45 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 }
 
 QUICConnectionId
-QUICPacket::connection_id(const uint8_t *buf)
+QUICPacket::destination_connection_id(const uint8_t *buf)
 {
-  constexpr uint8_t cid_offset = 1;
-  constexpr uint8_t cid_len    = 8;
+  uint8_t cid_offset;
+  uint8_t cid_len;
   QUICConnectionId cid;
   if (QUICTypeUtil::has_long_header(buf)) {
-    cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
+    cid_offset = 6;
+    cid_len    = buf[5] >> 4;
+    if (cid_len) {
+      cid_len += 3;
+    }
   } else {
-    ink_assert(QUICTypeUtil::has_connection_id(buf));
-    cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
+    cid_offset = 1;
+    // TODO Read CID length from records.config
+    cid_len = 18;
   }
+  cid = QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
 
   return cid;
+}
+
+QUICConnectionId
+QUICPacket::source_connection_id(const uint8_t *buf)
+{
+  ink_assert(QUICTypeUtil::has_long_header(buf));
+
+  uint8_t cid_offset = 6;
+  uint8_t cid_len    = 0;
+
+  cid_len = buf[5] >> 4;
+  if (cid_len) {
+    cid_len += 3;
+  }
+  cid_offset += cid_len;
+  cid_len = buf[5] & 0x0F;
+  if (cid_len) {
+    cid_len += 3;
+  }
+  return QUICTypeUtil::read_QUICConnectionId(buf + cid_offset, cid_len);
 }
 
 //

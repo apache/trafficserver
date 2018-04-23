@@ -190,8 +190,8 @@ public:
 
 private:
   QUICPacketNumber _packet_number;
-  QUICConnectionId _destination_cid;
-  QUICConnectionId _source_cid;
+  QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
+  QUICConnectionId _source_cid      = QUICConnectionId::ZERO();
   uint8_t *_payload_start;
 };
 
@@ -290,7 +290,8 @@ public:
   const uint8_t *payload() const;
   bool is_retransmittable() const;
 
-  static QUICConnectionId connection_id(const uint8_t *packet);
+  static QUICConnectionId destination_connection_id(const uint8_t *packet);
+  static QUICConnectionId source_connection_id(const uint8_t *packet);
 
   /*
    * Size of whole QUIC packet (header + payload + integrity check)

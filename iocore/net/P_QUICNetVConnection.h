@@ -149,7 +149,8 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, pub
 
 public:
   QUICNetVConnection() {}
-  void init(QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *, QUICConnectionTable *ctable = nullptr);
+  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *,
+            QUICConnectionTable *ctable = nullptr);
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
@@ -185,6 +186,7 @@ public:
   void registerNextProtocolSet(SSLNextProtocolSet *s);
 
   // QUICConnection
+  QUICConnectionId peer_connection_id() override;
   QUICConnectionId original_connection_id() override;
   QUICConnectionId connection_id() override;
   const QUICFiveTuple five_tuple() override;
@@ -224,6 +226,7 @@ private:
   QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
   std::random_device _rnd;
 
+  QUICConnectionId _peer_quic_connection_id;
   QUICConnectionId _original_quic_connection_id;
   QUICConnectionId _quic_connection_id;
   QUICFiveTuple _five_tuple;

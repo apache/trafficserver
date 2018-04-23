@@ -66,14 +66,15 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
 // XXX This might be called on ET_UDP thread
 void
-QUICNetVConnection::init(QUICConnectionId original_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler,
-                         QUICConnectionTable *ctable)
+QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
+                         QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_packet_transmitter_mutex    = new_ProxyMutex();
   this->_frame_transmitter_mutex     = new_ProxyMutex();
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
+  this->_peer_quic_connection_id     = peer_cid;
   this->_original_quic_connection_id = original_cid;
   this->_quic_connection_id.randomize();
   // PacketHandler for out going connection doesn't have connection table
@@ -313,6 +314,12 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
   this->_schedule_packet_write_ready();
 
   return CONNECT_SUCCESS;
+}
+
+QUICConnectionId
+QUICNetVConnection::peer_connection_id()
+{
+  return this->_peer_quic_connection_id;
 }
 
 QUICConnectionId
@@ -1320,19 +1327,20 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   switch (type) {
   case QUICPacketType::INITIAL:
     ink_assert(this->get_context() == NET_VCONNECTION_OUT);
-    packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->largest_acked_packet_number(),
-                                                         std::move(buf), len);
+    packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->_original_quic_connection_id,
+                                                         this->largest_acked_packet_number(), std::move(buf), len);
     this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
 
     break;
   case QUICPacketType::RETRY:
     // Echo "_largest_received_packet_number" as packet number. Probably this is the packet number from triggering client packet.
-    packet = this->_packet_factory.create_retry_packet(this->_quic_connection_id, this->_largest_received_packet_number,
-                                                       std::move(buf), len, retransmittable);
+    packet = this->_packet_factory.create_retry_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
+                                                       this->_largest_received_packet_number, std::move(buf), len, retransmittable);
     break;
   case QUICPacketType::HANDSHAKE:
-    packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                           std::move(buf), len, retransmittable);
+    packet =
+      this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
+                                                    this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
     this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
 
     break;
@@ -1346,8 +1354,9 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
         packet = this->_packet_factory.create_server_protected_packet(
           this->_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
       } else {
-        packet = this->_packet_factory.create_handshake_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                               std::move(buf), len, retransmittable);
+        packet =
+          this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
+                                                        this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
       }
     }
     break;
@@ -1417,7 +1426,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     // FIXME This should happen only once
     IOBufferBlock *block = udp_packet->getIOBlockChain();
     if (QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      QUICConnectionId cid = QUICPacket::connection_id(reinterpret_cast<const uint8_t *>(block->buf()));
+      QUICConnectionId cid = QUICPacket::destination_connection_id(reinterpret_cast<const uint8_t *>(block->buf()));
       if (this->_quic_connection_id != cid) {
         this->_quic_connection_id = cid;
       }

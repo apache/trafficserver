@@ -125,14 +125,14 @@ int
 QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
                                              size_t label_len, size_t length)
 {
-  uint8_t client_connection_id[8];
+  uint8_t client_connection_id[QUICConnectionId::MAX_LENGTH];
   size_t cid_len = 0;
   uint8_t cleartext_secret[512];
   size_t cleartext_secret_len = sizeof(cleartext_secret);
 
   QUICTypeUtil::write_QUICConnectionId(cid, client_connection_id, &cid_len);
   if (hkdf.extract(cleartext_secret, &cleartext_secret_len, QUIC_VERSION_1_SALT, sizeof(QUIC_VERSION_1_SALT), client_connection_id,
-                   8) != 1) {
+                   cid.length()) != 1) {
     return -1;
   }
 

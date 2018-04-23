@@ -59,7 +59,7 @@ QUICConnectionTable::lookup(const uint8_t *packet, QUICFiveTuple endpoint)
 {
   QUICConnectionId cid;
   if (QUICTypeUtil::has_connection_id(packet)) {
-    cid = QUICPacket::connection_id(packet);
+    cid = QUICPacket::destination_connection_id(packet);
   } else {
     // TODO: find cid with five tuples
     // cid = this->_cids.get(endpoint);

@@ -81,10 +81,17 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
 }
 
 QUICConnectionId
-QUICPacketHandler::_read_connection_id(IOBufferBlock *block)
+QUICPacketHandler::_read_destination_connection_id(IOBufferBlock *block)
 {
   const uint8_t *buf = reinterpret_cast<const uint8_t *>(block->buf());
-  return QUICPacket::connection_id(buf);
+  return QUICPacket::destination_connection_id(buf);
+}
+
+QUICConnectionId
+QUICPacketHandler::_read_source_connection_id(IOBufferBlock *block)
+{
+  const uint8_t *buf = reinterpret_cast<const uint8_t *>(block->buf());
+  return QUICPacket::source_connection_id(buf);
 }
 
 //
@@ -172,7 +179,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   if (is_debug_tag_set("quic_sec")) {
     ip_port_text_buffer ipb;
     if (QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      QUICConnectionId cid = this->_read_connection_id(block);
+      QUICConnectionId cid = this->_read_destination_connection_id(block);
       Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
             ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
     } else {
@@ -191,7 +198,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   if ((!vc && !QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) || (vc && vc->in_closed_queue)) {
     Connection con;
     con.setRemote(&udp_packet->from.sa);
-    QUICConnectionId cid = this->_read_connection_id(block);
+    QUICConnectionId cid = this->_read_destination_connection_id(block);
     QUICStatelessResetToken token;
     {
       QUICConfig::scoped_config params;
@@ -209,9 +216,10 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
     eth = eventProcessor.assign_thread(ET_NET);
     // Create a new NetVConnection
-    QUICConnectionId original_cid = this->_read_connection_id(block);
+    QUICConnectionId original_cid = this->_read_destination_connection_id(block);
+    QUICConnectionId peer_cid     = this->_read_source_connection_id(block);
     vc                            = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
-    vc->init(original_cid, udp_packet->getConnection(), this, this->_ctable);
+    vc->init(peer_cid, original_cid, udp_packet->getConnection(), this, this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
@@ -293,7 +301,7 @@ QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
 {
   IOBufferBlock *block = udp_packet->getIOBlockChain();
 
-  QUICConnectionId cid = this->_read_connection_id(block);
+  QUICConnectionId cid = this->_read_destination_connection_id(block);
 
   ip_port_text_buffer ipb;
   Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),

@@ -44,7 +44,8 @@ public:
 
 protected:
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu);
-  static QUICConnectionId _read_connection_id(IOBufferBlock *block);
+  static QUICConnectionId _read_destination_connection_id(IOBufferBlock *block);
+  static QUICConnectionId _read_source_connection_id(IOBufferBlock *block);
 
   Event *_collector_event                       = nullptr;
   QUICClosedConCollector *_closed_con_collector = nullptr;

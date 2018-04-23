@@ -36,6 +36,7 @@ class SSLNextProtocolSet;
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler
 {
 public:
+  virtual QUICConnectionId peer_connection_id()     = 0;
   virtual QUICConnectionId original_connection_id() = 0;
   virtual QUICConnectionId connection_id()          = 0;
   virtual const QUICFiveTuple five_tuple()          = 0;
