@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <stdarg.h>
 #include "ts/Diags.h"
 
@@ -95,10 +96,11 @@ MgmtMarshallInt mgmt_message_length(); // to allow for expansion
 
 template <typename T, typename... Rest>
 MgmtMarshallInt
-mgmt_message_length(T first, Rest... rest)
+mgmt_message_length(T first, Rest &&... rest)
 {
-  MgmtMarshallInt len = mgmt_message_length(first);
-  return (len != -1) ? len + mgmt_message_length(rest...) : len;
+  MgmtMarshallInt nfirst = mgmt_message_length(first);
+  MgmtMarshallInt nrest  = mgmt_message_length(std::forward<Rest>(rest)...);
+  return (nfirst != -1 && nrest != -1) ? nfirst + nrest : -1;
 }
 /// end mgmt_message_length ---------------------------------------------------
 
@@ -111,10 +113,11 @@ ssize_t mgmt_message_read(int fd); // to allow for expansion
 
 template <typename T, typename... Rest>
 ssize_t
-mgmt_message_read(int fd, T first, Rest... rest)
+mgmt_message_read(int fd, T first, Rest &&... rest)
 {
-  ssize_t nbytes = mgmt_message_read(fd, first);
-  return (nbytes != -1) ? nbytes + mgmt_message_read(fd, rest...) : nbytes;
+  ssize_t nfirst = mgmt_message_read(fd, first);
+  ssize_t nrest  = mgmt_message_read(fd, std::forward<Rest>(rest)...);
+  return (nfirst != -1 && nrest != -1) ? nfirst + nrest : -1;
 }
 /// mgmt_message_read ---------------------------------------------------------
 
@@ -127,10 +130,11 @@ ssize_t mgmt_message_write(int fd); // to allow for expansion
 
 template <typename T, typename... Rest>
 ssize_t
-mgmt_message_write(int fd, T first, Rest... rest)
+mgmt_message_write(int fd, T first, Rest &&... rest)
 {
-  ssize_t nbytes = mgmt_message_write(fd, first);
-  return (nbytes != -1) ? nbytes + mgmt_message_write(fd, rest...) : nbytes;
+  ssize_t nfirst = mgmt_message_write(fd, first);
+  ssize_t nrest  = mgmt_message_write(fd, std::forward<Rest>(rest)...);
+  return (nfirst != -1 && nrest != -1) ? nfirst + nrest : -1;
 }
 /// end mgmt_message_write ----------------------------------------------------
 
@@ -143,10 +147,14 @@ ssize_t mgmt_message_marshall(void *buf, size_t remain); // to allow for expansi
 
 template <typename T, typename... Rest>
 ssize_t
-mgmt_message_marshall(void *buf, size_t remain, T first, Rest... rest)
+mgmt_message_marshall(void *buf, size_t remain, T first, Rest &&... rest)
 {
-  ssize_t nbytes = mgmt_message_marshall(buf, remain, first);
-  return (nbytes != -1) ? nbytes + mgmt_message_marshall(static_cast<uint8_t *>(buf) + nbytes, remain - nbytes, rest...) : nbytes;
+  if (buf == nullptr) {
+    return -1;
+  }
+  ssize_t nfirst = mgmt_message_marshall(buf, remain, first);
+  ssize_t nrest  = mgmt_message_marshall(static_cast<uint8_t *>(buf) + nfirst, remain - nfirst, std::forward<Rest>(rest)...);
+  return (nfirst != -1 && nrest != -1) ? nfirst + nrest : -1;
 }
 /// end mgmt_message_marshall ---------------------------------------------------
 
@@ -159,12 +167,13 @@ ssize_t mgmt_message_parse(const void *buf, size_t len); // to allow for expansi
 
 template <typename T, typename... Rest>
 ssize_t
-mgmt_message_parse(const void *buf, size_t len, T first, Rest... rest)
+mgmt_message_parse(const void *buf, size_t len, T first, Rest &&... rest)
 {
-  if (buf == nullptr || len == 0) {
-    return 0;
+  if (buf == nullptr) {
+    return -1;
   }
-  ssize_t nbytes = mgmt_message_parse(buf, len, first);
-  return (nbytes != -1) ? nbytes + mgmt_message_parse(static_cast<const uint8_t *>(buf) + nbytes, len - nbytes, rest...) : nbytes;
+  ssize_t nfirst = mgmt_message_parse(buf, len, first);
+  ssize_t nrest  = mgmt_message_parse(static_cast<const uint8_t *>(buf) + nfirst, len - nfirst, std::forward<Rest>(rest)...);
+  return (nfirst != -1 && nrest != -1) ? nfirst + nrest : -1;
 }
 /// end mgmt_message_parse ------------------------------------------------------

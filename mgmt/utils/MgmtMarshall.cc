@@ -239,6 +239,7 @@ mgmt_message_length(MgmtMarshallString *field)
   if (*field == nullptr) {
     field = &empty;
   }
+
   return MGMT_INT_LENGTH + strlen(*field) + 1 + MGMT_HDR_LENGTH;
 }
 
@@ -267,7 +268,7 @@ ssize_t
 mgmt_message_write(int fd, MgmtMarshallInt *field)
 {
   // first, send the type info.
-  int8_t nhdr = mgmt_header_write(fd, MGMT_INT_HDR);
+  ssize_t nhdr = mgmt_header_write(fd, MGMT_INT_HDR);
   if (nhdr == -1) {
     return -1;
   }
@@ -284,7 +285,7 @@ ssize_t
 mgmt_message_write(int fd, MgmtMarshallLong *field)
 {
   // first, send the type info.
-  int8_t nhdr = mgmt_header_write(fd, MGMT_LONG_HDR);
+  ssize_t nhdr = mgmt_header_write(fd, MGMT_LONG_HDR);
   if (nhdr == -1) {
     return -1;
   }
@@ -302,7 +303,7 @@ mgmt_message_write(int fd, MgmtMarshallString *field)
 {
   MgmtMarshallData data;
 
-  int8_t nhdr = mgmt_header_write(fd, MGMT_STRING_HDR);
+  ssize_t nhdr = mgmt_header_write(fd, MGMT_STRING_HDR);
   // first, send the type info.
   if (nhdr == -1) {
     return -1;
@@ -324,7 +325,7 @@ mgmt_message_write(int fd, MgmtMarshallString *field)
 ssize_t
 mgmt_message_write(int fd, MgmtMarshallData *field)
 {
-  int8_t nhdr = mgmt_header_write(fd, MGMT_DATA_HDR);
+  ssize_t nhdr = mgmt_header_write(fd, MGMT_DATA_HDR);
   if (nhdr == -1) {
     return -1;
   }
@@ -355,7 +356,7 @@ mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallInt *field)
     return nospace();
   }
   memcpy(buf, &MGMT_INT_HDR, MGMT_HDR_LENGTH);
-  memcpy((uint8_t *)buf + MGMT_HDR_LENGTH, field, MGMT_INT_LENGTH);
+  memcpy(static_cast<char *>(buf) + MGMT_HDR_LENGTH, field, MGMT_INT_LENGTH);
   return MGMT_HDR_LENGTH + MGMT_INT_LENGTH;
 }
 
@@ -369,7 +370,7 @@ mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallLong *field)
     return nospace();
   }
   memcpy(buf, &MGMT_LONG_HDR, MGMT_HDR_LENGTH);
-  memcpy((uint8_t *)buf + MGMT_HDR_LENGTH, field, MGMT_LONG_LENGTH);
+  memcpy(static_cast<char *>(buf) + MGMT_HDR_LENGTH, field, MGMT_LONG_LENGTH);
   return MGMT_HDR_LENGTH + MGMT_LONG_LENGTH;
 }
 
@@ -394,9 +395,9 @@ mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallString *field)
   uint32_t offset = 0;
   memcpy(buf, &MGMT_STRING_HDR, MGMT_HDR_LENGTH);
   offset += MGMT_HDR_LENGTH;
-  memcpy((uint8_t *)buf + offset, &data.len, MGMT_INT_LENGTH);
+  memcpy(static_cast<char *>(buf) + offset, &data.len, MGMT_INT_LENGTH);
   offset += MGMT_INT_LENGTH;
-  memcpy((uint8_t *)buf + offset, data.ptr, data.len);
+  memcpy(static_cast<char *>(buf) + offset, data.ptr, data.len);
   return offset + data.len;
 }
 
@@ -413,9 +414,9 @@ mgmt_message_marshall(void *buf, size_t remain, MgmtMarshallData *field)
   uint32_t offset = 0;
   memcpy(buf, &MGMT_DATA_HDR, MGMT_HDR_LENGTH);
   offset += MGMT_HDR_LENGTH;
-  memcpy((uint8_t *)buf + offset, &(field->len), MGMT_INT_LENGTH);
+  memcpy(static_cast<char *>(buf) + offset, &(field->len), MGMT_INT_LENGTH);
   offset += MGMT_INT_LENGTH;
-  memcpy((uint8_t *)buf + offset, field->ptr, field->len);
+  memcpy(static_cast<char *>(buf) + offset, field->ptr, field->len);
   return offset + field->len;
 }
 
@@ -431,7 +432,7 @@ mgmt_header_match(int fd, MgmtMarshallHdr expected)
   if (nhdr == -1) {
     return false;
   }
-  if ((hdr ^ expected) != 0) {
+  if (hdr != expected) {
     Fatal("mgmt_header_read mismatch. expected %d but got %d", expected, hdr);
     return false;
   }
@@ -487,7 +488,7 @@ mgmt_message_read(int fd, MgmtMarshallString *field)
   }
 
   ink_assert(data_is_nul_terminated(&data));
-  *field = (char *)data.ptr;
+  *field = static_cast<char *>(data.ptr);
   return nread + MGMT_HDR_LENGTH;
 }
 
@@ -515,7 +516,7 @@ mgmt_header_match(const void *buf, MgmtMarshallHdr expected)
     return false;
   }
   MgmtMarshallHdr hdr = *(static_cast<const MgmtMarshallHdr *>(buf));
-  if ((hdr ^ expected) != 0) {
+  if (hdr != expected) {
     Fatal("mgmt_message_parse field mismatch. should be %d but got %d", expected, hdr);
     return false;
   }
@@ -570,7 +571,7 @@ mgmt_message_parse(const void *buf, size_t len, MgmtMarshallString *field)
 
   ink_assert(data_is_nul_terminated(&data));
 
-  *field = (char *)data.ptr;
+  *field = static_cast<char *>(data.ptr);
   return nread + MGMT_HDR_LENGTH;
 }
 ssize_t
