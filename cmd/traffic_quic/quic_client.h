@@ -30,24 +30,25 @@
 
 #include "QUICApplication.h"
 
+struct QUICClientConfig {
+  char addr[1024]       = "127.0.0.1";
+  char port[16]         = "4433";
+  char path[1018]       = "/";
+  char debug_tags[1024] = "quic";
+};
+
 class QUICClient : public Continuation
 {
 public:
-  QUICClient(const char *addr, const char *port, const char *path)
-    : Continuation(new_ProxyMutex()), _remote_addr(addr), _remote_port(port), _path(path)
-  {
-    SET_HANDLER(&QUICClient::start);
-  };
+  QUICClient(const QUICClientConfig *config);
   ~QUICClient();
 
   int start(int, void *);
   int state_http_server_open(int event, void *data);
 
 private:
-  const char *_remote_addr           = nullptr;
-  const char *_remote_port           = nullptr;
+  const QUICClientConfig *_config    = nullptr;
   struct addrinfo *_remote_addr_info = nullptr;
-  const char *_path                  = nullptr;
 };
 
 class QUICClientApp : public QUICApplication

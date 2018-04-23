@@ -23,6 +23,11 @@
 
 #include "quic_client.h"
 
+QUICClient::~QUICClient(const QUICClientConfig *config) : Continuation(new_ProxyMutex()), _config(config)
+{
+  SET_HANDLER(&QUICClient::start);
+}
+
 QUICClient::~QUICClient()
 {
   freeaddrinfo(this->_remote_addr_info);
@@ -41,7 +46,7 @@ QUICClient::start(int, void *)
   hints.ai_flags    = 0;
   hints.ai_protocol = 0;
 
-  int res = getaddrinfo(this->_remote_addr, this->_remote_port, &hints, &this->_remote_addr_info);
+  int res = getaddrinfo(this->_config->addr, this->_config->port, &hints, &this->_remote_addr_info);
   if (res < 0) {
     Debug("quic_client", "Error: %s (%d)", strerror(errno), errno);
     return EVENT_DONE;
@@ -76,7 +81,7 @@ QUICClient::state_http_server_open(int event, void *data)
 
     QUICNetVConnection *conn = static_cast<QUICNetVConnection *>(data);
     QUICClientApp *app       = new QUICClientApp(conn);
-    app->start(this->_path);
+    app->start(this->_config->path);
 
     break;
   }

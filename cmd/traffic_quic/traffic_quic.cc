@@ -49,16 +49,13 @@ main(int argc, const char **argv)
   AppVersionInfo appVersionInfo;
   appVersionInfo.setup(PACKAGE_NAME, "traffic_quic", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
-  char addr[1024]       = "127.0.0.1";
-  char port[16]         = "4433";
-  char path[1018]       = "/";
-  char debug_tags[1024] = "quic";
+  QUICClientConfig config;
 
   const ArgumentDescription argument_descriptions[] = {
-    {"addr", 'a', "Address", "S1023", addr, nullptr, nullptr},
-    {"port", 'p', "Port", "S15", port, nullptr, nullptr},
-    {"path", 'P', "Path", "S1017", path, nullptr, nullptr},
-    {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, nullptr, nullptr},
+    {"addr", 'a', "Address", "S1023", config.addr, nullptr, nullptr},
+    {"port", 'p', "Port", "S15", config.port, nullptr, nullptr},
+    {"path", 'P', "Path", "S1017", config.path, nullptr, nullptr},
+    {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", config.debug_tags, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION(),
@@ -67,7 +64,7 @@ main(int argc, const char **argv)
   // Process command line arguments and dump into variables
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
-  init_diags(debug_tags, nullptr);
+  init_diags(config.debug_tags, nullptr);
   RecProcessInit(RECM_STAND_ALONE);
   LibRecordsConfigInit();
 
@@ -89,7 +86,7 @@ main(int argc, const char **argv)
   udpNet.start(1, stacksize);
   quic_NetProcessor.start(-1, stacksize);
 
-  QUICClient client(addr, port, path);
+  QUICClient client(&config);
   eventProcessor.schedule_in(&client, 1, ET_NET);
 
   this_thread()->execute();
