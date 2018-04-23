@@ -23,7 +23,10 @@
 
 #include "quic_client.h"
 
-QUICClient::~QUICClient(const QUICClientConfig *config) : Continuation(new_ProxyMutex()), _config(config)
+#include <iostream>
+#include <fstream>
+
+QUICClient::QUICClient(const QUICClientConfig *config) : Continuation(new_ProxyMutex()), _config(config)
 {
   SET_HANDLER(&QUICClient::start);
 }
@@ -80,7 +83,13 @@ QUICClient::state_http_server_open(int event, void *data)
     Debug("quic_client", "start proxy server ssn/txn");
 
     QUICNetVConnection *conn = static_cast<QUICNetVConnection *>(data);
-    QUICClientApp *app       = new QUICClientApp(conn);
+
+    const char *filename = nullptr;
+    if (this->_config->output[0] != 0x0) {
+      filename = this->_config->output;
+    }
+
+    QUICClientApp *app = new QUICClientApp(conn, filename);
     app->start(this->_config->path);
 
     break;
@@ -106,7 +115,7 @@ QUICClient::state_http_server_open(int event, void *data)
 #define QUICClientAppDebug(fmt, ...) \
   Debug("quic_client_app", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_qc->connection_id()), ##__VA_ARGS__)
 
-QUICClientApp::QUICClientApp(QUICNetVConnection *qvc) : QUICApplication(qvc)
+QUICClientApp::QUICClientApp(QUICNetVConnection *qvc, const char *filename) : QUICApplication(qvc), _filename(filename)
 {
   this->_qc->stream_manager()->set_default_application(this);
 
@@ -116,6 +125,11 @@ QUICClientApp::QUICClientApp(QUICNetVConnection *qvc) : QUICApplication(qvc)
 void
 QUICClientApp::start(const char *path)
 {
+  if (this->_filename) {
+    // Destroy contents if file already exists
+    std::ofstream f_stream(this->_filename, std::ios::binary | std::ios::trunc);
+  }
+
   QUICStreamId stream_id;
   QUICErrorUPtr error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
 
@@ -152,13 +166,33 @@ QUICClientApp::main_event_handler(int event, Event *data)
 
   switch (event) {
   case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE:
-    if (stream_io->is_read_avail_more_than(0)) {
-      uint8_t response[1024] = {0};
-      stream_io->read(response, sizeof(response));
-      QUICClientAppDebug("\n%s", response);
+  case VC_EVENT_READ_COMPLETE: {
+    std::streambuf *default_stream = nullptr;
+    std::ofstream f_stream;
+
+    if (this->_filename) {
+      default_stream = std::cout.rdbuf();
+      f_stream       = std::ofstream(this->_filename, std::ios::binary | std::ios::app);
+      std::cout.rdbuf(f_stream.rdbuf());
     }
+
+    while (stream_io->is_read_avail_more_than(0)) {
+      uint8_t buf[8192] = {0};
+      int64_t len       = stream_io->get_read_buffer_reader()->block_read_avail();
+      len               = std::min(len, (int64_t)sizeof(buf));
+      stream_io->read(buf, len);
+
+      std::cout.write(reinterpret_cast<char *>(buf), len);
+    }
+    std::cout.flush();
+
+    if (this->_filename) {
+      f_stream.close();
+      std::cout.rdbuf(default_stream);
+    }
+
     break;
+  }
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     break;

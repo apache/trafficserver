@@ -32,6 +32,7 @@
 
 struct QUICClientConfig {
   char addr[1024]       = "127.0.0.1";
+  char output[1024]     = {0};
   char port[16]         = "4433";
   char path[1018]       = "/";
   char debug_tags[1024] = "quic";
@@ -54,8 +55,11 @@ private:
 class QUICClientApp : public QUICApplication
 {
 public:
-  QUICClientApp(QUICNetVConnection *qvc);
+  QUICClientApp(QUICNetVConnection *qvc, const char *filename);
 
   void start(const char *path);
   int main_event_handler(int event, Event *data);
+
+private:
+  const char *_filename = nullptr;
 };

@@ -53,6 +53,7 @@ main(int argc, const char **argv)
 
   const ArgumentDescription argument_descriptions[] = {
     {"addr", 'a', "Address", "S1023", config.addr, nullptr, nullptr},
+    {"output", 'o', "Write to FILE instead of stdout", "S1023", config.output, nullptr, nullptr},
     {"port", 'p', "Port", "S15", config.port, nullptr, nullptr},
     {"path", 'P', "Path", "S1017", config.path, nullptr, nullptr},
     {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", config.debug_tags, nullptr, nullptr},
