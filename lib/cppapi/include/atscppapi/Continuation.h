@@ -111,7 +111,7 @@ public:
   // Timeout of zero means no timeout.
   //
   Action
-  schedule(TSEvent event, TSHRTime timeout = 0, TSThreadPool tp = TS_THREAD_POOL_DEFAULT)
+  schedule(TSHRTime timeout = 0, TSThreadPool tp = TS_THREAD_POOL_DEFAULT)
   {
     return TSContSchedule(_cont, timeout, tp);
   }
@@ -119,13 +119,13 @@ public:
   // Timeout of zero means no timeout.
   //
   Action
-  httpSchedule(TSEvent event, TSHttpTxn httpTransactionp, TSHRTime timeout = 0)
+  httpSchedule(TSHttpTxn httpTransactionp, TSHRTime timeout = 0)
   {
     return TSHttpSchedule(_cont, httpTransactionp, timeout);
   }
 
   Action
-  scheduleEvery(TSEvent event, TSHRTime interval /* milliseconds */, TSThreadPool tp = TS_THREAD_POOL_DEFAULT)
+  scheduleEvery(TSHRTime interval /* milliseconds */, TSThreadPool tp = TS_THREAD_POOL_DEFAULT)
   {
     return TSContScheduleEvery(_cont, interval, tp);
   }
