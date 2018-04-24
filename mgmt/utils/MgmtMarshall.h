@@ -25,11 +25,12 @@
 
 #include <tuple>
 #include <stdarg.h>
-#include "ts/Diags.h"
 
 #define MAX_TIME_WAIT 60 // num secs for a timeout on a select call (remote only)
 
-// Simple message marshalling.
+// Simple message marshalling. Every message begins with a 32-bit header. The leading 8 bits indicate the type of the
+// message and the following 24 bits indicate the message length. For integer and long types, the lower 24 length bits
+// are ignored because it is fixed at compile time.
 //
 // MGMT_MARSHALL_INT
 // Wire size is 4 bytes signed. This type is used for enum and boolean values, as well as embedded lengths and general
@@ -39,13 +40,15 @@
 // Wire size is 8 bytes signed.
 //
 // MGMT_MARSHALL_STRING
-// Wire size is a 4 byte length followed by N bytes. The trailing NUL is always sent and NULL strings are sent as empty
+// Wire size is a 4 byte header followed by N bytes. The trailing NUL is always sent and NULL strings are sent as empty
 // strings. This means that the minimum wire size for a string is 5 bytes (4 byte length + NUL byte). The unmarshalled
 // string point is guaranteed to be non-NULL.
 //
 // MGMT_MARSHALL_DATA
-// Wire size is 4 byte length followed by N data bytes. If the length is 0, no subsequent bytes are sent. In this case
-// the unmarshalled data pointer is guaranteed to be NULL.
+// Wire size is 4 byte header followed by N data bytes. If the length is 0, no subsequent bytes are sent. In this case
+// the unmarshalled data pointer is guaranteed to be NULL. Within the protocol, one byte is added to the
+// MgmtMarshallData.len during marshalling to specify it's type. This is stripped in the unmarshalling step so that the
+// message length can be used.
 //
 // !!! Should use mgmt_message_length to figure out the length needed in mgmt_message_read and mgmt_message_parse !!!
 // This is because there are additional headers being sent and marshalled in the protocol.
@@ -58,11 +61,11 @@ enum MgmtMarshallType {
   MGMT_MARSHALL_DATA    // byte buffer
 };
 
-static constexpr size_t MGMT_HDR_LENGTH  = 1; // in bytes.
+static constexpr size_t MGMT_HDR_LENGTH  = 4; // in bytes.
 static constexpr size_t MGMT_INT_LENGTH  = 4;
 static constexpr size_t MGMT_LONG_LENGTH = 8;
 
-typedef uint8_t MgmtMarshallHdr; // sent before every parameter to give type info.
+typedef uint32_t MgmtMarshallHdr;
 typedef int32_t MgmtMarshallInt;
 typedef int64_t MgmtMarshallLong;
 typedef char *MgmtMarshallString;
@@ -72,10 +75,11 @@ struct MgmtMarshallData {
   size_t len;
 };
 
-static constexpr MgmtMarshallHdr MGMT_INT_HDR    = 0x0;
-static constexpr MgmtMarshallHdr MGMT_LONG_HDR   = 0x1;
-static constexpr MgmtMarshallHdr MGMT_STRING_HDR = 0x2;
-static constexpr MgmtMarshallHdr MGMT_DATA_HDR   = 0x3;
+/// A byte to idenify the marshalled type.
+static constexpr uint8_t MGMT_INT_TYPE    = 0x00;
+static constexpr uint8_t MGMT_LONG_TYPE   = 0x01;
+static constexpr uint8_t MGMT_STRING_TYPE = 0x02;
+static constexpr uint8_t MGMT_DATA_TYPE   = 0x03;
 
 /**
   Various marshalling functions are implemented below. All functions are written
@@ -177,3 +181,6 @@ mgmt_message_parse(const void *buf, size_t len, T first, Rest &&... rest)
   return (nfirst != -1 && nrest != -1) ? nfirst + nrest : -1;
 }
 /// end mgmt_message_parse ------------------------------------------------------
+
+/// This is so external functions can build headers if necessary.
+MgmtMarshallHdr mgmt_message_build_hdr(const uint8_t type, const uint32_t len);

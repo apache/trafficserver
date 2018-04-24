@@ -23,6 +23,7 @@
 #include <ts/TestBox.h>
 #include <MgmtMarshall.h>
 #include <MgmtSocket.h>
+#include <iostream>
 
 #define CHECK_EQ(expr, len)                                                                                 \
   do {                                                                                                      \
@@ -162,7 +163,7 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
     const char *s = stringvals[i];
-    len           = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */ + MGMT_HDR_LENGTH;
+    len           = MGMT_HDR_LENGTH /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
 
     mstring = s ? ats_strdup(s) : nullptr;
     CHECK_EQ(mgmt_message_write(clientfd, &mstring), len);
@@ -221,7 +222,7 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
     const char *s = stringvals[i];
-    len           = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */ + MGMT_HDR_LENGTH;
+    len           = MGMT_HDR_LENGTH /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
 
     mstring = s ? ats_strdup(s) : nullptr;
     CHECK_EQ(mgmt_message_marshall(msgbuf, 1, &mstring), -1);
@@ -278,27 +279,27 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
 
   // string messages include a 4-byte length and the NULL
   mstring = (char *)"foo";
-  CHECK_EQ(mgmt_message_length(&mstring), sizeof("foo") + MGMT_INT_LENGTH + MGMT_HDR_LENGTH);
+  CHECK_EQ(mgmt_message_length(&mstring), sizeof("foo") + MGMT_HDR_LENGTH);
 
   // NULL strings are the same as empty strings ...
   mstring = nullptr;
-  CHECK_EQ(mgmt_message_length(&mstring), 4 + 1 + MGMT_HDR_LENGTH);
+  CHECK_EQ(mgmt_message_length(&mstring), 1 + MGMT_HDR_LENGTH);
   mstring = (char *)"";
-  CHECK_EQ(mgmt_message_length(&mstring), 4 + 1 + MGMT_HDR_LENGTH);
+  CHECK_EQ(mgmt_message_length(&mstring), 1 + MGMT_HDR_LENGTH);
 
   // data fields include a 4-byte length. We don't go looking at the data in this case.
   mdata.len = 99;
   mdata.ptr = nullptr;
-  CHECK_EQ(mgmt_message_length(&mdata), 99 + 4 + MGMT_HDR_LENGTH);
+  CHECK_EQ(mgmt_message_length(&mdata), 99 + MGMT_HDR_LENGTH);
 
   mstring   = (char *)"all fields";
   mdata.len = 31;
   CHECK_EQ(mgmt_message_length(&mdata, &mint, &mlong, &mstring, &mlong, &mlong),
-           31 + 4 + 4 + 8 + sizeof("all fields") + 4 + 8 + 8 + 6 * MGMT_HDR_LENGTH);
+           31 + 4 + 8 + sizeof("all fields") + 8 + 8 + 6 * MGMT_HDR_LENGTH);
 
   mdata.ptr = nullptr;
   mdata.len = 0;
-  CHECK_EQ(mgmt_message_length(&mdata), 4 + MGMT_HDR_LENGTH);
+  CHECK_EQ(mgmt_message_length(&mdata), MGMT_HDR_LENGTH);
 }
 
 int

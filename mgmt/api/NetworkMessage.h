@@ -85,17 +85,17 @@ send_mgmt_request(const mgmt_message_sender &snd, OpType optype, Params &&... pa
   }
 
   msglen = mgmt_message_length(std::forward<Params>(params)...);
-  msgbuf = static_cast<char *>(ats_malloc(msglen + MGMT_HDR_LENGTH + 4));
+  msgbuf = static_cast<char *>(ats_malloc(msglen + MGMT_HDR_LENGTH));
 
   // Add data header
-  memcpy(static_cast<char *>(msgbuf), &MGMT_DATA_HDR, MGMT_HDR_LENGTH);
-  memcpy(static_cast<char *>(msgbuf) + MGMT_HDR_LENGTH, &msglen, 4);
+  uint32_t hdr = mgmt_message_build_hdr(MGMT_DATA_TYPE, msglen);
+  memcpy(static_cast<char *>(msgbuf), &hdr, MGMT_HDR_LENGTH);
 
   // Now marshall the message itself.
-  if (mgmt_message_marshall(static_cast<char *>(msgbuf) + 4 + MGMT_HDR_LENGTH, msglen, std::forward<Params>(params)...) == -1) {
+  if (mgmt_message_marshall(static_cast<char *>(msgbuf) + MGMT_HDR_LENGTH, msglen, std::forward<Params>(params)...) == -1) {
     return TS_ERR_PARAMS;
   }
-  return snd.send(msgbuf, msglen + 4 + MGMT_HDR_LENGTH);
+  return snd.send(msgbuf, msglen + MGMT_HDR_LENGTH);
 }
 
 template <typename... Params>

@@ -578,11 +578,11 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     break;
   // Congestion Control - end
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
-    MgmtMarshallInt options = 0;
-    MgmtMarshallString mparent;
-    MgmtMarshallString mchild;
+    MgmtMarshallInt options    = 0;
+    MgmtMarshallString mparent = nullptr;
+    MgmtMarshallString mchild  = nullptr;
     if (mgmt_message_parse(data_raw, mh->data_len, &mparent, &mchild, &options) != -1) {
-      configFiles->configFileChild(mparent, mchild, (unsigned int)options);
+      configFiles->configFileChild(mparent, mchild, static_cast<unsigned int>(options));
     } else {
       mgmt_log("[LocalManager::handleMgmtMsgFromProcesses] "
                "MGMT_SIGNAL_CONFIG_FILE_CHILD mgmt_message_parse error\n");
