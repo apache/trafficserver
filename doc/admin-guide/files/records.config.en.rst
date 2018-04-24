@@ -1317,6 +1317,11 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 1
+
+   Filter out hosts that are determined to be the same as the current host, e.g., localhost,
+   that have been specified in any parent and secondary_parent lists in the parent.config file.
+
 HTTP Connection Timeouts
 ========================
 
