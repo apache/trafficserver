@@ -40,6 +40,7 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 // Global Vars for Parent Selection
 static const char modulePrefix[]                             = "[ParentSelection]";
 static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = nullptr;
+static int self_detect                                       = 1;
 
 // Config var names
 static const char *file_var      = "proxy.config.http.parent_proxy.file";
@@ -350,33 +351,34 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
   char *_val                      = static_cast<char *>(ats_strndup(val, strlen(val)));
   char fqdn[TS_MAX_HOST_NAME_LEN] = {0}, *nm, *token, *savePtr;
   std::string str;
-  Machine *machine = Machine::instance();
+  Machine *machine                   = Machine::instance();
+  constexpr char PARENT_DELIMITERS[] = ";, ";
 
   strncpy(_val, val, strlen(val));
 
-  token = strtok_r(_val, ";", &savePtr);
+  token = strtok_r(_val, PARENT_DELIMITERS, &savePtr);
   while (token != nullptr) {
     if ((nm = strchr(token, ':')) != nullptr) {
       size_t len = (nm - token);
       ink_assert(len < sizeof(fqdn));
       memset(fqdn, 0, sizeof(fqdn));
       strncpy(fqdn, token, len);
-      if (machine->is_self(fqdn)) {
+      if (self_detect && machine->is_self(fqdn)) {
         Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
-        token = strtok_r(nullptr, ";", &savePtr);
+        token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
         continue;
       }
     } else {
-      if (machine->is_self(token)) {
+      if (self_detect && machine->is_self(token)) {
         Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", token, line_num);
-        token = strtok_r(nullptr, ";", &savePtr);
+        token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
         continue;
       }
     }
 
     str += token;
     str += ";";
-    token = strtok_r(nullptr, ";", &savePtr);
+    token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
   }
   strncpy(buf, str.c_str(), len);
   ats_free(_val);
@@ -580,9 +582,14 @@ ParentRecord::Init(matcher_line *line_info)
   bool used              = false;
   ParentRR_t round_robin = P_NO_ROUND_ROBIN;
   char buf[128];
+  RecInt rec_self_detect = 1;
 
   this->line_num = line_info->line_num;
   this->scheme   = nullptr;
+
+  if (RecGetRecordInt("proxy.config.http.parent_proxy.self_detect", &rec_self_detect) == REC_ERR_OKAY) {
+    self_detect = static_cast<int>(rec_self_detect);
+  }
 
   for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
     used  = false;
