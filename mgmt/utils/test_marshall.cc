@@ -23,7 +23,6 @@
 #include <ts/TestBox.h>
 #include <MgmtMarshall.h>
 #include <MgmtSocket.h>
-#include <iostream>
 
 #define CHECK_EQ(expr, len)                                                                                 \
   do {                                                                                                      \
