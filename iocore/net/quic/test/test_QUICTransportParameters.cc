@@ -31,7 +31,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   {
     uint8_t buf[] = {
       0x05, 0x06, 0x07, 0x08, // initial version
-      0x00, 0x1e,             // size of parameters
+      0x00, 0x1c,             // size of parameters
       0x00, 0x00,             // parameter id
       0x00, 0x04,             // length of value
       0x11, 0x22, 0x33, 0x44, // value
@@ -39,8 +39,8 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
       0x00, 0x04,             // length of value
       0x12, 0x34, 0x56, 0x78, // value
       0x00, 0x02,             // parameter id
-      0x00, 0x04,             // length of value
-      0x0a, 0x0b, 0x0c, 0x0d, // value
+      0x00, 0x02,             // length of value
+      0x0a, 0x0b,             // value
       0x00, 0x03,             // parameter id
       0x00, 0x02,             // length of value
       0x01, 0x23,             // value
@@ -62,8 +62,8 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
     data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, len);
-    CHECK(len == 4);
-    CHECK(memcmp(data, "\x0a\x0b\x0c\x0d", 4) == 0);
+    CHECK(len == 2);
+    CHECK(memcmp(data, "\x0a\x0b", 2) == 0);
 
     data = params_in_ch.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
     CHECK(len == 2);

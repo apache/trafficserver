@@ -399,7 +399,6 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   // MAYs
   tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_in());
   tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_in());
-  // this->_local_transport_parameters.add(QUICTransportParameterId::OMIT_CONNECTION_ID, {});
   // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
 
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);

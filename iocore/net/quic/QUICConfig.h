@@ -81,9 +81,9 @@ private:
   uint32_t _vn_exercise_enabled     = 0;
 
   uint32_t _initial_max_stream_id_bidi_in  = 100;
-  uint32_t _initial_max_stream_id_bidi_out = 101;
-  uint32_t _initial_max_stream_id_uni_in   = 102;
-  uint32_t _initial_max_stream_id_uni_out  = 103;
+  uint32_t _initial_max_stream_id_bidi_out = 100;
+  uint32_t _initial_max_stream_id_uni_in   = 100;
+  uint32_t _initial_max_stream_id_uni_out  = 100;
 
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;

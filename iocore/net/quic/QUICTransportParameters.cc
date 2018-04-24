@@ -169,12 +169,6 @@ QUICTransportParameters::_validate_parameters() const
   }
 
   // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::OMIT_CONNECTION_ID)) != this->_parameters.end()) {
-    if (ite->second->len() != 0) {
-      return -8;
-    }
-  }
-
   if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_PACKET_SIZE)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
       return -9;
@@ -190,6 +184,19 @@ QUICTransportParameters::_validate_parameters() const
     }
     if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 20) {
       return -12;
+    }
+  }
+
+  // MAYs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -3;
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -5;
     }
   }
 
@@ -362,27 +369,6 @@ QUICTransportParametersInClientHello::_validate_parameters() const
     return -1;
   }
 
-  // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -2;
-    }
-    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::SERVER_BIDI) {
-      return -3;
-    }
-  }
-
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -4;
-    }
-    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::SERVER_UNI) {
-      return -5;
-    }
-  }
-
   return 0;
 }
 
@@ -474,27 +460,6 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
     }
   } else {
     return -2;
-  }
-
-  // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -3;
-    }
-    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::CLIENT_BIDI) {
-      return -4;
-    }
-  }
-
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -5;
-    }
-    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::CLIENT_UNI) {
-      return -6;
-    }
   }
 
   return 0;
