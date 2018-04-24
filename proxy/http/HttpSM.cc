@@ -46,6 +46,7 @@
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
 #include <algorithm>
+#include <atomic>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
@@ -116,6 +117,9 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
     }
   }
 }
+
+// Unique state machine identifier
+std::atomic<int64_t> next_sm_id(0);
 }
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
@@ -250,8 +254,6 @@ HttpVCTable::cleanup_all()
     default_handler = _h;                 \
   }
 
-static int next_sm_id = 0;
-
 HttpSM::HttpSM() : Continuation(nullptr)
 {
   ink_zero(vc_table);
@@ -295,17 +297,9 @@ HttpSM::init()
   milestones[TS_MILESTONE_SM_START] = Thread::get_hrtime();
 
   magic = HTTP_SM_MAGIC_ALIVE;
-  sm_id = 0;
 
-  // Unique state machine identifier.
-  //  changed next_sm_id from int64_t to int because
-  //  atomic(32) is faster than atomic64.  The id is just
-  //  for debugging, so it's OK if it wraps every few days,
-  //  as long as the http_info bucket hash still works.
-  //  (To test this, initialize next_sm_id to 0x7ffffff0)
-  //  Leaving sm_id as int64_t to minimize code changes.
-
-  sm_id                    = (int64_t)ink_atomic_increment((&next_sm_id), 1);
+  // Unique state machine identifier
+  sm_id                    = next_sm_id++;
   t_state.state_machine_id = sm_id;
   t_state.state_machine    = this;
 
