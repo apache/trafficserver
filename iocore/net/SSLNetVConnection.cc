@@ -1344,15 +1344,24 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default: {
     err = (errno) ? errno : -ENET_CONNECT_FAILED;
+    char buf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
     // FIXME -- This triggers a retry on cases of cert validation errors....
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
-    char buf[512];
-    unsigned long e = ERR_peek_last_error();
-    ERR_error_string_n(e, buf, sizeof(buf));
     TraceIn(trace, get_remote_addr(), get_remote_port(),
             "SSL client handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, errno);
+    if (e) {
+      if (this->options.sni_servername) {
+        Error("SSL connection failed for '%s': %s", this->options.sni_servername.get(), buf);
+      } else {
+        char buff[INET6_ADDRSTRLEN];
+        ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+        Error("SSL connection failed for '%s': %s", buff, buf);
+      }
+    }
     return EVENT_ERROR;
   } break;
   }
