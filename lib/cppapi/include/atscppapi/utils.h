@@ -64,5 +64,5 @@ namespace utils
    * @return a string which is the pretty printed address including port
    */
   std::string getIpPortString(const sockaddr *);
-}
-}
+} // namespace utils
+} // namespace atscppapi

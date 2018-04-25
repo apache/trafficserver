@@ -334,8 +334,8 @@ namespace inliner
     }
   };
 
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #undef ONE_PIXEL
 

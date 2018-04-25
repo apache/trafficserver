@@ -67,7 +67,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   int ret;
   int states                           = TS_LUA_MAX_STATE_COUNT;
   static const struct option longopt[] = {
-    {"states", required_argument, 0, 's'}, {0, 0, 0, 0},
+    {"states", required_argument, 0, 's'},
+    {0, 0, 0, 0},
   };
 
   argc--;
@@ -446,7 +447,8 @@ TSPluginInit(int argc, const char *argv[])
 
   int states                           = TS_LUA_MAX_STATE_COUNT;
   static const struct option longopt[] = {
-    {"states", required_argument, 0, 's'}, {0, 0, 0, 0},
+    {"states", required_argument, 0, 's'},
+    {0, 0, 0, 0},
   };
 
   for (;;) {

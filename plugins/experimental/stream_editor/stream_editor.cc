@@ -257,7 +257,7 @@ class match_t
 {
 public:
   virtual bool find(const char *, size_t, size_t &, size_t &, const char *, std::string &) const = 0;
-  virtual size_t cont_size() const = 0;
+  virtual size_t cont_size() const                                                               = 0;
   virtual ~match_t() {}
 };
 

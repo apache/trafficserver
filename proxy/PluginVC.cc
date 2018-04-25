@@ -1005,9 +1005,7 @@ PluginVC::set_data(int id, void *data)
 
 int32_t PluginVCCore::nextid;
 
-PluginVCCore::~PluginVCCore()
-{
-}
+PluginVCCore::~PluginVCCore() {}
 
 PluginVCCore *
 PluginVCCore::alloc(Continuation *acceptor)
@@ -1254,9 +1252,7 @@ private:
   unsigned completions_received;
 };
 
-PVCTestDriver::PVCTestDriver() : NetTestDriver(), i(0), completions_received(0)
-{
-}
+PVCTestDriver::PVCTestDriver() : NetTestDriver(), i(0), completions_received(0) {}
 
 PVCTestDriver::~PVCTestDriver()
 {

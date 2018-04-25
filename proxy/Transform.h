@@ -78,9 +78,7 @@ public:
                            ) = 0;
 };
 
-inline TransformVCChain::TransformVCChain(ProxyMutex *m) : VConnection(m)
-{
-}
+inline TransformVCChain::TransformVCChain(ProxyMutex *m) : VConnection(m) {}
 
 ///////////////////////////////////////////////////////////////////
 /// RangeTransform implementation

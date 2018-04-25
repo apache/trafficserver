@@ -50,7 +50,7 @@ public:
 
 // Definitions to test compilation.
 typedef IntrusivePtrQueue<A, IntrusivePtrLinkFunction<A, &A::nextPtr, &A::prevPtr>> AList;
-}
+} // namespace
 
 REGRESSION_TEST(IntrusivePtr_Test_Basic)(RegressionTest *t, int atype, int *pstatus)
 {

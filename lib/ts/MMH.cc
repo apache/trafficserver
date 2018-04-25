@@ -321,7 +321,7 @@ _memset(unsigned char *b, int c, int len)
   int o = len & 0x3, i;
   for (i = 0; i < o; i++)
     b[i] = 0;
-  for (i                     = 0; i < (len - o) / 4; i++)
+  for (i = 0; i < (len - o) / 4; i++)
     ((uint32_t *)(b + o))[i] = 0;
 }
 #endif

@@ -90,7 +90,7 @@ struct EvacuationBlock;
     writer_lock_retry++;                                                  \
     ink_hrtime _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay); \
     if (writer_lock_retry > 2)                                            \
-      _t    = HRTIME_MSECONDS(cache_read_while_writer_retry_delay) * 2;   \
+      _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay) * 2;      \
     trigger = mutex->thread_holding->schedule_in_local(this, _t);         \
     return EVENT_CONT;                                                    \
   } while (0)

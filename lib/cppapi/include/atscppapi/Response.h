@@ -69,4 +69,4 @@ private:
   friend class Transaction;
   friend class utils::internal;
 };
-}
+} // namespace atscppapi

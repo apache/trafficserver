@@ -118,6 +118,6 @@ namespace cache
 
   void write(const std::string &, std::string &&);
 
-} // end of cache namespace
-} // end of ats namespace
+} // namespace cache
+} // namespace ats
 #endif // CACHE_H

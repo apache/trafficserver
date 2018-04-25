@@ -40,7 +40,7 @@ const string STAT_NAME = "stat_example";
 Stat stat;
 
 GlobalPlugin *plugin;
-}
+} // namespace
 
 /*
  * This is a simple plugin that will increment a counter

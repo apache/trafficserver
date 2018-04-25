@@ -27,8 +27,8 @@
 
 struct ATSHashBase {
   virtual void update(const void *, size_t) = 0;
-  virtual void final(void) = 0;
-  virtual void clear(void) = 0;
+  virtual void final(void)                  = 0;
+  virtual void clear(void)                  = 0;
   virtual ~ATSHashBase();
 };
 

@@ -464,7 +464,7 @@ inline void
 Vec<C, A, S>::fill(size_t nn)
 {
   for (size_t i = n; i < nn; i++)
-    add()       = 0;
+    add() = 0;
 }
 
 template <class C, class A, int S>
@@ -735,7 +735,7 @@ Vec<C, A, S>::insert(size_t index, Vec<C> &vv)
 {
   fill(n + vv.n);
   memmove(&v[index + vv.n], &v[index], (n - index - 1) * sizeof(C));
-  for (int x     = 0; x < vv.n; x++)
+  for (int x = 0; x < vv.n; x++)
     v[index + x] = vv[x];
 }
 
@@ -788,8 +788,8 @@ Vec<C, A, S>::set_expand()
     i = SET_INITIAL_INDEX;
   else
     i = i + 1;
-  n   = prime2[i];
-  v   = (C *)A::alloc(n * sizeof(C));
+  n = prime2[i];
+  v = (C *)A::alloc(n * sizeof(C));
   memset(static_cast<void *>(v), 0, n * sizeof(C));
 }
 
@@ -1614,7 +1614,7 @@ HashMap<K, AHashFns, C, A>::put(K akey, C avalue)
   } else {
     if (n < MAP_INTEGRAL_SIZE) {
       if (!v)
-        v        = e;
+        v = e;
       v[n].key   = akey;
       v[n].value = avalue;
       n++;
@@ -1830,14 +1830,16 @@ public:
     /// Dereference.
     Value *operator->() const { return m_value; }
     /// Find next value with matching key (prefix).
-    Location &operator++()
+    Location &
+    operator++()
     {
       if (m_value)
         this->advance();
       return *this;
     }
     /// Find next value with matching key (postfix).
-    Location &operator++(int)
+    Location &
+    operator++(int)
     {
       Location zret(*this);
       if (m_value)
@@ -2031,7 +2033,9 @@ TSHashTable<H>::end()
   return iterator(nullptr, nullptr);
 }
 
-template <typename H> typename TSHashTable<H>::iterator &TSHashTable<H>::iterator::operator++()
+template <typename H>
+typename TSHashTable<H>::iterator &
+TSHashTable<H>::iterator::operator++()
 {
   if (m_value) {
     if (nullptr == (m_value = ListHead::next(m_value))) {        // end of bucket, next bucket.
@@ -2044,7 +2048,9 @@ template <typename H> typename TSHashTable<H>::iterator &TSHashTable<H>::iterato
   return *this;
 }
 
-template <typename H> typename TSHashTable<H>::iterator TSHashTable<H>::iterator::operator++(int)
+template <typename H>
+typename TSHashTable<H>::iterator
+TSHashTable<H>::iterator::operator++(int)
 {
   iterator prev(*this);
   ++*this;
@@ -2095,7 +2101,7 @@ TSHashTable<H>::find(Key key)
   v = zret.m_bucket->m_chain.head;
   // Search for first matching key.
   while (nullptr != v && !Hasher::equal(key, Hasher::key(v)))
-    v          = ListHead::next(v);
+    v = ListHead::next(v);
   zret.m_value = v;
   return zret;
 }
@@ -2150,7 +2156,7 @@ TSHashTable<H>::remove(Location const &l)
       m_bucket_chain.remove(l.m_bucket);
     else if (1 == l.m_bucket->m_count) // if count drops to 1, then it's not mixed any more.
       l.m_bucket->m_mixed_p = false;
-    zret                    = true;
+    zret = true;
   }
   return zret;
 }

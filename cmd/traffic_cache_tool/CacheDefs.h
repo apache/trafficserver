@@ -46,7 +46,7 @@ namespace tag
 struct bytes {
   static constexpr char const *const label = " bytes";
 };
-}
+} // namespace tag
 
 using ts::round_down;
 using ts::round_up;
@@ -414,7 +414,7 @@ public:
     password.assign(p_pass, pass_len);
   }
 };
-}
+} // namespace ts
 
 class DFA;
 // this class matches url of the format : scheme://hostname:port/path;params?query
@@ -620,4 +620,4 @@ struct Stripe {
   void init_dir();
   Errata clear(); // clears striped headers and footers
 };
-} // end ct
+} // namespace ct

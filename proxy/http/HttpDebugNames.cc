@@ -168,9 +168,9 @@ HttpDebugNames::get_event_name(int event)
   case DNS_EVENT_LOOKUP:
     return ("DNS_EVENT_LOOKUP");
 
-  ////////////////////
-  // CACHE   EVENTS //
-  ////////////////////
+    ////////////////////
+    // CACHE   EVENTS //
+    ////////////////////
 
   case CACHE_EVENT_LOOKUP:
     return ("CACHE_EVENT_LOOKUP");

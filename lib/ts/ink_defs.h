@@ -115,13 +115,13 @@ countof(const T (&)[N])
 #endif
 
 /* Variables
-*/
+ */
 extern int debug_level;
 extern int off;
 extern int on;
 
 /* Functions
-*/
+ */
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
 int ink_number_of_processors();
 int ink_login_name_max();

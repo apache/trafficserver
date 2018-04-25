@@ -85,4 +85,4 @@ private:
   GlobalPluginState *state_; /**< Internal state tied to a GlobalPlugin */
 };
 
-} /* atscppapi */
+} // namespace atscppapi

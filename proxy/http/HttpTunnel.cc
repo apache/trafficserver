@@ -176,8 +176,8 @@ ChunkedHandler::read_size()
         if (ParseRules::is_lf(*tmp)) {
           Debug("http_chunk", "read chunk size of %d bytes", running_sum);
           bytes_left = (cur_chunk_size = running_sum);
-          state = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
-          done  = true;
+          state      = (running_sum == 0) ? CHUNK_READ_TRAILER_BLANK : CHUNK_READ_CHUNK;
+          done       = true;
           break;
         }
       } else if (state == CHUNK_READ_SIZE_START) {
@@ -502,9 +502,7 @@ HttpTunnelConsumer::HttpTunnelConsumer()
 {
 }
 
-HttpTunnel::HttpTunnel() : Continuation(nullptr)
-{
-}
+HttpTunnel::HttpTunnel() : Continuation(nullptr) {}
 
 void
 HttpTunnel::init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex)
@@ -1199,9 +1197,9 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     break;
 
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
-  // If the write completes on the stack (as it can for http2), then
-  // consumer could have called back by this point.  Must treat this as
-  // a regular read complete (falling through to the following cases).
+    // If the write completes on the stack (as it can for http2), then
+    // consumer could have called back by this point.  Must treat this as
+    // a regular read complete (falling through to the following cases).
 
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_EOS:
@@ -1277,7 +1275,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
 #ifndef LAZY_BUF_ALLOC
       && p->read_buffer->write_avail() > 0
 #endif
-      ) {
+  ) {
     // Only do flow control if enabled and the producer is an external
     // source.  Otherwise disable by making the backlog zero. Because
     // the backlog short cuts quit when the value is equal (or
@@ -1402,7 +1400,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
 #ifndef LAZY_BUF_ALLOC
         && p->read_buffer->write_avail() > 0
 #endif
-        ) {
+    ) {
       if (p->is_throttled()) {
         this->consumer_reenable(c);
       } else {

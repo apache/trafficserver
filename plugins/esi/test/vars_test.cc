@@ -135,8 +135,9 @@ main()
     esi_vars.populate(HttpHeader("hosT", -1, "localhost", -1));
     assert(esi_vars.getValue("HTTP_HOST") == "localhost");
 
-    esi_vars.populate(HttpHeader("User-agent", -1, "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) "
-                                                   "Gecko/20091201 Firefox/3.5.6 (.NETgecko CLR 3.5.30729)",
+    esi_vars.populate(HttpHeader("User-agent", -1,
+                                 "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) "
+                                 "Gecko/20091201 Firefox/3.5.6 (.NETgecko CLR 3.5.30729)",
                                  -1));
 
     /*

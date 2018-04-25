@@ -152,7 +152,7 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
   }
   return 0;
 }
-}
+} // namespace
 
 AsyncHttpFetch::AsyncHttpFetch(const string &url_str, const string &request_body)
 {

@@ -38,7 +38,7 @@ namespace
 {
 #define TAG "delay_transformation"
 GlobalPlugin *plugin;
-}
+} // namespace
 
 class DelayTransformationPlugin : public TransformationPlugin
 {

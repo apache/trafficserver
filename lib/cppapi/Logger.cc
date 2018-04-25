@@ -66,7 +66,7 @@ namespace
 // Since the TSTextLog API doesn't support override the log file sizes (I will add this to TS api at some point)
 // we will use the roll size specified by default in records.config.
 const int ROLL_ON_TIME = 1; // See RollingEnabledValues in LogConfig.h
-}
+} // namespace
 
 /*
  * These have default values specified for add_timestamp and rename_file in Logger.h

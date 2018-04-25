@@ -346,7 +346,8 @@ RawHashTableIter::operator()() const
   return (m_currentBinding->clientData);
 }
 
-inline RawHashTable_Value &RawHashTableIter::operator++()
+inline RawHashTable_Value &
+RawHashTableIter::operator++()
 {
   m_currentBinding = m_ht.nextBinding(&m_hashIterState);
   return (m_currentBinding->clientData);

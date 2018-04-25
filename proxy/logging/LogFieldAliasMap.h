@@ -86,7 +86,7 @@ public:
     BUFFER_TOO_SMALL,
   };
 
-  virtual int asInt(char *key, IntType *val, bool case_sensitive = false) const = 0;
+  virtual int asInt(char *key, IntType *val, bool case_sensitive = false) const                 = 0;
   virtual int asString(IntType key, char *buf, size_t bufLen, size_t *numChars = nullptr) const = 0;
 };
 

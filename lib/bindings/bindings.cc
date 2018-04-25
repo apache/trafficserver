@@ -32,9 +32,7 @@ is_indexable(lua_State *L, int index)
   return lua_istable(L, index) || lua_isuserdata(L, index);
 }
 
-BindingInstance::BindingInstance() : lua(nullptr)
-{
-}
+BindingInstance::BindingInstance() : lua(nullptr) {}
 
 BindingInstance::~BindingInstance()
 {

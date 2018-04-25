@@ -45,7 +45,8 @@ public:
     _field = it._field;
     return *this;
   }
-  HeaderIterator &operator++()
+  HeaderIterator &
+  operator++()
   {
     /* @todo this is said to be slow in the API call comments, do something better here */
     TSMLoc next = TSMimeHdrFieldNext(_bufp, _hdrs, _field);
@@ -53,7 +54,8 @@ public:
     _field = next;
     return *this;
   }
-  HeaderIterator operator++(int)
+  HeaderIterator
+  operator++(int)
   {
     HeaderIterator tmp(*this);
     operator++();

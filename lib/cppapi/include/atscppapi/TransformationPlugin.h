@@ -96,13 +96,13 @@ public:
   virtual void consume(ts::string_view data) = 0;
 
   /**
-  * Call this method if you wish to pause the transformation.
-  * Schedule the return value continuation to resume the transforamtion.
-  * If the continuation is scheduled and called after the transform is destroyed it
-  * won't do anything beyond cleanups.
-  * Note: You must schedule the continuation or destroy it (using TSContDestroy) yourself,
-  * otherwise it will leak.
-  */
+   * Call this method if you wish to pause the transformation.
+   * Schedule the return value continuation to resume the transforamtion.
+   * If the continuation is scheduled and called after the transform is destroyed it
+   * won't do anything beyond cleanups.
+   * Note: You must schedule the continuation or destroy it (using TSContDestroy) yourself,
+   * otherwise it will leak.
+   */
   TSCont pause();
 
   /**
@@ -134,4 +134,4 @@ private:
   static int resumeCallback(TSCont cont, TSEvent event, void *edata); /** Resume callback*/
 };
 
-} /* atscppapi */
+} // namespace atscppapi

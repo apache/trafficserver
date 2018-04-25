@@ -751,8 +751,9 @@ transformData(TSCont contp)
       EsiProcessor::ReturnCode retval = cont_data->esi_proc->process(out_data, out_data_len);
       TSDebug(cont_data->debug_tag, "[%s] data length: %d, retval: %d", __FUNCTION__, out_data_len, retval);
       if (retval == EsiProcessor::NEED_MORE_DATA) {
-        TSDebug(cont_data->debug_tag, "[%s] ESI processor needs more data; "
-                                      "will wait for all data to be fetched",
+        TSDebug(cont_data->debug_tag,
+                "[%s] ESI processor needs more data; "
+                "will wait for all data to be fetched",
                 __FUNCTION__);
         return 1;
       }
@@ -1128,9 +1129,8 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
       }
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     }
-    if (mod_data->gzip_encoding &&
-        !checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING, TS_HTTP_VALUE_GZIP,
-                          TS_HTTP_LEN_GZIP)) {
+    if (mod_data->gzip_encoding && !checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING,
+                                                     TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING, TS_HTTP_VALUE_GZIP,
                          TS_HTTP_LEN_GZIP);
     }
@@ -1641,9 +1641,10 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
   }
 
   if (result == 0) {
-    TSDebug(DEBUG_TAG, "[%s] Plugin started%s, "
-                       "packed-node-support: %d, private-response: %d, "
-                       "disable-gzip-output: %d, first-byte-flush: %d ",
+    TSDebug(DEBUG_TAG,
+            "[%s] Plugin started%s, "
+            "packed-node-support: %d, private-response: %d, "
+            "disable-gzip-output: %d, first-byte-flush: %d ",
             __FUNCTION__, bKeySet ? " and key is set" : "", pOptionInfo->packed_node_support, pOptionInfo->private_response,
             pOptionInfo->disable_gzip_output, pOptionInfo->first_byte_flush);
   }
@@ -1713,8 +1714,9 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   if (argc < 2) {
-    snprintf(errbuf, errbuf_size, "Unable to create remap instance, "
-                                  "argc: %d < 2",
+    snprintf(errbuf, errbuf_size,
+             "Unable to create remap instance, "
+             "argc: %d < 2",
              argc);
     TSError("[esi]Unable to create remap instance! argc: %d < 2", argc);
     return TS_ERROR;

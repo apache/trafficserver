@@ -169,7 +169,7 @@ HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const 
   session_protocol_preference = sp_set;
   return *this;
 }
-}
+} // namespace detail
 
 /**
    The continuation mutex is NULL to allow parellel accepts in NT. No

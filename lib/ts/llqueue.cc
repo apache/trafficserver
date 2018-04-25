@@ -50,7 +50,7 @@ newrec(LLQ *Q)
   }
 
   Q->free = (LLQrec *)ats_malloc(RECORD_CHUNK * sizeof(LLQrec));
-  for (i            = 0; i < RECORD_CHUNK; i++)
+  for (i = 0; i < RECORD_CHUNK; i++)
     Q->free[i].next = &Q->free[i + 1];
 
   Q->free[RECORD_CHUNK - 1].next = nullptr;

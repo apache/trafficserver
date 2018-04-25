@@ -97,7 +97,7 @@ CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata)
   return TS_SUCCESS;
 }
 
-} // Anon namespace
+} // namespace
 
 // Called by ATS as our initialization point
 void
@@ -107,7 +107,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
   TSCont cb_sni                        = nullptr; // sni callback continuation
   static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, nullptr, 'c'}, {nullptr, no_argument, nullptr, '\0'},
+    {const_cast<char *>("config"), required_argument, nullptr, 'c'},
+    {nullptr, no_argument, nullptr, '\0'},
   };
 
   info.plugin_name   = PLUGIN_NAME;

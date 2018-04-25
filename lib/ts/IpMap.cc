@@ -148,7 +148,7 @@ namespace detail
     self_type &mark(ArgType min,         ///< Minimum value in range.
                     ArgType max,         ///< Maximum value in range.
                     void *data = nullptr ///< Client data payload.
-                    );
+    );
     /** Unmark addresses.
 
         All addresses in the range [ @a min , @a max ] are cleared
@@ -201,21 +201,21 @@ namespace detail
     */
     void insertAfter(N *spot, ///< Node in list.
                      N *n     ///< Node to insert.
-                     );
+    );
     /** Insert @a n before @a spot.
         Caller is responsible for ensuring that @a spot is in this container
         and the proper location for @a n.
     */
     void insertBefore(N *spot, ///< Node in list.
                       N *n     ///< Node to insert.
-                      );
+    );
     /// Add node @a n as the first node.
     void prepend(N *n);
     /// Add node @a n as the last node.
     void append(N *n);
     /// Remove a node.
     void remove(N *n ///< Node to remove.
-                );
+    );
 
     /** Validate internal data structures.
         @note Intended for debugging, not general client use.
@@ -533,7 +533,7 @@ namespace detail
     } else if (nullptr != (n = this->getHead()) &&     // at least one node in tree.
                n->_data == payload &&                  // payload matches
                (n->_max <= max || n->_min <= max_plus) // overlap or adj.
-               ) {
+    ) {
       // Same payload with overlap, re-use.
       x = n;
       n = next(n);
@@ -786,7 +786,7 @@ namespace detail
     /// @return This interval.
     self_type &
     setMin(ArgType min ///< Minimum value (host order).
-           )
+    )
     {
       _min                     = min;
       _sa._min.sin_addr.s_addr = htonl(min);
@@ -797,7 +797,7 @@ namespace detail
     /// @return This interval.
     self_type &
     setMax(ArgType max ///< Maximum value (host order).
-           )
+    )
     {
       _max                     = max;
       _sa._max.sin_addr.s_addr = htonl(max);
@@ -809,7 +809,7 @@ namespace detail
     */
     self_type &
     setMaxMinusOne(ArgType max ///< One more than maximum value.
-                   )
+    )
     {
       return this->setMax(max - 1);
     }
@@ -818,7 +818,7 @@ namespace detail
     */
     self_type &
     setMinPlusOne(ArgType min ///< One less than minimum value.
-                  )
+    )
     {
       return this->setMin(min + 1);
     }
@@ -844,7 +844,7 @@ namespace detail
     /// Increment a metric.
     static void
     inc(Metric &m ///< Incremented in place.
-        )
+    )
     {
       ++m;
     }
@@ -852,7 +852,7 @@ namespace detail
     /// Decrement a metric.
     static void
     dec(Metric &m ///< Decremented in place.
-        )
+    )
     {
       --m;
     }
@@ -860,7 +860,7 @@ namespace detail
     /// @return Dereferenced @a addr.
     static Metric
     deref(ArgType addr ///< Argument to dereference.
-          )
+    )
     {
       return addr;
     }
@@ -887,7 +887,7 @@ namespace detail
   using Ip6Span = Interval<sockaddr_in6>;
 
   /** Node for IPv6 map.
-  */
+   */
   class Ip6Node : public IpMap::Node, protected Ip6Span
   {
     friend struct IpMapBase<Ip6Node>;
@@ -940,7 +940,7 @@ namespace detail
     /// @return This interval.
     self_type &
     setMin(ArgType min ///< Minimum value (host order).
-           )
+    )
     {
       ats_ip_copy(ats_ip_sa_cast(&_min), ats_ip_sa_cast(min));
       return *this;
@@ -951,7 +951,7 @@ namespace detail
     /// @return This interval.
     self_type &
     setMin(Metric const &min ///< Minimum value (host order).
-           )
+    )
     {
       return this->setMin(&min);
     }
@@ -960,7 +960,7 @@ namespace detail
     /// @return This interval.
     self_type &
     setMax(ArgType max ///< Maximum value (host order).
-           )
+    )
     {
       ats_ip_copy(ats_ip_sa_cast(&_max), ats_ip_sa_cast(max));
       return *this;
@@ -970,7 +970,7 @@ namespace detail
     /// @return This interval.
     self_type &
     setMax(Metric const &max ///< Maximum value (host order).
-           )
+    )
     {
       return this->setMax(&max);
     }
@@ -979,7 +979,7 @@ namespace detail
     */
     self_type &
     setMaxMinusOne(Metric const &max ///< One more than maximum value.
-                   )
+    )
     {
       this->setMax(max);
       dec(_max);
@@ -990,7 +990,7 @@ namespace detail
     */
     self_type &
     setMinPlusOne(Metric const &min ///< One less than minimum value.
-                  )
+    )
     {
       this->setMin(min);
       inc(_min);
@@ -1018,7 +1018,7 @@ namespace detail
     /// Increment a metric.
     static void
     inc(Metric &m ///< Incremented in place.
-        )
+    )
     {
       uint8_t *addr = m.sin6_addr.s6_addr;
       uint8_t *b    = addr + TS_IP6_SIZE;
@@ -1032,7 +1032,7 @@ namespace detail
     /// Decrement a metric.
     static void
     dec(Metric &m ///< Decremented in place.
-        )
+    )
     {
       uint8_t *addr = m.sin6_addr.s6_addr;
       uint8_t *b    = addr + TS_IP6_SIZE;
@@ -1045,7 +1045,7 @@ namespace detail
     /// @return Dereferenced @a addr.
     static Metric const &
     deref(ArgType addr ///< Argument to dereference.
-          )
+    )
     {
       return *addr;
     }
@@ -1065,8 +1065,8 @@ namespace detail
   {
     friend class ::IpMap;
   };
-}
-} // end ts::detail
+} // namespace detail
+} // namespace ts
 //----------------------------------------------------------------------------
 IpMap::~IpMap()
 {
@@ -1211,7 +1211,8 @@ IpMap::begin() const
   return iterator(this, x);
 }
 
-IpMap::iterator &IpMap::iterator::operator++()
+IpMap::iterator &
+IpMap::iterator::operator++()
 {
   if (_node) {
     // If we go past the end of the list see if it was the v4 list
@@ -1225,7 +1226,8 @@ IpMap::iterator &IpMap::iterator::operator++()
   return *this;
 }
 
-inline IpMap::iterator &IpMap::iterator::operator--()
+inline IpMap::iterator &
+IpMap::iterator::operator--()
 {
   if (_node) {
     // At a node, try to back up. Handle the case where we back over the

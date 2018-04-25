@@ -213,8 +213,9 @@ namespace detail
       BIO_free(x);
     }
   };
-/* namespace ssl */ } /* namespace detail */
-}
+  /* namespace ssl */ // namespace detail
+} /* namespace detail */
+} // namespace ssl
 
 struct ats_wildcard_matcher {
   ats_wildcard_matcher()

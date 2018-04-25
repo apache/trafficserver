@@ -148,7 +148,7 @@ namespace detail
       return Scalar<S, I, T>(scale_conversion_round_down<S, N>(_n));
     }
   };
-}
+} // namespace detail
 
 /// Mark a unit value to be scaled, rounding down.
 template <typename C>
@@ -329,15 +329,9 @@ protected:
   Counter _n; ///< Number of scale units.
 };
 
-template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar() : _n()
-{
-}
-template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(Counter n) : _n(n)
-{
-}
-template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(self const &that) : _n(that._n)
-{
-}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar() : _n() {}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(Counter n) : _n(n) {}
+template <intmax_t N, typename C, typename T> constexpr Scalar<N, C, T>::Scalar(self const &that) : _n(that._n) {}
 template <intmax_t N, typename C, typename T>
 template <typename I>
 constexpr Scalar<N, C, T>::Scalar(Scalar<N, I, T> const &that) : _n(static_cast<C>(that.count()))
@@ -771,26 +765,34 @@ operator-(Scalar<N, C, T> const &lhs, detail::scalar_round_down_t<N, C, T> rhs)
   return Scalar<N, C, T>(lhs) -= rhs._n;
 }
 
-template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator++() -> self &
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator++() -> self &
 {
   ++_n;
   return *this;
 }
 
-template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator++(int) -> self
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator++(int) -> self
 {
   self zret(*this);
   ++_n;
   return zret;
 }
 
-template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator--() -> self &
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator--() -> self &
 {
   --_n;
   return *this;
 }
 
-template <intmax_t N, typename C, typename T> auto Scalar<N, C, T>::operator--(int) -> self
+template <intmax_t N, typename C, typename T>
+auto
+Scalar<N, C, T>::operator--(int) -> self
 {
   self zret(*this);
   --_n;
@@ -928,7 +930,7 @@ namespace detail
   {
     return bwformat(w, spec, T::label);
   }
-} // detail
+} // namespace detail
 
 template <intmax_t N, typename C, typename T>
 BufferWriter &
@@ -939,7 +941,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, Scalar<N, C, T> const &x)
   return ts::detail::tag_label<T>(w, spec, b);
 }
 
-} // ts
+} // namespace ts
 
 namespace std
 {
@@ -959,4 +961,4 @@ template <intmax_t N, typename C, intmax_t S, typename I, typename T> struct com
   typedef std::ratio<N, S> R;
   typedef ts::Scalar<N / R::num, typename common_type<C, I>::type, T> type;
 };
-} // std
+} // namespace std

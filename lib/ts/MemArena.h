@@ -150,4 +150,4 @@ private:
   std::shared_ptr<Block> generation = nullptr; ///< Marks current generation
   std::shared_ptr<Block> current    = nullptr; ///< Head of allocations list. Allocate from this.
 };
-} // ts namespace
+} // namespace ts

@@ -146,4 +146,4 @@ globalJemallocNodumpAllocator()
   static auto instance = new JemallocNodumpAllocator();
   return *instance;
 }
-}
+} // namespace jearena

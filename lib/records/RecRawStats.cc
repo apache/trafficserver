@@ -37,7 +37,7 @@ thread_stat(EThread *et, RecRawStatBlock *rsb, int id)
 {
   return (reinterpret_cast<RecRawStat *>(reinterpret_cast<char *>(et) + rsb->ethr_stat_offset)) + id;
 }
-}
+} // namespace
 
 static int
 raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)

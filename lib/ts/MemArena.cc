@@ -28,9 +28,7 @@
 
 using namespace ts;
 
-inline MemArena::Block::Block(size_t n) : size(n), allocated(0), next(nullptr)
-{
-}
+inline MemArena::Block::Block(size_t n) : size(n), allocated(0), next(nullptr) {}
 
 inline char *
 MemArena::Block::data()

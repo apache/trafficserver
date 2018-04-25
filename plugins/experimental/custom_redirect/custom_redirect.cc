@@ -138,7 +138,7 @@ TSPluginInit(int argc, const char *argv[])
    *OR:
    * 3. If nothing specified, plugin will assume the first case and use the default redirect-url
    *    header name "x-redirect-url"
-  */
+   */
   if (argc > 1) {
     if (isNumber(argv[1])) {
       return_code         = atoi(argv[1]);

@@ -28,18 +28,18 @@
 
 TsConfigDescriptor LuaSNIConfig::desc = {TsConfigDescriptor::Type::ARRAY, "Array", "Item vector", "Vector"};
 TsConfigArrayDescriptor LuaSNIConfig::DESCRIPTOR(LuaSNIConfig::desc);
-TsConfigDescriptor LuaSNIConfig::Item::FQDN_DESCRIPTOR = {TsConfigDescriptor::Type::STRING, "String", TS_fqdn,
+TsConfigDescriptor LuaSNIConfig::Item::FQDN_DESCRIPTOR               = {TsConfigDescriptor::Type::STRING, "String", TS_fqdn,
                                                           "Fully Qualified Domain Name"};
-TsConfigDescriptor LuaSNIConfig::Item::DISABLE_h2_DESCRIPTOR = {TsConfigDescriptor::Type::BOOL, "Boolean", TS_disable_H2,
+TsConfigDescriptor LuaSNIConfig::Item::DISABLE_h2_DESCRIPTOR         = {TsConfigDescriptor::Type::BOOL, "Boolean", TS_disable_H2,
                                                                 "Disable H2"};
-TsConfigEnumDescriptor LuaSNIConfig::Item::LEVEL_DESCRIPTOR = {TsConfigDescriptor::Type::ENUM,
+TsConfigEnumDescriptor LuaSNIConfig::Item::LEVEL_DESCRIPTOR          = {TsConfigDescriptor::Type::ENUM,
                                                                "enum",
                                                                "Level",
                                                                "Level for client verification",
                                                                {{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
-TsConfigDescriptor LuaSNIConfig::Item::TUNNEL_DEST_DESCRIPTOR = {TsConfigDescriptor::Type::STRING, "String", TS_tunnel_route,
+TsConfigDescriptor LuaSNIConfig::Item::TUNNEL_DEST_DESCRIPTOR        = {TsConfigDescriptor::Type::STRING, "String", TS_tunnel_route,
                                                                  "tunnel route destination"};
-TsConfigDescriptor LuaSNIConfig::Item::CLIENT_CERT_DESCRIPTOR = {TsConfigDescriptor::Type::STRING, "String", TS_client_cert,
+TsConfigDescriptor LuaSNIConfig::Item::CLIENT_CERT_DESCRIPTOR        = {TsConfigDescriptor::Type::STRING, "String", TS_client_cert,
                                                                  "Client certificate to present to the next hop server"};
 TsConfigDescriptor LuaSNIConfig::Item::VERIFY_NEXT_SERVER_DESCRIPTOR = {TsConfigDescriptor::Type::INT, "Int",
                                                                         TS_verify_origin_server, "Next hop verification level"};

@@ -102,5 +102,5 @@ namespace utils
 
   }; /* internal */
 
-} /* utils */
-}
+} // namespace utils
+} // namespace atscppapi

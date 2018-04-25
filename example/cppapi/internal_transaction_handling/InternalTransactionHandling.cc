@@ -28,7 +28,7 @@ namespace
 {
 GlobalPlugin *plugin;
 GlobalPlugin *plugin2;
-}
+} // namespace
 
 #define TAG "internal_transaction_handling"
 

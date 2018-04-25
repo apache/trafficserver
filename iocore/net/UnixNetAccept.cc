@@ -453,7 +453,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 #if defined(linux)
           || res == -EPIPE
 #endif
-          ) {
+      ) {
         goto Ldone;
       } else if (accept_error_seriousness(res) >= 0) {
         check_transient_accept_error(res);
@@ -529,9 +529,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 //
 
-NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nullptr), opt(_opt)
-{
-}
+NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nullptr), opt(_opt) {}
 
 //
 // Stop listening.  When the next poll takes place, an error will result.

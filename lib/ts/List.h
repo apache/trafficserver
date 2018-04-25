@@ -266,8 +266,8 @@ DLL<C, L>::push(C *e)
 {
   if (head)
     prev(head) = e;
-  next(e)      = head;
-  head         = e;
+  next(e) = head;
+  head    = e;
 }
 
 template <class C, class L>
@@ -282,8 +282,8 @@ DLL<C, L>::remove(C *e)
     next(prev(e)) = next(e);
   if (next(e))
     prev(next(e)) = prev(e);
-  prev(e)         = nullptr;
-  next(e)         = nullptr;
+  prev(e) = nullptr;
+  next(e) = nullptr;
 }
 
 template <class C, class L>
@@ -295,7 +295,7 @@ DLL<C, L>::pop()
     head = next(ret);
     if (head)
       prev(head) = nullptr;
-    next(ret)    = nullptr;
+    next(ret) = nullptr;
     return ret;
   } else
     return nullptr;
@@ -494,7 +494,7 @@ template <class C, class L = typename C::Link_link> struct SortableQueue : publi
           this->next(n) = v;
         } else
           v = n;
-        n   = f;
+        n = f;
       }
     }
   }

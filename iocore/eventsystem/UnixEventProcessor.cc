@@ -133,7 +133,7 @@ public:
     return 0;
   }
 } Thread_Init_Func;
-}
+} // namespace
 
 void *
 ThreadAffinityInitializer::alloc_hugepage_stack(size_t stacksize)
@@ -168,7 +168,7 @@ ThreadAffinityInitializer::init()
     if (hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type) > 0) {
       break;
     }
-  // fallthrough
+    // fallthrough
 
   case 2: // assign threads to sockets
     obj_type = HWLOC_OBJ_SOCKET;
@@ -303,7 +303,7 @@ make_event_for_scheduling(Continuation *c, int event_code, void *cookie)
 
   return e;
 }
-}
+} // namespace
 
 Event *
 EventProcessor::schedule_spawn(Continuation *c, EventType ev_type, int event_code, void *cookie)

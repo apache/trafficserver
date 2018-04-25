@@ -59,4 +59,4 @@ int timestamp_to_hex_str(unsigned timestamp, char *str, size_t len, size_t *n_ch
 int seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_interval);
 int file_is_writeable(const char *full_filename, off_t *size_bytes = nullptr, bool *has_size_limit = nullptr,
                       uint64_t *current_size_limit_bytes = nullptr);
-};
+}; // namespace LogUtils

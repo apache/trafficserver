@@ -67,7 +67,7 @@ namespace inliner
     void abort(void);
   };
 
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #endif // INLINER_HANDLER_H

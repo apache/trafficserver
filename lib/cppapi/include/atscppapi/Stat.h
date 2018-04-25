@@ -100,4 +100,4 @@ private:
   int stat_id_; /**< The internal stat ID */
 };
 
-} /* atscppapi */
+} // namespace atscppapi

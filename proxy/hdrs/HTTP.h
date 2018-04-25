@@ -546,14 +546,14 @@ public:
    */
   char *url_string_get(Arena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
                        int *length  = nullptr  ///< Store string length here.
-                       );
+  );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
 
       @see url_string_get
    */
   char *url_string_get_ref(int *length = nullptr ///< Store string length here.
-                           );
+  );
 
   /** Print the URL.
       Output is not null terminated.
@@ -563,14 +563,14 @@ public:
                 int length,  ///< Length of @a buffer
                 int *offset, ///< [in,out] ???
                 int *skip    ///< [in,out] ???
-                );
+  );
 
   /** Get the URL path.
       This is a reference, not allocated.
       @return A pointer to the path or @c NULL if there is no valid URL.
   */
   const char *path_get(int *length ///< Storage for path length.
-                       );
+  );
 
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
@@ -592,7 +592,7 @@ public:
       @return A pointer to the scheme or @c NULL if there is no valid URL.
   */
   const char *scheme_get(int *length ///< Storage for path length.
-                         );
+  );
   void url_set(URL *url);
   void url_set_as_server_url(URL *url);
   void url_set(const char *str, int length);
@@ -661,23 +661,17 @@ private:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0))
-{
-}
+inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0)) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version)
-{
-}
+inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor))
-{
-}
+inline HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor)) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

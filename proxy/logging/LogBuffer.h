@@ -327,6 +327,4 @@ inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_net
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline LogBufferIterator::~LogBufferIterator()
-{
-}
+inline LogBufferIterator::~LogBufferIterator() {}

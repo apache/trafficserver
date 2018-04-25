@@ -94,7 +94,7 @@ public:
 
   virtual bool toss_this_entry(LogAccess *lad) = 0;
   virtual bool wipe_this_entry(LogAccess *lad) = 0;
-  virtual void display(FILE *fd = stdout) = 0;
+  virtual void display(FILE *fd = stdout)      = 0;
 
   static LogFilter *parse(const char *name, Action action, const char *condition);
 

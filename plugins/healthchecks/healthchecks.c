@@ -223,9 +223,8 @@ hc_thread(void *data ATS_UNUSED)
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
         HCFileInfo *finfo           = g_config;
 
-        while (
-          finfo &&
-          !((event->wd == finfo->wd) || ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
+        while (finfo && !((event->wd == finfo->wd) ||
+                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
           finfo = finfo->_next;
         }
         if (finfo) {

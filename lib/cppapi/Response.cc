@@ -37,7 +37,7 @@ struct ResponseState : noncopyable {
   Headers headers_;
   ResponseState() : hdr_buf_(nullptr), hdr_loc_(nullptr) {}
 };
-}
+} // namespace atscppapi
 
 Response::Response()
 {

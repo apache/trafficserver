@@ -169,7 +169,7 @@ public:
   void
   resize(int size)
   {
-    int new_bucket_num = size;
+    int new_bucket_num                          = size;
     HashTableEntry<key_t, data_t> **new_buckets = new HashTableEntry<key_t, data_t> *[new_bucket_num];
     memset(new_buckets, 0, new_bucket_num * sizeof(HashTableEntry<key_t, data_t> *));
 
@@ -210,7 +210,7 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
 {
-  int id = bucket_id(key);
+  int id                             = bucket_id(key);
   HashTableEntry<key_t, data_t> *cur = buckets[id];
   while (cur != NULL && cur->key != key) {
     cur = cur->next;
@@ -227,10 +227,10 @@ IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
   }
 
   HashTableEntry<key_t, data_t> *newEntry = HashTableEntry<key_t, data_t>::alloc();
-  newEntry->key  = key;
-  newEntry->data = data;
-  newEntry->next = buckets[id];
-  buckets[id]    = newEntry;
+  newEntry->key                           = key;
+  newEntry->data                          = data;
+  newEntry->next                          = buckets[id];
+  buckets[id]                             = newEntry;
   cur_size++;
   if (cur_size / bucket_num > MT_HASHTABLE_MAX_CHAIN_AVG_LEN) {
     GC();
@@ -245,8 +245,8 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(key_t key)
 {
-  int id     = bucket_id(key);
-  data_t ret = (data_t)0;
+  int id                              = bucket_id(key);
+  data_t ret                          = (data_t)0;
   HashTableEntry<key_t, data_t> *cur  = buckets[id];
   HashTableEntry<key_t, data_t> *prev = NULL;
   while (cur != NULL && cur->key != key) {
@@ -271,8 +271,8 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::lookup_entry(key_t key)
 {
-  int id     = bucket_id(key);
-  data_t ret = (data_t)0;
+  int id                             = bucket_id(key);
+  data_t ret                         = (data_t)0;
   HashTableEntry<key_t, data_t> *cur = buckets[id];
   while (cur != NULL && cur->key != key) {
     cur = cur->next;
@@ -322,7 +322,7 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(HashTableIteratorState<key_t, data_t> *s)
 {
-  data_t data = (data_t)0;
+  data_t data                           = (data_t)0;
   HashTableEntry<key_t, data_t> *pEntry = *(s->ppcur);
   if (pEntry != NULL) {
     data          = pEntry->data;

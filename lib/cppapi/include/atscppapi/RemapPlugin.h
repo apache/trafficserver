@@ -70,4 +70,4 @@ public:
 
   virtual ~RemapPlugin() {}
 };
-}
+} // namespace atscppapi

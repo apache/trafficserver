@@ -120,7 +120,7 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
 
 // Unique state machine identifier
 std::atomic<int64_t> next_sm_id(0);
-}
+} // namespace
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
@@ -862,8 +862,9 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       //  where the tunnel is not active
       HttpTunnelConsumer *c = tunnel.get_consumer(ua_txn);
       if (c && c->alive) {
-        SMDebug("http", "[%" PRId64 "] [watch_for_client_abort] "
-                        "forwarding event %s to tunnel",
+        SMDebug("http",
+                "[%" PRId64 "] [watch_for_client_abort] "
+                "forwarding event %s to tunnel",
                 sm_id, HttpDebugNames::get_event_name(event));
         tunnel.handleEvent(event, c->write_vio);
         return 0;
@@ -975,7 +976,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
   switch (event) {
   case VC_EVENT_EOS:
     ua_entry->eos = true;
-  // Fall through
+    // Fall through
 
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
@@ -1003,7 +1004,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
     /////////////////////
     state =
       t_state.hdr_info.server_response.parse_resp(&http_parser, &tmp, tmp + data_size, false // Only call w/ eof when data exhausted
-                                                  );
+      );
 
     bytes_used = tmp - start;
 
@@ -1019,7 +1020,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
   if (ua_entry->eos) {
     const char *end = ua_buffer_reader->start();
     state = t_state.hdr_info.server_response.parse_resp(&http_parser, &end, end, true // We are out of data after server eos
-                                                        );
+    );
     ink_release_assert(state == PARSE_RESULT_DONE || state == PARSE_RESULT_ERROR);
   }
   // Don't allow 0.9 (unparsable headers) since TS doesn't
@@ -1577,7 +1578,7 @@ HttpSM::handle_api_return()
       cache_sm.close_read();
       transform_cache_sm.close_read();
     }
-  // fallthrough
+    // fallthrough
 
   case HttpTransact::SM_ACTION_API_PRE_REMAP:
   case HttpTransact::SM_ACTION_API_POST_REMAP:
@@ -1901,7 +1902,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     }
     // FALLTHROUGH (since we are allowing the parse error)
   }
-  // fallthrough
+    // fallthrough
 
   case PARSE_RESULT_DONE:
     SMDebug("http_seq", "Done parsing server response header");
@@ -2023,18 +2024,18 @@ HttpSM::state_send_server_request_header(int event, void *data)
     //
     server_entry->eos = true;
 
-  // I'm not sure about the above comment, but if EOS is received on read and we are
-  // still in this state, we must have not gotten WRITE_COMPLETE.  With epoll we might not receive EOS
-  // from both read and write sides of a connection so it should be handled correctly (close tunnels,
-  // deallocate, etc) here with handle_server_setup_error().  Otherwise we might hang due to not shutting
-  // down and never receiving another event again.
-  /*if (server_buffer_reader->read_avail() > 0 && callout_state == HTTP_API_NO_CALLOUT) {
-     break;
-     } */
+    // I'm not sure about the above comment, but if EOS is received on read and we are
+    // still in this state, we must have not gotten WRITE_COMPLETE.  With epoll we might not receive EOS
+    // from both read and write sides of a connection so it should be handled correctly (close tunnels,
+    // deallocate, etc) here with handle_server_setup_error().  Otherwise we might hang due to not shutting
+    // down and never receiving another event again.
+    /*if (server_buffer_reader->read_avail() > 0 && callout_state == HTTP_API_NO_CALLOUT) {
+       break;
+       } */
 
-  // Nothing in the buffer
-  // proceed to error
-  // fallthrough
+    // Nothing in the buffer
+    // proceed to error
+    // fallthrough
 
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
@@ -2770,8 +2771,9 @@ HttpSM::tunnel_handler_100_continue(int event, void *data)
       // if the server closed while sending the
       //    100 continue header, handle it here so we
       //    don't assert later
-      SMDebug("http", "[%" PRId64 "] tunnel_handler_100_continue - server already "
-                      "closed, terminating connection",
+      SMDebug("http",
+              "[%" PRId64 "] tunnel_handler_100_continue - server already "
+              "closed, terminating connection",
               sm_id);
 
       // Since 100 isn't a final (loggable) response header
@@ -2899,7 +2901,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   case VC_EVENT_ERROR:
     t_state.squid_codes.log_code  = SQUID_LOG_ERR_READ_TIMEOUT;
     t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
-  /* fallthru */
+    /* fallthru */
 
   case VC_EVENT_EOS:
 
@@ -3097,7 +3099,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
                                      //      server_entry && server_entry->vc &&              // from an origin server
                                      //      server_session && server_session->get_netvc() && // which is still open and valid
       c->producer->num_consumers > 1 // with someone else reading it
-      ) {
+  ) {
     HttpTunnelProducer *p = nullptr;
 
     if (!server_entry || !server_entry->vc || !server_session || !server_session->get_netvc()) {
@@ -3337,7 +3339,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
       // fall through for the case INT64_MAX read with VC_EVENT_EOS
       // callback (read successful)
     }
-  // fallthrough
+    // fallthrough
 
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
@@ -4786,7 +4788,7 @@ HttpSM::do_http_server_open(bool raw)
                                                        t_state.current.server->name,         // hostname
                                                        ua_txn,                               // has ptr to bound ua sessions
                                                        this                                  // sm
-                                                       );
+    );
 
     switch (shared_result) {
     case HSM_DONE:
@@ -5256,9 +5258,10 @@ HttpSM::release_server_session(bool serve_from_cache)
 
   if (TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match && t_state.current.server != nullptr &&
       t_state.current.server->keep_alive == HTTP_KEEPALIVE && t_state.hdr_info.server_response.valid() &&
-      t_state.hdr_info.server_request.valid() && (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
-                                                  (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
-                                                   t_state.www_auth_content != HttpTransact::CACHE_AUTH_NONE)) &&
+      t_state.hdr_info.server_request.valid() &&
+      (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
+       (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&
+        t_state.www_auth_content != HttpTransact::CACHE_AUTH_NONE)) &&
       plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
     HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
     server_session->server_trans_stat--;
@@ -5411,8 +5414,9 @@ HttpSM::handle_server_setup_error(int event, void *data)
 
   if (tunnel.is_tunnel_active()) {
     ink_assert(server_entry->read_vio == data || server_entry->write_vio == data);
-    SMDebug("http", "[%" PRId64 "] [handle_server_setup_error] "
-                    "forwarding event %s to post tunnel",
+    SMDebug("http",
+            "[%" PRId64 "] [handle_server_setup_error] "
+            "forwarding event %s to post tunnel",
             sm_id, HttpDebugNames::get_event_name(event));
     HttpTunnelConsumer *c = tunnel.get_consumer(server_entry->vc);
     // it is possible only user agent post->post transform is set up

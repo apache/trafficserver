@@ -85,4 +85,4 @@ private:
   friend class ClientRequest;
   friend class utils::internal;
 };
-}
+} // namespace atscppapi

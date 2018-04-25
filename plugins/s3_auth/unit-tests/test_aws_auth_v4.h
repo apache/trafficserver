@@ -39,12 +39,14 @@ public:
     _it = i._it;
     return *this;
   }
-  HeaderIterator &operator++()
+  HeaderIterator &
+  operator++()
   {
     _it++;
     return *this;
   }
-  HeaderIterator operator++(int)
+  HeaderIterator
+  operator++(int)
   {
     HeaderIterator tmp(*this);
     operator++();

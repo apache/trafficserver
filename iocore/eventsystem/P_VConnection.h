@@ -66,9 +66,7 @@ VConnection::VConnection(Ptr<ProxyMutex> &aMutex) : Continuation(aMutex), lerrno
 }
 
 TS_INLINE
-VConnection::~VConnection()
-{
-}
+VConnection::~VConnection() {}
 
 TS_INLINE VIO *
 vc_do_io_write(VConnection *vc, Continuation *cont, int64_t nbytes, MIOBuffer *buf, int64_t offset)

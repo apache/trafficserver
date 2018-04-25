@@ -109,6 +109,6 @@ public:
 private:
   static const char DOCNODE_VERSION = 1;
 };
-};
+}; // namespace EsiLib
 
 #endif // _FETCHER_DOC_NODE_H

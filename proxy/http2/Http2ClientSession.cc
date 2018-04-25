@@ -58,9 +58,7 @@ send_connection_event(Continuation *cont, int event, void *edata)
   return cont->handleEvent(event, edata);
 }
 
-Http2ClientSession::Http2ClientSession()
-{
-}
+Http2ClientSession::Http2ClientSession() {}
 
 void
 Http2ClientSession::destroy()

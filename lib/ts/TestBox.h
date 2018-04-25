@@ -69,4 +69,4 @@ TestBox::check(bool result, char const *fmt, ...)
   }
   return result;
 }
-}
+} // namespace

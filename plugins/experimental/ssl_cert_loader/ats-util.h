@@ -55,7 +55,7 @@
 template <typename T>
 inline void
 ink_zero(T &t ///< Object to zero.
-         )
+)
 {
   memset(&t, 0, sizeof(t));
 }

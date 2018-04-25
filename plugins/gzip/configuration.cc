@@ -429,4 +429,4 @@ Configuration::Parse(const char *path)
 
   return c;
 } // Configuration::Parse
-} // namespace
+} // namespace Gzip

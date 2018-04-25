@@ -94,11 +94,11 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
       switch (num_padding) {
       case 3:
         *--out_buf = pad_char;
-      // fallthrough
+        // fallthrough
 
       case 2:
         *--out_buf = pad_char;
-      // fallthrough
+        // fallthrough
 
       case 1:
         *--out_buf = pad_char;

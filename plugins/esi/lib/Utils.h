@@ -124,7 +124,7 @@ namespace Utils
     }
     return retval;
   }
-};
-};
+}; // namespace Utils
+}; // namespace EsiLib
 
 #endif

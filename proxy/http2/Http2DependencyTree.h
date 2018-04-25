@@ -435,4 +435,4 @@ Tree<T>::size() const
 {
   return _node_count;
 }
-} // namespce Http2DependencyTree
+} // namespace Http2DependencyTree

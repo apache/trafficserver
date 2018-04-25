@@ -42,13 +42,9 @@ ERR_COMMAND_TAG_NOT_FOUND(char const *tag)
   return ts::Errata(s.str());
 }
 
-CommandTable::Command::Command()
-{
-}
+CommandTable::Command::Command() {}
 
-CommandTable::Command::Command(std::string const &name, std::string const &help) : _name(name), _help(help)
-{
-}
+CommandTable::Command::Command(std::string const &name, std::string const &help) : _name(name), _help(help) {}
 
 CommandTable::Command::Command(std::string const &name, std::string const &help, LeafAction const &f) : _name(name), _help(help)
 {
@@ -60,9 +56,7 @@ CommandTable::Command::Command(std::string const &name, std::string const &help,
   _action = f;
 }
 
-CommandTable::Command::~Command()
-{
-}
+CommandTable::Command::~Command() {}
 
 CommandTable::Command &
 CommandTable::Command::subCommand(std::string const &name, std::string const &help, LeafAction const &f)
@@ -144,9 +138,7 @@ CommandTable::Command::helpMessage(int argc, char *argv[], std::ostream &out, st
   }
 }
 
-CommandTable::CommandTable()
-{
-}
+CommandTable::CommandTable() {}
 
 auto
 CommandTable::add(std::string const &name, std::string const &help) -> Command &
@@ -180,4 +172,4 @@ CommandTable::helpMessage(int argc, char *argv[]) const
   std::cerr << "Command tree" << std::endl;
   _top.helpMessage(argc, argv, std::cerr, LEADING);
 }
-}
+} // namespace ts

@@ -198,7 +198,7 @@ runroot_map(const std::string &prefix)
   std::unordered_map<std::string, std::string> map;
   std::string str;
   while (std::getline(yamlfile, str)) {
-    int pos = str.find(':');
+    int pos                 = str.find(':');
     map[str.substr(0, pos)] = str.substr(pos + 2);
   }
 

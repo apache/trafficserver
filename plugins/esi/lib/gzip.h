@@ -64,6 +64,6 @@ gzip(const char *data, int data_len, std::string &cdata)
 typedef std::list<std::string> BufferList;
 
 bool gunzip(const char *data, int data_len, BufferList &buf_list);
-}
+} // namespace EsiLib
 
 #endif // _GZIP_H

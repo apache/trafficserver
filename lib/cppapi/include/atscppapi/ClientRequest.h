@@ -53,4 +53,4 @@ public:
 private:
   ClientRequestState *state_;
 };
-}
+} // namespace atscppapi

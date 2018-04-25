@@ -885,8 +885,9 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     TSStatIntIncrement(upload_vc_count, 1);
 
     if (!uconfig->use_disk_buffer && my_state->req_size > uconfig->mem_buffer_size) {
-      TSDebug(DEBUG_TAG, "The request size %" PRId64 " is larger than memory buffer size %" PRId64
-                         ", bypass upload proxy feature for this request",
+      TSDebug(DEBUG_TAG,
+              "The request size %" PRId64 " is larger than memory buffer size %" PRId64
+              ", bypass upload proxy feature for this request",
               my_state->req_size, uconfig->mem_buffer_size);
 
       pvc_cleanup(new_cont, my_state);

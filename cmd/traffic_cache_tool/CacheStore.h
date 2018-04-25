@@ -45,4 +45,4 @@ class CacheStore
     std::unique_ptr<char *> _text;
   };
 };
-}
+} // namespace ApacheTrafficServer

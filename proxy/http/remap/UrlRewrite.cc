@@ -179,9 +179,8 @@ UrlRewrite::_destroyTable(InkHashTable *h_table)
 void
 UrlRewrite::Print()
 {
-  printf("URL Rewrite table with %d entries\n",
-         num_rules_forward + num_rules_reverse + num_rules_redirect_temporary + num_rules_redirect_permanent +
-           num_rules_forward_with_recv_port);
+  printf("URL Rewrite table with %d entries\n", num_rules_forward + num_rules_reverse + num_rules_redirect_temporary +
+                                                  num_rules_redirect_permanent + num_rules_forward_with_recv_port);
   printf("  Reverse Proxy is %s\n", (reverse_proxy == 0) ? "Off" : "On");
 
   printf("  Forward Mapping Table with %d entries\n", num_rules_forward);
@@ -894,8 +893,9 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
     }
 
     if (list_iter->url_map->fromURL.port_get() != request_port) {
-      Debug("url_rewrite_regex", "Skipping regex with rank %d as regex map port does not match request port. "
-                                 "regex map port: %d, request port %d",
+      Debug("url_rewrite_regex",
+            "Skipping regex with rank %d as regex map port does not match request port. "
+            "regex map port: %d, request port %d",
             reg_map_rank, list_iter->url_map->fromURL.port_get(), request_port);
       continue;
     }
@@ -911,8 +911,9 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
     bool match_result = list_iter->regular_expression.exec(request_host, request_host_len, matches_info, countof(matches_info));
 
     if (match_result == true) {
-      Debug("url_rewrite_regex", "Request URL host [%.*s] matched regex in mapping of rank %d "
-                                 "with %d possible substitutions",
+      Debug("url_rewrite_regex",
+            "Request URL host [%.*s] matched regex in mapping of rank %d "
+            "with %d possible substitutions",
             request_host_len, request_host, reg_map_rank, match_result);
 
       mapping_container.set(list_iter->url_map);

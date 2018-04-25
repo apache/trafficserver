@@ -190,7 +190,7 @@ OneWayMultiTunnel::startEvent(int event, void *data)
     } else {
       goto Lwrite_complete;
     }
-  // fallthrough
+    // fallthrough
 
   Lread_complete:
   case VC_EVENT_READ_COMPLETE: { // SunCC uses old scoping rules

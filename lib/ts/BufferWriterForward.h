@@ -101,4 +101,4 @@ class BWFormat;
 
 class BufferWriter;
 
-} // ts
+} // namespace ts

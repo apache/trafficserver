@@ -105,7 +105,7 @@ test(const char *spec, const char *reqErr, OptionBitSet bS)
   REQUIRE(std::memcmp(error.data() + sizeof("cheese") - 1, reqErr, len) == 0);
 }
 
-} // end annonymous namespace
+} // namespace
 
 TEST_CASE("Forwarded", "[FWD]")
 {

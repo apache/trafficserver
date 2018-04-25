@@ -293,7 +293,7 @@ enum CookieOp { COOKIE_OP_DEL, COOKIE_OP_ADD, COOKIE_OP_SET };
  */
 bool cookieModifyHelper(const char *cookies, const size_t cookies_len, std::string &updated_cookies, const CookieOp cookie_op,
                         const std::string &cookie_key, const std::string &cookie_value = std::string());
-}
+} // namespace CookieHelper
 
 class OperatorSetConnDSCP : public Operator
 {

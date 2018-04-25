@@ -336,7 +336,8 @@ TSPluginInit(int argc, const char *argv[])
   if (argc > 1) {
     int c;
     static const struct option longopts[] = {
-      {"max-files", required_argument, nullptr, 'f'}, {nullptr, 0, nullptr, 0},
+      {"max-files", required_argument, nullptr, 'f'},
+      {nullptr, 0, nullptr, 0},
     };
 
     int longindex = 0;

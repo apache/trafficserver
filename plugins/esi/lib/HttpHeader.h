@@ -39,6 +39,6 @@ struct HttpHeader {
 };
 
 typedef std::list<HttpHeader> HttpHeaderList;
-};
+}; // namespace EsiLib
 
 #endif // _ESI_HTTP_HEADER_H

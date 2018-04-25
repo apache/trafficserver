@@ -44,9 +44,7 @@ static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
 Map<int, SSLNextProtocolSet *> snpsMap;
 extern TunnelHashMap TunnelMap;
-NextHopProperty::NextHopProperty()
-{
-}
+NextHopProperty::NextHopProperty() {}
 
 NextHopProperty *
 SNIConfigParams::getPropertyConfig(cchar *servername) const
@@ -110,9 +108,7 @@ SNIConfigParams::loadSNIConfig()
 
 int SNIConfig::configid = 0;
 /*definition of member functions of SNIConfigParams*/
-SNIConfigParams::SNIConfigParams()
-{
-}
+SNIConfigParams::SNIConfigParams() {}
 
 actionVector *
 SNIConfigParams::get(cchar *servername) const

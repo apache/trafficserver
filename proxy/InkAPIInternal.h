@@ -202,9 +202,7 @@ private:
   APIHooks m_hooks[N];
 };
 
-template <typename ID, ID N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false)
-{
-}
+template <typename ID, ID N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false) {}
 
 template <typename ID, ID N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
 {

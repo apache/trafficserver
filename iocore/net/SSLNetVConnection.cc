@@ -119,7 +119,7 @@ public:
        Continuation *target,          ///< "Real" continuation we want to call.
        int eventId = EVENT_IMMEDIATE, ///< Event ID for invocation of @a target.
        void *edata = nullptr          ///< Data for invocation of @a target.
-       )
+  )
   {
     EThread *eth = this_ethread();
     if (!target->mutex) {
@@ -140,7 +140,7 @@ private:
   int _eventId;          ///< with this event
   void *_edata;          ///< and this data
 };
-}
+} // namespace
 
 //
 // Private
@@ -818,9 +818,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   return num_really_written;
 }
 
-SSLNetVConnection::SSLNetVConnection()
-{
-}
+SSLNetVConnection::SSLNetVConnection() {}
 
 void
 SSLNetVConnection::do_io_close(int lerrno)
@@ -1188,10 +1186,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       const unsigned char *proto = nullptr;
       unsigned len               = 0;
 
-// If it's possible to negotiate both NPN and ALPN, then ALPN
-// is preferred since it is the server's preference.  The server
-// preference would not be meaningful if we let the client
-// preference have priority.
+      // If it's possible to negotiate both NPN and ALPN, then ALPN
+      // is preferred since it is the server's preference.  The server
+      // preference would not be meaningful if we let the client
+      // preference have priority.
 
 #if TS_USE_TLS_ALPN
       SSL_get0_alpn_selected(ssl, &proto, &len);
@@ -1421,8 +1419,8 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
 
   ink_release_assert(netvc != nullptr);
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
-// SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
-// server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
+    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
+    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
 
 #if HAVE_SSL_SELECT_NEXT_PROTO
     if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {

@@ -1088,4 +1088,4 @@ Stripe::loadMeta()
   return zret;
 }
 
-} // end ct
+} // namespace ct
