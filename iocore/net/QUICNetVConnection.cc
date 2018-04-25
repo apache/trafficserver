@@ -53,8 +53,11 @@
   Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__); \
   Error("quic_net [%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
 
-static constexpr uint32_t MAX_PACKET_OVERHEAD         = 17; // Max long header len(17)
-static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD   = 15;
+static constexpr uint32_t IPV4_HEADER_SIZE            = 20;
+static constexpr uint32_t IPV6_HEADER_SIZE            = 40;
+static constexpr uint32_t UDP_HEADER_SIZE             = 8;
+static constexpr uint32_t MAX_PACKET_OVERHEAD         = 54; // Max long header len
+static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD   = 24;
 static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
 static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(20);
 static constexpr int FRAME_PER_EVENT                  = 64;
@@ -369,9 +372,9 @@ uint32_t
 QUICNetVConnection::maximum_quic_packet_size()
 {
   if (this->options.ip_family == PF_INET6) {
-    return this->_pmtu - 48;
+    return this->_pmtu - UDP_HEADER_SIZE - IPV6_HEADER_SIZE;
   } else {
-    return this->_pmtu - 28;
+    return this->_pmtu - UDP_HEADER_SIZE - IPV4_HEADER_SIZE;
   }
 }
 
