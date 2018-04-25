@@ -310,12 +310,13 @@ struct HostDBInfo : public RefCountObj {
   void
   set_failed()
   {
-    if (is_srv)
+    if (is_srv) {
       data.srv.srv_offset = 0;
-    else if (reverse_dns)
+    } else if (reverse_dns) {
       data.hostname_offset = 0;
-    else
+    } else {
       ats_ip_invalidate(ip());
+    }
   }
 
   int iobuffer_index;

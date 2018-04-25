@@ -344,8 +344,9 @@ Mutex_trylock_spin(
   if (m->thread_holding != t) {
     int locked;
     do {
-      if ((locked = ink_mutex_try_acquire(&m->the_mutex)))
+      if ((locked = ink_mutex_try_acquire(&m->the_mutex))) {
         break;
+      }
     } while (--spincnt);
     if (!locked) {
 #ifdef DEBUG
@@ -512,8 +513,9 @@ public:
   void
   release()
   {
-    if (locked_p)
+    if (locked_p) {
       Mutex_unlock(m, m->thread_holding);
+    }
     locked_p = false;
   }
 
@@ -587,8 +589,9 @@ public:
 
   ~MutexTryLock()
   {
-    if (lock_acquired)
+    if (lock_acquired) {
       Mutex_unlock(m.get(), m->thread_holding);
+    }
   }
 
   /** Spin till lock is acquired

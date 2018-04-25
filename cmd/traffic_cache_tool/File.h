@@ -163,8 +163,9 @@ template <typename T>
 T
 FilePath::stat(T (*f)(struct stat const *)) const
 {
-  if (STAT_P::UNDEF == _stat_p)
+  if (STAT_P::UNDEF == _stat_p) {
     _stat_p = ::stat(_path.c_str(), &_stat) >= 0 ? STAT_P::VALID : STAT_P::INVALID;
+  }
   return _stat_p == STAT_P::VALID ? f(&_stat) : T();
 }
 

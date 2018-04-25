@@ -1100,18 +1100,21 @@ public:
     if (_writer) {
       _writer->reset();
     }
-    for (auto &reader : readers)
+    for (auto &reader : readers) {
       if (reader.allocated()) {
         reader.reset();
       }
+    }
   }
 
   void
   init_readers()
   {
-    for (auto &reader : readers)
-      if (reader.allocated() && !reader.block)
+    for (auto &reader : readers) {
+      if (reader.allocated() && !reader.block) {
         reader.block = _writer;
+      }
+    }
   }
 
   void

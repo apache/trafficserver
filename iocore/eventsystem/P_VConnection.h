@@ -75,8 +75,9 @@ vc_do_io_write(VConnection *vc, Continuation *cont, int64_t nbytes, MIOBuffer *b
 {
   IOBufferReader *reader = buf->alloc_reader();
 
-  if (offset > 0)
+  if (offset > 0) {
     reader->consume(offset);
+  }
 
   return vc->do_io_write(cont, nbytes, reader, true);
 }

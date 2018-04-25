@@ -117,8 +117,9 @@ public:
   {
     ats_free(start);
     start = nullptr;
-    if (!action.cancelled)
+    if (!action.cancelled) {
       action.continuation->handleEvent(STAT_PAGE_FAILURE, nullptr);
+    }
     return done(VIO::ABORT, event, e);
   }
 

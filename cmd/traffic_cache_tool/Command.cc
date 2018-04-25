@@ -122,12 +122,14 @@ CommandTable::Command::helpMessage(int argc, char *argv[], std::ostream &out, st
   if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
     // Tail of command keywords, start listing
     if (_name.empty()) { // root command group, don't print for that.
-      for (Command const &c : _group)
+      for (Command const &c : _group) {
         c.helpMessage(argc, argv, out, prefix);
+      }
     } else {
       out << prefix << _name << ": " << _help << std::endl;
-      for (Command const &c : _group)
+      for (Command const &c : _group) {
         c.helpMessage(argc, argv, out, "  " + prefix);
+      }
     }
   } else {
     char const *tag = argv[CommandTable::_opt_idx];

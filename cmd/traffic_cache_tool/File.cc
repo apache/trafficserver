@@ -39,10 +39,12 @@ path_join(ts::string_view lhs, ts::string_view rhs)
   size_t rn        = rhs.size();
   const char *rptr = rhs.data(); // May need to be modified.
 
-  if (ln && lhs[ln - 1] == '/')
+  if (ln && lhs[ln - 1] == '/') {
     --ln; // drop trailing separator.
-  if (rn && *rptr == '/')
+  }
+  if (rn && *rptr == '/') {
     --rn, ++rptr; // drop leading separator.
+  }
 
   std::string x;
   x.resize(ln + rn + 2);
@@ -81,10 +83,12 @@ operator/(char const *lhs, FilePath const &rhs)
   ats_scoped_str np;
 
   // If either path is empty, return the other path.
-  if (nullptr == lhs || 0 == *lhs)
+  if (nullptr == lhs || 0 == *lhs) {
     return rhs;
-  if (!rhs.has_path())
+  }
+  if (!rhs.has_path()) {
     return FilePath(lhs);
+  }
 
   return FilePath(path_join(lhs, static_cast<const char *>(rhs)));
 }
@@ -112,10 +116,12 @@ BulkFile::load()
         data[n] = '\n';
         ++_len;
       }
-    } else
+    } else {
       zret = errno;
-  } else
+    }
+  } else {
     zret = errno;
+  }
   return zret;
 }
 

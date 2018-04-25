@@ -81,8 +81,9 @@ public:
   void
   set_half_close_flag(bool flag)
   {
-    if (parent)
+    if (parent) {
       parent->set_half_close_flag(flag);
+    }
   }
   virtual bool
   get_half_close_flag() const

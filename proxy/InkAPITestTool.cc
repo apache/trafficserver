@@ -488,10 +488,11 @@ synclient_txn_create(void)
 
   ink_zero(*txn);
 
-  if (nullptr == (proxy_port = HttpProxyPort::findHttp(AF_INET)))
+  if (nullptr == (proxy_port = HttpProxyPort::findHttp(AF_INET))) {
     txn->connect_port = PROXY_HTTP_DEFAULT_PORT;
-  else
+  } else {
     txn->connect_port = proxy_port->m_port;
+  }
 
   txn->connect_ip = IP(127, 0, 0, 1);
   txn->status     = REQUEST_INPROGRESS;

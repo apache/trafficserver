@@ -75,8 +75,9 @@ TS_INLINE void
 ProtectedQueue::remove(Event *e)
 {
   ink_assert(e->in_the_prot_queue);
-  if (!ink_atomiclist_remove(&al, e))
+  if (!ink_atomiclist_remove(&al, e)) {
     localQueue.remove(e);
+  }
   e->in_the_prot_queue = 0;
 }
 

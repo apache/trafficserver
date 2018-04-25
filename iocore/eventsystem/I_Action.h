@@ -140,8 +140,9 @@ public:
     ink_assert(!cancelled);
     cancelled = true;
 #else
-    if (!cancelled)
+    if (!cancelled) {
       cancelled = true;
+    }
 #endif
   }
 
@@ -164,8 +165,9 @@ public:
     ink_assert(!cancelled);
     cancelled = true;
 #else
-    if (!cancelled)
+    if (!cancelled) {
       cancelled = true;
+    }
 #endif
   }
 
@@ -173,10 +175,11 @@ public:
   operator=(Continuation *acont)
   {
     continuation = acont;
-    if (acont)
+    if (acont) {
       mutex = acont->mutex;
-    else
+    } else {
       mutex = nullptr;
+    }
     return acont;
   }
 

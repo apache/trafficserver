@@ -395,8 +395,9 @@ wipeField(char **dest, char *field)
   if (buf_dest) {
     char *query_param = strstr(buf_dest, "?");
 
-    if (!query_param)
+    if (!query_param) {
       return;
+    }
 
     char *p1 = strstr(query_param, field);
 
@@ -412,13 +413,15 @@ wipeField(char **dest, char *field)
         temp_text += (p2 - p1);
         char *p3 = strstr(p2, "&");
         if (p3) {
-          for (int i     = 0; i < (p3 - p2); i++)
+          for (int i = 0; i < (p3 - p2); i++) {
             temp_text[i] = 'X';
+          }
           temp_text += (p3 - p2);
           memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
         } else {
-          for (int i     = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++)
+          for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
             temp_text[i] = 'X';
+          }
         }
       } else {
         return;
@@ -455,8 +458,9 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
 {
   bool retVal = false;
 
-  if (m_action != WIPE_FIELD_VALUE)
+  if (m_action != WIPE_FIELD_VALUE) {
     return false;
+  }
 
   // make single value case a little bit faster by taking it out of loop
   //

@@ -155,12 +155,14 @@ HdrCsvIter::get_first_int(MIMEField *m, int *valid)
   const char *r = get_first(m, &len);
 
   if (r) {
-    if (valid)
+    if (valid) {
       *valid = 1;
+    }
     return ink_atoi(r, len);
   } else {
-    if (valid)
+    if (valid) {
       *valid = 0;
+    }
     return 0;
   }
 }
@@ -172,12 +174,14 @@ HdrCsvIter::get_next_int(int *valid)
   const char *r = get_next(&len);
 
   if (r) {
-    if (valid)
+    if (valid) {
       *valid = 1;
+    }
     return ink_atoi(r, len);
   } else {
-    if (valid)
+    if (valid) {
       *valid = 0;
+    }
     return 0;
   }
 }
