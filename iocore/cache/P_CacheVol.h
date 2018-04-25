@@ -57,7 +57,7 @@
 #define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
 #define dir_evac_bucket(_e) dir_offset_evac_bucket(dir_offset(_e))
 #define offset_evac_bucket(_d, _o) \
-  dir_offset_evac_bucket((offset_to_vol_offset(_d, _o)
+  dir_offset_evac_bucket((_d->offset_to_vol_offset(_o)
 
 // Documents
 
@@ -243,10 +243,21 @@ struct Vol : public Continuation {
   uint32_t round_to_approx_size(uint32_t l);
 
   // inline functions
-  TS_INLINE int headerlen();         // calculates the total length of the vol header and the freelist
-  TS_INLINE int direntries();        // total number of dir entries
-  TS_INLINE Dir *dir_segment(int s); // returns the first dir in the segment s
-  TS_INLINE size_t dirlen();         // calculates the total length of header, directories and footer
+  int headerlen();         // calculates the total length of the vol header and the freelist
+  int direntries();        // total number of dir entries
+  Dir *dir_segment(int s); // returns the first dir in the segment s
+  size_t dirlen();         // calculates the total length of header, directories and footer
+  int vol_out_of_phase_valid(Dir *e);
+
+  int vol_out_of_phase_agg_valid(Dir *e);
+  int vol_out_of_phase_write_valid(Dir *e);
+  int vol_in_phase_valid(Dir *e);
+  int vol_in_phase_agg_buf_valid(Dir *e);
+
+  off_t vol_offset(Dir *e);
+  off_t offset_to_vol_offset(off_t pos);
+  off_t vol_offset_to_offset(off_t pos);
+  off_t vol_relative_length(off_t start_offset);
 
   Vol() : Continuation(new_ProxyMutex())
   {
@@ -351,57 +362,57 @@ Vol::direntries()
 }
 
 TS_INLINE int
-vol_out_of_phase_valid(Vol *d, Dir *e)
+Vol::vol_out_of_phase_valid(Dir *e)
 {
-  return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 TS_INLINE int
-vol_out_of_phase_agg_valid(Vol *d, Dir *e)
+Vol::vol_out_of_phase_agg_valid(Dir *e)
 {
-  return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
 }
 
 TS_INLINE int
-vol_out_of_phase_write_valid(Vol *d, Dir *e)
+Vol::vol_out_of_phase_write_valid(Dir *e)
 {
-  return (dir_offset(e) - 1 >= ((d->header->write_pos - d->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((this->header->write_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 TS_INLINE int
-vol_in_phase_valid(Vol *d, Dir *e)
+Vol::vol_in_phase_valid(Dir *e)
 {
-  return (dir_offset(e) - 1 < ((d->header->write_pos + d->agg_buf_pos - d->start) / CACHE_BLOCK_SIZE));
+  return (dir_offset(e) - 1 < ((this->header->write_pos + this->agg_buf_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
 TS_INLINE off_t
-vol_offset(Vol *d, Dir *e)
+Vol::vol_offset(Dir *e)
 {
-  return d->start + (off_t)dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
+  return this->start + (off_t)dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 TS_INLINE off_t
-offset_to_vol_offset(Vol *d, off_t pos)
+Vol::offset_to_vol_offset(off_t pos)
 {
-  return ((pos - d->start + CACHE_BLOCK_SIZE) / CACHE_BLOCK_SIZE);
+  return ((pos - this->start + CACHE_BLOCK_SIZE) / CACHE_BLOCK_SIZE);
 }
 
 TS_INLINE off_t
-vol_offset_to_offset(Vol *d, off_t pos)
+Vol::vol_offset_to_offset(off_t pos)
 {
-  return d->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
+  return this->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
 TS_INLINE int
-vol_in_phase_agg_buf_valid(Vol *d, Dir *e)
+Vol::vol_in_phase_agg_buf_valid(Dir *e)
 {
-  return (vol_offset(d, e) >= d->header->write_pos && vol_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
+  return (this->vol_offset(e) >= this->header->write_pos && this->vol_offset(e) < (this->header->write_pos + this->agg_buf_pos));
 }
 // length of the partition not including the offset of location 0.
 TS_INLINE off_t
-vol_relative_length(Vol *v, off_t start_offset)
+Vol::vol_relative_length(off_t start_offset)
 {
-  return (v->len + v->skip) - start_offset;
+  return (this->len + this->skip) - start_offset;
 }
 
 TS_INLINE uint32_t
