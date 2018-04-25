@@ -39,10 +39,10 @@ public:
   uint32_t no_activity_timeout_out() const;
   uint32_t initial_max_data() const;
   uint32_t initial_max_stream_data() const;
-  uint32_t initial_max_stream_id_bidi_in() const;
-  uint32_t initial_max_stream_id_bidi_out() const;
-  uint32_t initial_max_stream_id_uni_in() const;
-  uint32_t initial_max_stream_id_uni_out() const;
+  uint16_t initial_max_stream_id_bidi_in() const;
+  uint16_t initial_max_stream_id_bidi_out() const;
+  uint16_t initial_max_stream_id_uni_in() const;
+  uint16_t initial_max_stream_id_uni_out() const;
   uint32_t server_id() const;
   static int connection_table_size();
   uint32_t stateless_retry() const;
