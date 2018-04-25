@@ -60,8 +60,9 @@ SocketManager::open(const char *path, int oflag, mode_t mode)
   int s;
   do {
     s = ::open(path, oflag, mode);
-    if (likely(s >= 0))
+    if (likely(s >= 0)) {
       break;
+    }
     s = -errno;
   } while (transient_error());
   return s;
@@ -73,8 +74,9 @@ SocketManager::read(int fd, void *buf, int size, void * /* pOLP ATS_UNUSED */)
   int64_t r;
   do {
     r = ::read(fd, buf, size);
-    if (likely(r >= 0))
+    if (likely(r >= 0)) {
       break;
+    }
     r = -errno;
   } while (r == -EINTR);
   return r;
@@ -86,8 +88,9 @@ SocketManager::pread(int fd, void *buf, int size, off_t offset, char * /* tag AT
   int64_t r;
   do {
     r = ::pread(fd, buf, size, offset);
-    if (r < 0)
+    if (r < 0) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -98,8 +101,9 @@ SocketManager::readv(int fd, struct iovec *vector, size_t count)
   int64_t r;
   do {
     // coverity[tainted_data_argument]
-    if (likely((r = ::readv(fd, vector, count)) >= 0))
+    if (likely((r = ::readv(fd, vector, count)) >= 0)) {
       break;
+    }
     r = -errno;
   } while (transient_error());
   return r;
@@ -121,8 +125,9 @@ SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_re
     do {
       // coverity[tainted_data_argument]
       r = read_request ? ::readv(fd, &vector[n_vec], current_count) : ::writev(fd, &vector[n_vec], current_count);
-      if (likely(r >= 0))
+      if (likely(r >= 0)) {
         break;
+      }
       r = -errno;
     } while (transient_error());
 
@@ -131,17 +136,20 @@ SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_re
     }
     bytes_xfered += r;
 
-    if ((n_vec + max_iovecs_per_request) >= (int)count)
+    if ((n_vec + max_iovecs_per_request) >= (int)count) {
       break;
+    }
 
     // Compute bytes in current vector
     current_request_bytes = 0;
-    for (n = n_vec; n < (n_vec + current_count); ++n)
+    for (n = n_vec; n < (n_vec + current_count); ++n) {
       current_request_bytes += vector[n].iov_len;
+    }
 
     // Exit if we were unable to read all data in the current vector
-    if (r != current_request_bytes)
+    if (r != current_request_bytes) {
       break;
+    }
   }
   return bytes_xfered;
 }
@@ -170,8 +178,9 @@ SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr 
   int r;
   do {
     r = ::recvfrom(fd, (char *)buf, size, flags, addr, addrlen);
-    if (unlikely(r < 0))
+    if (unlikely(r < 0)) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -181,8 +190,9 @@ SocketManager::recvmsg(int fd, struct msghdr *m, int flags, void * /* pOLP ATS_U
 {
   int r;
   do {
-    if (unlikely((r = ::recvmsg(fd, m, flags)) < 0))
+    if (unlikely((r = ::recvmsg(fd, m, flags)) < 0)) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -192,8 +202,9 @@ SocketManager::write(int fd, void *buf, int size, void * /* pOLP ATS_UNUSED */)
 {
   int64_t r;
   do {
-    if (likely((r = ::write(fd, buf, size)) >= 0))
+    if (likely((r = ::write(fd, buf, size)) >= 0)) {
       break;
+    }
     r = -errno;
   } while (r == -EINTR);
   return r;
@@ -204,8 +215,9 @@ SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char * /* tag A
 {
   int64_t r;
   do {
-    if (unlikely((r = ::pwrite(fd, buf, size, offset)) < 0))
+    if (unlikely((r = ::pwrite(fd, buf, size, offset)) < 0)) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -215,8 +227,9 @@ SocketManager::writev(int fd, struct iovec *vector, size_t count)
 {
   int64_t r;
   do {
-    if (likely((r = ::writev(fd, vector, count)) >= 0))
+    if (likely((r = ::writev(fd, vector, count)) >= 0)) {
       break;
+    }
     r = -errno;
   } while (transient_error());
   return r;
@@ -233,8 +246,9 @@ SocketManager::send(int fd, void *buf, int size, int flags)
 {
   int r;
   do {
-    if (unlikely((r = ::send(fd, (char *)buf, size, flags)) < 0))
+    if (unlikely((r = ::send(fd, (char *)buf, size, flags)) < 0)) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -244,8 +258,9 @@ SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr con
 {
   int r;
   do {
-    if (unlikely((r = ::sendto(fd, (char *)buf, len, flags, to, tolen)) < 0))
+    if (unlikely((r = ::sendto(fd, (char *)buf, len, flags, to, tolen)) < 0)) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -255,8 +270,9 @@ SocketManager::sendmsg(int fd, struct msghdr *m, int flags, void * /* pOLP ATS_U
 {
   int r;
   do {
-    if (unlikely((r = ::sendmsg(fd, m, flags)) < 0))
+    if (unlikely((r = ::sendmsg(fd, m, flags)) < 0)) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -266,8 +282,9 @@ SocketManager::lseek(int fd, off_t offset, int whence)
 {
   int64_t r;
   do {
-    if ((r = ::lseek(fd, offset, whence)) < 0)
+    if ((r = ::lseek(fd, offset, whence)) < 0) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -277,8 +294,9 @@ SocketManager::fstat(int fd, struct stat *buf)
 {
   int r;
   do {
-    if ((r = ::fstat(fd, buf)) >= 0)
+    if ((r = ::fstat(fd, buf)) >= 0) {
       break;
+    }
     r = -errno;
   } while (transient_error());
   return r;
@@ -289,8 +307,9 @@ SocketManager::unlink(char *buf)
 {
   int r;
   do {
-    if ((r = ::unlink(buf)) < 0)
+    if ((r = ::unlink(buf)) < 0) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -300,8 +319,9 @@ SocketManager::fsync(int fildes)
 {
   int r;
   do {
-    if ((r = ::fsync(fildes)) < 0)
+    if ((r = ::fsync(fildes)) < 0) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -311,8 +331,9 @@ SocketManager::ftruncate(int fildes, off_t length)
 {
   int r;
   do {
-    if ((r = ::ftruncate(fildes, length)) < 0)
+    if ((r = ::ftruncate(fildes, length)) < 0) {
       r = -errno;
+    }
   } while (r == -EINTR);
   return r;
 }
@@ -322,8 +343,9 @@ SocketManager::poll(struct pollfd *fds, unsigned long nfds, int timeout)
 {
   int r;
   do {
-    if ((r = ::poll(fds, nfds, timeout)) >= 0)
+    if ((r = ::poll(fds, nfds, timeout)) >= 0) {
       break;
+    }
     r = -errno;
   } while (transient_error());
   return r;
@@ -334,11 +356,13 @@ TS_INLINE int
 SocketManager::epoll_create(int size)
 {
   int r;
-  if (size <= 0)
+  if (size <= 0) {
     size = EPOLL_MAX_DESCRIPTOR_SIZE;
+  }
   do {
-    if (likely((r = ::epoll_create(size)) >= 0))
+    if (likely((r = ::epoll_create(size)) >= 0)) {
       break;
+    }
     r = -errno;
   } while (errno == -EINTR);
   return r;
@@ -350,8 +374,9 @@ SocketManager::epoll_close(int epfd)
   int r = 0;
   if (likely(epfd >= 0)) {
     do {
-      if (likely((r = ::close(epfd)) == 0))
+      if (likely((r = ::close(epfd)) == 0)) {
         break;
+      }
       r = -errno;
     } while (errno == -EINTR);
   }
@@ -363,8 +388,9 @@ SocketManager::epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
   int r;
   do {
-    if (likely((r = ::epoll_ctl(epfd, op, fd, event)) == 0))
+    if (likely((r = ::epoll_ctl(epfd, op, fd, event)) == 0)) {
       break;
+    }
     r = -errno;
   } while (errno == -EINTR);
   return r;
@@ -375,8 +401,9 @@ SocketManager::epoll_wait(int epfd, struct epoll_event *events, int maxevents, i
 {
   int r;
   do {
-    if ((r = ::epoll_wait(epfd, events, maxevents, timeout)) >= 0)
+    if ((r = ::epoll_wait(epfd, events, maxevents, timeout)) >= 0) {
       break;
+    }
     r = -errno;
   } while (errno == -EINTR);
   return r;
@@ -498,8 +525,9 @@ SocketManager::shutdown(int s, int how)
 {
   int res;
   do {
-    if (unlikely((res = ::shutdown(s, how)) < 0))
+    if (unlikely((res = ::shutdown(s, how)) < 0)) {
       res = -errno;
+    }
   } while (res == -EINTR);
   return res;
 }
@@ -509,8 +537,9 @@ SocketManager::lockf(int s, int f, off_t size)
 {
   int res;
   do {
-    if ((res = ::lockf(s, f, size)) < 0)
+    if ((res = ::lockf(s, f, size)) < 0) {
       res = -errno;
+    }
   } while (res == -EINTR);
   return res;
 }
@@ -520,8 +549,9 @@ SocketManager::dup(int s)
 {
   int res;
   do {
-    if ((res = ::dup(s)) >= 0)
+    if ((res = ::dup(s)) >= 0) {
       break;
+    }
     res = -errno;
   } while (res == -EINTR);
   return res;

@@ -218,8 +218,9 @@ void
 Trie<T>::Clear()
 {
   T *iter;
-  while (nullptr != (iter = m_value_list.pop()))
+  while (nullptr != (iter = m_value_list.pop())) {
     delete iter;
+  }
 
   _Clear(&m_root);
   m_root.Clear();

@@ -112,8 +112,9 @@ URLparser::getPort(std::string &fullURL, int &port_ptr, int &port_len)
     if (!hostPort.empty()) // i.e. port is present
     {
       TextView port = url.take_prefix_at('/');
-      if (port.empty()) // i.e. backslash is not present, then the rest of the url must be just port
+      if (port.empty()) { // i.e. backslash is not present, then the rest of the url must be just port
         port = url;
+      }
       if (matcher.portmatch(port.data(), port.size())) {
         TextView text;
         n_port = svtoi(port, &text);
@@ -187,8 +188,9 @@ Stripe::clear()
   for (auto i : {A, B}) {
     for (auto j : {HEAD, FOOT}) {
       ssize_t n = pwrite(_span->_fd, zero, CacheStoreBlocks::SCALE, this->_meta_pos[i][j]);
-      if (n < CacheStoreBlocks::SCALE)
+      if (n < CacheStoreBlocks::SCALE) {
         std::cout << "Failed to clear stripe header" << std::endl;
+      }
     }
   }
 
@@ -206,8 +208,9 @@ Stripe::Chunk::append(MemSpan m)
 void
 Stripe::Chunk::clear()
 {
-  for (auto &m : _chain)
+  for (auto &m : _chain) {
     free(const_cast<void *>(m.data()));
+  }
   _chain.clear();
 }
 
@@ -465,8 +468,9 @@ TS_INLINE CacheDirEntry *
 dir_from_offset(int64_t i, CacheDirEntry *seg)
 {
 #if DIR_DEPTH < 5
-  if (!i)
+  if (!i) {
     return nullptr;
+  }
   return dir_in_seg(seg, i);
 #else
   i = i + ((i - 1) / (DIR_DEPTH - 1));
@@ -557,8 +561,9 @@ Stripe::dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_c
     int64_t offset = stripe_offset(e);
     int64_t size   = dir_approx_size(e);
     ssize_t n      = pread(fd, stripe_buff2, size, offset);
-    if (n < size)
+    if (n < size) {
       std::cout << "Failed to read content from the Stripe" << std::endl;
+    }
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
     std::string hdr(doc->hdr(), doc->hlen);
@@ -607,8 +612,9 @@ void
 Stripe::walk_all_buckets()
 {
   for (int s = 0; s < this->_segments; s++) {
-    if (walk_bucket_chain(s))
+    if (walk_bucket_chain(s)) {
       std::cout << "Loop present in Segment " << s << std::endl;
+    }
   }
 }
 
@@ -631,8 +637,9 @@ Stripe::walk_bucket_chain(int s)
         std::cout << "bit already set in "
                   << "seg " << s << " bucket " << b << std::endl;
       }
-      if (i > 0) // i.e., not the first dir in the segment
+      if (i > 0) { // i.e., not the first dir in the segment
         b_bitset[i] = true;
+      }
 
 #if 1
       if (!dir_valid(e) || !dir_offset(e)) {
@@ -706,8 +713,9 @@ Stripe::loadDir()
   dir            = (CacheDirEntry *)(raw_dir + this->vol_headerlen());
   // read directory
   ssize_t n = pread(this->_span->_fd, raw_dir, dirlen, this->_start);
-  if (n < dirlen)
+  if (n < dirlen) {
     std::cout << "Failed to read Dir from stripe @" << this->hashText;
+  }
   return zret;
 }
 //
@@ -976,9 +984,10 @@ Stripe::loadMeta()
   static const size_t SBSIZE = CacheStoreBlocks::SCALE; // save some typing.
   alignas(SBSIZE) char stripe_buff[SBSIZE];             // Use when reading a single stripe block.
   alignas(SBSIZE) char stripe_buff2[SBSIZE];            // use to save the stripe freelist
-  if (io_align > SBSIZE)
+  if (io_align > SBSIZE) {
     return Errata::Message(0, 1, "Cannot load stripe ", _idx, " on span ", _span->_path, " because the I/O block alignment ",
                            io_align, " is larger than the buffer alignment ", SBSIZE);
+  }
 
   _directory._start = pos;
   // Header A must be at the start of the stripe block.
@@ -1069,11 +1078,13 @@ Stripe::loadMeta()
   meta = data.ptr<StripeMeta>(0);
   // copy freelist
   freelist = (uint16_t *)malloc(_segments * sizeof(uint16_t));
-  for (int i    = 0; i < _segments; i++)
+  for (int i = 0; i < _segments; i++) {
     freelist[i] = meta->freelist[i];
+  }
 
-  if (!zret)
+  if (!zret) {
     _directory.clear();
+  }
   return zret;
 }
 

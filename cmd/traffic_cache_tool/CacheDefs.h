@@ -440,8 +440,9 @@ struct url_matcher {
   uint8_t
   match(const char *hostname) const
   {
-    if (regex.match(hostname) != -1)
+    if (regex.match(hostname) != -1) {
       return 1;
+    }
     //   if(url_with_user.match(hostname) != -1)
     //       return 2;
     return 0;
@@ -449,8 +450,9 @@ struct url_matcher {
   uint8_t
   portmatch(const char *hostname, int length) const
   {
-    if (port.match(hostname, length) != -1)
+    if (port.match(hostname, length) != -1) {
       return 1;
+    }
     //   if(url_with_user.match(hostname) != -1)
     //       return 2;
     return 0;

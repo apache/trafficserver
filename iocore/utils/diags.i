@@ -69,10 +69,12 @@ reconfigure_diags()
   //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
 
-  if (diags->base_debug_tags)
+  if (diags->base_debug_tags) {
     diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-  if (diags->base_action_tags)
+}
+  if (diags->base_action_tags) {
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
+}
 
 ////////////////////////////////////
 // change the diags config values //

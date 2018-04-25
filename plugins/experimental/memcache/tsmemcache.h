@@ -230,8 +230,9 @@ xatoull(char *s, char *e)
   if (isdigit(*s)) {
     n = *s - '0';
     s++;
-    if (s >= e)
+    if (s >= e) {
       return n;
+    }
   }
   while (isdigit(*s)) {
     n *= 10;

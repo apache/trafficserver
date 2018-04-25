@@ -324,8 +324,9 @@ TS_INLINE Dir *
 dir_from_offset(int64_t i, Dir *seg)
 {
 #if DIR_DEPTH < 5
-  if (!i)
+  if (!i) {
     return nullptr;
+  }
   return dir_in_seg(seg, i);
 #else
   i = i + ((i - 1) / (DIR_DEPTH - 1));
