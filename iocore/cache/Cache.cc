@@ -1673,8 +1673,8 @@ Ldone : {
     next_sync_serial++;
   }
   // clear effected portion of the cache
-  off_t clear_start = offset_to_vol_offset(this, header->write_pos);
-  off_t clear_end   = offset_to_vol_offset(this, recover_pos);
+  off_t clear_start = this->offset_to_vol_offset(header->write_pos);
+  off_t clear_end   = this->offset_to_vol_offset(recover_pos);
   if (clear_start <= clear_end) {
     dir_clear_range(clear_start, clear_end, this);
   } else {
@@ -2459,7 +2459,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
   // see if its in the aggregation buffer
   if (dir_agg_buf_valid(vol, &dir)) {
-    int agg_offset = vol_offset(vol, &dir) - vol->header->write_pos;
+    int agg_offset = vol->vol_offset(&dir) - vol->header->write_pos;
     buf            = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
     ink_assert((agg_offset + io.aiocb.aio_nbytes) <= (unsigned)vol->agg_buf_pos);
     char *doc = buf->data();
@@ -2471,7 +2471,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 
   io.aiocb.aio_fildes = vol->fd;
-  io.aiocb.aio_offset = vol_offset(vol, &dir);
+  io.aiocb.aio_offset = vol->vol_offset(&dir);
   if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(vol->skip + vol->len)) {
     io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
   }

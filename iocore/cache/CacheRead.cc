@@ -875,7 +875,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     if (vol->within_hit_evacuate_window(&earliest_dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&earliest_dir),
-             offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
+             vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
     goto Lsuccess;
@@ -1159,7 +1159,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     if (vol->within_hit_evacuate_window(&dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&dir),
-             offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
+             vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
 
