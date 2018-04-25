@@ -39,6 +39,9 @@ static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 #define QUICHSDebug(fmt, ...) \
   Debug("quic_handshake", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_qc->connection_id()), ##__VA_ARGS__)
 
+#define QUICVHSDebug(fmt, ...) \
+  Debug("v_quic_handshake", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_qc->connection_id()), ##__VA_ARGS__)
+
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                            \
   {                                                                                                                                \
     int i;                                                                                                                         \
@@ -311,7 +314,7 @@ QUICHandshake::remote_transport_parameters()
 int
 QUICHandshake::state_handshake(int event, Event *data)
 {
-  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
+  QUICVHSDebug("%s (%d)", get_vc_event_name(event), event);
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
@@ -351,8 +354,8 @@ QUICHandshake::state_handshake(int event, Event *data)
 int
 QUICHandshake::state_complete(int event, void *data)
 {
-  QUICHSDebug("%s (%d)", get_vc_event_name(event), event);
-  QUICHSDebug("Got an event on complete state. Ignoring it for now.");
+  QUICVHSDebug("%s (%d)", get_vc_event_name(event), event);
+  QUICVHSDebug("Got an event on complete state. Ignoring it for now.");
 
   return EVENT_DONE;
 }
@@ -440,7 +443,7 @@ QUICHandshake::_do_handshake(size_t &out_len)
     stream_io->read(in, in_len);
 
     if (in_len <= 0) {
-      QUICHSDebug("No message");
+      QUICVHSDebug("No message");
       return SSL_ERROR_NONE;
     }
     I_WANNA_DUMP_THIS_BUF(in, in_len);
