@@ -73,7 +73,7 @@ is_addr_query(int qtype)
 {
   return qtype == T_A || qtype == T_AAAA;
 }
-}
+} // namespace
 
 DNSProcessor dnsProcessor;
 ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
@@ -487,14 +487,13 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
     cur_con.close();
   }
 
-  if (cur_con.connect(target,
-                      DNSConnection::Options()
-                        .setNonBlockingConnect(true)
-                        .setNonBlockingIo(true)
-                        .setUseTcp(over_tcp)
-                        .setBindRandomPort(true)
-                        .setLocalIpv6(&local_ipv6.sa)
-                        .setLocalIpv4(&local_ipv4.sa)) < 0) {
+  if (cur_con.connect(target, DNSConnection::Options()
+                                .setNonBlockingConnect(true)
+                                .setNonBlockingIo(true)
+                                .setUseTcp(over_tcp)
+                                .setBindRandomPort(true)
+                                .setLocalIpv6(&local_ipv6.sa)
+                                .setLocalIpv4(&local_ipv4.sa)) < 0) {
     Debug("dns", "opening connection %s FAILED for %d", ip_text, icon);
     if (!failed) {
       if (dns_ns_rr) {

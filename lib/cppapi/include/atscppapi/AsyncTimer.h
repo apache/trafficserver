@@ -76,4 +76,4 @@ private:
   AsyncTimerState *state_;
 };
 
-} /* atscppapi */
+} // namespace atscppapi

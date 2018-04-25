@@ -1961,7 +1961,7 @@ Cache::vol_initialized(bool result)
 }
 
 /** Set the state of a disk programmatically.
-*/
+ */
 bool
 CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
                                      bool admin)
@@ -2653,9 +2653,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
 }
 // CacheVConnection
 
-CacheVConnection::CacheVConnection() : VConnection(nullptr)
-{
-}
+CacheVConnection::CacheVConnection() : VConnection(nullptr) {}
 
 void
 cplist_init()
@@ -3440,4 +3438,4 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   return true;
 }
 
-} // cache_bc
+} // namespace cache_bc

@@ -547,8 +547,9 @@ bool
 NetHandler::manage_active_queue(bool ignore_queue_size = false)
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
-  Debug("net_queue", "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
-                     "active_queue_size: %d keep_alive_queue_size: %d",
+  Debug("net_queue",
+        "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
+        "active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
         keep_alive_queue_size);
 

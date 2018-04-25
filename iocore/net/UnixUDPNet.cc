@@ -303,9 +303,7 @@ UDPReadContinuation::UDPReadContinuation(Event *completionToken)
   }
 }
 
-UDPReadContinuation::UDPReadContinuation() : Continuation(nullptr)
-{
-}
+UDPReadContinuation::UDPReadContinuation() : Continuation(nullptr) {}
 
 inline void
 UDPReadContinuation::free()
@@ -729,13 +727,9 @@ Lerror:
 }
 
 // send out all packets that need to be sent out as of time=now
-UDPQueue::UDPQueue()
-{
-}
+UDPQueue::UDPQueue() {}
 
-UDPQueue::~UDPQueue()
-{
-}
+UDPQueue::~UDPQueue() {}
 
 /*
  * Driver function that aggregates packets across cont's and sends them

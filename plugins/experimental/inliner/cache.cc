@@ -76,5 +76,5 @@ namespace cache
     }
     return 0;
   }
-} // end of cache namespace
-} // end of ats namespace
+} // namespace cache
+} // namespace ats

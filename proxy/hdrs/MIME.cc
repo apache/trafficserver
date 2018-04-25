@@ -1163,7 +1163,7 @@ static inline MIMEField *
 rebase(MIMEField *dest_ptr, ///< Original pointer into @src_base memory.
        void *dest_base,     ///< New base pointer.
        void *src_base       ///< Original base pointer.
-       )
+)
 {
   return reinterpret_cast<MIMEField *>(reinterpret_cast<char *>(dest_ptr) +
                                        (static_cast<char *>(dest_base) - static_cast<char *>(src_base)));
@@ -1306,9 +1306,9 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
 
   ink_assert(field_name_len >= 0);
 
-////////////////////////////////////////////
-// do presence check and slot accelerator //
-////////////////////////////////////////////
+  ////////////////////////////////////////////
+  // do presence check and slot accelerator //
+  ////////////////////////////////////////////
 
 #if TRACK_FIELD_FIND_CALLS
   Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d", mh, field_name_len, field_name_str, is_wks);

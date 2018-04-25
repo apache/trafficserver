@@ -98,8 +98,8 @@ namespace io
       new Read<C>(v, std::forward<C>(c), s);
     }
 
-  } // end of vconnection namespace
-} // end of io namespace
-} // end of ats namespace
+  } // namespace vconnection
+} // namespace io
+} // namespace ats
 
 #endif // VCONNECTION_H

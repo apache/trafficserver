@@ -119,7 +119,7 @@ tmr_init(void)
   int h;
 
   mstimeout_cache = -1;
-  for (h      = 0; h < HASH_SIZE; ++h)
+  for (h = 0; h < HASH_SIZE; ++h)
     timers[h] = (Timer *)0;
 }
 
@@ -203,7 +203,7 @@ tmr_mstimeout(struct timeval *nowP)
     if (!gotone)
       return INFTIM;
     if (msecs <= 0)
-      msecs         = 0;
+      msecs = 0;
     mstimeout_cache = msecs;
 
     return msecs;

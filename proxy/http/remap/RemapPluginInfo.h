@@ -38,7 +38,7 @@ class url_mapping;
 
 /**
  *
-**/
+ **/
 class remap_plugin_info
 {
 public:
@@ -71,7 +71,7 @@ public:
 /**
  * struct host_hdr_info;
  * Used to store info about host header
-**/
+ **/
 struct host_hdr_info {
   const char *request_host;
   int host_len;

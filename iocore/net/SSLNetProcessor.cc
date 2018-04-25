@@ -107,9 +107,7 @@ SSLNetProcessor::allocate_vc(EThread *t)
   return vc;
 }
 
-SSLNetProcessor::SSLNetProcessor()
-{
-}
+SSLNetProcessor::SSLNetProcessor() {}
 
 SSLNetProcessor::~SSLNetProcessor()
 {

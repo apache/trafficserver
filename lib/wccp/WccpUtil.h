@@ -51,14 +51,14 @@ ts::Errata &log(ts::Errata &err,       ///< Target errata.
                 ts::Errata::Id id,     ///< Message ID.
                 ts::Errata::Code code, ///< Severity level.
                 char const *text       ///< Message text.
-                );
+);
 /// Report literal string to an Errata.
 /// Use message ID 0.
 /// @return @a err.
 ts::Errata &log(ts::Errata &err,       ///< Target errata.
                 ts::Errata::Code code, ///< Severity level.
                 char const *text       ///< Message text.
-                );
+);
 /// printf style log to Errata.
 /// @return @a err.
 ts::Errata &logf(ts::Errata &err,       ///< Target errata.
@@ -66,7 +66,7 @@ ts::Errata &logf(ts::Errata &err,       ///< Target errata.
                  ts::Errata::Code code, ///< Severity level.
                  char const *format,    ///< Format string.
                  ...                    ///< Format string parameters.
-                 );
+);
 /// printf style log to Errata.
 /// The message id is set to zero.
 /// @return @a err.
@@ -74,13 +74,13 @@ ts::Errata &logf(ts::Errata &err,       ///< Target errata.
                  ts::Errata::Code code, ///< Severity level.
                  char const *format,    ///< Format string.
                  ...                    ///< Format string parameters.
-                 );
+);
 /// Return an Errata populated with a literal string.
 /// Use message ID 0.
 /// @return @a err.
 ts::Errata log(ts::Errata::Code code, ///< Severity level.
                char const *text       ///< Message text.
-               );
+);
 /// Return an Errata populated with a printf styleformatted string.
 /// Use message ID 0.
 /// @return @a err.
@@ -94,7 +94,7 @@ ts::Errata logf(ts::Errata::Code code, ///< Severity level.
  */
 ts::Errata log_errno(ts::Errata::Code code, ///< Severity level.
                      char const *text       ///< Message text.
-                     );
+);
 /** Return an @c Errata based on @c errno.
     @c errno and the corresponding system error string are appended to
     the results from the @a format and following arguments.
@@ -102,7 +102,7 @@ ts::Errata log_errno(ts::Errata::Code code, ///< Severity level.
 ts::Errata logf_errno(ts::Errata::Code code, ///< Severity code.
                       char const *format,    ///< Format string.
                       ...                    ///< Arguments for @a format.
-                      );
+);
 //@}
 
 // ------------------------------------------------------
@@ -188,7 +188,7 @@ typename std::vector<T>::iterator
 find_by_member(std::vector<T> &container, ///< Vector with elements.
                V T::*member,              ///< Pointer to member to compare.
                V const &value             ///< Value to match.
-               )
+)
 {
   typename std::vector<T>::iterator spot  = container.begin();
   typename std::vector<T>::iterator limit = container.end();
@@ -199,13 +199,13 @@ find_by_member(std::vector<T> &container, ///< Vector with elements.
 // ------------------------------------------------------
 /// Find a non-loop back IP address from an open socket.
 uint32_t Get_Local_Address(int s ///< Open socket.
-                           );
+);
 // ------------------------------------------------------
 /// Cheap and dirty conversion to string for debugging.
 /// @note Uses a static buffer so won't work across threads or
 /// twice in the same argument list.
 char const *ip_addr_to_str(uint32_t addr ///< Address to convert.
-                           );
+);
 
 /** Used for printing IP address.
     @code
@@ -219,4 +219,4 @@ char const *ip_addr_to_str(uint32_t addr ///< Address to convert.
     reinterpret_cast<unsigned char const *>(&(x))[2], reinterpret_cast<unsigned char const *>(&(x))[3]
 // ------------------------------------------------------
 
-} // namespace Wccp
+} // namespace wccp

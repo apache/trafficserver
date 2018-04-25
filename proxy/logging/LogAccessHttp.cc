@@ -82,9 +82,7 @@ LogAccessHttp::LogAccessHttp(HttpSM *sm)
   Deallocate space for any strings allocated in the init routine.
   -------------------------------------------------------------------------*/
 
-LogAccessHttp::~LogAccessHttp()
-{
-}
+LogAccessHttp::~LogAccessHttp() {}
 
 /*-------------------------------------------------------------------------
   LogAccessHttp::init
@@ -368,9 +366,8 @@ LogAccessHttp::validate_unmapped_url_path()
           m_client_req_unmapped_url_host_str = &m_client_req_unmapped_url_canon_str[len];
           m_client_req_unmapped_url_host_len = m_client_req_unmapped_url_path_len - len;
           // Attempt to find first '/' in the path
-          if (m_client_req_unmapped_url_host_len > 0 &&
-              (c = (char *)memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len)) !=
-                nullptr) {
+          if (m_client_req_unmapped_url_host_len > 0 && (c = (char *)memchr((void *)m_client_req_unmapped_url_host_str, '/',
+                                                                            m_client_req_unmapped_url_path_len)) != nullptr) {
             m_client_req_unmapped_url_host_len = (int)(c - m_client_req_unmapped_url_host_str);
             m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_host_str[m_client_req_unmapped_url_host_len];
             m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_path_len - len - m_client_req_unmapped_url_host_len;

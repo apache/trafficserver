@@ -58,9 +58,9 @@ main()
   eventProcessor.start(nproc);
   RecProcessStart();
 
-/*
- *  Reset necessary config variables
- */
+  /*
+   *  Reset necessary config variables
+   */
 
 #ifdef USE_SOCKS
   net_config_socks_server_host = "209.131.52.54";

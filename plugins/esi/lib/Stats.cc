@@ -66,5 +66,5 @@ namespace Stats
       */
     }
   }
-}
-}
+} // namespace Stats
+} // namespace EsiLib

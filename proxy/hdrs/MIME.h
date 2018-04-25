@@ -1007,7 +1007,7 @@ public:
                                   int *host_len,         ///< [out] Length of host.
                                   const char **port_ptr, ///< [out] Pointer to port.
                                   int *port_len          ///< [out] Length of port.
-                                  );
+  );
 
   void set_cooked_cc_need_revalidate_once();
   void unset_cooked_cc_need_revalidate_once();

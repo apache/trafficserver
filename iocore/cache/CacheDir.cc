@@ -1184,7 +1184,7 @@ compare_ushort(void const *a, void const *b)
 {
   return *static_cast<unsigned short const *>(a) - *static_cast<unsigned short const *>(b);
 }
-}
+} // namespace
 
 //
 // Check

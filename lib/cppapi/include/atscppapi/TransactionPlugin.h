@@ -40,7 +40,7 @@ using Mutex = std::recursive_mutex;
 namespace utils
 {
   class internal;
-} /* utils */
+} // namespace utils
 
 /**
  * @private

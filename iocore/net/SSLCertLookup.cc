@@ -245,9 +245,7 @@ SSLCertContext::release()
   ctx = nullptr;
 }
 
-SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true)
-{
-}
+SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true) {}
 
 SSLCertLookup::~SSLCertLookup()
 {
@@ -351,9 +349,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
   return ptr;
 }
 
-SSLContextStorage::SSLContextStorage() : wilddomains(-1), hostnames(ink_hash_table_create(InkHashTableKeyType_String))
-{
-}
+SSLContextStorage::SSLContextStorage() : wilddomains(-1), hostnames(ink_hash_table_create(InkHashTableKeyType_String)) {}
 
 bool
 SSLCtxCompare(SSLCertContext const &cc1, SSLCertContext const &cc2)

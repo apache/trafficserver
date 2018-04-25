@@ -354,8 +354,9 @@ EsiProcessor::process(const char *&data, int &data_len)
       }
       _node_list.splice(try_iter->pos, try_iter->except_nodes);
       if (_fetcher.getNumPendingRequests()) {
-        _debugLog(_debug_tag, "[%s] New fetch requests were triggered by except block; "
-                              "Returning NEED_MORE_DATA...",
+        _debugLog(_debug_tag,
+                  "[%s] New fetch requests were triggered by except block; "
+                  "Returning NEED_MORE_DATA...",
                   __FUNCTION__);
         return NEED_MORE_DATA;
       }
@@ -484,8 +485,9 @@ EsiProcessor::flush(string &data, int &overall_len)
       _n_prescanned_nodes = _n_prescanned_nodes + try_iter->except_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->except_nodes);
       if (_fetcher.getNumPendingRequests()) {
-        _debugLog(_debug_tag, "[%s] New fetch requests were triggered by except block; "
-                              "Returning NEED_MORE_DATA...",
+        _debugLog(_debug_tag,
+                  "[%s] New fetch requests were triggered by except block; "
+                  "Returning NEED_MORE_DATA...",
                   __FUNCTION__);
       }
     }

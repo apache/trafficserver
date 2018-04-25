@@ -513,7 +513,7 @@ public:
              int len,                   ///< Length of hostname.
              sockaddr const *aip,       ///< Address and/or port.
              HostDBApplicationInfo *app ///< I don't know.
-             );
+  );
 
   void setby_srv(const char *hostname, int len, const char *target, HostDBApplicationInfo *app);
 };

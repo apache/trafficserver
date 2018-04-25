@@ -85,6 +85,6 @@ namespace transformations
     GzipInflateTransformationState *state_; /** Internal state for Gzip Deflate Transformations */
   };
 
-} /* transformations */
+} // namespace transformations
 
-} /* atscppapi */
+} // namespace atscppapi

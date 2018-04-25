@@ -60,7 +60,7 @@ struct src_ip_info_t {
 
 /**
  *
-**/
+ **/
 class acl_filter_rule
 {
 private:

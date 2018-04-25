@@ -44,4 +44,4 @@ enum HttpVersion {
  * \endcode
  */
 extern const std::string HTTP_VERSION_STRINGS[];
-}
+} // namespace atscppapi

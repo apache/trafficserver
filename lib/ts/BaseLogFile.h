@@ -43,8 +43,9 @@
 #define LOGFILE_SEPARATOR_STRING "_"
 #define LOGFILE_DEFAULT_PERMS (0644)
 #define LOGFILE_ROLL_MAXPATHLEN 4096
-#define BASELOGFILE_DEBUG_MODE 0 // change this to 1 to enable debug messages
-                                 // TODO find a way to enable this from autotools
+#define BASELOGFILE_DEBUG_MODE \
+  0 // change this to 1 to enable debug messages
+    // TODO find a way to enable this from autotools
 
 typedef enum {
   LL_Debug = 0, // process does not die

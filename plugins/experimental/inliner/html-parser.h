@@ -137,11 +137,11 @@ namespace inliner
     virtual ~HtmlParser() {}
     bool parseTag(const char);
     size_t parse(const char *, size_t, size_t o = 0);
-    virtual void handleImage(const Attributes &) = 0;
+    virtual void handleImage(const Attributes &)      = 0;
     virtual size_t bypass(const size_t, const size_t) = 0;
   };
 
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #endif // HTML_PARSER_H

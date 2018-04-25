@@ -65,6 +65,6 @@ private:
 
   static const char *const FACTORY_FUNCTION_NAME;
 };
-};
+}; // namespace EsiLib
 
 #endif

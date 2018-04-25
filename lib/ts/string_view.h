@@ -84,26 +84,30 @@ namespace _private_
       return m_ptr;
     }
 
-    CONSTEXPR14 string_view_iterator &operator++() noexcept
+    CONSTEXPR14 string_view_iterator &
+    operator++() noexcept
     { // preincrement
       ++m_ptr;
       return *this;
     }
 
-    CONSTEXPR14 string_view_iterator operator++(int)noexcept
+    CONSTEXPR14 string_view_iterator
+    operator++(int) noexcept
     { // postincrement
       string_view_iterator tmp{*this};
       ++*this;
       return tmp;
     }
 
-    CONSTEXPR14 string_view_iterator &operator--() noexcept
+    CONSTEXPR14 string_view_iterator &
+    operator--() noexcept
     { // predecrement
       --m_ptr;
       return *this;
     }
 
-    CONSTEXPR14 string_view_iterator operator--(int)noexcept
+    CONSTEXPR14 string_view_iterator
+    operator--(int) noexcept
     { // postdecrement
       string_view_iterator tmp{*this};
       --*this;
@@ -190,7 +194,7 @@ namespace _private_
   private:
     pointer m_ptr = nullptr;
   };
-}
+} // namespace _private_
 
 template <typename _CharTraits>
 CONSTEXPR14 _private_::string_view_iterator<_CharTraits>
@@ -1058,7 +1062,7 @@ template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _
 #endif
   }
 };
-}
+} // namespace std
 #endif
 
 /// Literal suffix for string_view.

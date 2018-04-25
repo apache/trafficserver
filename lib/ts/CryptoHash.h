@@ -178,7 +178,7 @@ CryptoContext::finalize(CryptoHash &hash)
   return reinterpret_cast<CryptoContextBase *>(_obj)->finalize(hash);
 }
 
-} // end namespace
+} // namespace ats
 
 namespace ts
 {
@@ -190,7 +190,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, ats::CryptoHash const &hash)
     local_spec._type = 'x';
   return bwformat(w, local_spec, ts::string_view(reinterpret_cast<const char *>(hash.u8), CRYPTO_HASH_SIZE));
 }
-} // ts
+} // namespace ts
 
 using ats::CryptoHash;
 using ats::CryptoContext;

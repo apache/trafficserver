@@ -356,7 +356,7 @@ new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
   const char *location
 #endif
-  )
+)
 {
   IOBufferBlock *b = THREAD_ALLOC(ioBlockAllocator, this_thread());
 #ifdef TRACK_BUFFER_USER
@@ -1229,6 +1229,4 @@ MIOBufferAccessor::writer_for(MIOBuffer *abuf)
 }
 
 TS_INLINE
-MIOBufferAccessor::~MIOBufferAccessor()
-{
-}
+MIOBufferAccessor::~MIOBufferAccessor() {}

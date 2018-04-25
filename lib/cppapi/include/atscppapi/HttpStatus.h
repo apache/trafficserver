@@ -96,4 +96,4 @@ enum HttpStatus {
   HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 };
-}
+} // namespace atscppapi

@@ -91,7 +91,7 @@ const std::string DEFAULT_ERROR_RESPONSE = "<html><body><h1>This page will be ba
 const std::string DEFAULT_BOOM_HTTP_STATUS = "OK (BOOM)";
 
 Stat boom_counter;
-}
+} // namespace
 
 namespace
 {

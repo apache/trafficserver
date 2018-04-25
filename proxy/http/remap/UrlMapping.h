@@ -35,7 +35,7 @@
 
 /**
  * Used to store http referer strings (and/or regexp)
-**/
+ **/
 class referer_info
 {
 public:
@@ -52,7 +52,7 @@ public:
 
 /**
  *
-**/
+ **/
 class redirect_tag_str
 {
 public:
@@ -74,7 +74,7 @@ public:
 
 /**
  * Used to store the mapping for class UrlRewrite
-**/
+ **/
 class url_mapping
 {
 public:
@@ -131,7 +131,7 @@ private:
 /**
  * UrlMappingContainer wraps a url_mapping object and allows a caller to rewrite the target URL.
  * This is used while evaluating remap rules.
-**/
+ **/
 class UrlMappingContainer
 {
 public:

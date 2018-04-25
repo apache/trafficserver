@@ -147,4 +147,4 @@ operator<<(ostream &os, const ts::TextView &b)
   }
   return os;
 }
-}
+} // namespace std

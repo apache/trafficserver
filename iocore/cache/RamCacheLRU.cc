@@ -52,9 +52,9 @@ struct RamCacheLRU : public RamCache {
   uint16_t *seen = nullptr;
   Que(RamCacheLRUEntry, lru_link) lru;
   DList(RamCacheLRUEntry, hash_link) *bucket = nullptr;
-  int nbuckets = 0;
-  int ibuckets = 0;
-  Vol *vol     = nullptr;
+  int nbuckets                               = 0;
+  int ibuckets                               = 0;
+  Vol *vol                                   = nullptr;
 
   void resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
@@ -84,7 +84,7 @@ RamCacheLRU::resize_hashtable()
 {
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
-  int64_t s = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
+  int64_t s                                      = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
   DList(RamCacheLRUEntry, hash_link) *new_bucket = (DList(RamCacheLRUEntry, hash_link) *)ats_malloc(s);
   memset(static_cast<void *>(new_bucket), 0, s);
   if (bucket) {

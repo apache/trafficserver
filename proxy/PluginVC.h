@@ -47,9 +47,7 @@ struct PluginVCState {
   bool shutdown;
 };
 
-inline PluginVCState::PluginVCState() : vio(), shutdown(false)
-{
-}
+inline PluginVCState::PluginVCState() : vio(), shutdown(false) {}
 
 enum PluginVC_t {
   PLUGIN_VC_UNKNOWN,
@@ -212,17 +210,17 @@ public:
   /// Set the active address.
   void set_active_addr(in_addr_t ip, ///< IPv4 address in host order.
                        int port      ///< IP Port in host order.
-                       );
+  );
   /// Set the active address and port.
   void set_active_addr(sockaddr const *ip ///< Address and port used.
-                       );
+  );
   /// Set the passive address.
   void set_passive_addr(in_addr_t ip, ///< IPv4 address in host order.
                         int port      ///< IP port in host order.
-                        );
+  );
   /// Set the passive address.
   void set_passive_addr(sockaddr const *ip ///< Address and port.
-                        );
+  );
 
   void set_active_data(void *data);
   void set_passive_data(void *data);

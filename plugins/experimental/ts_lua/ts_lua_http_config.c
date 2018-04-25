@@ -268,8 +268,10 @@ ts_lua_var_item ts_lua_http_config_vars[] = {
 extern char __ts_lua_http_config_vars_static_assert[NUM_HTTP_CONFIG_VARS == TS_CONFIG_LAST_ENTRY + 1 ? 0 : -1];
 
 ts_lua_var_item ts_lua_http_timeout_vars[] = {
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_ACTIVE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_CONNECT),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_DNS), TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_NO_ACTIVITY),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_ACTIVE),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_CONNECT),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_DNS),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_NO_ACTIVITY),
 };
 
 static void ts_lua_inject_http_config_variables(lua_State *L);

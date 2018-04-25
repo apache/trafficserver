@@ -118,6 +118,6 @@ private:
 
   inline bool _evalSimpleExpr(const char *expr, int expr_len);
 };
-};
+}; // namespace EsiLib
 
 #endif // _ESI_EXPRESSION_H

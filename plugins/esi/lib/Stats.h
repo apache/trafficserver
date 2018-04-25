@@ -59,7 +59,7 @@ namespace Stats
   void init(StatSystem *system);
 
   void increment(STAT st, int step = 1);
-};
-};
+}; // namespace Stats
+}; // namespace EsiLib
 
 #endif

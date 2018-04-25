@@ -324,8 +324,8 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
         *op++ = (7 << 5) + (distance >> 8);
         for (len -= 7; len >= 255; len -= 255)
           *op++ = 255;
-        *op++   = len;
-        *op++   = (distance & 255);
+        *op++ = len;
+        *op++ = (distance & 255);
       }
     } else {
       /* far away, but not yet in the another galaxy... */
@@ -340,10 +340,10 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
         *op++ = (7 << 5) + 31;
         for (len -= 7; len >= 255; len -= 255)
           *op++ = 255;
-        *op++   = len;
-        *op++   = 255;
-        *op++   = distance >> 8;
-        *op++   = distance & 255;
+        *op++ = len;
+        *op++ = 255;
+        *op++ = distance >> 8;
+        *op++ = distance & 255;
       }
     }
 #else

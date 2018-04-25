@@ -97,8 +97,8 @@ namespace detail
   template <> struct is_valid_persistence<RECP_NON_PERSISTENT> {
     static const RecPersistT value = RECP_NON_PERSISTENT;
   };
-}
-}
+} // namespace detail
+} // namespace rec
 
 #define REC_PERSISTENCE_TYPE(P) rec::detail::is_valid_persistence<P>::value
 

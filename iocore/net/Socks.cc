@@ -422,12 +422,12 @@ SocksEntry::mainEvent(int event, void *data)
       free();
       break;
     }
-  /* else
-     This is server_connect_timeout. So we treat this as server being
-     down.
-     Should cancel any pending connect() action. Important on windows
-  */
-  // fallthrough
+    /* else
+       This is server_connect_timeout. So we treat this as server being
+       down.
+       Should cancel any pending connect() action. Important on windows
+    */
+    // fallthrough
 
   case VC_EVENT_ERROR:
     /*This is mostly ECONNREFUSED on Unix */
@@ -489,8 +489,9 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   socks_conf_stuff->accept_enabled = REC_ConfigReadInteger("proxy.config.socks.accept_enabled");
   socks_conf_stuff->accept_port    = REC_ConfigReadInteger("proxy.config.socks.accept_port");
   socks_conf_stuff->http_port      = REC_ConfigReadInteger("proxy.config.socks.http_port");
-  Debug("SocksProxy", "Read SocksProxy info: accept_enabled = %d "
-                      "accept_port = %d http_port = %d",
+  Debug("SocksProxy",
+        "Read SocksProxy info: accept_enabled = %d "
+        "accept_port = %d http_port = %d",
         socks_conf_stuff->accept_enabled, socks_conf_stuff->accept_port, socks_conf_stuff->http_port);
 
 #ifdef SOCKS_WITH_TS

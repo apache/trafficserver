@@ -45,9 +45,7 @@
     Debug("http_cache", "[%" PRId64 "] [%s, %s]", master_sm->sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-HttpCacheAction::HttpCacheAction() : sm(nullptr)
-{
-}
+HttpCacheAction::HttpCacheAction() : sm(nullptr) {}
 
 void
 HttpCacheAction::cancel(Continuation *c)
@@ -157,8 +155,9 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     // than or equal to the max number of open read retries,
     // else treat as a cache miss.
     ink_assert(open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries || write_locked);
-    Debug("http_cache", "[%" PRId64 "] [state_cache_open_read] cache open read failure %d. "
-                        "retrying cache open read...",
+    Debug("http_cache",
+          "[%" PRId64 "] [state_cache_open_read] cache open read failure %d. "
+          "retrying cache open read...",
           master_sm->sm_id, open_read_tries);
 
     do_cache_open_read(cache_key);
@@ -195,8 +194,9 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     } else {
       // The cache is hosed or full or something.
       // Forward the failure to the main sm
-      Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
-                          "done retrying...",
+      Debug("http_cache",
+            "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
+            "done retrying...",
             master_sm->sm_id, open_write_tries);
       open_write_cb = true;
       master_sm->handleEvent(event, data);
@@ -207,8 +207,9 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     // Retry the cache open write if the number retries is less
     // than or equal to the max number of open write retries
     ink_assert(open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries);
-    Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
-                        "retrying cache open write...",
+    Debug("http_cache",
+          "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
+          "retrying cache open write...",
           master_sm->sm_id, open_write_tries);
 
     open_write(

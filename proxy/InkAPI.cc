@@ -742,9 +742,7 @@ sdk_free_field_handle(TSMBuffer bufp, MIMEFieldSDKHandle *field_handle)
 // FileImpl
 //
 ////////////////////////////////////////////////////////////////////
-FileImpl::FileImpl() : m_fd(-1), m_mode(CLOSED), m_buf(nullptr), m_bufsize(0), m_bufpos(0)
-{
-}
+FileImpl::FileImpl() : m_fd(-1), m_mode(CLOSED), m_buf(nullptr), m_bufsize(0), m_bufpos(0) {}
 
 FileImpl::~FileImpl()
 {
@@ -5246,7 +5244,7 @@ TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
 /**
  * timeout is in msec
  * overrides as proxy.config.http.transaction_active_timeout_out
-**/
+ **/
 void
 TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -5259,7 +5257,7 @@ TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
 /**
  * timeout is in msec
  * overrides as proxy.config.http.connect_attempts_timeout
-**/
+ **/
 void
 TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -5272,7 +5270,7 @@ TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
 /**
  * timeout is in msec
  * overrides as proxy.config.dns.lookup_timeout
-**/
+ **/
 void
 TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -5286,7 +5284,7 @@ TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
 /**
  * timeout is in msec
  * overrides as proxy.config.http.transaction_no_activity_timeout_out
-**/
+ **/
 void
 TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -8273,7 +8271,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 }
 
 /* APIs to manipulate the overridable configuration options.
-*/
+ */
 TSReturnCode
 TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value)
 {

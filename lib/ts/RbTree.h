@@ -126,7 +126,7 @@ namespace detail
         @return The new root node for the subtree.
     */
     self *rotate(Direction d //!< The direction to rotate
-                 );
+    );
 
     /** Set the child node in direction @a d to @a n.
         The @a d child is set to the node @a n. The pointers in this
@@ -137,7 +137,7 @@ namespace detail
     */
     self *setChild(self *n,    //!< The node to set as the child
                    Direction d //!< The direction of the child
-                   );
+    );
 
     /** Remove this node from the tree.
         The tree is rebalanced after removal.
@@ -185,7 +185,7 @@ namespace detail
         is @b not updated.
     */
     void replaceWith(self *n //!< Node to put in place of this node.
-                     );
+    );
 
     //! Rebalance the tree starting at this node
     /** The tree is rebalanced so that all of the invariants are
@@ -201,7 +201,7 @@ namespace detail
     */
     self *rebalanceAfterRemove(Color c,    //!< The color of the removed node.
                                Direction d //!< Direction of removed node from parent
-                               );
+    );
 
     //! Invoke @c structure_fixup() on this node and all of its ancestors.
     self *rippleStructureFixup();

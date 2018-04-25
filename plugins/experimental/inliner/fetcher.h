@@ -328,6 +328,6 @@ get(io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
 {
   return get("127.0.0.1", i, l, t, ti);
 }
-} // end of ats namespace
+} // namespace ats
 
 #endif // FETCHER_H

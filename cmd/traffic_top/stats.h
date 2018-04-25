@@ -57,7 +57,7 @@ const char global[]    = "\"global\": {\n";
 const char start[]     = "\"proxy.process.";
 const char separator[] = "\": \"";
 const char end[]       = "\",\n";
-};
+}; // namespace constant
 
 //----------------------------------------------------------------------------
 class Stats

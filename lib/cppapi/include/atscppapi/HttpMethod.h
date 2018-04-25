@@ -50,4 +50,4 @@ enum HttpMethod {
  * \endcode
  */
 extern const std::string HTTP_METHOD_STRINGS[];
-}
+} // namespace atscppapi

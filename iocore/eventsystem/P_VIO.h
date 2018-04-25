@@ -25,9 +25,7 @@
 #include "I_VIO.h"
 
 TS_INLINE
-VIO::VIO(int aop) : _cont(nullptr), nbytes(0), ndone(0), op(aop), buffer(), vc_server(nullptr), mutex(nullptr)
-{
-}
+VIO::VIO(int aop) : _cont(nullptr), nbytes(0), ndone(0), op(aop), buffer(), vc_server(nullptr), mutex(nullptr) {}
 
 /////////////////////////////////////////////////////////////
 //
@@ -35,9 +33,7 @@ VIO::VIO(int aop) : _cont(nullptr), nbytes(0), ndone(0), op(aop), buffer(), vc_s
 //
 /////////////////////////////////////////////////////////////
 TS_INLINE
-VIO::VIO() : _cont(nullptr), nbytes(0), ndone(0), op(VIO::NONE), buffer(), vc_server(nullptr), mutex(nullptr)
-{
-}
+VIO::VIO() : _cont(nullptr), nbytes(0), ndone(0), op(VIO::NONE), buffer(), vc_server(nullptr), mutex(nullptr) {}
 
 TS_INLINE Continuation *
 VIO::get_continuation()

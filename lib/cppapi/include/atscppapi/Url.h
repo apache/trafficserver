@@ -143,4 +143,4 @@ private:
   friend class ClientRequest;
   friend class RemapPlugin;
 };
-}
+} // namespace atscppapi

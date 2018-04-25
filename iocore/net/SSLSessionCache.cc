@@ -299,10 +299,6 @@ SSLSessionBucket::removeSession(const SSLSessionID &id)
 }
 
 /* Session Bucket */
-SSLSessionBucket::SSLSessionBucket() : mutex(new_ProxyMutex())
-{
-}
+SSLSessionBucket::SSLSessionBucket() : mutex(new_ProxyMutex()) {}
 
-SSLSessionBucket::~SSLSessionBucket()
-{
-}
+SSLSessionBucket::~SSLSessionBucket() {}

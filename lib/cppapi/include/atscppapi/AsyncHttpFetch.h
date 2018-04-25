@@ -132,4 +132,4 @@ private:
   friend class utils::internal;
 };
 
-} /* atscppapi */
+} // namespace atscppapi

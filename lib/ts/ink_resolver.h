@@ -184,7 +184,7 @@ extern const char *const HOST_RES_STYLE_STRING[];
 /// Caclulate the effective resolution preferences.
 extern HostResStyle ats_host_res_from(int family,            ///< Connection family
                                       HostResPreferenceOrder ///< Preference ordering.
-                                      );
+);
 /// Calculate the host resolution style to force a family match to @a addr.
 extern HostResStyle ats_host_res_match(sockaddr const *addr);
 
@@ -192,7 +192,7 @@ extern HostResStyle ats_host_res_match(sockaddr const *addr);
  */
 extern void parse_host_res_preference(const char *value,           ///< [in] Configuration string.
                                       HostResPreferenceOrder order /// [out] Order to update.
-                                      );
+);
 
 #ifndef NS_GET16
 #define NS_GET16(s, cp)                                                  \
@@ -284,4 +284,4 @@ void ts_host_res_global_init();
 int ts_host_res_order_to_string(HostResPreferenceOrder const &order, ///< order to print
                                 char *out,                           ///< Target buffer for string.
                                 int size                             ///< Size of buffer.
-                                );
+);

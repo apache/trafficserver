@@ -188,4 +188,4 @@ private:
   DISALLOW_COPY_AND_ASSIGN(Configuration);
 }; // class Configuration
 
-} // namespace
+} // namespace Gzip

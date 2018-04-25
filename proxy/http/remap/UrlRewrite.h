@@ -36,7 +36,7 @@ struct BUILD_TABLE_INFO;
 
 /**
  * used for redirection, mapping, and reverse mapping
-**/
+ **/
 enum mapping_type {
   FORWARD_MAP,
   REVERSE_MAP,
@@ -49,7 +49,7 @@ enum mapping_type {
 
 /**
  *
-**/
+ **/
 class UrlRewrite : public RefCountObj
 {
 public:

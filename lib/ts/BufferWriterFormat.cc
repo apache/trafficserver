@@ -56,7 +56,7 @@ tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
   }
   return zret;
 }
-}
+} // namespace
 
 namespace ts
 {
@@ -283,11 +283,11 @@ namespace bw_fmt
   // Really only useful for hexadecimal currently.
   namespace
   {
-    char UPPER_DIGITS[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    char LOWER_DIGITS[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    char UPPER_DIGITS[]                                 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char LOWER_DIGITS[]                                 = "0123456789abcdefghijklmnopqrstuvwxyz";
     static const std::array<uint64_t, 11> POWERS_OF_TEN = {
       {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000}};
-  }
+  } // namespace
 
   /// Templated radix based conversions. Only a small number of radix are supported
   /// and providing a template minimizes cut and paste code while also enabling
@@ -562,7 +562,7 @@ namespace bw_fmt
     }
   }
 
-} // bw_fmt
+} // namespace bw_fmt
 
 BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
@@ -635,9 +635,7 @@ BWFormat::BWFormat(ts::TextView fmt)
   }
 }
 
-BWFormat::~BWFormat()
-{
-}
+BWFormat::~BWFormat() {}
 
 bool
 BWFormat::parse(ts::TextView &fmt, string_view &literal, string_view &specifier)
@@ -698,7 +696,7 @@ bw_fmt::Global_Table_Find(string_view name)
   return nullptr;
 }
 
-} // ts
+} // namespace ts
 
 namespace
 {
@@ -713,4 +711,4 @@ static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
   ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
   return true;
 }();
-}
+} // namespace

@@ -147,7 +147,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   char curdir[PATH_NAME_MAX];
 
   /* Treat null as an empty path.
-  */
+   */
   if (!addpath) {
     addpath = "";
   }
@@ -343,7 +343,7 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
   size_t maxlen;  // maximum total path length
 
   /* Treat null as an empty path.
-  */
+   */
   if (!addpath) {
     addpath = "";
   }

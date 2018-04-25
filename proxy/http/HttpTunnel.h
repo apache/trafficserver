@@ -221,7 +221,7 @@ struct HttpTunnelProducer {
       @return The actual backlog or a number at least @a limit.
    */
   uint64_t backlog(uint64_t limit = UINT64_MAX ///< More than this is irrelevant
-                   );
+  );
   /// Check if producer is original (to ATS) source of data.
   /// @return @c true if this producer is the source of bytes from outside ATS.
   bool is_source() const;
@@ -242,7 +242,7 @@ struct HttpTunnelProducer {
       @see unthrottle
   */
   void set_throttle_src(HttpTunnelProducer *srcp ///< Source producer of flow.
-                        );
+  );
 };
 
 class HttpTunnel : public Continuation
@@ -322,7 +322,7 @@ public:
   */
   void chain(HttpTunnelConsumer *c, ///< Flow goes in here
              HttpTunnelProducer *p  ///< Flow comes back out here
-             );
+  );
 
   void close_vc(HttpTunnelProducer *p);
   void close_vc(HttpTunnelConsumer *c);
@@ -575,6 +575,4 @@ HttpTunnelProducer::unthrottle()
   }
 }
 
-inline HttpTunnel::FlowControl::FlowControl() : high_water(DEFAULT_WATER_MARK), low_water(DEFAULT_WATER_MARK), enabled_p(false)
-{
-}
+inline HttpTunnel::FlowControl::FlowControl() : high_water(DEFAULT_WATER_MARK), low_water(DEFAULT_WATER_MARK), enabled_p(false) {}

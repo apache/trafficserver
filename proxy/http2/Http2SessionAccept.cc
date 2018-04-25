@@ -31,9 +31,7 @@ Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : S
   SET_HANDLER(&Http2SessionAccept::mainEvent);
 }
 
-Http2SessionAccept::~Http2SessionAccept()
-{
-}
+Http2SessionAccept::~Http2SessionAccept() {}
 
 bool
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)

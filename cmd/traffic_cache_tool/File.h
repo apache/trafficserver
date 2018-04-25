@@ -118,21 +118,11 @@ private:
 
 /* ------------------------------------------------------------------- */
 
-inline FilePath::FilePath()
-{
-}
-inline FilePath::FilePath(char const *path) : _path(path)
-{
-}
-inline FilePath::FilePath(TextView const &path) : _path(path.data(), path.size())
-{
-}
-inline FilePath::FilePath(self const &that) : _path(that._path)
-{
-}
-inline FilePath::FilePath(self &&that) : _path(std::move(that._path))
-{
-}
+inline FilePath::FilePath() {}
+inline FilePath::FilePath(char const *path) : _path(path) {}
+inline FilePath::FilePath(TextView const &path) : _path(path.data(), path.size()) {}
+inline FilePath::FilePath(self const &that) : _path(that._path) {}
+inline FilePath::FilePath(self &&that) : _path(std::move(that._path)) {}
 inline FilePath::operator const char *() const
 {
   return _path.c_str();
@@ -159,9 +149,7 @@ FilePath::is_relative() const
   return !this->is_absolute();
 }
 
-template <typename T>
-T
-FilePath::stat(T (*f)(struct stat const *)) const
+template <typename T> T FilePath::stat(T (*f)(struct stat const *)) const
 {
   if (STAT_P::UNDEF == _stat_p) {
     _stat_p = ::stat(_path.c_str(), &_stat) >= 0 ? STAT_P::VALID : STAT_P::INVALID;
@@ -205,10 +193,8 @@ FilePath::physical_size() const
   return this->stat<off_t>([](struct stat const *s) { return s->st_size; });
 }
 
-inline BulkFile::BulkFile(super &&that) : super(that)
-{
-}
+inline BulkFile::BulkFile(super &&that) : super(that) {}
 
 /* ------------------------------------------------------------------- */
-} // namespace
+} // namespace ts
 /* ------------------------------------------------------------------- */

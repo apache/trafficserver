@@ -155,7 +155,9 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
   ssm.put("b", "B");
   ssm.put("c", "C");
   ssm.put("d", "D");
-  form_SSMap(x, ssm) { /* nop */}
+  form_SSMap(x, ssm)
+  { /* nop */
+  }
 
   /*
     if ((ssm).n)

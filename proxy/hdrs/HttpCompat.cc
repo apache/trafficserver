@@ -103,12 +103,12 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
       break;
     }
 
-///////////////////////////////////////////////////////////////////
-// we are pointing to the first character of a token now, either //
-// a character, or a double quote --- the next step is to scan   //
-// for the next separator or end of string, being careful not to //
-// include separators inside quotes.                             //
-///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    // we are pointing to the first character of a token now, either //
+    // a character, or a double quote --- the next step is to scan   //
+    // for the next separator or end of string, being careful not to //
+    // include separators inside quotes.                             //
+    ///////////////////////////////////////////////////////////////////
 
 #define is_unquoted_separator(c) ((c == sep) && !in_quote)
 

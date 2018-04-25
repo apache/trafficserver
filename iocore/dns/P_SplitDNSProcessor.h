@@ -144,9 +144,7 @@ public:
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
 TS_INLINE
-DNSRequestData::DNSRequestData() : m_pHost(nullptr)
-{
-}
+DNSRequestData::DNSRequestData() : m_pHost(nullptr) {}
 
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
@@ -213,16 +211,12 @@ public:
    SplitDNSRecord::SplitDNSRecord()
    -------------------------------------------------------------- */
 TS_INLINE
-SplitDNSRecord::SplitDNSRecord() : m_dnsSrvr_cnt(0), m_domain_srch_list(0)
-{
-}
+SplitDNSRecord::SplitDNSRecord() : m_dnsSrvr_cnt(0), m_domain_srch_list(0) {}
 
 /* --------------------------------------------------------------
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
-TS_INLINE SplitDNSRecord::~SplitDNSRecord()
-{
-}
+TS_INLINE SplitDNSRecord::~SplitDNSRecord() {}
 
 /* ------------------
    Helper Functions

@@ -323,7 +323,7 @@ namespace io
     }
   };
 
-} // end of io namespace
-} // end of ats namespace
+} // namespace io
+} // namespace ats
 
 #endif // TS_H

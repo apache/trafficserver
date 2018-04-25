@@ -22,13 +22,9 @@
 #include "ts/ink_config.h"
 #include "P_Net.h"
 
-SSLNetAccept::SSLNetAccept(const NetProcessor::AcceptOptions &opt) : NetAccept(opt)
-{
-}
+SSLNetAccept::SSLNetAccept(const NetProcessor::AcceptOptions &opt) : NetAccept(opt) {}
 
-SSLNetAccept::~SSLNetAccept()
-{
-}
+SSLNetAccept::~SSLNetAccept() {}
 
 NetProcessor *
 SSLNetAccept::getNetProcessor() const

@@ -283,9 +283,7 @@ protected:
   Errata allocateFor(Span &span);
 };
 
-VolumeAllocator::VolumeAllocator()
-{
-}
+VolumeAllocator::VolumeAllocator() {}
 
 Errata
 VolumeAllocator::load(FilePath const &spanFile, FilePath const &volumeFile)
@@ -1104,7 +1102,7 @@ VolumeConfig::load(FilePath const &path)
 struct option Options[] = {{"help", 0, nullptr, 'h'},  {"spans", 1, nullptr, 's'}, {"volumes", 1, nullptr, 'v'},
                            {"write", 0, nullptr, 'w'}, {"input", 1, nullptr, 'i'}, {"device", 1, nullptr, 'd'},
                            {"aos", 1, nullptr, 'o'},   {nullptr, 0, nullptr, 0}};
-}
+} // namespace ct
 
 using namespace ct;
 Errata

@@ -44,4 +44,4 @@ public:
    */
   int compare(const std::string &lhs, const std::string &rhs) const;
 };
-}
+} // namespace atscppapi

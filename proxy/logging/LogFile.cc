@@ -408,8 +408,9 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
 int
 LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format)
 {
-  Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s "
-                    "(this=%p)",
+  Debug("log-file",
+        "entering LogFile::write_ascii_logbuffer3 for %s "
+        "(this=%p)",
         m_name, this);
   ink_assert(buffer_header != nullptr);
 

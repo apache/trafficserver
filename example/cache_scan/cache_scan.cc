@@ -161,10 +161,11 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
   if (event == TS_EVENT_CACHE_SCAN_DONE) {
     cstate->done = 1;
     char s[512];
-    int s_len = snprintf(s, sizeof(s), "</pre></p>\n<p>%d total objects in cache</p>\n"
-                                       "<form method=\"GET\" action=\"/show-cache\">"
-                                       "Enter URL to delete: <input type=\"text\" size=\"40\" name=\"remove_url\">"
-                                       "<input type=\"submit\"  value=\"Delete URL\">",
+    int s_len = snprintf(s, sizeof(s),
+                         "</pre></p>\n<p>%d total objects in cache</p>\n"
+                         "<form method=\"GET\" action=\"/show-cache\">"
+                         "Enter URL to delete: <input type=\"text\" size=\"40\" name=\"remove_url\">"
+                         "<input type=\"submit\"  value=\"Delete URL\">",
                          cstate->total_items);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s, s_len);
     TSVIONBytesSet(cstate->write_vio, cstate->total_bytes);

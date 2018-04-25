@@ -52,9 +52,7 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
   }
 }
 
-ParentRoundRobin::~ParentRoundRobin()
-{
-}
+ParentRoundRobin::~ParentRoundRobin() {}
 
 void
 ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,

@@ -42,7 +42,7 @@ struct BalancerTarget {
 
 struct BalancerInstance {
   virtual ~BalancerInstance() {}
-  virtual void push_target(const BalancerTarget &) = 0;
+  virtual void push_target(const BalancerTarget &)                       = 0;
   virtual const BalancerTarget &balance(TSHttpTxn, TSRemapRequestInfo *) = 0;
 };
 

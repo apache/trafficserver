@@ -1300,7 +1300,7 @@ extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
   const char *loc
 #endif
-  );
+);
 
 extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER

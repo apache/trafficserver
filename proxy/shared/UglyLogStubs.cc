@@ -76,21 +76,13 @@ Machine::instance()
 }
 
 #include "LogCollationAccept.h"
-LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port)
-{
-}
-LogCollationAccept::~LogCollationAccept()
-{
-}
+LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port) {}
+LogCollationAccept::~LogCollationAccept() {}
 
 #include "LogCollationClientSM.h"
-LogCollationClientSM::LogCollationClientSM(LogHost *log_host) : Continuation(new_ProxyMutex()), m_log_host(log_host)
-{
-}
+LogCollationClientSM::LogCollationClientSM(LogHost *log_host) : Continuation(new_ProxyMutex()), m_log_host(log_host) {}
 
-LogCollationClientSM::~LogCollationClientSM()
-{
-}
+LogCollationClientSM::~LogCollationClientSM() {}
 
 int
 LogCollationClientSM::send(LogBuffer * /* log_buffer ATS_UNUSED */)
@@ -193,10 +185,6 @@ SplitDNSConfig::reconfigure()
 
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 
-CacheHostTable::CacheHostTable(Cache * /* c ATS_UNUSED */, CacheType /* typ ATS_UNUSED */)
-{
-}
+CacheHostTable::CacheHostTable(Cache * /* c ATS_UNUSED */, CacheType /* typ ATS_UNUSED */) {}
 
-CacheHostTable::~CacheHostTable()
-{
-}
+CacheHostTable::~CacheHostTable() {}

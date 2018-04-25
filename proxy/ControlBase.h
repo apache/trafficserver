@@ -97,9 +97,7 @@ private:
   void clear();
 };
 
-inline ControlBase::ControlBase() : line_num(0)
-{
-}
+inline ControlBase::ControlBase() : line_num(0) {}
 
 inline bool
 ControlBase::CheckForMatch(HttpRequestData *request_data, int last_number)

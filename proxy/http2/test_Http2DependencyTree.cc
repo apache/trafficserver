@@ -532,14 +532,14 @@ REGRESSION_TEST(Http2DependencyTree_exclusive_node)(RegressionTest *t, int /* at
 }
 
 /** test for reprioritize with active node
-*
-*     root                  root                   root
-*    /    \                /    \   (remove A)    /    \
-*   A      B   =======>   C      B   =======>    C      B
-*           \            /
-*            C          A
-*
-*/
+ *
+ *     root                  root                   root
+ *    /    \                /    \   (remove A)    /    \
+ *   A      B   =======>   C      B   =======>    C      B
+ *           \            /
+ *            C          A
+ *
+ */
 REGRESSION_TEST(Http2DependencyTree_reprioritize)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
@@ -658,21 +658,21 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_3)(RegressionTest *t, int /* at
 }
 
 /** test for https://github.com/apache/trafficserver/issues/2268
-*
-*    root            root                  root
-*    /     =====>   /    \     =======>   /    \
-*   A              A      shadow         A      shadow
-*                          \                    \
-*                           B                    B
-*                                                 \
-*                                                  C
-*
-*              root                      root
-*             /    \                    /
-*  ======>   A      shadow   =======>  A
-*                    \
-*                     C
-*/
+ *
+ *    root            root                  root
+ *    /     =====>   /    \     =======>   /    \
+ *   A              A      shadow         A      shadow
+ *                          \                    \
+ *                           B                    B
+ *                                                 \
+ *                                                  C
+ *
+ *              root                      root
+ *             /    \                    /
+ *  ======>   A      shadow   =======>  A
+ *                    \
+ *                     C
+ */
 REGRESSION_TEST(Http2DependencyTree_insert_with_empty_parent)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
@@ -702,13 +702,13 @@ REGRESSION_TEST(Http2DependencyTree_insert_with_empty_parent)(RegressionTest *t,
 }
 
 /** test for https://github.com/apache/trafficserver/issues/2268
-*
-*    root            root                  root                root
-*    /     =====>   /    \     =======>   /    \   =======>   /    \
-*   A              A      shadow         A      B            A      B
-*                          \                     \
-*                           B                     shadow
-*/
+ *
+ *    root            root                  root                root
+ *    /     =====>   /    \     =======>   /    \   =======>   /    \
+ *   A              A      shadow         A      B            A      B
+ *                          \                     \
+ *                           B                     shadow
+ */
 REGRESSION_TEST(Http2DependencyTree_shadow_reprioritize)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);

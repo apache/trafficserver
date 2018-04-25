@@ -56,4 +56,4 @@ protected:
   const noncopyable &operator=(const noncopyable &) = delete;
 };
 
-} /* atscppapi */
+} // namespace atscppapi

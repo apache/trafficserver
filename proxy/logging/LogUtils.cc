@@ -395,7 +395,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
   *len_out = out_len;
   return new_url;
 }
-}
+} // namespace
 
 char *
 LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)

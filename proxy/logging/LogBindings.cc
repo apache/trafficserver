@@ -392,7 +392,8 @@ bool
 MakeLogBindings(BindingInstance &binding, LogConfig *conf)
 {
   static const luaL_reg metatable[] = {
-    {"__gc", refcount_object_gc}, {nullptr, nullptr},
+    {"__gc", refcount_object_gc},
+    {nullptr, nullptr},
   };
 
   // Register the logging object API.

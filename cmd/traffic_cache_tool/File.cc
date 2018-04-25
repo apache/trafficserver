@@ -130,4 +130,4 @@ BulkFile::content() const
 {
   return {_content.data(), _len};
 }
-}
+} // namespace ts

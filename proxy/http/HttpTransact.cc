@@ -1679,8 +1679,9 @@ HttpTransact::OSDNSLookup(State *s)
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
 
   char addrbuf[INET6_ADDRSTRLEN];
-  TxnDebug("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
-                         "IP: %s",
+  TxnDebug("http_trans",
+           "[OSDNSLookup] DNS lookup for O.S. successful "
+           "IP: %s",
            ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   // so the dns lookup was a success, but the lookup succeeded on
@@ -2251,8 +2252,9 @@ HttpTransact::issue_revalidate(State *s)
     // ok, request is either a conditional or does not have a no-cache.
     //   (or is method that we don't conditionalize but lookup the
     //    cache on like DELETE)
-    if (c_resp->get_last_modified() > 0 && (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
-                                            s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) &&
+    if (c_resp->get_last_modified() > 0 &&
+        (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
+         s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) &&
         s->range_setup == RANGE_NONE) {
       // make this a conditional request
       int length;
@@ -4205,8 +4207,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       ink_assert(s->cache_info.object_read);
       base_response        = s->cache_info.object_read->response_get();
       s->cache_info.action = CACHE_DO_SERVE;
-      TxnDebug("http_trans", "[hcoofsr] ignoring server response, "
-                             "cache action changed to: %s",
+      TxnDebug("http_trans",
+               "[hcoofsr] ignoring server response, "
+               "cache action changed to: %s",
                HttpDebugNames::get_cache_action_name(s->cache_info.action));
       s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
       client_response_code = base_response->status_get();
@@ -4267,8 +4270,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         client_response_code = HttpTransactCache::match_response_to_request_conditionals(
           &s->hdr_info.client_request, &s->hdr_info.server_response, s->response_received_time);
 
-        TxnDebug("http_trans", "[hcoofsr] conditional request, 200 "
-                               "response, send back 304 if possible [crc=%d]",
+        TxnDebug("http_trans",
+                 "[hcoofsr] conditional request, 200 "
+                 "response, send back 304 if possible [crc=%d]",
                  client_response_code);
         if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) || (client_response_code == HTTP_STATUS_PRECONDITION_FAILED)) {
           switch (s->cache_info.action) {
@@ -5068,8 +5072,9 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   // Add or append to the X-Forwarded-For header
   if (s->txn_conf->insert_squid_x_forwarded_for) {
     request->value_append_or_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string, ip_string_size);
-    TxnDebug("http_trans", "[add_client_ip_to_outgoing_request] Appended connecting client's "
-                           "(%s) to the X-Forwards header",
+    TxnDebug("http_trans",
+             "[add_client_ip_to_outgoing_request] Appended connecting client's "
+             "(%s) to the X-Forwards header",
              ip_string);
   }
 }
@@ -5251,9 +5256,9 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
   if (!incoming_hdr->presence(MIME_PRESENCE_DATE)) {
     incoming_hdr->set_date(s->current.now);
   }
-//     if (! incoming_hdr->get_reason_phrase()) {
-//      return MISSING_REASON_PHRASE;
-//     }
+  //     if (! incoming_hdr->get_reason_phrase()) {
+  //      return MISSING_REASON_PHRASE;
+  //     }
 
 #ifdef REALLY_NEED_TO_CHECK_DATE_VALIDITY
 
@@ -5766,8 +5771,9 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
                                                                    cached_response, cached_response->get_date(), s->current.now);
   // Negative age is overflow
   if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
-    TxnDebug("http_trans", "[is_stale_cache_response_returnable] "
-                           "document age is too large %" PRId64,
+    TxnDebug("http_trans",
+             "[is_stale_cache_response_returnable] "
+             "document age is too large %" PRId64,
              (int64_t)current_age);
     return false;
   }
@@ -6088,8 +6094,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
   // do not cache partial content - Range response
   if (response_code == HTTP_STATUS_PARTIAL_CONTENT || response_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE) {
-    TxnDebug("http_trans", "[is_response_cacheable] "
-                           "response code %d - don't cache",
+    TxnDebug("http_trans",
+             "[is_response_cacheable] "
+             "response code %d - don't cache",
              response_code);
     return false;
   }
@@ -6557,7 +6564,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
           break;
         }
-      // fallthrough
+        // fallthrough
 
       case SOURCE_CACHE:
         // if we are doing a single Range: request, calculate the new
@@ -6928,8 +6935,9 @@ HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit
     }
 
     if (s->method == HTTP_WKSIDX_PURGE || (valid_max_forwards && max_forwards <= 0)) {
-      TxnDebug("http_trans", "[delete_all_document_alternates_and_return] "
-                             "DELETE with Max-Forwards: %d",
+      TxnDebug("http_trans",
+               "[delete_all_document_alternates_and_return] "
+               "DELETE with Max-Forwards: %d",
                max_forwards);
 
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
@@ -6946,8 +6954,9 @@ HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit
     } else {
       if (valid_max_forwards) {
         --max_forwards;
-        TxnDebug("http_trans", "[delete_all_document_alternates_and_return] "
-                               "Decrementing max_forwards to %d",
+        TxnDebug("http_trans",
+                 "[delete_all_document_alternates_and_return] "
+                 "Decrementing max_forwards to %d",
                  max_forwards);
         s->hdr_info.client_request.value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, max_forwards);
       }
@@ -7087,8 +7096,9 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
         ink_time_t time_since_last_modify = date_value - last_modified_value;
         int h_freshness                   = (int)(time_since_last_modify * f);
         freshness_limit                   = std::max(h_freshness, 0);
-        TxnDebug("http_match", "calculate_document_freshness_limit --- heuristic: date=%" PRId64 ", lm=%" PRId64
-                               ", time_since_last_modify=%" PRId64 ", f=%g, freshness_limit = %d",
+        TxnDebug("http_match",
+                 "calculate_document_freshness_limit --- heuristic: date=%" PRId64 ", lm=%" PRId64
+                 ", time_since_last_modify=%" PRId64 ", f=%g, freshness_limit = %d",
                  (int64_t)date_value, (int64_t)last_modified_value, (int64_t)time_since_last_modify, f, freshness_limit);
       } else {
         freshness_limit = s->txn_conf->cache_heuristic_min_lifetime;
@@ -8178,7 +8188,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 
   case SQUID_LOG_TCP_MEM_HIT:
     HTTP_INCREMENT_DYN_STAT(http_cache_hit_mem_fresh_stat);
-  // fallthrough
+    // fallthrough
 
   case SQUID_LOG_TCP_HIT:
     // It's possible to have two stat's instead of one, if needed.

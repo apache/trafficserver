@@ -105,9 +105,7 @@ IpAllow::IpAllow(const char *config_var, const char *name, const char *action_va
   ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
 }
 
-IpAllow::~IpAllow()
-{
-}
+IpAllow::~IpAllow() {}
 
 void
 IpAllow::PrintMap(IpMap *map)
