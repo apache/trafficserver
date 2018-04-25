@@ -188,7 +188,7 @@ class TSStat(std.Target):
 
     option_spec = {
         'type': metrictypes,
-        'unit': metricunits,
+        'units': metricunits,
         'introduced': rst.directives.unchanged,
         'deprecated': rst.directives.unchanged,
         'ungathered': rst.directives.flag

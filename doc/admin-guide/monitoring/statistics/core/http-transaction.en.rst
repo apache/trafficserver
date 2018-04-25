@@ -108,59 +108,59 @@ HTTP Transaction
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.aborts integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.connect_failed integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.early_hangups integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.empty_hangups integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.other integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.possible_aborts integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.pre_accept_hangups integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.hit_fresh integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.hit_revalidated integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.miss_changed integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.miss_client_no_cache integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.miss_cold integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.other.unclassified integer
    :type: derivative
-   :unit: milliseconds
+   :units: milliseconds
 
 .. ts:stat:: global proxy.process.http.avg_transactions_per_client_connection float
    :type: derivative
@@ -170,7 +170,7 @@ HTTP Transaction
 
 .. ts:stat:: global proxy.process.http.total_transactions_time integer
    :type: counter
-   :unit: seconds
+   :units: seconds
 
 .. ts:stat:: global proxy.process.http.transaction_counts.errors.aborts integer
    :type: counter
@@ -226,66 +226,66 @@ HTTP Transaction
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.errors.aborts float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.errors.connect_failed float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.errors.other float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.errors.possible_aborts float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.errors.pre_accept_hangups float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.hit_fresh float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.hit_fresh.process float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.hit_revalidated float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.miss_changed float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.miss_client_no_cache float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.miss_cold float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.miss_not_cacheable float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.transaction_totaltime.other.unclassified float
    :type: counter
-   :unit: seconds
+   :units: seconds
    :ungathered:
 

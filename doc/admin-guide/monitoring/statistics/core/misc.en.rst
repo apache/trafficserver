@@ -46,11 +46,11 @@ Miscellaneous
     Number of loops that did a conditional wait.
 
 .. ts:stat:: global proxy.process.eventloop.time.min integer
-    :unit: nanoseconds
+    :units: nanoseconds
 
     Shortest time spent in a loop.
 
 .. ts:stat:: global proxy.process.eventloop.time.max integer
-    :unit: nanoseconds
+    :units: nanoseconds
 
     Longest time spent in a loop.
