@@ -433,7 +433,7 @@ Thread Variables
    `traffic_server` a signal either by `bin/trafficserver stop` or `kill`.
 
 .. ts:cv:: CONFIG proxy.config.thread.max_heartbeat_mseconds INT 60
-   :unit: milliseconds
+   :units: milliseconds
 
    Set the maximum heartbeat in milliseconds for threads, ranges from 0 to 1000.
 
