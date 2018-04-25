@@ -152,6 +152,12 @@ public:
   }
 
   QUICConnectionId
+  peer_connection_id() override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
   original_connection_id() override
   {
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
