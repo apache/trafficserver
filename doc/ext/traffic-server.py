@@ -407,7 +407,7 @@ def xref_cleanup(app, env, node, contnode):
 # get the branch this documentation is building for in X.X.x form
 with open('../configure.ac', 'r') as f:
     contents = f.read()
-    match = re.compile('m4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
+    match = re.compile(r'm4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
     autoconf_version = '.'.join(match.group(1).split('.', 2)[:2] + ['x'])
 
 # get the current branch the local repository is on
