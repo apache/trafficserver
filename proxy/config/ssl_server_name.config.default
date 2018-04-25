@@ -17,15 +17,15 @@ Lua based Configuration file
 
 
 params for client verification
-        NONE, MODERATE, STRICT
+        'NONE', 'MODERATE', 'STRICT'
 
 server_config = {
                 {
                     fqdn='one.com',
                     disable_h2 = <true|false>,
-                    verify_origin_server = <NONE|MODERATE|STRICT>,
+                    verify_origin_server = <'NONE'|'MODERATE'|'STRICT'>,
                     client_cert = "somepem.pem",
-                    verify_client = <NONE|MODERATE|STRICT>
+                    verify_client = <'NONE'|'MODERATE'|'STRICT'>
                 },
                 {
                     fqdn='two.com',
