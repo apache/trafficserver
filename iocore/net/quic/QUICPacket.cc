@@ -164,8 +164,14 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId
   this->_version            = version;
   this->_payload            = std::move(buf);
   this->_payload_length     = len;
-  this->_buf_len            = LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() +
-                   QUICVariableInt::size(this->_payload_length) + 4 + len;
+
+  if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
+    this->_buf_len =
+      LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() + this->_payload_length;
+  } else {
+    this->_buf_len = LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() +
+                     QUICVariableInt::size(this->_payload_length) + 4 + this->_payload_length;
+  }
 }
 
 QUICPacketType
@@ -277,10 +283,10 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   QUICTypeUtil::write_QUICConnectionId(this->_source_cid, buf + *len, &n);
   *len += n;
 
-  QUICIntUtil::write_QUICVariableInt(this->_payload_length, buf + *len, &n);
-  *len += n;
-
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
+    QUICIntUtil::write_QUICVariableInt(this->_payload_length, buf + *len, &n);
+    *len += n;
+
     QUICPacketNumber dst = 0;
     size_t dst_len       = 4;
     QUICPacket::encode_packet_number(dst, this->_packet_number, dst_len);

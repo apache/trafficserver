@@ -31,7 +31,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
   {
     const uint8_t input[] = {
       0x80,                                           // Long header, Type: NONE
-      0x00, 0x00, 0x00, 0x0b,                         // Version
+      0x00, 0x00, 0x00, 0x00,                         // Version
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
@@ -47,7 +47,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
     CHECK((header->source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
     CHECK(header->has_version() == true);
-    CHECK(header->version() == 0x0000000b);
+    CHECK(header->version() == 0x00000000);
     CHECK(header->has_key_phase() == false);
   }
 
