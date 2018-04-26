@@ -1055,9 +1055,9 @@ template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _
   {
 // not what I would normally do.. but better than making a custom hash function at the moment.
 // This should also mean we have some consistent behavior with std code
-#if defined(__linux__)
+#if defined(__GLIBCXX__)
     return std::_Hash_impl::hash(x.data(), x.length() * sizeof(typename string_type::value_type));
-#elif defined(freebsd) || defined(darwin)
+#elif defined(_LIBCPP_VERSION)
     return __do_string_hash(x.data(), x.data() + x.size());
 #endif
   }
