@@ -223,14 +223,14 @@ struct MultiCacheBase : public MultiCacheHeader {
   lowest_level(unsigned int bucket)
   {
     unsigned int i = (unsigned char)lowest_level_data[bucket / 4];
-    return 3 & (i >> (buckets % 4));
+    return 3 & (i >> ((bucket % 4) * 2));
   }
   void
   set_lowest_level(unsigned int bucket, unsigned int lowest)
   {
     unsigned char p = (unsigned char)lowest_level_data[bucket / 4];
-    p &= ~(3 << (buckets % 4));
-    p |= (lowest & 3) << (buckets % 4);
+    p &= ~(3 << ((bucket % 4) * 2));
+    p |= (lowest & 3) << ((bucket % 4) * 2);
     lowest_level_data[bucket / 4] = (char)p;
   }
 
