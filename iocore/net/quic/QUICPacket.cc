@@ -284,7 +284,7 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   *len += n;
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
-    QUICIntUtil::write_QUICVariableInt(this->_payload_length, buf + *len, &n);
+    QUICIntUtil::write_QUICVariableInt(this->_payload_length + 16, buf + *len, &n);
     *len += n;
 
     QUICPacketNumber dst = 0;

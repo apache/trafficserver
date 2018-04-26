@@ -88,7 +88,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
-      0x05,                                           // Payload length
+      0x15,                                           // Payload length (Not 0x05 because it will have 16 bytes of AEAD tag)
       0x12, 0x34, 0x56, 0x78,                         // Packet number
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Payload (dummy)
     };
