@@ -18,8 +18,8 @@
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir) \
-  $(TS_INCLUDES)
+	-I$(abs_top_srcdir) \
+	$(TS_INCLUDES)
 
 bin_PROGRAMS = unit_tests
 

@@ -17,28 +17,28 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy/shared \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/proxy/shared \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libCongestionControl.a
 
 libCongestionControl_a_SOURCES = \
-  Congestion.cc \
-  Congestion.h \
-  CongestionDB.cc \
-  CongestionDB.h \
-  CongestionStats.cc \
-  CongestionStats.h \
-  MT_hashtable.h
+	Congestion.cc \
+	Congestion.h \
+	CongestionDB.cc \
+	CongestionDB.h \
+	CongestionStats.cc \
+	CongestionStats.h \
+	MT_hashtable.h
 
 if BUILD_TESTS
-  libCongestionControl_a_SOURCES +=   CongestionTest.cc
+libCongestionControl_a_SOURCES += CongestionTest.cc
 endif
