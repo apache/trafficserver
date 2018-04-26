@@ -17,94 +17,94 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  $(TS_INCLUDES)
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	$(TS_INCLUDES)
 
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = libinkevent.a
 
 libinkevent_a_SOURCES = \
-  EventSystem.cc \
-  IOBuffer.cc \
-  I_Action.h \
-  I_Continuation.h \
-  I_EThread.h \
-  I_Event.h \
-  I_EventProcessor.h \
-  I_EventSystem.h \
-  I_IOBuffer.h \
-  I_Lock.h \
-  I_PriorityEventQueue.h \
-  I_Processor.h \
-  I_ProtectedQueue.h \
-  I_ProxyAllocator.h \
-  I_SocketManager.h \
-  I_Tasks.h \
-  I_Thread.h \
-  I_VConnection.h \
-  I_VIO.h \
-  Inline.cc \
-  Lock.cc \
-  PQ-List.cc \
-  P_EventSystem.h \
-  P_Freer.h \
-  P_IOBuffer.h \
-  P_ProtectedQueue.h \
-  P_Thread.h \
-  P_UnixEThread.h \
-  P_UnixEvent.h \
-  P_UnixEventProcessor.h \
-  P_UnixSocketManager.h \
-  P_VConnection.h \
-  P_VIO.h \
-  Processor.cc \
-  ProtectedQueue.cc \
-  ProxyAllocator.cc \
-  SocketManager.cc \
-  Tasks.cc \
-  Thread.cc \
-  UnixEThread.cc \
-  UnixEvent.cc \
-  UnixEventProcessor.cc
+	EventSystem.cc \
+	IOBuffer.cc \
+	I_Action.h \
+	I_Continuation.h \
+	I_EThread.h \
+	I_Event.h \
+	I_EventProcessor.h \
+	I_EventSystem.h \
+	I_IOBuffer.h \
+	I_Lock.h \
+	I_PriorityEventQueue.h \
+	I_Processor.h \
+	I_ProtectedQueue.h \
+	I_ProxyAllocator.h \
+	I_SocketManager.h \
+	I_Tasks.h \
+	I_Thread.h \
+	I_VConnection.h \
+	I_VIO.h \
+	Inline.cc \
+	Lock.cc \
+	PQ-List.cc \
+	P_EventSystem.h \
+	P_Freer.h \
+	P_IOBuffer.h \
+	P_ProtectedQueue.h \
+	P_Thread.h \
+	P_UnixEThread.h \
+	P_UnixEvent.h \
+	P_UnixEventProcessor.h \
+	P_UnixSocketManager.h \
+	P_VConnection.h \
+	P_VIO.h \
+	Processor.cc \
+	ProtectedQueue.cc \
+	ProxyAllocator.cc \
+	SocketManager.cc \
+	Tasks.cc \
+	Thread.cc \
+	UnixEThread.cc \
+	UnixEvent.cc \
+	UnixEventProcessor.cc
 
 check_PROGRAMS = test_Buffer test_Event \
-  test_MIOBufferWriter
+	test_MIOBufferWriter
 
 test_LD_FLAGS = \
-  @AM_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
 test_CPP_FLAGS = \
-  $(AM_CPPFLAGS) \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  @OPENSSL_INCLUDES@
+	$(AM_CPPFLAGS) \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	@OPENSSL_INCLUDES@
 
 test_LD_ADD = \
-  libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ @HWLOC_LIBS@
+	libinkevent.a \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@LIBTCL@ @HWLOC_LIBS@
 
 test_Buffer_SOURCES = \
-  test_Buffer.cc
+	test_Buffer.cc
 
 #test_UNUSED_SOURCES = \
 #  test_I_Buffer.cc \
 #  test_P_Buffer.cc
 
 test_Event_SOURCES = \
-  test_Event.cc
+	test_Event.cc
 
 #test_UNUSED_SOURCES = \
 #  test_I_Event.cc \
@@ -120,10 +120,10 @@ test_Buffer_LDADD = $(test_LD_ADD)
 test_Event_LDADD = $(test_LD_ADD)
 
 test_MIOBufferWriter_CPPFLAGS = $(AM_CPPFLAGS)\
-  -I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/tests/include
 
 test_MIOBufferWriter_SOURCES = \
-  unit-tests/test_MIOBufferWriter.cc
+	unit-tests/test_MIOBufferWriter.cc
 
 include $(top_srcdir)/build/tidy.mk
 

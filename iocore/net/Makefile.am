@@ -17,18 +17,18 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/shared \
-  -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy/http \
-  $(TS_INCLUDES) \
-  @OPENSSL_INCLUDES@
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/shared \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/proxy/http \
+	$(TS_INCLUDES) \
+	@OPENSSL_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
 
@@ -36,135 +36,135 @@ check_PROGRAMS = test_certlookup test_UDPNet
 noinst_LIBRARIES = libinknet.a
 
 test_certlookup_LDFLAGS = \
-  @AM_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
 test_certlookup_SOURCES = \
-  test_certlookup.cc \
-  SSLCertLookup.cc
+	test_certlookup.cc \
+	SSLCertLookup.cc
 
 test_certlookup_LDADD = \
-  @OPENSSL_LIBS@ \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/ParentSelectionStrategy.o
+	@OPENSSL_LIBS@ \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/proxy/ParentSelectionStrategy.o
 
 test_UDPNet_CPPFLAGS = \
-  $(AM_CPPFLAGS) \
-  $(LUAJIT_CPPFLAGS) \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  @OPENSSL_INCLUDES@
+	$(AM_CPPFLAGS) \
+	$(LUAJIT_CPPFLAGS) \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	@OPENSSL_INCLUDES@
 
 test_UDPNet_LDFLAGS = \
-  @AM_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
 test_UDPNet_LDADD = \
-  libinknet.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/ParentSelectionStrategy.o \
-  $(top_builddir)/lib/tsconfig/libtsconfig.la \
-  $(top_builddir)/lib/luajit/src/libluajit.a \
-  @LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@
+	libinknet.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/proxy/ParentSelectionStrategy.o \
+	$(top_builddir)/lib/tsconfig/libtsconfig.la \
+	$(top_builddir)/lib/luajit/src/libluajit.a \
+	@LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@
 
 test_UDPNet_SOURCES = \
-  test_I_UDPNet.cc
+	test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
-  BIO_fastopen.cc \
-  BIO_fastopen.h \
-  Connection.cc \
-  I_Net.h \
-  I_NetProcessor.h \
-  I_NetVConnection.h \
-  I_Socks.h \
-  I_UDPConnection.h \
-  I_UDPNet.h \
-  I_UDPPacket.h \
-  Inline.cc \
-  I_SessionAccept.h \
-  SessionAccept.cc \
-  LuaSNIConfig.h \
-  LuaSNIConfig.cc \
-  Net.cc \
-  NetVConnection.cc \
-  P_SNIActionPerformer.h \
-  P_CompletionUtil.h \
-  P_Connection.h \
-  P_InkBulkIO.h \
-  P_LibBulkIO.h \
-  P_Net.h \
-  P_NetAccept.h \
-  P_NetVConnection.h \
-  P_Socks.h \
-  P_SSLCertLookup.h \
-  P_SSLConfig.h \
-  P_SSLNetAccept.h \
-  P_SSLNetProcessor.h \
-  P_SSLNetVConnection.h \
-  P_SSLNextProtocolAccept.h \
-  P_SSLNextProtocolSet.h \
-  P_SSLSNI.h \
-  P_SSLUtils.h \
-  P_SSLClientUtils.h \
-  P_OCSPStapling.h \
-  P_Socks.h \
-  P_UDPConnection.h \
-  P_UDPIOEvent.h \
-  P_UDPNet.h \
-  P_UDPPacket.h \
-  P_UnixCompletionUtil.h \
-  P_UnixNet.h \
-  P_UnixNetProcessor.h \
-  P_UnixNetState.h \
-  P_UnixNetVConnection.h \
-  P_UnixPollDescriptor.h \
-  P_UnixUDPConnection.h \
-  Socks.cc \
-  SNIActionPerformer.cc \
-  SSLCertLookup.cc \
-  SSLSessionCache.cc \
-  SSLConfig.cc \
-  SSLInternal.cc \
-  SSLNetAccept.cc \
-  SSLNetProcessor.cc \
-  SSLNetVConnection.cc \
-  SSLNextProtocolAccept.cc \
-  SSLNextProtocolSet.cc \
-  SSLSNIConfig.cc \
-  SSLUtils.cc \
-  SSLClientUtils.cc \
-  OCSPStapling.cc \
-  Socks.cc \
-  UDPIOEvent.cc \
-  UnixConnection.cc \
-  UnixNet.cc \
-  UnixNetAccept.cc \
-  UnixNetPages.cc \
-  UnixNetProcessor.cc \
-  UnixNetVConnection.cc \
-  UnixUDPConnection.cc \
-  UnixUDPNet.cc \
-  SSLDynlock.cc
+	BIO_fastopen.cc \
+	BIO_fastopen.h \
+	Connection.cc \
+	I_Net.h \
+	I_NetProcessor.h \
+	I_NetVConnection.h \
+	I_Socks.h \
+	I_UDPConnection.h \
+	I_UDPNet.h \
+	I_UDPPacket.h \
+	Inline.cc \
+	I_SessionAccept.h \
+	SessionAccept.cc \
+	LuaSNIConfig.h \
+	LuaSNIConfig.cc \
+	Net.cc \
+	NetVConnection.cc \
+	P_SNIActionPerformer.h \
+	P_CompletionUtil.h \
+	P_Connection.h \
+	P_InkBulkIO.h \
+	P_LibBulkIO.h \
+	P_Net.h \
+	P_NetAccept.h \
+	P_NetVConnection.h \
+	P_Socks.h \
+	P_SSLCertLookup.h \
+	P_SSLConfig.h \
+	P_SSLNetAccept.h \
+	P_SSLNetProcessor.h \
+	P_SSLNetVConnection.h \
+	P_SSLNextProtocolAccept.h \
+	P_SSLNextProtocolSet.h \
+	P_SSLSNI.h \
+	P_SSLUtils.h \
+	P_SSLClientUtils.h \
+	P_OCSPStapling.h \
+	P_Socks.h \
+	P_UDPConnection.h \
+	P_UDPIOEvent.h \
+	P_UDPNet.h \
+	P_UDPPacket.h \
+	P_UnixCompletionUtil.h \
+	P_UnixNet.h \
+	P_UnixNetProcessor.h \
+	P_UnixNetState.h \
+	P_UnixNetVConnection.h \
+	P_UnixPollDescriptor.h \
+	P_UnixUDPConnection.h \
+	Socks.cc \
+	SNIActionPerformer.cc \
+	SSLCertLookup.cc \
+	SSLSessionCache.cc \
+	SSLConfig.cc \
+	SSLInternal.cc \
+	SSLNetAccept.cc \
+	SSLNetProcessor.cc \
+	SSLNetVConnection.cc \
+	SSLNextProtocolAccept.cc \
+	SSLNextProtocolSet.cc \
+	SSLSNIConfig.cc \
+	SSLUtils.cc \
+	SSLClientUtils.cc \
+	OCSPStapling.cc \
+	Socks.cc \
+	UDPIOEvent.cc \
+	UnixConnection.cc \
+	UnixNet.cc \
+	UnixNetAccept.cc \
+	UnixNetPages.cc \
+	UnixNetProcessor.cc \
+	UnixNetVConnection.cc \
+	UnixUDPConnection.cc \
+	UnixUDPNet.cc \
+	SSLDynlock.cc
 
 if BUILD_TESTS
-  libinknet_a_SOURCES += \
-     NetVCTest.cc \
-     P_NetVCTest.h
+libinknet_a_SOURCES += \
+	NetVCTest.cc \
+	P_NetVCTest.h
 endif
 
 libinknet_a_LIBADD = \
-   $(top_builddir)/lib/luajit/src/libluajit.a \
-   $(top_builddir)/lib/tsconfig/libtsconfig.la
+	$(top_builddir)/lib/luajit/src/libluajit.a \
+	$(top_builddir)/lib/tsconfig/libtsconfig.la
 
 include $(top_srcdir)/build/tidy.mk
 

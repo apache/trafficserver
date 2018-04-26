@@ -16,14 +16,14 @@
 #  limitations under the License.
 
 SUBDIRS = \
-  traffic_cache_tool \
-  traffic_cop \
-  traffic_crashlog \
-  traffic_ctl \
-  traffic_layout \
-  traffic_manager \
-  traffic_top \
-  traffic_via
+	traffic_cache_tool \
+	traffic_cop \
+	traffic_crashlog \
+	traffic_ctl \
+	traffic_layout \
+	traffic_manager \
+	traffic_top \
+	traffic_via
 
 TESTS = $(check_PROGRAMS)
 

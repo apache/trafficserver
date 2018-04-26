@@ -26,53 +26,53 @@ SUBDIRS = utils api
 noinst_LTLIBRARIES = libmgmt_c.la libmgmt_p.la libmgmt_lm.la
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/mgmt/api/include \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/lib \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES)
 
 libmgmt_c_la_SOURCES = \
-  RecordsConfig.cc \
-  RecordsConfig.h
+	RecordsConfig.cc \
+	RecordsConfig.h
 
 libmgmt_COMMON = \
-  BaseManager.cc \
-  BaseManager.h \
-  MgmtDefs.h \
-  RecordsConfigUtils.cc
+	BaseManager.cc \
+	BaseManager.h \
+	MgmtDefs.h \
+	RecordsConfigUtils.cc
 
 libmgmt_p_la_SOURCES = \
-  $(libmgmt_COMMON) \
-  ProcessManager.cc \
-  ProcessManager.h \
-  ProxyConfig.cc \
-  ProxyConfig.h
+	$(libmgmt_COMMON) \
+	ProcessManager.cc \
+	ProcessManager.h \
+	ProxyConfig.cc \
+	ProxyConfig.h
 
 libmgmt_lm_la_SOURCES = \
-  $(libmgmt_COMMON) \
-  Alarms.cc \
-  Alarms.h \
-  FileManager.cc \
-  FileManager.h \
-  LocalManager.cc \
-  LocalManager.h \
-  Rollback.cc \
-  Rollback.h \
-  WebMgmtUtils.cc \
-  WebMgmtUtils.h
+	$(libmgmt_COMMON) \
+	Alarms.cc \
+	Alarms.h \
+	FileManager.cc \
+	FileManager.h \
+	LocalManager.cc \
+	LocalManager.h \
+	Rollback.cc \
+	Rollback.h \
+	WebMgmtUtils.cc \
+	WebMgmtUtils.h
 
 libmgmt_lm_la_LIBADD = \
-  libmgmt_c.la \
-  $(top_builddir)/mgmt/utils/libutils_lm.la
+	libmgmt_c.la \
+	$(top_builddir)/mgmt/utils/libutils_lm.la
 
 libmgmt_p_la_LIBADD = \
-  libmgmt_c.la \
-  $(top_builddir)/mgmt/utils/libutils_p.la
+	libmgmt_c.la \
+	$(top_builddir)/mgmt/utils/libutils_p.la
 
 include $(top_srcdir)/build/tidy.mk
 

@@ -19,33 +19,33 @@
 if BUILD_TRAFFIC_TOP
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/api/include \
-  $(TS_INCLUDES) \
-  @CURL_CFLAGS@ \
-  @CURSES_CFLAGS@
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	$(TS_INCLUDES) \
+	@CURL_CFLAGS@ \
+	@CURSES_CFLAGS@
 
 AM_LDFLAGS += \
-  @CURSES_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
+	@CURSES_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_top
 
 traffic_top_SOURCES = traffic_top.cc
 
 traffic_top_LDADD = \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @CURL_LIBS@ \
-  @CURSES_LIBS@ \
-  @LIBTCL@ @HWLOC_LIBS@
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	$(top_builddir)/mgmt/api/libtsmgmt.la \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	@CURL_LIBS@ \
+	@CURSES_LIBS@ \
+	@LIBTCL@ @HWLOC_LIBS@
 
 endif
 
