@@ -1348,14 +1348,14 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 
     break;
   case QUICPacketType::PROTECTED:
-    packet = this->_packet_factory.create_server_protected_packet(this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                                  std::move(buf), len, retransmittable);
+    packet = this->_packet_factory.create_server_protected_packet(
+      this->_peer_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
     break;
   default:
     if (this->get_context() == NET_VCONNECTION_IN) {
       if (this->_handshake_handler && this->_handshake_handler->is_completed()) {
         packet = this->_packet_factory.create_server_protected_packet(
-          this->_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
+          this->_peer_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
       } else {
         packet =
           this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
@@ -1465,6 +1465,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     break;
   case QUICPacketCreationResult::SUCCESS:
     this->_last_received_packet_type = quic_packet->type();
+    this->_packet_factory.set_dcil(quic_packet->destination_cid().length());
 
     if (quic_packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
       QUICConDebug("Dequeue %s size=%u", QUICDebugNames::packet_type(quic_packet->type()), quic_packet->size());

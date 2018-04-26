@@ -309,6 +309,7 @@ QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_b
   int offset           = 1 + this->_connection_id.length();
   QUICPacketNumber src = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + offset, n);
   QUICPacket::decode_packet_number(this->_packet_number, src, n, this->_base_packet_number);
+  this->_payload_length = len - (1 + this->_dcil + this->_packet_number_len());
 }
 
 QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
@@ -957,6 +958,12 @@ void
 QUICPacketFactory::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
 {
   this->_hs_protocol = hs_protocol;
+}
+
+void
+QUICPacketFactory::set_dcil(uint8_t len)
+{
+  this->_dcil = len;
 }
 
 //
