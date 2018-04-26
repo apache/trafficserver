@@ -61,6 +61,7 @@ public:
   // proxy -> client fields
   //
   virtual int marshal_proxy_resp_content_type(char *);  // STR
+  virtual int marshal_proxy_resp_reason_phrase(char *); // STR
   virtual int marshal_proxy_resp_squid_len(char *);     // INT
   virtual int marshal_proxy_resp_content_len(char *);   // INT
   virtual int marshal_proxy_resp_status_code(char *);   // INT
