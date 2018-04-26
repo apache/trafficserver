@@ -20,73 +20,97 @@
 traffic_layout
 *****************
 
+Synopsis
+========
+:program:`traffic_layout` SUBCOMMAND [OPTIONS]
+
+Options
+=============
 .. program:: traffic_layout
 
-.. option:: --run-root [<path>]
+.. option:: --run-root=[<path>]
 
    Use the run root file at :arg:`path`.
 
+.. option:: -V, --version
+
+    Print version information and exit.
+
 Description
 =============
-Document for the special functionality of ``runroot`` inside :program:`traffic_layout` This feature
+Document for the special functionality of ``runroot`` inside :program:`traffic_layout`. This feature
 is for the setup of traffic server runroot. It will create a runtime sandbox for any program of
 traffic server to run under.
 
-#. Use :program:`traffic_layout` to create sandbox.
-#. Run any program using the sandbox with ``--run-root=/path/to/file`` or ``--run-root``.
+Use :program:`traffic_layout` to create sandbox.
+Run any program using the sandbox with ``--run-root=/path/to/file`` or ``--run-root``.
 
-How it works:
+How it works
 --------------
 
 #. Create a sandbox directory for programs to run under.
 #. Copy and symlink build time directories and files to the sandbox, allowing users to modify freely.
 #. Emit a yaml file that defines layout structure for other programs to use (relative path).
+#. Users are able to remove runroot and verify permission of the runroot.
 
-Options:
+Subcommands
 =============
 
-#. Initialize the runroot: ::
+- Initialize the runroot: ::
 
       traffic_layout init (--path /path/to/sandbox/)
 
-   Use the current working directory or specific path to create runroot.
+      Use the current working directory or the specific path to create runroot.
+      The path can be relative or set up in :envvar:`TS_RUNROOT`.
 
-#. Remove the runroot: ::
 
-      traffic_layout remove --path /path/to/sandbox/
+- Remove the runroot: ::
 
-   Remove the sandbox we created(check yaml file).
-   If no path provided, it will check bin executing path and current working directory to clean.
+      traffic_layout remove (--path /path/to/sandbox/)
 
-#. Use Force flag for creating: ::
+      Find the sandbox to remove in following order: 
+
+            1. specified in --path as absolute or relative.
+            2. :envvar:`TS_RUNROOT`
+            3. current working directory
+            4. installed directory.
+
+- Verify the runroot: ::
+
+      traffic_layout verify (--path /path/to/sandbox/)
+
+      Verify the permission of the sandbox.
+
+Subcommands options
+--------------
+- Force option: ::
 
       traffic_layout init --force (--path /path/to/sandbox)
-      traffic_layout remove --force --path /path/to/sandbox
+      traffic_layout remove --force (--path /path/to/sandbox)
 
-   Force create sandbox and overwrite existing directory when directory is not empty or has a yaml file in it.
-   Force removing a directory when directory has no yaml file.
+      Force init will create sandbox even if the directory is not empty.
+      Force remove will remove a directory even if directory has no yaml file.
 
-#. Use absolute flag for creating: ::
+- Absolute option: ::
 
       traffic_layout init --absolute (--path /path/to/sandbox)
 
-   create sandbox and put directories in the yaml file with absolute path form.
+      create the sandbox and put directories in the yaml file in the form of absolute path.
+
+- Fix option: ::
+
+      traffic_layout verify --fix (--path /path/to/sandbox)
+
+      Fix the permission issues verify found. ``--fix`` requires root privilege (sudo).
 
 Usage for other programs:
 ==============================================
 
-Use command line path or use :envvar:`TS_RUNROOT`.
-If command line path and envvar are not found, program will try to find the current executing program bin path or current working directory to use as runroot if the yaml file is found. 
-For bin path and cwd, it can go one level up to the parent directory to find the yaml file. ::
+All programs can find the runroot to use in the following order
 
-   trafficserver --run-root=/path/to/runroot (use /path/to/runroot as runroot)
-   trafficserver --run-root                  (use $TS_RUNROOT as runroot)
+      #. specified in --run-root=/path/to/runroot (path needs to be absolute)
+      #. :envvar:`TS_RUNROOT`
+      #. current working directory
+      #. installed directory
 
-.. envvar:: TS_RUNROOT
-
-   The path to run root directory.
-
-Notes
-==========
-
-.. note:: Path to sandbox must be an absolute path.
+if none of the above is found as runroot, runroot will not be used

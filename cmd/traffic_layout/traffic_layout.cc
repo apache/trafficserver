@@ -63,19 +63,20 @@ static void
 help_usage()
 {
   std::cout << "\nSubcommands:\n"
+               "info         Show the layout as default\n"
                "init         Initialize the ts_runroot sandbox\n"
                "remove       Remove the ts_runroot sandbox\n"
-               "info         Show the layout as default\n"
-               "verify:      Verify the ts_runroot paths\n"
+               "verify       Verify the ts_runroot paths\n"
             << std::endl;
   std::cout << "Switches of runroot:\n"
-               "--path       Specify the path of the runroot\n"
-               "--force:     Force to create ts_runroot, only works with init\n"
-               "--absolute:  Produce absolute path in the yaml file\n"
+               "--path:      Specify the path of the runroot\n"
+               "--force:     Force to create or remove ts_runroot\n"
+               "--absolute:  Produce absolute path in the yaml file during init\n"
                "--run-root(=/path):  Using specified TS_RUNROOT as sandbox\n"
+               "--fix:       fix the premission issues that verify found"
             << std::endl;
   printf("Detailed usage and description in traffic_layout.en.rst\n");
-  printf("General Usage:\n");
+  printf("\nGeneral Usage:\n");
   usage(argument_descriptions, countof(argument_descriptions), nullptr);
 }
 
@@ -129,7 +130,7 @@ traffic_runroot(int argc, const char **argv)
   }
   // parse the command line & put into global variable
   if (!engine.runroot_parse()) {
-    engine.runroot_help_message(true, true, true, true);
+    engine.runroot_help_message(true, true, true);
     return 0;
   }
   // check sanity of the command about the runroot program
