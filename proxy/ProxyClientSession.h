@@ -38,6 +38,21 @@
 class ProxyClientTransaction;
 struct AclRecord;
 
+enum class ProxyErrorClass {
+  NONE,
+  SSN,
+  TXN,
+};
+
+struct ProxyError {
+  ProxyError() {}
+  ProxyError(ProxyErrorClass cl, uint32_t co) : cls(cl), code(co) {}
+  size_t str(char *buf, size_t buf_len);
+
+  ProxyErrorClass cls = ProxyErrorClass::NONE;
+  uint32_t code       = 0;
+};
+
 class ProxyClientSession : public VConnection
 {
 public:

@@ -82,6 +82,8 @@ public:
   int marshal_client_finish_status_code(char *) override;     // INT
   int marshal_client_req_id(char *) override;                 // INT
   int marshal_client_req_uuid(char *) override;               // STR
+  int marshal_client_rx_error_code(char *) override;          // STR
+  int marshal_client_tx_error_code(char *) override;          // STR
 
   //
   // proxy -> client fields
