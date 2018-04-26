@@ -221,6 +221,27 @@ psct  Origin Server Response Content type of the document obtained by |TS| from
                              the origin server response.
 ===== ====================== ==================================================
 
+.. _admin-logging-fields-error-code:
+
+Error Code
+~~~~~~~~~~
+
+.. _crec:
+.. _ctec:
+
+The log fields of error code which is triggered session close or
+transaction close. The first byte of this field indicates that the error
+code is session level (``S``) or transaction level (``T``).
+When no error code is received or transmitted, these fileds are ``-``.
+For HTTP/2, error code are described in RFC 7540 section 7.
+
+===== ====== ==================================================================
+Field Source Description
+===== ====== ==================================================================
+crec  Client Request  Error code in hex which |TS| received
+ctec  Client Response Error code in hex which |TS| transmitted
+===== =============== =========================================================
+
 .. _admin-logging-fields-hierarchy:
 
 Hierarchical Proxies

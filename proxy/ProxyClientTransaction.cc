@@ -99,3 +99,19 @@ ProxyClientTransaction::adjust_thread(Continuation *cont, int event, void *data)
   }
   return nullptr;
 }
+
+void
+ProxyClientTransaction::set_rx_error_code(ProxyError e)
+{
+  if (this->current_reader) {
+    this->current_reader->t_state.client_info.rx_error_code = e;
+  }
+}
+
+void
+ProxyClientTransaction::set_tx_error_code(ProxyError e)
+{
+  if (this->current_reader) {
+    this->current_reader->t_state.client_info.tx_error_code = e;
+  }
+}

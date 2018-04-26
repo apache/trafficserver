@@ -800,6 +800,40 @@ LogAccessHttp::marshal_client_req_uuid(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+// 1 ('S'/'T' flag) + 8 (Error Code) + 1 ('\0')
+static constexpr size_t MAX_PROXY_ERROR_CODE_SIZE = 10;
+
+int
+LogAccessHttp::marshal_client_rx_error_code(char *buf)
+{
+  char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
+  m_http_sm->t_state.client_info.rx_error_code.str(error_code, sizeof(error_code));
+  int round_len = LogAccess::strlen(error_code);
+
+  if (buf) {
+    marshal_str(buf, error_code, round_len);
+  }
+
+  return round_len;
+}
+
+int
+LogAccessHttp::marshal_client_tx_error_code(char *buf)
+{
+  char error_code[MAX_PROXY_ERROR_CODE_SIZE] = {0};
+  m_http_sm->t_state.client_info.tx_error_code.str(error_code, sizeof(error_code));
+  int round_len = LogAccess::strlen(error_code);
+
+  if (buf) {
+    marshal_str(buf, error_code, round_len);
+  }
+
+  return round_len;
+}
+
+/*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
 int
 LogAccessHttp::marshal_client_security_protocol(char *buf)

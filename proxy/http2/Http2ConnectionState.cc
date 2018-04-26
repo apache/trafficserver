@@ -471,6 +471,7 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   if (stream != nullptr) {
     Http2StreamDebug(cstate.ua_session, stream_id, "RST_STREAM: Error Code: %u", rst_stream.error_code);
 
+    stream->set_rx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(rst_stream.error_code)});
     cstate.delete_stream(stream);
   }
 
@@ -630,8 +631,8 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   Http2StreamDebug(cstate.ua_session, stream_id, "GOAWAY: last stream id=%d, error code=%d", goaway.last_streamid,
                    static_cast<int>(goaway.error_code));
 
+  cstate.rx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(goaway.error_code)};
   cstate.handleEvent(HTTP2_SESSION_EVENT_FINI, nullptr);
-  // eventProcessor.schedule_imm(&cs, ET_NET, VC_EVENT_ERROR);
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
 }
@@ -1121,6 +1122,12 @@ Http2ConnectionState::cleanup_streams()
   Http2Stream *s = stream_list.head;
   while (s) {
     Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
+    if (this->rx_error_code.cls != ProxyErrorClass::NONE) {
+      s->set_rx_error_code(this->rx_error_code);
+    }
+    if (this->tx_error_code.cls != ProxyErrorClass::NONE) {
+      s->set_tx_error_code(this->tx_error_code);
+    }
     this->delete_stream(s);
     ink_assert(s != next);
     s = next;
@@ -1633,6 +1640,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   // change state to closed
   Http2Stream *stream = find_stream(id);
   if (stream != nullptr) {
+    stream->set_tx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(ec)});
     if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
       this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
       this->ua_session->set_half_close_local_flag(true);
@@ -1734,6 +1742,8 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_GOAWAY]);
   http2_write_goaway(goaway, frame.write());
   frame.finalize(HTTP2_GOAWAY_LEN);
+
+  this->tx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(ec)};
 
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
