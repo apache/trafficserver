@@ -89,6 +89,7 @@ public:
   // proxy -> client fields
   //
   int marshal_proxy_resp_content_type(char *) override;  // STR
+  int marshal_proxy_resp_reason_phrase(char *) override; // STR
   int marshal_proxy_resp_header_len(char *) override;    // INT
   int marshal_proxy_resp_content_len(char *) override;   // INT
   int marshal_proxy_resp_squid_len(char *) override;     // INT
@@ -208,6 +209,8 @@ private:
   int m_client_req_url_path_len;
   char *m_proxy_resp_content_type_str;
   int m_proxy_resp_content_type_len;
+  char *m_proxy_resp_reason_phrase_str;
+  int m_proxy_resp_reason_phrase_len;
   char *m_cache_lookup_url_canon_str;
   int m_cache_lookup_url_canon_len;
 

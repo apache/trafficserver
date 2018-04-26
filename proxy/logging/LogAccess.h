@@ -203,6 +203,7 @@ public:
   // proxy -> client fields
   //
   inkcoreapi virtual int marshal_proxy_resp_content_type(char *);  // STR
+  inkcoreapi virtual int marshal_proxy_resp_reason_phrase(char *); // STR
   inkcoreapi virtual int marshal_proxy_resp_squid_len(char *);     // INT
   inkcoreapi virtual int marshal_proxy_resp_content_len(char *);   // INT
   inkcoreapi virtual int marshal_proxy_resp_status_code(char *);   // INT
