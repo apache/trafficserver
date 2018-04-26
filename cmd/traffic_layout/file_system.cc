@@ -204,7 +204,7 @@ copy_function(const char *src_path, const struct stat *sb, int flag)
       }
     }
     // hardlink bin executable
-    if (sb->st_mode == BIN_MODE) {
+    if (sb->st_mode & S_IEXEC) {
       if (link(src_path, dst_path.c_str()) != 0) {
         if (errno != EEXIST) {
           ink_warning("failed to create hard link - %s", strerror(errno));
