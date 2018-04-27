@@ -1185,7 +1185,7 @@ QUICNetVConnection::_packetize_frames()
   }
 
   // NEW_CONNECTION_ID
-  if (this->_alt_con_manager) {
+  if (this->_alt_con_manager && this->_alt_con_manager->will_generate_frame()) {
     frame =
       this->_alt_con_manager->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
     while (frame) {

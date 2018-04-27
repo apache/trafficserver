@@ -27,18 +27,32 @@
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable) : _qc(qc), _ctable(ctable)
 {
+  QUICConfig::scoped_config params;
+
+  this->_nids = params->max_alt_connection_ids();
+  this->_alt_quic_connection_ids = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
   this->_update_alt_connection_ids(-1);
+}
+
+QUICAltConnectionManager::~QUICAltConnectionManager()
+{
+  ats_free(this->_alt_quic_connection_ids);
 }
 
 void
 QUICAltConnectionManager::_update_alt_connection_ids(int8_t chosen)
 {
+  if (this->_nids == 0) {
+    // Connection migration is disabled
+    return;
+  }
+
   if (chosen == -1) {
-    chosen = countof(this->_alt_quic_connection_ids) - 1;
+    chosen = (this->_nids - 1) & 0xff;
   }
 
   QUICConfig::scoped_config params;
-  int n       = sizeof(this->_alt_quic_connection_ids);
+  int n       = this->_nids;
   int current = this->_alt_quic_connection_id_seq_num % n;
   int delta   = chosen - current;
   int count   = (n + delta) % n + 1;
@@ -60,7 +74,7 @@ QUICAltConnectionManager::_update_alt_connection_ids(int8_t chosen)
 bool
 QUICAltConnectionManager::migrate_to(QUICConnectionId cid, QUICStatelessResetToken &new_reset_token)
 {
-  for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
+  for (unsigned int i = 0; i < this->_nids; ++i) {
     AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
     if (info.id == cid) {
       // Migrate connection
@@ -76,7 +90,7 @@ QUICAltConnectionManager::migrate_to(QUICConnectionId cid, QUICStatelessResetTok
 void
 QUICAltConnectionManager::invalidate_alt_connections()
 {
-  for (unsigned int i = 0; i < countof(this->_alt_quic_connection_ids); ++i) {
+  for (unsigned int i = 0; i < this->_nids; ++i) {
     this->_ctable.erase(this->_alt_quic_connection_ids[i].id, this->_qc);
   }
 }
@@ -91,7 +105,7 @@ QUICFrameUPtr
 QUICAltConnectionManager::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-  int count           = countof(this->_alt_quic_connection_ids);
+  int count           = this->_nids;
   for (int i = 0; i < count; ++i) {
     if (!this->_alt_quic_connection_ids[i].advertised) {
       this->_alt_quic_connection_ids[i].advertised = true;
