@@ -48,10 +48,10 @@
 #include "NetworkUtilsRemote.h"
 
 #include "EventCallback.h"
-#include "MgmtMarshall.h"
+#include "rpc/utils/MgmtMarshall.h"
 
 // forward declarations
-static TSMgmtError send_and_parse_list(OpType op, LLQ *list);
+static TSMgmtError send_and_parse_list(MgmtMarshallInt op, LLQ *list);
 static TSMgmtError mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action_need);
 
 // global variables
@@ -74,14 +74,13 @@ TSInitOptionT ts_init_options;
  * parameter
  */
 static TSMgmtError
-send_and_parse_list(OpType op, LLQ *list)
+send_and_parse_list(MgmtMarshallInt op, LLQ *list)
 {
   TSMgmtError ret;
   const char *tok;
   Tokenizer tokens(REMOTE_DELIM_STR);
   tok_iter_state i_state;
 
-  OpType optype = op;
   MgmtMarshallInt err;
   MgmtMarshallData reply    = {nullptr, 0};
   MgmtMarshallString strval = nullptr;
@@ -91,17 +90,16 @@ send_and_parse_list(OpType op, LLQ *list)
   }
 
   // create and send request
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype);
+  ret = client_request(main_socket_fd, main_socket_path, op);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
 
-  ret = recv_mgmt_message(main_socket_fd, reply);
+  ret = client_get_response(main_socket_fd, op, &strval);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
-
-  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &strval);
+  ret = client_get_response(main_socket_fd, op, &err);
   if (ret != TS_ERR_OKAY) {
     goto done;
   }
@@ -143,11 +141,9 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
 {
   TSMgmtError ret;
 
-  OpType optype            = OpType::RECORD_SET;
   MgmtMarshallString name  = const_cast<MgmtMarshallString>(rec_name);
   MgmtMarshallString value = const_cast<MgmtMarshallString>(rec_val);
 
-  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt action = TS_ACTION_UNDEFINED;
 
@@ -158,19 +154,16 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
   *action_need = TS_ACTION_UNDEFINED;
 
   // create and send request
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECORD_SET, &optype, &name, &value);
+  ret = client_request(main_socket_fd, main_socket_path, RECORD_SET, &name, &value);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
 
-  ret = recv_mgmt_message(main_socket_fd, reply);
+  ret = client_get_response(main_socket_fd, RECORD_SET, &action);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
-
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::RECORD_SET, &err, &action);
-  ats_free(reply.ptr);
-
+  ret = client_get_response(main_socket_fd, RECORD_SET, &err);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
@@ -299,25 +292,20 @@ TSProxyStateT
 ProxyStateGet()
 {
   TSMgmtError ret;
-  OpType optype          = OpType::PROXY_STATE_GET;
-  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt state;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::PROXY_STATE_GET, &optype);
+  ret = client_request(main_socket_fd, main_socket_path, PROXY_STATE_GET);
   if (ret != TS_ERR_OKAY) {
     return TS_PROXY_UNDEFINED;
   }
 
-  ret = recv_mgmt_message(main_socket_fd, reply);
+  ret = client_get_response(main_socket_fd, PROXY_STATE_GET, &state);
   if (ret != TS_ERR_OKAY) {
     return TS_PROXY_UNDEFINED;
   }
-
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::PROXY_STATE_GET, &err, &state);
-  ats_free(reply.ptr);
-
-  if (ret != TS_ERR_OKAY || err != TS_ERR_OKAY) {
+  ret = client_get_response(main_socket_fd, PROXY_STATE_GET, &err);
+  if (ret != TS_ERR_OKAY) {
     return TS_PROXY_UNDEFINED;
   }
 
@@ -328,12 +316,11 @@ TSMgmtError
 ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 {
   TSMgmtError ret;
-  OpType optype          = OpType::PROXY_STATE_SET;
   MgmtMarshallInt pstate = state;
   MgmtMarshallInt pclear = clear;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::PROXY_STATE_SET, &optype, &pstate, &pclear);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::PROXY_STATE_SET, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, PROXY_STATE_SET, &pstate, &pclear);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, PROXY_STATE_SET) : ret;
 }
 
 TSMgmtError
@@ -342,22 +329,20 @@ ServerBacktrace(unsigned options, char **trace)
   ink_release_assert(trace != nullptr);
   TSMgmtError ret;
   MgmtMarshallInt err;
-  OpType optype             = OpType::SERVER_BACKTRACE;
   MgmtMarshallInt flags     = options;
   MgmtMarshallData reply    = {nullptr, 0};
   MgmtMarshallString strval = nullptr;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::SERVER_BACKTRACE, &optype, &flags);
+  ret = client_request(main_socket_fd, main_socket_path, SERVER_BACKTRACE, &flags);
   if (ret != TS_ERR_OKAY) {
     goto fail;
   }
 
-  ret = recv_mgmt_message(main_socket_fd, reply);
+  ret = client_get_response(main_socket_fd, SERVER_BACKTRACE, &strval);
   if (ret != TS_ERR_OKAY) {
     goto fail;
   }
-
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::SERVER_BACKTRACE, &err, &strval);
+  ret = client_get_response(main_socket_fd, SERVER_BACKTRACE, &err);
   if (ret != TS_ERR_OKAY) {
     goto fail;
   }
@@ -381,10 +366,9 @@ TSMgmtError
 Reconfigure()
 {
   TSMgmtError ret;
-  OpType optype = OpType::RECONFIGURE;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECONFIGURE, &optype);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::RECONFIGURE, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, RECONFIGURE);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, RECONFIGURE) : ret;
 }
 
 /*-------------------------------------------------------------------------
@@ -400,15 +384,15 @@ TSMgmtError
 Restart(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::RESTART;
   MgmtMarshallInt oval = options;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RESTART, &optype, &oval);
+  ret = client_request(main_socket_fd, main_socket_path, RESTART, RESTART, &oval); // need the second restart request
+                                                                                   //  to match handler.
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
 
-  ret = parse_generic_response(OpType::RESTART, main_socket_fd);
+  ret = client_get_response(main_socket_fd, RESTART);
   if (ret == TS_ERR_OKAY) {
     ret = reconnect_loop(MAX_CONN_TRIES);
   }
@@ -425,12 +409,11 @@ TSMgmtError
 Bounce(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::BOUNCE;
   MgmtMarshallInt oval = options;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::BOUNCE, &optype, &oval);
+  ret = client_request(main_socket_fd, main_socket_path, BOUNCE, BOUNCE, &oval);
 
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::BOUNCE, main_socket_fd) : ret;
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, BOUNCE) : ret;
 }
 
 /*-------------------------------------------------------------------------
@@ -442,12 +425,11 @@ TSMgmtError
 Stop(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::STOP;
   MgmtMarshallInt oval = options;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::STOP, &optype, &oval);
+  ret = client_request(main_socket_fd, main_socket_path, STOP, &oval);
 
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::STOP, main_socket_fd) : ret;
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, STOP) : ret;
 }
 
 /*-------------------------------------------------------------------------
@@ -459,12 +441,11 @@ TSMgmtError
 Drain(unsigned options)
 {
   TSMgmtError ret;
-  OpType optype        = OpType::DRAIN;
   MgmtMarshallInt oval = options;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::DRAIN, &optype, &oval);
+  ret = client_request(main_socket_fd, main_socket_path, DRAIN, &oval);
 
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::DRAIN, main_socket_fd) : ret;
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, DRAIN) : ret;
 }
 
 /*-------------------------------------------------------------------------
@@ -476,11 +457,10 @@ TSMgmtError
 StorageDeviceCmdOffline(const char *dev)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::STORAGE_DEVICE_CMD_OFFLINE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(dev);
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::STORAGE_DEVICE_CMD_OFFLINE, &optype, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::STORAGE_DEVICE_CMD_OFFLINE, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, STORAGE_DEVICE_CMD_OFFLINE, &name);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, STORAGE_DEVICE_CMD_OFFLINE) : ret;
 }
 
 /*-------------------------------------------------------------------------
@@ -492,12 +472,11 @@ TSMgmtError
 LifecycleMessage(const char *tag, void const *data, size_t data_size)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::LIFECYCLE_MESSAGE;
   MgmtMarshallString mtag = const_cast<MgmtMarshallString>(tag);
   MgmtMarshallData mdata  = {const_cast<void *>(data), data_size};
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::LIFECYCLE_MESSAGE, &optype, &mtag, &mdata);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::LIFECYCLE_MESSAGE, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, LIFECYCLE_MESSAGE, &mtag, &mdata);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, LIFECYCLE_MESSAGE) : ret;
 }
 
 /***************************************************************************
@@ -532,12 +511,10 @@ mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData &data, TSRe
 }
 
 static TSMgmtError
-mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
+mgmt_record_get_reply(MgmtMarshallInt op, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
 
-  MgmtMarshallData reply = {nullptr, 0};
-  MgmtMarshallInt err;
   MgmtMarshallInt rclass;
   MgmtMarshallInt type;
   MgmtMarshallString name = nullptr;
@@ -547,19 +524,8 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
   rec_ele->rec_type = TS_REC_UNDEFINED;
 
   // Receive the next record reply.
-  ret = recv_mgmt_message(main_socket_fd, reply);
+  ret = client_get_response(main_socket_fd, op, &rclass, &type, &name, &value);
   if (ret != TS_ERR_OKAY) {
-    return ret;
-  }
-
-  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &rclass, &type, &name, &value);
-  ats_free(reply.ptr);
-  if (ret != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  if (err != TS_ERR_OKAY) {
-    ret = (TSMgmtError)err;
     goto done;
   }
 
@@ -578,14 +544,7 @@ static TSMgmtError
 mgmt_record_describe_reply(TSConfigRecordDescription *val)
 {
   TSMgmtError ret;
-  MgmtMarshallData reply = {nullptr, 0};
 
-  ret = recv_mgmt_message(main_socket_fd, reply);
-  if (ret != TS_ERR_OKAY) {
-    return ret;
-  }
-
-  MgmtMarshallInt err;
   MgmtMarshallString name = nullptr;
   MgmtMarshallString expr = nullptr;
   MgmtMarshallData value  = {nullptr, 0};
@@ -602,17 +561,9 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   MgmtMarshallInt checktype;
   MgmtMarshallInt source;
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass,
-                           &version, &rsb, &order, &access, &update, &updatetype, &checktype, &source, &expr);
-
-  ats_free(reply.ptr);
-
+  ret = client_get_response(main_socket_fd, RECORD_DESCRIBE_CONFIG, &name, &value, &deflt, &rtype, &rclass, &version, &rsb, &order,
+                            &access, &update, &updatetype, &checktype, &source, &expr);
   if (ret != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  if (err != TS_ERR_OKAY) {
-    ret = (TSMgmtError)err;
     goto done;
   }
 
@@ -646,7 +597,6 @@ TSMgmtError
 MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
-  OpType optype             = OpType::RECORD_GET;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   if (!rec_name || !rec_ele) {
@@ -654,7 +604,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
   }
 
   // create and send request
-  if ((ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECORD_GET, &optype, &record)) != TS_ERR_OKAY) {
+  if ((ret = client_request(main_socket_fd, main_socket_path, RECORD_GET, &record)) != TS_ERR_OKAY) {
     return ret;
   }
 
@@ -663,21 +613,33 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
   // when restarting traffic_server, even though it can't be recreated in a
   // test environment, it has been observed in production the names doesn't
   // match and caused traffic_cop to crash due to type mismatch.
-  while ((ret = mgmt_record_get_reply(OpType::RECORD_GET, rec_ele)) == TS_ERR_OKAY && strcmp(rec_name, rec_ele->rec_name) != 0) {
+  while ((ret = mgmt_record_get_reply(RECORD_GET, rec_ele)) == TS_ERR_OKAY && strcmp(rec_name, rec_ele->rec_name) != 0) {
   }
-  return ret;
+
+  MgmtMarshallInt err;
+
+  ret = client_get_response(main_socket_fd, RECORD_GET, &err);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+  if (err != TS_ERR_OKAY) {
+    return (TSMgmtError)err;
+  }
+
+  return TS_ERR_OKAY;
 }
 
 TSMgmtError
 MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList rec_vals)
 {
   TSMgmtError ret;
-  OpType optype             = OpType::RECORD_DESCRIBE_CONFIG;
+  TSMgmtError parse;
+  MgmtMarshallInt err;
   MgmtMarshallInt flags     = options | RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   // create and send request
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECORD_DESCRIBE_CONFIG, &optype, &record, &flags);
+  ret = client_request(main_socket_fd, main_socket_path, RECORD_DESCRIBE_CONFIG, &record, &flags);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
@@ -688,10 +650,10 @@ MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList 
     val = TSConfigRecordDescriptionCreate();
 
     // parse the reply to get record value and type
-    ret = mgmt_record_describe_reply(val);
+    parse = mgmt_record_describe_reply(val);
     if (ret != TS_ERR_OKAY) {
       TSConfigRecordDescriptionDestroy(val);
-      goto fail;
+      break; // even if we can't parse we need to read the err code off the socket
     }
 
     // A NULL record ends the list.
@@ -701,6 +663,16 @@ MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList 
     }
 
     enqueue((LLQ *)rec_vals, val);
+  }
+
+  ret = client_get_response(main_socket_fd, RECORD_DESCRIBE_CONFIG, &err);
+  if (ret != TS_ERR_OKAY || parse != TS_ERR_OKAY) {
+    goto fail;
+  }
+
+  if (err != TS_ERR_OKAY) {
+    ret = (TSMgmtError)err;
+    goto fail;
   }
 
   return TS_ERR_OKAY;
@@ -718,17 +690,35 @@ TSMgmtError
 MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription *val)
 {
   TSMgmtError ret;
-  OpType optype             = OpType::RECORD_DESCRIBE_CONFIG;
+  TSMgmtError parse;
   MgmtMarshallInt flags     = options & ~RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   // create and send request
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECORD_DESCRIBE_CONFIG, &optype, &record, &flags);
+  ret = client_request(main_socket_fd, main_socket_path, RECORD_DESCRIBE_CONFIG, &record, &flags);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
 
-  return mgmt_record_describe_reply(val);
+  parse = mgmt_record_describe_reply(val);
+
+  MgmtMarshallInt err;
+  ret = client_get_response(main_socket_fd, RECORD_DESCRIBE_CONFIG, &err);
+
+  // We have a lot of return codes here. The reason is that even if we find a parsing
+  // error, we still need to pull the err code off the socket. Thus, we need two additional
+  // checks to see if we successfully got the err code and another to see that the error code
+  // is ok.
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+  if (parse != TS_ERR_OKAY) {
+    return parse;
+  }
+  if (err != TS_ERR_OKAY) {
+    return (TSMgmtError)err;
+  }
+  return TS_ERR_OKAY;
 }
 
 TSMgmtError
@@ -737,14 +727,14 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
   TSMgmtError ret;
   TSRecordEle *rec_ele;
 
-  OpType optype             = OpType::RECORD_MATCH_GET;
+  MgmtMarshallInt err;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(regex);
 
   if (!regex || !rec_vals) {
     return TS_ERR_PARAMS;
   }
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::RECORD_MATCH_GET, &optype, &record);
+  ret = client_request(main_socket_fd, main_socket_path, RECORD_MATCH_GET, &record);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
@@ -753,7 +743,7 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
     rec_ele = TSRecordEleCreate();
 
     // parse the reply to get record value and type
-    ret = mgmt_record_get_reply(OpType::RECORD_MATCH_GET, rec_ele);
+    ret = mgmt_record_get_reply(RECORD_GET, rec_ele);
     if (ret != TS_ERR_OKAY) {
       TSRecordEleDestroy(rec_ele);
       goto fail;
@@ -766,6 +756,16 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
     }
 
     enqueue((LLQ *)rec_vals, rec_ele);
+  }
+
+  ret = client_get_response(main_socket_fd, RECORD_MATCH_GET, &err);
+  if (ret != TS_ERR_OKAY) {
+    goto fail;
+  }
+
+  if (err != TS_ERR_OKAY) {
+    ret = (TSMgmtError)err;
+    goto fail;
   }
 
   return TS_ERR_OKAY;
@@ -883,15 +883,14 @@ TSMgmtError
 EventResolve(const char *event_name)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::EVENT_RESOLVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
   if (!event_name) {
     return TS_ERR_PARAMS;
   }
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::EVENT_RESOLVE, &optype, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(OpType::EVENT_RESOLVE, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, EVENT_RESOLVE, &name);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, EVENT_RESOLVE) : ret;
 }
 
 /*-------------------------------------------------------------------------
@@ -907,7 +906,7 @@ ActiveEventGetMlt(LLQ *active_events)
     return TS_ERR_PARAMS;
   }
 
-  return (send_and_parse_list(OpType::EVENT_GET_MLT, active_events));
+  return (send_and_parse_list(EVENT_GET_MLT, active_events));
 }
 
 /*-------------------------------------------------------------------------
@@ -919,10 +918,8 @@ TSMgmtError
 EventIsActive(const char *event_name, bool *is_current)
 {
   TSMgmtError ret;
-  OpType optype           = OpType::EVENT_ACTIVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
-  MgmtMarshallData reply = {nullptr, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt bval;
 
@@ -931,19 +928,17 @@ EventIsActive(const char *event_name, bool *is_current)
   }
 
   // create and send request
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::EVENT_ACTIVE, &optype, &name);
+  ret = client_request(main_socket_fd, main_socket_path, EVENT_ACTIVE, &name);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
 
-  ret = recv_mgmt_message(main_socket_fd, reply);
+  // err code is always sent seperately
+  ret = client_get_response(main_socket_fd, EVENT_ACTIVE, &bval);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
-
-  ret = recv_mgmt_response(reply.ptr, reply.len, OpType::EVENT_ACTIVE, &err, &bval);
-  ats_free(reply.ptr);
-
+  ret = client_get_response(main_socket_fd, EVENT_ACTIVE, &err);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
@@ -981,10 +976,9 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
 
   // if we need to notify traffic manager of the event then send msg
   if (first_time) {
-    OpType optype           = OpType::EVENT_REG_CALLBACK;
     MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
-    ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, OpType::EVENT_REG_CALLBACK, &optype, &name);
+    ret = client_request(main_socket_fd, main_socket_path, EVENT_REG_CALLBACK, &name);
     if (ret != TS_ERR_OKAY) {
       return ret;
     }
@@ -1024,7 +1018,7 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 
   // check if we need to notify traffic manager of the event (notify TM
   // only if the event has no callbacks)
-  err = send_unregister_all_callbacks(event_socket_fd, remote_event_callbacks);
+  err = send_unregister_all_callbacks(event_socket_fd, event_socket_path, remote_event_callbacks);
   if (err != TS_ERR_OKAY) {
     return err;
   }
@@ -1036,32 +1030,28 @@ TSMgmtError
 HostStatusSetDown(const char *host_name)
 {
   TSMgmtError ret         = TS_ERR_PARAMS;
-  OpType op               = OpType::HOST_STATUS_DOWN;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, HOST_STATUS_DOWN, &name);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, HOST_STATUS_DOWN) : ret;
 }
 
 TSMgmtError
 HostStatusSetUp(const char *host_name)
 {
   TSMgmtError ret         = TS_ERR_PARAMS;
-  OpType op               = OpType::HOST_STATUS_UP;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, HOST_STATUS_UP, &name);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, HOST_STATUS_UP) : ret;
 }
 
 TSMgmtError
 StatsReset(const char *stat_name)
 {
   TSMgmtError ret;
-  OpType op               = OpType::STATS_RESET_NODE;
-  OpType optype           = op;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(stat_name);
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
+  ret = client_request(main_socket_fd, main_socket_path, STATS_RESET_NODE, &name);
+  return (ret == TS_ERR_OKAY) ? client_get_response(main_socket_fd, STATS_RESET_NODE) : ret;
 }

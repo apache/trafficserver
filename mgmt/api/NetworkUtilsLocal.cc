@@ -34,11 +34,10 @@
 #include "ts/ink_sock.h"
 #include "ts/Diags.h"
 #include "MgmtUtils.h"
-#include "MgmtSocket.h"
-#include "MgmtMarshall.h"
+#include "rpc/utils/MgmtSocket.h"
+#include "rpc/utils/MgmtMarshall.h"
 #include "CoreAPIShared.h"
 #include "NetworkUtilsLocal.h"
-#include "NetworkMessage.h"
 
 /**********************************************************************
  * preprocess_msg
@@ -54,15 +53,13 @@
 TSMgmtError
 preprocess_msg(int fd, void **req, size_t *reqlen)
 {
-  TSMgmtError ret;
   MgmtMarshallData msg;
 
   *req    = nullptr;
   *reqlen = 0;
 
-  ret = recv_mgmt_message(fd, msg);
-  if (ret != TS_ERR_OKAY) {
-    return ret;
+  if (mgmt_message_read(fd, &msg) == -1) {
+    return TS_ERR_PARAMS;
   }
 
   // We should never receive an empty payload.

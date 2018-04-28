@@ -35,17 +35,15 @@ noinst_LTLIBRARIES = libmgmtapilocal.la libmgmtapi.la
 lib_LTLIBRARIES = libtsmgmt.la
 
 libmgmtapi_la_SOURCES = \
-	CoreAPI.h \
-	CoreAPIShared.cc \
-	CoreAPIShared.h \
-	EventCallback.cc \
-	EventCallback.h \
-	GenericParser.cc \
-	GenericParser.h \
-	INKMgmtAPI.cc \
-	NetworkMessage.cc \
-	NetworkMessage.h \
-	include/mgmtapi.h
+  CoreAPI.h \
+  CoreAPIShared.cc \
+  CoreAPIShared.h \
+  EventCallback.cc \
+  EventCallback.h \
+  GenericParser.cc \
+  GenericParser.h \
+  INKMgmtAPI.cc \
+  include/mgmtapi.h 
 
 if BUILD_TESTS
 noinst_PROGRAMS = traffic_api_cli_remote
@@ -66,23 +64,24 @@ libtsmgmt_la_SOURCES = \
 	NetworkUtilsRemote.h
 
 libmgmtapilocal_la_LIBADD = \
-	libmgmtapi.la \
-	$(top_builddir)/lib/ts/libtsutil.la
+  libmgmtapi.la \
+  $(top_builddir)/lib/ts/libtsutil.la 
 
 libtsmgmt_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsmgmt_la_LIBADD = @LIBOBJS@ \
-	libmgmtapi.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/mgmt/utils/libutils_p.la
+  libmgmtapi.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/rpc/librpc_c.la \
+  $(top_builddir)/mgmt/utils/libutils_p.la 
 
 if BUILD_TESTS
 traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
 endif
 
 traffic_api_cli_remote_LDADD = \
-	libtsmgmt.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	@LIBTCL@ @OPENSSL_LIBS@
-
+  libtsmgmt.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBTCL@ @OPENSSL_LIBS@ @HWLOC_LIBS@
+ 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

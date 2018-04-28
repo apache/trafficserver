@@ -24,7 +24,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_assert.h"
 #include "ts/ink_cap.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 
 #if HAVE_UCRED_H
 #include <ucred.h>

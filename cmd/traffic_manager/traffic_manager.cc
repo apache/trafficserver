@@ -40,6 +40,7 @@
 #include "HTTP.h"
 #include "CoreAPI.h"
 
+#include "rpc/ServerControl.h"
 #include "LocalManager.h"
 #include "TSControlMain.h"
 #include "EventControlMain.h"
@@ -53,6 +54,7 @@
 
 #include "metrics.h"
 
+#include <memory> // for unique_ptr
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
@@ -69,6 +71,7 @@
 // These globals are still referenced directly by management API.
 LocalManager *lmgmt = nullptr;
 FileManager *configFiles;
+std::unique_ptr<MgmtServer> mgmt_server;
 
 static void fileUpdated(char *fname, bool incVersion);
 static void runAsUser(const char *userName);
@@ -680,21 +683,13 @@ main(int argc, const char **argv)
 
   // Setup the API and event sockets
   std::string rundir(RecConfigReadRuntimeDir());
-  std::string apisock(Layout::relative_to(rundir, MGMTAPI_MGMT_SOCKET_NAME));
   std::string eventsock(Layout::relative_to(rundir, MGMTAPI_EVENT_SOCKET_NAME));
 
   mode_t oldmask = umask(0);
   mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
 
-  int mgmtapiFD         = -1; // FD for the api interface to issue commands
   int eventapiFD        = -1; // FD for the api and clients to handle event callbacks
   char mgmtapiFailMsg[] = "Traffic server management API service Interface Failed to Initialize.";
-
-  mgmtapiFD = bind_unix_domain_socket(apisock.c_str(), newmode);
-  if (mgmtapiFD == -1) {
-    mgmt_log("[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n", apisock.c_str());
-    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, mgmtapiFailMsg);
-  }
 
   eventapiFD = bind_unix_domain_socket(eventsock.c_str(), newmode);
   if (eventapiFD == -1) {
@@ -703,7 +698,41 @@ main(int argc, const char **argv)
   }
 
   umask(oldmask);
-  ink_thread_create(nullptr, ts_ctrl_main, &mgmtapiFD, 0, 0, nullptr);
+
+  // Setup RPC server.
+  mgmt_server = std::make_unique<MgmtServer>(newmode);
+
+  if (mgmt_server->bindSocket(MGMTAPI_MGMT_SOCKET_NAME) == -1) {
+    mgmt_log("[WebIntrMain] Unable to set up socket for handling management API calls.");
+    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, mgmtapiFailMsg);
+  }
+
+  // callback functions are located in TSControlMain.cc
+  mgmt_server->registerControlCallback(RECORD_SET, handle_record_set);
+  mgmt_server->registerControlCallback(RECORD_GET, handle_record_get);
+  mgmt_server->registerControlCallback(PROXY_STATE_GET, handle_proxy_state_get);
+  mgmt_server->registerControlCallback(PROXY_STATE_SET, handle_proxy_state_set);
+  mgmt_server->registerControlCallback(RECONFIGURE, handle_reconfigure);
+  mgmt_server->registerControlCallback(RESTART, handle_restart);
+  mgmt_server->registerControlCallback(BOUNCE, handle_restart);
+  mgmt_server->registerControlCallback(STOP, handle_stop);
+  mgmt_server->registerControlCallback(DRAIN, handle_drain);
+  mgmt_server->registerControlCallback(EVENT_RESOLVE, handle_event_resolve);
+  mgmt_server->registerControlCallback(EVENT_GET_MLT, handle_event_get_mlt);
+  mgmt_server->registerControlCallback(EVENT_ACTIVE, handle_event_active);
+  mgmt_server->registerControlCallback(STATS_RESET_NODE, handle_stats_reset);
+  mgmt_server->registerControlCallback(STORAGE_DEVICE_CMD_OFFLINE, handle_storage_device_cmd_offline);
+  mgmt_server->registerControlCallback(RECORD_MATCH_GET, handle_record_match);
+  mgmt_server->registerControlCallback(API_PING, handle_api_ping);
+  mgmt_server->registerControlCallback(SERVER_BACKTRACE, handle_server_backtrace);
+  mgmt_server->registerControlCallback(RECORD_DESCRIBE_CONFIG, handle_record_describe);
+  mgmt_server->registerControlCallback(LIFECYCLE_MESSAGE, handle_lifecycle_message);
+  mgmt_server->registerControlCallback(HOST_STATUS_UP, handle_host_status_up);
+  mgmt_server->registerControlCallback(HOST_STATUS_DOWN, handle_host_status_down);
+
+  // only start once all callbacks registered.
+  mgmt_server->start();
+
   ink_thread_create(nullptr, event_callback_main, &eventapiFD, 0, 0, nullptr);
 
   mgmt_log("[TrafficManager] Setup complete\n");
@@ -726,7 +755,7 @@ main(int argc, const char **argv)
   uint64_t last_start_epoc_s = 0;  // latest start attempt in seconds since epoc
 
   for (;;) {
-    lmgmt->processEventQueue();
+    lmgmt->processEventQueue(); // events are queued through rpc lib.
     lmgmt->pollMgmtProcessServer();
 
     if (binding_version != metrics_version) {

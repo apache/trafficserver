@@ -34,10 +34,11 @@ traffic_cop_SOURCES = \
 	traffic_cop.cc
 
 traffic_cop_LDADD = \
-	$(top_builddir)/mgmt/libmgmt_c.la \
-	$(top_builddir)/mgmt/api/libtsmgmt.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/lib/records/librecords_cop.a
+  $(top_builddir)/mgmt/libmgmt_c.la \
+  $(top_builddir)/mgmt/api/libtsmgmt.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/records/librecords_cop.a \
+  $(top_builddir)/lib/rpc/librpc_c.la 
 
 include $(top_srcdir)/build/tidy.mk
 

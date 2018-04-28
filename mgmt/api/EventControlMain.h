@@ -31,7 +31,8 @@
 
 #pragma once
 
-#include "mgmtapi.h"       //add the include path b/c included in web dir
+#include "mgmtapi.h" //add the include path b/c included in web dir
+#include "TSControlMain.h"
 #include "CoreAPIShared.h" // for NUM_EVENTS
 
 // use events_registered[event_id] as index to check if alarm is registered

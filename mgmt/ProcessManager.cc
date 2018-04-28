@@ -28,7 +28,7 @@
 #include "ProcessManager.h"
 
 #include "ts/ink_apidefs.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 #include "ts/I_Layout.h"
 
 /*
@@ -218,14 +218,14 @@ ProcessManager::reconfigure()
 void
 ProcessManager::signalConfigFileChild(const char *parent, const char *child, unsigned int options)
 {
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+  MgmtMarshallInt mgmtopt    = options;
+  MgmtMarshallString mparent = const_cast<MgmtMarshallString>(parent);
+  MgmtMarshallString mchild  = const_cast<MgmtMarshallString>(child);
 
-  MgmtMarshallInt mgmtopt = options;
-
-  size_t len   = mgmt_message_length(fields, countof(fields), &parent, &child, &mgmtopt);
+  size_t len   = mgmt_message_length(&mparent, &mchild, &mgmtopt);
   void *buffer = ats_malloc(len);
 
-  mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child, &mgmtopt);
+  mgmt_message_marshall(buffer, len, &mparent, &mchild, &mgmtopt);
   signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, (const char *)buffer, len);
 
   ats_free(buffer);

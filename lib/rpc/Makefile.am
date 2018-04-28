@@ -17,37 +17,42 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+SUBDIRS = utils
+
 AM_CPPFLAGS += \
-	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/api/include \
-	$(TS_INCLUDES)
+  $(iocore_include_dirs) \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/api \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/mgmt/api/include \
+  -I$(abs_top_srcdir)/lib/tsconfig \
+  -I$(abs_top_srcdir)/proxy \
+  -I$(abs_top_srcdir)/proxy/http \
+  -I$(abs_top_srcdir)/proxy/hdrs \
+  -I$(abs_top_srcdir)/lib/records \
+  -I$(abs_top_srcdir)/lib \
+  $(TS_INCLUDES) \
+  @OPENSSL_INCLUDES@
 
-bin_PROGRAMS = traffic_ctl
+# two libraries because ServerControl needs the EventSystem which
+# pulls alot of dependencies that the ClientControl doesn't need
+noinst_LTLIBRARIES = librpc_c.la librpc_s.la
 
-traffic_ctl_SOURCES = \
-	alarm.cc \
-	config.cc \
-	metric.cc \
-	plugin.cc \
-	server.cc \
-	storage.cc \
-	host.cc \
-	traffic_ctl.cc
+librpc_c_la_SOURCES = \
+  ClientControl.cc \
+  ClientControl.h 
 
-traffic_ctl_LDADD = \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/rpc/librpc_c.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @HWLOC_LIBS@
+librpc_s_la_SOURCES = \
+  ServerControl.cc \
+  ServerControl.h 
+
+librpc_c_la_LIBADD = \
+  $(top_builddir)/lib/rpc/utils/librpc_utils.la
+
+librpc_s_la_LIBADD = \
+  $(top_builddir)/lib/rpc/utils/librpc_utils.la
 
 include $(top_srcdir)/build/tidy.mk
 
-clang-tidy-local: $(DIST_SOURCES)
+tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

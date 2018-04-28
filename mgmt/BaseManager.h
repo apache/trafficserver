@@ -40,7 +40,7 @@
 #include "ts/ink_hash_table.h"
 
 #include "MgmtDefs.h"
-#include "MgmtMarshall.h"
+#include "rpc/utils/MgmtMarshall.h"
 
 /*******************************************
  * used by LocalManager and in Proxy Main. *
@@ -83,27 +83,27 @@
  ***********************************************************************/
 
 // Signal flows: traffic server -> traffic manager
-#define MGMT_SIGNAL_PID 0
-#define MGMT_SIGNAL_MACHINE_UP 1 /* Data is ip addr */
-#define MGMT_SIGNAL_MACHINE_DOWN 2
-#define MGMT_SIGNAL_CONFIG_ERROR 3 /* Data is descriptive string */
-#define MGMT_SIGNAL_SYSTEM_ERROR 4
-#define MGMT_SIGNAL_LOG_SPACE_CRISIS 5
-#define MGMT_SIGNAL_CONFIG_FILE_READ 6
-#define MGMT_SIGNAL_CACHE_ERROR 7
-#define MGMT_SIGNAL_CACHE_WARNING 8
-#define MGMT_SIGNAL_LOGGING_ERROR 9
-#define MGMT_SIGNAL_LOGGING_WARNING 10
-// Currently unused: 11
-// Currently unused: 12
-// Currently unused: 13
-#define MGMT_SIGNAL_PLUGIN_SET_CONFIG 14
-#define MGMT_SIGNAL_LOG_FILES_ROLLED 15
-#define MGMT_SIGNAL_LIBRECORDS 16
-#define MGMT_SIGNAL_HTTP_CONGESTED_SERVER 20  /* Congestion control -- congested server */
-#define MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER 21 /* Congestion control -- alleviated server */
+#define MGMT_SIGNAL_PID 100
+#define MGMT_SIGNAL_MACHINE_UP 101 /* Data is ip addr */
+#define MGMT_SIGNAL_MACHINE_DOWN 102
+#define MGMT_SIGNAL_CONFIG_ERROR 103 /* Data is descriptive string */
+#define MGMT_SIGNAL_SYSTEM_ERROR 104
+#define MGMT_SIGNAL_LOG_SPACE_CRISIS 105
+#define MGMT_SIGNAL_CONFIG_FILE_READ 106
+#define MGMT_SIGNAL_CACHE_ERROR 107
+#define MGMT_SIGNAL_CACHE_WARNING 108
+#define MGMT_SIGNAL_LOGGING_ERROR 109
+#define MGMT_SIGNAL_LOGGING_WARNING 110
+// Currently unused: 111
+// Currently unused: 112
+// Currently unused: 113
+#define MGMT_SIGNAL_PLUGIN_SET_CONFIG 114
+#define MGMT_SIGNAL_LOG_FILES_ROLLED 115
+#define MGMT_SIGNAL_LIBRECORDS 116
+#define MGMT_SIGNAL_HTTP_CONGESTED_SERVER 120  /* Congestion control -- congested server */
+#define MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER 121 /* Congestion control -- alleviated server */
 
-#define MGMT_SIGNAL_CONFIG_FILE_CHILD 22
+#define MGMT_SIGNAL_CONFIG_FILE_CHILD 122
 
 #define MGMT_SIGNAL_SAC_SERVER_DOWN 400
 

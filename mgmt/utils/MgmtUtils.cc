@@ -23,7 +23,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_sock.h"
 #include "MgmtUtils.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 #include "ts/Diags.h"
 
 #include "LocalManager.h"

@@ -28,7 +28,7 @@
 #include "MgmtUtils.h"
 #include "ts/I_Layout.h"
 #include "LocalManager.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "FileManager.h"
 #include <ts/string_view.h>
@@ -578,19 +578,18 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     break;
   // Congestion Control - end
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
-    static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
-    char *parent                           = nullptr;
-    char *child                            = nullptr;
-    MgmtMarshallInt options                = 0;
-    if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options) != -1) {
-      configFiles->configFileChild(parent, child, (unsigned int)options);
+    MgmtMarshallInt options    = 0;
+    MgmtMarshallString mparent = nullptr;
+    MgmtMarshallString mchild  = nullptr;
+    if (mgmt_message_parse(data_raw, mh->data_len, &mparent, &mchild, &options) != -1) {
+      configFiles->configFileChild(mparent, mchild, static_cast<unsigned int>(options));
     } else {
       mgmt_log("[LocalManager::handleMgmtMsgFromProcesses] "
                "MGMT_SIGNAL_CONFIG_FILE_CHILD mgmt_message_parse error\n");
     }
     // Output pointers are guaranteed to be NULL or valid.
-    ats_free_null(parent);
-    ats_free_null(child);
+    ats_free_null(mparent);
+    ats_free_null(mchild);
   } break;
   case MGMT_SIGNAL_SAC_SERVER_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);

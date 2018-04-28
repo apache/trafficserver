@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = utils api
+SUBDIRS = utils api 
 
 # Decoder ring:
 # 	libmgmt_c.la 	Configuration records (defaults).
@@ -71,8 +71,9 @@ libmgmt_lm_la_LIBADD = \
 	$(top_builddir)/mgmt/utils/libutils_lm.la
 
 libmgmt_p_la_LIBADD = \
-	libmgmt_c.la \
-	$(top_builddir)/mgmt/utils/libutils_p.la
+  libmgmt_c.la \
+  $(top_builddir)/lib/rpc/utils/librpc_utils.la \
+  $(top_builddir)/mgmt/utils/libutils_p.la
 
 include $(top_srcdir)/build/tidy.mk
 

@@ -31,7 +31,7 @@
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
 #include "ExpandingArray.h"
-#include "MgmtSocket.h"
+#include "rpc/utils/MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "ts/I_Layout.h"
 #include "FileManager.h"

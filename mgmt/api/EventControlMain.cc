@@ -32,13 +32,12 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_sock.h"
 #include "LocalManager.h"
-#include "MgmtSocket.h"
-#include "MgmtMarshall.h"
+#include "rpc/utils/MgmtSocket.h"
+#include "rpc/utils/MgmtMarshall.h"
 #include "MgmtUtils.h"
 #include "EventControlMain.h"
 #include "CoreAPI.h"
 #include "NetworkUtilsLocal.h"
-#include "NetworkMessage.h"
 
 // variables that are very important
 ink_mutex mgmt_events_lock;
@@ -385,11 +384,10 @@ event_callback_main(void *arg)
       while (con_entry) {
         client_entry = (EventClientT *)ink_hash_table_entry_value(accepted_clients, con_entry);
         if (client_entry->events_registered[event->id]) {
-          OpType optype           = OpType::EVENT_NOTIFY;
           MgmtMarshallString name = event->name;
           MgmtMarshallString desc = event->description;
 
-          ret = send_mgmt_request(client_entry->fd, OpType::EVENT_NOTIFY, &optype, &name, &desc);
+          ret = mgmt_message_write(client_entry->fd, EVENT_NOTIFY, &name, &desc);
           if (ret != TS_ERR_OKAY) {
             Debug("event", "sending even notification to fd [%d] failed.", client_entry->fd);
           }
@@ -442,12 +440,12 @@ event_callback_main(void *arg)
 static TSMgmtError
 handle_event_reg_callback(EventClientT *client, void *req, size_t reqlen)
 {
-  MgmtMarshallInt optype;
+  MgmtMarshallInt op;
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_REG_CALLBACK, &optype, &name);
-  if (ret != TS_ERR_OKAY) {
+  if (mgmt_message_parse(req, reqlen, EVENT_REG_CALLBACK, &op, &name) == -1) {
+    ret = TS_ERR_PARAMS;
     goto done;
   }
 
@@ -485,12 +483,12 @@ done:
 static TSMgmtError
 handle_event_unreg_callback(EventClientT *client, void *req, size_t reqlen)
 {
-  MgmtMarshallInt optype;
+  MgmtMarshallInt op;
   MgmtMarshallString name = nullptr;
   TSMgmtError ret;
 
-  ret = recv_mgmt_request(req, reqlen, OpType::EVENT_UNREG_CALLBACK, &optype, &name);
-  if (ret != TS_ERR_OKAY) {
+  if (mgmt_message_parse(req, reqlen, EVENT_UNREG_CALLBACK, &op, &name) == -1) {
+    ret = TS_ERR_PARAMS;
     goto done;
   }
 
@@ -544,7 +542,10 @@ static const event_message_handler handlers[] = {
 static TSMgmtError
 handle_event_message(EventClientT *client, void *req, size_t reqlen)
 {
-  OpType optype = extract_mgmt_request_optype(req, reqlen);
+  MgmtMarshallInt optype;
+  if (mgmt_message_parse(req, reqlen, &optype) == -1) {
+    return TS_ERR_PARAMS;
+  }
 
   if (static_cast<unsigned>(optype) >= countof(handlers)) {
     goto fail;
