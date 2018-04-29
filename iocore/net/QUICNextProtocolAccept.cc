@@ -98,6 +98,4 @@ QUICNextProtocolAccept::cloneProtoSet()
   return this->protoset.clone();
 }
 
-QUICNextProtocolAccept::~QUICNextProtocolAccept()
-{
-}
+QUICNextProtocolAccept::~QUICNextProtocolAccept() {}

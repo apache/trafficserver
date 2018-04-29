@@ -57,9 +57,7 @@ QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh) : Continuation(m.
   SET_HANDLER(&QUICPollCont::pollEvent);
 }
 
-QUICPollCont::~QUICPollCont()
-{
-}
+QUICPollCont::~QUICPollCont() {}
 
 void
 QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)

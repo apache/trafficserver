@@ -32,9 +32,7 @@
 // QUICPacketProtection
 //
 
-QUICPacketProtection::~QUICPacketProtection()
-{
-}
+QUICPacketProtection::~QUICPacketProtection() {}
 
 void
 QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase)

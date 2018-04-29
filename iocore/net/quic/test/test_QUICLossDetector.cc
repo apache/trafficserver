@@ -138,7 +138,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     afc->update(pn9, false, true);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     std::shared_ptr<QUICFrame> x = afc->generate_frame(2048, 2048);
-    frame = std::dynamic_pointer_cast<QUICAckFrame>(x);
+    frame                        = std::dynamic_pointer_cast<QUICAckFrame>(x);
     detector.handle_frame(frame);
     ink_hrtime_sleep(HRTIME_MSECONDS(5000));
 

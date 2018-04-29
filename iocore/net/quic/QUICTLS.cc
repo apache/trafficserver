@@ -51,9 +51,7 @@ QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless)
   this->_server_pp = new QUICPacketProtection();
 }
 
-QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICTLS(ssl, nvc_ctx, false)
-{
-}
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICTLS(ssl, nvc_ctx, false) {}
 
 QUICTLS::~QUICTLS()
 {

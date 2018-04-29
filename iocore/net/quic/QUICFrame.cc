@@ -731,7 +731,8 @@ QUICAckFrame::AckBlockSection::const_iterator::const_iterator(uint8_t index, con
 }
 
 // FIXME: something wrong with clang-format?
-const QUICAckFrame::AckBlock &QUICAckFrame::AckBlockSection::const_iterator::operator++()
+const QUICAckFrame::AckBlock &
+QUICAckFrame::AckBlockSection::const_iterator::operator++()
 {
   ++(this->_index);
 

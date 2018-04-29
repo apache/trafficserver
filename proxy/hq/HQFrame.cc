@@ -75,9 +75,7 @@ HQFrame::HQFrame(const uint8_t *buf, size_t buf_len)
   this->_payload_offset = length_field_length + 2;
 }
 
-HQFrame::HQFrame(HQFrameType type) : _type(type)
-{
-}
+HQFrame::HQFrame(HQFrameType type) : _type(type) {}
 
 uint64_t
 HQFrame::total_length() const
@@ -120,9 +118,7 @@ HQFrame::reset(const uint8_t *buf, size_t len)
 //
 // UNKNOWN Frame
 //
-HQUnknownFrame::HQUnknownFrame(const uint8_t *buf, size_t buf_len) : HQFrame(buf, buf_len), _buf(buf), _buf_len(buf_len)
-{
-}
+HQUnknownFrame::HQUnknownFrame(const uint8_t *buf, size_t buf_len) : HQFrame(buf, buf_len), _buf(buf), _buf_len(buf_len) {}
 
 void
 HQUnknownFrame::store(uint8_t *buf, size_t *len) const

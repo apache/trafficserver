@@ -33,9 +33,7 @@ HQSessionAccept::HQSessionAccept(const HttpSessionAccept::Options &_o) : Session
   SET_HANDLER(&HQSessionAccept::mainEvent);
 }
 
-HQSessionAccept::~HQSessionAccept()
-{
-}
+HQSessionAccept::~HQSessionAccept() {}
 
 bool
 HQSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)

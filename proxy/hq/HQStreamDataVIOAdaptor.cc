@@ -24,9 +24,7 @@
 #include "HQStreamDataVIOAdaptor.h"
 #include "I_VIO.h"
 
-HQStreamDataVIOAdaptor::HQStreamDataVIOAdaptor(VIO *sink) : _sink_vio(sink)
-{
-}
+HQStreamDataVIOAdaptor::HQStreamDataVIOAdaptor(VIO *sink) : _sink_vio(sink) {}
 
 std::vector<HQFrameType>
 HQStreamDataVIOAdaptor::interests()

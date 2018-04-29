@@ -24,9 +24,7 @@
 #include "HQHeaderVIOAdaptor.h"
 #include "I_VIO.h"
 
-HQHeaderVIOAdaptor::HQHeaderVIOAdaptor(VIO *sink) : _sink_vio(sink)
-{
-}
+HQHeaderVIOAdaptor::HQHeaderVIOAdaptor(VIO *sink) : _sink_vio(sink) {}
 
 std::vector<HQFrameType>
 HQHeaderVIOAdaptor::interests()

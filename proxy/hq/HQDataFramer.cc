@@ -25,9 +25,7 @@
 #include "HQDataFramer.h"
 #include "HQClientTransaction.h"
 
-HQDataFramer::HQDataFramer(HQClientTransaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source)
-{
-}
+HQDataFramer::HQDataFramer(HQClientTransaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source) {}
 
 HQFrameUPtr
 HQDataFramer::generate_frame(uint16_t max_size)

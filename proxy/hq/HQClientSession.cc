@@ -23,9 +23,7 @@
 
 #include "HQClientSession.h"
 
-HQClientSession::HQClientSession(NetVConnection *vc) : _client_vc(vc)
-{
-}
+HQClientSession::HQClientSession(NetVConnection *vc) : _client_vc(vc) {}
 
 HQClientSession::~HQClientSession()
 {

@@ -307,7 +307,7 @@ public:
   /// Check for QUIC ports.
   /// @return @c true if any port in @a ports is an QUIC port.
   static bool hasQUIC(Group const &ports ///< Ports to check.
-                      );
+  );
 
   /// Check for QUIC ports.
   /// @return @c true if any global port is an QUIC port.

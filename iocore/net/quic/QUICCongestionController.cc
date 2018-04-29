@@ -27,20 +27,20 @@
 #include "QUICConfig.h"
 
 #define QUICCCDebug(fmt, ...)                                                                                           \
-  Debug("quic_cc", "[%" PRIx64 "] "                                                                                     \
-                   "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt,                                 \
+  Debug("quic_cc",                                                                                                      \
+        "[%" PRIx64 "] "                                                                                                \
+        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt,                                            \
         static_cast<uint64_t>(this->_connection_id), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         ##__VA_ARGS__)
 
 #define QUICCCError(fmt, ...)                                                                                           \
-  Error("quic_cc", "[%" PRIx64 "] "                                                                                     \
-                   "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt,                                 \
+  Error("quic_cc",                                                                                                      \
+        "[%" PRIx64 "] "                                                                                                \
+        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt,                                            \
         static_cast<uint64_t>(this->_connection_id), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         ##__VA_ARGS__)
 
-QUICCongestionController::QUICCongestionController() : QUICCongestionController(0)
-{
-}
+QUICCongestionController::QUICCongestionController() : QUICCongestionController(0) {}
 
 QUICCongestionController::QUICCongestionController(QUICConnectionId connection_id) : _connection_id(connection_id)
 {

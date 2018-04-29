@@ -510,7 +510,8 @@ public:
 
 class MockQUICRTTProvider : public QUICRTTProvider
 {
-  ink_hrtime smoothed_rtt() const
+  ink_hrtime
+  smoothed_rtt() const
   {
     return HRTIME_MSECONDS(1);
   }

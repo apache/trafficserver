@@ -489,9 +489,7 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 // QUICPacket
 //
 
-QUICPacket::QUICPacket()
-{
-}
+QUICPacket::QUICPacket() {}
 
 QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len)
 {
