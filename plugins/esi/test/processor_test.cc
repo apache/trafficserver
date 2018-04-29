@@ -280,9 +280,10 @@ main()
     assert(esi_proc.completeParse() == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE + 9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
-                                "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
-                                ">>>>> Content for URL [blah bleh] <<<<<",
+    assert(strncmp(output_data,
+                   "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
+                   "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
+                   ">>>>> Content for URL [blah bleh] <<<<<",
                    output_data_len) == 0);
   }
 
@@ -303,9 +304,10 @@ main()
     assert(esi_proc.completeParse() == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE + 9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
-                                "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
-                                ">>>>> Content for URL [blah bleh] <<<<<",
+    assert(strncmp(output_data,
+                   "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
+                   "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
+                   ">>>>> Content for URL [blah bleh] <<<<<",
                    output_data_len) == 0);
   }
 
@@ -332,9 +334,10 @@ main()
     assert(esi_proc.completeParse() == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE + 9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
-                                "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
-                                ">>>>> Content for URL [blah bleh] <<<<<",
+    assert(strncmp(output_data,
+                   "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
+                   "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
+                   ">>>>> Content for URL [blah bleh] <<<<<",
                    output_data_len) == 0);
   }
 
@@ -354,9 +357,10 @@ main()
     assert(esi_proc.completeParse(input_data.data(), input_data.size()) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE + 9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
-                                "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
-                                ">>>>> Content for URL [blah bleh] <<<<<",
+    assert(strncmp(output_data,
+                   "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
+                   "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
+                   ">>>>> Content for URL [blah bleh] <<<<<",
                    output_data_len) == 0);
   }
 
@@ -382,9 +386,10 @@ main()
     assert(esi_proc.completeParse(line6, sizeof(line6) - 1) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE + 9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
-                                "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
-                                ">>>>> Content for URL [blah bleh] <<<<<",
+    assert(strncmp(output_data,
+                   "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
+                   "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
+                   ">>>>> Content for URL [blah bleh] <<<<<",
                    output_data_len) == 0);
   }
 
@@ -436,9 +441,10 @@ main()
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE + 9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
-                                "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
-                                ">>>>> Content for URL [blah bleh] <<<<<",
+    assert(strncmp(output_data,
+                   "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
+                   "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
+                   ">>>>> Content for URL [blah bleh] <<<<<",
                    output_data_len) == 0);
   }
 

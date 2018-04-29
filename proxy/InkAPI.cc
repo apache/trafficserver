@@ -58,6 +58,7 @@
 #include "I_AIO.h"
 #include "I_Tasks.h"
 
+#include "P_OCSPStapling.h"
 #include "I_RecDefs.h"
 #include "I_RecCore.h"
 #include "I_Machine.h"
@@ -742,9 +743,7 @@ sdk_free_field_handle(TSMBuffer bufp, MIMEFieldSDKHandle *field_handle)
 // FileImpl
 //
 ////////////////////////////////////////////////////////////////////
-FileImpl::FileImpl() : m_fd(-1), m_mode(CLOSED), m_buf(nullptr), m_bufsize(0), m_bufpos(0)
-{
-}
+FileImpl::FileImpl() : m_fd(-1), m_mode(CLOSED), m_buf(nullptr), m_bufsize(0), m_bufpos(0) {}
 
 FileImpl::~FileImpl()
 {
@@ -5246,7 +5245,7 @@ TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
 /**
  * timeout is in msec
  * overrides as proxy.config.http.transaction_active_timeout_out
-**/
+ **/
 void
 TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -5259,7 +5258,7 @@ TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
 /**
  * timeout is in msec
  * overrides as proxy.config.http.connect_attempts_timeout
-**/
+ **/
 void
 TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -5272,7 +5271,7 @@ TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
 /**
  * timeout is in msec
  * overrides as proxy.config.dns.lookup_timeout
-**/
+ **/
 void
 TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -5286,7 +5285,7 @@ TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
 /**
  * timeout is in msec
  * overrides as proxy.config.http.transaction_no_activity_timeout_out
-**/
+ **/
 void
 TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
 {
@@ -5565,7 +5564,7 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
 
   sm->ua_txn->set_outbound_port(ats_ip_port_host_order(addr));
   sm->ua_txn->set_outbound_ip(IpAddr(addr));
-  return TS_ERROR;
+  return TS_SUCCESS;
 }
 
 sockaddr const *
@@ -5936,9 +5935,10 @@ TSHttpArgIndexReserve(UserArg::Type type, const char *name, const char *descript
   if (idx < limit) {
     UserArg &arg(UserArgTable[type][idx]);
     arg.name = name;
-    if (description)
+    if (description) {
       arg.description = description;
-    *ptr_idx          = idx;
+    }
+    *ptr_idx = idx;
 
     return TS_SUCCESS;
   }
@@ -8272,7 +8272,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 }
 
 /* APIs to manipulate the overridable configuration options.
-*/
+ */
 TSReturnCode
 TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value)
 {
@@ -9147,8 +9147,7 @@ TSPluginDescriptorAccept(TSCont contp)
   Action *action = nullptr;
 
   HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
-  for (int i = 0, n = proxy_ports.size(); i < n; ++i) {
-    HttpProxyPort &port = proxy_ports[i];
+  for (auto &port : proxy_ports) {
     if (port.isPlugin()) {
       NetProcessor::AcceptOptions net(make_net_accept_options(&port, -1 /* nthreads */));
       action = netProcessor.main_accept((INKContInternal *)contp, port.m_fd, net);
@@ -9287,12 +9286,19 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
 }
 
 tsapi TSSslContext
-TSSslServerContextCreate()
+TSSslServerContextCreate(TSSslX509 cert, const char *certname)
 {
   TSSslContext ret        = nullptr;
   SSLConfigParams *config = SSLConfig::acquire();
   if (config != nullptr) {
     ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
+    if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
+      if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
+        if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname)) {
+          Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+        }
+      }
+    }
     SSLConfig::release(config);
   }
   return ret;
@@ -9404,7 +9410,7 @@ extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 TSSslSession
 TSSslSessionGet(const TSSslSessionID *session_id)
 {
-  SSL_SESSION *session = NULL;
+  SSL_SESSION *session = nullptr;
   if (session_id && session_cache) {
     session_cache->getSession(reinterpret_cast<const SSLSessionID &>(*session_id), &session);
   }

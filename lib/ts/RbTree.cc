@@ -255,7 +255,7 @@ namespace detail
   RBNode *
   RBNode::rebalanceAfterRemove(Color c,    //!< The color of the removed node
                                Direction d //!< Direction of removed node from its parent
-                               )
+  )
   {
     self *root;
 
@@ -366,5 +366,5 @@ namespace detail
     return 0;
 #endif
   }
-}
-}
+} // namespace detail
+} // namespace ts

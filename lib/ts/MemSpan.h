@@ -27,6 +27,8 @@
 #pragma once
 #include <cstring>
 #include <iosfwd>
+#include <iostream>
+#include <cstddef>
 
 /// Apache Traffic Server commons.
 namespace ts
@@ -54,7 +56,7 @@ public:
    */
   constexpr MemSpan(void *ptr,  ///< Pointer to buffer.
                     ptrdiff_t n ///< Size of buffer.
-                    );
+  );
 
   /** Construct from a half open range of two pointers.
       @note The instance at @start is in the span but the instance at @a end is not.
@@ -62,14 +64,14 @@ public:
   template <typename T>
   constexpr MemSpan(T *start, ///< First byte in the span.
                     T *end    ///< First byte not in the span.
-                    );
+  );
 
   /** Construct from a half open range of two pointers.
       @note The instance at @start is in the span but the instance at @a end is not.
   */
   MemSpan(void *start, ///< First byte in the span.
           void *end    ///< First byte not in the span.
-          );
+  );
 
   /** Construct to cover an array.
    *
@@ -164,7 +166,7 @@ public:
   /// @return @c this.
   self_type &assign(void *ptr,      ///< Buffer address.
                     ptrdiff_t n = 0 ///< Buffer size.
-                    );
+  );
 
   /// Set the span.
   /// This is faster but equivalent to constructing a new span with the same
@@ -172,7 +174,7 @@ public:
   /// @return @c this.
   self_type &assign(void *start,    ///< First valid character.
                     void const *end ///< First invalid character.
-                    );
+  );
 
   /// Clear the span (become an empty span).
   self_type &clear();
@@ -289,31 +291,19 @@ memcmp(MemSpan const &lhs, MemSpan const &rhs)
 // need to bring memcmp in so this is an overload, not an override.
 using std::memcmp;
 
-inline constexpr MemSpan::MemSpan()
-{
-}
+inline constexpr MemSpan::MemSpan() {}
 
-inline constexpr MemSpan::MemSpan(void *ptr, ptrdiff_t n) : _data(ptr), _size(n)
-{
-}
+inline constexpr MemSpan::MemSpan(void *ptr, ptrdiff_t n) : _data(ptr), _size(n) {}
 
-template <typename T> constexpr MemSpan::MemSpan(T *start, T *end) : _data(start), _size((end - start) * sizeof(T))
-{
-}
+template <typename T> constexpr MemSpan::MemSpan(T *start, T *end) : _data(start), _size((end - start) * sizeof(T)) {}
 
 // <void*> is magic, handle that specially.
 // No constexpr because the spec specifically forbids casting from <void*> to a typed pointer.
-inline MemSpan::MemSpan(void *start, void *end) : _data(start), _size(static_cast<char *>(end) - static_cast<char *>(start))
-{
-}
+inline MemSpan::MemSpan(void *start, void *end) : _data(start), _size(static_cast<char *>(end) - static_cast<char *>(start)) {}
 
-template <typename T, size_t N> MemSpan::MemSpan(T (&a)[N]) : _data(a), _size(N * sizeof(T))
-{
-}
+template <typename T, size_t N> MemSpan::MemSpan(T (&a)[N]) : _data(a), _size(N * sizeof(T)) {}
 
-inline constexpr MemSpan::MemSpan(std::nullptr_t) : _data(nullptr), _size(0)
-{
-}
+inline constexpr MemSpan::MemSpan(std::nullptr_t) : _data(nullptr), _size(0) {}
 
 inline ptrdiff_t
 MemSpan::distance(void const *lhs, void const *rhs)
@@ -340,7 +330,7 @@ MemSpan::assign(void *ptr, void const *limit)
 inline MemSpan &
 MemSpan::clear()
 {
-  _data = 0;
+  _data = nullptr;
   _size = 0;
   return *this;
 }
@@ -379,7 +369,8 @@ MemSpan::empty() const
   return _size == 0;
 }
 
-inline MemSpan &MemSpan::operator++()
+inline MemSpan &
+MemSpan::operator++()
 {
   _data = static_cast<char *>(_data) + 1;
   --_size;
@@ -575,4 +566,4 @@ operator<<(ostream &os, const ts::MemSpan &b)
   }
   return os;
 }
-} // std
+} // namespace std

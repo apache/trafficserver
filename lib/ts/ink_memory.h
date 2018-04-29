@@ -20,8 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef _ink_memory_h_
-#define _ink_memory_h_
+#pragma once
 
 #include <ctype.h>
 #include <string.h>
@@ -208,7 +207,7 @@ template <typename T>
 inline void
 ink_zero(T &t)
 {
-  memset(&t, 0, sizeof(t));
+  memset(static_cast<void *>(&t), 0, sizeof(t));
 }
 
 /** Scoped resources.
@@ -389,7 +388,7 @@ struct SCOPED_FD_TRAITS {
     close(fd);
   }
 };
-}
+} // namespace detail
 /** File descriptor as a scoped resource.
  */
 class ats_scoped_fd : public ats_scoped_resource<detail::SCOPED_FD_TRAITS>
@@ -442,7 +441,7 @@ struct SCOPED_MALLOC_TRAITS {
   static bool
   isValid(T *t)
   {
-    return 0 != t;
+    return nullptr != t;
   }
   static void
   destroy(T *t)
@@ -464,7 +463,7 @@ struct SCOPED_OBJECT_TRAITS {
   static bool
   isValid(T *t)
   {
-    return 0 != t;
+    return nullptr != t;
   }
   static void
   destroy(T *t)
@@ -472,7 +471,7 @@ struct SCOPED_OBJECT_TRAITS {
     delete t;
   }
 };
-}
+} // namespace detail
 
 /** Specialization of @c ats_scoped_resource for strings.
     This contains an allocated string that is cleaned up if not explicitly released.
@@ -609,5 +608,3 @@ using ats_unique_buf = std::unique_ptr<uint8_t, decltype(&ats_free)>;
 ats_unique_buf ats_unique_malloc(size_t size);
 
 #endif /* __cplusplus */
-
-#endif

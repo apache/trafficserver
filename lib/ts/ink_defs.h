@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_defs_h
-#define _ink_defs_h
+#pragma once
 
 #include "ts/ink_config.h"
 #include <stddef.h>
@@ -116,13 +115,13 @@ countof(const T (&)[N])
 #endif
 
 /* Variables
-*/
+ */
 extern int debug_level;
 extern int off;
 extern int on;
 
 /* Functions
-*/
+ */
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
 int ink_number_of_processors();
 int ink_login_name_max();
@@ -140,5 +139,3 @@ namespace ts
 static const int NO_FD = -1; ///< No or invalid file descriptor.
 }
 #endif
-
-#endif /*__ink_defs_h*/

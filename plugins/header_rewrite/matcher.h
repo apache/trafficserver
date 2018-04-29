@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __MATCHER_H__
-#define __MATCHER_H__ 1
+#pragma once
 
 #include <string>
 #include <sstream>
@@ -44,7 +43,7 @@ enum MatcherOps {
 class Matcher
 {
 public:
-  explicit Matcher(const MatcherOps op) : _pdata(NULL), _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
+  explicit Matcher(const MatcherOps op) : _pdata(nullptr), _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
   virtual ~Matcher()
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher");
@@ -65,7 +64,7 @@ public:
   free_pdata()
   {
     TSfree(_pdata);
-    _pdata = NULL;
+    _pdata = nullptr;
   }
 
 protected:
@@ -218,5 +217,3 @@ private:
   T _data;
   regexHelper helper;
 };
-
-#endif // __MATCHER_H

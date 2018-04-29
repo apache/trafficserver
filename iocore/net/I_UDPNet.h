@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef __UDPNET_H_
-#define __UDPNET_H_
+#pragma once
 
 #include "ts/I_Version.h"
 #include "I_EventSystem.h"
@@ -107,5 +106,3 @@ extern EventType ET_UDP;
 
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"
-
-#endif //__UDPNET_H_

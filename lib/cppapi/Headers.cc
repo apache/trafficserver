@@ -145,13 +145,15 @@ std::string header_field_value_iterator::operator*()
   return std::string();
 }
 
-header_field_value_iterator &header_field_value_iterator::operator++()
+header_field_value_iterator &
+header_field_value_iterator::operator++()
 {
   ++state_->index_;
   return *this;
 }
 
-header_field_value_iterator header_field_value_iterator::operator++(int)
+header_field_value_iterator
+header_field_value_iterator::operator++(int)
 {
   header_field_value_iterator tmp(*this);
   operator++();
@@ -198,9 +200,7 @@ struct HeaderFieldIteratorState {
   }
 };
 
-HeaderField::~HeaderField()
-{
-}
+HeaderField::~HeaderField() {}
 
 HeaderField::size_type
 HeaderField::size() const
@@ -397,9 +397,7 @@ header_field_iterator::header_field_iterator(void *hdr_buf, void *hdr_loc, void 
 {
 }
 
-header_field_iterator::header_field_iterator(const header_field_iterator &it) : state_(new HeaderFieldIteratorState(*it.state_))
-{
-}
+header_field_iterator::header_field_iterator(const header_field_iterator &it) : state_(new HeaderFieldIteratorState(*it.state_)) {}
 
 header_field_iterator &
 header_field_iterator::operator=(const header_field_iterator &rhs)
@@ -430,13 +428,15 @@ advanceIterator(HeaderFieldIteratorState *state, TSMLoc (*getNextField)(TSMBuffe
   return state;
 }
 
-header_field_iterator &header_field_iterator::operator++()
+header_field_iterator &
+header_field_iterator::operator++()
 {
   state_ = advanceIterator(state_, TSMimeHdrFieldNext);
   return *this;
 }
 
-header_field_iterator header_field_iterator::operator++(int)
+header_field_iterator
+header_field_iterator::operator++(int)
 {
   header_field_iterator tmp(*this);
   operator++();
@@ -693,8 +693,8 @@ std::string
 Headers::wireStr()
 {
   string retval;
-  for (iterator iter = begin(), last = end(); iter != last; ++iter) {
-    HeaderField hf = *iter;
+  for (auto &&iter : *this) {
+    HeaderField hf = iter;
     retval += hf.name().str();
     retval += ": ";
     retval += hf.values(", ");
@@ -713,4 +713,4 @@ operator<<(std::ostream &os, atscppapi::Headers &obj)
   return os;
 }
 
-} /* atscppapi namespace */
+} // namespace atscppapi

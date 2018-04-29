@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __I_SOCKS_H__
-#define __I_SOCKS_H__
+#pragma once
 
 /*When this is being compiled with TS, we enable more features the use
   non modularized stuff. namely:
@@ -65,8 +64,6 @@ struct SocksAddrType {
   } addr;
 
   void reset();
-  SocksAddrType() : type(SOCKS_ATYPE_NONE) { addr.buf = 0; }
+  SocksAddrType() : type(SOCKS_ATYPE_NONE) { addr.buf = nullptr; }
   ~SocksAddrType() { reset(); }
 };
-
-#endif

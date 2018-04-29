@@ -93,12 +93,11 @@ Online Documentation
     built-in search functionality. Documentation for past releases is also
     available.
 
-Jira Bug Tracker
-    https://issues.apache.org/jira/browse/TS
+Bug Tracker
+    https://github.com/apache/trafficserver/issues
 
     If you wish to report bugs, or look for open issues on which you may help
-    contribute to the |TS| project, please visit the public Jira bug tracker
-    site.
+    contribute to the |TS| project, please visit the public bug tracker site.
 
 Mailing Lists
 -------------

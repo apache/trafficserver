@@ -20,8 +20,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#ifndef _URL_MAPPING_PATH_INDEX_H
-#define _URL_MAPPING_PATH_INDEX_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #undef std // FIXME: remove dependancy on the STL
@@ -93,8 +92,6 @@ private:
     if (group_iter != m_tries.end()) {
       return group_iter->second;
     }
-    return 0;
+    return nullptr;
   }
 };
-
-#endif // _URL_MAPPING_PATH_INDEX_H

@@ -28,8 +28,7 @@
 
 
  ****************************************************************************/
-#ifndef _P_AIO_h_
-#define _P_AIO_h_
+#pragma once
 
 #include "P_EventSystem.h"
 #include "I_AIO.h"
@@ -124,8 +123,9 @@ AIOCallbackInternal::io_complete(int event, void *data)
     err_op->action               = aio_err_callbck;
     eventProcessor.schedule_imm(err_op);
   }
-  if (!action.cancelled)
+  if (!action.cancelled) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
+  }
   return EVENT_DONE;
 }
 
@@ -156,5 +156,3 @@ enum aio_stat_enum {
   AIO_STAT_COUNT
 };
 extern RecRawStatBlock *aio_rsb;
-
-#endif

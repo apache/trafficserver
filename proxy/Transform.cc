@@ -688,8 +688,9 @@ NullTransform::handle_event(int event, void *edata)
         }
 
         if (towrite > 0) {
-          Debug("transform", "[NullTransform::handle_event] "
-                             "writing %" PRId64 " bytes to output",
+          Debug("transform",
+                "[NullTransform::handle_event] "
+                "writing %" PRId64 " bytes to output",
                 towrite);
           m_output_buf->write(m_write_vio.get_reader(), towrite);
 

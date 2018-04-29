@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __CACHE_HTTP_H__
-#define __CACHE_HTTP_H__
+#pragma once
 
 #include "P_CacheArray.h"
 #include "HTTP.h"
@@ -84,5 +83,3 @@ CacheHTTPInfoVector::get(int idx)
   ink_assert(idx < xcount);
   return &data[idx].alternate;
 }
-
-#endif /* __CACHE_HTTP_H__ */

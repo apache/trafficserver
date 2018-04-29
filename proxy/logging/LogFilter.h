@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_FILTER_H
-#define LOG_FILTER_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/IpMap.h"
@@ -95,7 +94,7 @@ public:
 
   virtual bool toss_this_entry(LogAccess *lad) = 0;
   virtual bool wipe_this_entry(LogAccess *lad) = 0;
-  virtual void display(FILE *fd = stdout) = 0;
+  virtual void display(FILE *fd = stdout)      = 0;
 
   static LogFilter *parse(const char *name, Action action, const char *condition);
 
@@ -160,7 +159,7 @@ private:
     // return 0 if s1 is substring of s0 and 1 otherwise
     // this reverse behavior is to conform to the behavior of strcmp
     // which returns 0 if strings match
-    return (strstr(s0, s1) == NULL ? 1 : 0);
+    return (strstr(s0, s1) == nullptr ? 1 : 0);
   }
 
   enum LengthCondition {
@@ -396,8 +395,9 @@ wipeField(char **dest, char *field)
   if (buf_dest) {
     char *query_param = strstr(buf_dest, "?");
 
-    if (!query_param)
+    if (!query_param) {
       return;
+    }
 
     char *p1 = strstr(query_param, field);
 
@@ -413,13 +413,15 @@ wipeField(char **dest, char *field)
         temp_text += (p2 - p1);
         char *p3 = strstr(p2, "&");
         if (p3) {
-          for (int i     = 0; i < (p3 - p2); i++)
+          for (int i = 0; i < (p3 - p2); i++) {
             temp_text[i] = 'X';
+          }
           temp_text += (p3 - p2);
           memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
         } else {
-          for (int i     = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++)
+          for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
             temp_text[i] = 'X';
+          }
         }
       } else {
         return;
@@ -456,8 +458,9 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
 {
   bool retVal = false;
 
-  if (m_action != WIPE_FIELD_VALUE)
+  if (m_action != WIPE_FIELD_VALUE) {
     return false;
+  }
 
   // make single value case a little bit faster by taking it out of loop
   //
@@ -507,5 +510,3 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
   }
   return retVal;
 }
-
-#endif

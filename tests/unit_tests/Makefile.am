@@ -15,11 +15,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir) \
-  $(TS_INCLUDES)
+	-I$(abs_top_srcdir) \
+	$(TS_INCLUDES)
 
 bin_PROGRAMS = unit_tests
 
 unit_tests_SOURCES = main.cpp
 
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

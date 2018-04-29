@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_DNSProcessor_h_
-#define _I_DNSProcessor_h_
+#pragma once
 
 #include "SRV.h"
 
@@ -42,10 +41,10 @@ const int DNS_HOSTBUF_SIZE   = MAX_DNS_PACKET_LEN;
 
 */
 struct HostEnt : RefCountObj {
-  struct hostent ent = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
-  uint32_t ttl                           = 0;
-  int packet_size                        = 0;
-  char buf[MAX_DNS_PACKET_LEN]           = {0};
+  struct hostent ent           = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
+  uint32_t ttl                 = 0;
+  int packet_size              = 0;
+  char buf[MAX_DNS_PACKET_LEN] = {0};
   u_char *host_aliases[DNS_MAX_ALIASES]  = {nullptr};
   u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1] = {nullptr};
   u_char hostbuf[DNS_HOSTBUF_SIZE]       = {0};
@@ -116,7 +115,7 @@ struct DNSProcessor : public Processor {
 
   // Open/close a link to a 'named' (done in start())
   //
-  void open(sockaddr const *ns = 0);
+  void open(sockaddr const *ns = nullptr);
 
   DNSProcessor();
 
@@ -173,9 +172,7 @@ DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options cons
   return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
 }
 
-inline DNSProcessor::Options::Options() : handler(0), timeout(0), host_res_style(HOST_RES_IPV4)
-{
-}
+inline DNSProcessor::Options::Options() : handler(nullptr), timeout(0), host_res_style(HOST_RES_IPV4) {}
 
 inline DNSProcessor::Options &
 DNSProcessor::Options::setHandler(DNSHandler *h)
@@ -206,5 +203,3 @@ DNSProcessor::Options::reset()
 }
 
 void ink_dns_init(ModuleVersion version);
-
-#endif

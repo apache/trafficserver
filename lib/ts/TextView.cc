@@ -123,7 +123,7 @@ ts::svtoi(TextView src, TextView *out, int base)
       ++src;
     }
     if (out && (src.data() > (neg ? start + 1 : start))) {
-      out->set_view(start, src.data());
+      out->assign(start, src.data());
     }
 
     if (neg) {
@@ -147,4 +147,4 @@ operator<<(ostream &os, const ts::TextView &b)
   }
   return os;
 }
-}
+} // namespace std

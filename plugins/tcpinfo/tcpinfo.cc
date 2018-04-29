@@ -56,8 +56,9 @@
 // carefully order the fields so the field ordering is compatible. This lets you change
 // the verbosity without breaking a perser that is moderately robust.
 static const char *tcpi_headers[] = {
-  "timestamp event client server rtt", "timestamp event client server rtt rttvar last_sent last_recv "
-                                       "snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans",
+  "timestamp event client server rtt",
+  "timestamp event client server rtt rttvar last_sent last_recv "
+  "snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans",
 };
 
 struct Config {

@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip or deflate
+  Transforms content using gzip, deflate or brotli
 
   @section license License
 
@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _GZIP_MISC_H_
-#define _GZIP_MISC_H_
+#pragma once
 
 #include <zlib.h>
 #include <ts/ts.h>
@@ -97,6 +96,4 @@ void restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, con
 const char *init_hidden_header_name();
 int check_ts_version();
 int register_plugin();
-void gzip_log_ratio(int64_t in, int64_t out);
-
-#endif
+void log_compression_ratio(int64_t in, int64_t out);

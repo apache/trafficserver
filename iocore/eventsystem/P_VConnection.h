@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(P_VConnection_h)
-#define P_VConnection_h
+#pragma once
 #include "I_EventSystem.h"
 
 TS_INLINE const char *
@@ -57,27 +56,26 @@ get_vc_event_name(int event)
 TS_INLINE
 VConnection::VConnection(ProxyMutex *aMutex) : Continuation(aMutex), lerrno(0)
 {
-  SET_HANDLER(0);
+  SET_HANDLER(nullptr);
 }
 
 TS_INLINE
 VConnection::VConnection(Ptr<ProxyMutex> &aMutex) : Continuation(aMutex), lerrno(0)
 {
-  SET_HANDLER(0);
+  SET_HANDLER(nullptr);
 }
 
 TS_INLINE
-VConnection::~VConnection()
-{
-}
+VConnection::~VConnection() {}
 
 TS_INLINE VIO *
 vc_do_io_write(VConnection *vc, Continuation *cont, int64_t nbytes, MIOBuffer *buf, int64_t offset)
 {
   IOBufferReader *reader = buf->alloc_reader();
 
-  if (offset > 0)
+  if (offset > 0) {
     reader->consume(offset);
+  }
 
   return vc->do_io_write(cont, nbytes, reader, true);
 }
@@ -95,4 +93,3 @@ VConnection::reenable_re(VIO *vio)
 {
   reenable(vio);
 }
-#endif

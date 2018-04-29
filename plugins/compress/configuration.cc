@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip or deflate
+  Transforms content using gzip, deflate or brotli
 
   @section license License
 
@@ -102,7 +102,6 @@ enum ParserState {
   kParseRemoveAcceptEncoding,
   kParseEnable,
   kParseCache,
-  kParseDisallow,
   kParseFlush,
   kParseAllow,
   kParseMinimumContentLength
@@ -122,12 +121,6 @@ HostConfiguration::update_defaults()
   if (compressible_status_codes_.empty()) {
     compressible_status_codes_ = {TS_HTTP_STATUS_OK, TS_HTTP_STATUS_PARTIAL_CONTENT, TS_HTTP_STATUS_NOT_MODIFIED};
   }
-}
-
-void
-HostConfiguration::add_disallow(const std::string &disallow)
-{
-  disallows_.push_back(disallow);
 }
 
 void
@@ -175,14 +168,6 @@ bool
 HostConfiguration::is_url_allowed(const char *url, int url_len)
 {
   string surl(url, url_len);
-  if (has_disallows()) {
-    for (StringContainer::iterator it = disallows_.begin(); it != disallows_.end(); ++it) {
-      if (fnmatch(it->c_str(), surl.c_str(), 0) == 0) {
-        info("url [%s] disabled for compression, matched disallow pattern [%s]", surl.c_str(), it->c_str());
-        return false;
-      }
-    }
-  }
   if (has_allows()) {
     for (StringContainer::iterator allow_it = allows_.begin(); allow_it != allows_.end(); ++allow_it) {
       const char *match_string = allow_it->c_str();
@@ -199,7 +184,7 @@ HostConfiguration::is_url_allowed(const char *url, int url_len)
     info("url [%s] disabled for compression, did not match any allows pattern", surl.c_str());
     return false;
   }
-  info("url [%s] enabled for compression, did not match and disallow pattern ", surl.c_str());
+  info("url [%s] enabled for compression, did not match any pattern", surl.c_str());
   return true;
 }
 
@@ -366,8 +351,6 @@ Configuration::Parse(const char *path)
           state = kParseEnable;
         } else if (token == "cache") {
           state = kParseCache;
-        } else if (token == "disallow") {
-          state = kParseDisallow;
         } else if (token == "flush") {
           state = kParseFlush;
         } else if (token == "supported-algorithms") {
@@ -400,10 +383,6 @@ Configuration::Parse(const char *path)
         current_host_configuration->set_cache(token == "true");
         state = kParseStart;
         break;
-      case kParseDisallow:
-        current_host_configuration->add_disallow(token);
-        state = kParseStart;
-        break;
       case kParseFlush:
         current_host_configuration->set_flush(token == "true");
         state = kParseStart;
@@ -429,4 +408,4 @@ Configuration::Parse(const char *path)
 
   return c;
 } // Configuration::Parse
-} // namespace
+} // namespace Gzip

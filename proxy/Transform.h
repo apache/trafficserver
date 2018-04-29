@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TRANSFORM_H__
-#define __TRANSFORM_H__
+#pragma once
 
 #include "P_EventSystem.h"
 #include "HTTP.h"
@@ -79,9 +78,7 @@ public:
                            ) = 0;
 };
 
-inline TransformVCChain::TransformVCChain(ProxyMutex *m) : VConnection(m)
-{
-}
+inline TransformVCChain::TransformVCChain(ProxyMutex *m) : VConnection(m) {}
 
 ///////////////////////////////////////////////////////////////////
 /// RangeTransform implementation
@@ -96,15 +93,15 @@ num_chars_for_int(int64_t i)
 {
   int k = 1;
 
-  if (i < 0)
+  if (i < 0) {
     return 0;
+  }
 
-  while ((i /= 10) != 0)
+  while ((i /= 10) != 0) {
     ++k;
+  }
 
   return k;
 }
 
 extern TransformProcessor transformProcessor;
-
-#endif /* __TRANSFORM_H__ */

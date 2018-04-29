@@ -88,10 +88,10 @@ mt_cache_lookup_check(TSCont contp, TSHttpTxn txnp, struct txndata *txn_data)
       }
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
 
-    // fall through to the default as we always need to send the original
-    // money trace header received from the client back to the client in the
-    // response
-    // fallthrough
+      // fall through to the default as we always need to send the original
+      // money trace header received from the client back to the client in the
+      // response
+      // fallthrough
 
     default:
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);

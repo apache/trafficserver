@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_CACHE_SM_H_
-#define _HTTP_CACHE_SM_H_
+#pragma once
 
 #include "P_Cache.h"
 #include "ProxyConfig.h"
@@ -44,7 +43,7 @@ class HttpCacheSM;
 
 struct HttpCacheAction : public Action {
   HttpCacheAction();
-  virtual void cancel(Continuation *c = NULL);
+  virtual void cancel(Continuation *c = nullptr);
   void
   init(HttpCacheSM *sm_arg)
   {
@@ -99,13 +98,13 @@ public:
   bool
   is_ram_cache_hit()
   {
-    return cache_read_vc ? (cache_read_vc->is_ram_cache_hit()) : 0;
+    return cache_read_vc ? (cache_read_vc->is_ram_cache_hit()) : false;
   }
 
   bool
   is_compressed_in_ram()
   {
-    return cache_read_vc ? (cache_read_vc->is_compressed_in_ram()) : 0;
+    return cache_read_vc ? (cache_read_vc->is_compressed_in_ram()) : false;
   }
 
   inline void
@@ -144,7 +143,7 @@ public:
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_read_vc->do_io_close(); // abort
-      cache_read_vc = NULL;
+      cache_read_vc = nullptr;
     }
   }
   inline void
@@ -153,7 +152,7 @@ public:
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_write_vc->do_io_close(); // abort
-      cache_write_vc = NULL;
+      cache_write_vc = nullptr;
     }
   }
   inline void
@@ -162,7 +161,7 @@ public:
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_write_vc->do_io_close();
-      cache_write_vc = NULL;
+      cache_write_vc = nullptr;
     }
   }
   inline void
@@ -171,7 +170,7 @@ public:
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
       cache_read_vc->do_io_close();
-      cache_read_vc = NULL;
+      cache_read_vc = nullptr;
     }
   }
   inline void
@@ -212,5 +211,3 @@ private:
   int lookup_max_recursive;
   int current_lookup_level;
 };
-
-#endif

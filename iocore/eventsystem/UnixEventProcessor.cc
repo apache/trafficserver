@@ -133,7 +133,7 @@ public:
     return 0;
   }
 } Thread_Init_Func;
-}
+} // namespace
 
 void *
 ThreadAffinityInitializer::alloc_hugepage_stack(size_t stacksize)
@@ -168,7 +168,7 @@ ThreadAffinityInitializer::init()
     if (hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type) > 0) {
       break;
     }
-  // fallthrough
+    // fallthrough
 
   case 2: // assign threads to sockets
     obj_type = HWLOC_OBJ_SOCKET;
@@ -192,7 +192,7 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
     // Get our `obj` instance with index based on the thread number we are on.
     hwloc_obj_t obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, t->id % obj_count);
 #if HWLOC_API_VERSION >= 0x00010100
-    int cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
+    int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
     char *cpu_mask   = (char *)alloca(cpu_mask_len);
     hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
     Debug("iocore_thread", "EThread: %p %s: %d CPU Mask: %s\n", t, obj_name, obj->logical_index, cpu_mask);
@@ -303,7 +303,7 @@ make_event_for_scheduling(Continuation *c, int event_code, void *cookie)
 
   return e;
 }
-}
+} // namespace
 
 Event *
 EventProcessor::schedule_spawn(Continuation *c, EventType ev_type, int event_code, void *cookie)

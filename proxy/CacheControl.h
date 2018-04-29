@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _CACHE_CONTROL_H_
-#define _CACHE_CONTROL_H_
+#pragma once
 
 #include "Main.h"
 #include "P_EventSystem.h"
@@ -138,11 +137,9 @@ struct HttpConfigParams;
 struct OverridableHttpConfigParams;
 
 inkcoreapi void getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableHttpConfigParams *h_txn_conf,
-                                char *tag = NULL);
+                                char *tag = nullptr);
 inkcoreapi bool host_rule_in_CacheControlTable();
 inkcoreapi bool ip_rule_in_CacheControlTable();
 
 void initCacheControl();
 void reloadCacheControl();
-
-#endif /* _CACHE_CONTROL_H_ */

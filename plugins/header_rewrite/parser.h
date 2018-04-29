@@ -19,8 +19,7 @@
 //
 // Interface for the config line parser
 //
-#ifndef __PARSER_H__
-#define __PARSER_H__ 1
+#pragma once
 
 #include <string>
 #include <vector>
@@ -88,5 +87,3 @@ private:
 protected:
   std::vector<std::string> _tokens;
 };
-
-#endif // __PARSER_H

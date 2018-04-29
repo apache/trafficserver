@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TS_REGEX_H__
-#define __TS_REGEX_H__
+#pragma once
 
 #include "ts/ink_config.h"
 
@@ -41,7 +40,7 @@ enum REFlags {
 class Regex
 {
 public:
-  Regex() : regex(NULL), regex_extra(NULL) {}
+  Regex() : regex(nullptr), regex_extra(nullptr) {}
   bool compile(const char *pattern, const unsigned flags = 0);
   // It is safe to call exec() concurrently on the same object instance
   bool exec(const char *str);
@@ -65,7 +64,7 @@ typedef struct __pat {
 class DFA
 {
 public:
-  DFA() : _my_patterns(0) {}
+  DFA() : _my_patterns(nullptr) {}
   ~DFA();
 
   int compile(const char *pattern, unsigned flags = 0);
@@ -79,5 +78,3 @@ private:
 
   dfa_pattern *_my_patterns;
 };
-
-#endif /* __TS_REGEX_H__ */

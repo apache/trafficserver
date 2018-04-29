@@ -22,9 +22,9 @@ import subprocess
 
 log = open('forwarded.log', 'w')
 
-regexByEqualUuid = re.compile("^by=_[0-9a-f-]+$")
+regexByEqualUuid = re.compile(r'^by=_[0-9a-f-]+$')
 
-byCount = 0;
+byCount = 0
 byEqualUuid = "__INVALID__"
 
 def observe(headers):

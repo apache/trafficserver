@@ -44,17 +44,16 @@ static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
 Map<int, SSLNextProtocolSet *> snpsMap;
 extern TunnelHashMap TunnelMap;
-NextHopProperty::NextHopProperty()
-{
-}
+NextHopProperty::NextHopProperty() {}
 
 NextHopProperty *
 SNIConfigParams::getPropertyConfig(cchar *servername) const
 {
   NextHopProperty *nps = nullptr;
   nps                  = next_hop_table.get(servername);
-  if (!nps)
+  if (!nps) {
     nps = wild_next_hop_table.get(servername);
+  }
   return nps;
 }
 
@@ -76,8 +75,9 @@ SNIConfigParams::loadSNIConfig()
     if (wildcard) {
       ts::TextView domain{servername, strlen(servername)};
       domain.take_prefix_at('.');
-      if (!domain.empty())
+      if (!domain.empty()) {
         wild_sni_action_map.put(ats_stringdup(domain), aiVec);
+      }
     } else {
       sni_action_map.put(ats_strdup(servername), aiVec);
     }
@@ -98,18 +98,17 @@ SNIConfigParams::loadSNIConfig()
     nps->name            = ats_strdup(servername);
     nps->verifyLevel     = item.verify_origin_server;
     nps->ctx             = clientCTX;
-    if (wildcard)
+    if (wildcard) {
       wild_next_hop_table.put(nps->name, nps);
-    else
+    } else {
       next_hop_table.put(nps->name, nps);
+    }
   } // end for
 }
 
 int SNIConfig::configid = 0;
 /*definition of member functions of SNIConfigParams*/
-SNIConfigParams::SNIConfigParams()
-{
-}
+SNIConfigParams::SNIConfigParams() {}
 
 actionVector *
 SNIConfigParams::get(cchar *servername) const
@@ -176,8 +175,9 @@ SNIConfigParams::cleanup()
   sni_action_map.get_keys(keys);
   for (int i = keys.length() - 1; i >= 0; i--) {
     auto actionVec = sni_action_map.get(keys.get(i));
-    for (auto &ai : *actionVec)
+    for (auto &ai : *actionVec) {
       delete ai;
+    }
 
     actionVec->clear();
   }
@@ -186,8 +186,9 @@ SNIConfigParams::cleanup()
   wild_sni_action_map.get_keys(keys);
   for (int i = keys.length() - 1; i >= 0; i--) {
     auto actionVec = wild_sni_action_map.get(keys.get(i));
-    for (auto &ai : *actionVec)
+    for (auto &ai : *actionVec) {
       delete ai;
+    }
 
     actionVec->clear();
   }

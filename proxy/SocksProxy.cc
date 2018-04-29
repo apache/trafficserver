@@ -131,7 +131,7 @@ SocksProxy::mainEvent(int event, void *data)
 
     clientVC = (NetVConnection *)data;
     clientVC->socks_addr.reset();
-  // fallthrough
+    // fallthrough
 
   case VC_EVENT_WRITE_COMPLETE:
 

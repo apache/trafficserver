@@ -27,8 +27,7 @@
  *
  *****************************************************************************/
 
-#ifndef _PARENT_ROUND_ROBIN_H
-#define _PARENT_ROUND_ROBIN_H
+#pragma once
 
 #include "ParentSelection.h"
 
@@ -50,5 +49,3 @@ public:
   void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold, unsigned int retry_time);
   uint32_t numParents(ParentResult *result) const;
 };
-
-#endif

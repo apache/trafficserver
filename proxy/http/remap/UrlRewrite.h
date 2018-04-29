@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _URL_REWRITE_H_
-#define _URL_REWRITE_H_
+#pragma once
 
 #include "ts/ink_config.h"
 #include "UrlMapping.h"
@@ -37,7 +36,7 @@ struct BUILD_TABLE_INFO;
 
 /**
  * used for redirection, mapping, and reverse mapping
-**/
+ **/
 enum mapping_type {
   FORWARD_MAP,
   REVERSE_MAP,
@@ -50,7 +49,7 @@ enum mapping_type {
 
 /**
  *
-**/
+ **/
 class UrlRewrite : public RefCountObj
 {
 public:
@@ -120,7 +119,7 @@ public:
     bool
     empty()
     {
-      return ((hash_lookup == NULL) && regex_list.empty());
+      return ((hash_lookup == nullptr) && regex_list.empty());
     }
   };
 
@@ -211,5 +210,3 @@ private:
 };
 
 void url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int scheme = -1);
-
-#endif

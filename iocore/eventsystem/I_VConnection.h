@@ -22,8 +22,7 @@
 
  */
 
-#if !defined(_I_VConnection_h_)
-#define _I_VConnection_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
@@ -201,7 +200,7 @@ public:
     @return VIO representing the scheduled IO operation.
 
   */
-  virtual VIO *do_io_read(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) = 0;
+  virtual VIO *do_io_read(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) = 0;
 
   /**
     Write data to the VConnection.
@@ -251,7 +250,8 @@ public:
     @return VIO representing the scheduled IO operation.
 
   */
-  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
+  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                           bool owner = false) = 0;
 
   /**
     Indicate that the VConnection is no longer needed.
@@ -442,5 +442,3 @@ struct DummyVConnection : public AnnotatedVConnection {
 
   DummyVConnection(ProxyMutex *m) : AnnotatedVConnection(m) {}
 };
-
-#endif /*_I_VConnection_h_*/

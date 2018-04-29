@@ -117,8 +117,8 @@ Require client certificate verification for ``example.com`` and any server name 
 .. code-block:: lua
 
    server_config = {
-      { fqdn="example.com", verify_client=MODERATE },
-      { fqdn="*.yahoo.com", verify_client=STRICT }
+      { fqdn="example.com", verify_client='MODERATE' },
+      { fqdn="*.yahoo.com", verify_client='STRICT' }
    }
 
 Disable outbound server certificate verification for ``trusted.example.com`` and require a valid
@@ -129,8 +129,8 @@ client certificate.
    server_config = {
       {
          fqdn="trusted.example.com",
-         verify_origin_server=NONE,
-         verify_client=STRICT
+         verify_origin_server='NONE',
+         verify_client='STRICT'
       }
    }
 

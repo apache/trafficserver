@@ -597,6 +597,9 @@ Log::init_fields()
     SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED", SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1", SQUID_LOG_ERR_UNKNOWN,
     "ERR_UNKNOWN");
 
+  Ptr<LogFieldAliasTable> cache_subcode_map = make_ptr(new LogFieldAliasTable);
+  cache_subcode_map->init(2, SQUID_SUBCODE_EMPTY, "NONE", SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED, "NUM_REDIRECTIONS_EXCEEDED");
+
   Ptr<LogFieldAliasTable> cache_hit_miss_map = make_ptr(new LogFieldAliasTable);
   cache_hit_miss_map->init(21, SQUID_HIT_RESERVED, "HIT", SQUID_HIT_LEVEL_1, "HIT_RAM", // Also SQUID_HIT_RAM
                            SQUID_HIT_LEVEL_2, "HIT_SSD",                                // Also SQUID_HIT_SSD
@@ -615,6 +618,12 @@ Log::init_fields()
                        &LogAccess::unmarshal_cache_code, make_alias_map(cache_code_map));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "crc", field);
+
+  // Reuse the unmarshalling code from crc
+  field = new LogField("cache_result_subcode", "crsc", LogField::sINT, &LogAccess::marshal_cache_result_subcode,
+                       &LogAccess::unmarshal_cache_code, make_alias_map(cache_subcode_map));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "crsc", field);
 
   field = new LogField("cache_hit_miss", "chm", LogField::sINT, &LogAccess::marshal_cache_hit_miss,
                        &LogAccess::unmarshal_cache_hit_miss, make_alias_map(cache_hit_miss_map));

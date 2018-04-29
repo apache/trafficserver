@@ -27,8 +27,7 @@
 
  */
 
-#ifndef __TS_API_H__
-#define __TS_API_H__
+#pragma once
 
 #include <ts/apidefs.h>
 
@@ -1237,7 +1236,7 @@ tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
 /*  Create a new SSL context based on the settings in records.config */
-tsapi TSSslContext TSSslServerContextCreate(void);
+tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
 tsapi void TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
 tsapi TSNextProtocolSet TSUnregisterProtocol(TSNextProtocolSet protoset, const char *protocol);
@@ -1285,7 +1284,7 @@ tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSML
     after use with @c TSfree.
 */
 tsapi char *TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length /**< String length return, may be @c NULL. */
-                                           );
+);
 
 tsapi void TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag);
 tsapi void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag);
@@ -1372,7 +1371,7 @@ tsapi struct sockaddr const *TSHttpTxnServerAddrGet(TSHttpTxn txnp);
     @return @c TS_SUCCESS if the origin server address is set, @c TS_ERROR otherwise.
 */
 tsapi TSReturnCode TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr /**< Address for origin server. */
-                                          );
+);
 
 /** Get the next hop address.
  *
@@ -1761,7 +1760,7 @@ tsapi struct sockaddr const *TSNetVConnRemoteAddrGet(TSVConn vc);
 tsapi TSAction TSNetConnect(
   TSCont contp,             /**< continuation that is called back when the attempted net connection either succeeds or fails. */
   struct sockaddr const *to /**< Address to which to connect. */
-  );
+);
 
 tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
 
@@ -2473,5 +2472,3 @@ tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __TS_API_H__ */

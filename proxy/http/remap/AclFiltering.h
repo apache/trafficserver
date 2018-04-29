@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ACL_FILTERING_H_
-#define _ACL_FILTERING_H_
+#pragma once
 
 #include "Main.h"
 #include "ts/ink_inet.h"
@@ -39,15 +38,15 @@ static int const ACL_FILTER_MAX_IN_IP  = 8;
 static int const ACL_FILTER_MAX_ARGV   = 512;
 
 struct src_ip_info_t {
-  IpEndpoint start; ///< Minimum value in range.
-  IpEndpoint end;   ///< Maximum value in range.
-  bool invert;      ///< Should we "invert" the meaning of this IP range ("not in range")
+  IpAddr start; ///< Minimum value in range.
+  IpAddr end;   ///< Maximum value in range.
+  bool invert;  ///< Should we "invert" the meaning of this IP range ("not in range")
 
   void
   reset()
   {
-    ink_zero(start);
-    ink_zero(end);
+    start.invalidate();
+    end.invalidate();
     invert = false;
   }
 
@@ -55,13 +54,14 @@ struct src_ip_info_t {
   bool
   contains(IpEndpoint const &ip)
   {
-    return ats_ip_addr_cmp(&start, &ip) <= 0 && ats_ip_addr_cmp(&ip, &end) <= 0;
+    IpAddr addr{ip};
+    return addr.cmp(start) >= 0 && addr.cmp(end) <= 0;
   }
 };
 
 /**
  *
-**/
+ **/
 class acl_filter_rule
 {
 private:
@@ -97,7 +97,7 @@ public:
 
   acl_filter_rule();
   ~acl_filter_rule();
-  void name(const char *_name = NULL);
+  void name(const char *_name = nullptr);
   int add_argv(int _argc, char *_argv[]);
   void print(void);
 
@@ -106,5 +106,3 @@ public:
   static void requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp);
   static void requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp);
 };
-
-#endif

@@ -111,7 +111,7 @@ public:
    */
   constexpr TextView(const char *ptr, ///< Pointer to buffer.
                      size_t n         ///< Size of buffer.
-                     );
+  );
 
   /** Construct explicitly with a pointer and size.
       If @a n is negative it is treated as 0.
@@ -119,14 +119,14 @@ public:
    */
   constexpr TextView(const char *ptr, ///< Pointer to buffer.
                      int n            ///< Size of buffer.
-                     );
+  );
 
   /** Construct from a half open range of two pointers.
       @note The byte at @start is in the view but the byte at @a end is not.
   */
   constexpr TextView(const char *start, ///< First byte in the view.
                      const char *end    ///< First byte not in the view.
-                     );
+  );
 
   /** Constructor from constant string.
 
@@ -160,10 +160,10 @@ public:
   template <size_t N> self_type &operator=(const char (&s)[N]);
 
   /// Explicitly set the view.
-  self_type &set_view(char const *ptr, size_t n);
+  self_type &assign(char const *ptr, size_t n);
 
   /// Explicitly set the view to the range [ @a b , @a e )
-  self_type &set_view(char const *b, char const *e);
+  self_type &assign(char const *b, char const *e);
 
   /// @return The first byte in the view.
   char operator*() const;
@@ -196,11 +196,11 @@ public:
   template <typename F> size_t rfind_if(F const &pred) const;
 
   /** Remove bytes that match @a c from the start of the view.
-  */
+   */
   self_type &ltrim(char c);
 
   /** Remove bytes from the start of the view that are in @a delimiters.
-  */
+   */
   self_type &ltrim(super_type const &delimiters);
 
   /** Remove bytes from the start of the view that are in @a delimiters.
@@ -216,11 +216,11 @@ public:
   template <typename F> self_type &ltrim_if(F const &pred);
 
   /** Remove bytes that match @a c from the end of the view.
-  */
+   */
   self_type &rtrim(char c);
 
   /** Remove bytes from the end of the view that are in @a delimiters.
-  */
+   */
   self_type &rtrim(super_type const &delimiters);
 
   /** Remove bytes from the end of the view that are in @a delimiters.
@@ -236,11 +236,11 @@ public:
   template <typename F> self_type &rtrim_if(F const &pred);
 
   /** Remove bytes that match @a c from the end of the view.
-  */
+   */
   self_type &trim(char c);
 
   /** Remove bytes from the start and end of the view that are in @a delimiters.
-  */
+   */
   self_type &trim(super_type const &delimiters);
 
   /** Remove bytes from the start and end of the view that are in @a delimiters.
@@ -500,30 +500,14 @@ protected:
 // Inline implementations.
 
 // === TextView Implementation ===
-inline constexpr TextView::TextView()
-{
-}
-inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n)
-{
-}
-inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n)
-{
-}
-inline constexpr TextView::TextView(const char *start, const char *end) : super_type(start, end - start)
-{
-}
-inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0)
-{
-}
-inline TextView::TextView(std::string const &str) : super_type(str)
-{
-}
-inline constexpr TextView::TextView(super_type const &that) : super_type(that)
-{
-}
-template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1)
-{
-}
+inline constexpr TextView::TextView() {}
+inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n) {}
+inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
+inline constexpr TextView::TextView(const char *start, const char *end) : super_type(start, end - start) {}
+inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0) {}
+inline TextView::TextView(std::string const &str) : super_type(str) {}
+inline constexpr TextView::TextView(super_type const &that) : super_type(that) {}
+template <size_t N> constexpr TextView::TextView(const char (&s)[N]) : super_type(s, s[N - 1] ? N : N - 1) {}
 
 inline void
 TextView::init_delimiter_set(super_type const &delimiters, std::bitset<256> &set)
@@ -561,7 +545,8 @@ inline TextView::operator bool() const
   return !this->empty();
 }
 
-inline TextView &TextView::operator++()
+inline TextView &
+TextView::operator++()
 {
   this->remove_prefix(1);
   return *this;
@@ -589,14 +574,14 @@ TextView::operator=(super_type const &that)
 }
 
 inline TextView &
-TextView::set_view(char const *ptr, size_t n)
+TextView::assign(char const *ptr, size_t n)
 {
   *this = super_type(ptr, n);
   return *this;
 }
 
 inline TextView &
-TextView::set_view(char const *b, char const *e)
+TextView::assign(char const *b, char const *e)
 {
   *this = super_type(b, e - b);
   return *this;
@@ -973,22 +958,6 @@ TextView::trim_if(F const &pred)
   return this->ltrim_if(pred).rtrim_if(pred);
 }
 
-#if __GNUC__ == 6
-// The super class operators are ambiguous in GCC 6, but not in 5 or 7.
-// As best I can tell, TextView isn't recognized as a subclass of string_view in template deduction.
-bool inline
-operator==(TextView lhs, TextView rhs)
-{
-  return lhs.size() == rhs.size() && 0 == memcmp(lhs.data(), rhs.data(), lhs.size());
-}
-
-bool inline
-operator!=(TextView lhs, TextView rhs)
-{
-  return lhs.size() != rhs.size() || 0 != memcmp(lhs.data(), rhs.data(), lhs.size());
-}
-#endif
-
 inline bool
 TextView::isPrefixOf(super_type const &that) const
 {
@@ -1043,7 +1012,7 @@ TextView::stream_write(Stream &os, const TextView &b) const
 // Provide an instantiation for @c std::ostream as it's likely this is the only one ever used.
 extern template std::ostream &TextView::stream_write(std::ostream &, const TextView &) const;
 
-} // end namespace ApacheTrafficServer
+} // namespace ts
 
 namespace std
 {

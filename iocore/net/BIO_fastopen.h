@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef BIO_FASTOPEN_H_DA87E080_DB75_4C9C_959A_40243592D454
-#define BIO_FASTOPEN_H_DA87E080_DB75_4C9C_959A_40243592D454
+#pragma once
 
 #include <openssl/bio.h>
 
@@ -34,5 +33,3 @@ const BIO_METHOD *BIO_s_fastopen();
 #if !defined(BIO_set_conn_address)
 #define BIO_set_conn_address(b, addr) BIO_ctrl(b, BIO_C_SET_CONNECT, 2, (char *)addr)
 #endif
-
-#endif /* BIO_FASTOPEN_H_DA87E080_DB75_4C9C_959A_40243592D454 */

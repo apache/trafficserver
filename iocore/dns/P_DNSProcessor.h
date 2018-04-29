@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_P_DNSProcessor_h_)
-#define _P_DNSProcessor_h_
+#pragma once
 
 /*
   #include "I_DNS.h"
@@ -166,8 +165,8 @@ struct DNSEntry : public Continuation {
 
   DNSEntry()
   {
-    for (int i = 0; i < MAX_DNS_RETRIES; i++)
-      id[i]    = -1;
+    for (int &i : id)
+      i = -1;
     memset(qname, 0, MAXDNAME);
   }
 };
@@ -317,10 +316,10 @@ DNSHandler::DNSHandler()
     in_flight(0),
     name_server(0),
     in_write_dns(0),
-    hostent_cache(0),
+    hostent_cache(nullptr),
     last_primary_retry(0),
     last_primary_reopen(0),
-    m_res(0),
+    m_res(nullptr),
     txn_lookup_timeout(0),
     generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
 {
@@ -341,5 +340,3 @@ DNSHandler::DNSHandler()
 
 #define DOT_SEPARATED(_x) \
   ((unsigned char *)&(_x))[0], ((unsigned char *)&(_x))[1], ((unsigned char *)&(_x))[2], ((unsigned char *)&(_x))[3]
-
-#endif

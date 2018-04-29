@@ -29,8 +29,7 @@
 
 
  ****************************************************************************/
-#ifndef MT_HASHTABLE_H_
-#define MT_HASHTABLE_H_
+#pragma once
 
 #define MT_HASHTABLE_PARTITION_BITS 6
 #define MT_HASHTABLE_PARTITIONS (1 << MT_HASHTABLE_PARTITION_BITS)
@@ -78,7 +77,7 @@ public:
 template <class key_t, class data_t> class IMTHashTable
 {
 public:
-  IMTHashTable(int size, bool (*gc_func)(data_t) = NULL, void (*pre_gc_func)(void) = NULL)
+  IMTHashTable(int size, bool (*gc_func)(data_t) = NULL, void (*pre_gc_func)(void) = nullptr)
   {
     m_gc_func     = gc_func;
     m_pre_gc_func = pre_gc_func;
@@ -139,10 +138,12 @@ public:
   void
   GC(void)
   {
-    if (m_gc_func == NULL)
+    if (m_gc_func == NULL) {
       return;
-    if (m_pre_gc_func)
+    }
+    if (m_pre_gc_func) {
       m_pre_gc_func();
+    }
     for (int i = 0; i < bucket_num; i++) {
       HashTableEntry<key_t, data_t> *cur  = buckets[i];
       HashTableEntry<key_t, data_t> *prev = NULL;
@@ -150,10 +151,11 @@ public:
       while (cur != NULL) {
         next = cur->next;
         if (m_gc_func(cur->data)) {
-          if (prev != NULL)
+          if (prev != NULL) {
             prev->next = next;
-          else
+          } else {
             buckets[i] = next;
+          }
           ats_free(cur);
           cur_size--;
         } else {
@@ -167,7 +169,7 @@ public:
   void
   resize(int size)
   {
-    int new_bucket_num = size;
+    int new_bucket_num                          = size;
     HashTableEntry<key_t, data_t> **new_buckets = new HashTableEntry<key_t, data_t> *[new_bucket_num];
     memset(new_buckets, 0, new_bucket_num * sizeof(HashTableEntry<key_t, data_t> *));
 
@@ -208,15 +210,15 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
 {
-  int id = bucket_id(key);
+  int id                             = bucket_id(key);
   HashTableEntry<key_t, data_t> *cur = buckets[id];
   while (cur != NULL && cur->key != key) {
     cur = cur->next;
   }
   if (cur != NULL) {
-    if (data == cur->data)
+    if (data == cur->data) {
       return (data_t)0;
-    else {
+    } else {
       data_t tmp = cur->data;
       cur->data  = data;
       // potential memory leak, need to check the return value by the caller
@@ -225,15 +227,16 @@ IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
   }
 
   HashTableEntry<key_t, data_t> *newEntry = HashTableEntry<key_t, data_t>::alloc();
-  newEntry->key  = key;
-  newEntry->data = data;
-  newEntry->next = buckets[id];
-  buckets[id]    = newEntry;
+  newEntry->key                           = key;
+  newEntry->data                          = data;
+  newEntry->next                          = buckets[id];
+  buckets[id]                             = newEntry;
   cur_size++;
   if (cur_size / bucket_num > MT_HASHTABLE_MAX_CHAIN_AVG_LEN) {
     GC();
-    if (cur_size / bucket_num > MT_HASHTABLE_MAX_CHAIN_AVG_LEN)
+    if (cur_size / bucket_num > MT_HASHTABLE_MAX_CHAIN_AVG_LEN) {
       resize(bucket_num * 2);
+    }
   }
   return (data_t)0;
 }
@@ -242,8 +245,8 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(key_t key)
 {
-  int id     = bucket_id(key);
-  data_t ret = (data_t)0;
+  int id                              = bucket_id(key);
+  data_t ret                          = (data_t)0;
   HashTableEntry<key_t, data_t> *cur  = buckets[id];
   HashTableEntry<key_t, data_t> *prev = NULL;
   while (cur != NULL && cur->key != key) {
@@ -251,11 +254,12 @@ IMTHashTable<key_t, data_t>::remove_entry(key_t key)
     cur  = cur->next;
   }
   if (cur != NULL) {
-    if (prev != NULL)
+    if (prev != NULL) {
       prev->next = cur->next;
-    else
+    } else {
       buckets[id] = cur->next;
-    ret           = cur->data;
+    }
+    ret = cur->data;
     HashTableEntry<key_t, data_t>::free(cur);
     cur_size--;
   }
@@ -267,8 +271,8 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::lookup_entry(key_t key)
 {
-  int id     = bucket_id(key);
-  data_t ret = (data_t)0;
+  int id                             = bucket_id(key);
+  data_t ret                         = (data_t)0;
   HashTableEntry<key_t, data_t> *cur = buckets[id];
   while (cur != NULL && cur->key != key) {
     cur = cur->next;
@@ -285,8 +289,9 @@ IMTHashTable<key_t, data_t>::first_entry(int bucket_id, HashTableIteratorState<k
 {
   s->cur_buck = bucket_id;
   s->ppcur    = &(buckets[bucket_id]);
-  if (*(s->ppcur) != NULL)
+  if (*(s->ppcur) != NULL) {
     return (*(s->ppcur))->data;
+  }
   return (data_t)0;
 }
 
@@ -296,8 +301,9 @@ IMTHashTable<key_t, data_t>::next_entry(HashTableIteratorState<key_t, data_t> *s
 {
   if ((*(s->ppcur)) != NULL) {
     s->ppcur = &((*(s->ppcur))->next);
-    if (*(s->ppcur) != NULL)
+    if (*(s->ppcur) != NULL) {
       return (*(s->ppcur))->data;
+    }
   }
   return (data_t)0;
 }
@@ -306,8 +312,9 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::cur_entry(HashTableIteratorState<key_t, data_t> *s)
 {
-  if (*(s->ppcur) == NULL)
+  if (*(s->ppcur) == NULL) {
     return (data_t)0;
+  }
   return (*(s->ppcur))->data;
 }
 
@@ -315,7 +322,7 @@ template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(HashTableIteratorState<key_t, data_t> *s)
 {
-  data_t data = (data_t)0;
+  data_t data                           = (data_t)0;
   HashTableEntry<key_t, data_t> *pEntry = *(s->ppcur);
   if (pEntry != NULL) {
     data          = pEntry->data;
@@ -329,7 +336,7 @@ IMTHashTable<key_t, data_t>::remove_entry(HashTableIteratorState<key_t, data_t> 
 template <class key_t, class data_t> class MTHashTable
 {
 public:
-  MTHashTable(int size, bool (*gc_func)(data_t) = NULL, void (*pre_gc_func)(void) = NULL)
+  MTHashTable(int size, bool (*gc_func)(data_t) = NULL, void (*pre_gc_func)(void) = nullptr)
   {
     for (int i = 0; i < MT_HASHTABLE_PARTITIONS; i++) {
       locks[i]      = new_ProxyMutex();
@@ -387,8 +394,9 @@ public:
     data_t ret = (data_t)0;
     for (int i = 0; i < hashTables[part_id]->getBucketNum(); i++) {
       ret = hashTables[part_id]->first_entry(i, s);
-      if (ret != (data_t)0)
+      if (ret != (data_t)0) {
         return ret;
+      }
     }
     return (data_t)0;
   }
@@ -397,20 +405,23 @@ public:
   cur_entry(int part_id, HashTableIteratorState<key_t, data_t> *s)
   {
     data_t data = IMTHashTable<key_t, data_t>::cur_entry(s);
-    if (!data)
+    if (!data) {
       data = next_entry(part_id, s);
+    }
     return data;
   };
   data_t
   next_entry(int part_id, HashTableIteratorState<key_t, data_t> *s)
   {
     data_t ret = IMTHashTable<key_t, data_t>::next_entry(s);
-    if (ret != (data_t)0)
+    if (ret != (data_t)0) {
       return ret;
+    }
     for (int i = s->cur_buck + 1; i < hashTables[part_id]->getBucketNum(); i++) {
       ret = hashTables[part_id]->first_entry(i, s);
-      if (ret != (data_t)0)
+      if (ret != (data_t)0) {
         return ret;
+      }
     }
     return (data_t)0;
   }
@@ -428,5 +439,3 @@ private:
   // int last_GC_time[MT_HASHTABLE_PARTITIONS];
   // int32_t cur_items;
 };
-
-#endif /* MT_HASHTABLE_H_ */

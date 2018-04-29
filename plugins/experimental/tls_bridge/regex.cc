@@ -55,8 +55,9 @@ Regex::compile(const char *pattern, const unsigned flags)
   int options    = 0;
   int study_opts = 0;
 
-  if (regex)
+  if (regex) {
     return false;
+  }
 
   if (flags & CASE_INSENSITIVE) {
     options |= PCRE_CASELESS;
@@ -79,8 +80,9 @@ Regex::compile(const char *pattern, const unsigned flags)
   regex_extra = pcre_study(regex, study_opts, &error);
 
 #ifdef PCRE_CONFIG_JIT
-  if (regex_extra)
+  if (regex_extra) {
     pcre_assign_jit_stack(regex_extra, &get_jit_stack, nullptr);
+  }
 #endif
 
   return true;
@@ -115,12 +117,14 @@ Regex::exec(ts::string_view src, int *ovector, int ovecsize) const
 
 Regex::~Regex()
 {
-  if (regex_extra)
+  if (regex_extra) {
 #ifdef PCRE_CONFIG_JIT
     pcre_free_study(regex_extra);
 #else
     pcre_free(regex_extra);
 #endif
-  if (regex)
+  }
+  if (regex) {
     pcre_free(regex);
+  }
 }

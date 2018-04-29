@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _URL_MAPPING_H_
-#define _URL_MAPPING_H_
+#pragma once
 
 #include <vector>
 
@@ -36,11 +35,11 @@
 
 /**
  * Used to store http referer strings (and/or regexp)
-**/
+ **/
 class referer_info
 {
 public:
-  referer_info(char *_ref, bool *error_flag = NULL, char *errmsgbuf = NULL, int errmsgbuf_size = 0);
+  referer_info(char *_ref, bool *error_flag = nullptr, char *errmsgbuf = nullptr, int errmsgbuf_size = 0);
   ~referer_info();
   referer_info *next;
   char *referer;
@@ -53,17 +52,17 @@ public:
 
 /**
  *
-**/
+ **/
 class redirect_tag_str
 {
 public:
-  redirect_tag_str() : next(0), chunk_str(NULL), type(0) {}
+  redirect_tag_str() : next(nullptr), chunk_str(nullptr), type(0) {}
   ~redirect_tag_str()
   {
     type = 0;
     if (chunk_str) {
       ats_free(chunk_str);
-      chunk_str = NULL;
+      chunk_str = nullptr;
     }
   }
 
@@ -75,7 +74,7 @@ public:
 
 /**
  * Used to store the mapping for class UrlRewrite
-**/
+ **/
 class url_mapping
 {
 public:
@@ -132,12 +131,12 @@ private:
 /**
  * UrlMappingContainer wraps a url_mapping object and allows a caller to rewrite the target URL.
  * This is used while evaluating remap rules.
-**/
+ **/
 class UrlMappingContainer
 {
 public:
-  UrlMappingContainer() : _mapping(NULL), _toURLPtr(NULL), _heap(NULL) {}
-  explicit UrlMappingContainer(HdrHeap *heap) : _mapping(NULL), _toURLPtr(NULL), _heap(heap) {}
+  UrlMappingContainer() : _mapping(nullptr), _toURLPtr(nullptr), _heap(nullptr) {}
+  explicit UrlMappingContainer(HdrHeap *heap) : _mapping(nullptr), _toURLPtr(nullptr), _heap(heap) {}
   ~UrlMappingContainer() { deleteToURL(); }
   URL *
   getToURL() const
@@ -147,7 +146,7 @@ public:
   URL *
   getFromURL() const
   {
-    return _mapping ? &(_mapping->fromURL) : NULL;
+    return _mapping ? &(_mapping->fromURL) : nullptr;
   };
 
   url_mapping *
@@ -161,7 +160,7 @@ public:
   {
     deleteToURL();
     _mapping  = m;
-    _toURLPtr = m ? &(m->toUrl) : NULL;
+    _toURLPtr = m ? &(m->toUrl) : nullptr;
   }
 
   void
@@ -173,7 +172,7 @@ public:
   URL *
   createNewToURL()
   {
-    ink_assert(_heap != NULL);
+    ink_assert(_heap != nullptr);
     deleteToURL();
     _toURL.create(_heap);
     _toURLPtr = &_toURL;
@@ -192,9 +191,9 @@ public:
   clear()
   {
     deleteToURL();
-    _mapping  = NULL;
-    _toURLPtr = NULL;
-    _heap     = NULL;
+    _mapping  = nullptr;
+    _toURLPtr = nullptr;
+    _heap     = nullptr;
   }
 
   // noncopyable, non-assignable
@@ -207,5 +206,3 @@ private:
   URL _toURL;
   HdrHeap *_heap;
 };
-
-#endif

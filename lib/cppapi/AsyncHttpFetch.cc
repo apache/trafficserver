@@ -152,7 +152,7 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
   }
   return 0;
 }
-}
+} // namespace
 
 AsyncHttpFetch::AsyncHttpFetch(const string &url_str, const string &request_body)
 {
@@ -231,9 +231,9 @@ AsyncHttpFetch::run()
                     state_->request_->getUrl().getUrlString().c_str(), HTTP_VERSION_STRINGS[state_->request_->getVersion()].c_str(),
                     reinterpret_cast<struct sockaddr const *>(&addr), TS_FETCH_FLAGS_STREAM | TS_FETCH_FLAGS_DECHUNK);
     string header_value;
-    for (Headers::iterator iter = headers.begin(), end = headers.end(); iter != end; ++iter) {
-      HeaderFieldName header_name = (*iter).name();
-      header_value                = (*iter).values();
+    for (auto &&header : headers) {
+      HeaderFieldName header_name = header.name();
+      header_value                = header.values();
       TSFetchHeaderAdd(state_->fetch_sm_, header_name.c_str(), header_name.length(), header_value.data(), header_value.size());
     }
     LOG_DEBUG("Launching streaming fetch");

@@ -1,13 +1,3 @@
-#if !defined(TS_IP_MAP_HEADER)
-#define TS_IP_MAP_HEADER
-
-#include "ts/ink_platform.h"
-#include "ts/ink_defs.h"
-#include "ts/RbTree.h"
-#include "ts/ink_inet.h"
-#include "ts/IntrusiveDList.h"
-#include "ts/ink_assert.h"
-
 /** @file
 
     Map of IP addresses to client data.
@@ -30,6 +20,15 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+
+#pragma once
+
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/RbTree.h"
+#include "ts/ink_inet.h"
+#include "ts/IntrusiveDList.h"
+#include "ts/ink_assert.h"
 
 namespace ts
 {
@@ -60,8 +59,8 @@ namespace detail
 
   class Ip4Map; // Forward declare.
   class Ip6Map; // Forward declare.
-}
-} // namespace ts::detail
+} // namespace detail
+} // namespace ts
 
 /** Map from IP addresses to client data.
 
@@ -101,7 +100,7 @@ public:
   class iterator; // forward declare.
 
   /** Public API for intervals in the map.
-  */
+   */
   class Node : protected ts::detail::RBNode
   {
     friend class iterator;
@@ -110,7 +109,7 @@ public:
   public:
     typedef Node self; ///< Self reference type.
     /// Default constructor.
-    Node() : _data(0) {}
+    Node() : _data(nullptr) {}
     /// Construct with @a data.
     Node(void *data) : _data(data) {}
     /// @return Client data for the node.
@@ -122,7 +121,7 @@ public:
     /// Set client data.
     virtual self &
     setData(void *data ///< Client data pointer to store.
-            )
+    )
     {
       _data = data;
       return *this;
@@ -154,7 +153,7 @@ public:
     typedef Node &reference;     ///< Reference to referent.
     typedef std::bidirectional_iterator_tag iterator_category;
     /// Default constructor.
-    iterator() : _tree(0), _node(0) {}
+    iterator() : _tree(nullptr), _node(nullptr) {}
     reference operator*() const; //!< value operator
     pointer operator->() const;  //!< dereference operator
     self &operator++();          //!< next node (prefix)
@@ -192,7 +191,7 @@ public:
   self &mark(sockaddr const *min, ///< Minimum value in range.
              sockaddr const *max, ///< Maximum value in range.
              void *data = nullptr ///< Client data payload.
-             );
+  );
 
   /** Mark a range.
       All addresses in the range [ @a min , @a max ] are marked with @a data.
@@ -202,7 +201,7 @@ public:
   self &mark(in_addr_t min,       ///< Minimum address (network order).
              in_addr_t max,       ///< Maximum address (network order).
              void *data = nullptr ///< Client data.
-             );
+  );
 
   /** Mark a range.
       All addresses in the range [ @a min , @a max ] are marked with @a data.
@@ -212,7 +211,7 @@ public:
   self &mark(IpAddr const &min,   ///< Minimum address (network order).
              IpAddr const &max,   ///< Maximum address (network order).
              void *data = nullptr ///< Client data.
-             );
+  );
 
   /** Mark an IPv4 address @a addr with @a data.
       This is equivalent to calling @c mark(addr, addr, data).
@@ -221,7 +220,7 @@ public:
   */
   self &mark(in_addr_t addr,      ///< Address (network order).
              void *data = nullptr ///< Client data.
-             );
+  );
 
   /** Mark a range.
       All addresses in the range [ @a min , @a max ] are marked with @a data.
@@ -231,7 +230,7 @@ public:
   self &mark(IpEndpoint const *min, ///< Minimum address (network order).
              IpEndpoint const *max, ///< Maximum address (network order).
              void *data = nullptr   ///< Client data.
-             );
+  );
 
   /** Mark an address @a addr with @a data.
       This is equivalent to calling @c mark(addr, addr, data).
@@ -240,7 +239,7 @@ public:
   */
   self &mark(IpEndpoint const *addr, ///< Address (network order).
              void *data = nullptr    ///< Client data.
-             );
+  );
 
   /** Unmark addresses.
 
@@ -251,13 +250,13 @@ public:
   */
   self &unmark(sockaddr const *min, ///< Minimum value.
                sockaddr const *max  ///< Maximum value.
-               );
+  );
   /// Unmark addresses (overload).
   self &unmark(IpEndpoint const *min, IpEndpoint const *max);
   /// Unmark overload.
   self &unmark(in_addr_t min, ///< Minimum of range to unmark.
                in_addr_t max  ///< Maximum of range to unmark.
-               );
+  );
 
   /** Fill addresses.
 
@@ -273,6 +272,8 @@ public:
   self &fill(sockaddr const *min, sockaddr const *max, void *data = nullptr);
   /// Fill addresses (overload).
   self &fill(IpEndpoint const *min, IpEndpoint const *max, void *data = nullptr);
+  /// Fill addresses (overload).
+  self &fill(IpAddr const &min, IpAddr const &max, void *data = nullptr);
   /// Fill addresses (overload).
   self &fill(in_addr_t min, in_addr_t max, void *data = nullptr);
 
@@ -396,6 +397,15 @@ IpMap::fill(IpEndpoint const *min, IpEndpoint const *max, void *data)
   return this->fill(&min->sa, &max->sa, data);
 }
 
+inline IpMap &
+IpMap::fill(IpAddr const &min, IpAddr const &max, void *data)
+{
+  IpEndpoint x, y;
+  x.assign(min);
+  y.assign(max);
+  return this->fill(&x.sa, &y.sa, data);
+}
+
 inline bool
 IpMap::contains(IpEndpoint const *target, void **ptr) const
 {
@@ -413,17 +423,19 @@ IpMap::contains(IpAddr const &addr, void **ptr) const
 inline IpMap::iterator
 IpMap::end() const
 {
-  return iterator(this, 0);
+  return iterator(this, nullptr);
 }
 
-inline IpMap::iterator IpMap::iterator::operator++(int)
+inline IpMap::iterator
+IpMap::iterator::operator++(int)
 {
   iterator old(*this);
   ++*this;
   return old;
 }
 
-inline IpMap::iterator IpMap::iterator::operator--(int)
+inline IpMap::iterator
+IpMap::iterator::operator--(int)
 {
   self tmp(*this);
   --*this;
@@ -446,8 +458,4 @@ inline IpMap::iterator::pointer IpMap::iterator::operator->() const
   return _node;
 }
 
-inline IpMap::IpMap() : _m4(0), _m6(0)
-{
-}
-
-#endif // TS_IP_MAP_HEADER
+inline IpMap::IpMap() : _m4(nullptr), _m6(nullptr) {}

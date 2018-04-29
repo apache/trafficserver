@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_P_Freer_h_)
-#define _P_Freer_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Tasks.h"
@@ -39,8 +38,9 @@ public: // Needed by WinNT compiler (compiler bug)
   {
     (void)event;
     (void)e;
-    if (p)
+    if (p) {
       delete p;
+    }
     delete this;
     return EVENT_DONE;
   }
@@ -132,5 +132,3 @@ new_Derefer(C *ap, ink_hrtime t)
 {
   eventProcessor.schedule_in(new DereferContinuation<C>(ap), t, ET_TASK);
 }
-
-#endif /* _Freer_h_ */

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef I_SessionAccept_H_
-#define I_SessionAccept_H_
+#pragma once
 
 #include "I_Net.h"
 #include "I_VConnection.h"
@@ -71,7 +70,7 @@ public:
 
    */
   virtual bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
-  HttpProxyPort *proxyPort = nullptr;
+  HttpProxyPort *proxyPort                                             = nullptr;
   /* Returns nullptr if the specified client_ip is not allowed by ip_allow
    * Returns a pointer to the relevant IP policy for later processing otherwise */
   static const AclRecord *testIpAllowPolicy(sockaddr const *client_ip);
@@ -79,5 +78,3 @@ public:
 private:
   virtual int mainEvent(int event, void *netvc) = 0;
 };
-
-#endif /* I_SessionAccept_H_ */

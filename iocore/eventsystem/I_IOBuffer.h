@@ -36,7 +36,7 @@
 
  */
 
-#if !defined(I_IOBuffer_h)
+#pragma once
 #define I_IOBuffer_h
 
 #include "ts/ink_platform.h"
@@ -935,7 +935,7 @@ public:
   buf()
   {
     IOBufferBlock *b = first_write_block();
-    return b ? b->buf() : 0;
+    return b ? b->buf() : nullptr;
   }
 
   char *
@@ -1100,18 +1100,21 @@ public:
     if (_writer) {
       _writer->reset();
     }
-    for (int j = 0; j < MAX_MIOBUFFER_READERS; j++)
-      if (readers[j].allocated()) {
-        readers[j].reset();
+    for (auto &reader : readers) {
+      if (reader.allocated()) {
+        reader.reset();
       }
+    }
   }
 
   void
   init_readers()
   {
-    for (int j = 0; j < MAX_MIOBUFFER_READERS; j++)
-      if (readers[j].allocated() && !readers[j].block)
-        readers[j].block = _writer;
+    for (auto &reader : readers) {
+      if (reader.allocated() && !reader.block) {
+        reader.block = _writer;
+      }
+    }
   }
 
   void
@@ -1297,7 +1300,7 @@ extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
   const char *loc
 #endif
-  );
+);
 
 extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
@@ -1401,4 +1404,3 @@ extern IOBufferBlock *iobufferblock_clone(IOBufferBlock *b, int64_t offset, int6
 
 */
 extern IOBufferBlock *iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t write);
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __P_SSLCERTLOOKUP_H__
-#define __P_SSLCERTLOOKUP_H__
+#pragma once
 
 #include "ProxyConfig.h"
 #include "P_SSLUtils.h"
@@ -61,7 +60,7 @@ struct SSLCertContext {
     OPT_TUNNEL ///< Just tunnel, don't terminate.
   };
 
-  SSLCertContext() : ctx(0), opt(OPT_NONE), keyblock(nullptr) {}
+  SSLCertContext() : ctx(nullptr), opt(OPT_NONE), keyblock(nullptr) {}
   explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(nullptr) {}
   SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(nullptr) {}
   SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
@@ -111,4 +110,3 @@ void ticket_block_free(void *ptr);
 ssl_ticket_key_block *ticket_block_alloc(unsigned count);
 ssl_ticket_key_block *ticket_block_create(char *ticket_key_data, int ticket_key_len);
 ssl_ticket_key_block *ssl_create_ticket_keyblock(const char *ticket_key_path);
-#endif /* __P_SSLCERTLOOKUP_H__ */

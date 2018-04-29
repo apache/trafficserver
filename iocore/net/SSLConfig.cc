@@ -395,8 +395,9 @@ SSLConfigParams::printCTXmap() const
 {
   Vec<cchar *> keys;
   ctx_map.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++)
+  for (size_t i = 0; i < keys.length(); i++) {
     Debug("ssl", "Client certificates in the map %s: %p", keys.get(i), ctx_map.get(keys.get(i)));
+  }
 }
 void
 SSLConfigParams::freeCTXmap() const

@@ -21,8 +21,7 @@
     limitations under the License.
  */
 
-#if !defined TS_BUFFERWRITER_H_
-#define TS_BUFFERWRITER_H_
+#pragma once
 
 #include <stdlib.h>
 #include <utility>
@@ -496,7 +495,7 @@ namespace bw_fmt
   /// Generic floating point conversion.
   BufferWriter &Format_Floating(BufferWriter &w, BWFSpec const &spec, double n, bool negative_p);
 
-} // bw_fmt
+} // namespace bw_fmt
 
 /** Compiled BufferWriter format
  */
@@ -637,8 +636,11 @@ bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
 {
   BWFSpec ptr_spec{spec};
   ptr_spec._radix_lead_p = true;
-  if (ptr_spec._type == BWFSpec::DEFAULT_TYPE)
-    ptr_spec._type = 'x'; // if default, switch to hex.
+  if (ptr_spec._type == BWFSpec::DEFAULT_TYPE || ptr_spec._type == 'p') {
+    ptr_spec._type = 'x'; // if default or 'p;, switch to lower hex.
+  } else if (ptr_spec._type == 'P') {
+    ptr_spec._type = 'X'; // P means upper hex, overriding other specializations.
+  }
   return bw_fmt::Format_Integer(w, ptr_spec, reinterpret_cast<intptr_t>(ptr), false);
 }
 
@@ -653,6 +655,19 @@ inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &, char c)
 {
   return w.write(c);
+}
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bool f)
+{
+  if ('s' == spec._type) {
+    w.write(f ? "true"_sv : "false"_sv);
+  } else if ('S' == spec._type) {
+    w.write(f ? "TRUE"_sv : "FALSE"_sv);
+  } else {
+    bw_fmt::Format_Integer(w, spec, static_cast<uintmax_t>(f), false);
+  }
+  return w;
 }
 
 template <size_t N>
@@ -738,5 +753,3 @@ bwprint(std::string &s, ts::TextView fmt, Rest &&... rest)
 }
 
 } // end namespace ts
-
-#endif // include once

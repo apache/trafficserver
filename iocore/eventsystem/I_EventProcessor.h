@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_EventProcessor_h_
-#define _I_EventProcessor_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Continuation.h"
@@ -38,7 +37,7 @@ constexpr int MAX_THREADS_IN_EACH_TYPE = 3072;
 #ifdef TS_MAX_NUMBER_EVENT_THREADS
 constexpr int MAX_EVENT_THREADS = TS_MAX_NUMBER_EVENT_THREADS;
 #else
-constexpr int MAX_EVENT_THREADS = 4096;
+constexpr int MAX_EVENT_THREADS        = 4096;
 #endif
 
 class EThread;
@@ -239,7 +238,7 @@ public:
   /// Schedule an @a event on continuation @a c when a thread of type @a ev_type is spawned.
   /// The @a cookie is attached to the event instance passed to the continuation.
   /// @return The scheduled event.
-  Event *schedule_spawn(Continuation *c, EventType ev_type, int event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_spawn(Continuation *c, EventType ev_type, int event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /// Schedule the function @a f to be called in a thread of type @a ev_type when it is spawned.
   Event *schedule_spawn(void (*f)(EThread *), EventType ev_type);
@@ -401,5 +400,3 @@ private:
 };
 
 extern inkcoreapi class EventProcessor eventProcessor;
-
-#endif /*_EventProcessor_h_*/

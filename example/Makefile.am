@@ -186,6 +186,6 @@ cppapi_WebSocket_la_LIBADD = $(libatscppapi)
 cppapi_boom_la_LIBADD = $(libatscppapi)
 cppapi_intercept_la_LIBADD = $(libatscppapi)
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
 	$(CC_Clang_Tidy)

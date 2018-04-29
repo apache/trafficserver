@@ -719,8 +719,9 @@ HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, Prot
 
       memcpy(hdr, "http", 4);
       hdr += 4;
-      if (tls_p)
+      if (tls_p) {
         *hdr++ = 's';
+      }
 
       // If detail level is compact (RFC 7239 compliant "proto" value for Forwarded field), stop here.
 

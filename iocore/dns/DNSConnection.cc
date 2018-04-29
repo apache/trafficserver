@@ -78,6 +78,14 @@ void
 DNSConnection::trigger()
 {
   handler->triggered.enqueue(this);
+
+  // Since the periodic check is removed, we need to call
+  // this when it's triggered by EVENTIO_DNS_CONNECTION.
+  // The handler should be pionting to DNSHandler::mainEvent.
+  // We can schedule an immediate event or call the handler
+  // directly, and since both arguments are not being used
+  // passing in 0 and nullptr will do the job.
+  handler->handleEvent(0, nullptr);
 }
 
 int
@@ -183,8 +191,9 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
+  }
 #endif
 
   ats_ip_copy(&ip.sa, addr);

@@ -280,9 +280,9 @@ Vol::scan_for_pinned_documents()
   if (cache_config_permit_pinning) {
     // we can't evacuate anything between header->write_pos and
     // header->write_pos + AGG_SIZE.
-    int ps                = offset_to_vol_offset(this, header->write_pos + AGG_SIZE);
-    int pe                = offset_to_vol_offset(this, header->write_pos + 2 * EVACUATION_SIZE + (len / PIN_SCAN_EVERY));
-    int vol_end_offset    = offset_to_vol_offset(this, len + skip);
+    int ps                = this->offset_to_vol_offset(header->write_pos + AGG_SIZE);
+    int pe                = this->offset_to_vol_offset(header->write_pos + 2 * EVACUATION_SIZE + (len / PIN_SCAN_EVERY));
+    int vol_end_offset    = this->offset_to_vol_offset(len + skip);
     int before_end_of_vol = pe < vol_end_offset;
     DDebug("cache_evac", "scan %d %d", ps, pe);
     for (int i = 0; i < this->direntries(); i++) {
@@ -695,8 +695,8 @@ Ldone:
 int
 Vol::evac_range(off_t low, off_t high, int evac_phase)
 {
-  off_t s = offset_to_vol_offset(this, low);
-  off_t e = offset_to_vol_offset(this, high);
+  off_t s = this->offset_to_vol_offset(low);
+  off_t e = this->offset_to_vol_offset(high);
   int si  = dir_offset_evac_bucket(s);
   int ei  = dir_offset_evac_bucket(e);
 
@@ -718,7 +718,7 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
       first->f.done       = 1;
       io.aiocb.aio_fildes = fd;
       io.aiocb.aio_nbytes = dir_approx_size(&first->dir);
-      io.aiocb.aio_offset = vol_offset(this, &first->dir);
+      io.aiocb.aio_offset = this->vol_offset(&first->dir);
       if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(skip + len)) {
         io.aiocb.aio_nbytes = skip + len - io.aiocb.aio_offset;
       }
@@ -752,8 +752,8 @@ agg_copy(char *p, CacheVC *vc)
     ink_assert(vol->round_to_approx_size(len) == vc->agg_len);
     // update copy of directory entry for this document
     dir_set_approx_size(&vc->dir, vc->agg_len);
-    dir_set_offset(&vc->dir, offset_to_vol_offset(vol, o));
-    ink_assert(vol_offset(vol, &vc->dir) < (vol->skip + vol->len));
+    dir_set_offset(&vc->dir, vol->offset_to_vol_offset(o));
+    ink_assert(vol->vol_offset(&vc->dir) < (vol->skip + vol->len));
     dir_set_phase(&vc->dir, vol->header->phase);
 
     // fill in document header
@@ -877,7 +877,7 @@ agg_copy(char *p, CacheVC *vc)
     memcpy(p, doc, doc->len);
 
     vc->dir = vc->overwrite_dir;
-    dir_set_offset(&vc->dir, offset_to_vol_offset(vc->vol, o));
+    dir_set_offset(&vc->dir, vc->vol->offset_to_vol_offset(o));
     dir_set_phase(&vc->dir, vc->vol->header->phase);
     return l;
   }
@@ -888,8 +888,8 @@ Vol::evacuate_cleanup_blocks(int i)
 {
   EvacuationBlock *b = evacuate[i].head;
   while (b) {
-    if (b->f.done && ((header->phase != dir_phase(&b->dir) && header->write_pos > vol_offset(this, &b->dir)) ||
-                      (header->phase == dir_phase(&b->dir) && header->write_pos <= vol_offset(this, &b->dir)))) {
+    if (b->f.done && ((header->phase != dir_phase(&b->dir) && header->write_pos > this->vol_offset(&b->dir)) ||
+                      (header->phase == dir_phase(&b->dir) && header->write_pos <= this->vol_offset(&b->dir)))) {
       EvacuationBlock *x = b;
       DDebug("cache_evac", "evacuate cleanup free %X offset %d", (int)b->evac_frags.key.slice32(0), (int)dir_offset(&b->dir));
       b = b->link.next;
@@ -1058,7 +1058,7 @@ Lagain:
     int l       = round_to_approx_size(sizeof(Doc));
     agg_buf_pos = l;
     Doc *d      = (Doc *)agg_buffer;
-    memset(d, 0, sizeof(Doc));
+    memset(static_cast<void *>(d), 0, sizeof(Doc));
     d->magic        = DOC_MAGIC;
     d->len          = l;
     d->sync_serial  = header->sync_serial;
@@ -1532,7 +1532,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
        */
       if (!dir_valid(vol, &dir)) {
         DDebug("cache_write", "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %" PRId64,
-               (int64_t)offset_to_vol_offset(vol, vol->header->write_pos), dir_offset(&dir));
+               (int64_t)vol->offset_to_vol_offset(vol->header->write_pos), dir_offset(&dir));
         last_collision = nullptr;
         goto Lcollision;
       }

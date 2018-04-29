@@ -22,8 +22,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_HTTP_STATUS_H_
-#define ATSCPPAPI_HTTP_STATUS_H_
 
 #include <string>
 
@@ -98,6 +96,4 @@ enum HttpStatus {
   HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 };
-}
-
-#endif
+} // namespace atscppapi

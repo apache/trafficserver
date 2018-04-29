@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __PRIORITY_QUEUE_H__
-#define __PRIORITY_QUEUE_H__
+#pragma once
 
 #include "ts/ink_assert.h"
 #include <vector>
@@ -77,7 +76,7 @@ template <typename T, typename Comp>
 bool
 PriorityQueue<T, Comp>::in(PriorityQueueEntry<T> *entry)
 {
-  ink_release_assert(entry != NULL);
+  ink_release_assert(entry != nullptr);
 
   if (std::find(_v.begin(), _v.end(), entry) != _v.end()) {
     return true;
@@ -97,7 +96,7 @@ template <typename T, typename Comp>
 void
 PriorityQueue<T, Comp>::push(PriorityQueueEntry<T> *entry)
 {
-  ink_release_assert(entry != NULL);
+  ink_release_assert(entry != nullptr);
 
   int len = _v.size();
   _v.push_back(entry);
@@ -111,7 +110,7 @@ PriorityQueueEntry<T> *
 PriorityQueue<T, Comp>::top()
 {
   if (empty()) {
-    return NULL;
+    return nullptr;
   } else {
     return _v[0];
   }
@@ -165,7 +164,7 @@ template <typename T, typename Comp>
 void
 PriorityQueue<T, Comp>::update(PriorityQueueEntry<T> *entry)
 {
-  ink_release_assert(entry != NULL);
+  ink_release_assert(entry != nullptr);
 
   if (empty()) {
     return;
@@ -180,7 +179,7 @@ template <typename T, typename Comp>
 void
 PriorityQueue<T, Comp>::update(PriorityQueueEntry<T> *entry, bool increased)
 {
-  ink_release_assert(entry != NULL);
+  ink_release_assert(entry != nullptr);
 
   if (empty()) {
     return;
@@ -259,5 +258,3 @@ PriorityQueue<T, Comp>::_bubble_down(uint32_t index)
     break;
   }
 }
-
-#endif // __PRIORITY_QUEUE_H__

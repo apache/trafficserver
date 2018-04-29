@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_EVENTS_H_
-#define _I_REC_EVENTS_H_
+#pragma once
 
 // copy from mgmt/BaseManager.h
 #define REC_EVENT_SYNC_KEY 10000
@@ -37,5 +36,3 @@
 #define REC_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION 10010
 
 #define REC_EVENT_CACHE_DISK_CONTROL 10011
-
-#endif

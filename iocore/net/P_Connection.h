@@ -47,8 +47,7 @@
 
   **************************************************************************/
 
-#ifndef __CONNECTION_H__
-#define __CONNECTION_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -97,7 +96,7 @@ struct Connection {
       @see connect
   */
   int open(NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options.
-           );
+  );
 
   /** Connect the socket.
 
@@ -111,12 +110,12 @@ struct Connection {
   */
   int connect(sockaddr const *to,                       ///< Remote address and port.
               NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options
-              );
+  );
 
   /// Set the internal socket address struct.
   void
   setRemote(sockaddr const *remote_addr ///< Address and port.
-            )
+  )
   {
     ats_ip_copy(&addr, remote_addr);
   }
@@ -176,5 +175,3 @@ struct Server : public Connection {
 
   Server() : Connection(), http_accept_filter(false) { ink_zero(accept_addr); }
 };
-
-#endif /*_Connection_h*/

@@ -265,9 +265,7 @@ struct charIndexIterState {
   DynArray<charIndexIterInternal> q;
 };
 
-charIndexIterState::charIndexIterState() : cur_level(-1), cur_index(-1), cur_el(nullptr), q(&default_iter, 6)
-{
-}
+charIndexIterState::charIndexIterState() : cur_level(-1), cur_index(-1), cur_el(nullptr), q(&default_iter, 6) {}
 
 // class charIndex - A constant time string matcher intended for
 //    short strings in a sparsely populated DNS paritition
@@ -679,9 +677,7 @@ const char *LeafTypeStr[] = {"Leaf Invalid", "Host (Partial)", "Host (Full)", "D
 
 static int negative_one = -1;
 
-HostBranch::HostBranch() : level(0), type(HOST_TERMINAL), next_level(nullptr), leaf_indexs(&negative_one, 1)
-{
-}
+HostBranch::HostBranch() : level(0), type(HOST_TERMINAL), next_level(nullptr), leaf_indexs(&negative_one, 1) {}
 
 // HostBranch::~HostBranch()
 //

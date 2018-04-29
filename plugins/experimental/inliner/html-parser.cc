@@ -326,5 +326,5 @@ namespace inliner
     return done;
   }
 
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats

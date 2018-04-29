@@ -80,9 +80,7 @@ CacheHashIdElt::setBuckets(bool state)
   return *this;
 }
 
-CacheIdBox::CacheIdBox() : m_base(0), m_tail(0), m_size(0), m_cap(0)
-{
-}
+CacheIdBox::CacheIdBox() : m_base(0), m_tail(0), m_size(0), m_cap(0) {}
 
 size_t
 CacheIdBox::getSize() const
@@ -219,9 +217,7 @@ CapabilityElt::setCapData(uint32_t data)
   return *this;
 }
 
-CapabilityElt::CapabilityElt()
-{
-}
+CapabilityElt::CapabilityElt() {}
 
 CapabilityElt::CapabilityElt(Type cap, uint32_t data)
 {
@@ -1558,9 +1554,7 @@ AssignMapComp::parse(MsgBuffer &buffer)
   return zret;
 }
 // ------------------------------------------------------
-detail::Assignment::Assignment() : m_key(0, 0), m_active(false), m_router_list(0), m_hash_assign(0), m_mask_assign(0)
-{
-}
+detail::Assignment::Assignment() : m_key(0, 0), m_active(false), m_router_list(0), m_hash_assign(0), m_mask_assign(0) {}
 
 bool
 detail::Assignment::fill(cache::GroupData &group, uint32_t addr)
@@ -1758,7 +1752,7 @@ RedirectAssignMsg::fill(detail::cache::GroupData const &group, SecurityOption se
 void
 ISeeYouMsg::fill(detail::router::GroupData const &group, SecurityOption sec_opt, detail::Assignment & /* assign ATS_UNUSED */,
                  size_t to_caches, size_t n_routers, size_t n_caches, bool /* send_capabilities ATS_UNUSED */
-                 )
+)
 {
   m_header.fill(m_buffer, I_SEE_YOU);
   m_security.fill(m_buffer, sec_opt);

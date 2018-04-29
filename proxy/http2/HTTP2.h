@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef __HTTP2_H__
-#define __HTTP2_H__
+#pragma once
 
 #include "ts/ink_defs.h"
 #include "ts/ink_memory.h"
@@ -239,7 +238,7 @@ struct Http2FrameHeader {
 // [RFC 7540] 5.4. Error Handling
 struct Http2Error {
   Http2Error(const Http2ErrorClass error_class = Http2ErrorClass::HTTP2_ERROR_CLASS_NONE,
-             const Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_NO_ERROR, const char *err_msg = NULL)
+             const Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_NO_ERROR, const char *err_msg = nullptr)
   {
     cls  = error_class;
     code = error_code;
@@ -381,5 +380,3 @@ public:
 
   static void init();
 };
-
-#endif /* __HTTP2_H__ */

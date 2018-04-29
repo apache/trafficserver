@@ -719,35 +719,38 @@ make_response_header(int sock, char *url_start, char *url_end, int *url_len, cha
       } else {
         snprintf(buff, 1024, "Content-Range: bytes %lu-%d/%d", fd[sock].range_start, fd[sock].total_length, fd[sock].total_length);
       }
-      print_len = sprintf(header, "HTTP/1.1 206 Partial-Content\r\n"
-                                  "Content-Type: %s\r\n"
-                                  "Cache-Control: max-age=630720000\r\n"
-                                  "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
-                                  "%s"
-                                  "Content-Length: %d\r\n"
-                                  "%s\r\n"
-                                  "%s"
-                                  "\r\n%s",
+      print_len = sprintf(header,
+                          "HTTP/1.1 206 Partial-Content\r\n"
+                          "Content-Type: %s\r\n"
+                          "Cache-Control: max-age=630720000\r\n"
+                          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+                          "%s"
+                          "Content-Length: %d\r\n"
+                          "%s\r\n"
+                          "%s"
+                          "\r\n%s",
                           content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "Connection: close\r\n",
                           fd[sock].response_length, buff, no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "",
                           url_start ? url_start : "");
     } else if (fd[sock].ims) {
-      print_len = sprintf(header, "HTTP/1.0 304 Not-Modified\r\n"
-                                  "Content-Type: %s\r\n"
-                                  "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
-                                  "%s"
-                                  "\r\n",
+      print_len = sprintf(header,
+                          "HTTP/1.0 304 Not-Modified\r\n"
+                          "Content-Type: %s\r\n"
+                          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+                          "%s"
+                          "\r\n",
                           content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "");
-      *url_len = 0;
+      *url_len  = 0;
     } else {
-      print_len = sprintf(header, "HTTP/1.0 200 OK\r\n"
-                                  "Content-Type: %s\r\n"
-                                  "Cache-Control: max-age=630720000\r\n"
-                                  "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
-                                  "%s"
-                                  "Content-Length: %d\r\n"
-                                  "%s"
-                                  "\r\n%s",
+      print_len = sprintf(header,
+                          "HTTP/1.0 200 OK\r\n"
+                          "Content-Type: %s\r\n"
+                          "Cache-Control: max-age=630720000\r\n"
+                          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+                          "%s"
+                          "Content-Length: %d\r\n"
+                          "%s"
+                          "\r\n%s",
                           content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "", fd[sock].response_length,
                           no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "", url_start ? url_start : "");
     }
@@ -1594,7 +1597,7 @@ accept_sock(int sock)
 #else
                     (socklen_t *)&size
 #endif
-                    );
+    );
     if (new_fd < 0) {
       if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
@@ -2804,7 +2807,7 @@ make_client(unsigned int addr, int port)
     panic_perror("fcntl");
   }
 
-/* tweak buffer size so that remote end can't close connection too fast */
+  /* tweak buffer size so that remote end can't close connection too fast */
 
 #if 0
   int bufsize = cbuffersize;
@@ -2936,14 +2939,15 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
   switch (post_support) {
   case 0:
     if (range_mode) {
-      sprintf(fd[sock].req_header, "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "\r\n",
+      sprintf(fd[sock].req_header,
+              "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
               // coverity[dont_call]
@@ -2970,27 +2974,29 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
     break;
   case 1:
     if (range_mode) {
-      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
-                                   "Content-Length: %d\r\n"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "\r\n",
+      sprintf(fd[sock].req_header,
+              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+              "Content-Length: %d\r\n"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
               // coverity[dont_call]
               reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
-      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                                   "Content-Length: %d\r\n"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "\r\n",
+      sprintf(fd[sock].req_header,
+              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+              "Content-Length: %d\r\n"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, fd[sock].response_length,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
               // coverity[dont_call]
@@ -3003,27 +3009,29 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
       ink_assert(!"post_size should never be zero!");
 
     if (range_mode) {
-      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
-                                   "Content-Length: %d\r\n"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "\r\n",
+      sprintf(fd[sock].req_header,
+              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.1\r\n"
+              "Content-Length: %d\r\n"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "Connection: close\r\n",
               // coverity[dont_call]
               reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, "Host: localhost\r\n", rbuf, cookie);
     } else {
-      sprintf(fd[sock].req_header, "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-                                   "Content-Length: %d\r\n"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "%s"
-                                   "\r\n",
+      sprintf(fd[sock].req_header,
+              "POST http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+              "Content-Length: %d\r\n"
+              "%s"
+              "%s"
+              "%s"
+              "%s"
+              "\r\n",
               local_host, server_port, dr, fd[sock].response_length, evo_str, extension, post_size,
               fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
               // coverity[dont_call]
@@ -3039,13 +3047,14 @@ make_nohost_request(int sock, double dr, const char *evo_str, const char *extens
 static int
 make_host1_request(int sock, double dr, const char *evo_str, const char *extension, const char *eheaders, const char *cookie)
 {
-  sprintf(fd[sock].req_header, "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
-                               "Host: %s:%d\r\n"
-                               "%s"
-                               "%s"
-                               "%s"
-                               "%s"
-                               "\r\n",
+  sprintf(fd[sock].req_header,
+          "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
+          "Host: %s:%d\r\n"
+          "%s"
+          "%s"
+          "%s"
+          "%s"
+          "\r\n",
           dr, fd[sock].response_length, evo_str, extension, local_host, server_port,
           fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
           // coverity[dont_call]
@@ -3057,12 +3066,13 @@ static int
 make_host2_request(int sock, double dr, const char *evo_str, const char *extension, const char *eheaders, const char *cookie)
 {
   /* Send a non-proxy client request i.e. for Transparency testing */
-  sprintf(fd[sock].req_header, "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
-                               "%s"
-                               "%s"
-                               "%s"
-                               "%s"
-                               "\r\n",
+  sprintf(fd[sock].req_header,
+          "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
+          "%s"
+          "%s"
+          "%s"
+          "%s"
+          "\r\n",
           dr, fd[sock].response_length, evo_str, extension, fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
           // coverity[dont_call]
           reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
@@ -3558,24 +3568,26 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
     }
   }
   if (proxy_port) {
-    sprintf(fd[sock].req_header, "GET %s HTTP/1.0\r\n"
-                                 "%s"
-                                 "%s"
-                                 "Accept: */*\r\n"
-                                 "%s"
-                                 "\r\n",
+    sprintf(fd[sock].req_header,
+            "GET %s HTTP/1.0\r\n"
+            "%s"
+            "%s"
+            "Accept: */*\r\n"
+            "%s"
+            "\r\n",
             curl,
             // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
             eheaders);
   } else {
-    sprintf(fd[sock].req_header, "GET /%s%s%s%s%s HTTP/1.0\r\n"
-                                 "Host: %s\r\n"
-                                 "%s"
-                                 "%s"
-                                 "Accept: */*\r\n"
-                                 "%s"
-                                 "\r\n",
+    sprintf(fd[sock].req_header,
+            "GET /%s%s%s%s%s HTTP/1.0\r\n"
+            "Host: %s\r\n"
+            "%s"
+            "%s"
+            "Accept: */*\r\n"
+            "%s"
+            "\r\n",
             path, xquer ? "?" : "", quer, xpar ? ";" : "", para, host,
             // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
@@ -3641,7 +3653,7 @@ main(int argc __attribute__((unused)), const char *argv[])
   setvbuf(stdout, (char *)nullptr, _IOLBF, 0);
 
   fd = (FD *)malloc(MAXFDS * sizeof(FD));
-  memset(fd, 0, MAXFDS * sizeof(FD));
+  memset(static_cast<void *>(fd), 0, MAXFDS * sizeof(FD));
   process_args(&appVersionInfo, argument_descriptions, n_argument_descriptions, argv);
 
   if (!drand_seed) {
@@ -3821,35 +3833,35 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
                       int *real_frag_exists, int *real_quer_exists, int *real_para_exists, int *real_relative_url,
                       int *real_leading_slash)
 /*
-    * Input: src_url
-    * Outputs: every other argument
-    *
-    * You may pass in nullptr pointers for any of: sche, host, port, path,
-    * frag, quer, or para, and they will not be returned.
-    *
-    *
-    * According to the HTML Sourcebook, a URL consists:
-    *
-    *   http://www.address.edu:80/path/subdir/file.ext?query;params#fragment
-    *   aaaa   bbbbbbbbbbbbbbb cc dddddddddddddddddddd eeeee ffffff gggggggg
-    *
-    * where
-    *   a = scheme
-    *   b = host
-    *   c = port
-    *   d = path
-    *   e = query
-    *   f = params
-    *   g = fragment
-    *
-    * Order of parsing is: fragment, scheme, host, port, params, query, path
-    *
-    * Note that the hostname:port part may contain something like:
-    *   user@pass:hostname:port
-    *   bbbbbbbbbbbbbbbbbb cccc
-    * i.e., the port is the thing after the _last_ colon in this part
-    *
-    */
+ * Input: src_url
+ * Outputs: every other argument
+ *
+ * You may pass in nullptr pointers for any of: sche, host, port, path,
+ * frag, quer, or para, and they will not be returned.
+ *
+ *
+ * According to the HTML Sourcebook, a URL consists:
+ *
+ *   http://www.address.edu:80/path/subdir/file.ext?query;params#fragment
+ *   aaaa   bbbbbbbbbbbbbbb cc dddddddddddddddddddd eeeee ffffff gggggggg
+ *
+ * where
+ *   a = scheme
+ *   b = host
+ *   c = port
+ *   d = path
+ *   e = query
+ *   f = params
+ *   g = fragment
+ *
+ * Order of parsing is: fragment, scheme, host, port, params, query, path
+ *
+ * Note that the hostname:port part may contain something like:
+ *   user@pass:hostname:port
+ *   bbbbbbbbbbbbbbbbbb cccc
+ * i.e., the port is the thing after the _last_ colon in this part
+ *
+ */
 {
   const char *start = src_url;
   int len           = strlen(src_url);

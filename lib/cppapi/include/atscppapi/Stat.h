@@ -20,8 +20,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_STAT_H_
-#define ATSCPPAPI_STAT_H_
 
 #include <atscppapi/noncopyable.h>
 #include <stdint.h>
@@ -102,6 +100,4 @@ private:
   int stat_id_; /**< The internal stat ID */
 };
 
-} /* atscppapi */
-
-#endif /* ATSCPPAPI_STAT_H_ */
+} // namespace atscppapi

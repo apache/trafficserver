@@ -34,8 +34,7 @@
 
 
  ****************************************************************************/
-#if !defined(_UnixNetState_h_)
-#define _UnixNetState_h_
+#pragma once
 
 #include "ts/List.h"
 #include "I_VIO.h"
@@ -53,5 +52,3 @@ struct NetState {
 
   NetState() : enabled(0), vio(VIO::NONE), in_enabled_list(0), triggered(0) {}
 };
-
-#endif

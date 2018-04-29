@@ -32,9 +32,7 @@
  *   free callers from allocating the memory.
  ***************************************************************************/
 
-Token::Token() : name(nullptr), value(nullptr)
-{
-}
+Token::Token() : name(nullptr), value(nullptr) {}
 
 Token::~Token()
 {
@@ -106,9 +104,7 @@ Token::Print()
  *   function calls in addition to the common length() and the debugging
  *   print() member functions.
  ***************************************************************************/
-TokenList::TokenList() : length(0)
-{
-}
+TokenList::TokenList() : length(0) {}
 
 TokenList::~TokenList()
 {

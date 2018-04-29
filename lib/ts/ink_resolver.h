@@ -66,8 +66,7 @@
   limitations under the License.
 */
 
-#ifndef _ink_resolver_h_
-#define _ink_resolver_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
@@ -185,7 +184,7 @@ extern const char *const HOST_RES_STYLE_STRING[];
 /// Caclulate the effective resolution preferences.
 extern HostResStyle ats_host_res_from(int family,            ///< Connection family
                                       HostResPreferenceOrder ///< Preference ordering.
-                                      );
+);
 /// Calculate the host resolution style to force a family match to @a addr.
 extern HostResStyle ats_host_res_match(sockaddr const *addr);
 
@@ -193,7 +192,7 @@ extern HostResStyle ats_host_res_match(sockaddr const *addr);
  */
 extern void parse_host_res_preference(const char *value,           ///< [in] Configuration string.
                                       HostResPreferenceOrder order /// [out] Order to update.
-                                      );
+);
 
 #ifndef NS_GET16
 #define NS_GET16(s, cp)                                                  \
@@ -268,7 +267,7 @@ struct ts_imp_res_state {
 typedef ts_imp_res_state *ink_res_state;
 
 int ink_res_init(ink_res_state, IpEndpoint const *pHostList, size_t pHostListSize, int dnsSearch, const char *pDefDomain = nullptr,
-                 const char *pSearchList = nullptr, const char *pResolvConf = NULL);
+                 const char *pSearchList = nullptr, const char *pResolvConf = nullptr);
 
 int ink_res_mkquery(ink_res_state, int, const char *, int, int, const unsigned char *, int, const unsigned char *, unsigned char *,
                     int);
@@ -285,6 +284,4 @@ void ts_host_res_global_init();
 int ts_host_res_order_to_string(HostResPreferenceOrder const &order, ///< order to print
                                 char *out,                           ///< Target buffer for string.
                                 int size                             ///< Size of buffer.
-                                );
-
-#endif /* _ink_resolver_h_ */
+);

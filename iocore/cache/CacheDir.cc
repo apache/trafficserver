@@ -217,7 +217,7 @@ dir_init_segment(int s, Vol *d)
   d->header->freelist[s] = 0;
   Dir *seg               = d->dir_segment(s);
   int l, b;
-  memset(seg, 0, SIZEOF_DIR * DIR_DEPTH * d->buckets);
+  memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * d->buckets);
   for (l = 1; l < DIR_DEPTH; l++) {
     for (b = 0; b < d->buckets; b++) {
       Dir *bucket = dir_bucket(b, seg);
@@ -644,7 +644,7 @@ Llink:
 Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
-  ink_assert(vol_offset(d, e) < (d->skip + d->len));
+  ink_assert(d->vol_offset(e) < (d->skip + d->len));
   DDebug("dir_insert", "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), d->fd, bi, e,
          key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
@@ -721,7 +721,7 @@ Llink:
 Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
-  ink_assert(vol_offset(d, e) < d->skip + d->len);
+  ink_assert(d->vol_offset(e) < d->skip + d->len);
   DDebug("dir_overwrite", "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), d->fd,
          bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
@@ -1184,7 +1184,7 @@ compare_ushort(void const *a, void const *b)
 {
   return *static_cast<unsigned short const *>(a) - *static_cast<unsigned short const *>(b);
 }
-}
+} // namespace
 
 //
 // Check
@@ -1514,7 +1514,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   }
 
   Dir dir1;
-  memset(&dir1, 0, sizeof(dir1));
+  memset(static_cast<void *>(&dir1), 0, sizeof(dir1));
   int s1, b1;
 
   rprintf(t, "corrupt_bucket test\n");

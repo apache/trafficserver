@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef __P_UDPPPACKET_H_
-#define __P_UDPPPACKET_H_
+#pragma once
 
 #include "I_UDPNet.h"
 
@@ -265,5 +264,3 @@ new_UDPPacket()
   UDPPacketInternal *p = udpPacketAllocator.alloc();
   return p;
 }
-
-#endif //__P_UDPPPACKET_H_

@@ -28,14 +28,16 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSSslContext TSSslServerContextCreate(void)
+.. function:: TSSslContext TSSslServerContextCreate(TSSslX509 *cert, char *certname)
 .. function:: void TSSslContextDestroy(TSSslContext ctx)
 
 Description
 ===========
 
 :func:`TSSslServerContextCreate` creates a new TLS server context. The context
-is configured using the TLS settings specified in :file:`records.config`.
+is configured using the TLS settings specified in :file:`records.config`. The user can pass certificate object(:type:`TSSslX509` :arg:`cert`
+and certname (:code:`const char*` :arg:`certname`) optionally.
+This function sets the certificate status callback and initializes ocsp stapling data if :arg:`cert` and :arg:`certname` is provided and ocsp is enabled globally.
 :func:`TSSslServerContextCreate` returns ``nullptr`` on failure.
 
 :func:`TSSslContextDestroy` destroys a TLS context created by

@@ -18,10 +18,10 @@
 
 .. default-domain:: c
 
-TSSslContextFindByName
-**********************
+TS SSL Context
+**************
 
-Traffic Server TLS server context lookup.
+Traffic Server TLS server context.
 
 Synopsis
 ========
@@ -42,6 +42,7 @@ server :arg:`name`.
 :func:`TSSslContextFindByAddr` searches for a SSL server context
 created from :file:`ssl_multicert.config` matchin against the server
 :arg:`address`.
+
 
 
 See also

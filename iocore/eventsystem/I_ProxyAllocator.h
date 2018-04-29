@@ -28,8 +28,7 @@
 
 
 *****************************************************************************/
-#ifndef _I_ProxyAllocator_h_
-#define _I_ProxyAllocator_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 
@@ -42,7 +41,7 @@ struct ProxyAllocator {
   int allocated;
   void *freelist;
 
-  ProxyAllocator() : allocated(0), freelist(0) {}
+  ProxyAllocator() : allocated(0), freelist(nullptr) {}
 };
 
 template <class C>
@@ -122,5 +121,3 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
     if (_t->_a.allocated > thread_freelist_high_watermark) \
       thread_freeup(::_a, _t->_a);                         \
   } while (0)
-
-#endif /* _ProxyAllocator_h_ */

@@ -158,7 +158,7 @@ public:
         - ERROR: A syntax error was encountered. See the errata for detail. Do not continue parsing.
     */
     Rv<Result> parse(
-      ConstBuffer* cbuff = 0 ///< [out] Parsed path element.
+      ConstBuffer* cbuff = nullptr ///< [out] Parsed path element.
     );
 
     /// Check if input is available.
@@ -642,7 +642,7 @@ namespace detail {
   inline size_t ValueTable::size() const { return _ptr ? _ptr->_values.size() : 0; }
   inline Generation ValueTable::generation() const { return _ptr ? _ptr->_generation : Generation(0); }
   inline ValueItem const& ValueTable::operator [] (ValueIndex idx) const { return const_cast<self*>(this)->operator [] (idx); }
-  inline ValueTable& ValueTable::reset() { _ptr = 0; return *this; }
+  inline ValueTable& ValueTable::reset() { _ptr = nullptr; return *this; }
 
   inline ValueItem::ValueItem() : _type(VoidValue), _local_index(0), _srcLine(0), _srcColumn(0) {}
   inline ValueItem::ValueItem(ValueType type) : _type(type), _local_index(0), _srcLine(0), _srcColumn(0) {}
@@ -678,7 +678,7 @@ inline bool Value::isContainer() const { return 0 != (detail::IS_CONTAINER & det
 inline Value Value::getParent() const { return this->hasValue() ? Value(_config, _config._table[_vidx]._parent) : Value(); }
 inline bool Value::isRoot() const { return this->hasValue() && _vidx == 0; }
 inline Value& Value::reset() { _config = Configuration(); _vidx = detail::NULL_VALUE_INDEX; return *this; }
-inline detail::ValueItem* Value::item() { return this->hasValue() ? &(_config._table[_vidx]) : 0; }
+inline detail::ValueItem* Value::item() { return this->hasValue() ? &(_config._table[_vidx]) : nullptr; }
 inline detail::ValueItem const* Value::item() const { return const_cast<self*>(this)->item(); }
 inline Value Value::operator [] (char const* name) const { return (*this)[ConstBuffer(name, strlen(name))]; }
 inline size_t Value::childCount() const {
@@ -718,7 +718,7 @@ inline Path::ImplType::ImplType() { }
 inline Path::Path() { }
 inline Path::ImplType* Path::instance() { if (!_ptr) _ptr = new ImplType; return _ptr.get(); }
 inline Path& Path::append(ConstBuffer const& tag) { this->instance()->_elements.push_back(tag); return *this; }
-inline Path& Path::append(size_t index) { this->instance()->_elements.push_back(ConstBuffer(0, index)); return *this; }
+inline Path& Path::append(size_t index) { this->instance()->_elements.push_back(ConstBuffer(nullptr, index)); return *this; }
 inline size_t Path::count() const { return _ptr ? _ptr->_elements.size() : 0; }
 inline ConstBuffer const& Path::operator [] (size_t idx) const { return _ptr ? _ptr->_elements[idx] : detail::NULL_CONST_BUFFER; }
 

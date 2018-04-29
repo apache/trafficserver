@@ -1970,7 +1970,9 @@ HdrTest::test_comma_vals()
     {"foo, bar,", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
     {"foo, bar, ", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
     {
-      ",foo,bar,", 4, {{0, 0}, {1, 3}, {5, 3}, {9, 0}},
+      ",foo,bar,",
+      4,
+      {{0, 0}, {1, 3}, {5, 3}, {9, 0}},
     },
   };
 
@@ -2194,7 +2196,7 @@ HdrTest::test_parse_comma_list()
   int i, j, failures, ntests, offset;
 
   failures = (offset = 0);
-  ntests = sizeof(tests) / sizeof(tests[0]);
+  ntests   = sizeof(tests) / sizeof(tests[0]);
 
   for (i = 0; i < ntests; i++) {
     StrList list(false);

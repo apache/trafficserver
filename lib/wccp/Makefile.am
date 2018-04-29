@@ -20,9 +20,9 @@
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/proxy \
-  $(TS_INCLUDES)
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/proxy \
+	$(TS_INCLUDES)
 
 #WCCP_DEFS = @WCCP_DEFS@
 #DEFS += $(WCCP_DEFS)
@@ -31,19 +31,19 @@ noinst_LIBRARIES = libwccp.a
 # noinst_PROGRAMS = test-cache
 
 libwccp_a_SOURCES = \
-  Wccp.h \
-  WccpConfig.cc \
-  WccpEndPoint.cc \
-  WccpLocal.h \
-  WccpMeta.h \
-  WccpMsg.cc \
-  WccpStatic.cc \
-  WccpUtil.h
+	Wccp.h \
+	WccpConfig.cc \
+	WccpEndPoint.cc \
+	WccpLocal.h \
+	WccpMeta.h \
+	WccpMsg.cc \
+	WccpStatic.cc \
+	WccpUtil.h
 
 # test_cache_SOURCES = \
-#   wccp-test-cache.cc
+#		wccp-test-cache.cc
 
 # test_cache_LDADD = $(LDADD) -L$(top_builddir)/lib/tsconfig -ltsconfig -L$(top_builddir)/lib/wccp -lwccp -L$(top_builddir)/lib/ts -ltsutil
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

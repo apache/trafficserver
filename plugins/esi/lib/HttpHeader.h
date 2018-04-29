@@ -34,11 +34,11 @@ struct HttpHeader {
   int name_len;
   const char *value;
   int value_len;
-  HttpHeader(const char *n = 0, int n_len = -1, const char *v = 0, int v_len = -1)
+  HttpHeader(const char *n = nullptr, int n_len = -1, const char *v = nullptr, int v_len = -1)
     : name(n), name_len(n_len), value(v), value_len(v_len){};
 };
 
 typedef std::list<HttpHeader> HttpHeaderList;
-};
+}; // namespace EsiLib
 
 #endif // _ESI_HTTP_HEADER_H

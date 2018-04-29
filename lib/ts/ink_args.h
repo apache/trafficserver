@@ -26,8 +26,7 @@ Process arguments
 
 ****************************************************************************/
 
-#ifndef _INK_ARGS_H
-#define _INK_ARGS_H
+#pragma once
 #include "ts/ink_defs.h"
 #include "ts/ink_apidefs.h"
 
@@ -81,23 +80,21 @@ struct ArgumentDescription {
   }
 
 /* Global Data
-*/
+ */
 extern const char *file_arguments[]; // exported by process_args()
 extern unsigned n_file_arguments;    // exported by process_args()
 extern const char *program_name;     // exported by process_args()
 
 /* Print out arguments and values
-*/
+ */
 void show_argument_configuration(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions);
 
 void usage(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions, const char *arg_unused) TS_NORETURN;
 
 /* Process all arguments
-*/
+ */
 void process_args(const AppVersionInfo *appinfo, const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions,
-                  const char **argv, const char *usage_string = 0);
+                  const char **argv, const char *usage_string = nullptr);
 
 bool process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argument_descriptions,
                      unsigned n_argument_descriptions, const char **argv);
-
-#endif /*_INK_ARGS_H*/

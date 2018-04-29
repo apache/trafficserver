@@ -21,8 +21,7 @@
   limitations under the License.
 
  */
-#if !defined(_ink_cap_h_)
-#define _ink_cap_h_
+#pragma once
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -31,7 +30,7 @@
 
 /// Generate a debug message with the current capabilities for the process.
 extern void DebugCapabilities(const char *tag ///< Debug message tag.
-                              );
+);
 /// Set capabilities to persist across change of user id.
 /// @return true on success
 extern bool PreserveCapabilities();
@@ -61,7 +60,7 @@ extern int elevating_stat(const char *path, struct stat *buff);
     @return true on success
  */
 extern bool EnableCoreFile(bool flag ///< New enable state.
-                           );
+);
 
 void EnableDeathSignal(int signum);
 
@@ -105,5 +104,3 @@ private:
   void *cap_state; ///< Original capabilities state to restore.
 #endif
 };
-
-#endif

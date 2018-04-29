@@ -30,8 +30,7 @@
  *
  */
 
-#ifndef _MGMT_HASH_TABLE_H
-#define _MGMT_HASH_TABLE_H
+#pragma once
 
 #include "ts/ink_memory.h"
 #include "ts/ink_hash_table.h"
@@ -188,5 +187,3 @@ private:
   ink_mutex mutex;
 
 }; /* End class MgmtHashTable */
-
-#endif /* _MGMT_HASH_TABLE_H */

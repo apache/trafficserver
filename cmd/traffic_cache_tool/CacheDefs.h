@@ -32,6 +32,7 @@
 #include <ts/TextView.h>
 #include <ts/ink_file.h>
 #include <list>
+#include <ts/CryptoHash.h>
 
 #include "Command.h"
 #include "File.h"
@@ -45,7 +46,7 @@ namespace tag
 struct bytes {
   static constexpr char const *const label = " bytes";
 };
-}
+} // namespace tag
 
 using ts::round_down;
 using ts::round_up;
@@ -413,7 +414,7 @@ public:
     password.assign(p_pass, pass_len);
   }
 };
-}
+} // namespace ts
 
 class DFA;
 // this class matches url of the format : scheme://hostname:port/path;params?query
@@ -439,8 +440,9 @@ struct url_matcher {
   uint8_t
   match(const char *hostname) const
   {
-    if (regex.match(hostname) != -1)
+    if (regex.match(hostname) != -1) {
       return 1;
+    }
     //   if(url_with_user.match(hostname) != -1)
     //       return 2;
     return 0;
@@ -448,8 +450,9 @@ struct url_matcher {
   uint8_t
   portmatch(const char *hostname, int length) const
   {
-    if (port.match(hostname, length) != -1)
+    if (port.match(hostname, length) != -1) {
       return 1;
+    }
     //   if(url_with_user.match(hostname) != -1)
     //       return 2;
     return 0;
@@ -573,7 +576,7 @@ struct Stripe {
   void updateLiveData(enum Copy c);
 
   Span *_span;           ///< Hosting span.
-  INK_MD5 hash_id;       /// hash_id
+  CryptoHash hash_id;    /// hash_id
   Bytes _start;          ///< Offset of first byte of stripe metadata.
   Bytes _content;        ///< Start of content.
   CacheStoreBlocks _len; ///< Length of stripe.
@@ -609,7 +612,7 @@ struct Stripe {
   void dir_free_entry(CacheDirEntry *e, int s);
   CacheDirEntry *dir_delete_entry(CacheDirEntry *e, CacheDirEntry *p, int s);
   //  int dir_bucket_length(CacheDirEntry *b, int s);
-  int dir_probe(INK_MD5 *key, CacheDirEntry *result, CacheDirEntry **last_collision);
+  int dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_collision);
   bool dir_valid(CacheDirEntry *e);
   bool validate_sync_serial();
   Errata updateHeaderFooter();
@@ -617,4 +620,4 @@ struct Stripe {
   void init_dir();
   Errata clear(); // clears striped headers and footers
 };
-} // end ct
+} // namespace ct

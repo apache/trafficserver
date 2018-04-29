@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __URL_H__
-#define __URL_H__
+#pragma once
 
 #include "ts/Arena.h"
 #include "HdrToken.h"
@@ -246,9 +245,9 @@ public:
 
   int length_get();
   void clear_string_ref();
-  char *string_get(Arena *arena, int *length = NULL);
-  char *string_get_ref(int *length = NULL);
-  char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = NULL);
+  char *string_get(Arena *arena, int *length = nullptr);
+  char *string_get_ref(int *length = nullptr);
+  char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr);
   void hash_get(CryptoHash *hash, cache_generation_t generation = -1) const;
   void host_hash_get(CryptoHash *hash);
 
@@ -293,16 +292,12 @@ public:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline URL::URL() : m_url_impl(nullptr)
-{
-}
+inline URL::URL() : m_url_impl(nullptr) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline URL::~URL()
-{
-}
+inline URL::~URL() {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -355,14 +350,14 @@ URL::copy_shallow(const URL *url)
 inline void
 URL::clear()
 {
-  m_url_impl = NULL;
+  m_url_impl = nullptr;
   HdrHeapSDKHandle::clear();
 }
 
 inline void
 URL::reset()
 {
-  m_url_impl = NULL;
+  m_url_impl = nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -723,5 +718,3 @@ URL::unescapify(Arena *arena, const char *str, int length)
 {
   return url_unescapify(arena, str, length);
 }
-
-#endif /* __URL_H__ */

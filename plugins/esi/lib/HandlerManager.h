@@ -55,7 +55,7 @@ private:
   struct ModuleHandles {
     void *object;
     SpecialIncludeHandlerCreator function;
-    ModuleHandles(void *o = nullptr, SpecialIncludeHandlerCreator f = 0) : object(o), function(f){};
+    ModuleHandles(void *o = nullptr, SpecialIncludeHandlerCreator f = nullptr) : object(o), function(f){};
   };
 
   typedef std::map<std::string, ModuleHandles> ModuleHandleMap;
@@ -65,6 +65,6 @@ private:
 
   static const char *const FACTORY_FUNCTION_NAME;
 };
-};
+}; // namespace EsiLib
 
 #endif

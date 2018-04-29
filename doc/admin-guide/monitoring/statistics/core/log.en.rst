@@ -24,52 +24,52 @@ Logging
 
 .. ts:stat:: global proxy.node.log.bytes_flush_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_lost_before_flush_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_lost_before_preproc integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_lost_before_sent_to_network integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_lost_before_written_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_received_from_network_avg_10s integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_received_from_network integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_sent_to_network_avg_10s integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_sent_to_network integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_written_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.event_log_access_aggr integer
@@ -134,35 +134,35 @@ Logging
 
 .. ts:stat:: global proxy.process.log.bytes_flush_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.bytes_lost_before_flush_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.bytes_lost_before_preproc integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.bytes_lost_before_sent_to_network integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.bytes_lost_before_written_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.bytes_received_from_network integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.bytes_sent_to_network integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.bytes_written_to_disk integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.log.event_log_access_aggr integer
    :type: counter
@@ -225,7 +225,7 @@ Logging
 
 .. ts:stat:: global proxy.process.log.log_files_space_used integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
    Indicates the number of bytes currently in use by |TS| log files.
 

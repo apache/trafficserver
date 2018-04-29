@@ -23,8 +23,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_UTILS_H_
-#define ATSCPPAPI_UTILS_H_
 
 #include <string>
 #include <netinet/in.h>
@@ -66,7 +64,5 @@ namespace utils
    * @return a string which is the pretty printed address including port
    */
   std::string getIpPortString(const sockaddr *);
-}
-}
-
-#endif /* ATSCPPAPI_UTILS_H_ */
+} // namespace utils
+} // namespace atscppapi

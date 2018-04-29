@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __CACHE_ARRAY_H__
-#define __CACHE_ARRAY_H__
+#pragma once
 
 #define FAST_DATA_SIZE 4
 
@@ -60,8 +59,9 @@ CacheArray<T>::CacheArray(const T *val, int initial_size)
   if (initial_size > 0) {
     int i = 1;
 
-    while (i < initial_size)
+    while (i < initial_size) {
       i <<= 1;
+    }
 
     resize(i);
   }
@@ -183,5 +183,3 @@ CacheArray<T>::resize(int new_size)
     size = new_size;
   }
 }
-
-#endif /* __CACHE_ARRAY_H__ */

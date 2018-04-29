@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_CONFIG_H
-#define LOG_CONFIG_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_RecProcess.h"
@@ -104,7 +103,7 @@ public:
   LogConfig();
   ~LogConfig();
 
-  void init(LogConfig *previous_config = 0);
+  void init(LogConfig *previous_config = nullptr);
   void display(FILE *fd = stdout);
   void setup_log_objects();
 
@@ -235,5 +234,3 @@ struct LogDeleteCandidate {
   char *name;
   int64_t size;
 };
-
-#endif

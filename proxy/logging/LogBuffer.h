@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_BUFFER_H
-#define LOG_BUFFER_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Diags.h"
@@ -307,7 +306,7 @@ private:
   -------------------------------------------------------------------------*/
 
 inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_network_order)
-  : m_in_network_order(in_network_order), m_next(0), m_iter_entry_count(0), m_buffer_entry_count(0)
+  : m_in_network_order(in_network_order), m_next(nullptr), m_iter_entry_count(0), m_buffer_entry_count(0)
 {
   ink_assert(header);
 
@@ -328,7 +327,4 @@ inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_net
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline LogBufferIterator::~LogBufferIterator()
-{
-}
-#endif
+inline LogBufferIterator::~LogBufferIterator() {}

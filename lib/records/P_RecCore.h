@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_CORE_H_
-#define _P_REC_CORE_H_
+#pragma once
 
 #include "ts/ink_thread.h"
 #include "ts/ink_hash_table.h"
@@ -97,5 +96,3 @@ RecUpdateT RecExecConfigUpdateCbs(unsigned int update_required_type);
 void RecDumpRecordsHt(RecT rec_type = RECT_NULL);
 
 void RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata);
-
-#endif

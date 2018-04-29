@@ -280,14 +280,16 @@ NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, vo
     void *idx = reinterpret_cast<void *>(static_cast<intptr_t>(updated_member - &global_config[0]));
     // Signal the NetHandler instances, passing the index of the updated config value.
     for (int i = 0; i < eventProcessor.n_thread_groups; ++i) {
-      if (!active_thread_types[i])
+      if (!active_thread_types[i]) {
         continue;
+      }
       for (EThread **tp    = eventProcessor.thread_group[i]._thread,
                    **limit = eventProcessor.thread_group[i]._thread + eventProcessor.thread_group[i]._count;
            tp < limit; ++tp) {
         NetHandler *nh = get_NetHandler(*tp);
-        if (nh)
+        if (nh) {
           nh->thread->schedule_imm(nh, TS_EVENT_MGMT_UPDATE, idx);
+        }
       }
     }
   }
@@ -385,11 +387,11 @@ NetHandler::process_ready_list()
   while ((vc = read_ready_list.dequeue())) {
     // Initialize the thread-local continuation flags
     set_cont_flags(vc->control_flags);
-    if (vc->closed)
+    if (vc->closed) {
       free_netvc(vc);
-    else if (vc->read.enabled && vc->read.triggered)
+    } else if (vc->read.enabled && vc->read.triggered) {
       vc->net_read_io(this, this->thread);
-    else if (!vc->read.enabled) {
+    } else if (!vc->read.enabled) {
       read_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->read.triggered && vc->write.enabled) {
@@ -402,11 +404,11 @@ NetHandler::process_ready_list()
   }
   while ((vc = write_ready_list.dequeue())) {
     set_cont_flags(vc->control_flags);
-    if (vc->closed)
+    if (vc->closed) {
       free_netvc(vc);
-    else if (vc->write.enabled && vc->write.triggered)
+    } else if (vc->write.enabled && vc->write.triggered) {
       write_to_net(this, vc, this->thread);
-    else if (!vc->write.enabled) {
+    } else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->write.triggered && vc->read.enabled) {
@@ -448,8 +450,9 @@ NetHandler::mainNetEvent(int event, Event *e)
     intptr_t idx = reinterpret_cast<intptr_t>(e->cookie);
     // Copy to the same offset in the instance struct.
     config[idx] = global_config[idx];
-    if (config_value_affects_per_thread_value[idx])
+    if (config_value_affects_per_thread_value[idx]) {
       this->configure_per_thread_values();
+    }
     return EVENT_CONT;
   } else {
     ink_assert(trigger_event == e && (event == EVENT_INTERVAL || event == EVENT_POLL));
@@ -544,8 +547,9 @@ bool
 NetHandler::manage_active_queue(bool ignore_queue_size = false)
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
-  Debug("net_queue", "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
-                     "active_queue_size: %d keep_alive_queue_size: %d",
+  Debug("net_queue",
+        "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
+        "active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
         keep_alive_queue_size);
 

@@ -17,6 +17,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = -I $(top_srcdir)/lib -D__STDC_FORMAT_MACROS
 
 noinst_PROGRAMS = traffic_cache_tool
@@ -33,6 +35,11 @@ traffic_cache_tool_LDADD = \
 	$(top_builddir)/lib/ts/.libs/TextView.o \
 	$(top_builddir)/lib/tsconfig/.libs/Errata.o \
 	$(top_builddir)/lib/ts/.libs/Regex.o \
+	$(top_builddir)/lib/ts/.libs/CryptoHash.o \
+	$(top_builddir)/lib/ts/.libs/MMH.o \
 	@OPENSSL_LIBS@ @LIBPCRE@
 
 all-am: Makefile $(PROGRAMS)
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

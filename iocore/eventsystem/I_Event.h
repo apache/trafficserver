@@ -22,8 +22,7 @@
 
  */
 
-#ifndef _Event_h_
-#define _Event_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_Action.h"
@@ -245,9 +244,9 @@ private:
 public:
   LINK(Event, link);
 
-/*-------------------------------------------------------*\
-| UNIX/non-NT Interface                                   |
-\*-------------------------------------------------------*/
+  /*-------------------------------------------------------*\
+  | UNIX/non-NT Interface                                   |
+  \*-------------------------------------------------------*/
 
 #ifdef ONLY_USED_FOR_FIB_AND_BIN_HEAP
   void *node_pointer;
@@ -280,5 +279,3 @@ extern ClassAllocator<Event> eventAllocator;
     ::_a.free(_p);             \
   else                         \
     THREAD_FREE(_p, _a, _t)
-
-#endif /*_Event_h_*/

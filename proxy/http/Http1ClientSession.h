@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP1_CLIENT_SESSION_H_
-#define _HTTP1_CLIENT_SESSION_H_
+#pragma once
 
 //#include "libts.h"
 #include "P_Net.h"
@@ -69,8 +68,9 @@ public:
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) override;
 
   // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
 
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
@@ -106,10 +106,10 @@ public:
     // Make sure the vio's are also released to avoid
     // later surprises in inactivity timeout
     if (client_vc) {
-      client_vc->do_io_read(NULL, 0, NULL);
-      client_vc->do_io_write(NULL, 0, NULL);
-      client_vc->set_action(NULL);
-      client_vc = NULL;
+      client_vc->do_io_read(nullptr, 0, nullptr);
+      client_vc->do_io_write(nullptr, 0, nullptr);
+      client_vc->set_action(nullptr);
+      client_vc = nullptr;
     }
   }
 
@@ -127,24 +127,6 @@ public:
 
   // Indicate we are done with a transaction
   void release(ProxyClientTransaction *trans) override;
-
-  virtual uint16_t
-  get_outbound_port() const
-  {
-    return outbound_port;
-  }
-
-  virtual IpAddr
-  get_outbound_ip4() const
-  {
-    return outbound_ip4;
-  }
-
-  virtual IpAddr
-  get_outbound_ip6() const
-  {
-    return outbound_ip6;
-  }
 
   void attach_server_session(HttpServerSession *ssession, bool transaction_done = true) override;
 
@@ -228,12 +210,6 @@ public:
   // Link<Http1ClientSession> debug_link;
   LINK(Http1ClientSession, debug_link);
 
-  /// Local address for outbound connection.
-  IpAddr outbound_ip4;
-  /// Local address for outbound connection.
-  IpAddr outbound_ip6;
-  /// Local port for outbound connection.
-  uint16_t outbound_port;
   /// Set outbound connection to transparent.
   bool f_outbound_transparent;
   /// Transparently pass-through non-HTTP traffic.
@@ -243,5 +219,3 @@ public:
 };
 
 extern ClassAllocator<Http1ClientSession> http1ClientSessionAllocator;
-
-#endif

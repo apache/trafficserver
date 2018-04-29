@@ -182,9 +182,9 @@ RamCacheCLFUS::resize_hashtable()
 {
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
-  int64_t s = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
+  int64_t s                                        = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
   DList(RamCacheCLFUSEntry, hash_link) *new_bucket = (DList(RamCacheCLFUSEntry, hash_link) *)ats_malloc(s);
-  memset(new_bucket, 0, s);
+  memset(static_cast<void *>(new_bucket), 0, s);
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
       RamCacheCLFUSEntry *e = nullptr;

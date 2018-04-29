@@ -22,8 +22,7 @@
     limitations under the License.
 */
 
-#ifndef CONFIGS_H_DEBFCE23_D6E9_40C2_AAA5_32B32586A3DA
-#define CONFIGS_H_DEBFCE23_D6E9_40C2_AAA5_32B32586A3DA
+#pragma once
 
 #include <stdlib.h>
 
@@ -39,7 +38,7 @@ const char PLUGIN_NAME[] = "background_fetch";
 class BgFetchConfig
 {
 public:
-  BgFetchConfig(TSCont cont) : _cont(cont), _rules(NULL), _ref_count(0) { TSContDataSet(cont, static_cast<void *>(this)); }
+  BgFetchConfig(TSCont cont) : _cont(cont), _rules(nullptr), _ref_count(0) { TSContDataSet(cont, static_cast<void *>(this)); }
   void
   acquire()
   {
@@ -84,5 +83,3 @@ private:
   BgFetchRule *_rules;
   int _ref_count;
 };
-
-#endif /* CONFIGS_H_DEBFCE23_D6E9_40C2_AAA5_32B32586A3DA */

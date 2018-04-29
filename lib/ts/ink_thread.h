@@ -26,8 +26,7 @@
 
 **************************************************************************/
 
-#ifndef _INK_THREAD_H
-#define _INK_THREAD_H
+#pragma once
 
 #include "ts/ink_hrtime.h"
 #include "ts/ink_defs.h"
@@ -309,5 +308,3 @@ ink_set_thread_name(const char *name ATS_UNUSED)
 }
 
 #endif /* #if defined(POSIX_THREAD) */
-
-#endif /*_INK_THREAD_H*/

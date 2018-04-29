@@ -22,8 +22,7 @@
  * @see aws_auth_v4.h
  */
 
-#ifndef PLUGINS_S3_AUTH_AWS_AUTH_V4_WRAP_H_
-#define PLUGINS_S3_AUTH_AWS_AUTH_V4_WRAP_H_
+#pragma once
 
 /* Define a header iterator to be used in the plugin using ATS API */
 class HeaderIterator
@@ -46,7 +45,8 @@ public:
     _field = it._field;
     return *this;
   }
-  HeaderIterator &operator++()
+  HeaderIterator &
+  operator++()
   {
     /* @todo this is said to be slow in the API call comments, do something better here */
     TSMLoc next = TSMimeHdrFieldNext(_bufp, _hdrs, _field);
@@ -54,7 +54,8 @@ public:
     _field = next;
     return *this;
   }
-  HeaderIterator operator++(int)
+  HeaderIterator
+  operator++(int)
   {
     HeaderIterator tmp(*this);
     operator++();
@@ -125,5 +126,3 @@ public:
   TSMLoc _hdrs;
   TSMLoc _url;
 };
-
-#endif /* PLUGINS_S3_AUTH_AWS_AUTH_V4_WRAP_H_ */

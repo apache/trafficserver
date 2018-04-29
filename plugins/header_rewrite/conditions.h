@@ -19,8 +19,7 @@
 //
 // Declarations for all conditionals / conditional values we support.
 //
-#ifndef __CONDITIONS_H__
-#define __CONDITIONS_H__ 1
+#pragma once
 
 #include <string>
 #include <cstring>
@@ -181,7 +180,7 @@ private:
     const char *start, *last, *end;
 
     // Sanity
-    if (buf == NULL || name == NULL || value == NULL || value_len == NULL) {
+    if (buf == nullptr || name == nullptr || value == nullptr || value_len == nullptr) {
       return TS_ERROR;
     }
 
@@ -554,5 +553,3 @@ protected:
 private:
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
 };
-
-#endif // __CONDITIONS_H

@@ -57,7 +57,7 @@ const char global[]    = "\"global\": {\n";
 const char start[]     = "\"proxy.process.";
 const char separator[] = "\": \"";
 const char end[]       = "\",\n";
-};
+}; // namespace constant
 
 //----------------------------------------------------------------------------
 class Stats
@@ -341,8 +341,9 @@ public:
   getValue(const string &key, const map<string, string> *stats) const
   {
     map<string, string>::const_iterator stats_it = stats->find(key);
-    if (stats_it == stats->end())
+    if (stats_it == stats->end()) {
       return 0;
+    }
     int64_t value = atoll(stats_it->second.c_str());
     return value;
   }
@@ -363,10 +364,11 @@ public:
     const LookupItem &item = lookup_it->second;
 
     map<string, string>::const_iterator stats_it = _stats->find(item.name);
-    if (stats_it == _stats->end())
+    if (stats_it == _stats->end()) {
       value = "";
-    else
+    } else {
       value = stats_it->second.c_str();
+    }
   }
 
   void
@@ -376,10 +378,11 @@ public:
     assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
     prettyName             = item.pretty;
-    if (overrideType != 0)
+    if (overrideType != 0) {
       type = overrideType;
-    else
+    } else {
       type = item.type;
+    }
 
     if (type == 1 || type == 2 || type == 5 || type == 8) {
       value = getValue(item.name, _stats);
@@ -399,10 +402,11 @@ public:
       double denominator = 0;
       getStat(item.numerator, numerator);
       getStat(item.denominator, denominator);
-      if (denominator == 0)
+      if (denominator == 0) {
         value = 0;
-      else
+      } else {
         value = numerator / denominator;
+      }
       if (type == 4) {
         value *= 100;
       }
@@ -412,36 +416,40 @@ public:
       getStat(item.numerator, numerator, 2);
       getStat(item.denominator, denominator, 2);
       value = numerator + denominator;
-      if (type == 7)
+      if (type == 7) {
         value *= 8;
+      }
     }
 
     if (type == 8) {
       double denominator;
       getStat(item.denominator, denominator, 2);
-      if (denominator == 0)
+      if (denominator == 0) {
         value = 0;
-      else
+      } else {
         value = value / denominator * 1000;
+      }
     }
 
     if (type == 5) {
       double denominator = 0;
       getStat("client_req", denominator);
-      if (denominator == 0)
+      if (denominator == 0) {
         value = 0;
-      else
+      } else {
         value = value / denominator * 100;
+      }
     }
   }
 
   bool
   toggleAbsolute()
   {
-    if (_absolute == true)
+    if (_absolute == true) {
       _absolute = false;
-    else
+    } else {
       _absolute = true;
+    }
 
     return _absolute;
   }
@@ -454,13 +462,14 @@ public:
     pos += sizeof(constant::global) - 1;
 
     // find parts of the line
-    while (1) {
+    while (true) {
       size_t start     = response.find(constant::start, pos);
       size_t separator = response.find(constant::separator, pos);
       size_t end       = response.find(constant::end, pos);
 
-      if (start == string::npos || separator == string::npos || end == string::npos)
+      if (start == string::npos || separator == string::npos || end == string::npos) {
         return;
+      }
 
       // cout << constant::start << " " << start << endl;
       // cout << constant::separator << " " << separator << endl;

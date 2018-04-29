@@ -91,7 +91,7 @@ HostDBInfo::srvname(HostDBRoundRobin *rr) const
 static inline bool
 is_addr_valid(uint8_t af, ///< Address family (format of data)
               void *ptr   ///< Raw address data (not a sockaddr variant!)
-              )
+)
 {
   return (AF_INET == af && INADDR_ANY != *(reinterpret_cast<in_addr_t *>(ptr))) ||
          (AF_INET6 == af && !IN6_IS_ADDR_UNSPECIFIED(reinterpret_cast<in6_addr *>(ptr)));
@@ -101,7 +101,7 @@ static inline void
 ip_addr_set(sockaddr *ip, ///< Target storage, sockaddr compliant.
             uint8_t af,   ///< Address format.
             void *ptr     ///< Raw address data
-            )
+)
 {
   if (AF_INET6 == af) {
     ats_ip6_set(ip, *static_cast<in6_addr *>(ptr));
@@ -116,7 +116,7 @@ static inline void
 ip_addr_set(IpAddr &ip, ///< Target storage.
             uint8_t af, ///< Address format.
             void *ptr   ///< Raw address data
-            )
+)
 {
   if (AF_INET6 == af) {
     ip = *static_cast<in6_addr *>(ptr);
@@ -2228,7 +2228,7 @@ struct HostDBFileContinuation : public Continuation {
   HostDBFileContinuation() : Continuation(nullptr) {}
   /// Finish update
   static void finish(Keys *keys ///< Valid keys from update.
-                     );
+  );
   /// Clean up this instance.
   void destroy();
 };
@@ -2330,8 +2330,9 @@ ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval)
   }
 
   // Swap the pointer
-  if (parsed_hosts_file_ptr != nullptr)
+  if (parsed_hosts_file_ptr != nullptr) {
     hostDB.hosts_file_ptr = parsed_hosts_file_ptr;
+  }
   // Mark this one as completed, so we can allow another update to happen
   HostDBFileUpdateActive = 0;
 }

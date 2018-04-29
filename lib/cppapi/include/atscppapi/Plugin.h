@@ -24,8 +24,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_PLUGIN_H_
-#define ATSCPPAPI_PLUGIN_H_
 
 #include <atscppapi/Request.h>
 #include <atscppapi/Transaction.h>
@@ -153,11 +151,11 @@ public:
 
 protected:
   /**
-  * \note This interface can never be implemented directly, it should be implemented
-  *   through extending GlobalPlugin, TransactionPlugin, or TransformationPlugin.
-  *
-  * @private
-  */
+   * \note This interface can never be implemented directly, it should be implemented
+   *   through extending GlobalPlugin, TransactionPlugin, or TransformationPlugin.
+   *
+   * @private
+   */
   Plugin(){};
 };
 
@@ -171,6 +169,4 @@ RegisterGlobalPlugin(std::string const &name, std::string const &vendor, std::st
   RegisterGlobalPlugin(name.c_str(), vendor.c_str(), email.c_str());
 }
 
-} /* atscppapi */
-
-#endif /* ATSCPPAPI_GLOBALPLUGIN_H_ */
+} // namespace atscppapi

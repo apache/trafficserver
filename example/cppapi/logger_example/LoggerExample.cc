@@ -35,7 +35,7 @@ namespace
 {
 Logger log;
 GlobalPlugin *plugin;
-}
+} // namespace
 
 /*
  * You should always take advantage of the LOG_DEBUG, LOG_INFO, and LOG_ERROR
@@ -61,11 +61,12 @@ public:
   void
   handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
-    LOG_DEBUG(log, "handleReadRequestHeadersPostRemap.\n"
-                   "\tRequest URL: %s\n"
-                   "\tRequest Path: %s\n"
-                   "\tRequest Query: %s\n"
-                   "\tRequest Method: %s",
+    LOG_DEBUG(log,
+              "handleReadRequestHeadersPostRemap.\n"
+              "\tRequest URL: %s\n"
+              "\tRequest Path: %s\n"
+              "\tRequest Query: %s\n"
+              "\tRequest Method: %s",
               transaction.getClientRequest().getUrl().getUrlString().c_str(),
               transaction.getClientRequest().getUrl().getPath().c_str(), transaction.getClientRequest().getUrl().getQuery().c_str(),
               HTTP_METHOD_STRINGS[transaction.getClientRequest().getMethod()].c_str());

@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _PARENT_SELECTION_H_
-#define _PARENT_SELECTION_H_
+#pragma once
 
 #include "Main.h"
 #include "ProxyConfig.h"
@@ -179,7 +178,7 @@ struct ParentResult {
   bool
   is_some() const
   {
-    if (rec == NULL) {
+    if (rec == nullptr) {
       // If we don't have a result, we either haven't done a parent
       // lookup yet (PARENT_UNDEFINED), or the lookup didn't match
       // anything (PARENT_DIRECT).
@@ -314,7 +313,7 @@ public:
   selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold, unsigned int retry_time)
   {
     if (!result->is_api_result()) {
-      ink_release_assert(result->rec->selection_strategy != NULL);
+      ink_release_assert(result->rec->selection_strategy != nullptr);
       return result->rec->selection_strategy->selectParent(firstCall, result, rdata, fail_threshold, retry_time);
     }
   }
@@ -323,7 +322,7 @@ public:
   markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time)
   {
     if (!result->is_api_result()) {
-      ink_release_assert(result->rec->selection_strategy != NULL);
+      ink_release_assert(result->rec->selection_strategy != nullptr);
       result->rec->selection_strategy->markParentDown(result, fail_threshold, retry_time);
     }
   }
@@ -332,7 +331,7 @@ public:
   markParentUp(ParentResult *result)
   {
     if (!result->is_api_result()) {
-      ink_release_assert(result != NULL);
+      ink_release_assert(result != nullptr);
       result->rec->selection_strategy->markParentUp(result);
     }
   }
@@ -343,7 +342,7 @@ public:
     if (result->is_api_result()) {
       return 1;
     } else {
-      ink_release_assert(result->rec->selection_strategy != NULL);
+      ink_release_assert(result->rec->selection_strategy != nullptr);
       return result->rec->selection_strategy->numParents(result);
     }
   }
@@ -385,7 +384,7 @@ int parentSelection_CB(const char *name, RecDataT data_type, RecData data, void 
 
 // Unit Test Functions
 void show_result(ParentResult *aParentResult);
-void br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip = NULL); // short for build request
+void br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip = nullptr); // short for build request
 int verify(ParentResult *r, ParentResultType e, const char *h, int p);
 
 /*
@@ -416,5 +415,3 @@ struct SocksServerConfig {
 
   static int m_id;
 };
-
-#endif

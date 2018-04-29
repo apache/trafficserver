@@ -67,7 +67,7 @@ public:
 
   /** Tells processor to wrap-up parsing; a final or the only piece of
    * data can be optionally provided */
-  bool completeParse(const char *data = 0, int data_len = -1);
+  bool completeParse(const char *data = nullptr, int data_len = -1);
 
   /** convenient alternative to method above */
   bool
@@ -147,7 +147,7 @@ private:
 
   bool _processEsiNode(const EsiLib::DocNodeList::iterator &iter);
   bool _handleParseComplete();
-  bool _getIncludeData(const EsiLib::DocNode &node, const char **content_ptr = 0, int *content_len_ptr = 0);
+  bool _getIncludeData(const EsiLib::DocNode &node, const char **content_ptr = nullptr, int *content_len_ptr = nullptr);
   DataStatus _getIncludeStatus(const EsiLib::DocNode &node);
   bool _handleVars(const char *str, int str_len);
   bool _handleChoose(EsiLib::DocNodeList::iterator &curr_node);

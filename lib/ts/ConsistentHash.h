@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#ifndef __CONSISTENT_HASH_H__
-#define __CONSISTENT_HASH_H__
+#pragma once
 
 #include "Hash.h"
 #include <stdint.h>
@@ -49,10 +48,11 @@ typedef std::map<uint64_t, ATSConsistentHashNode *>::iterator ATSConsistentHashI
 struct ATSConsistentHash {
   ATSConsistentHash(int r = 1024, ATSHash64 *h = nullptr);
   void insert(ATSConsistentHashNode *node, float weight = 1.0, ATSHash64 *h = nullptr);
-  ATSConsistentHashNode *lookup(const char *url = nullptr, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
-  ATSConsistentHashNode *lookup_available(const char *url = nullptr, ATSConsistentHashIter *i = NULL, bool *w = NULL,
+  ATSConsistentHashNode *lookup(const char *url = nullptr, ATSConsistentHashIter *i = nullptr, bool *w = nullptr,
+                                ATSHash64 *h = nullptr);
+  ATSConsistentHashNode *lookup_available(const char *url = nullptr, ATSConsistentHashIter *i = nullptr, bool *w = nullptr,
                                           ATSHash64 *h = nullptr);
-  ATSConsistentHashNode *lookup_by_hashval(uint64_t hashval, ATSConsistentHashIter *i = nullptr, bool *w = NULL);
+  ATSConsistentHashNode *lookup_by_hashval(uint64_t hashval, ATSConsistentHashIter *i = nullptr, bool *w = nullptr);
   ~ATSConsistentHash();
 
 private:
@@ -60,5 +60,3 @@ private:
   ATSHash64 *hash;
   std::map<uint64_t, ATSConsistentHashNode *> NodeMap;
 };
-
-#endif

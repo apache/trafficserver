@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_INTERCEPT_PLUGIN_H_
-#define ATSCPPAPI_INTERCEPT_PLUGIN_H_
 
 #include <string>
 #include <atscppapi/Transaction.h>
@@ -98,6 +96,4 @@ private:
   friend class utils::internal;
 };
 
-} /* atscppapi */
-
-#endif /* ATSCPPAPI_INTERCEPT_PLUGIN_H_ */
+} // namespace atscppapi

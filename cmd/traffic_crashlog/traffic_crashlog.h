@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TRAFFIC_CRASHLOG_H__
-#define __TRAFFIC_CRASHLOG_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/ink_memory.h"
@@ -75,5 +74,3 @@ bool crashlog_write_regions(FILE *, const crashlog_target &);
 bool crashlog_write_registers(FILE *, const crashlog_target &);
 bool crashlog_write_siginfo(FILE *, const crashlog_target &);
 bool crashlog_write_uname(FILE *, const crashlog_target &);
-
-#endif /* __TRAFFIC_CRASHLOG_H__ */

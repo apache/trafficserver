@@ -27,8 +27,7 @@
 
 
  ****************************************************************************/
-#ifndef _P_ProtectedQueue_h_
-#define _P_ProtectedQueue_h_
+#pragma once
 
 #include "I_EventSystem.h"
 
@@ -76,8 +75,9 @@ TS_INLINE void
 ProtectedQueue::remove(Event *e)
 {
   ink_assert(e->in_the_prot_queue);
-  if (!ink_atomiclist_remove(&al, e))
+  if (!ink_atomiclist_remove(&al, e)) {
     localQueue.remove(e);
+  }
   e->in_the_prot_queue = 0;
 }
 
@@ -91,5 +91,3 @@ ProtectedQueue::dequeue_local()
   }
   return e;
 }
-
-#endif

@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#if !defined(_ink_string_pp_h_)
-#define _ink_string_pp_h_
+#pragma once
 #include <stdio.h>
 #include <strings.h>
 
@@ -47,7 +46,7 @@ struct Str {
   struct Str *next; // next in list
   struct Str *prev; // prev in list
 
-  Str() : str(nullptr), len(0), next(NULL), prev(NULL) {}
+  Str() : str(nullptr), len(0), next(nullptr), prev(nullptr) {}
   Str(char *s)
   {
     str  = s;
@@ -158,8 +157,9 @@ StrList::init()
 inline void
 StrList::clean()
 {
-  if (overflow_first)
+  if (overflow_first) {
     overflow_heap_clean();
+  }
   init();
 }
 
@@ -184,16 +184,18 @@ StrList::base_heap_alloc(int size)
     p = &(base_heap[base_heap_used]);
     base_heap_used += size;
     return ((void *)p);
-  } else
+  } else {
     return (nullptr);
+  }
 }
 
 inline void *
 StrList::alloc(int size)
 {
   void *p = base_heap_alloc(size);
-  if (p == nullptr)
+  if (p == nullptr) {
     p = overflow_heap_alloc(size);
+  }
   return (p);
 }
 
@@ -219,8 +221,9 @@ StrList::get_idx(int i)
 {
   Str *s;
 
-  for (s = head; ((s != nullptr) && i); s = s->next, i--)
+  for (s = head; ((s != nullptr) && i); s = s->next, i--) {
     ;
+  }
   return ((i == 0) ? s : nullptr);
 }
 
@@ -228,8 +231,9 @@ inline void
 StrList::append(Str *str)
 {
   // do nothing if str is nullptr to avoid pointer chasing below
-  if (str == nullptr)
+  if (str == nullptr) {
     return;
+  }
   ++count;
   str->next = nullptr;
   str->prev = tail;
@@ -245,8 +249,9 @@ StrList::append(Str *str)
 inline void
 StrList::prepend(Str *str)
 {
-  if (str == nullptr)
+  if (str == nullptr) {
     return;
+  }
   ++count;
   str->next = head;
   str->prev = nullptr;
@@ -262,31 +267,38 @@ StrList::prepend(Str *str)
 inline void
 StrList::add_after(Str *prev, Str *str)
 {
-  if (str == nullptr || prev == NULL)
+  if (str == nullptr || prev == nullptr) {
     return;
+  }
   ++count;
   str->next  = prev->next;
   str->prev  = prev;
   prev->next = str;
-  if (tail == prev)
+  if (tail == prev) {
     tail = str;
+  }
 }
 
 inline void
 StrList::detach(Str *str)
 {
-  if (str == nullptr)
+  if (str == nullptr) {
     return;
+  }
   --count;
 
-  if (head == str)
+  if (head == str) {
     head = str->next;
-  if (tail == str)
+  }
+  if (tail == str) {
     tail = str->prev;
-  if (str->prev)
+  }
+  if (str->prev) {
     str->prev->next = str->next;
-  if (str->next)
+  }
+  if (str->next) {
     str->next->prev = str->prev;
+  }
 }
 
 inline Str *
@@ -298,5 +310,3 @@ StrList::append_string(const char *s, int len_not_counting_nul)
   append(cell);
   return (cell);
 }
-
-#endif

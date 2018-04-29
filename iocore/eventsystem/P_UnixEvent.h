@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_UnixEvent_h_
-#define _P_UnixEvent_h_
+#pragma once
 
 TS_INLINE Event *
 Event::init(Continuation *c, ink_hrtime atimeout_at, ink_hrtime aperiod)
@@ -46,5 +45,3 @@ TS_INLINE
 Event::Event() : in_the_prot_queue(false), in_the_priority_queue(false), immediate(false), globally_allocated(true), in_heap(false)
 {
 }
-
-#endif /*_UnixEvent_h_*/

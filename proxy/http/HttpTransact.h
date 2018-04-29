@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_HttpTransact_h_)
-#define _HttpTransact_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_HostDB.h"
@@ -686,6 +685,7 @@ public:
 
   typedef struct _SquidLogInfo {
     SquidLogCode log_code          = SQUID_LOG_ERR_UNKNOWN;
+    SquidSubcode subcode           = SQUID_SUBCODE_EMPTY;
     SquidHierarchyCode hier_code   = SQUID_HIER_EMPTY;
     SquidHitMissCode hit_miss_code = SQUID_MISS_NONE;
 
@@ -1136,5 +1136,3 @@ is_response_body_precluded(HTTPStatus status_code, int method)
 }
 
 inkcoreapi extern ink_time_t ink_local_time(void);
-
-#endif

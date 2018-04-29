@@ -395,10 +395,6 @@ NetVCTest::main_handler(int event, void *data)
   return 0;
 }
 
-NetTestDriver::NetTestDriver() : Continuation(nullptr), errors(0), r(nullptr), pstatus(nullptr)
-{
-}
+NetTestDriver::NetTestDriver() : Continuation(nullptr), errors(0), r(nullptr), pstatus(nullptr) {}
 
-NetTestDriver::~NetTestDriver()
-{
-}
+NetTestDriver::~NetTestDriver() {}

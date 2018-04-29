@@ -32,8 +32,7 @@
  *
  ***************************************************************************/
 
-#ifndef _NETWORK_UTILS_REMOTE_H_
-#define _NETWORK_UTILS_REMOTE_H_
+#pragma once
 
 #include "mgmtapi.h"
 #include "NetworkMessage.h"
@@ -92,5 +91,3 @@ TSMgmtError send_unregister_all_callbacks(int fd, CallbackTable *cb_table);
  * Un-marshalling (parse responses)
  *****************************************************************************/
 TSMgmtError parse_generic_response(OpType optype, int fd);
-
-#endif /* _NETWORK_UTILS_REMOTE_H_ */

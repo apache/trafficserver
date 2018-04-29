@@ -25,6 +25,7 @@ libatscppapi_la_SOURCES = \
 	AsyncTimer.cc \
 	CaseInsensitiveStringComparator.cc \
 	ClientRequest.cc \
+	Continuation.cc \
 	GlobalPlugin.cc \
 	GzipDeflateTransformation.cc \
 	GzipInflateTransformation.cc \
@@ -54,6 +55,7 @@ library_include_HEADERS = \
 	$(base_include_folder)/AsyncTimer.h \
 	$(base_include_folder)/CaseInsensitiveStringComparator.h \
 	$(base_include_folder)/ClientRequest.h \
+	$(base_include_folder)/Continuation.h \
 	$(base_include_folder)/GlobalPlugin.h \
 	$(base_include_folder)/GzipDeflateTransformation.h \
 	$(base_include_folder)/GzipInflateTransformation.h \
@@ -78,5 +80,5 @@ library_include_HEADERS = \
 
 include $(top_srcdir)/build/tidy.mk
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

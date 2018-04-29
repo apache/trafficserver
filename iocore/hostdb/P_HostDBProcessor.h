@@ -25,8 +25,7 @@
   P_HostDBProcessor.h
  ****************************************************************************/
 
-#ifndef _P_HostDBProcessor_h_
-#define _P_HostDBProcessor_h_
+#pragma once
 
 #include "I_HostDBProcessor.h"
 #include <ts/TsBuffer.h>
@@ -234,7 +233,7 @@ HostDBRoundRobin::find_ip(sockaddr const *ip)
 inline HostDBInfo *
 HostDBRoundRobin::select_next(sockaddr const *ip)
 {
-  HostDBInfo *zret = 0;
+  HostDBInfo *zret = nullptr;
   if (good > 1) {
     int idx = this->index_of(ip);
     if (idx >= 0) {
@@ -496,7 +495,7 @@ struct HostDBContinuation : public Continuation {
     bool force_dns;              ///< Force DNS lookup. Default @c false
     Continuation *cont;          ///< Continuation / action. Default @c nullptr (none)
 
-    Options() : timeout(0), host_res_style(HOST_RES_NONE), force_dns(false), cont(0) {}
+    Options() : timeout(0), host_res_style(HOST_RES_NONE), force_dns(false), cont(nullptr) {}
   };
   static const Options DEFAULT_OPTIONS; ///< Default defaults.
   void init(HostDBHash const &hash, Options const &opt = DEFAULT_OPTIONS);
@@ -534,5 +533,3 @@ HostDBContinuation::key_partition()
 {
   return hostDB.refcountcache->partition_for_key(hash.hash.fold());
 }
-
-#endif /* _P_HostDBProcessor_h_ */

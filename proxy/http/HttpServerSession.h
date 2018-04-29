@@ -30,18 +30,17 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_SERVER_SESSION_H_
-#define _HTTP_SERVER_SESSION_H_
+#pragma once
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
-* are actually required.
-* Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
-* for header buffer and tunnel buffer. The allocation is done by
-* the net code in read_from_net when data is actually written into
-* the buffer. By allocating memory only when it is required we can
-* reduce the memory consumed by TS process.
-*
-* IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in HttpSM.h as well.
-*/
+ * are actually required.
+ * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
+ * for header buffer and tunnel buffer. The allocation is done by
+ * the net code in read_from_net when data is actually written into
+ * the buffer. By allocating memory only when it is required we can
+ * reduce the memory consumed by TS process.
+ *
+ * IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in HttpSM.h as well.
+ */
 #define LAZY_BUF_ALLOC
 
 #include "P_Net.h"
@@ -69,7 +68,7 @@ class HttpServerSession : public VConnection
 {
 public:
   HttpServerSession()
-    : VConnection(NULL),
+    : VConnection(nullptr),
       hostname_hash(),
       con_id(0),
       transact_count(0),
@@ -80,11 +79,11 @@ public:
       sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
       sharing_pool(TS_SERVER_SESSION_SHARING_POOL_GLOBAL),
       enable_origin_connection_limiting(false),
-      connection_count(NULL),
-      read_buffer(NULL),
-      server_vc(NULL),
+      connection_count(nullptr),
+      read_buffer(nullptr),
+      server_vc(nullptr),
       magic(HTTP_SS_MAGIC_DEAD),
-      buf_reader(NULL)
+      buf_reader(nullptr)
   {
   }
 
@@ -95,9 +94,9 @@ public:
   reset_read_buffer(void)
   {
     ink_assert(read_buffer->_writer);
-    ink_assert(buf_reader != NULL);
+    ink_assert(buf_reader != nullptr);
     read_buffer->dealloc_all_readers();
-    read_buffer->_writer = NULL;
+    read_buffer->_writer = nullptr;
     buf_reader           = read_buffer->alloc_reader();
   }
 
@@ -107,9 +106,10 @@ public:
     return buf_reader;
   };
 
-  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr);
 
-  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                           bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
@@ -212,4 +212,3 @@ HttpServerSession::attach_hostname(const char *hostname)
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
 }
-#endif

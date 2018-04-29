@@ -22,8 +22,7 @@
 
  */
 
-#ifndef __NETVCONNECTION_H__
-#define __NETVCONNECTION_H__
+#pragma once
 
 #include "ts/ink_inet.h"
 #include "I_Action.h"
@@ -223,7 +222,7 @@ struct NetVCOptions {
     if (&that != this) {
       sni_servername    = nullptr; // release any current name.
       clientCertificate = nullptr;
-      memcpy(this, &that, sizeof(self));
+      memcpy(static_cast<void *>(this), &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
         this->sni_servername = ats_strdup(that.sni_servername);
@@ -664,8 +663,8 @@ inline NetVConnection::NetVConnection()
   : AnnotatedVConnection(nullptr),
     attributes(0),
     thread(nullptr),
-    got_local_addr(0),
-    got_remote_addr(0),
+    got_local_addr(false),
+    got_remote_addr(false),
     is_internal_request(false),
     is_transparent(false),
     write_buffer_empty_event(0),
@@ -680,5 +679,3 @@ NetVConnection::trapWriteBufferEmpty(int event)
 {
   write_buffer_empty_event = event;
 }
-
-#endif

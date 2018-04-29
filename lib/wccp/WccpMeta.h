@@ -1,6 +1,3 @@
-#if !defined(TS_WCCP_META_HEADER)
-#define TS_WCCP_META_HEADER
-
 /** @file
     Meta programming support for WCCP.
 
@@ -22,6 +19,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+
+#pragma once
 
 #include <algorithm>
 
@@ -110,7 +109,7 @@ minima(C const &c, V (C::value_type::second_type::*ex)(ARG1) const, ARG1 const &
 }
 
 /** Apply a unary method to every object in a direct container.
-*/
+ */
 template <typename C, typename V, typename ARG1>
 void
 for_each(C &c, V (C::value_type::*ex)(ARG1), ARG1 const &arg1)
@@ -120,7 +119,7 @@ for_each(C &c, V (C::value_type::*ex)(ARG1), ARG1 const &arg1)
 }
 
 /** Apply a unary method to every object in a paired container.
-*/
+ */
 template <typename C, typename V, typename ARG1>
 void
 for_each(C &c, V (C::value_type::second_type::*ex)(ARG1) const, ARG1 const &arg1)
@@ -216,5 +215,3 @@ template <
 #endif
 
 } // namespace ts
-
-#endif // TS_WCCP_META_HEADER

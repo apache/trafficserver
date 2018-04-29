@@ -20,8 +20,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_RESPONSE_H_
-#define ATSCPPAPI_RESPONSE_H_
 
 #include <atscppapi/Headers.h>
 #include <atscppapi/HttpVersion.h>
@@ -71,6 +69,4 @@ private:
   friend class Transaction;
   friend class utils::internal;
 };
-}
-
-#endif
+} // namespace atscppapi

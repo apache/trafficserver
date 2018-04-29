@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __DYN_ARRAY_H__
-#define __DYN_ARRAY_H__
+#pragma once
 
 template <class T> class DynArray
 {
@@ -58,8 +57,9 @@ inline DynArray<T>::DynArray(const T *val, intptr_t initial_size) : data(nullptr
   if (initial_size > 0) {
     int i = 1;
 
-    while (i < initial_size)
+    while (i < initial_size) {
       i <<= 1;
+    }
 
     resize(i);
   }
@@ -177,8 +177,9 @@ DynArray<T>::resize(intptr_t new_size)
     }
 
     for (; i < new_size; i++) {
-      if (default_val)
+      if (default_val) {
         new_data[i] = (T)*default_val;
+      }
     }
 
     if (data) {
@@ -188,5 +189,3 @@ DynArray<T>::resize(intptr_t new_size)
     size = new_size;
   }
 }
-
-#endif /* __DYN_ARRAY_H__ */

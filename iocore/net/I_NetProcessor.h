@@ -22,8 +22,7 @@
 
  */
 
-#ifndef __I_NETPROCESSOR_H__
-#define __I_NETPROCESSOR_H__
+#pragma once
 
 #include "I_EventSystem.h"
 #include "I_Socks.h"
@@ -269,7 +268,4 @@ extern inkcoreapi NetProcessor &netProcessor;
 
 */
 extern inkcoreapi NetProcessor &sslNetProcessor;
-
 extern inkcoreapi NetProcessor &quicNetProcessor;
-
-#endif

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _SHA256_h_
-#define _SHA256_h_
+#pragma once
 
 #include "ts/ink_code.h"
 #include "ts/ink_defs.h"
@@ -49,5 +48,3 @@ public:
     return SHA256_Final(hash.u8, &_ctx);
   }
 };
-
-#endif

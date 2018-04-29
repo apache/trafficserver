@@ -171,7 +171,7 @@ static char *
 get_body_ptr(const char *request)
 {
   char *ptr = (char *)strstr((const char *)request, (const char *)"\r\n\r\n");
-  return (ptr != NULL) ? (ptr + 4) : NULL;
+  return (ptr != nullptr) ? (ptr + 4) : nullptr;
 }
 
 /* Caller must free returned request */
@@ -488,10 +488,11 @@ synclient_txn_create(void)
 
   ink_zero(*txn);
 
-  if (0 == (proxy_port = HttpProxyPort::findHttp(AF_INET)))
+  if (nullptr == (proxy_port = HttpProxyPort::findHttp(AF_INET))) {
     txn->connect_port = PROXY_HTTP_DEFAULT_PORT;
-  else
+  } else {
     txn->connect_port = proxy_port->m_port;
+  }
 
   txn->connect_ip = IP(127, 0, 0, 1);
   txn->status     = REQUEST_INPROGRESS;
@@ -507,7 +508,7 @@ synclient_txn_delete(ClientTxn *txn)
   TSAssert(txn->magic == MAGIC_ALIVE);
   if (txn->connect_action && !TSActionDone(txn->connect_action)) {
     TSActionCancel(txn->connect_action);
-    txn->connect_action = NULL;
+    txn->connect_action = nullptr;
   }
 
   ats_free(txn->request);
@@ -520,19 +521,19 @@ static void
 synclient_txn_close(ClientTxn *txn)
 {
   if (txn) {
-    if (txn->vconn != NULL) {
+    if (txn->vconn != nullptr) {
       TSVConnClose(txn->vconn);
-      txn->vconn = NULL;
+      txn->vconn = nullptr;
     }
 
-    if (txn->req_buffer != NULL) {
+    if (txn->req_buffer != nullptr) {
       TSIOBufferDestroy(txn->req_buffer);
-      txn->req_buffer = NULL;
+      txn->req_buffer = nullptr;
     }
 
-    if (txn->resp_buffer != NULL) {
+    if (txn->resp_buffer != nullptr) {
       TSIOBufferDestroy(txn->resp_buffer);
-      txn->resp_buffer = NULL;
+      txn->resp_buffer = nullptr;
     }
 
     TSDebug(CDBG_TAG, "Client Txn destroyed");
@@ -580,7 +581,7 @@ synclient_txn_read_response(TSCont contp)
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   TSIOBufferBlock block = TSIOBufferReaderStart(txn->resp_reader);
-  while (block != NULL) {
+  while (block != nullptr) {
     int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, txn->resp_reader, &blocklen);
 
@@ -746,8 +747,8 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
     txn->vconn      = (TSVConn)data;
     txn->local_port = (int)((NetVConnection *)data)->get_local_port();
 
-    txn->write_vio = NULL;
-    txn->read_vio  = NULL;
+    txn->write_vio = nullptr;
+    txn->read_vio  = nullptr;
 
     /* start writing */
     SET_TEST_HANDLER(txn->current_handler, synclient_txn_write_request_handler);
@@ -789,7 +790,7 @@ synserver_create(int port, TSCont cont)
   SocketServer *s  = (SocketServer *)TSmalloc(sizeof(SocketServer));
   s->magic         = MAGIC_ALIVE;
   s->accept_port   = port;
-  s->accept_action = NULL;
+  s->accept_action = nullptr;
   s->accept_cont   = cont;
   TSContDataSet(s->accept_cont, s);
   return s;
@@ -805,7 +806,7 @@ static int
 synserver_start(SocketServer *s)
 {
   TSAssert(s->magic == MAGIC_ALIVE);
-  TSAssert(s->accept_action == NULL);
+  TSAssert(s->accept_action == nullptr);
 
   if (s->accept_port != SYNSERVER_DUMMY_PORT) {
     TSAssert(s->accept_port > 0);
@@ -823,7 +824,7 @@ synserver_stop(SocketServer *s)
   TSAssert(s->magic == MAGIC_ALIVE);
   if (s->accept_action && !TSActionDone(s->accept_action)) {
     TSActionCancel(s->accept_action);
-    s->accept_action = NULL;
+    s->accept_action = nullptr;
     TSDebug(SDBG_TAG, "Had to cancel action");
   }
   TSDebug(SDBG_TAG, "stopped");
@@ -833,13 +834,13 @@ synserver_stop(SocketServer *s)
 static int
 synserver_delete(SocketServer *s)
 {
-  if (s != NULL) {
+  if (s != nullptr) {
     TSAssert(s->magic == MAGIC_ALIVE);
     synserver_stop(s);
 
     if (s->accept_cont) {
       TSContDestroy(s->accept_cont);
-      s->accept_cont = NULL;
+      s->accept_cont = nullptr;
       TSDebug(SDBG_TAG, "destroyed accept cont");
     }
 
@@ -909,7 +910,7 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 
   txn->vconn = (TSVConn)data;
 
-  txn->write_vio = NULL;
+  txn->write_vio = nullptr;
 
   /* start reading */
   txn->read_vio = TSVConnRead(txn->vconn, txn_cont, txn->req_buffer, INT64_MAX);
@@ -923,7 +924,7 @@ synserver_txn_close(TSCont contp)
   ServerTxn *txn = (ServerTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
-  if (txn->vconn != NULL) {
+  if (txn->vconn != nullptr) {
     TSVConnClose(txn->vconn);
   }
   if (txn->req_buffer) {
@@ -1023,7 +1024,7 @@ synserver_txn_read_request(TSCont contp)
   int end;
   TSIOBufferBlock block = TSIOBufferReaderStart(txn->req_reader);
 
-  while (block != NULL) {
+  while (block != nullptr) {
     int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, txn->req_reader, &blocklen);
 
@@ -1040,7 +1041,7 @@ synserver_txn_read_request(TSCont contp)
   txn->request[txn->request_len] = '\0';
   TSDebug(SDBG_TAG, "Request = |%s|, req len = %d", txn->request, txn->request_len);
 
-  end = (strstr(txn->request, HTTP_REQUEST_END) != NULL);
+  end = (strstr(txn->request, HTTP_REQUEST_END) != nullptr);
   TSDebug(SDBG_TAG, "End of request = %d", end);
 
   return end;

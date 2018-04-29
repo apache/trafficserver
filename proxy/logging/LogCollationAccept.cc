@@ -65,8 +65,9 @@ LogCollationAccept::~LogCollationAccept()
     m_accept_action->cancel();
     m_accept_action = nullptr;
 
-    Debug("log-collation", "closing Log::collation_accept_file_descriptor "
-                           "(%d)",
+    Debug("log-collation",
+          "closing Log::collation_accept_file_descriptor "
+          "(%d)",
           Log::collation_accept_file_descriptor);
     if (::close(Log::collation_accept_file_descriptor) < 0) {
       Error("error closing collate listen file descriptor [%d]: %s", Log::collation_accept_file_descriptor, strerror(errno));

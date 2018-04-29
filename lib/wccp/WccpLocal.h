@@ -1,6 +1,3 @@
-#if !defined(TS_WCCP_LOCAL_HEADER)
-#define TS_WCCP_LOCAL_HEADER
-
 /** @file
     WCCP (v2) support for Apache Traffic Server.
 
@@ -23,6 +20,8 @@
     limitations under the License.
  */
 
+#pragma once
+
 #include "Wccp.h"
 #include "WccpUtil.h"
 #include <ts/TsBuffer.h>
@@ -41,7 +40,7 @@ namespace detail
   {
     struct RouterData;
   }
-}
+} // namespace detail
 
 /// Default port used by the protocol.
 static unsigned int const DEFAULT_PORT = 2048;
@@ -100,15 +99,15 @@ public:
   MsgBuffer(); ///< Default construct empty buffer.
   /// Construct from ATS buffer.
   MsgBuffer(super const &that ///< Instance to copy.
-            );
+  );
   /// Construct from pointer and size.
   MsgBuffer(void *ptr, ///< Pointer to buffer.
             size_t n   ///< Size of buffer.
-            );
+  );
   /// Assign a buffer.
   MsgBuffer &set(void *ptr, ///< Pointer to buffer.
                  size_t n   ///< Size of buffer.
-                 );
+  );
 
   /// Get the buffer size.
   size_t getSize() const;
@@ -124,7 +123,7 @@ public:
   size_t getSpace() const;
   /// Mark additional space in use.
   self &use(size_t n ///< Additional space to mark in use.
-            );
+  );
   /// Mark all space as unused.
   self &reset();
 
@@ -177,7 +176,7 @@ struct RouterId {
   /// Construct from address and sequence number.
   RouterId(uint32_t addr,   ///< Router address.
            uint32_t recv_id ///< Receive ID (sequence number).
-           );
+  );
 
   uint32_t m_addr;    ///< Identifying router IP address.
   uint32_t m_recv_id; ///< Recieve ID (sequence #).
@@ -202,7 +201,7 @@ public:
   /// Construct from address and sequence number.
   RouterIdElt(uint32_t addr,   ///< Router address.
               uint32_t recv_id ///< Receive ID (sequence number).
-              );
+  );
 
   /// @name Accessors
   //@{
@@ -228,7 +227,7 @@ public:
   /// Construct from address and sequence number.
   AssignmentKeyElt(uint32_t addr,      ///< Key address.
                    uint32_t generation ///< Change number.
-                   );
+  );
 
   /// @name Accessors
   //@{
@@ -257,7 +256,7 @@ public:
   RouterAssignElt(uint32_t addr,         ///< Router address.
                   uint32_t recv_id,      ///< Receive ID (sequence number).
                   uint32_t change_number ///< Change number (sequence number).
-                  );
+  );
 
   /// @name Accessors
   //@{
@@ -281,13 +280,13 @@ public:
   RouterAssignListElt();
   /// Construct with @n elements.
   RouterAssignListElt(int n ///< Number of elements.
-                      );
+  );
 
   /// @name Accessors
   //@{
   /// Access element.
   RouterAssignElt &elt(int idx ///< Index of target element.
-                       );
+  );
   /// Access const element.
   RouterAssignElt const &elt(int idx ///< Index of target element.
                              ) const;
@@ -299,7 +298,7 @@ public:
   self &updateRouterId(uint32_t addr,  ///< Identifying IP address of router.
                        uint32_t rcvid, ///< New receive ID value.
                        uint32_t cno    ///< New change number.
-                       );
+  );
 
   /// Get size in bytes of this structure.
   size_t getSize() const;
@@ -309,10 +308,10 @@ public:
   size_t getVarSize() const;
   /// Calculate size in bytes for @a n elements.
   static size_t calcSize(int n ///< Number of elements.
-                         );
+  );
   /// Calculate size of variable data in bytes for @a n elements.
   static size_t calcVarSize(int n ///< Number of elements.
-                            );
+  );
 
 protected:
   uint32_t m_count; ///< # of elements (network order).
@@ -337,18 +336,18 @@ public:
   /// Construct from address and sequence number.
   CapabilityElt(Type type,    ///< Capability type.
                 uint32_t data ///< Capability data.
-                );
+  );
 
   /// @name Accessors
   //@{
   Type getCapType() const; ///< Get the capability type.
   /// Set capability type.
   self &setCapType(Type cap ///< Capability type.
-                   );
+  );
   uint32_t getCapData() const; ///< Get capability data.
   /// Set capability data.
   self &setCapData(uint32_t data ///< Data value.
-                   );
+  );
   //@}
 protected:
   enum Type m_cap_type  = NO_METHOD; ///< Capability type.
@@ -369,7 +368,7 @@ public:
           uint32_t dstAddr, ///< Mask for destination address.
           uint16_t srcPort, ///< Mask for source port.
           uint16_t dstPort  ///< Mask for destination port.
-          );
+  );
 
   /// @name Accessors
   //@{
@@ -412,7 +411,7 @@ public:
            uint32_t dstAddr,   ///< Value for destination address.
            uint16_t srcPort,   ///< Value for source port.
            uint16_t dstPort    ///< Value for destination port.
-           );
+  );
 
   /// @name Accessors
   //@{
@@ -447,7 +446,7 @@ public:
   MaskValueSetElt(); ///< Default constructor.
   /// Construct from address and sequence number.
   MaskValueSetElt(uint32_t n ///< Value count.
-                  );
+  );
 
   /// @name Accessors
   //@{
@@ -477,18 +476,18 @@ public:
                  uint32_t dstAddr,   ///< Value for destination address.
                  uint16_t srcPort,   ///< Value for source port.
                  uint16_t dstPort    ///< Value for destination port.
-                 );
+  );
 
   /// Get the value count.
   /// @note No corresponding @c set because this cannot be directly changed.
   uint32_t getCount() const;
   /// Access value element.
   ValueElt &operator[](int idx ///< Index of target element.
-                       );
+  );
   //@}
   /// Calcuate the size of an element with @a n values.
   static size_t calcSize(uint32_t n ///< Number of values.
-                         );
+  );
   /// Get the size (length) of this element.
   size_t getSize() const;
 
@@ -523,7 +522,7 @@ public:
   HashAssignElt();
   /// Construct with @n elements.
   HashAssignElt(int n ///< Number of elements.
-                );
+  );
 
   /// @name Accessors
   //@{
@@ -535,10 +534,10 @@ public:
   /// Set a cache address.
   self &setAddr(int idx,      ///< Index of target address.
                 uint32_t addr ///< Address value to set.
-                );
+  );
   /// Access a bucket.
   Bucket &operator[](size_t idx ///< Bucket index (0..N_BUCKETS-1)
-                     );
+  );
   /// Access a const bucket.
   Bucket const &operator[](size_t idx ///< Bucket index (0..N_BUCKETS-1)
                            ) const;
@@ -555,7 +554,7 @@ public:
   size_t getSize() const;
   /// Calculate size in bytes for @a n caches.
   static size_t calcSize(int n ///< Number of caches.
-                         );
+  );
 
 protected:
   uint32_t m_count; ///< # of caches (network order).
@@ -589,14 +588,14 @@ public:
                           uint32_t dstAddr, ///< Mask for destination address.
                           uint16_t srcPort, ///< Mask for source port.
                           uint16_t dstPort  ///< Mask for destination port.
-                          );
+    );
     /// Initialize the current set to empty with specific mask values.
     /// @return A pointer to the new set.
     MaskValueSetElt *initSet(uint32_t srcAddr, ///< Mask for source address.
                              uint32_t dstAddr, ///< Mask for destination address.
                              uint16_t srcPort, ///< Mask for source port.
                              uint16_t dstPort  ///< Mask for destination port.
-                             );
+    );
     MaskValueSetElt *m_set; ///< Current set.
     MaskAssignElt *m_elt;   ///< Parent element.
   };
@@ -611,7 +610,7 @@ public:
                 uint32_t dstAddr, ///< Mask for destination address.
                 uint16_t srcPort, ///< Mask for source port.
                 uint16_t dstPort  ///< Mask for destination port.
-                );
+  );
 
   /// Get size in bytes of this structure.
   /// @note This is not constant time. The mask/value sets must be traversed
@@ -670,7 +669,7 @@ public:
                                        memory layout of the object.
                                    */
   self &setMask(bool state         ///< @c true to be mask, @c false to be hash.
-                );
+  );
 
   self &clearReserved(); ///< Set reserved bits to zero.
   //@}
@@ -791,7 +790,7 @@ public:
   uint32_t getAddr() const;
   /// Set the identifying cache address.
   self &setAddr(uint32_t ///< Identifying IP address.
-                );
+  );
   uint16_t getHashRev() const;     ///< Get hash revision field.
   self &setHashRev(uint16_t rev);  ///< Set hash revision field to @a rev.
   self &initHashRev();             ///< Set hash revision to default value.
@@ -803,23 +802,23 @@ public:
                                        memory layout of the object.
                                    */
   self &setMask(bool state         ///< @c true to be mask, @c false to be hash.
-                );
+  );
 
   self &clearReserved(); ///< Set reserved bits to zero.
   //@}
   /// Initialize to unassigned hash.
   /// The cache address is set to @a addr.
   self &initDefaultHash(uint32_t addr ///< Identifying cache address.
-                        );
+  );
   /// Initialize to unassigned mask
   /// The cache address is set to @a addr.
   self &initDefaultMask(uint32_t addr ///< Identifying cache address.
-                        );
+  );
   /** Fill in element from source copy.
       Internal memory is allocated and the @a src copied.
    */
   self &fill(self const &src ///< Original source element
-             );
+  );
   /** Fill in element from source copy.
       This is used to write the element to memory that is allocated
       independently of the box.
@@ -827,10 +826,10 @@ public:
    */
   self &fill(void *base,     ///< Target buffer.
              self const &src ///< Original source element
-             );
+  );
   /// Initialize box from an existing element in memory.
   int parse(MsgBuffer base ///< Source memory.
-            );
+  );
 
   /// Get the size in bytes of the contained element.
   size_t getSize() const;
@@ -838,7 +837,7 @@ public:
 protected:
   /// Force buffer to be at least @a n bytes
   self &require(size_t n ///< Minimum buffer size required.
-                );
+  );
 
   CacheIdElt *m_base;       ///< Base address of memory for element.
   CacheIdElt::Tail *m_tail; ///< Base address of trailing data elements.
@@ -908,12 +907,12 @@ public:
   /// @a base is updated to account for this component.
   self &fill(MsgBuffer &base, ///< [in,out] Buffer for component storage.
              message_type_t t ///< Message type.
-             );
+  );
 
   /// Validate component for existing data.
   /// @a base is updated to account for this component.
   int parse(MsgBuffer &base ///< [in,out] Base address for component data.
-            );
+  );
 
   /// Compute size of a component of this type.
   static size_t calcSize();
@@ -969,7 +968,7 @@ struct CompWithHeader : public ComponentBase {
   */
   int checkHeader(MsgBuffer const &buffer, ///< Message buffer.
                   CompType t               ///< Expected component type.
-                  );
+  );
 };
 
 /** Sect 5.6.1: Security Info Component
@@ -1026,18 +1025,18 @@ public:
   /// This is used for the security hash unless the local key is set.
   /// @a key is copied to a global buffer and clipped to @c KEY_SIZE bytes.
   static void setDefaultKey(const char *key ///< Shared key.
-                            );
+  );
   static void setDefaultOption(Option opt ///< Type of security.
-                               );
+  );
 
   /// Set messsage local security key.
   self &setKey(const char *key ///< Shared key.
-               );
+  );
 
   /// Compute and set the security data.
   /// @a msg must be a buffer that covers exactly the entire message.
   self &secure(MsgBuffer const &msg ///< Message data.
-               );
+  );
 
   bool validate(MsgBuffer const &msg ///< Message data.
                 ) const;
@@ -1103,7 +1102,7 @@ public:
   /// Set a port value.
   self &setPort(int idx,      ///< Index of port.
                 uint16_t port ///< Value for port.
-                );
+  );
   /// Zero (clear) all ports.
   self &clearPorts();
   /** Add a port to the service.
@@ -1111,7 +1110,7 @@ public:
       to add more than @c N_PORTS ports.
    */
   self &addPort(uint16_t port ///< Port value.
-                );
+  );
   //@}
 
   /// Raw access to ServiceGroup.
@@ -1121,7 +1120,7 @@ public:
    */
   self &fill(MsgBuffer &base,        ///< Target storage.
              ServiceGroup const &svc ///< Service group definition.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1172,7 +1171,7 @@ public:
   /// Set the fields in the router ID element.
   self &setIdElt(uint32_t addr,   ///< Identifying IP address for router.
                  uint32_t recv_id ///< Receive count for router to target cache.
-                 );
+  );
   uint32_t getAddr() const;     ///< Get the address field in the ID element.
   self &setAddr(uint32_t addr); ///< Set the address field in the ID element.
   uint32_t getRecvId() const;   ///< Get the receive ID field in the ID element.
@@ -1182,7 +1181,7 @@ public:
   uint32_t getToAddr() const;
   /// Set the sent to address.
   self &setToAddr(uint32_t addr ///< Address value.
-                  );
+  );
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
@@ -1193,12 +1192,12 @@ public:
   /// Set received from address.
   self &setFromAddr(int idx,      ///< Index of address.
                     uint32_t addr ///< Address value.
-                    );
+  );
   //@}
   /// Find an address in the from list.
   /// @return The index of the address, or -1 if not found.
   int findFromAddr(uint32_t addr ///< Search value.
-                   );
+  );
 
   /** Write serialization data for single cache target.
       This completely fills the component.
@@ -1208,14 +1207,14 @@ public:
                       uint32_t recv_count, ///< Receive count for target cache.
                       uint32_t to_addr,    ///< Destination address in initial packet.
                       uint32_t from_addr   ///< Identifying IP address of target cache.
-                      );
+  );
 
   /** Write basic message structure.
       The router and cache data must be filled in separately.
   */
   self &fill(MsgBuffer &base, ///< Target storage.
              size_t n_caches  ///< Number of caches (fromAddr).
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1223,11 +1222,11 @@ public:
 
   /// Compute the memory size of the component.
   static size_t calcSize(int n ///< Receive address count
-                         );
+  );
 };
 
 /** Sect 5.6.4: Web-Cache Identity Info Component
-*/
+ */
 class CacheIdComp : public CompWithHeader<CacheIdComp>
 {
 public:
@@ -1267,7 +1266,7 @@ public:
   */
   self &fill(MsgBuffer &base,      ///< Target storage.
              CacheIdBox const &src ///< Cache descriptor
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1326,7 +1325,7 @@ public:
   uint32_t getCacheCount() const;
   /// Access cache element.
   CacheIdBox &cacheId(int idx ///< Index of target element.
-                      );
+  );
   /// Access cache element.
   CacheIdBox const &cacheId(int idx ///< Index of target element.
                             ) const;
@@ -1340,7 +1339,7 @@ public:
   /// Set router address.
   self &setRouterAddr(int idx,      ///< Index of router.
                       uint32_t addr ///< Address value.
-                      );
+  );
   //@}
 
   /** Write serialization data.
@@ -1351,7 +1350,7 @@ public:
   self &fill(MsgBuffer &base, ///< Target storage.
              int n_routers,   ///< Number of routers in view.
              int n_caches     ///< Number of caches in view.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1399,13 +1398,13 @@ public:
   uint32_t getRouterCount() const;
   /// Access a router ID element.
   RouterIdElt &routerElt(int idx ///< Index of target element.
-                         );
+  );
   /** Find a router element by router IP address.
       @return A pointer to the router element or @c NULL
       if no router is identified by @a addr.
   */
   RouterIdElt *findf_router_elt(uint32_t addr ///< Router IP address.
-                                );
+  );
   /// Get cache count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
@@ -1416,7 +1415,7 @@ public:
   /// Set a cache address.
   self &setCacheAddr(int idx,      ///< Index of target address.
                      uint32_t addr ///< Address value to set.
-                     );
+  );
   //@}
 
   /** Write serialization data.
@@ -1426,7 +1425,7 @@ public:
   */
   self &fill(MsgBuffer &buffer,                    ///< Target storage.
              detail::cache::GroupData const &group ///< Service group information.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1435,7 +1434,7 @@ public:
   /// Compute the total size of the component.
   static size_t calcSize(int n_routers, ///< Number of routers in view.
                          int n_caches   ///< Number of caches in view.
-                         );
+  );
 
 protected:
   /// Get router element array.
@@ -1486,7 +1485,7 @@ public:
   uint32_t getRouterCount() const;
   /// Access a router assignment element.
   RouterAssignElt &routerElt(int idx ///< Index of target element.
-                             );
+  );
   /// Get cache count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
@@ -1497,10 +1496,10 @@ public:
   /// Set a cache address.
   self &setCacheAddr(int idx,      ///< Index of target address.
                      uint32_t addr ///< Address value to set.
-                     );
+  );
   /// Access a bucket.
   Bucket &bucket(int idx ///< Index of target bucket.
-                 );
+  );
   /// Access a bucket.
   Bucket const &bucket(int idx ///< Index of target bucket.
                        ) const;
@@ -1509,7 +1508,7 @@ public:
   /// Fill out the component from an @c Assignment.
   self &fill(MsgBuffer &buffer,               ///< Target storage.
              detail::Assignment const &assign ///< Assignment data.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1518,7 +1517,7 @@ public:
   /// Compute the total size of the component.
   static size_t calcSize(int n_routers, ///< Number of routers in view.
                          int n_caches   ///< Number of caches in view.
-                         );
+  );
 
 protected:
   /// Serialized count of cache addresses.
@@ -1552,7 +1551,7 @@ public:
   //@{
   /// Directly access mask value element.
   CapabilityElt &elt(int idx ///< Index of target element.
-                     );
+  );
   CapabilityElt const &elt(int idx ///< Index of target element.
                            ) const;
   /// Get the element count.
@@ -1568,7 +1567,7 @@ public:
   */
   self &fill(MsgBuffer &buffer, ///< Target storage.
              int n              ///< Number of capabilities.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1576,7 +1575,7 @@ public:
 
   /// Compute the total size of the component.
   static size_t calcSize(int n ///< Number of capabilities.
-                         );
+  );
 
   /// Find value for Cache Assignment.
   ServiceGroup::CacheAssignmentStyle getCacheAssignmentStyle() const;
@@ -1644,12 +1643,12 @@ public:
   uint16_t getAssignType() const;
   /// Set the assignment type.
   self &setAssignType(uint16_t t ///< Assignment type.
-                      );
+  );
   /// Get the assignment length.
   uint16_t getAssignLength() const;
   /// Set the assignment length.
   self &setAssignLength(uint16_t length ///< Length in bytes.
-                        );
+  );
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
@@ -1696,7 +1695,7 @@ public:
   /// Fill out the component from an @c Assignment.
   virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
                      detail::Assignment const &assign ///< Assignment data.
-                     );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1705,7 +1704,7 @@ public:
   /// Compute the total size of the component.
   static size_t calcSize(int n_routers, ///< Number of routers in view.
                          int n_caches   ///< Number of caches in view.
-                         );
+  );
 
 protected:
   /// Serialized count of cache addresses.
@@ -1729,7 +1728,7 @@ public:
   /// Fill out the component from an @c Assignment.
   virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
                      detail::Assignment const &assign ///< Assignment data.
-                     );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1779,7 +1778,7 @@ public:
   self &fill(MsgBuffer &buffer, ///< Component storage.
              cmd_t cmd,         ///< Command type.
              uint32_t data      ///< Command data.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1817,7 +1816,7 @@ public:
   /// Fill from assignment data.
   self &fill(MsgBuffer &buffer,               ///< Component storage.
              detail::Assignment const &assign ///< Assignment data.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1862,7 +1861,7 @@ public:
              uint32_t toAddr,     ///< Destination address.
              uint32_t cacheAddr,  ///< Cache identifying address.
              uint32_t recvId      ///< Recieve ID.
-             );
+  );
 
   /// Validate an existing structure.
   /// @return Parse result.
@@ -1875,7 +1874,7 @@ public:
 /// Cache assignment hash function.
 inline uint8_t
 assignment_hash(uint32_t key ///< Key to hash.
-                )
+)
 {
   key ^= key >> 16;
   key ^= key >> 8;
@@ -1922,7 +1921,7 @@ namespace detail
     bool isActive() const;
     /// Control active flag.
     self &setActive(bool state ///< New active state.
-                    );
+    );
 
     /** Fill the assignment from cache service group data.
         Caches that are obsolete are purged from the data.
@@ -1931,12 +1930,12 @@ namespace detail
     */
     bool fill(cache::GroupData &group, ///< Service group data.
               uint32_t addr            ///< Identifying IP address of designated cache.
-              );
+    );
     /// Update the receive ID for a router.
     self &updateRouterId(uint32_t addr,  ///< Identifying IP address of router.
                          uint32_t rcvid, ///< New receive ID.
                          uint32_t cno    ///< New change number.
-                         );
+    );
 
     /// Get the assignment key.
     AssignmentKeyElt const &getKey() const;
@@ -1990,13 +1989,13 @@ namespace detail
       GroupData() = default;
       /// Use @a key instead of global default.
       self &setKey(const char *key ///< Shared key.
-                   );
+      );
       /// Use security @a style instead of global default.
       self &setSecurity(SecurityOption style ///< Security style to use.
-                        );
+      );
     };
-  }
-}
+  } // namespace endpoint
+} // namespace detail
 // ------------------------------------------------------
 /** Base class for all messages.
  */
@@ -2009,7 +2008,7 @@ public:
   virtual ~BaseMsg() {}
   /// Set the message @a buffer.
   void setBuffer(MsgBuffer const &buffer ///< Storage for message.
-                 );
+  );
   /// Get the current buffer.
   MsgBuffer const &buffer() const;
   /// Invoke once all components have been filled.
@@ -2049,16 +2048,16 @@ public:
   void fill(detail::cache::GroupData const &group, ///< Service group for message.
             CacheIdBox const &cache_id,            ///< ID to use for this cache.
             SecurityOption sec_opt                 ///< Security option to use.
-            );
+  );
   /** Fill in optional capabilities.
       The capabilities component is added only if the @a router
       is set to send them.
   */
   void fill_caps(detail::cache::RouterData const &router ///< Target router.
-                 );
+  );
   /// Parse message data, presumed to be of this type.
   int parse(ts::Buffer const &buffer ///< Raw message data.
-            );
+  );
 
   CacheIdComp m_cache_id;     ///< Web cache identity info.
   CacheViewComp m_cache_view; ///< Web cache view.
@@ -2081,11 +2080,11 @@ public:
             size_t n_routers,                       ///< Routers in view.
             size_t n_caches,                        ///< Caches in view.
             bool send_capabilities = false          ///< Send capabilities.
-            );
+  );
 
   /// Parse message data, presumed to be of this type.
   int parse(ts::Buffer const &buffer ///< Raw message data.
-            );
+  );
 
   RouterIdComp m_router_id;     ///< Router ID.
   RouterViewComp m_router_view; ///< Router view data.
@@ -2114,11 +2113,11 @@ public:
   */
   void fill(detail::cache::GroupData const &group, ///< Service group for message.
             SecurityOption sec_opt                 ///< Security option to use.
-            );
+  );
 
   /// Parse message data, presumed to be of this type.
   int parse(ts::Buffer const &buffer ///< Raw message data.
-            );
+  );
 
   // Only one of these should be present in an instance.
   AssignInfoComp m_hash_assign;        ///< Primary (hash) assignment.
@@ -2144,11 +2143,11 @@ public:
             AssignmentKeyElt const &key,           ///< Assignment key.
             int n_routers,                         ///< Number of routers expected.
             int n_caches                           ///< Number of caches expected.
-            );
+  );
 
   /// Parse message data, presumed to be of this type.
   int parse(ts::Buffer const &buffer ///< Raw message data.
-            );
+  );
 
   QueryComp m_query; ///< Router Removal Query component.
 };
@@ -2203,11 +2202,11 @@ public:
   /// Open a socket for communications.
   /// @return 0 on success, -ERRNO on failure.
   virtual int open(uint32_t addr ///< Local IP address.
-                   );
+  );
 
   /// Use MD5 security.
   void useMD5Security(ts::ConstBuffer const &key ///< Shared key.
-                      );
+  );
 
   /// Perform all scheduled housekeeping functions.
   /// @return 0 for success, -errno on error.
@@ -2230,19 +2229,19 @@ public:
   /// Process HERE_I_AM message.
   virtual ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
                                    ts::Buffer const &data  ///< Buffer with message data.
-                                   );
+  );
   /// Process I_SEE_YOU message.
   virtual ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
                                    ts::Buffer const &data  ///< Buffer with message data.
-                                   );
+  );
   /// Process REDIRECT_ASSIGN message.
   virtual ts::Errata handleRedirectAssign(IpHeader const &header, ///< IP packet data.
                                           ts::Buffer const &data  ///< Buffer with message data.
-                                          );
+  );
   /// Process REMOVAL_QUERY message.
   virtual ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
                                         ts::Buffer const &data  ///< Buffer with message data.
-                                        );
+  );
 
 protected:
   /** Local address for this end point.
@@ -2266,7 +2265,7 @@ protected:
   /// Validate a security component.
   bool validateSecurity(BaseMsg &msg,          ///< Message data (including security component).
                         GroupData const &group ///< Group data for message.
-                        );
+  );
 };
 // ------------------------------------------------------
 namespace detail
@@ -2290,7 +2289,7 @@ namespace detail
       RouterData();
       /// Construct with address.
       RouterData(uint32_t addr ///< Router identifying address.
-                 );
+      );
 
       /// Time until next packet.
       /// @return Seconds until a packet should be sent.
@@ -2380,20 +2379,20 @@ namespace detail
       /// Find a router by IP @a addr.
       /// @return A pointer to the router, or @c NULL if not found.
       RouterBag::iterator findRouter(uint32_t addr ///< IP address of cache.
-                                     );
+      );
 
       /// Set an intial router for a service group.
       self &seedRouter(uint32_t addr ///< IP address for router.
-                       );
+      );
       /// Remove a seed router.
       /// @return The last time a packet was sent to the router.
       time_t removeSeedRouter(uint32_t addr ///< Identifying router address.
-                              );
+      );
 
       /// Find a cache by IP @a addr.
       /// @return An iterator to the cache, or @c NULL if not found.
       CacheBag::iterator findCache(uint32_t addr ///< IP address of cache.
-                                   );
+      );
       /// Adjust packet stamp vectors to track routers.
       void resizeCacheSources();
 
@@ -2409,10 +2408,10 @@ namespace detail
           @return @c true if any routers were culled, @c false otherwise.
       */
       bool cullRouters(time_t now ///< Current time.
-                       );
+      );
 
       /** Check to see if the process associated with service is up
-      */
+       */
       bool processUp();
 
       /// Update state to reflect a view change.
@@ -2420,10 +2419,10 @@ namespace detail
 
       /// Use @a key instead of global default.
       self &setKey(const char *key ///< Shared key.
-                   );
+      );
       /// Use security @a style instead of global default.
       self &setSecurity(SecurityOption style ///< Security style to use.
-                        );
+      );
     };
     inline const char *
     GroupData::getProcName()
@@ -2435,8 +2434,8 @@ namespace detail
     {
       m_proc_name = ats_strndup(name.data(), name.size());
     }
-  }
-}
+  } // namespace cache
+} // namespace detail
 
 /** Implementation class for Cache Endpoint.
  */
@@ -2465,7 +2464,7 @@ public:
   */
   virtual GroupData &defineServiceGroup(ServiceGroup const &svc,         ///< [in] Service to define.
                                         ServiceGroup::Result *result = 0 ///< [out] Result for service creation.
-                                        );
+  );
 
   /** Set an intial router for a service group.
       This is needed to bootstrap the protocol.
@@ -2473,11 +2472,11 @@ public:
   */
   self &seedRouter(uint8_t id,   ///< Service group ID.
                    uint32_t addr ///< IP address for router.
-                   );
+  );
 
   /// Define services from a configuration file.
   ts::Errata loadServicesFromFile(const char *path ///< Path to file.
-                                  );
+  );
 
   /// Override.
   int open(uint32_t addr);
@@ -2503,24 +2502,24 @@ protected:
   /// Generate contents in HERE_I_AM @a msg for seed router.
   void generateHereIAm(HereIAmMsg &msg, ///< Message with allocated buffer.
                        GroupData &group ///< Group with data for message.
-                       );
+  );
   /// Generate contents in HERE_I_AM @a msg for active @a router.
   void generateHereIAm(HereIAmMsg &msg,   ///< Message with allocated buffer.
                        GroupData &group,  ///< Group with data for message.
                        RouterData &router ///< Target router.
-                       );
+  );
   /// Generate contents in REDIRECT_ASSIGN @a msg for a service @a group.
   void generateRedirectAssign(RedirectAssignMsg &msg, ///< Message with allocated buffer.
                               GroupData &group        ///< Group with data for message.
-                              );
+  );
   /// Process HERE_I_AM message.
   virtual ts::Errata handleISeeYou(IpHeader const &header, ///< IP packet data.
                                    ts::Buffer const &data  ///< Buffer with message data.
-                                   );
+  );
   /// Process REMOVAL_QUERY message.
   virtual ts::Errata handleRemovalQuery(IpHeader const &header, ///< IP packet data.
                                         ts::Buffer const &data  ///< Message data.
-                                        );
+  );
 
   /// Map Service Group ID to Service Group Data.
   typedef std::map<uint8_t, GroupData> GroupMap;
@@ -2600,12 +2599,12 @@ namespace detail
       /// Find a cache by IP @a addr.
       /// @return An iterator to the cache, or @c NULL if not found.
       CacheBag::iterator findCache(uint32_t addr ///< IP address of cache.
-                                   );
+      );
       /// Adjust packet stamp vectors to track caches.
       void resizeRouterSources();
     };
-  }
-}
+  } // namespace router
+} // namespace detail
 
 /** Implementation class for Router Endpoint.
  */
@@ -2624,7 +2623,7 @@ public:
   /// Process HERE_I_AM message.
   virtual ts::Errata handleHereIAm(IpHeader const &header, ///< IP packet data.
                                    ts::Buffer const &data  ///< Buffer with message data.
-                                   );
+  );
   /// Perform all scheduled housekeeping functions.
   int housekeeping();
   /// Send pending I_SEE_YOU messages.
@@ -2647,7 +2646,7 @@ protected:
   void generateISeeYou(ISeeYouMsg &msg,  ///< Message structure to fill.
                        GroupData &group, ///< Group data for message.
                        CacheData &cache  ///< Target cache.
-                       );
+  );
 
   /// Map Service Group ID to Service Group Data.
   typedef std::map<uint8_t, GroupData> GroupMap;
@@ -2655,16 +2654,10 @@ protected:
   GroupMap m_groups;
 };
 // ------------------------------------------------------
-inline RouterId::RouterId() : m_addr(0), m_recv_id(0)
-{
-}
-inline RouterId::RouterId(uint32_t addr, uint32_t recv_id) : m_addr(addr), m_recv_id(recv_id)
-{
-}
+inline RouterId::RouterId() : m_addr(0), m_recv_id(0) {}
+inline RouterId::RouterId(uint32_t addr, uint32_t recv_id) : m_addr(addr), m_recv_id(recv_id) {}
 
-inline RouterIdElt::RouterIdElt(uint32_t addr, uint32_t recv_id) : super(addr, htonl(recv_id))
-{
-}
+inline RouterIdElt::RouterIdElt(uint32_t addr, uint32_t recv_id) : super(addr, htonl(recv_id)) {}
 inline uint32_t
 RouterIdElt::getAddr() const
 {
@@ -2693,9 +2686,7 @@ RouterIdElt::operator=(super const &that)
   return this->setAddr(that.m_addr).setRecvId(that.m_recv_id);
 }
 
-inline MaskElt::MaskElt()
-{
-}
+inline MaskElt::MaskElt() {}
 
 inline MaskElt::MaskElt(uint32_t srcAddr, uint32_t dstAddr, uint16_t srcPort, uint16_t dstPort)
   : m_src_addr(srcAddr), m_dst_addr(dstAddr), m_src_port(srcPort), m_dst_port(dstPort)
@@ -2747,21 +2738,15 @@ MaskElt::setDstPort(uint16_t mask)
   return *this;
 }
 
-inline ValueElt::ValueElt()
-{
-}
+inline ValueElt::ValueElt() {}
 
 inline ValueElt::ValueElt(uint32_t cacheAddr, uint32_t srcAddr, uint32_t dstAddr, uint16_t srcPort, uint16_t dstPort)
   : m_src_addr(srcAddr), m_dst_addr(dstAddr), m_src_port(srcPort), m_dst_port(dstPort), m_cache_addr(cacheAddr)
 {
 }
 
-inline MaskValueSetElt::MaskValueSetElt()
-{
-}
-inline MaskValueSetElt::MaskValueSetElt(uint32_t count) : m_count(count)
-{
-}
+inline MaskValueSetElt::MaskValueSetElt() {}
+inline MaskValueSetElt::MaskValueSetElt(uint32_t count) : m_count(count) {}
 inline MaskElt &
 MaskValueSetElt::maskElt()
 {
@@ -2969,9 +2954,7 @@ CacheIdBox::setUnassigned(bool state)
   return *this;
 }
 
-inline AssignmentKeyElt::AssignmentKeyElt(uint32_t addr, uint32_t n) : m_addr(addr), m_change_number(htonl(n))
-{
-}
+inline AssignmentKeyElt::AssignmentKeyElt(uint32_t addr, uint32_t n) : m_addr(addr), m_change_number(htonl(n)) {}
 inline uint32_t
 AssignmentKeyElt::getAddr() const
 {
@@ -3011,9 +2994,7 @@ RouterAssignElt::setChangeNumber(uint32_t n)
   return *this;
 }
 
-inline SecurityComp::SecurityComp() : m_local_key(false)
-{
-}
+inline SecurityComp::SecurityComp() : m_local_key(false) {}
 inline void
 SecurityComp::setDefaultOption(Option opt)
 {
@@ -3025,9 +3006,7 @@ SecurityComp::calcSize(Option opt)
   return SECURITY_NONE == opt ? sizeof(RawNone) : sizeof(RawMD5);
 }
 
-inline ServiceComp::ServiceComp() : m_port_count(0)
-{
-}
+inline ServiceComp::ServiceComp() : m_port_count(0) {}
 inline ServiceComp::raw_t *
 ServiceComp::access()
 {
@@ -3251,9 +3230,7 @@ detail::Assignment::updateRouterId(uint32_t addr, uint32_t rcvid, uint32_t cno)
     m_router_list->updateRouterId(addr, rcvid, cno);
   return *this;
 }
-inline AssignmentKeyElt::AssignmentKeyElt()
-{
-}
+inline AssignmentKeyElt::AssignmentKeyElt() {}
 inline AssignmentKeyElt const &
 detail::Assignment::getKey() const
 {
@@ -3278,15 +3255,9 @@ detail::Assignment::getMask() const
   return *m_mask_assign;
 }
 
-inline MsgBuffer::MsgBuffer() : super(), _count(0)
-{
-}
-inline MsgBuffer::MsgBuffer(super const &that) : super(that), _count(0)
-{
-}
-inline MsgBuffer::MsgBuffer(void *p, size_t n) : super(static_cast<char *>(p), n), _count(0)
-{
-}
+inline MsgBuffer::MsgBuffer() : super(), _count(0) {}
+inline MsgBuffer::MsgBuffer(super const &that) : super(that), _count(0) {}
+inline MsgBuffer::MsgBuffer(void *p, size_t n) : super(static_cast<char *>(p), n), _count(0) {}
 
 inline size_t
 MsgBuffer::getSize() const
@@ -3349,9 +3320,7 @@ MsgBuffer::zero()
   return *this;
 }
 
-inline PacketStamp::PacketStamp() : m_time(0), m_sn(0)
-{
-}
+inline PacketStamp::PacketStamp() : m_time(0), m_sn(0) {}
 
 inline PacketStamp &
 PacketStamp::set(time_t time, uint32_t sn)
@@ -3361,23 +3330,13 @@ PacketStamp::set(time_t time, uint32_t sn)
   return *this;
 }
 
-inline ServiceGroup::ServiceGroup() : m_svc_type(STANDARD), m_svc_id(0), m_priority(0), m_protocol(0), m_flags(0)
-{
-}
+inline ServiceGroup::ServiceGroup() : m_svc_type(STANDARD), m_svc_id(0), m_priority(0), m_protocol(0), m_flags(0) {}
 
-inline RouterIdElt::RouterIdElt()
-{
-}
-inline RouterAssignElt::RouterAssignElt() : m_change_number(0)
-{
-}
+inline RouterIdElt::RouterIdElt() {}
+inline RouterAssignElt::RouterAssignElt() : m_change_number(0) {}
 
-inline RouterAssignListElt::RouterAssignListElt()
-{
-}
-inline RouterAssignListElt::RouterAssignListElt(int n) : m_count(htonl(n))
-{
-}
+inline RouterAssignListElt::RouterAssignListElt() {}
+inline RouterAssignListElt::RouterAssignListElt(int n) : m_count(htonl(n)) {}
 inline RouterAssignElt &
 RouterAssignListElt::elt(int n)
 {
@@ -3417,12 +3376,8 @@ RouterAssignListElt::getCount() const
   return ntohl(m_count);
 }
 
-inline HashAssignElt::HashAssignElt()
-{
-}
-inline HashAssignElt::HashAssignElt(int n) : m_count(htonl(n))
-{
-}
+inline HashAssignElt::HashAssignElt() {}
+inline HashAssignElt::HashAssignElt(int n) : m_count(htonl(n)) {}
 // This is untainted because an overall size check is done when the packet is read. If any of the
 // counts are bogus, that size check will fail.
 // coverity[ -tainted_data_return]
@@ -3510,9 +3465,7 @@ MaskAssignElt::init(uint32_t srcAddr, uint32_t dstAddr, uint16_t srcPort, uint16
   return zret;
 }
 
-inline ComponentBase::ComponentBase() : m_base(0)
-{
-}
+inline ComponentBase::ComponentBase() : m_base(0) {}
 inline bool
 ComponentBase::isEmpty() const
 {
@@ -3583,9 +3536,7 @@ inline RouterViewComp::RouterViewComp() : m_cache_count(0)
   memset(m_cache_ids, 0, sizeof(m_cache_ids));
 }
 
-inline CapComp::CapComp()
-{
-}
+inline CapComp::CapComp() {}
 inline CapComp &
 CapComp::invalidate()
 {
@@ -3624,9 +3575,7 @@ CapComp::getCacheAssignmentStyle() const
   return m_cache_assign;
 }
 
-inline AssignMapComp::AssignMapComp()
-{
-}
+inline AssignMapComp::AssignMapComp() {}
 
 /*  Implementation note: Due to a bug in gcc, we have to be
     careful with these fields. If we use the field access templates
@@ -3711,17 +3660,11 @@ QueryComp::calcSize()
   return sizeof(raw_t);
 }
 
-inline detail::cache::SeedRouter::SeedRouter()
-{
-}
+inline detail::cache::SeedRouter::SeedRouter() {}
 
-inline detail::cache::SeedRouter::SeedRouter(uint32_t addr) : m_addr(addr), m_count(0), m_xmit(0)
-{
-}
+inline detail::cache::SeedRouter::SeedRouter(uint32_t addr) : m_addr(addr), m_count(0), m_xmit(0) {}
 
-inline BaseMsg::BaseMsg() : m_buffer(0, 0)
-{
-}
+inline BaseMsg::BaseMsg() : m_buffer(0, 0) {}
 inline MsgBuffer const &
 BaseMsg::buffer() const
 {
@@ -3747,5 +3690,3 @@ RouterImpl::RouterData::resize(size_t n)
 // ------------------------------------------------------
 
 } // namespace wccp
-
-#endif // TS_WCCP_LOCAL_HEADER

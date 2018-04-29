@@ -46,12 +46,12 @@ clean-local:
 
 jar-check:
 	@if [ -z "$(PLANTUML_JAR)" ] ; then \
-	  echo plantuml jar file variable not set.; \
-	  exit 1; \
+		echo plantuml jar file variable not set.; \
+		exit 1; \
 	elif [ ! -r "$(PLANTUML_JAR)" ] ; then \
-	  echo plantuml jar \'${PLANTUML_JAR}\' not readable.; \
-	  exit 1; \
+		echo plantuml jar \'${PLANTUML_JAR}\' not readable.; \
+		exit 1; \
 	elif [ -d "${PLANTUML_JAR}" ] ; then \
-	  echo plantuml jar not downloaded to \'${PLANTUML_JAR}\'.; \
-	  exit 1; \
+		echo plantuml jar not downloaded to \'${PLANTUML_JAR}\'.; \
+		exit 1; \
 	fi

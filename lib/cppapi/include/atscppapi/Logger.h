@@ -27,8 +27,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_LOGGER_H_
-#define ATSCPPAPI_LOGGER_H_
 
 #include <string>
 #include <atscppapi/noncopyable.h>
@@ -262,6 +260,4 @@ private:
   LoggerState *state_; /**< Internal state for the Logger */
 };
 
-} /* atscppapi */
-
-#endif /* ATSCPPAPI_LOGGER_H_ */
+} // namespace atscppapi

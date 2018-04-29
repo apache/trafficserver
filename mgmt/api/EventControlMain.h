@@ -29,8 +29,7 @@
  *
  ***************************************************************************/
 
-#ifndef EVENT_CONTROL_MAIN_H
-#define EVENT_CONTROL_MAIN_H
+#pragma once
 
 #include "mgmtapi.h"       //add the include path b/c included in web dir
 #include "CoreAPIShared.h" // for NUM_EVENTS
@@ -52,5 +51,3 @@ void delete_event_queue(LLQ *q);
 
 void apiAlarmCallback(alarm_t newAlarm, char *ip, char *desc);
 void *event_callback_main(void *arg);
-
-#endif

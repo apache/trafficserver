@@ -17,8 +17,3 @@
 #  limitations under the License.
 
 SUBDIRS = eventsystem net aio dns hostdb utils cache
-
-include $(top_srcdir)/build/tidy.mk
-
-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)

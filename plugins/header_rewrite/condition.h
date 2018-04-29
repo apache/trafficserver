@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __CONDITION_H__
-#define __CONDITION_H__ 1
+#pragma once
 
 #include <string>
 
@@ -48,7 +47,7 @@ enum CondModifiers {
 class Condition : public Statement
 {
 public:
-  Condition() : _qualifier(""), _cond_op(MATCH_EQUAL), _matcher(NULL), _mods(COND_NONE)
+  Condition() : _qualifier(""), _cond_op(MATCH_EQUAL), _matcher(nullptr), _mods(COND_NONE)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition");
   }
@@ -130,5 +129,3 @@ private:
 
   CondModifiers _mods;
 };
-
-#endif // __CONDITION_H

@@ -112,8 +112,9 @@ URLparser::getPort(std::string &fullURL, int &port_ptr, int &port_len)
     if (!hostPort.empty()) // i.e. port is present
     {
       TextView port = url.take_prefix_at('/');
-      if (port.empty()) // i.e. backslash is not present, then the rest of the url must be just port
+      if (port.empty()) { // i.e. backslash is not present, then the rest of the url must be just port
         port = url;
+      }
       if (matcher.portmatch(port.data(), port.size())) {
         TextView text;
         n_port = svtoi(port, &text);
@@ -187,8 +188,9 @@ Stripe::clear()
   for (auto i : {A, B}) {
     for (auto j : {HEAD, FOOT}) {
       ssize_t n = pwrite(_span->_fd, zero, CacheStoreBlocks::SCALE, this->_meta_pos[i][j]);
-      if (n < CacheStoreBlocks::SCALE)
+      if (n < CacheStoreBlocks::SCALE) {
         std::cout << "Failed to clear stripe header" << std::endl;
+      }
     }
   }
 
@@ -206,14 +208,16 @@ Stripe::Chunk::append(MemSpan m)
 void
 Stripe::Chunk::clear()
 {
-  for (auto &m : _chain)
+  for (auto &m : _chain) {
     free(const_cast<void *>(m.data()));
+  }
   _chain.clear();
 }
 
 Stripe::Stripe(Span *span, Bytes start, CacheStoreBlocks len) : _span(span), _start(start), _len(len)
 {
   ts::bwprint(hashText, "{} {}:{}", span->_path.path(), _start.count(), _len.count());
+  CryptoContext().hash_immediate(hash_id, hashText.data(), static_cast<int>(hashText.size()));
   printf("hash id of stripe is hash of %.*s\n", static_cast<int>(hashText.size()), hashText.data());
 }
 
@@ -229,15 +233,15 @@ Stripe::InitializeMeta()
 {
   Errata zret;
   // memset(this->raw_dir, 0, dir_len);
-  for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 2; j++) {
-      _meta[i][j].magic             = StripeMeta::MAGIC;
-      _meta[i][j].version.ink_major = ts::CACHE_DB_MAJOR_VERSION;
-      _meta[i][j].version.ink_minor = ts::CACHE_DB_MINOR_VERSION;
-      _meta[i][j].agg_pos = _meta[i][j].last_write_pos = _meta[i][j].write_pos = this->_content;
-      _meta[i][j].phase = _meta[i][j].cycle = _meta[i][j].sync_serial = _meta[i][j].write_serial = _meta[i][j].dirty = 0;
-      _meta[i][j].create_time = time(nullptr);
-      _meta[i][j].sector_size = DEFAULT_HW_SECTOR_SIZE;
+  for (auto &i : _meta) {
+    for (auto &j : i) {
+      j.magic             = StripeMeta::MAGIC;
+      j.version.ink_major = ts::CACHE_DB_MAJOR_VERSION;
+      j.version.ink_minor = ts::CACHE_DB_MINOR_VERSION;
+      j.agg_pos = j.last_write_pos = j.write_pos = this->_content;
+      j.phase = j.cycle = j.sync_serial = j.write_serial = j.dirty = 0;
+      j.create_time                                                = time(nullptr);
+      j.sector_size                                                = DEFAULT_HW_SECTOR_SIZE;
     }
   }
   if (!freelist) // freelist is not allocated yet
@@ -464,8 +468,9 @@ TS_INLINE CacheDirEntry *
 dir_from_offset(int64_t i, CacheDirEntry *seg)
 {
 #if DIR_DEPTH < 5
-  if (!i)
-    return 0;
+  if (!i) {
+    return nullptr;
+  }
   return dir_in_seg(seg, i);
 #else
   i = i + ((i - 1) / (DIR_DEPTH - 1));
@@ -525,7 +530,7 @@ Stripe::stripe_offset(CacheDirEntry *e)
 }
 
 int
-Stripe::dir_probe(INK_MD5 *key, CacheDirEntry *result, CacheDirEntry **last_collision)
+Stripe::dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_collision)
 {
   int segment = key->slice32(0) % this->_segments;
   int bucket  = key->slice32(1) % this->_buckets;
@@ -556,8 +561,9 @@ Stripe::dir_probe(INK_MD5 *key, CacheDirEntry *result, CacheDirEntry **last_coll
     int64_t offset = stripe_offset(e);
     int64_t size   = dir_approx_size(e);
     ssize_t n      = pread(fd, stripe_buff2, size, offset);
-    if (n < size)
+    if (n < size) {
       std::cout << "Failed to read content from the Stripe" << std::endl;
+    }
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
     std::string hdr(doc->hdr(), doc->hlen);
@@ -606,8 +612,9 @@ void
 Stripe::walk_all_buckets()
 {
   for (int s = 0; s < this->_segments; s++) {
-    if (walk_bucket_chain(s))
+    if (walk_bucket_chain(s)) {
       std::cout << "Loop present in Segment " << s << std::endl;
+    }
   }
 }
 
@@ -630,8 +637,9 @@ Stripe::walk_bucket_chain(int s)
         std::cout << "bit already set in "
                   << "seg " << s << " bucket " << b << std::endl;
       }
-      if (i > 0) // i.e., not the first dir in the segment
-        b_bitset[i] = 1;
+      if (i > 0) { // i.e., not the first dir in the segment
+        b_bitset[i] = true;
+      }
 
 #if 1
       if (!dir_valid(e) || !dir_offset(e)) {
@@ -705,8 +713,9 @@ Stripe::loadDir()
   dir            = (CacheDirEntry *)(raw_dir + this->vol_headerlen());
   // read directory
   ssize_t n = pread(this->_span->_fd, raw_dir, dirlen, this->_start);
-  if (n < dirlen)
+  if (n < dirlen) {
     std::cout << "Failed to read Dir from stripe @" << this->hashText;
+  }
   return zret;
 }
 //
@@ -780,7 +789,7 @@ Stripe::check_loop(int s)
       this->dir_init_segment(s);
       return 1;
     }
-    f_bitset[i] = 1;
+    f_bitset[i] = true;
     e           = dir_from_offset(i, seg);
   }
 
@@ -975,9 +984,10 @@ Stripe::loadMeta()
   static const size_t SBSIZE = CacheStoreBlocks::SCALE; // save some typing.
   alignas(SBSIZE) char stripe_buff[SBSIZE];             // Use when reading a single stripe block.
   alignas(SBSIZE) char stripe_buff2[SBSIZE];            // use to save the stripe freelist
-  if (io_align > SBSIZE)
+  if (io_align > SBSIZE) {
     return Errata::Message(0, 1, "Cannot load stripe ", _idx, " on span ", _span->_path, " because the I/O block alignment ",
                            io_align, " is larger than the buffer alignment ", SBSIZE);
+  }
 
   _directory._start = pos;
   // Header A must be at the start of the stripe block.
@@ -1068,12 +1078,14 @@ Stripe::loadMeta()
   meta = data.ptr<StripeMeta>(0);
   // copy freelist
   freelist = (uint16_t *)malloc(_segments * sizeof(uint16_t));
-  for (int i    = 0; i < _segments; i++)
+  for (int i = 0; i < _segments; i++) {
     freelist[i] = meta->freelist[i];
+  }
 
-  if (!zret)
+  if (!zret) {
     _directory.clear();
+  }
   return zret;
 }
 
-} // end ct
+} // namespace ct

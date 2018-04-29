@@ -22,8 +22,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_platform_h
-#define _ink_platform_h
+#pragma once
 
 #include "ts/ink_config.h"
 
@@ -138,15 +137,7 @@ struct ifafilt;
 #include <stropts.h>
 #endif
 
-#ifdef HAVE_MACHINE_ENDIAN_H
-#include <machine/endian.h>
-#endif
-#ifdef HAVE_ENDIAN_H
-#include <endian.h>
-#endif
-#ifdef HAVE_SYS_BYTEORDER_H
-#include <sys/byteorder.h>
-#endif
+#include "ink_endian.h"
 
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -191,9 +182,8 @@ typedef unsigned int in_addr_t;
 #include <resolv.h> // Must go after the netinet includes for FreeBSD
 
 #ifndef PATH_NAME_MAX
-#define PATH_NAME_MAX 4096 // instead of PATH_MAX which is inconsistent
-                           // on various OSs (linux-4096,osx/bsd-1024,
-                           //                 windows-260,etc)
+#define PATH_NAME_MAX \
+  4096 // instead of PATH_MAX which is inconsistent
+       // on various OSs (linux-4096,osx/bsd-1024,
+       //                 windows-260,etc)
 #endif
-
-#endif /* _ink_platform_h */

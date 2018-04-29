@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_DEFS_H_
-#define _I_REC_DEFS_H_
+#pragma once
 
 #include "ts/ink_mutex.h"
 #include "ts/ink_rwlock.h"
@@ -98,8 +97,8 @@ namespace detail
   template <> struct is_valid_persistence<RECP_NON_PERSISTENT> {
     static const RecPersistT value = RECP_NON_PERSISTENT;
   };
-}
-}
+} // namespace detail
+} // namespace rec
 
 #define REC_PERSISTENCE_TYPE(P) rec::detail::is_valid_persistence<P>::value
 
@@ -182,5 +181,3 @@ struct RecRawStatBlock {
 typedef int (*RecConfigUpdateCb)(const char *name, RecDataT data_type, RecData data, void *cookie);
 typedef int (*RecStatUpdateFunc)(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id, void *cookie);
 typedef int (*RecRawStatSyncCb)(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id);
-
-#endif

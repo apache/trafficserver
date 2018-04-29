@@ -45,7 +45,10 @@ typedef enum {
 } TSLuaServerState;
 
 const char *ts_lua_cache_lookup_result_string[] = {
-  "TS_LUA_CACHE_LOOKUP_MISS", "TS_LUA_CACHE_LOOKUP_HIT_STALE", "TS_LUA_CACHE_LOOKUP_HIT_FRESH", "TS_LUA_CACHE_LOOKUP_SKIPPED",
+  "TS_LUA_CACHE_LOOKUP_MISS",
+  "TS_LUA_CACHE_LOOKUP_HIT_STALE",
+  "TS_LUA_CACHE_LOOKUP_HIT_FRESH",
+  "TS_LUA_CACHE_LOOKUP_SKIPPED",
 };
 
 const char *ts_lua_server_state_string[] = {

@@ -94,11 +94,11 @@ BWFSpec::is_sign(char c)
 inline bool
 BWFSpec::is_type(char c)
 {
-  return 'x' == c || 'X' == c || 'o' == c || 'b' == c || 'B' == c || 'd' == c;
+  return 'x' == c || 'X' == c || 'o' == c || 'b' == c || 'B' == c || 'd' == c || 's' == c || 'S' == c;
 }
 
 class BWFormat;
 
 class BufferWriter;
 
-} // ts
+} // namespace ts

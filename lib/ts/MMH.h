@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _MMH_h_
-#define _MMH_h_
+#pragma once
 
 #include "ts/ink_code.h"
 #include "ts/ink_defs.h"
@@ -115,5 +114,3 @@ public:
   }
 #endif
 };
-
-#endif

@@ -36,7 +36,7 @@ namespace
 const int GZIP_MEM_LEVEL  = 8;
 const int WINDOW_BITS     = 31; // Always use 31 for gzip.
 const unsigned int ONE_KB = 1024;
-}
+} // namespace
 
 /**
  * @private

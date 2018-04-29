@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_CLIENTREQUEST_H_
-#define ATSCPPAPI_CLIENTREQUEST_H_
 
 #include <atscppapi/Request.h>
 
@@ -55,6 +53,4 @@ public:
 private:
   ClientRequestState *state_;
 };
-}
-
-#endif /* ATSCPPAPI_CLIENTREQUEST_H_ */
+} // namespace atscppapi

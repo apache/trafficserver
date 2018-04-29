@@ -24,7 +24,7 @@ Bandwidth and Transfer
 
 .. ts:stat:: global proxy.node.bandwidth_hit_ratio_avg_10s float
    :type: derivative
-   :unit: ratio
+   :units: ratio
 
    The difference of :ts:stat:`proxy.node.user_agent_total_bytes_avg_10s` and
    :ts:stat:`proxy.node.origin_server_total_bytes_avg_10s`, divided by
@@ -35,7 +35,7 @@ Bandwidth and Transfer
 
 .. ts:stat:: global proxy.node.bandwidth_hit_ratio float
    :type: derivative
-   :unit: ratio
+   :units: ratio
 
    The difference of :ts:stat:`proxy.node.user_agent_total_bytes` and
    :ts:stat:`proxy.node.origin_server_total_bytes`, divided by
@@ -46,19 +46,19 @@ Bandwidth and Transfer
 
 .. ts:stat:: global proxy.node.client_throughput_out float
    :type: gauge
-   :unit: mbits
+   :units: mbits
 
    The value of :ts:stat:`proxy.node.http.throughput` represented in megabits.
 
 .. ts:stat:: global proxy.node.client_throughput_out_kbit integer
    :type: gauge
-   :unit: kbits
+   :units: kbits
 
    The value of :ts:stat:`proxy.node.http.throughput` represented in kilobits.
 
 .. ts:stat:: global proxy.node.http.throughput integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
    The throughput of responses to user agents over the previous 10 seconds, in
    bytes.
@@ -66,53 +66,53 @@ Bandwidth and Transfer
 .. ts:stat:: global proxy.process.http.throttled_proxy_only integer
 .. ts:stat:: global proxy.process.http.user_agent_request_document_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_request_header_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.user_agent_response_document_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.user_agent_response_header_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100 integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100K integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100M integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_10K integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_10M integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_1K integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_1M integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
    :ungathered:
 

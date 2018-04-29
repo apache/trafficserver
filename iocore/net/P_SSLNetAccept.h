@@ -36,8 +36,7 @@
 
 
  ****************************************************************************/
-#if !defined(_SSLNetAccept_h_)
-#define _SSLNetAccept_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_Connection.h"
@@ -54,4 +53,3 @@ struct SSLNetAccept : public NetAccept {
   SSLNetAccept(const NetProcessor::AcceptOptions &opt);
   virtual ~SSLNetAccept();
 };
-#endif

@@ -22,8 +22,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_GLOBALPLUGIN_H_
-#define ATSCPPAPI_GLOBALPLUGIN_H_
 
 #include <atscppapi/Plugin.h>
 
@@ -87,6 +85,4 @@ private:
   GlobalPluginState *state_; /**< Internal state tied to a GlobalPlugin */
 };
 
-} /* atscppapi */
-
-#endif /* ATSCPPAPI_GLOBALPLUGIN_H_ */
+} // namespace atscppapi

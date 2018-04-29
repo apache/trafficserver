@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef SOURCELOCATION_H_88F6E38C_ACBB_4EFE_8819_71FCB162AE9B
-#define SOURCELOCATION_H_88F6E38C_ACBB_4EFE_8819_71FCB162AE9B
+#pragma once
 
 // The SourceLocation class wraps up a source code location, including
 // file name, function name, and line number, and contains a method to
@@ -59,5 +58,3 @@ public:
 
   char *str(char *buf, int buflen) const;
 };
-
-#endif /* SOURCELOCATION_H_88F6E38C_ACBB_4EFE_8819_71FCB162AE9B */

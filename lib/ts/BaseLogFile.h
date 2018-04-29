@@ -22,8 +22,7 @@
 
  */
 
-#ifndef BASE_LOG_FILE_H
-#define BASE_LOG_FILE_H
+#pragma once
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -44,8 +43,9 @@
 #define LOGFILE_SEPARATOR_STRING "_"
 #define LOGFILE_DEFAULT_PERMS (0644)
 #define LOGFILE_ROLL_MAXPATHLEN 4096
-#define BASELOGFILE_DEBUG_MODE 0 // change this to 1 to enable debug messages
-                                 // TODO find a way to enable this from autotools
+#define BASELOGFILE_DEBUG_MODE \
+  0 // change this to 1 to enable debug messages
+    // TODO find a way to enable this from autotools
 
 typedef enum {
   LL_Debug = 0, // process does not die
@@ -237,4 +237,3 @@ private:
   uint64_t m_signature      = 0;
   bool m_has_signature      = false;
 };
-#endif

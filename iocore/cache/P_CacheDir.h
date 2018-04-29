@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_DIR_H__
-#define _P_CACHE_DIR_H__
+#pragma once
 
 #include "P_CacheHttp.h"
 
@@ -86,13 +85,13 @@ struct CacheVC;
     dir_set_next(_e, next);             \
   } while (0)
 // entry is valid
-#define dir_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_valid(_d, _e))
+#define dir_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? _d->vol_in_phase_valid(_e) : _d->vol_out_of_phase_valid(_e))
 // entry is valid and outside of write aggregation region
-#define dir_agg_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_agg_valid(_d, _e))
+#define dir_agg_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? _d->vol_in_phase_valid(_e) : _d->vol_out_of_phase_agg_valid(_e))
 // entry may be valid or overwritten in the last aggregated write
 #define dir_write_valid(_d, _e) \
   (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_write_valid(_d, _e))
-#define dir_agg_buf_valid(_d, _e) (_d->header->phase == dir_phase(_e) && vol_in_phase_agg_buf_valid(_d, _e))
+#define dir_agg_buf_valid(_d, _e) (_d->header->phase == dir_phase(_e) && _d->vol_in_phase_agg_buf_valid(_e))
 #define dir_is_empty(_e) (!dir_offset(_e))
 #define dir_clear(_e) \
   do {                \
@@ -271,7 +270,14 @@ struct CacheSync : public Continuation {
   void aio_write(int fd, char *b, int n, off_t o);
 
   CacheSync()
-    : Continuation(new_ProxyMutex()), vol_idx(0), buf(0), buflen(0), buf_huge(false), writepos(0), trigger(0), start_time(0)
+    : Continuation(new_ProxyMutex()),
+      vol_idx(0),
+      buf(nullptr),
+      buflen(0),
+      buf_huge(false),
+      writepos(0),
+      trigger(nullptr),
+      start_time(0)
   {
     SET_HANDLER(&CacheSync::mainEvent);
   }
@@ -295,8 +301,8 @@ void dir_sync_init();
 int check_dir(Vol *d);
 void dir_clean_vol(Vol *d);
 void dir_clear_range(off_t start, off_t end, Vol *d);
-int dir_segment_accounted(int s, Vol *d, int offby = 0, int *free = 0, int *used = 0, int *empty = 0, int *valid = 0,
-                          int *agg_valid = 0, int *avg_size = 0);
+int dir_segment_accounted(int s, Vol *d, int offby = 0, int *free = nullptr, int *used = nullptr, int *empty = nullptr,
+                          int *valid = nullptr, int *agg_valid = nullptr, int *avg_size = nullptr);
 uint64_t dir_entries_used(Vol *d);
 void sync_cache_dir_on_shutdown();
 
@@ -318,8 +324,9 @@ TS_INLINE Dir *
 dir_from_offset(int64_t i, Dir *seg)
 {
 #if DIR_DEPTH < 5
-  if (!i)
-    return 0;
+  if (!i) {
+    return nullptr;
+  }
   return dir_in_seg(seg, i);
 #else
   i = i + ((i - 1) / (DIR_DEPTH - 1));
@@ -353,5 +360,3 @@ dir_bucket_row(Dir *b, int64_t i)
 {
   return dir_in_seg(b, i);
 }
-
-#endif /* _P_CACHE_DIR_H__ */

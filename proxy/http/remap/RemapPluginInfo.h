@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_REMAPPLUGININFO_h_)
-#define _REMAPPLUGININFO_h_
+#pragma once
 #include "ts/ink_platform.h"
 
 #include "ts/apidefs.h"
@@ -39,7 +38,7 @@ class url_mapping;
 
 /**
  *
-**/
+ **/
 class remap_plugin_info
 {
 public:
@@ -72,11 +71,9 @@ public:
 /**
  * struct host_hdr_info;
  * Used to store info about host header
-**/
+ **/
 struct host_hdr_info {
   const char *request_host;
   int host_len;
   int request_port;
 };
-
-#endif

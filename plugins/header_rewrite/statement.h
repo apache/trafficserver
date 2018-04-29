@@ -20,8 +20,7 @@
 // Base class for all Conditions and Operations. We share the "linked" list, and the
 // resource management / requirements.
 //
-#ifndef __STATEMENT_H__
-#define __STATEMENT_H__ 1
+#pragma once
 
 #include <string>
 #include <time.h>
@@ -97,7 +96,7 @@ enum NetworkSessionQualifiers {
 class Statement
 {
 public:
-  Statement() : _next(NULL), _pdata(NULL), _rsrc(RSRC_NONE), _initialized(false), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK)
+  Statement() : _next(nullptr), _pdata(nullptr), _rsrc(RSRC_NONE), _initialized(false), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Statement");
   }
@@ -125,7 +124,7 @@ public:
   free_pdata()
   {
     TSfree(_pdata);
-    _pdata = NULL;
+    _pdata = nullptr;
   }
 
   // Which hook are we adding this statement to?
@@ -184,5 +183,3 @@ private:
   std::vector<TSHttpHookID> _allowed_hooks;
   TSHttpHookID _hook;
 };
-
-#endif // __STATEMENT_H

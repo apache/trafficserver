@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_HostDBProcessor_h_
-#define _I_HostDBProcessor_h_
+#pragma once
 
 #include "ts/HashFNV.h"
 #include "ts/ink_time.h"
@@ -311,12 +310,13 @@ struct HostDBInfo : public RefCountObj {
   void
   set_failed()
   {
-    if (is_srv)
+    if (is_srv) {
       data.srv.srv_offset = 0;
-    else if (reverse_dns)
+    } else if (reverse_dns) {
       data.hostname_offset = 0;
-    else
+    } else {
       ats_ip_invalidate(ip());
+    }
   }
 
   int iobuffer_index;
@@ -475,7 +475,7 @@ struct HostDBProcessor : public Processor {
   void
   setbyaddr_appinfo(sockaddr const *addr, HostDBApplicationInfo *app)
   {
-    this->setby(0, 0, addr, app);
+    this->setby(nullptr, 0, addr, app);
   }
 
   void
@@ -483,7 +483,7 @@ struct HostDBProcessor : public Processor {
   {
     sockaddr_in addr;
     ats_ip4_set(&addr, ip);
-    this->setby(0, 0, ats_ip_sa_cast(&addr), app);
+    this->setby(nullptr, 0, ats_ip_sa_cast(&addr), app);
   }
 
   /** Configuration. */
@@ -513,7 +513,7 @@ public:
              int len,                   ///< Length of hostname.
              sockaddr const *aip,       ///< Address and/or port.
              HostDBApplicationInfo *app ///< I don't know.
-             );
+  );
 
   void setby_srv(const char *hostname, int len, const char *target, HostDBApplicationInfo *app);
 };
@@ -523,5 +523,3 @@ void run_HostDBTest();
 extern inkcoreapi HostDBProcessor hostDBProcessor;
 
 void ink_hostdb_init(ModuleVersion version);
-
-#endif

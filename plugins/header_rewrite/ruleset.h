@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __RULESET_H__
-#define __RULESET_H__ 1
+#pragma once
 
 #include <string>
 
@@ -37,9 +36,9 @@ class RuleSet
 {
 public:
   RuleSet()
-    : next(NULL),
-      _cond(NULL),
-      _oper(NULL),
+    : next(nullptr),
+      _cond(nullptr),
+      _oper(nullptr),
       _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK),
       _ids(RSRC_NONE),
       _opermods(OPER_NONE),
@@ -54,13 +53,13 @@ public:
   bool
   has_operator() const
   {
-    return NULL != _oper;
+    return nullptr != _oper;
   }
 
   bool
   has_condition() const
   {
-    return NULL != _cond;
+    return nullptr != _cond;
   }
 
   void
@@ -84,7 +83,7 @@ public:
   bool
   eval(const Resources &res) const
   {
-    if (NULL == _cond) {
+    if (nullptr == _cond) {
       return true;
     } else {
       return _cond->do_eval(res);
@@ -118,5 +117,3 @@ private:
   OperModifiers _opermods;
   bool _last;
 };
-
-#endif // __RULESET_H

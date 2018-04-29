@@ -29,8 +29,7 @@
 
  ****************************************************************************/
 
-#ifndef __P_UNIXNETVCONNECTION_H__
-#define __P_UNIXNETVCONNECTION_H__
+#pragma once
 
 #include "ts/ink_sock.h"
 #include "I_NetVConnection.h"
@@ -91,7 +90,7 @@ struct OOB_callback : public Continuation {
   int retry_OOB_send(int, Event *);
 
   OOB_callback(Ptr<ProxyMutex> &m, NetVConnection *vc, Continuation *cont, char *buf, int len)
-    : Continuation(m), data(buf), length(len), trigger(0)
+    : Continuation(m), data(buf), length(len), trigger(nullptr)
   {
     server_vc   = (UnixNetVConnection *)vc;
     server_cont = cont;
@@ -416,9 +415,7 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
 #endif
 }
 
-TS_INLINE UnixNetVConnection::~UnixNetVConnection()
-{
-}
+TS_INLINE UnixNetVConnection::~UnixNetVConnection() {}
 
 TS_INLINE SOCKET
 UnixNetVConnection::get_socket()
@@ -437,5 +434,3 @@ UnixNetVConnection::set_action(Continuation *c)
 void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void net_activity(UnixNetVConnection *vc, EThread *thread);
-
-#endif

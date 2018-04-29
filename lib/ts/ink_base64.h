@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_base64_h_
-#define _ink_base64_h_
+#pragma once
 
 /*
  * Base64 encoding and decoding as according to RFC1521.  Similar to uudecode.
@@ -45,5 +44,3 @@ bool ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char 
 // Little helper functions to calculate minimum required output buffer for encoding/decoding.
 #define ATS_BASE64_ENCODE_DSTLEN(_length) ((_length * 8) / 6 + 4)
 #define ATS_BASE64_DECODE_DSTLEN(_length) (((_length + 3) / 4) * 3)
-
-#endif

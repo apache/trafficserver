@@ -52,14 +52,14 @@ namespace io
     ~IO()
     {
       consume();
-      assert(reader != NULL);
+      assert(reader != nullptr);
       TSIOBufferReaderFree(reader);
-      assert(buffer != NULL);
+      assert(buffer != nullptr);
       TSIOBufferDestroy(buffer);
     }
 
-    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) {}
-    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) { assert(buffer != NULL); }
+    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) {}
+    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) { assert(buffer != nullptr); }
     static IO *read(TSVConn, TSCont, const int64_t);
 
     static IO *
@@ -90,7 +90,7 @@ namespace io
 
     ReaderSize(const TSIOBufferReader r, const size_t s, const size_t o = 0) : reader(r), offset(o), size(s)
     {
-      assert(reader != NULL);
+      assert(reader != nullptr);
     }
 
     ReaderSize(const ReaderSize &) = delete;
@@ -102,7 +102,7 @@ namespace io
     const TSIOBufferReader reader;
     const size_t offset;
 
-    ReaderOffset(const TSIOBufferReader r, const size_t o) : reader(r), offset(o) { assert(reader != NULL); }
+    ReaderOffset(const TSIOBufferReader r, const size_t o) : reader(r), offset(o) { assert(reader != nullptr); }
     ReaderOffset(const ReaderOffset &) = delete;
     ReaderOffset &operator=(const ReaderOffset &) = delete;
     void *operator new(const std::size_t)         = delete;
@@ -118,23 +118,23 @@ namespace io
 
     ~Lock()
     {
-      if (mutex_ != NULL) {
+      if (mutex_ != nullptr) {
         TSMutexUnlock(mutex_);
       }
     }
 
     Lock(const TSMutex m) : mutex_(m)
     {
-      if (mutex_ != NULL) {
+      if (mutex_ != nullptr) {
         TSMutexLock(mutex_);
       }
     }
 
     // noncopyable
-    Lock(void) : mutex_(NULL) {}
+    Lock(void) : mutex_(nullptr) {}
     Lock(const Lock &) = delete;
 
-    Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = NULL; }
+    Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = nullptr; }
     Lock &operator=(const Lock &) = delete;
   };
 
@@ -151,7 +151,7 @@ namespace io
     bool reenable_;
 
     static int Handle(TSCont, TSEvent, void *);
-    static WriteOperationWeakPointer Create(const TSVConn, const TSMutex mutex = NULL, const size_t timeout = 0);
+    static WriteOperationWeakPointer Create(const TSVConn, const TSMutex mutex = nullptr, const size_t timeout = 0);
 
     ~WriteOperation();
 
@@ -243,16 +243,16 @@ namespace io
 
     ~BufferNode()
     {
-      assert(reader_ != NULL);
+      assert(reader_ != nullptr);
       TSIOBufferReaderFree(reader_);
-      assert(buffer_ != NULL);
+      assert(buffer_ != nullptr);
       TSIOBufferDestroy(buffer_);
     }
 
     BufferNode(void) : buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_))
     {
-      assert(buffer_ != NULL);
-      assert(reader_ != NULL);
+      assert(buffer_ != nullptr);
+      assert(reader_ != nullptr);
     }
 
     // noncopyable
@@ -299,7 +299,7 @@ namespace io
     {
       if (data_) {
         const Lock lock = data_->root_->lock();
-        assert(data_->root_ != NULL);
+        assert(data_->root_ != nullptr);
         const bool empty = data_->nodes_.empty();
         if (data_->first_ && empty) {
           // TSDebug(PLUGIN_TAG, "flushing");
@@ -307,15 +307,15 @@ namespace io
           *data_->root_ << std::forward<T>(t);
         } else {
           // TSDebug(PLUGIN_TAG, "buffering");
-          BufferNode *buffer = NULL;
+          BufferNode *buffer = nullptr;
           if (!empty) {
             buffer = dynamic_cast<BufferNode *>(data_->nodes_.back().get());
           }
-          if (buffer == NULL) {
+          if (buffer == nullptr) {
             data_->nodes_.emplace_back(new BufferNode());
             buffer = reinterpret_cast<BufferNode *>(data_->nodes_.back().get());
           }
-          assert(buffer != NULL);
+          assert(buffer != nullptr);
           *buffer << std::forward<T>(t);
         }
       }
@@ -323,7 +323,7 @@ namespace io
     }
   };
 
-} // end of io namespace
-} // end of ats namespace
+} // namespace io
+} // namespace ats
 
 #endif // TS_H

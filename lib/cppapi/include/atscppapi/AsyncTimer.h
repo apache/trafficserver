@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_ASYNCTIMER_H_
-#define ATSCPPAPI_ASYNCTIMER_H_
 
 #include <string>
 #include <memory>
@@ -78,6 +76,4 @@ private:
   AsyncTimerState *state_;
 };
 
-} /* atscppapi */
-
-#endif /* ATSCPPAPI_ASYNCTIMER_H_ */
+} // namespace atscppapi

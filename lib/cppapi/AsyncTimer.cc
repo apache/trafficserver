@@ -60,7 +60,7 @@ handleTimerEvent(TSCont cont, TSEvent event, void *edata)
   }
   return 0;
 }
-}
+} // namespace
 
 AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms)
 {

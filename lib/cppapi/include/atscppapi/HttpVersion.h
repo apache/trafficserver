@@ -22,8 +22,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_HTTP_VERSION_H_
-#define ATSCPPAPI_HTTP_VERSION_H_
 
 #include <string>
 
@@ -46,6 +44,4 @@ enum HttpVersion {
  * \endcode
  */
 extern const std::string HTTP_VERSION_STRINGS[];
-}
-
-#endif
+} // namespace atscppapi

@@ -24,8 +24,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_LOGGING_INTERNAL_H_
-#define ATSCPPAPI_LOGGING_INTERNAL_H_
 
 #include "atscppapi/Logger.h"
 
@@ -40,5 +38,3 @@
 
 #define LOG_DEBUG(fmt, ...) TS_DEBUG("atscppapi", fmt, ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...) TS_ERROR("atscppapi", fmt, ##__VA_ARGS__)
-
-#endif /* ATSCPPAPI_LOGGING_INTERNAL_H_ */

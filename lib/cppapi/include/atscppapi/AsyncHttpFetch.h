@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#ifndef ATSCPPAPI_ASYNCHTTPFETCH_H_
-#define ATSCPPAPI_ASYNCHTTPFETCH_H_
 
 #include <string>
 #include <memory>
@@ -134,6 +132,4 @@ private:
   friend class utils::internal;
 };
 
-} /* atscppapi */
-
-#endif /* ATSCPPAPI_ASYNCHTTPFETCH_H_ */
+} // namespace atscppapi

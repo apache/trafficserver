@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_HttpSessionAccept_h_)
-#define _HttpSessionAccept_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "records/I_RecHttp.h"
@@ -170,7 +169,7 @@ HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const 
   session_protocol_preference = sp_set;
   return *this;
 }
-}
+} // namespace detail
 
 /**
    The continuation mutex is NULL to allow parellel accepts in NT. No
@@ -198,7 +197,7 @@ public:
       initialization order issues. It is important to pick up data that is read
       from the config file and a static is initialized long before that point.
   */
-  HttpSessionAccept(Options const &opt = Options()) : SessionAccept(NULL), detail::HttpSessionAcceptOptions(opt) // copy these.
+  HttpSessionAccept(Options const &opt = Options()) : SessionAccept(nullptr), detail::HttpSessionAcceptOptions(opt) // copy these.
   {
     SET_HANDLER(&HttpSessionAccept::mainEvent);
     return;
@@ -212,5 +211,3 @@ public:
   HttpSessionAccept(const HttpSessionAccept &) = delete;
   HttpSessionAccept &operator=(const HttpSessionAccept &) = delete;
 };
-
-#endif

@@ -19,65 +19,65 @@
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libhdrs.a
 EXTRA_PROGRAMS = load_http_hdr
 
 # Http library source files.
 libhdrs_a_SOURCES = \
-  HTTP.cc \
-  HTTP.h \
-  HdrHeap.cc \
-  HdrHeap.h \
-  HdrTSOnly.cc \
-  HdrToken.cc \
-  HdrToken.h \
-  HdrUtils.cc \
-  HdrUtils.h \
-  HttpCompat.cc \
-  HttpCompat.h \
-  MIME.cc \
-  MIME.h \
-  URL.cc \
-  URL.h
+	HTTP.cc \
+	HTTP.h \
+	HdrHeap.cc \
+	HdrHeap.h \
+	HdrTSOnly.cc \
+	HdrToken.cc \
+	HdrToken.h \
+	HdrUtils.cc \
+	HdrUtils.h \
+	HttpCompat.cc \
+	HttpCompat.h \
+	MIME.cc \
+	MIME.h \
+	URL.cc \
+	URL.h
 
 if BUILD_TESTS
-  libhdrs_a_SOURCES += \
-    HdrTest.cc \
-    HdrTest.h
+libhdrs_a_SOURCES += \
+	HdrTest.cc \
+	HdrTest.h
 endif
 
 load_http_hdr_SOURCES = \
-  HTTP.h \
-  HdrHeap.h \
-  MIME.h \
-  load_http_hdr.cc
+	HTTP.h \
+	HdrHeap.h \
+	MIME.h \
+	load_http_hdr.cc
 
 load_http_hdr_LDADD = -L. -lhdrs \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@
+	$(top_builddir)/lib/ts/libtsutil.la \
+	@LIBTCL@
 
 check_PROGRAMS = test_mime
 
 TESTS = test_mime
 
 test_mime_LDADD = -L. -lhdrs \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @HWLOC_LIBS@ \
-  @LIBTCL@ @LIBCAP@
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@ \
+	@LIBTCL@ @LIBCAP@
 
 test_mime_SOURCES = test_mime.cc
 
 #test_UNUSED_SOURCES = \
 #  test_urlhash.cc
 
-tidy-local: $(libhdrs_a_SOURCES)
+clang-tidy-local: $(libhdrs_a_SOURCES)
 	$(CXX_Clang_Tidy)

@@ -41,8 +41,8 @@ namespace io
 
     ~IO()
     {
-      assert(buffer != NULL);
-      assert(reader != NULL);
+      assert(buffer != nullptr);
+      assert(reader != nullptr);
       const int64_t available = TSIOBufferReaderAvail(reader);
       if (available > 0) {
         TSIOBufferReaderConsume(reader, available);
@@ -51,8 +51,8 @@ namespace io
       TSIOBufferDestroy(buffer);
     }
 
-    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) {}
-    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) { assert(buffer != NULL); }
+    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) {}
+    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) { assert(buffer != nullptr); }
     static IO *read(TSVConn, TSCont, const int64_t);
 
     static IO *
@@ -62,6 +62,6 @@ namespace io
     }
   };
 
-} // end of io namespace
-} // end of ats namespace
+} // namespace io
+} // namespace ats
 #endif // TS_H

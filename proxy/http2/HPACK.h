@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HPACK_H__
-#define __HPACK_H__
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Diags.h"
@@ -180,5 +179,3 @@ int64_t hpack_decode_header_block(HpackHandle &handle, HTTPHdr *hdr, const uint8
 int64_t hpack_encode_header_block(HpackHandle &handle, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr,
                                   int32_t maximum_table_size = -1);
 int32_t hpack_get_maximum_table_size(HpackHandle &handle);
-
-#endif /* __HPACK_H__ */

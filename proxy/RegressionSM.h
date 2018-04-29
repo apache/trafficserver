@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _RegressionSM_h
-#define _RegressionSM_h
+#pragma once
 
 #include "I_EventSystem.h"
 #include "ts/Regression.h"
@@ -69,7 +68,7 @@ struct RegressionSM : public Continuation {
   void child_done(int status);
   void xrun(RegressionSM *parent);
 
-  RegressionSM(RegressionTest *at = NULL) : t(at) { mutex = new_ProxyMutex(); }
+  RegressionSM(RegressionTest *at = nullptr) : t(at) { mutex = new_ProxyMutex(); }
 
   RegressionSM(const RegressionSM &);
 };
@@ -78,5 +77,3 @@ RegressionSM *r_sequential(RegressionTest *t, int n, RegressionSM *sm);
 RegressionSM *r_sequential(RegressionTest *t, RegressionSM *sm, ...); // terminate list in NULL
 RegressionSM *r_parallel(RegressionTest *t, int n, RegressionSM *sm);
 RegressionSM *r_parallel(RegressionTest *t, RegressionSM *sm, ...); // terminate list in NULL
-
-#endif

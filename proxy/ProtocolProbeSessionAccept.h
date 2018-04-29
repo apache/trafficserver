@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef ProtocolProbeSessionAccept_H_
-#define ProtocolProbeSessionAccept_H_
+#pragma once
 
 #include "I_SessionAccept.h"
 
@@ -40,7 +39,7 @@ struct ProtocolProbeSessionAcceptEnums {
 class ProtocolProbeSessionAccept : public SessionAccept, public ProtocolProbeSessionAcceptEnums
 {
 public:
-  ProtocolProbeSessionAccept() : SessionAccept(NULL)
+  ProtocolProbeSessionAccept() : SessionAccept(nullptr)
   {
     memset(endpoint, 0, sizeof(endpoint));
     SET_HANDLER(&ProtocolProbeSessionAccept::mainEvent);
@@ -67,5 +66,3 @@ private:
 
   friend struct ProtocolProbeTrampoline;
 };
-
-#endif /* ProtocolProbeSessionAccept_H_ */

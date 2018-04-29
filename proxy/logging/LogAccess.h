@@ -26,8 +26,7 @@
 
 
  ***************************************************************************/
-#ifndef LOG_ACCESS_H
-#define LOG_ACCESS_H
+#pragma once
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
 #include "ts/ink_align.h"
@@ -208,6 +207,7 @@ public:
   inkcoreapi virtual int marshal_proxy_resp_header_len(char *);    // INT
   inkcoreapi virtual int marshal_proxy_finish_status_code(char *); // INT
   inkcoreapi virtual int marshal_cache_result_code(char *);        // INT
+  inkcoreapi virtual int marshal_cache_result_subcode(char *);     // INT
   inkcoreapi virtual int marshal_proxy_host_port(char *);          // INT
   inkcoreapi virtual int marshal_cache_hit_miss(char *);           // INT
 
@@ -324,13 +324,13 @@ public:
   static int unmarshal_itox(int64_t val, char *dest, int field_width = 0, char leading_char = ' ');
   static int unmarshal_int_to_str(char **buf, char *dest, int len);
   static int unmarshal_int_to_str_hex(char **buf, char *dest, int len);
-  static int unmarshal_str(char **buf, char *dest, int len, LogSlice *slice = NULL);
+  static int unmarshal_str(char **buf, char *dest, int len, LogSlice *slice = nullptr);
   static int unmarshal_ttmsf(char **buf, char *dest, int len);
   static int unmarshal_int_to_date_str(char **buf, char *dest, int len);
   static int unmarshal_int_to_time_str(char **buf, char *dest, int len);
   static int unmarshal_int_to_netscape_str(char **buf, char *dest, int len);
   static int unmarshal_http_version(char **buf, char *dest, int len);
-  static int unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice = NULL);
+  static int unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice = nullptr);
   static int unmarshal_http_status(char **buf, char *dest, int len);
   static int unmarshal_ip(char **buf, IpEndpoint *dest);
   static int unmarshal_ip_to_str(char **buf, char *dest, int len);
@@ -343,7 +343,7 @@ public:
   static int unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
-  static int unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg = 0);
+  static int unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg = nullptr);
 
   static int unmarshal_record(char **buf, char *dest, int len);
 
@@ -386,7 +386,7 @@ LogAccess::round_strlen(int len)
 inline int
 LogAccess::strlen(const char *str)
 {
-  if (str == NULL || str[0] == 0) {
+  if (str == nullptr || str[0] == 0) {
     return round_strlen(sizeof(DEFAULT_STR));
   } else {
     return (int)(round_strlen(((int)::strlen(str) + 1))); // actual bytes for string
@@ -408,5 +408,3 @@ LogAccess::marshal_int(char *dest, int64_t source)
   -------------------------------------------------------------------------*/
 
 char *resolve_logfield_string(LogAccess *context, const char *format_str);
-
-#endif

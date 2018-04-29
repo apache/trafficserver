@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HDRTOKEN_H__
-#define __HDRTOKEN_H__
+#pragma once
 
 #include <assert.h>
 #include <sys/types.h>
@@ -109,8 +108,8 @@ extern uint32_t hdrtoken_str_flags[];
 ////////////////////////////////////////////////////////////////////////////
 
 extern void hdrtoken_init();
-extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = NULL);
-inkcoreapi extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = NULL);
+extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
+inkcoreapi extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);
 
@@ -384,5 +383,3 @@ hdrtoken_wks_to_flags(const char *wks)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
-#endif /* __HDRTOKEN_H__ */

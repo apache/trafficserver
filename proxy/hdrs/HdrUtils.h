@@ -31,8 +31,7 @@
 
  ****************************************************************************/
 
-#ifndef _HDR_UTILS_H_
-#define _HDR_UTILS_H_
+#pragma once
 
 #include "ts/ParseRules.h"
 #include "MIME.h"
@@ -44,15 +43,15 @@ public:
   // MIME standard separator ',' is used as the default value
   // Set-cookie/Cookie uses ';'
   HdrCsvIter(const char s = ',')
-    : m_value_start(NULL),
+    : m_value_start(nullptr),
       m_value_len(0),
       m_bytes_consumed(0),
       m_follow_dups(false),
-      m_csv_start(NULL),
+      m_csv_start(nullptr),
       m_csv_len(0),
-      m_csv_end(NULL),
+      m_csv_end(nullptr),
       m_csv_index(0),
-      m_cur_field(NULL),
+      m_cur_field(nullptr),
       m_separator(s)
   {
   }
@@ -65,8 +64,8 @@ public:
 
   int get_index();
 
-  int get_first_int(MIMEField *m, int *valid = NULL);
-  int get_next_int(int *valid = NULL);
+  int get_first_int(MIMEField *m, int *valid = nullptr);
+  int get_next_int(int *valid = nullptr);
 
 private:
   void find_csv();
@@ -156,12 +155,14 @@ HdrCsvIter::get_first_int(MIMEField *m, int *valid)
   const char *r = get_first(m, &len);
 
   if (r) {
-    if (valid)
+    if (valid) {
       *valid = 1;
+    }
     return ink_atoi(r, len);
   } else {
-    if (valid)
+    if (valid) {
       *valid = 0;
+    }
     return 0;
   }
 }
@@ -173,14 +174,14 @@ HdrCsvIter::get_next_int(int *valid)
   const char *r = get_next(&len);
 
   if (r) {
-    if (valid)
+    if (valid) {
       *valid = 1;
+    }
     return ink_atoi(r, len);
   } else {
-    if (valid)
+    if (valid) {
       *valid = 0;
+    }
     return 0;
   }
 }
-
-#endif

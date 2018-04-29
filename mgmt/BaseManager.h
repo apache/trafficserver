@@ -124,7 +124,7 @@ public:
   BaseManager();
   ~BaseManager();
 
-  int registerMgmtCallback(int msg_id, MgmtCallback func, void *opaque_callback_data = NULL);
+  int registerMgmtCallback(int msg_id, MgmtCallback func, void *opaque_callback_data = nullptr);
 
   LLQ *mgmt_event_queue;
   InkHashTable *mgmt_callback_table;

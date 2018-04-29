@@ -20,8 +20,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#ifndef _TRIE_H
-#define _TRIE_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -170,7 +169,7 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
 {
   _CheckArgs(key, key_len);
 
-  const Node *found_node = 0;
+  const Node *found_node = nullptr;
   const Node *curr_node  = &m_root;
   int i                  = 0;
 
@@ -219,8 +218,9 @@ void
 Trie<T>::Clear()
 {
   T *iter;
-  while (nullptr != (iter = m_value_list.pop()))
+  while (nullptr != (iter = m_value_list.pop())) {
     delete iter;
+  }
 
   _Clear(&m_root);
   m_root.Clear();
@@ -251,5 +251,3 @@ Trie<T>::Node::Print(const char *debug_tag) const
     }
   }
 }
-
-#endif // _TRIE_H

@@ -488,8 +488,9 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
       }
     }
   }
-  rprintf(t, "Cache stability difference - "
-             "delta = %d of %d : %d to, %d from, originally %d slots, now %d slots (net gain = %d/%d)\n",
+  rprintf(t,
+          "Cache stability difference - "
+          "delta = %d of %d : %d to, %d from, originally %d slots, now %d slots (net gain = %d/%d)\n",
           to + from, VOL_HASH_TABLE_SIZE, to, from, then, now, now - then, to - from);
   *pstatus = REGRESSION_TEST_PASSED;
 

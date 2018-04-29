@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_H__
-#define __HTTP_H__
+#pragma once
 
 #include <assert.h>
 #include "ts/Arena.h"
@@ -159,6 +158,12 @@ enum SquidLogCode {
   SQUID_LOG_ERR_WEBFETCH_DETECTED     = 'H',
   SQUID_LOG_ERR_FUTURE_1              = 'I',
   SQUID_LOG_ERR_UNKNOWN               = 'Z'
+};
+
+// squild log subcodes
+enum SquidSubcode {
+  SQUID_SUBCODE_EMPTY                     = '0',
+  SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED = '1',
 };
 
 /* squid hieratchy codes */
@@ -539,16 +544,16 @@ public:
       and invoking @c URL::string_get if the host is in a header
       field and not explicitly in the URL.
    */
-  char *url_string_get(Arena *arena = 0, ///< Arena to use, or @c malloc if NULL.
-                       int *length  = 0  ///< Store string length here.
-                       );
+  char *url_string_get(Arena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
+                       int *length  = nullptr  ///< Store string length here.
+  );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
 
       @see url_string_get
    */
-  char *url_string_get_ref(int *length = 0 ///< Store string length here.
-                           );
+  char *url_string_get_ref(int *length = nullptr ///< Store string length here.
+  );
 
   /** Print the URL.
       Output is not null terminated.
@@ -558,21 +563,21 @@ public:
                 int length,  ///< Length of @a buffer
                 int *offset, ///< [in,out] ???
                 int *skip    ///< [in,out] ???
-                );
+  );
 
   /** Get the URL path.
       This is a reference, not allocated.
       @return A pointer to the path or @c NULL if there is no valid URL.
   */
   const char *path_get(int *length ///< Storage for path length.
-                       );
+  );
 
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
       @note The results are cached so this is fast after the first call.
       @return A pointer to the host name.
   */
-  const char *host_get(int *length = 0);
+  const char *host_get(int *length = nullptr);
 
   /** Get the target port.
       If the target port is not found then it is adjusted to the
@@ -587,7 +592,7 @@ public:
       @return A pointer to the scheme or @c NULL if there is no valid URL.
   */
   const char *scheme_get(int *length ///< Storage for path length.
-                         );
+  );
   void url_set(URL *url);
   void url_set_as_server_url(URL *url);
   void url_set(const char *str, int length);
@@ -605,7 +610,7 @@ public:
   /// If @a url is @c NULL the cached URL in this header is used.
   /// @note In the default case the copy is avoided if the cached URL already
   /// has the target. If @a url is non @c NULL the copy is always performed.
-  void set_url_target_from_host_field(URL *url = 0);
+  void set_url_target_from_host_field(URL *url = nullptr);
 
   /// Mark the target cache as invalid.
   /// @internal Ugly but too many places currently that touch the
@@ -656,23 +661,17 @@ private:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0))
-{
-}
+inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0)) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version)
-{
-}
+inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor))
-{
-}
+inline HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor)) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1281,14 +1280,14 @@ inline const char *
 HTTPHdr::path_get(int *length)
 {
   URL *url = this->url_get();
-  return url ? url->path_get(length) : 0;
+  return url ? url->path_get(length) : nullptr;
 }
 
 inline const char *
 HTTPHdr::scheme_get(int *length)
 {
   URL *url = this->url_get();
-  return url ? url->scheme_get(length) : 0;
+  return url ? url->scheme_get(length) : nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -1576,7 +1575,7 @@ HTTPInfo::object_size_set(int64_t size)
 inline HTTPInfo::FragOffset *
 HTTPInfo::get_frag_table()
 {
-  return m_alt ? m_alt->m_frag_offsets : 0;
+  return m_alt ? m_alt->m_frag_offsets : nullptr;
 }
 
 inline int
@@ -1584,5 +1583,3 @@ HTTPInfo::get_frag_offset_count()
 {
   return m_alt ? m_alt->m_frag_offset_count : 0;
 }
-
-#endif /* __HTTP_H__ */

@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __OPERATORS_H__
-#define __OPERATORS_H__ 1
+#pragma once
 
 #include <string>
 
@@ -58,7 +57,7 @@ private:
 class OperatorSetStatus : public Operator
 {
 public:
-  OperatorSetStatus() : _reason(NULL), _reason_len(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatus"); }
+  OperatorSetStatus() : _reason(nullptr), _reason_len(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatus"); }
   void initialize(Parser &p);
 
 protected:
@@ -294,7 +293,7 @@ enum CookieOp { COOKIE_OP_DEL, COOKIE_OP_ADD, COOKIE_OP_SET };
  */
 bool cookieModifyHelper(const char *cookies, const size_t cookies_len, std::string &updated_cookies, const CookieOp cookie_op,
                         const std::string &cookie_key, const std::string &cookie_value = std::string());
-}
+} // namespace CookieHelper
 
 class OperatorSetConnDSCP : public Operator
 {
@@ -341,5 +340,3 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetDebug);
 };
-
-#endif // __OPERATORS_H

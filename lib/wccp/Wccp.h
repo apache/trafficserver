@@ -1,6 +1,3 @@
-#if !defined(ATS_WCCP_API_HEADER)
-#define ATS_WCCP_API_HEADER
-
 /** @file
     WCCP (v2) support API.
 
@@ -22,6 +19,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+
+#pragma once
 
 #include <ts/TsBuffer.h>
 #include <tsconfig/Errata.h>
@@ -55,7 +54,7 @@ namespace detail
   {
     struct GroupData;
   }
-}
+} // namespace detail
 
 /// Basic time unit for WCCP in seconds
 /// @note Sec 4.14: HERE_I_AM_T.
@@ -189,7 +188,7 @@ public:
   /// Set a port value.
   self &setPort(int idx,      ///< Index of port.
                 uint16_t port ///< Value for port.
-                );
+  );
   /// Zero (clear) all ports.
   self &clearPorts();
   //@}
@@ -219,7 +218,7 @@ public:
       This is also used as the address for the socket.
   */
   self &setAddr(uint32_t addr ///< IP address.
-                );
+  );
 
   /** Check if this endpoint is ready to use.
       @return @c true if the address has been set and services
@@ -239,7 +238,7 @@ public:
       @see setAddr
   */
   int open(uint32_t addr = INADDR_ANY ///< Local IP address for socket.
-           );
+  );
 
   /// Get the internal socket.
   /// Useful primarily for socket options and using
@@ -248,10 +247,10 @@ public:
 
   /// Use MD5 based security with @a key.
   void useMD5Security(char const *key ///< Shared hash key.
-                      );
+  );
   /// Use MD5 based security with @a key.
   void useMD5Security(ts::ConstBuffer const &key ///< Shared hash key.
-                      );
+  );
 
   /// Perform house keeping, including sending outbound messages.
   int housekeeping();
@@ -297,7 +296,7 @@ public:
 
   /// Define services from a configuration file.
   ts::Errata loadServicesFromFile(char const *path ///< Path to file.
-                                  );
+  );
 
   /** Define a service group.
 
@@ -323,7 +322,7 @@ public:
   */
   self &addSeedRouter(uint8_t id,   ///< Service group ID.
                       uint32_t addr ///< IP address of router.
-                      );
+  );
 
   /// Number of seconds until next housekeeping activity is due.
   time_t waitTime() const;
@@ -353,23 +352,23 @@ public:
 
   /// Add an address for a seed router.
   self &addSeedRouter(uint32_t addr ///< Router IP address.
-                      );
+  );
   /// Set the security key.
   self &setKey(char const *key /// Shared key.
-               );
+  );
   /// Set the service local security option.
   self &setSecurity(SecurityOption opt ///< Security style to use.
-                    );
+  );
   /// Set intercepted packet forwarding style.
   self &setForwarding(PacketStyle style ///< Type of forwarding supported.
-                      );
+  );
   /// Enable or disable packet return by layer 2 rewrite.
   self &setReturn(PacketStyle style ///< Type of return supported.
-                  );
+  );
 
   /// Set cache assignment style.
   self &setCacheAssignment(CacheAssignmentStyle style ///< Style to use.
-                           );
+  );
 
 private:
   Service(Cache const &cache, detail::cache::GroupData &group);
@@ -500,13 +499,9 @@ ServiceGroup::clearPorts()
   return *this;
 }
 
-inline Cache::Service::Service() : m_group(0)
-{
-}
+inline Cache::Service::Service() : m_group(0) {}
 
-inline Cache::Service::Service(Cache const &cache, detail::cache::GroupData &group) : m_cache(cache), m_group(&group)
-{
-}
+inline Cache::Service::Service(Cache const &cache, detail::cache::GroupData &group) : m_cache(cache), m_group(&group) {}
 
 inline void
 EndPoint::useMD5Security(char const *key)
@@ -515,5 +510,4 @@ EndPoint::useMD5Security(char const *key)
 }
 // ------------------------------------------------------
 
-} // namespace Wccp
-#endif // include guard.
+} // namespace wccp

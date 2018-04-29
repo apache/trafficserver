@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_ACCESS_HTTP_H
-#define LOG_ACCESS_HTTP_H
+#pragma once
 
 #include "ts/Arena.h"
 #include "HTTP.h"
@@ -94,6 +93,7 @@ public:
   int marshal_proxy_resp_status_code(char *) override;   // INT
   int marshal_proxy_finish_status_code(char *) override; // INT
   int marshal_cache_result_code(char *) override;        // INT
+  int marshal_cache_result_subcode(char *) override;     // INT
   int marshal_cache_hit_miss(char *) override;           // INT
 
   //
@@ -214,5 +214,3 @@ private:
 
   void validate_lookup_url(void);
 };
-
-#endif

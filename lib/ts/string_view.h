@@ -84,26 +84,30 @@ namespace _private_
       return m_ptr;
     }
 
-    CONSTEXPR14 string_view_iterator &operator++() noexcept
+    CONSTEXPR14 string_view_iterator &
+    operator++() noexcept
     { // preincrement
       ++m_ptr;
       return *this;
     }
 
-    CONSTEXPR14 string_view_iterator operator++(int)noexcept
+    CONSTEXPR14 string_view_iterator
+    operator++(int) noexcept
     { // postincrement
       string_view_iterator tmp{*this};
       ++*this;
       return tmp;
     }
 
-    CONSTEXPR14 string_view_iterator &operator--() noexcept
+    CONSTEXPR14 string_view_iterator &
+    operator--() noexcept
     { // predecrement
       --m_ptr;
       return *this;
     }
 
-    CONSTEXPR14 string_view_iterator operator--(int)noexcept
+    CONSTEXPR14 string_view_iterator
+    operator--(int) noexcept
     { // postdecrement
       string_view_iterator tmp{*this};
       --*this;
@@ -190,7 +194,7 @@ namespace _private_
   private:
     pointer m_ptr = nullptr;
   };
-}
+} // namespace _private_
 
 template <typename _CharTraits>
 CONSTEXPR14 _private_::string_view_iterator<_CharTraits>
@@ -834,11 +838,6 @@ private:
 };
 
 // operators for basic_string_view<>
-// this has a c++11 compat version and a c++14/17 version that uses enable_if_t and some newer stuff to reduce the code
-// Ideally we use the old version for c++11 compilers, newer version for c++14 compiler. For c++17 we should not need this file
-// as we can use the builtin version then
-#if __cplusplus < 201402
-
 ////////////////////////////
 // ==
 template <typename _Type, typename _Traits>
@@ -1034,177 +1033,6 @@ operator>=(char const *const lhs, basic_string_view<_Type, _Traits> const rhs)
   return rhs.compare(lhs) >= 0;
 }
 
-#else
-/////////////////////////////////////////////////
-// this form is more functional than the above case which only deals with char* and std::string
-// this form deal with convertable type correctly as is less code :)
-
-////////////////////////////
-// ==
-template <typename _Type, typename _Traits>
-constexpr bool
-operator==(const basic_string_view<_Type, _Traits> lhs, const basic_string_view<_Type, _Traits> rhs) noexcept
-{
-  return lhs._equal(rhs);
-}
-
-// user conversion for stuff like std::string or char*, literals
-
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator==(_OtherType &&lhs, const basic_string_view<_Type, _Traits> rhs) noexcept(
-  noexcept(basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs))))
-{
-  return rhs._equal(std::forward<_OtherType>(lhs));
-}
-
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator==(const basic_string_view<_Type, _Traits> lhs,
-           _OtherType &&rhs) noexcept(noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(rhs)))))
-{
-  return lhs._equal(std::forward<_OtherType>(rhs));
-}
-
-///////////////////////////////
-// !=
-template <typename _Type, typename _Traits>
-constexpr bool
-operator!=(const basic_string_view<_Type, _Traits> lhs, const basic_string_view<_Type, _Traits> rhs) noexcept
-{
-  return !lhs._equal(rhs);
-}
-
-// user conversion for stuff like std::string or char*, literals
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator!=(_OtherType &&lhs, const basic_string_view<_Type, _Traits> rhs) noexcept(
-  noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)))))
-{
-  return !rhs._equal(std::forward<_OtherType>(lhs));
-}
-
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator!=(const basic_string_view<_Type, _Traits> lhs,
-           _OtherType &&rhs) noexcept(noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(rhs)))))
-{
-  return !lhs._equal(std::forward<_OtherType>(rhs));
-}
-
-///////////////////////////////
-// <
-template <typename _Type, typename _Traits>
-constexpr bool
-operator<(const basic_string_view<_Type, _Traits> lhs, const basic_string_view<_Type, _Traits> rhs) noexcept
-{
-  return lhs.compare(rhs) < 0;
-}
-
-// user conversion for stuff like std::string or char*, literals
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator<(_OtherType &&lhs, const basic_string_view<_Type, _Traits> rhs) noexcept(
-  noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)))))
-{ // less-than compare objects convertible to basic_string_view instances
-  return basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)).compare(rhs) < 0;
-}
-
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator<(const basic_string_view<_Type, _Traits> lhs,
-          _OtherType &&rhs) noexcept(noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(rhs)))))
-{
-  return lhs.compare(std::forward<_OtherType>(rhs)) < 0;
-}
-
-///////////////////////////////
-// >
-template <typename _Type, typename _Traits>
-constexpr bool
-operator>(const basic_string_view<_Type, _Traits> lhs, const basic_string_view<_Type, _Traits> rhs) noexcept
-{
-  return lhs.compare(rhs) > 0;
-}
-// user conversion for stuff like std::string or char*, literals
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator>(_OtherType &&lhs, const basic_string_view<_Type, _Traits> rhs) noexcept(
-  noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)))))
-{
-  return basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)).compare(rhs) > 0;
-}
-
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator>(const basic_string_view<_Type, _Traits> lhs,
-          _OtherType &&rhs) noexcept(noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(rhs)))))
-{
-  return lhs.compare(std::forward<_OtherType>(rhs)) > 0;
-}
-
-///////////////////////////////
-// <=
-template <typename _Type, typename _Traits>
-constexpr bool
-operator<=(const basic_string_view<_Type, _Traits> lhs, const basic_string_view<_Type, _Traits> rhs) noexcept
-{
-  return lhs.compare(rhs) <= 0;
-}
-// user conversion for stuff like std::string or char*, literals
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator<=(_OtherType &&lhs, const basic_string_view<_Type, _Traits> rhs) noexcept(
-  noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)))))
-{
-  return basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)).compare(rhs) <= 0;
-}
-
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator<=(const basic_string_view<_Type, _Traits> lhs,
-           _OtherType &&rhs) noexcept(noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(rhs)))))
-{
-  return lhs.compare(std::forward<_OtherType>(rhs)) <= 0;
-}
-
-///////////////////////////////
-// >=
-template <typename _Type, typename _Traits>
-constexpr bool
-operator>=(const basic_string_view<_Type, _Traits> lhs, const basic_string_view<_Type, _Traits> rhs) noexcept
-{
-  return lhs.compare(rhs) >= 0;
-}
-// user conversion for stuff like std::string or char*, literals
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator>=(_OtherType &&lhs, const basic_string_view<_Type, _Traits> rhs) noexcept(
-  noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)))))
-{
-  return basic_string_view<_Type, _Traits>(std::forward<_OtherType>(lhs)).compare(rhs) >= 0;
-}
-
-template <typename _Type, typename _Traits, typename _OtherType,
-          typename = std::enable_if_t<std::is_convertible<_OtherType, basic_string_view<_Type, _Traits>>::value>>
-constexpr bool
-operator>=(const basic_string_view<_Type, _Traits> lhs,
-           _OtherType &&rhs) noexcept(noexcept((basic_string_view<_Type, _Traits>(std::forward<_OtherType>(rhs)))))
-{
-  return lhs.compare(std::forward<_OtherType>(rhs)) >= 0;
-}
-#endif
 // stream operator
 
 template <typename _Type, typename _Traits>
@@ -1227,14 +1055,14 @@ template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _
   {
 // not what I would normally do.. but better than making a custom hash function at the moment.
 // This should also mean we have some consistent behavior with std code
-#if defined(__linux__)
+#if defined(__GLIBCXX__)
     return std::_Hash_impl::hash(x.data(), x.length() * sizeof(typename string_type::value_type));
-#elif defined(freebsd) || defined(darwin)
+#elif defined(_LIBCPP_VERSION)
     return __do_string_hash(x.data(), x.data() + x.size());
 #endif
   }
 };
-}
+} // namespace std
 #endif
 
 /// Literal suffix for string_view.

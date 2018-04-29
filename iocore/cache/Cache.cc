@@ -88,7 +88,6 @@ int cache_config_compatibility_4_2_0_fixup = 1;
 // Globals
 
 RecRawStatBlock *cache_rsb = nullptr;
-Cache *theStreamCache      = nullptr;
 Cache *theCache            = nullptr;
 CacheDisk **gdisks         = nullptr;
 int gndisks                = 0;
@@ -630,9 +629,6 @@ CacheProcessor::start_internal(int flags)
 
     ink_strlcpy(path, sd->pathname, sizeof(path));
     if (!sd->file_pathname) {
-      if (config_volumes.num_http_volumes && config_volumes.num_stream_volumes) {
-        Warning("It is suggested that you use raw disks if streaming and http are in the same cache");
-      }
       ink_strlcat(path, "/cache.db", sizeof(path));
       opts |= O_CREAT;
     }
@@ -864,12 +860,6 @@ CacheProcessor::diskInitialized()
       theCache->scheme = CACHE_HTTP_TYPE;
       theCache->open(clear, fix);
     }
-
-    if (config_volumes.num_stream_volumes != 0) {
-      theStreamCache         = new Cache();
-      theStreamCache->scheme = CACHE_RTSP_TYPE;
-      theStreamCache->open(clear, fix);
-    }
   }
 }
 
@@ -878,9 +868,10 @@ CacheProcessor::cacheInitialized()
 {
   int i;
 
-  if ((theCache && (theCache->ready == CACHE_INITIALIZING)) || (theStreamCache && (theStreamCache->ready == CACHE_INITIALIZING))) {
+  if (theCache && (theCache->ready == CACHE_INITIALIZING)) {
     return;
   }
+
   int caches_ready  = 0;
   int cache_init_ok = 0;
   /* allocate ram size in proportion to the disk space the
@@ -900,14 +891,6 @@ CacheProcessor::cacheInitialized()
     total_size += theCache->cache_size;
     Debug("cache_init", "CacheProcessor::cacheInitialized - theCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
           total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
-  }
-  if (theStreamCache) {
-    total_size += theStreamCache->cache_size;
-    Debug("cache_init", "CacheProcessor::cacheInitialized - theStreamCache, total_size = %" PRId64 " = %" PRId64 " MB", total_size,
-          total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
-  }
-
-  if (theCache) {
     if (theCache->ready == CACHE_INIT_FAILED) {
       Debug("cache_init", "CacheProcessor::cacheInitialized - failed to initialize the cache for http: cache disabled");
       Warning("failed to initialize the cache for http: cache disabled\n");
@@ -916,15 +899,6 @@ CacheProcessor::cacheInitialized()
       caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
       caches[CACHE_FRAG_TYPE_HTTP] = theCache;
       caches[CACHE_FRAG_TYPE_NONE] = theCache;
-    }
-  }
-  if (theStreamCache) {
-    if (theStreamCache->ready == CACHE_INIT_FAILED) {
-      Debug("cache_init", "CacheProcessor::cacheInitialized - failed to initialize the cache for streaming: cache disabled");
-      Warning("failed to initialize the cache for streaming: cache disabled\n");
-    } else {
-      caches_ready                 = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
-      caches[CACHE_FRAG_TYPE_RTSP] = theStreamCache;
     }
   }
 
@@ -1016,11 +990,7 @@ CacheProcessor::cacheInitialized()
             ram_cache_bytes += (int64_t)(http_ram_cache_size * factor);
             CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)(http_ram_cache_size * factor));
           } else {
-            factor = (double)(int64_t)(gvol[i]->len >> STORE_BLOCK_SHIFT) / (int64_t)theStreamCache->cache_size;
-            Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gvol[i]->ram_cache->init((int64_t)(stream_ram_cache_size * factor), vol);
-            ram_cache_bytes += (int64_t)(stream_ram_cache_size * factor);
-            CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)(stream_ram_cache_size * factor));
+            ink_release_assert(!"Unexpected non-HTTP cache volume");
           }
           Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
@@ -1305,7 +1275,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate_size = (int)(len / EVACUATION_BUCKET_SIZE) + 2;
   int evac_len  = (int)evacuate_size * sizeof(DLL<EvacuationBlock>);
   evacuate      = (DLL<EvacuationBlock> *)ats_malloc(evac_len);
-  memset(evacuate, 0, evac_len);
+  memset(static_cast<void *>(evacuate), 0, evac_len);
 
   Debug("cache_init", "Vol %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(), dirlen(),
         (long long)this->len, (double)dirlen() / (double)this->len * 100.0);
@@ -1673,8 +1643,8 @@ Ldone : {
     next_sync_serial++;
   }
   // clear effected portion of the cache
-  off_t clear_start = offset_to_vol_offset(this, header->write_pos);
-  off_t clear_end   = offset_to_vol_offset(this, recover_pos);
+  off_t clear_start = this->offset_to_vol_offset(header->write_pos);
+  off_t clear_end   = this->offset_to_vol_offset(recover_pos);
   if (clear_start <= clear_end) {
     dir_clear_range(clear_start, clear_end, this);
   } else {
@@ -1961,7 +1931,7 @@ Cache::vol_initialized(bool result)
 }
 
 /** Set the state of a disk programmatically.
-*/
+ */
 bool
 CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
                                      bool admin)
@@ -2003,9 +1973,6 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
   if (theCache) {
     rebuild_host_table(theCache);
   }
-  if (theStreamCache) {
-    rebuild_host_table(theStreamCache);
-  }
 
   zret = this->has_online_storage();
   if (!zret) {
@@ -2019,13 +1986,6 @@ CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
       caches_ready              = ~caches_ready;
       CacheProcessor::cache_ready &= caches_ready;
       Warning("all volumes for http cache are corrupt, http cache disabled");
-    }
-    if (theStreamCache && !theStreamCache->hosttable->gen_host_rec.vol_hash_table) {
-      unsigned int caches_ready = 0;
-      caches_ready              = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
-      caches_ready              = ~caches_ready;
-      CacheProcessor::cache_ready &= caches_ready;
-      Warning("all volumes for mixt cache are corrupt, mixt cache disabled");
     }
   }
 
@@ -2459,7 +2419,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
   // see if its in the aggregation buffer
   if (dir_agg_buf_valid(vol, &dir)) {
-    int agg_offset = vol_offset(vol, &dir) - vol->header->write_pos;
+    int agg_offset = vol->vol_offset(&dir) - vol->header->write_pos;
     buf            = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
     ink_assert((agg_offset + io.aiocb.aio_nbytes) <= (unsigned)vol->agg_buf_pos);
     char *doc = buf->data();
@@ -2471,7 +2431,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 
   io.aiocb.aio_fildes = vol->fd;
-  io.aiocb.aio_offset = vol_offset(vol, &dir);
+  io.aiocb.aio_offset = vol->vol_offset(&dir);
   if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(vol->skip + vol->len)) {
     io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
   }
@@ -2653,9 +2613,7 @@ Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const
 }
 // CacheVConnection
 
-CacheVConnection::CacheVConnection() : VConnection(nullptr)
-{
-}
+CacheVConnection::CacheVConnection() : VConnection(nullptr) {}
 
 void
 cplist_init()
@@ -3418,7 +3376,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   if (hdr_size > length) {
     return false;
   }
-  memcpy(d_hdr, s_hdr, hdr_size);
+  memcpy(static_cast<void *>(d_hdr), s_hdr, hdr_size);
   d_alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(d_hdr) - reinterpret_cast<char *>(d_alt));
   dst += hdr_size;
   length -= hdr_size;
@@ -3430,7 +3388,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   if (hdr_size > length) {
     return false;
   }
-  memcpy(d_hdr, s_hdr, hdr_size);
+  memcpy(static_cast<void *>(d_hdr), s_hdr, hdr_size);
   d_alt->m_response_hdr.m_heap = reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(d_hdr) - reinterpret_cast<char *>(d_alt));
   dst += hdr_size;
   length -= hdr_size;
@@ -3440,4 +3398,4 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   return true;
 }
 
-} // cache_bc
+} // namespace cache_bc

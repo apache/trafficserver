@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _MGMT_MARSHALL_H
-#define _MGMT_MARSHALL_H
+#pragma once
 
 #include <stdarg.h>
 
@@ -76,5 +75,3 @@ ssize_t mgmt_message_parse_v(const void *ptr, size_t len, const MgmtMarshallType
 
 ssize_t mgmt_message_marshall(void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, ...);
 ssize_t mgmt_message_marshall_v(void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, va_list ap);
-
-#endif /* _MGMT_MARSHALL_H */

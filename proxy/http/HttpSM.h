@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_SM_H_
-#define _HTTP_SM_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_EventSystem.h"
@@ -129,8 +128,8 @@ private:
 inline bool
 HttpVCTable::is_table_clear() const
 {
-  for (int i = 0; i < vc_table_max_entries; i++) {
-    if (vc_table[i].vc != nullptr) {
+  for (const auto &i : vc_table) {
+    if (i.vc != nullptr) {
       return false;
     }
   }
@@ -141,7 +140,7 @@ struct HttpTransformInfo {
   HttpVCTableEntry *entry;
   VConnection *vc;
 
-  HttpTransformInfo() : entry(NULL), vc(NULL) {}
+  HttpTransformInfo() : entry(nullptr), vc(nullptr) {}
 };
 
 enum {
@@ -516,7 +515,7 @@ protected:
   HttpTunnelProducer *setup_transfer_from_transform_to_cache_only();
   void setup_plugin_agents(HttpTunnelProducer *p);
 
-  HttpTransact::StateMachineAction_t last_action = HttpTransact::SM_ACTION_UNDEFINED;
+  HttpTransact::StateMachineAction_t last_action     = HttpTransact::SM_ACTION_UNDEFINED;
   int (HttpSM::*m_last_state)(int event, void *data) = nullptr;
   virtual void set_next_state();
   void call_transact_and_set_next_state(TransactEntryFunc_t f);
@@ -649,7 +648,7 @@ inline void
 HttpSM::remove_ua_entry()
 {
   vc_table.remove_entry(ua_entry);
-  ua_entry = NULL;
+  ua_entry = nullptr;
 }
 
 inline void
@@ -657,7 +656,7 @@ HttpSM::remove_server_entry()
 {
   if (server_entry) {
     vc_table.remove_entry(server_entry);
-    server_entry = NULL;
+    server_entry = nullptr;
   }
 }
 
@@ -681,14 +680,14 @@ inline void
 HttpSM::txn_hook_append(TSHttpHookID id, INKContInternal *cont)
 {
   api_hooks.append(id, cont);
-  hooks_set = 1;
+  hooks_set = true;
 }
 
 inline void
 HttpSM::txn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
 {
   api_hooks.prepend(id, cont);
-  hooks_set = 1;
+  hooks_set = true;
 }
 
 inline APIHook *
@@ -700,15 +699,15 @@ HttpSM::txn_hook_get(TSHttpHookID id)
 inline void
 HttpSM::add_cache_sm()
 {
-  if (second_cache_sm == NULL) {
+  if (second_cache_sm == nullptr) {
     second_cache_sm = new HttpCacheSM;
     second_cache_sm->init(this, mutex);
-    if (t_state.cache_info.object_read != NULL) {
+    if (t_state.cache_info.object_read != nullptr) {
       second_cache_sm->cache_read_vc        = cache_sm.cache_read_vc;
-      cache_sm.cache_read_vc                = NULL;
+      cache_sm.cache_read_vc                = nullptr;
       second_cache_sm->read_locked          = cache_sm.read_locked;
       t_state.cache_info.second_object_read = t_state.cache_info.object_read;
-      t_state.cache_info.object_read        = NULL;
+      t_state.cache_info.object_read        = nullptr;
     }
   }
 }
@@ -779,4 +778,3 @@ HttpSM::get_postbuf_clone_reader()
 {
   return this->_postbuf.get_post_data_buffer_clone_reader();
 }
-#endif

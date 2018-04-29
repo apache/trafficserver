@@ -23,10 +23,9 @@
 
 /**
  * Remap plugins class
-**/
+ **/
 
-#if !defined(_REMAPPLUGINS_h_)
-#define _REMAPPLUGINS_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_EventSystem.h"
@@ -37,7 +36,7 @@
 
 /**
  * A class that represents a queue of plugins to run
-**/
+ **/
 struct RemapPlugins : public Continuation {
   RemapPlugins() : _cur(0) {}
   RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi)
@@ -81,5 +80,3 @@ private:
   HTTPHdr *_request_header = nullptr;
   host_hdr_info *_hh_ptr   = nullptr;
 };
-
-#endif

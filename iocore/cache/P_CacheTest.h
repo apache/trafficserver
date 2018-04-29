@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __P_CACHE_TEST_H__
-#define __P_CACHE_TEST_H__
+#pragma once
 
 #include "P_Cache.h"
 #include "RegressionSM.h"
@@ -108,7 +107,7 @@ struct CacheTestSM : public RegressionSM {
   {
     if (timeout)
       timeout->cancel();
-    timeout = 0;
+    timeout = nullptr;
   }
 
   // RegressionSM API
@@ -147,5 +146,3 @@ struct CacheTestSM : public RegressionSM {
   } _sm(_t);
 
 void force_link_CacheTest();
-
-#endif /* __P_CACHE_TEST_H__ */

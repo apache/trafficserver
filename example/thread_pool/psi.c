@@ -987,7 +987,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   for (i = 0; i < NB_THREADS; i++) {
     char *thread_name = (char *)TSmalloc(64);
     sprintf(thread_name, "Thread[%d]", i);
-    if (!TSThreadCreate((TSThreadFunc)thread_loop, thread_name)) {
+    if (!TSThreadCreate(thread_loop, thread_name)) {
       TSError("[%s] Failed creating threads", PLUGIN_NAME);
       return;
     }

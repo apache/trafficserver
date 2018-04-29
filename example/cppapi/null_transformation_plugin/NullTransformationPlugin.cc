@@ -30,7 +30,7 @@ namespace
 {
 #define TAG "null_transformation"
 GlobalPlugin *plugin;
-}
+} // namespace
 
 class NullTransformationPlugin : public TransformationPlugin
 {

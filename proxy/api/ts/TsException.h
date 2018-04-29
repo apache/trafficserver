@@ -21,8 +21,7 @@
     limitations under the License.
 */
 
-#if !defined(TS_EXCEPTION_HEADER)
-#define TS_EXCEPTION_HEADER
+#pragma once
 
 /** @file
     Apache Traffic Server Exceptions.
@@ -45,7 +44,7 @@ public:
   Exception();
   /// Construct with alternate @a text.
   Exception(const char *text ///< Alternate text for exception.
-            );
+  );
 
   static const char *const DEFAULT_TEXT;
 
@@ -56,12 +55,6 @@ protected:
 // ----------------------------------------------------------
 // Inline implementations.
 
-inline Exception::Exception() : m_text(DEFAULT_TEXT)
-{
-}
-inline Exception::Exception(const char *text) : m_text(text)
-{
-}
-}
-
-#endif // TS_EXCEPTION_HEADER
+inline Exception::Exception() : m_text(DEFAULT_TEXT) {}
+inline Exception::Exception(const char *text) : m_text(text) {}
+} // namespace ts

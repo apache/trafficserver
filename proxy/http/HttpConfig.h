@@ -31,8 +31,7 @@
 
 
  ****************************************************************************/
-#ifndef _HttpConfig_h_
-#define _HttpConfig_h_
+#pragma once
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -356,7 +355,7 @@ struct HttpConfigPortRange {
   int high;
   HttpConfigPortRange *next;
 
-  HttpConfigPortRange() : low(0), high(0), next(0) {}
+  HttpConfigPortRange() : low(0), high(0), next(nullptr) {}
   ~HttpConfigPortRange()
   {
     if (next)
@@ -390,7 +389,7 @@ using OptionBitSet = std::bitset<NUM_OPTIONS>;
 //
 OptionBitSet optStrToBitset(ts::string_view optConfigStr, ts::FixedBufferWriter &error);
 
-} // end HttpForwarded namespace
+} // namespace HttpForwarded
 
 /////////////////////////////////////////////////////////////
 // This is a little helper class, used by the HttpConfigParams
@@ -503,19 +502,19 @@ struct OverridableHttpConfigParams {
       default_buffer_size_index(8),
       default_buffer_water_mark(32768),
       slow_log_threshold(0),
-      body_factory_template_base(NULL),
+      body_factory_template_base(nullptr),
       body_factory_template_base_len(0),
-      proxy_response_server_string(NULL),
+      proxy_response_server_string(nullptr),
       proxy_response_server_string_len(0),
-      global_user_agent_header(NULL),
+      global_user_agent_header(nullptr),
       global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10),
       background_fill_threshold(0.5),
-      client_cert_filename(NULL),
-      client_cert_filepath(NULL),
-      cache_vary_default_text(NULL),
-      cache_vary_default_images(NULL),
-      cache_vary_default_other(NULL)
+      client_cert_filename(nullptr),
+      client_cert_filepath(nullptr),
+      cache_vary_default_text(nullptr),
+      cache_vary_default_images(nullptr),
+      cache_vary_default_other(nullptr)
   {
   }
 
@@ -903,9 +902,7 @@ public:
 //
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
-inline HttpConfigParams::HttpConfigParams()
-{
-}
+inline HttpConfigParams::HttpConfigParams() {}
 
 inline HttpConfigParams::~HttpConfigParams()
 {
@@ -928,4 +925,3 @@ inline HttpConfigParams::~HttpConfigParams()
     delete connect_ports;
   }
 }
-#endif /* #ifndef _HttpConfig_h_ */

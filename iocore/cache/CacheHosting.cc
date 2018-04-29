@@ -165,7 +165,7 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
 
   if (errNo) {
     // There was a problem so undo the effects this function
-    memset(cur_d, 0, sizeof(CacheHostRecord));
+    memset(static_cast<void *>(cur_d), 0, sizeof(CacheHostRecord));
     return;
   }
   Debug("cache_hosting", "hostname: %s, host record: %p", match_data, cur_d);
@@ -613,9 +613,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
   const char *matcher_name = "[CacheVolition]";
 
   memset(volume_seen, 0, sizeof(volume_seen));
-  num_volumes        = 0;
-  num_stream_volumes = 0;
-  num_http_volumes   = 0;
+  num_volumes      = 0;
+  num_http_volumes = 0;
 
   if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
     // We have an empty file
@@ -752,7 +751,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       if (scheme == CACHE_HTTP_TYPE) {
         num_http_volumes++;
       } else {
-        num_stream_volumes++;
+        ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
       Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d", volume_number, scheme, size, in_percent);
     }
@@ -935,8 +934,7 @@ create_config(RegressionTest *t, int num)
         config_volumes.num_http_volumes++;
         rprintf(t, "volume=%d scheme=http size=%d\n", cp->number, cp->size);
       } else {
-        config_volumes.num_stream_volumes++;
-        rprintf(t, "volume=%d scheme=rtsp size=%d\n", cp->number, cp->size);
+        // ToDo: Assert ?
       }
     }
   } break;
@@ -1047,9 +1045,8 @@ ClearConfigVol(ConfigVolumes *configp)
     Warning("failed");
     return 0;
   }
-  configp->num_volumes        = 0;
-  configp->num_http_volumes   = 0;
-  configp->num_stream_volumes = 0;
+  configp->num_volumes      = 0;
+  configp->num_http_volumes = 0;
   return 1;
 }
 
@@ -1079,8 +1076,8 @@ save_state()
   saved_cp_list_len = cp_list_len;
   memcpy(&saved_config_volumes, &config_volumes, sizeof(ConfigVolumes));
   saved_gnvol = gnvol;
-  memset(&cp_list, 0, sizeof(Queue<CacheVol>));
-  memset(&config_volumes, 0, sizeof(ConfigVolumes));
+  memset(static_cast<void *>(&cp_list), 0, sizeof(Queue<CacheVol>));
+  memset(static_cast<void *>(&config_volumes), 0, sizeof(ConfigVolumes));
   gnvol = 0;
 }
 

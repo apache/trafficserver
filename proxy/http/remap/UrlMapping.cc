@@ -28,7 +28,7 @@
 
 /**
  *
-**/
+ **/
 bool
 url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 {
@@ -40,7 +40,7 @@ url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 
 /**
  *
-**/
+ **/
 remap_plugin_info *
 url_mapping::get_plugin(std::size_t index) const
 {
@@ -62,7 +62,7 @@ url_mapping::get_instance(std::size_t index) const
 
 /**
  *
-**/
+ **/
 void
 url_mapping::delete_instance(unsigned int index)
 {
@@ -76,7 +76,7 @@ url_mapping::delete_instance(unsigned int index)
 
 /**
  *
-**/
+ **/
 url_mapping::~url_mapping()
 {
   referer_info *r;
@@ -127,7 +127,7 @@ url_mapping::Print()
 
 /**
  *
-**/
+ **/
 redirect_tag_str *
 redirect_tag_str::parse_format_redirect_url(char *url)
 {
@@ -173,7 +173,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 
 /**
  *
-**/
+ **/
 referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
   : next(nullptr), referer(nullptr), referer_size(0), any(false), negative(false), regx_valid(false)
 {
@@ -213,7 +213,7 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
 
 /**
  *
-**/
+ **/
 referer_info::~referer_info()
 {
   ats_free(referer);

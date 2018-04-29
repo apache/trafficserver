@@ -24,8 +24,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_DEP_TREE_H__
-#define __HTTP2_DEP_TREE_H__
+#pragma once
 
 #include "ts/List.h"
 #include "ts/Diags.h"
@@ -436,5 +435,4 @@ Tree<T>::size() const
 {
   return _node_count;
 }
-} // namespce Http2DependencyTree
-#endif // __HTTP2_DEP_TREE_H__
+} // namespace Http2DependencyTree

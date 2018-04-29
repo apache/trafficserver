@@ -54,8 +54,8 @@ dump(PQ *pq)
 {
   std::vector<Entry *> v = pq->dump();
 
-  for (uint32_t i = 0; i < v.size(); i++) {
-    cout << v[i]->index << "," << v[i]->node->weight << "," << v[i]->node->content << endl;
+  for (auto &i : v) {
+    cout << i->index << "," << i->node->weight << "," << i->node->content << endl;
   }
   cout << "--------" << endl;
 }

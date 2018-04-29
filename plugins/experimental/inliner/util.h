@@ -37,6 +37,6 @@ private:                                  \
 namespace util
 {
 typedef std::vector<char> Buffer;
-} // end of util namespace
+} // namespace util
 
 #endif // UTIL_H

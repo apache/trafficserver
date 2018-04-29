@@ -33,3 +33,4 @@ development team.
    MemSpan.en
    scalar.en
    buffer-writer.en
+   MemArena.en

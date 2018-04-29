@@ -99,7 +99,7 @@ public:
 
   DocNodeList child_nodes;
 
-  DocNode(TYPE _type = TYPE_UNKNOWN, const char *_data = 0, int32_t _data_len = 0)
+  DocNode(TYPE _type = TYPE_UNKNOWN, const char *_data = nullptr, int32_t _data_len = 0)
     : type(_type), data(_data), data_len(_data_len){};
 
   void pack(std::string &buffer) const;
@@ -109,6 +109,6 @@ public:
 private:
   static const char DOCNODE_VERSION = 1;
 };
-};
+}; // namespace EsiLib
 
 #endif // _FETCHER_DOC_NODE_H

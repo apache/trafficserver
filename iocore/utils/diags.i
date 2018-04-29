@@ -52,10 +52,10 @@ reconfigure_diags()
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
-    c.outputs[i].to_stdout = 0;
-    c.outputs[i].to_stderr = 1;
-    c.outputs[i].to_syslog = 1;
-    c.outputs[i].to_diagslog = 1;
+    c.outputs[i].to_stdout = false;
+    c.outputs[i].to_stderr = true;
+    c.outputs[i].to_syslog = true;
+    c.outputs[i].to_diagslog = true;
   }
 
   //////////////////////////////
@@ -69,10 +69,12 @@ reconfigure_diags()
   //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
 
-  if (diags->base_debug_tags)
+  if (diags->base_debug_tags) {
     diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-  if (diags->base_action_tags)
+}
+  if (diags->base_action_tags) {
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
+}
 
 ////////////////////////////////////
 // change the diags config values //

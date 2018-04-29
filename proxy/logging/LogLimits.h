@@ -26,8 +26,7 @@
  module.
  ***************************************************************************/
 
-#ifndef LOG_LIMITS_H
-#define LOG_LIMITS_H
+#pragma once
 
 enum {
   LOG_MAX_FORMAT_LINE      = 2048, /* "format:enable:..." */
@@ -37,5 +36,3 @@ enum {
 
 #define LOG_KILOBYTE ((int64_t)1024)
 #define LOG_MEGABYTE ((int64_t)1048576)
-
-#endif

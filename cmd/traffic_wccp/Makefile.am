@@ -18,29 +18,29 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/lib/wccp \
-  $(TS_INCLUDES) \
-  @OPENSSL_INCLUDES@
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/lib/wccp \
+	$(TS_INCLUDES) \
+	@OPENSSL_INCLUDES@
 
 AM_LDFLAGS += \
-  @OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_wccp
 
 traffic_wccp_SOURCES = \
-  wccp_client.cc
+	wccp_client.cc
 
 traffic_wccp_LDADD = \
-  $(top_builddir)/lib/tsconfig/libtsconfig.la \
-  $(top_builddir)/lib/wccp/libwccp.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/luajit/src/libluajit.a \
-  @OPENSSL_LIBS@
+	$(top_builddir)/lib/tsconfig/libtsconfig.la \
+	$(top_builddir)/lib/wccp/libwccp.a \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/lib/luajit/src/libluajit.a \
+	@OPENSSL_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

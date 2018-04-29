@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _FILE_MANAGER_H_
-#define _FILE_MANAGER_H_
+#pragma once
 
 /****************************************************************************
  *
@@ -89,7 +88,7 @@ class FileManager
 public:
   FileManager();
   ~FileManager();
-  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = NULL, unsigned flags = 0);
+  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = nullptr, unsigned flags = 0);
   bool getRollbackObj(const char *fileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
   void fileChanged(const char *fileName, bool incVersion);
@@ -106,5 +105,3 @@ private:
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc
-
-#endif

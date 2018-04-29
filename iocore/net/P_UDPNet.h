@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef __P_UDPNET_H_
-#define __P_UDPNET_H_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "I_UDPNet.h"
@@ -339,5 +338,3 @@ get_UDPNetHandler(EThread *t)
 {
   return (UDPNetHandler *)ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset);
 }
-
-#endif //__P_UDPNET_H_

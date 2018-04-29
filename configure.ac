@@ -49,7 +49,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability tar-ustar foreign no-installinf
 AM_MAINTAINER_MODE([enable])
 
 # Enable a recursive "tidy" rule for clang-tidy.
-m4_ifdef([AM_EXTRA_RECURSIVE_TARGETS], [AM_EXTRA_RECURSIVE_TARGETS([tidy])])
+m4_ifdef([AM_EXTRA_RECURSIVE_TARGETS], [AM_EXTRA_RECURSIVE_TARGETS([clang-tidy])])
 
 AC_CONFIG_HEADERS([lib/ink_autoconf.h])
 
@@ -1666,6 +1666,7 @@ AC_CHECK_HEADERS([sys/types.h \
                   sys/pset.h \
                   sched.h \
                   pthread.h \
+                  sys/endian.h \
                   machine/endian.h \
                   endian.h \
                   sys/sysinfo.h \
@@ -2115,7 +2116,10 @@ AC_MSG_NOTICE([Build option summary:
     CC:                 $CC
     CXX:                $CXX
     CPP:                $CPP
+    CFLAGS:             $CFLAGS
+    CXXFLAGS:           $CXXFLAGS
     CPPFLAGS:           $CPPFLAGS
+    LDFLAGS:            $LDFLAGS
     AM@&t@_CFLAGS:          $AM_CFLAGS
     AM@&t@_CXXFLAGS:        $AM_CXXFLAGS
     AM@&t@_CPPFLAGS:        $AM_CPPFLAGS

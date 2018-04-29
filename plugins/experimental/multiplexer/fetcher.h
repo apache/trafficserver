@@ -112,12 +112,12 @@ template <class T> struct HttpTransaction {
     : parsingHeaders_(false),
       abort_(false),
       timeout_(false),
-      in_(NULL),
+      in_(nullptr),
       out_(i),
       vconnection_(v),
       continuation_(c),
       t_(t),
-      chunkDecoder_(NULL)
+      chunkDecoder_(nullptr)
   {
     assert(vconnection_ != NULL);
     assert(continuation_ != NULL);
@@ -157,14 +157,14 @@ template <class T> struct HttpTransaction {
   static bool
   isChunkEncoding(const TSMBuffer b, const TSMLoc l)
   {
-    assert(b != NULL);
-    assert(l != NULL);
+    assert(b != nullptr);
+    assert(l != nullptr);
     bool result        = false;
     const TSMLoc field = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING);
-    if (field != NULL) {
+    if (field != nullptr) {
       int length;
       const char *const value = TSMimeHdrFieldValueStringGet(b, l, field, -1, &length);
-      if (value != NULL && length == TS_HTTP_LEN_CHUNKED) {
+      if (value != nullptr && length == TS_HTTP_LEN_CHUNKED) {
         result = strncasecmp(value, TS_HTTP_VALUE_CHUNKED, TS_HTTP_LEN_CHUNKED) == 0;
       }
       TSHandleMLocRelease(b, l, field);
@@ -183,7 +183,7 @@ template <class T> struct HttpTransaction {
       self->t_.error();
       self->abort();
       close(self);
-      TSContDataSet(c, NULL);
+      TSContDataSet(c, nullptr);
       break;
     case TS_EVENT_VCONN_EOS:
       TSDebug(PLUGIN_TAG, "HttpTransaction: EOS");
@@ -229,14 +229,14 @@ template <class T> struct HttpTransaction {
       if (e == TS_EVENT_VCONN_READ_COMPLETE || e == TS_EVENT_VCONN_EOS) {
         self->t_.done();
         close(self);
-        TSContDataSet(c, NULL);
+        TSContDataSet(c, nullptr);
       } else if (self->chunkDecoder_ != NULL && self->chunkDecoder_->isEnd()) {
         assert(self->parsingHeaders_ == false);
         assert(isChunkEncoding(self->parser_.buffer_, self->parser_.location_));
         self->abort();
         self->t_.done();
         close(self);
-        TSContDataSet(c, NULL);
+        TSContDataSet(c, nullptr);
       } else {
         TSVIOReenable(self->in_->vio);
       }
@@ -265,7 +265,7 @@ template <class T> struct HttpTransaction {
       self->t_.timeout();
       self->abort();
       close(self);
-      TSContDataSet(c, NULL);
+      TSContDataSet(c, nullptr);
       break;
 
     default:
@@ -288,9 +288,9 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
     return false;
   }
   TSVConn vconn = TSHttpConnect(reinterpret_cast<sockaddr *>(&socket));
-  assert(vconn != NULL);
+  assert(vconn != nullptr);
   TSCont contp = TSContCreate(Transaction::handle, TSMutexCreate());
-  assert(contp != NULL);
+  assert(contp != nullptr);
   Transaction *transaction = new Transaction(vconn, contp, i, l, t);
   TSContDataSet(contp, transaction);
   if (ti > 0) {
@@ -306,6 +306,6 @@ get(io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
 {
   return get("127.0.0.1", i, l, t, ti);
 }
-} // end of ats namespace
+} // namespace ats
 
 #endif // NEW_FETCHER_H

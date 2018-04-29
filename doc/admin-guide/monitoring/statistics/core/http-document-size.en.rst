@@ -24,7 +24,7 @@ HTTP Document Size
 
 .. ts:stat:: global proxy.process.http.pushed_document_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.request_document_size_100 integer

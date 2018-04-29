@@ -487,7 +487,7 @@ CB_servername(TSCont /*contp*/, TSEvent /*event*/, void *edata)
   return TS_SUCCESS;
 }
 
-} // Anon namespace
+} // namespace
 
 // Called by ATS as our initialization point
 void
@@ -499,7 +499,8 @@ TSPluginInit(int argc, const char *argv[])
   TSCont cb_lc                         = nullptr; // life cycle callback continuuation
   TSCont cb_sni                        = nullptr; // SNI callback continuuation
   static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, nullptr, 'c'}, {nullptr, no_argument, nullptr, '\0'},
+    {const_cast<char *>("config"), required_argument, nullptr, 'c'},
+    {nullptr, no_argument, nullptr, '\0'},
   };
 
   info.plugin_name   = const_cast<char *>("SSL Certificate Loader");

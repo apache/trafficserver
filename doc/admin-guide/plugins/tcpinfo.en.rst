@@ -70,7 +70,7 @@ The following options may be specified in :file:`plugin.config`:
   event         Event name (one of the names listed above)
   client        Client IP address
   server        Server IP address
-  rtt           Estimated round trip time
+  rtt           Estimated round trip time in microseconds
   ==========    ==================================================
 
   The following fields are logged when the log level is ``2``:
@@ -82,7 +82,7 @@ The following options may be specified in :file:`plugin.config`:
   event             Event name (one of the names listed above)
   client            Client IP address
   server            Server IP address
-  rtt               Estimated round trip time
+  rtt               Estimated round trip time in microseconds
   rttvar
   last_sent
   last_recv
@@ -106,12 +106,12 @@ The following options may be specified in :file:`plugin.config`:
 --rolling-enabled=VALUE
   This logfile option allows you to set logfile rolling behaviour of
   the output log file  without making any changes to the global
-  logging configurations.  This option overrides the 
-  :ts:cv:`proxy.config.output.logfile.rolling_enabled` setting in records.config
+  logging configurations.  This option overrides the
+  :ts:cv:`proxy.config.output.logfile.rolling_enabled` setting in :file:`records.config`
   for the ``tcpinfo`` plugin.  The setting may range from ``0`` to ``3``.
   ``0`` disables logfile rolling.  ``1`` is the ``default`` and enables logfile
   rolling at specfic intervals set by ``--rolling-interval-sec`` discussed
-  below.  ``2`` enables logfile rolling by logfile size, see 
+  below.  ``2`` enables logfile rolling by logfile size, see
   ``--rolling-size-mb`` below.  Finally a value of ``3`` enables logfile rolling
   at specfic intervals or size, whichever occurs first using the interval or size
   settings discussed below.
@@ -121,11 +121,11 @@ The following options may be specified in :file:`plugin.config`:
   using interval rolling. Default value is ``0``.
 
 --rolling-interval-sec=VALUE
-  Set the rolling interval in seconds for the output log file. May be set 
+  Set the rolling interval in seconds for the output log file. May be set
   from ``60`` to ``86400`` seconds, Defaults to ``86400``.
 
 --rolling-size=VALUE
-  Set the size in MB at which the output log file  will roll when using log size 
+  Set the size in MB at which the output log file  will roll when using log size
   rolling.  Minimum value is ``10``, defaults to ``1024``. In your config file,
   you may use the K, M, or G suffix as in::
 
@@ -140,12 +140,12 @@ transaction thereafter::
 
   tcpinfo.so --log-file=tcp-metrics --log-level=1 --hooks=ssn_start,txn_start
 
-The file ``tcp-metrics.log`` will contain the following log format::
+The file ``tcp-metrics.log`` will contain the following log format (with client and server both on 127.0.0.1)::
 
   timestamp event client server rtt
-  20140414.17h40m14s ssn_start 127.0.0.1 127.0.0.1 4000
-  20140414.17h40m14s txn_start 127.0.0.1 127.0.0.1 4000
-  20140414.17h40m16s ssn_start 127.0.0.1 127.0.0.1 4000
-  20140414.17h40m16s txn_start 127.0.0.1 127.0.0.1 4000
-  20140414.17h40m16s ssn_start 127.0.0.1 127.0.0.1 4000
-  20140414.17h40m16s txn_start 127.0.0.1 127.0.0.1 4000
+  20140414.17h40m14s ssn_start 127.0.0.1 127.0.0.1 153859
+  20140414.17h40m14s txn_start 127.0.0.1 127.0.0.1 181018
+  20140414.17h40m16s ssn_start 127.0.0.1 127.0.0.1 86869
+  20140414.17h40m16s txn_start 127.0.0.1 127.0.0.1 19088
+  20140414.17h40m16s ssn_start 127.0.0.1 127.0.0.1 85718
+  20140414.17h40m16s txn_start 127.0.0.1 127.0.0.1 38059

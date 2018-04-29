@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_queue_h_
-#define _ink_queue_h_
+#pragma once
 
 /***********************************************************************
 
@@ -205,5 +204,3 @@ void *ink_atomiclist_remove(InkAtomicList *l, void *item);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* _ink_queue_h_ */

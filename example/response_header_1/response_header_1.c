@@ -163,16 +163,16 @@ modify_header(TSHttpTxn txnp)
      */
 
     /* txn origin server response for this transaction stored
-    * in resp_bufp, resp_loc
-    *
-    * Create a new MIME field/value. Cached value has been incremented.
-    * Insert new MIME field/value into the server response buffer,
-    * allow HTTP processing to continue. This will update
-    * (indirectly invalidates) the cached HTTP headers MIME field.
-    * It is apparently not necessary to update all of the MIME fields
-    * in the in-process response in order to have the cached response
-    * become invalid.
-  */
+     * in resp_bufp, resp_loc
+     *
+     * Create a new MIME field/value. Cached value has been incremented.
+     * Insert new MIME field/value into the server response buffer,
+     * allow HTTP processing to continue. This will update
+     * (indirectly invalidates) the cached HTTP headers MIME field.
+     * It is apparently not necessary to update all of the MIME fields
+     * in the in-process response in order to have the cached response
+     * become invalid.
+     */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probaby should check for errrors */
 
     /* mimehdr1_name : TSstrdup( "x-num-served-from-cache" ) ; */
@@ -208,7 +208,7 @@ modify_response_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edat
     TSDebug(PLUGIN_NAME, "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
     modify_header(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  /*  fall through  */
+    /*  fall through  */
 
   default:
     break;

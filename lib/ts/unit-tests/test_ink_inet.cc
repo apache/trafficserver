@@ -25,6 +25,9 @@
 #include <ts/ink_inet.h>
 #include <catch.hpp>
 #include <iostream>
+#include <ts/apidefs.h>
+#include <ts/ink_inet.h>
+#include <ts/BufferWriter.h>
 
 TEST_CASE("ink_inet", "[libts][inet][ink_inet]")
 {
@@ -65,6 +68,7 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
 {
   IpEndpoint ep;
   IpAddr addr;
+  IpAddr lower, upper;
 
   REQUIRE(0 == ats_ip_pton("76.14.64.156", &ep.sa));
   REQUIRE(0 == addr.load("76.14.64.156"));
@@ -79,4 +83,64 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
     break;
   default:;
   }
+
+  REQUIRE(TS_SUCCESS != addr.load("Evil Dave Rulz!"));
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("1.1.1.1-2.2.2.2"_sv, lower, upper));
+  REQUIRE(TS_SUCCESS != ats_ip_range_parse("172.16.39.0/", lower, upper));
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("172.16.39.0/24", lower, upper));
+  REQUIRE(TS_SUCCESS != ats_ip_range_parse("172.16.39.0-", lower, upper));
+  REQUIRE(TS_SUCCESS != ats_ip_range_parse("172.16.39.0/35", lower, upper));
+  REQUIRE(TS_SUCCESS != ats_ip_range_parse("172.16.39.0/-20", lower, upper));
+  REQUIRE(TS_SUCCESS != ats_ip_range_parse("Thanks, Persia! You're the best.", lower, upper));
+
+  addr.load("172.16.39.0");
+  REQUIRE(addr == lower);
+  addr.load("172.16.39.255");
+  REQUIRE(addr == upper);
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("10.169.243.105/23", lower, upper));
+  addr.load("10.169.242.0");
+  REQUIRE(lower == addr);
+  addr.load("10.169.243.255");
+  REQUIRE(upper == addr);
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("192.168.99.22", lower, upper));
+  REQUIRE(lower == upper);
+  REQUIRE(lower != IpAddr{INADDR_ANY});
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("0/0", lower, upper));
+  REQUIRE(lower == IpAddr{INADDR_ANY});
+  REQUIRE(upper == IpAddr{INADDR_BROADCAST});
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("c600::-d900::"_sv, lower, upper));
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("1300::/96", lower, upper));
+  REQUIRE(TS_SUCCESS != ats_ip_range_parse("ffee::24c3:3349:3cee:0143/", lower, upper));
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("ffee:1337:beef:dead:24c3:3349:3cee:0143/80", lower, upper));
+  addr.load("ffee:1337:beef:dead:24c3::"_sv);
+  REQUIRE(lower == addr);
+  addr.load("ffee:1337:beef:dead:24c3:FFFF:FFFF:FFFF"_sv);
+  REQUIRE(upper == addr);
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("ffee:1337:beef:dead:24c3:3349:3cee:0143/57", lower, upper));
+  addr.load("ffee:1337:beef:de80::"_sv);
+  REQUIRE(lower == addr);
+  addr.load("ffee:1337:beef:deff:FFFF:FFFF:FFFF:FFFF"_sv);
+  REQUIRE(upper == addr);
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("ffee::24c3:3349:3cee:0143", lower, upper));
+  REQUIRE(lower == upper);
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("::/0", lower, upper));
+  REQUIRE(lower._addr._u64[0] == 0);
+  REQUIRE(lower._addr._u64[1] == 0);
+  REQUIRE(upper._addr._u64[0] == ~static_cast<uint64_t>(0));
+  REQUIRE(upper._addr._u64[1] == static_cast<uint64_t>(-1));
+
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("c000::/32", lower, upper));
+  addr.load("c000::");
+  REQUIRE(addr == lower);
+  addr.load("c000::ffff:ffff:ffff:ffff:ffff:ffff");
+  REQUIRE(addr == upper);
 }

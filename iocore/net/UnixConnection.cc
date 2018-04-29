@@ -210,7 +210,7 @@ template <typename T> struct cleaner {
     obj = nullptr;
   }
 };
-}
+} // namespace
 
 /** Default options.
 

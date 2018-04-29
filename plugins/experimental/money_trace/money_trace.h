@@ -43,7 +43,7 @@
 struct MT {
   std::minstd_rand0 generator;
 
-  MT() { generator.seed(time(0)); }
+  MT() { generator.seed(time(nullptr)); }
   long
   spanId()
   {

@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef LUA_H_7A9F5CCE_01C6_45C3_987A_FDCC1F437AA2
-#define LUA_H_7A9F5CCE_01C6_45C3_987A_FDCC1F437AA2
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,5 +99,3 @@ private:
   lua_State *L;
   unsigned nvals;
 };
-
-#endif /* LUA_H_7A9F5CCE_01C6_45C3_987A_FDCC1F437AA2 */

@@ -24,37 +24,37 @@ AM_CFLAGS += @FLEX_CFLAGS@
 AM_YFLAGS = --yacc -d -p tsconfig
 
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir)/lib \
-  $(TS_INCLUDES)
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES)
 
 BUILT_SOURCES = \
-  TsConfigGrammar.hpp
+	TsConfigGrammar.hpp
 
 CLEANFILES = $(BUILT_SOURCES)
 
 libtsconfig_la_SOURCES = \
-  Errata.cc \
-  Errata.h \
-  IntrusivePtr.h \
-  NumericType.h \
-  TsBuilder.cc \
-  TsBuilder.h \
-  TsConfigGrammar.hpp \
-  TsConfigLexer.h \
-  TsConfigLua.cc \
-  TsConfigLua.h \
-  TsConfigParseEvents.h \
-  TsConfigTypes.h \
-  TsErrataUtil.cc \
-  TsErrataUtil.h \
-  TsValue.cc \
-  TsValue.h
+	Errata.cc \
+	Errata.h \
+	IntrusivePtr.h \
+	NumericType.h \
+	TsBuilder.cc \
+	TsBuilder.h \
+	TsConfigGrammar.hpp \
+	TsConfigLexer.h \
+	TsConfigLua.cc \
+	TsConfigLua.h \
+	TsConfigParseEvents.h \
+	TsConfigTypes.h \
+	TsErrataUtil.cc \
+	TsErrataUtil.h \
+	TsValue.cc \
+	TsValue.h
 
 # Depend on the original grammar files only if we can build them.
 if BUILD_TSCONFIG_GRAMMAR
-  libtsconfig_la_SOURCES += TsConfigGrammar.y TsConfigSyntax.l
+libtsconfig_la_SOURCES += TsConfigGrammar.y TsConfigSyntax.l
 else
-  libtsconfig_la_SOURCES += TsConfigGrammar.c TsConfigGrammar.h TsConfigSyntax.c
+libtsconfig_la_SOURCES += TsConfigGrammar.c TsConfigGrammar.h TsConfigSyntax.c
 
 # Prevent automatic rules from firing if invalid.
 TsConfigSyntax.c: ;
@@ -74,5 +74,5 @@ TsConfigGrammar.hpp: TsConfigGrammar.h BisonHeaderToC++.sed
 
 include $(top_srcdir)/build/tidy.mk
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

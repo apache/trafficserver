@@ -50,6 +50,6 @@ protected:
 
   virtual ~ComponentBase(){};
 };
-};
+}; // namespace EsiLib
 
 #endif // _ESI_COMPONENT_BASE_H

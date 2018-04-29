@@ -668,7 +668,7 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
       auth->txn   = txn;
       return AuthRequestContext::dispatch(auth->cont, event, edata);
     }
-  // fallthru
+    // fallthru
 
   default:
     return TS_EVENT_NONE;

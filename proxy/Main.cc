@@ -206,8 +206,9 @@ static ArgumentDescription argument_descriptions[] = {
 
   {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", nullptr},
   {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", nullptr},
-  {"command", 'C', "Maintenance Command to Execute\n"
-                   "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, help",
+  {"command", 'C',
+   "Maintenance Command to Execute\n"
+   "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, help",
    "S511", &command_string, "PROXY_COMMAND_STRING", nullptr},
   {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_CONFIG_CONFIG_DIR", nullptr},
   {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", nullptr},
@@ -449,10 +450,11 @@ private:
 void
 set_debug_ip(const char *ip_string)
 {
-  if (ip_string)
+  if (ip_string) {
     diags->debug_client_ip.load(ip_string);
-  else
+  } else {
     diags->debug_client_ip.invalidate();
+  }
 }
 
 static int
@@ -923,59 +925,66 @@ static const struct CMD {
   int (*f)(char *);
   bool no_process_lock; /// If set this command doesn't need a process level lock.
 } commands[] = {
-  {"list", "List cache configuration", "LIST\n"
-                                       "\n"
-                                       "FORMAT: list\n"
-                                       "\n"
-                                       "List the sizes of the Host Database and Cache Index,\n"
-                                       "and the storage available to the cache.\n",
+  {"list", "List cache configuration",
+   "LIST\n"
+   "\n"
+   "FORMAT: list\n"
+   "\n"
+   "List the sizes of the Host Database and Cache Index,\n"
+   "and the storage available to the cache.\n",
    cmd_list, false},
-  {"check", "Check the cache (do not make any changes)", "CHECK\n"
-                                                         "\n"
-                                                         "FORMAT: check\n"
-                                                         "\n"
-                                                         "Check the cache for inconsistencies or corruption.\n"
-                                                         "CHECK does not make any changes to the data stored in\n"
-                                                         "the cache. CHECK requires a scan of the contents of the\n"
-                                                         "cache and may take a long time for large caches.\n",
+  {"check", "Check the cache (do not make any changes)",
+   "CHECK\n"
+   "\n"
+   "FORMAT: check\n"
+   "\n"
+   "Check the cache for inconsistencies or corruption.\n"
+   "CHECK does not make any changes to the data stored in\n"
+   "the cache. CHECK requires a scan of the contents of the\n"
+   "cache and may take a long time for large caches.\n",
    cmd_check, true},
-  {"clear", "Clear the entire cache", "CLEAR\n"
-                                      "\n"
-                                      "FORMAT: clear\n"
-                                      "\n"
-                                      "Clear the entire cache.  All data in the cache is\n"
-                                      "lost and the cache is reconfigured based on the current\n"
-                                      "description of database sizes and available storage.\n",
+  {"clear", "Clear the entire cache",
+   "CLEAR\n"
+   "\n"
+   "FORMAT: clear\n"
+   "\n"
+   "Clear the entire cache.  All data in the cache is\n"
+   "lost and the cache is reconfigured based on the current\n"
+   "description of database sizes and available storage.\n",
    cmd_clear, false},
-  {"clear_cache", "Clear the document cache", "CLEAR_CACHE\n"
-                                              "\n"
-                                              "FORMAT: clear_cache\n"
-                                              "\n"
-                                              "Clear the document cache.  All documents in the cache are\n"
-                                              "lost and the cache is reconfigured based on the current\n"
-                                              "description of database sizes and available storage.\n",
+  {"clear_cache", "Clear the document cache",
+   "CLEAR_CACHE\n"
+   "\n"
+   "FORMAT: clear_cache\n"
+   "\n"
+   "Clear the document cache.  All documents in the cache are\n"
+   "lost and the cache is reconfigured based on the current\n"
+   "description of database sizes and available storage.\n",
    cmd_clear, false},
-  {"clear_hostdb", "Clear the hostdb cache", "CLEAR_HOSTDB\n"
-                                             "\n"
-                                             "FORMAT: clear_hostdb\n"
-                                             "\n"
-                                             "Clear the entire hostdb cache.  All host name resolution\n"
-                                             "information is lost.\n",
+  {"clear_hostdb", "Clear the hostdb cache",
+   "CLEAR_HOSTDB\n"
+   "\n"
+   "FORMAT: clear_hostdb\n"
+   "\n"
+   "Clear the entire hostdb cache.  All host name resolution\n"
+   "information is lost.\n",
    cmd_clear, false},
-  {CMD_VERIFY_CONFIG, "Verify the config", "\n"
-                                           "\n"
-                                           "FORMAT: verify_config\n"
-                                           "\n"
-                                           "Load the config and verify traffic_server comes up correctly. \n",
+  {CMD_VERIFY_CONFIG, "Verify the config",
+   "\n"
+   "\n"
+   "FORMAT: verify_config\n"
+   "\n"
+   "Load the config and verify traffic_server comes up correctly. \n",
    cmd_verify, true},
-  {"help", "Obtain a short description of a command (e.g. 'help clear')", "HELP\n"
-                                                                          "\n"
-                                                                          "FORMAT: help [command_name]\n"
-                                                                          "\n"
-                                                                          "EXAMPLES: help help\n"
-                                                                          "          help commit\n"
-                                                                          "\n"
-                                                                          "Provide a short description of a command (like this).\n",
+  {"help", "Obtain a short description of a command (e.g. 'help clear')",
+   "HELP\n"
+   "\n"
+   "FORMAT: help [command_name]\n"
+   "\n"
+   "EXAMPLES: help help\n"
+   "          help commit\n"
+   "\n"
+   "Provide a short description of a command (like this).\n",
    cmd_help, false},
 };
 
@@ -1032,9 +1041,10 @@ check_fd_limit()
       ink_abort("too few file descriptors (%d) available", fds_limit);
     }
     char msg[256];
-    snprintf(msg, sizeof(msg), "connection throttle too high, "
-                               "%d (throttle) + %d (internal use) > %d (file descriptor limit), "
-                               "using throttle of %d",
+    snprintf(msg, sizeof(msg),
+             "connection throttle too high, "
+             "%d (throttle) + %d (internal use) > %d (file descriptor limit), "
+             "using throttle of %d",
              fds_throttle, THROTTLE_FD_HEADROOM, fds_limit, new_fds_throttle);
     SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, msg);
   }
@@ -1792,6 +1802,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     net_config_poll_timeout = 10; // Default value for all platform.
   }
 
+  REC_ReadConfigInteger(thread_max_heartbeat_mseconds, "proxy.config.thread.max_heartbeat_mseconds");
+
   ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_aio_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
@@ -1849,7 +1861,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Translate string to IpAddr
     set_debug_ip(p);
   }
-  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.diags.debug.client_ip", update_debug_client_ip, nullptr);
 
   // log initialization moved down
 

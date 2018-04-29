@@ -20,7 +20,7 @@ Extract the protocol information from the VIA headers and store it in a log file
 import re
 
 log = open('via.log', 'w')
-rxp = re.compile('(\S+)\s+(\S+)\s\((\S+)\s+\[([^]]+)\]\s\[([^]]+)\]\s*\)')
+rxp = re.compile(r'(\S+)\s+(\S+)\s\((\S+)\s+\[([^]]+)\]\s\[([^]]+)\]\s*\)')
 
 
 def observe(headers):

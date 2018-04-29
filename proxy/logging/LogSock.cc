@@ -557,7 +557,7 @@ LogSock::read_alloc(int cid, int *size)
 }
 
 /**
-*/
+ */
 bool
 LogSock::is_connected(int cid, bool ping) const
 {
@@ -585,7 +585,7 @@ LogSock::is_connected(int cid, bool ping) const
 }
 
 /**
-*/
+ */
 void
 LogSock::check_connections()
 {
@@ -629,7 +629,7 @@ LogSock::authorized_client(int cid, char *key)
 }
 
 /**
-*/
+ */
 char *
 LogSock::connected_host(int cid)
 {
@@ -638,7 +638,7 @@ LogSock::connected_host(int cid)
 }
 
 /**
-*/
+ */
 int
 LogSock::connected_port(int cid)
 {
@@ -694,7 +694,7 @@ LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
 }
 
 /**
-*/
+ */
 int
 LogSock::read_header(int sd, LogSock::MsgHeader *header)
 {
@@ -710,7 +710,7 @@ LogSock::read_header(int sd, LogSock::MsgHeader *header)
 }
 
 /**
-*/
+ */
 int
 LogSock::read_body(int sd, void *buf, int bytes)
 {

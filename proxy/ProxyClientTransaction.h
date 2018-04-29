@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __PROXY_CLIENT_TRANSACTION_H__
-#define __PROXY_CLIENT_TRANSACTION_H__
+#pragma once
 
 #include "ProxyClientSession.h"
 #include <ts/string_view.h>
@@ -41,7 +40,7 @@ public:
   virtual NetVConnection *
   get_netvc() const
   {
-    return (parent) ? parent->get_netvc() : NULL;
+    return (parent) ? parent->get_netvc() : nullptr;
   }
 
   virtual void set_active_timeout(ink_hrtime timeout_in)     = 0;
@@ -82,8 +81,9 @@ public:
   void
   set_half_close_flag(bool flag)
   {
-    if (parent)
+    if (parent) {
       parent->set_half_close_flag(flag);
+    }
   }
   virtual bool
   get_half_close_flag() const
@@ -107,7 +107,7 @@ public:
   APIHook *
   ssn_hook_get(TSHttpHookID id) const
   {
-    return parent ? parent->ssn_hook_get(id) : NULL;
+    return parent ? parent->ssn_hook_get(id) : nullptr;
   }
 
   bool
@@ -147,35 +147,44 @@ public:
   const AclRecord *
   get_acl_record() const
   {
-    return parent ? parent->acl_record : NULL;
+    return parent ? parent->acl_record : nullptr;
   }
 
   // Indicate we are done with this transaction
   virtual void release(IOBufferReader *r);
 
   // outbound values Set via the server port definition.  Really only used for Http1 at the moment
-  virtual uint16_t
+  virtual in_port_t
   get_outbound_port() const
   {
-    return 0;
+    return outbound_port;
   }
   virtual IpAddr
   get_outbound_ip4() const
   {
-    return IpAddr();
+    return outbound_ip4;
   }
   virtual IpAddr
   get_outbound_ip6() const
   {
-    return IpAddr();
+    return outbound_ip6;
   }
   virtual void
-  set_outbound_port(uint16_t new_port)
+  set_outbound_port(in_port_t port)
   {
+    outbound_port = port;
   }
   virtual void
   set_outbound_ip(const IpAddr &new_addr)
   {
+    if (new_addr.isIp4()) {
+      outbound_ip4 = new_addr;
+    } else if (new_addr.isIp6()) {
+      outbound_ip6 = new_addr;
+    } else {
+      outbound_ip4.invalidate();
+      outbound_ip6.invalidate();
+    }
   }
   virtual bool
   is_outbound_transparent() const
@@ -217,7 +226,7 @@ public:
   HttpServerSession *
   get_server_session() const
   {
-    return parent ? parent->get_server_session() : NULL;
+    return parent ? parent->get_server_session() : nullptr;
   }
 
   HttpSM *
@@ -231,7 +240,7 @@ public:
   virtual const char *
   get_protocol_string()
   {
-    return parent ? parent->get_protocol_string() : NULL;
+    return parent ? parent->get_protocol_string() : nullptr;
   }
 
   void
@@ -269,10 +278,12 @@ protected:
 
   /// DNS resolution preferences.
   HostResStyle host_res_style;
+  /// Local outbound address control.
+  in_port_t outbound_port{0};
+  IpAddr outbound_ip4;
+  IpAddr outbound_ip6;
 
   bool restart_immediate;
 
 private:
 };
-
-#endif /* __PROXY_CLIENT_TRANSACTION_H__ */

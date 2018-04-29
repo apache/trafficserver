@@ -30,8 +30,7 @@
 
  ****************************************************************************/
 
-#ifndef _HTTP_SESSION_MANAGER_H_
-#define _HTTP_SESSION_MANAGER_H_
+#pragma once
 
 #include "P_EventSystem.h"
 #include "HttpServerSession.h"
@@ -150,7 +149,7 @@ public:
 class HttpSessionManager
 {
 public:
-  HttpSessionManager() : m_g_pool(NULL) {}
+  HttpSessionManager() : m_g_pool(nullptr) {}
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyClientTransaction *ua_txn,
                               HttpSM *sm);
@@ -166,5 +165,3 @@ private:
 };
 
 extern HttpSessionManager httpSessionManager;
-
-#endif

@@ -48,6 +48,8 @@ int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
 
 bool shutdown_event_system = false;
 
+int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
+
 EThread::EThread()
 {
   memset(thread_private, 0, PER_THREAD_DATA);
@@ -236,9 +238,9 @@ EThread::execute_regular()
       while ((e = EventQueue.dequeue_ready(cur_time))) {
         ink_assert(e);
         ink_assert(e->timeout_at > 0);
-        if (e->cancelled)
+        if (e->cancelled) {
           free_event(e);
-        else {
+        } else {
           done_one = true;
           process_event(e, e->callback_event);
         }
@@ -258,7 +260,7 @@ EThread::execute_regular()
     next_time             = EventQueue.earliest_timeout();
     ink_hrtime sleep_time = next_time - Thread::get_hrtime_updated();
     if (sleep_time > 0) {
-      sleep_time = std::min(sleep_time, HRTIME_MSECONDS(THREAD_MAX_HEARTBEAT_MSECONDS));
+      sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
       ++(current_metric->_wait);
     } else {
       sleep_time = 0;
@@ -360,11 +362,13 @@ EThread::summarize_stats(EventMetrics summary[N_EVENT_TIMESCALES])
 
   for (int t = 0; t < N_EVENT_TIMESCALES; ++t) {
     int count = SAMPLE_COUNT[t];
-    if (t > 0)
+    if (t > 0) {
       count -= SAMPLE_COUNT[t - 1];
+    }
     while (--count >= 0) {
-      if (0 != m->_loop_time._start)
+      if (0 != m->_loop_time._start) {
         sum += *m;
+      }
       m = this->prev(m);
     }
     summary[t] += sum; // push out to return vector.

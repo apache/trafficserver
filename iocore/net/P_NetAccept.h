@@ -36,8 +36,7 @@
 
 
  ****************************************************************************/
-#ifndef __P_NETACCEPT_H__
-#define __P_NETACCEPT_H__
+#pragma once
 
 #include <vector>
 #include "ts/ink_platform.h"
@@ -117,5 +116,3 @@ struct NetAccept : public Continuation {
 
 extern Ptr<ProxyMutex> naVecMutex;
 extern std::vector<NetAccept *> naVec;
-
-#endif

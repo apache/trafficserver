@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _HOST_SELECTION_H_
-#define _HOST_SELECTION_H_
+#pragma once
 
 #include "ControlBase.h"
 #include "ControlMatcher.h"
@@ -71,5 +70,3 @@ private:
   ink_rwlock host_status_rwlock;
   ink_rwlock host_statids_rwlock;
 };
-
-#endif

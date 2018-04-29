@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_CLIENT_SESSION_H__
-#define __HTTP2_CLIENT_SESSION_H__
+#pragma once
 
 #include "HTTP2.h"
 #include "Plugin.h"
@@ -48,7 +47,7 @@ size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFE
 
 // To support Upgrade: h2c
 struct Http2UpgradeContext {
-  Http2UpgradeContext() : req_header(NULL) {}
+  Http2UpgradeContext() : req_header(nullptr) {}
   ~Http2UpgradeContext()
   {
     if (req_header) {
@@ -76,7 +75,7 @@ public:
   Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags)
   {
     this->hdr      = {0, (uint8_t)type, flags, streamid};
-    this->ioreader = NULL;
+    this->ioreader = nullptr;
   }
 
   IOBufferReader *
@@ -174,8 +173,9 @@ public:
   }
 
   // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
@@ -191,9 +191,9 @@ public:
   {
     // Make sure the vio's are also released to avoid later surprises in inactivity timeout
     if (client_vc) {
-      client_vc->do_io_read(NULL, 0, NULL);
-      client_vc->do_io_write(NULL, 0, NULL);
-      client_vc->set_action(NULL);
+      client_vc->do_io_read(nullptr, 0, nullptr);
+      client_vc->do_io_write(nullptr, 0, nullptr);
+      client_vc->set_action(nullptr);
     }
   }
 
@@ -361,5 +361,3 @@ private:
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
-
-#endif // __HTTP2_CLIENT_SESSION_H__

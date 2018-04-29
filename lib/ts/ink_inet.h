@@ -22,8 +22,7 @@
 
  */
 
-#if !defined(_ink_inet_h_)
-#define _ink_inet_h_
+#pragma once
 
 #include <netinet/in.h>
 #include <netdb.h>
@@ -88,11 +87,11 @@ union IpEndpoint {
       The entire address (all parts) are copied if the @a ip is valid.
   */
   self &assign(sockaddr const *ip ///< Source address, family, port.
-               );
+  );
   /// Assign from an @a addr and @a port.
   self &assign(IpAddr const &addr, ///< Address and address family.
                in_port_t port = 0  ///< Port (network order).
-               );
+  );
 
   /// Test for valid IP address.
   bool isValid() const;
@@ -107,12 +106,12 @@ union IpEndpoint {
   /// @a family must be @c AF_INET or @c AF_INET6.
   /// @return This object.
   self &setToAnyAddr(int family ///< Address family.
-                     );
+  );
   /// Set to be loopback for family @a family.
   /// @a family must be @c AF_INET or @c AF_INET6.
   /// @return This object.
   self &setToLoopback(int family ///< Address family.
-                      );
+  );
 
   /// Port in network order.
   in_port_t &port();
@@ -141,11 +140,11 @@ int ats_tcp_somaxconn();
 
     @return 0 if an address was found, non-zero otherwise.
 */
-int ats_ip_parse(ts::string_view src,      ///< [in] String to search.
-                 ts::string_view *addr,    ///< [out] Range containing IP address.
-                 ts::string_view *port,    ///< [out] Range containing port.
-                 ts::string_view *rest = 0 ///< [out] Remnant past the addr/port if any.
-                 );
+int ats_ip_parse(ts::string_view src,            ///< [in] String to search.
+                 ts::string_view *addr,          ///< [out] Range containing IP address.
+                 ts::string_view *port,          ///< [out] Range containing port.
+                 ts::string_view *rest = nullptr ///< [out] Remnant past the addr/port if any.
+);
 
 /**  Check to see if a buffer contains only IP address characters.
      @return
@@ -247,7 +246,7 @@ ats_is_ip6(IpEndpoint const *addr)
 inline bool
 ats_ip_are_compatible(sockaddr const *lhs, ///< Address to test.
                       sockaddr const *rhs  ///< Address to test.
-                      )
+)
 {
   return lhs->sa_family == rhs->sa_family;
 }
@@ -255,7 +254,7 @@ ats_ip_are_compatible(sockaddr const *lhs, ///< Address to test.
 inline bool
 ats_ip_are_compatible(IpEndpoint const *lhs, ///< Address to test.
                       IpEndpoint const *rhs  ///< Address to test.
-                      )
+)
 {
   return ats_ip_are_compatible(&lhs->sa, &rhs->sa);
 }
@@ -263,7 +262,7 @@ ats_ip_are_compatible(IpEndpoint const *lhs, ///< Address to test.
 inline bool
 ats_ip_are_compatible(int lhs,            ///< Address family to test.
                       sockaddr const *rhs ///< Address to test.
-                      )
+)
 {
   return lhs == rhs->sa_family;
 }
@@ -271,7 +270,7 @@ ats_ip_are_compatible(int lhs,            ///< Address family to test.
 inline bool
 ats_ip_are_compatible(sockaddr const *lhs, ///< Address to test.
                       int rhs              ///< Family to test.
-                      )
+)
 {
   return lhs->sa_family == rhs;
 }
@@ -394,26 +393,26 @@ ats_ip6_cast(sockaddr const &a)
 /// @return The @c sockaddr size for the family of @a addr.
 inline size_t
 ats_ip_size(sockaddr const *addr ///< Address object.
-            )
+)
 {
   return AF_INET == addr->sa_family ? sizeof(sockaddr_in) : AF_INET6 == addr->sa_family ? sizeof(sockaddr_in6) : 0;
 }
 inline size_t
 ats_ip_size(IpEndpoint const *addr ///< Address object.
-            )
+)
 {
   return AF_INET == addr->sa.sa_family ? sizeof(sockaddr_in) : AF_INET6 == addr->sa.sa_family ? sizeof(sockaddr_in6) : 0;
 }
 /// @return The size of the IP address only.
 inline size_t
 ats_ip_addr_size(sockaddr const *addr ///< Address object.
-                 )
+)
 {
   return AF_INET == addr->sa_family ? sizeof(in_addr_t) : AF_INET6 == addr->sa_family ? sizeof(in6_addr) : 0;
 }
 inline size_t
 ats_ip_addr_size(IpEndpoint const *addr ///< Address object.
-                 )
+)
 {
   return AF_INET == addr->sa.sa_family ? sizeof(in_addr_t) : AF_INET6 == addr->sa.sa_family ? sizeof(in6_addr) : 0;
 }
@@ -545,7 +544,7 @@ ats_ip6_addr_cast(IpEndpoint const *ip)
 inline uint32_t *
 ats_ip_addr32_cast(sockaddr *addr)
 {
-  uint32_t *zret = 0;
+  uint32_t *zret = nullptr;
   switch (addr->sa_family) {
   case AF_INET:
     zret = reinterpret_cast<uint32_t *>(&ats_ip4_addr_cast(addr));
@@ -572,7 +571,7 @@ ats_ip_addr32_cast(sockaddr const *addr)
 inline uint8_t *
 ats_ip_addr8_cast(sockaddr *addr)
 {
-  uint8_t *zret = 0;
+  uint8_t *zret = nullptr;
   switch (addr->sa_family) {
   case AF_INET:
     zret = reinterpret_cast<uint8_t *>(&ats_ip4_addr_cast(addr));
@@ -708,7 +707,7 @@ ats_is_ip_any(sockaddr const *ip)
 inline bool
 ats_ip_copy(sockaddr *dst,      ///< Destination object.
             sockaddr const *src ///< Source object.
-            )
+)
 {
   size_t n = 0;
   if (src) {
@@ -735,14 +734,14 @@ ats_ip_copy(sockaddr *dst,      ///< Destination object.
 inline bool
 ats_ip_copy(IpEndpoint *dst,    ///< Destination object.
             sockaddr const *src ///< Source object.
-            )
+)
 {
   return ats_ip_copy(&dst->sa, src);
 }
 inline bool
 ats_ip_copy(IpEndpoint *dst,      ///< Destination object.
             IpEndpoint const *src ///< Source object.
-            )
+)
 {
   return ats_ip_copy(&dst->sa, &src->sa);
 }
@@ -773,7 +772,7 @@ ats_ip_copy(sockaddr *dst, IpEndpoint const *src)
 inline int
 ats_ip_addr_cmp(sockaddr const *lhs, ///< Left hand operand.
                 sockaddr const *rhs  ///< Right hand operand.
-                )
+)
 {
   int zret       = 0;
   uint16_t rtype = rhs->sa_family;
@@ -871,7 +870,7 @@ ats_ip_addr_port_eq(sockaddr const *lhs, sockaddr const *rhs)
 /// or zero if neither.
 inline in_port_t
 ats_ip_port_host_order(sockaddr const *addr ///< Address with port.
-                       )
+)
 {
   // We can discard the const because this function returns
   // by value.
@@ -883,7 +882,7 @@ ats_ip_port_host_order(sockaddr const *addr ///< Address with port.
 /// or zero if neither.
 inline in_port_t
 ats_ip_port_host_order(IpEndpoint const *ip ///< Address with port.
-                       )
+)
 {
   // We can discard the const because this function returns
   // by value.
@@ -895,7 +894,7 @@ ats_ip_port_host_order(IpEndpoint const *ip ///< Address with port.
 */
 inline in_addr_t
 ats_ip4_addr_host_order(sockaddr const *addr ///< Address object.
-                        )
+)
 {
   return ntohl(ats_ip4_addr_cast(const_cast<sockaddr *>(addr)));
 }
@@ -905,7 +904,7 @@ inline sockaddr *
 ats_ip4_set(sockaddr_in *dst,  ///< Destination storage.
             in_addr_t addr,    ///< address, IPv4 network order.
             in_port_t port = 0 ///< port, network order.
-            )
+)
 {
   ink_zero(*dst);
 #if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
@@ -924,7 +923,7 @@ inline sockaddr *
 ats_ip4_set(IpEndpoint *dst,   ///< Destination storage.
             in_addr_t ip4,     ///< address, IPv4 network order.
             in_port_t port = 0 ///< port, network order.
-            )
+)
 {
   return ats_ip4_set(&dst->sin, ip4, port);
 }
@@ -938,7 +937,7 @@ inline sockaddr *
 ats_ip4_set(sockaddr *dst,     ///< Destination storage.
             in_addr_t ip4,     ///< address, IPv4 network order.
             in_port_t port = 0 ///< port, network order.
-            )
+)
 {
   return ats_ip4_set(ats_ip4_cast(dst), ip4, port);
 }
@@ -949,7 +948,7 @@ inline sockaddr *
 ats_ip6_set(sockaddr_in6 *dst,    ///< Destination storage.
             in6_addr const &addr, ///< address in network order.
             in_port_t port = 0    ///< Port, network order.
-            )
+)
 {
   ink_zero(*dst);
 #if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
@@ -967,7 +966,7 @@ inline sockaddr *
 ats_ip6_set(sockaddr *dst,        ///< Destination storage.
             in6_addr const &addr, ///< address in network order.
             in_port_t port = 0    ///< Port, network order.
-            )
+)
 {
   return ats_ip6_set(ats_ip6_cast(dst), addr, port);
 }
@@ -978,7 +977,7 @@ inline sockaddr *
 ats_ip6_set(IpEndpoint *dst,      ///< Destination storage.
             in6_addr const &addr, ///< address in network order.
             in_port_t port = 0    ///< Port, network order.
-            )
+)
 {
   return ats_ip6_set(&dst->sin6, addr, port);
 }
@@ -989,7 +988,7 @@ ats_ip6_set(IpEndpoint *dst,      ///< Destination storage.
 const char *ats_ip_ntop(const sockaddr *addr, ///< Address.
                         char *dst,            ///< Output buffer.
                         size_t size           ///< Length of buffer.
-                        );
+);
 
 /** Write a null terminated string for @a addr to @a dst.
     A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
@@ -998,7 +997,7 @@ inline const char *
 ats_ip_ntop(IpEndpoint const *addr, ///< Address.
             char *dst,              ///< Output buffer.
             size_t size             ///< Length of buffer.
-            )
+)
 {
   return ats_ip_ntop(&addr->sa, dst, size);
 }
@@ -1016,7 +1015,7 @@ typedef char ip_port_text_buffer[INET6_ADDRPORTSTRLEN];
 const char *ats_ip_nptop(const sockaddr *addr, ///< Address.
                          char *dst,            ///< Output buffer.
                          size_t size           ///< Length of buffer.
-                         );
+);
 
 /** Write a null terminated string for @a addr to @a dst with port.
     A buffer of size INET6_ADDRPORTSTRLEN suffices, including a terminating nul.
@@ -1025,7 +1024,7 @@ inline const char *
 ats_ip_nptop(IpEndpoint const *addr, ///< Address.
              char *dst,              ///< Output buffer.
              size_t size             ///< Length of buffer.
-             )
+)
 {
   return ats_ip_nptop(&addr->sa, dst, size);
 }
@@ -1048,7 +1047,7 @@ ats_ip_nptop(IpEndpoint const *addr, ///< Address.
 */
 int ats_ip_pton(const ts::string_view &text, ///< [in] text.
                 sockaddr *addr               ///< [out] address
-                );
+);
 
 /** Convert @a text to an IP address and write it to @a addr.
 
@@ -1064,7 +1063,7 @@ int ats_ip_pton(const ts::string_view &text, ///< [in] text.
 inline int
 ats_ip_pton(const char *text,  ///< [in] text.
             sockaddr_in6 *addr ///< [out] address
-            )
+)
 {
   return ats_ip_pton(ts::string_view(text, strlen(text)), ats_ip_sa_cast(addr));
 }
@@ -1072,7 +1071,7 @@ ats_ip_pton(const char *text,  ///< [in] text.
 inline int
 ats_ip_pton(const ts::string_view &text, ///< [in] text.
             IpEndpoint *addr             ///< [out] address
-            )
+)
 {
   return ats_ip_pton(text, &addr->sa);
 }
@@ -1080,7 +1079,7 @@ ats_ip_pton(const ts::string_view &text, ///< [in] text.
 inline int
 ats_ip_pton(const char *text, ///< [in] text.
             IpEndpoint *addr  ///< [out] address
-            )
+)
 {
   return ats_ip_pton(ts::string_view(text, strlen(text)), &addr->sa);
 }
@@ -1088,7 +1087,7 @@ ats_ip_pton(const char *text, ///< [in] text.
 inline int
 ats_ip_pton(const char *text, ///< [in] text.
             sockaddr *addr    ///< [out] address
-            )
+)
 {
   return ats_ip_pton(ts::string_view(text, strlen(text)), addr);
 }
@@ -1121,10 +1120,10 @@ ats_ip_pton(const char *text, ///< [in] text.
 int ats_ip_getbestaddrinfo(const char *name, ///< [in] Address name (IPv4, IPv6, or host name)
                            IpEndpoint *ip4,  ///< [out] Storage for IPv4 address.
                            IpEndpoint *ip6   ///< [out] Storage for IPv6 address
-                           );
+);
 
 /** Generic IP address hash function.
-*/
+ */
 uint32_t ats_ip_hash(sockaddr const *addr);
 
 uint64_t ats_ip_port_hash(sockaddr const *addr);
@@ -1137,7 +1136,7 @@ uint64_t ats_ip_port_hash(sockaddr const *addr);
 int ats_ip_to_hex(sockaddr const *addr, ///< Address to convert. Must be IP.
                   char *dst,            ///< Destination buffer.
                   size_t len            ///< Length of @a dst.
-                  );
+);
 
 /** Storage for an IP address.
     In some cases we want to store just the address and not the
@@ -1175,7 +1174,7 @@ struct IpAddr {
   explicit IpAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
   /// Assign sockaddr storage.
   self &assign(sockaddr const *addr ///< May be @c nullptr
-               );
+  );
 
   /// Assign from end point.
   self &
@@ -1185,7 +1184,7 @@ struct IpAddr {
   }
   /// Assign from IPv4 raw address.
   self &operator=(in_addr_t ip ///< Network order IPv4 address.
-                  );
+  );
   /// Assign from IPv6 raw address.
   self &operator=(in6_addr const &ip);
 
@@ -1195,7 +1194,7 @@ struct IpAddr {
       @return 0 on success, non-zero on failure.
   */
   int load(const char *str ///< Nul terminated input string.
-           );
+  );
 
   /** Load from string.
       The address is copied to this object if the conversion is successful,
@@ -1203,7 +1202,7 @@ struct IpAddr {
       @return 0 on success, non-zero on failure.
   */
   int load(ts::string_view const &str ///< Text of IP address.
-           );
+  );
 
   /** Output to a string.
       @return The string @a dest.
@@ -1437,7 +1436,7 @@ IpAddr::hash() const
 sockaddr *ats_ip_set(sockaddr *dst,      ///< Destination storage.
                      IpAddr const &addr, ///< source address.
                      in_port_t port = 0  ///< port, network order.
-                     );
+);
 
 /** Convert @a text to an IP address and write it to @a addr.
     Convenience overload.
@@ -1446,10 +1445,12 @@ sockaddr *ats_ip_set(sockaddr *dst,      ///< Destination storage.
 inline int
 ats_ip_pton(const char *text, ///< [in] text.
             IpAddr &addr      ///< [out] address
-            )
+)
 {
   return addr.load(text) ? 0 : -1;
 }
+
+int ats_ip_range_parse(ts::string_view src, IpAddr &lower, IpAddr &upper);
 
 inline IpEndpoint &
 IpEndpoint::assign(IpAddr const &addr, in_port_t port)
@@ -1543,5 +1544,3 @@ IpEndpoint::setToLoopback(int family)
   }
   return *this;
 }
-
-#endif // _ink_inet.h

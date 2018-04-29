@@ -21,12 +21,9 @@
     limitations under the License.
 */
 
-#ifndef _MGMT_HANDLERS_H_
-#define _MGMT_HANDLERS_H_
+#pragma once
 
 extern int aconf_port_arg;
 
 void *mgmt_synthetic_main(void *);
 bool api_socket_is_restricted();
-
-#endif

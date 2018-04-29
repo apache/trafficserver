@@ -137,7 +137,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 #else
         ifreq *spot = req, *req_limit = req + (conf.ifc_len / sizeof(*req)); spot < req_limit; ++spot
 #endif
-        ) {
+      ) {
 #if HAVE_IFADDRS_H
         ifip    = spot->ifa_addr;
         ifflags = spot->ifa_flags;

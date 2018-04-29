@@ -101,9 +101,8 @@ public:
     cout << "Adding a new accept type accept header" << endl;
     client_request_headers.append("accept", "text/blah");
 
-    for (Headers::iterator header_iter = client_request_headers.begin(), header_end = client_request_headers.end();
-         header_iter != header_end; ++header_iter) {
-      cout << (*header_iter).str() << endl;
+    for (auto &&client_request_header : client_request_headers) {
+      cout << client_request_header.str() << endl;
     }
 
     /*

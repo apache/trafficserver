@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _Store_h_
-#define _Store_h_
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Result.h"
@@ -118,8 +117,9 @@ public:
   nth(unsigned i)
   {
     Span *x = this;
-    while (x && i--)
+    while (x && i--) {
       x = x->link.next;
+    }
     return x;
   }
 
@@ -127,8 +127,10 @@ public:
   paths() const
   {
     int i = 0;
-    for (const Span *x = this; x; i++, x = x->link.next)
+    for (const Span *x = this; x; i++, x = x->link.next) {
       ;
+    }
+
     return i;
   }
 
@@ -172,12 +174,14 @@ public:
   /// at every call site. We also need this because we have ats_scoped_str members.
   Span(Span const &that)
   {
-    memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(0)->pathname)));
-    if (that.pathname)
+    memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(nullptr)->pathname)));
+    if (that.pathname) {
       pathname = ats_strdup(that.pathname);
-    if (that.hash_base_string)
+    }
+    if (that.hash_base_string) {
       hash_base_string = ats_strdup(that.hash_base_string);
-    link.next          = nullptr;
+    }
+    link.next = nullptr;
   }
 
   ~Span();
@@ -271,5 +275,3 @@ struct Store {
 
 // store either free or in the cache, can be stolen for reconfiguration
 void stealStore(Store &s, int blocks);
-
-#endif

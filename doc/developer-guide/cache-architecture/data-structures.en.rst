@@ -455,10 +455,6 @@ Data Structures
 
        Total number of volumes scpecified in volume.config for HTTP scheme
 
-    .. member:: int num_stream_volumes
-
-       Total number of volumes scpecified in volume.config for stream
-
     .. member:: Queue<ConfigVol> cp_queue
 
 .. class:: Cache

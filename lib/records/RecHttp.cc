@@ -145,7 +145,7 @@ size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_
 size_t const OPT_INBOUND_IP_PREFIX_LEN  = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
 size_t const OPT_HOST_RES_PREFIX_LEN    = strlen(HttpProxyPort::OPT_HOST_RES_PREFIX);
 size_t const OPT_PROTO_PREFIX_LEN       = strlen(HttpProxyPort::OPT_PROTO_PREFIX);
-}
+} // namespace
 
 namespace
 {
@@ -155,7 +155,7 @@ namespace
 // reference. Might be a problem with Vec<> creating a fixed array
 // rather than allocating on first use (compared to std::vector<>).
 HttpProxyPort::Group GLOBAL_DATA;
-}
+} // namespace
 HttpProxyPort::Group &HttpProxyPort::m_global = GLOBAL_DATA;
 
 HttpProxyPort::HttpProxyPort()
@@ -198,7 +198,7 @@ HttpProxyPort::findHttp(Group const &ports, uint16_t family)
     if (p.m_port &&                               // has a valid port
         TRANSPORT_DEFAULT == p.m_type &&          // is normal HTTP
         (!check_family_p || p.m_family == family) // right address family
-        ) {
+    ) {
       zret = &p;
     };
   }
@@ -308,8 +308,7 @@ HttpProxyPort::processOptions(const char *opts)
     return zret;
   }
 
-  for (int i = 0, n_items = values.size(); i < n_items; ++i) {
-    const char *item = values[i];
+  for (auto item : values) {
     if (isdigit(item[0])) { // leading digit -> port value
       char *ptr;
       int port = strtoul(item, &ptr, 10);

@@ -19,21 +19,21 @@
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/http/remap \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/shared \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/http/remap \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/shared \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	$(TS_INCLUDES)
 
 if BUILD_LUAJIT
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir)/lib/luajit/src
+	-I$(abs_top_srcdir)/lib/luajit/src
 endif
 
 EXTRA_DIST = LogStandalone.cc
@@ -41,60 +41,60 @@ EXTRA_DIST = LogStandalone.cc
 noinst_LIBRARIES = liblogging.a liblogcollation.a
 
 liblogging_a_SOURCES = \
-  Log.cc \
-  Log.h \
-  LogAccess.cc \
-  LogAccess.h \
-  LogAccessHttp.cc \
-  LogAccessHttp.h \
-  LogBindings.cc \
-  LogBindings.h \
-  LogBuffer.cc \
-  LogBuffer.h \
-  LogBufferSink.h \
-  LogConfig.cc \
-  LogConfig.h \
-  LogField.cc \
-  LogField.h \
-  LogFieldAliasMap.cc \
-  LogFieldAliasMap.h \
-  LogFile.cc \
-  LogFile.h \
-  LogFilter.cc \
-  LogFilter.h \
-  LogFormat.cc \
-  LogFormat.h \
-  LogHost.cc \
-  LogHost.h \
-  LogLimits.h \
-  LogObject.cc \
-  LogObject.h \
-  LogSock.cc \
-  LogSock.h \
-  LogUtils.cc \
-  LogUtils.h
+	Log.cc \
+	Log.h \
+	LogAccess.cc \
+	LogAccess.h \
+	LogAccessHttp.cc \
+	LogAccessHttp.h \
+	LogBindings.cc \
+	LogBindings.h \
+	LogBuffer.cc \
+	LogBuffer.h \
+	LogBufferSink.h \
+	LogConfig.cc \
+	LogConfig.h \
+	LogField.cc \
+	LogField.h \
+	LogFieldAliasMap.cc \
+	LogFieldAliasMap.h \
+	LogFile.cc \
+	LogFile.h \
+	LogFilter.cc \
+	LogFilter.h \
+	LogFormat.cc \
+	LogFormat.h \
+	LogHost.cc \
+	LogHost.h \
+	LogLimits.h \
+	LogObject.cc \
+	LogObject.h \
+	LogSock.cc \
+	LogSock.h \
+	LogUtils.cc \
+	LogUtils.h
 
 liblogcollation_a_SOURCES = \
-  LogCollationAccept.cc \
-  LogCollationAccept.h \
-  LogCollationBase.h \
-  LogCollationClientSM.cc \
-  LogCollationClientSM.h \
-  LogCollationHostSM.cc \
-  LogCollationHostSM.h
+	LogCollationAccept.cc \
+	LogCollationAccept.h \
+	LogCollationBase.h \
+	LogCollationClientSM.cc \
+	LogCollationClientSM.h \
+	LogCollationHostSM.cc \
+	LogCollationHostSM.h
 
 check_PROGRAMS = \
-  test_LogUtils
+	test_LogUtils
 
 TESTS = \
-  test_LogUtils
+	test_LogUtils
 
 test_LogUtils_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a
 
 test_LogUtils_SOURCES = \
-  test_LogUtils.cc
+	test_LogUtils.cc
 
-tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
+clang-tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)

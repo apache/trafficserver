@@ -27,8 +27,7 @@
  *
  ****************************************************************************/
 
-#ifndef _FETCH_SM_H
-#define _FETCH_SM_H
+#pragma once
 
 #include "P_Net.h"
 #include "HttpSM.h"
@@ -172,5 +171,3 @@ private:
   int64_t resp_content_length    = -1;
   int64_t resp_received_body_len = 0;
 };
-
-#endif

@@ -22,7 +22,7 @@
 
  */
 
-#ifndef _I_EventSystem_h
+#pragma once
 #define _I_EventSystem_h
 
 #include "ts/ink_platform.h"
@@ -50,5 +50,3 @@
   makeModuleVersion(EVENT_SYSTEM_MODULE_MAJOR_VERSION, EVENT_SYSTEM_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
 
 void ink_event_system_init(ModuleVersion version);
-
-#endif
