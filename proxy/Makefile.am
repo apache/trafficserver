@@ -216,7 +216,7 @@ endif
 traffic_server_LDADD += \
 	$(top_builddir)/iocore/net/libinknet.a
 
-	if ENABLE_QUIC
+if ENABLE_QUIC
 traffic_server_LDADD += \
 	$(top_builddir)/iocore/net/quic/libquic.a
 endif
