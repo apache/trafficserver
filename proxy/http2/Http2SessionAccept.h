@@ -40,10 +40,10 @@
 
 struct Http2SessionAccept : public SessionAccept {
   explicit Http2SessionAccept(const HttpSessionAccept::Options &);
-  ~Http2SessionAccept();
+  ~Http2SessionAccept() override;
 
-  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
-  int mainEvent(int event, void *netvc);
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
+  int mainEvent(int event, void *netvc) override;
 
   // noncopyable
   Http2SessionAccept(const Http2SessionAccept &) = delete;

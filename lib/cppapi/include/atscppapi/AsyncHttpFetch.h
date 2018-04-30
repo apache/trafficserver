@@ -121,10 +121,10 @@ public:
   /**
    * Starts a HTTP fetch of the Request contained.
    */
-  virtual void run();
+  void run() override;
 
 protected:
-  virtual ~AsyncHttpFetch();
+  ~AsyncHttpFetch() override;
 
 private:
   AsyncHttpFetchState *state_;

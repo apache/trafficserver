@@ -54,19 +54,19 @@ struct NetAccept;
 //////////////////////////////////////////////////////////////////
 struct SSLNetProcessor : public UnixNetProcessor {
 public:
-  virtual int start(int, size_t stacksize);
+  int start(int, size_t stacksize) override;
 
   void cleanup(void);
 
   SSLNetProcessor();
-  virtual ~SSLNetProcessor();
+  ~SSLNetProcessor() override;
 
   //
   // Private
   //
 
-  virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt);
-  virtual NetVConnection *allocate_vc(EThread *t);
+  NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
+  NetVConnection *allocate_vc(EThread *t) override;
 
   // noncopyable
   SSLNetProcessor(const SSLNetProcessor &) = delete;

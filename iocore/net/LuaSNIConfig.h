@@ -105,7 +105,7 @@ struct LuaSNIConfig : public TsConfigBase {
     TsConfigString CLIENT_CERT_CONFIG;
     static TsConfigDescriptor VERIFY_NEXT_SERVER_DESCRIPTOR;
     TsConfigInt VERIFY_NEXT_SERVER_CONFIG;
-    ~Item() {}
+    ~Item() override {}
   };
   std::vector<self::Item> items;
   ts::Errata loader(lua_State *s) override;

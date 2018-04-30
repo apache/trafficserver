@@ -203,9 +203,9 @@ public:
     return;
   }
 
-  ~HttpSessionAccept() { return; }
-  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
-  int mainEvent(int event, void *netvc);
+  ~HttpSessionAccept() override { return; }
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
+  int mainEvent(int event, void *netvc) override;
 
   // noncopyable
   HttpSessionAccept(const HttpSessionAccept &) = delete;

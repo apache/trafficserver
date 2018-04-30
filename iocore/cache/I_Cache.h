@@ -70,7 +70,7 @@ struct CacheProcessor : public Processor {
   {
   }
 
-  virtual int start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
+  int start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
   virtual int start_internal(int flags = 0);
   void stop();
 
@@ -172,14 +172,14 @@ CacheProcessor::afterInitCallbackSet(CALLBACK_FUNC cb)
 }
 
 struct CacheVConnection : public VConnection {
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)                           = 0;
-  virtual VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset)  = 0;
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) = 0;
-  void do_io_close(int lerrno = -1)                                                          = 0;
-  void reenable(VIO *avio)                                                                   = 0;
-  void reenable_re(VIO *avio)                                                                = 0;
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override                           = 0;
+  virtual VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset)           = 0;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override = 0;
+  void do_io_close(int lerrno = -1) override                                                          = 0;
+  void reenable(VIO *avio) override                                                                   = 0;
+  void reenable_re(VIO *avio) override                                                                = 0;
   void
-  do_io_shutdown(ShutdownHowTo_t howto)
+  do_io_shutdown(ShutdownHowTo_t howto) override
   {
     (void)howto;
     ink_assert(!"CacheVConnection::do_io_shutdown unsupported");

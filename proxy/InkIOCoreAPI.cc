@@ -102,7 +102,7 @@ struct INKThreadInternal : public EThread {
     ink_cond_init(&completion.signal);
   }
 
-  ~INKThreadInternal()
+  ~INKThreadInternal() override
   {
     ink_mutex_destroy(&completion.lock);
     ink_cond_destroy(&completion.signal);

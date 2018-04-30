@@ -267,7 +267,7 @@ struct Vol : public Continuation {
     SET_HANDLER(&Vol::aggWrite);
   }
 
-  ~Vol() { ats_memalign_free(agg_buffer); }
+  ~Vol() override { ats_memalign_free(agg_buffer); }
 };
 
 struct AIO_Callback_handler : public Continuation {

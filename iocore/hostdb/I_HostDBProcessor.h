@@ -156,7 +156,7 @@ struct HostDBInfo : public RefCountObj {
   }
 
   void
-  free()
+  free() override
   {
     Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + iobuffer_index)), this);
     ioBufAllocator[iobuffer_index].free_void((void *)(this));
@@ -494,7 +494,7 @@ struct HostDBProcessor : public Processor {
   /* hostdb does not use any dedicated event threads
    * currently. Dont pass any value to start
    */
-  int start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
+  int start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
 
   // Private
   HostDBCache *cache();

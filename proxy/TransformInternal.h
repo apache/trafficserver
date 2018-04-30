@@ -37,12 +37,12 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
-  void do_io_close(int lerrno = -1);
-  void do_io_shutdown(ShutdownHowTo_t howto);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
-  void reenable(VIO *vio);
+  void reenable(VIO *vio) override;
 
 public:
   TransformVConnection *m_tvc;

@@ -158,8 +158,8 @@ public:
   void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
   void signal_write_event(bool call_update);
   void reenable(VIO *vio) override;
-  virtual void transaction_done() override;
-  virtual bool
+  void transaction_done() override;
+  bool
   ignore_keep_alive() override
   {
     // If we return true here, Connection header will always be "close".
@@ -208,15 +208,15 @@ public:
 
   void release(IOBufferReader *r) override;
 
-  virtual bool
+  bool
   allow_half_open() const override
   {
     return false;
   }
 
-  virtual void set_active_timeout(ink_hrtime timeout_in) override;
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  virtual void cancel_inactivity_timeout() override;
+  void set_active_timeout(ink_hrtime timeout_in) override;
+  void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void cancel_inactivity_timeout() override;
   void clear_inactive_timer();
   void clear_active_timer();
   void clear_timers();

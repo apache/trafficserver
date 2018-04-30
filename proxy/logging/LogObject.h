@@ -101,7 +101,7 @@ public:
             Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0, int rolling_offset_hr = 0,
             int rolling_size_mb = 0, bool auto_created = false);
   LogObject(LogObject &);
-  virtual ~LogObject();
+  ~LogObject() override;
 
   void add_filter(LogFilter *filter, bool copy = true);
   void set_filter_list(const LogFilterList &list, bool copy = true);

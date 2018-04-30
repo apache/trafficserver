@@ -156,7 +156,7 @@ public:
     ebuf   = buf + sz;
   }
 
-  ~ShowCont()
+  ~ShowCont() override
   {
     ats_free(sarg);
     ats_free(start);

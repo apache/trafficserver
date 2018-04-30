@@ -122,7 +122,7 @@ class AsyncDispatchController : public AsyncDispatchControllerBase
 {
 public:
   bool
-  dispatch()
+  dispatch() override
   {
     bool ret = false;
     std::lock_guard<Mutex> scopedLock(*dispatch_mutex_);
@@ -134,14 +134,14 @@ public:
   }
 
   void
-  disable()
+  disable() override
   {
     std::lock_guard<Mutex> scopedLock(*dispatch_mutex_);
     event_receiver_ = nullptr;
   }
 
   bool
-  isEnabled()
+  isEnabled() override
   {
     return (event_receiver_ != nullptr);
   }
@@ -158,7 +158,7 @@ public:
   {
   }
 
-  virtual ~AsyncDispatchController() {}
+  ~AsyncDispatchController() override {}
 
 public:
   AsyncEventReceiverType *event_receiver_;

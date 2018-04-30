@@ -56,7 +56,7 @@ public:
   LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec = 0);
   LogFormat(const LogFormat &rhs);
 
-  ~LogFormat();
+  ~LogFormat() override;
 
   void display(FILE *fd = stdout);
 

@@ -106,8 +106,8 @@ public:
    * @param subject subject string
    * @return return false if any of the patterns matches, true otherwise.
    */
-  virtual bool
-  match(const String &subject) const
+  bool
+  match(const String &subject) const override
   {
     return !MultiPattern::match(subject);
   }

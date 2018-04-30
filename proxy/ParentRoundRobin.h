@@ -40,12 +40,13 @@ class ParentRoundRobin : public ParentSelectionStrategy
 
 public:
   ParentRoundRobin(ParentRecord *_parent_record, ParentRR_t _round_robin_type);
-  ~ParentRoundRobin();
+  ~ParentRoundRobin() override;
   pRecord *
-  getParents(ParentResult *result)
+  getParents(ParentResult *result) override
   {
     return parents;
   }
-  void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold, unsigned int retry_time);
-  uint32_t numParents(ParentResult *result) const;
+  void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
+                    unsigned int retry_time) override;
+  uint32_t numParents(ParentResult *result) const override;
 };

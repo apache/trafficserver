@@ -152,7 +152,7 @@ typedef struct tsapi_vio *TSVIO;
 class VConnection : public Continuation
 {
 public:
-  virtual ~VConnection();
+  ~VConnection() override;
 
   /**
     Read data from the VConnection.
@@ -410,31 +410,31 @@ protected:
 };
 
 struct DummyVConnection : public AnnotatedVConnection {
-  virtual VIO *
+  VIO *
   do_io_write(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, IOBufferReader * /* buf ATS_UNUSED */,
-              bool /* owner ATS_UNUSED */)
+              bool /* owner ATS_UNUSED */) override
   {
     ink_assert(!"VConnection::do_io_write -- "
                 "cannot use default implementation");
     return nullptr;
   }
 
-  virtual VIO *
-  do_io_read(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, MIOBuffer * /* buf ATS_UNUSED */)
+  VIO *
+  do_io_read(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, MIOBuffer * /* buf ATS_UNUSED */) override
   {
     ink_assert(!"VConnection::do_io_read -- "
                 "cannot use default implementation");
     return nullptr;
   }
 
-  virtual void
-  do_io_close(int /* alerrno ATS_UNUSED */)
+  void
+  do_io_close(int /* alerrno ATS_UNUSED */) override
   {
     ink_assert(!"VConnection::do_io_close -- "
                 "cannot use default implementation");
   }
 
-  virtual void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
+  void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */) override
   {
     ink_assert(!"VConnection::do_io_shutdown -- "
                 "cannot use default implementation");

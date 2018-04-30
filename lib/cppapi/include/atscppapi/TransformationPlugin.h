@@ -111,7 +111,7 @@ public:
    */
   virtual void handleInputComplete() = 0;
 
-  virtual ~TransformationPlugin(); /**< Destructor for a TransformationPlugin */
+  ~TransformationPlugin() override; /**< Destructor for a TransformationPlugin */
 protected:
   /**
    * This method is how a TransformationPlugin will produce output for the downstream

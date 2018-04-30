@@ -70,7 +70,7 @@ class NetTestDriver : public Continuation
 {
 public:
   NetTestDriver();
-  ~NetTestDriver();
+  ~NetTestDriver() override;
 
   int errors;
 
@@ -83,7 +83,7 @@ class NetVCTest : public Continuation
 {
 public:
   NetVCTest();
-  ~NetVCTest();
+  ~NetVCTest() override;
   NetVcTestType_t test_cont_type;
 
   int main_handler(int event, void *data);

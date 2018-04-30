@@ -36,14 +36,14 @@ protected:
 public:
   SHA256Context() { SHA256_Init(&_ctx); }
   /// Update the hash with @a data of @a length bytes.
-  virtual bool
-  update(void const *data, int length)
+  bool
+  update(void const *data, int length) override
   {
     return SHA256_Update(&_ctx, data, length);
   }
   /// Finalize and extract the @a hash.
-  virtual bool
-  finalize(CryptoHash &hash)
+  bool
+  finalize(CryptoHash &hash) override
   {
     return SHA256_Final(hash.u8, &_ctx);
   }

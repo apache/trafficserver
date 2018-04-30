@@ -101,7 +101,7 @@ class LogConfig : public ConfigInfo
 {
 public:
   LogConfig();
-  ~LogConfig();
+  ~LogConfig() override;
 
   void init(LogConfig *previous_config = nullptr);
   void display(FILE *fd = stdout);

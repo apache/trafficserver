@@ -259,7 +259,7 @@ public:
     return "http/2";
   }
 
-  virtual int
+  int
   populate_protocol(ts::string_view *result, int size) const override
   {
     int retval = 0;
@@ -272,7 +272,7 @@ public:
     return retval;
   }
 
-  virtual const char *
+  const char *
   protocol_contains(ts::string_view prefix) const override
   {
     const char *retval = nullptr;
