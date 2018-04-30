@@ -69,7 +69,7 @@ public:
    * @see Plugin
    */
   void registerHook(Plugin::HookType);
-  virtual ~GlobalPlugin();
+  ~GlobalPlugin() override;
 
 protected:
   /**

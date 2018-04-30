@@ -50,15 +50,16 @@ public:
   static const int PRIMARY   = 0;
   static const int SECONDARY = 1;
   ParentConsistentHash(ParentRecord *_parent_record);
-  ~ParentConsistentHash();
+  ~ParentConsistentHash() override;
   pRecord *
-  getParents(ParentResult *result)
+  getParents(ParentResult *result) override
   {
     return parents[result->last_lookup];
   }
   uint64_t getPathHash(HttpRequestData *hrdata, ATSHash64 *h);
-  void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold, unsigned int retry_time);
+  void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
+                    unsigned int retry_time) override;
   void markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);
-  uint32_t numParents(ParentResult *result) const;
+  uint32_t numParents(ParentResult *result) const override;
   void markParentUp(ParentResult *result);
 };

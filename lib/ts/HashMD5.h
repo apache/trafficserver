@@ -26,12 +26,12 @@
 
 struct ATSHashMD5 : ATSHash {
   ATSHashMD5(void);
-  void update(const void *data, size_t len);
-  void final(void);
-  const void *get(void) const;
-  size_t size(void) const;
-  void clear(void);
-  ~ATSHashMD5();
+  void update(const void *data, size_t len) override;
+  void final(void) override;
+  const void *get(void) const override;
+  size_t size(void) const override;
+  void clear(void) override;
+  ~ATSHashMD5() override;
 
 private:
   EVP_MD_CTX *ctx;

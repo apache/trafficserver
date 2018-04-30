@@ -79,7 +79,7 @@ namespace transformations
      */
     void handleInputComplete() override;
 
-    virtual ~GzipInflateTransformation();
+    ~GzipInflateTransformation() override;
 
   private:
     GzipInflateTransformationState *state_; /** Internal state for Gzip Deflate Transformations */

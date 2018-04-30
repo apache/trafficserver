@@ -63,7 +63,7 @@ public:
     _debugLog(_debug_tag, "FailureInfo Ctor:inserting URL object into the statistics map [FailureInfo object]%p", this);
   };
 
-  ~FailureInfo() {}
+  ~FailureInfo() override {}
   /* Fills the statistics vector depending
    * upon the position of the window marker
    */

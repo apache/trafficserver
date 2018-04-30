@@ -35,9 +35,9 @@ protected:
 public:
   MD5Context();
   /// Update the hash with @a data of @a length bytes.
-  virtual bool update(void const *data, int length);
+  bool update(void const *data, int length) override;
   /// Finalize and extract the @a hash.
-  virtual bool finalize(CryptoHash &hash);
+  bool finalize(CryptoHash &hash) override;
 };
 
 typedef CryptoHash INK_MD5;

@@ -292,7 +292,7 @@ public:
     @return vio
 
   */
-  virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) = 0;
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override = 0;
 
   /**
     Initiates write. Thread-safe, may be called when not handling
@@ -328,7 +328,7 @@ public:
     @return vio pointer
 
   */
-  virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) = 0;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override = 0;
 
   /**
     Closes the vconnection. A state machine MUST call do_io_close()
@@ -346,7 +346,7 @@ public:
     @param lerrno VIO:CLOSE for regular close or VIO::ABORT for aborts
 
   */
-  virtual void do_io_close(int lerrno = -1) = 0;
+  void do_io_close(int lerrno = -1) override = 0;
 
   /**
     Shuts down read side, write side, or both. do_io_shutdown() can
@@ -364,7 +364,7 @@ public:
     @param howto IO_SHUTDOWN_READ, IO_SHUTDOWN_WRITE, IO_SHUTDOWN_READWRITE
 
   */
-  virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
+  void do_io_shutdown(ShutdownHowTo_t howto) override = 0;
 
   /**
     Sends out of band messages over the connection. This function
@@ -571,13 +571,13 @@ public:
   EThread *thread;
 
   /// PRIVATE: The public interface is VIO::reenable()
-  virtual void reenable(VIO *vio) = 0;
+  void reenable(VIO *vio) override = 0;
 
   /// PRIVATE: The public interface is VIO::reenable()
-  virtual void reenable_re(VIO *vio) = 0;
+  void reenable_re(VIO *vio) override = 0;
 
   /// PRIVATE
-  virtual ~NetVConnection() {}
+  ~NetVConnection() override {}
   /**
     PRIVATE: instances of NetVConnection cannot be created directly
     by the state machines. The objects are created by NetProcessor

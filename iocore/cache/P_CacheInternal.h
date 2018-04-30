@@ -231,24 +231,24 @@ extern int cache_config_read_while_writer_max_retries;
 struct CacheVC : public CacheVConnection {
   CacheVC();
 
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset);
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
-  void do_io_close(int lerrno = -1);
-  void reenable(VIO *avio);
-  void reenable_re(VIO *avio);
-  bool get_data(int i, void *data);
-  bool set_data(int i, void *data);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void reenable(VIO *avio) override;
+  void reenable_re(VIO *avio) override;
+  bool get_data(int i, void *data) override;
+  bool set_data(int i, void *data) override;
 
   bool
-  is_ram_cache_hit() const
+  is_ram_cache_hit() const override
   {
     ink_assert(vio.op == VIO::READ);
     return !f.not_from_ram_cache;
   }
 
   int
-  get_header(void **ptr, int *len)
+  get_header(void **ptr, int *len) override
   {
     if (first_buf) {
       Doc *doc = (Doc *)first_buf->data();
@@ -261,7 +261,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   int
-  set_header(void *ptr, int len)
+  set_header(void *ptr, int len) override
   {
     header_to_write     = ptr;
     header_to_write_len = len;
@@ -269,7 +269,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   int
-  get_single_data(void **ptr, int *len)
+  get_single_data(void **ptr, int *len) override
   {
     if (first_buf) {
       Doc *doc = (Doc *)first_buf->data();
@@ -284,7 +284,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   int
-  get_volume_number() const
+  get_volume_number() const override
   {
     if (vol && vol->cache_vol) {
       return vol->cache_vol->vol_number;
@@ -294,7 +294,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   bool
-  is_compressed_in_ram() const
+  is_compressed_in_ram() const override
   {
     ink_assert(vio.op == VIO::READ);
     return f.compressed_in_ram;
@@ -373,9 +373,9 @@ struct CacheVC : public CacheVConnection {
   int evacuateReadHead(int event, Event *e);
 
   void cancel_trigger();
-  virtual int64_t get_object_size();
-  virtual void set_http_info(CacheHTTPInfo *info);
-  virtual void get_http_info(CacheHTTPInfo **info);
+  int64_t get_object_size() override;
+  void set_http_info(CacheHTTPInfo *info) override;
+  void get_http_info(CacheHTTPInfo **info) override;
   /** Get the fragment table.
       @return The address of the start of the fragment table,
       or @c nullptr if there is no fragment table.
@@ -385,11 +385,11 @@ struct CacheVC : public CacheVConnection {
       @return Length of header data used for alternates.
    */
   virtual uint32_t load_http_info(CacheHTTPInfoVector *info, struct Doc *doc, RefCountObj *block_ptr = nullptr);
-  virtual bool is_pread_capable();
-  virtual bool set_pin_in_cache(time_t time_pin);
-  virtual time_t get_pin_in_cache();
-  virtual bool set_disk_io_priority(int priority);
-  virtual int get_disk_io_priority();
+  bool is_pread_capable() override;
+  bool set_pin_in_cache(time_t time_pin) override;
+  time_t get_pin_in_cache() override;
+  bool set_disk_io_priority(int priority) override;
+  int get_disk_io_priority() override;
 
 // offsets from the base stat
 #define CACHE_STAT_ACTIVE 0

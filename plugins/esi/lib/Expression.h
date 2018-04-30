@@ -58,7 +58,7 @@ public:
     return evaluate(expr.data(), expr.size());
   }
 
-  virtual ~Expression(){};
+  ~Expression() override{};
 
 private:
   static const std::string EMPTY_STRING;

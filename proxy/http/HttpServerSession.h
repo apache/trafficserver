@@ -106,15 +106,15 @@ public:
     return buf_reader;
   };
 
-  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr);
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
 
-  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
-                           bool owner = false);
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
 
-  virtual void do_io_close(int lerrno = -1);
-  virtual void do_io_shutdown(ShutdownHowTo_t howto);
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
-  virtual void reenable(VIO *vio);
+  void reenable(VIO *vio) override;
 
   void release();
   void attach_hostname(const char *hostname);

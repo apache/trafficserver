@@ -53,8 +53,8 @@ public:
     LinkServerPushPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
-  virtual void
-  handleSendResponseHeaders(Transaction &transaction)
+  void
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     serverPush(transaction);
     transaction.resume();

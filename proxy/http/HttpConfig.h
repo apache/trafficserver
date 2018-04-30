@@ -766,7 +766,7 @@ struct OverridableHttpConfigParams {
 struct HttpConfigParams : public ConfigInfo {
 public:
   HttpConfigParams();
-  ~HttpConfigParams();
+  ~HttpConfigParams() override;
 
   enum {
     CACHE_REQUIRED_HEADERS_NONE                   = 0,

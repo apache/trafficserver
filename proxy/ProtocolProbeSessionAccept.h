@@ -44,17 +44,17 @@ public:
     memset(endpoint, 0, sizeof(endpoint));
     SET_HANDLER(&ProtocolProbeSessionAccept::mainEvent);
   }
-  ~ProtocolProbeSessionAccept() {}
+  ~ProtocolProbeSessionAccept() override {}
   void registerEndpoint(ProtoGroupKey key, SessionAccept *ap);
 
-  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
 
   // noncopyable
   ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &) = delete;            // disabled
   ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &) = delete; // disabled
 
 private:
-  int mainEvent(int event, void *netvc);
+  int mainEvent(int event, void *netvc) override;
 
   /** Child acceptors, index by @c ProtoGroupKey
 

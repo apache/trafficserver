@@ -104,7 +104,7 @@ struct CacheDisk : public Continuation {
 
   CacheDisk() : Continuation(new_ProxyMutex()) {}
 
-  ~CacheDisk();
+  ~CacheDisk() override;
 
   int open(bool clear);
   int open(char *s, off_t blocks, off_t skip, int hw_sector_size, int fildes, bool clear);

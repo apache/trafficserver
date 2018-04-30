@@ -94,7 +94,7 @@ class BaseStatPagesHandler : public Continuation
 {
 public:
   BaseStatPagesHandler(ProxyMutex *amutex) : Continuation(amutex), response(nullptr), response_size(0), response_length(0){};
-  ~BaseStatPagesHandler() { resp_clear(); };
+  ~BaseStatPagesHandler() override { resp_clear(); };
 
 protected:
   inkcoreapi void resp_clear(void);

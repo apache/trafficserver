@@ -89,7 +89,7 @@ struct SplitDNSResult {
    -------------------------------------------------------------- */
 struct SplitDNS : public ConfigInfo {
   SplitDNS();
-  ~SplitDNS();
+  ~SplitDNS() override;
 
   void *getDNSRecord(const char *hostname);
   void findServer(RequestData *rdata, SplitDNSResult *result);

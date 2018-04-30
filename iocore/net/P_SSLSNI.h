@@ -60,7 +60,7 @@ struct SNIConfigParams : public ConfigInfo {
   LuaSNIConfig L_sni;
   NextHopProperty *getPropertyConfig(cchar *servername) const;
   SNIConfigParams();
-  virtual ~SNIConfigParams();
+  ~SNIConfigParams() override;
   void cleanup();
   int Initialize();
   void loadSNIConfig();

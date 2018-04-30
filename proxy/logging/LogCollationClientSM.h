@@ -45,7 +45,7 @@ class LogCollationClientSM : public LogCollationBase, public Continuation
 {
 public:
   LogCollationClientSM(LogHost *log_host);
-  ~LogCollationClientSM();
+  ~LogCollationClientSM() override;
 
   int client_handler(int event, void *data);
 

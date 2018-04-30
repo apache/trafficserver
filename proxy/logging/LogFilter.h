@@ -72,7 +72,7 @@ public:
   static const char *OPERATOR_NAME[];
 
   LogFilter(const char *name, LogField *field, Action action, Operator oper);
-  virtual ~LogFilter();
+  ~LogFilter() override;
 
   char *
   name() const
@@ -129,12 +129,12 @@ public:
   LogFilterString(const char *name, LogField *field, Action a, Operator o, char *value);
   LogFilterString(const char *name, LogField *field, Action a, Operator o, size_t num_values, char **value);
   LogFilterString(const LogFilterString &rhs);
-  ~LogFilterString();
+  ~LogFilterString() override;
   bool operator==(LogFilterString &rhs);
 
-  bool toss_this_entry(LogAccess *lad);
-  bool wipe_this_entry(LogAccess *lad);
-  void display(FILE *fd = stdout);
+  bool toss_this_entry(LogAccess *lad) override;
+  bool wipe_this_entry(LogAccess *lad) override;
+  void display(FILE *fd = stdout) override;
 
   // noncopyable
   LogFilterString &operator=(LogFilterString &rhs) = delete;
@@ -189,12 +189,12 @@ public:
   LogFilterInt(const char *name, LogField *field, Action a, Operator o, size_t num_values, int64_t *value);
   LogFilterInt(const char *name, LogField *field, Action a, Operator o, char *values);
   LogFilterInt(const LogFilterInt &rhs);
-  ~LogFilterInt();
+  ~LogFilterInt() override;
   bool operator==(LogFilterInt &rhs);
 
-  bool toss_this_entry(LogAccess *lad);
-  bool wipe_this_entry(LogAccess *lad);
-  void display(FILE *fd = stdout);
+  bool toss_this_entry(LogAccess *lad) override;
+  bool wipe_this_entry(LogAccess *lad) override;
+  void display(FILE *fd = stdout) override;
 
   // noncopyable
   LogFilterInt &operator=(LogFilterInt &rhs) = delete;
@@ -221,13 +221,13 @@ public:
   LogFilterIP(const char *name, LogField *field, Action a, Operator o, size_t num_values, IpAddr *value);
   LogFilterIP(const char *name, LogField *field, Action a, Operator o, char *values);
   LogFilterIP(const LogFilterIP &rhs);
-  ~LogFilterIP();
+  ~LogFilterIP() override;
 
   bool operator==(LogFilterIP &rhs);
 
-  virtual bool toss_this_entry(LogAccess *lad);
-  virtual bool wipe_this_entry(LogAccess *lad);
-  void display(FILE *fd = stdout);
+  bool toss_this_entry(LogAccess *lad) override;
+  bool wipe_this_entry(LogAccess *lad) override;
+  void display(FILE *fd = stdout) override;
 
   // noncopyable
   LogFilterIP &operator=(LogFilterIP &rhs) = delete;

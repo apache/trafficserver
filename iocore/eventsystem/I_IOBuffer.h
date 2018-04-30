@@ -228,7 +228,7 @@ public:
     should not use this object or reference after this call.
 
   */
-  virtual void free();
+  void free() override;
 
   int64_t _size_index;
 
@@ -487,7 +487,7 @@ public:
     call.
 
   */
-  virtual void free();
+  void free() override;
 
   char *_start;
   char *_end;

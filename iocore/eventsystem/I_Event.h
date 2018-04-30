@@ -261,7 +261,7 @@ public:
 #endif
 
 #if defined(__GNUC__)
-  virtual ~Event() {}
+  ~Event() override {}
 #endif
 };
 

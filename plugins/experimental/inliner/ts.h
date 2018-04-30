@@ -234,14 +234,14 @@ namespace io
   struct StringNode : Node {
     std::string string_;
     explicit StringNode(std::string &&s) : string_(std::move(s)) {}
-    Node::Result process(const TSIOBuffer);
+    Node::Result process(const TSIOBuffer) override;
   };
 
   struct BufferNode : Node {
     const TSIOBuffer buffer_;
     const TSIOBufferReader reader_;
 
-    ~BufferNode()
+    ~BufferNode() override
     {
       assert(reader_ != nullptr);
       TSIOBufferReaderFree(reader_);
@@ -263,7 +263,7 @@ namespace io
     BufferNode &operator<<(const ReaderOffset &);
     BufferNode &operator<<(const char *const);
     BufferNode &operator<<(const std::string &);
-    Node::Result process(const TSIOBuffer);
+    Node::Result process(const TSIOBuffer) override;
   };
 
   struct Data : Node {
@@ -276,7 +276,7 @@ namespace io
     Data(const Data &) = delete;
     Data &operator=(const Data &) = delete;
 
-    Node::Result process(const TSIOBuffer);
+    Node::Result process(const TSIOBuffer) override;
   };
 
   struct Sink {
