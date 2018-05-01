@@ -2090,9 +2090,8 @@ mgmt_lifecycle_msg_callback(void *, char *data, int len)
   MgmtInt op;
   MgmtMarshallString tag;
   MgmtMarshallData payload;
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA};
 
-  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &tag, &payload) == -1) {
+  if (mgmt_message_parse(data, len, &op, &tag, &payload) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
   } else {
     msg.tag       = tag;
