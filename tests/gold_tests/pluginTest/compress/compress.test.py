@@ -19,7 +19,7 @@
 import os
 import subprocess
 Test.Summary = '''
-Test gzip plugin
+Test compress plugin
 '''
 
 # This test case is very bare-bones.  It only covers a few scenarios that have caused problems.
@@ -27,13 +27,23 @@ Test gzip plugin
 # Skip if plugins not present.
 #
 Test.SkipUnless(
-    Condition.PluginExists('gzip.so'),
+    Condition.PluginExists('compress.so'),
     Condition.PluginExists('conf_remap.so'),
     Condition.HasATSFeature('TS_HAS_BROTLI')
 )
 
 
-server = Test.MakeOriginServer("server", options={'--load': '{}/gzip_observer.py'.format(Test.TestDirectory)})
+server = Test.MakeOriginServer("server", options={'--load': '{}/compress_observer.py'.format(Test.TestDirectory)})
+
+def repeat(str, count):
+    result = ""
+    while count > 0:
+        result += str
+        count -= 1
+    return result
+
+# Need a fairly big body, otherwise the plugin will refuse to compress
+body = repeat("lets go surfin now everybodys learnin how\n", 25)
 
 # expected response from the origin server
 response_header = {
@@ -44,7 +54,7 @@ response_header = {
     "Content-Type: text/javascript\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
-    "body": "lets go surfin now everybodys learnin how"
+    "body": body
 }
 for i in range(3):
     # add request/response to the server dictionary
@@ -53,6 +63,13 @@ for i in range(3):
     }
     server.addResponse("sessionfile.log", request_header, response_header)
 
+def curl(ts, name, idx, encodingList):
+    return (
+        "curl --verbose --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
+        " --header 'X-Ats-Compress-Test: {}/{}/{}'".format(name, idx, encodingList) +
+        " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
+        " >> {0}/compress_long.log 2>&1 ; printf '\n\n' >> {0}/compress_long.log".format(Test.RunDirectory)
+    )
 
 def oneTs(name, AeHdr1='gzip, deflate, sdch, br'):
     global waitForServer
@@ -62,33 +79,25 @@ def oneTs(name, AeHdr1='gzip, deflate, sdch, br'):
     ts = Test.MakeATSProcess(name)
 
     ts.Disk.records_config.update({
-        # 'proxy.config.diags.debug.enabled': 1,
-        # 'proxy.config.diags.debug.tags': 'http|gzip|cache',
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http|compress|cache',
         'proxy.config.http.normalize_ae': 0,
     })
 
     ts.Disk.remap_config.AddLine(
         'map http://ae-0/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-        ' @plugin=gzip.so @pparam={}/gzip.config'.format(Test.TestDirectory)
+        ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
     )
     ts.Disk.remap_config.AddLine(
         'map http://ae-1/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
         ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1' +
-        ' @plugin=gzip.so @pparam={}/gzip.config'.format(Test.TestDirectory)
+        ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
     )
     ts.Disk.remap_config.AddLine(
         'map http://ae-2/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
         ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2' +
-        ' @plugin=gzip.so @pparam={}/gzip2.config'.format(Test.TestDirectory)
+        ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.TestDirectory)
     )
-
-    def curl(idx, encodingList):
-        return (
-            "curl --verbose --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
-            " --header 'X-Ats-Gzip-Test: {}/{}/{}'".format(name, idx, encodingList) +
-            " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
-            " >> {0}/gzip_long.log 2>&1 ; printf '\n\n' >> {0}/gzip_long.log".format(Test.RunDirectory)
-        )
 
     for i in range(3):
 
@@ -100,20 +109,19 @@ def oneTs(name, AeHdr1='gzip, deflate, sdch, br'):
             tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
         waitForServer = False
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(i, AeHdr1)
+        tr.Processes.Default.Command = curl(ts, name, i, AeHdr1)
 
         tr = Test.AddTestRun()
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(i, "gzip")
+        tr.Processes.Default.Command = curl(ts, name, i, "gzip")
 
         tr = Test.AddTestRun()
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(i, "br")
+        tr.Processes.Default.Command = curl(ts, name, i, "br")
 
         tr = Test.AddTestRun()
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(i, "deflate")
-
+        tr.Processes.Default.Command = curl(ts, name, i, "deflate")
 
 waitForServer = True
 
@@ -124,14 +132,14 @@ oneTs("ts3", "deflate")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
-    r"tr -d '\r' < {1}/gzip_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > {1}/gzip_short.log"
+    r"tr -d '\r' < {1}/compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > {1}/compress_short.log"
 ).format(Test.TestDirectory, Test.RunDirectory)
-f = tr.Disk.File("gzip_short.log")
-f.Content = "gzip.gold"
+f = tr.Disk.File("compress_short.log")
+f.Content = "compress.gold"
 
 # Have to comment this out, because caching does not seem to be consistent, which is disturbing.
 #
 # tr = Test.AddTestRun()
 # tr.Processes.Default.Command = "echo"
-# f = tr.Disk.File("gzip_userver.log")
-# f.Content = "gzip_userver.gold"
+# f = tr.Disk.File("compress_userver.log")
+# f.Content = "compress_userver.gold"

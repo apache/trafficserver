@@ -1,3 +1,6 @@
+'''
+For compress gold test, observer for micro-server.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,10 +17,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-grep --text \
- -e 'HTTP/' \
- -e '^> X-Ats-Gzip-Test:' \
- -e '^> Accept-Encoding:' \
- -e '^< Content-' \
- -e '^< Vary:' \
- -e '^$'
+log = open('compress_userver.log', 'w')
+
+def observe(headers):
+    log.write("{}\n".format(headers['X-Ats-Compress-Test']))
+    log.flush()
+
+Hooks.register(Hooks.ReadRequestHook, observe)

@@ -1,6 +1,3 @@
-'''
-For gzip gold test, observer for micro-server.
-'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,10 +14,10 @@ For gzip gold test, observer for micro-server.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-log = open('gzip_userver.log', 'w')
-
-def observe(headers):
-    log.write("{}\n".format(headers['X-Ats-Gzip-Test']))
-    log.flush()
-
-Hooks.register(Hooks.ReadRequestHook, observe)
+grep --text \
+ -e 'HTTP/' \
+ -e '^> X-Ats-Compress-Test:' \
+ -e '^> Accept-Encoding:' \
+ -e '^< Content-' \
+ -e '^< Vary:' \
+ -e '^$'
