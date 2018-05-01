@@ -1,0 +1,10 @@
+HTTP/1.1 200 OK
+Content-Length: 14
+Date: ``
+Age: 0
+Connection: keep-alive
+Via: ``
+Server: ``
+X-Cache: miss
+``
+the flinstones``
