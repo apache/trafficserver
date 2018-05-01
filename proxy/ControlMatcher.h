@@ -99,7 +99,7 @@
 #include "URL.h"
 
 #ifdef HAVE_CTYPE_H
-#include <ctype.h>
+#include <cctype>
 #endif
 
 #define SignalError(_buf, _already)                         \

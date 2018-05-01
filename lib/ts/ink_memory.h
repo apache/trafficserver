@@ -22,10 +22,10 @@
  */
 #pragma once
 
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 #include <strings.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <string>
 
 #include "ts/string_view.h"

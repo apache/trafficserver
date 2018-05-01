@@ -27,7 +27,7 @@
 #include <atscppapi/InterceptPlugin.h>
 
 #include <string>
-#include <stddef.h>
+#include <cstddef>
 
 #include "WSBuffer.h"
 

@@ -23,7 +23,7 @@
  */
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "ts/apidefs.h"
 #include "ts/ink_memory.h"

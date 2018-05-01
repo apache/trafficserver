@@ -26,7 +26,7 @@
 #define _ESI_EXPRESSION_H
 
 #include <string>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "ComponentBase.h"
 #include "Variables.h"

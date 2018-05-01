@@ -21,7 +21,7 @@
 #define __MONEY_TRACE_H
 
 #include <random>
-#include <time.h>
+#include <ctime>
 #include "ts/ts.h"
 #include "ts/remap.h"
 

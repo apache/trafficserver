@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include "ts/ink_platform.h"
 #include "LogBufferSink.h"

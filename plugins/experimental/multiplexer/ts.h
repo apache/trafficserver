@@ -22,7 +22,7 @@
  */
 #ifndef TS_H
 #define TS_H
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #include <limits>
 #include <list>

@@ -53,7 +53,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "ts/ink_assert.h"
 #include "ts/ink_queue.h"

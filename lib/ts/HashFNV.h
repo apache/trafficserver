@@ -28,7 +28,7 @@
 #pragma once
 
 #include "ts/Hash.h"
-#include <stdint.h>
+#include <cstdint>
 
 struct ATSHash32FNV1a : ATSHash32 {
   ATSHash32FNV1a(void);

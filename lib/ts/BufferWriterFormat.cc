@@ -22,10 +22,10 @@
  */
 
 #include <ts/BufferWriter.h>
-#include <ctype.h>
+#include <cctype>
 #include <ctime>
 #include <cmath>
-#include <math.h>
+#include <cmath>
 #include <array>
 
 namespace

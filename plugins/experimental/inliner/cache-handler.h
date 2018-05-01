@@ -27,7 +27,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <assert.h>
+#include <cassert>
 
 #include "cache.h"
 #include "fetcher.h"

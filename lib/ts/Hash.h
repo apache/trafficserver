@@ -22,8 +22,8 @@
 #pragma once
 
 #include <cstddef>
-#include <stdint.h>
-#include <ctype.h>
+#include <cstdint>
+#include <cctype>
 
 struct ATSHashBase {
   virtual void update(const void *, size_t) = 0;

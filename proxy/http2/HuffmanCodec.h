@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 void hpack_huffman_init();
 void hpack_huffman_fin();

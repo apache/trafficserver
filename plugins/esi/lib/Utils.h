@@ -32,7 +32,7 @@
 #include <string>
 #include <map>
 #include <list>
-#include <ctype.h>
+#include <cctype>
 
 namespace EsiLib
 {

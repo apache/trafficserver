@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 #include <memory.h>
 #include <strings.h>
 

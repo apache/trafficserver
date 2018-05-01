@@ -36,7 +36,7 @@
 
 #include <climits>
 #include <string>
-#include <stdbool.h>
+
 #if TS_USE_TLS_ASYNC
 #include <openssl/async.h>
 #endif

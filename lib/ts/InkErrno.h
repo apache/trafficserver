@@ -28,7 +28,7 @@
 */
 
 #pragma once
-#include <errno.h>
+#include <cerrno>
 
 #define INK_START_ERRNO 20000
 

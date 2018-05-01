@@ -23,7 +23,7 @@
 #ifndef VCONNECTION_H
 #define VCONNECTION_H
 
-#include <assert.h>
+#include <cassert>
 
 #include "ts.h"
 

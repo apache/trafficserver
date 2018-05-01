@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include <stdarg.h>
+#include <cstdarg>
 #include "ink_mutex.h"
 #include "Regex.h"
 #include "ink_apidefs.h"

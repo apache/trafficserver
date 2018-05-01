@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <stdarg.h>
+#include <cstdarg>
 #include "ts/ink_apidefs.h"
 #include "ts/Regression.h"
 

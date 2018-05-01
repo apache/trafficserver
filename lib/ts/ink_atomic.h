@@ -36,10 +36,10 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <assert.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdint>
+#include <cassert>
 
 #include "ts/ink_defs.h"
 #include "ts/ink_apidefs.h"

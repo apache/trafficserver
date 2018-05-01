@@ -24,7 +24,7 @@
 #include "Command.h"
 #include <new>
 #include <algorithm>
-#include <string.h>
+#include <cstring>
 #include <sstream>
 
 namespace ts

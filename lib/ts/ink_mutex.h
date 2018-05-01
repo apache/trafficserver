@@ -36,8 +36,7 @@
 #include "ts/ink_error.h"
 
 #include <pthread.h>
-#include <stdlib.h>
-
+#include <cstdlib>
 typedef pthread_mutex_t ink_mutex;
 
 void ink_mutex_init(ink_mutex *m);

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #define MAX_TIME_WAIT 60 // num secs for a timeout on a select call (remote only)
 

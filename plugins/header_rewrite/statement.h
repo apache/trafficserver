@@ -23,7 +23,7 @@
 #pragma once
 
 #include <string>
-#include <time.h>
+#include <ctime>
 #include <vector>
 
 #include "ts/ts.h"

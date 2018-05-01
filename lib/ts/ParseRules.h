@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <string.h>
+#include <cstring>
 
 #include "ts/ink_defs.h"
 #include "ts/ink_apidefs.h"
