@@ -22,7 +22,7 @@
 #pragma once
 
 #include "Hash.h"
-#include <stdint.h>
+#include <cstdint>
 #include <iostream>
 #include <map>
 

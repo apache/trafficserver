@@ -19,13 +19,13 @@
 #ifndef _MP4_META_H
 #define _MP4_META_H
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stddef.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <cstddef>
 #include <unistd.h>
 #include <getopt.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include <ts/ts.h>
 

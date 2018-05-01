@@ -31,12 +31,12 @@
 #pragma once
 
 #if defined(linux)
-#include <stdio.h>
+#include <cstdio>
 #include <sys/procfs.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 #include <elf.h>
 #include "ts/DynArray.h"
 

@@ -40,7 +40,7 @@
 
 #if defined(POSIX_THREAD)
 #include <pthread.h>
-#include <signal.h>
+#include <csignal>
 #include <semaphore.h>
 
 #if HAVE_PTHREAD_NP_H
@@ -91,7 +91,7 @@ typedef struct timespec ink_timestruc;
 typedef timestruc_t ink_timestruc;
 #endif
 
-#include <errno.h>
+#include <cerrno>
 #include "ts/ink_mutex.h"
 #include "ts/ink_assert.h"
 

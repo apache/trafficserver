@@ -23,7 +23,7 @@
 
 #ifndef FAILURE_INFO_H
 #define FAILURE_INFO_H
-#include <time.h>
+#include <ctime>
 #include <vector>
 #include <map>
 #include <sys/time.h>

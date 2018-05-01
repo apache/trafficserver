@@ -24,10 +24,10 @@
 
 #pragma once
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 #include <sys/time.h>
-#include <stdint.h>
+#include <cstdint>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

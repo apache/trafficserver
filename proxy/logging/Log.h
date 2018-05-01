@@ -51,7 +51,7 @@
 
 #pragma once
 
-#include <stdarg.h>
+#include <cstdarg>
 #include "ts/ink_platform.h"
 #include "ts/EventNotify.h"
 #include "ts/ink_hash_table.h"

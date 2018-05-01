@@ -18,7 +18,7 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <string.h>
+#include <cstring>
 #include <list>
 #include <string>
 

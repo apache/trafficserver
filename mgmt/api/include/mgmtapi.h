@@ -27,9 +27,8 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stddef.h>
+#include <cstdint>
+#include <cstddef>
 
 /***************************************************************************
  * System Specific Items

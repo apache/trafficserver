@@ -35,8 +35,8 @@
 #ifndef _ALARMS_H
 #define _ALARMS_H
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 
 #include "ts/ink_hash_table.h"
 #include "ts/ink_mutex.h"

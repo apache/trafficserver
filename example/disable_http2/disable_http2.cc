@@ -30,7 +30,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <openssl/ssl.h>
 
 #define PLUGIN_NAME "disable_http2"

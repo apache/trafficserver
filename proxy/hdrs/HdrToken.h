@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <sys/types.h>
 #include "ts/ink_assert.h"
 #include "ts/ink_atomic.h"

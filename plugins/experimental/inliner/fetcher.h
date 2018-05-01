@@ -49,7 +49,7 @@
 #include <limits>
 #include <netinet/in.h>
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "chunk-decoder.h"
 #include "ts.h"

@@ -25,8 +25,8 @@
 
 #include <zlib.h>
 #include <ts/ts.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>

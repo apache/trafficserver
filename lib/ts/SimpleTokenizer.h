@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
 #include "ts/ink_memory.h"
 
 /*-----------------------------------------------------------------------------

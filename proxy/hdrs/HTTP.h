@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include "ts/Arena.h"
 #include "ts/CryptoHash.h"
 #include "MIME.h"

@@ -28,15 +28,15 @@
 #include <map>
 #include <getopt.h>
 #include <system_error>
-#include <string.h>
+#include <cstring>
 #include <fcntl.h>
-#include <ctype.h>
+#include <cctype>
 #include <cstring>
 #include <vector>
 #include <unordered_set>
-#include <time.h>
+#include <ctime>
 #include <bitset>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include <ts/ink_memory.h>
 #include <ts/ink_file.h>

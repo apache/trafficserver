@@ -22,7 +22,7 @@
 #pragma once
 
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include <atscppapi/noncopyable.h>
 
 namespace atscppapi

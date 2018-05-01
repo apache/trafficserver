@@ -33,12 +33,12 @@
  ****************************************************************************/
 #pragma once
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <bitset>
 
 #ifdef HAVE_CTYPE_H
-#include <ctype.h>
+#include <cctype>
 #endif
 
 #include "ts/ink_platform.h"

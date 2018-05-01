@@ -28,8 +28,8 @@
 
 #pragma once
 
-#include <stdarg.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstring>
 
 #include "ts/ink_platform.h"
 #include "ts/Ptr.h"

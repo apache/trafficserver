@@ -28,7 +28,7 @@
  ***************************************************************************/
 #pragma once
 
-#include <string.h>
+#include <cstring>
 #include "ts/ink_assert.h"
 #include "ts/Tokenizer.h"
 #include "ts/List.h"

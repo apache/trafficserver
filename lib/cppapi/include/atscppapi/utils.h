@@ -27,7 +27,7 @@
 #include <string>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdint.h>
+#include <cstdint>
 
 #ifndef ATSCPPAPI_UNUSED
 #ifdef __GNUC__
