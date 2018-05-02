@@ -28,6 +28,7 @@
 #include "api/ts/remap.h"
 
 #define TSREMAP_FUNCNAME_INIT "TSRemapInit"
+#define TSREMAP_FUNCNAME_CONFIG_RELOAD "TSRemapConfigReload"
 #define TSREMAP_FUNCNAME_DONE "TSRemapDone"
 #define TSREMAP_FUNCNAME_NEW_INSTANCE "TSRemapNewInstance"
 #define TSREMAP_FUNCNAME_DELETE_INSTANCE "TSRemapDeleteInstance"
@@ -43,6 +44,7 @@ class remap_plugin_info
 {
 public:
   typedef TSReturnCode _tsremap_init(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
+  typedef void _tsremap_config_reload();
   typedef void _tsremap_done(void);
   typedef TSReturnCode _tsremap_new_instance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
   typedef void _tsremap_delete_instance(void *);
@@ -54,6 +56,7 @@ public:
   int path_size;
   void *dlh; /* "handle" for the dynamic library */
   _tsremap_init *fp_tsremap_init;
+  _tsremap_config_reload *fp_tsremap_config_reload;
   _tsremap_done *fp_tsremap_done;
   _tsremap_new_instance *fp_tsremap_new_instance;
   _tsremap_delete_instance *fp_tsremap_delete_instance;
@@ -66,6 +69,7 @@ public:
   remap_plugin_info *find_by_path(char *_path);
   void add_to_list(remap_plugin_info *pi);
   void delete_my_list();
+  void indicate_reload();
 };
 
 /**

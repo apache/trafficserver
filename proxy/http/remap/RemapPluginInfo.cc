@@ -31,6 +31,7 @@ remap_plugin_info::remap_plugin_info(char *_path)
     path_size(0),
     dlh(nullptr),
     fp_tsremap_init(nullptr),
+    fp_tsremap_config_reload(nullptr),
     fp_tsremap_done(nullptr),
     fp_tsremap_new_instance(nullptr),
     fp_tsremap_delete_instance(nullptr),
@@ -106,4 +107,20 @@ remap_plugin_info::delete_my_list()
   }
 
   delete this;
+}
+
+//
+// Tell all plugins (that so wish) that remap.config is being reloaded
+//
+void
+remap_plugin_info::indicate_reload()
+{
+  remap_plugin_info *p = this;
+
+  while (p) {
+    if (p->fp_tsremap_config_reload) {
+      p->fp_tsremap_config_reload();
+    }
+    p = p->next;
+  }
 }
