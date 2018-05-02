@@ -40,12 +40,19 @@ namespace ct
 class CacheScan
 {
   Stripe *stripe;
+  url_matcher *u_matcher;
 
 public:
-  CacheScan(Stripe *str) : stripe(str){};
+  CacheScan(Stripe *str, ts::FilePath const &path) : stripe(str)
+  {
+    if (path.has_path()) {
+      u_matcher = new url_matcher(path);
+    }
+  };
+  CacheScan(Stripe *str) : stripe(str) {}
+  Errata Scan(bool search = false);
+  Errata get_alternates(const char *buf, int length, bool search);
   int unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);
-  Errata Scan();
-  Errata get_alternates(const char *buf, int length);
   Errata unmarshal(char *buf, int len, RefCountObj *block_ref);
   Errata unmarshal(HTTPHdrImpl *obj, intptr_t offset);
   Errata unmarshal(URLImpl *obj, intptr_t offset);
