@@ -880,6 +880,24 @@ ssl_track_free(void *ptr, const char * /*filename*/, int /*lineno*/)
   ats_track_free(ptr, &ssl_memory_freed);
 }
 
+/*
+ * Some items are only initialized if certain config values are set
+ * Must have a second pass that initializes after loading the SSL config
+ */
+void
+SSLPostConfigInitialize()
+{
+  if (SSLConfigParams::engine_conf_file) {
+    ENGINE_load_dynamic();
+
+    OPENSSL_load_builtin_modules();
+    if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
+      Error("FATAL: error loading engine configuration file %s", SSLConfigParams::engine_conf_file);
+      // ERR_print_errors_fp(stderr);
+    }
+  }
+}
+
 void
 SSLInitializeLibrary()
 {
@@ -895,22 +913,6 @@ SSLInitializeLibrary()
 
     SSL_load_error_strings();
     SSL_library_init();
-
-#if TS_USE_TLS_ASYNC
-    if (SSLConfigParams::async_handshake_enabled) {
-      ASYNC_init_thread(0, 0);
-    }
-#endif
-
-    if (SSLConfigParams::engine_conf_file) {
-      ENGINE_load_dynamic();
-
-      OPENSSL_load_builtin_modules();
-      if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
-        Error("FATAL: error loading engine configuration file %s", SSLConfigParams::engine_conf_file);
-        // ERR_print_errors_fp(stderr);
-      }
-    }
 
 #ifdef OPENSSL_FIPS
     // calling FIPS_mode_set() will force FIPS to POST (Power On Self Test)
