@@ -275,14 +275,45 @@ public:
 
 class DFA;
 // this class matches url of the format : scheme://hostname:port/path;params?query
+
 struct url_matcher {
-  // R"(^https?\:\/\/^[a-z A-Z 0-9]\.[a-z A-Z 0-9 \.]+)"
+  url_matcher(ts::FilePath const &path) // file contains a list of regex
+  {
+    ts::BulkFile cfile(path);
+    if (cfile.load() == 0) {
+      ts::TextView fileContent = cfile.content();
+      const char **patterns;
+      std::vector<std::string> str_vec;
+      int count = 0;
+      while (fileContent) {
+        ts::TextView line = fileContent.take_prefix_at('\n');
+        std::string reg_str(line.data(), line.size());
+        str_vec.push_back(reg_str);
+        count++;
+      }
+      patterns = (const char **)ats_malloc(count * sizeof(char *));
+      int i    = 0;
+      for (auto str : str_vec) {
+        patterns[i++] = ats_strdup(str.data());
+
+        std::cout << "regex input\n" << patterns[i - 1] << std::endl;
+      }
+      for (i = 0; i < count; i++) {
+        std::cout << "regex " << patterns[i] << std::endl;
+      }
+      if (regex.compile(patterns, count) != 0) {
+        std::cout << "Check your regular expression" << std::endl;
+      }
+
+      if (port.compile(R"([0-9]+$)") != 0) {
+        std::cout << "Check your regular expression" << std::endl;
+        return;
+      }
+    }
+  }
+
   url_matcher()
   {
-    /*if (regex.compile(R"(^https?\:\/\/^[a-z A-Z 0-9][\. a-z A-Z 0-9 ]+(\:[0-9]\/)?.*))") != 0) {
-        std::cout<<"Check your regular expression"<<std::endl;
-    }*/
-    //  (\w+\:[\w\W]+\@)? (:[0-9]+)?(\/.*)
     if (regex.compile(R"(^(https?\:\/\/)") != 0) {
       std::cout << "Check your regular expression" << std::endl;
       return;
@@ -294,14 +325,14 @@ struct url_matcher {
   }
 
   ~url_matcher() {}
+
   uint8_t
   match(const char *hostname) const
   {
     if (regex.match(hostname) != -1) {
       return 1;
     }
-    //   if(url_with_user.match(hostname) != -1)
-    //       return 2;
+
     return 0;
   }
   uint8_t
@@ -310,8 +341,6 @@ struct url_matcher {
     if (port.match(hostname, length) != -1) {
       return 1;
     }
-    //   if(url_with_user.match(hostname) != -1)
-    //       return 2;
     return 0;
   }
 
