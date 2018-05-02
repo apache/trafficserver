@@ -30,6 +30,7 @@ Synopsis
 `#include <ts/remap.h>`
 
 .. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
+.. function:: void TSRemapConfigReload(void)
 .. function:: void TSRemapDone(void)
 .. function:: TSRemapStatus TSRemapDoRemap(void * ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
 .. function:: TSReturnCode TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errbuf_size)
@@ -57,11 +58,16 @@ the remap plugin.
 A remap plugin may be invoked for different remap rules. Traffic Server
 will call the entry point each time a plugin is specified in a remap
 rule. When a remap plugin instance is no longer required, Traffic Server
-will call :func:`TSRemapDeleteInstance`.
+will call :func:`TSRemapDeleteInstance`. At that point, it's safe to remove
+any data or continuations associated with that instance.
 
 :func:`TSRemapDoRemap` is called for each HTTP transaction. This is a mandatory
 entry point. In this function, the remap plugin may examine and modify
 the HTTP transaction.
+
+:func:`TSRemapConfigReload` is called once for every remap plugin just before the
+remap configuration file (:file:`remap.config`) is reloaded. This is an optional
+entry point, which takes no arguments and has no return value.
 
 Types
 =====
