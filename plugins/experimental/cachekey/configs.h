@@ -85,10 +85,10 @@ protected:
 class ConfigQuery : public ConfigElements
 {
 public:
-  bool finalize();
+  bool finalize() override;
 
 private:
-  const String &name() const;
+  const String &name() const override;
   static const String _NAME;
 };
 
@@ -98,12 +98,12 @@ private:
 class ConfigHeaders : public ConfigElements
 {
 public:
-  bool finalize();
+  bool finalize() override;
 
   const StringSet &getInclude() const;
 
 private:
-  const String &name() const;
+  const String &name() const override;
   static const String _NAME;
 };
 
@@ -113,10 +113,10 @@ private:
 class ConfigCookies : public ConfigElements
 {
 public:
-  bool finalize();
+  bool finalize() override;
 
 private:
-  const String &name() const;
+  const String &name() const override;
   static const String _NAME;
 };
 

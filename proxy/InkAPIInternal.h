@@ -100,7 +100,7 @@ struct INKConfigImpl : public ConfigInfo {
   void *mdata;
   TSConfigDestroyFunc m_destroy_func;
 
-  virtual ~INKConfigImpl() { m_destroy_func(mdata); }
+  ~INKConfigImpl() override { m_destroy_func(mdata); }
 };
 
 struct HttpAltInfo {

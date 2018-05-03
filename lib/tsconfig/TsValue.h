@@ -24,12 +24,12 @@
     limitations under the License.
  */
 
-# include <string.h>
-# include <ts/TsBuffer.h>
-# include <tsconfig/NumericType.h>
-# include <tsconfig/IntrusivePtr.h>
-# include <tsconfig/Errata.h>
-# include <vector>
+#include <cstring>
+#include <ts/TsBuffer.h>
+#include <tsconfig/NumericType.h>
+#include <tsconfig/IntrusivePtr.h>
+#include <tsconfig/Errata.h>
+#include <vector>
 
 namespace ts { namespace config {
 

@@ -21,7 +21,7 @@
  * @brief Unit tests for functions implementing S3 auth version 4
  */
 
-#include <string.h>
+#include <cstring>
 #include <openssl/hmac.h>   /* EVP_MAX_MD_SIZE */
 #define CATCH_CONFIG_MAIN   /* include main function */
 #include <catch.hpp>        /* catch unit-test framework */

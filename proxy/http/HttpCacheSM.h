@@ -43,7 +43,7 @@ class HttpCacheSM;
 
 struct HttpCacheAction : public Action {
   HttpCacheAction();
-  virtual void cancel(Continuation *c = nullptr);
+  void cancel(Continuation *c = nullptr) override;
   void
   init(HttpCacheSM *sm_arg)
   {

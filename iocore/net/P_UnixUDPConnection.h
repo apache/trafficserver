@@ -52,11 +52,11 @@ public:
   EventIO ep;
 
   UnixUDPConnection(int the_fd);
-  virtual ~UnixUDPConnection();
+  ~UnixUDPConnection() override;
 
 private:
   int m_errno = 0;
-  virtual void UDPConnection_is_abstract(){};
+  void UDPConnection_is_abstract() override{};
 };
 
 TS_INLINE

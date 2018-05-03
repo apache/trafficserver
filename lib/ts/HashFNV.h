@@ -28,21 +28,21 @@
 #pragma once
 
 #include "ts/Hash.h"
-#include <stdint.h>
+#include <cstdint>
 
 struct ATSHash32FNV1a : ATSHash32 {
   ATSHash32FNV1a(void);
 
   template <typename Transform> void update(const void *data, size_t len, Transform xfrm);
   void
-  update(const void *data, size_t len)
+  update(const void *data, size_t len) override
   {
     update(data, len, ATSHash::nullxfrm());
   }
 
-  void final(void);
-  uint32_t get(void) const;
-  void clear(void);
+  void final(void) override;
+  uint32_t get(void) const override;
+  void clear(void) override;
 
 private:
   uint32_t hval;
@@ -66,14 +66,14 @@ struct ATSHash64FNV1a : ATSHash64 {
 
   template <typename Transform> void update(const void *data, size_t len, Transform xfrm);
   void
-  update(const void *data, size_t len)
+  update(const void *data, size_t len) override
   {
     update(data, len, ATSHash::nullxfrm());
   }
 
-  void final(void);
-  uint64_t get(void) const;
-  void clear(void);
+  void final(void) override;
+  uint64_t get(void) const override;
+  void clear(void) override;
 
 private:
   uint64_t hval;

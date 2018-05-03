@@ -99,7 +99,7 @@
 #include "URL.h"
 
 #ifdef HAVE_CTYPE_H
-#include <ctype.h>
+#include <cctype>
 #endif
 
 #define SignalError(_buf, _already)                         \
@@ -132,10 +132,10 @@ public:
 class HttpRequestData : public RequestData
 {
 public:
-  inkcoreapi char *get_string();
-  inkcoreapi const char *get_host();
-  inkcoreapi sockaddr const *get_ip();
-  inkcoreapi sockaddr const *get_client_ip();
+  inkcoreapi char *get_string() override;
+  inkcoreapi const char *get_host() override;
+  inkcoreapi sockaddr const *get_ip() override;
+  inkcoreapi sockaddr const *get_client_ip() override;
 
   HttpRequestData()
     : hdr(nullptr),

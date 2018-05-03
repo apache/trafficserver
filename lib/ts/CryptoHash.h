@@ -145,9 +145,9 @@ class CryptoContext : public CryptoContextBase
 public:
   CryptoContext();
   /// Update the hash with @a data of @a length bytes.
-  virtual bool update(void const *data, int length);
+  bool update(void const *data, int length) override;
   /// Finalize and extract the @a hash.
-  virtual bool finalize(CryptoHash &hash);
+  bool finalize(CryptoHash &hash) override;
 
   enum HashType {
     UNSPECIFIED,

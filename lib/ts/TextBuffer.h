@@ -35,8 +35,7 @@
 #include "ts/ink_memory.h"
 #include "ts/ink_apidefs.h"
 
-#include <stdarg.h>
-
+#include <cstdarg>
 class TextBuffer
 {
 public:

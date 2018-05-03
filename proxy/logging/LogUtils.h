@@ -22,7 +22,7 @@
  */
 #pragma once
 
-#include "time.h"
+#include <ctime>
 
 #include "ts/ink_platform.h"
 #include "ts/Arena.h"

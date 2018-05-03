@@ -56,7 +56,7 @@ class HttpPagesHandler : public BaseStatPagesHandler
 {
 public:
   HttpPagesHandler(Continuation *cont, HTTPHdr *header);
-  ~HttpPagesHandler();
+  ~HttpPagesHandler() override;
 
   int handle_smlist(int event, void *edata);
   int handle_smdetails(int event, void *edata);

@@ -162,7 +162,7 @@ struct PollCont : public Continuation {
 
   PollCont(Ptr<ProxyMutex> &m, int pt = net_config_poll_timeout);
   PollCont(Ptr<ProxyMutex> &m, NetHandler *nh, int pt = net_config_poll_timeout);
-  ~PollCont();
+  ~PollCont() override;
   int pollEvent(int, Event *);
   void do_poll(ink_hrtime timeout);
 };
@@ -285,7 +285,7 @@ public:
   static std::bitset<std::numeric_limits<unsigned int>::digits> active_thread_types;
 
   int mainNetEvent(int event, Event *data);
-  int waitForActivity(ink_hrtime timeout);
+  int waitForActivity(ink_hrtime timeout) override;
   void process_enabled_list();
   void process_ready_list();
   void manage_keep_alive_queue();
@@ -339,7 +339,7 @@ public:
   void stopCop(UnixNetVConnection *netvc);
 
   // Signal the epoll_wait to terminate.
-  void signalActivity();
+  void signalActivity() override;
 
   /**
     Release a netvc and free it.

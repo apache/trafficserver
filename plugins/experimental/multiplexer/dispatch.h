@@ -23,7 +23,7 @@
 #ifndef DISPATCH_H
 #define DISPATCH_H
 
-#include <assert.h>
+#include <cassert>
 #include <memory>
 #include <string>
 #include <ts/ts.h>

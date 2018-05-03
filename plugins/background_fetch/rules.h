@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 

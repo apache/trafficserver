@@ -10,6 +10,7 @@ Makefile.in
 *.log
 *.trs
 .*.sw*
+*.o.tmp
 
 .deps/
 

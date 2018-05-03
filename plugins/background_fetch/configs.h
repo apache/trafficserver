@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "rules.h"
 #include "ts/ink_atomic.h"

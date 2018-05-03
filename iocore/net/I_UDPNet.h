@@ -44,7 +44,7 @@
 class UDPNetProcessor : public Processor
 {
 public:
-  virtual int start(int n_upd_threads, size_t stacksize) = 0;
+  int start(int n_upd_threads, size_t stacksize) override = 0;
 
   // this function was interanal intially.. this is required for public and
   // interface probably should change.

@@ -32,9 +32,9 @@
 
 #include "ts/ink_config.h"
 #include "ts/ink_assert.h"
-#include <time.h>
+#include <ctime>
 #include <sys/time.h>
-#include <stdlib.h>
+#include <cstdlib>
 typedef int64_t ink_hrtime;
 
 int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);

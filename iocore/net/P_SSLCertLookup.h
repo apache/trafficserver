@@ -103,7 +103,7 @@ struct SSLCertLookup : public ConfigInfo {
   SSLCertContext *get(unsigned i) const;
 
   SSLCertLookup();
-  virtual ~SSLCertLookup();
+  ~SSLCertLookup() override;
 };
 
 void ticket_block_free(void *ptr);

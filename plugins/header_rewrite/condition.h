@@ -113,7 +113,7 @@ public:
   }
 
   // Virtual methods, has to be implemented by each conditional;
-  virtual void initialize(Parser &p);
+  void initialize(Parser &p) override;
   virtual void append_value(std::string &s, const Resources &res) = 0;
 
 protected:

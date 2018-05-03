@@ -140,7 +140,7 @@ enum {
 class HdrStrHeap : public RefCountObj
 {
 public:
-  virtual void free();
+  void free() override;
 
   char *allocate(int nbytes);
   char *expand(char *ptr, int old_size, int new_size);

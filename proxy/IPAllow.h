@@ -113,7 +113,7 @@ public:
   enum match_key_t { SRC_ADDR, DEST_ADDR };
 
   IpAllow(const char *config_var, const char *name, const char *action_val);
-  ~IpAllow();
+  ~IpAllow() override;
   void Print();
   AclRecord *match(IpEndpoint const *ip, match_key_t key) const;
   AclRecord *match(sockaddr const *ip, match_key_t key) const;

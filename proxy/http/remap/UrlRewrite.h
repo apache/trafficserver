@@ -54,7 +54,7 @@ class UrlRewrite : public RefCountObj
 {
 public:
   UrlRewrite();
-  ~UrlRewrite();
+  ~UrlRewrite() override;
 
   int BuildTable(const char *path);
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);

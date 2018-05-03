@@ -97,7 +97,7 @@ public:
 
   void clear();
 
-  virtual ~Variables() { _releaseCookieJar(); };
+  ~Variables() override { _releaseCookieJar(); };
 
   // noncopyable
   Variables(const Variables &) = delete;            // non-copyable

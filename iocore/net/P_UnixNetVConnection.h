@@ -165,7 +165,7 @@ public:
 
   SOCKET get_socket() override;
 
-  virtual ~UnixNetVConnection();
+  ~UnixNetVConnection() override;
 
   /////////////////////////////////////////////////////////////////
   // instances of UnixNetVConnection should be allocated         //

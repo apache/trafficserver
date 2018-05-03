@@ -209,7 +209,7 @@ public:
   NetProcessor(){};
 
   /** Private destructor. */
-  virtual ~NetProcessor(){};
+  ~NetProcessor() override{};
 
   /** This is MSS for connections we accept (client connections). */
   static int accept_mss;

@@ -23,7 +23,7 @@
 #ifndef ORIGINAL_REQUEST_H
 #define ORIGINAL_REQUEST_H
 
-#include <assert.h>
+#include <cassert>
 #include <string>
 #include <ts/ts.h>
 

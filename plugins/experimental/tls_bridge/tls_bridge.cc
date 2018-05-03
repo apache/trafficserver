@@ -19,7 +19,7 @@
 #include "ts/ts.h"
 #include <atomic>
 #include <vector>
-#include <inttypes.h>
+#include <cinttypes>
 #include "ts/TextView.h"
 #include "regex.h"
 

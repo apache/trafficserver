@@ -29,7 +29,7 @@
 struct LogCollationAccept : public Continuation {
 public:
   LogCollationAccept(int port);
-  ~LogCollationAccept();
+  ~LogCollationAccept() override;
 
   int accept_event(int event, NetVConnection *net_vc);
 

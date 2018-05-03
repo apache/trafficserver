@@ -57,7 +57,7 @@ struct SSLConfigParams : public ConfigInfo {
   };
 
   SSLConfigParams();
-  virtual ~SSLConfigParams();
+  ~SSLConfigParams() override;
 
   char *serverCertPathOnly;
   char *serverCertChainFilename;
@@ -169,7 +169,7 @@ struct SSLTicketParams : public ConfigInfo {
   void LoadTicketData(char *ticket_data, int ticket_data_len);
   void cleanup();
 
-  ~SSLTicketParams() { cleanup(); }
+  ~SSLTicketParams() override { cleanup(); }
 };
 
 struct SSLTicketKeyConfig {

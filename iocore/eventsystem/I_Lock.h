@@ -219,7 +219,7 @@ public:
   void print_lock_stats(int flag);
 #endif // LOCK_CONTENTION_PROFILING
 #endif // DEBUG
-  void free();
+  void free() override;
 
   /**
     Constructor - use new_ProxyMutex() instead.

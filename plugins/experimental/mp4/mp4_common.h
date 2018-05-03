@@ -19,11 +19,11 @@
 #ifndef _MP4_COMMON_H
 #define _MP4_COMMON_H
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 #include <unistd.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include <ts/ts.h>
 #include <ts/experimental.h>

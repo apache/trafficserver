@@ -249,7 +249,7 @@ public:
   //  Event *schedule_spawn(Continuation *c, int event, void *cookie = NULL);
 
   EventProcessor();
-  ~EventProcessor();
+  ~EventProcessor() override;
   EventProcessor(const EventProcessor &) = delete;
   EventProcessor &operator=(const EventProcessor &) = delete;
 

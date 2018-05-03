@@ -413,7 +413,7 @@ SSLContextStorage::insert(const char *name, int idx)
     if (subdomain) {
       auto index = this->wilddomains.get(subdomain);
       if (index != -1) {
-        Warning("previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, index, idx);
+        Debug("ssl", "previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, index, idx);
         idx = -1;
       } else {
         this->wilddomains.put(ats_strdup(subdomain), idx);
@@ -422,7 +422,7 @@ SSLContextStorage::insert(const char *name, int idx)
     }
   } else {
     if (ink_hash_table_lookup(this->hostnames, lower_case_name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
-      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
+      Debug("ssl", "previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
       idx = -1;
     } else {
       ink_hash_table_insert(this->hostnames, lower_case_name, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));

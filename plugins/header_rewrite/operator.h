@@ -45,7 +45,7 @@ class Operator : public Statement
 public:
   Operator() : _mods(OPER_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
   OperModifiers get_oper_modifiers() const;
-  virtual void initialize(Parser &p);
+  void initialize(Parser &p) override;
 
   void
   do_exec(const Resources &res) const
@@ -73,7 +73,7 @@ class OperatorHeaders : public Operator
 {
 public:
   OperatorHeaders() : _header("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
-  void initialize(Parser &p);
+  void initialize(Parser &p) override;
 
 protected:
   std::string _header;
@@ -90,7 +90,7 @@ class OperatorCookies : public Operator
 {
 public:
   OperatorCookies() : _cookie("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCookies"); }
-  void initialize(Parser &p);
+  void initialize(Parser &p) override;
 
 protected:
   std::string _cookie;
