@@ -22,17 +22,6 @@
 Bandwidth and Transfer
 **********************
 
-.. ts:stat:: global proxy.node.bandwidth_hit_ratio float
-   :type: derivative
-   :units: ratio
-
-   The difference of :ts:stat:`proxy.node.user_agent_total_bytes` and
-   :ts:stat:`proxy.node.origin_server_total_bytes`, divided by
-   :ts:stat:`proxy.node.user_agent_total_bytes`.
-
-   Represents the ratio of bytes served to user agents which were satisfied by
-   cache hits, since statistics collection began.
-
 .. ts:stat:: global proxy.process.http.throttled_proxy_only integer
 .. ts:stat:: global proxy.process.http.user_agent_request_document_total_size integer
    :type: counter

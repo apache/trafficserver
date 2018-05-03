@@ -56,15 +56,12 @@ static char *epic_prefix;
 // names like proxy.process.cache.volume_XX.*.active
 
 static const std::set<std::string> epic_gauges = {
-  "proxy.node.cache_hit_mem_ratio",
-  "proxy.node.cache_hit_ratio",
   "proxy.node.config.reconfigure_required",
   "proxy.node.config.reconfigure_time",
   "proxy.node.config.restart_required.cop",
   "proxy.node.config.restart_required.manager",
   "proxy.node.config.restart_required.proxy",
   "proxy.node.current_server_connections",
-  "proxy.node.hostdb.hit_ratio",
   "proxy.node.proxy_running",
   "proxy.node.restarts.manager.start_time",
   "proxy.node.restarts.proxy.cache_ready_time",

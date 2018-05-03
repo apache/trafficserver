@@ -38,12 +38,6 @@ msgid ""
 "cache hits, over the previous 10 seconds,"
 msgstr ""
 
-#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:47
-msgid ""
-"The percentage vaue of :ts:stat:`proxy.node.bandwidth_hit_ratio` converted "
-"to an integer."
-msgstr ""
-
 #: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:54
 msgid ""
 "The difference of :ts:stat:`proxy.node.user_agent_total_bytes` and :ts:stat:"

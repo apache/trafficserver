@@ -64,12 +64,6 @@ msgid ""
 "memory cache since statistics collection began."
 msgstr ""
 
-#: ../../admin-guide/monitoring/statistics/core/cache.en.rst:69
-msgid ""
-"The value of :ts:stat:`proxy.node.cache_hit_mem_ratio` converted to an "
-"integer percent."
-msgstr ""
-
 #: ../../admin-guide/monitoring/statistics/core/cache.en.rst:74
 msgid ""
 "Represents the ratio of cache lookups over the previous 10 seconds which "
@@ -81,12 +75,6 @@ msgstr ""
 msgid ""
 "Represents the ratio of cache lookups which have been satisfied by either "
 "the in-memory cache or the on-disk cache since statistics collection began."
-msgstr ""
-
-#: ../../admin-guide/monitoring/statistics/core/cache.en.rst:90
-msgid ""
-"The value of :ts:stat:`proxy.node.cache_hit_ratio` converted to an integer "
-"percent."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/cache.en.rst:95
