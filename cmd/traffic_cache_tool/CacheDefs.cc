@@ -463,13 +463,16 @@ Stripe::dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_c
       e = next_dir(e, seg);
 
     } while (e);
-
+    if (e == nullptr) {
+      std::cout << "No directory entry found matching the URL key" << std::endl;
+      return 0;
+    }
     int fd       = _span->_fd;
     Bytes offset = stripe_offset(e);
     int64_t size = dir_approx_size(e);
     ssize_t n    = pread(fd, stripe_buff2, size, offset);
     if (n < size)
-      std::cout << "Failed to read content from the Stripe:" << strerror(n) << std::endl;
+      std::cout << "Failed to read content from the Stripe:" << strerror(errno) << std::endl;
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
     std::string hdr(doc->hdr(), doc->hlen);

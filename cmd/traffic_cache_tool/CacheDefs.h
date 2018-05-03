@@ -444,10 +444,10 @@ struct Span {
   CacheStoreBlocks _base;   ///< Offset to first usable byte.
   CacheStoreBlocks _offset; ///< Offset to first content byte.
   // The space between _base and _offset is where the span information is stored.
-  CacheStoreBlocks _len;         ///< Total length of span.
-  CacheStoreBlocks _free_space;  ///< Total size of free stripes.
-  ink_device_geometry _geometry; ///< Geometry of span.
-  uint64_t num_usable_blocks;    // number of usable blocks for stripes i.e., after subtracting the skip and the disk header.
+  CacheStoreBlocks _len;                                 ///< Total length of span.
+  CacheStoreBlocks _free_space;                          ///< Total size of free stripes.
+  ink_device_geometry _geometry = ink_device_geometry(); ///< Geometry of span.
+  uint64_t num_usable_blocks    = 0; // number of usable blocks for stripes i.e., after subtracting the skip and the disk header.
   /// Local copy of serialized header data stored on in the span.
   std::unique_ptr<ts::SpanHeader> _header;
   /// Live information about stripes.
@@ -516,8 +516,8 @@ struct Stripe {
   int8_t _idx      = -1; ///< Stripe index in span.
   int agg_buf_pos  = 0;
 
-  int64_t _buckets;  ///< Number of buckets per segment.
-  int64_t _segments; ///< Number of segments.
+  int64_t _buckets  = 0; ///< Number of buckets per segment.
+  int64_t _segments = 0; ///< Number of segments.
 
   std::string hashText;
 
