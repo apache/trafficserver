@@ -113,16 +113,31 @@ public:
 
 private:
   std::string _content; ///< The file contents.
-  size_t _len;          ///< Length of file content.
+  size_t _len = -1;     ///< Length of file content.
 };
 
 /* ------------------------------------------------------------------- */
 
-inline FilePath::FilePath() {}
-inline FilePath::FilePath(char const *path) : _path(path) {}
-inline FilePath::FilePath(TextView const &path) : _path(path.data(), path.size()) {}
-inline FilePath::FilePath(self const &that) : _path(that._path) {}
-inline FilePath::FilePath(self &&that) : _path(std::move(that._path)) {}
+inline FilePath::FilePath()
+{
+  ink_zero(_stat);
+}
+inline FilePath::FilePath(char const *path) : _path(path)
+{
+  ink_zero(_stat);
+}
+inline FilePath::FilePath(TextView const &path) : _path(path.data(), path.size())
+{
+  ink_zero(_stat);
+}
+inline FilePath::FilePath(self const &that) : _path(that._path)
+{
+  ink_zero(_stat);
+}
+inline FilePath::FilePath(self &&that) : _path(std::move(that._path))
+{
+  ink_zero(_stat);
+}
 inline FilePath::operator const char *() const
 {
   return _path.c_str();

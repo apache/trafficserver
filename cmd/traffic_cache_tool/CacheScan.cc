@@ -54,7 +54,7 @@ CacheScan::Scan()
           int64_t offset = this->stripe->stripe_offset(e);
           ssize_t n      = pread(fd, stripe_buff2, size, offset);
           if (n < size)
-            std::cout << "Failed to read content from the Stripe.  " << strerror(n) << std::endl;
+            std::cout << "Failed to read content from the Stripe.  " << strerror(errno) << std::endl;
           Doc *doc = reinterpret_cast<Doc *>(stripe_buff2);
           get_alternates(doc->hdr(), doc->hlen);
 
