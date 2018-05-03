@@ -67,8 +67,8 @@ To view a statistic, enter the following command:::
 where ``variable`` is the variable representing the information you
 want to view. For a list of variables you can specify, refer to :ref:`traffic_ctl metrics <traffic-ctl-metric>`.
 
-For example, the following command displays the document hit rate for
-the Traffic Server node:::
+For example, the following command displays the total number of completed
+HTTP requests:::
 
-     traffic_ctl metric get proxy.node.cache_hit_ratio
+     traffic_ctl metric get proxy.process.http.completed_requests
 

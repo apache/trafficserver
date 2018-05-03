@@ -22,22 +22,12 @@
 Origin Server
 *************
 
-.. ts:stat:: global proxy.node.http.origin_server_current_connections_count integer
-   :type: counter
-
 .. ts:stat:: global proxy.node.http.origin_server_total_request_bytes integer
    :type: counter
    :units: bytes
 
 .. ts:stat:: global proxy.node.http.origin_server_total_response_bytes integer
    :type: counter
-   :units: bytes
-
-.. ts:stat:: global proxy.node.http.origin_server_total_transactions_count integer
-   :type: counter
-
-.. ts:stat:: global proxy.node.origin_server_total_bytes_avg_10s float
-   :type: derivative
    :units: bytes
 
 .. ts:stat:: global proxy.node.origin_server_total_bytes integer

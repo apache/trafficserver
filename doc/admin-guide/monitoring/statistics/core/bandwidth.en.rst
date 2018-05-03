@@ -22,17 +22,6 @@
 Bandwidth and Transfer
 **********************
 
-.. ts:stat:: global proxy.node.bandwidth_hit_ratio_avg_10s float
-   :type: derivative
-   :units: ratio
-
-   The difference of :ts:stat:`proxy.node.user_agent_total_bytes_avg_10s` and
-   :ts:stat:`proxy.node.origin_server_total_bytes_avg_10s`, divided by
-   :ts:stat:`proxy.node.user_agent_total_bytes_avg_10s`.
-
-   Represents the ratio of bytes served to user agents which were satisfied by
-   cache hits, over the previous 10 seconds,
-
 .. ts:stat:: global proxy.node.bandwidth_hit_ratio float
    :type: derivative
    :units: ratio
@@ -43,25 +32,6 @@ Bandwidth and Transfer
 
    Represents the ratio of bytes served to user agents which were satisfied by
    cache hits, since statistics collection began.
-
-.. ts:stat:: global proxy.node.client_throughput_out float
-   :type: gauge
-   :units: mbits
-
-   The value of :ts:stat:`proxy.node.http.throughput` represented in megabits.
-
-.. ts:stat:: global proxy.node.client_throughput_out_kbit integer
-   :type: gauge
-   :units: kbits
-
-   The value of :ts:stat:`proxy.node.http.throughput` represented in kilobits.
-
-.. ts:stat:: global proxy.node.http.throughput integer
-   :type: gauge
-   :units: bytes
-
-   The throughput of responses to user agents over the previous 10 seconds, in
-   bytes.
 
 .. ts:stat:: global proxy.process.http.throttled_proxy_only integer
 .. ts:stat:: global proxy.process.http.user_agent_request_document_total_size integer

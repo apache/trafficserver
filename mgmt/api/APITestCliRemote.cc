@@ -871,27 +871,17 @@ set_stats()
 
   TSRecordSetFloat("proxy.node.bandwidth_hit_ratio", 110, &action);
   TSRecordSetFloat("proxy.node.hostdb.hit_ratio", 110, &action);
-  TSRecordSetFloat("proxy.node.cache.percent_free", 110, &action);
   TSRecordSetFloat("proxy.node.cache_hit_ratio", 110, &action);
   TSRecordSetFloat("proxy.node.cache_hit_mem_ratio", 110, &action);
-  TSRecordSetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.node.http.cache_hit_fresh_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.node.http.cache_hit_mem_fresh_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.node.http.cache_hit_ims_avg_10s", 100, &action);
-  TSRecordSetFloat("proxy.node.client_throughput_out", 110, &action);
 
   TSRecordSetInt("proxy.node.proxy_running", 110, &action);
   TSRecordSetInt("proxy.node.proxy_running", 110, &action);
-  TSRecordSetInt("proxy.node.current_client_connections", 110, &action);
-  TSRecordSetInt("proxy.node.current_cache_connections", 110, &action);
 }
 
 void
 print_stats()
 {
-  TSFloat f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11;
-  TSInt i1, i2, i3, i4, i5, i6, i7, i8, i9;
+  TSInt i1, i2, i3, i4, i5, i6, i7, i8;
 
   fprintf(stderr, "[print_stats]\n");
 
@@ -907,31 +897,13 @@ print_stats()
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1,
           i2, i3, i4, i5, i6, i7, i8);
 
-  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio", &f1);
-  TSRecordGetFloat("proxy.node.hostdb.hit_ratio", &f2);
-  TSRecordGetFloat("proxy.node.cache.percent_free", &f3);
-  TSRecordGetFloat("proxy.node.cache_hit_ratio", &f4);
-  TSRecordGetFloat("proxy.node.cache_hit_mem_ratio", &f10);
-  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", &f5);
-  TSRecordGetFloat("proxy.node.http.cache_hit_fresh_avg_10s", &f6);
-  TSRecordGetFloat("proxy.node.http.cache_hit_mem_fresh_avg_10s", &f11);
-  TSRecordGetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", &f7);
-  TSRecordGetFloat("proxy.node.http.cache_hit_ims_avg_10s", &f8);
-  TSRecordGetFloat("proxy.node.client_throughput_out", &f9);
-
-  fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f10, f5, f6, f11, f7, f8, f9);
-
   TSRecordGetInt("proxy.node.proxy_running", &i4);
   TSRecordGetInt("proxy.node.proxy_running", &i6);
-  TSRecordGetInt("proxy.node.current_client_connections", &i8);
-  TSRecordGetInt("proxy.node.current_cache_connections", &i9);
 
-  fprintf(stderr,
-          "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
-          i1, i7, i2, i3, i4, i5, i6, i8, i9);
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i7, i2, i3, i4,
+          i5, i6);
 
   fprintf(stderr, "PROCESS stats: \n");
-  fprintf(stderr, "%f, %f\n", f1, f2);
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4);
 }
 

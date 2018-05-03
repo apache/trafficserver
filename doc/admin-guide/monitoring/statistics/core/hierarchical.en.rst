@@ -22,9 +22,6 @@
 Hierarchical Cache
 ******************
 
-.. ts:stat:: global proxy.node.http.current_parent_proxy_connections integer
-   :type: counter
-
 .. ts:stat:: global proxy.node.http.parent_proxy_total_request_bytes integer
    :type: counter
    :units: bytes
