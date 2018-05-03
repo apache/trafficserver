@@ -22,25 +22,6 @@
 DNS
 ***
 
-.. ts:stat:: global proxy.node.dns.lookup_avg_time_ms integer
-   :type: derivative
-   :units: milliseconds
-   :ungathered:
-
-   Average number of milliseconds spent performing DNS lookups per host.
-
-.. ts:stat:: global proxy.node.dns.lookups_per_second float
-   :type: derivative
-   :ungathered:
-
-   The average number of DNS lookups performance per second.
-
-.. ts:stat:: global proxy.node.dns.total_dns_lookups integer
-   :type: counter
-   :ungathered:
-
-   Total number of DNS lookups performance since statistics collection began.
-
 .. ts:stat:: global proxy.process.dns.fail_avg_time integer
    :type: derivative
    :units: milliseconds

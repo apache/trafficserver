@@ -103,53 +103,6 @@ including the current node. (Note that these names are contrived, and you are
 advised to both pick as clear and detailed a metric name as possible and also
 to ensure there is no conflict with existing metric names).
 
-Support Functions
------------------
-
-Several supporting functions are defined in the default configuration file.
-Existing dynamic metrics shipped with :file:`metrics.config` make extensive use
-of these functions, and your own custom metrics may as necessary, too.
-
-cluster(name)
-~~~~~~~~~~~~~
-
-Returns the sum of metric ``name`` for the entire cluster of which the current
-node is a member. Memoization is used to avoid additional cost from calling
-this function multiple times within a single metrics pass. The ``name`` must be
-a metric within the node scope.
-
-mbits(bytes)
-~~~~~~~~~~~~
-
-Converts and returns ``bytes`` as megabits (``bytes * 8 / 1000000``).
-
-mbytes(bytes)
-~~~~~~~~~~~~~
-
-Converts and returns ``bytes`` as mebibytes (``bytes / (1024 * 1024)``).
-
-now()
-~~~~~
-
-Returns the current node's time in milliseconds-from-epoch.
-
-rate_of(msec, key, fn)
-~~~~~~~~~~~~~~~~~~~~~~
-
-Returns the rate of change over a period of ``msec`` milliseconds for the
-metric value of ``key`` (obtained by invoking the function ``fn``).
-
-This is accomplished by effectively snapshotting the value of the metric at the
-beginning and end of the given period expressed by ``msec``, multiplying their
-difference by 1,000 and dividing that by ``msec``.
-
-rate_of_10s(key, fn)
-~~~~~~~~~~~~~~~~~~~~
-
-Returns the rate of change for the past 10 seconds for the metric ``key``, as
-calculated by function ``fn``. This function simply wraps ``rate_of`` and
-supplies an ``msec`` value of ``10 * 1000``.
-
 Definition Examples
 -------------------
 
@@ -176,64 +129,6 @@ the value. In this case, the function body is just a ``return`` of the named,
 underlying process statistic. No calculations, aggregates, or other processing
 are performed.
 
-Returning a rate-of-change
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Slightly more involved than just returning a point-in-time value from a given
-statistic is calculating the rate of change:
-
-.. code:: lua
-
-    integer 'proxy.node.dns.lookups_per_second' [[
-      local self = ...
-
-      return rate_of_10s(self,
-        function() return proxy.process.dns.total_dns_lookups end
-      )
-    ]]
-
-Similar to the previous example, we are returning another metric's value, but
-in this case we do so within a function that we're passing into
-``rate_of_10s``. This function, explained earlier, wraps ``rate_of`` which
-tracks the given metric over a specific interval and returns the average
-per-second rate of change, obtaining the values it uses to calculate this rate
-by invoking the function passed to it.
-
-Calculating a rate-of-change's delta
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A more complicated example involves calculating the variance in the rate of
-change of an underlying statistic over a given period of time. This is not an
-average of a statistic, nor is it just the raw delta between two samplings of
-that statistic, and while inappropriate to know *how much* of an event has
-occurred, it is useful to know how erratic or unstable the frequency of that
-event occurring is.
-
-In other words, a large absolute value indicates a deviance from the usual
-pattern of behavior/activity. For example, if your |TS| cache (using the
-example dynamic metric function below) sees between 10,000 and 10,250 HostDB
-hits every 10 seconds, the value returned by this metric will remain fairly
-small. If all of a sudden 50,000 hits make it to HostDB in the span of that
-same averaging interval, this value will increase significantly. This could
-then be used to trigger various alerts that something might be up with HostDB
-lookups on the |TS| cluster.
-
-.. code:: lua
-
-    integer 'proxy.node.hostdb.total_hits_avg_10s' [[
-      local self = ...
-
-      return interval_delta_of_10s(self,
-        function() return proxy.process.hostdb.total_hits end
-      )
-    ]]
-
-The catch is that if the dramatic increase is actually the new norm, the metric
-will return to emitting small absolute values again - even though the statistic
-underneath is now consistently and significantly higher or lower than it used
-to be. If what you are trying to measure, though, is the stability of a metric
-that's, long-term, a good thing.
-
 Converting a metric to a ratio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -256,20 +151,6 @@ reporting states available, but we'll use these for brevity.
           proxy.node.cache.misses +
           proxy.node.cache.revalidates
         )
-    ]]
-
-Summing across a cluster
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-When running a |TS| cluster of multiple nodes, there are many metrics which are
-useful to see at both the node and cluster level. Dynamic metrics make it very
-easy to collect the metric's value for every node in the cluster and return the
-sum, as seen here with cache connections:
-
-.. code:: lua
-
-    counter 'proxy.cluster.http.cache_current_connections_count' [[
-      return cluster('proxy.node.http.cache_current_connections_count')
     ]]
 
 Further Reading
