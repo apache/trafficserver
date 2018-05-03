@@ -35,17 +35,19 @@
 #define DEBUG_LOG(fmt, ...) TSDebug(PLUGIN_NAME, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
-static bool cache_key_no_args = false;
-//ts|mp4|flv
-static char *file_suffix = NULL;
-
 struct txndata {
     char *range_value;
 };
 
+struct rangearge {
+    char *file_suffix;
+    //ts|mp4|flv
+    bool cache_key_no_args;
+};
+
 static void handle_read_request_header(TSCont, TSEvent, void *);
 
-static void range_header_check(TSHttpTxn txnp);
+static void range_header_check(TSHttpTxn txnp, struct rangearge *ra);
 
 static void handle_send_origin_request(TSCont, TSHttpTxn, struct txndata *);
 
@@ -66,8 +68,10 @@ static void transaction_handler(TSCont, TSEvent, void *);
 static void
 handle_read_request_header(TSCont txn_contp, TSEvent event, void *edata) {
     TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-
-    range_header_check(txnp);
+    struct rangearge *ra = (struct rangearge *) TSmalloc(sizeof(struct rangearge));
+    ra->file_suffix = NULL;
+    ra->cache_key_no_args = false;
+    range_header_check(txnp, ra);
 
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
@@ -83,7 +87,7 @@ handle_read_request_header(TSCont txn_contp, TSEvent event, void *edata) {
  *    and TS_HTTP_TXN_CLOSE_HOOK for further processing.
  */
 static void
-range_header_check(TSHttpTxn txnp) {
+range_header_check(TSHttpTxn txnp, struct rangearge *ra) {
     char cache_key_url[8192] = {0};
     char new_url[8192] = {0};
     char *req_url, *comma;
@@ -120,7 +124,7 @@ range_header_check(TSHttpTxn txnp) {
                     }
 
                     if (req_url != nullptr && url_length > 0) {
-                        if (cache_key_no_args) {
+                        if (ra->cache_key_no_args) {
                             comma = strchr(req_url, '?');
                             if (comma != nullptr) {
 
@@ -134,7 +138,7 @@ range_header_check(TSHttpTxn txnp) {
                             }
                         }
 
-                        if (cache_key_no_args && comma != nullptr && strlen(new_url)) {
+                        if (ra->cache_key_no_args && comma != nullptr && strlen(new_url)) {
                             snprintf(cache_key_url, 8192, "%s-%s", new_url, txn_state->range_value);
                             DEBUG_LOG("Rewriting cache1 URL for %s to %s", new_url, cache_key_url);
                         } else {
@@ -407,16 +411,20 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size) {
  */
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /*errbuf */, int /* errbuf_size */) {
+    struct rangearge *range_state;
+    range_state = (struct rangearge *) TSmalloc(sizeof(struct rangearge));
+    range_state->file_suffix = NULL;
+    range_state->cache_key_no_args = false;
     if (argc > 2 && argv[2] && (strncasecmp(argv[2], "all", 3) != 0)) {
-        file_suffix = TSstrdup(argv[2]);
-        DEBUG_LOG("file_suffix is %s", file_suffix);
+        range_state->file_suffix = TSstrdup(argv[2]);
+        DEBUG_LOG("file_suffix is %s", range_state->file_suffix);
     }
 
     if (argc > 3 && argv[3] && argv[3][0] == '1') {
-        DEBUG_LOG("need set cache_key no args!");
-        cache_key_no_args = true;
+        DEBUG_LOG("cache_key_no_args is true!");
+        range_state->cache_key_no_args = true;
     }
-
+    *ih = range_state;
     return TS_SUCCESS;
 }
 
@@ -425,7 +433,15 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /*errbuf */, int /*
  */
 void
 TSRemapDeleteInstance(void *ih) {
-    DEBUG_LOG("no op");
+    if (ih) {
+        struct rangearge *ra = (struct rangearge *)ih;
+        if(ra->file_suffix) {
+            TSfree(ra->file_suffix);
+        }
+        TSfree(ra);
+
+    }
+    DEBUG_LOG( "Delete Instance rangearge!");
 }
 
 /**
@@ -433,7 +449,13 @@ TSRemapDeleteInstance(void *ih) {
  */
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri) {
-    if (file_suffix) {
+
+    struct rangearge *ra = (struct rangearge *)ih;
+    if (ra == NULL) {
+        return TSREMAP_NO_REMAP;
+    }
+
+    if (ra->file_suffix) {
         const char *path;
         int path_len;
         path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
@@ -456,20 +478,20 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri) {
         if (comma != nullptr && (comma + 1) < (pathTmp + path_len)) {
 //            TSDebug(PLUGIN_NAME, "Checking 2 if ");
 //            TSDebug(PLUGIN_NAME, "comma=%s", comma+1);
-//            TSDebug(PLUGIN_NAME, "file_suffix=%s", file_suffix);
-            f_find = strcasestr(file_suffix, comma + 1);
+//            TSDebug(PLUGIN_NAME, "file_suffix=%s", ra->file_suffix);
+            f_find = strcasestr(ra->file_suffix, comma + 1);
             if (f_find != nullptr) {
                 DEBUG_LOG("TSRemapDoRemap f_find");
-                range_header_check(txnp);
+                range_header_check(txnp, ra);
             } else {
-                if (cache_key_no_args) {
+                if (ra->cache_key_no_args) {
                     change_cache_key(txnp);
                 }
             }
         }
     } else {
         DEBUG_LOG("TSRemapDoRemap else");
-        range_header_check(txnp);
+        range_header_check(txnp, ra);
     }
 
     return TSREMAP_NO_REMAP;
@@ -498,6 +520,7 @@ TSPluginInit(int argc, const char *argv[]) {
         return;
     } else {
         TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, txnp_cont);
+
     }
 }
 
