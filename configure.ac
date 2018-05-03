@@ -205,6 +205,15 @@ AC_ARG_ENABLE([asan],
 )
 AC_MSG_RESULT([$enable_asan])
 
+# Enable LSAN in stand-alone mode for the builds
+AC_MSG_CHECKING([whether to enable lsan])
+AC_ARG_ENABLE([lsan],
+  [AS_HELP_STRING([--enable-lsan],[enable stand-alone Leak Sanitizer])],
+  [],
+  [enable_lsan=no]
+)
+AC_MSG_RESULT([$enable_lsan])
+
 # Enable TSAN for the builds
 AC_MSG_CHECKING([whether to enable tsan])
 AC_ARG_ENABLE([tsan],
@@ -980,6 +989,15 @@ if test "x${enable_asan}" = "xyes"; then
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+fi
+
+# Flags for LSAN stand-alone mode
+if test "x${enable_lsan}" = "xyes"; then
+  if test "x${enable_asan}" = "xyes"; then
+    AC_ERROR([ASAN already specified, --enable-lsan is meant only for lsan stand-alone mode])
+  fi
+  TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
+  TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
 fi
 
 # Flags for TSAN
