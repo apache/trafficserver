@@ -27,13 +27,6 @@ health checks. The statistics documented here can help to ensure that your |TS|
 instances are not spending an unreasonable amount of timing resolving your
 origin servers' hostnames prior to object revalidation or retrieval.
 
-.. ts:stat:: global proxy.node.hostdb.hit_ratio float
-   :type: derivative
-   :units: ratio
-
-   Represents the ratio of origin server name resolutions which were satisfied
-   by the HostDB lookup cache since statistics collection began.
-
 .. ts:stat:: global proxy.process.hostdb.bytes integer
    :type: counter
    :units: bytes

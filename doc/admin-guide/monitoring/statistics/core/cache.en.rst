@@ -27,16 +27,6 @@ Cache
 
    Represents the number of documents currently residing in the cache.
 
-.. ts:stat:: global proxy.node.cache_hit_mem_ratio float
-
-   Represents the ratio of cache lookups which have been satisfied by the
-   in-memory cache since statistics collection began.
-
-.. ts:stat:: global proxy.node.cache_hit_ratio float
-
-   Represents the ratio of cache lookups which have been satisfied by either the
-   in-memory cache or the on-disk cache since statistics collection began.
-
 .. ts:stat:: global proxy.node.cache_total_hits counter
 
    Represents the total number of cache lookups which have been satisfied by

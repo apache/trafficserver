@@ -869,11 +869,6 @@ set_stats()
   TSRecordSetInt("proxy.process.http.current_server_connections", 100, &action);
   TSRecordSetInt("proxy.process.http.current_server_transactions", 100, &action);
 
-  TSRecordSetFloat("proxy.node.bandwidth_hit_ratio", 110, &action);
-  TSRecordSetFloat("proxy.node.hostdb.hit_ratio", 110, &action);
-  TSRecordSetFloat("proxy.node.cache_hit_ratio", 110, &action);
-  TSRecordSetFloat("proxy.node.cache_hit_mem_ratio", 110, &action);
-
   TSRecordSetInt("proxy.node.proxy_running", 110, &action);
   TSRecordSetInt("proxy.node.proxy_running", 110, &action);
 }

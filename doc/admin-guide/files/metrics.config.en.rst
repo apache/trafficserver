@@ -129,30 +129,6 @@ the value. In this case, the function body is just a ``return`` of the named,
 underlying process statistic. No calculations, aggregates, or other processing
 are performed.
 
-Converting a metric to a ratio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Using a very simplified version of the |TS| cache hit reporting, we can
-demonstrate taking a metric which expresses the occurrence of one type of event
-within a set of possibilities and converting its absolute value into a ratio
-of that set's total.
-
-In this example, we assume we have three cache hit states (misses, hits, and
-revalidates) and they are tracked in the metrics ``proxy.node.cache.<state>``.
-These are not the real metric names in |TS|, and there are much finer grained
-reporting states available, but we'll use these for brevity.
-
-.. code:: lua
-
-    float 'proxy.node.cache.hits_ratio' [[
-      return
-        proxy.node.cache.hits /
-        ( proxy.node.cache.hits +
-          proxy.node.cache.misses +
-          proxy.node.cache.revalidates
-        )
-    ]]
-
 Further Reading
 ===============
 

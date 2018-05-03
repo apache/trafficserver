@@ -52,12 +52,6 @@ msgid ""
 "by the HostDB lookup cache since statistics collection began."
 msgstr ""
 
-#: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:48
-msgid ""
-"The value of :ts:stat:`proxy.node.hostdb.hit_ratio` converted to an integer "
-"percent."
-msgstr ""
-
 #: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:54
 msgid ""
 "Represents the number of origin server name resolutions which were "

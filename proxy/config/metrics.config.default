@@ -14,10 +14,6 @@
 --
 -- HTTP Cache.
 --
-float 'proxy.node.hostdb.hit_ratio' [[
-  return proxy.process.hostdb.total_hits / proxy.process.hostdb.total_lookups
-]]
-
 counter 'proxy.node.http.user_agent_total_request_bytes' [[
   return proxy.process.http.user_agent_request_document_total_size +
     proxy.process.http.user_agent_request_header_total_size
@@ -52,11 +48,6 @@ counter 'proxy.node.origin_server_total_bytes' [[
     proxy.node.http.parent_proxy_total_response_bytes
 ]]
 
-float 'proxy.node.bandwidth_hit_ratio' [[
-  return (proxy.node.user_agent_total_bytes - proxy.node.origin_server_total_bytes)
-      / proxy.node.user_agent_total_bytes
-]]
-
 counter 'proxy.node.cache_total_hits' [[
   return proxy.process.http.cache_hit_fresh +
     proxy.process.http.cache_hit_revalidated +
@@ -75,24 +66,6 @@ counter 'proxy.node.cache_total_misses' [[
     proxy.process.http.cache_miss_client_no_cache +
     proxy.process.http.cache_miss_ims             +
     proxy.process.http.cache_read_error
-]]
-
-float 'proxy.node.cache_hit_ratio' [[
-  return
-    proxy.node.cache_total_hits   /
-    (
-      proxy.node.cache_total_hits   +
-      proxy.node.cache_total_misses
-    )
-]]
-
-float 'proxy.node.cache_hit_mem_ratio' [[
-  return
-    proxy.node.cache_total_hits_mem   /
-    (
-    proxy.node.cache_total_hits   +
-    proxy.node.cache_total_misses
-    )
 ]]
 
 integer 'proxy.node.current_server_connections' [[
