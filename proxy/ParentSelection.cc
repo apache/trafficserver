@@ -519,8 +519,13 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   return nullptr;
 
 MERROR:
-  ats_free(parents);
-  parents = nullptr;
+  if (isPrimary) {
+    ats_free(parents);
+    parents = nullptr;
+  } else {
+    ats_free(secondary_parents);
+    secondary_parents = nullptr;
+  }
 
   return errPtr;
 }
