@@ -24,11 +24,12 @@
 
 int thread_freelist_high_watermark = 512;
 int thread_freelist_low_watermark  = 32;
+extern int cmd_disable_freelist;
 
 void *
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {
-  if (l.freelist) {
+  if (!cmd_disable_freelist && l.freelist) {
     void *v    = (void *)l.freelist;
     l.freelist = *(void **)l.freelist;
     --(l.allocated);
