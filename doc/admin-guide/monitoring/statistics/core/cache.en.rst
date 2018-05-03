@@ -27,13 +27,13 @@ Cache
 
    Represents the number of documents currently residing in the cache.
 
-.. ts:stat:: global proxy.node.cache_total_hits counter
+.. ts:stat:: global proxy.process.cache_total_hits counter
 
    Represents the total number of cache lookups which have been satisfied by
    either the in-memory cache or the on-disk cache, since statistics collection
    began.
 
-.. ts:stat:: global proxy.node.cache_total_misses counter
+.. ts:stat:: global proxy.process.cache_total_misses counter
 
    Represents the total number of cache lookups which could not be satisfied by
    either the in-memory cache or the on-disk cache, and which required origin

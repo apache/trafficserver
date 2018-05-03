@@ -22,14 +22,14 @@
 HTTP Connection
 ***************
 
-.. ts:stat:: global proxy.node.current_server_connections integer
+.. ts:stat:: global proxy.process.current_server_connections integer
    :type: gauge
 
-.. ts:stat:: global proxy.node.http.user_agent_total_request_bytes integer
+.. ts:stat:: global proxy.process.http.user_agent_total_request_bytes integer
    :type: counter
    :units: bytes
 
-.. ts:stat:: global proxy.node.http.user_agent_total_response_bytes integer
+.. ts:stat:: global proxy.process.http.user_agent_total_response_bytes integer
    :type: counter
    :units: bytes
 
