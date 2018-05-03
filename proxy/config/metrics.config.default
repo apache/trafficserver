@@ -14,52 +14,48 @@
 --
 -- HTTP Cache.
 --
-counter 'proxy.node.http.user_agent_total_request_bytes' [[
+counter 'proxy.process.http.user_agent_total_request_bytes' [[
   return proxy.process.http.user_agent_request_document_total_size +
     proxy.process.http.user_agent_request_header_total_size
 ]]
 
-counter 'proxy.node.http.user_agent_total_response_bytes' [[
+counter 'proxy.process.http.user_agent_total_response_bytes' [[
   return proxy.process.http.user_agent_response_document_total_size +
     proxy.process.http.user_agent_response_header_total_size
 ]]
 
-counter 'proxy.node.http.origin_server_total_request_bytes' [[
+counter 'proxy.process.http.origin_server_total_request_bytes' [[
   return proxy.process.http.origin_server_request_document_total_size +
     proxy.process.http.origin_server_request_header_total_size
 ]]
 
-counter 'proxy.node.http.origin_server_total_response_bytes' [[
+counter 'proxy.process.http.origin_server_total_response_bytes' [[
   return proxy.process.http.origin_server_response_document_total_size +
     proxy.process.http.origin_server_response_header_total_size
 ]]
 
 -- Add up the downstream (client <-> proxy) traffic volume.
-counter 'proxy.node.user_agent_total_bytes' [[
-  return proxy.node.http.user_agent_total_request_bytes +
-    proxy.node.http.user_agent_total_response_bytes
+counter 'proxy.process.user_agent_total_bytes' [[
+  return proxy.process.http.user_agent_total_request_bytes +
+    proxy.process.http.user_agent_total_response_bytes
 ]]
 
 -- Add up the upstream (client <-> proxy) traffic volume.
-counter 'proxy.node.origin_server_total_bytes' [[
-  return proxy.node.http.origin_server_total_request_bytes +
-    proxy.node.http.origin_server_total_response_bytes +
-    proxy.node.http.parent_proxy_total_request_bytes +
-    proxy.node.http.parent_proxy_total_response_bytes
+counter 'proxy.process.origin_server_total_bytes' [[
+  return proxy.process.http.origin_server_total_request_bytes +
+    proxy.process.http.origin_server_total_response_bytes +
+    proxy.process.http.parent_proxy_request_total_bytes +
+    proxy.process.http.parent_proxy_response_total_bytes
 ]]
 
-counter 'proxy.node.cache_total_hits' [[
+counter 'proxy.process.cache_total_hits' [[
   return proxy.process.http.cache_hit_fresh +
     proxy.process.http.cache_hit_revalidated +
     proxy.process.http.cache_hit_ims +
     proxy.process.http.cache_hit_stale_served
 ]]
 
-counter 'proxy.node.cache_total_hits_mem' [[
-  return proxy.process.http.cache_hit_mem_fresh
-]]
-
-counter 'proxy.node.cache_total_misses' [[
+counter 'proxy.process.cache_total_misses' [[
   return
     proxy.process.http.cache_miss_cold            +
     proxy.process.http.cache_miss_changed         +
@@ -68,7 +64,7 @@ counter 'proxy.node.cache_total_misses' [[
     proxy.process.http.cache_read_error
 ]]
 
-integer 'proxy.node.current_server_connections' [[
+integer 'proxy.process.current_server_connections' [[
   return
     proxy.process.http.current_server_connections +
     proxy.process.http.current_parent_proxy_connections
