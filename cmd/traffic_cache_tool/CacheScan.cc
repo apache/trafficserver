@@ -268,7 +268,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
-  int tmp;
+  int tmp         = 0;
   if (heap != nullptr) {
     tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
     if (hh == nullptr || tmp < 0) {
