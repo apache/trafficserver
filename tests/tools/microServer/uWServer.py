@@ -299,10 +299,7 @@ class MyHandler(BaseHTTPRequestHandler):
         try:
             self.headers = http.client.parse_headers(self.rfile,
                                                      _class=self.MessageClass)
-            if test_mode_enabled:
-                key = self.getLookupKey(self.requestline)
-            else:
-                key, __ = cgi.parse_header(self.headers.get('Content-MD5'))
+            key = self.getLookupKey(self.requestline)
             self.resp = G_replay_dict[key] if key in G_replay_dict else None
 
             if self.resp is None or 'skipHooks' not in self.resp.getOptions():
@@ -521,7 +518,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
                         lengthSTR = header.split(':')[1]
                         length = lengthSTR.strip(' ')
-                        if test_mode_enabled:  # the length of the body is given priority in test mode rather than the value in Content-Length. But in replay mode Content-Length gets the priority
+                        if test_mode_enabled:  # the length of the body is given priority in test mode rather than the value in Content-Length. Otherwise, Content-Length gets the priority
                             if not (self.resp.getBody()):  # Don't attach content-length yet if body is present in the response specified by tester
                                 self.send_header('Content-Length', str(length))
                         else:
