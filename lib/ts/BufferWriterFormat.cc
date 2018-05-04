@@ -591,14 +591,14 @@ bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
 BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span)
 {
-  static const BWFormat default_fmt{"{:#x}@{}"};
+  static const BWFormat default_fmt{"{:#x}@{:p}"};
   if (spec._ext.size() && 'd' == spec._ext.front()) {
     const char *digits = 'X' == spec._type ? bw_fmt::UPPER_DIGITS : bw_fmt::LOWER_DIGITS;
     if (spec._radix_lead_p) {
       w.write('0');
       w.write(digits[33]);
     }
-    bw_fmt::Hex_Dump(w, string_view{static_cast<char *>(span.data()), span.usize()}, digits);
+    bw_fmt::Hex_Dump(w, span.view(), digits);
   } else {
     w.print(default_fmt, span.size(), span.data());
   }
