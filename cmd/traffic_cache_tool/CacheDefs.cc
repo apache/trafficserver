@@ -270,7 +270,7 @@ Stripe::validateMeta(StripeMeta const *meta)
 bool
 Stripe::probeMeta(MemSpan &mem, StripeMeta const *base_meta)
 {
-  while (mem.usize() >= sizeof(StripeMeta)) {
+  while (mem.size() >= sizeof(StripeMeta)) {
     StripeMeta const *meta = mem.ptr<StripeMeta>(0);
     if (this->validateMeta(meta) && (base_meta == nullptr ||               // no base version to check against.
                                      (meta->version == base_meta->version) // need more checks here I think.
