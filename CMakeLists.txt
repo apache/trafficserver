@@ -1269,6 +1269,8 @@ add_library(libtsutil SHARED
         lib/ts/Map.h
         lib/ts/MatcherUtils.cc
         lib/ts/MatcherUtils.h
+        lib/ts/MemArena.h
+        lib/ts/MemArena.cc
         lib/ts/MemSpan.h
         lib/ts/mkdfa.c
         lib/ts/MMH.cc
@@ -1332,6 +1334,8 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_ink_inet.cc
 	lib/ts/unit-tests/test_IpMap.cc
 	lib/ts/unit-tests/test_layout.cc
+	lib/ts/unit-tests/test_MemArena.cc
+	lib/ts/unit-tests/test_MemSpan.cc
 	lib/ts/unit-tests/test_MT_hashtable.cc
 	lib/ts/unit-tests/test_Scalar.cc
 	lib/ts/unit-tests/test_string_view.cc
