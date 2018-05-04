@@ -330,6 +330,7 @@ Stripe::updateHeaderFooter()
       std::cout << "problem writing dir to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << dir_size << std::endl;
       zret = Errata::Message(0, errno, "Failed to write stripe header ");
+      ats_free(meta_t);
       return zret;
     }
 
