@@ -235,9 +235,9 @@ code is session level (``S``) or transaction level (``T``).
 When no error code is received or transmitted, these fileds are ``-``.
 For HTTP/2, error code are described in RFC 7540 section 7.
 
-===== ====== ==================================================================
-Field Source Description
-===== ====== ==================================================================
+===== =============== =========================================================
+Field Source          Description
+===== =============== =========================================================
 crec  Client Request  Error code in hex which |TS| received
 ctec  Client Response Error code in hex which |TS| transmitted
 ===== =============== =========================================================
