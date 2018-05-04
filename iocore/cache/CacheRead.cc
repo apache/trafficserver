@@ -784,7 +784,7 @@ Lread : {
         if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
           DDebug("cache_read_agg", "%p: key: %X ReadMain complete: %d", this, first_key.slice32(1), (int)vio.ndone);
           doc_len = vio.ndone;
-          goto Leos;
+          goto Lcomplete;
         }
       }
       DDebug("cache_read_agg", "%p: key: %X ReadMain writer aborted: %d", this, first_key.slice32(1), (int)vio.ndone);
@@ -802,6 +802,8 @@ Lread : {
   // remove the directory entry
   dir_delete(&earliest_key, vol, &earliest_dir);
 }
+Lcomplete:
+  return calluser(VC_EVENT_READ_COMPLETE);
 Lerror:
   return calluser(VC_EVENT_ERROR);
 Leos:
