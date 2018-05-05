@@ -53,7 +53,7 @@ Synopsis
     local HOSTNAME = ''
     function __init__(argtb)
         if (#argtb) < 1 then
-            print(argtb[0], 'hostname parameter required!!')
+            ts.debug(argtb[0] .. ' hostname parameter required!!')
             return -1
         end
         HOSTNAME = argtb[1]
@@ -212,9 +212,30 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+TS Basic Internal Information
+-----------------------------
+**syntax:** *ts.get_install_dir()*
+**syntax:** *ts.get_runtime_dir()*
+**syntax:** *ts.get_config_dir()*
+**syntax:** *ts.get_plugin_dir()*
+**syntax:** *ts.get_traffic_server_version()*
+
+**context:** global 
+
+**description**: get basic internal information for the TS instance, such as install directory, runtime directory,
+config directory, plugin directory and version of ATS
+
+Here is an example:
+
+::
+
+       local config_dir = ts.get_config_dir()
+
+`TOP <#ts-lua-plugin>`_
+
 Remap status constants
 ----------------------
-**context:** do_remap
+**context:** do_emap
 
 ::
 
@@ -567,7 +588,7 @@ Here is an example:
 
     function do_remap()
         local uri = ts.client_request.get_uri()
-        print(uri)
+        ts.debug(uri)
     end
 
 Then ``GET /st?a=1`` will yield the output:
@@ -604,7 +625,7 @@ Here is an example:
 
     function do_remap()
         local query = ts.client_request.get_uri_args()
-        print(query)
+        ts.debug(query)
     end
 
 Then ``GET /st?a=1&b=2`` will yield the output:
@@ -643,7 +664,7 @@ Here is an example:
 
     function do_remap()
         local query = ts.client_request.get_uri_params()
-        print(query)
+        ts.debug(query)
     end
 
 Then ``GET /st;a=1`` will yield the output:
@@ -682,7 +703,7 @@ Here is an example:
 
     function do_remap()
         local url = ts.client_request.get_url()
-        print(url)
+        ts.debug(url)
     end
 
 Then ``GET /st?a=1&b=2 HTTP/1.1\r\nHost: a.tbcdn.cn\r\n...`` will yield the output:
@@ -709,7 +730,7 @@ Here is an example:
 
     function do_remap()
         local ua = ts.client_request.header['User-Agent']
-        print(ua)
+        ts.debug(ua)
         ts.client_request.header['Host'] = 'a.tbcdn.cn'
     end
 
@@ -735,7 +756,7 @@ Here is an example:
     function do_remap()
         hdrs = ts.client_request.get_headers()
         for k, v in pairs(hdrs) do
-            print(k..': '..v)
+            ts.debug(k..': '..v)
         end
     end
 
@@ -764,9 +785,9 @@ Here is an example:
 
     function do_remap()
         ip, port, family = ts.client_request.client_addr.get_addr()
-        print(ip)               -- 192.168.231.17
-        print(port)             -- 17786
-        print(family)           -- 2(AF_INET)
+        ts.debug(ip)               -- 192.168.231.17
+        ts.debug(port)             -- 17786
+        ts.debug(family)           -- 2(AF_INET)
         return 0
     end
 
@@ -788,7 +809,7 @@ Here is an example:
 
     function do_global_read_request()
         port = ts.client_request.client_addr.get_incoming_port()
-        print(port)             -- 80
+        ts.debug(port)             -- 80
     end
 
 `TOP <#ts-lua-plugin>`_
@@ -807,7 +828,7 @@ Here is an example:
 
     function do_remap()
         local url_host = ts.client_request.get_url_host()
-        print(url_host)
+        ts.debug(url_host)
     end
 
 Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
@@ -860,7 +881,7 @@ Here is an example:
 
     function do_remap()
         local url_port = ts.client_request.get_url_port()
-        print(url_port)
+        ts.debug(url_port)
     end
 
 Then Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
@@ -896,7 +917,7 @@ Here is an example:
 
     function do_remap()
         local url_scheme = ts.client_request.get_url_scheme()
-        print(url_scheme)
+        ts.debug(url_scheme)
     end
 
 Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
@@ -1112,9 +1133,9 @@ Here is an example:
     function cache_lookup()
         local cache_status = ts.http.get_cache_lookup_status()
         if cache_status == TS_LUA_CACHE_LOOKUP_HIT_FRESH then
-            print('hit')
+            ts.debug('hit')
         else
-            print('not hit')
+            ts.debug('not hit')
         end
     end
 
@@ -1141,9 +1162,9 @@ Here is an example:
     function cache_lookup()
         local cache_status = ts.http.get_cache_lookup_status()
         if cache_status == TS_LUA_CACHE_LOOKUP_HIT_FRESH then
-            print('hit')
+            ts.debug('hit')
         else
-            print('not hit')
+            ts.debug('not hit')
         end
         ts.http.set_cache_lookup_status(TS_LUA_CACHE_LOOKUP_MISS)
     end
@@ -1187,7 +1208,7 @@ Here is an example:
         local cache_status = ts.http.get_cache_lookup_status()
         if cache_status == TS_LUA_CACHE_LOOKUP_HIT_FRESH then
             code = ts.cached_response.get_status()
-            print(code)         -- 200
+            ts.debug(code)         -- 200
         end
     end
 
@@ -1229,7 +1250,7 @@ Here is an example:
         local status = ts.http.get_cache_lookup_status()
         if status == TS_LUA_CACHE_LOOKUP_HIT_FRESH then
             local ct = ts.cached_response.header['Content-Type']
-            print(ct)         -- text/plain
+            ts.debug(ct)         -- text/plain
         end
     end
 
@@ -1258,7 +1279,7 @@ Here is an example:
         if status == TS_LUA_CACHE_LOOKUP_HIT_FRESH then
             hdrs = ts.cached_response.get_headers()
             for k, v in pairs(hdrs) do
-                print(k..': '..v)
+                ts.debug(k..': '..v)
             end
         end
     end
@@ -1299,7 +1320,7 @@ Here is an example:
 
     function send_request()
         local uri = ts.server_request.get_uri()
-        print(uri)
+        ts.debug(uri)
     end
 
     function do_remap()
@@ -1341,7 +1362,7 @@ Here is an example:
 
     function send_request()
         local query = ts.server_request.get_uri_args()
-        print(query)
+        ts.debug(query)
     end
 
     function do_remap()
@@ -1385,7 +1406,7 @@ Here is an example:
 
     function send_request()
         local query = ts.server_request.get_uri_params()
-        print(query)
+        ts.debug(query)
     end
 
     function do_remap()
@@ -1433,7 +1454,7 @@ Here is an example:
 
     function send_request()
         local ua = ts.server_request.header['User-Agent']
-        print(ua)
+        ts.debug(ua)
         ts.server_request.header['Accept-Encoding'] = 'gzip'
     end
 
@@ -1464,7 +1485,7 @@ Here is an example:
     function send_request()
         hdrs = ts.cached_response.get_headers()
         for k, v in pairs(hdrs) do
-            print(k..': '..v)
+            ts.debug(k..': '..v)
         end
     end
 
@@ -1532,9 +1553,9 @@ Here is an example:
 
     function do_global_send_request()
         ip, port, family = ts.server_request.server_addr.get_addr()
-        print(ip)               -- 192.168.231.17
-        print(port)             -- 80
-        print(family)           -- 2(AF_INET)
+        ts.debug(ip)               -- 192.168.231.17
+        ts.debug(port)             -- 80
+        ts.debug(family)           -- 2(AF_INET)
     end
 
 `TOP <#ts-lua-plugin>`_
@@ -1555,9 +1576,9 @@ Here is an example:
 
     function do_global_send_request()
         ip, port, family = ts.server_request.server_addr.get_nexthop_addr()
-        print(ip)               -- 192.168.231.17
-        print(port)             -- 80
-        print(family)           -- 2(AF_INET)
+        ts.debug(ip)               -- 192.168.231.17
+        ts.debug(port)             -- 80
+        ts.debug(family)           -- 2(AF_INET)
     end
 
 `TOP <#ts-lua-plugin>`_
@@ -1578,7 +1599,7 @@ Here is an example:
 
     function do_global_send_request()
         ip = ts.server_request.server_addr.get_ip()
-        print(ip)               -- 192.168.231.17
+        ts.debug(ip)               -- 192.168.231.17
     end
 
 `TOP <#ts-lua-plugin>`_
@@ -1599,7 +1620,7 @@ Here is an example:
 
     function do_global_send_request()
         port = ts.server_request.server_addr.get_port()
-        print(port)             -- 80
+        ts.debug(port)             -- 80
     end
 
 `TOP <#ts-lua-plugin>`_
@@ -1620,7 +1641,7 @@ Here is an example:
 
     function do_global_send_request()
         port = ts.server_request.server_addr.get_outgoing_port()
-        print(port)             -- 50880
+        ts.debug(port)             -- 50880
     end
 
 `TOP <#ts-lua-plugin>`_
@@ -1659,7 +1680,7 @@ Here is an example:
 
     function send_request()
         local url_host = ts.server_request.get_url_host()
-        print(url_host)
+        ts.debug(url_host)
     end
 
     function do_remap()
@@ -1737,7 +1758,7 @@ Here is an example:
 
     function send_request()
         local url_scheme = ts.server_request.get_url_scheme()
-        print(url_host)
+        ts.debug(url_host)
     end
 
     function do_remap()
@@ -1776,7 +1797,7 @@ Here is an example:
 
     function read_response()
         local code = ts.server_response.get_status()
-        print(code)         -- 200
+        ts.debug(code)         -- 200
     end
 
     function do_remap()
@@ -1855,7 +1876,7 @@ Here is an example:
 
     function read_response()
         local ct = ts.server_response.header['Content-Type']
-        print(ct)
+        ts.debug(ct)
         ts.server_response.header['Cache-Control'] = 'max-age=14400'
     end
 
@@ -1886,7 +1907,7 @@ Here is an example:
     function read_response()
         hdrs = ts.server_response.get_headers()
         for k, v in pairs(hdrs) do
-            print(k..': '..v)
+            ts.debug(k..': '..v)
         end
     end
 
@@ -1927,7 +1948,7 @@ Here is an example:
 
     function send_response()
         local code = ts.client_response.get_status()
-        print(code)         -- 200
+        ts.debug(code)         -- 200
     end
 
     function do_remap()
@@ -2006,7 +2027,7 @@ Here is an example:
 
     function send_response()
         local ct = ts.client_response.header['Content-Type']
-        print(ct)
+        ts.debug(ct)
         ts.client_response.header['Cache-Control'] = 'max-age=3600'
     end
 
@@ -2037,7 +2058,7 @@ Here is an example:
     function send_response()
         hdrs = ts.client_response.get_headers()
         for k, v in pairs(hdrs) do
-            print(k..': '..v)
+            ts.debug(k..': '..v)
         end
     end
 
@@ -2432,6 +2453,27 @@ Here is an example
 
 `TOP <#ts-lua-plugin>`_
 
+Server state constants
+----------------------
+**context:** global
+
+::
+
+    TS_LUA_SRVSTATE_STATE_UNDEFINED (0)
+    TS_LUA_SRVSTATE_ACTIVE_TIMEOUT (1)
+    TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE (2)
+    TS_LUA_SRVSTATE_CONNECTION_ALIVE (3)
+    TS_LUA_SRVSTATE_CONNECTION_CLOSED (4)
+    TS_LUA_SRVSTATE_CONNECTION_ERROR (5)
+    TS_LUA_SRVSTATE_INACTIVE_TIMEOUT(6)
+    TS_LUA_SRVSTATE_OPEN_RAW_ERROR (7)
+    TS_LUA_SRVSTATE_PARSE_ERROR (8)
+    TS_LUA_SRVSTATE_TRANSACTION_COMPLETE (9)
+    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F (10)
+    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M (11)
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.get_remap_from_url
 --------------------------
 **syntax:** *ts.http.get_remap_from_url()*
@@ -2470,27 +2512,43 @@ Here is an example
 
 `TOP <#ts-lua-plugin>`_
 
-Server state constants
-----------------------
-**context:** global
+ts.http.get_client_fd
+---------------------
+**syntax:** *ts.http.get_client_fd()*
+
+**context:** after do_global_read_request
+
+**description:** This function can be used to get the client FD for the transaction.
+
+Here is an example
 
 ::
 
-    TS_LUA_SRVSTATE_STATE_UNDEFINED (0)
-    TS_LUA_SRVSTATE_ACTIVE_TIMEOUT (1)
-    TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE (2)
-    TS_LUA_SRVSTATE_CONNECTION_ALIVE (3)
-    TS_LUA_SRVSTATE_CONNECTION_CLOSED (4)
-    TS_LUA_SRVSTATE_CONNECTION_ERROR (5)
-    TS_LUA_SRVSTATE_INACTIVE_TIMEOUT(6)
-    TS_LUA_SRVSTATE_OPEN_RAW_ERROR (7)
-    TS_LUA_SRVSTATE_PARSE_ERROR (8)
-    TS_LUA_SRVSTATE_TRANSACTION_COMPLETE (9)
-    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F (10)
-    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M (11)
+    function do_global_read_request()
+        local fd = ts.http.get_client_fd()
+        ts.debug(fd)
+    end
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.get_server_fd
+---------------------
+**syntax:** *ts.http.get_server_fd()*
+
+**context:** after do_global_send_request
+
+**description:** This function can be used to get the server (origin) FD for the transaction.
+
+Here is an example
+
+::
+
+    function do_global_send_request()
+        local fd = ts.http.get_server_fd()
+        ts.debug(fd)
+    end
+
+`TOP <#ts-lua-plugin>`_
 
 ts.add_package_path
 -------------------
@@ -2509,7 +2567,7 @@ Here is an example:
     ts.add_package_path('/home/a/test/lua/pac/?.lua')
     local nt = require("nt")
     function do_remap()
-        print(nt.t9(7979))
+        ts.debug(nt.t9(7979))
         return 0
     end
 
@@ -2532,7 +2590,7 @@ Here is an example:
     ts.add_package_cpath('/home/a/test/c/module/?.so')
     local ma = require("ma")
     function do_remap()
-        print(ma.ft())
+        ts.debug(ma.ft())
         return 0
     end
 
@@ -2554,8 +2612,8 @@ Here is an example:
 
     function do_remap()
         uri = ts.client_request.get_uri()
-        print(uri)              -- /foo
-        print(ts.md5(uri))      -- 1effb2475fcfba4f9e8b8a1dbc8f3caf
+        ts.debug(uri)              -- /foo
+        ts.debug(ts.md5(uri))      -- 1effb2475fcfba4f9e8b8a1dbc8f3caf
     end
 
 
@@ -2595,8 +2653,8 @@ Here is an example:
 
     function do_remap()
         uri = ts.client_request.get_uri()
-        print(uri)              -- /foo
-        print(ts.sha1(uri))     -- 6dbd548cc03e44b8b44b6e68e56255ce4273ae49
+        ts.debug(uri)              -- /foo
+        ts.debug(ts.sha1(uri))     -- 6dbd548cc03e44b8b44b6e68e56255ce4273ae49
     end
 
 
@@ -2728,7 +2786,7 @@ Here is a basic example:
         local url = string.format('http://%s/foo.txt', ts.ctx['host'])
         local res = ts.fetch(url)
         if res.status == 200 then
-            print(res.body)
+            ts.debug(res.body)
         end
     end
 
@@ -2780,7 +2838,7 @@ Here is an example:
                 })
 
     for i = 1, #(vec) do
-        print(vec[i].status)
+        ts.debug(vec[i].status)
     end
 
 
@@ -2818,7 +2876,7 @@ Here is an example:
                       'Cache-Control: max-age=7200\r\n' ..
                       'Accept-Ranges: bytes\r\n\r\n' ..
                       nt
-        print(dstr)
+        ts.debug(dstr)
         ts.say(resp)
     end
 
@@ -3011,6 +3069,30 @@ Here is an example:
 
     function do_remap()
         ts.hook(TS_LUA_HOOK_READ_RESPONSE_HDR, read_response)
+        ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.host_lookup
+--------------
+**syntax:** *ts.host_lookup(hostname)*
+
+**context:** *hook point functions added after do_remap*
+
+**description:** Look for ip address of the host name without blocking. Nil if address cannot be found.
+
+Behind the scene, this method makes use of the ATS event model.
+
+Here is an example:
+
+::
+
+    function send_response()
+        local result = ts.host_lookup("www.xyz.com") -- ip address of www.xyz.com
+    end
+
+    function do_remap()
         ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
     end
 
