@@ -235,7 +235,7 @@ Here is an example:
 
 Remap status constants
 ----------------------
-**context:** do_emap
+**context:** do_remap
 
 ::
 
