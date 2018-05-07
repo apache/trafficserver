@@ -48,6 +48,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    AWS S3 Authentication <s3_auth.en>
    AuthProxy <authproxy.en>
    Background Fetch <background_fetch.en>
+   Cache Key Manipulation <cachekey.en>
    Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
    ESI <esi.en>
@@ -70,6 +71,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Background Fetch <background_fetch.en>`
    Proactively fetch content from Origin in a way that it will fill the object into cache.
+
+:doc:`Cache Key Manipulation <cachekey.en>`
+   Allows some common cache key manipulations based on various HTTP request elements.
 
 :doc:`Combo Handler <combo_handler.en>`
    Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
@@ -125,7 +129,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
-   Cache Key Manipulation <cachekey.en>
    Cache Promote <cache_promote.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    Epic <epic.en>
@@ -152,9 +155,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Buffer Upload <buffer_upload.en>`
    Buffers POST data before connecting to the Origin server.
-
-:doc:`Cache Key Manipulation <cachekey.en>`
-   Allows some common cache key manipulations based on various HTTP request elements.
 
 :doc:`Cache Promote <cache_promote.en>`
    Provides additional control over when an object should be allowed into the cache.
