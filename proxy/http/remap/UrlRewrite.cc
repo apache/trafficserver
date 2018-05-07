@@ -281,10 +281,8 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
     toPath      = map_to->path_get(&toPathLen);
     requestPath = request_url->path_get(&requestPathLen);
 
-    // Should be +3, little extra padding won't hurt. Use the stack allocation
-    // for better performance (bummer that arrays of variable length is not supported
-    // on Solaris CC.
-    char *newPath  = static_cast<char *>(alloca(sizeof(char) * ((requestPathLen - fromPathLen) + toPathLen + 8)));
+    // Should be +3, little extra padding won't hurt.
+    char newPath[(requestPathLen - fromPathLen) + toPathLen + 8];
     int newPathLen = 0;
 
     *newPath = 0;
@@ -303,11 +301,11 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
     if (requestPath) {
       // avoid adding another trailing slash if the requestPath already had one and so does the toPath
       if (requestPathLen < fromPathLen) {
-        if (toPathLen && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
+        if (toPath && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
       } else {
-        if (toPathLen && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
+        if (toPath && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
       }
