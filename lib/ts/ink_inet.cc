@@ -598,10 +598,10 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
           }
         }
       }
-      if (ip4_type > NA) {
+      if (ip4 && ip4_type > NA) {
         ats_ip_copy(ip4, ip4_src);
       }
-      if (ip6_type > NA) {
+      if (ip6 && ip6_type > NA) {
         ats_ip_copy(ip6, ip6_src);
       }
       freeaddrinfo(ai_result); // free *after* the copy.
