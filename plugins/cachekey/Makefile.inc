@@ -14,10 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/cachekey/cachekey.la
-experimental_cachekey_cachekey_la_SOURCES = \
-  experimental/cachekey/cachekey.cc \
-  experimental/cachekey/common.cc \
-  experimental/cachekey/configs.cc \
-  experimental/cachekey/pattern.cc \
-  experimental/cachekey/plugin.cc
+pkglib_LTLIBRARIES += cachekey/cachekey.la
+cachekey_cachekey_la_SOURCES = \
+  cachekey/cachekey.cc \
+  cachekey/common.cc \
+  cachekey/configs.cc \
+  cachekey/pattern.cc \
+  cachekey/plugin.cc
