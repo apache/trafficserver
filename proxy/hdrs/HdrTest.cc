@@ -527,7 +527,7 @@ HdrTest::test_mime()
 
   // Test the (new) continuation line folding to be correct. This should replace the
   // \r\n with two spaces (so a total of three between "part1" and "part2").
-  int length;
+  int length               = 0;
   const char *continuation = hdr.value_get("continuation", 12, &length);
 
   if ((13 != length)) {
