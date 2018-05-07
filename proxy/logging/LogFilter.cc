@@ -1045,7 +1045,7 @@ LogFilterList::toss_this_entry(LogAccess *lad)
   -------------------------------------------------------------------------*/
 
 LogFilter *
-LogFilterList::find_by_name(char *name)
+LogFilterList::find_by_name(const char *name)
 {
   for (LogFilter *f = first(); f; f = next(f)) {
     if (strcmp(f->name(), name) == 0) {

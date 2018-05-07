@@ -26,14 +26,14 @@ if BUILD_WCCP
 SUBDIRS += wccp
 endif
 
-#if BUILD_YAML_CPP
-SUBDIRS += yamlcpp
-#endif
-
 LOCAL =
 
 if BUILD_LUAJIT
 LOCAL += all-luajit
+endif
+
+if BUILD_YAML_CPP
+LOCAL += yamlcpp
 endif
 
 # Support verbose LuaJIT builds with "make V=1".
@@ -62,7 +62,9 @@ all-luajit:
 		XCFLAGS="" \
 		LDFLAGS="$(LUAJIT_LDFLAGS)" \
 		Q=$(luajit__v_$(V))
+	$(MAKE) -C yamlcpp
 
 clean-local:
 	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && $(MAKE) CC="$(CC)" clean)
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -rf "$(top_builddir)/$(subdir)/luajit"
+	$(MAKE) -C yamlcpp clean

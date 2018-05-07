@@ -50,7 +50,8 @@ traffic_logcat_traffic_logcat_LDADD += \
 endif
 
 traffic_logcat_traffic_logcat_LDADD += \
-	@LIBTCL@ @HWLOC_LIBS@\
+	@LIBTCL@ @HWLOC_LIBS@ \
+	@LIB_YAMLCPP@ \
 	@LIBPROFILER@ -lm
 
 if SYSTEM_LUAJIT

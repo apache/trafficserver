@@ -41,6 +41,7 @@ include_directories(lib
         lib/records
         lib/wccp
         lib/cppapi/include
+        lib/yamlcpp/include
         iocore/eventsystem
         iocore/net
         iocore/dns
@@ -276,8 +277,8 @@ add_executable(ats
         iocore/net/I_UDPNet.h
         iocore/net/I_UDPPacket.h
         iocore/net/Inline.cc
-        iocore/net/LuaSNIConfig.cc
-        iocore/net/LuaSNIConfig.h
+        iocore/net/YamlSNIConfig.cc
+        iocore/net/YamlSNIConfig.h
         iocore/net/Net.cc
         iocore/net/NetVConnection.cc
         iocore/net/NetVCTest.cc
