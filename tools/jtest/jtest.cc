@@ -519,8 +519,8 @@ static inline void
 append_string(char *dest, const char *src, int *offset_ptr, int max_len)
 {
   int num = strlen(src);
-  if (*offset_ptr + num > max_len) {
-    num = max_len - *offset_ptr;
+  if (*offset_ptr + num >= max_len) {
+    num = max_len - (*offset_ptr + 1);
   }
   strncpy(dest + *offset_ptr, src, num + 1);
   (*offset_ptr) += num;
