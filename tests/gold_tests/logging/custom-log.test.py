@@ -37,14 +37,14 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.logging_config.AddLines(
-    '''custom = format {
-  Format = "%<hii> %<hiih>"
-}
-
-log.ascii {
-  Format = custom,
-  Filename = 'test_log_field'
-}'''.split("\n")
+    '''
+formats:
+  - name: custom
+    format: "%<hii> %<hiih>"
+logs:
+  - filename: test_log_field
+    format: custom
+'''.split("\n")
 )
 
 # #########################################################################
