@@ -1030,8 +1030,6 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "metrics.config") == 0) {
     ink_atomic_increment(&metrics_version, 1);
     mgmt_log("[fileUpdated] metrics.config file has been modified\n");
-  } else if (strcmp(fname, "congestion.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
   } else if (strcmp(fname, "proxy.config.ssl.server.ticket_key.filename") == 0) {
     lmgmt->signalFileChange("proxy.config.ssl.server.ticket_key.filename");
   } else if (strcmp(fname, SSL_SERVER_NAME_CONFIG) == 0) {

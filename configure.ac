@@ -2073,7 +2073,6 @@ AC_CONFIG_FILES([
   proxy/config/body_factory/default/Makefile
   proxy/config/records.config.default
   proxy/config/storage.config.default
-  proxy/congest/Makefile
   proxy/hdrs/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile

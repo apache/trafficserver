@@ -193,10 +193,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "congestion.config"
-    tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
-
     fname = "hosting.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
@@ -279,12 +275,12 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
     p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
         p.Variables.admin_port)  # support pre ATS 6.x
-    
+
     if command == "traffic_manager":
         p.ReturnCode = 2
     else:
         p.ReturnCode = 0
-        
+
 
     return p
 

@@ -569,14 +569,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
       executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, nullptr, 0);
     }
     break;
-  // Congestion Control - begin
-  case MGMT_SIGNAL_HTTP_CONGESTED_SERVER:
-    alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER, data_raw);
-    break;
-  case MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER:
-    alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER, data_raw);
-    break;
-  // Congestion Control - end
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
     static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
     char *parent                           = nullptr;

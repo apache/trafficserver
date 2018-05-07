@@ -52,10 +52,6 @@ const char *alarmText[] = {
   "",
   "Add OEM Alarm",
   "",
-  "HTTP Origin Server is Congested",
-  "Congested HTTP Origin Server is now Alleviated",
-  "", /* congested server */
-  ""  /* alleviated server */
 };
 
 const int alarmTextNum = sizeof(alarmText) / sizeof(char *);
@@ -195,9 +191,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   case MGMT_ALARM_ADD_ALARM:
     priority = 2;
     break;
-  case MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER:
-  case MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER:
-    return;
   default:
     priority = 2;
     break;

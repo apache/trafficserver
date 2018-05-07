@@ -194,8 +194,6 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
   switch (m_filetype) {
   case TS_FNAME_CACHE_OBJ: /* cache.config */
     return cacheParse(rule);
-  case TS_FNAME_CONGESTION: /* congestion.config */
-    return congestionParse(rule, 1, 15);
   case TS_FNAME_HOSTING: /* hosting.config */
     return hostingParse(rule);
   case TS_FNAME_IP_ALLOW: /* ip_allow.config */
@@ -359,15 +357,6 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
 
   delete token;
   return m_tokenList;
-}
-
-/**
- * congestionParse
- **/
-TokenList *
-Rule::congestionParse(char *rule, unsigned short minNumToken, unsigned short maxNumToken)
-{
-  return cacheParse(rule, minNumToken, maxNumToken);
 }
 
 /**
@@ -835,8 +824,6 @@ RuleList::parse(char *fileBuf, const char *filename)
 
   if (strstr(filename, "cache.config")) {
     m_filetype = TS_FNAME_CACHE_OBJ; /* cache.config */
-  } else if (strstr(filename, "congestion.config")) {
-    m_filetype = TS_FNAME_CONGESTION; /* congestion.config */
   } else if (strstr(filename, "hosting.config")) {
     m_filetype = TS_FNAME_HOSTING; /* hosting.config */
   } else if (strstr(filename, "ip_allow.config")) {
