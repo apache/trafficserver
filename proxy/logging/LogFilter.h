@@ -263,7 +263,7 @@ public:
   void add(LogFilter *filter, bool copy = true);
   bool toss_this_entry(LogAccess *lad);
   bool wipe_this_entry(LogAccess *lad);
-  LogFilter *find_by_name(char *name);
+  LogFilter *find_by_name(const char *name);
   void clear();
 
   LogFilter *

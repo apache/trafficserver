@@ -55,6 +55,7 @@ endif
 
 traffic_logstats_traffic_logstats_LDADD += \
   @LIBTCL@ @HWLOC_LIBS@ \
+  @LIB_YAMLCPP@ \
   @LIBPROFILER@ -lm
 
 if SYSTEM_LUAJIT

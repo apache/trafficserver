@@ -95,6 +95,7 @@ traffic_server_traffic_server_LDADD += \
 	@LIBLZMA@ \
 	@LIBPROFILER@ \
 	@OPENSSL_LIBS@ \
+	@LIB_YAMLCPP@ \
 	-lm
 
 if BUILD_LUAJIT
