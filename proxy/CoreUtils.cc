@@ -476,7 +476,7 @@ CoreUtils::print_http_hdr(HTTPHdr *h, const char *name)
   if (h->m_heap && h->m_http) {
     int r = load_http_hdr(h, &new_handle);
 
-    if (r > 0) {
+    if (r > 0 && new_handle.m_http) {
       printf("----------- %s  ------------\n", name);
       new_handle.m_mime = new_handle.m_http->m_fields_impl;
       new_handle.print(nullptr, 0, nullptr, nullptr);
