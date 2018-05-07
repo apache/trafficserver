@@ -19,7 +19,7 @@
 # That means you generally want to append your rules after the ones listed here.
 #
 # Allow anything on localhost (this is the default configuration based on the
-# depricated CONFIG proxy.config.http.quick_filter.mask INT 0x482)
+# deprecated CONFIG proxy.config.http.quick_filter.mask INT 0x482)
 src_ip=127.0.0.1                                  action=ip_allow method=ALL
 src_ip=::1                                        action=ip_allow method=ALL
 # Deny PURGE, DELETE, and PUSH for all (this implies allow other methods for all)

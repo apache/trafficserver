@@ -63,7 +63,7 @@
 --  RollingEnabled value to disable all log rolling.
 --
 -- log.roll.time (number)
---  RollingEnabled value. Roll at a certain time requency, specified
+--  RollingEnabled value. Roll at a certain time frequency, specified
 --  by RollingIntervalSec, and RollingOffsetHr.
 --
 -- log.roll.size (number)

@@ -21,7 +21,7 @@ no_socks   123.14.84.1 - 123.14.89.4, 109.32.15.2
 # We currently support Username/Password authentication
 # Format for username/password used by traffic_server when it connects to
 # the SOCKS server:
-#   auth u <user_name> <pasword>
+#   auth u <user_name> <password>
 # The letter u says it is of type username/password.
 # e.g:
 #   auth u traffic_server inktomi
@@ -36,7 +36,7 @@ no_socks   123.14.84.1 - 123.14.89.4, 109.32.15.2
 #
 # examples:
 #
-# The following rule uses internal.exaple.com:1080 as the socks server all
+# The following rule uses internal.example.com:1080 as the socks server all
 # destination addresses between 10.0.0.0 and 10.255.255.255
 #
 # dest_ip=10.0.0.0-10.255.255.255 parent="internal.example.com:1080"

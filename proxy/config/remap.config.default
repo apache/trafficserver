@@ -158,7 +158,7 @@
 #  Example:
 #     map ws://bar.com/ ws://foo.com/
 #
-#  Explaination: When a request comes in with the appropriate upgrade headers, Traffic Server will use this
+#  Explanation: When a request comes in with the appropriate upgrade headers, Traffic Server will use this
 #   remap rule in an attempt to establish and maintain a websocket connection.
 #
 #  Named filters can be created and applied to blocks of mappings
