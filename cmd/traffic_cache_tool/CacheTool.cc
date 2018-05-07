@@ -945,6 +945,7 @@ Cache::build_stripe_hash_table()
   unsigned int rtable_size     = 0;
   int i                        = 0;
   uint64_t used                = 0;
+
   // estimate allocation
   for (auto &elt : globalVec_stripe) {
     // printf("stripe length %" PRId64 "\n", elt->_len.count());
@@ -958,7 +959,7 @@ Cache::build_stripe_hash_table()
   }
   i = 0;
   for (auto &elt : globalVec_stripe) {
-    forvol[i] = static_cast<int64_t>(VOL_HASH_TABLE_SIZE * elt->_len) / total;
+    forvol[i] = total ? static_cast<int64_t>(VOL_HASH_TABLE_SIZE * elt->_len) / total : 0;
     used += forvol[i];
     gotvol[i] = 0;
     i++;
