@@ -2268,13 +2268,15 @@ HttpTransact::issue_revalidate(State *s)
     // if Etag exists, also add if-non-match header
     if (c_resp->presence(MIME_PRESENCE_ETAG) && (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
                                                  s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD)) {
-      int length;
+      int length       = 0;
       const char *etag = c_resp->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &length);
-      if ((length >= 2) && (etag[0] == 'W') && (etag[1] == '/')) {
-        etag += 2;
-        length -= 2;
+      if (nullptr != etag) {
+        if ((length >= 2) && (etag[0] == 'W') && (etag[1] == '/')) {
+          etag += 2;
+          length -= 2;
+        }
+        s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, etag, length);
       }
-      s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, etag, length);
       if (!s->cop_test_page)
         DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
     }
