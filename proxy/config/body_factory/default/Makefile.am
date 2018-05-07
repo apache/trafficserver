@@ -25,7 +25,6 @@ dist_bodyfactory_DATA = \
 	.body_factory_info \
 	cache\#not_in_cache \
 	cache\#read_error \
-	congestion\#retryAfter \
 	connect\#dns_failed \
 	connect\#failed_connect \
 	connect\#hangup \

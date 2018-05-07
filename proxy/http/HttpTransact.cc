@@ -3113,10 +3113,7 @@ HttpTransact::OriginServerRawOpen(State *s)
   case CONNECTION_ERROR:
   /* fall through */
   case CONNECTION_CLOSED:
-  /* fall through */
-  case CONGEST_CONTROL_CONGESTED_ON_F:
-  /* fall through */
-  case CONGEST_CONTROL_CONGESTED_ON_M:
+    /* fall through */
     handle_server_died(s);
 
     ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
@@ -6354,8 +6351,7 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
   if (s->current.state != CONNECTION_ALIVE) {
     ink_assert((s->current.state == CONNECTION_ERROR) || (s->current.state == OPEN_RAW_ERROR) ||
                (s->current.state == PARSE_ERROR) || (s->current.state == CONNECTION_CLOSED) ||
-               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT) ||
-               (s->current.state == CONGEST_CONTROL_CONGESTED_ON_M) || (s->current.state == CONGEST_CONTROL_CONGESTED_ON_F));
+               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT));
 
     s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
     return false;

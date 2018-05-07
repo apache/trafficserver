@@ -171,7 +171,6 @@ typedef enum {
 /* ToDo: This should be moved over to the core, into the GenericParser.h */
 typedef enum {
   TS_FNAME_CACHE_OBJ,       /* cache.config */
-  TS_FNAME_CONGESTION,      /* congestion.config */
   TS_FNAME_HOSTING,         /* hosting.config */
   TS_FNAME_IP_ALLOW,        /* ip_allow.config */
   TS_FNAME_PARENT_PROXY,    /* parent.config */

@@ -46,7 +46,6 @@ plugins to build large scale web applications.
   |-- proxy/ ............. HTTP proxy logic
       |-- api/ ........... Plugin API includes
       |-- config/ ........ Configurations
-      |-- congest/ ....... Congestion control
       |-- hdrs/ .......... Headers parsing and management
       |-- http/ .......... The actual HTTP protocol implementation
       |---http2/ ......... HTTP/2 implementation
@@ -109,7 +108,7 @@ plugins to build large scale web applications.
     libtool
     tcl-dev
     linux-headers
-  
+
   OSX (we recommend HomeBrew):
     autoconf
     automake
