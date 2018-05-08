@@ -244,7 +244,6 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
 TEST_CASE("bwstring", "[bwprint][bwstring]")
 {
   std::string s;
-  size_t n;
   ts::TextView fmt("{} -- {}");
   ts::string_view text{"e99a18c428cb38d5f260853678922e03"};
 
