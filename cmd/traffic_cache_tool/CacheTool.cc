@@ -723,7 +723,7 @@ Span::loadDevice()
 
   ats_scoped_fd fd{_path.open(flags)};
 
-  if (fd) {
+  if (fd != ts::NO_FD) {
     if (ink_file_get_geometry(fd, _geometry)) {
       off_t offset = ts::CacheSpan::OFFSET;
       CacheStoreBlocks span_hdr_size(1);                        // default.
