@@ -3950,10 +3950,7 @@ HttpSM::do_remap_request(bool run_inline)
 {
   SMDebug("http_seq", "[HttpSM::do_remap_request] Remapping request");
   SMDebug("url_rewrite", "Starting a possible remapping for request [%" PRId64 "]", sm_id);
-  bool ret = false;
-  if (t_state.cop_test_page == false) {
-    ret = remapProcessor.setup_for_remap(&t_state, m_remap);
-  }
+  bool ret = remapProcessor.setup_for_remap(&t_state, m_remap);
 
   // Preserve effective url before remap
   t_state.unmapped_url.create(t_state.hdr_info.client_request.url_get()->m_heap);
@@ -5989,9 +5986,7 @@ HttpSM::setup_server_send_request()
     t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
 
-  if (!t_state.cop_test_page) {
-    DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), t_state.state_machine_id, "Proxy's Request after hooks");
-  }
+  DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), t_state.state_machine_id, "Proxy's Request after hooks");
 
   // We need a reader so bytes don't fall off the end of
   //  the buffer
@@ -6876,22 +6871,20 @@ HttpSM::kill_this()
 
     HTTP_SM_SET_DEFAULT_HANDLER(nullptr);
 
-    if (!t_state.cop_test_page || t_state.http_config_param->record_cop_page) {
-      //////////////
-      // Log Data //
-      //////////////
-      SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
-      if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-        LogAccessHttp accessor(this);
+    //////////////
+    // Log Data //
+    //////////////
+    SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
+    if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
+      LogAccessHttp accessor(this);
 
-        int ret = Log::access(&accessor);
+      int ret = Log::access(&accessor);
 
-        if (ret & Log::FULL) {
-          SMDebug("http", "[update_stats] Logging system indicates FULL.");
-        }
-        if (ret & Log::FAIL) {
-          Log::error("failed to log transaction for at least one log object");
-        }
+      if (ret & Log::FULL) {
+        SMDebug("http", "[update_stats] Logging system indicates FULL.");
+      }
+      if (ret & Log::FAIL) {
+        Log::error("failed to log transaction for at least one log object");
       }
     }
 
@@ -6918,11 +6911,6 @@ void
 HttpSM::update_stats()
 {
   milestones[TS_MILESTONE_SM_FINISH] = Thread::get_hrtime();
-
-  if (t_state.cop_test_page && !t_state.http_config_param->record_cop_page) {
-    SMDebug("http_seq", "Skipping cop heartbeat logging & stats due to config");
-    return;
-  }
 
   if (is_action_tag_set("bad_length_state_dump")) {
     if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
@@ -7289,13 +7277,6 @@ HttpSM::set_next_state()
       break;
     } else if (t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER && t_state.http_config_param->no_dns_forward_to_parent &&
                t_state.parent_result.result != PARENT_UNDEFINED) {
-      if (t_state.cop_test_page) {
-        NetVConnection *vc = t_state.state_machine->ua_txn->get_netvc();
-        if (vc) {
-          ats_ip_copy(t_state.host_db_info.ip(), vc->get_local_addr());
-        }
-      }
-
       t_state.dns_info.lookup_success = true;
       call_transact_and_set_next_state(nullptr);
       break;
@@ -7894,9 +7875,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
     }
   }
 
-  if (!t_state.cop_test_page) {
-    DUMP_HEADER("http_hdrs", &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
-  }
+  DUMP_HEADER("http_hdrs", &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
 }
 
 void

@@ -31,6 +31,7 @@
 
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
+#include "MgmtSocket.h"
 #include "NetworkUtilsRemote.h"
 #include "FileManager.h"
 #include "ts/I_Layout.h"
@@ -43,8 +44,6 @@
 #include "LocalManager.h"
 #include "TSControlMain.h"
 #include "EventControlMain.h"
-
-#include "MgmtHandlers.h"
 
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
@@ -450,6 +449,22 @@ millisleep(int ms)
   nanosleep(&ts, nullptr); // we use nanosleep instead of sleep because it does not interact with signals
 }
 
+bool
+api_socket_is_restricted()
+{
+  RecInt intval;
+
+  // If the socket is not administratively restricted, check whether we have platform
+  // support. Otherwise, default to making it restricted.
+  if (RecGetRecordInt("proxy.config.admin.api.restricted", &intval) == REC_ERR_OKAY) {
+    if (intval == 0) {
+      return !mgmt_has_peereid();
+    }
+  }
+
+  return true;
+}
+
 int
 main(int argc, const char **argv)
 {
@@ -469,24 +484,20 @@ main(int argc, const char **argv)
   // TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_local = 0;
   char *proxy_port   = nullptr;
-  int proxy_backdoor = -1;
   char *tsArgs       = nullptr;
   int disable_syslog = false;
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
-  ink_thread synthThrId;
 
   int binding_version      = 0;
   BindingInstance *binding = nullptr;
 
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, nullptr, nullptr},
-    {"aconfPort", '-', "Autoconf port", "I", &aconf_port_arg, "MGMT_ACONF_PORT", nullptr},
     {"path", '-', "Path to the management socket", "S*", &mgmt_path, nullptr, nullptr},
     {"recordsConf", '-', "Path to records.config", "S*", &recs_conf, nullptr, nullptr},
     {"tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, nullptr, nullptr},
     {"proxyPort", '-', "HTTP port descriptor", "S*", &proxy_port, nullptr, nullptr},
-    {"proxyBackDoor", '-', "Management port", "I", &proxy_backdoor, nullptr, nullptr},
     {TM_OPT_BIND_STDOUT, '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
     {TM_OPT_BIND_STDERR, '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
 #if TS_USE_DIAGS
@@ -661,22 +672,9 @@ main(int argc, const char **argv)
     HttpProxyPort::loadValue(lmgmt->m_proxy_ports, proxy_port);
   }
 
-  if (proxy_backdoor != -1) {
-    RecSetRecordInt("proxy.config.process_manager.mgmt_port", proxy_backdoor, REC_SOURCE_DEFAULT);
-  }
-
   lmgmt->initMgmtProcessServer(); /* Setup p-to-p process server */
 
   lmgmt->listenForProxy();
-
-  //
-  // As listenForProxy() may change/restore euid, we should put
-  // the creation of mgmt_synthetic_main thread after it. So that we
-  // can keep a consistent euid when create mgmtapi/eventapi unix
-  // sockets in mgmt_synthetic_main thread.
-  //
-  ink_thread_create(&synthThrId, mgmt_synthetic_main, nullptr, 0, 0, nullptr); /* Spin web agent thread */
-  Debug("lm", "Created Web Agent thread (%" PRId64 ")", (int64_t)synthThrId);
 
   // Setup the API and event sockets
   std::string rundir(RecConfigReadRuntimeDir());

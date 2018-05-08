@@ -60,14 +60,14 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.env_prep", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.config_dir", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TC, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
+  {RECT_CONFIG, "proxy.config.config_dir", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
   // Jira TS-21
   {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
   {RECT_CONFIG, "proxy.config.alarm_email", RECD_STRING, TS_PKGSYSUSER, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.syslog_facility", RECD_STRING, "LOG_DAEMON", RECU_RESTART_TC, RR_NULL, RECC_STR, ".*", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.syslog_facility", RECD_STRING, "LOG_DAEMON", RECU_RESTART_TM, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   //# Negative core limit means max out limit
   {RECT_CONFIG, "proxy.config.core_limit", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -77,16 +77,6 @@ static const RecordElement RecordsConfig[] =
   // 0 - Disabled, 1 - enabled for important pages (e.g. cache directory), 2 - enabled for all pages
   {RECT_CONFIG, "proxy.config.mlock_enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cop.core_signal", RECD_INT, "0", RECU_DYNAMIC, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,                             // needed by traffic_cop
-  {RECT_CONFIG, "proxy.config.cop.linux_min_swapfree_kb", RECD_INT, "0", RECU_DYNAMIC, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,                             // needed by traffic_cop
-  {RECT_CONFIG, "proxy.config.cop.linux_min_memfree_kb", RECD_INT, "0", RECU_DYNAMIC, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
-  ,                             // needed by traffic_cop
-  {RECT_CONFIG, "proxy.config.cop.init_sleep_time", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-900]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.cop.active_health_checks", RECD_INT, "3", RECU_NULL, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
-  ,
   //# 0 = disable (seconds)
   {RECT_CONFIG, "proxy.config.dump_mem_info_frequency", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -95,7 +85,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.max_disk_errors", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.output.logfile", RECD_STRING, "traffic.out", RECU_RESTART_TC, RR_REQUIRED, RECC_NULL, nullptr,
+  {RECT_CONFIG, "proxy.config.output.logfile", RECD_STRING, "traffic.out", RECU_RESTART_TM, RR_REQUIRED, RECC_NULL, nullptr,
    RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile_perm", RECD_STRING, "rw-r--r--", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -248,8 +238,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.lm.pserver_timeout_msecs", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.admin.synthetic_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.localhost_only", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.admin_user", RECD_STRING, "admin", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NO_ACCESS}
@@ -283,8 +271,6 @@ static const RecordElement RecordsConfig[] =
   //#
   //##############################################################################
   {RECT_CONFIG, "proxy.config.process_manager.timeout", RECD_INT, "5", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.process_manager.mgmt_port", RECD_INT, "8084", RECU_NULL, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   //##############################################################################
@@ -384,8 +370,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.server_session_sharing.match", RECD_STRING, "both", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.server_session_sharing.pool", RECD_STRING, "thread", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.record_heartbeat", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.default_buffer_size", RECD_INT, "8", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -778,7 +762,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.net.default_inactivity_timeout", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.net.inactivity_check_frequency", RECD_INT, "1", RECU_RESTART_TC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.net.inactivity_check_frequency", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.event_period", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

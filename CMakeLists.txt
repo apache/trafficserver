@@ -55,10 +55,6 @@ include_directories(lib
         proxy/api
         lib/luajit/src)
 
-add_executable(traffic_cop
-        cmd/traffic_cop/traffic_cop.cc
-)
-
 add_executable(traffic_crashlog
         cmd/traffic_crashlog/procinfo.cc
         cmd/traffic_crashlog/traffic_crashlog.cc

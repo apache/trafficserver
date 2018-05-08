@@ -735,7 +735,6 @@ public:
     bool first_dns_lookup                             = true;
 
     bool backdoor_request = false; // internal
-    bool cop_test_page    = false; // internal
     HttpRequestData request_data;
     ParentConfigParams *parent_params = nullptr;
     ParentResult parent_result;

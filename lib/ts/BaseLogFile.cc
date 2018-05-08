@@ -378,7 +378,7 @@ BaseLogFile::display(FILE *fd)
  * However, we still need to log the creation of BaseLogFile, since the
  * information is still useful. This function will print out log messages
  * into traffic.out if we happen to be bootstrapping Diags. Since
- * traffic_cop redirects stdout/stderr into traffic.out, that
+ * traffic_manager redirects stdout/stderr into traffic.out, that
  * redirection is inherited by way of exec()/fork() all the way here.
  *
  * TODO use Debug() for non bootstrap instances

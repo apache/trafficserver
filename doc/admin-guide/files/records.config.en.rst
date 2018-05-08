@@ -168,7 +168,7 @@ not be affected by future configuration changes made in
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
-   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
+   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_manager &
    $ traffic_ctl config get proxy.config.product_company
 
 .. _configuration-variables:
@@ -235,49 +235,6 @@ System Variables
    :ref:`admin-logging-understanding` for more in-depth discussion
    of the contents and interpretations of log files.
 
-.. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
-
-   The signal sent to :program:`traffic_cop`'s managed processes to stop them.
-
-   A value of ``0`` means no signal will be sent.
-
-.. ts:cv:: CONFIG proxy.config.cop.linux_min_memfree_kb INT 0
-
-   The minimum amount of free memory space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to
-   prevent the system from hanging.
-
-.. ts:cv:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 0
-
-   The minimum amount of free swap space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to
-   prevent the system from hanging. This configuration variable applies if
-   swap is enabled in Linux 2.2 only.
-
-.. ts:cv:: CONFIG proxy.config.cop.init_sleep_time INT 0
-
-   The minimum amount of addtional duration allowed before Traffic Server detects
-   that the :program:`traffic_server` is not responsive and attempts a restart
-   during startup. This configuration variable allows Traffic Server a longer init
-   time to load potentially large configuration files such as remap config. Note that
-   this applies only during startup of Traffic Server and does not apply to the run
-   time heartbeat checking.
-
-.. ts:cv:: CONFIG proxy.config.cop.active_health_checks INT 3
-
-   Specifies which, if any, of :program:`traffic_server` and
-   :program:`traffic_manager` that :program:`traffic_cop` is allowed to kill
-   in the event of failed health checks. The possible values are:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` :program:`traffic_cop` is not allowed to kill any processes.
-   ``1`` Only :program:`traffic_manager` can be killed on failed health checks.
-   ``2`` Only :program:`traffic_server` can be killed on failed health checks.
-   ``3`` :program:`traffic_server` and :program:`traffic_manager` can be killed
-         on failures (default).
-   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
@@ -614,10 +571,6 @@ Cluster
 Local Manager
 =============
 
-.. ts:cv:: CONFIG proxy.config.admin.synthetic_port INT 8083
-
-   The synthetic healthcheck port.
-
 .. ts:cv:: CONFIG proxy.config.admin.number_config_bak INT 3
 
    The maximum number of copies of rolled configuration files to keep.
@@ -663,14 +616,6 @@ Local Manager
    configuration file. Dynamic configuration changes can still be made using
    :program:`traffic_ctl config set`, but these changes will not be persisted
    on service restarts or when :option:`traffic_ctl config reload` is run.
-
-Process Manager
-===============
-
-.. ts:cv:: CONFIG proxy.config.process_manager.mgmt_port  INT 8084
-
-   The port used for internal communication between :program:`traffic_manager`
-   and :program:`traffic_server` processes.
 
 Alarm Configuration
 ===================
@@ -1111,11 +1056,6 @@ ip-resolve
    :ts:cv:`proxy.config.http.server_session_sharing.match` value. If the server session matches the next transaction
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
-
-.. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat logging.
 
 .. ts:cv:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 

@@ -2030,7 +2030,6 @@ AC_CONFIG_FILES([
   Makefile
   cmd/Makefile
   cmd/traffic_cache_tool/Makefile
-  cmd/traffic_cop/Makefile
   cmd/traffic_crashlog/Makefile
   cmd/traffic_ctl/Makefile
   cmd/traffic_layout/Makefile

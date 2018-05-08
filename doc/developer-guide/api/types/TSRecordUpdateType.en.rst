@@ -47,10 +47,6 @@ Enumeration Members
 
    The value is updated if the :program:`traffic_manager` process is restarted.
 
-.. c:member:: TSRecordUpdateType TS_RECORDUPDATE_RESTART_TC
-
-   The value is updated if the :program:`traffic_cop` process is restarted. This is effect a complete restart of |TS|.
-
 Description
 ===========
 

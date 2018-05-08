@@ -815,11 +815,6 @@ public:
   MgmtInt post_copy_size = 2048;
   MgmtInt max_post_size  = 0;
 
-  ////////////////////
-  // Local Manager  //
-  ////////////////////
-  MgmtInt synthetic_port = 0;
-
   ///////////////////////////////////////////////////////////////////
   // Put all MgmtByte members down here, avoids additional padding //
   ///////////////////////////////////////////////////////////////////
@@ -843,8 +838,6 @@ public:
 
   MgmtByte reverse_proxy_enabled = 0;
   MgmtByte url_remap_required    = 1;
-
-  MgmtByte record_cop_page = 0;
 
   MgmtByte errors_log_error_pages = 1;
   MgmtByte enable_http_info       = 0;
