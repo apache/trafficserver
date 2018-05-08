@@ -38,7 +38,7 @@ traffic_cache_tool_LDADD = \
 	$(top_builddir)/lib/ts/.libs/Regex.o \
 	$(top_builddir)/lib/ts/.libs/CryptoHash.o \
 	$(top_builddir)/lib/ts/.libs/MMH.o \
-	@OPENSSL_LIBS@ @LIBPCRE@ @LIBTCL@
+	-lpthread @OPENSSL_LIBS@ @LIBPCRE@ @LIBTCL@
 	
 
 all-am: Makefile $(PROGRAMS)
