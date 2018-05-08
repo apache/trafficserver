@@ -1129,8 +1129,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.slow_log_threshold, "proxy.config.http.slow.log.threshold");
   HttpEstablishStaticConfigByte(c.oride.ssl_client_verify_server, "proxy.config.ssl.client.verify.server");
 
-  HttpEstablishStaticConfigByte(c.record_cop_page, "proxy.config.http.record_heartbeat");
-
   HttpEstablishStaticConfigByte(c.oride.send_http11_requests, "proxy.config.http.send_http11_requests");
   HttpEstablishStaticConfigByte(c.oride.allow_multi_range, "proxy.config.http.allow_multi_range");
 
@@ -1170,9 +1168,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.redirection_host_no_port, "proxy.config.http.redirect_host_no_port");
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
-
-  // Local Manager
-  HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
   http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
@@ -1404,7 +1399,6 @@ HttpConfig::reconfigure()
   params->url_remap_required               = INT_TO_BOOL(m_master.url_remap_required);
   params->errors_log_error_pages           = INT_TO_BOOL(m_master.errors_log_error_pages);
   params->oride.slow_log_threshold         = m_master.oride.slow_log_threshold;
-  params->record_cop_page                  = INT_TO_BOOL(m_master.record_cop_page);
   params->oride.ssl_client_verify_server   = m_master.oride.ssl_client_verify_server;
   params->oride.send_http11_requests       = m_master.oride.send_http11_requests;
   params->oride.doc_in_cache_skip_dns      = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
@@ -1438,9 +1432,6 @@ HttpConfig::reconfigure()
   params->post_copy_size                    = m_master.post_copy_size;
   params->oride.client_cert_filename        = ats_strdup(m_master.oride.client_cert_filename);
   params->oride.client_cert_filepath        = ats_strdup(m_master.oride.client_cert_filepath);
-
-  // Local Manager
-  params->synthetic_port = m_master.synthetic_port;
 
   m_id = configProcessor.set(m_id, params);
 

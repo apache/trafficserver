@@ -627,7 +627,6 @@ typedef enum {
   TS_RECORDUPDATE_DYNAMIC,
   TS_RECORDUPDATE_RESTART_TS,
   TS_RECORDUPDATE_RESTART_TM,
-  TS_RECORDUPDATE_RESTART_TC
 } TSRecordUpdateType;
 
 /* The values of this enum must match enum RecCheckT in I_RecDefs.h */

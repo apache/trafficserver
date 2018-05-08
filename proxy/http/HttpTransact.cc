@@ -608,26 +608,6 @@ HttpTransact::StartRemapRequest(State *s)
 
   TxnDebug("http_trans", "START HttpTransact::StartRemapRequest");
 
-  /**
-   * Check for URL remappings before checking request
-   * validity or initializing state variables since
-   * the remappings can insert or change the destination
-   * host, port and protocol.
-   **/
-
-  HTTPHdr *incoming_request = &s->hdr_info.client_request;
-  URL *url                  = incoming_request->url_get();
-  int host_len, path_len;
-  const char *host = url->host_get(&host_len);
-  const char *path = url->path_get(&path_len);
-  const int port   = url->port_get();
-
-  const char syntxt[] = "synthetic.txt";
-
-  s->cop_test_page = is_localhost(host, host_len) && ((path_len == sizeof(syntxt) - 1) && (memcmp(path, syntxt, path_len) == 0)) &&
-                     port == s->http_config_param->synthetic_port && s->method == HTTP_WKSIDX_GET &&
-                     s->orig_scheme == URL_WKSIDX_HTTP && ats_ip4_addr_cast(&s->client_info.dst_addr.sa) == htonl(INADDR_LOOPBACK);
-
   //////////////////////////////////////////////////////////////////
   // FIX: this logic seems awfully convoluted and hard to follow; //
   //      seems like we could come up with a more elegant and     //
@@ -788,13 +768,11 @@ HttpTransact::EndRemapRequest(State *s)
       }
       s->reverse_proxy = false;
       goto done;
-    } else if (s->http_config_param->url_remap_required && !s->cop_test_page) {
+    } else if (s->http_config_param->url_remap_required) {
       ///////////////////////////////////////////////////////
       // the url mapping failed, but mappings are strictly //
-      // required (except for synthetic cop accesses), so  //
-      // return an error message.                          //
+      // required so return an error message.              //
       ///////////////////////////////////////////////////////
-
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found", "urlrouting#no_mapping");
       s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
@@ -1225,8 +1203,7 @@ HttpTransact::HandleRequest(State *s)
   // this needs to be called after initializing state variables from request
   // it adds the client-ip to the incoming client request.
 
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", &s->hdr_info.client_request, s->state_machine_id, "Incoming Request");
+  DUMP_HEADER("http_hdrs", &s->hdr_info.client_request, s->state_machine_id, "Incoming Request");
 
   if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_INTERCEPT) {
     setup_plugin_request_intercept(s);
@@ -1235,13 +1212,9 @@ HttpTransact::HandleRequest(State *s)
 
   // if ip in url or cop test page, not do srv lookup.
   if (s->txn_conf->srv_enabled) {
-    if (s->cop_test_page) {
-      s->txn_conf->srv_enabled = false;
-    } else {
-      IpEndpoint addr;
-      ats_ip_pton(s->server_info.name, &addr);
-      s->txn_conf->srv_enabled = !ats_is_ip(&addr);
-    }
+    IpEndpoint addr;
+    ats_ip_pton(s->server_info.name, &addr);
+    s->txn_conf->srv_enabled = !ats_is_ip(&addr);
   }
 
   // if the request is a trace or options request, decrement the
@@ -1827,7 +1800,7 @@ void
 HttpTransact::DecideCacheLookup(State *s)
 {
   // Check if a client request is lookupable.
-  if (s->redirect_info.redirect_in_process || s->cop_test_page) {
+  if (s->redirect_info.redirect_in_process) {
     // for redirect, we want to skip cache lookup and write into
     // the cache directly with the URL before the redirect
     s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -2001,11 +1974,9 @@ HttpTransact::HandlePushResponseHdr(State *s)
   s->hdr_info.server_request.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
   s->hdr_info.server_request.value_set("X-Inktomi-Source", 16, "http PUSH", 9);
 
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Pushed Response Header");
+  DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Pushed Response Header");
 
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Generated Request Header");
+  DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Generated Request Header");
 
   s->response_received_time = s->request_sent_time = ink_local_time();
 
@@ -2186,9 +2157,7 @@ HttpTransact::issue_revalidate(State *s)
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
     s->cache_info.action = CACHE_DO_UPDATE;
-    if (!s->cop_test_page) {
-      DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
-    }
+    DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
     return;
   }
 
@@ -2262,8 +2231,7 @@ HttpTransact::issue_revalidate(State *s)
       if (str) {
         s->hdr_info.server_request.value_set(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE, str, length);
       }
-      if (!s->cop_test_page)
-        DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
+      DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
     }
     // if Etag exists, also add if-non-match header
     if (c_resp->presence(MIME_PRESENCE_ETAG) && (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
@@ -2277,8 +2245,7 @@ HttpTransact::issue_revalidate(State *s)
         }
         s->hdr_info.server_request.value_set(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, etag, length);
       }
-      if (!s->cop_test_page)
-        DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
+      DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
     }
     break;
   case HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION: // 203
@@ -3166,8 +3133,7 @@ HttpTransact::HandleResponse(State *s)
   s->current.now = s->response_received_time;
 
   TxnDebug("http_trans", "[HandleResponse] response_received_time: %" PRId64, (int64_t)s->response_received_time);
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Incoming O.S. Response");
+  DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Incoming O.S. Response");
 
   HTTP_INCREMENT_DYN_STAT(http_incoming_responses_stat);
 
@@ -3907,8 +3873,7 @@ HttpTransact::build_response_copy(State *s, HTTPHdr *base_response, HTTPHdr *out
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response); // http version conversion
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response");
+  DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -4391,8 +4356,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
                                                  warn_text, strlen(warn_text));
     }
 
-    if (!s->cop_test_page)
-      DUMP_HEADER("http_hdrs", &s->hdr_info.client_response, s->state_machine_id, "Proxy's Response (Client Conditionals)");
+    DUMP_HEADER("http_hdrs", &s->hdr_info.client_response, s->state_machine_id, "Proxy's Response (Client Conditionals)");
     return;
   }
   // all other responses (not 304, 412, 416) are handled here
@@ -4615,8 +4579,7 @@ HttpTransact::handle_transform_ready(State *s)
   s->pre_transform_source = s->source;
   s->source               = SOURCE_TRANSFORM;
 
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", &s->hdr_info.transform_response, s->state_machine_id, "Header From Transform");
+  DUMP_HEADER("http_hdrs", &s->hdr_info.transform_response, s->state_machine_id, "Header From Transform");
 
   build_response(s, &s->hdr_info.transform_response, &s->hdr_info.client_response, s->client_info.http_version);
 
@@ -4664,8 +4627,7 @@ HttpTransact::set_header_for_transform(State *s, HTTPHdr *base_header)
   //   in the chain
   s->hdr_info.transform_response.field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
 
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", &s->hdr_info.transform_response, s->state_machine_id, "Header To Transform");
+  DUMP_HEADER("http_hdrs", &s->hdr_info.transform_response, s->state_machine_id, "Header To Transform");
 }
 
 void
@@ -4731,8 +4693,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   // add one marker to the content in cache
   // cache_info->response_get()->value_set("@WWW-Auth", 9, "true", 4);
   //}
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", cache_info->request_get(), s->state_machine_id, "Cached Request Hdr");
+  DUMP_HEADER("http_hdrs", cache_info->request_get(), s->state_machine_id, "Cached Request Hdr");
 }
 
 void
@@ -5604,10 +5565,8 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
   }
 
   if (s->current.server->keep_alive == HTTP_KEEPALIVE) {
-    if (!s->cop_test_page) {
-      TxnDebug("http_hdrs", "[initialize_state_variables_from_response]"
-                            "Server is keep-alive.");
-    }
+    TxnDebug("http_hdrs", "[initialize_state_variables_from_response]"
+                          "Server is keep-alive.");
   } else if (s->state_machine->ua_txn && s->state_machine->ua_txn->is_outbound_transparent() &&
              s->state_machine->t_state.http_config_param->use_client_source_port) {
     /* If we are reusing the client<->ATS 4-tuple for ATS<->server then if the server side is closed, we can't
@@ -5646,9 +5605,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
       const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
 
       if (wks_value == HTTP_VALUE_CHUNKED && !is_response_body_precluded(status_code, s->method)) {
-        if (!s->cop_test_page) {
-          TxnDebug("http_hdrs", "[init_state_vars_from_resp] transfer encoding: chunked!");
-        }
+        TxnDebug("http_hdrs", "[init_state_vars_from_resp] transfer encoding: chunked!");
         s->current.server->transfer_encoding = CHUNKED_ENCODING;
 
         s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
@@ -7649,8 +7606,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   ink_assert(s->request_sent_time >= s->response_received_time);
 
   TxnDebug("http_trans", "[build_request] request_sent_time: %" PRId64, (int64_t)s->request_sent_time);
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
+  DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
 
   HTTP_INCREMENT_DYN_STAT(http_outgoing_requests_stat);
 }
@@ -7793,7 +7749,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
     HttpTransactHeaders::add_connection_close(outgoing_response);
   }
 
-  if (!s->cop_test_page && is_debug_tag_set("http_hdrs")) {
+  if (is_debug_tag_set("http_hdrs")) {
     if (base_response) {
       DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
     }

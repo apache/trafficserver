@@ -193,22 +193,13 @@ requests and manage, control, and monitor the health of the system.
    first-served order. This connection queueing shields users from any
    server restart downtime.
 
--  The :program:`traffic_cop` process monitors the health of both the
-   :program:`traffic_server` and :program:`traffic_manager` processes. The
-   :program:`traffic_cop` process periodically (several times each minute)
-   queries the :program:`traffic_server` and :program:`traffic_manager`
-   processes by issuing heartbeat requests to fetch synthetic web pages. In the
-   event of failure (if no response is received within a timeout interval or
-   if an incorrect response is received), :program:`traffic_cop` restarts the
-   :program:`traffic_manager` and :program:`traffic_server` processes.
-
-The figure below illustrates the three Traffic Server processes.
+The figure below illustrates the Traffic Server processes.
 
 .. figure:: ../static/images/admin/process.jpg
    :align: center
-   :alt: Illustration of the three Traffic Server Processes
+   :alt: Illustration of the Traffic Server Processes
 
-   Illustration of the three Traffic Server Processes
+   Illustration of the Traffic Server Processes
 
 Administration Tools
 --------------------

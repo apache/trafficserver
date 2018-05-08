@@ -53,7 +53,6 @@ Runtime Structure
    node "traffic_server"
 
    [traffic_ctl] <-d-> [traffic_manager] : Remote RPC
-   [traffic_cop] <-r-> [traffic_manager] : Remote RPC
    [other remote clients] <-u-> [traffic_manager] : Remote RPC
    [traffic_manager] <-r-> [traffic_server] : Local RPC
    [traffic_server] <-r-> [plugin] : Hook
@@ -76,7 +75,7 @@ Sequence diagram for a command sent from |TCtl| to when it is recieved by a plug
 Remote RPC vs Local RPC 
 =======================
 
-The RPC API for remote clients, such as |TCtl|, :program:`traffic_cop`, etc, is different from the RPC API used between |TManager| and |TServer|. 
+The RPC API for remote clients, such as |TCtl|, etc, is different from the RPC API used between |TManager| and |TServer|. 
 
 |TManager| acts like a bridge for remote clients to interact with |TServer|. Thus, it is currently impossible to do things like have |TCtl| directly send messages to |TServer|. Classes suffixed with "Remote", ie. :ts:git:`CoreAPIRemote.cc`, and classes suffixed with "Local", ie. :ts:git:`NetworkUtilsLocal.cc` are for remote and local clients, respectively. The following sections will note which set of RPC's are relevant.
 

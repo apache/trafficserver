@@ -107,7 +107,6 @@ enum RecUpdateT {
   RECU_DYNAMIC,    // config can be updated dynamically w/ "traffic_ctl config reload"
   RECU_RESTART_TS, // config requires TS to be restarted to take effect
   RECU_RESTART_TM, // config requires TM/TS to be restarted to take effect
-  RECU_RESTART_TC  // config requires TC/TM/TS to be restarted to take effect
 };
 
 enum RecCheckT {

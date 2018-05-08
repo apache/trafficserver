@@ -18,7 +18,7 @@
 # chkconfig: - 90 10
 # description: Apache Traffic Server is a fast, scalable and extensible  \
 #             HTTP/1.1 compliant caching proxy server.
-# processname: traffic_cop traffic_manager traffic_server
+# processname: traffic_manager traffic_server
 # config: /etc/trafficserver
 # config: /etc/sysconfig/trafficserver
 # pidfile: /var/run/trafficserver/cop.pid
@@ -102,17 +102,13 @@ TS_ROOT=${TS_ROOT:-$TS_PREFIX}
 # For standard installations TS_BASE will be empty
 eval TS_BASE="`echo $TS_ROOT | ${ESED} -e 's;@prefix@$;;'`"
 
-TC_NAME=${TC_NAME:-traffic_cop}
 TM_NAME=${TM_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
-TC_DAEMON=${TC_DAEMON:-$TS_BASE@exp_bindir@/traffic_cop}
-TC_DAEMON_ARGS=""
 TM_DAEMON=${TM_DAEMON:-$TS_BASE@exp_bindir@/traffic_manager}
 TM_DAEMON_ARGS=""
 TS_DAEMON=${TS_DAEMON:-$TS_BASE@exp_bindir@/traffic_server}
 TS_DAEMON_ARGS=""
 TL_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_ctl}
-TC_PIDFILE=${TC_PIDFILE:-$TS_BASE@exp_runtimedir@/cop.lock}
 TM_PIDFILE=${TM_PIDFILE:-$TS_BASE@exp_runtimedir@/manager.lock}
 TS_PIDFILE=${TS_PIDFILE:-$TS_BASE@exp_runtimedir@/server.lock}
 # number of times to retry check on pid lock file
@@ -196,7 +192,7 @@ forkdaemon()
     while (( $i < $PIDFILE_CHECK_RETRIES ))
     do
         # check for regular file and size greater than 0
-        if [[ -f $TC_PIDFILE ]] && [[ -s $TC_PIDFILE ]]
+        if [[ -f $TM_PIDFILE ]] && [[ -s $TM_PIDFILE ]]
         then
             success
             return 0
@@ -221,16 +217,16 @@ do_start()
   #   0 if daemon has been started
   #   1 if daemon was already running
   #   2 if daemon could not be started
-    start-stop-daemon --start --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
+    start-stop-daemon --start --quiet --pidfile $TM_PIDFILE --exec $TM_DAEMON --test > /dev/null \
         || return 1
-    start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON -- \
-        $TC_DAEMON_ARGS \
+    start-stop-daemon --start --background --quiet --pidfile $TM_PIDFILE --exec $TM_DAEMON -- \
+        $TM_DAEMON_ARGS \
         || return 2
   # Add code here, if necessary, that waits for the process to be ready
   # to handle requests from services started subsequently which depend
   # on this one.  As a last resort, sleep for some time.
     sleep 1
-    test -f "$TC_PIDFILE" || return 2
+    test -f "$TM_PIDFILE" || return 2
 }
 
 #
@@ -243,7 +239,7 @@ do_stop()
   #   1 if daemon was already stopped
   #   2 if daemon could not be stopped
   #   other if a failure occurred
-    start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TC_PIDFILE --name $TC_NAME
+    start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
   # Wait for children to finish too if this is a daemon that forks
@@ -252,7 +248,7 @@ do_stop()
   # that waits for the process to drop all resources that could be
   # needed by services started subsequently.  A last resort is to
   # sleep for some time.
-    start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TC_DAEMON
+    start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TM_DAEMON
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
   # Need to stop the TM and TS also
@@ -263,7 +259,7 @@ do_stop()
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
   # Many daemons don't delete their pidfiles when they exit.
-    rm -f $TC_PIDFILE
+    rm -f $TM_PIDFILE
     rm -f $TM_PIDFILE
     rm -f $TS_PIDFILE
     return "$RETVAL"
@@ -284,21 +280,21 @@ case "$1" in
 	    do_start
 	    eend $?
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
+            action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TM_DAEMON $TM_DAEMON_ARGS
         elif [ "$DISTRIB_ID" = "suse" ]; then
             echo -n "Starting ${TS_PACKAGE_NAME}"
-            startproc -p $TC_PIDFILE $TC_DAEMON $TC_DAEMON_ARGS
+            startproc -p $TM_PIDFILE $TM_DAEMON $TM_DAEMON_ARGS
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
-            launchctl bsexec / launchctl list $TC_NAME > /dev/null 2>&1 && exit 0
-            launchctl bsexec / launchctl submit -l $TC_NAME -p $TC_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TC_DAEMON_ARGS
+            launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1 && exit 0
+            launchctl bsexec / launchctl submit -l $TM_NAME -p $TM_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TM_DAEMON_ARGS
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
-            name="$TC_NAME"
+            name="$TM_NAME"
             command="/usr/sbin/daemon"
-            command_args="$TC_DAEMON $TC_DAEMON_ARGS"
-            pidfile="$TC_PIDFILE"
+            command_args="$TM_DAEMON $TM_DAEMON_ARGS"
+            pidfile="$TM_PIDFILE"
             run_rc_command "$1"
         else
             echo "This script needs to be ported to this OS"
@@ -314,7 +310,6 @@ case "$1" in
             test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE -d 35 $TC_DAEMON
             action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE -d 35 $TM_DAEMON
             action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE -d 35 $TS_DAEMON
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
@@ -322,9 +317,6 @@ case "$1" in
 	    do_stop
 	    eend $?
         elif [ "$DISTRIB_ID" = "suse" ]; then
-            echo -n "Stopping ${TC_NAME}"
-            killproc -p $TC_PIDFILE $TC_DAEMON
-            rc_status -v
             echo -n "Stopping ${TM_NAME}"
             killproc -p $TM_PIDFILE $TM_DAEMON
             rc_status -v
@@ -333,22 +325,15 @@ case "$1" in
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Stopping ${TS_PACKAGE_NAME}"
-            launchctl bsexec / launchctl list $TC_NAME > /dev/null 2>&1 || exit 0
-            echo "Stopping ${TC_NAME}"
-            launchctl bsexec / launchctl remove ${TC_NAME}
-            rm -f ${TC_PIDFILE}
+            launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1 || exit 0
             echo "Stopping ${TM_NAME}"
-            kill $(cat $TM_PIDFILE)
+            launchctl bsexec / launchctl remove ${TM_NAME}
             rm -f ${TM_PIDFILE}
             echo "Stopping ${TS_NAME}"
             kill $(cat $TS_PIDFILE)
             rm -f ${TS_PIDFILE}
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Stopping ${TS_PACKAGE_NAME}"
-            if [ -e "$TC_PIDFILE" ]; then
-                kill $(cat $TC_PIDFILE)
-                rm -f ${TC_PIDFILE}
-            fi
             if [ -e "$TM_PIDFILE" ]; then
                 kill $(cat $TM_PIDFILE)
                 rm -f ${TM_PIDFILE}
@@ -419,16 +404,16 @@ case "$1" in
         ;;
     status)
         if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            status -p $TC_PIDFILE $TC_NAME
+            status -p $TM_PIDFILE $TM_NAME
         elif [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-            status_of_proc "$TC_DAEMON" "$TC_NAME" -p "$TC_PIDFILE" && exit 0 || exit $?
+            status_of_proc "$TM_DAEMON" "$TM_NAME" -p "$TM_PIDFILE" && exit 0 || exit $?
         elif [  "$DISTRIB_ID" = "suse" ]; then
             echo -n "Checking for service ${DM}: "
-            checkproc -p $TC_PIDFILE $TC_NAME
+            checkproc -p $TM_PIDFILE $TM_NAME
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             /bin/echo -n "${TS_PACKAGE_NAME} is "
-            launchctl bsexec / launchctl list $TC_NAME > /dev/null 2>&1
+            launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1
             status=$?
             [ $status -eq 0 ] || /bin/echo -n "not "
             echo "running."
@@ -440,10 +425,6 @@ case "$1" in
             if pgrep $TS_NAME > /dev/null ; then
                 echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else
                 echo "$TS_NAME not running"
-            fi
-            if pgrep $TC_NAME > /dev/null ; then
-                echo "$TC_NAME running as pid `cat $TC_PIDFILE`"; else
-                echo "$TC_NAME not running" ;
             fi
             exit $status
         else

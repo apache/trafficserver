@@ -1972,14 +1972,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       } else {
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
-
-      // Start the back door, since it's just a special HttpProxyServer,
-      // the requirements to start it have been met if we got here.
-      int back_door_port = NO_FD;
-      REC_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
-      if (back_door_port != NO_FD) {
-        start_HttpProxyServerBackDoor(back_door_port, !!num_accept_threads); // One accept thread is enough
-      }
     }
     SNIConfig::cloneProtoSet();
     // Plugins can register their own configuration names so now after they've done that

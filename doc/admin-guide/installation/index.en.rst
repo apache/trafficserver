@@ -227,9 +227,8 @@ Stop Traffic Server
 
 To stop Traffic Server, always use the :program:`trafficserver` command,
 passing in the attribute ``stop``. This command stops all the Traffic
-Server processes (:program:`traffic_manager`, :program:`traffic_server`, and
-:program:`traffic_cop`). Do not manually stop processes, as this can lead to
-unpredictable results. ::
+Server processes (:program:`traffic_manager` and :program:`traffic_server`).
+Do not manually stop processes, as this can lead to unpredictable results. ::
 
     bin/trafficserver stop
 

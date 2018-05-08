@@ -464,24 +464,6 @@ port. Traffic Server clusters should ideally be configured to use a
 separate network interface and cluster on a private subnet, so that
 client machines have no access to the cluster ports.
 
-'No cop file' message in the system log file
---------------------------------------------
-
-The following message appears repeatedly in the system log file: ::
-
-     traffic_cop[16056]: encountered "var/trafficserver/no_cop" file...exiting
-
-The file ``var/trafficserver/no_cop`` acts as an administrative control
-that instructs the :program:`traffic_cop` process to exit immediately without
-starting :program:`traffic_manager` or performing any health checks. The
-``no_cop`` file prevents Traffic Server from starting automatically when
-it has been stopped with the option:`trafficserver stop` command. Without
-this static control, Traffic Server would restart automatically upon
-system reboot. The ``no_cop`` control keeps Traffic Server off until it
-is explicitly restarted with: ::
-
-   trafficserver start
-
 Warning in the system log file when manually editing vaddrs.config
 ------------------------------------------------------------------
 

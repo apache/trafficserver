@@ -84,8 +84,7 @@ specifies where these messages are logged. A typical location is
 
 The :manpage:`syslog(8)` process works on a system-wide basis, so it serves as
 the single repository for messages from all |TS| processes (including
-:program:`traffic_server`, :program:`traffic_manager`, and
-:program:`traffic_cop`).
+:program:`traffic_server` and  :program:`traffic_manager`).
 
 System information logs observe a static format. Each log entry in the log
 contains information about the date and time the error was logged, the hostname
