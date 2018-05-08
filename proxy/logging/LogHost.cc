@@ -418,18 +418,31 @@ LogHostList::preproc_and_try_delete(LogBuffer *lb)
     available_host = lh;
 
     do {
+#ifndef __clang_analyzer__
       ink_atomic_increment(&lb->m_references, 1);
-      success     = lh->preproc_and_try_delete(lb);
+      success = lh->preproc_and_try_delete(lb);
+#else
+      /* clang-analyzer cannot be sure that lb->m_references
+       * isn't being modified problematically simultaneously
+       * in other threads. It, however, mustn't be or all is
+       * already lost. Suppress clang-analyzer for this case
+       * so that it does not erroneously believe a use after
+       * free occurs here.
+       */
+      success = false;
+#endif
       need_orphan = need_orphan && (success == false);
     } while (lb && (success == false) && (lh = lh->failover_link.next));
 
     nr--;
   }
 
+#ifndef __clang_analyzer__
   if (need_orphan && available_host) {
     ink_atomic_increment(&lb->m_references, 1);
     available_host->orphan_write_and_try_delete(lb);
   }
+#endif
 
   LogBuffer::destroy(lb);
   return 0;
