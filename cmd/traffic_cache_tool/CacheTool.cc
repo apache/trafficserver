@@ -1356,11 +1356,8 @@ void static scan_span(Span *span)
   for (auto strp : span->_stripes) {
     strp->loadMeta();
     strp->loadDir();
-    strp->walk_all_buckets();
     CacheScan cs(strp);
     cs.Scan();
-
-    // break; // to be removed
   }
 }
 
@@ -1374,7 +1371,6 @@ Scan_Cache()
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
     for (auto sp : cache._spans) {
       threadPool.emplace_back(scan_span, sp); // move constructor is necessary since std::thread is non copyable
-      // break; // to be removed
     }
     for (auto &th : threadPool)
       th.join();
