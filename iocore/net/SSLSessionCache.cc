@@ -33,8 +33,6 @@
 #define PRINT_BUCKET(x)
 #endif
 
-using ts::detail::RBNode;
-
 /* Session Cache */
 SSLSessionCache::SSLSessionCache() : session_bucket(nullptr), nbuckets(SSLConfigParams::session_cache_number_buckets)
 {
