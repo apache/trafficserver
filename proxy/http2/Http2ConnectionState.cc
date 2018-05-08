@@ -377,10 +377,6 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "priority bad length");
   }
 
-  if (!Http2::stream_priority_enabled) {
-    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
-  }
-
   uint8_t buf[HTTP2_PRIORITY_LEN] = {0};
   frame.reader()->memcpy(buf, HTTP2_PRIORITY_LEN, 0);
 
@@ -394,6 +390,10 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   if (stream_id == priority.stream_dependency) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                       "PRIORITY frame depends on itself");
+  }
+
+  if (!Http2::stream_priority_enabled) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
 
   Http2StreamDebug(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
