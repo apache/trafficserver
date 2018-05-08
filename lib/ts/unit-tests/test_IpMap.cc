@@ -22,6 +22,7 @@
 */
 
 #include <ts/IpMap.h>
+#include <sstream>
 #include <catch.hpp>
 
 std::ostream &
@@ -332,7 +333,6 @@ TEST_CASE("IpMap Fill", "[libts][ipmap]")
   void *const markA = reinterpret_cast<void *>(1);
   void *const markB = reinterpret_cast<void *>(2);
   void *const markC = reinterpret_cast<void *>(3);
-  void *mark; // for retrieval
 
   IpEndpoint a0, a_10_28_56_0, a_10_28_56_4, a_10_28_56_255, a3, a4;
   IpEndpoint a_9_255_255_255, a_10_0_0_0, a_10_0_0_19, a_10_0_0_255, a_10_0_1_0;
