@@ -60,7 +60,7 @@ path_join(ts::string_view lhs, ts::string_view rhs)
 FilePath &
 FilePath::operator=(char const *path)
 {
-  _path   = ats_strdup(path);
+  _path   = path;
   _stat_p = STAT_P::UNDEF;
   return *this;
 }
