@@ -272,7 +272,7 @@ namespace detail
 
       while (parent) { // @a n is not the root
         // If the current node is RED, we can just recolor and be done
-        if (n == RED) {
+        if (n && n == RED) {
           n->_color = BLACK;
           break;
         } else {
