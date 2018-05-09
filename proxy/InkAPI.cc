@@ -1888,14 +1888,14 @@ TSfclose(TSFile filep)
   delete file;
 }
 
-size_t
+int
 TSfread(TSFile filep, void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *)filep;
   return file->fread(buf, length);
 }
 
-size_t
+int
 TSfwrite(TSFile filep, const void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *)filep;
