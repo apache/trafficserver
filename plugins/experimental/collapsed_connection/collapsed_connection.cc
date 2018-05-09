@@ -370,7 +370,7 @@ addOrCheckKeepPassRecords(uint32_t hash_key, int64_t timeout)
     if (keep_pass_list->empty()) {
       push_back = true;
     } else {
-      PassRecord &lastRecord = *(keep_pass_list->end());
+      PassRecord &lastRecord = *--(keep_pass_list->end());
 
       if (lastRecord.timeout <= passRecord.timeout) {
         push_back = true;
