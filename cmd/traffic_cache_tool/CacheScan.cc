@@ -34,7 +34,7 @@ const int HTTP_ALT_MARSHAL_SIZE = ROUND(sizeof(HTTPCacheAlt), HDR_PTR_SIZE);
 namespace ct
 {
 Errata
-CacheScan::Scan()
+CacheScan::Scan(bool search)
 {
   int64_t guessed_size = 1048576; // 1M
   Errata zret;
@@ -56,7 +56,7 @@ CacheScan::Scan()
           if (n < size)
             std::cout << "Failed to read content from the Stripe.  " << strerror(errno) << std::endl;
           Doc *doc = reinterpret_cast<Doc *>(stripe_buff2);
-          get_alternates(doc->hdr(), doc->hlen);
+          get_alternates(doc->hdr(), doc->hlen, search);
 
           e = next_dir(e, seg);
         } while (e);
@@ -304,7 +304,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 }
 
 Errata
-CacheScan::get_alternates(const char *buf, int length)
+CacheScan::get_alternates(const char *buf, int length, bool search)
 {
   Errata zret;
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
@@ -324,7 +324,16 @@ CacheScan::get_alternates(const char *buf, int length)
                         std::string(url->m_ptr_host, url->m_len_host) + ":" + std::string(url->m_ptr_port, url->m_len_port) + "/" +
                         std::string(url->m_ptr_path, url->m_len_path) + ";" + std::string(url->m_ptr_params, url->m_len_params) +
                         "?" + std::string(url->m_ptr_query, url->m_len_query);
-      std::cout << str << std::endl;
+
+      if (search) {
+        std::string str_host =
+          std::string(url->m_ptr_scheme, url->m_len_scheme) + "://" + std::string(url->m_ptr_host, url->m_len_host) + ":" +
+          std::string(url->m_ptr_port, url->m_len_port) + "/" + std::string(url->m_ptr_path, url->m_len_path) + ";" +
+          std::string(url->m_ptr_params, url->m_len_params) + "?" + std::string(url->m_ptr_query, url->m_len_query);
+        if (u_matcher->match(str_host.data()))
+          std::cout << "match found " << str_host << std::endl;
+      } else
+        std::cout << str << std::endl;
     } else {
       // std::cout << "alternate retrieval failed" << std::endl;
       break;
