@@ -320,6 +320,7 @@ Stripe::updateHeaderFooter()
       std::cout << "problem writing header to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << hdr_size << std::endl;
       zret = Errata::Message(0, errno, "Failed to write stripe header ");
+      ats_free(meta_t);
       return zret;
     }
     // copy dir entries
@@ -343,10 +344,11 @@ Stripe::updateHeaderFooter()
       std::cout << "problem writing footer to disk: " << strerror(errno) << ":"
                 << " " << n << "<" << footer_size << std::endl;
       zret = Errata::Message(0, errno, "Failed to write stripe header ");
+      ats_free(meta_t);
       return zret;
     }
   }
-  ats_memalign_free(meta_t);
+  ats_free(meta_t);
   return zret;
 }
 
