@@ -330,7 +330,7 @@ public:
 
   // This unfortunately can't go into the t_state, beacuse of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  UrlRewrite *m_remap;
+  UrlRewrite *m_remap = nullptr;
 
   // _postbuf api
   int64_t postbuf_reader_avail();
