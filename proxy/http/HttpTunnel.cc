@@ -839,7 +839,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       // initialize a reader to chunked buffer start before writing to keep ref count
       chunked_buffer_start = p->chunked_handler.chunked_buffer->alloc_reader();
       p->chunked_handler.chunked_buffer->write(p->buffer_start, p->chunked_handler.skip_bytes);
-    } else if (p->do_dechunking) {
+    }
+    if (p->do_dechunking) {
       // bz57413
       Debug("http_tunnel", "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %" PRId64 "",
             p->chunked_handler.chunked_reader->read_avail());
