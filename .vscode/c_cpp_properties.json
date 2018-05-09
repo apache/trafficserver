@@ -1,0 +1,148 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
+                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include",
+                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
+                "/usr/local/include",
+                "/usr/local/opt/openssl@1.1/include",
+                "/usr/local/opt/openssl/include",
+                "/usr/include",
+                "${workspaceFolder}",
+                "${workspaceFolder}/iocore/aio",
+                "${workspaceFolder}/iocore/cache",
+                "${workspaceFolder}/iocore/cluster",
+                "${workspaceFolder}/iocore/dns",
+                "${workspaceFolder}/iocore/eventsystem",
+                "${workspaceFolder}/iocore/hostdb",
+                "${workspaceFolder}/iocore/net",
+                "${workspaceFolder}/iocore/utils",
+                "${workspaceFolder}/lib",
+                "${workspaceFolder}/lib/cppapi/include",
+                "${workspaceFolder}/lib/records",
+                "${workspaceFolder}/lib/ts",
+                "${workspaceFolder}/mgmt",
+                "${workspaceFolder}/mgmt/api/include",
+                "${workspaceFolder}/mgmt/utils",
+                "${workspaceFolder}/proxy",
+                "${workspaceFolder}/proxy/api",
+                "${workspaceFolder}/proxy/api/ts",
+                "${workspaceFolder}/proxy/hdrs",
+                "${workspaceFolder}/proxy/http",
+                "${workspaceFolder}/proxy/http/remap",
+                "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/logging"
+            ],
+            "defines": [],
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
+                    "/usr/local/include",
+                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include",
+                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
+                    "/usr/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include",
+                "${workspaceFolder}",
+                "${workspaceFolder}/iocore/aio",
+                "${workspaceFolder}/iocore/cache",
+                "${workspaceFolder}/iocore/cluster",
+                "${workspaceFolder}/iocore/dns",
+                "${workspaceFolder}/iocore/eventsystem",
+                "${workspaceFolder}/iocore/hostdb",
+                "${workspaceFolder}/iocore/net",
+                "${workspaceFolder}/iocore/utils",
+                "${workspaceFolder}/lib",
+                "${workspaceFolder}/lib/cppapi/include",
+                "${workspaceFolder}/lib/records",
+                "${workspaceFolder}/lib/ts",
+                "${workspaceFolder}/mgmt",
+                "${workspaceFolder}/mgmt/api/include",
+                "${workspaceFolder}/mgmt/utils",
+                "${workspaceFolder}/proxy",
+                "${workspaceFolder}/proxy/api",
+                "${workspaceFolder}/proxy/api/ts",
+                "${workspaceFolder}/proxy/hdrs",
+                "${workspaceFolder}/proxy/http",
+                "${workspaceFolder}/proxy/http/remap",
+                "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/logging"
+            ],
+            "defines": [],
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "/usr/include",
+                    "/usr/local/include",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "${workspaceFolder}",
+                "${workspaceFolder}/iocore/aio",
+                "${workspaceFolder}/iocore/cache",
+                "${workspaceFolder}/iocore/cluster",
+                "${workspaceFolder}/iocore/dns",
+                "${workspaceFolder}/iocore/eventsystem",
+                "${workspaceFolder}/iocore/hostdb",
+                "${workspaceFolder}/iocore/net",
+                "${workspaceFolder}/iocore/utils",
+                "${workspaceFolder}/lib",
+                "${workspaceFolder}/lib/cppapi/include",
+                "${workspaceFolder}/lib/records",
+                "${workspaceFolder}/lib/ts",
+                "${workspaceFolder}/mgmt",
+                "${workspaceFolder}/mgmt/api/include",
+                "${workspaceFolder}/mgmt/utils",
+                "${workspaceFolder}/proxy",
+                "${workspaceFolder}/proxy/api",
+                "${workspaceFolder}/proxy/api/ts",
+                "${workspaceFolder}/proxy/hdrs",
+                "${workspaceFolder}/proxy/http",
+                "${workspaceFolder}/proxy/http/remap",
+                "${workspaceFolder}/proxy/http2",
+                "${workspaceFolder}/proxy/logging"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "intelliSenseMode": "msvc-x64",
+            "browse": {
+                "path": [
+                    "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        }
+    ],
+    "version": 4
+}
