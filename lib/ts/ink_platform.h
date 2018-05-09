@@ -131,6 +131,9 @@ struct ifafilt;
 
 #ifdef HAVE_CPIO_H
 #include <cpio.h>
+#if defined(MAGIC)
+#undef MAGIC
+#endif
 #endif
 
 #ifdef HAVE_STROPTS_H

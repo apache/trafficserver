@@ -19,8 +19,9 @@
   limitations under the License.
  */
 
-#include "ts/HashMD5.h"
 #include "ts/ink_assert.h"
+#include "ts/ink_config.h"
+#include "ts/HashMD5.h"
 
 ATSHashMD5::ATSHashMD5() : md_len(0), finalized(false)
 {

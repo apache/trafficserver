@@ -45,8 +45,8 @@
 #include <thread>
 
 #include "File.h"
-#include "CacheDefs.h"
 #include "Command.h"
+#include "CacheDefs.h"
 #include "CacheScan.h"
 
 using ts::Bytes;
