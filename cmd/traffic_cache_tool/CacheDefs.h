@@ -36,10 +36,6 @@
 #include "Command.h"
 #include "File.h"
 
-#if defined(MAGIC)
-#undef MAGIC
-#endif
-
 namespace tag
 {
 struct bytes {

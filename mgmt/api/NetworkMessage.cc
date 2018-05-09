@@ -23,6 +23,7 @@
 
 #include "ts/ink_config.h"
 #include "ts/ink_defs.h"
+#include "ts/ink_error.h"
 #include "ts/ink_assert.h"
 #include "ts/ink_memory.h"
 #include "mgmtapi.h"

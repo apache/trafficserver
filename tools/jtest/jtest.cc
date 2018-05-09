@@ -53,6 +53,7 @@
 #include <stdlib.h>
 
 #include "ts/ink_defs.h"
+#include "ts/ink_error.h"
 #include "ts/ink_memory.h"
 #include "ts/ink_assert.h"
 #include "ts/INK_MD5.h"
