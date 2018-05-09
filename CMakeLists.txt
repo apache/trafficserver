@@ -1350,6 +1350,7 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_MT_hashtable.cc
 	lib/ts/unit-tests/test_Scalar.cc
 	lib/ts/unit-tests/test_string_view.cc
+	lib/ts/unit-tests/test_scoped_resource.cc
 	lib/ts/unit-tests/test_TextView.cc
 )
 
