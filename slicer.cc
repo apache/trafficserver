@@ -29,6 +29,7 @@
 #include "slicer.h"
 
 #include "config.h"
+#include "data.h"
 
 #include "ts/remap.h"
 
@@ -85,6 +86,20 @@ TSRemapInit
 
   DEBUG_LOG("slicer remap is successfully initialized.");
   return TS_SUCCESS;
+}
+
+/**
+ * Origin server response
+ */
+SLICER_EXPORT
+void
+TSRemapOSResponse
+	( void * ih
+	, TSHttpTxn txn
+	, int os_response_type
+	)
+{
+	DEBUG_LOG("Origin Server Response");
 }
 
 /**
@@ -196,6 +211,39 @@ isGetRequest
 }
 
 /**
+ * continuation handler
+ */
+static
+int
+cont_handler
+	( TSCont contp
+	, TSEvent event
+	, void * edata
+	)
+{
+	DEBUG_LOG("cont_handler: %d", event);
+
+	switch (event)
+	{
+		case TS_EVENT_HTTP_TXN_CLOSE:
+		{
+			DEBUG_LOG("transaction close");
+			SlicerData * const slicerdata = static_cast<SlicerData*>
+				(TSContDataGet(contp));
+			delete slicerdata;
+			TSContDestroy(contp);
+		}
+		default:
+		{
+			DEBUG_LOG("event: %d", event);
+//			TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+		}
+	}
+
+	return 0;
+}
+
+/**
  * Entry point for slicing.
  */
 SLICER_EXPORT
@@ -221,23 +269,19 @@ TSRemapDoRemap
 	}
 
 	// configure and set up continuation
-	SlicerConfig * const config = static_cast<SlicerConfig*>(ih);
+	SlicerConfig * const slicerconfig = static_cast<SlicerConfig*>(ih);
+
+	// slicer data with view into the config
+	SlicerData * const slicerdata = new SlicerData(slicerconfig);
+
+	// set up our continuation
+	TSCont contp = TSContCreate(cont_handler, NULL);
+	TSContDataSet(contp, static_cast<void*>(slicerdata));
+
+	// condition of continuation
+	TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
 
 	return TSREMAP_NO_REMAP;
-}
-
-/**
- * Transaction event handler.
- */
-static
-void
-transaction_handler
-	( TSCont contp
-	, TSEvent event
-	, void * const edata
-	)
-{
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 }
 
 /**

@@ -3,12 +3,16 @@ all: slicer
 slicer_la_SOURCES = \
 	slicer.cc \
 	config.cc \
-	config.h \
+	data.cc \
 	util.cc \
+
+slicer_la_HEADERS = \
+	config.h \
+	data.h \
 	util.h \
 
-slicer: $(slicer_la_SOURCES)
-	tsxs -v -i -o slicer.so slicer.cc config.cc util.cc
+slicer: $(slicer_la_SOURCES) $(slicer_la_HEADERS)
+	tsxs -v -i -o slicer.so $(slicer_la_SOURCES)
 
 CXX = c++ -std=c++11
 #CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
