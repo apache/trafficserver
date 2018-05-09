@@ -3187,15 +3187,21 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
 
    The location of the :file:`ssl_multicert.config` file, relative
-   to the Traffic Server configuration directory. In the following
-   example, if the Traffic Server configuration directory is
-   `/etc/trafficserver`, the Traffic Server SSL configuration file
+   to the |TS| configuration directory. In the following
+   example, if the |TS| configuration directory is
+   `/etc/trafficserver`, the |TS| SSL configuration file
    and the corresponding certificates are located in
    `/etc/trafficserver/ssl`::
 
       CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.config
       CONFIG proxy.config.ssl.server.cert.path STRING etc/trafficserver/ssl
       CONFIG proxy.config.ssl.server.private_key.path STRING etc/trafficserver/ssl
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.exit_on_load_fail INT 1
+
+   By default (``1``), |TS| will not start unless all the SSL certificates listed in the
+   :file:`ssl_multicert.config` file successfully load.  If false (``0``), SSL certificate
+   load failures will not prevent |TS| from starting.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
 
