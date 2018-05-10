@@ -6710,7 +6710,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 
   // If we're half closed, we got a FIN from the client. Forward it on to the origin server
   // now that we have the tunnel operational.
-  if (ua_txn->get_half_close_flag()) {
+  if (ua_txn && ua_txn->get_half_close_flag()) {
     p_ua->vc->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
