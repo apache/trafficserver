@@ -1316,13 +1316,6 @@ tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TS
 */
 tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
 
-/** Get SSL object of this session.
-    Retrieves the SSL object of the SSL connection.
-
-    @return SSL object of this session
- */
-tsapi void *TSHttpSsnSSLConnectionGet(TSHttpSsn ssnp); /* returns SSL * */
-
 /** Get client address for transaction @a txnp.
     Retrieves the socket address of the remote client that has
     connected to Traffic Server for transaction @a txnp. The
