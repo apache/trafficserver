@@ -32,11 +32,11 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
   TSHttpTxn txn;
   TSMBuffer mbuf;
   TSMLoc mhdr;
-  SSL *ssl;
 
-  txn = (TSHttpTxn)edata;
-  hdr = (const SslHdrInstance *)TSContDataGet(cont);
-  ssl = (SSL *)TSHttpSsnSSLConnectionGet(TSHttpTxnSsnGet(txn));
+  txn                 = (TSHttpTxn)edata;
+  hdr                 = (const SslHdrInstance *)TSContDataGet(cont);
+  TSVConn vconn       = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txn));
+  TSSslConnection ssl = TSVConnSSLConnectionGet(vconn);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -61,7 +61,7 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
     goto done;
   }
 
-  SslHdrExpand(ssl, hdr->expansions, mbuf, mhdr);
+  SslHdrExpand((SSL *)ssl, hdr->expansions, mbuf, mhdr);
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
 
 done:
