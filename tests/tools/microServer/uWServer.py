@@ -595,6 +595,7 @@ def _bool(arg):
                                                                                    opt_true_values | opt_false_values)
         raise ValueError(msg)
 
+
 def _argparse_bool(arg):
     try:
         _bool(arg)
@@ -669,6 +670,9 @@ def main():
                         The only two acceptable arguments which are not header fields are : fqdn (represented by HOST) and the url path (represented by PATH) in a request line.\
                         Example: given a client request as  << GET /some/resource/location HTTP/1.1\nHost: hahaha.com\n\n >>, if the user wishes the host field and the path to be used for the response lookup\
                         then the required format will be {%%Host}{PATH}")
+    parser.add_argument("--ipv6",
+                        action="store_true",
+                        help="Sets the server socketfamily to IPv6")
 
     args = parser.parse_args()
     options = args
@@ -687,12 +691,18 @@ def main():
         global lookup_key_
         lookup_key_ = args.lookupkey
         MyHandler.protocol_version = HTTP_VERSION
+
+        if options.ipv6:
+            print("Server running on IPv6")
+            HTTPServer.address_family = socket.AF_INET6
+
         if options.ssl == "True" or options.ssl == "true":
             server = SSLServer((options.ip_address, options.port), MyHandler, options)
         else:
             server = ThreadingServer((options.ip_address, options.port), MyHandler, options)
+
         server.timeout = 5
-        print("started server on port {0}".format(options.port))
+        print("Started server on port {0}".format(options.port))
         server_thread = threading.Thread(target=server.serve_forever())
         server_thread.daemon = True
         server_thread.start()
