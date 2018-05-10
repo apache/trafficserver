@@ -26,7 +26,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: size_t TSfwrite(TSFile filep, const void * buf, size_t length)
+.. function:: ssize_t TSfwrite(TSFile filep, const void * buf, size_t length)
 
 Description
 ===========
@@ -39,3 +39,9 @@ number of bytes written (:c:func:`TSfwrite` returns this value) against the
 value of :arg:`length`.  If it is less, there might be insufficient space on
 disk, for example.
 
+The behavior is undefined if length is greater than SSIZE_MAX.
+
+Return Value
+============
+
+Returns the number of bytes actually written, or -1 if an error occured.
