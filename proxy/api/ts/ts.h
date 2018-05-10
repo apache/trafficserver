@@ -203,7 +203,7 @@ tsapi void TSfclose(TSFile filep);
       while reading the file, it returns -1.
 
  */
-tsapi size_t TSfread(TSFile filep, void *buf, size_t length);
+tsapi ssize_t TSfread(TSFile filep, void *buf, size_t length);
 
 /**
     Attempts to write length bytes of data from the buffer buf
@@ -220,7 +220,7 @@ tsapi size_t TSfread(TSFile filep, void *buf, size_t length);
       writing, it returns the number of bytes successfully written.
 
  */
-tsapi size_t TSfwrite(TSFile filep, const void *buf, size_t length);
+tsapi ssize_t TSfwrite(TSFile filep, const void *buf, size_t length);
 
 /**
     Flushes pending data that has been buffered up in memory from
