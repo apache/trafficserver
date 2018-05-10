@@ -36,6 +36,7 @@ class EThread;
 
 extern int thread_freelist_high_watermark;
 extern int thread_freelist_low_watermark;
+extern int cmd_disable_pfreelist;
 
 struct ProxyAllocator {
   int allocated;
@@ -48,7 +49,7 @@ template <class C>
 inline C *
 thread_alloc(ClassAllocator<C> &a, ProxyAllocator &l)
 {
-  if (l.freelist) {
+  if (!cmd_disable_pfreelist && l.freelist) {
     C *v       = (C *)l.freelist;
     l.freelist = *(C **)l.freelist;
     --(l.allocated);
@@ -62,7 +63,7 @@ template <class C>
 inline C *
 thread_alloc_init(ClassAllocator<C> &a, ProxyAllocator &l)
 {
-  if (l.freelist) {
+  if (!cmd_disable_pfreelist && l.freelist) {
     C *v       = (C *)l.freelist;
     l.freelist = *(C **)l.freelist;
     --(l.allocated);
@@ -113,11 +114,15 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #define THREAD_ALLOC(_a, _t) thread_alloc(::_a, _t->_a)
 #define THREAD_ALLOC_INIT(_a, _t) thread_alloc_init(::_a, _t->_a)
-#define THREAD_FREE(_p, _a, _t)                            \
-  do {                                                     \
-    *(char **)_p    = (char *)_t->_a.freelist;             \
-    _t->_a.freelist = _p;                                  \
-    _t->_a.allocated++;                                    \
-    if (_t->_a.allocated > thread_freelist_high_watermark) \
-      thread_freeup(::_a, _t->_a);                         \
-  } while (0)
+#define THREAD_FREE(_p, _a, _t)                              \
+  if (!cmd_disable_pfreelist) {                              \
+    do {                                                     \
+      *(char **)_p    = (char *)_t->_a.freelist;             \
+      _t->_a.freelist = _p;                                  \
+      _t->_a.allocated++;                                    \
+      if (_t->_a.allocated > thread_freelist_high_watermark) \
+        thread_freeup(::_a, _t->_a);                         \
+    } while (0);                                             \
+  } else {                                                   \
+    thread_free(::_a, _p);                                   \
+  }
