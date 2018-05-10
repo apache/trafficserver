@@ -714,16 +714,6 @@ add_executable(ats
         plugins/experimental/cache_key_genid/cache_key_genid.c
         plugins/experimental/cache_promote/cache_promote.cc
         plugins/experimental/cache_range_requests/cache_range_requests.cc
-        plugins/experimental/cachekey/tests/pattern_test.cc
-        plugins/experimental/cachekey/cachekey.cc
-        plugins/experimental/cachekey/cachekey.h
-        plugins/experimental/cachekey/common.cc
-        plugins/experimental/cachekey/common.h
-        plugins/experimental/cachekey/configs.cc
-        plugins/experimental/cachekey/configs.h
-        plugins/experimental/cachekey/pattern.cc
-        plugins/experimental/cachekey/pattern.h
-        plugins/experimental/cachekey/plugin.cc
         plugins/experimental/collapsed_connection/collapsed_connection.cc
         plugins/experimental/collapsed_connection/MurmurHash3.cc
         plugins/experimental/collapsed_connection/MurmurHash3.h
@@ -1410,7 +1400,7 @@ add_library(libtsconfig SHARED
 )
 
 # Plugins
-add_executable(plugin_compress
+add_library(plugin_compress SHARED
         plugins/compress/configuration.cc
         plugins/compress/configuration.h
         plugins/compress/debug_macros.h
@@ -1418,6 +1408,19 @@ add_executable(plugin_compress
         plugins/compress/misc.cc
         plugins/compress/misc.h
 )
+
+add_library(plugin_cachekey SHARED
+        plugins/cachekey/tests/pattern_test.cc
+        plugins/cachekey/cachekey.cc
+        plugins/cachekey/cachekey.h
+        plugins/cachekey/common.cc
+        plugins/cachekey/common.h
+        plugins/cachekey/configs.cc
+        plugins/cachekey/configs.h
+        plugins/cachekey/pattern.cc
+        plugins/cachekey/pattern.h
+        plugins/cachekey/plugin.cc
+        )
 
 # CacheTool
 add_executable(traffic_cache_tool
