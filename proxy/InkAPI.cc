@@ -802,11 +802,11 @@ FileImpl::fclose()
   }
 }
 
-int
-FileImpl::fread(void *buf, int length)
+ssize_t
+FileImpl::fread(void *buf, size_t length)
 {
-  int64_t amount;
-  int64_t err;
+  size_t amount;
+  ssize_t err;
 
   if ((m_mode != READ) || (m_fd == -1)) {
     return -1;
@@ -855,11 +855,11 @@ FileImpl::fread(void *buf, int length)
   }
 }
 
-int
-FileImpl::fwrite(const void *buf, int length)
+ssize_t
+FileImpl::fwrite(const void *buf, size_t length)
 {
   const char *p, *e;
-  int64_t avail;
+  size_t avail;
 
   if ((m_mode != WRITE) || (m_fd == -1)) {
     return -1;
@@ -895,11 +895,11 @@ FileImpl::fwrite(const void *buf, int length)
   return (p - (const char *)buf);
 }
 
-int
+ssize_t
 FileImpl::fflush()
 {
   char *p, *e;
-  int err = 0;
+  ssize_t err = 0;
 
   if ((m_mode != WRITE) || (m_fd == -1)) {
     return -1;
@@ -930,10 +930,10 @@ FileImpl::fflush()
 }
 
 char *
-FileImpl::fgets(char *buf, int length)
+FileImpl::fgets(char *buf, size_t length)
 {
   char *e;
-  int pos;
+  size_t pos;
 
   if (length == 0) {
     return nullptr;
@@ -954,13 +954,15 @@ FileImpl::fgets(char *buf, int length)
   e = (char *)memchr(m_buf, '\n', m_bufpos);
   if (e) {
     e += 1;
-    if (length > (e - m_buf + 1)) {
+    if (length > (size_t)(e - m_buf + 1)) {
       length = e - m_buf + 1;
     }
   }
 
-  pos      = fread(buf, length - 1);
-  buf[pos] = '\0';
+  ssize_t rlen = fread(buf, length - 1);
+  if (rlen >= 0) {
+    buf[rlen] = '\0';
+  }
 
   return buf;
 }
@@ -1888,14 +1890,14 @@ TSfclose(TSFile filep)
   delete file;
 }
 
-size_t
+ssize_t
 TSfread(TSFile filep, void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *)filep;
   return file->fread(buf, length);
 }
 
-size_t
+ssize_t
 TSfwrite(TSFile filep, const void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *)filep;

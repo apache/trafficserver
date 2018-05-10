@@ -83,17 +83,17 @@ public:
 
   int fopen(const char *filename, const char *mode);
   void fclose();
-  int fread(void *buf, int length);
-  int fwrite(const void *buf, int length);
-  int fflush();
-  char *fgets(char *buf, int length);
+  ssize_t fread(void *buf, size_t length);
+  ssize_t fwrite(const void *buf, size_t length);
+  ssize_t fflush();
+  char *fgets(char *buf, size_t length);
 
 public:
   int m_fd;
   int m_mode;
   char *m_buf;
-  int m_bufsize;
-  int m_bufpos;
+  size_t m_bufsize;
+  size_t m_bufpos;
 };
 
 struct INKConfigImpl : public ConfigInfo {
