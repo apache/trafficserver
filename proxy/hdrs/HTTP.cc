@@ -1955,6 +1955,7 @@ void
 HTTPInfo::create()
 {
   m_alt = httpCacheAltAllocator.alloc();
+  ink_release_assert(m_alt);
 }
 
 void
