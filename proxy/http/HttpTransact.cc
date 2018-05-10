@@ -5392,11 +5392,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
 
     // Logically want to make sure max_forwards is a legitimate non-zero non-negative integer
     // Since max_fowards is a signed integer, no sense making sure it is less than INT_MAX.
-    // Would be negative in that case. Noted by coverity
-    if (max_forwards <= 0) {
-      Log::error("HTTP: snapping invalid max-forwards value %d to %d", max_forwards, INT_MAX);
-      max_forwards = INT_MAX;
-    }
+    // Would be negative in that case.  Already checked negative in the other case.  Noted by coverity
 
     --max_forwards;
     TxnDebug("http_trans", "[handle_trace_options] Decrementing max_forwards to %d", max_forwards);
