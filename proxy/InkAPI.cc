@@ -4919,7 +4919,7 @@ TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   }
 
   c_resp = cached_obj_store->response_get();
-  if (c_resp == nullptr || !c_resp->valid()) {
+  if (!c_resp->valid()) {
     cached_obj_store->response_set(cached_obj->response_get());
   }
   c_resp                        = cached_obj_store->response_get();
