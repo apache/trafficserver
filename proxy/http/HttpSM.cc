@@ -5480,11 +5480,12 @@ HttpSM::handle_server_setup_error(int event, void *data)
     // In case of TIMEOUT, the iocore sends back
     // server_entry->read_vio instead of the write_vio
     // if (vio->op == VIO::WRITE && vio->ndone == 0) {
-    if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
+    if (server_entry && server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
     } else {
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;
     }
+
     // Clean up the vc_table entry so any events in play to the timed out server vio
     // don't get handled.  The connection isn't there.
     if (server_entry) {
