@@ -53,6 +53,12 @@ use :manpage:`malloc(3)` for every allocation. Though this option
 should not commonly be needed, it may be beneficial in memory-constrained
 environments or where the working set is highly variable.
 
+.. option:: -F, --disable_pfreelist
+
+Disable free list in ProxyAllocator which were left out by the -f
+option. Please note that this option is a temporary, testing
+option, and will be removed in the future.
+
 .. option:: -o LEVEL, --dprintf_level LEVEL
 
 .. option:: -R LEVEL, --regression LEVEL
