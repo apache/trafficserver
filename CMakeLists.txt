@@ -730,7 +730,6 @@ add_executable(ats
         plugins/experimental/collapsed_connection/P_collapsed_connection.h
         plugins/experimental/collapsed_forwarding/collapsed_forwarding.cc
         plugins/experimental/custom_redirect/custom_redirect.cc
-        plugins/experimental/epic/epic.cc
         plugins/experimental/escalate/escalate.cc
         plugins/experimental/geoip_acl/acl.cc
         plugins/experimental/geoip_acl/acl.h
