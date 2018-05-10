@@ -522,6 +522,9 @@ append_string(char *dest, const char *src, int *offset_ptr, int max_len)
   int num = strlen(src);
   if (*offset_ptr + num >= max_len) {
     num = max_len - (*offset_ptr + 1);
+    if (num <= 1) {
+      return;
+    }
   }
   strncpy(dest + *offset_ptr, src, num + 1);
   (*offset_ptr) += num;
