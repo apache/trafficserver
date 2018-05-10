@@ -721,7 +721,7 @@ Span::loadDevice()
 #endif
     ;
 
-  ats_scoped_fd fd{_path.open(flags)};
+  ats_scoped_fd fd(_path.open(flags));
 
   if (fd.isValid()) {
     if (ink_file_get_geometry(fd, _geometry)) {
