@@ -108,8 +108,10 @@ BulkFile::load()
   if (0 == fstat(fd, &info)) {
     size_t n = info.st_size;
     _content.resize(n + 2);
-    auto data = const_cast<char *>(_content.data());
-    if (0 < (_len = read(fd, data, n))) {
+    auto data     = const_cast<char *>(_content.data());
+    auto read_len = read(fd, data, n);
+    if (0 < read_len) {
+      _len = read_len;
       // Force a trailing linefeed and nul.
       memset(data + _len, 0, 2);
       if (data[n - 1] != '\n') {
