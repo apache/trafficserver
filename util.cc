@@ -19,7 +19,7 @@
 
 #include "util.h"
 
-#include "slicer.h"
+#include "slice.h"
 
 std::pair<std::string, std::string>
 keyValFrom(std::string line)

@@ -24,27 +24,29 @@
 
 #include "ts/ts.h"
 
-class SlicerConfig;
+class SliceConfig;
 
-class SlicerData
+class SliceData
 {
-	SlicerData() = delete;
-	SlicerData(SlicerData const &) = delete;
-	SlicerData & operator=(SlicerData const &) = delete;
+	SliceData() = delete;
+	SliceData(SliceData const &) = delete;
+	SliceData & operator=(SliceData const &) = delete;
 
 public:
 
-	SlicerConfig const * config; // buffer sizes, etc
+	SliceConfig const * config; // buffer sizes, etc
 
+	TSHttpTxn txnp;
 	TSVIO output_vio;
 	TSIOBuffer output_buffer;
 	TSIOBufferReader output_reader;
 
 	explicit
-	SlicerData
-		( SlicerConfig const * const _config
+	SliceData
+		( SliceConfig const * const _config
+		, TSHttpTxn txn
 		);
 
-	~SlicerData
+	~SliceData
 		();
 };

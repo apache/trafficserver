@@ -4,7 +4,7 @@
 #include "ts/ts.h"
 
 // Data Structures and Classes
-class SlicerConfig
+class SliceConfig
 {
 public:
 
@@ -19,8 +19,8 @@ public:
   int64_t m_input_wm_bytes{512 * 1024};  // watermark
   int64_t m_output_wm_bytes{512 * 1024}; // watermark
 
-  SlicerConfig();
-  ~SlicerConfig();
+  SliceConfig();
+  ~SliceConfig();
 
   bool parseArguments(int const argc, char const * const argv[], char * const errbuf, int const errbuf_size);
 

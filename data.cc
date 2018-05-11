@@ -33,16 +33,18 @@
 
 #include <cstddef>
 
-SlicerData :: SlicerData
-	( SlicerConfig const * const _config
+SliceData :: SliceData
+	( SliceConfig const * const _config
+	, TSHttpTxn _txnp
 	)
 	: config(_config)
+	, txnp(_txnp)
 	, output_vio(NULL)
 	, output_buffer(NULL)
 	, output_reader(NULL)
 { }
 
-SlicerData :: ~SlicerData
+SliceData :: ~SliceData
 	()
 {
 	if (NULL != output_vio)

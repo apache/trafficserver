@@ -26,7 +26,7 @@
  * requests.
  */
 
-#include "slicer.h"
+#include "slice.h"
 
 #include "config.h"
 #include "data.h"
@@ -47,11 +47,47 @@ handle_read_request_header
 	, void * edata
 	)
 {
+	DEBUG_LOG("Global plugin handle begin");
 /*
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   range_header_check(txnp);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 */
+}
+
+/**
+ * continuation handler
+ */
+static
+int
+cont_handler
+	( TSCont contp
+	, TSEvent event
+	, void * edata
+	)
+{
+	DEBUG_LOG("cont_handler: %s", TSHttpEventNameLookup(event));
+
+	switch (event)
+	{
+		case TS_EVENT_HTTP_TXN_CLOSE:
+		{
+			DEBUG_LOG("transaction close");
+			SliceData * const slicedata
+				= static_cast<SliceData*>(TSContDataGet(contp));
+			delete slicedata;
+			TSContDestroy(contp);
+//			TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+		}
+		break;
+		default:
+		{
+//			TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+		}
+		break;
+	}
+
+	return 0;
 }
 
 /**
@@ -65,11 +101,14 @@ TSRemapInit
 	, int errbuf_size
 	)
 {
-  DEBUG_LOG("Slicer Plugin Init");
+  DEBUG_LOG("Slice Plugin Init");
 
   if (nullptr == api_info)
   {
-    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    strncpy
+	 	( errbuf
+		, "[tsremap_init] - Invalid TSRemapInterface argument"
+		, errbuf_size - 1);
     return TS_ERROR;
   }
 
@@ -84,7 +123,7 @@ TSRemapInit
     return TS_ERROR;
   }
 
-  DEBUG_LOG("slicer remap is successfully initialized.");
+  DEBUG_LOG("slice remap is successfully initialized.");
   return TS_SUCCESS;
 }
 
@@ -116,17 +155,17 @@ TSRemapNewInstance
 	)
 {
 	DEBUG_LOG("New Instance");
-	SlicerConfig * const config = new SlicerConfig;
+	SliceConfig * const config = new SliceConfig;
 	if (! config->parseArguments(argc, argv, errbuf, errbuf_size))
 	{
-		DEBUG_LOG("Couldn't parse slicer remap arguments");
+		DEBUG_LOG("Couldn't parse slice remap arguments");
 		delete config;
 		return TS_ERROR;
 	}
 
 	*ih = static_cast<void*>(config);
 
-  return TS_SUCCESS;
+	return TS_SUCCESS;
 }
 
 /**
@@ -141,7 +180,7 @@ TSRemapDeleteInstance
 	DEBUG_LOG("Delete Instance");
 	if (nullptr != ih)
 	{
-		SlicerConfig * const config = static_cast<SlicerConfig*>(ih);
+		SliceConfig * const config = static_cast<SliceConfig*>(ih);
 		delete config;
 	}
 }
@@ -171,7 +210,7 @@ struct GuardMloc
 };
 
 /**
- * slicer handles GET requests only
+ * slice handles GET requests only
  */
 static
 bool
@@ -211,39 +250,6 @@ isGetRequest
 }
 
 /**
- * continuation handler
- */
-static
-int
-cont_handler
-	( TSCont contp
-	, TSEvent event
-	, void * edata
-	)
-{
-	DEBUG_LOG("cont_handler: %d", event);
-
-	switch (event)
-	{
-		case TS_EVENT_HTTP_TXN_CLOSE:
-		{
-			DEBUG_LOG("transaction close");
-			SlicerData * const slicerdata = static_cast<SlicerData*>
-				(TSContDataGet(contp));
-			delete slicerdata;
-			TSContDestroy(contp);
-		}
-		default:
-		{
-			DEBUG_LOG("event: %d", event);
-//			TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-		}
-	}
-
-	return 0;
-}
-
-/**
  * Entry point for slicing.
  */
 SLICER_EXPORT
@@ -258,7 +264,7 @@ TSRemapDoRemap
 
 	if (nullptr == ih)
 	{
-		ERROR_LOG("Slicer config not available");
+		ERROR_LOG("Slice config not available");
 		return TSREMAP_NO_REMAP;
 	}
 
@@ -269,16 +275,21 @@ TSRemapDoRemap
 	}
 
 	// configure and set up continuation
-	SlicerConfig * const slicerconfig = static_cast<SlicerConfig*>(ih);
+	SliceConfig * const sliceconfig = static_cast<SliceConfig*>(ih);
 
-	// slicer data with view into the config
-	SlicerData * const slicerdata = new SlicerData(slicerconfig);
+	// slice data with view into the config
+	SliceData * const slicedata = new SliceData(sliceconfig, txnp);
 
 	// set up our continuation
 	TSCont contp = TSContCreate(cont_handler, NULL);
-	TSContDataSet(contp, static_cast<void*>(slicerdata));
+	TSContDataSet(contp, static_cast<void*>(slicedata));
 
-	// condition of continuation
+	// add in hooks of interest
+
+	// set up transform hook if necessary
+	TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+
+	// transaction close, cleanup
 	TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
 
 	return TSREMAP_NO_REMAP;

@@ -1,5 +1,5 @@
 #include "config.h"
-#include "slicer.h"
+#include "slice.h"
 #include "util.h"
 
 #include <cctype>
@@ -10,18 +10,18 @@ static char const *const SLICER_CONFIG_BLOCKSIZE       = "blocksize";
 static char const *const SLICER_CONFIG_INPUT_WM_BYTES  = "input_watermark_bytes";
 static char const *const SLICER_CONFIG_OUTPUT_WM_BYTES = "output_watermark_bytes";
 
-SlicerConfig :: SlicerConfig
+SliceConfig :: SliceConfig
 	()
     : m_blocksize(default_blocksize)
 	 , m_input_wm_bytes(default_watermark_bytes)
 	 , m_output_wm_bytes(default_watermark_bytes)
 {
-  ALLOC_DEBUG_LOG("SlicerConfig - Create");
+  ALLOC_DEBUG_LOG("SliceConfig - Create");
 }
 
-SlicerConfig :: ~SlicerConfig()
+SliceConfig :: ~SliceConfig()
 {
-  DEBUG_LOG("SlicerConfig - Destroy");
+  DEBUG_LOG("SliceConfig - Destroy");
 }
 
 static inline bool
@@ -31,7 +31,7 @@ isPowerOfTwo(int64_t value)
 }
 
 bool
-SlicerConfig :: parseArguments(int const argc, char const *const argv[], char *const errbuf, int const errbuf_size)
+SliceConfig :: parseArguments(int const argc, char const *const argv[], char *const errbuf, int const errbuf_size)
 {
   DEBUG_LOG("Number of arguments: %d", argc);
   for (int ii = 0; ii < argc; ++ii) {
@@ -78,7 +78,7 @@ SlicerConfig :: parseArguments(int const argc, char const *const argv[], char *c
       }
     }
   } else {
-    DEBUG_LOG("Using default Slicer configuration");
+    DEBUG_LOG("Using default Slice configuration");
   }
 
   if (m_blocksize < min_blocksize) {
@@ -117,19 +117,19 @@ SlicerConfig :: parseArguments(int const argc, char const *const argv[], char *c
 }
 
 int64_t
-SlicerConfig :: blockSize() const
+SliceConfig :: blockSize() const
 {
   return m_blocksize;
 }
 
 int64_t
-SlicerConfig :: inputWatermarkBytes() const
+SliceConfig :: inputWatermarkBytes() const
 {
   return m_input_wm_bytes;
 }
 
 int64_t
-SlicerConfig :: outputWatermarkBytes() const
+SliceConfig :: outputWatermarkBytes() const
 {
   return m_output_wm_bytes;
 }
