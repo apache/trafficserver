@@ -9577,6 +9577,15 @@ TSHttpTxnIdGet(TSHttpTxn txnp)
   return (uint64_t)sm->sm_id;
 }
 
+// Returns unique client session identifier
+int64_t
+TSHttpSsnIdGet(TSHttpSsn ssnp)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  return cs->connection_id();
+}
+
 // Return information about the protocols used by the client
 TSReturnCode
 TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual)
