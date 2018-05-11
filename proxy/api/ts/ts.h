@@ -2362,6 +2362,9 @@ tsapi int TSHttpTxnIsWebsocket(TSHttpTxn txnp);
 /* Get the Txn's (HttpSM's) unique identifier, which is a sequence number since server start) */
 tsapi uint64_t TSHttpTxnIdGet(TSHttpTxn txnp);
 
+/* Get the Ssn's unique identifier */
+tsapi int64_t TSHttpSsnIdGet(TSHttpSsn ssnp);
+
 /* Expose internal Base64 Encoding / Decoding */
 tsapi TSReturnCode TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length);
 tsapi TSReturnCode TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
