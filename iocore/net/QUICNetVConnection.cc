@@ -1445,10 +1445,11 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     written += b->read_avail();
     b = b->next.get();
   }
-  udp_packet->free();
 
   quic_packet =
     this->_packet_factory.create(udp_packet->from, std::move(pkt), written, this->largest_received_packet_number(), result);
+  udp_packet->free();
+
   switch (result) {
   case QUICPacketCreationResult::NOT_READY:
     QUICConDebug("Not ready to decrypt the packet");
