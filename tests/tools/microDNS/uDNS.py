@@ -88,11 +88,12 @@ def build_domain_mappings(path):
             # this loop only runs once, kind of a hack to access the only key in the dict
             domain_name = DomainName(d)
             print("Domain name:", domain_name)
-            records[domain_name] = [A(x) for x in domain[domain_name]]
+            # we can test using python's built-in ipaddress module, but this should suffice
+            records[domain_name] = [A(x) if ":" not in x else AAAA(x) for x in domain[domain_name]] 
             print(records[domain_name])
 
     if 'otherwise' in zone_file:
-        default_records.extend([A(d) for d in zone_file['otherwise']])
+        default_records.extend([A(d) if ":" not in d else AAAA(d) for d in zone_file['otherwise']])
 
 
 def add_authoritative_records(reply, domain):
@@ -157,11 +158,17 @@ if __name__ == '__main__':
     parser.add_argument("zone_file", help="path to zone file")
     parser.add_argument("--rr", action='store_true',
                         help='round robin load balances if multiple IP addresses are present for 1 domain')
+    parser.add_argument("--ipv6", action="store_true",
+                        help="Sets the server socketfamily to IPv6")
     args = parser.parse_args()
 
     if args.rr:
         round_robin = True
     build_domain_mappings(args.zone_file)
+
+    if args.ipv6:
+        print("Server running on IPv6")
+        socketserver.TCPServer.address_family = socket.AF_INET6
 
     servers = [
         socketserver.ThreadingUDPServer((args.ip_addr, args.port), UDPRequestHandler),
@@ -170,6 +177,7 @@ if __name__ == '__main__':
 
     print("Starting DNS...")
     for s in servers:
+        print(s.address_family)
         thread = threading.Thread(target=s.serve_forever)  # that thread will start one more thread for each request
         thread.daemon = True  # exit the server thread when the main thread terminates
         thread.start()
@@ -181,7 +189,8 @@ if __name__ == '__main__':
             sys.stdout.flush()
 
     except KeyboardInterrupt:
-        pass
+        print("Got ctrl^C")
+        # pass
     finally:
         for s in servers:
             s.shutdown()
