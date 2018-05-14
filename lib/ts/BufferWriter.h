@@ -32,7 +32,6 @@
 
 #include <ts/TextView.h>
 #include <ts/MemSpan.h>
-#include <ts/ink_assert.h>
 #include <ts/BufferWriterForward.h>
 
 namespace ts
@@ -207,7 +206,12 @@ public:
       can use it to measure the number of characters a series of writes would result it (from the
       extent() value) without actually writing.
    */
-  FixedBufferWriter(char *buffer, size_t capacity) : _buf(buffer), _capacity(capacity) {}
+  FixedBufferWriter(char *buffer, size_t capacity);
+
+  /** Construct empty buffer.
+   * This is useful for doing sizing before allocating a buffer.
+   */
+  FixedBufferWriter(std::nullptr_t);
 
   FixedBufferWriter(const FixedBufferWriter &) = delete;
   FixedBufferWriter &operator=(const FixedBufferWriter &) = delete;
@@ -233,6 +237,9 @@ public:
   write(const void *data, size_t length) override
   {
     size_t newSize = _attempted + length;
+#if defined(__clang_analyzer__)
+    assert(_capacity == 0 || _buf != nullptr); // make clang-analyzer happy.
+#endif
 
     if (newSize <= _capacity) {
       std::memcpy(_buf + _attempted, data, length);
@@ -751,5 +758,13 @@ bwprint(std::string &s, ts::TextView fmt, Rest &&... rest)
     ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).print(fmt, std::forward<Rest>(rest)...);
   }
 }
+
+// -- FixedBufferWriter --
+inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buf(buffer), _capacity(capacity)
+{
+  ink_assert(_capacity == 0 || buffer != nullptr);
+}
+
+inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
 
 } // end namespace ts

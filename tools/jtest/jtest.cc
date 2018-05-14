@@ -53,6 +53,7 @@
 #include <stdlib.h>
 
 #include "ts/ink_defs.h"
+#include "ts/ink_error.h"
 #include "ts/ink_memory.h"
 #include "ts/ink_assert.h"
 #include "ts/INK_MD5.h"
@@ -519,8 +520,11 @@ static inline void
 append_string(char *dest, const char *src, int *offset_ptr, int max_len)
 {
   int num = strlen(src);
-  if (*offset_ptr + num > max_len) {
-    num = max_len - *offset_ptr;
+  if (*offset_ptr + num >= max_len) {
+    num = max_len - (*offset_ptr + 1);
+    if (num <= 1) {
+      return;
+    }
   }
   strncpy(dest + *offset_ptr, src, num + 1);
   (*offset_ptr) += num;

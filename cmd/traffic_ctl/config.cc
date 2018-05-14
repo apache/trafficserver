@@ -115,8 +115,6 @@ rec_updateof(int rec_updatetype)
     return "static, restart traffic_server";
   case RECU_RESTART_TM:
     return "static, restart traffic_manager";
-  case RECU_RESTART_TC:
-    return "static, full restart";
   case RECU_NULL: /* fallthru */
   default:
     return "none";

@@ -29,7 +29,6 @@
 #include "I_RecProcess.h"
 #include "ts/ink_platform.h"
 #include "P_SSLUtils.h"
-#include "ts/RbTree.h"
 #include "ts/apidefs.h"
 #include <openssl/ssl.h>
 

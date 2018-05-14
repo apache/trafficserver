@@ -54,10 +54,6 @@ HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
     return "PARSE_ERROR";
   case HttpTransact::TRANSACTION_COMPLETE:
     return "TRANSACTION_COMPLETE";
-  case HttpTransact::CONGEST_CONTROL_CONGESTED_ON_F:
-    return "CONGEST_CONTROL_CONGESTED_ON_F";
-  case HttpTransact::CONGEST_CONTROL_CONGESTED_ON_M:
-    return "CONGEST_CONTROL_CONGESTED_ON_M";
   case HttpTransact::PARENT_RETRY:
     return "PARENT_RETRY";
   }

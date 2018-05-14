@@ -168,7 +168,7 @@ not be affected by future configuration changes made in
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
-   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
+   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_manager &
    $ traffic_ctl config get proxy.config.product_company
 
 .. _configuration-variables:
@@ -235,49 +235,6 @@ System Variables
    :ref:`admin-logging-understanding` for more in-depth discussion
    of the contents and interpretations of log files.
 
-.. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
-
-   The signal sent to :program:`traffic_cop`'s managed processes to stop them.
-
-   A value of ``0`` means no signal will be sent.
-
-.. ts:cv:: CONFIG proxy.config.cop.linux_min_memfree_kb INT 0
-
-   The minimum amount of free memory space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to
-   prevent the system from hanging.
-
-.. ts:cv:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 0
-
-   The minimum amount of free swap space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to
-   prevent the system from hanging. This configuration variable applies if
-   swap is enabled in Linux 2.2 only.
-
-.. ts:cv:: CONFIG proxy.config.cop.init_sleep_time INT 0
-
-   The minimum amount of addtional duration allowed before Traffic Server detects
-   that the :program:`traffic_server` is not responsive and attempts a restart
-   during startup. This configuration variable allows Traffic Server a longer init
-   time to load potentially large configuration files such as remap config. Note that
-   this applies only during startup of Traffic Server and does not apply to the run
-   time heartbeat checking.
-
-.. ts:cv:: CONFIG proxy.config.cop.active_health_checks INT 3
-
-   Specifies which, if any, of :program:`traffic_server` and
-   :program:`traffic_manager` that :program:`traffic_cop` is allowed to kill
-   in the event of failed health checks. The possible values are:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` :program:`traffic_cop` is not allowed to kill any processes.
-   ``1`` Only :program:`traffic_manager` can be killed on failed health checks.
-   ``2`` Only :program:`traffic_server` can be killed on failed health checks.
-   ``3`` :program:`traffic_server` and :program:`traffic_manager` can be killed
-         on failures (default).
-   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
@@ -614,10 +571,6 @@ Cluster
 Local Manager
 =============
 
-.. ts:cv:: CONFIG proxy.config.admin.synthetic_port INT 8083
-
-   The synthetic healthcheck port.
-
 .. ts:cv:: CONFIG proxy.config.admin.number_config_bak INT 3
 
    The maximum number of copies of rolled configuration files to keep.
@@ -663,14 +616,6 @@ Local Manager
    configuration file. Dynamic configuration changes can still be made using
    :program:`traffic_ctl config set`, but these changes will not be persisted
    on service restarts or when :option:`traffic_ctl config reload` is run.
-
-Process Manager
-===============
-
-.. ts:cv:: CONFIG proxy.config.process_manager.mgmt_port  INT 8084
-
-   The port used for internal communication between :program:`traffic_manager`
-   and :program:`traffic_server` processes.
 
 Alarm Configuration
 ===================
@@ -1111,11 +1056,6 @@ ip-resolve
    :ts:cv:`proxy.config.http.server_session_sharing.match` value. If the server session matches the next transaction
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
-
-.. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat logging.
 
 .. ts:cv:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 
@@ -3146,7 +3086,7 @@ SSL Termination
    The current default, included in the ``records.config.default`` example
    configuration is:
 
-   ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
+   TLS-AES-256-GCM-SHA384:TLS-AES-128-GCM-SHA256:TLS-CHACHA20-POLY1305-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cipher_suite STRING <See notes under proxy.config.ssl.server.cipher_suite.>
 
@@ -3187,15 +3127,21 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
 
    The location of the :file:`ssl_multicert.config` file, relative
-   to the Traffic Server configuration directory. In the following
-   example, if the Traffic Server configuration directory is
-   `/etc/trafficserver`, the Traffic Server SSL configuration file
+   to the |TS| configuration directory. In the following
+   example, if the |TS| configuration directory is
+   `/etc/trafficserver`, the |TS| SSL configuration file
    and the corresponding certificates are located in
    `/etc/trafficserver/ssl`::
 
       CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.config
       CONFIG proxy.config.ssl.server.cert.path STRING etc/trafficserver/ssl
       CONFIG proxy.config.ssl.server.private_key.path STRING etc/trafficserver/ssl
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.exit_on_load_fail INT 1
+
+   By default (``1``), |TS| will not start unless all the SSL certificates listed in the
+   :file:`ssl_multicert.config` file successfully load.  If false (``0``), SSL certificate
+   load failures will not prevent |TS| from starting.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
 
@@ -3865,6 +3811,13 @@ Sockets
    Turn on or off support for HTTP proxying. This is rarely used, the one
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
+
+.. ts:cv:: CONFIG proxy.config.http.allow_half_open INT 1
+   :reloadable:
+   :overridable:
+
+   Turn on or off support for connection half open for client side. Default is on, so
+   after client sends FIN, the connection is still there.
 
 .. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
 

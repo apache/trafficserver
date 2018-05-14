@@ -10,4 +10,4 @@ This plugin allows some common cache key manipulations based on various HTTP req
 * classify request using `User-Agent` and a list of regular expressions
 
 # Documentation
-Details and examples can be found in [cachekey plugin documentation](../../../doc/admin-guide/plugins/cachekey.en.rst).
+Details and examples can be found in [cachekey plugin documentation](../../doc/admin-guide/plugins/cachekey.en.rst).

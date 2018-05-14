@@ -72,11 +72,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/cache.config.en.po
 source_file = _build/locale/pot/admin-guide/files/cache.config.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--files--congestion_config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/congestion.config.en.po
-source_file = _build/locale/pot/admin-guide/files/congestion.config.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--files--hosting_config_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/hosting.config.en.po
 source_file = _build/locale/pot/admin-guide/files/hosting.config.en.pot
@@ -260,11 +255,6 @@ source_lang = en
 [apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cluster_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cluster.en.po
 source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cluster.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--congestion_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/congestion.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/congestion.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--monitoring--statistics--core--dns_en]

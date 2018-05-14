@@ -1229,7 +1229,7 @@ recordRestartCheck(const char *varName)
     return false;
   }
 
-  if (update_t == RECU_RESTART_TS || update_t == RECU_RESTART_TM || update_t == RECU_RESTART_TC) {
+  if (update_t == RECU_RESTART_TS || update_t == RECU_RESTART_TM) {
     return true;
   }
 

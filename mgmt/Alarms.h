@@ -70,11 +70,8 @@ class AppVersionInfo;
 #define MGMT_ALARM_WEB_ERROR 15
 #define MGMT_ALARM_PING_FAILURE 16
 #define MGMT_ALARM_MGMT_CONFIG_ERROR 17
-#define MGMT_ALARM_ADD_ALARM 18                    /* OEM_ALARM */
-#define MGMT_ALARM_PROXY_LOG_SPACE_ROLLED 19       /* Alarm when log files will be rolled */
-#define MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER 20  /* Congestion control -- congested server */
-#define MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER 21 /* Congestion control -- alleviated server */
-#define MGMT_ALARM_PROXY_FTP_ERROR 22
+#define MGMT_ALARM_ADD_ALARM 18              /* OEM_ALARM */
+#define MGMT_ALARM_PROXY_LOG_SPACE_ROLLED 19 /* Alarm when log files will be rolled */
 
 #define MGMT_ALARM_SAC_SERVER_DOWN 400
 

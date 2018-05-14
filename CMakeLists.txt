@@ -55,10 +55,6 @@ include_directories(lib
         proxy/api
         lib/luajit/src)
 
-add_executable(traffic_cop
-        cmd/traffic_cop/traffic_cop.cc
-)
-
 add_executable(traffic_crashlog
         cmd/traffic_crashlog/procinfo.cc
         cmd/traffic_crashlog/traffic_crashlog.cc
@@ -576,25 +572,6 @@ add_executable(ats
         lib/records/test_RecordsConfig.h
         lib/records/test_RecProcess.i
         lib/records/test_RecTree.cc
-        lib/tsconfig/Errata.cc
-        lib/tsconfig/Errata.h
-        lib/tsconfig/IntrusivePtr.h
-        lib/tsconfig/NumericType.h
-        lib/tsconfig/test-tsconfig.cc
-        lib/tsconfig/TsBuilder.cc
-        lib/tsconfig/TsBuilder.h
-        lib/tsconfig/TsConfigGrammar.c
-        lib/tsconfig/TsConfigGrammar.h
-        lib/tsconfig/TsConfigLexer.h
-        lib/tsconfig/TsConfigLua.cc
-        lib/tsconfig/TsConfigLua.h
-        lib/tsconfig/TsConfigParseEvents.h
-        lib/tsconfig/TsConfigSyntax.c
-        lib/tsconfig/TsConfigTypes.h
-        lib/tsconfig/TsErrataUtil.cc
-        lib/tsconfig/TsErrataUtil.h
-        lib/tsconfig/TsValue.cc
-        lib/tsconfig/TsValue.h
         lib/wccp/wccp-test-router.cc
         lib/wccp/Wccp.h
         lib/wccp/WccpConfig.cc
@@ -733,23 +710,12 @@ add_executable(ats
         plugins/experimental/cache_key_genid/cache_key_genid.c
         plugins/experimental/cache_promote/cache_promote.cc
         plugins/experimental/cache_range_requests/cache_range_requests.cc
-        plugins/experimental/cachekey/tests/pattern_test.cc
-        plugins/experimental/cachekey/cachekey.cc
-        plugins/experimental/cachekey/cachekey.h
-        plugins/experimental/cachekey/common.cc
-        plugins/experimental/cachekey/common.h
-        plugins/experimental/cachekey/configs.cc
-        plugins/experimental/cachekey/configs.h
-        plugins/experimental/cachekey/pattern.cc
-        plugins/experimental/cachekey/pattern.h
-        plugins/experimental/cachekey/plugin.cc
         plugins/experimental/collapsed_connection/collapsed_connection.cc
         plugins/experimental/collapsed_connection/MurmurHash3.cc
         plugins/experimental/collapsed_connection/MurmurHash3.h
         plugins/experimental/collapsed_connection/P_collapsed_connection.h
         plugins/experimental/collapsed_forwarding/collapsed_forwarding.cc
         plugins/experimental/custom_redirect/custom_redirect.cc
-        plugins/experimental/epic/epic.cc
         plugins/experimental/escalate/escalate.cc
         plugins/experimental/geoip_acl/acl.cc
         plugins/experimental/geoip_acl/acl.h
@@ -899,12 +865,6 @@ add_executable(ats
         plugins/experimental/url_sig/url_sig.h
         plugins/experimental/webp_transform/ImageTransform.cc
         plugins/generator/generator.cc
-        plugins/gzip/configuration.cc
-        plugins/gzip/configuration.h
-        plugins/gzip/debug_macros.h
-        plugins/gzip/gzip.cc
-        plugins/gzip/misc.cc
-        plugins/gzip/misc.h
         plugins/header_rewrite/condition.cc
         plugins/header_rewrite/condition.h
         plugins/header_rewrite/conditions.cc
@@ -1375,6 +1335,7 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_MT_hashtable.cc
 	lib/ts/unit-tests/test_Scalar.cc
 	lib/ts/unit-tests/test_string_view.cc
+	lib/ts/unit-tests/test_scoped_resource.cc
 	lib/ts/unit-tests/test_TextView.cc
 )
 
@@ -1411,6 +1372,51 @@ add_library(libcache SHARED
         iocore/cache/RamCacheLRU.cc
         iocore/cache/Store.cc
 )
+
+add_library(libtsconfig SHARED
+        lib/tsconfig/Errata.cc
+        lib/tsconfig/Errata.h
+        lib/tsconfig/IntrusivePtr.h
+        lib/tsconfig/NumericType.h
+        lib/tsconfig/test-tsconfig.cc
+        lib/tsconfig/TsBuilder.cc
+        lib/tsconfig/TsBuilder.h
+        lib/tsconfig/TsConfigGrammar.c
+        lib/tsconfig/TsConfigGrammar.h
+        lib/tsconfig/TsConfigLexer.h
+        lib/tsconfig/TsConfigLua.cc
+        lib/tsconfig/TsConfigLua.h
+        lib/tsconfig/TsConfigParseEvents.h
+        lib/tsconfig/TsConfigSyntax.c
+        lib/tsconfig/TsConfigTypes.h
+        lib/tsconfig/TsErrataUtil.cc
+        lib/tsconfig/TsErrataUtil.h
+        lib/tsconfig/TsValue.cc
+        lib/tsconfig/TsValue.h
+)
+
+# Plugins
+add_library(plugin_compress SHARED
+        plugins/compress/configuration.cc
+        plugins/compress/configuration.h
+        plugins/compress/debug_macros.h
+        plugins/compress/compress.cc
+        plugins/compress/misc.cc
+        plugins/compress/misc.h
+)
+
+add_library(plugin_cachekey SHARED
+        plugins/cachekey/tests/pattern_test.cc
+        plugins/cachekey/cachekey.cc
+        plugins/cachekey/cachekey.h
+        plugins/cachekey/common.cc
+        plugins/cachekey/common.h
+        plugins/cachekey/configs.cc
+        plugins/cachekey/configs.h
+        plugins/cachekey/pattern.cc
+        plugins/cachekey/pattern.h
+        plugins/cachekey/plugin.cc
+        )
 
 # CacheTool
 add_executable(traffic_cache_tool

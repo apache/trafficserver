@@ -93,7 +93,7 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
             body = createDummyBodywithLength(nBytes)
         #print("request session is",id(request_session))
         if method == 'GET':
-            r1 = request_session.request('GET', extractHeader.extract_GET_path(
+            r1 = request_session.request('GET', 'http://'+extractHeader.extract_host(txn_req_headers)+extractHeader.extract_GET_path(
                 txn_req_headers), headers=txn_req_headers_dict, data=body)
             responseHeaders = r1.headers
             responseContent = r1.content  # byte array
@@ -101,19 +101,19 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
             #print("len: {0} received {1}".format(responseHeaders['Content-Length'], responseContent))
 
         elif method == 'POST':
-            r1 = request_session.request('POST', extractHeader.extract_GET_path(
+            r1 = request_session.request('POST', 'http://'+extractHeader.extract_host(txn_req_headers)+extractHeader.extract_GET_path(
                 txn_req_headers), headers=txn_req_headers_dict, data=body)
             responseHeaders = r1.headers
             responseContent = r1.content
 
             #print("len: {0} received {1}".format(responseHeaders['Content-Length'], responseContent))
         elif method == 'HEAD':
-            r1 = request_session.request('HEAD', extractHeader.extract_GET_path(
+            r1 = request_session.request('HEAD', 'http://'+extractHeader.extract_host(txn_req_headers)+extractHeader.extract_GET_path(
                 txn_req_headers), headers=txn_req_headers_dict, data=body)
             responseHeaders = r1.headers
             responseContent = r1.content
         else:   # EXPERIMENTAL
-            r1 = request_session.request(method, extractHeader.extract_GET_path(
+            r1 = request_session.request(method, 'http://'+extractHeader.extract_host(txn_req_headers)+extractHeader.extract_GET_path(
                 txn_req_headers), headers=txn_req_headers_dict, data=body)
             responseHeaders = r1.headers
             responseContent = r1.content

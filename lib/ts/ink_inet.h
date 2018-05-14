@@ -721,10 +721,12 @@ ats_ip_copy(sockaddr *dst,      ///< Destination object.
     }
   }
   if (n) {
-    memcpy(dst, src, n);
+    if (src != dst) {
+      memcpy(dst, src, n);
 #if HAVE_STRUCT_SOCKADDR_SA_LEN
-    dst->sa_len = n;
+      dst->sa_len = n;
 #endif
+    }
   } else {
     ats_ip_invalidate(dst);
   }
@@ -1183,8 +1185,9 @@ struct IpAddr {
     return this->assign(&ip.sa);
   }
   /// Assign from IPv4 raw address.
-  self &operator=(in_addr_t ip ///< Network order IPv4 address.
-  );
+  /// @param ip Network order IPv4 address.
+  self &operator=(in_addr_t ip);
+
   /// Assign from IPv6 raw address.
   self &operator=(in6_addr const &ip);
 
@@ -1223,7 +1226,7 @@ struct IpAddr {
 
   /// Inequality.
   bool
-  operator!=(self const &that)
+  operator!=(self const &that) const
   {
     return !(*this == that);
   }

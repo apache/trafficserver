@@ -43,8 +43,6 @@ AM_LDFLAGS += \
 
 traffic_manager_SOURCES = \
 	AddConfigFilesHere.cc \
-	MgmtHandlers.cc \
-	MgmtHandlers.h \
 	metrics.h \
 	traffic_manager.cc
 

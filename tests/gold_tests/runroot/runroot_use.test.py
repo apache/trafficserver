@@ -43,13 +43,13 @@ f.Exists = True
 
 # 1. --run-root use path cmd
 tr = Test.AddTestRun("use runroot via commandline")
-tr.Processes.Default.Command = os.path.join("$ATS_BIN/traffic_layout info --run-root=" + path)
+tr.Processes.Default.Command = "$ATS_BIN/traffic_layout info --run-root=" + path
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("PREFIX: " + path, "commandline runroot path")
 
 # 2. use cwd as runroot
 tr = Test.AddTestRun("use runroot via cwd")
-tr.Processes.Default.Command = "cd " + path + ";" + os.path.join("$ATS_BIN/traffic_layout info")
+tr.Processes.Default.Command = "cd " + path + ";" + "$ATS_BIN/traffic_layout info"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("PREFIX: " + path, "cwd runroot path")
 
@@ -62,6 +62,6 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("PREFIX: " + path,
 # 3. TS_RUNROOT ENV variable
 tr = Test.AddTestRun("use runroot via TS_RUNROOT")
 tr.Processes.Default.Env["TS_RUNROOT"] = path2
-tr.Processes.Default.Command = os.path.join("$ATS_BIN/traffic_layout info")
+tr.Processes.Default.Command = "$ATS_BIN/traffic_layout info"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("PREFIX: " + path2, "$TS_RUNROOT Env path")

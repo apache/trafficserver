@@ -17,7 +17,6 @@
 
 SUBDIRS = \
 	traffic_cache_tool \
-	traffic_cop \
 	traffic_crashlog \
 	traffic_ctl \
 	traffic_layout \

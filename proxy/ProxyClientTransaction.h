@@ -270,6 +270,8 @@ public:
   // session.
   //
   virtual int get_transaction_id() const = 0;
+  void set_rx_error_code(ProxyError e);
+  void set_tx_error_code(ProxyError e);
 
 protected:
   ProxyClientSession *parent;

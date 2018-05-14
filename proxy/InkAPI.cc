@@ -4919,7 +4919,7 @@ TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   }
 
   c_resp = cached_obj_store->response_get();
-  if (c_resp == nullptr || !c_resp->valid()) {
+  if (!c_resp->valid()) {
     cached_obj_store->response_set(cached_obj->response_get());
   }
   c_resp                        = cached_obj_store->response_get();
@@ -8262,6 +8262,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
     ret = _memberp_to_generic(&overridableHttpConfig->allow_multi_range, typep);
     break;
+  case TS_CONFIG_HTTP_ALLOW_HALF_OPEN:
+    ret = _memberp_to_generic(&overridableHttpConfig->allow_half_open, typep);
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8510,6 +8513,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     if (!strncmp(name, "proxy.config.ssl.client.cert.path", length)) {
       cnf = TS_CONFIG_SSL_CERT_FILEPATH;
       typ = TS_RECORDDATATYPE_STRING;
+    } else if (!strncmp(name, "proxy.config.http.allow_half_open", length)) {
+      cnf = TS_CONFIG_HTTP_ALLOW_HALF_OPEN;
     }
     break;
 

@@ -114,6 +114,8 @@ class Http2ConnectionState : public Continuation
 public:
   Http2ConnectionState() : stream_list() { SET_HANDLER(&Http2ConnectionState::main_event_handler); }
 
+  ProxyError rx_error_code;
+  ProxyError tx_error_code;
   Http2ClientSession *ua_session   = nullptr;
   HpackHandle *local_hpack_handle  = nullptr;
   HpackHandle *remote_hpack_handle = nullptr;

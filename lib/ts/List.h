@@ -739,5 +739,7 @@ template <class C, class L = typename C::Link_link> struct AtomicSLL {
 
 template <class C, class L> inline AtomicSLL<C, L>::AtomicSLL()
 {
-  ink_atomiclist_init(&al, "AtomicSLL", (uint32_t)(uintptr_t)&L::next_link((C *)nullptr));
+  // need @c offsetof but that's not reliable until C++17, and we can't use the nullptr trick directly because
+  // clang-analyzer gets upset, so we use 0x10 as the base and subtract it back afterwards.
+  ink_atomiclist_init(&al, "AtomicSLL", reinterpret_cast<uintptr_t>(&L::next_link(reinterpret_cast<C *>(0x10))) - 0x10);
 }

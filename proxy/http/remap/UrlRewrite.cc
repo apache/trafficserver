@@ -56,7 +56,6 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 UrlRewrite::UrlRewrite()
   : nohost_rules(0),
     reverse_proxy(0),
-    mgmt_synthetic_port(0),
     ts_name(nullptr),
     http_default_redirect_url(nullptr),
     num_rules_forward(0),
@@ -95,7 +94,6 @@ UrlRewrite::UrlRewrite()
   }
 
   REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
-  REC_ReadConfigInteger(mgmt_synthetic_port, "proxy.config.admin.synthetic_port");
 
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;
@@ -281,10 +279,8 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
     toPath      = map_to->path_get(&toPathLen);
     requestPath = request_url->path_get(&requestPathLen);
 
-    // Should be +3, little extra padding won't hurt. Use the stack allocation
-    // for better performance (bummer that arrays of variable length is not supported
-    // on Solaris CC.
-    char *newPath  = static_cast<char *>(alloca(sizeof(char) * ((requestPathLen - fromPathLen) + toPathLen + 8)));
+    // Should be +3, little extra padding won't hurt.
+    char newPath[(requestPathLen - fromPathLen) + toPathLen + 8];
     int newPathLen = 0;
 
     *newPath = 0;
@@ -303,11 +299,11 @@ url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *req
     if (requestPath) {
       // avoid adding another trailing slash if the requestPath already had one and so does the toPath
       if (requestPathLen < fromPathLen) {
-        if (toPathLen && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
+        if (toPath && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
       } else {
-        if (toPathLen && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
+        if (toPath && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
           fromPathLen++;
         }
       }

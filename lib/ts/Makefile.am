@@ -286,6 +286,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_MT_hashtable.cc \
 	unit-tests/test_Scalar.cc \
 	unit-tests/test_string_view.cc \
+	unit-tests/test_scoped_resource.cc \
 	unit-tests/test_TextView.cc 
 
 if HAS_HKDF

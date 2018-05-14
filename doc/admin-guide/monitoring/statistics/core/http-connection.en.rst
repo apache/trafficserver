@@ -22,35 +22,16 @@
 HTTP Connection
 ***************
 
-.. ts:stat:: global proxy.node.current_cache_connections integer
-   :type: gauge
-   :ungathered:
-
-.. ts:stat:: global proxy.node.current_client_connections integer
+.. ts:stat:: global proxy.process.current_server_connections integer
    :type: gauge
 
-.. ts:stat:: global proxy.node.current_server_connections integer
-   :type: gauge
-
-.. ts:stat:: global proxy.node.http.user_agent_current_connections_count integer
-   :type: gauge
-
-.. ts:stat:: global proxy.node.http.user_agents_total_documents_served integer
-   :type: counter
-
-.. ts:stat:: global proxy.node.http.user_agents_total_transactions_count integer
-   :type: counter
-
-.. ts:stat:: global proxy.node.http.user_agent_total_request_bytes integer
+.. ts:stat:: global proxy.process.http.user_agent_total_request_bytes integer
    :type: counter
    :units: bytes
 
-.. ts:stat:: global proxy.node.http.user_agent_total_response_bytes integer
+.. ts:stat:: global proxy.process.http.user_agent_total_response_bytes integer
    :type: counter
    :units: bytes
-
-.. ts:stat:: global proxy.node.http.user_agent_xacts_per_second float
-   :type: derivative
 
 .. ts:stat:: global proxy.process.http.broken_server_connections integer
    :type: counter

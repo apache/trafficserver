@@ -22,8 +22,10 @@
 */
 
 #include <ts/TextView.h>
+#include <string>
+#include <sstream>
+#include <iomanip>
 #include <catch.hpp>
-#include <iostream>
 
 using TV = ts::TextView;
 

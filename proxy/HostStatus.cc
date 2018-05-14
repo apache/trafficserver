@@ -94,14 +94,15 @@ HostStatus_t
 HostStatus::getHostStatus(const char *name)
 {
   intptr_t _status = HostStatus_t::HOST_STATUS_INIT;
+  int lookup       = 0;
 
   // the hash table value pointer has the HostStatus_t value.
   ink_rwlock_rdlock(&host_status_rwlock);
-  ink_hash_table_lookup(hosts_statuses, name, reinterpret_cast<void **>(&_status));
+  lookup = ink_hash_table_lookup(hosts_statuses, name, reinterpret_cast<void **>(&_status));
   ink_rwlock_unlock(&host_status_rwlock);
   Debug("host_statuses", "name: %s, status: %d", name, static_cast<int>(_status));
 
-  return static_cast<HostStatus_t>(_status);
+  return lookup == 0 ? HostStatus_t::HOST_STATUS_INIT : static_cast<HostStatus_t>(_status);
 }
 
 void
@@ -124,11 +125,13 @@ HostStatus::createHostStat(const char *name)
 int
 HostStatus::getHostStatId(const char *name)
 {
+  int lookup   = 0;
   intptr_t _id = -1;
+
   ink_rwlock_rdlock(&host_statids_rwlock);
-  ink_hash_table_lookup(hosts_stats_ids, name, reinterpret_cast<void **>(&_id));
+  lookup = ink_hash_table_lookup(hosts_stats_ids, name, reinterpret_cast<void **>(&_id));
   ink_rwlock_unlock(&host_statids_rwlock);
   Debug("host_statuses", "name: %s, id: %d", name, static_cast<int>(_id));
 
-  return static_cast<int>(_id);
+  return lookup == 0 ? -1 : static_cast<int>(_id);
 }

@@ -450,6 +450,7 @@ struct OverridableHttpConfigParams {
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
       request_buffer_enabled(0),
+      allow_half_open(1),
       ssl_client_verify_server(0),
       redirect_use_orig_cache_key(0),
       number_of_redirections(0),
@@ -628,6 +629,11 @@ struct OverridableHttpConfigParams {
   // Buffer post body before connecting servers //
   ////////////////////////////////////////////////
   MgmtByte request_buffer_enabled;
+
+  /////////////////////////////////////////////////
+  // Keep connection open after client sends FIN //
+  /////////////////////////////////////////////////
+  MgmtByte allow_half_open;
 
   /////////////////////////////
   // server verification mode//
@@ -815,11 +821,6 @@ public:
   MgmtInt post_copy_size = 2048;
   MgmtInt max_post_size  = 0;
 
-  ////////////////////
-  // Local Manager  //
-  ////////////////////
-  MgmtInt synthetic_port = 0;
-
   ///////////////////////////////////////////////////////////////////
   // Put all MgmtByte members down here, avoids additional padding //
   ///////////////////////////////////////////////////////////////////
@@ -843,8 +844,6 @@ public:
 
   MgmtByte reverse_proxy_enabled = 0;
   MgmtByte url_remap_required    = 1;
-
-  MgmtByte record_cop_page = 0;
 
   MgmtByte errors_log_error_pages = 1;
   MgmtByte enable_http_info       = 0;

@@ -52,7 +52,9 @@ union CryptoHash {
   CryptoHash &
   operator=(CryptoHash const &that)
   {
-    memcpy(this, &that, sizeof(*this));
+    if (this != &that) {
+      memcpy(this, &that, sizeof(*this));
+    }
     return *this;
   }
 

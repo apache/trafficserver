@@ -215,6 +215,12 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_uuid, DEFAULT_STR_FIELD)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_rx_error_code, DEFAULT_STR_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_tx_error_code, DEFAULT_STR_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_sec, DEFAULT_INT_FIELD)
 LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_ms, DEFAULT_INT_FIELD)
 

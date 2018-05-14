@@ -40,8 +40,7 @@ typedef enum {
   TS_LUA_SRVSTATE_OPEN_RAW_ERROR,
   TS_LUA_SRVSTATE_PARSE_ERROR,
   TS_LUA_SRVSTATE_TRANSACTION_COMPLETE,
-  TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F,
-  TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M,
+  TS_LUA_SRVSTATE_PARENT_RETRY,
 } TSLuaServerState;
 
 const char *ts_lua_cache_lookup_result_string[] = {
@@ -52,18 +51,10 @@ const char *ts_lua_cache_lookup_result_string[] = {
 };
 
 const char *ts_lua_server_state_string[] = {
-  "TS_LUA_SRVSTATE_STATE_UNDEFINED",
-  "TS_LUA_SRVSTATE_ACTIVE_TIMEOUT",
-  "TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE",
-  "TS_LUA_SRVSTATE_CONNECTION_ALIVE",
-  "TS_LUA_SRVSTATE_CONNECTION_CLOSED",
-  "TS_LUA_SRVSTATE_CONNECTION_ERROR",
-  "TS_LUA_SRVSTATE_INACTIVE_TIMEOUT",
-  "TS_LUA_SRVSTATE_OPEN_RAW_ERROR",
-  "TS_LUA_SRVSTATE_PARSE_ERROR",
-  "TS_LUA_SRVSTATE_TRANSACTION_COMPLETE",
-  "TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F",
-  "TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M",
+  "TS_LUA_SRVSTATE_STATE_UNDEFINED",      "TS_LUA_SRVSTATE_ACTIVE_TIMEOUT",    "TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE",
+  "TS_LUA_SRVSTATE_CONNECTION_ALIVE",     "TS_LUA_SRVSTATE_CONNECTION_CLOSED", "TS_LUA_SRVSTATE_CONNECTION_ERROR",
+  "TS_LUA_SRVSTATE_INACTIVE_TIMEOUT",     "TS_LUA_SRVSTATE_OPEN_RAW_ERROR",    "TS_LUA_SRVSTATE_PARSE_ERROR",
+  "TS_LUA_SRVSTATE_TRANSACTION_COMPLETE", "TS_LUA_SRVSTATE_PARENT_RETRY",
 };
 
 static void ts_lua_inject_http_retset_api(lua_State *L);
@@ -104,6 +95,9 @@ static int ts_lua_http_get_server_state(lua_State *L);
 
 static int ts_lua_http_get_remap_from_url(lua_State *L);
 static int ts_lua_http_get_remap_to_url(lua_State *L);
+
+static int ts_lua_http_get_server_fd(lua_State *L);
+static int ts_lua_http_get_client_fd(lua_State *L);
 
 static void ts_lua_inject_server_state_variables(lua_State *L);
 
@@ -240,6 +234,12 @@ ts_lua_inject_http_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_get_remap_to_url);
   lua_setfield(L, -2, "get_remap_to_url");
+
+  lua_pushcfunction(L, ts_lua_http_get_server_fd);
+  lua_setfield(L, -2, "get_server_fd");
+
+  lua_pushcfunction(L, ts_lua_http_get_client_fd);
+  lua_setfield(L, -2, "get_client_fd");
 
   ts_lua_inject_server_state_variables(L);
 }
@@ -792,6 +792,40 @@ ts_lua_http_get_remap_to_url(lua_State *L)
 done:
   if (str != NULL) {
     TSfree(str);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_server_fd(lua_State *L)
+{
+  int fd;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSHttpTxnServerFdGet(http_ctx->txnp, &fd) != TS_SUCCESS) {
+    lua_pushnil(L);
+  } else {
+    lua_pushnumber(L, fd);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_client_fd(lua_State *L)
+{
+  int fd;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSHttpTxnClientFdGet(http_ctx->txnp, &fd) != TS_SUCCESS) {
+    lua_pushnil(L);
+  } else {
+    lua_pushnumber(L, fd);
   }
 
   return 1;

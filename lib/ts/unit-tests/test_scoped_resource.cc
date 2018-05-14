@@ -1,6 +1,6 @@
 /** @file
 
-    A brief file description
+    IpMap unit tests.
 
     @section license License
 
@@ -21,9 +21,30 @@
     limitations under the License.
 */
 
-#pragma once
+#include <ts/ink_memory.h>
+#include <catch.hpp>
 
-extern int aconf_port_arg;
+ats_scoped_fd
+fixed_fd()
+{
+  ats_scoped_fd zret{5};
+  return zret;
+}
 
-void *mgmt_synthetic_main(void *);
-bool api_socket_is_restricted();
+ats_scoped_fd
+direct_fixed_fd()
+{
+  return ats_scoped_fd{6};
+}
+
+TEST_CASE("scoped_resource", "[libts][scoped]")
+{
+  ats_scoped_fd no_fd;
+  REQUIRE(-1 == no_fd);
+  ats_scoped_fd fd1{fixed_fd()};
+  REQUIRE(fd1 == 5);
+  ats_scoped_fd fd2{direct_fixed_fd()};
+  REQUIRE(6 == fd2);
+  ats_scoped_fd fd3{ats_scoped_fd()};
+  REQUIRE(-1 == fd3);
+};

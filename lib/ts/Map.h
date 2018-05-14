@@ -1636,9 +1636,11 @@ HashMap<K, AHashFns, C, A>::put(K akey, C avalue)
   }
   HashMap<K, AHashFns, C, A> vv(*this);
   Map<K, C, A>::set_expand();
-  for (size_t i = 0; i < vv.n; i++)
-    if (vv.v[i].key)
+  for (size_t i = 0; i < vv.n; i++) {
+    if (vv.v && vv.v[i] && vv.v[i].key) {
       put(vv.v[i].key, vv.v[i].value);
+    }
+  }
   return put(akey, avalue);
 }
 
