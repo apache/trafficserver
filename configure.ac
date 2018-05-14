@@ -858,7 +858,7 @@ case $host_os_def in
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
       #    common_opt="-pipe -Wall -Wconversion -Wno-sign-conversion -Wno-format-truncation"
-      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-format-truncation"
+      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-format-truncation -Wno-cast-function-type -Wno-stringop-overflow"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Wno-noexcept-type"
