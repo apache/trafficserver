@@ -489,7 +489,8 @@ append_string(char *dest, const char *src, int *offset_ptr, int max_len)
   if (*offset_ptr + num > max_len) {
     num = max_len - *offset_ptr;
   }
-  strncpy(dest + *offset_ptr, src, num + 1);
+  memcpy(dest + *offset_ptr, src, num);
+  dest[*offset_ptr + num] = '\0';
   (*offset_ptr) += num;
 }
 
@@ -3892,7 +3893,7 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
 
           /* append emb_path */
 
-          sprintf(temp2, "%s%s", temp2, emb.path);
+          strcat(temp2, emb.path);
 
           /* remove "." and ".." */
 

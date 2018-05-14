@@ -229,7 +229,8 @@ decodeViaHeader(const char *str)
   char tmp[viaHdrLength + 2];
   char *Via = tmp;
 
-  strncpy(Via, str, viaHdrLength + 1); // Safe to call strcpy.
+  memcpy(Via, str, viaHdrLength);
+  Via[viaHdrLength] = '\0'; // null terminate
   printf("Via header is %s, Length is %zu\n", Via, viaHdrLength);
 
   // Via header inside square brackets
