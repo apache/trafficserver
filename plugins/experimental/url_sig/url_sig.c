@@ -291,7 +291,7 @@ getAppQueryString(const char *query_string, int query_length)
     return NULL;
   }
   memset(buf, 0, sizeof(buf));
-  strncpy(buf, query_string, query_length);
+  memcpy(buf, query_string, query_length);
   p = buf;
 
   TSDebug(PLUGIN_NAME, "query_string: %s, query_length: %d", query_string, query_length);
@@ -392,7 +392,8 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
       TSError("insuficient space to copy into new_path_seg buffer.");
       return NULL;
     } else {
-      strncat(new_path_seg, segment[i], l);
+      memcpy(new_path_seg, segment[i], l);
+      new_path_seg[l] = '\0';
       if (i != numtoks - 1) {
         strncat(new_path_seg, "/", 1);
       }
@@ -404,13 +405,13 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
   // save the encoded signing parameter data
   if (sig_anchor != NULL) { // a signature anchor string was found.
     if (strlen(sig_anchor) < signed_seg_len) {
-      strncpy(signed_seg, sig_anchor, strlen(sig_anchor));
+      memcpy(signed_seg, sig_anchor, strlen(sig_anchor));
     } else {
       TSError("insuficient space to copy into new_path_seg buffer.");
     }
   } else { // no signature anchor string was found, assum it is in the last path segment.
     if (strlen(segment[numtoks - 2]) < signed_seg_len) {
-      strncpy(signed_seg, segment[numtoks - 2], strlen(segment[numtoks - 2]));
+      memcpy(signed_seg, segment[numtoks - 2], strlen(segment[numtoks - 2]));
     } else {
       TSError("insuficient space to copy into new_path_seg buffer.");
       return NULL;
@@ -436,16 +437,16 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
   for (i = 0; i < numtoks; i++) {
     // cp the base64 decoded string.
     if (i == sig_anchor_seg && sig_anchor != NULL) {
-      strncat(new_url, segment[i], strlen(segment[i]));
-      strncat(new_url, (char *)decoded_string, strlen((char *)decoded_string));
+      memcpy(new_url, segment[i], strlen(segment[i]));
+      memcpy(new_url, (char *)decoded_string, strlen((char *)decoded_string));
       strncat(new_url, "/", 1);
       continue;
     } else if (i == numtoks - 2 && sig_anchor == NULL) {
-      strncat(new_url, (char *)decoded_string, strlen((char *)decoded_string));
+      memcpy(new_url, (char *)decoded_string, strlen((char *)decoded_string));
       strncat(new_url, "/", 1);
       continue;
     }
-    strncat(new_url, segment[i], strlen(segment[i]));
+    memcpy(new_url, segment[i], strlen(segment[i]));
     if (i < numtoks - 1) {
       strncat(new_url, "/", 1);
     }
