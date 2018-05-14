@@ -145,7 +145,7 @@ setup_watchers(int fd)
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
-    strncpy(fname, conf->fname, MAX_PATH_LEN - 1);
+    strncpy(fname, conf->fname, MAX_PATH_LEN);
     dname = dirname(fname);
     /* Make sure to only watch each directory once */
     if (!(dir = find_direntry(dname, head_dir))) {
