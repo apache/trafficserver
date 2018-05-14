@@ -183,7 +183,7 @@ read_blacklist(TSCont contp)
   file   = TSfopen(blacklist_file, "r");
   nsites = 0;
 
-  /* If the Mutext lock is not successful try again in RETRY_TIME */
+  /* If the Mutex lock is not successful try again in RETRY_TIME */
   if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
     if (file != NULL) {
       TSfclose(file);
