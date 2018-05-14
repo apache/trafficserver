@@ -25,10 +25,10 @@ Test response when connection to origin fails
 ts = Test.MakeATSProcess("ts")
 
 HOST = 'www.connectfail502.test'
-ARBITRARY_LOOPBACK_IP='127.220.59.101' # This should fail to connect.
+server = Test.MakeOriginServer("server", ssl=False) # Reserves a port across autest.
 
 ts.Disk.remap_config.AddLine(
-    'map http://{host} http://{ip}'.format(host=HOST, ip=ARBITRARY_LOOPBACK_IP)
+        'map http://{host} http://{ip}:{uport}'.format(host=HOST, ip='127.0.0.1', uport=server.Variables.Port)
 )
 
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, 'tcp_client.py'))
@@ -38,7 +38,8 @@ data_file.WriteOn("GET / HTTP/1.1\r\nHost: {host}\r\n\r\n".format(host=HOST))
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'"\
+# Do not start the origin server: We wish to simulate connection refused while hopefully no one else uses this port.
+tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | sed -e '/^Date: /d' -e '/^Server: ATS\//d'"\
         .format(ts.Variables.port, "www.connectfail502.test-get.txt")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'general-connection-failure-502.gold'
