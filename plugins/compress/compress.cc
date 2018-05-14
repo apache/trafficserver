@@ -1009,7 +1009,10 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   info("TSPluginInit %s", argv[0]);
-  global_hidden_header_name = init_hidden_header_name();
+
+  if (!global_hidden_header_name) {
+    global_hidden_header_name = init_hidden_header_name();
+  }
 
   TSCont management_contp = TSContCreate(management_update, nullptr);
 
@@ -1059,7 +1062,9 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
   } else {
     config_path = TSstrdup(3 == argc ? argv[2] : "");
   }
-  global_hidden_header_name = init_hidden_header_name();
+  if (!global_hidden_header_name) {
+    global_hidden_header_name = init_hidden_header_name();
+  }
 
   Configuration *config = Configuration::Parse(config_path);
   *instance             = config;
