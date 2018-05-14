@@ -55,7 +55,7 @@ private:
   QUICConnection *_qc = nullptr;
   QUICConnectionTable &_ctable;
   AltConnectionInfo *_alt_quic_connection_ids;
-  uint8_t _nids                           = 0;
+  uint8_t _nids                          = 0;
   int8_t _alt_quic_connection_id_seq_num = 0;
   bool _need_advertise                   = false;
 

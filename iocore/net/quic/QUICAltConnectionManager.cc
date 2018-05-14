@@ -29,7 +29,7 @@ QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConne
 {
   QUICConfig::scoped_config params;
 
-  this->_nids = params->max_alt_connection_ids();
+  this->_nids                    = params->max_alt_connection_ids();
   this->_alt_quic_connection_ids = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
   this->_update_alt_connection_ids(-1);
 }
