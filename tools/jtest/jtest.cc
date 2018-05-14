@@ -526,7 +526,8 @@ append_string(char *dest, const char *src, int *offset_ptr, int max_len)
       return;
     }
   }
-  strncpy(dest + *offset_ptr, src, num + 1);
+  memcpy(dest + *offset_ptr, src, num);
+  dest[*offset_ptr + num] = '\0';
   (*offset_ptr) += num;
 }
 
@@ -723,40 +724,40 @@ make_response_header(int sock, char *url_start, char *url_end, int *url_len, cha
       } else {
         snprintf(buff, 1024, "Content-Range: bytes %lu-%d/%d", fd[sock].range_start, fd[sock].total_length, fd[sock].total_length);
       }
-      print_len = sprintf(header,
-                          "HTTP/1.1 206 Partial-Content\r\n"
-                          "Content-Type: %s\r\n"
-                          "Cache-Control: max-age=630720000\r\n"
-                          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
-                          "%s"
-                          "Content-Length: %d\r\n"
-                          "%s\r\n"
-                          "%s"
-                          "\r\n%s",
-                          content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "Connection: close\r\n",
-                          fd[sock].response_length, buff, no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "",
-                          url_start ? url_start : "");
+      print_len = snprintf(header, header_limit,
+                           "HTTP/1.1 206 Partial-Content\r\n"
+                           "Content-Type: %s\r\n"
+                           "Cache-Control: max-age=630720000\r\n"
+                           "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+                           "%s"
+                           "Content-Length: %d\r\n"
+                           "%s\r\n"
+                           "%s"
+                           "\r\n%s",
+                           content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "Connection: close\r\n",
+                           fd[sock].response_length, buff, no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "",
+                           url_start ? url_start : "");
     } else if (fd[sock].ims) {
-      print_len = sprintf(header,
-                          "HTTP/1.0 304 Not-Modified\r\n"
-                          "Content-Type: %s\r\n"
-                          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
-                          "%s"
-                          "\r\n",
-                          content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "");
+      print_len = snprintf(header, header_limit,
+                           "HTTP/1.0 304 Not-Modified\r\n"
+                           "Content-Type: %s\r\n"
+                           "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+                           "%s"
+                           "\r\n",
+                           content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "");
       *url_len  = 0;
     } else {
-      print_len = sprintf(header,
-                          "HTTP/1.0 200 OK\r\n"
-                          "Content-Type: %s\r\n"
-                          "Cache-Control: max-age=630720000\r\n"
-                          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
-                          "%s"
-                          "Content-Length: %d\r\n"
-                          "%s"
-                          "\r\n%s",
-                          content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "", fd[sock].response_length,
-                          no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "", url_start ? url_start : "");
+      print_len = snprintf(header, header_limit,
+                           "HTTP/1.0 200 OK\r\n"
+                           "Content-Type: %s\r\n"
+                           "Cache-Control: max-age=630720000\r\n"
+                           "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+                           "%s"
+                           "Content-Length: %d\r\n"
+                           "%s"
+                           "\r\n%s",
+                           content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "", fd[sock].response_length,
+                           no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "", url_start ? url_start : "");
     }
   } else {
     *url_len = print_len = sprintf(header, "ftp://%s:%d/%12.10f/%d", local_host, server_port, fd[sock].doc, fd[sock].length);
@@ -4320,7 +4321,7 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
 
           /* append emb_path */
 
-          sprintf(temp2, "%s%s", temp2, emb.path);
+          strcat(temp2, emb.path);
 
           /* remove "." and ".." */
 

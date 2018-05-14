@@ -348,13 +348,11 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
 void
 ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, size_t len)
 {
-  char *_val                      = static_cast<char *>(ats_strndup(val, strlen(val)));
+  char *_val                      = ats_strndup(val, strlen(val));
   char fqdn[TS_MAX_HOST_NAME_LEN] = {0}, *nm, *token, *savePtr;
   std::string str;
   Machine *machine                   = Machine::instance();
   constexpr char PARENT_DELIMITERS[] = ";, ";
-
-  strncpy(_val, val, strlen(val));
 
   token = strtok_r(_val, PARENT_DELIMITERS, &savePtr);
   while (token != nullptr) {
