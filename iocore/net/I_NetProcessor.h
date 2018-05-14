@@ -96,6 +96,9 @@ public:
     */
     bool f_inbound_transparent;
 
+    /// Proxy Protocol enabled
+    bool f_proxy_protocol;
+
     /// Default constructor.
     /// Instance is constructed with default values.
     AcceptOptions() { this->reset(); }

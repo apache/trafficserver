@@ -214,6 +214,8 @@ public:
   bool f_outbound_transparent;
   /// Transparently pass-through non-HTTP traffic.
   bool f_transparent_passthrough;
+  /// Proxy Protocol
+  bool f_proxy_protocol;
 
   Http1ClientTransaction trans;
 };

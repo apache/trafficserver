@@ -241,6 +241,10 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
   }
 
+  if (opt.f_proxy_protocol) {
+    Debug("proxyprotocol", "Proxy Protocol enabled.");
+  }
+
 #if defined(TCP_MAXSEG)
   if (NetProcessor::accept_mss > 0) {
     if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {

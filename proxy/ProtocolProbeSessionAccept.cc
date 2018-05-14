@@ -91,8 +91,10 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       goto done;
     }
 
-    if (http_has_proxy_v1(reader, netvc)) {
-      Debug("http", "ioCompletionEvent: http has proxy_v1 header");
+    if (netvc->                   f_proxy_protocol) {
+      if (http_has_proxy_v1(reader, netvc)) {
+        Debug("http", "ioCompletionEvent: http has proxy_v1 header");
+      }
     }
 
     if (proto_is_http2(reader)) {

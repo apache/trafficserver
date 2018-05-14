@@ -382,9 +382,11 @@ SSLNetVConnection::read_raw_data()
   }
   NET_SUM_DYN_STAT(net_read_bytes_stat, r);
 
-  if (ssl_has_proxy_v1(this, buffer, &r)) {
-    Debug("ssl", "[SSLNetVConnection::read_raw_data] ssl has proxy_v1 header");
-  }
+//  if (this->             f_proxy_protocol) {
+    if (ssl_has_proxy_v1(this, buffer, &r)) {
+      Debug("ssl", "[SSLNetVConnection::read_raw_data] ssl has proxy_v1 header");
+    }
+//  }
 
   if (r > 0) {
     this->handShakeBuffer->fill(r);
