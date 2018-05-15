@@ -79,41 +79,19 @@ typedef struct _ink_freelist_list {
   struct _ink_freelist_list *next;
 } ink_freelist_list;
 
-static void *freelist_new(InkFreeList *f);
-static void freelist_free(InkFreeList *f, void *item);
-static void freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
-
 static void *malloc_new(InkFreeList *f);
 static void malloc_free(InkFreeList *f, void *item);
 static void malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
 
-static const ink_freelist_ops malloc_ops   = {malloc_new, malloc_free, malloc_bulkfree};
-static const ink_freelist_ops freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
-static const ink_freelist_ops *default_ops = &freelist_ops;
+static const ink_freelist_ops malloc_ops           = {malloc_new, malloc_free, malloc_bulkfree};
+static const ink_freelist_ops *freelist_malloc_ops = &malloc_ops;
 
-static ink_freelist_list *freelists                  = nullptr;
-static const ink_freelist_ops *freelist_freelist_ops = default_ops;
+static ink_freelist_list *freelists = nullptr;
 
 const InkFreeListOps *
 ink_freelist_malloc_ops()
 {
   return &malloc_ops;
-}
-
-const InkFreeListOps *
-ink_freelist_freelist_ops()
-{
-  return &freelist_ops;
-}
-
-void
-ink_freelist_init_ops(const InkFreeListOps *ops)
-{
-  // This *MUST* only be called at startup before any freelists allocate anything. We will certainly crash if object
-  // allocated from the freelist are freed by malloc.
-  ink_release_assert(freelist_freelist_ops == default_ops);
-
-  freelist_freelist_ops = ops;
 }
 
 void
@@ -182,77 +160,7 @@ int fake_global_for_ink_queue = 0;
 void *
 ink_freelist_new(InkFreeList *f)
 {
-  void *ptr;
-
-  if (likely(ptr = freelist_freelist_ops->fl_new(f))) {
-    ink_atomic_increment((int *)&f->used, 1);
-  }
-
-  return ptr;
-}
-
-static void *
-freelist_new(InkFreeList *f)
-{
-  head_p item;
-  head_p next;
-  int result = 0;
-
-  do {
-    INK_QUEUE_LD(item, f->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
-      uint32_t i;
-      void *newp        = nullptr;
-      size_t alloc_size = f->chunk_size * f->type_size;
-      size_t alignment  = 0;
-
-      if (ats_hugepage_enabled()) {
-        alignment = ats_hugepage_size();
-        newp      = ats_alloc_hugepage(alloc_size);
-      }
-
-      if (newp == nullptr) {
-        alignment = ats_pagesize();
-        newp      = ats_memalign(alignment, INK_ALIGN(alloc_size, alignment));
-      }
-
-      if (f->advice) {
-        ats_madvise((caddr_t)newp, INK_ALIGN(alloc_size, alignment), f->advice);
-      }
-      SET_FREELIST_POINTER_VERSION(item, newp, 0);
-
-      ink_atomic_increment((int *)&f->allocated, f->chunk_size);
-
-      /* free each of the new elements */
-      for (i = 0; i < f->chunk_size; i++) {
-        char *a = ((char *)FREELIST_POINTER(item)) + i * f->type_size;
-#ifdef DEADBEEF
-        const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
-        for (int j = 0; j < (int)f->type_size; j++)
-          a[j] = str[j % 4];
-#endif
-        freelist_free(f, a);
-      }
-
-    } else {
-      SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0), FREELIST_VERSION(item) + 1);
-      result = ink_atomic_cas(&f->head.data, item.data, next.data);
-
-#ifdef SANITY
-      if (result) {
-        if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next)))
-          ink_abort("ink_freelist_new: loop detected");
-        if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3)
-          ink_abort("ink_freelist_new: bad list");
-        if (TO_PTR(FREELIST_POINTER(next)))
-          fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(next));
-      }
-#endif /* SANITY */
-    }
-  } while (result == 0);
-  ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item)) & (((uintptr_t)f->alignment) - 1)));
-
-  return TO_PTR(FREELIST_POINTER(item));
+  return freelist_malloc_ops->fl_new(f);
 }
 
 static void *
@@ -273,46 +181,7 @@ void
 ink_freelist_free(InkFreeList *f, void *item)
 {
   if (likely(item != nullptr)) {
-    ink_assert(f->used != 0);
-    freelist_freelist_ops->fl_free(f, item);
-    ink_atomic_decrement((int *)&f->used, 1);
-  }
-}
-
-static void
-freelist_free(InkFreeList *f, void *item)
-{
-  void **adr_of_next = (void **)ADDRESS_OF_NEXT(item, 0);
-  head_p h;
-  head_p item_pair;
-  int result = 0;
-
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
-
-#ifdef DEADBEEF
-  {
-    static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
-
-    // set the entire item to DEADBEEF
-    for (int j = 0; j < (int)f->type_size; j++)
-      ((char *)item)[j] = str[j % 4];
-  }
-#endif /* DEADBEEF */
-
-  while (!result) {
-    INK_QUEUE_LD(h, f->head);
-#ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == item)
-      ink_abort("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
-      ink_abort("ink_freelist_free: bad list");
-    if (TO_PTR(FREELIST_POINTER(h)))
-      fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
-#endif /* SANITY */
-    *adr_of_next = FREELIST_POINTER(h);
-    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
+    freelist_malloc_ops->fl_free(f, item);
   }
 }
 
@@ -329,52 +198,7 @@ malloc_free(InkFreeList *f, void *item)
 void
 ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
-  ink_assert(f->used >= num_item);
-
-  freelist_freelist_ops->fl_bulkfree(f, head, tail, num_item);
-  ink_atomic_decrement((int *)&f->used, num_item);
-}
-
-static void
-freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
-{
-  void **adr_of_next = (void **)ADDRESS_OF_NEXT(tail, 0);
-  head_p h;
-  head_p item_pair;
-  int result = 0;
-
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
-
-#ifdef DEADBEEF
-  {
-    static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
-
-    // set the entire item to DEADBEEF;
-    void *temp = head;
-    for (size_t i = 0; i < num_item; i++) {
-      for (int j = sizeof(void *); j < (int)f->type_size; j++)
-        ((char *)temp)[j] = str[j % 4];
-      *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp, 0));
-      temp                      = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
-    }
-  }
-#endif /* DEADBEEF */
-
-  while (!result) {
-    INK_QUEUE_LD(h, f->head);
-#ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == head)
-      ink_abort("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
-      ink_abort("ink_freelist_free: bad list");
-    if (TO_PTR(FREELIST_POINTER(h)))
-      fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
-#endif /* SANITY */
-    *adr_of_next = FREELIST_POINTER(h);
-    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
-  }
+  freelist_malloc_ops->fl_bulkfree(f, head, tail, num_item);
 }
 
 static void
