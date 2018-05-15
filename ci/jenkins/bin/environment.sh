@@ -16,6 +16,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Show which platform we're actually building on
+set +x
+echo -n "Build platform: "
+
+[ -f /etc/lsb-release ] && grep DISTRIB_RELEASE /etc/lsb-release
+[ -f /etc/debian_version ] && cat /etc/debian_version
+[ -f /etc/redhat-release ] && cat /etc/redhat-release
+
 # Shouldn't have to tweak this
 export ATS_SRC_HOME="/home/jenkins/src"
 
@@ -34,13 +42,7 @@ export TODAY=$(/bin/date +'%m%d%Y')
 ATS_BRANCH=master
 ATS_IS_7="yes"
 
-test "${JOB_NAME#*-4.2.x}" != "${JOB_NAME}" && ATS_BRANCH=4.2.x && ATS_IS_7="no"
-test "${JOB_NAME#*-5.3.x}" != "${JOB_NAME}" && ATS_BRANCH=5.3.x && ATS_IS_7="no"
-test "${JOB_NAME#*-6.0.x}" != "${JOB_NAME}" && ATS_BRANCH=6.0.x && ATS_IS_7="no"
-test "${JOB_NAME#*-6.1.x}" != "${JOB_NAME}" && ATS_BRANCH=6.1.x && ATS_IS_7="no"
 test "${JOB_NAME#*-6.2.x}" != "${JOB_NAME}" && ATS_BRANCH=6.2.x && ATS_IS_7="no"
-test "${JOB_NAME#*-6.3.x}" != "${JOB_NAME}" && ATS_BRANCH=6.3.x && ATS_IS_7="no"
-test "${JOB_NAME#*-7.0.x}" != "${JOB_NAME}" && ATS_BRANCH=7.0.x
 test "${JOB_NAME#*-7.1.x}" != "${JOB_NAME}" && ATS_BRANCH=7.1.x
 test "${JOB_NAME#*-7.2.x}" != "${JOB_NAME}" && ATS_BRANCH=7.2.x
 test "${JOB_NAME#*-8.0.x}" != "${JOB_NAME}" && ATS_BRANCH=8.0.x
@@ -48,33 +50,35 @@ test "${JOB_NAME#*-8.1.x}" != "${JOB_NAME}" && ATS_BRANCH=8.1.x
 test "${JOB_NAME#*-8.2.x}" != "${JOB_NAME}" && ATS_BRANCH=8.2.x
 test "${JOB_NAME#*-9.0.x}" != "${JOB_NAME}" && ATS_BRANCH=9.0.x
 test "${JOB_NAME#*-9.1.x}" != "${JOB_NAME}" && ATS_BRANCH=9.1.x
-test "${JOB_NAME#*-9.2.x}" != "${JOB_NAME}" && ATS_BRANCH=9.2.x
+test "${JOB_NAME#*-9.2.x}" != "${JOB_NAME}" && ATS_BRANCH=9.1.x
 
 export ATS_BRANCH
+echo "Branch is $ATS_BRANCH"
 
 # Decide on compilers, gcc is the default
 if test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}"; then
-    export CC="clang"
-    export CXX="clang++"
-    export CXXFLAGS="-Qunused-arguments -std=c++11"
-    export WITH_LIBCPLUSPLUS="yes"
+	export CC="clang"
+	export CXX="clang++"
+	#    export CXXFLAGS="-Qunused-arguments -std=c++11"
+	export CXXFLAGS="-Qunused-arguments"
+	export WITH_LIBCPLUSPLUS="yes"
 fi
 
-# I can't figure out how to deal with scl enable devtoolset-3 bash and the sub-shell with Jenkins,
-# so hacking this up for now.
+# Check for devtoolset-7, but only for ATS 7.x and later
 if test "$ATS_IS_7" == "yes"; then
-    if test -x "/opt/rh/devtoolset-3/root/usr/bin/gcc"; then
-	export CC="/opt/rh/devtoolset-3/root/usr/bin/gcc"
-	export CXX="/opt/rh/devtoolset-3/root/usr/bin/g++"
-	export PATH="/opt/rh/devtoolset-3/root/usr/bin:${PATH}"
-    elif test -x "/usr/bin/gcc-4.9"; then
-	export CC="/usr/bin/gcc-4.9"
-	export CXX="/usr/bin/g++-4.9"
-    fi
+	if test -f "/opt/rh/devtoolset-7/enable"; then
+		source /opt/rh/devtoolset-7/enable
+		echo "Enabling devtoolset-7"
+	elif test -x "/usr/bin/gcc-4.9"; then
+		export CC="/usr/bin/gcc-4.9"
+		export CXX="/usr/bin/g++-4.9"
+		echo "CC: $CC"
+		echo "CXX: $CXX"
+	fi
 fi
 
 # Figure out parallelism for regular builds / bots
 ATS_MAKE_FLAGS="-j4"
 
-# This is for Solaris, but didn't seem to work
-#[ -x /usr/sbin/psrinfo ] && ATS_MAKE_FLAGS="-j $(/usr/sbin/psrinfo -p)" # Conservative on Solaris
+# Restore verbose shell output
+set -x
