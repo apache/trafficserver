@@ -17,13 +17,11 @@
 #  limitations under the License.
 
 import os
-from random import randint
 Test.Summary = '''
-Test transactions and sessions, making sure they open and close in the proper order.
+Test transactions and sessions, making sure two continuations catch the same number of hooks.
 '''
-# need Apache Benchmark. For RHEL7, this is httpd-tools
 Test.SkipUnless(
-    Condition.HasProgram("ab", "apache benchmark (httpd-tools) needs to be installed on system for this test to work")
+    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work")
 )
 Test.ContinueOnFail = True
 # Define default ATS
@@ -50,15 +48,22 @@ ts.Disk.remap_config.AddLine(
     'map http://double.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
 )
 
-numberOfRequests = randint(1000, 1500)
+cmd = 'curl -vs http://127.0.0.1:{0}'.format(ts.Variables.port)
+numberOfRequests = 25
 
-# Make a *ton* of calls to the proxy!
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'ab -n {0} -c 10 http://127.0.0.1:{1}/;sleep 5'.format(numberOfRequests, ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
-tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+
+# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands. 
+ps = tr.SpawnCommands(cmdstr=cmd,  count=numberOfRequests)
+tr.Processes.Default.Env = ts.Env
+
+# Execution order is: ts/server, ps(curl cmds), Default Process.
+tr.Processes.Default.StartBefore(
+    server, ready=When.PortOpen(server.Variables.Port))
+# Adds a delay once the ts port is ready. This is because we cannot test the ts state.
+tr.Processes.Default.StartBefore(ts, ready=10)
+ts.StartAfter(*ps)
+server.StartAfter(*ps)
 tr.StillRunningAfter = ts
 
 comparator_command = '''
@@ -71,14 +76,9 @@ if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -
 
 records = ts.Disk.File(os.path.join(ts.Variables.RUNTIMEDIR, "records.snap"))
 
-
-def file_is_ready():
-    return os.path.exists(records.AbsPath)
-
-
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun()
-tr.DelayStart=10 
+tr.DelayStart = 10 # wait for stats to be updated
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env

@@ -59,9 +59,9 @@ public:
   operator std::string();
 
   /**
-    * const char * conversion
-    * @return a const char * which is this HeaderFieldName
-    */
+   * const char * conversion
+   * @return a const char * which is this HeaderFieldName
+   */
   operator const char *();
 
   /**
@@ -86,21 +86,21 @@ public:
   bool operator==(const char *field_name);
 
   /**
-    * Case insensitive comparison of this HeaderFieldName
-    * @return true if the two strings are equal.
-    */
+   * Case insensitive comparison of this HeaderFieldName
+   * @return true if the two strings are equal.
+   */
   bool operator==(const std::string &field_name);
 
   /**
-    * Case insensitive comparison of this HeaderFieldName
-    * @return true if the two strings are not equal.
-    */
+   * Case insensitive comparison of this HeaderFieldName
+   * @return true if the two strings are not equal.
+   */
   bool operator!=(const char *field_name);
 
   /**
-    * Case insensitive comparison of this HeaderFieldName
-    * @return true if the two strings are not equal.
-    */
+   * Case insensitive comparison of this HeaderFieldName
+   * @return true if the two strings are not equal.
+   */
   bool operator!=(const std::string &field_name);
 };
 
@@ -116,20 +116,20 @@ private:
 
 public:
   /**
-    * Constructor for header_field_value_iterator, this shouldn't need to be used directly.
-    * @param bufp the TSMBuffer associated with the headers
-    * @param mloc the TSMLoc associated with the headers.
-    * @param field_loc the TSMLoc assocated with the field.
-    * @param index the index of the value in the HeaderField
-    * @warning This shouldn't need to be used directly!
-    */
+   * Constructor for header_field_value_iterator, this shouldn't need to be used directly.
+   * @param bufp the TSMBuffer associated with the headers
+   * @param mloc the TSMLoc associated with the headers.
+   * @param field_loc the TSMLoc assocated with the field.
+   * @param index the index of the value in the HeaderField
+   * @warning This shouldn't need to be used directly!
+   */
   header_field_value_iterator(void *bufp, void *hdr_loc, void *field_loc, int index);
 
   /**
-    * Copy Constructor for header_field_value_iterator, this shouldn't need to be used directly.
-    * @param header_field_value_iterator an existing iterator to copy
-    * @warning This shouldn't need to be used directly!
-    */
+   * Copy Constructor for header_field_value_iterator, this shouldn't need to be used directly.
+   * @param header_field_value_iterator an existing iterator to copy
+   * @warning This shouldn't need to be used directly!
+   */
   header_field_value_iterator(const header_field_value_iterator &it);
   ~header_field_value_iterator();
 
@@ -179,9 +179,9 @@ public:
   ~header_field_iterator();
 
   /**
-    * Copy Constructor for header_field_iterator, this shouldn't need to be used directly.
-    * @param header_field_iterator: for constructing the iterator.
-    * @warning This shouldn't need to be used directly!
+   * Copy Constructor for header_field_iterator, this shouldn't need to be used directly.
+   * @param header_field_iterator: for constructing the iterator.
+   * @warning This shouldn't need to be used directly!
    */
   header_field_iterator(const header_field_iterator &it);
 
@@ -244,21 +244,21 @@ public:
   ~HeaderField();
 
   /**
-    * Get the size of the HeaderField, this is the number of values associated with the header field.
-    * @return the number of values in this HeaderField.
-    */
+   * Get the size of the HeaderField, this is the number of values associated with the header field.
+   * @return the number of values in this HeaderField.
+   */
   size_type size() const;
 
   /**
-    * Returns an iterator to the start of the values
-    * @return an iterator point to the start of this header field's values
-    */
+   * Returns an iterator to the start of the values
+   * @return an iterator point to the start of this header field's values
+   */
   iterator begin();
 
   /**
-    * Returns an iterator to the end of this header field's values.
-    * @return an iterator that points beyond the last element of the header field's values.
-    */
+   * Returns an iterator to the end of this header field's values.
+   * @return an iterator that points beyond the last element of the header field's values.
+   */
   iterator end();
 
   /**
@@ -269,30 +269,30 @@ public:
   HeaderFieldName name() const;
 
   /**
-    * Join all the values of this HeaderField into a single string separated by the join string.
-    * @param an optional join string (defaults to ",")
-    * @return a string which is all of the joined values of this HeaderField
-    */
+   * Join all the values of this HeaderField into a single string separated by the join string.
+   * @param an optional join string (defaults to ",")
+   * @return a string which is all of the joined values of this HeaderField
+   */
   std::string values(const char *join = ",");
 
   /**
-    * Join all the values of this HeaderField into a single string separated by the join string.
-    * @param a join string
-    * @return a string which is all of the joined values of this HeaderField
-    */
+   * Join all the values of this HeaderField into a single string separated by the join string.
+   * @param a join string
+   * @return a string which is all of the joined values of this HeaderField
+   */
   std::string values(const std::string &join);
 
   /**
-    * Join all the values of this HeaderField into a single string separated by the join string.
-    * @param a optional join character
-    * @return a string which is all of the joined values of this HeaderField
-    */
+   * Join all the values of this HeaderField into a single string separated by the join string.
+   * @param a optional join character
+   * @return a string which is all of the joined values of this HeaderField
+   */
   std::string values(const char join);
 
   /**
-    * Check if this HeaderField is empty (no values).
-    * @return a boolean value representing whether or not the header field has values.
-    */
+   * Check if this HeaderField is empty (no values).
+   * @return a boolean value representing whether or not the header field has values.
+   */
   bool empty();
 
   /**
@@ -370,24 +370,24 @@ public:
   bool operator=(const char *field_value);
 
   /**
-    * Get the index value from this HeaderField
-    * @param the index to retrieve a copy of
-    * @return a copy of the string which is the index^th value in this HeaderField
-    * @note as currently written this returns an immutable string, it will NOT allow you to
-    * change the value.
-    */
+   * Get the index value from this HeaderField
+   * @param the index to retrieve a copy of
+   * @return a copy of the string which is the index^th value in this HeaderField
+   * @note as currently written this returns an immutable string, it will NOT allow you to
+   * change the value.
+   */
   std::string operator[](const int index);
 
   /**
-    * Get a string representing all the header field's values
-    * @return a string representation of all the header fields
-    */
+   * Get a string representing all the header field's values
+   * @return a string representation of all the header fields
+   */
   friend std::ostream &operator<<(std::ostream &os, HeaderField &obj);
 
   /**
-    * Get a string representing all the header field's values.
-    * @return a string representation of all the header fields
-    */
+   * Get a string representing all the header field's values.
+   * @return a string representation of all the header fields
+   */
   std::string str();
   friend class Headers;
   friend class header_field_iterator;
@@ -414,180 +414,180 @@ public:
   Headers(void *bufp, void *mloc);
 
   /**
-    * Context Values are a way to share data between plugins, the key is always a string
-    * and the value can be a std::shared_ptr to any type that extends ContextValue.
-    * @param bufp the TSMBuffer associated with the headers
-    * @param mloc the TSMLoc associated with the headers.
-    * @warning This should only be used if you're mixing the C++ and C apis.
-    */
+   * Context Values are a way to share data between plugins, the key is always a string
+   * and the value can be a std::shared_ptr to any type that extends ContextValue.
+   * @param bufp the TSMBuffer associated with the headers
+   * @param mloc the TSMLoc associated with the headers.
+   * @warning This should only be used if you're mixing the C++ and C apis.
+   */
   void reset(void *bufp, void *mloc);
 
   /**
-    * Check if the header class has been initialized. If you're only using the C++ api then this
-    * should always return true.
-    * @return a boolean value representing whether or not the Headers have been initialized..
-    */
+   * Check if the header class has been initialized. If you're only using the C++ api then this
+   * should always return true.
+   * @return a boolean value representing whether or not the Headers have been initialized..
+   */
   bool isInitialized() const;
 
   typedef unsigned int size_type;
   typedef header_field_iterator iterator;
 
   /**
-    * Check if the headers are empty
-    * @return a boolean value representing whether or not the Headers are empty
-    */
+   * Check if the headers are empty
+   * @return a boolean value representing whether or not the Headers are empty
+   */
   bool empty();
 
   /**
-    * Get the size of the headers (the number of HeaderFields).
-    * @return the number of HeaderFields
-    */
+   * Get the size of the headers (the number of HeaderFields).
+   * @return the number of HeaderFields
+   */
   size_type size() const;
 
   /**
-    * Get the size of the headers (the number of HeaderFields).
-    * @return the number of HeaderFields
-    */
+   * Get the size of the headers (the number of HeaderFields).
+   * @return the number of HeaderFields
+   */
   size_type lengthBytes() const;
 
   /**
-    * Returns an iterator to the start of the HeaderFields.
-    * @return an iterator point to the start of the header fields.
-    */
+   * Returns an iterator to the start of the HeaderFields.
+   * @return an iterator point to the start of the header fields.
+   */
   iterator begin();
 
   /**
-    * Returns an iterator to the end of the HeaderFields (beyond the last element).
-    * @return an iterator that points beyond the last element in the header fields.
-    */
+   * Returns an iterator to the end of the HeaderFields (beyond the last element).
+   * @return an iterator that points beyond the last element in the header fields.
+   */
   iterator end();
 
   /**
-    * Clears all headers.
-    * @return true if the headers were succesfully cleared.
-    */
+   * Clears all headers.
+   * @return true if the headers were succesfully cleared.
+   */
   bool clear();
 
   /**
-    * Erase a single header field pointed to by an iterator
-    * @param an iterator pointing to a header field.
-    * @return true if the header field pointed to by the iterator was erased.
-    */
+   * Erase a single header field pointed to by an iterator
+   * @param an iterator pointing to a header field.
+   * @return true if the header field pointed to by the iterator was erased.
+   */
   bool erase(iterator it);
 
   /**
-    * Erase all headers whose name matches key (this is a case insensitive match).
-    * @param the name of the header fields to erase
-    * @return the number of elements erased that matched the key
-    */
+   * Erase all headers whose name matches key (this is a case insensitive match).
+   * @param the name of the header fields to erase
+   * @return the number of elements erased that matched the key
+   */
   size_type erase(const std::string &key);
 
   /**
-    * Erase all headers whose name matches key (this is a case insensitive match).
-    * @param the name of the header fields to erase
-    * @param the length of the key (optional).
-    * @return the number of elements erased that matched the key
-    */
+   * Erase all headers whose name matches key (this is a case insensitive match).
+   * @param the name of the header fields to erase
+   * @param the length of the key (optional).
+   * @return the number of elements erased that matched the key
+   */
   size_type erase(const char *key, int length = -1);
 
   /**
-    * Count all headers whose name matches key (this is a case insensitive match).
-    * @param the name of the header fields to erase
-    * @param the length of the key (optional).
-    * @return the number of elements erased that matched the key
-    */
+   * Count all headers whose name matches key (this is a case insensitive match).
+   * @param the name of the header fields to erase
+   * @param the length of the key (optional).
+   * @return the number of elements erased that matched the key
+   */
   size_type count(const char *key, int length = -1);
 
   /**
-    * Count all headers whose name matches key (this is a case insensitive match).
-    * @param the name of the header fields to count
-    * @return the number of elements whose name is key.
-    */
+   * Count all headers whose name matches key (this is a case insensitive match).
+   * @param the name of the header fields to count
+   * @return the number of elements whose name is key.
+   */
   size_type count(const std::string &key);
 
   /**
-    * Join all headers whos name is key with the optionally specified join string
-    * @param the name of the headers to join into a single string
-    * @param an optional join string (defaults to ",")
-    * @return a string which is all of the joined values of headers matching key.
-    */
+   * Join all headers whos name is key with the optionally specified join string
+   * @param the name of the headers to join into a single string
+   * @param an optional join string (defaults to ",")
+   * @return a string which is all of the joined values of headers matching key.
+   */
   std::string values(const std::string &key, const char *join = ",");
 
   /**
-    * Join all headers whos name is key with the optionally specified join string
-    * @param the name of the headers to join into a single string
-    * @param the string to join the fields with
-    * @return a string which is all of the joined values of headers matching key.
-    */
+   * Join all headers whos name is key with the optionally specified join string
+   * @param the name of the headers to join into a single string
+   * @param the string to join the fields with
+   * @return a string which is all of the joined values of headers matching key.
+   */
   std::string values(const std::string &key, const std::string &join);
 
   /**
-    * Join all headers whos name is key with the optionally specified join character
-    * @param the name of the headers to join into a single string
-    * @param the join character.
-    * @return a string which is all of the joined values of headers matching key.
-    */
+   * Join all headers whos name is key with the optionally specified join character
+   * @param the name of the headers to join into a single string
+   * @param the join character.
+   * @return a string which is all of the joined values of headers matching key.
+   */
   std::string values(const std::string &key, const char join);
 
   /**
-    * Returns the value at given position of header with given name
-    * @param name of header
-    * @param position of value
-    * @return value
-    */
+   * Returns the value at given position of header with given name
+   * @param name of header
+   * @param position of value
+   * @return value
+   */
   std::string value(const std::string &key, size_type index = 0);
 
   /**
-    * Returns an iterator to the first HeaderField with the name key.
-    * @param key the name of first header field ot find.
-    * @return an iterator that points to the first matching header field with name key.
-    */
+   * Returns an iterator to the first HeaderField with the name key.
+   * @param key the name of first header field ot find.
+   * @return an iterator that points to the first matching header field with name key.
+   */
   iterator find(const std::string &key);
 
   /**
-    * Returns an iterator to the first HeaderField with the name key.
-    * @param key the name of first header field ot find.
-    * @param the length of the key specified (optional).
-    * @return an iterator that points to the first matching header field with name key.
-    */
+   * Returns an iterator to the first HeaderField with the name key.
+   * @param key the name of first header field ot find.
+   * @param the length of the key specified (optional).
+   * @return an iterator that points to the first matching header field with name key.
+   */
   iterator find(const char *key, int length = -1);
 
   /**
-    * Append a HeaderField.
-    * @param key the name of the header field to append
-    * @param value the value of the header field to append
-    * @return an iterator to the appended header field or the end() iterator if append fails.
-    */
+   * Append a HeaderField.
+   * @param key the name of the header field to append
+   * @param value the value of the header field to append
+   * @return an iterator to the appended header field or the end() iterator if append fails.
+   */
   iterator append(const std::string &key, const std::string &value);
 
   /**
-    * Erase all headers with name specified by key and then re-create the header with the specified values.
-    * @param key the name of the header field to erased and re-created.
-    * @param value the value of the header field to set.
-    * @return an iterator to the new header field or the end() iterator if append fails.
-    */
+   * Erase all headers with name specified by key and then re-create the header with the specified values.
+   * @param key the name of the header field to erased and re-created.
+   * @param value the value of the header field to set.
+   * @return an iterator to the new header field or the end() iterator if append fails.
+   */
   iterator set(const std::string &key, const std::string &value);
 
   /**
-    * Set the header field values to the value given, the header field will be created
-    * if it does not already exist.
-    * @param key the name of the header field whose value to set.
-    * @return an iterator to the new header field or the end() iterator if append fails.
-    * @warning This will create a header field with the given name, thus it should not be
-    * used to check for the existance of a header, use count() or find() instead.
-    */
+   * Set the header field values to the value given, the header field will be created
+   * if it does not already exist.
+   * @param key the name of the header field whose value to set.
+   * @return an iterator to the new header field or the end() iterator if append fails.
+   * @warning This will create a header field with the given name, thus it should not be
+   * used to check for the existance of a header, use count() or find() instead.
+   */
   HeaderField operator[](const std::string &key);
 
   /**
-    * Get a human-readable/log-friendly string representing all the header fields.
-    * @return a string representation of all the header fields
-    */
+   * Get a human-readable/log-friendly string representing all the header fields.
+   * @return a string representation of all the header fields
+   */
   std::string str();
 
   /**
-    * Get a string that can be put on the wire
-    * @return a string representation of all the header fields
-    */
+   * Get a string that can be put on the wire
+   * @return a string representation of all the header fields
+   */
   std::string wireStr();
 
   friend std::ostream &operator<<(std::ostream &os, Headers &obj);
@@ -600,4 +600,4 @@ private:
   friend class ClientRequest;
   friend class Response;
 };
-}
+} // namespace atscppapi

@@ -42,7 +42,7 @@ public:
 
   void useHeaders(const EsiLib::HttpHeaderList &headers);
 
-  bool addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = nullptr);
+  bool addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = nullptr) override;
 
   bool handleFetchEvent(TSEvent event, void *edata);
 
@@ -59,10 +59,10 @@ public:
     return (_n_pending_requests == 0);
   };
 
-  DataStatus getRequestStatus(const std::string &url) const;
+  DataStatus getRequestStatus(const std::string &url) const override;
 
   int
-  getNumPendingRequests() const
+  getNumPendingRequests() const override
   {
     return _n_pending_requests;
   };
@@ -86,7 +86,7 @@ public:
   bool getData(const std::string &url, ResponseData &resp_data) const;
 
   bool
-  getContent(const std::string &url, const char *&content, int &content_len) const
+  getContent(const std::string &url, const char *&content, int &content_len) const override
   {
     ResponseData resp;
     if (getData(url, resp)) {
@@ -99,7 +99,7 @@ public:
 
   void clear();
 
-  ~HttpDataFetcherImpl();
+  ~HttpDataFetcherImpl() override;
 
 private:
   TSCont _contp;

@@ -303,7 +303,8 @@ TSPluginInit(int argc, const char *argv[])
   const char *proof = "acme";
 
   static const struct option longopt[] = {
-    {(char *)"proof-directory", optional_argument, NULL, 'p'}, {NULL, no_argument, NULL, '\0'},
+    {(char *)"proof-directory", optional_argument, NULL, 'p'},
+    {NULL, no_argument, NULL, '\0'},
   };
 
   memset(&gConfig, 0, sizeof(gConfig));

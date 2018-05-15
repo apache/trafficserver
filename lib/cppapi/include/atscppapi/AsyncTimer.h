@@ -63,17 +63,17 @@ public:
    */
   AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms = 0);
 
-  virtual ~AsyncTimer();
+  ~AsyncTimer() override;
 
   /**
    * Starts the timer.
    */
-  void run();
+  void run() override;
 
-  void cancel();
+  void cancel() override;
 
 private:
   AsyncTimerState *state_;
 };
 
-} /* atscppapi */
+} // namespace atscppapi

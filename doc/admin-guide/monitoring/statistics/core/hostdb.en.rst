@@ -27,50 +27,9 @@ health checks. The statistics documented here can help to ensure that your |TS|
 instances are not spending an unreasonable amount of timing resolving your
 origin servers' hostnames prior to object revalidation or retrieval.
 
-.. ts:stat:: global proxy.node.hostdb.hit_ratio_avg_10s float
-   :type: derivative
-   :unit: ratio
-
-   Represents the ratio of origin server name resolutions which were satisfied
-   by the HostDB lookup cache over the last 10 seconds.
-
-.. ts:stat:: global proxy.node.hostdb.hit_ratio float
-   :type: derivative
-   :unit: ratio
-
-   Represents the ratio of origin server name resolutions which were satisfied
-   by the HostDB lookup cache since statistics collection began.
-
-.. ts:stat:: global proxy.node.hostdb.total_hits_avg_10s float
-   :type: derivative
-
-   Represents the number of origin server name resolutions which were satisfied
-   by the HostDB lookup cache over the last 10 seconds.
-
-.. ts:stat:: global proxy.node.hostdb.total_hits integer
-   :type: counter
-
-   Represents the total number of origin server name resolutions which were
-   satisfied by entries in the HostDB lookup cache, since statistics collection
-   began.
-
-.. ts:stat:: global proxy.node.hostdb.total_lookups_avg_10s float
-   :type: derivative
-
-   Represents the number of origin server name resolutions which were performed
-   over the last 10 seconds, regardless of whether they were satisfied by the
-   HostDB lookup cache.
-
-.. ts:stat:: global proxy.node.hostdb.total_lookups integer
-   :type: counter
-
-   Represents the total number of origin server name resolutions which have been
-   performed, since statistics collection began, regardless of whether they were
-   satisfied by the HostDB lookup cache or required DNS lookups.
-
 .. ts:stat:: global proxy.process.hostdb.bytes integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
    Represents the number of bytes allocated to the HostDB lookup cache.
 
@@ -99,11 +58,11 @@ origin servers' hostnames prior to object revalidation or retrieval.
 
 .. ts:stat:: global proxy.process.hostdb.ttl_expires integer
    :type: gauge
-   :unit: seconds
+   :units: seconds
 
 .. ts:stat:: global proxy.process.hostdb.ttl float
    :type: gauge
-   :unit: seconds
+   :units: seconds
 
 .. ts:stat:: global proxy.process.hostdb.cache.current_items integer
    :type: gauge
@@ -112,7 +71,7 @@ origin servers' hostnames prior to object revalidation or retrieval.
 
 .. ts:stat:: global proxy.process.hostdb.cache.current_size integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
    The total size of all host records in the HostDB cache.
 
@@ -128,7 +87,7 @@ origin servers' hostnames prior to object revalidation or retrieval.
 
 .. ts:stat:: global proxy.process.hostdb.cache.last_sync.total_size integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
    The total size of all host records in the HostDB cache that where synced to disk.
 

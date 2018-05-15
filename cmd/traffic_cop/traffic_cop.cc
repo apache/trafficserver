@@ -288,12 +288,14 @@ sig_fatal(int signum)
 #if defined(solaris)
   if (t) {
     if (t->si_code <= 0) {
-      cop_log(COP_FATAL, "cop received fatal user signal [%d] from"
-                         " pid [%d] uid [%d]\n",
+      cop_log(COP_FATAL,
+              "cop received fatal user signal [%d] from"
+              " pid [%d] uid [%d]\n",
               signum, (int)(t->si_pid), t->si_uid);
     } else {
-      cop_log(COP_FATAL, "cop received fatal kernel signal [%d], "
-                         "reason [%d]\n",
+      cop_log(COP_FATAL,
+              "cop received fatal kernel signal [%d], "
+              "reason [%d]\n",
               signum, t->si_code);
     }
   } else {

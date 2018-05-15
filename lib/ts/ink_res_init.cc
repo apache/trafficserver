@@ -301,7 +301,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
              const char *pDefDomain,      ///< Default domain (may be nullptr).
              const char *pSearchList,     ///< Unknown
              const char *pResolvConf      ///< Path to configuration file.
-             )
+)
 {
   FILE *fp;
   char *cp, **pp;
@@ -339,8 +339,8 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     if ((ret = sysinfo(SI_SRPC_DOMAIN, buf, sizeof(buf))) > 0 && (unsigned int)ret <= sizeof(buf)) {
       if (buf[0] == '+')
         buf[0] = '.';
-      cp       = strchr(buf, '.');
-      cp       = (cp == nullptr) ? buf : (cp + 1);
+      cp = strchr(buf, '.');
+      cp = (cp == nullptr) ? buf : (cp + 1);
       ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     }
   }

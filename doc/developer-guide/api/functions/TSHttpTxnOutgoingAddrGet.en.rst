@@ -39,7 +39,9 @@ These functions concern the local IP address and port, that is the address and p
 of outbound connections (network connections *from* |TS| *to* another socket).
 
 The address and optional the port can be set with :func:`TSHttpTxnOutgoingAddrSet`. This must be
-done before the outbound connection is made, that is in the :macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK` or earlier.
+done before the outbound connection is made, that is, earlier than the :macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK`.
+A good choice is the :macro:`TS_HTTP_POST_REMAP_HOOK`, since it is a hook that is always called, and it
+is the latest hook that is called before the connection is made.
 The :arg:`addr` must be populated with the IP address and port to be used. If the port is not
 relevant it can be set to zero, which means use any available local port. This function returns
 :macro:`TS_SUCCESS` on success and :macro:`TS_ERROR` on failure.
@@ -47,8 +49,8 @@ relevant it can be set to zero, which means use any available local port. This f
 Even on a successful call to :func:`TSHttpTxnOutgoingAddrSet`, the local IP address may not match
 what was passing :arg:`addr` if :ts:cv:`session sharing <proxy.config.http.server_session_sharing.match>` is enabled.
 
-Conversely :func:`TSHttpTxnOutgoingAddrGet` retrieves the local address and must be called after
-:macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK`, after the outbound connection has been established. It returns a
+Conversely :func:`TSHttpTxnOutgoingAddrGet` retrieves the local address and must be called in the
+:macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK` or later, after the outbound connection has been established. It returns a
 pointer to a :code:`sockaddr` which contains the local IP address and port. If there is no valid
 outbound connection, :arg:`addr` will be :code:`NULL`. The returned pointer is a transient pointer
 and must not be referenced after the callback in which :func:`TSHttpTxnOutgoingAddrGet` was called.

@@ -18,26 +18,26 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/api/include \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	$(TS_INCLUDES)
 
 AM_LDFLAGS += \
-  @OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_cop
 
 traffic_cop_SOURCES = \
-  traffic_cop.cc
+	traffic_cop.cc
 
 traffic_cop_LDADD = \
-  $(top_builddir)/mgmt/libmgmt_c.la \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/records/librecords_cop.a
+	$(top_builddir)/mgmt/libmgmt_c.la \
+	$(top_builddir)/mgmt/api/libtsmgmt.la \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/lib/records/librecords_cop.a
 
 include $(top_srcdir)/build/tidy.mk
 

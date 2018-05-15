@@ -97,7 +97,7 @@ public:
 
   void clear();
 
-  virtual ~Variables() { _releaseCookieJar(); };
+  ~Variables() override { _releaseCookieJar(); };
 
   // noncopyable
   Variables(const Variables &) = delete;            // non-copyable
@@ -178,6 +178,6 @@ private:
   mutable std::string _cached_sub_cookie_value;
   const std::string &_getSubCookieValue(const std::string &cookie_str, size_t cookie_part_divider) const;
 };
-};
+}; // namespace EsiLib
 
 #endif // _ESI_VARIABLES_H

@@ -40,7 +40,7 @@ namespace inliner
     size_t counter_;
     bool abort_;
 
-    ~Handler()
+    ~Handler() override
     {
       assert(reader_ != nullptr);
       if (!abort_) {
@@ -59,15 +59,15 @@ namespace inliner
 
     void parse(void);
 
-    size_t bypass(const size_t, const size_t);
-    void handleImage(const Attributes &);
+    size_t bypass(const size_t, const size_t) override;
+    void handleImage(const Attributes &) override;
 
     std::string generateId(void);
 
     void abort(void);
   };
 
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #endif // INLINER_HANDLER_H

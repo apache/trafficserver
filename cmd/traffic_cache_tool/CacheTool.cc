@@ -28,24 +28,26 @@
 #include <map>
 #include <getopt.h>
 #include <system_error>
-#include <string.h>
+#include <cstring>
 #include <fcntl.h>
-#include <ctype.h>
+#include <cctype>
 #include <cstring>
 #include <vector>
 #include <unordered_set>
-#include <time.h>
+#include <ctime>
 #include <bitset>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include <ts/ink_memory.h>
 #include <ts/ink_file.h>
 #include <ts/BufferWriter.h>
 #include <ts/CryptoHash.h>
+#include <thread>
 
 #include "File.h"
 #include "CacheDefs.h"
 #include "Command.h"
+#include "CacheScan.h"
 
 using ts::Bytes;
 using ts::Megabytes;
@@ -233,10 +235,12 @@ Cache::clearSpan(Span* span)
 void
 Cache::clearAllocation()
 {
-  for (auto span : _spans)
+  for (auto span : _spans) {
     span->clear();
-  for (auto &item : _volumes)
+  }
+  for (auto &item : _volumes) {
     item.second.clear();
+  }
 }
 /* --------------------------------------------------------------------------------------- */
 /// Temporary structure used for doing allocation computations.
@@ -281,19 +285,19 @@ protected:
   Errata allocateFor(Span &span);
 };
 
-VolumeAllocator::VolumeAllocator()
-{
-}
+VolumeAllocator::VolumeAllocator() {}
 
 Errata
 VolumeAllocator::load(FilePath const &spanFile, FilePath const &volumeFile)
 {
   Errata zret;
 
-  if (!volumeFile)
+  if (!volumeFile) {
     zret.push(0, 9, "Volume config file not set");
-  if (!spanFile)
+  }
+  if (!spanFile) {
     zret.push(0, 9, "Span file not set");
+  }
 
   if (zret) {
     zret = _vols.load(volumeFile);
@@ -305,8 +309,9 @@ VolumeAllocator::load(FilePath const &spanFile, FilePath const &volumeFile)
         for (auto &vol : _vols) {
           CacheStripeBlocks size(0);
           auto spot = _cache._volumes.find(vol._idx);
-          if (spot != _cache._volumes.end())
+          if (spot != _cache._volumes.end()) {
             size = round_down(spot->second._size);
+          }
           _av.push_back({vol, size, 0, 0});
         }
       }
@@ -327,8 +332,9 @@ VolumeAllocator::fillEmptySpans()
   Errata zret;
   // Walk the spans, skipping ones that are not empty.
   for (auto span : _cache._spans) {
-    if (span->isEmpty())
+    if (span->isEmpty()) {
       this->allocateFor(*span);
+    }
   }
   return zret;
 }
@@ -382,9 +388,10 @@ VolumeAllocator::allocateFor(Span &span)
   static const int64_t SCALE = 1000;
   int64_t total_shares       = 0;
 
-  if (Verbosity >= NORMAL)
+  if (Verbosity >= NORMAL) {
     std::cout << "Allocating " << CacheStripeBlocks(round_down(span._len)).count() << " stripe blocks from span " << span._path
               << std::endl;
+  }
 
   // Walk the volumes and get the relative allocations.
   for (auto &v : _av) {
@@ -416,25 +423,30 @@ VolumeAllocator::allocateFor(Span &span)
       span_used += n;
       total_shares -= v._shares;
       Errata z = _cache.allocStripe(&span, v._config._idx, round_up(n));
-      if (Verbosity >= NORMAL)
+      if (Verbosity >= NORMAL) {
         std::cout << "           " << n << " to volume " << v._config._idx << std::endl;
-      if (!z)
+      }
+      if (!z) {
         std::cout << z;
+      }
     }
   }
-  if (Verbosity >= NORMAL)
+  if (Verbosity >= NORMAL) {
     std::cout << "     Total " << span_used << std::endl;
+  }
   if (OPEN_RW_FLAG) {
-    if (Verbosity >= NORMAL)
+    if (Verbosity >= NORMAL) {
       std::cout << " Updating Header ... ";
+    }
     zret = span.updateHeader();
   }
   _cache.dumpVolumes(); // debug
   if (Verbosity >= NORMAL) {
-    if (zret)
+    if (zret) {
       std::cout << " Done" << std::endl;
-    else
+    } else {
       std::cout << " Error" << std::endl << zret;
+    }
   }
 
   return zret;
@@ -444,14 +456,15 @@ Errata
 Cache::loadSpan(FilePath const &path)
 {
   Errata zret;
-  if (!path.has_path())
+  if (!path.has_path()) {
     zret = Errata::Message(0, EINVAL, "A span file specified by --span is required");
-  else if (!path.is_readable())
+  } else if (!path.is_readable()) {
     zret = Errata::Message(0, EPERM, '\'', path.path(), "' is not readable.");
-  else if (path.is_regular_file())
+  } else if (path.is_regular_file()) {
     zret = this->loadSpanConfig(path);
-  else
+  } else {
     zret = this->loadSpanDirect(path);
+  }
   return zret;
 }
 
@@ -503,8 +516,9 @@ Cache::loadSpanConfig(FilePath const &path)
     while (content) {
       ts::TextView line = content.take_prefix_at('\n');
       line.ltrim_if(&isspace);
-      if (line.empty() || '#' == *line)
+      if (line.empty() || '#' == *line) {
         continue;
+      }
       ts::TextView path = line.take_prefix_if(&isspace);
       if (path) {
         // After this the line is [size] [id=string] [volume=#]
@@ -554,8 +568,9 @@ Cache::loadURLs(FilePath const &path)
         url.assign(blob.data(), blob.size());
         int port_ptr = -1, port_len = -1;
         int port = parser.getPort(url, port_ptr, port_len);
-        if (port_ptr >= 0 && port_len > 0)
+        if (port_ptr >= 0 && port_len > 0) {
           url.erase(port_ptr, port_len + 1); // get rid of :PORT
+        }
         std::cout << "port # " << port << ":" << port_ptr << ":" << port_len << ":" << url << std::endl;
         ts::CacheURL *curl = new ts::CacheURL(url, port);
         URLset.emplace(curl);
@@ -634,8 +649,9 @@ Cache::dumpVolumes()
 {
   for (auto const &elt : _volumes) {
     size_t size = 0;
-    for (auto const &r : elt.second._stripes)
+    for (auto const &r : elt.second._stripes) {
       size += r->_len;
+    }
 
     std::cout << "Volume " << elt.first << " has " << elt.second._stripes.size() << " stripes and " << size << " bytes"
               << std::endl;
@@ -669,22 +685,24 @@ Cache::calcTotalSpanPhysicalSize()
 
 Cache::~Cache()
 {
-  for (auto *span : _spans)
+  for (auto *span : _spans) {
     delete span;
+  }
 }
 
 Errata
 Span::load()
 {
   Errata zret;
-  if (!_path.is_readable())
+  if (!_path.is_readable()) {
     zret = Errata::Message(0, EPERM, _path, " is not readable.");
-  else if (_path.is_char_device() || _path.is_block_device())
+  } else if (_path.is_char_device() || _path.is_block_device()) {
     zret = this->loadDevice();
-  else if (_path.is_dir())
+  } else if (_path.is_dir()) {
     zret.push(0, 1, "Directory support not yet available");
-  else
+  } else {
     zret.push(0, EBADF, _path, " is not a valid file type");
+  }
   return zret;
 }
 
@@ -725,8 +743,9 @@ Span::loadDevice()
           } else {
             // TODO - check the pread return
             ssize_t n = pread(fd, _header.get(), span_hdr_size, offset);
-            if (n < span_hdr_size)
+            if (n < span_hdr_size) {
               std::cout << "Failed to read the Span Header" << std::endl;
+            }
           }
           _len = _header->num_blocks;
         } else {
@@ -843,8 +862,9 @@ Span::updateHeader()
   _header.reset(hdr);
   if (OPEN_RW_FLAG) {
     ssize_t r = pwrite(_fd, hdr, hdr_size, ts::CacheSpan::OFFSET);
-    if (r < ts::CacheSpan::OFFSET)
+    if (r < ts::CacheSpan::OFFSET) {
       zret.push(0, errno, "Failed to update span - ", strerror(errno));
+    }
   } else {
     std::cout << "Writing not enabled, no updates perfomed" << std::endl;
   }
@@ -858,13 +878,14 @@ Span::clearPermanently()
     alignas(512) static char zero[CacheStoreBlocks::SCALE]; // should be all zero, it's static.
     std::cout << "Clearing " << _path << " permanently on disk ";
     ssize_t n = pwrite(_fd, zero, sizeof(zero), ts::CacheSpan::OFFSET);
-    if (n == sizeof(zero))
+    if (n == sizeof(zero)) {
       std::cout << "done";
-    else {
+    } else {
       const char *text = strerror(errno);
       std::cout << "failed";
-      if (n >= 0)
+      if (n >= 0) {
         std::cout << " - " << n << " of " << sizeof(zero) << " bytes written";
+      }
       std::cout << " - " << text;
     }
 
@@ -924,6 +945,7 @@ Cache::build_stripe_hash_table()
   unsigned int rtable_size     = 0;
   int i                        = 0;
   uint64_t used                = 0;
+
   // estimate allocation
   for (auto &elt : globalVec_stripe) {
     // printf("stripe length %" PRId64 "\n", elt->_len.count());
@@ -937,7 +959,7 @@ Cache::build_stripe_hash_table()
   }
   i = 0;
   for (auto &elt : globalVec_stripe) {
-    forvol[i] = static_cast<int64_t>(VOL_HASH_TABLE_SIZE * elt->_len) / total;
+    forvol[i] = total ? static_cast<int64_t>(VOL_HASH_TABLE_SIZE * elt->_len) / total : 0;
     used += forvol[i];
     gotvol[i] = 0;
     i++;
@@ -1018,8 +1040,9 @@ VolumeConfig::load(FilePath const &path)
       ++ln;
       ts::TextView line = content.take_prefix_at('\n');
       line.ltrim_if(&isspace);
-      if (line.empty() || '#' == *line)
+      if (line.empty() || '#' == *line) {
         continue;
+      }
 
       while (line) {
         ts::TextView value(line.take_prefix_if(&isspace));
@@ -1065,10 +1088,12 @@ VolumeConfig::load(FilePath const &path)
       if (v.hasSize() && v.hasIndex()) {
         _volumes.push_back(std::move(v));
       } else {
-        if (!v.hasSize())
+        if (!v.hasSize()) {
           zret.push(0, 7, "Line ", ln, " does not have the required field ", TAG_SIZE);
-        if (!v.hasIndex())
+        }
+        if (!v.hasIndex()) {
           zret.push(0, 8, "Line ", ln, " does not have the required field ", TAG_VOL);
+        }
       }
     }
   } else {
@@ -1080,7 +1105,7 @@ VolumeConfig::load(FilePath const &path)
 struct option Options[] = {{"help", 0, nullptr, 'h'},  {"spans", 1, nullptr, 's'}, {"volumes", 1, nullptr, 'v'},
                            {"write", 0, nullptr, 'w'}, {"input", 1, nullptr, 'i'}, {"device", 1, nullptr, 'd'},
                            {"aos", 1, nullptr, 'o'},   {nullptr, 0, nullptr, 0}};
-}
+} // namespace ct
 
 using namespace ct;
 Errata
@@ -1117,10 +1142,12 @@ Simulate_Span_Allocation(int argc, char *argv[])
   Errata zret;
   VolumeAllocator va;
 
-  if (!VolumeFile)
+  if (!VolumeFile) {
     zret.push(0, 9, "Volume config file not set");
-  if (!SpanFile)
+  }
+  if (!SpanFile) {
     zret.push(0, 9, "Span file not set");
+  }
 
   if (zret) {
     if ((zret = va.load(SpanFile, VolumeFile)).isOK()) {
@@ -1167,8 +1194,9 @@ Find_Stripe(FilePath const &input_file_path)
 
   Errata zret;
   Cache cache;
-  if (input_file_path)
+  if (input_file_path) {
     printf("passed argv %s\n", input_file_path.path());
+  }
   cache.loadURLs(input_file_path);
   if ((zret = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
@@ -1295,8 +1323,9 @@ Get_Response(FilePath const &input_file_path)
 
   Errata zret;
   Cache cache;
-  if (input_file_path)
+  if (input_file_path) {
     printf("passed argv %s\n", input_file_path.path());
+  }
   cache.loadURLs(input_file_path);
   if ((zret = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
@@ -1319,6 +1348,37 @@ Get_Response(FilePath const &input_file_path)
     }
   }
 
+  return zret;
+}
+
+void static scan_span(Span *span)
+{
+  for (auto strp : span->_stripes) {
+    strp->loadMeta();
+    strp->loadDir();
+    strp->walk_all_buckets();
+    CacheScan cs(strp);
+    cs.Scan();
+
+    // break; // to be removed
+  }
+}
+
+Errata
+Scan_Cache()
+{
+  Errata zret;
+  Cache cache;
+  std::vector<std::thread> threadPool;
+  if ((zret = cache.loadSpan(SpanFile))) {
+    cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
+    for (auto sp : cache._spans) {
+      threadPool.emplace_back(scan_span, sp); // move constructor is necessary since std::thread is non copyable
+      // break; // to be removed
+    }
+    for (auto &th : threadPool)
+      th.join();
+  }
   return zret;
 }
 
@@ -1386,6 +1446,8 @@ main(int argc, char *argv[])
                [&](int, char *argv[]) { return Get_Response(input_url_file); });
   Commands.add(std::string("init"), std::string(" Initializes uninitialized span"),
                [&](int, char *argv[]) { return Init_disk(input_url_file); });
+  Commands.add(std::string("scan"), std::string(" Scans the whole cache and lists the urls of the cached contents"),
+               [&](int, char *argv[]) { return Scan_Cache(); });
   Commands.setArgIndex(optind);
 
   if (help) {
@@ -1399,7 +1461,8 @@ main(int argc, char *argv[])
     std::cerr << result;
     exit(1);
   }
-  if (inp)
+  if (inp) {
     free(inp);
+  }
   return 0;
 }

@@ -30,7 +30,7 @@
  *
  ****************************************************************************/
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "ts/ink_hash_table.h"
 #include "ts/List.h"

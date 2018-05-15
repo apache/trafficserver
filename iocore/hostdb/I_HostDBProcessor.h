@@ -156,7 +156,7 @@ struct HostDBInfo : public RefCountObj {
   }
 
   void
-  free()
+  free() override
   {
     Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + iobuffer_index)), this);
     ioBufAllocator[iobuffer_index].free_void((void *)(this));
@@ -310,12 +310,13 @@ struct HostDBInfo : public RefCountObj {
   void
   set_failed()
   {
-    if (is_srv)
+    if (is_srv) {
       data.srv.srv_offset = 0;
-    else if (reverse_dns)
+    } else if (reverse_dns) {
       data.hostname_offset = 0;
-    else
+    } else {
       ats_ip_invalidate(ip());
+    }
   }
 
   int iobuffer_index;
@@ -493,7 +494,7 @@ struct HostDBProcessor : public Processor {
   /* hostdb does not use any dedicated event threads
    * currently. Dont pass any value to start
    */
-  int start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
+  int start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
 
   // Private
   HostDBCache *cache();
@@ -512,7 +513,7 @@ public:
              int len,                   ///< Length of hostname.
              sockaddr const *aip,       ///< Address and/or port.
              HostDBApplicationInfo *app ///< I don't know.
-             );
+  );
 
   void setby_srv(const char *hostname, int len, const char *target, HostDBApplicationInfo *app);
 };

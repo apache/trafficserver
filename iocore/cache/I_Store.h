@@ -117,8 +117,9 @@ public:
   nth(unsigned i)
   {
     Span *x = this;
-    while (x && i--)
+    while (x && i--) {
       x = x->link.next;
+    }
     return x;
   }
 
@@ -126,8 +127,10 @@ public:
   paths() const
   {
     int i = 0;
-    for (const Span *x = this; x; i++, x = x->link.next)
+    for (const Span *x = this; x; i++, x = x->link.next) {
       ;
+    }
+
     return i;
   }
 
@@ -172,11 +175,13 @@ public:
   Span(Span const &that)
   {
     memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(nullptr)->pathname)));
-    if (that.pathname)
+    if (that.pathname) {
       pathname = ats_strdup(that.pathname);
-    if (that.hash_base_string)
+    }
+    if (that.hash_base_string) {
       hash_base_string = ats_strdup(that.hash_base_string);
-    link.next          = nullptr;
+    }
+    link.next = nullptr;
   }
 
   ~Span();

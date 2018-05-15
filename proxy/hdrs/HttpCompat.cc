@@ -103,12 +103,12 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
       break;
     }
 
-///////////////////////////////////////////////////////////////////
-// we are pointing to the first character of a token now, either //
-// a character, or a double quote --- the next step is to scan   //
-// for the next separator or end of string, being careful not to //
-// include separators inside quotes.                             //
-///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    // we are pointing to the first character of a token now, either //
+    // a character, or a double quote --- the next step is to scan   //
+    // for the next separator or end of string, being careful not to //
+    // include separators inside quotes.                             //
+    ///////////////////////////////////////////////////////////////////
 
 #define is_unquoted_separator(c) ((c == sep) && !in_quote)
 
@@ -454,7 +454,8 @@ HttpCompat::do_header_values_rfc2068_14_43_match(MIMEField *hdr1, MIMEField *hdr
   const char *hdr2_val = iter2.get_first(hdr2, &hdr2_val_len);
 
   while (hdr1_val || hdr2_val) {
-    if (hdr1_val_len != hdr2_val_len || ParseRules::strncasecmp_eow(hdr1_val, hdr2_val, hdr1_val_len) == false) {
+    if (!hdr1_val || !hdr2_val || hdr1_val_len != hdr2_val_len ||
+        ParseRules::strncasecmp_eow(hdr1_val, hdr2_val, hdr1_val_len) == false) {
       return false;
     }
 

@@ -26,7 +26,7 @@
 #define _ESI_EXPRESSION_H
 
 #include <string>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "ComponentBase.h"
 #include "Variables.h"
@@ -58,7 +58,7 @@ public:
     return evaluate(expr.data(), expr.size());
   }
 
-  virtual ~Expression(){};
+  ~Expression() override{};
 
 private:
   static const std::string EMPTY_STRING;
@@ -118,6 +118,6 @@ private:
 
   inline bool _evalSimpleExpr(const char *expr, int expr_len);
 };
-};
+}; // namespace EsiLib
 
 #endif // _ESI_EXPRESSION_H

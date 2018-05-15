@@ -167,6 +167,4 @@ Layout::Layout(ts::string_view const _prefix)
   cachedir      = layout_relative(prefix, TS_BUILD_CACHEDIR);
 }
 
-Layout::~Layout()
-{
-}
+Layout::~Layout() {}

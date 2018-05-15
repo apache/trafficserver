@@ -169,7 +169,7 @@ HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const 
   session_protocol_preference = sp_set;
   return *this;
 }
-}
+} // namespace detail
 
 /**
    The continuation mutex is NULL to allow parellel accepts in NT. No
@@ -203,9 +203,9 @@ public:
     return;
   }
 
-  ~HttpSessionAccept() { return; }
-  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
-  int mainEvent(int event, void *netvc);
+  ~HttpSessionAccept() override { return; }
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
+  int mainEvent(int event, void *netvc) override;
 
   // noncopyable
   HttpSessionAccept(const HttpSessionAccept &) = delete;

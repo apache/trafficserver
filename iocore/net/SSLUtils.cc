@@ -91,17 +91,17 @@
 TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
 /*
  * struct ssl_user_config: gather user provided settings from ssl_multicert.config in to this single struct
-   * ssl_ticket_enabled - session ticket enabled
-   * ssl_cert_name - certificate
-   * dest_ip - IPv[64] address to match
-   * ssl_cert_name - certificate
-   * first_cert - the first certificate name when multiple cert files are in 'ssl_cert_name'
-   * ssl_ca_name - CA public certificate
-   * ssl_key_name - Private key
-   * ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
-   * ssl_key_dialog - Private key dialog
-   * servername - Destination server
-   */
+ * ssl_ticket_enabled - session ticket enabled
+ * ssl_cert_name - certificate
+ * dest_ip - IPv[64] address to match
+ * ssl_cert_name - certificate
+ * first_cert - the first certificate name when multiple cert files are in 'ssl_cert_name'
+ * ssl_ca_name - CA public certificate
+ * ssl_key_name - Private key
+ * ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+ * ssl_key_dialog - Private key dialog
+ * servername - Destination server
+ */
 struct ssl_user_config {
   ssl_user_config() : opt(SSLCertContext::OPT_NONE)
   {
@@ -880,6 +880,24 @@ ssl_track_free(void *ptr, const char * /*filename*/, int /*lineno*/)
   ats_track_free(ptr, &ssl_memory_freed);
 }
 
+/*
+ * Some items are only initialized if certain config values are set
+ * Must have a second pass that initializes after loading the SSL config
+ */
+void
+SSLPostConfigInitialize()
+{
+  if (SSLConfigParams::engine_conf_file) {
+    ENGINE_load_dynamic();
+
+    OPENSSL_load_builtin_modules();
+    if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
+      Error("FATAL: error loading engine configuration file %s", SSLConfigParams::engine_conf_file);
+      // ERR_print_errors_fp(stderr);
+    }
+  }
+}
+
 void
 SSLInitializeLibrary()
 {
@@ -895,22 +913,6 @@ SSLInitializeLibrary()
 
     SSL_load_error_strings();
     SSL_library_init();
-
-#if TS_USE_TLS_ASYNC
-    if (SSLConfigParams::async_handshake_enabled) {
-      ASYNC_init_thread(0, 0);
-    }
-#endif
-
-    if (SSLConfigParams::engine_conf_file) {
-      ENGINE_load_dynamic();
-
-      OPENSSL_load_builtin_modules();
-      if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
-        Error("FATAL: error loading engine configuration file %s", SSLConfigParams::engine_conf_file);
-        // ERR_print_errors_fp(stderr);
-      }
-    }
 
 #ifdef OPENSSL_FIPS
     // calling FIPS_mode_set() will force FIPS to POST (Power On Self Test)
@@ -1560,8 +1562,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   // disable selected protocols
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
 
-  Debug("ssl.session_cache", "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
-                             "skip_on_contention=%d, timeout=%d, auto_clear=%d",
+  Debug("ssl.session_cache",
+        "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
+        "skip_on_contention=%d, timeout=%d, auto_clear=%d",
         ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
         params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout, params->ssl_session_cache_auto_clear);
 

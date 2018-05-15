@@ -22,7 +22,7 @@
 #pragma once
 
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include <atscppapi/noncopyable.h>
 
 namespace atscppapi
@@ -143,4 +143,4 @@ private:
   friend class ClientRequest;
   friend class RemapPlugin;
 };
-}
+} // namespace atscppapi

@@ -420,7 +420,6 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
   acl_filter_rule *rule;
   unsigned long ul;
   const char *argptr;
-  char tmpbuf[1024];
   src_ip_info_t *ipi;
   int i, j;
   bool new_rule_flg = false;
@@ -505,9 +504,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
       }
-      ink_strlcpy(tmpbuf, argptr, sizeof(tmpbuf));
-      // important! use copy of argument
-      if (ExtractIpRange(tmpbuf, &ipi->start.sa, &ipi->end.sa) != nullptr) {
+      if (ats_ip_range_parse(argptr, ipi->start, ipi->end) != 0) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
@@ -545,9 +542,8 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
       }
-      ink_strlcpy(tmpbuf, argptr, sizeof(tmpbuf));
       // important! use copy of argument
-      if (ExtractIpRange(tmpbuf, &ipi->start.sa, &ipi->end.sa) != nullptr) {
+      if (ats_ip_range_parse(argptr, ipi->start, ipi->end) != 0) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;

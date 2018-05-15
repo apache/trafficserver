@@ -41,7 +41,7 @@ namespace inliner
       return content.size() >= SIGNATURE_SIZE && std::equal(SIGNATURE, SIGNATURE + SIGNATURE_SIZE, content.begin());
     }
   };
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #endif // JPEG_H

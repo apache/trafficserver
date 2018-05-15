@@ -18,30 +18,30 @@
 bin_PROGRAMS = traffic_crashlog
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/mgmt/api/include \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	$(TS_INCLUDES)
 
 AM_LDFLAGS += \
-  @OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@
 
 traffic_crashlog_SOURCES = \
-  procinfo.cc \
-  traffic_crashlog.cc \
-  traffic_crashlog.h
+	procinfo.cc \
+	traffic_crashlog.cc \
+	traffic_crashlog.h
 
 traffic_crashlog_LDADD = \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/mgmt/api/libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @HWLOC_LIBS@
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/mgmt/api/libtsmgmt.la \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	@LIBTCL@ @HWLOC_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 

@@ -51,7 +51,7 @@ public:
     return;
   }
 
-  virtual ~RefCountObj() {}
+  ~RefCountObj() override {}
   RefCountObj &
   operator=(const RefCountObj &s)
   {

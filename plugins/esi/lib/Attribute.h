@@ -38,6 +38,6 @@ struct Attribute {
 };
 
 typedef std::list<Attribute> AttributeList;
-};
+}; // namespace EsiLib
 
 #endif // _ESI_ATTRIBUTE_H

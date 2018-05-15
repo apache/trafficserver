@@ -82,7 +82,6 @@
 #define AIO_EVENT_EVENTS_START 3900
 #define BLOCK_CACHE_EVENT_EVENTS_START 4000
 #define UTILS_EVENT_EVENTS_START 5000
-#define CONGESTION_EVENT_EVENTS_START 5100
 #define INK_API_EVENT_EVENTS_START 60000
 #define SRV_EVENT_EVENTS_START 62000
 #define REMAP_EVENT_EVENTS_START 63000
@@ -242,9 +241,9 @@ private:
 public:
   LINK(Event, link);
 
-/*-------------------------------------------------------*\
-| UNIX/non-NT Interface                                   |
-\*-------------------------------------------------------*/
+  /*-------------------------------------------------------*\
+  | UNIX/non-NT Interface                                   |
+  \*-------------------------------------------------------*/
 
 #ifdef ONLY_USED_FOR_FIB_AND_BIN_HEAP
   void *node_pointer;
@@ -261,7 +260,7 @@ public:
 #endif
 
 #if defined(__GNUC__)
-  virtual ~Event() {}
+  ~Event() override {}
 #endif
 };
 

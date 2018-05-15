@@ -44,7 +44,7 @@ stub(const char *file, int line)
 
   std::exit(1);
 }
-}
+} // namespace
 
 #define STUB stub(__FILE__, __LINE__);
 
@@ -71,9 +71,7 @@ int thread_freelist_high_watermark;
 int thread_freelist_low_watermark;
 inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator("ARGH");
 inkcoreapi ClassAllocator<IOBufferData> ioDataAllocator("ARGH");
-IOBufferBlock::IOBufferBlock()
-{
-}
+IOBufferBlock::IOBufferBlock() {}
 
 void
 IOBufferBlock::free()

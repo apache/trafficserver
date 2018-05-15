@@ -33,9 +33,7 @@ operator<<(std::ostream &os, ATSConsistentHashNode &thing)
   return os << thing.name;
 }
 
-ATSConsistentHash::ATSConsistentHash(int r, ATSHash64 *h) : replicas(r), hash(h)
-{
-}
+ATSConsistentHash::ATSConsistentHash(int r, ATSHash64 *h) : replicas(r), hash(h) {}
 
 void
 ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *h)

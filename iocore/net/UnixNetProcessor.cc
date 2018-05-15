@@ -231,7 +231,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
                            */
                           !socks_conf_stuff->ip_map.contains(target))
 #endif
-                        );
+  );
   SocksEntry *socksEntry = nullptr;
 
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);

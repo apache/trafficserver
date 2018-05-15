@@ -98,9 +98,9 @@ Ldone:
 static off_t
 next_in_map(Vol *d, char *vol_map, off_t offset)
 {
-  off_t start_offset = vol_offset_to_offset(d, 0);
+  off_t start_offset = d->vol_offset_to_offset(0);
   off_t new_off      = (offset - start_offset);
-  off_t vol_len      = vol_relative_length(d, start_offset);
+  off_t vol_len      = d->vol_relative_length(start_offset);
 
   while (new_off < vol_len && !vol_map[new_off / SCAN_BUF_SIZE]) {
     new_off += SCAN_BUF_SIZE;
@@ -124,8 +124,8 @@ static char *
 make_vol_map(Vol *d)
 {
   // Map will be one byte for each SCAN_BUF_SIZE bytes.
-  off_t start_offset = vol_offset_to_offset(d, 0);
-  off_t vol_len      = vol_relative_length(d, start_offset);
+  off_t start_offset = d->vol_offset_to_offset(0);
+  off_t vol_len      = d->vol_relative_length(start_offset);
   size_t map_len     = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
   char *vol_map      = (char *)ats_malloc(map_len);
 
@@ -142,7 +142,7 @@ make_vol_map(Vol *d)
       }
       while (e) {
         if (dir_offset(e) && dir_valid(d, e) && dir_agg_valid(d, e) && dir_head(e)) {
-          off_t offset = vol_offset(d, e) - start_offset;
+          off_t offset = d->vol_offset(e) - start_offset;
           if (offset <= vol_len) {
             vol_map[offset / SCAN_BUF_SIZE] = 1;
           }
@@ -186,7 +186,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (!fragment) { // initialize for first read
     fragment            = 1;
     scan_vol_map        = make_vol_map(vol);
-    io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, vol_offset_to_offset(vol, 0));
+    io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, vol->vol_offset_to_offset(0));
     if (io.aiocb.aio_offset >= (off_t)(vol->skip + vol->len)) {
       goto Lnext_vol;
     }
@@ -236,7 +236,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         goto Lskip;
       }
       if (!dir_agg_valid(vol, &dir) || !dir_head(&dir) ||
-          (vol_offset(vol, &dir) != io.aiocb.aio_offset + ((char *)doc - buf->data()))) {
+          (vol->vol_offset(&dir) != io.aiocb.aio_offset + ((char *)doc - buf->data()))) {
         continue;
       }
       break;

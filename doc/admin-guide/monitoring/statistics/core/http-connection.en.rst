@@ -22,35 +22,16 @@
 HTTP Connection
 ***************
 
-.. ts:stat:: global proxy.node.current_cache_connections integer
-   :type: gauge
-   :ungathered:
-
-.. ts:stat:: global proxy.node.current_client_connections integer
+.. ts:stat:: global proxy.process.current_server_connections integer
    :type: gauge
 
-.. ts:stat:: global proxy.node.current_server_connections integer
-   :type: gauge
-
-.. ts:stat:: global proxy.node.http.user_agent_current_connections_count integer
-   :type: gauge
-
-.. ts:stat:: global proxy.node.http.user_agents_total_documents_served integer
+.. ts:stat:: global proxy.process.http.user_agent_total_request_bytes integer
    :type: counter
+   :units: bytes
 
-.. ts:stat:: global proxy.node.http.user_agents_total_transactions_count integer
+.. ts:stat:: global proxy.process.http.user_agent_total_response_bytes integer
    :type: counter
-
-.. ts:stat:: global proxy.node.http.user_agent_total_request_bytes integer
-   :type: counter
-   :unit: bytes
-
-.. ts:stat:: global proxy.node.http.user_agent_total_response_bytes integer
-   :type: counter
-   :unit: bytes
-
-.. ts:stat:: global proxy.node.http.user_agent_xacts_per_second float
-   :type: derivative
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.broken_server_connections integer
    :type: counter
@@ -85,22 +66,22 @@ HTTP Connection
 
 .. ts:stat:: global proxy.process.http.err_client_abort_origin_server_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.err_client_abort_user_agent_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.err_client_read_error_count_stat integer
    :type: counter
 
 .. ts:stat:: global proxy.process.http.err_client_read_error_origin_server_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.err_client_read_error_user_agent_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.err_connect_fail_count_stat integer
    :type: counter
@@ -108,17 +89,17 @@ HTTP Connection
 
 .. ts:stat:: global proxy.process.http.err_connect_fail_origin_server_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.err_connect_fail_user_agent_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.http_misc_origin_server_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.incoming_requests integer
    :type: counter
@@ -150,4 +131,4 @@ HTTP Connection
 .. ts:stat:: global proxy.process.http.origin_connections_throttled_out integer
    :type: counter
 
-This tracks the number of origin connections denied due to being over the :ts:cv`proxy.config.http.origin_max_connections` limit.
+This tracks the number of origin connections denied due to being over the :ts:cv:`proxy.config.http.origin_max_connections` limit.

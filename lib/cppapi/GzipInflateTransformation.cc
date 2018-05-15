@@ -36,7 +36,7 @@ namespace
 {
 const int WINDOW_BITS             = 31; // Always use 31 for gzip.
 unsigned int INFLATE_SCALE_FACTOR = 6;
-}
+} // namespace
 
 /**
  * @private

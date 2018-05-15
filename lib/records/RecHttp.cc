@@ -63,6 +63,7 @@ int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_PROXY_PROTO = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
@@ -127,6 +128,7 @@ const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
 const char *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
 const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
 const char *const HttpProxyPort::OPT_SSL                     = "ssl";
+const char *const HttpProxyPort::OPT_PROXY_PROTO             = "pp";
 const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
 const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
 const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
@@ -140,7 +142,7 @@ size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_
 size_t const OPT_INBOUND_IP_PREFIX_LEN  = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
 size_t const OPT_HOST_RES_PREFIX_LEN    = strlen(HttpProxyPort::OPT_HOST_RES_PREFIX);
 size_t const OPT_PROTO_PREFIX_LEN       = strlen(HttpProxyPort::OPT_PROTO_PREFIX);
-}
+} // namespace
 
 namespace
 {
@@ -150,7 +152,7 @@ namespace
 // reference. Might be a problem with Vec<> creating a fixed array
 // rather than allocating on first use (compared to std::vector<>).
 HttpProxyPort::Group GLOBAL_DATA;
-}
+} // namespace
 HttpProxyPort::Group &HttpProxyPort::m_global = GLOBAL_DATA;
 
 HttpProxyPort::HttpProxyPort()
@@ -158,6 +160,7 @@ HttpProxyPort::HttpProxyPort()
     m_type(TRANSPORT_DEFAULT),
     m_port(0),
     m_family(AF_INET),
+    m_proxy_protocol(false),
     m_inbound_transparent_p(false),
     m_outbound_transparent_p(false),
     m_transparent_passthrough(false)
@@ -181,7 +184,7 @@ HttpProxyPort::findHttp(Group const &ports, uint16_t family)
     if (p.m_port &&                               // has a valid port
         TRANSPORT_DEFAULT == p.m_type &&          // is normal HTTP
         (!check_family_p || p.m_family == family) // right address family
-        ) {
+    ) {
       zret = &p;
     };
   }
@@ -339,6 +342,8 @@ HttpProxyPort::processOptions(const char *opts)
       m_type = TRANSPORT_SSL;
     } else if (0 == strcasecmp(OPT_PLUGIN, item)) {
       m_type = TRANSPORT_PLUGIN;
+    } else if (0 == strcasecmp(OPT_PROXY_PROTO, item)) {
+      m_proxy_protocol = true;
     } else if (0 == strcasecmp(OPT_TRANSPARENT_INBOUND, item)) {
 #if TS_USE_TPROXY
       m_inbound_transparent_p = true;
@@ -533,6 +538,10 @@ HttpProxyPort::print(char *out, size_t n)
     return n;
   }
 
+  if (m_proxy_protocol) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_PROXY_PROTO);
+  }
+
   if (m_outbound_transparent_p && m_inbound_transparent_p) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_TRANSPARENT_FULL);
   } else if (m_inbound_transparent_p) {
@@ -627,7 +636,10 @@ ts_session_protocol_well_known_name_indices_init()
   HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_1_1);
   HTTP2_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
 
+
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
+  // Disable proxy protocol by default in TLS, explicit configuration to enable
+  DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(TS_ALPN_PROTOCOL_INDEX_PROXY_PROTO);
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 

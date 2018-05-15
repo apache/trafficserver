@@ -68,7 +68,7 @@ public:
   /** Should be called only after request header has completely been consumed */
   Headers &getRequestHeaders();
 
-  virtual ~InterceptPlugin();
+  ~InterceptPlugin() override;
 
   struct State; /** Internal use only */
 
@@ -96,4 +96,4 @@ private:
   friend class utils::internal;
 };
 
-} /* atscppapi */
+} // namespace atscppapi

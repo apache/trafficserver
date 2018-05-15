@@ -68,6 +68,6 @@ protected:
   Expression &_esi_expr;
   HttpDataFetcher &_http_fetcher;
 };
-};
+}; // namespace EsiLib
 
 #endif

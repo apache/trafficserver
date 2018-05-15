@@ -229,4 +229,4 @@ CommandTable::setArgIndex(int n)
   _opt_idx = n;
   return *this;
 }
-}
+} // namespace ts

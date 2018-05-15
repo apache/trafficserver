@@ -17,13 +17,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+	
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS = -I $(top_srcdir)/lib -D__STDC_FORMAT_MACROS
 
 noinst_PROGRAMS = traffic_cache_tool
 
-traffic_cache_tool_SOURCES = CacheDefs.h CacheDefs.cc CacheTool.cc File.h File.cc Command.h Command.cc
+traffic_cache_tool_SOURCES = CacheDefs.h CacheDefs.cc CacheTool.cc File.h File.cc Command.h Command.cc CacheScan.h CacheScan.cc
 traffic_cache_tool_LDADD = \
 	$(top_builddir)/lib/ts/.libs/ink_assert.o \
 	$(top_builddir)/lib/ts/.libs/ink_code.o \
@@ -37,7 +38,8 @@ traffic_cache_tool_LDADD = \
 	$(top_builddir)/lib/ts/.libs/Regex.o \
 	$(top_builddir)/lib/ts/.libs/CryptoHash.o \
 	$(top_builddir)/lib/ts/.libs/MMH.o \
-	@OPENSSL_LIBS@ @LIBPCRE@
+	@OPENSSL_LIBS@ @LIBPCRE@ @LIBTCL@
+	
 
 all-am: Makefile $(PROGRAMS)
 

@@ -55,17 +55,21 @@ const static struct {
   uint32_t raw_string_len;
   uint8_t *encoded_field;
   int encoded_field_len;
-} string_test_case[] = {{(char *)"", 0, (uint8_t *)"\x0"
-                                                   "",
+} string_test_case[] = {{(char *)"", 0,
+                         (uint8_t *)"\x0"
+                                    "",
                          1},
-                        {(char *)"custom-key", 10, (uint8_t *)"\xA"
-                                                              "custom-key",
+                        {(char *)"custom-key", 10,
+                         (uint8_t *)"\xA"
+                                    "custom-key",
                          11},
-                        {(char *)"", 0, (uint8_t *)"\x80"
-                                                   "",
+                        {(char *)"", 0,
+                         (uint8_t *)"\x80"
+                                    "",
                          1},
-                        {(char *)"custom-key", 10, (uint8_t *)"\x88"
-                                                              "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
+                        {(char *)"custom-key", 10,
+                         (uint8_t *)"\x88"
+                                    "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
                          9}};
 
 // [RFC 7541] C.2.4. Indexed Header Field
@@ -85,78 +89,91 @@ const static struct {
   HpackField type;
   uint8_t *encoded_field;
   int encoded_field_len;
-} literal_test_case[] = {
-  {(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL, (uint8_t *)"\x40\x0a"
-                                                                                             "custom-key\x0d"
-                                                                                             "custom-header",
-   26},
-  {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NOINDEX_LITERAL, (uint8_t *)"\x00\x0a"
-                                                                                             "custom-key\x0d"
-                                                                                             "custom-header",
-   26},
-  {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NEVERINDEX_LITERAL, (uint8_t *)"\x10\x0a"
-                                                                                                "custom-key\x0d"
-                                                                                                "custom-header",
-   26},
-  {(char *)":path", (char *)"/sample/path", 4, HpackField::INDEXED_LITERAL, (uint8_t *)"\x44\x0c"
-                                                                                       "/sample/path",
-   14},
-  {(char *)":path", (char *)"/sample/path", 4, HpackField::NOINDEX_LITERAL, (uint8_t *)"\x04\x0c"
-                                                                                       "/sample/path",
-   14},
-  {(char *)":path", (char *)"/sample/path", 4, HpackField::NEVERINDEX_LITERAL, (uint8_t *)"\x14\x0c"
-                                                                                          "/sample/path",
-   14},
-  {(char *)"password", (char *)"secret", 0, HpackField::INDEXED_LITERAL, (uint8_t *)"\x40\x08"
-                                                                                    "password\x06"
-                                                                                    "secret",
-   17},
-  {(char *)"password", (char *)"secret", 0, HpackField::NOINDEX_LITERAL, (uint8_t *)"\x00\x08"
-                                                                                    "password\x06"
-                                                                                    "secret",
-   17},
-  {(char *)"password", (char *)"secret", 0, HpackField::NEVERINDEX_LITERAL, (uint8_t *)"\x10\x08"
-                                                                                       "password\x06"
-                                                                                       "secret",
-   17},
-  // with Huffman Coding
-  {(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL,
-   (uint8_t *)"\x40"
-              "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-              "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
-   20},
-  {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NOINDEX_LITERAL,
-   (uint8_t *)"\x00"
-              "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-              "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
-   20},
-  {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NEVERINDEX_LITERAL,
-   (uint8_t *)"\x10"
-              "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-              "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
-   20},
-  {(char *)":path", (char *)"/sample/path", 4, HpackField::INDEXED_LITERAL, (uint8_t *)"\x44"
-                                                                                       "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
-   11},
-  {(char *)":path", (char *)"/sample/path", 4, HpackField::NOINDEX_LITERAL, (uint8_t *)"\x04"
-                                                                                       "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
-   11},
-  {(char *)":path", (char *)"/sample/path", 4, HpackField::NEVERINDEX_LITERAL,
-   (uint8_t *)"\x14"
-              "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
-   11},
-  {(char *)"password", (char *)"secret", 0, HpackField::INDEXED_LITERAL, (uint8_t *)"\x40"
-                                                                                    "\x86\xac\x68\x47\x83\xd9\x27"
-                                                                                    "\x84\x41\x49\x61\x53",
-   13},
-  {(char *)"password", (char *)"secret", 0, HpackField::NOINDEX_LITERAL, (uint8_t *)"\x00"
-                                                                                    "\x86\xac\x68\x47\x83\xd9\x27"
-                                                                                    "\x84\x41\x49\x61\x53",
-   13},
-  {(char *)"password", (char *)"secret", 0, HpackField::NEVERINDEX_LITERAL, (uint8_t *)"\x10"
-                                                                                       "\x86\xac\x68\x47\x83\xd9\x27"
-                                                                                       "\x84\x41\x49\x61\x53",
-   13}};
+} literal_test_case[] = {{(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL,
+                          (uint8_t *)"\x40\x0a"
+                                     "custom-key\x0d"
+                                     "custom-header",
+                          26},
+                         {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NOINDEX_LITERAL,
+                          (uint8_t *)"\x00\x0a"
+                                     "custom-key\x0d"
+                                     "custom-header",
+                          26},
+                         {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NEVERINDEX_LITERAL,
+                          (uint8_t *)"\x10\x0a"
+                                     "custom-key\x0d"
+                                     "custom-header",
+                          26},
+                         {(char *)":path", (char *)"/sample/path", 4, HpackField::INDEXED_LITERAL,
+                          (uint8_t *)"\x44\x0c"
+                                     "/sample/path",
+                          14},
+                         {(char *)":path", (char *)"/sample/path", 4, HpackField::NOINDEX_LITERAL,
+                          (uint8_t *)"\x04\x0c"
+                                     "/sample/path",
+                          14},
+                         {(char *)":path", (char *)"/sample/path", 4, HpackField::NEVERINDEX_LITERAL,
+                          (uint8_t *)"\x14\x0c"
+                                     "/sample/path",
+                          14},
+                         {(char *)"password", (char *)"secret", 0, HpackField::INDEXED_LITERAL,
+                          (uint8_t *)"\x40\x08"
+                                     "password\x06"
+                                     "secret",
+                          17},
+                         {(char *)"password", (char *)"secret", 0, HpackField::NOINDEX_LITERAL,
+                          (uint8_t *)"\x00\x08"
+                                     "password\x06"
+                                     "secret",
+                          17},
+                         {(char *)"password", (char *)"secret", 0, HpackField::NEVERINDEX_LITERAL,
+                          (uint8_t *)"\x10\x08"
+                                     "password\x06"
+                                     "secret",
+                          17},
+                         // with Huffman Coding
+                         {(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL,
+                          (uint8_t *)"\x40"
+                                     "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+                                     "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+                          20},
+                         {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NOINDEX_LITERAL,
+                          (uint8_t *)"\x00"
+                                     "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+                                     "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+                          20},
+                         {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NEVERINDEX_LITERAL,
+                          (uint8_t *)"\x10"
+                                     "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+                                     "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+                          20},
+                         {(char *)":path", (char *)"/sample/path", 4, HpackField::INDEXED_LITERAL,
+                          (uint8_t *)"\x44"
+                                     "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+                          11},
+                         {(char *)":path", (char *)"/sample/path", 4, HpackField::NOINDEX_LITERAL,
+                          (uint8_t *)"\x04"
+                                     "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+                          11},
+                         {(char *)":path", (char *)"/sample/path", 4, HpackField::NEVERINDEX_LITERAL,
+                          (uint8_t *)"\x14"
+                                     "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+                          11},
+                         {(char *)"password", (char *)"secret", 0, HpackField::INDEXED_LITERAL,
+                          (uint8_t *)"\x40"
+                                     "\x86\xac\x68\x47\x83\xd9\x27"
+                                     "\x84\x41\x49\x61\x53",
+                          13},
+                         {(char *)"password", (char *)"secret", 0, HpackField::NOINDEX_LITERAL,
+                          (uint8_t *)"\x00"
+                                     "\x86\xac\x68\x47\x83\xd9\x27"
+                                     "\x84\x41\x49\x61\x53",
+                          13},
+                         {(char *)"password", (char *)"secret", 0, HpackField::NEVERINDEX_LITERAL,
+                          (uint8_t *)"\x10"
+                                     "\x86\xac\x68\x47\x83\xd9\x27"
+                                     "\x84\x41\x49\x61\x53",
+                          13}};
 
 // [RFC 7541] C.3. Request Examples without Huffman Coding - C.3.1. First Request
 // [RFC 7541] C.4. Request Examples with Huffman Coding - C.4.1. First Request

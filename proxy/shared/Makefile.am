@@ -20,29 +20,29 @@ include $(top_srcdir)/build/tidy.mk
 
 # Note that hdrs is targeted from ../Makefile.am
 noinst_LIBRARIES = \
-  libdiagsconfig.a \
-  libUglyLogStubs.a
+	libdiagsconfig.a \
+	libUglyLogStubs.a
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/api \
-  -I$(abs_top_srcdir)/mgmt/api/include \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir) \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/lib \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/api \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir) \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES)
 
 libdiagsconfig_a_SOURCES = \
-  DiagsConfig.cc
+	DiagsConfig.cc
 
 libUglyLogStubs_a_SOURCES = \
-  UglyLogStubs.cc
+	UglyLogStubs.cc
 
 clang-tidy-local: $(libdiagsconfig_a_SOURCES) $(libUglyLogStubs_a_SOURCES)
 	$(CXX_Clang_Tidy)

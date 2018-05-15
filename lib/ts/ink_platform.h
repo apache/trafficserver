@@ -182,7 +182,8 @@ typedef unsigned int in_addr_t;
 #include <resolv.h> // Must go after the netinet includes for FreeBSD
 
 #ifndef PATH_NAME_MAX
-#define PATH_NAME_MAX 4096 // instead of PATH_MAX which is inconsistent
-                           // on various OSs (linux-4096,osx/bsd-1024,
-                           //                 windows-260,etc)
+#define PATH_NAME_MAX \
+  4096 // instead of PATH_MAX which is inconsistent
+       // on various OSs (linux-4096,osx/bsd-1024,
+       //                 windows-260,etc)
 #endif

@@ -1,0 +1,81 @@
+What this plugin does:
+
+=====================
+this plugin compresses responses, via gzip or brotli, whichever is applicable
+it can compress origin respones as well as cached responses
+
+installation:
+make && sudo make install
+
+if no makefile is present, you can compile it using
+    tsxs -o compress.so *.cc
+and then install it using
+    tsxs -i -o compress.so
+
+after installation, add a line to plugin.config:
+compress.so
+
+in this case, the plugin will use a default behaviour:
+- use caching
+- compress text/* for every origin
+- don't hide accept encoding from origin servers (for an offloading reverse proxy)
+- no urls are disallowed from compression
+
+alternatively, a configuration can also be specified:
+compress.so <path-to-plugin>/sample.compress.config
+
+after modifying plugin.config, restart traffic server (sudo traffic_ctl server restart)
+the configuration is re-read when a management update is given (sudo traffic_ctl config reload)
+
+a sample configuration (sample.compress.config):
+
+######################################################################
+#flags and options are:
+#
+# enable-gzip: default true, set true/false to enable/disable plugin for specific host
+#
+# remove-accept-encoding: this sets if the plugin should hide the accept encoding from origin servers
+# - to ease the load on the origins
+# - for when the proxy parses responses, and the resulting compression/decompression
+#   is wastefull
+#
+# cache: when set, the plugin stores the uncompressed and compressed response as alternates
+#
+# compressible-content-type: wildcard pattern for matching compressible content types
+#
+# allow: wildcard pattern for enabling compression on urls. prefix with ! to exclude from compression
+#
+# supported-algorithms: compression algorithms supported. comma separated algorithms. Default is gzip
+#
+######################################################################
+
+#first, we configure the default/global plugin behaviour
+enabled true
+remove-accept-encoding true
+cache false
+
+compressible-content-type text/*
+compressible-content-type *javascript*
+#disabling is possible too
+compressible-content-type !text/javascript
+
+allow */here/*
+#disabling is possible too
+allow !*/nothere/*
+
+#supported algorithms
+supported-algorithms br,gzip
+
+#override the global configuration for a host.
+#www.foo.nl does NOT inherit anything
+[www.foo.nl]
+enabled true
+remove-accept-encoding true
+compressible-content-type text/*
+
+cache false
+allow !/notthis/*.js
+allow !/notthat*
+
+allow /this/*.js
+allow !/notthat/*.css

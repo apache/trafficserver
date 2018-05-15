@@ -57,9 +57,7 @@
     reinterpret_cast<unsigned const char *>(&(x))[2], reinterpret_cast<unsigned char const *>(&(x))[3]
 
 // ----------
-ControlBase::Modifier::~Modifier()
-{
-}
+ControlBase::Modifier::~Modifier() {}
 ControlBase::Modifier::Type
 ControlBase::Modifier::type() const
 {
@@ -252,9 +250,7 @@ struct IPortMod : public ControlBase::Modifier {
 };
 
 const char *const IPortMod::NAME = "IPort";
-IPortMod::IPortMod(int port) : _port(port)
-{
-}
+IPortMod::IPortMod(int port) : _port(port) {}
 const char *
 IPortMod::name() const
 {
@@ -356,9 +352,7 @@ struct SchemeMod : public ControlBase::Modifier {
 
 const char *const SchemeMod::NAME = "Scheme";
 
-SchemeMod::SchemeMod(int scheme) : _scheme(scheme)
-{
-}
+SchemeMod::SchemeMod(int scheme) : _scheme(scheme) {}
 
 ControlBase::Modifier::Type
 SchemeMod::type() const
@@ -415,9 +409,7 @@ struct TextMod : public ControlBase::Modifier {
   void set(const char *value);
 };
 
-TextMod::TextMod() : text()
-{
-}
+TextMod::TextMod() : text() {}
 TextMod::~TextMod()
 {
   free(text.data());
@@ -448,9 +440,7 @@ struct MultiTextMod : public ControlBase::Modifier {
   void print(FILE *f) const override;
 };
 
-MultiTextMod::MultiTextMod()
-{
-}
+MultiTextMod::MultiTextMod() {}
 MultiTextMod::~MultiTextMod()
 {
   text_vec.clear();
@@ -692,7 +682,7 @@ InternalMod::make(char *value, const char **error)
 }
 
 // ----------
-} // anon name space
+} // namespace
 // ------------------------------------------------
 ControlBase::~ControlBase()
 {
@@ -772,7 +762,10 @@ enum mod_errors {
 };
 
 static const char *errorFormats[] = {
-  "Unknown error parsing modifier", "Unable to parse modifier", "Unknown modifier", "Callee Generated",
+  "Unknown error parsing modifier",
+  "Unable to parse modifier",
+  "Unknown modifier",
+  "Callee Generated",
 };
 
 ControlBase::Modifier *

@@ -28,7 +28,7 @@
  ***************************************************************************/
 #pragma once
 
-#include <string.h>
+#include <cstring>
 #include "ts/ink_assert.h"
 #include "ts/Tokenizer.h"
 #include "ts/List.h"
@@ -202,8 +202,6 @@ private:
   char *m_errorHint;
 
   TokenList *cacheParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *congestionParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN,
-                             unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *parentParse(char *rule);
   TokenList *remapParse(char *rule);
   TokenList *socksParse(char *rule);

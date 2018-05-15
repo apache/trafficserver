@@ -189,7 +189,6 @@ struct ConfigVol {
 struct ConfigVolumes {
   int num_volumes;
   int num_http_volumes;
-  int num_stream_volumes;
   Queue<ConfigVol> cp_queue;
   void read_config_file();
   void BuildListFromString(char *config_file_path, char *file_buf);
@@ -202,8 +201,7 @@ struct ConfigVolumes {
       cp_queue.pop();
     }
     // reset count variables
-    num_volumes        = 0;
-    num_http_volumes   = 0;
-    num_stream_volumes = 0;
+    num_volumes      = 0;
+    num_http_volumes = 0;
   }
 };

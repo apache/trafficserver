@@ -130,7 +130,8 @@ public:
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
-    self &operator++()
+    self &
+    operator++()
     {
       if (_elt)
         _elt = _elt->*N;
@@ -139,7 +140,8 @@ public:
     /// Pre-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator.
-    self &operator--()
+    self &
+    operator--()
     {
       if (_elt)
         _elt = _elt->*P;
@@ -150,7 +152,8 @@ public:
     /// Post-increment.
     /// Move to the next element in the list.
     /// @return The iterator value before the increment.
-    self operator++(int)
+    self
+    operator++(int)
     {
       self tmp(*this);
       ++*this;
@@ -159,7 +162,8 @@ public:
     /// Post-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator value before the decrement.
-    self operator--(int)
+    self
+    operator--(int)
     {
       self tmp(*this);
       --*this;
@@ -204,13 +208,13 @@ public:
   /// @return This container.
   self &
   prepend(T *elt ///< Element to add.
-          )
+  )
   {
     elt->*N = _head;
     elt->*P = nullptr;
     if (_head)
       _head->*P = elt;
-    _head       = elt;
+    _head = elt;
     if (!_tail)
       _tail = _head; // empty to non-empty transition
     ++_count;
@@ -220,13 +224,13 @@ public:
   /// @return This container.
   self &
   append(T *elt ///< Element to add.
-         )
+  )
   {
     elt->*N = nullptr;
     elt->*P = _tail;
     if (_tail)
       _tail->*N = elt;
-    _tail       = elt;
+    _tail = elt;
     if (!_head)
       _head = _tail; // empty to non-empty transition
     ++_count;
@@ -244,7 +248,7 @@ public:
       if (_head)
         _head->*P = 0;
       else
-        _tail  = 0; // non-empty to empty transition.
+        _tail = 0;  // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
       --_count;
@@ -263,7 +267,7 @@ public:
       if (_tail)
         _tail->*N = 0;
       else
-        _head  = 0; // non-empty to empty transition.
+        _head = 0;  // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
       --_count;
@@ -277,7 +281,7 @@ public:
   self &
   insertAfter(T *target, ///< Target element in list.
               T *elt     ///< Element to insert.
-              )
+  )
   {
     // Should assert that !(elt->*N || elt->*P)
     elt->*N    = target->*N;
@@ -297,7 +301,7 @@ public:
   self &
   insertBefore(T *target, ///< Target element in list.
                T *elt     ///< Element to insert.
-               )
+  )
   {
     // Should assert that !(elt->*N || elt->*P)
     elt->*P    = target->*P;
@@ -314,7 +318,7 @@ public:
   /// @return This list.
   self &
   take(T *elt ///< Element to remove.
-       )
+  )
   {
     if (elt->*P)
       elt->*P->*N = elt->*N;

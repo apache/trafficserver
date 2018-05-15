@@ -152,7 +152,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
   ink_hash_table_destroy(g_rec_config_contents_ht);
   g_rec_config_contents_ht = ink_hash_table_create(InkHashTableKeyType_String);
 
-  line_tok.Initialize(fbuf, SHARE_TOKS);
+  line_tok.Initialize(fbuf, SHARE_TOKS | ALLOW_EMPTY_TOKS);
   line     = line_tok.iterFirst(&line_tok_state);
   line_num = 1;
   while (line) {

@@ -27,7 +27,7 @@
 #include <string>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdint.h>
+#include <cstdint>
 
 #ifndef ATSCPPAPI_UNUSED
 #ifdef __GNUC__
@@ -64,5 +64,5 @@ namespace utils
    * @return a string which is the pretty printed address including port
    */
   std::string getIpPortString(const sockaddr *);
-}
-}
+} // namespace utils
+} // namespace atscppapi

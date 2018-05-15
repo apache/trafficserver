@@ -27,7 +27,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <assert.h>
+#include <cassert>
 
 #include "cache.h"
 #include "fetcher.h"
@@ -334,8 +334,8 @@ namespace inliner
     }
   };
 
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #undef ONE_PIXEL
 

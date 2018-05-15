@@ -86,7 +86,7 @@ struct OneWayTunnel : public Continuation {
 
   static void SetupTwoWayTunnel(OneWayTunnel *east, OneWayTunnel *west);
   OneWayTunnel();
-  virtual ~OneWayTunnel();
+  ~OneWayTunnel() override;
 
   // Use One of the following init functions to start the tunnel.
   /**

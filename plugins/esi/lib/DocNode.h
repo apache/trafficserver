@@ -24,7 +24,7 @@
 #ifndef _FETCHER_DOC_NODE_H
 #define _FETCHER_DOC_NODE_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <list>
 #include <string>
 
@@ -109,6 +109,6 @@ public:
 private:
   static const char DOCNODE_VERSION = 1;
 };
-};
+}; // namespace EsiLib
 
 #endif // _FETCHER_DOC_NODE_H

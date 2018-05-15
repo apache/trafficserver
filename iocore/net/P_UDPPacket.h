@@ -36,11 +36,11 @@ class UDPPacketInternal : public UDPPacket
 {
 public:
   UDPPacketInternal();
-  virtual ~UDPPacketInternal();
+  ~UDPPacketInternal() override;
 
   void append_block_internal(IOBufferBlock *block);
 
-  virtual void free();
+  void free() override;
 
   SLINK(UDPPacketInternal, alink); // atomic link
   // packet scheduling stuff: keep it a doubly linked list

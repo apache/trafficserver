@@ -173,8 +173,9 @@ LogObject::LogObject(LogObject &rhs)
   ink_assert(b);
   SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
-  Debug("log-config", "exiting LogObject copy constructor, "
-                      "filename=%s this=%p",
+  Debug("log-config",
+        "exiting LogObject copy constructor, "
+        "filename=%s this=%p",
         m_filename, this);
 }
 
@@ -349,9 +350,10 @@ void
 LogObject::display(FILE *fd)
 {
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-  fprintf(fd, "LogObject [%p]: format = %s (%p)\nbasename = %s\n"
-              "flags = %u\n"
-              "signature = %" PRIu64 "\n",
+  fprintf(fd,
+          "LogObject [%p]: format = %s (%p)\nbasename = %s\n"
+          "flags = %u\n"
+          "signature = %" PRIu64 "\n",
           this, m_format->name(), m_format, m_basename, m_flags, m_signature);
   if (is_collation_client()) {
     m_host_list.display(fd);
@@ -581,8 +583,9 @@ LogObject::log(LogAccess *lad, const char *text_entry)
     }
 
     if (time_now < m_format->m_interval_next) {
-      Debug("log-agg", "Time now = %ld, next agg = %ld; not time "
-                       "for aggregate entry",
+      Debug("log-agg",
+            "Time now = %ld, next agg = %ld; not time "
+            "for aggregate entry",
             time_now, m_format->m_interval_next);
       return Log::AGGR;
     }
@@ -903,8 +906,9 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
 
         ink_release_assert(retVal == NO_FILENAME_CONFLICTS);
 
-        Debug("log", "LogObjectManager managing object %s (%s) "
-                     "[signature = %" PRIu64 ", address = %p]",
+        Debug("log",
+              "LogObjectManager managing object %s (%s) "
+              "[signature = %" PRIu64 ", address = %p]",
               log_object->get_base_filename(), col_client ? "collation client" : log_object->get_full_filename(),
               log_object->get_signature(), log_object);
 
@@ -957,11 +961,12 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
       if (got_sig && signature == obj_sig) {
         conflicts = false;
       }
-      Debug("log", "LogObjectManager::_solve_filename_conflicts\n"
-                   "\tfilename = %s\n"
-                   "\tmeta file signature = %" PRIu64 "\n"
-                   "\tlog object signature = %" PRIu64 "\n"
-                   "\tconflicts = %d",
+      Debug("log",
+            "LogObjectManager::_solve_filename_conflicts\n"
+            "\tfilename = %s\n"
+            "\tmeta file signature = %" PRIu64 "\n"
+            "\tlog object signature = %" PRIu64 "\n"
+            "\tconflicts = %d",
             filename, signature, obj_sig, conflicts);
     }
 

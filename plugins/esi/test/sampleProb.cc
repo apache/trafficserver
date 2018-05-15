@@ -81,9 +81,9 @@ registerSuccFail(string URL, FailureData &data, bool isSuccess)
   struct timeval currTime, result, startTime;
   int marker;
   FailureData::iterator it;
-  it = data.find(URL);
+  it                                     = data.find(URL);
   vector<pair<double, double>> &passFail = it->second->_passFail;
-  marker = it->second->_marker;
+  marker                                 = it->second->_marker;
 
   startTime = it->second->_start;
 
@@ -122,7 +122,7 @@ isAttemptReq(string URL, FailureData &data)
   FailureData::iterator it;
   it = data.find(URL);
   if (it != data.end()) {
-    double avg = 0;
+    double avg                             = 0;
     vector<pair<double, double>> &passFail = it->second->_passFail;
 
     for (int i = 0; i < it->second->_totalSlot; i++) {

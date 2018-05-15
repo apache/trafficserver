@@ -50,14 +50,14 @@ const char *ExtractIpRange(char *match_str, sockaddr *min, sockaddr *max);
 const char *ExtractIpRange(char *match_str,
                            in_addr_t *addr1, ///< [in,out] Returned address in host order.
                            in_addr_t *addr2  ///< [in,out] Returned address in host order.
-                           );
+);
 
 /// Convenience overload for IPv6.
 inline const char *
 ExtractIpRange(char *match_str,
                sockaddr_in6 *addr1, ///< [in,out] Returned address in network order.
                sockaddr_in6 *addr2  ///< [in,out] Returned address in network order.
-               )
+)
 {
   return ExtractIpRange(match_str, ats_ip_sa_cast(addr1), ats_ip_sa_cast(addr2));
 }

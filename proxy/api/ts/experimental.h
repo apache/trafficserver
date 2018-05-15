@@ -275,7 +275,7 @@ tsapi TSAction TSNetConnectTransparent(
   TSCont contp,                /**< continuation that is called back when the attempted net connection either succeeds or fails. */
   struct sockaddr const *from, /**< Address to spoof as connection origin */
   struct sockaddr const *to    /**< Address to which to connect. */
-  );
+);
 
 /* =====  Matcher Utils =====  */
 #define TS_MATCHER_LINE_INVALID 0

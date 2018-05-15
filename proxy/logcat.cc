@@ -222,8 +222,9 @@ open_output_file(char *output_file)
         file_desc = -1;
       }
     } else {
-      fprintf(stderr, "Error, output file %s already exists.\n"
-                      "Select a different filename or use the -w flag\n",
+      fprintf(stderr,
+              "Error, output file %s already exists.\n"
+              "Select a different filename or use the -w flag\n",
               output_file);
       file_desc = -1;
     }

@@ -182,63 +182,16 @@ existing disk, or to remove disks from a Traffic Server node:
 Partitioning the Cache
 ======================
 
-You can manage your cache space more efficiently and restrict disk usage
-by creating :term:`cache volumes <cache volume>` with different sizes for
-specific protocols. You can further configure these volumes to store data from
-specific :term:`origin servers <origin server>` and/or domains.
-
-Creating Cache Partitions for Specific Protocols
-------------------------------------------------
-
-You can create separate :term:`volumes <cache volume>` for your cache that vary
-in size to store content according to protocol. This ensures that a certain
-amount of disk space is always available for a particular protocol. Traffic
-Server currently supports only the ``http`` partition type.
-
-To partition the cache according to protocol:
-
-#. Enter a line in :file:`volume.config` for each volume you want to create. ::
-
-    volume=1 scheme=http size=50%
-    volume=2 scheme=http size=50%
-
-#. Restart Traffic Server.
-
-.. important::
-
-    Volume definitions must be the same across all nodes in a cluster.
-
-Making Changes to Partition Sizes and Protocols
------------------------------------------------
-
-After you've configured your cache volumes based on protocol, you can
-make changes to the configuration at any time. Before making changes,
-note the following:
-
--  You must stop Traffic Server before you change the cache volume size
-   and protocol assignment.
-
--  When you increase the size of a volume, the contents of the volume
-   are *not* deleted. However, when you reduce the size of a volume, the
-   contents of the volume *are* deleted.
-
--  When you change the volume number, the volume is deleted and then
-   recreated, even if the size and protocol type remain the same.
-
--  When you add new disks to your Traffic Server node, volume sizes
-   specified in percentages will increase proportionately.
-
--  Substantial changes to volume sizes can result in disk fragmentation,
-   which affects performance and cache hit rate. You should clear the cache
-   before making many changes to cache volume sizes (refer to `Clearing the Cache`_).
+You can manage your cache space and restrict disk usage from specific
+:term:`origin servers <origin server>` and/or domains by creating
+:term:`cache volumes <cache volume>`.
 
 Partitioning the Cache According to Origin Server or Domain
 -----------------------------------------------------------
 
 .. XXX: rewrite to remove repetitious single-v-multiple points; break out global partition note for clarify; fix up plurality
 
-After you have partitioned the cache according to size and protocol, you
-can assign the volumes you created to specific origin servers and/or
+You can assign the volumes you create to specific origin servers and/or
 domains. You can assign a volume to a single origin server or to
 multiple origin servers. However, if a volume is assigned to multiple
 origin servers, then there is no guarantee on the space available in the
@@ -248,7 +201,8 @@ origin servers and domains, you must assign a generic volume to store
 content from all origin servers and domains that are not listed. This
 generic volume is also used if the partitions for a particular origin
 server or domain become corrupt. If you do not assign a generic volume,
-then Traffic Server will run in proxy-only mode.
+then Traffic Server will run in proxy-only mode. The volumes do
+not need to be the same size.
 
 .. note::
 
@@ -260,12 +214,6 @@ then Traffic Server will run in proxy-only mode.
 
 To partition the cache according to hostname and domain:
 
-#. Configure the cache volumes according to size and protocol, as
-   described in `Creating Cache Partitions for Specific Protocols`_.
-#. Create a separate volume based on protocol for each host and domain,
-   as well as an additional generic partition to use for content that
-   does not belong to these origin servers or domains. The volumes do
-   not need to be the same size.
 #. Enter a line in the :file:`hosting.config` file to
    allocate the volume(s) used for each origin server and/or domain.
 #. Assign a generic volume to use for content that does not belong to

@@ -115,7 +115,7 @@ SSL/TLS
 
 .. ts:stat:: global proxy.process.ssl.total_handshake_time integer
    :type: counter
-   :unit: milliseconds
+   :units: milliseconds
 
    The total amount of time spent performing SSL/TLS handshakes for new sessions
    since statistics collection began.

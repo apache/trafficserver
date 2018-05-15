@@ -197,7 +197,10 @@ void
 lua_metrics_register(lua_State *L)
 {
   static const luaL_reg metatable[] = {
-    {"__gc", metrics_gc}, {"__index", metrics_index}, {"__newindex", metrics_newindex}, {nullptr, nullptr},
+    {"__gc", metrics_gc},
+    {"__index", metrics_index},
+    {"__newindex", metrics_newindex},
+    {nullptr, nullptr},
   };
 
   BindingInstance::register_metatable(L, BINDING, metatable);

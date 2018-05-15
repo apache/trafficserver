@@ -36,7 +36,7 @@ class UDPConnectionInternal : public UDPConnection
 {
 public:
   UDPConnectionInternal();
-  virtual ~UDPConnectionInternal();
+  ~UDPConnectionInternal() override;
 
   Continuation *continuation;
   int recvActive; // interested in receiving

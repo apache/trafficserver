@@ -78,10 +78,10 @@ namespace transformations
      */
     void handleInputComplete() override;
 
-    virtual ~GzipDeflateTransformation();
+    ~GzipDeflateTransformation() override;
 
   private:
     GzipDeflateTransformationState *state_; /** Internal state for Gzip Deflate Transformations */
   };
-}
-}
+} // namespace transformations
+} // namespace atscppapi

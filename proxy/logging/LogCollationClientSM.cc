@@ -578,7 +578,7 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
     Debug("log-coll", "[%d]client::client_send - EVENT_IMMEDIATE", m_id);
     // callback complete, reset m_pending_event
     m_pending_event = nullptr;
-  // fallthrough
+    // fallthrough
 
   case LOG_COLL_EVENT_SWITCH: {
     Debug("log-coll", "[%d]client::client_send - SWITCH", m_id);
@@ -600,10 +600,10 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
            m_log_host->port());
       m_flow = LOG_COLL_FLOW_ALLOW;
     }
-// future work:
-// Wrap the buffer in a io_buffer_block and send directly to
-// do_io_write to save a memory copy.  But for now, just
-// write the lame way.
+    // future work:
+    // Wrap the buffer in a io_buffer_block and send directly to
+    // do_io_write to save a memory copy.  But for now, just
+    // write the lame way.
 
 #if defined(LOG_BUFFER_TRACKING)
     Debug("log-buftrak", "[%d]client::client_send - network write begin", m_buffer_in_iocore->header()->id);

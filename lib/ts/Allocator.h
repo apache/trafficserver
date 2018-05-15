@@ -40,7 +40,7 @@
 #pragma once
 
 #include <new>
-#include <stdlib.h>
+#include <cstdlib>
 #include "ts/ink_queue.h"
 #include "ts/ink_defs.h"
 #include "ts/ink_resource.h"

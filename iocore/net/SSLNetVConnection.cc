@@ -37,7 +37,7 @@
 
 #include <climits>
 #include <string>
-#include <stdbool.h>
+
 #if TS_USE_TLS_ASYNC
 #include <openssl/async.h>
 #endif
@@ -120,7 +120,7 @@ public:
        Continuation *target,          ///< "Real" continuation we want to call.
        int eventId = EVENT_IMMEDIATE, ///< Event ID for invocation of @a target.
        void *edata = nullptr          ///< Data for invocation of @a target.
-       )
+  )
   {
     EThread *eth = this_ethread();
     if (!target->mutex) {
@@ -141,7 +141,7 @@ private:
   int _eventId;          ///< with this event
   void *_edata;          ///< and this data
 };
-}
+} // namespace
 
 //
 // Private
@@ -823,9 +823,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   return num_really_written;
 }
 
-SSLNetVConnection::SSLNetVConnection()
-{
-}
+SSLNetVConnection::SSLNetVConnection() {}
 
 void
 SSLNetVConnection::do_io_close(int lerrno)
@@ -1193,10 +1191,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       const unsigned char *proto = nullptr;
       unsigned len               = 0;
 
-// If it's possible to negotiate both NPN and ALPN, then ALPN
-// is preferred since it is the server's preference.  The server
-// preference would not be meaningful if we let the client
-// preference have priority.
+      // If it's possible to negotiate both NPN and ALPN, then ALPN
+      // is preferred since it is the server's preference.  The server
+      // preference would not be meaningful if we let the client
+      // preference have priority.
 
 #if TS_USE_TLS_ALPN
       SSL_get0_alpn_selected(ssl, &proto, &len);
@@ -1376,15 +1374,24 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default: {
     err = (errno) ? errno : -ENET_CONNECT_FAILED;
+    char buf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
     // FIXME -- This triggers a retry on cases of cert validation errors....
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
-    char buf[512];
-    unsigned long e = ERR_peek_last_error();
-    ERR_error_string_n(e, buf, sizeof(buf));
     TraceIn(trace, get_remote_addr(), get_remote_port(),
             "SSL client handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, errno);
+    if (e) {
+      if (this->options.sni_servername) {
+        Error("SSL connection failed for '%s': %s", this->options.sni_servername.get(), buf);
+      } else {
+        char buff[INET6_ADDRSTRLEN];
+        ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+        Error("SSL connection failed for '%s': %s", buff, buf);
+      }
+    }
     return EVENT_ERROR;
   } break;
   }
@@ -1426,8 +1433,8 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
 
   ink_release_assert(netvc != nullptr);
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
-// SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
-// server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
+    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
+    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
 
 #if HAVE_SSL_SELECT_NEXT_PROTO
     if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {

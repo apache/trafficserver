@@ -363,9 +363,7 @@ LogHost::authenticated()
   LogHostList
   -------------------------------------------------------------------------*/
 
-LogHostList::LogHostList()
-{
-}
+LogHostList::LogHostList() {}
 
 LogHostList::~LogHostList()
 {

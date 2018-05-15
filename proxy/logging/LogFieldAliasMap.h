@@ -28,8 +28,8 @@
 
 #pragma once
 
-#include <stdarg.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstring>
 
 #include "ts/ink_platform.h"
 #include "ts/Ptr.h"
@@ -86,7 +86,7 @@ public:
     BUFFER_TOO_SMALL,
   };
 
-  virtual int asInt(char *key, IntType *val, bool case_sensitive = false) const = 0;
+  virtual int asInt(char *key, IntType *val, bool case_sensitive = false) const                 = 0;
   virtual int asString(IntType key, char *buf, size_t bufLen, size_t *numChars = nullptr) const = 0;
 };
 
@@ -126,11 +126,11 @@ private:
 
 public:
   LogFieldAliasTable() : m_min(0), m_max(0), m_entries(0), m_table(nullptr) {}
-  ~LogFieldAliasTable() { delete[] m_table; }
+  ~LogFieldAliasTable() override { delete[] m_table; }
   void init(size_t numPairs, ...);
 
   int
-  asInt(char *key, IntType *val, bool case_sensitive) const
+  asInt(char *key, IntType *val, bool case_sensitive) const override
   {
     int retVal = INVALID_STRING;
 
@@ -156,7 +156,7 @@ public:
   }
 
   int
-  asString(IntType key, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const
+  asString(IntType key, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const override
   {
     int retVal;
     size_t numChars;
@@ -194,7 +194,7 @@ class LogFieldAliasTimeHex : public LogFieldAliasMap
 {
 public:
   int
-  asInt(char *str, IntType *time, bool /* case_sensitive ATS_UNUSED */) const
+  asInt(char *str, IntType *time, bool /* case_sensitive ATS_UNUSED */) const override
   {
     unsigned long a;
     // coverity[secure_coding]
@@ -207,7 +207,7 @@ public:
   }
 
   int
-  asString(IntType time, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const
+  asString(IntType time, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const override
   {
     return (LogUtils::timestamp_to_hex_str(time, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
   }

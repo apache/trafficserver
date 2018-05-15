@@ -19,9 +19,9 @@
 library_includedir=$(includedir)/ts
 
 library_include_HEADERS = \
-  ts.h \
-  remap.h \
-  experimental.h
+	ts.h \
+	remap.h \
+	experimental.h
 
 noinst_HEADERS = \
-  InkAPIPrivateIOCore.h
+	InkAPIPrivateIOCore.h

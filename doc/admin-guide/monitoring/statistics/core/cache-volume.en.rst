@@ -32,13 +32,13 @@ a configuration with only one cache volume: :literal:`0`.
 
 .. ts:stat:: global proxy.process.cache.volume_0.bytes_total integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
    Represents the total number of bytes allocated for the cache volume.
 
 .. ts:stat:: global proxy.process.cache.volume_0.bytes_used integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
    Represents the number of bytes in this cache volume which are occupied by
    cache objects.
@@ -112,7 +112,7 @@ a configuration with only one cache volume: :literal:`0`.
 
 .. ts:stat:: global proxy.process.cache.volume_0.percent_full integer
    :type: gauge
-   :unit: percent
+   :units: percent
 
 .. ts:stat:: global proxy.process.cache.volume_0.pread_count integer
    :type: counter
@@ -120,7 +120,7 @@ a configuration with only one cache volume: :literal:`0`.
 
 .. ts:stat:: global proxy.process.cache.volume_0.ram_cache.bytes_used integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.cache.volume_0.ram_cache.hits integer
    :type: counter
@@ -130,7 +130,7 @@ a configuration with only one cache volume: :literal:`0`.
 
 .. ts:stat:: global proxy.process.cache.volume_0.ram_cache.total_bytes integer
    :type: gauge
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.cache.volume_0.read.active integer
    :type: gauge
@@ -195,7 +195,7 @@ a configuration with only one cache volume: :literal:`0`.
 
 .. ts:stat:: global proxy.process.cache.volume_0.write_bytes_stat integer
    :type: counter
-   :unit: bytes
+   :units: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.cache.volume_0.write.failure integer

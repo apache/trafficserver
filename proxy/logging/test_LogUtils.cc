@@ -31,10 +31,16 @@ REGRESSION_TEST(LogUtils_pure_escapify_url)(RegressionTest *t, int /* atype ATS_
   box = REGRESSION_TEST_PASSED;
 
   char input[][32] = {
-    " ", "%", "% ", "%20",
+    " ",
+    "%",
+    "% ",
+    "%20",
   };
   const char *expected[] = {
-    "%20", "%25", "%25%20", "%2520",
+    "%20",
+    "%25",
+    "%25%20",
+    "%2520",
   };
   char output[128];
   int output_len;
@@ -52,10 +58,16 @@ REGRESSION_TEST(LogUtils_escapify_url)(RegressionTest *t, int /* atype ATS_UNUSE
   box = REGRESSION_TEST_PASSED;
 
   char input[][32] = {
-    " ", "%", "% ", "%20",
+    " ",
+    "%",
+    "% ",
+    "%20",
   };
   const char *expected[] = {
-    "%20", "%25", "%25%20", "%20",
+    "%20",
+    "%25",
+    "%25%20",
+    "%20",
   };
   char output[128];
   int output_len;

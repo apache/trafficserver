@@ -40,7 +40,7 @@ using Mutex = std::recursive_mutex;
 namespace utils
 {
   class internal;
-} /* utils */
+} // namespace utils
 
 /**
  * @private
@@ -98,7 +98,7 @@ public:
    * @see Plugin
    */
   void registerHook(Plugin::HookType hook_type);
-  virtual ~TransactionPlugin();
+  ~TransactionPlugin() override;
 
   bool isWebsocket() const;
 

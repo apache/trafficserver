@@ -479,8 +479,6 @@ typedef enum {
   TS_SRVSTATE_OPEN_RAW_ERROR,
   TS_SRVSTATE_PARSE_ERROR,
   TS_SRVSTATE_TRANSACTION_COMPLETE,
-  TS_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F,
-  TS_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M,
   TS_SRVSTATE_PARENT_RETRY
 } TSServerState;
 
@@ -856,6 +854,7 @@ typedef struct tsapi_cachetxn *TSCacheTxn;
 typedef struct tsapi_port *TSPortDescriptor;
 typedef struct tsapi_vio *TSVIO;
 typedef struct tsapi_thread *TSThread;
+typedef struct tsapi_x509 *TSSslX509;
 typedef struct tsapi_mutex *TSMutex;
 typedef struct tsapi_config *TSConfig;
 typedef struct tsapi_cont *TSCont;
@@ -1192,11 +1191,13 @@ extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_0_9;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_0;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_1;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_2_0;
+extern tsapi const char *const TS_ALPN_PROTOCOL_PROXY_PROTO;
 
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0;
+extern tsapi int TS_ALPN_PROTOCOL_INDEX_PROXY_PROTO;
 
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP;
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
@@ -1204,6 +1205,7 @@ extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_1_0;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_1_1;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_2_0;
+extern tsapi const char *const TS_PROTO_TAG_PROXY_PROTO;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_3;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_2;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_1;

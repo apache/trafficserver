@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <utility>
 #include <cstring>
 #include <vector>
@@ -495,7 +495,7 @@ namespace bw_fmt
   /// Generic floating point conversion.
   BufferWriter &Format_Floating(BufferWriter &w, BWFSpec const &spec, double n, bool negative_p);
 
-} // bw_fmt
+} // namespace bw_fmt
 
 /** Compiled BufferWriter format
  */

@@ -72,7 +72,6 @@ initializeRegistry()
   configFiles->addFile("remap.config", false);
   configFiles->addFile("volume.config", false);
   configFiles->addFile("hosting.config", false);
-  configFiles->addFile("congestion.config", false);
   configFiles->addFile("plugin.config", false);
   configFiles->addFile("splitdns.config", false);
   configFiles->addFile("ssl_multicert.config", false);

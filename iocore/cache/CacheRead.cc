@@ -170,8 +170,8 @@ CacheVC::load_http_info(CacheHTTPInfoVector *info, Doc *doc, RefCountObj *block_
 {
   uint32_t zret = info->get_handles(doc->hdr(), doc->hlen, block_ptr);
   if (!this->f.doc_from_ram_cache && // ram cache is always already fixed up.
-      // If this is an old object, the object version will be old or 0, in either case this is correct.
-      // Forget the 4.2 compatibility, always update older versioned objects.
+                                     // If this is an old object, the object version will be old or 0, in either case this is
+                                     // correct. Forget the 4.2 compatibility, always update older versioned objects.
       VersionNumber(doc->v_major, doc->v_minor) < CACHE_DB_VERSION) {
     for (int i = info->xcount - 1; i >= 0; --i) {
       info->data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
@@ -875,7 +875,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     if (vol->within_hit_evacuate_window(&earliest_dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&earliest_dir),
-             offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
+             vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
     goto Lsuccess;
@@ -1159,7 +1159,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     if (vol->within_hit_evacuate_window(&dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&dir),
-             offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
+             vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
 

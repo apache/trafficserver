@@ -168,7 +168,7 @@ struct cmp_str {
     return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
   }
 };
-}
+} // namespace
 
 typedef std::map<ts::ConstBuffer, TSMilestonesType, cmp_str> milestone_map;
 static milestone_map m_milestone_map;
@@ -647,8 +647,9 @@ LogField::update_aggregate(int64_t val)
     return;
   }
 
-  Debug("log-agg", "Aggregate field %s updated with val %" PRId64 ", "
-                   "new val = %" PRId64 ", cnt = %" PRId64 "",
+  Debug("log-agg",
+        "Aggregate field %s updated with val %" PRId64 ", "
+        "new val = %" PRId64 ", cnt = %" PRId64 "",
         m_symbol, val, m_agg_val, m_agg_cnt);
 }
 
@@ -700,9 +701,7 @@ LogField::fieldlist_contains_aggregates(char *fieldlist)
   heap with "new" and that each element is on at most ONE list.  To enforce
   this, items are copied by default, using the copy ctor.
   -------------------------------------------------------------------------*/
-LogFieldList::LogFieldList() : m_marshal_len(0)
-{
-}
+LogFieldList::LogFieldList() : m_marshal_len(0) {}
 
 LogFieldList::~LogFieldList()
 {

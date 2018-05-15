@@ -84,26 +84,30 @@ namespace _private_
       return m_ptr;
     }
 
-    CONSTEXPR14 string_view_iterator &operator++() noexcept
+    CONSTEXPR14 string_view_iterator &
+    operator++() noexcept
     { // preincrement
       ++m_ptr;
       return *this;
     }
 
-    CONSTEXPR14 string_view_iterator operator++(int)noexcept
+    CONSTEXPR14 string_view_iterator
+    operator++(int) noexcept
     { // postincrement
       string_view_iterator tmp{*this};
       ++*this;
       return tmp;
     }
 
-    CONSTEXPR14 string_view_iterator &operator--() noexcept
+    CONSTEXPR14 string_view_iterator &
+    operator--() noexcept
     { // predecrement
       --m_ptr;
       return *this;
     }
 
-    CONSTEXPR14 string_view_iterator operator--(int)noexcept
+    CONSTEXPR14 string_view_iterator
+    operator--(int) noexcept
     { // postdecrement
       string_view_iterator tmp{*this};
       --*this;
@@ -190,7 +194,7 @@ namespace _private_
   private:
     pointer m_ptr = nullptr;
   };
-}
+} // namespace _private_
 
 template <typename _CharTraits>
 CONSTEXPR14 _private_::string_view_iterator<_CharTraits>
@@ -1051,14 +1055,14 @@ template <class _Type, class _Traits> struct hash<ts::basic_string_view<_Type, _
   {
 // not what I would normally do.. but better than making a custom hash function at the moment.
 // This should also mean we have some consistent behavior with std code
-#if defined(__linux__)
+#if defined(__GLIBCXX__)
     return std::_Hash_impl::hash(x.data(), x.length() * sizeof(typename string_type::value_type));
-#elif defined(freebsd) || defined(darwin)
+#elif defined(_LIBCPP_VERSION)
     return __do_string_hash(x.data(), x.data() + x.size());
 #endif
   }
 };
-}
+} // namespace std
 #endif
 
 /// Literal suffix for string_view.

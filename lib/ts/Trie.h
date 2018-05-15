@@ -22,9 +22,9 @@
 */
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "ts/List.h"
 
@@ -218,8 +218,9 @@ void
 Trie<T>::Clear()
 {
   T *iter;
-  while (nullptr != (iter = m_value_list.pop()))
+  while (nullptr != (iter = m_value_list.pop())) {
     delete iter;
+  }
 
   _Clear(&m_root);
   m_root.Clear();

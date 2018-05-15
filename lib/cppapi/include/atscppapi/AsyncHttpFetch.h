@@ -121,10 +121,10 @@ public:
   /**
    * Starts a HTTP fetch of the Request contained.
    */
-  virtual void run();
+  void run() override;
 
 protected:
-  virtual ~AsyncHttpFetch();
+  ~AsyncHttpFetch() override;
 
 private:
   AsyncHttpFetchState *state_;
@@ -132,4 +132,4 @@ private:
   friend class utils::internal;
 };
 
-} /* atscppapi */
+} // namespace atscppapi

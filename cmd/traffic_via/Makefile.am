@@ -18,25 +18,25 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/mgmt/api/include \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	$(TS_INCLUDES)
 
 AM_LDFLAGS += \
-  @OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_via
 
 traffic_via_SOURCES = \
-  traffic_via.cc
+	traffic_via.cc
 
 traffic_via_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBPCRE@
+	$(top_builddir)/lib/ts/libtsutil.la \
+	@LIBPCRE@
 
 TESTS = \
-  test_traffic_via
+	test_traffic_via
 
 include $(top_srcdir)/build/tidy.mk
 

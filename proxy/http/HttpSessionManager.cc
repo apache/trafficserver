@@ -67,8 +67,9 @@ bool
 ServerSessionPool::match(HttpServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
                          TSServerSessionSharingMatchType match_style)
 {
-  return TS_SERVER_SESSION_SHARING_MATCH_NONE != match_style && // if no matching allowed, fail immediately.
-         // The hostname matches if we're not checking it or it (and the port!) is a match.
+  return TS_SERVER_SESSION_SHARING_MATCH_NONE !=
+           match_style && // if no matching allowed, fail immediately.
+                          // The hostname matches if we're not checking it or it (and the port!) is a match.
          (TS_SERVER_SESSION_SHARING_MATCH_IP == match_style ||
           (ats_ip_port_cast(addr) == ats_ip_port_cast(ss->get_server_ip()) && ss->hostname_hash == hostname_hash)) &&
          // The IP address matches if we're not checking it or it is a match.
@@ -153,8 +154,9 @@ ServerSessionPool::releaseSession(HttpServerSession *ss)
   m_ip_pool.insert(ss);
   m_host_pool.insert(ss);
 
-  Debug("http_ss", "[%" PRId64 "] [release session] "
-                   "session placed into shared pool",
+  Debug("http_ss",
+        "[%" PRId64 "] [release session] "
+        "session placed into shared pool",
         ss->con_id);
 }
 
@@ -200,8 +202,9 @@ ServerSessionPool::eventHandler(int event, void *data)
                                           http_config_params->origin_min_keep_alive_connections;
 
         if (connection_count_below_min) {
-          Debug("http_ss", "[%" PRId64 "] [session_bucket] session received io notice [%s], "
-                           "reseting timeout to maintain minimum number of connections",
+          Debug("http_ss",
+                "[%" PRId64 "] [session_bucket] session received io notice [%s], "
+                "reseting timeout to maintain minimum number of connections",
                 s->con_id, HttpDebugNames::get_event_name(event));
           s->get_netvc()->set_inactivity_timeout(s->get_netvc()->get_inactivity_timeout());
           s->get_netvc()->set_active_timeout(s->get_netvc()->get_active_timeout());
@@ -293,8 +296,9 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     }
     // Release this session back to the main session pool and
     //   then continue looking for one from the shared pool
-    Debug("http_ss", "[%" PRId64 "] [acquire session] "
-                     "session not a match, returning to shared pool",
+    Debug("http_ss",
+          "[%" PRId64 "] [acquire session] "
+          "session not a match, returning to shared pool",
           to_return->con_id);
     to_return->release();
     to_return = nullptr;

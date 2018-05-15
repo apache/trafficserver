@@ -22,9 +22,7 @@
 #include "ts/Hash.h"
 #include <cstring>
 
-ATSHashBase::~ATSHashBase()
-{
-}
+ATSHashBase::~ATSHashBase() {}
 
 bool
 ATSHash::operator==(const ATSHash &other) const

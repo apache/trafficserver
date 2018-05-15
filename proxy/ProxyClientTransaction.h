@@ -81,8 +81,9 @@ public:
   void
   set_half_close_flag(bool flag)
   {
-    if (parent)
+    if (parent) {
       parent->set_half_close_flag(flag);
+    }
   }
   virtual bool
   get_half_close_flag() const
@@ -269,6 +270,8 @@ public:
   // session.
   //
   virtual int get_transaction_id() const = 0;
+  void set_rx_error_code(ProxyError e);
+  void set_tx_error_code(ProxyError e);
 
 protected:
   ProxyClientSession *parent;

@@ -118,7 +118,7 @@ namespace inliner
   };
 
   // const uint32_t PNG::HEADER_SIZE = 8;
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #endif // PNG_H

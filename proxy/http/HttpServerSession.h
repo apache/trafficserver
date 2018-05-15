@@ -32,15 +32,15 @@
 
 #pragma once
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
-* are actually required.
-* Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
-* for header buffer and tunnel buffer. The allocation is done by
-* the net code in read_from_net when data is actually written into
-* the buffer. By allocating memory only when it is required we can
-* reduce the memory consumed by TS process.
-*
-* IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in HttpSM.h as well.
-*/
+ * are actually required.
+ * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
+ * for header buffer and tunnel buffer. The allocation is done by
+ * the net code in read_from_net when data is actually written into
+ * the buffer. By allocating memory only when it is required we can
+ * reduce the memory consumed by TS process.
+ *
+ * IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in HttpSM.h as well.
+ */
 #define LAZY_BUF_ALLOC
 
 #include "P_Net.h"
@@ -106,15 +106,15 @@ public:
     return buf_reader;
   };
 
-  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr);
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
 
-  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
-                           bool owner = false);
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
 
-  virtual void do_io_close(int lerrno = -1);
-  virtual void do_io_shutdown(ShutdownHowTo_t howto);
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
-  virtual void reenable(VIO *vio);
+  void reenable(VIO *vio) override;
 
   void release();
   void attach_hostname(const char *hostname);

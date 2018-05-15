@@ -15,8 +15,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <arpa/inet.h>
 
 #include <ts/ts.h>
@@ -54,7 +54,7 @@ public:
   virtual void read_regex(const char *fn, int &tokens)             = 0;
   virtual int process_args(int argc, char *argv[])                 = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
-  virtual void add_token(const std::string &str) = 0;
+  virtual void add_token(const std::string &str)                   = 0;
 
   void
   set_allow(bool allow)
@@ -137,10 +137,10 @@ class CountryAcl : public Acl
 {
 public:
   CountryAcl() : _regexes(nullptr) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
-  void read_regex(const char *fn, int &tokens);
-  int process_args(int argc, char *argv[]);
-  bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;
-  void add_token(const std::string &str);
+  void read_regex(const char *fn, int &tokens) override;
+  int process_args(int argc, char *argv[]) override;
+  bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const override;
+  void add_token(const std::string &str) override;
 
 private:
   bool _iso_country_codes[NUM_ISO_CODES];

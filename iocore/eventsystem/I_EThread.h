@@ -300,7 +300,7 @@ public:
   EThread(ThreadType att, Event *e);
   EThread(const EThread &) = delete;
   EThread &operator=(const EThread &) = delete;
-  virtual ~EThread();
+  ~EThread() override;
 
   Event *schedule(Event *e, bool fast_signal = false);
 
@@ -363,13 +363,13 @@ public:
     DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
 
     int
-    waitForActivity(ink_hrtime timeout)
+    waitForActivity(ink_hrtime timeout) override
     {
       _q.wait(Thread::get_hrtime() + timeout);
       return 0;
     }
     void
-    signalActivity()
+    signalActivity() override
     {
       _q.signal();
     }
@@ -473,3 +473,5 @@ operator new(size_t, ink_dummy_for_new *p)
 #define ETHREAD_GET_PTR(thread, offset) ((void *)((char *)(thread) + (offset)))
 
 extern EThread *this_ethread();
+
+extern int thread_max_heartbeat_mseconds;

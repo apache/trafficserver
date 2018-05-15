@@ -22,7 +22,7 @@
 #pragma once
 
 #include <sys/socket.h>
-#include <stdint.h>
+#include <cstdint>
 #include <list>
 #include <memory>
 #include "atscppapi/Request.h"
@@ -410,4 +410,4 @@ private:
   friend class utils::internal;
 };
 
-} /* atscppapi */
+} // namespace atscppapi

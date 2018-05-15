@@ -123,8 +123,9 @@ AIOCallbackInternal::io_complete(int event, void *data)
     err_op->action               = aio_err_callbck;
     eventProcessor.schedule_imm(err_op);
   }
-  if (!action.cancelled)
+  if (!action.cancelled) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
+  }
   return EVENT_DONE;
 }
 

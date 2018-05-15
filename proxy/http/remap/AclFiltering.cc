@@ -112,13 +112,13 @@ acl_filter_rule::print()
   printf("src_ip_cnt=%d\n", src_ip_cnt);
   for (i = 0; i < src_ip_cnt; i++) {
     ip_text_buffer b1, b2;
-    printf("%s - %s", ats_ip_ntop(&src_ip_array[i].start.sa, b1, sizeof(b1)), ats_ip_ntop(&src_ip_array[i].end.sa, b2, sizeof(b2)));
+    printf("%s - %s", src_ip_array[i].start.toString(b1, sizeof(b1)), src_ip_array[i].end.toString(b2, sizeof(b2)));
   }
   printf("\n");
   printf("in_ip_cnt=%d\n", in_ip_cnt);
   for (i = 0; i < in_ip_cnt; i++) {
     ip_text_buffer b1, b2;
-    printf("%s - %s", ats_ip_ntop(&in_ip_array[i].start.sa, b1, sizeof(b1)), ats_ip_ntop(&in_ip_array[i].end.sa, b2, sizeof(b2)));
+    printf("%s - %s", in_ip_array[i].start.toString(b1, sizeof(b1)), in_ip_array[i].end.toString(b2, sizeof(b2)));
   }
   printf("\n");
   for (i = 0; i < argc; i++) {

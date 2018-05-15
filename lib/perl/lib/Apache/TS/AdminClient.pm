@@ -449,21 +449,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.vary_default_text
  proxy.config.http.cache.when_to_revalidate
  proxy.config.http.chunking_enabled
- proxy.config.http.congestion_control.default.client_wait_interval
- proxy.config.http.congestion_control.default.congestion_scheme
- proxy.config.http.congestion_control.default.dead_os_conn_retries
- proxy.config.http.congestion_control.default.dead_os_conn_timeout
- proxy.config.http.congestion_control.default.error_page
- proxy.config.http.congestion_control.default.fail_window
- proxy.config.http.congestion_control.default.live_os_conn_retries
- proxy.config.http.congestion_control.default.live_os_conn_timeout
- proxy.config.http.congestion_control.default.max_connection
- proxy.config.http.congestion_control.default.max_connection_failures
- proxy.config.http.congestion_control.default.proxy_retry_interval
- proxy.config.http.congestion_control.default.wait_interval_alpha
- proxy.config.http.congestion_control.enabled
- proxy.config.http.congestion_control.filename
- proxy.config.http.congestion_control.localtime
  proxy.config.http.connect_attempts_max_retries
  proxy.config.http.connect_attempts_max_retries_dead_server
  proxy.config.http.connect_attempts_rr_retries

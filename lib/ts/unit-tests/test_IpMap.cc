@@ -53,13 +53,13 @@ class MapMarkedAt : public Catch::MatcherBase<IpMap>
 public:
   MapMarkedAt(IpEndpoint const &addr) : _addr(addr) {}
 
-  virtual bool
+  bool
   match(IpMap const &map) const override
   {
     return map.contains(&_addr);
   }
 
-  virtual std::string
+  std::string
   describe() const override
   {
     std::ostringstream ss;
@@ -84,14 +84,14 @@ class MapMarkedWith : public Catch::MatcherBase<IpMap>
 public:
   MapMarkedWith(IpEndpoint const &addr, void *mark) : _addr(addr), _mark(mark) {}
 
-  virtual bool
+  bool
   match(IpMap const &map) const override
   {
     void *mark = nullptr;
     return (_found_p = map.contains(&_addr, &mark)) && mark == _mark;
   }
 
-  virtual std::string
+  std::string
   describe() const override
   {
     std::ostringstream ss;

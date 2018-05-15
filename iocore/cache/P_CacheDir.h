@@ -85,13 +85,13 @@ struct CacheVC;
     dir_set_next(_e, next);             \
   } while (0)
 // entry is valid
-#define dir_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_valid(_d, _e))
+#define dir_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? _d->vol_in_phase_valid(_e) : _d->vol_out_of_phase_valid(_e))
 // entry is valid and outside of write aggregation region
-#define dir_agg_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_agg_valid(_d, _e))
+#define dir_agg_valid(_d, _e) (_d->header->phase == dir_phase(_e) ? _d->vol_in_phase_valid(_e) : _d->vol_out_of_phase_agg_valid(_e))
 // entry may be valid or overwritten in the last aggregated write
 #define dir_write_valid(_d, _e) \
   (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) : vol_out_of_phase_write_valid(_d, _e))
-#define dir_agg_buf_valid(_d, _e) (_d->header->phase == dir_phase(_e) && vol_in_phase_agg_buf_valid(_d, _e))
+#define dir_agg_buf_valid(_d, _e) (_d->header->phase == dir_phase(_e) && _d->vol_in_phase_agg_buf_valid(_e))
 #define dir_is_empty(_e) (!dir_offset(_e))
 #define dir_clear(_e) \
   do {                \
@@ -324,8 +324,9 @@ TS_INLINE Dir *
 dir_from_offset(int64_t i, Dir *seg)
 {
 #if DIR_DEPTH < 5
-  if (!i)
+  if (!i) {
     return nullptr;
+  }
   return dir_in_seg(seg, i);
 #else
   i = i + ((i - 1) / (DIR_DEPTH - 1));

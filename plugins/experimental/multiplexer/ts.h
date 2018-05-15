@@ -22,7 +22,7 @@
  */
 #ifndef TS_H
 #define TS_H
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #include <limits>
 #include <list>
@@ -62,6 +62,6 @@ namespace io
     }
   };
 
-} // end of io namespace
-} // end of ats namespace
+} // namespace io
+} // namespace ats
 #endif // TS_H

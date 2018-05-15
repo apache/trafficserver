@@ -22,7 +22,7 @@
 #pragma once
 
 #include <atscppapi/noncopyable.h>
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 namespace atscppapi
@@ -100,4 +100,4 @@ private:
   int stat_id_; /**< The internal stat ID */
 };
 
-} /* atscppapi */
+} // namespace atscppapi

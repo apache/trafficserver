@@ -37,7 +37,7 @@ constexpr int MAX_THREADS_IN_EACH_TYPE = 3072;
 #ifdef TS_MAX_NUMBER_EVENT_THREADS
 constexpr int MAX_EVENT_THREADS = TS_MAX_NUMBER_EVENT_THREADS;
 #else
-constexpr int MAX_EVENT_THREADS = 4096;
+constexpr int MAX_EVENT_THREADS        = 4096;
 #endif
 
 class EThread;
@@ -249,7 +249,7 @@ public:
   //  Event *schedule_spawn(Continuation *c, int event, void *cookie = NULL);
 
   EventProcessor();
-  ~EventProcessor();
+  ~EventProcessor() override;
   EventProcessor(const EventProcessor &) = delete;
   EventProcessor &operator=(const EventProcessor &) = delete;
 

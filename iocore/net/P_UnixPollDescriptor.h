@@ -70,7 +70,7 @@ struct PollDescriptor {
 #if TS_USE_KQUEUE
   struct kevent kq_Triggered_Events[POLL_DESCRIPTOR_SIZE];
 /* we define these here as numbers, because for kqueue mapping them to a combination of
-*filters / flags is hard to do. */
+ *filters / flags is hard to do. */
 #define get_ev_port(a) ((a)->kqueue_fd)
 #define get_ev_events(a, x) ((a)->kq_event_convert((a)->kq_Triggered_Events[(x)].filter, (a)->kq_Triggered_Events[(x)].flags))
 #define get_ev_data(a, x) ((a)->kq_Triggered_Events[(x)].udata)

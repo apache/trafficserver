@@ -35,7 +35,7 @@
 void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
                    IpAddr &ip4,      ///< [out] IPv4 address.
                    IpAddr &ip6       ///< [out] Ipv6 address.
-                   );
+);
 
 /** A set of session protocols.
     This depends on using @c SessionProtocolNameRegistry to get the indices.
@@ -232,6 +232,7 @@ public:
     TRANSPORT_COMPRESSED,   ///< Compressed HTTP.
     TRANSPORT_BLIND_TUNNEL, ///< Blind tunnel (no processing).
     TRANSPORT_SSL,          ///< SSL connection.
+    TRANSPORT_PROXY_PROTO,  ///< Proxy Protocol
     TRANSPORT_PLUGIN        /// < Protocol plugin connection
   };
 
@@ -239,6 +240,8 @@ public:
   TransportType m_type; ///< Type of connection.
   in_port_t m_port;     ///< Port on which to listen.
   uint8_t m_family;     ///< IP address family.
+  /// True if proxy protocol is required on incoming requests.
+  bool m_proxy_protocol;
   /// True if inbound connects (from client) are transparent.
   bool m_inbound_transparent_p;
   /// True if outbound connections (to origin servers) are transparent.
@@ -268,7 +271,7 @@ public:
       @return The IP address for @a family
   */
   IpAddr &outboundIp(uint16_t family ///< IP address family.
-                     );
+  );
 
   /// Check for SSL port.
   bool isSSL() const;
@@ -281,7 +284,7 @@ public:
   /// This object's internal state is updated as specified by @a opts.
   /// @return @c true if a port option was successfully processed, @c false otherwise.
   bool processOptions(const char *opts ///< String containing the options.
-                      );
+  );
 
   /** Global instance.
 
@@ -293,7 +296,7 @@ public:
   /// Check for SSL ports.
   /// @return @c true if any port in @a ports is an SSL port.
   static bool hasSSL(Group const &ports ///< Ports to check.
-                     );
+  );
 
   /// Check for SSL ports.
   /// @return @c true if any global port is an SSL port.
@@ -309,7 +312,7 @@ public:
       found, @c false if none.
   */
   static bool loadConfig(std::vector<self> &ports ///< Destination for found port data.
-                         );
+  );
 
   /** Load all relevant configuration data into the global ports.
 
@@ -328,7 +331,7 @@ public:
   */
   static bool loadValue(std::vector<self> &ports, ///< Destination for found port data.
                         const char *value         ///< Source port data.
-                        );
+  );
 
   /** Load ports from a value string into the global ports.
 
@@ -338,12 +341,12 @@ public:
       @return @c true if a valid port was found, @c false if none.
   */
   static bool loadValue(const char *value ///< Source port data.
-                        );
+  );
 
   /// Load default value if @a ports is empty.
   /// @return @c true if the default was needed / loaded.
   static bool loadDefaultIfEmpty(std::vector<self> &ports ///< Load target.
-                                 );
+  );
 
   /// Load default value into the global set if it is empty.
   /// @return @c true if the default was needed / loaded.
@@ -356,7 +359,7 @@ public:
   */
   static const self *findHttp(Group const &ports,         ///< Group to search.
                               uint16_t family = AF_UNSPEC ///< Desired address family.
-                              );
+  );
 
   /** Find an HTTP port in the global ports.
       If @a family is specified then only ports for that family
@@ -372,7 +375,7 @@ public:
   */
   int print(char *out, ///< Output string.
             size_t n   ///< Maximum output length.
-            );
+  );
 
   static const char *const PORTS_CONFIG_NAME; ///< New unified port descriptor.
 
@@ -390,6 +393,7 @@ public:
   static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
   static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
   static const char *const OPT_SSL;                     ///< SSL (experimental)
+  static const char *const OPT_PROXY_PROTO;             ///< Proxy Protocol
   static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
   static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
   static const char *const OPT_COMPRESSED;              ///< Compressed.
@@ -413,7 +417,7 @@ protected:
                           const char *prefix ///< Keyword prefix
                           ,
                           size_t prefix_len ///< Length of keyword prefix.
-                          );
+  );
 };
 
 inline bool

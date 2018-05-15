@@ -24,7 +24,7 @@
 #ifndef _ESI_COMPONENT_BASE_H
 #define _ESI_COMPONENT_BASE_H
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
 namespace EsiLib
@@ -50,6 +50,6 @@ protected:
 
   virtual ~ComponentBase(){};
 };
-};
+}; // namespace EsiLib
 
 #endif // _ESI_COMPONENT_BASE_H

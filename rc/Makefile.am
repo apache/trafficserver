@@ -17,4 +17,4 @@
 #  limitations under the License.
 
 dist_bin_SCRIPTS = \
-  trafficserver
+	trafficserver

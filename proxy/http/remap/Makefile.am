@@ -19,36 +19,36 @@
 include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/shared \
-  -I$(abs_top_srcdir)/proxy/http \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/shared \
+	-I$(abs_top_srcdir)/proxy/http \
+	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libhttp_remap.a
 
 libhttp_remap_a_SOURCES = \
-  AclFiltering.cc \
-  AclFiltering.h \
-  RemapConfig.cc \
-  RemapConfig.h \
-  RemapPluginInfo.cc \
-  RemapPluginInfo.h \
-  RemapPlugins.cc \
-  RemapPlugins.h \
-  RemapProcessor.cc \
-  RemapProcessor.h \
-  UrlMapping.cc \
-  UrlMapping.h \
-  UrlMappingPathIndex.cc \
-  UrlMappingPathIndex.h \
-  UrlRewrite.cc \
-  UrlRewrite.h
+	AclFiltering.cc \
+	AclFiltering.h \
+	RemapConfig.cc \
+	RemapConfig.h \
+	RemapPluginInfo.cc \
+	RemapPluginInfo.h \
+	RemapPlugins.cc \
+	RemapPlugins.h \
+	RemapProcessor.cc \
+	RemapProcessor.h \
+	UrlMapping.cc \
+	UrlMapping.h \
+	UrlMappingPathIndex.cc \
+	UrlMappingPathIndex.h \
+	UrlRewrite.cc \
+	UrlRewrite.h
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)

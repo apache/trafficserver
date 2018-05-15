@@ -196,6 +196,8 @@ public:
   inkcoreapi virtual int marshal_client_finish_status_code(char *);     // INT
   inkcoreapi virtual int marshal_client_req_id(char *);                 // INT
   inkcoreapi virtual int marshal_client_req_uuid(char *);               // STR
+  inkcoreapi virtual int marshal_client_rx_error_code(char *);          // STR
+  inkcoreapi virtual int marshal_client_tx_error_code(char *);          // STR
 
   //
   // proxy -> client fields

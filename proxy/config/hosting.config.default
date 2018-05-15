@@ -12,7 +12,7 @@
 #
 # Each line must include exactly one primary specifier
 #
-#   Primiary destination specifiers are
+#   Primary destination specifiers are
 #     domain=
 #     hostname=
 #
@@ -24,7 +24,7 @@
 # don't belong to the list of hostnames in this file go to the
 # volumes specified with the hostname or domain name = '*'
 #
-# For example: to store all inktomi objects in volume 2
+# For example: to store all example.com objects in volume 2
 # hostname=www.example.com  volume=2
 # To direct all other requests to volumes 3 and 4
 # hostname=*	volume=3,4

@@ -784,9 +784,7 @@ LogFormat::display(FILE *fd)
   LogFormatList
   -------------------------------------------------------------------------*/
 
-LogFormatList::LogFormatList()
-{
-}
+LogFormatList::LogFormatList() {}
 
 LogFormatList::~LogFormatList()
 {

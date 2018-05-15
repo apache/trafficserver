@@ -18,16 +18,16 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  -I$(abs_top_srcdir)/iocore/utils \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/api \
-  -I$(abs_top_srcdir)/mgmt/api/include \
-  -I$(abs_top_srcdir)/lib/tsconfig \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/lib \
-  $(TS_INCLUDES) \
-  @OPENSSL_INCLUDES@
+	-I$(abs_top_srcdir)/iocore/utils \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/api \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	-I$(abs_top_srcdir)/lib/tsconfig \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES) \
+	@OPENSSL_INCLUDES@
 
 # header files used by other libraries
 EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
@@ -38,31 +38,31 @@ check_PROGRAMS = test_marshall
 TESTS = $(check_PROGRAMS)
 
 libutils_COMMON = \
-  MgmtMarshall.cc \
-  MgmtMarshall.h \
-  MgmtSocket.cc \
-  MgmtSocket.h \
-  MgmtUtils.cc \
-  MgmtUtils.h
+	MgmtMarshall.cc \
+	MgmtMarshall.h \
+	MgmtSocket.cc \
+	MgmtSocket.h \
+	MgmtUtils.cc \
+	MgmtUtils.h
 
 libutils_lm_la_SOURCES = \
-  $(libutils_COMMON) \
-  ExpandingArray.cc \
-  ExpandingArray.h \
-  MgmtLocalCleanup.cc
+	$(libutils_COMMON) \
+	ExpandingArray.cc \
+	ExpandingArray.h \
+	MgmtLocalCleanup.cc
 
 libutils_p_la_SOURCES = \
-  $(libutils_COMMON) \
-  MgmtProcessCleanup.cc
+	$(libutils_COMMON) \
+	MgmtProcessCleanup.cc
 
 test_marshall_LDFLAGS = \
-  @AM_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
 test_marshall_SOURCES = test_marshall.cc
 test_marshall_LDADD = \
-  libutils_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la
+	libutils_p.la \
+	$(top_builddir)/lib/ts/libtsutil.la
 
 include $(top_srcdir)/build/tidy.mk
 

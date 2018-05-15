@@ -220,12 +220,12 @@ normalize_url(char *url, int *len)
 
       case FIRST_DOT: // "/./" => "/"
         modified = 1;
-        p[0] = (p[-1] = 0);
+        p[0]     = (p[-1] = 0);
         break;
 
       case SECOND_DOT: { // "/dir/../" or "/../" => "/"
         modified = 1;
-        p[0] = (p[-1] = (p[-2] = 0));
+        p[0]     = (p[-1] = (p[-2] = 0));
 
         char *dir = p - 3;
         while (dir[0] == 0 && dir > root)
@@ -487,8 +487,9 @@ PrefetchTransform::handle_event(int event, void *edata)
         }
 
         if (towrite > 0) {
-          Debug("PrefetchParser", "handle_event() "
-                                  "writing %" PRId64 " bytes to output",
+          Debug("PrefetchParser",
+                "handle_event() "
+                "writing %" PRId64 " bytes to output",
                 towrite);
 
           // Debug("PrefetchParser", "Read avail before = %d", avail);
@@ -657,14 +658,16 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
     Debug("PrefetchTemp", "recursion: %d", rec_depth);
 
     if (rec_depth > prefetch_config->max_recursion) {
-      Debug("PrefetchParserRecursion", "Recursive parsing is not done "
-                                       "since recursion depth(%d) is greater than max allowed (%d)",
+      Debug("PrefetchParserRecursion",
+            "Recursive parsing is not done "
+            "since recursion depth(%d) is greater than max allowed (%d)",
             rec_depth, prefetch_config->max_recursion);
       return;
     }
   } else if (!prefetch_config->ip_map.contains(&client_ip)) {
-    Debug("PrefetchParser", "client (%s) does not match any of the "
-                            "prefetch_children mentioned in configuration\n",
+    Debug("PrefetchParser",
+          "client (%s) does not match any of the "
+          "prefetch_children mentioned in configuration\n",
           client_ipb);
     return;
   }
@@ -737,8 +740,9 @@ PrefetchPlugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
-    Debug("PrefetchPlugin", "Received TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK "
-                            "event (sm = 0x%p)\n",
+    Debug("PrefetchPlugin",
+          "Received TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK "
+          "event (sm = 0x%p)\n",
           sm);
     int status;
     TSHttpTxnCacheLookupStatusGet((TSHttpTxn)sm, &status);
@@ -754,8 +758,9 @@ PrefetchPlugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     break;
   }
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    Debug("PrefetchPlugin", "Received TS_EVENT_HTTP_READ_RESPONSE_HDR "
-                            "event (sm = 0x%p)\n",
+    Debug("PrefetchPlugin",
+          "Received TS_EVENT_HTTP_READ_RESPONSE_HDR "
+          "event (sm = 0x%p)\n",
           sm);
     resp = &sm->t_state.hdr_info.server_response;
 
@@ -1004,8 +1009,9 @@ PrefetchBlaster::init(PrefetchUrlEntry *entry, HTTPHdr *req_hdr, PrefetchTransfo
 
   int temp;
   if (request->url_get()->parse(entry->url, url_len) != PARSE_DONE || request->url_get()->scheme_get(&temp) != URL_SCHEME_HTTP) {
-    Debug("PrefetchParserURLs", "URL parsing failed or scheme is not HTTP "
-                                "for %s",
+    Debug("PrefetchParserURLs",
+          "URL parsing failed or scheme is not HTTP "
+          "for %s",
           entry->url);
     free();
     return -1;
@@ -1625,8 +1631,9 @@ PrefetchBlaster::bufferObject(int event, void * /* data ATS_UNUSED */)
   case VC_EVENT_READ_READY:
     if (buf->high_water()) {
       // right now we don't handle DEL events on the child
-      Debug("PrefetchBlasterTemp", "The object is bigger than %" PRId64 " bytes "
-                                   "cancelling the url",
+      Debug("PrefetchBlasterTemp",
+            "The object is bigger than %" PRId64 " bytes "
+            "cancelling the url",
             buf->water_mark);
       buf->reset();
       buf->fill(PRELOAD_HEADER_LEN);
@@ -1720,8 +1727,9 @@ PrefetchBlaster::blastObject(int event, void *data)
     reader->read(io_block->end(), towrite);
     io_block->fill(towrite);
 
-    Debug("PrefetchBlaster", "UDP: sending data: pkt_no: %d last_pkt: %d"
-                             " url: %s",
+    Debug("PrefetchBlaster",
+          "UDP: sending data: pkt_no: %d last_pkt: %d"
+          " url: %s",
           n_pkts_sent, (towrite >= nread_avail), url_ent->url);
 
     setup_udp_header(io_block->start(), seq_no, n_pkts_sent++, (towrite >= nread_avail));
@@ -1934,7 +1942,7 @@ PrefetchConfiguration::readHtmlTags(int fd, html_tag **ptags, html_tag **pattrs)
     while (((ret = read(fd, &c, 1)) == 1) && (c != '\n'))
       if (len < 511)
         buf[len++] = c;
-    buf[len]       = 0;
+    buf[len] = 0;
     if (ret <= 0)
       end_of_file = 1;
 
@@ -1946,7 +1954,7 @@ PrefetchConfiguration::readHtmlTags(int fd, html_tag **ptags, html_tag **pattrs)
       tags[ntags].attr = ats_strdup(attr);
       if (num >= 4) {
         if (!attrs_exist)
-          attrs_exist    = true;
+          attrs_exist = true;
         attrs[ntags].tag = ats_strdup(attr_tag);
         attrs[ntags].tag = ats_strdup(attr_attr);
       }
@@ -2164,8 +2172,9 @@ KeepAliveConn::handleEvent(int event, void *data)
     break;
 
   case VC_EVENT_ERROR:
-    Debug("PrefetchKeepAlive", "got VC_ERROR.. connection problem? "
-                               "(ip: %s)",
+    Debug("PrefetchKeepAlive",
+          "got VC_ERROR.. connection problem? "
+          "(ip: %s)",
           ats_ip_ntop(&ip.sa, ipb, sizeof(ipb)));
     free();
     break;

@@ -39,6 +39,7 @@
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
 #include "records/I_RecHttp.h"
+#include "ProxyClientSession.h"
 
 #define MAX_DNS_LOOKUPS 2
 
@@ -355,8 +356,6 @@ public:
     OPEN_RAW_ERROR,
     PARSE_ERROR,
     TRANSACTION_COMPLETE,
-    CONGEST_CONTROL_CONGESTED_ON_F,
-    CONGEST_CONTROL_CONGESTED_ON_M,
     PARENT_RETRY
   };
 
@@ -584,6 +583,8 @@ public:
 
     /// @c true if the connection is transparent.
     bool is_transparent = false;
+    ProxyError rx_error_code;
+    ProxyError tx_error_code;
 
     bool
     had_connect_fail() const

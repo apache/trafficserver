@@ -60,6 +60,7 @@ SSLNetProcessor::start(int, size_t stacksize)
   // This initialization order matters ...
   SSLInitializeLibrary();
   SSLConfig::startup();
+  SSLPostConfigInitialize();
   SNIConfig::startup();
 
   if (!SSLCertificateConfig::startup()) {
@@ -107,9 +108,7 @@ SSLNetProcessor::allocate_vc(EThread *t)
   return vc;
 }
 
-SSLNetProcessor::SSLNetProcessor()
-{
-}
+SSLNetProcessor::SSLNetProcessor() {}
 
 SSLNetProcessor::~SSLNetProcessor()
 {

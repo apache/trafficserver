@@ -44,7 +44,7 @@ class UDPPacket;
 class UDPConnection : public Continuation
 {
 public:
-  virtual ~UDPConnection(){};
+  ~UDPConnection() override{};
 
   SOCKET getFd();
   void setBinding(struct sockaddr const *);

@@ -18,30 +18,29 @@
 
 SUBDIRS = body_factory
 EXTRA_DIST = \
-  records.config.default.in \
-  storage.config.default.in
+	records.config.default.in \
+	storage.config.default.in
 
 sysconfdir = $(pkgsysconfdir)
 nodist_sysconf_DATA = \
-  records.config.default \
-  storage.config.default
+	records.config.default \
+	storage.config.default
 
 dist_sysconf_DATA =	\
-  cache.config.default \
-  congestion.config.default \
-  hosting.config.default \
-  ip_allow.config.default \
-  log_hosts.config.default \
-  logging.config.default \
-  metrics.config.default \
-  parent.config.default \
-  plugin.config.default \
-  remap.config.default \
-  socks.config.default \
-  splitdns.config.default \
-  ssl_multicert.config.default \
-  ssl_server_name.config.default \
-  volume.config.default
+	cache.config.default \
+	hosting.config.default \
+	ip_allow.config.default \
+	log_hosts.config.default \
+	logging.config.default \
+	metrics.config.default \
+	parent.config.default \
+	plugin.config.default \
+	remap.config.default \
+	socks.config.default \
+	splitdns.config.default \
+	ssl_multicert.config.default \
+	ssl_server_name.config.default \
+	volume.config.default
 
 install-exec-hook:
 	for dfltcfgfile in $(dist_sysconf_DATA) $(nodist_sysconf_DATA) ; \

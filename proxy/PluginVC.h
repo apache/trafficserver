@@ -47,9 +47,7 @@ struct PluginVCState {
   bool shutdown;
 };
 
-inline PluginVCState::PluginVCState() : vio(), shutdown(false)
-{
-}
+inline PluginVCState::PluginVCState() : vio(), shutdown(false) {}
 
 enum PluginVC_t {
   PLUGIN_VC_UNKNOWN,
@@ -74,43 +72,43 @@ class PluginVC : public NetVConnection, public PluginIdentity
 
 public:
   PluginVC(PluginVCCore *core_obj);
-  ~PluginVC();
+  ~PluginVC() override;
 
-  virtual VIO *do_io_read(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr);
+  VIO *do_io_read(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
 
-  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
-                           bool owner = false);
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
 
-  virtual void do_io_close(int lerrno = -1);
-  virtual void do_io_shutdown(ShutdownHowTo_t howto);
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
   // Reenable a given vio.  The public interface is through VIO::reenable
-  virtual void reenable(VIO *vio);
-  virtual void reenable_re(VIO *vio);
+  void reenable(VIO *vio) override;
+  void reenable_re(VIO *vio) override;
 
   // Timeouts
-  virtual void set_active_timeout(ink_hrtime timeout_in);
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in);
-  virtual void cancel_active_timeout();
-  virtual void cancel_inactivity_timeout();
-  virtual void add_to_keep_alive_queue();
-  virtual void remove_from_keep_alive_queue();
-  virtual bool add_to_active_queue();
-  virtual ink_hrtime get_active_timeout();
-  virtual ink_hrtime get_inactivity_timeout();
+  void set_active_timeout(ink_hrtime timeout_in) override;
+  void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void cancel_active_timeout() override;
+  void cancel_inactivity_timeout() override;
+  void add_to_keep_alive_queue() override;
+  void remove_from_keep_alive_queue() override;
+  bool add_to_active_queue() override;
+  ink_hrtime get_active_timeout() override;
+  ink_hrtime get_inactivity_timeout() override;
 
   // Pure virutal functions we need to compile
-  virtual SOCKET get_socket();
-  virtual void set_local_addr();
-  virtual void set_remote_addr();
-  virtual void set_remote_addr(const sockaddr *);
-  virtual int set_tcp_init_cwnd(int init_cwnd);
-  virtual int set_tcp_congestion_control(int);
+  SOCKET get_socket() override;
+  void set_local_addr() override;
+  void set_remote_addr() override;
+  void set_remote_addr(const sockaddr *) override;
+  int set_tcp_init_cwnd(int init_cwnd) override;
+  int set_tcp_congestion_control(int) override;
 
-  virtual void apply_options();
+  void apply_options() override;
 
-  virtual bool get_data(int id, void *data);
-  virtual bool set_data(int id, void *data);
+  bool get_data(int id, void *data) override;
+  bool set_data(int id, void *data) override;
 
   virtual PluginVC *
   get_other_side()
@@ -120,14 +118,14 @@ public:
 
   //@{ @name Plugin identity.
   /// Override for @c PluginIdentity.
-  virtual const char *
-  getPluginTag() const
+  const char *
+  getPluginTag() const override
   {
     return plugin_tag;
   }
   /// Override for @c PluginIdentity.
-  virtual int64_t
-  getPluginId() const
+  int64_t
+  getPluginId() const override
   {
     return plugin_id;
   }
@@ -195,7 +193,7 @@ class PluginVCCore : public Continuation
 
 public:
   PluginVCCore();
-  ~PluginVCCore();
+  ~PluginVCCore() override;
 
   // Allocate a PluginVCCore object, passing the continuation which
   // will receive NET_EVENT_ACCEPT to accept the new session.
@@ -213,17 +211,17 @@ public:
   /// Set the active address.
   void set_active_addr(in_addr_t ip, ///< IPv4 address in host order.
                        int port      ///< IP Port in host order.
-                       );
+  );
   /// Set the active address and port.
   void set_active_addr(sockaddr const *ip ///< Address and port used.
-                       );
+  );
   /// Set the passive address.
   void set_passive_addr(in_addr_t ip, ///< IPv4 address in host order.
                         int port      ///< IP port in host order.
-                        );
+  );
   /// Set the passive address.
   void set_passive_addr(sockaddr const *ip ///< Address and port.
-                        );
+  );
 
   void set_active_data(void *data);
   void set_passive_data(void *data);

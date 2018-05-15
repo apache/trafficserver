@@ -169,9 +169,9 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
       } while (prtmp && strcmp(prtmp->hostname, result->hostname) == 0);
     }
   }
-  host_stat = pStatus.getHostStatus(pRec->hostname);
-  // didn't find a parent or the parent is marked unavailable.
-  if ((pRec && !pRec->available) || host_stat == HOST_STATUS_DOWN) {
+  host_stat = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
+  // didn't find a parent or the parent is marked unavailable or the parent is marked down
+  if (!pRec || (pRec && !pRec->available) || host_stat == HOST_STATUS_DOWN) {
     do {
       // check if the host is retryable.  It's retryable if the retry window has elapsed
       // and the global host status is HOST_STATUS_UP
@@ -221,12 +221,13 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
         Debug("parent_select", "No available parents.");
         break;
       }
-      host_stat = pStatus.getHostStatus(pRec->hostname);
-    } while (!prtmp || !pRec->available || host_stat == HOST_STATUS_DOWN);
+      host_stat = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
+    } while (!pRec || !pRec->available || host_stat == HOST_STATUS_DOWN);
   }
 
   // use the available or marked for retry parent.
-  if (pRec && (pRec->available || result->retry)) {
+  host_stat = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
+  if (pRec && host_stat == HOST_STATUS_UP && (pRec->available || result->retry)) {
     result->result      = PARENT_SPECIFIED;
     result->hostname    = pRec->hostname;
     result->port        = pRec->port;

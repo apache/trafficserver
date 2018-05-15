@@ -22,10 +22,10 @@
  */
 #pragma once
 
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 #include <strings.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <string>
 
 #include "ts/string_view.h"
@@ -386,7 +386,7 @@ struct SCOPED_FD_TRAITS {
     close(fd);
   }
 };
-}
+} // namespace detail
 /** File descriptor as a scoped resource.
  */
 class ats_scoped_fd : public ats_scoped_resource<detail::SCOPED_FD_TRAITS>
@@ -469,7 +469,7 @@ struct SCOPED_OBJECT_TRAITS {
     delete t;
   }
 };
-}
+} // namespace detail
 
 /** Specialization of @c ats_scoped_resource for strings.
     This contains an allocated string that is cleaned up if not explicitly released.

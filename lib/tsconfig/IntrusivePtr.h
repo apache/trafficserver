@@ -32,7 +32,7 @@
  */
 
 #include <sys/types.h>
-#include <assert.h>
+#include <cassert>
 #include <functional>
 
 namespace ts

@@ -260,4 +260,4 @@ private:
   LoggerState *state_; /**< Internal state for the Logger */
 };
 
-} /* atscppapi */
+} // namespace atscppapi

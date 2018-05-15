@@ -59,8 +59,9 @@ CacheArray<T>::CacheArray(const T *val, int initial_size)
   if (initial_size > 0) {
     int i = 1;
 
-    while (i < initial_size)
+    while (i < initial_size) {
       i <<= 1;
+    }
 
     resize(i);
   }

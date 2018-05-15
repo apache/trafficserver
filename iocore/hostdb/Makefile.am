@@ -17,63 +17,63 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	$(TS_INCLUDES)
 
 EXTRA_DIST = I_HostDB.h
 
 noinst_LIBRARIES = libinkhostdb.a
 
 libinkhostdb_a_SOURCES = \
-  HostDB.cc \
-  I_HostDB.h \
-  I_HostDBProcessor.h \
-  Inline.cc \
-  P_HostDB.h \
-  P_HostDBProcessor.h \
-  P_RefCountCache.h \
-  P_RefCountCacheSerializer.h \
-  RefCountCache.cc
+	HostDB.cc \
+	I_HostDB.h \
+	I_HostDBProcessor.h \
+	Inline.cc \
+	P_HostDB.h \
+	P_HostDBProcessor.h \
+	P_RefCountCache.h \
+	P_RefCountCacheSerializer.h \
+	RefCountCache.cc
 
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = test_RefCountCache
 
 test_RefCountCache_SOURCES = \
-  test_RefCountCache.cc
+	test_RefCountCache.cc
 
 #test_UNUSED_SOURCES = \
 #  test_I_HostDB.cc \
 #  test_P_HostDB.cc
 
 test_LD_FLAGS = \
-  @AM_LDFLAGS@ \
-  @OPENSSL_LDFLAGS@
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
 test_CPP_FLAGS = \
-  $(AM_CPPFLAGS) \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  @OPENSSL_INCLUDES@
+	$(AM_CPPFLAGS) \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	@OPENSSL_INCLUDES@
 
 test_LD_ADD = \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ @HWLOC_LIBS@
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@LIBTCL@ @HWLOC_LIBS@
 
 test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)
 

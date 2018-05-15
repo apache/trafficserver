@@ -277,9 +277,7 @@ Impl::handleRemovalQuery(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED
   return log(LVL_INFO, "Unanticipated WCCP2_REMOVAL_QUERY message ignored.");
 }
 // ------------------------------------------------------
-CacheImpl::GroupData::GroupData() : m_proc_name(NULL), m_assignment_pending(false)
-{
-}
+CacheImpl::GroupData::GroupData() : m_proc_name(NULL), m_assignment_pending(false) {}
 
 CacheImpl::GroupData &
 CacheImpl::GroupData::seedRouter(uint32_t addr)
@@ -339,9 +337,7 @@ CacheImpl::GroupData::resizeCacheSources()
   }
 }
 
-inline CacheImpl::RouterData::RouterData() : m_addr(0), m_generation(0), m_rapid(0), m_assign(false), m_send_caps(false)
-{
-}
+inline CacheImpl::RouterData::RouterData() : m_addr(0), m_generation(0), m_rapid(0), m_assign(false), m_send_caps(false) {}
 
 inline CacheImpl::RouterData::RouterData(uint32_t addr)
   : m_addr(addr), m_generation(0), m_rapid(0), m_assign(false), m_send_caps(false)
@@ -890,8 +886,9 @@ CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buff
     }
   } else {
     // Not an error in the multi-cast case, so just log under debug.
-    logf(LVL_DEBUG, "WCCP2_REMOVAL_QUERY ignored -- target cache address " ATS_IP_PRINTF_CODE
-                    " did not match local address " ATS_IP_PRINTF_CODE "\n.",
+    logf(LVL_DEBUG,
+         "WCCP2_REMOVAL_QUERY ignored -- target cache address " ATS_IP_PRINTF_CODE
+         " did not match local address " ATS_IP_PRINTF_CODE "\n.",
          ATS_IP_OCTETS(target_addr), ATS_IP_OCTETS(m_addr));
   }
 
@@ -906,9 +903,7 @@ detail::router::CacheData::idAddr() const
   return m_id.getAddr();
 }
 
-RouterImpl::GroupData::GroupData()
-{
-}
+RouterImpl::GroupData::GroupData() {}
 
 RouterImpl::CacheBag::iterator
 RouterImpl::GroupData::findCache(uint32_t addr)
@@ -1105,17 +1100,11 @@ RouterImpl::isConfigured() const
   return false;
 }
 // ------------------------------------------------------
-EndPoint::EndPoint()
-{
-}
+EndPoint::EndPoint() {}
 
-EndPoint::~EndPoint()
-{
-}
+EndPoint::~EndPoint() {}
 
-EndPoint::EndPoint(self const &that) : m_ptr(that.m_ptr)
-{
-}
+EndPoint::EndPoint(self const &that) : m_ptr(that.m_ptr) {}
 
 inline EndPoint::ImplType *
 EndPoint::instance()
@@ -1170,13 +1159,9 @@ EndPoint::handleMessage()
                  ts::Rv<int>(-ENOTCONN, log(LVL_INFO, "EndPoint::handleMessage called on unconnected instance"));
 }
 // ------------------------------------------------------
-Cache::Cache()
-{
-}
+Cache::Cache() {}
 
-Cache::~Cache()
-{
-}
+Cache::~Cache() {}
 
 EndPoint::ImplType *
 Cache::make()
@@ -1228,13 +1213,9 @@ Cache::loadServicesFromFile(const char *path)
   return this->instance()->loadServicesFromFile(path);
 }
 // ------------------------------------------------------
-Router::Router()
-{
-}
+Router::Router() {}
 
-Router::~Router()
-{
-}
+Router::~Router() {}
 
 EndPoint::ImplType *
 Router::make()

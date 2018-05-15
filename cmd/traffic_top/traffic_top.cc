@@ -75,7 +75,7 @@ const short blue   = 4;
 const short grey   = 6;
 const short cyan   = 7;
 const short border = 8;
-};
+}; // namespace colorPair
 
 //----------------------------------------------------------------------------
 static void

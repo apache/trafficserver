@@ -106,7 +106,7 @@ namespace
 {
 int handleEvents(TSCont cont, TSEvent event, void *edata);
 void destroyCont(InterceptPlugin::State *state);
-}
+} // namespace
 
 InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type type) : TransactionPlugin(transaction)
 {
@@ -294,7 +294,7 @@ InterceptPlugin::handleEvent(int abstract_event, void *edata)
     }
     // else fall through into the next shut down cases
     LOG_ERROR("Error while reading request!");
-  // fallthrough
+    // fallthrough
 
   case TS_EVENT_VCONN_READ_COMPLETE: // fall throughs intentional
   case TS_EVENT_VCONN_WRITE_COMPLETE:
@@ -397,4 +397,4 @@ destroyCont(InterceptPlugin::State *state)
     state->cont_ = nullptr;
   }
 }
-}
+} // namespace

@@ -77,7 +77,7 @@ struct Machine {
   */
   static self *init(char const *name     = nullptr, ///< Host name of the machine.
                     sockaddr const *addr = nullptr  ///< Primary IP address of the machine.
-                    );
+  );
   /// @return The global instance of this class.
   static self *instance();
   bool is_self(const char *name);

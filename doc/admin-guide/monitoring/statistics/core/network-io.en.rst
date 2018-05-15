@@ -69,11 +69,11 @@ Network I/O
 
 .. ts:stat:: global proxy.process.net.read_bytes integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.net.write_bytes integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.tcp.total_accepts integer
    :type: counter

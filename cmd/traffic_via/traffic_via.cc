@@ -321,7 +321,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   /* see 'ink_args.h' for meanings of the various fields */
   ArgumentDescription argument_descriptions[] = {
-    VERSION_ARGUMENT_DESCRIPTION(), HELP_ARGUMENT_DESCRIPTION(),
+    VERSION_ARGUMENT_DESCRIPTION(),
+    HELP_ARGUMENT_DESCRIPTION(),
   };
 
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);

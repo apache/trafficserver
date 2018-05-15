@@ -23,10 +23,10 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = trafficserver.pc
 
 AM_CPPFLAGS += \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/wccp \
-  $(TS_INCLUDES)
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/wccp \
+	$(TS_INCLUDES)
 
 if BUILD_TEST_TOOLS
 bin_PROGRAMS = jtest/jtest
@@ -46,11 +46,11 @@ noinst_PROGRAMS += http_load/http_load
 endif
 
 http_load_http_load_LDADD = @OPENSSL_LIBS@
-http_load_http_load_SOURCES =  \
-  http_load/http_load.c \
-  http_load/timers.c \
-  http_load/port.h \
-  http_load/timers.h
+http_load_http_load_SOURCES = \
+	http_load/http_load.c \
+	http_load/timers.c \
+	http_load/port.h \
+	http_load/timers.h
 
 endif
 

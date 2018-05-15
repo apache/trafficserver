@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <utility>
 #include <cstring>
 #include <vector>
@@ -101,4 +101,4 @@ class BWFormat;
 
 class BufferWriter;
 
-} // ts
+} // namespace ts

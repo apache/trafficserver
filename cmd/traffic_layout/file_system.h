@@ -25,9 +25,6 @@
 
 #include <string>
 
-// binary executable mode (for symlink)
-#define BIN_MODE 33261
-
 // some system does not have OPEN_MAX defined
 // size can be changed accordingly
 #define OPEN_MAX_FILE 256

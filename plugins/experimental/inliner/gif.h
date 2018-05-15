@@ -44,7 +44,7 @@ namespace inliner
                                                   std::equal(SIGNATURE2, SIGNATURE2 + SIGNATURE_SIZE, content.begin()));
     }
   };
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats
 
 #endif // GIF_H

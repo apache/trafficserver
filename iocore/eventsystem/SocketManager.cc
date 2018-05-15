@@ -78,9 +78,7 @@ SocketManager::accept4(int s, struct sockaddr *addr, socklen_t *addrlen, int fla
   return -errno;
 }
 
-SocketManager::SocketManager() : pagesize(ats_pagesize())
-{
-}
+SocketManager::SocketManager() : pagesize(ats_pagesize()) {}
 
 SocketManager::~SocketManager()
 {

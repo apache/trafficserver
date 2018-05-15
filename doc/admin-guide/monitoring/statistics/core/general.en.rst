@@ -56,22 +56,19 @@ General
 
 .. ts:stat:: global proxy.node.restarts.manager.start_time integer
    :type: gauge
-   :unit: seconds
+   :units: seconds
 
    Unix epoch-time value indicating the time at which the currently-running
    :program:`traffic_manager` process was started.
 
 .. ts:stat:: global proxy.node.restarts.proxy.cache_ready_time integer
    :type: gauge
-   :unit: seconds
+   :units: seconds
 
 .. ts:stat:: global proxy.node.restarts.proxy.restart_count integer
 .. ts:stat:: global proxy.node.restarts.proxy.start_time integer
 .. ts:stat:: global proxy.node.restarts.proxy.stop_time integer
-.. ts:stat:: global proxy.node.user_agents_total_documents_served integer
-.. ts:stat:: global proxy.node.user_agent_total_bytes_avg_10s float
-.. ts:stat:: global proxy.node.user_agent_total_bytes integer
-.. ts:stat:: global proxy.node.user_agent_xacts_per_second float
+.. ts:stat:: global proxy.process.user_agent_total_bytes integer
 .. ts:stat:: global proxy.node.version.manager.build_date string
 .. ts:stat:: global proxy.node.version.manager.build_machine string
 .. ts:stat:: global proxy.node.version.manager.build_number integer
@@ -118,7 +115,7 @@ General
    |TS|.
 
 .. ts:stat:: global proxy.process.traffic_server.memory.rss integer
-   :unit: bytes
+   :units: bytes
 
    The resident set size (RSS) of the ``traffic_server`` process. This is
    basically the amount of memory this process is consuming.

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include <stdarg.h> // for va_list
+#include <cstdarg> // for va_list
 
 #include "ts/ink_llqueue.h"
 #include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc

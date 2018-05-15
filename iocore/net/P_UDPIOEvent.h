@@ -29,7 +29,7 @@ class UDPIOEvent : public Event
 {
 public:
   UDPIOEvent() : fd(-1), err(0), m(nullptr), handle(nullptr), b(nullptr), bytesTransferred(0){};
-  ~UDPIOEvent(){};
+  ~UDPIOEvent() override{};
 
   void
   setInfo(int fd_, const Ptr<IOBufferBlock> &b_, int bytesTransferred_, int errno_)

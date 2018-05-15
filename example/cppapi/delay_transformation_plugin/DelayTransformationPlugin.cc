@@ -38,7 +38,7 @@ namespace
 {
 #define TAG "delay_transformation"
 GlobalPlugin *plugin;
-}
+} // namespace
 
 class DelayTransformationPlugin : public TransformationPlugin
 {
@@ -51,21 +51,21 @@ public:
   }
 
   void
-  handleSendRequestHeaders(Transaction &transaction)
+  handleSendRequestHeaders(Transaction &transaction) override
   {
     transaction.getServerRequest().getHeaders()["X-Content-Delayed"] = "1";
     transaction.resume();
   }
 
   void
-  handleSendResponseHeaders(Transaction &transaction)
+  handleSendResponseHeaders(Transaction &transaction) override
   {
     transaction.getClientResponse().getHeaders()["X-Content-Delayed"] = "1";
     transaction.resume();
   }
 
   void
-  consume(ts::string_view data)
+  consume(ts::string_view data) override
   {
     TS_DEBUG(TAG, "Consuming...");
     produce(data);
@@ -80,13 +80,13 @@ public:
   }
 
   void
-  handleInputComplete()
+  handleInputComplete() override
   {
     TS_DEBUG(TAG, "handleInputComplete");
     setOutputComplete();
   }
 
-  virtual ~DelayTransformationPlugin() {}
+  ~DelayTransformationPlugin() override {}
 };
 
 class GlobalHookPlugin : public GlobalPlugin
@@ -98,15 +98,15 @@ public:
     registerHook(HOOK_READ_RESPONSE_HEADERS);
   }
 
-  virtual void
-  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
     transaction.addPlugin(new DelayTransformationPlugin(transaction, TransformationPlugin::REQUEST_TRANSFORMATION));
     transaction.resume();
   }
 
-  virtual void
-  handleReadResponseHeaders(Transaction &transaction)
+  void
+  handleReadResponseHeaders(Transaction &transaction) override
   {
     transaction.addPlugin(new DelayTransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
     transaction.resume();

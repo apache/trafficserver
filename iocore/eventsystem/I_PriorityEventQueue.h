@@ -111,8 +111,9 @@ struct PriorityEventQueue {
   earliest_timeout()
   {
     for (int i = 0; i < N_PQ_LIST; i++) {
-      if (after[i].head)
+      if (after[i].head) {
         return last_check_time + (PQ_BUCKET_TIME(i) / 2);
+      }
     }
     return last_check_time + HRTIME_FOREVER;
   }

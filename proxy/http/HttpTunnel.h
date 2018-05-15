@@ -221,7 +221,7 @@ struct HttpTunnelProducer {
       @return The actual backlog or a number at least @a limit.
    */
   uint64_t backlog(uint64_t limit = UINT64_MAX ///< More than this is irrelevant
-                   );
+  );
   /// Check if producer is original (to ATS) source of data.
   /// @return @c true if this producer is the source of bytes from outside ATS.
   bool is_source() const;
@@ -242,7 +242,7 @@ struct HttpTunnelProducer {
       @see unthrottle
   */
   void set_throttle_src(HttpTunnelProducer *srcp ///< Source producer of flow.
-                        );
+  );
 };
 
 class HttpTunnel : public Continuation
@@ -322,7 +322,7 @@ public:
   */
   void chain(HttpTunnelConsumer *c, ///< Flow goes in here
              HttpTunnelProducer *p  ///< Flow comes back out here
-             );
+  );
 
   void close_vc(HttpTunnelProducer *p);
   void close_vc(HttpTunnelConsumer *c);
@@ -493,8 +493,9 @@ HttpTunnel::get_consumer(VIO *vio)
 inline void
 HttpTunnel::append_message_to_producer_buffer(HttpTunnelProducer *p, const char *msg, int64_t msg_len)
 {
-  if (p == nullptr || p->read_buffer == nullptr)
+  if (p == nullptr || p->read_buffer == nullptr) {
     return;
+  }
 
   p->read_buffer->write(msg, msg_len);
   p->nbytes += msg_len;
@@ -518,8 +519,9 @@ HttpTunnelConsumer::is_downstream_from(VConnection *vc)
   HttpTunnelProducer *p = producer;
   HttpTunnelConsumer *c;
   while (p) {
-    if (p->vc == vc)
+    if (p->vc == vc) {
       return true;
+    }
     // The producer / consumer chain can contain a cycle in the case
     // of a blind tunnel so give up if we find ourself (the original
     // consumer).
@@ -560,17 +562,17 @@ HttpTunnelProducer::is_throttled() const
 inline void
 HttpTunnelProducer::throttle()
 {
-  if (!this->is_throttled())
+  if (!this->is_throttled()) {
     this->set_throttle_src(this);
+  }
 }
 
 inline void
 HttpTunnelProducer::unthrottle()
 {
-  if (this->is_throttled())
+  if (this->is_throttled()) {
     this->set_throttle_src(nullptr);
+  }
 }
 
-inline HttpTunnel::FlowControl::FlowControl() : high_water(DEFAULT_WATER_MARK), low_water(DEFAULT_WATER_MARK), enabled_p(false)
-{
-}
+inline HttpTunnel::FlowControl::FlowControl() : high_water(DEFAULT_WATER_MARK), low_water(DEFAULT_WATER_MARK), enabled_p(false) {}

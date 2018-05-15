@@ -354,8 +354,9 @@ LogConfig::setup_collation(LogConfig *prev_config)
         }
         Debug("log", "I am a collation host listening on port %d.", collation_port);
       } else {
-        Debug("log", "I am a collation client (%d)."
-                     " My collation host is %s:%d",
+        Debug("log",
+              "I am a collation client (%d)."
+              " My collation host is %s:%d",
               collation_mode, collation_host, collation_port);
       }
 
@@ -424,10 +425,10 @@ LogConfig::init(LogConfig *prev_config)
   // the specified space for collation is larger than that for local files
   //
   size_t num_collation_clients = log_object_manager.get_num_collation_clients();
-  use_orphan_log_space_value =
-    (num_collation_clients == 0 ? false : (log_object_manager.get_num_objects() == num_collation_clients ?
-                                             true :
-                                             max_space_mb_for_orphan_logs > max_space_mb_for_logs));
+  use_orphan_log_space_value   = (num_collation_clients == 0 ? false :
+                                                             (log_object_manager.get_num_objects() == num_collation_clients ?
+                                                                true :
+                                                                max_space_mb_for_orphan_logs > max_space_mb_for_logs));
 
   initialized = true;
 }
@@ -667,8 +668,9 @@ LogConfig::space_to_write(int64_t bytes_to_write) const
 
   space = ((logical_space_used < config_space) && (physical_space_left > partition_headroom));
 
-  Debug("logspace", "logical space used %" PRId64 ", configured space %" PRId64 ", physical space left %" PRId64
-                    ", partition headroom %" PRId64 ", space %s available",
+  Debug("logspace",
+        "logical space used %" PRId64 ", configured space %" PRId64 ", physical space left %" PRId64 ", partition headroom %" PRId64
+        ", space %s available",
         logical_space_used, config_space, physical_space_left, partition_headroom, space ? "is" : "is not");
 
   return space;
@@ -824,8 +826,9 @@ LogConfig::update_space_used()
              "logfile %s: %s.",
              candidates[victim].name, strerror(errno));
       } else {
-        Debug("logspace", "The rolled logfile, %s, was auto-deleted; "
-                          "%" PRId64 " bytes were reclaimed.",
+        Debug("logspace",
+              "The rolled logfile, %s, was auto-deleted; "
+              "%" PRId64 " bytes were reclaimed.",
               candidates[victim].name, candidates[victim].size);
         m_space_used -= candidates[victim].size;
         m_partition_space_left += candidates[victim].size;

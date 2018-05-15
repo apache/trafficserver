@@ -28,7 +28,7 @@
 #include <limits>
 #include <netinet/in.h>
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "chunk-decoder.h"
 #include "ts.h"
@@ -306,6 +306,6 @@ get(io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
 {
   return get("127.0.0.1", i, l, t, ti);
 }
-} // end of ats namespace
+} // namespace ats
 
 #endif // NEW_FETCHER_H

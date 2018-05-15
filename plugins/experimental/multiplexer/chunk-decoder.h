@@ -24,7 +24,7 @@
 #define CHUNK_DECODER_H
 
 #include <ts/ts.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 /** Class to handle state for decoding chunked data.
  */

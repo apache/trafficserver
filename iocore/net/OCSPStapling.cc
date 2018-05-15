@@ -115,8 +115,8 @@ stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
       return issuer;
 #else
       X509_up_ref(issuer);
-#endif
       goto end;
+#endif
     }
   }
 

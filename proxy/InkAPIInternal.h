@@ -100,7 +100,7 @@ struct INKConfigImpl : public ConfigInfo {
   void *mdata;
   TSConfigDestroyFunc m_destroy_func;
 
-  virtual ~INKConfigImpl() { m_destroy_func(mdata); }
+  ~INKConfigImpl() override { m_destroy_func(mdata); }
 };
 
 struct HttpAltInfo {
@@ -202,9 +202,7 @@ private:
   APIHooks m_hooks[N];
 };
 
-template <typename ID, ID N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false)
-{
-}
+template <typename ID, ID N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false) {}
 
 template <typename ID, ID N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
 {

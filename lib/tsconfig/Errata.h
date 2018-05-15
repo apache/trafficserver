@@ -311,7 +311,7 @@ public:
         /// Constructor.
         SinkFunctionWrapper(SinkHandlerFunction f) : m_f(f) { }
         /// Operator to invoke the function.
-        virtual void operator() (Errata const& e) const { m_f(e); }
+        void operator() (Errata const& e) const override { m_f(e); }
         SinkHandlerFunction m_f; ///< Client supplied handler.
     };
 

@@ -350,7 +350,7 @@ Port_Type_Invalid(ts::ConstBuffer const &text, int line)
   return ts::Errata::Message(30, LVL_WARN, out.str());
 }
 
-} // anon namespace
+} // namespace
 
 namespace wccp
 {
@@ -415,7 +415,7 @@ load_option_set(Value const &setting, CfgString *opts, size_t count)
  */
 ts::Rv<ts::ConstBuffer>
 load_security(Value const &setting ///< Security setting.
-              )
+)
 {
   ts::Rv<ts::ConstBuffer> zret;
   int src_line;
@@ -460,7 +460,7 @@ load_security(Value const &setting ///< Security setting.
 ts::Errata
 load_routers(Value const &setting,        ///< Source of addresses.
              std::vector<uint32_t> &addrs ///< Output list
-             )
+)
 {
   ts::Errata zret;
   const char *text;
@@ -798,4 +798,4 @@ CacheImpl::loadServicesFromFile(const char *path)
   return zret;
 }
 
-} // namespace.
+} // namespace wccp

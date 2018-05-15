@@ -644,7 +644,7 @@ Llink:
 Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
-  ink_assert(vol_offset(d, e) < (d->skip + d->len));
+  ink_assert(d->vol_offset(e) < (d->skip + d->len));
   DDebug("dir_insert", "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), d->fd, bi, e,
          key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
@@ -721,7 +721,7 @@ Llink:
 Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
-  ink_assert(vol_offset(d, e) < d->skip + d->len);
+  ink_assert(d->vol_offset(e) < d->skip + d->len);
   DDebug("dir_overwrite", "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), d->fd,
          bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
@@ -1184,7 +1184,7 @@ compare_ushort(void const *a, void const *b)
 {
   return *static_cast<unsigned short const *>(a) - *static_cast<unsigned short const *>(b);
 }
-}
+} // namespace
 
 //
 // Check

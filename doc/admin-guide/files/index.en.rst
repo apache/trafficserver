@@ -78,7 +78,7 @@ Configuration Files
    Defines mapping rules used by |TS| to properly route all incoming requests.
 
 :doc:`splitdns.config.en`
-   Configures DNS servers to use under specific conditios.
+   Configures DNS servers to use under specific conditions.
 
 :doc:`ssl_multicert.config.en`
    Configures |TS| to use different server certificates for SSL termination

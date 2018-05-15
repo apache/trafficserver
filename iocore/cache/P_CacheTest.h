@@ -112,18 +112,18 @@ struct CacheTestSM : public RegressionSM {
 
   // RegressionSM API
   void
-  run()
+  run() override
   {
     rprintf(this->t, "running %s (%p)\n", this->cache_test_name, this);
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     timeout = eventProcessor.schedule_imm(this);
   }
 
-  virtual RegressionSM *clone() = 0;
+  RegressionSM *clone() override = 0;
 
   CacheTestSM(RegressionTest *t, const char *name);
   CacheTestSM(const CacheTestSM &ao);
-  ~CacheTestSM();
+  ~CacheTestSM() override;
 };
 
 // It is 2010 and C++ STILL doesn't have closures, a technology of the 1950s, unbelievable

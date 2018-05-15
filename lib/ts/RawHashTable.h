@@ -287,10 +287,11 @@ inline RawHashTable::RawHashTable(RawHashTable_KeyType akey_type, bool adealloca
 
 inline RawHashTable::~RawHashTable()
 {
-  if (deallocate_values_on_destruct)
+  if (deallocate_values_on_destruct) {
     ink_hash_table_destroy_and_free_values(ht);
-  else
+  } else {
     ink_hash_table_destroy(ht);
+  }
 }
 
 /**
@@ -345,7 +346,8 @@ RawHashTableIter::operator()() const
   return (m_currentBinding->clientData);
 }
 
-inline RawHashTable_Value &RawHashTableIter::operator++()
+inline RawHashTable_Value &
+RawHashTableIter::operator++()
 {
   m_currentBinding = m_ht.nextBinding(&m_hashIterState);
   return (m_currentBinding->clientData);

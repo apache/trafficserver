@@ -23,7 +23,7 @@
 
 /**
  * Remap plugins class
-**/
+ **/
 
 #pragma once
 
@@ -36,7 +36,7 @@
 
 /**
  * A class that represents a queue of plugins to run
-**/
+ **/
 struct RemapPlugins : public Continuation {
   RemapPlugins() : _cur(0) {}
   RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi)
@@ -44,7 +44,7 @@ struct RemapPlugins : public Continuation {
   {
   }
 
-  ~RemapPlugins() { _cur = 0; }
+  ~RemapPlugins() override { _cur = 0; }
   // Some basic setters
   void
   setState(HttpTransact::State *state)

@@ -90,7 +90,7 @@ struct EvacuationBlock;
     writer_lock_retry++;                                                  \
     ink_hrtime _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay); \
     if (writer_lock_retry > 2)                                            \
-      _t    = HRTIME_MSECONDS(cache_read_while_writer_retry_delay) * 2;   \
+      _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay) * 2;      \
     trigger = mutex->thread_holding->schedule_in_local(this, _t);         \
     return EVENT_CONT;                                                    \
   } while (0)
@@ -231,24 +231,24 @@ extern int cache_config_read_while_writer_max_retries;
 struct CacheVC : public CacheVConnection {
   CacheVC();
 
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset);
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
-  void do_io_close(int lerrno = -1);
-  void reenable(VIO *avio);
-  void reenable_re(VIO *avio);
-  bool get_data(int i, void *data);
-  bool set_data(int i, void *data);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void reenable(VIO *avio) override;
+  void reenable_re(VIO *avio) override;
+  bool get_data(int i, void *data) override;
+  bool set_data(int i, void *data) override;
 
   bool
-  is_ram_cache_hit() const
+  is_ram_cache_hit() const override
   {
     ink_assert(vio.op == VIO::READ);
     return !f.not_from_ram_cache;
   }
 
   int
-  get_header(void **ptr, int *len)
+  get_header(void **ptr, int *len) override
   {
     if (first_buf) {
       Doc *doc = (Doc *)first_buf->data();
@@ -261,7 +261,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   int
-  set_header(void *ptr, int len)
+  set_header(void *ptr, int len) override
   {
     header_to_write     = ptr;
     header_to_write_len = len;
@@ -269,7 +269,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   int
-  get_single_data(void **ptr, int *len)
+  get_single_data(void **ptr, int *len) override
   {
     if (first_buf) {
       Doc *doc = (Doc *)first_buf->data();
@@ -284,7 +284,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   int
-  get_volume_number() const
+  get_volume_number() const override
   {
     if (vol && vol->cache_vol) {
       return vol->cache_vol->vol_number;
@@ -294,7 +294,7 @@ struct CacheVC : public CacheVConnection {
   }
 
   bool
-  is_compressed_in_ram() const
+  is_compressed_in_ram() const override
   {
     ink_assert(vio.op == VIO::READ);
     return f.compressed_in_ram;
@@ -373,9 +373,9 @@ struct CacheVC : public CacheVConnection {
   int evacuateReadHead(int event, Event *e);
 
   void cancel_trigger();
-  virtual int64_t get_object_size();
-  virtual void set_http_info(CacheHTTPInfo *info);
-  virtual void get_http_info(CacheHTTPInfo **info);
+  int64_t get_object_size() override;
+  void set_http_info(CacheHTTPInfo *info) override;
+  void get_http_info(CacheHTTPInfo **info) override;
   /** Get the fragment table.
       @return The address of the start of the fragment table,
       or @c nullptr if there is no fragment table.
@@ -385,11 +385,11 @@ struct CacheVC : public CacheVConnection {
       @return Length of header data used for alternates.
    */
   virtual uint32_t load_http_info(CacheHTTPInfoVector *info, struct Doc *doc, RefCountObj *block_ptr = nullptr);
-  virtual bool is_pread_capable();
-  virtual bool set_pin_in_cache(time_t time_pin);
-  virtual time_t get_pin_in_cache();
-  virtual bool set_disk_io_priority(int priority);
-  virtual int get_disk_io_priority();
+  bool is_pread_capable() override;
+  bool set_pin_in_cache(time_t time_pin) override;
+  time_t get_pin_in_cache() override;
+  bool set_disk_io_priority(int priority) override;
+  int get_disk_io_priority() override;
 
 // offsets from the base stat
 #define CACHE_STAT_ACTIVE 0
@@ -575,8 +575,9 @@ free_CacheVC(CacheVC *cont)
     } // else abort,cancel
   }
   ink_assert(mutex->thread_holding == this_ethread());
-  if (cont->trigger)
+  if (cont->trigger) {
     cont->trigger->cancel();
+  }
   ink_assert(!cont->is_io_in_progress());
   ink_assert(!cont->od);
   /* calling cont->io.action = nullptr causes compile problem on 2.6 solaris
@@ -592,10 +593,11 @@ free_CacheVC(CacheVC *cont)
   cont->vector.clear();
   cont->vio.buffer.clear();
   cont->vio.mutex.clear();
-  if (cont->vio.op == VIO::WRITE && cont->alternate_index == CACHE_ALT_INDEX_DEFAULT)
+  if (cont->vio.op == VIO::WRITE && cont->alternate_index == CACHE_ALT_INDEX_DEFAULT) {
     cont->alternate.destroy();
-  else
+  } else {
     cont->alternate.clear();
+  }
   cont->_action.cancelled = 0;
   cont->_action.mutex.clear();
   cont->mutex.clear();
@@ -604,8 +606,9 @@ free_CacheVC(CacheVC *cont)
   cont->blocks.clear();
   cont->writer_buf.clear();
   cont->alternate_index = CACHE_ALT_INDEX_DEFAULT;
-  if (cont->scan_vol_map)
+  if (cont->scan_vol_map) {
     ats_free(cont->scan_vol_map);
+  }
   memset((char *)&cont->vio, 0, cont->size_to_init);
 #ifdef CACHE_STAT_PAGES
   ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
@@ -638,10 +641,11 @@ CacheVC::callcont(int event)
   ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
   _action.continuation->handleEvent(event, this);
   recursive--;
-  if (closed)
+  if (closed) {
     die();
-  else if (vio.vc_server)
+  } else if (vio.vc_server) {
     handleEvent(EVENT_IMMEDIATE, nullptr);
+  }
   return EVENT_DONE;
 }
 
@@ -680,17 +684,19 @@ CacheVC::die()
     }
     if (!is_io_in_progress()) {
       SET_HANDLER(&CacheVC::openWriteClose);
-      if (!recursive)
+      if (!recursive) {
         openWriteClose(EVENT_NONE, nullptr);
+      }
     } // else catch it at the end of openWriteWriteDone
     return EVENT_CONT;
   } else {
-    if (is_io_in_progress())
+    if (is_io_in_progress()) {
       save_handler = (ContinuationHandler)&CacheVC::openReadClose;
-    else {
+    } else {
       SET_HANDLER(&CacheVC::openReadClose);
-      if (!recursive)
+      if (!recursive) {
         openReadClose(EVENT_NONE, nullptr);
+      }
     }
     return EVENT_CONT;
   }
@@ -710,8 +716,9 @@ CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
     }
     ret = handleWrite(EVENT_CALL, e);
   }
-  if (ret == EVENT_RETURN)
+  if (ret == EVENT_RETURN) {
     return handleEvent(AIO_EVENT_DONE, nullptr);
+  }
   return EVENT_CONT;
 }
 
@@ -733,17 +740,20 @@ TS_INLINE bool
 CacheVC::writer_done()
 {
   OpenDirEntry *cod = od;
-  if (!cod)
-    cod      = vol->open_read(&first_key);
+  if (!cod) {
+    cod = vol->open_read(&first_key);
+  }
   CacheVC *w = (cod) ? cod->writers.head : nullptr;
   // If the write vc started after the reader, then its not the
   // original writer, since we never choose a writer that started
   // after the reader. The original writer was deallocated and then
   // reallocated for the same first_key
-  for (; w && (w != write_vc || w->start_time > start_time); w = (CacheVC *)w->opendir_link.next)
+  for (; w && (w != write_vc || w->start_time > start_time); w = (CacheVC *)w->opendir_link.next) {
     ;
-  if (!w)
+  }
+  if (!w) {
     return true;
+  }
   return false;
 }
 
@@ -790,8 +800,9 @@ Vol::close_write_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return -1;
+  }
   return close_write(cont);
 }
 
@@ -800,8 +811,9 @@ Vol::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return -1;
+  }
   return open_write(cont, allow_if_writers, max_writers);
 }
 
@@ -809,8 +821,9 @@ TS_INLINE OpenDirEntry *
 Vol::open_read_lock(CryptoHash *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return nullptr;
+  }
   return open_dir.open_read(key);
 }
 
@@ -819,14 +832,16 @@ Vol::begin_read_lock(CacheVC *cont)
 {
 // no need for evacuation as the entire document is already in memory
 #ifndef CACHE_STAT_PAGES
-  if (cont->f.single_fragment)
+  if (cont->f.single_fragment) {
     return 0;
+  }
 #endif
   // VC is enqueued in stat_cache_vcs in the begin_read call
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return -1;
+  }
   return begin_read(cont);
 }
 
@@ -835,8 +850,9 @@ Vol::close_read_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return -1;
+  }
   return close_read(cont);
 }
 
@@ -845,8 +861,9 @@ dir_delete_lock(CacheKey *key, Vol *d, ProxyMutex *m, Dir *del)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, d->mutex, thread);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return -1;
+  }
   return dir_delete(key, d, del);
 }
 
@@ -855,8 +872,9 @@ dir_insert_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, d->mutex, thread);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return -1;
+  }
   return dir_insert(key, d, to_part);
 }
 
@@ -865,8 +883,9 @@ dir_overwrite_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m, Dir *over
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, d->mutex, thread);
-  if (!lock.is_locked())
+  if (!lock.is_locked()) {
     return -1;
+  }
   return dir_overwrite(key, d, to_part, overwrite, must_overwrite);
 }
 
@@ -884,8 +903,9 @@ next_CacheKey(CacheKey *next_key, CacheKey *key)
   uint8_t *b = (uint8_t *)next_key;
   uint8_t *k = (uint8_t *)key;
   b[0]       = CacheKey_next_table[k[0]];
-  for (int i = 1; i < 16; i++)
-    b[i]     = CacheKey_next_table[(b[i - 1] + k[i]) & 0xFF];
+  for (int i = 1; i < 16; i++) {
+    b[i] = CacheKey_next_table[(b[i - 1] + k[i]) & 0xFF];
+  }
 }
 extern uint8_t CacheKey_prev_table[];
 void TS_INLINE
@@ -893,9 +913,10 @@ prev_CacheKey(CacheKey *prev_key, CacheKey *key)
 {
   uint8_t *b = (uint8_t *)prev_key;
   uint8_t *k = (uint8_t *)key;
-  for (int i = 15; i > 0; i--)
-    b[i]     = 256 + CacheKey_prev_table[k[i]] - k[i - 1];
-  b[0]       = CacheKey_prev_table[k[0]];
+  for (int i = 15; i > 0; i--) {
+    b[i] = 256 + CacheKey_prev_table[k[i]] - k[i - 1];
+  }
+  b[0] = CacheKey_prev_table[k[0]];
 }
 
 TS_INLINE unsigned int
@@ -1003,7 +1024,6 @@ struct Cache {
 };
 
 extern Cache *theCache;
-extern Cache *theStreamCache;
 inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 
 TS_INLINE void

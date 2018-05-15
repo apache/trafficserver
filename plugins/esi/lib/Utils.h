@@ -32,7 +32,7 @@
 #include <string>
 #include <map>
 #include <list>
-#include <ctype.h>
+#include <cctype>
 
 namespace EsiLib
 {
@@ -124,7 +124,7 @@ namespace Utils
     }
     return retval;
   }
-};
-};
+}; // namespace Utils
+}; // namespace EsiLib
 
 #endif

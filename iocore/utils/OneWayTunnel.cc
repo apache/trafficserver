@@ -104,9 +104,7 @@ OneWayTunnel::SetupTwoWayTunnel(OneWayTunnel *east, OneWayTunnel *west)
   west->tunnel_peer = east;
 }
 
-OneWayTunnel::~OneWayTunnel()
-{
-}
+OneWayTunnel::~OneWayTunnel() {}
 
 OneWayTunnel::OneWayTunnel(Continuation *aCont, Transform_fn aManipulate_fn, bool aclose_source, bool aclose_target)
   : Continuation(aCont ? aCont->mutex.get() : new_ProxyMutex()),
@@ -309,12 +307,12 @@ OneWayTunnel::startEvent(int event, void *data)
   case VC_EVENT_ERROR:
   Lerror:
     lerrno = ((VIO *)data)->vc_server->lerrno;
-  // fallthrough
+    // fallthrough
 
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
     result = -1;
-  // fallthrough
+    // fallthrough
 
   case VC_EVENT_WRITE_COMPLETE:
   Ldone:

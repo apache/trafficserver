@@ -59,9 +59,7 @@ HttpPagesHandler::HttpPagesHandler(Continuation *cont, HTTPHdr *header)
   }
 }
 
-HttpPagesHandler::~HttpPagesHandler()
-{
-}
+HttpPagesHandler::~HttpPagesHandler() {}
 
 int64_t
 HttpPagesHandler::extract_id(const char *query)

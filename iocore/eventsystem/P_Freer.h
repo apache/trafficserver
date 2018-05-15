@@ -38,8 +38,9 @@ public: // Needed by WinNT compiler (compiler bug)
   {
     (void)event;
     (void)e;
-    if (p)
+    if (p) {
       delete p;
+    }
     delete this;
     return EVENT_DONE;
   }

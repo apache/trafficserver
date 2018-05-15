@@ -432,6 +432,17 @@ Thread Variables
    HTTP/2 graceful shutdown for now. Stopping Traffic Server here means sending
    `traffic_server` a signal either by `bin/trafficserver stop` or `kill`.
 
+.. ts:cv:: CONFIG proxy.config.thread.max_heartbeat_mseconds INT 60
+   :units: milliseconds
+
+   Set the maximum heartbeat in milliseconds for threads, ranges from 0 to 1000.
+
+   This controls the maximum amount of time the event loop will wait for I/O activity.
+   On a system that is not busy, this option can be set to a higher value to decrease
+   the spin around overhead. If experiencing unexpected delays, setting a lower value
+   should improve the situation. Note that this setting should only be used by expert
+   system tuners, and will not be beneficial with random fiddling.
+
 Network
 =======
 
@@ -1305,6 +1316,11 @@ Parent Proxy Configuration
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
 .. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
+
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 1
+
+   Filter out hosts that are determined to be the same as the current host, e.g., localhost,
+   that have been specified in any parent and secondary_parent lists in the parent.config file.
 
 HTTP Connection Timeouts
 ========================
@@ -3378,6 +3394,7 @@ Client-Related Configuration
 :2: The provided certificate will be verified and the connection will be established irrespective of the verification result. If verification fails the name of the server will be logged.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
+   :overridable:
 
    The filename of SSL client certificate installed on Traffic Server.
 
@@ -3432,7 +3449,7 @@ Client-Related Configuration
    thread will be rescheduled for other work until the crypto engine operation
    completes. A test crypto engine that inserts a 5 second delay on private key
    operations can be found at :ts:git:`contrib/openssl/async_engine.c`.
-   
+
 .. ts:cv:: CONFIG proxy.config.ssl.engine.conf_file STRING NULL
 
    Specify the location of the openssl config file used to load dynamic crypto

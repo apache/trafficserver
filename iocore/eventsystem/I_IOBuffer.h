@@ -228,7 +228,7 @@ public:
     should not use this object or reference after this call.
 
   */
-  virtual void free();
+  void free() override;
 
   int64_t _size_index;
 
@@ -487,7 +487,7 @@ public:
     call.
 
   */
-  virtual void free();
+  void free() override;
 
   char *_start;
   char *_end;
@@ -1100,18 +1100,21 @@ public:
     if (_writer) {
       _writer->reset();
     }
-    for (auto &reader : readers)
+    for (auto &reader : readers) {
       if (reader.allocated()) {
         reader.reset();
       }
+    }
   }
 
   void
   init_readers()
   {
-    for (auto &reader : readers)
-      if (reader.allocated() && !reader.block)
+    for (auto &reader : readers) {
+      if (reader.allocated() && !reader.block) {
         reader.block = _writer;
+      }
+    }
   }
 
   void
@@ -1297,7 +1300,7 @@ extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
   const char *loc
 #endif
-  );
+);
 
 extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
