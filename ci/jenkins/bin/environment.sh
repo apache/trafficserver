@@ -55,27 +55,48 @@ test "${JOB_NAME#*-9.2.x}" != "${JOB_NAME}" && ATS_BRANCH=9.1.x
 export ATS_BRANCH
 echo "Branch is $ATS_BRANCH"
 
-# Decide on compilers, gcc is the default
-if test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}"; then
-	export CC="clang"
-	export CXX="clang++"
-	#    export CXXFLAGS="-Qunused-arguments -std=c++11"
+# If the job name includes the string "clang", force clang. This can also be set
+# explicitly for specific jobs.
+test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_clang=1
+
+if [ "1" == "$enable_clang" ]; then
+	if [ -x "/usr/local/bin/clang++50" ]; then
+		export CC="/usr/local/bin/clang50"
+		export CXX="/usr/local/bin/clang++50"
+	else
+		export CC="clang"
+		export CXX="clang++"
+	fi
 	export CXXFLAGS="-Qunused-arguments"
 	export WITH_LIBCPLUSPLUS="yes"
-fi
-
-# Check for devtoolset-7, but only for ATS 7.x and later
-if test "$ATS_IS_7" == "yes"; then
-	if test -f "/opt/rh/devtoolset-7/enable"; then
-		source /opt/rh/devtoolset-7/enable
-		echo "Enabling devtoolset-7"
-	elif test -x "/usr/bin/gcc-4.9"; then
-		export CC="/usr/bin/gcc-4.9"
-		export CXX="/usr/bin/g++-4.9"
-		echo "CC: $CC"
-		echo "CXX: $CXX"
+elif [ "1" == "$enable_icc" ]; then
+	source /opt/intel/bin/iccvars.sh intel64
+	export CC=icc
+	export CXX=icpc
+else
+	# Default is gcc / g++
+	export CC=gcc
+	export CXX=g++
+	# Only test for non standard compilers on ATS v7.x and later. ToDo: Remove this when 6.x is EOLifed.
+	if test "$ATS_IS_7" == "yes"; then
+		if test -f "/opt/rh/devtoolset-7/enable"; then
+			# This changes the path such that gcc / g++ is the right version. This is for CentOS 6 / 7.
+			source /opt/rh/devtoolset-7/enable
+			echo "Enabling devtoolset-7"
+		elif test -x "/usr/bin/g++-7"; then
+			# This is for Debian platforms
+			export CC=/usr/bin/gcc-7
+			export CXX=/usr/bin/g++-7
+		fi
 	fi
 fi
+
+# Echo out compiler information
+echo "Compiler information:"
+echo "CC: ${CC}"
+$CC -v
+echo "CXX: $CXX"
+$CXX -v
 
 # Figure out parallelism for regular builds / bots
 ATS_MAKE_FLAGS="-j4"
