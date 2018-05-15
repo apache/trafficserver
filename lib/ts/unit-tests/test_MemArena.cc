@@ -132,9 +132,6 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
 TEST_CASE("MemArena large alloc", "[libts][MemArena]")
 {
   ts::MemArena arena;
-
-  size_t arena_size = arena.size(); // little bit less than 1 << 15
-
   ts::MemSpan s = arena.alloc(4000);
   REQUIRE(s.size() == 4000);
 
