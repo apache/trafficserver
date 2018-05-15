@@ -38,13 +38,21 @@ CacheScan::Scan()
 {
   int64_t guessed_size = 1048576; // 1M
   Errata zret;
+  std::bitset<65536> dir_bitset;
   char *stripe_buff2 = (char *)ats_memalign(ats_pagesize(), guessed_size);
   for (int s = 0; s < this->stripe->_segments; s++) {
+    dir_bitset.reset();
     for (int b = 0; b < this->stripe->_buckets; b++) {
       CacheDirEntry *seg = this->stripe->dir_segment(s);
       CacheDirEntry *e   = dir_bucket(b, seg);
       if (dir_offset(e)) {
         do {
+          if (dir_bitset[dir_to_offset(e, seg)]) {
+            std::string str = "Loop detected in stripe " + this->stripe->hashText + " segment: " + std::to_string(s) +
+                              " bucket: " + std::to_string(b);
+            std::cout << str << std::endl;
+            break;
+          }
           int64_t size = dir_approx_size(e);
           if (size > guessed_size) {
             ats_free(stripe_buff2);
@@ -58,7 +66,8 @@ CacheScan::Scan()
           Doc *doc = reinterpret_cast<Doc *>(stripe_buff2);
           get_alternates(doc->hdr(), doc->hlen);
 
-          e = next_dir(e, seg);
+          dir_bitset[dir_to_offset(e, seg)] = true;
+          e                                 = next_dir(e, seg);
         } while (e);
       }
     }
@@ -128,9 +137,32 @@ CacheScan::unmarshal(URLImpl *obj, intptr_t offset)
 }
 
 Errata
-CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref)
+CacheScan::unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset)
 {
   Errata zret;
+  HDR_UNMARSHAL_PTR(mf->m_next, MIMEFieldBlockImpl, offset);
+
+  for (uint32_t index = 0; index < mf->m_freetop; index++) {
+    MIMEField *field = &(mf->m_field_slots[index]);
+
+    if (field->is_live()) {
+      HDR_UNMARSHAL_STR(field->m_ptr_name, offset);
+      HDR_UNMARSHAL_STR(field->m_ptr_value, offset);
+      if (field->m_next_dup) {
+        HDR_UNMARSHAL_PTR(field->m_next_dup, MIMEField, offset);
+      }
+    } else {
+      // Clear out other types of slots
+      field->m_readiness = MIME_FIELD_SLOT_READINESS_EMPTY;
+    }
+  }
+  return zret;
+}
+
+int
+CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref)
+{
+  int zret   = -1;
   *found_obj = nullptr;
 
   // Check out this heap and make sure it is OK
@@ -192,9 +224,9 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
     case HDR_HEAP_OBJ_URL:
       this->unmarshal((URLImpl *)obj, offset);
       break;
-    //        case HDR_HEAP_OBJ_FIELD_BLOCK:
-    //          this->unmarshal((MIMEFieldBlockImpl *)obj,offset);
-    //          break;
+    case HDR_HEAP_OBJ_FIELD_BLOCK:
+      this->unmarshal((MIMEFieldBlockImpl *)obj, offset);
+      break;
     case HDR_HEAP_OBJ_MIME_HEADER:
       this->unmarshal((MIMEHdrImpl *)obj, offset);
       break;
@@ -202,8 +234,8 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
     //      // Nothing to do
     //      break;
     default:
-      zret.push(0, 0, "WARNING: Unmarshal failed due to unknow obj type ", (int)obj->m_type, " after ",
-                (int)(obj_data - (char *)this), " bytes");
+      std::cout << "WARNING: Unmarshal failed due to unknown obj type " << (int)obj->m_type << " after "
+                << (int)(obj_data - (char *)hh) << " bytes" << std::endl;
       // dump_heap(unmarshal_size);
       return zret;
     }
@@ -213,8 +245,8 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   hh->m_magic = HDR_BUF_MAGIC_ALIVE;
 
-  // hh->unmarshal_size = ROUND(unmarshal_size, HDR_PTR_SIZE);
-  return zret;
+  int unmarshal_length = ROUND(hh->unmarshal_size(), HDR_PTR_SIZE);
+  return unmarshal_length;
 }
 
 Errata
@@ -272,7 +304,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   if (heap != nullptr) {
     tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
     if (hh == nullptr || tmp < 0) {
-      ink_assert(!"HTTPInfo::request unmarshal failed");
+      zret.push(0, 0, "HTTPInfo::request unmarshal failed");
       return zret;
     }
     len -= tmp;
@@ -286,9 +318,9 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    // tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
     if (hh == nullptr || tmp < 0) {
-      ink_assert(!"HTTPInfo::response unmarshal failed");
+      zret.push(0, 0, "HTTPInfo::response unmarshal failed");
       return zret;
     }
     len -= tmp;
@@ -316,14 +348,19 @@ CacheScan::get_alternates(const char *buf, int length)
     HTTPCacheAlt *a = (HTTPCacheAlt *)buf;
 
     if (a->m_magic == CACHE_ALT_MAGIC_MARSHALED) {
-      this->unmarshal((char *)buf, length, block_ref);
-      //        std::cout << "alternate unmarshal failed" << std::endl;
-      //      }
-      auto *url       = a->m_request_hdr.m_http->u.req.m_url_impl;
-      std::string str = "stripe: " + this->stripe->hashText + " : " + std::string(url->m_ptr_scheme, url->m_len_scheme) + "://" +
-                        std::string(url->m_ptr_host, url->m_len_host) + ":" + std::string(url->m_ptr_port, url->m_len_port) + "/" +
-                        std::string(url->m_ptr_path, url->m_len_path) + ";" + std::string(url->m_ptr_params, url->m_len_params) +
-                        "?" + std::string(url->m_ptr_query, url->m_len_query);
+      zret = this->unmarshal((char *)buf, length, block_ref);
+      if (zret.size()) {
+        std::cerr << zret << std::endl;
+        return zret;
+      }
+
+      auto *url = a->m_request_hdr.m_http->u.req.m_url_impl;
+      std::string str;
+      ts::bwprint(str, "stripe: {} : {}://{}:{}/{};{}?{}", std::string_view(this->stripe->hashText),
+                  std::string_view(url->m_ptr_scheme, url->m_len_scheme), std::string_view(url->m_ptr_host, url->m_len_host),
+                  std::string_view(url->m_ptr_port, url->m_len_port), std::string_view(url->m_ptr_path, url->m_len_path),
+                  std::string_view(url->m_ptr_params, url->m_len_params), std::string_view(url->m_ptr_query, url->m_len_query));
+
       std::cout << str << std::endl;
     } else {
       // std::cout << "alternate retrieval failed" << std::endl;
