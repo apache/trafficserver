@@ -31,7 +31,7 @@ mv /CA/RAT/rat-${ATS_BRANCH}.txt.new /CA/RAT/rat-${ATS_BRANCH}.txt
 curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/RAT/rat-${ATS_BRANCH}.txt
 
 # Mark as failed if there are any unknown licesnes
-grep '0 Unknown Licenses' /CA/RAT/rat-${ATS_BRANCH}.txt > /dev/null || exit 1
+grep '0 Unknown Licenses' /CA/RAT/rat-${ATS_BRANCH}.txt >/dev/null || exit 1
 
 # Normal exit
 exit 0
