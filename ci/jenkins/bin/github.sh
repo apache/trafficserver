@@ -30,14 +30,6 @@ WCCP=""
 [ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
 [ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
 
-# Check for clang
-if [ "1" == "$enable_clang" ]; then
-	export CC="clang"
-	export CXX="clang++"
-	export CXXFLAGS="-Qunused-arguments"
-	export WITH_LIBCPLUSPLUS="yes"
-fi
-
 mkdir -p ${INSTALL}
 cd src
 
@@ -45,8 +37,6 @@ echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
 echo "DEBUG: $DEBUG"
 echo "WCCP: $WCCP"
-echo "CC: $CC"
-echo "CXX: $CXX"
 
 # Restore verbose shell output
 set -x
