@@ -248,3 +248,36 @@ Ptr<T>::operator=(const Ptr<T> &src)
 {
   return (operator=(src.m_ptr));
 }
+
+// Bit of subtly here for the flipped version of equality checks
+// With only the template versions, the compiler will try to substitute @c nullptr_t
+// for @c T and fail, because that's not the type and no operator will be found.
+// Therefore there needs to be specific overrides for @c nullptr_t.
+
+template <typename T>
+inline bool
+operator==(std::nullptr_t, Ptr<T> const &rhs)
+{
+  return rhs.get() == nullptr;
+}
+
+template <typename T>
+inline bool
+operator!=(std::nullptr_t, Ptr<T> const &rhs)
+{
+  return rhs.get() != nullptr;
+}
+
+template <typename T>
+inline bool
+operator==(T const *lhs, Ptr<T> const &rhs)
+{
+  return rhs.get() == lhs;
+}
+
+template <typename T>
+inline bool
+operator!=(T const *lhs, Ptr<T> const &rhs)
+{
+  return rhs.get() != lhs;
+}
