@@ -69,6 +69,11 @@ the HTTP transaction.
 remap configuration file (:file:`remap.config`) is reloaded. This is an optional
 entry point, which takes no arguments and has no return value.
 
+Generally speaking, calls to these functions are mutually exclusive. The exception
+is for functions which take an HTTP transaction as a parameter. Calls to these
+transaction-specific functions for different transactions are not necessarily mutually exclusive
+of each other.
+
 Types
 =====
 
