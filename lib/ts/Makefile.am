@@ -141,7 +141,6 @@ libtsutil_la_SOURCES = \
 	ink_sock.h \
 	ink_sprintf.cc \
 	ink_sprintf.h \
-	ink_std_compat.h \
 	ink_stack_trace.cc \
 	ink_stack_trace.h \
 	ink_string.cc \

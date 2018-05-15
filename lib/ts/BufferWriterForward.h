@@ -28,7 +28,6 @@
 #include <cstring>
 #include <vector>
 #include <map>
-#include <ts/ink_std_compat.h>
 
 #include <ts/TextView.h>
 #include <ts/ink_assert.h>
