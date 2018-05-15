@@ -637,8 +637,7 @@ CXXFLAGS="${_ts_saved_CXXFLAGS}"
 # All compilers we support have 'gnu99' as an available C standard
 TS_ADDTO(AM_CFLAGS, [-std=gnu99])
 
-AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
-AX_CXX_COMPILE_STDCXX(17, noext, optional)
+TS_ADDTO(AM_CXXFLAGS, [-std=c++17])
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
 dnl 5.9 still has an ancient version, but we have macros that require
