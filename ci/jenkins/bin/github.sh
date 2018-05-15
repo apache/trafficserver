@@ -16,10 +16,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+set +x
+
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
 
 # Optional settings
-CCACHE=""; WERROR=""; DEBUG=""; WCCP=""
+CCACHE=""
+WERROR=""
+DEBUG=""
+WCCP=""
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
 [ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
@@ -27,24 +32,36 @@ CCACHE=""; WERROR=""; DEBUG=""; WCCP=""
 
 # Check for clang
 if [ "1" == "$enable_clang" ]; then
-    export CC="clang"
-    export CXX="clang++"
-    export CXXFLAGS="-Qunused-arguments -std=c++11"
-    export WITH_LIBCPLUSPLUS="yes"
+	export CC="clang"
+	export CXX="clang++"
+	export CXXFLAGS="-Qunused-arguments"
+	export WITH_LIBCPLUSPLUS="yes"
 fi
 
 mkdir -p ${INSTALL}
 cd src
+
+echo "CCACHE: $CCACHE"
+echo "WERROR: $WERROR"
+echo "DEBUG: $DEBUG"
+echo "WCCP: $WCCP"
+echo "CC: $CC"
+echo "CXX: $CXX"
+
+# Restore verbose shell output
+set -x
+
+# Configure
 autoreconf -if
 
 ./configure --prefix="${INSTALL}" \
-            --with-user=jenkins \
-            --enable-experimental-plugins \
-            --enable-example-plugins \
-            ${CCACHE} \
-            ${WCCP} \
-            ${WERROR} \
-            ${DEBUG}
+	--with-user=jenkins \
+	--enable-experimental-plugins \
+	--enable-example-plugins \
+	${CCACHE} \
+	${WCCP} \
+	${WERROR} \
+	${DEBUG}
 
 # Build and run regressions
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=

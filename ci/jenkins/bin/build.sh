@@ -16,32 +16,36 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+set +x
+
 # Check if it's a debug or release build
 DEBUG=""
 test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && DEBUG="--enable-debug"
 
 # When to turn on ccache, disabled for some builds
 CCACHE="--enable-ccache"
-#test "${JOB_NAME#*debian_8}" != "${JOB_NAME}" && CCACHE=""
-#test "${JOB_NAME#*ubuntu_12_04}" != "${JOB_NAME}" && CCACHE=""
-#test "${JOB_NAME#*ubuntu_14_04}" != "${JOB_NAME}" && CCACHE=""
-#test "${JOB_NAME#*compiler=clang,label=ubuntu_16_04}" != "${JOB_NAME}" && CCACHE=""
 
-# When to enable -Werror, turned off for RHEL5 node (due to LuaJIT / gcc issues on RHEL5)
+# When to enable -Werror
 WERROR="--enable-werror"
-test "${NODE_NAME#RHEL 5}" != "${NODE_NAME}" && WERROR=""
+
+echo "DEBUG: $DEBUG"
+echo "CCACHE: $CCACHE"
+echo "WERROR: $WERROR"
 
 # Change to the build area (this is previously setup in extract.sh)
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
-
 mkdir -p BUILDS && cd BUILDS
+
+# Restore verbose shell output
+set -x
+
 ../configure \
-    --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
-    --enable-experimental-plugins \
-    --enable-example-plugins \
-    --with-user=jenkins \
-    ${CCACHE} \
-    ${WERROR} \
-    ${DEBUG}
+	--prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
+	--enable-experimental-plugins \
+	--enable-example-plugins \
+	--with-user=jenkins \
+	${CCACHE} \
+	${WERROR} \
+	${DEBUG}
 
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
