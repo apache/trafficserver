@@ -23,8 +23,6 @@
 
 #define _HOSTDB_CC_
 
-#include "ts/ink_std_compat.h"
-
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
 #include "ts/I_Layout.h"
