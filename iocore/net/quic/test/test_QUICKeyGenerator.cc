@@ -24,6 +24,7 @@
 #include "catch.hpp"
 
 #include <cstring>
+#include <iomanip>
 
 #ifdef OPENSSL_IS_BORINGSSL
 #include <openssl/base.h>
