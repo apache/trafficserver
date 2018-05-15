@@ -135,7 +135,7 @@ QUICClientApp::start(const char *path)
 
   if (error->cls != QUICErrorClass::NONE) {
     Error("%s", error->msg);
-    ink_assert(abort);
+    ink_assert(!error->msg);
   }
 
   // TODO: move to transaction
