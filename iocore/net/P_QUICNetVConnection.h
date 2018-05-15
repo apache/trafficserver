@@ -59,6 +59,7 @@
 #include "quic/QUICAltConnectionManager.h"
 #include "quic/QUICPathValidator.h"
 #include "quic/QUICApplicationMap.h"
+#include "quic/QUICPacketReceiveQueue.h"
 
 // These are included here because older OpenQUIC libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -197,7 +198,6 @@ public:
   NetVConnectionContext_t direction() override;
   SSLNextProtocolSet *next_protocol_set() override;
   void close(QUICConnectionErrorUPtr error) override;
-  QUICPacketNumber largest_received_packet_number() override;
   QUICPacketNumber largest_acked_packet_number() override;
   void handle_received_packet(UDPPacket *packet) override;
   bool is_closed() override;
@@ -231,7 +231,6 @@ private:
   QUICConnectionId _quic_connection_id;
   QUICFiveTuple _five_tuple;
 
-  QUICPacketNumber _largest_received_packet_number = 0;
   UDPConnection *_udp_con                          = nullptr;
   QUICPacketHandler *_packet_handler               = nullptr;
   QUICPacketFactory _packet_factory;
@@ -258,9 +257,8 @@ private:
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
 
-  CountQueue<UDPPacket> _packet_recv_queue;
+  QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory};
   CountQueue<QUICPacket> _packet_send_queue;
-  std::queue<QUICPacketUPtr> _quic_packet_recv_queue;
 
   QUICConnectionErrorUPtr _connection_error  = nullptr;
   uint32_t _state_closing_recv_packet_count  = 0;

@@ -789,12 +789,6 @@ QUICNetVConnection::next_protocol_set()
 }
 
 QUICPacketNumber
-QUICNetVConnection::largest_received_packet_number()
-{
-  return this->_largest_received_packet_number;
-}
-
-QUICPacketNumber
 QUICNetVConnection::largest_acked_packet_number()
 {
   return this->_loss_detector->largest_acked_packet_number();
@@ -885,7 +879,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
   QUICErrorUPtr error = this->_recv_and_ack(std::move(packet));
 
   // Packet number of RETRY packet is echo of INITIAL packet
-  this->_largest_received_packet_number = 0;
+  this->_packet_recv_queue.reset();
   this->_stream_manager->reset_recv_offset();
 
   // Generate new Connection ID
@@ -982,7 +976,7 @@ QUICNetVConnection::_state_common_receive_packet()
 QUICErrorUPtr
 QUICNetVConnection::_state_closing_receive_packet()
 {
-  while (this->_packet_recv_queue.size > 0) {
+  while (this->_packet_recv_queue.size() > 0) {
     QUICPacketCreationResult result;
     QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::SUCCESS) {
@@ -1006,7 +1000,7 @@ QUICNetVConnection::_state_closing_receive_packet()
 QUICErrorUPtr
 QUICNetVConnection::_state_draining_receive_packet()
 {
-  while (this->_packet_recv_queue.size > 0) {
+  while (this->_packet_recv_queue.size() > 0) {
     QUICPacketCreationResult result;
     QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::SUCCESS) {
@@ -1277,10 +1271,6 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
   uint16_t size               = packet->payload_length();
   QUICPacketNumber packet_num = packet->packet_number();
 
-  if (packet_num > this->_largest_received_packet_number) {
-    this->_largest_received_packet_number = packet_num;
-  }
-
   bool should_send_ack;
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
@@ -1338,7 +1328,7 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   case QUICPacketType::RETRY:
     // Echo "_largest_received_packet_number" as packet number. Probably this is the packet number from triggering client packet.
     packet = this->_packet_factory.create_retry_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
-                                                       this->_largest_received_packet_number, std::move(buf), len, retransmittable);
+                                                       this->_packet_recv_queue.largest_received_packet_number(), std::move(buf), len, retransmittable);
     break;
   case QUICPacketType::HANDSHAKE:
     packet =
@@ -1417,46 +1407,28 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 QUICPacketUPtr
 QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 {
-  QUICPacketUPtr quic_packet = QUICPacketFactory::create_null_packet();
-  UDPPacket *udp_packet      = this->_packet_recv_queue.dequeue();
-  if (!udp_packet) {
-    result = QUICPacketCreationResult::NOT_READY;
-    return quic_packet;
-  }
+  QUICPacketUPtr packet = this->_packet_recv_queue.dequeue(result);
 
   if (this->direction() == NET_VCONNECTION_OUT) {
     // Reset CID if a server sent back a new CID
     // FIXME This should happen only once
-    IOBufferBlock *block = udp_packet->getIOBlockChain();
-    if (QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      QUICConnectionId cid = QUICPacket::destination_connection_id(reinterpret_cast<const uint8_t *>(block->buf()));
+    QUICConnectionId cid = packet->destination_cid();
+    if (cid.length()) {
       if (this->_quic_connection_id != cid) {
         this->_quic_connection_id = cid;
       }
     }
   }
 
-  // Create a QUIC packet
-  ats_unique_buf pkt = ats_unique_malloc(udp_packet->getPktLength());
-  IOBufferBlock *b   = udp_packet->getIOBlockChain();
-  size_t written     = 0;
-  while (b) {
-    memcpy(pkt.get() + written, b->buf(), b->read_avail());
-    written += b->read_avail();
-    b = b->next.get();
+  if (result == QUICPacketCreationResult::SUCCESS) {
+    this->_last_received_packet_type = packet->type();
+    this->_packet_factory.set_dcil(packet->destination_cid().length());
   }
 
-  quic_packet =
-    this->_packet_factory.create(udp_packet->from, std::move(pkt), written, this->largest_received_packet_number(), result);
-  udp_packet->free();
-
+  // Debug prints
   switch (result) {
   case QUICPacketCreationResult::NOT_READY:
     QUICConDebug("Not ready to decrypt the packet");
-    // FIXME: unordered packet should be buffered and retried
-    if (this->_packet_recv_queue.size > 0) {
-      result = QUICPacketCreationResult::IGNORED;
-    }
     break;
   case QUICPacketCreationResult::IGNORED:
     QUICConDebug("Ignored");
@@ -1465,23 +1437,19 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     QUICConDebug("Unsupported version");
     break;
   case QUICPacketCreationResult::SUCCESS:
-    this->_last_received_packet_type = quic_packet->type();
-    this->_packet_factory.set_dcil(quic_packet->destination_cid().length());
-
-    if (quic_packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
-      QUICConDebug("Dequeue %s size=%u", QUICDebugNames::packet_type(quic_packet->type()), quic_packet->size());
+    if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
+      QUICConDebug("Dequeue %s size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
     } else {
-      QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(quic_packet->type()),
-                   quic_packet->packet_number(), quic_packet->size());
+      QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()),
+                   packet->packet_number(), packet->size());
     }
-
     break;
   default:
     QUICConDebug("Failed to decrypt the packet");
     break;
   }
 
-  return quic_packet;
+  return packet;
 }
 
 void

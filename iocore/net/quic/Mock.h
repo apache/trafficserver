@@ -222,12 +222,6 @@ public:
   }
 
   QUICPacketNumber
-  largest_received_packet_number() override
-  {
-    return 0;
-  }
-
-  QUICPacketNumber
   largest_acked_packet_number() override
   {
     return 0;

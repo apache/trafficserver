@@ -74,6 +74,7 @@ libquic_a_SOURCES = \
   QUICApplication.cc \
   QUICApplicationMap.cc \
   QUICIncomingFrameBuffer.cc \
+  QUICPacketReceiveQueue.cc \
   QUICPacketRetransmitter.cc \
   QUICPathValidator.cc \
   QUICStatelessRetry.cc
