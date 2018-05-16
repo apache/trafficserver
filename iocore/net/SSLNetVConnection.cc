@@ -37,6 +37,8 @@
 #include <climits>
 #include <string>
 
+using namespace std::literals;
+
 #if TS_USE_TLS_ASYNC
 #include <openssl/async.h>
 #endif
@@ -1700,10 +1702,10 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   return EVENT_DONE;
 }
 
-ts::string_view
+std::string_view
 SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
-  ts::string_view retval{"tls/?.?"_sv}; // return this if the protocol lookup doesn't work.
+  std::string_view retval{"tls/?.?"sv}; // return this if the protocol lookup doesn't work.
 
   if (proto_string) {
     // openSSL guarantees the case of the protocol string.
@@ -1732,7 +1734,7 @@ SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 }
 
 int
-SSLNetVConnection::populate_protocol(ts::string_view *results, int n) const
+SSLNetVConnection::populate_protocol(std::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
@@ -1748,10 +1750,10 @@ SSLNetVConnection::populate_protocol(ts::string_view *results, int n) const
 }
 
 const char *
-SSLNetVConnection::protocol_contains(ts::string_view prefix) const
+SSLNetVConnection::protocol_contains(std::string_view prefix) const
 {
-  const char *retval  = nullptr;
-  ts::string_view tag = map_tls_protocol_to_tag(getSSLProtocol());
+  const char *retval   = nullptr;
+  std::string_view tag = map_tls_protocol_to_tag(getSSLProtocol());
   if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
     retval = tag.data();
   } else {

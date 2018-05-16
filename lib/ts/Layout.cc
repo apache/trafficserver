@@ -44,7 +44,7 @@ Layout::get()
 }
 
 void
-Layout::create(ts::string_view const prefix)
+Layout::create(std::string_view const prefix)
 {
   if (layout == nullptr) {
     layout = new Layout(prefix);
@@ -52,7 +52,7 @@ Layout::create(ts::string_view const prefix)
 }
 
 static void
-_relative(char *path, size_t buffsz, ts::string_view root, ts::string_view file)
+_relative(char *path, size_t buffsz, std::string_view root, std::string_view file)
 {
   if (ink_filepath_merge(path, buffsz, root.data(), file.data(), INK_FILEPATH_TRUENAME)) {
     int err = errno;
@@ -69,7 +69,7 @@ _relative(char *path, size_t buffsz, ts::string_view root, ts::string_view file)
 }
 
 static std::string
-layout_relative(ts::string_view root, ts::string_view file)
+layout_relative(std::string_view root, std::string_view file)
 {
   char path[PATH_NAME_MAX];
   std::string ret;
@@ -79,26 +79,26 @@ layout_relative(ts::string_view root, ts::string_view file)
 }
 
 std::string
-Layout::relative(ts::string_view file)
+Layout::relative(std::string_view file)
 {
   return layout_relative(prefix, file);
 }
 
 // for updating the structure sysconfdir
 void
-Layout::update_sysconfdir(ts::string_view dir)
+Layout::update_sysconfdir(std::string_view dir)
 {
   sysconfdir.assign(dir.data(), dir.size());
 }
 
 std::string
-Layout::relative_to(ts::string_view dir, ts::string_view file)
+Layout::relative_to(std::string_view dir, std::string_view file)
 {
   return layout_relative(dir, file);
 }
 
 void
-Layout::relative_to(char *buf, size_t bufsz, ts::string_view dir, ts::string_view file)
+Layout::relative_to(char *buf, size_t bufsz, std::string_view dir, std::string_view file)
 {
   char path[PATH_NAME_MAX];
 
@@ -111,7 +111,7 @@ Layout::relative_to(char *buf, size_t bufsz, ts::string_view dir, ts::string_vie
   }
 }
 
-Layout::Layout(ts::string_view const _prefix)
+Layout::Layout(std::string_view const _prefix)
 {
   if (!_prefix.empty()) {
     prefix.assign(_prefix.data(), _prefix.size());

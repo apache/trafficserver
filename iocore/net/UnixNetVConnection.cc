@@ -1499,7 +1499,7 @@ UnixNetVConnection::remove_from_active_queue()
 }
 
 int
-UnixNetVConnection::populate_protocol(ts::string_view *results, int n) const
+UnixNetVConnection::populate_protocol(std::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
@@ -1516,9 +1516,9 @@ UnixNetVConnection::populate_protocol(ts::string_view *results, int n) const
 }
 
 const char *
-UnixNetVConnection::protocol_contains(ts::string_view tag) const
+UnixNetVConnection::protocol_contains(std::string_view tag) const
 {
-  ts::string_view retval = options.get_proto_string();
+  std::string_view retval = options.get_proto_string();
   if (!IsNoCasePrefixOf(tag, retval)) { // didn't match IP level, check TCP level
     retval = options.get_family_string();
     if (!IsNoCasePrefixOf(tag, retval)) { // no match here either, return empty.

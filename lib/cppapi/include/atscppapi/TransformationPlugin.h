@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <ts/string_view.h>
+#include <string_view>
 #include <atscppapi/Transaction.h>
 #include <atscppapi/TransactionPlugin.h>
 
@@ -62,7 +62,7 @@ struct TransformationPluginState;
  *     transaction.getClientResponse().getHeaders().set("X-Content-Transformed", "1");
  *     transaction.resume();
  *   }
- *   void consume(ts::string_view data) {
+ *   void consume(std::string_view data) {
  *     produce(data);
  *   }
  *   void handleInputComplete() {
@@ -93,7 +93,7 @@ public:
    * A method that you must implement when writing a TransformationPlugin, this method will be
    * fired whenever an upstream TransformationPlugin has produced output.
    */
-  virtual void consume(ts::string_view data) = 0;
+  virtual void consume(std::string_view data) = 0;
 
   /**
    * Call this method if you wish to pause the transformation.
@@ -117,7 +117,7 @@ protected:
    * This method is how a TransformationPlugin will produce output for the downstream
    * transformation plugin.
    */
-  size_t produce(ts::string_view);
+  size_t produce(std::string_view);
 
   /**
    * This is the method that you must call when you're done producing output for
@@ -130,7 +130,7 @@ protected:
 
 private:
   TransformationPluginState *state_; /** Internal state for a TransformationPlugin */
-  size_t doProduce(ts::string_view);
+  size_t doProduce(std::string_view);
   static int resumeCallback(TSCont cont, TSEvent event, void *edata); /** Resume callback*/
 };
 

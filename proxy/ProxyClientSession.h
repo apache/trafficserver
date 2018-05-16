@@ -25,7 +25,7 @@
 
 #include <ts/ink_platform.h>
 #include <ts/ink_resolver.h>
-#include <ts/string_view.h>
+#include <string_view>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/HttpServerSession.h"
@@ -238,14 +238,14 @@ public:
   }
 
   virtual int
-  populate_protocol(ts::string_view *result, int size) const
+  populate_protocol(std::string_view *result, int size) const
   {
     auto vc = this->get_netvc();
     return vc ? vc->populate_protocol(result, size) : 0;
   }
 
   virtual const char *
-  protocol_contains(ts::string_view tag_prefix) const
+  protocol_contains(std::string_view tag_prefix) const
   {
     auto vc = this->get_netvc();
     return vc ? vc->protocol_contains(tag_prefix) : nullptr;

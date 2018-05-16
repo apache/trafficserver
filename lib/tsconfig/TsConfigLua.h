@@ -30,16 +30,16 @@
 #ifndef TSCONFIGLUA_H
 #define TSCONFIGLUA_H
 
+#include <iostream>
+#include <string_view>
+#include <unordered_map>
 
 #include "tsconfig/Errata.h"
-#include <unordered_map>
 #include "luajit/src/lua.hpp"
-#include <iostream>
-#include <ts/string_view.h>
 #include <ts/HashFNV.h>
 
 /// Hash functor for @c string_view
-inline size_t TsLuaConfigSVHash(ts::string_view const& sv)
+inline size_t TsLuaConfigSVHash(std::string_view const& sv)
 {
   ATSHash64FNV1a h;
   h.update(sv.data(), sv.size());
@@ -72,9 +72,9 @@ struct TsConfigDescriptor {
   }
  * */
   Type type; ///< Value type.
-  ts::string_view type_name; ///< Literal type name used in the schema.
-  ts::string_view name; ///< Name of the configuration value.
-  ts::string_view description; ///< Description of the  value.
+  std::string_view type_name; ///< Literal type name used in the schema.
+  std::string_view name; ///< Name of the configuration value.
+  std::string_view description; ///< Description of the  value.
 };
 
 /** Configuration item instance data.
@@ -145,8 +145,8 @@ class TsConfigEnumDescriptor : public TsConfigDescriptor {
   using self_type = TsConfigEnumDescriptor;
   using super_type = TsConfigDescriptor;
 public:
-  struct Pair { ts::string_view key; int value; };
- TsConfigEnumDescriptor(Type t, ts::string_view t_name, ts::string_view n, ts::string_view d, std::initializer_list<Pair> pairs)
+  struct Pair { std::string_view key; int value; };
+ TsConfigEnumDescriptor(Type t, std::string_view t_name, std::string_view n, std::string_view d, std::initializer_list<Pair> pairs)
     : super_type{t, t_name, n, d}, values{pairs.size(), &TsLuaConfigSVHash}, keys{pairs.size()}
   {
     for ( auto& p : pairs ) {
@@ -154,9 +154,9 @@ public:
       keys[p.value] = p.key;
     }
   }
-  std::unordered_map<ts::string_view, int, size_t(*)(ts::string_view const&) > values;
-  std::unordered_map<int, ts::string_view> keys;
-  int get(ts::string_view key)
+  std::unordered_map<std::string_view, int, size_t(*)(std::string_view const&) > values;
+  std::unordered_map<int, std::string_view> keys;
+  int get(std::string_view key)
   {
       return values[key];
   }
@@ -176,7 +176,7 @@ public:
    {
     ts::Errata zret;
     std::string key(lua_tostring(L,-1));
-    ref = edescriptor.get(ts::string_view(key));
+    ref = edescriptor.get(std::string_view(key));
     return zret;
     }
 };

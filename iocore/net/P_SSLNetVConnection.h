@@ -33,7 +33,7 @@
 
 #include <ts/ink_platform.h>
 #include <ts/apidefs.h>
-#include <ts/string_view.h>
+#include <string_view>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -293,8 +293,8 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
-  int populate_protocol(ts::string_view *results, int n) const override;
-  const char *protocol_contains(ts::string_view tag) const override;
+  int populate_protocol(std::string_view *results, int n) const override;
+  const char *protocol_contains(std::string_view tag) const override;
 
   /**
    * Populate the current object based on the socket information in in the
@@ -318,7 +318,7 @@ public:
   SSLNetVConnection &operator=(const SSLNetVConnection &) = delete;
 
 private:
-  ts::string_view map_tls_protocol_to_tag(const char *proto_string) const;
+  std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
 
   bool sslHandShakeComplete        = false;

@@ -158,8 +158,8 @@ bool
 LogHost::set_name_or_ipstr(const char *name_or_ip)
 {
   if (name_or_ip && name_or_ip[0] != '\0') {
-    ts::string_view addr, port;
-    if (ats_ip_parse(ts::string_view(name_or_ip), &addr, &port) == 0) {
+    std::string_view addr, port;
+    if (ats_ip_parse(std::string_view(name_or_ip), &addr, &port) == 0) {
       uint16_t p = port.empty() ? Log::config->collation_port : atoi(port.data());
       char *n    = const_cast<char *>(addr.data());
       // Force termination. We know we can do this because the address

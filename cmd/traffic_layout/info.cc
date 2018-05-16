@@ -114,7 +114,7 @@ produce_features(bool json)
 }
 
 void
-print_var(ts::string_view const &name, ts::string_view const &value, bool json, bool last = false)
+print_var(std::string_view const &name, std::string_view const &value, bool json, bool last = false)
 {
   if (json) {
     printf(R"(    "%.*s": "%.*s"%s)", static_cast<int>(name.size()), name.data(), static_cast<int>(value.size()), value.data(),

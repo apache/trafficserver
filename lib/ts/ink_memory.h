@@ -28,7 +28,6 @@
 #include <cinttypes>
 #include <string>
 
-#include "ts/string_view.h"
 #include "ts/ink_config.h"
 
 #if HAVE_UNISTD_H
@@ -151,7 +150,7 @@ ats_stringdup(std::string const &p)
 }
 
 inline char *
-ats_stringdup(ts::string_view const &p)
+ats_stringdup(std::string_view const &p)
 {
   return p.empty() ? nullptr : _xstrdup(p.data(), p.size(), nullptr);
 }
@@ -491,7 +490,7 @@ public:
       _r = strdup(s.c_str());
   }
   // constructor with string_view
-  explicit ats_scoped_str(const ts::string_view &s)
+  explicit ats_scoped_str(const std::string_view &s)
   {
     if (s.empty())
       _r = nullptr;
@@ -517,7 +516,7 @@ public:
   }
   // string_view case
   self &
-  operator=(const ts::string_view &s)
+  operator=(const std::string_view &s)
   {
     if (s.empty())
       _r = nullptr;
