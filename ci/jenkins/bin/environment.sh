@@ -61,8 +61,13 @@ test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_clang=1
 
 if [ "1" == "$enable_clang" ]; then
 	if [ -x "/usr/local/bin/clang++50" ]; then
+		# For FreeBSD
 		export CC="/usr/local/bin/clang50"
 		export CXX="/usr/local/bin/clang++50"
+	elif [ -x "/usr/bin/clang++-5.0" ]; then
+		# For Ubuntu 17.x
+		export CC="/usr/bin/clang-5.0"
+		export CXX="/usr/bin/clang++-5.0"
 	else
 		export CC="clang"
 		export CXX="clang++"
@@ -70,6 +75,7 @@ if [ "1" == "$enable_clang" ]; then
 	export CXXFLAGS="-Qunused-arguments"
 	export WITH_LIBCPLUSPLUS="yes"
 elif [ "1" == "$enable_icc" ]; then
+	source /opt/rh/devtoolset-7/enable
 	source /opt/intel/bin/iccvars.sh intel64
 	export CC=icc
 	export CXX=icpc
