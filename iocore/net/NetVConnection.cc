@@ -45,7 +45,7 @@ NetVConnection::cancel_OOB()
   return;
 }
 
-ts::string_view
+std::string_view
 NetVCOptions::get_proto_string() const
 {
   switch (ip_proto) {
@@ -59,7 +59,7 @@ NetVCOptions::get_proto_string() const
   return {};
 }
 
-ts::string_view
+std::string_view
 NetVCOptions::get_family_string() const
 {
   switch (ip_family) {

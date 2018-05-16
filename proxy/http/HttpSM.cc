@@ -7978,11 +7978,11 @@ HttpSM::is_redirect_required()
 
 // Fill in the client protocols used.  Return the number of entries returned
 int
-HttpSM::populate_client_protocol(ts::string_view *result, int n) const
+HttpSM::populate_client_protocol(std::string_view *result, int n) const
 {
   int retval = 0;
   if (n > 0) {
-    ts::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+    std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
     if (!proto.empty()) {
       result[retval++] = proto;
       if (n > retval && ua_txn) {
@@ -7995,12 +7995,12 @@ HttpSM::populate_client_protocol(ts::string_view *result, int n) const
 
 // Look for a specific protocol
 const char *
-HttpSM::client_protocol_contains(ts::string_view tag_prefix) const
+HttpSM::client_protocol_contains(std::string_view tag_prefix) const
 {
-  const char *retval    = nullptr;
-  ts::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+  const char *retval     = nullptr;
+  std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
   if (!proto.empty()) {
-    ts::string_view prefix(tag_prefix);
+    std::string_view prefix(tag_prefix);
     if (prefix.size() <= proto.size() && 0 == strncmp(proto.data(), prefix.data(), prefix.size())) {
       retval = proto.data();
     } else if (ua_txn) {
@@ -8010,7 +8010,7 @@ HttpSM::client_protocol_contains(ts::string_view tag_prefix) const
   return retval;
 }
 
-ts::string_view
+std::string_view
 HttpSM::find_proto_string(HTTPVersion version) const
 {
   if (version == HTTPVersion(1, 1)) {

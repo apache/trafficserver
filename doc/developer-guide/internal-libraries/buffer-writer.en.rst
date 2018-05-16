@@ -208,7 +208,7 @@ a "not enough space" message if not. E.g. ::
    ts::FixedBufferWriter subw{w.auxWriter()};
    this->write_some_output(subw);
    if (!subw.error()) w.fill(subw.size());
-   else w.write("Insufficient space"_sv);
+   else w.write("Insufficient space"sv);
 
 Examples
 ++++++++
@@ -243,11 +243,11 @@ becomes
 
    // ...
 
-   w.write(" ["_sv);
+   w.write(" ["sv);
    if (s->txn_conf->insert_request_via_string > 2) { // Highest verbosity
       w.write(incoming_via);
    } else {
-      w.write(ts::string_view{incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT});
+      w.write(std::string_view{incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT});
    }
    w.write(']');
 
@@ -255,11 +255,11 @@ There will be no overrun on the memory buffer in :arg:`w`, in strong contrast to
 This can be done better, as ::
 
    if (w.remaining() >= 3) {
-      w.clip(1).write(" ["_sv);
+      w.clip(1).write(" ["sv);
       if (s->txn_conf->insert_request_via_string > 2) { // Highest verbosity
          w.write(incoming_via);
       } else {
-         w.write(ts::string_view{incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT});
+         w.write(std::string_view{incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT});
       }
       w.extend(1).write(']');
    }

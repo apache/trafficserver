@@ -28,7 +28,6 @@ development team.
 .. toctree::
    :maxdepth: 1
 
-   string_view.en
    TextView.en
    MemSpan.en
    scalar.en

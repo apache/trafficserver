@@ -29,7 +29,7 @@
 #include <iosfwd>
 #include <iostream>
 #include <cstddef>
-#include <ts/string_view.h>
+#include <string_view>
 
 /// Apache Traffic Server commons.
 namespace ts
@@ -268,13 +268,13 @@ public:
    *
    * @return A @c string_view covering the span contents.
    */
-  string_view view() const;
+  std::string_view view() const;
 
   /** Support automatic conversion to string_view.
    *
    * @return A view of the memory in this span.
    */
-  operator string_view() const;
+  operator std::string_view() const;
 
   /// Internal utility for computing the difference of two void pointers.
   /// @return the byte (char) difference between the pointers, @a lhs - @a rhs
@@ -595,13 +595,13 @@ MemSpan::find_if(F const &pred)
   return nullptr;
 }
 
-inline string_view
+inline std::string_view
 MemSpan::view() const
 {
   return {static_cast<const char *>(_data), static_cast<size_t>(_size)};
 }
 
-inline MemSpan::operator string_view() const
+inline MemSpan::operator std::string_view() const
 {
   return this->view();
 }
