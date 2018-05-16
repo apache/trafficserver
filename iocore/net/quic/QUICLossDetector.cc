@@ -369,7 +369,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_loss_time = 0;
-  std::map<QUICPacketNumber, PacketInfo &> lost_packets;
+  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
   double delay_until_lost = INFINITY;
 
   if (this->_k_using_time_loss_detection) {
@@ -389,11 +389,11 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
       QUICLDDebug("Lost: time since sent is too long (sent=%" PRId64 ", delay=%lf, fraction=%lf, lrtt=%" PRId64 ", srtt=%" PRId64
                   ")",
                   time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt, this->_smoothed_rtt);
-      lost_packets.insert({unacked.first, *unacked.second});
+      lost_packets.insert({unacked.first, unacked.second.get()});
     } else if (packet_delta > this->_reordering_threshold) {
       QUICLDDebug("Lost: packet delta is too large (largest=%" PRId64 " unacked=%" PRId64 " threshold=%" PRId32 ")",
                   largest_acked_packet_number, unacked.second->packet_number, this->_reordering_threshold);
-      lost_packets.insert({unacked.first, *unacked.second});
+      lost_packets.insert({unacked.first, unacked.second.get()});
     } else if (this->_loss_time == 0 && delay_until_lost != INFINITY) {
       this->_loss_time = Thread::get_hrtime() + delay_until_lost - time_since_sent;
     }
@@ -408,7 +408,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
       // them somewhere.
       // I couldn't find the place so just send them here for now.
-      this->_retransmit_lost_packet(*lost_packet.second.packet);
+      this->_retransmit_lost_packet(*lost_packet.second->packet);
       // END OF ADDITIONAL CODE
       this->_remove_from_sent_packet_list(lost_packet.first);
     }

@@ -113,6 +113,7 @@ QUICAckFrameCreator::_create_ack_frame()
     uint64_t delay = this->_calculate_delay();
     ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, protection);
   }
+
   return ack_frame;
 }
 

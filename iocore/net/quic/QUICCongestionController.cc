@@ -87,11 +87,11 @@ QUICCongestionController::on_packet_acked(QUICPacketNumber acked_packet_number, 
 }
 
 void
-QUICCongestionController::on_packets_lost(std::map<QUICPacketNumber, PacketInfo &> lost_packets)
+QUICCongestionController::on_packets_lost(std::map<QUICPacketNumber, PacketInfo *> &lost_packets)
 {
   // Remove lost packets from bytes_in_flight.
   for (auto &lost_packet : lost_packets) {
-    this->_bytes_in_flight -= lost_packet.second.bytes;
+    this->_bytes_in_flight -= lost_packet.second->bytes;
   }
   QUICPacketNumber largest_lost_packet = lost_packets.rbegin()->first;
   // Start a new recovery epoch if the lost packet is larger
