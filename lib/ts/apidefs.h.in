@@ -1191,11 +1191,13 @@ extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_0_9;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_0;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_1;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_2_0;
+extern tsapi const char *const TS_ALPN_PROTOCOL_PROXY_PROTO;
 
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0;
+extern tsapi int TS_ALPN_PROTOCOL_INDEX_PROXY_PROTO;
 
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP;
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
@@ -1203,6 +1205,7 @@ extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_1_0;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_1_1;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_2_0;
+extern tsapi const char *const TS_PROTO_TAG_PROXY_PROTO;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_3;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_2;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_1;
