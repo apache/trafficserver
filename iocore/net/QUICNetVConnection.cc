@@ -1121,12 +1121,26 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
 
   // TODO: check debug build
   char msg[1024];
-  frame->debug_msg(msg, sizeof(msg));
   QUICConDebug("[TX] %s", msg);
 
-  frame->store(buf.get() + len, &l);
-  len += l;
+  ink_assert(max_size > len);
+  size_t n = frame->store(buf.get() + len, &l, max_size - len);
+  if (n > 0) {
+    frame->debug_msg(msg, sizeof(msg));
+    len += l;
+    return;
+  }
 
+  // split frame
+  auto new_frame = QUICFrameFactory::split_frame(frame.get(), max_size - len);
+  frame->debug_msg(msg, sizeof(msg));
+  ink_assert(frame->store(buf.get() + len, &l, max_size - len) > 0);
+  ink_assert(new_frame != nullptr);
+
+  this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, current_packet_type));
+  len = 0;
+  buf = ats_unique_malloc(max_size);
+  this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(new_frame));
   return;
 }
 
