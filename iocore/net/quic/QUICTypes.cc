@@ -21,10 +21,12 @@
  *  limitations under the License.
  */
 
+#include <algorithm>
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
 
 bool
+#include <algorithm>
 QUICTypeUtil::has_long_header(const uint8_t *buf)
 {
   return (buf[0] & 0x80) != 0;
@@ -270,4 +272,16 @@ QUICConnectionId::_hashcode() const
   return (static_cast<uint64_t>(this->_id[0]) << 56) + (static_cast<uint64_t>(this->_id[1]) << 48) +
          (static_cast<uint64_t>(this->_id[2]) << 40) + (static_cast<uint64_t>(this->_id[3]) << 32) + (this->_id[4] << 24) +
          (this->_id[5] << 16) + (this->_id[6] << 8) + this->_id[7];
+}
+
+uint64_t
+QUICConnectionId::l64() const
+{
+  uint64_t v = 0;
+  int ndigit = std::min(8U, static_cast<unsigned int>(this->_len));
+  int offset = static_cast<unsigned int>(this->_len) - ndigit;
+  for (int i = 0; i < ndigit; i++) {
+    v += static_cast<uint64_t>(this->_id[offset + i]) << (8 * (ndigit - i - 1));
+  }
+  return v;
 }

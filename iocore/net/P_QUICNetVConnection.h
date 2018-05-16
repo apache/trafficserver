@@ -231,8 +231,8 @@ private:
   QUICConnectionId _quic_connection_id;
   QUICFiveTuple _five_tuple;
 
-  UDPConnection *_udp_con                          = nullptr;
-  QUICPacketHandler *_packet_handler               = nullptr;
+  UDPConnection *_udp_con            = nullptr;
+  QUICPacketHandler *_packet_handler = nullptr;
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;

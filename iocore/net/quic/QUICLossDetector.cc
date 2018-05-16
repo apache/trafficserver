@@ -28,8 +28,7 @@
 #include "QUICConfig.h"
 #include "QUICEvents.h"
 
-#define QUICLDDebug(fmt, ...) \
-  Debug("quic_loss_detector", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_connection_id), ##__VA_ARGS__)
+#define QUICLDDebug(fmt, ...) Debug("quic_loss_detector", "[%" PRIx64 "] " fmt, this->_connection_id.l64(), ##__VA_ARGS__)
 
 QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc)
   : _transmitter(transmitter), _cc(cc)

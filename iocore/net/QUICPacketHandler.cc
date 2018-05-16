@@ -74,7 +74,7 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
 
   // NOTE: p will be enqueued to udpOutQueue of UDPNetHandler
   ip_port_text_buffer ipb;
-  Debug("quic_sec", "[%" PRIx64 "] send %s packet to %s, size=%" PRId64, static_cast<uint64_t>(packet.destination_cid()),
+  Debug("quic_sec", "[%" PRIx64 "] send %s packet to %s, size=%" PRId64, packet.destination_cid().l64(),
         QUICDebugNames::packet_type(packet.type()), ats_ip_nptop(&udp_packet->to.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
 
   udp_con->send(c, udp_packet);
@@ -178,13 +178,13 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
   if (is_debug_tag_set("quic_sec")) {
     ip_port_text_buffer ipb;
-    if (QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      QUICConnectionId cid = this->_read_destination_connection_id(block);
-      Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
+    if (QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) {
+      QUICConnectionId cid = this->_read_source_connection_id(block);
+      Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, cid.l64(),
             ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
     } else {
-      Debug("quic_sec", "received packet from %s, size=%" PRId64 "without CID",
-            ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+      Debug("quic_sec", "received packet from %s, size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
+            udp_packet->getPktLength());
     }
   }
 
@@ -304,7 +304,7 @@ QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
   QUICConnectionId cid = this->_read_destination_connection_id(block);
 
   ip_port_text_buffer ipb;
-  Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, static_cast<uint64_t>(cid),
+  Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, cid.l64(),
         ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
 
   this->_vc->handle_received_packet(udp_packet);

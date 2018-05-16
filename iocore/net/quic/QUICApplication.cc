@@ -162,7 +162,7 @@ QUICApplication::reenable(QUICStream *stream)
     stream_io->read_reenable();
     stream_io->write_reenable();
   } else {
-    Debug(tag, "[%" PRIx64 "] Unknown Stream, id: %" PRIx64, static_cast<uint64_t>(this->_qc->connection_id()), stream->id());
+    Debug(tag, "[%" PRIx64 "] Unknown Stream, id: %" PRIx64, this->_qc->connection_id().l64(), stream->id());
   }
 
   return;

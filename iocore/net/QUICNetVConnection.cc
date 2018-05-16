@@ -43,15 +43,13 @@
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 
-#define QUICConDebug(fmt, ...) \
-  Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
+#define QUICConDebug(fmt, ...) Debug("quic_net", "[%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__)
 
-#define QUICConVDebug(fmt, ...) \
-  Debug("v_quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
+#define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__)
 
-#define QUICError(fmt, ...)                                                                                 \
-  Debug("quic_net", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__); \
-  Error("quic_net [%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_quic_connection_id), ##__VA_ARGS__)
+#define QUICError(fmt, ...)                                                                     \
+  Debug("quic_net", "[%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__); \
+  Error("quic_net [%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__)
 
 static constexpr uint32_t IPV4_HEADER_SIZE            = 20;
 static constexpr uint32_t IPV6_HEADER_SIZE            = 40;
@@ -87,8 +85,8 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
     this->_ctable->insert(this->_original_quic_connection_id, this);
   }
 
-  QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(this->_original_quic_connection_id),
-               static_cast<uint64_t>(this->_quic_connection_id));
+  QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, this->_original_quic_connection_id.l64(),
+               this->_quic_connection_id.l64());
 }
 
 bool
@@ -203,13 +201,13 @@ QUICNetVConnection::start()
   this->_packet_factory.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
-  this->_congestion_controller  = new QUICCongestionController(this->connection_id());
+  this->_congestion_controller  = new QUICCongestionController(this->peer_connection_id());
   this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(this->_loss_detector, UINT64_MAX);
   this->_path_validator         = new QUICPathValidator();
   this->_stream_manager =
-    new QUICStreamManager(this->_loss_detector, this->connection_id(), this->_application_map, this->netvc_context);
+    new QUICStreamManager(this->_loss_detector, this->peer_connection_id(), this->_application_map, this->netvc_context);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
@@ -455,9 +453,8 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
   switch (frame->type()) {
   case QUICFrameType::MAX_DATA:
     this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data());
-    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
-          static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
-          this->_remote_flow_controller->current_limit());
+    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
+          this->_remote_flow_controller->current_offset(), this->_remote_flow_controller->current_limit());
     this->_schedule_packet_write_ready();
 
     break;
@@ -885,8 +882,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
   // Generate new Connection ID
   QUICConnectionId tmp = this->_original_quic_connection_id;
   this->_original_quic_connection_id.randomize();
-  QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, static_cast<uint64_t>(tmp),
-               static_cast<uint64_t>(this->_original_quic_connection_id));
+  QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, tmp.l64(), this->_original_quic_connection_id.l64());
 
   this->_hs_protocol->initialize_key_materials(this->_original_quic_connection_id);
 
@@ -1212,9 +1208,8 @@ QUICNetVConnection::_packetize_frames()
     ++frame_count;
     if (frame->type() == QUICFrameType::STREAM) {
       int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
-      Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
-            static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
-            this->_remote_flow_controller->current_limit());
+      Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
+            this->_remote_flow_controller->current_offset(), this->_remote_flow_controller->current_limit());
       ink_assert(ret == 0);
     }
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
@@ -1285,7 +1280,7 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
   }
 
   int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
         this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
   if (ret != 0) {
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
@@ -1328,7 +1323,8 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   case QUICPacketType::RETRY:
     // Echo "_largest_received_packet_number" as packet number. Probably this is the packet number from triggering client packet.
     packet = this->_packet_factory.create_retry_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
-                                                       this->_packet_recv_queue.largest_received_packet_number(), std::move(buf), len, retransmittable);
+                                                       this->_packet_recv_queue.largest_received_packet_number(), std::move(buf),
+                                                       len, retransmittable);
     break;
   case QUICPacketType::HANDSHAKE:
     packet =
@@ -1375,11 +1371,10 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
 
   this->_local_flow_controller->set_limit(local_initial_max_data);
   this->_remote_flow_controller->set_limit(remote_initial_max_data);
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, static_cast<uint64_t>(this->_quic_connection_id),
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
         this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64,
-        static_cast<uint64_t>(this->_quic_connection_id), this->_remote_flow_controller->current_offset(),
-        this->_remote_flow_controller->current_limit());
+  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
+        this->_remote_flow_controller->current_offset(), this->_remote_flow_controller->current_limit());
 }
 
 void
@@ -1440,8 +1435,8 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
       QUICConDebug("Dequeue %s size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
     } else {
-      QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()),
-                   packet->packet_number(), packet->size());
+      QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+                   packet->size());
     }
     break;
   default:

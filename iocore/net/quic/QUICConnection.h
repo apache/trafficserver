@@ -58,11 +58,11 @@ public:
 
   virtual QUICStreamManager *stream_manager() = 0;
 
-  virtual uint32_t pmtu()                                   = 0;
-  virtual NetVConnectionContext_t direction()               = 0;
-  virtual SSLNextProtocolSet *next_protocol_set()           = 0;
-  virtual void close(QUICConnectionErrorUPtr error)         = 0;
-  virtual QUICPacketNumber largest_acked_packet_number()    = 0;
-  virtual void handle_received_packet(UDPPacket *packeet)   = 0;
-  virtual bool is_closed()                                  = 0;
+  virtual uint32_t pmtu()                                 = 0;
+  virtual NetVConnectionContext_t direction()             = 0;
+  virtual SSLNextProtocolSet *next_protocol_set()         = 0;
+  virtual void close(QUICConnectionErrorUPtr error)       = 0;
+  virtual QUICPacketNumber largest_acked_packet_number()  = 0;
+  virtual void handle_received_packet(UDPPacket *packeet) = 0;
+  virtual bool is_closed()                                = 0;
 };

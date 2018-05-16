@@ -235,6 +235,11 @@ public:
     return memcmp(this->_id, x._id, sizeof(this->_id)) != 0;
   }
 
+  /*
+   * This is just for debugging.
+   */
+  uint64_t l64() const;
+
   uint8_t length() const;
   bool is_zero() const;
   void randomize();
