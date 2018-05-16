@@ -17,7 +17,6 @@
 #  limitations under the License.
 
 set +x
-[ -d tests ] || exit 0
 
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
 URL="https://ci.trafficserver.apache.org/autest"
@@ -36,6 +35,9 @@ WCCP=""
 
 mkdir -p ${INSTALL}
 cd src
+
+# The tests directory must exist (i.e. for older branches we don't run this)
+[ -d tests ] || exit 0
 
 echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
