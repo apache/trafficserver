@@ -86,8 +86,6 @@ add_executable(traffic_manager
         cmd/traffic_manager/AddConfigFilesHere.cc
         cmd/traffic_manager/metrics.cc
         cmd/traffic_manager/metrics.h
-        cmd/traffic_manager/MgmtHandlers.cc
-        cmd/traffic_manager/MgmtHandlers.h
         cmd/traffic_manager/test_metrics.cc
         cmd/traffic_manager/traffic_manager.cc
 )
