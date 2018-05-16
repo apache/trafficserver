@@ -32,34 +32,33 @@
 
 // use std string and string view for layout
 #include <string>
-#include "ts/string_view.h"
 
 /**
   The Layout is a simple place holder for the distribution layout.
 
  */
 struct Layout {
-  Layout(ts::string_view const _prefix = {});
+  Layout(std::string_view const _prefix = {});
   ~Layout();
 
   /**
    Return file path relative to Layout->prefix
 
   */
-  std::string relative(ts::string_view file);
+  std::string relative(std::string_view file);
 
   /**
    update the sysconfdir to a test conf dir
 
    */
-  void update_sysconfdir(ts::string_view dir);
+  void update_sysconfdir(std::string_view dir);
 
   /**
    Return file path relative to dir
    Example usage: Layout::relative_to(default_layout()->sysconfdir, "foo.bar");
 
   */
-  static std::string relative_to(ts::string_view dir, ts::string_view file);
+  static std::string relative_to(std::string_view dir, std::string_view file);
 
   /**
    Return file path relative to dir
@@ -67,7 +66,7 @@ struct Layout {
    Example usage: Layout::relative_to(default_layout()->sysconfdir, "foo.bar");
 
   */
-  static void relative_to(char *buf, size_t bufsz, ts::string_view dir, ts::string_view file);
+  static void relative_to(char *buf, size_t bufsz, std::string_view dir, std::string_view file);
 
   /**
    Creates a Layout Object with the given prefix.  If no
@@ -75,7 +74,7 @@ struct Layout {
    at the compile time.
 
   */
-  static void create(ts::string_view const prefix = {});
+  static void create(std::string_view const prefix = {});
 
   /**
    Returns the Layout object created by create_default_layout().

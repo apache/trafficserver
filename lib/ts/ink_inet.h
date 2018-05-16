@@ -27,9 +27,10 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <string_view>
+
 #include <ts/ink_memory.h>
 #include <ts/ink_apidefs.h>
-#include <ts/string_view.h>
 #include <ts/BufferWriterForward.h>
 
 #if !TS_HAS_IN6_IS_ADDR_UNSPECIFIED
@@ -45,18 +46,18 @@ IN6_IS_ADDR_UNSPECIFIED(in6_addr const *addr)
 #endif
 
 // IP protocol stack tags.
-extern const ts::string_view IP_PROTO_TAG_IPV4;
-extern const ts::string_view IP_PROTO_TAG_IPV6;
-extern const ts::string_view IP_PROTO_TAG_UDP;
-extern const ts::string_view IP_PROTO_TAG_TCP;
-extern const ts::string_view IP_PROTO_TAG_TLS_1_0;
-extern const ts::string_view IP_PROTO_TAG_TLS_1_1;
-extern const ts::string_view IP_PROTO_TAG_TLS_1_2;
-extern const ts::string_view IP_PROTO_TAG_TLS_1_3;
-extern const ts::string_view IP_PROTO_TAG_HTTP_0_9;
-extern const ts::string_view IP_PROTO_TAG_HTTP_1_0;
-extern const ts::string_view IP_PROTO_TAG_HTTP_1_1;
-extern const ts::string_view IP_PROTO_TAG_HTTP_2_0;
+extern const std::string_view IP_PROTO_TAG_IPV4;
+extern const std::string_view IP_PROTO_TAG_IPV6;
+extern const std::string_view IP_PROTO_TAG_UDP;
+extern const std::string_view IP_PROTO_TAG_TCP;
+extern const std::string_view IP_PROTO_TAG_TLS_1_0;
+extern const std::string_view IP_PROTO_TAG_TLS_1_1;
+extern const std::string_view IP_PROTO_TAG_TLS_1_2;
+extern const std::string_view IP_PROTO_TAG_TLS_1_3;
+extern const std::string_view IP_PROTO_TAG_HTTP_0_9;
+extern const std::string_view IP_PROTO_TAG_HTTP_1_0;
+extern const std::string_view IP_PROTO_TAG_HTTP_1_1;
+extern const std::string_view IP_PROTO_TAG_HTTP_2_0;
 
 struct IpAddr; // forward declare.
 
@@ -139,10 +140,10 @@ int ats_tcp_somaxconn();
 
     @return 0 if an address was found, non-zero otherwise.
 */
-int ats_ip_parse(ts::string_view src,            ///< [in] String to search.
-                 ts::string_view *addr,          ///< [out] Range containing IP address.
-                 ts::string_view *port,          ///< [out] Range containing port.
-                 ts::string_view *rest = nullptr ///< [out] Remnant past the addr/port if any.
+int ats_ip_parse(std::string_view src,            ///< [in] String to search.
+                 std::string_view *addr,          ///< [out] Range containing IP address.
+                 std::string_view *port,          ///< [out] Range containing port.
+                 std::string_view *rest = nullptr ///< [out] Remnant past the addr/port if any.
 );
 
 /**  Check to see if a buffer contains only IP address characters.
@@ -151,7 +152,7 @@ int ats_ip_parse(ts::string_view src,            ///< [in] String to search.
     - AF_INET - only digits and dots.
     - AF_INET6 - colons found.
 */
-int ats_ip_check_characters(ts::string_view text);
+int ats_ip_check_characters(std::string_view text);
 
 /**
   Wrapper for inet_addr().
@@ -188,7 +189,7 @@ ats_ip_invalidate(IpEndpoint *ip)
 /** Get a string name for an IP address family.
     @return The string name (never @c nullptr).
 */
-ts::string_view ats_ip_family_name(int family);
+std::string_view ats_ip_family_name(int family);
 
 /// Test for IP protocol.
 /// @return @c true if the address is IP, @c false otherwise.
@@ -1046,8 +1047,8 @@ ats_ip_nptop(IpEndpoint const *addr, ///< Address.
 
     @return 0 on success, non-zero on failure.
 */
-int ats_ip_pton(const ts::string_view &text, ///< [in] text.
-                sockaddr *addr               ///< [out] address
+int ats_ip_pton(const std::string_view &text, ///< [in] text.
+                sockaddr *addr                ///< [out] address
 );
 
 /** Convert @a text to an IP address and write it to @a addr.
@@ -1066,12 +1067,12 @@ ats_ip_pton(const char *text,  ///< [in] text.
             sockaddr_in6 *addr ///< [out] address
 )
 {
-  return ats_ip_pton(ts::string_view(text, strlen(text)), ats_ip_sa_cast(addr));
+  return ats_ip_pton(std::string_view(text, strlen(text)), ats_ip_sa_cast(addr));
 }
 
 inline int
-ats_ip_pton(const ts::string_view &text, ///< [in] text.
-            IpEndpoint *addr             ///< [out] address
+ats_ip_pton(const std::string_view &text, ///< [in] text.
+            IpEndpoint *addr              ///< [out] address
 )
 {
   return ats_ip_pton(text, &addr->sa);
@@ -1082,7 +1083,7 @@ ats_ip_pton(const char *text, ///< [in] text.
             IpEndpoint *addr  ///< [out] address
 )
 {
-  return ats_ip_pton(ts::string_view(text, strlen(text)), &addr->sa);
+  return ats_ip_pton(std::string_view(text, strlen(text)), &addr->sa);
 }
 
 inline int
@@ -1090,7 +1091,7 @@ ats_ip_pton(const char *text, ///< [in] text.
             sockaddr *addr    ///< [out] address
 )
 {
-  return ats_ip_pton(ts::string_view(text, strlen(text)), addr);
+  return ats_ip_pton(std::string_view(text, strlen(text)), addr);
 }
 
 /** Get the best address info for @a name.
@@ -1203,7 +1204,7 @@ struct IpAddr {
       otherwise this object is invalidated.
       @return 0 on success, non-zero on failure.
   */
-  int load(ts::string_view const &str ///< Text of IP address.
+  int load(std::string_view const &str ///< Text of IP address.
   );
 
   /** Output to a string.
@@ -1452,7 +1453,7 @@ ats_ip_pton(const char *text, ///< [in] text.
   return addr.load(text) ? 0 : -1;
 }
 
-int ats_ip_range_parse(ts::string_view src, IpAddr &lower, IpAddr &upper);
+int ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper);
 
 inline IpEndpoint &
 IpEndpoint::assign(IpAddr const &addr, in_port_t port)

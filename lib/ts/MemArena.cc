@@ -22,6 +22,8 @@
     limitations under the License.
  */
 
+#include <algorithm>
+
 #include "MemArena.h"
 #include <ts/ink_memory.h>
 #include <ts/ink_assert.h>

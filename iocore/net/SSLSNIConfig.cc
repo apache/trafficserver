@@ -118,8 +118,8 @@ SNIConfigParams::get(cchar *servername) const
     Vec<cchar *> keys;
     wild_sni_action_map.get_keys(keys);
     for (int i = 0; i < static_cast<int>(keys.length()); i++) {
-      ts::string_view sv{servername, strlen(servername)};
-      ts::string_view key_sv{keys.get(i)};
+      std::string_view sv{servername, strlen(servername)};
+      std::string_view key_sv{keys.get(i)};
       if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
         return wild_sni_action_map.get(key_sv.data());
       }

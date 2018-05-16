@@ -31,6 +31,8 @@
 #include <array>
 #include <chrono>
 
+using namespace std::literals;
+
 namespace
 {
 // Customized version of string to int. Using this instead of the general @c svtoi function
@@ -215,7 +217,7 @@ namespace bw_fmt
   void
   Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n)
   {
-    static const BWFormat fmt{"{{BAD_ARG_INDEX:{} of {}}}"_sv};
+    static const BWFormat fmt{"{{BAD_ARG_INDEX:{} of {}}}"sv};
     w.print(fmt, i, n);
   }
 
@@ -446,7 +448,7 @@ namespace bw_fmt
       }
     }
     width -= static_cast<int>(n);
-    string_view digits{buff + sizeof(buff) - n, n};
+    std::string_view digits{buff + sizeof(buff) - n, n};
 
     if (spec._align == BWFSpec::Align::SIGN) { // custom for signed case because prefix and digits are seperated.
       if (neg) {
@@ -489,15 +491,15 @@ namespace bw_fmt
   BufferWriter &
   Format_Floating(BufferWriter &w, BWFSpec const &spec, double f, bool neg_p)
   {
-    static const ts::string_view infinity_bwf{"Inf"};
-    static const ts::string_view nan_bwf{"NaN"};
-    static const ts::string_view zero_bwf{"0"};
-    static const ts::string_view subnormal_bwf{"subnormal"};
-    static const ts::string_view unknown_bwf{"unknown float"};
+    static const std::string_view infinity_bwf{"Inf"};
+    static const std::string_view nan_bwf{"NaN"};
+    static const std::string_view zero_bwf{"0"};
+    static const std::string_view subnormal_bwf{"subnormal"};
+    static const std::string_view unknown_bwf{"unknown float"};
 
     // Handle floating values that are not normal
     if (!std::isnormal(f)) {
-      ts::string_view unnormal;
+      std::string_view unnormal;
       switch (std::fpclassify(f)) {
       case FP_INFINITE:
         unnormal = infinity_bwf;
@@ -567,8 +569,8 @@ namespace bw_fmt
     --width; // '.'
     width -= static_cast<int>(r);
 
-    string_view whole_digits{whole + sizeof(whole) - l, l};
-    string_view frac_digits{fraction + sizeof(fraction) - r, r};
+    std::string_view whole_digits{whole + sizeof(whole) - l, l};
+    std::string_view frac_digits{fraction + sizeof(fraction) - r, r};
 
     Write_Aligned(w,
                   [&]() {
@@ -583,7 +585,7 @@ namespace bw_fmt
 
   /// Write out the @a data as hexadecimal, using @a digits as the conversion.
   void
-  Hex_Dump(BufferWriter &w, string_view data, const char *digits)
+  Hex_Dump(BufferWriter &w, std::string_view data, const char *digits)
   {
     const char *ptr = data.data();
     for (auto n = data.size(); n > 0; --n) {
@@ -596,7 +598,7 @@ namespace bw_fmt
 } // namespace bw_fmt
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
+bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
 {
   int width = static_cast<int>(spec._min); // amount left to fill.
   if (spec._prec > 0) {
@@ -643,8 +645,8 @@ BWFormat::BWFormat(ts::TextView fmt)
   int arg_idx = 0;
 
   while (fmt) {
-    string_view lit_str;
-    string_view spec_str;
+    std::string_view lit_str;
+    std::string_view spec_str;
     bool spec_p = this->parse(fmt, lit_str, spec_str);
 
     if (lit_str.size()) {
@@ -673,7 +675,7 @@ BWFormat::~BWFormat() {}
 /// Pass the results back in @a literal and @a specifier as appropriate.
 /// Update @a fmt to strip the parsed text.
 bool
-BWFormat::parse(ts::TextView &fmt, string_view &literal, string_view &specifier)
+BWFormat::parse(ts::TextView &fmt, std::string_view &literal, std::string_view &specifier)
 {
   TextView::size_type off;
 
@@ -697,7 +699,7 @@ BWFormat::parse(ts::TextView &fmt, string_view &literal, string_view &specifier)
     } else if ('}' == c1) {
       throw std::invalid_argument("BWFormat:: Unopened } in format string.");
     } else {
-      literal = string_view{fmt.data(), off};
+      literal = std::string_view{fmt.data(), off};
       fmt.remove_prefix(off + 1);
     }
   } else {
@@ -724,7 +726,7 @@ BWFormat::Format_Literal(BufferWriter &w, BWFSpec const &spec)
 }
 
 bw_fmt::GlobalSignature
-bw_fmt::Global_Table_Find(string_view name)
+bw_fmt::Global_Table_Find(std::string_view name)
 {
   if (name.size()) {
     auto spot = bw_fmt::BWF_GLOBAL_TABLE.find(name);
@@ -748,7 +750,7 @@ FixedBufferWriter::operator>>(int fd) const
 }
 
 bool
-bwf_register_global(string_view name, BWGlobalNameSignature formatter)
+bwf_register_global(std::string_view name, BWGlobalNameSignature formatter)
 {
   return ts::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
 }
@@ -765,7 +767,7 @@ BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
   char buff[32];
   std::time_t t = std::time(nullptr);
   auto n        = strftime(buff, sizeof(buff), "%Y %b %d %H:%M:%S", std::localtime(&t));
-  w.write(ts::string_view{buff, n});
+  w.write(std::string_view{buff, n});
 }
 
 void
@@ -790,11 +792,11 @@ void
 BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
 {
 #if defined(__FreeBSD_version)
-  bwformat(w, spec, "thread"_sv); // no thread names in FreeBSD.
+  bwformat(w, spec, "thread"sv); // no thread names in FreeBSD.
 #else
   char name[32]; // manual says at least 16, bump that up a bit.
   pthread_getname_np(pthread_self(), name, sizeof(name));
-  bwformat(w, spec, ts::string_view{name});
+  bwformat(w, spec, std::string_view{name});
 #endif
 }
 

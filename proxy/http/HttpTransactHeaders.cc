@@ -23,10 +23,11 @@
 
 #include <bitset>
 #include <algorithm>
+#include <array>
+#include <string_view>
 
 #include <ts/ink_platform.h>
 #include <ts/BufferWriter.h>
-#include <ts/string_view.h>
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -37,7 +38,7 @@
 
 #include "I_Machine.h"
 
-#include <array>
+using namespace std::literals;
 
 bool
 HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_param, const int method)
@@ -694,7 +695,7 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
 /// Returns the number of characters appended to hdr_string (no nul appended).
 int
 HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, ProtocolStackDetail pSDetail,
-                                              ts::string_view *proto_buf, int n_proto, char separator)
+                                              std::string_view *proto_buf, int n_proto, char separator)
 {
   char *hdr   = hdr_string; // keep original pointer for size computation later.
   char *limit = hdr_string + len;
@@ -702,7 +703,7 @@ HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, Prot
   if (n_proto <= 0 || hdr == nullptr || len <= 0) {
     // nothing
   } else if (ProtocolStackDetail::Full == pSDetail) {
-    for (ts::string_view *v = proto_buf, *v_limit = proto_buf + n_proto; v < v_limit && (hdr + v->size() + 1) < limit; ++v) {
+    for (std::string_view *v = proto_buf, *v_limit = proto_buf + n_proto; v < v_limit && (hdr + v->size() + 1) < limit; ++v) {
       if (v != proto_buf) {
         *hdr++ = separator;
       }
@@ -710,12 +711,12 @@ HttpTransactHeaders::write_hdr_protocol_stack(char *hdr_string, size_t len, Prot
       hdr += v->size();
     }
   } else {
-    ts::string_view *proto_end = proto_buf + n_proto;
-    bool http_1_0_p            = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_0) != proto_end;
-    bool http_1_1_p            = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_1) != proto_end;
+    std::string_view *proto_end = proto_buf + n_proto;
+    bool http_1_0_p             = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_0) != proto_end;
+    bool http_1_1_p             = std::find(proto_buf, proto_end, IP_PROTO_TAG_HTTP_1_1) != proto_end;
 
     if ((http_1_0_p || http_1_1_p) && hdr + 10 < limit) {
-      bool tls_p = std::find_if(proto_buf, proto_end, [](ts::string_view tag) { return IsPrefixOf("tls/"_sv, tag); }) != proto_end;
+      bool tls_p = std::find_if(proto_buf, proto_end, [](std::string_view tag) { return IsPrefixOf("tls/"sv, tag); }) != proto_end;
 
       memcpy(hdr, "http", 4);
       hdr += 4;
@@ -800,7 +801,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   }
 
   char *incoming_via = s->via_string;
-  std::array<ts::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
+  std::array<std::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
   int n_proto = s->state_machine->populate_client_protocol(proto_buf.data(), proto_buf.size());
 
   via_string +=
@@ -882,7 +883,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   }
 
   char *incoming_via = s->via_string;
-  std::array<ts::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
+  std::array<std::string_view, 10> proto_buf; // 10 seems like a reasonable number of protos to print
   int n_proto = 0;
 
   // Should suffice - if we're adding a response VIA, the connection is HTTP and only 1.0 and 1.1 are supported outbound.
@@ -1102,8 +1103,8 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       }
     }
 
-    std::array<ts::string_view, 10> protoBuf; // 10 seems like a reasonable number of protos to print
-    int n_proto = 0;                          // Indulge clang's incorrect claim that this need to be initialized.
+    std::array<std::string_view, 10> protoBuf; // 10 seems like a reasonable number of protos to print
+    int n_proto = 0;                           // Indulge clang's incorrect claim that this need to be initialized.
 
     static const HttpForwarded::OptionBitSet OptionsNeedingProtocol = HttpForwarded::OptionBitSet()
                                                                         .set(HttpForwarded::PROTO)
@@ -1133,9 +1134,9 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       const MIMEField *hostField = s->hdr_info.client_request.field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
 
       if (hostField and hostField->m_len_value) {
-        ts::string_view hSV{hostField->m_ptr_value, hostField->m_len_value};
+        std::string_view hSV{hostField->m_ptr_value, hostField->m_len_value};
 
-        bool needsDoubleQuotes = hSV.find(':') != ts::string_view::npos;
+        bool needsDoubleQuotes = hSV.find(':') != std::string_view::npos;
 
         if (hdr.size()) {
           hdr << ';';
@@ -1186,7 +1187,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
     // it's size is exactly the capacity of the buffer.
     //
     if (hdr.size() and !hdr.error() and (hdr.size() < hdr.capacity())) {
-      ts::string_view sV = hdr.view();
+      std::string_view sV = hdr.view();
 
       request->value_append(MIME_FIELD_FORWARDED, MIME_LEN_FORWARDED, sV.data(), sV.size(), true, ','); // true => separator must
                                                                                                         // be inserted

@@ -100,14 +100,14 @@ Regex::get_capture_count()
 }
 
 bool
-Regex::exec(ts::string_view src) const
+Regex::exec(std::string_view src) const
 {
   int ovector[30];
   return exec(src, ovector, 30);
 }
 
 bool
-Regex::exec(ts::string_view src, int *ovector, int ovecsize) const
+Regex::exec(std::string_view src, int *ovector, int ovecsize) const
 {
   int rv;
 

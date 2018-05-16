@@ -62,8 +62,8 @@ struct BWFSpec {
   int _prec         = -1;                                       ///< Precision
   unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maxium width
   int _idx          = -1;                                       ///< Positional "name" of the specification.
-  string_view _name;                                            ///< Name of the specification.
-  string_view _ext;                                             ///< Extension if provided.
+  std::string_view _name;                                       ///< Name of the specification.
+  std::string_view _ext;                                        ///< Extension if provided.
 
   static const self_type DEFAULT;
 

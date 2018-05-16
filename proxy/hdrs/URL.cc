@@ -109,7 +109,7 @@ is_host_char(char c)
 
 // Checks if `addr` is a valid FQDN string
 bool
-validate_host_name(ts::string_view addr)
+validate_host_name(std::string_view addr)
 {
   return std::all_of(addr.begin(), addr.end(), &is_host_char);
 }
@@ -1312,7 +1312,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     }
   }
   if (host._size) {
-    if (validate_host_name(ts::string_view(host._ptr, host._size))) {
+    if (validate_host_name(std::string_view(host._ptr, host._size))) {
       url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
     } else {
       return PARSE_RESULT_ERROR;

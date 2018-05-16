@@ -18,7 +18,7 @@
 
 #include <sstream>
 #include <iostream>
-#include <ts/string_view.h>
+#include <string_view>
 #include <atscppapi/PluginInit.h>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransformationPlugin.h>
@@ -51,7 +51,7 @@ public:
   }
 
   void
-  consume(ts::string_view data) override
+  consume(std::string_view data) override
   {
     _img.write(data.data(), data.length());
   }
@@ -67,7 +67,7 @@ public:
     Blob output_blob;
     image.magick("WEBP");
     image.write(&output_blob);
-    produce(ts::string_view(reinterpret_cast<const char *>(output_blob.data()), output_blob.length()));
+    produce(std::string_view(reinterpret_cast<const char *>(output_blob.data()), output_blob.length()));
 
     setOutputComplete();
   }

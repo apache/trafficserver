@@ -23,7 +23,7 @@
 #include <vector>
 #include <zlib.h>
 #include <cinttypes>
-#include <ts/string_view.h>
+#include <string_view>
 #include "atscppapi/TransformationPlugin.h"
 #include "atscppapi/GzipDeflateTransformation.h"
 #include "logging_internal.h"
@@ -80,7 +80,7 @@ GzipDeflateTransformation::~GzipDeflateTransformation()
 }
 
 void
-GzipDeflateTransformation::consume(ts::string_view data)
+GzipDeflateTransformation::consume(std::string_view data)
 {
   if (data.size() == 0) {
     return;
@@ -118,7 +118,7 @@ GzipDeflateTransformation::consume(ts::string_view data)
 
     LOG_DEBUG("Iteration %d: Deflate compressed %ld bytes to %d bytes, producing output...", iteration, data.size(),
               bytes_to_write);
-    produce(ts::string_view(reinterpret_cast<char *>(&buffer[0]), static_cast<size_t>(bytes_to_write)));
+    produce(std::string_view(reinterpret_cast<char *>(&buffer[0]), static_cast<size_t>(bytes_to_write)));
   } while (state_->z_stream_.avail_out == 0);
 
   state_->z_stream_.next_out = nullptr;
@@ -152,7 +152,7 @@ GzipDeflateTransformation::handleInputComplete()
     if (status == Z_OK || status == Z_STREAM_END) {
       LOG_DEBUG("Iteration %d: Gzip deflate finalize had an extra %d bytes to process, status '%d'. Producing output...", iteration,
                 bytes_to_write, status);
-      produce(ts::string_view(reinterpret_cast<char *>(buffer), static_cast<size_t>(bytes_to_write)));
+      produce(std::string_view(reinterpret_cast<char *>(buffer), static_cast<size_t>(bytes_to_write)));
     } else if (status != Z_STREAM_END) {
       LOG_ERROR("Iteration %d: Gzip deflinate finalize produced an error '%d'", iteration, status);
     }

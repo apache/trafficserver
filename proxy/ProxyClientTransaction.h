@@ -24,7 +24,7 @@
 #pragma once
 
 #include "ProxyClientSession.h"
-#include <ts/string_view.h>
+#include <string_view>
 
 class HttpSM;
 class HttpServerSession;
@@ -255,13 +255,13 @@ public:
   }
 
   virtual int
-  populate_protocol(ts::string_view *result, int size) const
+  populate_protocol(std::string_view *result, int size) const
   {
     return parent ? parent->populate_protocol(result, size) : 0;
   }
 
   virtual const char *
-  protocol_contains(ts::string_view tag_prefix) const
+  protocol_contains(std::string_view tag_prefix) const
   {
     return parent ? parent->protocol_contains(tag_prefix) : nullptr;
   }

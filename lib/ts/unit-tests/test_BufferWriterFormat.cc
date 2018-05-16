@@ -30,6 +30,8 @@
 #include <ts/INK_MD5.h>
 #include <ts/CryptoHash.h>
 
+using namespace std::literals;
+
 TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
 {
   ts::LocalBufferWriter<50> bw;
@@ -46,7 +48,7 @@ TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
 TEST_CASE("bwprint basics", "[bwprint]")
 {
   ts::LocalBufferWriter<256> bw;
-  ts::string_view fmt1{"Some text"_sv};
+  std::string_view fmt1{"Some text"sv};
 
   bw.print(fmt1);
   REQUIRE(bw.view() == fmt1);
@@ -138,7 +140,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
 {
   ts::LocalBufferWriter<256> bw;
   ts::BWFormat fmt("left >{0:<9}< right >{0:>9}< center >{0:^9}<");
-  ts::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
+  std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
 
   bw.reduce(0);
   static const ts::BWFormat bad_arg_fmt{"{{BAD_ARG_INDEX:{} of {}}}"};
@@ -187,7 +189,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.print("{:#:d}", ts::MemSpan(const_cast<char *>(char_ptr), 4));
   REQUIRE(bw.view() == "0x676f6f64");
 
-  ts::string_view sv{"abc123"};
+  std::string_view sv{"abc123"};
   bw.reduce(0);
   bw.print("{}", sv);
   REQUIRE(bw.view() == sv);
@@ -261,7 +263,7 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
 {
   std::string s;
   ts::TextView fmt("{} -- {}");
-  ts::string_view text{"e99a18c428cb38d5f260853678922e03"};
+  std::string_view text{"e99a18c428cb38d5f260853678922e03"};
 
   ts::bwprint(s, fmt, "string", 956);
   REQUIRE(s.size() == 13);
@@ -275,10 +277,10 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
 
   ts::LocalBufferWriter<128> bw;
   char buff[128];
-  snprintf(buff, sizeof(buff), "|%s|", bw.print("Deep Silent Complete by {}\0", "Nightwish"_sv).data());
-  REQUIRE(ts::string_view(buff) == "|Deep Silent Complete by Nightwish|");
-  snprintf(buff, sizeof(buff), "|%s|", bw.reset().print("Deep Silent Complete by {}\0elided junk", "Nightwish"_sv).data());
-  REQUIRE(ts::string_view(buff) == "|Deep Silent Complete by Nightwish|");
+  snprintf(buff, sizeof(buff), "|%s|", bw.print("Deep Silent Complete by {}\0", "Nightwish"sv).data());
+  REQUIRE(std::string_view(buff) == "|Deep Silent Complete by Nightwish|");
+  snprintf(buff, sizeof(buff), "|%s|", bw.reset().print("Deep Silent Complete by {}\0elided junk", "Nightwish"sv).data());
+  REQUIRE(std::string_view(buff) == "|Deep Silent Complete by Nightwish|");
 }
 
 TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
@@ -491,7 +493,7 @@ TEST_CASE("bwperf", "[bwprint][performance]")
 
   static constexpr const char * FMT = "Format |{:#010x}| '{}'";
   static constexpr ts::TextView fmt{FMT, strlen(FMT)};
-  static constexpr ts::string_view text{"e99a18c428cb38d5f260853678922e03"_sv};
+  static constexpr std::string_view text{"e99a18c428cb38d5f260853678922e03"sv};
   ts::LocalBufferWriter<256> bw;
 
   ts::BWFSpec spec;

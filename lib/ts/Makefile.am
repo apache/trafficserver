@@ -20,7 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 
 library_includedir=$(includedir)/ts
 
-library_include_HEADERS = apidefs.h string_view.h TextView.h
+library_include_HEADERS = apidefs.h TextView.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
@@ -198,7 +198,6 @@ libtsutil_la_SOURCES = \
 	SimpleTokenizer.h \
 	SourceLocation.cc \
 	SourceLocation.h \
-	string_view.h \
 	TestBox.h \
 	TextBuffer.cc \
 	TextBuffer.h \
@@ -274,7 +273,6 @@ test_tslib_SOURCES = \
 	unit-tests/test_MemArena.cc \
 	unit-tests/test_MT_hashtable.cc \
 	unit-tests/test_Scalar.cc \
-	unit-tests/test_string_view.cc \
 	unit-tests/test_scoped_resource.cc \
 	unit-tests/test_TextView.cc 
 

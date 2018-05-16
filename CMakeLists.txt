@@ -1290,7 +1290,6 @@ add_library(libtsutil SHARED
         lib/ts/SimpleTokenizer.h
         lib/ts/SourceLocation.cc
         lib/ts/SourceLocation.h
-        lib/ts/string_view.h
         lib/ts/test_arena.cc
         lib/ts/test_atomic.cc
         lib/ts/test_freelist.cc
@@ -1330,7 +1329,6 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_MemSpan.cc
 	lib/ts/unit-tests/test_MT_hashtable.cc
 	lib/ts/unit-tests/test_Scalar.cc
-	lib/ts/unit-tests/test_string_view.cc
 	lib/ts/unit-tests/test_scoped_resource.cc
 	lib/ts/unit-tests/test_TextView.cc
 )

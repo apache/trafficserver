@@ -63,7 +63,7 @@
 #include "I_RecCore.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
-#include <ts/string_view.h>
+#include <string_view>
 
 #include "api/ts/ts.h"
 
@@ -2445,7 +2445,7 @@ TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
 
-  if (0 != ats_ip_pton(ts::string_view(str, str_len), addr)) {
+  if (0 != ats_ip_pton(std::string_view(str, str_len), addr)) {
     return TS_ERROR;
   }
 
@@ -5951,7 +5951,7 @@ TSHttpArgIndexNameLookup(UserArg::Type type, const char *name, int *arg_idx, con
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
   sdk_assert(0 <= type && type < UserArg::Type::COUNT);
 
-  ts::string_view n{name};
+  std::string_view n{name};
 
   for (UserArg *arg = UserArgTable[type], *limit = arg + UserArgIdx[type]; arg < limit; ++arg) {
     if (arg->name == n) {
@@ -8401,7 +8401,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     if (value && length > 0) {
       ts::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(value, length), error);
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(value, length), error);
       if (!error.size()) {
         s->t_state.txn_conf->insert_forwarded = bs;
       } else {
@@ -9577,7 +9577,7 @@ TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   int count  = 0;
   if (sm && n > 0) {
-    auto mem = static_cast<ts::string_view *>(alloca(sizeof(ts::string_view) * n));
+    auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
     count    = sm->populate_client_protocol(mem, n);
     for (int i = 0; i < count; ++i) {
       result[i] = mem[i].data();
@@ -9597,7 +9597,7 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   int count              = 0;
   if (cs && n > 0) {
-    auto mem = static_cast<ts::string_view *>(alloca(sizeof(ts::string_view) * n));
+    auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
     count    = cs->populate_protocol(mem, n);
     for (int i = 0; i < count; ++i) {
       result[i] = mem[i].data();
@@ -9620,7 +9620,7 @@ TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
-  return sm->client_protocol_contains(ts::string_view{tag});
+  return sm->client_protocol_contains(std::string_view{tag});
 }
 
 const char *
@@ -9628,7 +9628,7 @@ TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
-  return cs->protocol_contains(ts::string_view{tag});
+  return cs->protocol_contains(std::string_view{tag});
 }
 
 const char *
