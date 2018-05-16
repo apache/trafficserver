@@ -27,6 +27,7 @@ NOCLEAN=${NOCLEAN:-}
 OUTPUT_BASE=${OUTPUT_BASE:-/home/jenkins/clang-analyzer}
 
 # Options
+#options="--status-bugs --keep-empty"
 options="--keep-empty"
 configure="--enable-experimental-plugins"
 
