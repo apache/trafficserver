@@ -155,7 +155,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload1), 5, 0x01, 0x00);
     CHECK(stream_frame.size() == 8);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 8);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
@@ -178,7 +178,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload2), 5, 0x01, 0x01);
     CHECK(stream_frame.size() == 9);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 9);
     CHECK(memcmp(buf, expected2, len) == 0);
   }
@@ -201,7 +201,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload3), 5, 0x01, 0x010000);
     CHECK(stream_frame.size() == 12);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 12);
     CHECK(memcmp(buf, expected3, len) == 0);
   }
@@ -224,7 +224,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload4), 5, 0x01, 0x0100000000);
     CHECK(stream_frame.size() == 16);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 16);
     CHECK(memcmp(buf, expected4, len) == 0);
   }
@@ -247,7 +247,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload5), 5, 0x0100, 0x0100000000);
     CHECK(stream_frame.size() == 17);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 17);
     CHECK(memcmp(buf, expected5, len) == 0);
   }
@@ -270,7 +270,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload6), 5, 0x010000, 0x0100000000);
     CHECK(stream_frame.size() == 19);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 19);
     CHECK(memcmp(buf, expected6, len) == 0);
   }
@@ -293,7 +293,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload7), 5, 0x01000000, 0x0100000000);
     CHECK(stream_frame.size() == 19);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 19);
     CHECK(memcmp(buf, expected7, len) == 0);
   }
@@ -316,9 +316,40 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(std::move(payload), 5, 0x01000000, 0x0100000000, true);
     CHECK(stream_frame.size() == 19);
 
-    stream_frame.store(buf, &len);
+    stream_frame.store(buf, &len, 32);
     CHECK(len == 19);
     CHECK(memcmp(buf, expected, len) == 0);
+  }
+
+  SECTION("split stream frame")
+  {
+    size_t len;
+    uint8_t buf1[] = {
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x01,                                           // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x0a,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+      0x11, 0x22, 0x33, 0x44, 0x55,
+    };
+
+    QUICFrameUPtr frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM);
+    CHECK(frame1->size() == 21);
+    QUICStreamFrame *stream_frame = dynamic_cast<QUICStreamFrame *>(frame1.get());
+    CHECK(stream_frame->offset() == 0x100000000);
+    CHECK(stream_frame->stream_id() == 0x01);
+    CHECK(stream_frame->data_length() == 10);
+    QUICStreamFrame *stream_frame2 = stream_frame->split(16);
+    CHECK(stream_frame->stream_id() == 0x01);
+    CHECK(stream_frame->data_length() == 5);
+    CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04\x05", stream_frame->data_length()) == 0);
+    CHECK(stream_frame->offset() == 0x100000000);
+
+    CHECK(stream_frame2->data_length() == 5);
+    CHECK(memcmp(stream_frame2->data(), "\x11\x22\x33\x44\x55", stream_frame2->data_length()) == 0);
+    CHECK(stream_frame2->offset() == 0x100000000 + 5);
+    CHECK(stream_frame2->stream_id() == 0x01);
   }
 }
 
@@ -422,7 +453,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     QUICAckFrame ack_frame(0x12, 0x3456, 0);
     CHECK(ack_frame.size() == 6);
 
-    ack_frame.store(buf, &len);
+    ack_frame.store(buf, &len, 32);
     CHECK(len == 6);
     CHECK(memcmp(buf, expected, len) == 0);
   }
@@ -449,7 +480,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     section->add_ack_block({0x05060708, 0x090a0b0c0d0e0f10});
     CHECK(ack_frame.size() == 21);
 
-    ack_frame.store(buf, &len);
+    ack_frame.store(buf, &len, 32);
     CHECK(len == 21);
     CHECK(memcmp(buf, expected, len) == 0);
   }
@@ -487,7 +518,7 @@ TEST_CASE("Store RST_STREAM Frame", "[quic]")
   QUICRstStreamFrame rst_stream_frame(0x12345678, 0x0001, 0x1122334455667788);
   CHECK(rst_stream_frame.size() == 15);
 
-  rst_stream_frame.store(buf, &len);
+  rst_stream_frame.store(buf, &len, 65535);
   CHECK(len == 15);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -517,7 +548,7 @@ TEST_CASE("Store Ping Frame", "[quic]")
   QUICPingFrame frame(true);
   CHECK(frame.size() == 1);
 
-  frame.store(buf, &len);
+  frame.store(buf, &len, 16);
   CHECK(len == 1);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -543,7 +574,7 @@ TEST_CASE("Store Padding Frame", "[quic]")
     0x00, // Type
   };
   QUICPaddingFrame padding_frame;
-  padding_frame.store(buf, &len);
+  padding_frame.store(buf, &len, 65535);
   CHECK(len == 1);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -605,7 +636,7 @@ TEST_CASE("Store ConnectionClose Frame", "[quic]")
     QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, 5, "ABCDE");
     CHECK(connection_close_frame.size() == 9);
 
-    connection_close_frame.store(buf, &len);
+    connection_close_frame.store(buf, &len, 32);
     CHECK(len == 9);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
@@ -621,7 +652,7 @@ TEST_CASE("Store ConnectionClose Frame", "[quic]")
       0x00,       // Reason Phrase Length
     };
     QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, 0, nullptr);
-    connection_close_frame.store(buf, &len);
+    connection_close_frame.store(buf, &len, 32);
     CHECK(len == 4);
     CHECK(memcmp(buf, expected2, len) == 0);
   }
@@ -684,7 +715,7 @@ TEST_CASE("Store ApplicationClose Frame", "[quic]")
     QUICApplicationCloseFrame app_close_frame(static_cast<QUICAppErrorCode>(0x01), 5, "ABCDE");
     CHECK(app_close_frame.size() == 9);
 
-    app_close_frame.store(buf, &len);
+    app_close_frame.store(buf, &len, 32);
     CHECK(len == 9);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
@@ -701,7 +732,7 @@ TEST_CASE("Store ApplicationClose Frame", "[quic]")
     QUICApplicationCloseFrame app_close_frame(static_cast<QUICAppErrorCode>(0x01), 0, nullptr);
     CHECK(app_close_frame.size() == 4);
 
-    app_close_frame.store(buf, &len);
+    app_close_frame.store(buf, &len, 32);
     CHECK(len == 4);
     CHECK(memcmp(buf, expected2, len) == 0);
   }
@@ -733,7 +764,7 @@ TEST_CASE("Store MaxData Frame", "[quic]")
   QUICMaxDataFrame max_data_frame(0x1122334455667788);
   CHECK(max_data_frame.size() == 9);
 
-  max_data_frame.store(buf, &len);
+  max_data_frame.store(buf, &len, 65535);
   CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -768,7 +799,7 @@ TEST_CASE("Store MaxStreamData Frame", "[quic]")
   QUICMaxStreamDataFrame max_stream_data_frame(0x01020304, 0x1122334455667788ULL);
   CHECK(max_stream_data_frame.size() == 13);
 
-  max_stream_data_frame.store(buf, &len);
+  max_stream_data_frame.store(buf, &len, 65535);
   CHECK(len == 13);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -799,7 +830,7 @@ TEST_CASE("Store MaxStreamId Frame", "[quic]")
   QUICMaxStreamIdFrame max_stream_id_frame(0x01020304);
   CHECK(max_stream_id_frame.size() == 5);
 
-  max_stream_id_frame.store(buf, &len);
+  max_stream_id_frame.store(buf, &len, 65535);
   CHECK(len == 5);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -830,7 +861,7 @@ TEST_CASE("Store Blocked Frame", "[quic]")
   QUICBlockedFrame blocked_stream_frame(0x07);
   CHECK(blocked_stream_frame.size() == 2);
 
-  blocked_stream_frame.store(buf, &len);
+  blocked_stream_frame.store(buf, &len, 65535);
   CHECK(len == 2);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -865,7 +896,7 @@ TEST_CASE("Store StreamBlocked Frame", "[quic]")
   QUICStreamBlockedFrame stream_blocked_frame(0x01020304, 0x07);
   CHECK(stream_blocked_frame.size() == 6);
 
-  stream_blocked_frame.store(buf, &len);
+  stream_blocked_frame.store(buf, &len, 65535);
   CHECK(len == 6);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -897,7 +928,7 @@ TEST_CASE("Store StreamIdBlocked Frame", "[quic]")
   QUICStreamIdBlockedFrame stream_id_blocked_frame(0x0102);
   CHECK(stream_id_blocked_frame.size() == 3);
 
-  stream_id_blocked_frame.store(buf, &len);
+  stream_id_blocked_frame.store(buf, &len, 65535);
   CHECK(len == 3);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -941,7 +972,7 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
                                             {expected + 12});
   CHECK(new_con_id_frame.size() == 28);
 
-  new_con_id_frame.store(buf, &len);
+  new_con_id_frame.store(buf, &len, 32);
   CHECK(len == 28);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -976,7 +1007,7 @@ TEST_CASE("Store STOP_SENDING Frame", "[quic]")
   QUICStopSendingFrame stop_sending_frame(0x12345678, static_cast<QUICAppErrorCode>(0x01));
   CHECK(stop_sending_frame.size() == 7);
 
-  stop_sending_frame.store(buf, &len);
+  stop_sending_frame.store(buf, &len, 65535);
   CHECK(len == 7);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -1015,7 +1046,7 @@ TEST_CASE("Store PATH_CHALLENGE Frame", "[quic]")
   QUICPathChallengeFrame frame(std::move(data), QUICPathChallengeFrame::DATA_LEN);
   CHECK(frame.size() == 9);
 
-  frame.store(buf, &len);
+  frame.store(buf, &len, 16);
   CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -1053,7 +1084,7 @@ TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
   QUICPathResponseFrame frame(std::move(data), QUICPathResponseFrame::DATA_LEN);
   CHECK(frame.size() == 9);
 
-  frame.store(buf, &len);
+  frame.store(buf, &len, 16);
   CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -1160,7 +1191,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 8);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1180,7 +1211,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 15);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1200,7 +1231,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 9);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1220,7 +1251,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 9);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1238,7 +1269,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 9);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1257,7 +1288,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 13);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1275,7 +1306,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 5);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1292,7 +1323,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 1);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1310,7 +1341,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 2);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1329,7 +1360,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 6);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1347,7 +1378,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 3);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1369,7 +1400,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 28);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1388,7 +1419,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 7);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1406,7 +1437,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 9);
     CHECK(memcmp(buf, frame_buf, len) == 0);
@@ -1424,7 +1455,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    frame->store(buf, &len);
+    frame->store(buf, &len, 32);
 
     CHECK(len == 9);
     CHECK(memcmp(buf, frame_buf, len) == 0);
