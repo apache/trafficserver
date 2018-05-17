@@ -60,41 +60,41 @@ echo "Branch is $ATS_BRANCH"
 test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_clang=1
 
 if [ "1" == "$enable_clang" ]; then
-	if [ -x "/usr/local/bin/clang++50" ]; then
-		# For FreeBSD
-		export CC="/usr/local/bin/clang50"
-		export CXX="/usr/local/bin/clang++50"
-	elif [ -x "/usr/bin/clang++-5.0" ]; then
-		# For Ubuntu 17.x
-		export CC="/usr/bin/clang-5.0"
-		export CXX="/usr/bin/clang++-5.0"
-	else
-		export CC="clang"
-		export CXX="clang++"
-	fi
-	export CXXFLAGS="-Qunused-arguments"
-	export WITH_LIBCPLUSPLUS="yes"
+    if [ -x "/usr/local/bin/clang++50" ]; then
+        # For FreeBSD
+        export CC="/usr/local/bin/clang50"
+        export CXX="/usr/local/bin/clang++50"
+    elif [ -x "/usr/bin/clang++-5.0" ]; then
+        # For Ubuntu 17.x
+        export CC="/usr/bin/clang-5.0"
+        export CXX="/usr/bin/clang++-5.0"
+    else
+        export CC="clang"
+        export CXX="clang++"
+    fi
+    export CXXFLAGS="-Qunused-arguments"
+    export WITH_LIBCPLUSPLUS="yes"
 elif [ "1" == "$enable_icc" ]; then
-	source /opt/rh/devtoolset-7/enable
-	source /opt/intel/bin/iccvars.sh intel64
-	export CC=icc
-	export CXX=icpc
+    source /opt/rh/devtoolset-7/enable
+    source /opt/intel/bin/iccvars.sh intel64
+    export CC=icc
+    export CXX=icpc
 else
-	# Default is gcc / g++
-	export CC=gcc
-	export CXX=g++
-	# Only test for non standard compilers on ATS v7.x and later. ToDo: Remove this when 6.x is EOLifed.
-	if test "$ATS_IS_7" == "yes"; then
-		if test -f "/opt/rh/devtoolset-7/enable"; then
-			# This changes the path such that gcc / g++ is the right version. This is for CentOS 6 / 7.
-			source /opt/rh/devtoolset-7/enable
-			echo "Enabling devtoolset-7"
-		elif test -x "/usr/bin/g++-7"; then
-			# This is for Debian platforms
-			export CC=/usr/bin/gcc-7
-			export CXX=/usr/bin/g++-7
-		fi
-	fi
+    # Default is gcc / g++
+    export CC=gcc
+    export CXX=g++
+    # Only test for non standard compilers on ATS v7.x and later. ToDo: Remove this when 6.x is EOLifed.
+    if test "$ATS_IS_7" == "yes"; then
+        if test -f "/opt/rh/devtoolset-7/enable"; then
+            # This changes the path such that gcc / g++ is the right version. This is for CentOS 6 / 7.
+            source /opt/rh/devtoolset-7/enable
+            echo "Enabling devtoolset-7"
+        elif test -x "/usr/bin/g++-7"; then
+            # This is for Debian platforms
+            export CC=/usr/bin/gcc-7
+            export CXX=/usr/bin/g++-7
+        fi
+    fi
 fi
 
 # Echo out compiler information

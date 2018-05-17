@@ -27,23 +27,23 @@ set -e # exit on error
 MASTER=trafficserver
 
 branch() {
-  local dname="$1" # directory name
-  local bname="$2" # branch name
+    local dname="$1" # directory name
+    local bname="$2" # branch name
 
-  git clone --local $MASTER ${dname}
-  ( cd ${dname} && git checkout -b ${bname} origin/${bname})
+    git clone --local $MASTER ${dname}
+    (cd ${dname} && git checkout -b ${bname} origin/${bname})
 }
 
-if [ ! -d $MASTER ] ; then
-  git clone https://git-wip-us.apache.org/repos/asf/trafficserver.git $MASTER
+if [ ! -d $MASTER ]; then
+    git clone https://git-wip-us.apache.org/repos/asf/trafficserver.git $MASTER
 fi
 
 (
-  cd $MASTER
-  for branch in $(git branch -r | egrep 'origin/[0-9.x]+') ; do
-    git checkout -b $(echo $branch | sed -es'|origin/||') $branch
-    git checkout master
-  done
+    cd $MASTER
+    for branch in $(git branch -r | egrep 'origin/[0-9.x]+'); do
+        git checkout -b $(echo $branch | sed -es'|origin/||') $branch
+        git checkout master
+    done
 )
 
 # The directory names corresponsing to the branches should match the names

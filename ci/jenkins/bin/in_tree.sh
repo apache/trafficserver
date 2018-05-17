@@ -22,12 +22,12 @@ cd "${WORKSPACE}/src"
 
 autoreconf -fi
 ./configure \
-	--with-user=jenkins \
-	--enable-ccache \
-	--enable-werror \
-	--enable-experimental-plugins \
-	--enable-example-plugins \
-	--enable-wccp
+    --with-user=jenkins \
+    --enable-ccache \
+    --enable-werror \
+    --enable-experimental-plugins \
+    --enable-example-plugins \
+    --enable-wccp
 
 ${ATS_MAKE} -j5 V=1
 #${ATS_MAKE} check VERBOSE=Y

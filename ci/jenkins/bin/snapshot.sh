@@ -21,12 +21,12 @@ cd "${WORKSPACE}/src"
 autoreconf -fi
 
 ./configure \
-	--with-user=jenkins \
-	--enable-ccache \
-	--enable-debug \
-	--enable-werror \
-	--enable-experimental-plugins \
-	--enable-example-plugins
+    --with-user=jenkins \
+    --enable-ccache \
+    --enable-debug \
+    --enable-werror \
+    --enable-experimental-plugins \
+    --enable-example-plugins
 
 ${ATS_MAKE} asf-dist
 
