@@ -24,6 +24,7 @@
                 "${workspaceFolder}/lib/records",
                 "${workspaceFolder}/lib/ts",
                 "${workspaceFolder}/mgmt",
+                "${workspaceFolder}/mgmt/api",
                 "${workspaceFolder}/mgmt/api/include",
                 "${workspaceFolder}/mgmt/utils",
                 "${workspaceFolder}/proxy",
@@ -33,7 +34,8 @@
                 "${workspaceFolder}/proxy/http",
                 "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
-                "${workspaceFolder}/proxy/logging"
+                "${workspaceFolder}/proxy/logging",
+                "${workspaceFolder}/proxy/shared"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -76,6 +78,7 @@
                 "${workspaceFolder}/lib/records",
                 "${workspaceFolder}/lib/ts",
                 "${workspaceFolder}/mgmt",
+                "${workspaceFolder}/mgmt/api",
                 "${workspaceFolder}/mgmt/api/include",
                 "${workspaceFolder}/mgmt/utils",
                 "${workspaceFolder}/proxy",
@@ -85,7 +88,8 @@
                 "${workspaceFolder}/proxy/http",
                 "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
-                "${workspaceFolder}/proxy/logging"
+                "${workspaceFolder}/proxy/logging",
+                "${workspaceFolder}/proxy/shared"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -117,6 +121,7 @@
                 "${workspaceFolder}/lib/records",
                 "${workspaceFolder}/lib/ts",
                 "${workspaceFolder}/mgmt",
+                "${workspaceFolder}/mgmt/api",
                 "${workspaceFolder}/mgmt/api/include",
                 "${workspaceFolder}/mgmt/utils",
                 "${workspaceFolder}/proxy",
@@ -126,7 +131,8 @@
                 "${workspaceFolder}/proxy/http",
                 "${workspaceFolder}/proxy/http/remap",
                 "${workspaceFolder}/proxy/http2",
-                "${workspaceFolder}/proxy/logging"
+                "${workspaceFolder}/proxy/logging",
+                "${workspaceFolder}/proxy/shared"
             ],
             "defines": [
                 "_DEBUG",
