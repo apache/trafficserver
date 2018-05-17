@@ -22,6 +22,7 @@ import json
 import socket
 import ssl
 import time
+import sys
 
 
 def addMethod(self, testName, request_header, functionName):
@@ -131,8 +132,12 @@ def makeHeader(self, requestString, **kwargs):
     return headerStr
 
 
-def uServerUpAndRunning(host, port, isSsl):
-    plain_sock = socket.socket(socket.AF_INET)
+def uServerUpAndRunning(host, port, isSsl, isIPv6):
+    if isIPv6:
+        plain_sock = socket.socket(socket.AF_INET6)
+    else:
+        plain_sock = socket.socket(socket.AF_INET)
+
     sock = ssl.wrap_socket(plain_sock) if isSsl else plain_sock
     try:
         sock.connect((host, port))
@@ -161,19 +166,27 @@ def uServerUpAndRunning(host, port, isSsl):
 AddWhenFunction(uServerUpAndRunning)
 
 
-def MakeOriginServer(obj, name, port=False, ip=False, delay=False, ssl=False, lookup_key='{PATH}', mode='test', options={}):
+def MakeOriginServer(obj, name, port=False, ip='INADDR_LOOPBACK', delay=False, ssl=False, lookup_key='{PATH}', mode='test', options={}):
+    # to get the IP keywords in tools/lib
+    sys.path.append(obj.Variables.AtsTestToolsDir)
+    import lib.IPConstants as IPConstants
+
     server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microServer/uWServer.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     # create Process
     p = obj.Processes.Process(name)
+
     if (port == False):
         port = get_port(p, "Port")
-    if (ip == False):
-        ip = '127.0.0.1'
+
+    ipaddr = IPConstants.getIP(ip)
+
     if (delay == False):
         delay = 0
+
     command = "python3 {0} --data-dir {1} --port {2} --ip_address {3} --delay {4} -m test --ssl {5} --lookupkey '{6}' -m {7}".format(
-        server_path, data_dir, port, ip, delay, ssl, lookup_key, mode)
+        server_path, data_dir, port, ipaddr, delay, ssl, lookup_key, mode)
+
     for flag, value in options.items():
         command += " {} {}".format(flag, value)
 
@@ -186,7 +199,7 @@ def MakeOriginServer(obj, name, port=False, ip=False, delay=False, ssl=False, lo
 
     # Set up health check.
     addResponse(p, "healthcheck.json", {
-        "headers": "GET /ruok HTTP/1.1\r\nHost: {}\r\n\r\n".format(ip),
+        "headers": "GET /ruok HTTP/1.1\r\nHost: {}\r\n\r\n".format(ipaddr),
         "timestamp": "1469733493.993",
         "body": ""
     }, {
@@ -196,7 +209,7 @@ def MakeOriginServer(obj, name, port=False, ip=False, delay=False, ssl=False, lo
         "options": "skipHooks"
     })
 
-    p.Ready = When.uServerUpAndRunning(ip, port, ssl)
+    p.Ready = When.uServerUpAndRunning(ipaddr, port, ssl, IPConstants.isIPv6(ip))
     p.ReturnCode = Any(None, 0)
 
     return p
