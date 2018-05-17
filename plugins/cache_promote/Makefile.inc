@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/cache_promote/cache_promote.la
+pkglib_LTLIBRARIES += cache_promote/cache_promote.la
 
-experimental_cache_promote_cache_promote_la_SOURCES = \
-  experimental/cache_promote/cache_promote.cc
+cache_promote_cache_promote_la_SOURCES = \
+  cache_promote/cache_promote.cc
