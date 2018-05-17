@@ -256,7 +256,7 @@ public:
   {
     size_t newSize = _attempted + length;
 #if defined(__clang_analyzer__)
-    assert(_capacity == 0 || _buf != nullptr); // make clang-analyzer happy.
+    ink_assert(_capacity == 0 || _buf != nullptr); // make clang-analyzer happy.
 #endif
 
     if (newSize <= _capacity) {
