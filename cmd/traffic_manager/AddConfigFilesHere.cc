@@ -75,7 +75,6 @@ initializeRegistry()
   configFiles->addFile("plugin.config", false);
   configFiles->addFile("splitdns.config", false);
   configFiles->addFile("ssl_multicert.config", false);
-  configFiles->addFile("metrics.config", false);
   configFiles->addFile(SSL_SERVER_NAME_CONFIG, false);
   configFiles->registerCallback(testcall);
 }
