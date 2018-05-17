@@ -39,6 +39,10 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     }
   }
 
+  if (quic_packet->packet_number() > this->_largest_received_packet_number) {
+    this->_largest_received_packet_number = quic_packet->packet_number();
+  }
+
   return quic_packet;
 }
 
