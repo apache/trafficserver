@@ -639,6 +639,7 @@ add_executable(ats
         plugins/background_fetch/headers.h
         plugins/background_fetch/rules.cc
         plugins/background_fetch/rules.h
+        plugins/cache_promote/cache_promote.cc
         plugins/conf_remap/conf_remap.cc
         plugins/esi/fetcher/FetchedDataProcessor.h
         plugins/esi/fetcher/HttpDataFetcher.h
@@ -700,7 +701,6 @@ add_executable(ats
         plugins/experimental/balancer/roundrobin.cc
         plugins/experimental/buffer_upload/buffer_upload.cc
         plugins/experimental/cache_key_genid/cache_key_genid.c
-        plugins/experimental/cache_promote/cache_promote.cc
         plugins/experimental/cache_range_requests/cache_range_requests.cc
         plugins/experimental/collapsed_connection/collapsed_connection.cc
         plugins/experimental/collapsed_connection/MurmurHash3.cc
