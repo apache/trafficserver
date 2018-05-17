@@ -142,7 +142,7 @@ Writing
 
 The basic mechanism for writing to a :class:`BufferWriter` is :func:`BufferWriter::write`.
 This is an overloaded method for a character (:code:`char`), a buffer (:code:`void *, size_t`)
-and a string view (:class:`string_view`). Because there is a constructor for :class:`string_view`
+and a string view (:code:`std::string_view`). Because there is a constructor for :code:`std::string_view`
 that takes a :code:`const char*` as a C string, passing a literal string works as expected.
 
 There are also stream operators in the style of C++ stream I/O. The basic template is
@@ -162,7 +162,7 @@ Reading
 Data in the buffer can be extracted using :func:`BufferWriter::data`. This and
 :func:`BufferWriter::size` return a pointer to the start of the buffer and the amount of data
 written to the buffer. This is effectively the same as :func:`BufferWriter::view` which returns a
-:class:`string_view` which covers the output data. Calling :func:`BufferWriter::error` will indicate
+:code:`std::string_view` which covers the output data. Calling :func:`BufferWriter::error` will indicate
 if more data than space available was written (i.e. the buffer would have been overrun).
 :func:`BufferWriter::extent` returns the amount of data written to the :class:`BufferWriter`. This
 can be used in a two pass style with a null / size 0 buffer to determine the buffer size required
@@ -438,8 +438,8 @@ reasonable without the programmer needing to be explicit.
 
    For several specializations the hexadecimal format is taken to indicate printing the value as if
    it were a hexidecimal value, in effect providing a hex dump of the value. This is the case for
-   :class:`string_view` and therefore a hex dump of an object can be done by creating a
-   :class:`string_view` covering the data and then printing it with :code:`{:x}`.
+   :code:`std::string_view` and therefore a hex dump of an object can be done by creating a
+   :code:`std::string_view` covering the data and then printing it with :code:`{:x}`.
 
    The string type ('s' or 'S') is generally used to cause alphanumeric output for a value that would
    normally use numeric output. For instance, a :code:`bool` is normally ``0`` or ``1``. Using the
@@ -504,7 +504,7 @@ this is :ref:`here <bwf-http-debug-name-example>` ::
    }
 
    bw.print("Unexpected event {0} in state {1}[{1:d}] for {2}",
-      event, t_state.current.state, string_view{host, host_len});
+      event, t_state.current.state, std::string_view{host, host_len});
 
 Using :code:`std::string`, which illustrates the advantage of a formatter overloading knowing how to
 get the size from the object and not having to deal with restrictions on the numeric type (e.g.,
@@ -645,7 +645,7 @@ Specialized Types
 
 These are types for which there exists a type specific BWF formatter.
 
-:class:`string_view`
+:code:`std::string_view`
    Generally the contents of the view.
 
    'x' or 'X'
@@ -656,8 +656,8 @@ These are types for which there exists a type specific BWF formatter.
 
    The :token:`precision` is interpreted specially for this type to mean "skip :token:`precision`
    initial characters". When combined with :token:`max` this allows a mechanism for printing
-   substrings of the :class:`string_view`. For instance, to print the 10th through 20th characters
-   the format ``{:.10,20}`` would suffice. Given the method :code:`substr` for :class:`string_view`
+   substrings of the :code:`std::string_view`. For instance, to print the 10th through 20th characters
+   the format ``{:.10,20}`` would suffice. Given the method :code:`substr` for :code:`std::string_view`
    is cheap, it's unclear how useful this is.
 
 :code:`sockaddr const*`
@@ -827,9 +827,9 @@ Reference
 
       Return the number of valid (written) bytes in the buffer.
 
-   .. function:: string_view view() const
+   .. function:: std::string_view view() const
 
-      Return a :class:`string_view` that covers the valid data in the buffer.
+      Return a :code:`std::string_view` that covers the valid data in the buffer.
 
    .. function:: size_t remaining() const
 
@@ -923,7 +923,7 @@ Reference
 .. class:: BWFSpec
 
    This holds a format specifier. It has the parsing logic for a specifier and if the constructor is
-   passed a :class:`string_view` of a specifier, that will parse it and loaded into the class
+   passed a :code:`std::string_view` of a specifier, that will parse it and loaded into the class
    members. This is useful to specialized implementations of :func:`bwformat`.
 
 .. function:: template<typename V> BufferWriter& bwformat(BufferWriter & w, BWFSpec const & spec, V const & v)
@@ -932,7 +932,7 @@ Reference
    supported can be extended by defining an overload of this function for the types.
 
 .. function:: template < typename ... Args > \
-               std::string& bwprint(std::string & s, string_view format, Args &&... args)
+               std::string& bwprint(std::string & s, std::string_view format, Args &&... args)
 
    Generate formatted output in :arg:`s` based on the :arg:`format` and arguments :arg:`args`. The
    string :arg:`s` is adjusted in size to be the exact length as required by the output. If the
@@ -940,7 +940,7 @@ Reference
    a re-allocation.
 
 .. function:: template < typename ... Args > \
-               std::string& bwprintv(std::string & s, string_view format, std::tuple<Args...> args)
+               std::string& bwprintv(std::string & s, std::string_view format, std::tuple<Args...> args)
 
    Generate formatted output in :arg:`s` based on the :arg:`format` and :arg:`args`, which must be a
    tuple of the arguments to use for the format. The string :arg:`s` is adjusted in size to be the
