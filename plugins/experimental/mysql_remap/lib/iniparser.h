@@ -42,9 +42,9 @@
                                                                 Includes
  ---------------------------------------------------------------------------*/
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * The following #include is necessary on many Unixes but not Linux.
