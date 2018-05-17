@@ -40,12 +40,12 @@ mkdir -p BUILDS && cd BUILDS
 set -x
 
 ../configure \
-	--prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
-	--enable-experimental-plugins \
-	--enable-example-plugins \
-	--with-user=jenkins \
-	${CCACHE} \
-	${WERROR} \
-	${DEBUG}
+    --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
+    --enable-experimental-plugins \
+    --enable-example-plugins \
+    --with-user=jenkins \
+    ${CCACHE} \
+    ${WERROR} \
+    ${DEBUG}
 
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
