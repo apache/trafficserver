@@ -16,19 +16,33 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
+import ipaddress
 
-import sys
-if sys.version_info < (3, 5, 0):
-    host.WriteError(
-        "You need python 3.5 or later to run these tests\n", show_stack=False)
+# convenience functions
 
-autest_version ="1.5.3"
-if AuTestVersion() < autest_version:
-    host.WriteError(
-        "Tests need AuTest version {ver} or better\n Please update AuTest:\n  pip install --upgrade autest\n".format(ver=autest_version), show_stack=False)
+IPkw = {'INADDR_LOOPBACK':'127.0.0.1',
+		'IN6ADDR_LOOPBACK':'::1',
+		'INADDR_ANY':'0.0.0.0',
+		'IN6ADDR_ANY':'::'}
+
+def isIPv6(addr):
+	if addr in IPkw:
+		addr = IPkw[addr]
 
 
-Settings.path_argument(["--ats-bin"],
-                       required=True,
-                       help="A user provided directory to ATS bin")
+	return ipaddress.ip_address(addr).version == 6
+
+
+def isIPv4(addr):
+	if addr in IPkw:
+		addr = IPkw[addr]
+
+	return ipaddress.ip_address(addr).version == 4
+
+
+def getIP(addr):
+	if addr in IPkw:
+		addr = IPkw[addr]
+
+	return str(ipaddress.ip_address(addr))
+ 
