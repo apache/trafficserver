@@ -50,13 +50,13 @@ set -x
 # Configure
 autoreconf -if
 ./configure --prefix="${INSTALL}" \
-	--with-user=jenkins \
-	--enable-experimental-plugins \
-	--enable-example-plugins \
-	${CCACHE} \
-	${WCCP} \
-	${WERROR} \
-	${DEBUG}
+    --with-user=jenkins \
+    --enable-experimental-plugins \
+    --enable-example-plugins \
+    ${CCACHE} \
+    ${WCCP} \
+    ${WERROR} \
+    ${DEBUG}
 
 # Build and run regressions
 ${ATS_MAKE} -j4 && ${ATS_MAKE} install
@@ -82,15 +82,15 @@ date
 cd /var/tmp # To be safer
 chmod -R a+r ${SANDBOX}
 if [ "0" != "$status" ]; then
-	if [ -d "$SANDBOX" ]; then
-		find "$SANDBOX" -name \*.db -exec rm {} \;
-		mv "$SANDBOX" /CA/autest
-		echo "Sandbox is available at ${URL}/${AUSB}/"
-	fi
-	exit -1
+    if [ -d "$SANDBOX" ]; then
+        find "$SANDBOX" -name \*.db -exec rm {} \;
+        mv "$SANDBOX" /CA/autest
+        echo "Sandbox is available at ${URL}/${AUSB}/"
+    fi
+    exit -1
 else
-	[ -d "$SANDBOX" ] && rmdir "$SANDBOX"
-	exit 0
+    [ -d "$SANDBOX" ] && rmdir "$SANDBOX"
+    exit 0
 fi
 
 set -x

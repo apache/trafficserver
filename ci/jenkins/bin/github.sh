@@ -45,13 +45,13 @@ set -x
 autoreconf -if
 
 ./configure --prefix="${INSTALL}" \
-	--with-user=jenkins \
-	--enable-experimental-plugins \
-	--enable-example-plugins \
-	${CCACHE} \
-	${WCCP} \
-	${WERROR} \
-	${DEBUG}
+    --with-user=jenkins \
+    --enable-experimental-plugins \
+    --enable-example-plugins \
+    ${CCACHE} \
+    ${WCCP} \
+    ${WERROR} \
+    ${DEBUG}
 
 # Build and run regressions
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
