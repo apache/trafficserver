@@ -1409,7 +1409,8 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
       // Reset CID if a server sent back a new CID
       // FIXME This should happen only once
       QUICConnectionId src_cid = packet->source_cid();
-      if (src_cid.length()) {
+      // FIXME src connection id could be zero ? if so, check packet header type.
+      if (src_cid != QUICConnectionId::ZERO()) {
         if (this->_peer_quic_connection_id != src_cid) {
           this->_peer_quic_connection_id = src_cid;
         }
