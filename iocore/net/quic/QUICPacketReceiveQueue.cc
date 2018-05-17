@@ -23,6 +23,33 @@
 
 #include "QUICPacketReceiveQueue.h"
 
+#include "QUICIntUtil.h"
+
+// FIXME: workaround for coalescing packets
+static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
+static constexpr int LONG_HDR_PKT_NUM_LEN = 4;
+
+static size_t long_hdr_pkt_len(uint8_t *buf) {
+  uint8_t dcil = (buf[5] >> 4);
+  if (dcil) {
+    dcil += 3;
+  }
+  uint8_t scil = (buf[5] & 0x0F);
+  if (scil) {
+    scil += 3;
+  }
+  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID;
+  offset += dcil;
+  offset += scil;
+
+  size_t payload_len = QUICIntUtil::read_QUICVariableInt(buf + offset);
+  offset += QUICVariableInt::size(buf + offset);
+  offset += LONG_HDR_PKT_NUM_LEN;
+  offset += payload_len;
+
+  return offset;
+}
+
 QUICPacketReceiveQueue::QUICPacketReceiveQueue(QUICPacketFactory &packet_factory) : _packet_factory(packet_factory) {}
 
 void
@@ -35,25 +62,63 @@ QUICPacketUPtr
 QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
 {
   QUICPacketUPtr quic_packet = QUICPacketFactory::create_null_packet();
-  UDPPacket *udp_packet      = this->_queue.dequeue();
-  if (!udp_packet) {
-    result = QUICPacketCreationResult::NOT_READY;
-    return quic_packet;
+  UDPPacket *udp_packet = nullptr;
+
+  // FIXME: avoid this copy
+  // Copy payload of UDP packet to this->_payload once
+  if (!this->_payload) {
+    udp_packet = this->_queue.dequeue();
+    if (!udp_packet) {
+      result = QUICPacketCreationResult::NOT_READY;
+      return quic_packet;
+    }
+
+    // Create a QUIC packet
+    this->_from = udp_packet->from;
+    this->_payload_len = udp_packet->getPktLength();
+    this->_payload = ats_unique_malloc(this->_payload_len);
+    IOBufferBlock *b   = udp_packet->getIOBlockChain();
+    size_t written     = 0;
+    while (b) {
+      memcpy(this->_payload.get() + written, b->buf(), b->read_avail());
+      written += b->read_avail();
+      b = b->next.get();
+    }
   }
 
-  // Create a QUIC packet
-  ats_unique_buf pkt = ats_unique_malloc(udp_packet->getPktLength());
-  IOBufferBlock *b   = udp_packet->getIOBlockChain();
-  size_t written     = 0;
-  while (b) {
-    memcpy(pkt.get() + written, b->buf(), b->read_avail());
-    written += b->read_avail();
-    b = b->next.get();
+  ats_unique_buf pkt = {nullptr, [](void *p) { ats_free(p); }};
+  size_t pkt_len = 0;
+
+  if (QUICTypeUtil::has_long_header(this->_payload.get())) {
+    if (QUICTypeUtil::has_long_header(this->_payload.get() + this->_offset)) {
+      pkt_len = long_hdr_pkt_len(this->_payload.get() + this->_offset);
+    } else {
+      pkt_len = this->_payload_len - this->_offset;
+    }
+
+    if (pkt_len < this->_payload_len) {
+      pkt = ats_unique_malloc(pkt_len);
+      memcpy(pkt.get(), this->_payload.get() + this->_offset, pkt_len);
+      this->_offset += pkt_len;
+
+      if (this->_offset >= this->_payload_len) {
+        this->_payload.release();
+      }
+    } else {
+      pkt = std::move(this->_payload);
+      pkt_len = this->_payload_len;
+    }
+  } else {
+    pkt = std::move(this->_payload);
+    pkt_len = this->_payload_len;
   }
 
   quic_packet =
-    this->_packet_factory.create(udp_packet->from, std::move(pkt), written, this->largest_received_packet_number(), result);
-  udp_packet->free();
+    this->_packet_factory.create(this->_from, std::move(pkt), pkt_len, this->largest_received_packet_number(), result);
+
+  if (udp_packet) {
+    udp_packet->free();
+  }
 
   if (result == QUICPacketCreationResult::NOT_READY) {
     // FIXME: unordered packet should be buffered and retried

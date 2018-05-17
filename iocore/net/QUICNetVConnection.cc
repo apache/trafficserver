@@ -849,11 +849,12 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
 QUICErrorUPtr
 QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packet)
 {
-  if (packet->size() < MINIMUM_INITIAL_PACKET_SIZE) {
-    QUICConDebug("Packet size is smaller than the minimum initial packet size");
-    // Ignore the packet
-    return QUICErrorUPtr(new QUICNoError());
-  }
+  // QUIC packet could be smaller than MINIMUM_INITIAL_PACKET_SIZE when coalescing packets
+  // if (packet->size() < MINIMUM_INITIAL_PACKET_SIZE) {
+  //   QUICConDebug("Packet size is smaller than the minimum initial packet size");
+  //   // Ignore the packet
+  //   return QUICErrorUPtr(new QUICNoError());
+  // }
 
   // Start handshake
   QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
