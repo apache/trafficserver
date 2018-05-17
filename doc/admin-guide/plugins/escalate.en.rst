@@ -44,11 +44,8 @@ when the origin server in the remap rule returns a 401,
 Installation
 ------------
 
-This plugin is only built if the configure option ::
-
-    --enable-experimental-plugins
-
-is given at build time.
+This plugin is considered stable and is included with |TS| by default. There
+are no special steps necessary for its installation.
 
 Example
 -------
