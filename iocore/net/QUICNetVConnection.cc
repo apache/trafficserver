@@ -1315,7 +1315,7 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   switch (type) {
   case QUICPacketType::INITIAL:
     ink_assert(this->get_context() == NET_VCONNECTION_OUT);
-    packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->_original_quic_connection_id,
+    packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->_quic_connection_id,
                                                          this->largest_acked_packet_number(), std::move(buf), len);
     this->_handshake_handler->handleEvent(QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE, nullptr);
 
@@ -1408,10 +1408,10 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     if (this->direction() == NET_VCONNECTION_OUT) {
       // Reset CID if a server sent back a new CID
       // FIXME This should happen only once
-      QUICConnectionId cid = packet->destination_cid();
-      if (cid.length()) {
-        if (this->_quic_connection_id != cid) {
-          this->_quic_connection_id = cid;
+      QUICConnectionId src_cid = packet->source_cid();
+      if (src_cid.length()) {
+        if (this->_peer_quic_connection_id != src_cid) {
+          this->_peer_quic_connection_id = src_cid;
         }
       }
     }
