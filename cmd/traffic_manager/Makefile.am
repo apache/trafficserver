@@ -16,9 +16,6 @@
 #  limitations under the License.
 
 bin_PROGRAMS = traffic_manager
-check_PROGRAMS = test_metrics
-
-TESTS = $(check_PROGRAMS)
 
 AM_CPPFLAGS += \
 	$(LUAJIT_CPPFLAGS) \
@@ -43,7 +40,6 @@ AM_LDFLAGS += \
 
 traffic_manager_SOURCES = \
 	AddConfigFilesHere.cc \
-	metrics.h \
 	traffic_manager.cc
 
 traffic_manager_LDADD = \
@@ -57,9 +53,6 @@ traffic_manager_LDADD = \
 
 AM_LDFLAGS += \
 	$(LUAJIT_LDFLAGS)
-
-traffic_manager_SOURCES += \
-	metrics.cc
 
 traffic_manager_LDADD += \
 	$(top_builddir)/lib/bindings/libbindings.la
@@ -79,25 +72,10 @@ traffic_manager_LDADD +=\
 	@LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
 	-lm
 
-test_metrics_SOURCES = test_metrics.cc metrics.cc
-test_metrics_LDADD = \
-	$(top_builddir)/mgmt/libmgmt_lm.la \
-	$(top_builddir)/lib/records/librecords_lm.a \
-	$(top_builddir)/lib/bindings/libbindings.la \
-	$(top_builddir)/lib/luajit/src/libluajit.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	@LIBTCL@ @LIBPCRE@
-
 # Must do it this way or the dependencies aren't detected.
 if BUILD_WCCP
 
 traffic_manager_LDADD += \
-	$(top_builddir)/lib/wccp/libwccp.a \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
-	@OPENSSL_LIBS@
-
-test_metrics_LDADD += \
 	$(top_builddir)/lib/wccp/libwccp.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@OPENSSL_LIBS@

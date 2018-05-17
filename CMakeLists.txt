@@ -64,7 +64,6 @@ add_executable(traffic_crashlog
 add_executable(traffic_ctl
         cmd/traffic_ctl/alarm.cc
         cmd/traffic_ctl/config.cc
-        cmd/traffic_ctl/metric.cc
         cmd/traffic_ctl/plugin.cc
         cmd/traffic_ctl/server.cc
         cmd/traffic_ctl/storage.cc
@@ -84,9 +83,6 @@ add_executable(traffic_layout
 
 add_executable(traffic_manager
         cmd/traffic_manager/AddConfigFilesHere.cc
-        cmd/traffic_manager/metrics.cc
-        cmd/traffic_manager/metrics.h
-        cmd/traffic_manager/test_metrics.cc
         cmd/traffic_manager/traffic_manager.cc
 )
 
@@ -336,8 +332,6 @@ add_executable(ats
         lib/bindings/bindings.h
         lib/bindings/lua.cc
         lib/bindings/lua.h
-        lib/bindings/metrics.cc
-        lib/bindings/metrics.h
         lib/bindings/repl.cc
         lib/bindings/repl.h
         lib/cppapi/include/atscppapi/Async.h

@@ -54,7 +54,6 @@ cmd/traffic_ctl/traffic_ctl
 cmd/traffic_crashlog/traffic_crashlog
 cmd/traffic_top/traffic_top
 cmd/traffic_manager/traffic_manager
-cmd/traffic_manager/test_metrics
 cmd/traffic_layout/traffic_layout
 cmd/traffic_via/traffic_via
 cmd/traffic_wccp/traffic_wccp
