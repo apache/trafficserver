@@ -30,7 +30,6 @@ Configuration Files
    ip_allow.config.en
    log_hosts.config.en
    logging.config.en
-   metrics.config.en
    parent.config.en
    plugin.config.en
    records.config.en
@@ -59,9 +58,6 @@ Configuration Files
 
 :doc:`logging.config.en`
    Defines custom log file formats, filters, and processing options.
-
-:doc:`metrics.config.en`
-   Defines custom dynamic metrics using Lua scripting.
 
 :doc:`parent.config.en`
    Configures parent proxies in hierarchical caching layouts.
