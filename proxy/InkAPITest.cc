@@ -6742,16 +6742,17 @@ transformable(TSHttpTxn txnp, TransformTestData *data)
 static void
 transform_add(TSHttpTxn txnp, TransformTestData *test_data)
 {
-  TSVConn connp;
-  auto *data = new AppendTransformTestData;
-
-  data->test_data = test_data;
-  connp           = TSTransformCreate(transformtest_transform, txnp);
+  TSVConn connp = TSTransformCreate(transformtest_transform, txnp);
   if (connp == nullptr) {
-    SDK_RPRINT(data->test_data->test, "TSHttpTxnTransform", "", TC_FAIL, "Unable to create Transformation.");
+    SDK_RPRINT(test_data->test, "TSHttpTxnTransform", "", TC_FAIL, "Unable to create Transformation.");
     return;
   }
+
+  // Add data to the continuation
+  auto *data      = new AppendTransformTestData;
+  data->test_data = test_data;
   TSContDataSet(connp, data);
+
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
   return;
 }
