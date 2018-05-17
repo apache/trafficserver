@@ -20,7 +20,7 @@
 .. _admin-plugins-compress:
 
 Compress Plugin
-***********
+***************
 
 This plugin adds compression and decompression options to both origin and cache
 responses.
@@ -60,31 +60,31 @@ This plugin can be used as either global plugin or remap plugin.
 It can be enabled globally for |TS| by adding the following to your
 :file:`plugin.config`::
 
-    compress.so
+   compress.so
 
 With no further options, this will enable the following default behavior:
 
--  Enable caching of both compressed and uncompressed versions of origin
+*  Enable caching of both compressed and uncompressed versions of origin
    responses as :term:`alternates <alternate>`.
 
--  Compress objects with `text/*` content types for every origin.
+*  Compress objects with `text/*` content types for every origin.
 
--  Don't hide `Accept` encoding headers from origin servers (for an offloading
+*  Don't hide `Accept` encoding headers from origin servers (for an offloading
    reverse proxy).
 
--  No URLs are disallowed from compression.
+*  No URLs are disallowed from compression.
 
--  Disable flush (flush compressed content to client).
+*  Disable flush (flush compressed content to client).
 
 Alternatively, a configuration may be specified (shown here using the sample
 configuration provided with the plugin's source)::
 
-    compress.so <path-to-plugin>/sample.compress.config
+   compress.so <path-to-plugin>/sample.compress.config
 
 This can be used as remap plugin by pointing to config file in remap rule
 :file:`remap.config`:: (relative to the ts:cv:`proxy.config.config_dir`)
 
-    @plugin=compress.so @pparam=sample.compress.config
+   @plugin=compress.so @pparam=sample.compress.config
 
 The following sections detail the options you may specify in the plugin's
 configuration file. Options may be used globally, or may be specified on a
@@ -138,10 +138,10 @@ When set to ``true`` this option causes the plugin to strip the request's
 ``Accept-Encoding`` header when contacting the origin server. Setting this option to ``false``
 will leave the header intact if the client provided it.
 
-- To ease the load on the origins.
+*  To ease the load on the origins.
 
-- For when the proxy parses responses, and the resulting compression and
-  decompression is wasteful.
+*  For when the proxy parses responses, and the resulting compression and
+   decompression is wasteful.
 
 supported-algorithms
 ----------------------
@@ -162,53 +162,53 @@ To establish global defaults for all site requests passing through |TS|, while
 overriding just a handful for requests to content at ``www.example.com``, you
 might create a configuration with the following options::
 
-    # Set some global options first
-    cache true
-    remove-accept-encoding false
-    compressible-content-type text/*
-    compressible-content-type application/json
-    flush false
+   # Set some global options first
+   cache true
+   remove-accept-encoding false
+   compressible-content-type text/*
+   compressible-content-type application/json
+   flush false
 
-    # Now set a configuration for www.example.com
-    [www.example.com]
-    cache false
-    remove-accept-encoding true
-    allow !/notthis/*.js
-    allow /this/*.js
-    flush true
+   # Now set a configuration for www.example.com
+   [www.example.com]
+   cache false
+   remove-accept-encoding true
+   allow !/notthis/*.js
+   allow /this/*.js
+   flush true
 
-    # Allows brotli encoded response from origin but is not capable of brotli compression
-    [brotli.allowed.com]
-    enabled true
-    compressible-content-type text/*
-    compressible-content-type application/json
-    flush true
-    supported-algorithms gzip,deflate
+   # Allows brotli encoded response from origin but is not capable of brotli compression
+   [brotli.allowed.com]
+   enabled true
+   compressible-content-type text/*
+   compressible-content-type application/json
+   flush true
+   supported-algorithms gzip,deflate
 
-    # Supports brotli compression
-    [brotli.compress.com]
-    enabled true
-    compressible-content-type text/*
-    compressible-content-type application/json
-    flush true
-    supported-algorithms br,gzip
+   # Supports brotli compression
+   [brotli.compress.com]
+   enabled true
+   compressible-content-type text/*
+   compressible-content-type application/json
+   flush true
+   supported-algorithms br,gzip
 
-    # This origin does it all
-    [bar.example.com]
-    enabled false
+   # This origin does it all
+   [bar.example.com]
+   enabled false
 
 Assuming the above options are in a file at ``/etc/trafficserver/compress.config``
 the plugin would be enabled for |TS| in :file:`plugin.config` as::
 
-    compress.so /etc/trafficserver/compress.config
+   compress.so /etc/trafficserver/compress.config
 
 Alternatively, the compress plugin can be used as a remap plugin: ::
 
-  map http://www.example.com http://origin.example.com \
-    @plugin=compress.so @pparam=compress.config
+   map http://www.example.com http://origin.example.com \
+      @plugin=compress.so @pparam=compress.config
 
-    $ cat /etc/trafficserver/compress.config
-    enabled true
-    cache true
-    compressible-content-type *xml
-    supported-algorithms
+   $ cat /etc/trafficserver/compress.config
+   enabled true
+   cache true
+   compressible-content-type *xml
+   supported-algorithms
