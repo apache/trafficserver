@@ -1404,18 +1404,18 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 {
   QUICPacketUPtr packet = this->_packet_recv_queue.dequeue(result);
 
-  if (this->direction() == NET_VCONNECTION_OUT) {
-    // Reset CID if a server sent back a new CID
-    // FIXME This should happen only once
-    QUICConnectionId cid = packet->destination_cid();
-    if (cid.length()) {
-      if (this->_quic_connection_id != cid) {
-        this->_quic_connection_id = cid;
+  if (result == QUICPacketCreationResult::SUCCESS) {
+    if (this->direction() == NET_VCONNECTION_OUT) {
+      // Reset CID if a server sent back a new CID
+      // FIXME This should happen only once
+      QUICConnectionId cid = packet->destination_cid();
+      if (cid.length()) {
+        if (this->_quic_connection_id != cid) {
+          this->_quic_connection_id = cid;
+        }
       }
     }
-  }
 
-  if (result == QUICPacketCreationResult::SUCCESS) {
     this->_last_received_packet_type = packet->type();
     this->_packet_factory.set_dcil(packet->destination_cid().length());
   }
