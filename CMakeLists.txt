@@ -708,7 +708,6 @@ add_executable(ats
         plugins/experimental/collapsed_connection/P_collapsed_connection.h
         plugins/experimental/collapsed_forwarding/collapsed_forwarding.cc
         plugins/experimental/custom_redirect/custom_redirect.cc
-        plugins/experimental/escalate/escalate.cc
         plugins/experimental/geoip_acl/acl.cc
         plugins/experimental/geoip_acl/acl.h
         plugins/experimental/geoip_acl/geoip_acl.cc
@@ -1410,6 +1409,10 @@ add_library(plugin_cachekey SHARED
         plugins/cachekey/pattern.cc
         plugins/cachekey/pattern.h
         plugins/cachekey/plugin.cc
+        )
+
+add_library(plugin_escalate SHARED
+        plugins/escalate/escalate.cc
         )
 
 # CacheTool
