@@ -58,7 +58,6 @@ port\.h
 ^HashFNV.cc$
 ^HashSip.cc$
 ^TsConfigGrammar[.][ch]$
-^luajit$
 ^.*crt$
 ^.*key$
 ^protocol_binary.h$

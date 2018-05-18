@@ -53,8 +53,7 @@ include_directories(lib
         mgmt/api
         mgmt/utils
         mgmt/api/include
-        proxy/api
-        lib/luajit/src)
+        proxy/api)
 
 add_executable(traffic_crashlog
         src/traffic_crashlog/procinfo.cc
@@ -353,12 +352,6 @@ add_executable(ats
         iocore/utils/Machine.cc
         iocore/utils/OneWayMultiTunnel.cc
         iocore/utils/OneWayTunnel.cc
-        lib/bindings/bindings.cc
-        lib/bindings/bindings.h
-        lib/bindings/lua.cc
-        lib/bindings/lua.h
-        lib/bindings/repl.cc
-        lib/bindings/repl.h
         lib/cppapi/include/atscppapi/Async.h
         lib/cppapi/include/atscppapi/AsyncHttpFetch.h
         lib/cppapi/include/atscppapi/AsyncTimer.h
@@ -410,147 +403,6 @@ add_executable(ats
         lib/cppapi/Url.cc
         lib/cppapi/utils.cc
         lib/cppapi/utils_internal.cc
-        lib/luajit/dynasm/dasm_arm.h
-        lib/luajit/dynasm/dasm_mips.h
-        lib/luajit/dynasm/dasm_ppc.h
-        lib/luajit/dynasm/dasm_proto.h
-        lib/luajit/dynasm/dasm_x86.h
-        lib/luajit/src/host/buildvm.c
-        lib/luajit/src/host/buildvm.h
-        lib/luajit/src/host/buildvm_asm.c
-        lib/luajit/src/host/buildvm_fold.c
-        lib/luajit/src/host/buildvm_lib.c
-        lib/luajit/src/host/buildvm_peobj.c
-        lib/luajit/src/host/minilua.c
-        lib/luajit/src/lauxlib.h
-        lib/luajit/src/lib_aux.c
-        lib/luajit/src/lib_base.c
-        lib/luajit/src/lib_bit.c
-        lib/luajit/src/lib_debug.c
-        lib/luajit/src/lib_ffi.c
-        lib/luajit/src/lib_init.c
-        lib/luajit/src/lib_io.c
-        lib/luajit/src/lib_jit.c
-        lib/luajit/src/lib_math.c
-        lib/luajit/src/lib_os.c
-        lib/luajit/src/lib_package.c
-        lib/luajit/src/lib_string.c
-        lib/luajit/src/lib_table.c
-        lib/luajit/src/lj_alloc.c
-        lib/luajit/src/lj_alloc.h
-        lib/luajit/src/lj_api.c
-        lib/luajit/src/lj_arch.h
-        lib/luajit/src/lj_asm.c
-        lib/luajit/src/lj_asm.h
-        lib/luajit/src/lj_asm_arm.h
-        lib/luajit/src/lj_asm_mips.h
-        lib/luajit/src/lj_asm_ppc.h
-        lib/luajit/src/lj_asm_x86.h
-        lib/luajit/src/lj_bc.c
-        lib/luajit/src/lj_bc.h
-        lib/luajit/src/lj_bcdump.h
-        lib/luajit/src/lj_bcread.c
-        lib/luajit/src/lj_bcwrite.c
-        lib/luajit/src/lj_carith.c
-        lib/luajit/src/lj_carith.h
-        lib/luajit/src/lj_ccall.c
-        lib/luajit/src/lj_ccall.h
-        lib/luajit/src/lj_ccallback.c
-        lib/luajit/src/lj_ccallback.h
-        lib/luajit/src/lj_cconv.c
-        lib/luajit/src/lj_cconv.h
-        lib/luajit/src/lj_cdata.c
-        lib/luajit/src/lj_cdata.h
-        lib/luajit/src/lj_char.c
-        lib/luajit/src/lj_char.h
-        lib/luajit/src/lj_clib.c
-        lib/luajit/src/lj_clib.h
-        lib/luajit/src/lj_cparse.c
-        lib/luajit/src/lj_cparse.h
-        lib/luajit/src/lj_crecord.c
-        lib/luajit/src/lj_crecord.h
-        lib/luajit/src/lj_ctype.c
-        lib/luajit/src/lj_ctype.h
-        lib/luajit/src/lj_debug.c
-        lib/luajit/src/lj_debug.h
-        lib/luajit/src/lj_def.h
-        lib/luajit/src/lj_dispatch.c
-        lib/luajit/src/lj_dispatch.h
-        lib/luajit/src/lj_emit_arm.h
-        lib/luajit/src/lj_emit_mips.h
-        lib/luajit/src/lj_emit_ppc.h
-        lib/luajit/src/lj_emit_x86.h
-        lib/luajit/src/lj_err.c
-        lib/luajit/src/lj_err.h
-        lib/luajit/src/lj_errmsg.h
-        lib/luajit/src/lj_ff.h
-        lib/luajit/src/lj_ffrecord.c
-        lib/luajit/src/lj_ffrecord.h
-        lib/luajit/src/lj_frame.h
-        lib/luajit/src/lj_func.c
-        lib/luajit/src/lj_func.h
-        lib/luajit/src/lj_gc.c
-        lib/luajit/src/lj_gc.h
-        lib/luajit/src/lj_gdbjit.c
-        lib/luajit/src/lj_gdbjit.h
-        lib/luajit/src/lj_ir.c
-        lib/luajit/src/lj_ir.h
-        lib/luajit/src/lj_ircall.h
-        lib/luajit/src/lj_iropt.h
-        lib/luajit/src/lj_jit.h
-        lib/luajit/src/lj_lex.c
-        lib/luajit/src/lj_lex.h
-        lib/luajit/src/lj_lib.c
-        lib/luajit/src/lj_lib.h
-        lib/luajit/src/lj_load.c
-        lib/luajit/src/lj_mcode.c
-        lib/luajit/src/lj_mcode.h
-        lib/luajit/src/lj_meta.c
-        lib/luajit/src/lj_meta.h
-        lib/luajit/src/lj_obj.c
-        lib/luajit/src/lj_obj.h
-        lib/luajit/src/lj_opt_dce.c
-        lib/luajit/src/lj_opt_fold.c
-        lib/luajit/src/lj_opt_loop.c
-        lib/luajit/src/lj_opt_mem.c
-        lib/luajit/src/lj_opt_narrow.c
-        lib/luajit/src/lj_opt_sink.c
-        lib/luajit/src/lj_opt_split.c
-        lib/luajit/src/lj_parse.c
-        lib/luajit/src/lj_parse.h
-        lib/luajit/src/lj_record.c
-        lib/luajit/src/lj_record.h
-        lib/luajit/src/lj_snap.c
-        lib/luajit/src/lj_snap.h
-        lib/luajit/src/lj_state.c
-        lib/luajit/src/lj_state.h
-        lib/luajit/src/lj_str.c
-        lib/luajit/src/lj_str.h
-        lib/luajit/src/lj_strscan.c
-        lib/luajit/src/lj_strscan.h
-        lib/luajit/src/lj_tab.c
-        lib/luajit/src/lj_tab.h
-        lib/luajit/src/lj_target.h
-        lib/luajit/src/lj_target_arm.h
-        lib/luajit/src/lj_target_mips.h
-        lib/luajit/src/lj_target_ppc.h
-        lib/luajit/src/lj_target_x86.h
-        lib/luajit/src/lj_trace.c
-        lib/luajit/src/lj_trace.h
-        lib/luajit/src/lj_traceerr.h
-        lib/luajit/src/lj_udata.c
-        lib/luajit/src/lj_udata.h
-        lib/luajit/src/lj_vm.h
-        lib/luajit/src/lj_vmevent.c
-        lib/luajit/src/lj_vmevent.h
-        lib/luajit/src/lj_vmmath.c
-        lib/luajit/src/ljamalg.c
-        lib/luajit/src/lua.h
-        lib/luajit/src/lua.hpp
-        lib/luajit/src/luaconf.h
-        lib/luajit/src/luajit.c
-        lib/luajit/src/luajit.h
-        lib/luajit/src/lualib.h
         lib/records/I_RecAlarms.h
         lib/records/I_RecCore.h
         lib/records/I_RecDefs.h
@@ -1031,8 +883,6 @@ add_executable(ats
         proxy/logging/LogAccessHttp.h
         proxy/logging/LogAccessTest.cc
         proxy/logging/LogAccessTest.h
-        proxy/logging/LogBindings.cc
-        proxy/logging/LogBindings.h
         proxy/logging/LogBuffer.cc
         proxy/logging/LogBuffer.h
         proxy/logging/LogBufferSink.h
@@ -1367,8 +1217,6 @@ add_library(libtsconfig SHARED
         lib/tsconfig/TsConfigGrammar.c
         lib/tsconfig/TsConfigGrammar.h
         lib/tsconfig/TsConfigLexer.h
-        lib/tsconfig/TsConfigLua.cc
-        lib/tsconfig/TsConfigLua.h
         lib/tsconfig/TsConfigParseEvents.h
         lib/tsconfig/TsConfigSyntax.c
         lib/tsconfig/TsConfigTypes.h

@@ -34,11 +34,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES)
 
-# NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
-# building libtool archives, change these to only apply to the executables.
-AM_LDFLAGS += \
-	$(LUAJIT_LDFLAGS)
-
 noinst_HEADERS = \
 	Show.h
 
