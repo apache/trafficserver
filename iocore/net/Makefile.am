@@ -52,7 +52,6 @@ test_certlookup_LDADD = \
 
 test_UDPNet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	$(LUAJIT_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
@@ -163,7 +162,6 @@ libinknet_a_SOURCES += \
 endif
 
 libinknet_a_LIBADD = \
-	$(top_builddir)/lib/luajit/src/libluajit.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la
 
 include $(top_srcdir)/build/tidy.mk

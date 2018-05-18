@@ -41,20 +41,9 @@ traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/lib/bindings/libbindings.la
-
-if BUILD_LUAJIT
-traffic_logcat_traffic_logcat_LDADD += \
-	$(top_builddir)/lib/luajit/src/libluajit.a
-endif
+	$(top_builddir)/lib/ts/libtsutil.la
 
 traffic_logcat_traffic_logcat_LDADD += \
 	@LIBTCL@ @HWLOC_LIBS@ \
 	@LIB_YAMLCPP@ \
 	@LIBPROFILER@ -lm
-
-if SYSTEM_LUAJIT
-traffic_logcat_traffic_logcat_LDADD += \
-    @LIBLUAJIT@
-endif

@@ -30,14 +30,10 @@ traffic_manager_traffic_manager_CPPFLAGS = \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES)
 
-if BUILD_LUAJIT
-traffic_manager_traffic_manager_CPPFLAGS += \
-	-I$(abs_top_srcdir)/lib/luajit/src
-endif
-
 traffic_manager_traffic_manager_LDFLAGS = \
     $(AM_LDFLAGS) \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ \
+	@LIB_YAMLCPP@
 
 traffic_manager_traffic_manager_SOURCES = \
 	traffic_manager/AddConfigFilesHere.cc \
@@ -55,29 +51,10 @@ traffic_manager_traffic_manager_LDADD = \
 	@LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
 	-lm
 
-if BUILD_LUAJIT
-traffic_manager_traffic_manager_LDFLAGS += \
-    $(AM_LDFLAGS) \
-	$(LUAJIT_LDFLAGS)
-endif
-
-if SYSTEM_LUAJIT
-traffic_manager_traffic_manager_LDADD += \
-	@LIBLUAJIT@
-endif
-
 # Must do it this way or the dependencies aren't detected.
 if BUILD_WCCP
 traffic_manager_traffic_manager_LDADD += \
 	$(top_builddir)/lib/wccp/libwccp.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@OPENSSL_LIBS@
-endif
-
-traffic_manager_traffic_manager_LDADD += \
-	$(top_builddir)/lib/bindings/libbindings.la
-
-if BUILD_LUAJIT
-traffic_manager_traffic_manager_LDADD += \
-	$(top_builddir)/lib/luajit/src/libluajit.a
 endif

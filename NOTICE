@@ -55,11 +55,6 @@ Copyright (C) 2014 Comcast
 
 ~~~
 
-LuaJIT -- a Just-In-Time Compiler for Lua. http://luajit.org/
-Copyright (C) 2005-2014 Mike Pall. All rights reserved.
-
-~~~
-
 collapsed_collapsing: Plugin for connection collapsing to origin
 Copyright (C) 2014 Yahoo! Inc.  All rights reserved.
 
