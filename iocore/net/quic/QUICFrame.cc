@@ -2027,7 +2027,7 @@ QUICFrameFactory::create_path_challenge_frame(const uint8_t *data)
   memcpy(buf.get(), data, QUICPathChallengeFrame::DATA_LEN);
 
   QUICPathChallengeFrame *frame = quicPathChallengeFrameAllocator.alloc();
-  new (frame) QUICPathChallengeFrame(std::move(buf));
+  new (frame) QUICPathChallengeFrame(std::move(buf), false);
   return std::unique_ptr<QUICPathChallengeFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_path_challenge_frame);
 }
 
@@ -2038,7 +2038,7 @@ QUICFrameFactory::create_path_response_frame(const uint8_t *data)
   memcpy(buf.get(), data, QUICPathResponseFrame::DATA_LEN);
 
   QUICPathResponseFrame *frame = quicPathResponseFrameAllocator.alloc();
-  new (frame) QUICPathResponseFrame(std::move(buf));
+  new (frame) QUICPathResponseFrame(std::move(buf), false);
   return std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_path_challenge_frame);
 }
 

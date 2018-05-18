@@ -1147,7 +1147,7 @@ QUICNetVConnection::_packetize_frames()
 
   bool will_be_ack_only = true;
   if (this->_connection_error || this->_packet_retransmitter.will_generate_frame() ||
-      this->_stream_manager->will_generate_frame()) {
+      this->_stream_manager->will_generate_frame() || this->_path_validator->will_generate_frame()) {
     will_be_ack_only = false;
   }
 
@@ -1159,6 +1159,7 @@ QUICNetVConnection::_packetize_frames()
   } else {
     frame = this->_ack_frame_creator.generate_frame(UINT16_MAX, this->_maximum_stream_frame_data_size());
   }
+
   if (frame != nullptr) {
     ++frame_count;
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
