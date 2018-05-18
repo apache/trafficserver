@@ -784,60 +784,6 @@ add_executable(ats
         plugins/experimental/tls_bridge/regex.cc
         plugins/experimental/tls_bridge/regex.h
         plugins/experimental/tls_bridge/tls_bridge.cc
-        plugins/experimental/ts_lua/ts_lua.c
-        plugins/experimental/ts_lua/ts_lua_cached_response.c
-        plugins/experimental/ts_lua/ts_lua_cached_response.h
-        plugins/experimental/ts_lua/ts_lua_client_request.c
-        plugins/experimental/ts_lua/ts_lua_client_request.h
-        plugins/experimental/ts_lua/ts_lua_client_response.c
-        plugins/experimental/ts_lua/ts_lua_client_response.h
-        plugins/experimental/ts_lua/ts_lua_common.h
-        plugins/experimental/ts_lua/ts_lua_constant.c
-        plugins/experimental/ts_lua/ts_lua_constant.h
-        plugins/experimental/ts_lua/ts_lua_context.c
-        plugins/experimental/ts_lua/ts_lua_context.h
-        plugins/experimental/ts_lua/ts_lua_coroutine.c
-        plugins/experimental/ts_lua/ts_lua_coroutine.h
-        plugins/experimental/ts_lua/ts_lua_crypto.c
-        plugins/experimental/ts_lua/ts_lua_crypto.h
-        plugins/experimental/ts_lua/ts_lua_fetch.c
-        plugins/experimental/ts_lua/ts_lua_fetch.h
-        plugins/experimental/ts_lua/ts_lua_hook.c
-        plugins/experimental/ts_lua/ts_lua_hook.h
-        plugins/experimental/ts_lua/ts_lua_http.c
-        plugins/experimental/ts_lua/ts_lua_http.h
-        plugins/experimental/ts_lua/ts_lua_http_cntl.c
-        plugins/experimental/ts_lua/ts_lua_http_cntl.h
-        plugins/experimental/ts_lua/ts_lua_http_config.c
-        plugins/experimental/ts_lua/ts_lua_http_config.h
-        plugins/experimental/ts_lua/ts_lua_http_intercept.c
-        plugins/experimental/ts_lua/ts_lua_http_intercept.h
-        plugins/experimental/ts_lua/ts_lua_http_milestone.c
-        plugins/experimental/ts_lua/ts_lua_http_milestone.h
-        plugins/experimental/ts_lua/ts_lua_io.c
-        plugins/experimental/ts_lua/ts_lua_io.h
-        plugins/experimental/ts_lua/ts_lua_log.c
-        plugins/experimental/ts_lua/ts_lua_log.h
-        plugins/experimental/ts_lua/ts_lua_mgmt.c
-        plugins/experimental/ts_lua/ts_lua_mgmt.h
-        plugins/experimental/ts_lua/ts_lua_misc.c
-        plugins/experimental/ts_lua/ts_lua_misc.h
-        plugins/experimental/ts_lua/ts_lua_package.c
-        plugins/experimental/ts_lua/ts_lua_package.h
-        plugins/experimental/ts_lua/ts_lua_remap.c
-        plugins/experimental/ts_lua/ts_lua_remap.h
-        plugins/experimental/ts_lua/ts_lua_server_request.c
-        plugins/experimental/ts_lua/ts_lua_server_request.h
-        plugins/experimental/ts_lua/ts_lua_server_response.c
-        plugins/experimental/ts_lua/ts_lua_server_response.h
-        plugins/experimental/ts_lua/ts_lua_stat.c
-        plugins/experimental/ts_lua/ts_lua_stat.h
-        plugins/experimental/ts_lua/ts_lua_string.c
-        plugins/experimental/ts_lua/ts_lua_string.h
-        plugins/experimental/ts_lua/ts_lua_transform.c
-        plugins/experimental/ts_lua/ts_lua_transform.h
-        plugins/experimental/ts_lua/ts_lua_util.c
-        plugins/experimental/ts_lua/ts_lua_util.h
         plugins/experimental/uri_signing/config.c
         plugins/experimental/uri_signing/config.h
         plugins/experimental/uri_signing/cookie.c
@@ -886,6 +832,60 @@ add_executable(ats
         plugins/header_rewrite/value.h
         plugins/healthchecks/healthchecks.c
         plugins/libloader/libloader.c
+        plugins/lua/ts_lua.c
+        plugins/lua/ts_lua_cached_response.c
+        plugins/lua/ts_lua_cached_response.h
+        plugins/lua/ts_lua_client_request.c
+        plugins/lua/ts_lua_client_request.h
+        plugins/lua/ts_lua_client_response.c
+        plugins/lua/ts_lua_client_response.h
+        plugins/lua/ts_lua_common.h
+        plugins/lua/ts_lua_constant.c
+        plugins/lua/ts_lua_constant.h
+        plugins/lua/ts_lua_context.c
+        plugins/lua/ts_lua_context.h
+        plugins/lua/ts_lua_coroutine.c
+        plugins/lua/ts_lua_coroutine.h
+        plugins/lua/ts_lua_crypto.c
+        plugins/lua/ts_lua_crypto.h
+        plugins/lua/ts_lua_fetch.c
+        plugins/lua/ts_lua_fetch.h
+        plugins/lua/ts_lua_hook.c
+        plugins/lua/ts_lua_hook.h
+        plugins/lua/ts_lua_http.c
+        plugins/lua/ts_lua_http.h
+        plugins/lua/ts_lua_http_cntl.c
+        plugins/lua/ts_lua_http_cntl.h
+        plugins/lua/ts_lua_http_config.c
+        plugins/lua/ts_lua_http_config.h
+        plugins/lua/ts_lua_http_intercept.c
+        plugins/lua/ts_lua_http_intercept.h
+        plugins/lua/ts_lua_http_milestone.c
+        plugins/lua/ts_lua_http_milestone.h
+        plugins/lua/ts_lua_io.c
+        plugins/lua/ts_lua_io.h
+        plugins/lua/ts_lua_log.c
+        plugins/lua/ts_lua_log.h
+        plugins/lua/ts_lua_mgmt.c
+        plugins/lua/ts_lua_mgmt.h
+        plugins/lua/ts_lua_misc.c
+        plugins/lua/ts_lua_misc.h
+        plugins/lua/ts_lua_package.c
+        plugins/lua/ts_lua_package.h
+        plugins/lua/ts_lua_remap.c
+        plugins/lua/ts_lua_remap.h
+        plugins/lua/ts_lua_server_request.c
+        plugins/lua/ts_lua_server_request.h
+        plugins/lua/ts_lua_server_response.c
+        plugins/lua/ts_lua_server_response.h
+        plugins/lua/ts_lua_stat.c
+        plugins/lua/ts_lua_stat.h
+        plugins/lua/ts_lua_string.c
+        plugins/lua/ts_lua_string.h
+        plugins/lua/ts_lua_transform.c
+        plugins/lua/ts_lua_transform.h
+        plugins/lua/ts_lua_util.c
+        plugins/lua/ts_lua_util.h
         plugins/regex_remap/regex_remap.cc
         plugins/regex_revalidate/regex_revalidate.c
         plugins/s3_auth/unit-tests/test_aws_auth_v4.cc
