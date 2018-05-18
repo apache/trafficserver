@@ -782,7 +782,7 @@ public:
   typedef CacheIdBox self; ///< Self reference type.
 
   /// Default constructor.
-  CacheIdBox();
+  CacheIdBox() = default;
 
   /// @name Accessors
   //@{
@@ -839,10 +839,10 @@ protected:
   self &require(size_t n ///< Minimum buffer size required.
   );
 
-  CacheIdElt *m_base;       ///< Base address of memory for element.
-  CacheIdElt::Tail *m_tail; ///< Base address of trailing data elements.
-  size_t m_size;            ///< Size of element (valid data in buffer);
-  size_t m_cap;             ///< Size of allocated memory. Zero if external memory.
+  CacheIdElt *m_base       = nullptr; ///< Base address of memory for element.
+  CacheIdElt::Tail *m_tail = nullptr; ///< Base address of trailing data elements.
+  size_t m_size            = 0;       ///< Size of element (valid data in buffer);
+  size_t m_cap             = 0;       ///< Size of allocated memory. Zero if external memory.
 };
 
 /** Base class for all components.
@@ -866,14 +866,14 @@ class ComponentBase
 public:
   typedef ComponentBase self; ///< Self reference type.
   /// Default constructor.
-  ComponentBase();
+  ComponentBase() = default;
   /// Check for not present.
   bool isEmpty() const;
 
 protected:
   /// Base of component in message data.
   /// If this is @c NULL then the component is not in the message.
-  char *m_base;
+  char *m_base = nullptr;
 };
 
 /// Synthetic component to represent the overall message header.
@@ -3465,7 +3465,6 @@ MaskAssignElt::init(uint32_t srcAddr, uint32_t dstAddr, uint16_t srcPort, uint16
   return zret;
 }
 
-inline ComponentBase::ComponentBase() : m_base(0) {}
 inline bool
 ComponentBase::isEmpty() const
 {
