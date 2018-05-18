@@ -394,7 +394,7 @@ QUICStreamManager::generate_frame(uint16_t connection_credit, uint16_t maximum_f
   }
 
   if (frame != nullptr && frame->type() == QUICFrameType::STREAM) {
-    this->add_total_offset_sent(frame->size());
+    this->add_total_offset_sent(static_cast<QUICStreamFrame *>(frame.get())->data_length());
   }
 
   return frame;
