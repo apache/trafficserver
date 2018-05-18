@@ -19,8 +19,8 @@
 
 .. _admin-plugins-ts-lua:
 
-TS Lua Plugin
-*************
+Lua Plugin
+**********
 
 This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With
 this module, we can implement ATS plugin by writing Lua script instead of C
@@ -3658,7 +3658,7 @@ Todo
 * ts.cache_xxx
 * protocol
 
-Currently when we use ts_lua as a global plugin, each global hook is using a separate lua state for the same
+Currently when we use this as a global plugin, each global hook is using a separate lua state for the same
 transaction. This can be wasteful. Also the state cannot be reused for the same transaction across the global hooks. The
 alternative will be to use a TXN_START hook to create a lua state first and then add each global hook in the lua script
 as transaction hook instead. But this will have problem down the road when we need to have multiple plugins to work
@@ -3680,7 +3680,7 @@ Follow the steps below to use busted framework to run some unit tests on sample 
 
 * Run "sudo luarocks install luacov"
 
-* "cd trafficserver/plugins/experimental/ts_lua/ci"
+* "cd trafficserver/plugins/lua/ci"
 
 * Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for "module.lua"
 
