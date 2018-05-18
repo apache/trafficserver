@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <lua.h>
+#include "lua.h"
 
 static void ts_lua_inject_number_variables(lua_State *L);
 

@@ -39,6 +39,7 @@ include compress/Makefile.inc
 include header_rewrite/Makefile.inc
 include healthchecks/Makefile.inc
 include libloader/Makefile.inc
+include lua/Makefile.inc
 include regex_remap/Makefile.inc
 include regex_revalidate/Makefile.inc
 include s3_auth/Makefile.inc
@@ -76,7 +77,6 @@ include experimental/stale_while_revalidate/Makefile.inc
 include experimental/stream_editor/Makefile.inc
 include experimental/system_stats/Makefile.inc
 include experimental/tls_bridge/Makefile.inc
-include experimental/ts_lua/Makefile.inc
 include experimental/url_sig/Makefile.inc
 
 if BUILD_URI_SIGNING_PLUGIN
