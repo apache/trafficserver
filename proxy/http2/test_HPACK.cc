@@ -39,7 +39,6 @@ using namespace std;
 
 AppVersionInfo appVersionInfo;
 
-static int cmd_disable_freelist = 0;
 static char cmd_input_dir[512]  = "";
 static char cmd_output_dir[512] = "";
 
@@ -397,7 +396,7 @@ main(int argc, const char **argv)
   appVersionInfo.setup(PACKAGE_NAME, "test_HPACK", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
-  if (cmd_disable_freelist) {
+  if (likely(cmd_disable_freelist)) {
     ink_freelist_init_ops(ink_freelist_malloc_ops());
   }
   if (*cmd_input_dir) {

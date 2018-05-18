@@ -169,7 +169,6 @@ HttpBodyFactory *body_factory              = nullptr;
 static int accept_mss             = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
 static int poll_timeout           = -1; // No value set.
-static int cmd_disable_freelist   = 0;
 
 static bool signal_received[NSIG];
 
@@ -1580,7 +1579,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   command_index = find_cmd_index(command_string);
   command_valid = command_flag && command_index >= 0;
 
-  if (cmd_disable_freelist) {
+  if (likely(cmd_disable_freelist)) {
     ink_freelist_init_ops(ink_freelist_malloc_ops());
   }
 

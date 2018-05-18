@@ -22,13 +22,15 @@
 */
 #include "I_EventSystem.h"
 
+extern int cmd_disable_freelist;
+
 int thread_freelist_high_watermark = 512;
 int thread_freelist_low_watermark  = 32;
 
 void *
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {
-  if (l.freelist) {
+  if (unlikely(!cmd_disable_freelist && l.freelist)) {
     void *v    = (void *)l.freelist;
     l.freelist = *(void **)l.freelist;
     --(l.allocated);
@@ -40,21 +42,22 @@ thread_alloc(Allocator &a, ProxyAllocator &l)
 void
 thread_freeup(Allocator &a, ProxyAllocator &l)
 {
-  void *head   = (void *)l.freelist;
-  void *tail   = (void *)l.freelist;
-  size_t count = 0;
-  while (l.freelist && l.allocated > thread_freelist_low_watermark) {
-    tail       = l.freelist;
-    l.freelist = *(void **)l.freelist;
-    --(l.allocated);
-    ++count;
-  }
+  if (unlikely(!cmd_disable_freelist)) {
+    void *head   = (void *)l.freelist;
+    void *tail   = (void *)l.freelist;
+    size_t count = 0;
+    while (l.freelist && l.allocated > thread_freelist_low_watermark) {
+      tail       = l.freelist;
+      l.freelist = *(void **)l.freelist;
+      --(l.allocated);
+      ++count;
+    }
 
-  if (unlikely(count == 1)) {
-    a.free_void(tail);
-  } else if (count > 0) {
-    a.free_void_bulk(head, tail, count);
+    if (unlikely(count == 1)) {
+      a.free_void(tail);
+    } else if (count > 0) {
+      a.free_void_bulk(head, tail, count);
+    }
   }
-
   ink_assert(l.allocated >= thread_freelist_low_watermark);
 }
