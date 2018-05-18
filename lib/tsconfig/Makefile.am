@@ -41,8 +41,6 @@ libtsconfig_la_SOURCES = \
 	TsBuilder.h \
 	TsConfigGrammar.hpp \
 	TsConfigLexer.h \
-	TsConfigLua.cc \
-	TsConfigLua.h \
 	TsConfigParseEvents.h \
 	TsConfigTypes.h \
 	TsErrataUtil.cc \
@@ -65,7 +63,7 @@ endif
 
 test_tsconfig_SOURCES = test-tsconfig.cc
 
-test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la $(top_builddir)/lib/luajit/src/libluajit.a
+test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la
 
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.

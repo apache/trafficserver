@@ -31,11 +31,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES)
 
-if BUILD_LUAJIT
-AM_CPPFLAGS += \
-	-I$(abs_top_srcdir)/lib/luajit/src
-endif
-
 EXTRA_DIST = LogStandalone.cc
 
 noinst_LIBRARIES = liblogging.a liblogcollation.a
@@ -47,8 +42,6 @@ liblogging_a_SOURCES = \
 	LogAccess.h \
 	LogAccessHttp.cc \
 	LogAccessHttp.h \
-	LogBindings.cc \
-	LogBindings.h \
 	LogBuffer.cc \
 	LogBuffer.h \
 	LogBufferSink.h \
