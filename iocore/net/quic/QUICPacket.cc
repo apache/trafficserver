@@ -390,7 +390,7 @@ QUICPacketShortHeader::_packet_number_len() const
 {
   QUICPacketShortHeaderType type;
   if (this->_buf) {
-    type = static_cast<QUICPacketShortHeaderType>(this->_buf.get()[0] & 0x07);
+    type = static_cast<QUICPacketShortHeaderType>(this->_buf.get()[0] & 0x03);
   } else {
     type = this->_packet_number_type;
   }
