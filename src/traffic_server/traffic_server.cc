@@ -1613,6 +1613,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Restart syslog now that we have configuration info
   syslog_log_configure();
 
+  // Register stats if standalone
+  if (DEFAULT_REMOTE_MANAGEMENT_FLAG == remote_management_flag) {
+    RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(nullptr), RECP_NON_PERSISTENT);
+    RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
+    RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.proxy", 0, RECP_NON_PERSISTENT);
+    RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
+    RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
+  }
+
   // init huge pages
   int enabled;
   REC_ReadConfigInteger(enabled, "proxy.config.allocator.hugepages");
