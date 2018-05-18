@@ -54,14 +54,6 @@ traffic_manager_LDADD = \
 AM_LDFLAGS += \
 	$(LUAJIT_LDFLAGS)
 
-traffic_manager_LDADD += \
-	$(top_builddir)/lib/bindings/libbindings.la
-
-if BUILD_LUAJIT
-traffic_manager_LDADD += \
-	$(top_builddir)/lib/luajit/src/libluajit.a
-endif
-
 if SYSTEM_LUAJIT
 traffic_manager_LDADD +=\
 	@LIBLUAJIT@
@@ -80,6 +72,14 @@ traffic_manager_LDADD += \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@OPENSSL_LIBS@
 
+endif
+
+traffic_manager_LDADD += \
+	$(top_builddir)/lib/bindings/libbindings.la
+
+if BUILD_LUAJIT
+traffic_manager_LDADD += \
+	$(top_builddir)/lib/luajit/src/libluajit.a
 endif
 
 include $(top_srcdir)/build/tidy.mk
