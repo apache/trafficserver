@@ -77,8 +77,8 @@ export CCC_CXX=${LLVM_BASE}/bin/clang++
 [ "$output" != "/tmp" ] && echo "Results (if any) can be found at ${results_url}"
 autoreconf -fi
 ${LLVM_BASE}/bin/scan-build ./configure ${configure} \
-    CXXFLAGS="-stdlib=libc++ -I/opt/llvm/include/c++/v1 -std=c++17" \
-    LDFLAGS="-L/opt/llvm/lib64 -Wl,-rpath=/opt/llvm/lib64"
+    CXXFLAGS="-stdlib=libc++ -I${LLVM_BASE}/include/c++/v1 -std=c++17" \
+    LDFLAGS="-L${LLVM_BASE}/lib64 -Wl,-rpath=${LLVM_BASE}/lib64"
 
 # Since we don't want the analyzer to look at LuaJIT, build it first
 # without scan-build. The subsequent make will then skip it.
