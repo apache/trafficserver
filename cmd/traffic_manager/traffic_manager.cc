@@ -49,6 +49,7 @@
 #include "RecordsConfig.h"
 
 #include "P_RecLocal.h"
+#include "DerivativeMetrics.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -89,8 +90,6 @@ static const char *mgmt_path = nullptr;
 static const char *recs_conf = "records.config";
 
 static int fds_limit;
-
-// ToDo: Any globals for calculated metrics
 
 // TODO: Use positive instead negative selection
 //       This should just be #if defined(solaris)
@@ -714,7 +713,7 @@ main(int argc, const char **argv)
   int sleep_time             = 0;  // sleep_time given in sec
   uint64_t last_start_epoc_s = 0;  // latest start attempt in seconds since epoc
 
-  // ToDo: Initialize whatever is needed for calculated metrics
+  DerivativeMetrics derived; // This is simple class to calculate some useful derived metrics
 
   for (;;) {
     lmgmt->processEventQueue();
@@ -731,7 +730,9 @@ main(int argc, const char **argv)
       mgmt_log("[main] Reading Configuration Files Reread\n");
     }
 
-    // ToDo: Here we should update the calculated metrics
+    // Update the derived metrics. ToDo: this runs once a second, that might be excessive, maybe it should be
+    // done more like every config_update_interval_ms (proxy.config.config_update_interval_ms) ?
+    derived.Update();
 
     if (lmgmt->mgmt_shutdown_outstanding != MGMT_PENDING_NONE) {
       Debug("lm", "pending shutdown %d", lmgmt->mgmt_shutdown_outstanding);
