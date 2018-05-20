@@ -25,7 +25,6 @@
 # include "TsBuilder.h"
 # include "ts/ink_defs.h"
 
-# include <TsErrataUtil.h>
 # include <sys/stat.h>
 # include <cstdio>
 # include <cstdlib>
@@ -67,7 +66,7 @@ detail::ValueTable::instance() {
 #if !defined(__clang_analyzer__)
   if (! _ptr) { _ptr.reset(new ImplType); }
 #else
-  assert(_ptr.get() != nullptr);
+  ink_assert(_ptr.get() != nullptr);
 #endif
   return _ptr.get();
 }
@@ -103,20 +102,20 @@ detail::ValueTable::make(ValueIndex pidx, ValueType type, ConstBuffer const& nam
 }
         zret = n; // mark for return to caller.
       } else {
-        msg::log(zret.errata(), msg::WARN, "Add child failed because parent is not a container.");
+        zret.errata().note(Severity::WARN, "Add child failed because parent is not a container.");
       }
     } else {
-      msg::logf(zret.errata(), msg::WARN, "Add child failed because parent index (%ul) is out of range (%ul).", pidx.raw(), n);
+      zret.errata().note(Severity::WARN, "Add child failed because parent index (%ul) is out of range (%ul).", pidx.raw(), n);
     }
   } else {
-    msg::log(zret.errata(), msg::WARN, "Add child failed because the configuration is null.");
+    zret.errata().note(Severity::WARN, "Add child failed because the configuration is null.");
   }
   return zret;
 }
 
 detail::ValueItem&
 detail::ValueTable::operator [] ( ValueIndex idx ) {
-  assert(_ptr && idx < _ptr->_values.size());
+  ink_assert(_ptr && idx < _ptr->_values.size());
   return _ptr->_values[idx];
 }
 Buffer
@@ -191,9 +190,11 @@ Rv<Value>
 Value::makeChild(ValueType type, ConstBuffer const& name) {
   Rv<Value> zret;
   Rv<detail::ValueIndex> vr = _config._table.make(this->_vidx, type, name);
-  if (vr.isOK()) { zret = Value(_config, vr.result());
-  } else { zret.errata() = vr.errata();
-}
+  if (vr.is_ok()) {
+    zret = Value(_config, vr.result());
+  } else {
+    zret.errata().note(vr.errata());
+  }
   return zret;
 }
 
@@ -210,7 +211,7 @@ Value::makeList(ConstBuffer const& name) {
 Rv<Value>
 Value::makeString(ConstBuffer const& text, ConstBuffer const& name) {
   Rv<Value> zret = this->makeChild(StringValue, name);
-  if (zret.isOK()) { zret.result().setText(text);
+  if (zret.is_ok()) { zret.result().setText(text);
 }
   return zret;
 }
@@ -218,7 +219,7 @@ Value::makeString(ConstBuffer const& text, ConstBuffer const& name) {
 Rv<Value>
 Value::makeInteger(ConstBuffer const& text, ConstBuffer const& name) {
   Rv<Value> zret = this->makeChild(IntegerValue, name);
-  if (zret.isOK()) { zret.result().setText(text);
+  if (zret.is_ok()) { zret.result().setText(text);
 }
   return zret;
 }
@@ -226,7 +227,7 @@ Value::makeInteger(ConstBuffer const& text, ConstBuffer const& name) {
 Rv<Value>
 Value::makePath(Path const& path, ConstBuffer const& name) {
   Rv<Value> zret = this->makeChild(PathValue, name);
-  if (zret.isOK()) { _config._table[zret.result()._vidx]._path = path;
+  if (zret.is_ok()) { _config._table[zret.result()._vidx]._path = path;
 }
   return zret;
 }
@@ -278,22 +279,22 @@ Path::Parser::parse(ConstBuffer *cbuff) {
 }
 
     if (C_INVALID == cb) {
-      msg::logf(zret, msg::WARN, "Invalid character '%c' [%u] in path.", *_c, *_c);
+      zret.note(Severity::WARN, "Invalid character '%c' [%u] in path.", *_c, *_c);
     } else { switch (state) {
       case S_INIT:
         switch (cb) {
         case C_DIGIT: state = S_INDEX; idx = *_c - '0'; break;
         case C_IDENT: state = S_TAG; break;
-        case C_DASH: msg::logf(zret, msg::WARN, "Dash not allowed as leading character for tag."); final = true; break;
-        case C_DOT: msg::logf(zret, msg::WARN, "Separator without preceding element."); final = true; break;
-        default: msg::logf(zret, msg::WARN, "Internal error: unexpected character %u in INIT state.", *_c); final = true; break;
+        case C_DASH: zret.note(Severity::WARN, "Dash not allowed as leading character for tag."); final = true; break;
+        case C_DOT: zret.note(Severity::WARN, "Separator without preceding element."); final = true; break;
+        default: zret.note(Severity::WARN, "Internal error: unexpected character %u in INIT state.", *_c); final = true; break;
         }
         break;
       case S_INDEX: // reading an index.
         if (C_DIGIT == cb) { idx = 10 * idx + *_c - '0';
         } else if (C_DOT == cb) { final = true; }
         else {
-          msg::logf(zret, msg::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
+          zret.note(Severity::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
           final = true;
         }
         break;
@@ -302,17 +303,17 @@ Path::Parser::parse(ConstBuffer *cbuff) {
         } else if (C_DASH == cb) { state = S_DASH;
         } else if (C_DOT == cb) { final = true; }
         else { // should never happen, but be safe.
-          msg::logf(zret, msg::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
+          zret.note(Severity::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
           final = true;
         }
         break;
       case S_DASH: // dashes inside tag.
         if (C_IDENT == cb || C_DIGIT == cb) { state = S_TAG;
         } else if (C_DOT == cb) {
-          msg::log(zret, msg::WARN, "Trailing dash not allowed in tag element.");
+          zret.note(Severity::WARN, "Trailing dash not allowed in tag element.");
           final = true;
         } else if (C_DASH != cb) { // should never happen, but be safe.
-          msg::logf(zret, msg::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
+          zret.note(Severity::WARN, "Invalid character '%c' [%u] in index element.", *_c, *_c);
           final = true;
         }
         break;
@@ -320,7 +321,7 @@ Path::Parser::parse(ConstBuffer *cbuff) {
 }
     ++_c;
   }
-  if (!zret.isOK()) {
+  if (!zret.is_ok()) {
     zret = ERROR;
     if (cbuff) { cbuff->set(_c - 1, 1);
 }
@@ -343,7 +344,7 @@ Path::Parser::parse(ConstBuffer *cbuff) {
 }
   } else if (S_DASH == state) {
     zret = ERROR;
-    msg::log(zret, msg::WARN, "Trailing dash not allowed in tag element.");
+    zret.note(Severity::WARN, "Trailing dash not allowed in tag element.");
     if (cbuff) { cbuff->set(start, _c - start);
 }
   }
@@ -374,17 +375,17 @@ Configuration::loadFromPath(char const* path) {
           memset(buffer._ptr + n, 0, 2); // required by FLEX
           zret = Builder(zret.result()).build(buffer);
         } else {
-          msg::logf_errno(zret, msg::WARN, "failed to read %" PRIu64 " bytes from configuration file '%s'", info.st_size, path);
+          zret.note(Severity::WARN, "failed to read %" PRIu64 " bytes from configuration file '%s'", info.st_size, path);
         }
       } else {
-        msg::logf_errno(zret, msg::WARN, "failed to allocate buffer for configuration file '%s' - needed %" PRIu64 " bytes.", path, info.st_size);
+        zret.note(Severity::WARN, "failed to allocate buffer for configuration file '%s' - needed %" PRIu64 " bytes.", path, info.st_size);
       }
     } else {
-      msg::logf_errno(zret, msg::WARN, "failed to determine file information on '%s'", path);
+      zret.note(Severity::WARN, "failed to determine file information on '%s'", path);
     }
     fclose(in);
   } else {
-    msg::logf_errno(zret, msg::WARN, "failed to open configuration file '%s'", path);
+    zret.note(Severity::WARN, "failed to open configuration file '%s'", path);
   }
   return zret;
 }

@@ -29,6 +29,7 @@
    SNI based Configuration in ATS
  ****************************************************************************/
 
+#include <sstream>
 #include "P_SSLSNI.h"
 #include "ts/Diags.h"
 #include "ts/SimpleTokenizer.h"
@@ -152,7 +153,7 @@ SNIConfigParams::Initialize()
   }
 
   ts::Errata zret = Y_sni.loader(sni_filename);
-  if (!zret.isOK()) {
+  if (!zret.is_ok()) {
     std::stringstream errMsg;
     errMsg << zret;
     Error("failed to load ssl_server_name.yaml: %s", errMsg.str().c_str());

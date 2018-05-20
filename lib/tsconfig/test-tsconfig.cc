@@ -35,7 +35,7 @@ inline std::ostream& operator << ( std::ostream& s, ts::ConstBuffer const& b ) {
 int main(int /* argc ATS_UNUSED */, char **/* argv ATS_UNUSED */) {
   printf("Testing TsConfig\n");
   ts::Rv<Configuration> cv = Configuration::loadFromPath("test-1.tsconfig");
-  if (cv.isOK()) {
+  if (cv.is_ok()) {
     Value v = cv.result().find("thing-1.name");
     if (v) {
       std::cout << "thing-1.name = " << v.getText() << std::endl;

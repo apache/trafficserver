@@ -58,17 +58,11 @@ static const char USAGE_TEXT[] = "%s\n"
 static void
 PrintErrata(ts::Errata const &err)
 {
-  size_t n;
-  static size_t const SIZE = 4096;
-  char buff[SIZE];
-  if (err.size()) {
-    ts::Errata::Code code = err.top().getCode();
-    if (do_debug || code >= wccp::LVL_WARN) {
-      n = err.write(buff, SIZE, 1, 0, 2, "> ");
-      // strip trailing newlines.
-      while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r'))
-        buff[--n] = 0;
-      printf("%s\n", buff);
+  if (err.count()) {
+    if (do_debug || err.severity() >= ts::Severity::WARN) {
+      ts::LocalBufferWriter<4096> w;
+      w.print("{}\0", err);
+      printf("%s", w.data());
     }
   }
 }
@@ -76,7 +70,7 @@ PrintErrata(ts::Errata const &err)
 static void
 Init_Errata_Logging()
 {
-  ts::Errata::registerSink(&PrintErrata);
+  ts::Errata::register_sink(&PrintErrata);
 }
 
 static void

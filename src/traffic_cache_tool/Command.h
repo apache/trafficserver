@@ -24,6 +24,7 @@
 #include <vector>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <iostream>
 #include <memory.h>
 #include <tsconfig/Errata.h>
@@ -79,7 +80,7 @@ public:
     */
     ts::Errata invoke(int argc, char *argv[]);
 
-    void helpMessage(int argc, char *argv[], std::ostream &out = std::cerr, std::string const &prefix = std::string()) const;
+    void helpMessage(int argc, char *argv[], std::ostream &out = std::cerr, std::string_view prefix = std::string_view()) const;
 
   protected:
     typedef std::vector<Command> CommandGroup;

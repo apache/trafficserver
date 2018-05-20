@@ -42,14 +42,14 @@ YamlSNIConfig::loader(const char *cfgFilename)
     }
 
     if (!config.IsSequence()) {
-      return ts::Errata::Message(1, 1, "expected sequence");
+      return ts::Errata().note(ts::Severity::ERROR, "expected sequence");
     }
 
     for (auto it = config.begin(); it != config.end(); ++it) {
       items.push_back(it->as<YamlSNIConfig::Item>());
     }
   } catch (std::exception &ex) {
-    return ts::Errata::Message(1, 1, ex.what());
+    return ts::Errata().note(ts::Severity::ERROR, ex.what());
   }
 
   return ts::Errata();

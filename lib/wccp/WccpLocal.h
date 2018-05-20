@@ -2475,7 +2475,7 @@ public:
   );
 
   /// Define services from a configuration file.
-  ts::Errata loadServicesFromFile(const char *path ///< Path to file.
+  ts::Errata &&loadServicesFromFile(const char *path ///< Path to file.
   );
 
   /// Override.
@@ -3239,19 +3239,19 @@ detail::Assignment::getKey() const
 inline RouterAssignListElt const &
 detail::Assignment::getRouterList() const
 {
-  assert(m_router_list);
+  ink_assert(m_router_list);
   return *m_router_list;
 }
 inline HashAssignElt const &
 detail::Assignment::getHash() const
 {
-  assert(m_hash_assign);
+  ink_assert(m_hash_assign);
   return *m_hash_assign;
 }
 inline MaskAssignElt const &
 detail::Assignment::getMask() const
 {
-  assert(m_mask_assign);
+  ink_assert(m_mask_assign);
   return *m_mask_assign;
 }
 
@@ -3689,3 +3689,8 @@ RouterImpl::RouterData::resize(size_t n)
 // ------------------------------------------------------
 
 } // namespace wccp
+
+namespace ts
+{
+BufferWriter &bwformat(BufferWriter &w, const BWFSpec &spec, const wccp::CapabilityElt::Type &cap);
+} // namespace ts

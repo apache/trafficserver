@@ -37,9 +37,7 @@ static const std::string LEADING(":-  ");
 ts::Errata
 ERR_COMMAND_TAG_NOT_FOUND(char const *tag)
 {
-  std::ostringstream s;
-  s << "Command tag " << tag << " not found";
-  return ts::Errata(s.str());
+  return ts::Errata().note(Severity::INFO, "Commang tag '{}' not found.", tag);
 }
 
 CommandTable::Command::Command() {}
@@ -91,10 +89,8 @@ CommandTable::Command::invoke(int argc, char *argv[])
       zret = _action.invoke();
     } else {
       std::ostringstream s;
-      s << "Incomplete command, additional keyword required";
-      s << std::endl;
       this->helpMessage(0, nullptr, s, LEADING);
-      zret.push(s.str());
+      zret.note(Severity::ERROR, "Incomplete command, additional keyword required.{}", s.str());
     }
   } else {
     char const *tag = argv[CommandTable::_opt_idx];
@@ -111,7 +107,7 @@ CommandTable::Command::invoke(int argc, char *argv[])
 }
 
 void
-CommandTable::Command::helpMessage(int argc, char *argv[], std::ostream &out, std::string const &prefix) const
+CommandTable::Command::helpMessage(int argc, char *argv[], std::ostream &out, std::string_view prefix) const
 {
   if (CommandTable::_opt_idx >= argc || argv[CommandTable::_opt_idx][0] == '-') {
     // Tail of command keywords, start listing
@@ -120,9 +116,13 @@ CommandTable::Command::helpMessage(int argc, char *argv[], std::ostream &out, st
         c.helpMessage(argc, argv, out, prefix);
       }
     } else {
+      std::string p;
+      p.reserve(prefix.size() + 2);
+      p.assign("  ");
+      p += prefix;
       out << prefix << _name << ": " << _help << std::endl;
       for (Command const &c : _group) {
-        c.helpMessage(argc, argv, out, "  " + prefix);
+        c.helpMessage(argc, argv, out, p);
       }
     }
   } else {

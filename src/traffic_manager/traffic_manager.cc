@@ -413,29 +413,25 @@ set_process_limits(RecInt fds_throttle)
 static void
 Errata_Logger(ts::Errata const &err)
 {
-  size_t n;
-  static size_t const SIZE = 4096;
-  char buff[SIZE];
-  if (err.size()) {
-    ts::Errata::Code code = err.top().getCode();
-    n                     = err.write(buff, SIZE, 1, 0, 2, "> ");
-    // strip trailing newlines.
-    while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r'))
-      buff[--n] = 0;
-    // log it.
-    if (code > 1)
-      mgmt_elog(0, "[WCCP]%s", buff);
-    else if (code > 0)
-      mgmt_log("[WCCP]%s", buff);
+  if (err.count()) {
+    ts::LocalBufferWriter<4096> w;
+    auto code = err.severity();
+    w.print("{}\n", err);
+    ts::TextView tv{w.view()};
+    tv.rtrim_if(&isspace); // clip trailing newlines and other white space.
+    if (code >= ts::Severity::ERROR)
+      mgmt_elog(0, "[WCCP]%.*s", static_cast<int>(tv.size()), tv.data());
+    else if (code > ts::Severity::DBG)
+      mgmt_log("[WCCP]%.*s", static_cast<int>(tv.size()), tv.data());
     else
-      Debug("WCCP", "%s", buff);
+      Debug("WCCP", "%.*s", static_cast<int>(tv.size()), tv.data());
   }
 }
 
 static void
 Init_Errata_Logging()
 {
-  ts::Errata::registerSink(&Errata_Logger);
+  ts::Errata::register_sink(&Errata_Logger);
 }
 #endif
 

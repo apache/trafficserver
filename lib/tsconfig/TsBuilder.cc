@@ -21,11 +21,12 @@
     limitations under the License.
  */
 
+# include <cstdlib>
 # include "TsBuilder.h"
-# include "TsErrataUtil.h"
 # include "TsConfigLexer.h"
 # include "TsConfigGrammar.hpp"
-# include <cstdlib>
+
+using ts::Severity;
 
 // Prefix for text of our messages.
 # define PRE "Configuration Parser: "
@@ -94,19 +95,20 @@ Builder::init() {
 // the dispatcher can't find the builder object.
 void
 Builder::dispatch(void* data, Token* token) {
+  Errata erratum;
     if (data) {
         Handler* handler = reinterpret_cast<Handler*>(data);
         if (handler->_ptr) {
             if (handler->_method) {
                 ((handler->_ptr)->*(handler->_method))(*token);
             } else {
-                msg::logf(msg::WARN, PRE "Unable to dispatch event - no method.");
+              erratum.note(Severity::WARN, PRE "Unable to dispatch event - no method.");
             }
         } else {
-            msg::logf(msg::WARN, PRE "Unable to dispatch event - no builder.");
+          erratum.note(Severity::WARN, PRE "Unable to dispatch event - no builder.");
         }
     } else {
-        msg::logf(msg::WARN, PRE "Unable to dispatch event - no handler.");
+      erratum.note(Severity::WARN, PRE "Unable to dispatch event - no handler.");
     }
 }
 
@@ -117,7 +119,7 @@ Builder::syntaxErrorDispatch(void* data, char const* text) {
 
 int
 Builder::syntaxError(char const* text) {
-  msg::logf(_errata, msg::WARN,
+  _errata.note(Severity::WARN,
     "Syntax error '%s' near line %d, column %d.",
     text, tsconfiglex_current_line(), tsconfiglex_current_col()
   );
@@ -129,7 +131,7 @@ Builder::build(Buffer const& buffer) {
   _v = _config.getRoot(); // seed current value.
   _errata.clear(); // no errors yet.
   tsconfig_parse_buffer(&_handlers, buffer._ptr, buffer._size);
-  return MakeRv(_config, _errata);
+  return MakeRv(_config, std::move(_errata));
 }
 
 void
@@ -176,7 +178,7 @@ void Builder::pathIndex(Token const& token){
 
 void Builder::pathClose(Token const&) {
     Rv<Value> cv = _v.makePath(_path, _name);
-    if (cv.isOK()) {
+    if (cv.is_ok()) {
       cv.result().setText(_extent).setSource(_loc._line, _loc._col);
       // Terminate path. This will overwrite trailing whitespace or
       // the closing angle bracket, both of which are expendable.
@@ -207,9 +209,9 @@ void Builder::literalValue(Token const& token) {
         text._ptr[text._size] = 0; // OK because we have the trailing quote.
         cv = _v.makeString(text, _name);
     } else {
-        msg::logf(_errata, msg::WARN, PRE "Unexpected literal type %d.", token._type);
+        _errata.note(Severity::WARN, PRE "Unexpected literal type %d.", token._type);
     }
-    if (!cv.isOK()) { _errata.pull(cv.errata());
+    if (!cv.is_ok()) { _errata.note(cv.errata());
 }
     if (cv.result()) { cv.result().setSource(token._loc._line, token._loc._col);
 }

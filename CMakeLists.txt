@@ -1219,8 +1219,6 @@ add_library(libtsconfig SHARED
         lib/tsconfig/TsConfigParseEvents.h
         lib/tsconfig/TsConfigSyntax.c
         lib/tsconfig/TsConfigTypes.h
-        lib/tsconfig/TsErrataUtil.cc
-        lib/tsconfig/TsErrataUtil.h
         lib/tsconfig/TsValue.cc
         lib/tsconfig/TsValue.h
 )

@@ -25,6 +25,7 @@
 #include <errno.h>
 #include "ts/ink_string.h"
 #include "ts/ink_defs.h"
+#include "ts/bwf_std_format.h"
 // ------------------------------------------------------
 namespace wccp
 {
@@ -40,6 +41,8 @@ namespace wccp
 #error "can't determine socket option"
 #endif
 
+using ts::Errata;
+using ts::Severity;
 // ------------------------------------------------------
 Impl::GroupData &
 Impl::GroupData::setKey(const char *key)
@@ -71,12 +74,12 @@ Impl::open(uint addr)
   ats_scoped_fd fd;
 
   if (ts::NO_FD != m_fd) {
-    log(LVL_INFO, "Attempted to open already open WCCP Endpoint");
+    Errata().note(Severity::INFO, "Attempted to open already open WCCP Endpoint");
     return -EALREADY;
   }
 
   if (ts::NO_FD == (fd = socket(PF_INET, SOCK_DGRAM, 0))) {
-    log_errno(LVL_FATAL, "Failed to create socket");
+    Errata().note(Severity::FATAL, "Failed to create socket {}", ts::bwf::Errno());
     return -errno;
   }
 
@@ -88,16 +91,16 @@ Impl::open(uint addr)
   in_addr.sin_addr.s_addr = m_addr;
   int zret                = bind(fd, &saddr, sizeof(saddr));
   if (-1 == zret) {
-    log_errno(LVL_FATAL, "Failed to bind socket to port");
+    Errata().note(Severity::FATAL, "Failed to bind socket to port {}", ts::bwf::Errno());
     this->close();
     return -errno;
   }
-  logf(LVL_INFO, "Socket bound to %s:%d", ip_addr_to_str(m_addr), DEFAULT_PORT);
+  Errata().note(Severity::INFO, "Socket bound to {::a}", m_addr, DEFAULT_PORT);
 
   // Now get the address. Usually the same but possibly different,
   // certainly if addr was INADDR_ANY.
   if (INADDR_ANY == m_addr && INADDR_ANY == (m_addr = Get_Local_Address(fd))) {
-    log_errno(LVL_FATAL, "Failed to get local address for socket");
+    Errata().note(Severity::FATAL, "Failed to get local address for socket {}", ts::bwf::Errno());
     this->close();
     return -errno;
   }
@@ -105,7 +108,7 @@ Impl::open(uint addr)
   // Enable retrieval of destination address on packets.
   int ip_pktinfo_flag = 1;
   if (-1 == setsockopt(fd, IPPROTO_IP, DSTADDR_SOCKOPT, &ip_pktinfo_flag, sizeof(ip_pktinfo_flag))) {
-    log_errno(LVL_FATAL, "Failed to enable destination address retrieval");
+    Errata().note(Severity::FATAL, "Failed to enable destination address retrieval {}", ts::bwf::Errno());
     this->close();
     return -errno;
   }
@@ -116,7 +119,7 @@ Impl::open(uint addr)
   /// identifier is 0, which is the value used when PMTU is enabled.
   int pmtu = IP_PMTUDISC_DONT;
   if (-1 == setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu))) {
-    log_errno(LVL_FATAL, "Failed to disable PMTU on WCCP socket.");
+    Errata().note(Severity::FATAL, "Failed to disable PMTU on WCCP socket. - {}", ts::bwf::Errno());
     this->close();
     return -errno;
   }
@@ -259,22 +262,22 @@ Impl::handleMessage()
 ts::Errata
 Impl::handleHereIAm(IpHeader const &, ts::Buffer const &)
 {
-  return log(LVL_INFO, "Unanticipated WCCP2_HERE_I_AM message ignored");
+  return Errata().note(Severity::INFO, "Unanticipated WCCP2_HERE_I_AM message ignored");
 }
 ts::Errata
 Impl::handleISeeYou(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
 {
-  return log(LVL_INFO, "Unanticipated WCCP2_I_SEE_YOU message ignored.");
+  return Errata().note(Severity::INFO, "Unanticipated WCCP2_I_SEE_YOU message ignored.");
 }
 ts::Errata
 Impl::handleRedirectAssign(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
 {
-  return log(LVL_INFO, "Unanticipated WCCP2_REDIRECT_ASSIGN message ignored.");
+  return Errata().note(Severity::INFO, "Unanticipated WCCP2_REDIRECT_ASSIGN message ignored.");
 }
 ts::Errata
 Impl::handleRemovalQuery(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
 {
-  return log(LVL_INFO, "Unanticipated WCCP2_REMOVAL_QUERY message ignored.");
+  return Errata().note(Severity::INFO, "Unanticipated WCCP2_REMOVAL_QUERY message ignored.");
 }
 // ------------------------------------------------------
 CacheImpl::GroupData::GroupData() : m_proc_name(NULL), m_assignment_pending(false) {}
@@ -467,7 +470,7 @@ CacheImpl::GroupData::cullRouters(time_t now)
       // Put it back in the seeds.
       this->seedRouter(addr);
       zret = true; // Router was culled, report it to caller.
-      logf(LVL_INFO, "Router " ATS_IP_PRINTF_CODE " timed out and was removed from the active list.", ATS_IP_OCTETS(addr));
+      Errata().note(Severity::INFO, "Router {::a} timed out and was removed from the active list.", addr);
     } else {
       ++idx; // move to next router.
     }
@@ -486,7 +489,7 @@ CacheImpl::GroupData::viewChanged(time_t now)
   m_assignment_pending = m_routers.size() && m_caches.size();
   // Cancel any pending assignment transmissions.
   ts::for_each(m_routers, ts::assign_member(&RouterData::m_assign, false));
-  logf(LVL_DEBUG, "Service group %d view change (%d)", m_svc.getSvcId(), m_generation);
+  Errata().note(Severity::DBG, "Service group {} view change ({})", m_svc.getSvcId(), m_generation);
 
   return *this;
 }
@@ -579,7 +582,7 @@ CacheImpl::checkRouterAssignment(GroupData const &group, RouterViewComp const &c
   if (ainfo.isActive() && !comp.isEmpty()) {
     // Validate the assignment key.
     if (ainfo.getKey().getAddr() != comp.getKeyAddr() || ainfo.getKey().getChangeNumber() != comp.getKeyChangeNumber()) {
-      log(zret, LVL_INFO, "Router assignment key did not match.");
+      zret.note(Severity::INFO, "Router assignment key did not match.");
       ;
     } else if (ServiceGroup::HASH_ONLY == group.m_cache_assign) {
       // Still not sure how much checking we really want or should
@@ -642,12 +645,12 @@ CacheImpl::housekeeping()
           if (0 <= zret) {
             rspot->m_xmit.set(now, group.m_generation);
             rspot->m_send_caps = false;
-            logf(LVL_DEBUG, "Sent HERE_I_AM for service group %d to router %s%s[#%d,%lu].", group.m_svc.getSvcId(),
-                 ip_addr_to_str(rspot->m_addr), rspot->m_rapid ? " [rapid] " : " ", group.m_generation, now);
+            Errata().note(Severity::DBG, "Sent HERE_I_AM for service group {} to router {}{}[#{},%lu].", group.m_svc.getSvcId(),
+                          rspot->m_addr, rspot->m_rapid ? " [rapid] " : " ", group.m_generation, now);
             if (rspot->m_rapid)
               --(rspot->m_rapid);
           } else {
-            logf_errno(LVL_WARN, "Failed to send to router " ATS_IP_PRINTF_CODE " - ", ATS_IP_OCTETS(rspot->m_addr));
+            Errata().note(Severity::WARN, "Failed to send to router {} - {}", rspot->m_addr, ts::bwf::Errno());
           }
         } else if (rspot->m_assign) {
           RedirectAssignMsg redirect_assign;
@@ -676,13 +679,13 @@ CacheImpl::housekeeping()
         dst_addr.sin_addr.s_addr = sspot->m_addr;
         zret                     = sendto(m_fd, msg_data, here_i_am.getCount(), 0, addr_ptr, sizeof(dst_addr));
         if (0 <= zret) {
-          logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [gen=#%d,t=%lu,n=%lu].", group.m_svc.getSvcId(),
-               ip_addr_to_str(sspot->m_addr), group.m_generation, now, here_i_am.getCount());
+          Errata().note(Severity::DBG, "Sent HERE_I_AM for SG {} to seed router {} [gen=#{},t={},n={}].", group.m_svc.getSvcId(),
+                        sspot->m_addr, group.m_generation, now, here_i_am.getCount());
           sspot->m_xmit = now;
           sspot->m_count += 1;
         } else
-          logf(LVL_DEBUG, "Error [%d:%s] sending HERE_I_AM for SG %d to seed router %s [#%d,%lu].", zret, strerror(errno),
-               group.m_svc.getSvcId(), ip_addr_to_str(sspot->m_addr), group.m_generation, now);
+          Errata().note(Severity::DBG, "Error {} sending HERE_I_AM for SG {} to seed router {} [#{},{}].", zret, ts::bwf::Errno(),
+                        group.m_svc.getSvcId(), sspot->m_addr, group.m_generation, now);
       }
     }
   }
@@ -701,25 +704,25 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
   int parse         = msg.parse(chunk);
 
   if (PARSE_SUCCESS != parse)
-    return logf(LVL_INFO, "Ignored malformed [%d] WCCP2_I_SEE_YOU message.", parse);
+    return zret.note(Severity::INFO, "Ignored malformed [%d] WCCP2_I_SEE_YOU message.", parse);
 
   ServiceGroup svc(msg.m_service);
   GroupMap::iterator spot = m_groups.find(svc.getSvcId());
   if (spot == m_groups.end())
-    return logf(LVL_INFO, "WCCP2_I_SEE_YOU ignored - service group %d not found.", svc.getSvcId());
+    return zret.note(Severity::INFO, "WCCP2_I_SEE_YOU ignored - service group %d not found.", svc.getSvcId());
 
   GroupData &group = spot->second;
 
   if (!this->validateSecurity(msg, group))
-    return log(LVL_INFO, "Ignored WCCP2_I_SEE_YOU with invalid security.\n");
+    return zret.note(Severity::INFO, "Ignored WCCP2_I_SEE_YOU with invalid security.");
 
   if (svc != group.m_svc)
-    return logf(LVL_INFO, "WCCP2_I_SEE_YOU ignored - service group definition %d does not match.\n", svc.getSvcId());
+    return zret.note(Severity::INFO, "WCCP2_I_SEE_YOU ignored - service group definition %d does not match.\n", svc.getSvcId());
 
   if (-1 == msg.m_router_id.findFromAddr(m_addr))
-    return logf(LVL_INFO, "WCCP2_I_SEE_YOU ignored -- cache not in from list.\n");
+    return zret.note(Severity::INFO, "WCCP2_I_SEE_YOU ignored -- cache not in from list.\n");
 
-  logf(LVL_DEBUG, "Received WCCP2_I_SEE_YOU for group %d.", group.m_svc.getSvcId());
+  zret.note(Severity::DBG, "Received WCCP2_I_SEE_YOU for group %d.", group.m_svc.getSvcId());
 
   // Prefered address for router.
   uint32_t router_addr = msg.m_router_id.idElt().getAddr();
@@ -754,7 +757,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
     else if (ServiceGroup::L2 & ps & group.m_packet_forward)
       r.m_packet_forward = ServiceGroup::L2;
     else
-      logf(zret, LVL_WARN, "Packet forwarding (config=%d, %s=%d) did not match.", group.m_packet_forward, caps_tag, ps);
+      zret.note(Severity::WARN, "Packet forwarding (config={}, {}={}) did not match.", group.m_packet_forward, caps_tag, ps);
 
     // No caps -> use GRE return.
     ps = caps.isEmpty() ? ServiceGroup::GRE : caps.getPacketReturnStyle();
@@ -763,7 +766,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
     else if (ServiceGroup::L2 & ps & group.m_packet_return)
       r.m_packet_return = ServiceGroup::L2;
     else
-      logf(zret, LVL_WARN, "Packet return (local=%d, %s=%d) did not match.", group.m_packet_return, caps_tag, ps);
+      zret.note(Severity::WARN, "Packet return (local={}, {}={}) did not match.", group.m_packet_return, caps_tag, ps);
 
     // No caps -> use HASH assignment.
     as = caps.isEmpty() ? ServiceGroup::HASH_ONLY : caps.getCacheAssignmentStyle();
@@ -773,27 +776,26 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
       r.m_cache_assign = ServiceGroup::MASK_ONLY;
       group.m_id.initDefaultMask(m_addr); // switch to MASK style ID.
     } else
-      logf(zret, LVL_WARN, "Cache assignment (local=%d, %s=%d) did not match.", group.m_cache_assign, caps_tag, as);
+      zret.note(Severity::WARN, "Cache assignment (local={}, {}={}) did not match.", group.m_cache_assign, caps_tag, as);
 
     if (!zret) {
       // cancel out, can't use this packet because we reject the router.
-      return logf(zret, LVL_WARN, "Router %s rejected because of capabilities mismatch.", ip_addr_to_str(router_addr));
+      return zret.note(Severity::WARN, "Router {} rejected because of capabilities mismatch.", router_addr);
     }
 
     group.m_routers.push_back(r);
     ar_spot      = group.m_routers.end() - 1;
     view_changed = true;
-    logf(LVL_INFO, "Added source router %s to view %d", ip_addr_to_str(router_addr), group.m_svc.getSvcId());
+    zret.note(Severity::INFO, "Added source router {} to view {}", router_addr, group.m_svc.getSvcId());
   } else {
     // Existing router. Update the receive ID in the assignment object.
     group.m_assign_info.updateRouterId(router_addr, recv_id, msg.m_router_view.getChangeNumber());
     // Check the assignment to see if we need to send it again.
     ts::Errata status = this->checkRouterAssignment(group, msg.m_router_view);
-    if (status.size()) {
+    if (status.count()) {
       ar_spot->m_assign = true; // schedule an assignment message.
-      logf(status, LVL_INFO,
-           "Router assignment reported from " ATS_IP_PRINTF_CODE " did not match local assignment. Resending assignment.\n ",
-           ATS_IP_OCTETS(router_addr));
+      zret.note(status).note(
+        Severity::INFO, "Router assignment reported from {} did not match local assignment. Resending assignment.", router_addr);
     }
   }
   time_t then = ar_spot->m_recv.m_time; // used for comparisons later.
@@ -826,7 +828,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
       group.m_caches.push_back(CacheData());
       ac_spot = group.m_caches.end() - 1;
       ac_spot->m_src.resize(group.m_routers.size());
-      logf(LVL_INFO, "Added cache %s to view %d", ip_addr_to_str(cache.getAddr()), group.m_svc.getSvcId());
+      zret.note(Severity::INFO, "Added cache {} to view {}", cache.getAddr(), group.m_svc.getSvcId());
       view_changed = true;
     } else {
       // Check if the cache wasn't reported last time but was reported
@@ -857,20 +859,21 @@ CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buff
   int parse  = msg.parse(chunk);
 
   if (PARSE_SUCCESS != parse)
-    return log(LVL_INFO, "Ignored malformed WCCP2_REMOVAL_QUERY message.");
+    return zret.note(Severity::INFO, "Ignored malformed WCCP2_REMOVAL_QUERY message.");
 
   ServiceGroup svc(msg.m_service);
   GroupMap::iterator spot = m_groups.find(svc.getSvcId());
   if (spot == m_groups.end())
-    return logf(LVL_INFO, "WCCP2_REMOVAL_QUERY ignored - service group %d not found.", svc.getSvcId());
+    return zret.note(Severity::INFO, "WCCP2_REMOVAL_QUERY ignored - service group {} not found.", svc.getSvcId());
 
   GroupData &group = spot->second;
 
   if (!this->validateSecurity(msg, group))
-    return log(LVL_INFO, "Ignored WCCP2_REMOVAL_QUERY with invalid security.\n");
+    return zret.note(Severity::INFO, "Ignored WCCP2_REMOVAL_QUERY with invalid security.\n");
 
   if (svc != group.m_svc)
-    return logf(LVL_INFO, "WCCP2_REMOVAL_QUERY ignored - service group definition %d does not match.\n", svc.getSvcId());
+    return zret.note(Severity::INFO, "WCCP2_REMOVAL_QUERY ignored - service group definition {} does not match.\n",
+                     svc.getSvcId());
 
   uint32_t target_addr = msg.m_query.getCacheAddr(); // intended cache
   if (m_addr == target_addr) {
@@ -879,19 +882,17 @@ CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buff
     if (group.m_routers.end() != router) {
       router->m_rapid = true; // do rapid responses.
       router->m_recv.set(now, msg.m_query.getRecvId());
-      logf(LVL_INFO, "WCCP2_REMOVAL_QUERY from router " ATS_IP_PRINTF_CODE ".\n", ATS_IP_OCTETS(raddr));
+      Errata().note(Severity::INFO, "WCCP2_REMOVAL_QUERY from router {}.", raddr);
     } else {
-      logf(LVL_INFO, "WCCP2_REMOVAL_QUERY from unknown router " ATS_IP_PRINTF_CODE ".\n", ATS_IP_OCTETS(raddr));
+      Errata().note(Severity::INFO, "WCCP2_REMOVAL_QUERY from unknown router {}.", raddr);
     }
   } else {
     // Not an error in the multi-cast case, so just log under debug.
-    logf(LVL_DEBUG,
-         "WCCP2_REMOVAL_QUERY ignored -- target cache address " ATS_IP_PRINTF_CODE
-         " did not match local address " ATS_IP_PRINTF_CODE "\n.",
-         ATS_IP_OCTETS(target_addr), ATS_IP_OCTETS(m_addr));
+    zret.note(Severity::DBG, "WCCP2_REMOVAL_QUERY ignored -- target cache address {} did not match local address {}.", target_addr,
+              m_addr);
   }
 
-  logf(LVL_DEBUG, "Received WCCP2_REMOVAL_QUERY for group %d.", group.m_svc.getSvcId());
+  zret.note(Severity::DBG, "Received WCCP2_REMOVAL_QUERY for group %d.", group.m_svc.getSvcId());
 
   return zret;
 }
@@ -950,18 +951,18 @@ RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::Buffer const &chunk)
   int parse  = msg.parse(chunk);
 
   if (PARSE_SUCCESS != parse)
-    return log(LVL_INFO, "Ignored malformed WCCP2_HERE_I_AM message.\n");
+    return zret.note(Severity::INFO, "Ignored malformed WCCP2_HERE_I_AM message.");
 
   if (!this->validateSecurity(msg, nil_group))
-    return log(LVL_INFO, "Ignored WCCP2_HERE_I_AM with invalid security.\n");
+    return zret.note(Severity::INFO, "Ignored WCCP2_HERE_I_AM with invalid security.");
 
   ServiceGroup svc(msg.m_service);
   ServiceGroup::Result r;
   GroupData &group = this->defineServiceGroup(svc, &r);
   if (ServiceGroup::CONFLICT == r)
-    return logf(LVL_INFO, "WCCP2_HERE_I_AM ignored - service group %d definition does not match.\n", svc.getSvcId());
+    return Errata().note(Severity::INFO, "WCCP2_HERE_I_AM ignored - service group {} definition does not match.", svc.getSvcId());
   else if (ServiceGroup::DEFINED == r)
-    return logf(LVL_INFO, "Service group %d defined by WCCP2_HERE_I_AM.\n", svc.getSvcId());
+    return Errata().note(Severity::INFO, "Service group {} defined by WCCP2_HERE_I_AM.", svc.getSvcId());
 
   // Check if this cache is already known.
   uint32_t cache_addr = msg.m_cache_id.getAddr();
@@ -980,7 +981,8 @@ RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::Buffer const &chunk)
     // If so, make sure the sequence # is correct.
     RouterIdElt *me = msg.m_cache_view.findf_router_elt(m_addr);
     if (me && me->getRecvId() != cache->m_recv_count)
-      return logf(LVL_INFO, "Discarded out of date (recv=%d, local=%ld) WCCP2_HERE_I_AM.\n", me->getRecvId(), cache->m_recv_count);
+      return Errata().note(Severity::INFO, "Discarded out of date (recv=%d, local=%ld) WCCP2_HERE_I_AM.\n", me->getRecvId(),
+                           cache->m_recv_count);
   }
 
   cache_gen = msg.m_cache_view.getChangeNumber();
@@ -1077,9 +1079,9 @@ RouterImpl::xmitISeeYou()
         cache->m_xmit.set(now, group.m_generation);
         cache->m_pending    = false;
         cache->m_recv_count = msg.m_router_id.getRecvId();
-        logf(LVL_DEBUG, "I_SEE_YOU -> %s\n", ip_addr_to_str(cache->m_id.getAddr()));
+        Errata().note(Severity::DBG, "I_SEE_YOU -> {}", cache->m_id.getAddr());
       } else {
-        log_errno(LVL_WARN, "Router transmit failed -");
+        Errata().note(Severity::WARN, "Router transmit failed - {}", ts::bwf::Errno());
         return zret;
       }
     }
@@ -1115,7 +1117,7 @@ EndPoint &
 EndPoint::setAddr(uint32_t addr)
 {
   this->instance()->m_addr = addr;
-  logf(LVL_DEBUG, "Endpoint address set to %s\n", ip_addr_to_str(addr));
+  Errata().note(Severity::DBG, "Endpoint address set to {}", addr);
   return *this;
 }
 
@@ -1155,7 +1157,8 @@ ts::Rv<int>
 EndPoint::handleMessage()
 {
   return m_ptr ? m_ptr->handleMessage() :
-                 ts::Rv<int>(-ENOTCONN, log(LVL_INFO, "EndPoint::handleMessage called on unconnected instance"));
+                 ts::Rv<int>(-ENOTCONN, Errata().note(Severity::INFO, "EndPoint::handleMessage called on unconnected instance {}",
+                                                      ts::bwf::Errno(ENOTCONN)));
 }
 // ------------------------------------------------------
 Cache::Cache() {}

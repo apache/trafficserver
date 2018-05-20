@@ -28,12 +28,13 @@ development team.
 .. toctree::
    :maxdepth: 1
 
-   TextView.en
-   MemSpan.en
-   scalar.en
-   buffer-writer.en
-   intrusive-list.en
-   intrusive-hash-map.en
-   MemArena.en
    AcidPtr.en
+   buffer-writer.en
+   Errata.en
    Extendible.en
+   intrusive-hash-map.en
+   intrusive-list.en
+   MemArena.en
+   MemSpan.en
+   TextView.en
+   scalar.en

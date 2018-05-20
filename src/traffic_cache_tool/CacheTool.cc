@@ -43,6 +43,7 @@
 #include <ts/BufferWriter.h>
 #include <ts/CryptoHash.h>
 #include <thread>
+#include <ts/bwf_std_format.h>
 
 #include "File.h"
 #include "Command.h"
@@ -56,6 +57,7 @@ using ts::CacheStripeBlocks;
 using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
 using ts::Errata;
+using ts::Severity;
 using ts::FilePath;
 using ts::CacheDirEntry;
 using ts::MemSpan;
@@ -217,7 +219,7 @@ Cache::allocStripe(Span *span, int vol_idx, CacheStripeBlocks len)
 {
   auto rv = span->allocStripe(vol_idx, len);
   std::cout << span->_path << ":" << vol_idx << std::endl;
-  if (rv.isOK()) {
+  if (rv.is_ok()) {
     _volumes[vol_idx]._stripes.push_back(rv);
   }
   return rv.errata();
@@ -293,10 +295,10 @@ VolumeAllocator::load(FilePath const &spanFile, FilePath const &volumeFile)
   Errata zret;
 
   if (!volumeFile) {
-    zret.push(0, 9, "Volume config file not set");
+    zret.note(Severity::ERROR, "Volume config file not set");
   }
   if (!spanFile) {
-    zret.push(0, 9, "Span file not set");
+    zret.note(Severity::ERROR, "Span file not set");
   }
 
   if (zret) {
@@ -347,7 +349,7 @@ VolumeAllocator::allocateSpan(FilePath const &input_file_path)
     if (0 == strcmp(span->_path.path(), input_file_path.path())) {
       std::cout << "===============================" << std::endl;
       if (span->_header) {
-        zret.push(0, 1, "Disk already initialized with valid header");
+        zret.note(Severity::INFO, "Disk already initialized with valid header");
       } else {
         this->allocateFor(*span);
         span->updateHeader();
@@ -457,9 +459,9 @@ Cache::loadSpan(FilePath const &path)
 {
   Errata zret;
   if (!path.has_path()) {
-    zret = Errata::Message(0, EINVAL, "A span file specified by --span is required");
+    zret.note(Severity::ERROR, "A span file specified by --span is required.");
   } else if (!path.is_readable()) {
-    zret = Errata::Message(0, EPERM, '\'', path.path(), "' is not readable.");
+    zret.note(Severity::ERROR, "'{}' is not readable.");
   } else if (path.is_regular_file()) {
     zret = this->loadSpanConfig(path);
   } else {
@@ -533,7 +535,7 @@ Cache::loadSpanConfig(FilePath const &path)
               auto n = ts::svtoi(value, &text);
               if (text == value && 0 < n && n < 256) {
               } else {
-                zret.push(0, 0, "Invalid volume index '", value, "'");
+                zret.note(Severity::ERROR, "Invalid volume index '", value, "'");
               }
             }
           }
@@ -542,7 +544,7 @@ Cache::loadSpanConfig(FilePath const &path)
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path);
+    zret.note(Severity::ERROR, "Unable to load '{}'.", path);
   }
   return zret;
 }
@@ -577,7 +579,7 @@ Cache::loadURLs(FilePath const &path)
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path);
+    zret.note(Severity::ERROR, "Unable to load '{}'.", path);
   }
   return zret;
 }
@@ -695,13 +697,13 @@ Span::load()
 {
   Errata zret;
   if (!_path.is_readable()) {
-    zret = Errata::Message(0, EPERM, _path, " is not readable.");
+    zret.note(Severity::ERROR, "'{}' is not readable {}.", _path, ts::bwf::Errno(EPERM));
   } else if (_path.is_char_device() || _path.is_block_device()) {
     zret = this->loadDevice();
   } else if (_path.is_dir()) {
-    zret.push(0, 1, "Directory support not yet available");
+    zret.note(Severity::ERROR, "Directory support not yet available");
   } else {
-    zret.push(0, EBADF, _path, " is not a valid file type");
+    zret.note(Severity::ERROR, "'{}' is not a valid file type {}", _path, ts::bwf::Errno(EBADF));
   }
   return zret;
 }
@@ -749,7 +751,7 @@ Span::loadDevice()
           }
           _len = _header->num_blocks;
         } else {
-          zret = Errata::Message(0, 0, _path, " header is uninitialized or invalid");
+          zret.note(Severity::ERROR, " '{}' header is uninitialized or invalid.", _path);
           std::cout << "Span: " << _path << " header is uninitialized or invalid" << std::endl;
           _len = round_down(_geometry.totalsz) - _base;
         }
@@ -757,13 +759,13 @@ Span::loadDevice()
         _fd     = fd.release();
         _offset = _base + span_hdr_size;
       } else {
-        zret = Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
+        zret.note(Severity::ERROR, "Failed to read from '{}' {}.", _path, ts::bwf::Errno());
       }
     } else {
-      zret = Errata::Message(0, 23, "Unable to get device geometry for ", _path);
+      zret.note(Severity::ERROR, "Unable to get device geometry for '{}'.", _path);
     }
   } else {
-    zret = Errata::Message(0, errno, "Unable to open ", _path);
+    zret.note(Severity::ERROR, "Unable to open '{}' - {}.", _path, ts::bwf::Errno());
   }
   return zret;
 }
@@ -793,7 +795,7 @@ Span::allocStripe(int vol_idx, CacheStripeBlocks len)
     }
   }
   return ts::Rv<Stripe *>(nullptr,
-                          Errata::Message(0, 15, "Failed to allocate stripe of size ", len, " - no free block large enough"));
+                          Errata().note(Severity::ERROR, "Failed to allocate stripe of size {} - no free block large enough", len));
 }
 
 bool
@@ -864,7 +866,7 @@ Span::updateHeader()
   if (OPEN_RW_FLAG) {
     ssize_t r = pwrite(_fd, hdr, hdr_size, ts::CacheSpan::OFFSET);
     if (r < ts::CacheSpan::OFFSET) {
-      zret.push(0, errno, "Failed to update span - ", strerror(errno));
+      zret.note(Severity::ERROR, "Failed to update span - {}.", ts::bwf::Errno());
     }
   } else {
     std::cout << "Writing not enabled, no updates perfomed" << std::endl;
@@ -1049,10 +1051,10 @@ VolumeConfig::load(FilePath const &path)
         ts::TextView value(line.take_prefix_if(&isspace));
         ts::TextView tag(value.take_prefix_at('='));
         if (tag.empty()) {
-          zret.push(0, 1, "Line ", ln, " is invalid");
+          zret.note(Severity::WARN, "Line ", ln, " is invalid");
         } else if (0 == strcasecmp(tag, TAG_SIZE)) {
           if (v.hasSize()) {
-            zret.push(0, 5, "Line ", ln, " has field ", TAG_SIZE, " more than once");
+            zret.note(Severity::WARN, "Line ", ln, " has field ", TAG_SIZE, " more than once");
           } else {
             ts::TextView text;
             auto n = ts::svtoi(value, &text);
@@ -1061,27 +1063,27 @@ VolumeConfig::load(FilePath const &path)
               if (percent.empty()) {
                 v._size = CacheStripeBlocks(round_up(Megabytes(n)));
                 if (v._size.count() != n) {
-                  zret.push(0, 0, "Line ", ln, " size ", n, " was rounded up to ", v._size);
+                  zret.note(Severity::INFO, "Line ", ln, " size ", n, " was rounded up to ", v._size);
                 }
               } else if ('%' == *percent && percent.size() == 1) {
                 v._percent = n;
               } else {
-                zret.push(0, 3, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
+                zret.note(Severity::WARN, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
               }
             } else {
-              zret.push(0, 2, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
+              zret.note(Severity::WARN, "Line ", ln, " has invalid value '", value, "' for ", TAG_SIZE, " field");
             }
           }
         } else if (0 == strcasecmp(tag, TAG_VOL)) {
           if (v.hasIndex()) {
-            zret.push(0, 6, "Line ", ln, " has field ", TAG_VOL, " more than once");
+            zret.note(Severity::WARN, "Line ", ln, " has field ", TAG_VOL, " more than once");
           } else {
             ts::TextView text;
             auto n = ts::svtoi(value, &text);
             if (text == value) {
               v._idx = n;
             } else {
-              zret.push(0, 4, "Line ", ln, " has invalid value '", value, "' for ", TAG_VOL, " field");
+              zret.note(Severity::WARN, "Line ", ln, " has invalid value '", value, "' for ", TAG_VOL, " field");
             }
           }
         }
@@ -1090,15 +1092,15 @@ VolumeConfig::load(FilePath const &path)
         _volumes.push_back(std::move(v));
       } else {
         if (!v.hasSize()) {
-          zret.push(0, 7, "Line ", ln, " does not have the required field ", TAG_SIZE);
+          zret.note(Severity::WARN, "Line ", ln, " does not have the required field ", TAG_SIZE);
         }
         if (!v.hasIndex()) {
-          zret.push(0, 8, "Line ", ln, " does not have the required field ", TAG_VOL);
+          zret.note(Severity::WARN, "Line ", ln, " does not have the required field ", TAG_VOL);
         }
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path);
+    zret.note(Severity::ERROR, "Unable to load '{}' - {}", path, ts::bwf::Errno(EBADF));
   }
   return zret;
 }
@@ -1144,14 +1146,14 @@ Simulate_Span_Allocation(int argc, char *argv[])
   VolumeAllocator va;
 
   if (!VolumeFile) {
-    zret.push(0, 9, "Volume config file not set");
+    zret.note(Severity::ERROR, "Volume config file not set");
   }
   if (!SpanFile) {
-    zret.push(0, 9, "Span file not set");
+    zret.note(Severity::ERROR, "Span file not set");
   }
 
   if (zret) {
-    if ((zret = va.load(SpanFile, VolumeFile)).isOK()) {
+    if ((zret = va.load(SpanFile, VolumeFile)).is_ok()) {
       zret = va.fillAllSpans();
       va.dumpVolumes();
     }
@@ -1166,7 +1168,7 @@ Clear_Spans()
   Cache cache;
 
   if (!OPEN_RW_FLAG) {
-    zret.push(0, 1, "Writing Not Enabled.. Please use --write to enable writing to disk");
+    zret.note(Severity::ERROR, "Writing Not Enabled.. Please use --write to enable writing to disk");
     return zret;
   }
 
@@ -1303,7 +1305,7 @@ Init_disk(FilePath const &input_file_path)
   VolumeAllocator va;
 
   if (!OPEN_RW_FLAG) {
-    zret.push(0, 1, "Writing Not Enabled.. Please use --write to enable writing to disk");
+    zret.note(Severity::ERROR, "Writing Not Enabled.. Please use --write to enable writing to disk");
     return zret;
   }
 
@@ -1375,7 +1377,7 @@ Scan_Cache(ts::FilePath const &regex_path)
   Cache cache;
   std::vector<std::thread> threadPool;
   if ((zret = cache.loadSpan(SpanFile))) {
-    if (zret.size()) {
+    if (zret.count()) {
       return zret;
     }
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
@@ -1463,7 +1465,7 @@ main(int argc, char *argv[])
 
   Errata result = Commands.invoke(argc, argv);
 
-  if (result.size()) {
+  if (result.count()) {
     std::cerr << result;
     exit(1);
   }

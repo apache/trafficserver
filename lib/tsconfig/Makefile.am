@@ -43,8 +43,6 @@ libtsconfig_la_SOURCES = \
 	TsConfigLexer.h \
 	TsConfigParseEvents.h \
 	TsConfigTypes.h \
-	TsErrataUtil.cc \
-	TsErrataUtil.h \
 	TsValue.cc \
 	TsValue.h
 

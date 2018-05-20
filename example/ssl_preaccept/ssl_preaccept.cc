@@ -27,6 +27,7 @@
  */
 
 #include <cstdio>
+#include <deque>
 #include <memory.h>
 #include <cinttypes>
 #include <ts/ts.h>
@@ -93,7 +94,7 @@ int
 Load_Config_File()
 {
   ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
-  if (!cv.isOK()) {
+  if (!cv.is_ok()) {
     TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
     return -1;
   }

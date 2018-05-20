@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ts/TsBuffer.h>
+#include <tsconfig/IntrusivePtr.h>
 #include <tsconfig/Errata.h>
 #include <memory.h>
 #include "ts/ink_defs.h"
@@ -112,13 +113,13 @@ public:
   /// @name Well known (standard) services.
   //@{
   /// HTTP
-  static uint8_t const HTTP = 0;
+  static constexpr uint8_t HTTP = 0;
   //@}
   /// Service IDs of this value or less are reserved.
-  static uint8_t const RESERVED = 50;
+  static constexpr uint8_t RESERVED = 50;
 
   /// Number of ports in component (defined by protocol).
-  static size_t const N_PORTS = 8;
+  static constexpr size_t N_PORTS = 8;
 
   /// @name Flag mask values.
   //@{
@@ -511,3 +512,11 @@ EndPoint::useMD5Security(char const *key)
 // ------------------------------------------------------
 
 } // namespace wccp
+
+namespace ts
+{
+BufferWriter &bwformat(BufferWriter &w, const BWFSpec &spec, const wccp::ServiceConstants::PacketStyle &style);
+
+BufferWriter &bwformat(BufferWriter &w, const BWFSpec &spec, const wccp::ServiceConstants::CacheAssignmentStyle &style);
+
+} // namespace ts
