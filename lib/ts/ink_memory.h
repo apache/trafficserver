@@ -27,6 +27,7 @@
 #include <strings.h>
 #include <cinttypes>
 #include <string>
+#include <string_view>
 
 #include "ts/ink_config.h"
 
