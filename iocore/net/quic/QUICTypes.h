@@ -53,6 +53,11 @@ constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 
 constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
+// OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
+// https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
+// Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
+constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-11"sv);
+
 enum class QUICHandshakeMsgType {
   NONE = 0,
   INITIAL,

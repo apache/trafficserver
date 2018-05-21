@@ -24,6 +24,7 @@
 #include "QUICConfig.h"
 
 #include <openssl/ssl.h>
+
 #include <records/I_RecHttp.h>
 
 #include "P_SSLConfig.h"
@@ -88,7 +89,10 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params)
 {
   SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
 
-  // SSL_CTX_set_alpn_protos()
+  if (SSL_CTX_set_alpn_protos(ssl_ctx, reinterpret_cast<const unsigned char *>(QUIC_ALPN_PROTO_LIST.data()),
+                              QUIC_ALPN_PROTO_LIST.size()) != 0) {
+    Error("SSL_CTX_set_alpn_protos failed");
+  }
 
   if (params->client_supported_groups() != nullptr) {
     if (SSL_CTX_set1_groups_list(ssl_ctx, params->client_supported_groups()) != 1) {
