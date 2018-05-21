@@ -123,7 +123,7 @@ HQClientSession::release(ProxyClientTransaction *trans)
 }
 
 int
-HQClientSession::populate_protocol(ts::string_view *result, int size) const
+HQClientSession::populate_protocol(std::string_view *result, int size) const
 {
   int retval = 0;
   if (size > retval) {

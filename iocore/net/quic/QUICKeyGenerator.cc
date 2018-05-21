@@ -26,16 +26,18 @@
 #include "ts/ink_assert.h"
 #include "QUICHKDF.h"
 
+using namespace std::literals;
+
 constexpr static uint8_t QUIC_VERSION_1_SALT[] = {
   0x9c, 0x10, 0x8f, 0x98, 0x52, 0x0a, 0x5c, 0x5c, 0x32, 0x96, 0x8e, 0x95, 0x0e, 0x8a, 0x2c, 0x5f, 0xe0, 0x6d, 0x6c, 0x38,
 };
-constexpr static ts::string_view LABEL_FOR_CLIENT_CLEARTEXT_SECRET("client hs"_sv);
-constexpr static ts::string_view LABEL_FOR_SERVER_CLEARTEXT_SECRET("server hs"_sv);
-constexpr static ts::string_view LABEL_FOR_CLIENT_0RTT_SECRET("EXPORTER-QUIC 0rtt"_sv);
-constexpr static ts::string_view LABEL_FOR_CLIENT_PP_SECRET("EXPORTER-QUIC client 1rtt"_sv);
-constexpr static ts::string_view LABEL_FOR_SERVER_PP_SECRET("EXPORTER-QUIC server 1rtt"_sv);
-constexpr static ts::string_view LABEL_FOR_KEY("key"_sv);
-constexpr static ts::string_view LABEL_FOR_IV("iv"_sv);
+constexpr static std::string_view LABEL_FOR_CLIENT_CLEARTEXT_SECRET("client hs"sv);
+constexpr static std::string_view LABEL_FOR_SERVER_CLEARTEXT_SECRET("server hs"sv);
+constexpr static std::string_view LABEL_FOR_CLIENT_0RTT_SECRET("EXPORTER-QUIC 0rtt"sv);
+constexpr static std::string_view LABEL_FOR_CLIENT_PP_SECRET("EXPORTER-QUIC client 1rtt"sv);
+constexpr static std::string_view LABEL_FOR_SERVER_PP_SECRET("EXPORTER-QUIC server 1rtt"sv);
+constexpr static std::string_view LABEL_FOR_KEY("key"sv);
+constexpr static std::string_view LABEL_FOR_IV("iv"sv);
 
 std::unique_ptr<KeyMaterial>
 QUICKeyGenerator::generate(QUICConnectionId cid)

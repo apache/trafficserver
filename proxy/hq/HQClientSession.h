@@ -50,7 +50,7 @@ public:
   int get_transact_count() const override;
   const char *get_protocol_string() const override;
   void release(ProxyClientTransaction *trans) override;
-  int populate_protocol(ts::string_view *result, int size) const override;
+  int populate_protocol(std::string_view *result, int size) const override;
 
   // HQClientSession specific methods
   void add_transaction(HQClientTransaction *);

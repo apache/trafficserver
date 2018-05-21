@@ -24,7 +24,6 @@
 #include "QUICHandshakeProtocol.h"
 
 #include "ts/Diags.h"
-#include "ts/string_view.h"
 #include "QUICTypes.h"
 #include "QUICHKDF.h"
 

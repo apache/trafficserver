@@ -24,7 +24,6 @@
 #include <string>
 
 #include "ts/ink_config.h"
-#include "ts/ink_std_compat.h"
 #include "records/I_RecHttp.h"
 #include "ts/Diags.h"
 
@@ -742,7 +741,7 @@ QUICNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
 }
 
 int
-QUICNetVConnection::populate_protocol(ts::string_view *results, int n) const
+QUICNetVConnection::populate_protocol(std::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
@@ -755,10 +754,10 @@ QUICNetVConnection::populate_protocol(ts::string_view *results, int n) const
 }
 
 const char *
-QUICNetVConnection::protocol_contains(ts::string_view prefix) const
+QUICNetVConnection::protocol_contains(std::string_view prefix) const
 {
   const char *retval  = nullptr;
-  ts::string_view tag = IP_PROTO_TAG_QUIC;
+  std::string_view tag = IP_PROTO_TAG_QUIC;
   if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
     retval = tag.data();
   } else {
