@@ -329,7 +329,7 @@ URL::create(HdrHeap *heap)
 inline void
 URL::copy(const URL *url)
 {
-  ink_assert(url->valid());
+  ink_assert(url != nullptr && url->valid());
   url_copy_onto(url->m_url_impl, url->m_heap, m_url_impl, m_heap);
 }
 
