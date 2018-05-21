@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/escalate/escalate.la
+pkglib_LTLIBRARIES += cache_promote/cache_promote.la
 
-experimental_escalate_escalate_la_SOURCES = \
-  experimental/escalate/escalate.cc
+cache_promote_cache_promote_la_SOURCES = \
+  cache_promote/cache_promote.cc

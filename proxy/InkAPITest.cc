@@ -6742,16 +6742,17 @@ transformable(TSHttpTxn txnp, TransformTestData *data)
 static void
 transform_add(TSHttpTxn txnp, TransformTestData *test_data)
 {
-  TSVConn connp;
-  auto *data = new AppendTransformTestData;
-
-  data->test_data = test_data;
-  connp           = TSTransformCreate(transformtest_transform, txnp);
+  TSVConn connp = TSTransformCreate(transformtest_transform, txnp);
   if (connp == nullptr) {
-    SDK_RPRINT(data->test_data->test, "TSHttpTxnTransform", "", TC_FAIL, "Unable to create Transformation.");
+    SDK_RPRINT(test_data->test, "TSHttpTxnTransform", "", TC_FAIL, "Unable to create Transformation.");
     return;
   }
+
+  // Add data to the continuation
+  auto *data      = new AppendTransformTestData;
+  data->test_data = test_data;
   TSContDataSet(connp, data);
+
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
   return;
 }
@@ -7821,7 +7822,7 @@ REGRESSION_TEST(SDK_API_ENCODING)(RegressionTest *test, int /* atype ATS_UNUSED 
   // test to verify TSStringPercentDecode does not write past the end of the
   // buffer
   const size_t buf_len = strlen(url3) + 1; // 81
-  strncpy(buf, url3, buf_len - 1);
+  memcpy(buf, url3, buf_len - 1);
   const char canary = 0xFF;
   buf[buf_len - 1]  = canary;
 

@@ -1,5 +1,3 @@
-#!/bin/sh
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,22 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-cd "${WORKSPACE}/src"
+pkglib_LTLIBRARIES += escalate/escalate.la
 
-autoreconf -if && ./configure
-
-# WTF
-rm -f lib/ts/stamp-h1
-
-${ATS_MAKE} rat | tee RAT.txt
-mv RAT.txt /CA/RAT/rat-${ATS_BRANCH}.txt.new
-mv /CA/RAT/rat-${ATS_BRANCH}.txt.new /CA/RAT/rat-${ATS_BRANCH}.txt
-
-# Purgatory
-curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/RAT/rat-${ATS_BRANCH}.txt
-
-# Mark as failed if there are any unknown licesnes
-grep '0 Unknown Licenses' /CA/RAT/rat-${ATS_BRANCH}.txt >/dev/null || exit 1
-
-# Normal exit
-exit 0
+escalate_escalate_la_SOURCES = \
+  escalate/escalate.cc

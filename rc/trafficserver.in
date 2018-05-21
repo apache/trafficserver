@@ -21,7 +21,6 @@
 # processname: traffic_manager traffic_server
 # config: /etc/trafficserver
 # config: /etc/sysconfig/trafficserver
-# pidfile: /var/run/trafficserver/cop.pid
 #
 # Template from /etc/init.d/skeleton on Ubuntu
 #

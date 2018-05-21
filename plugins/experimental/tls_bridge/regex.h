@@ -25,7 +25,7 @@
 
 #include <pcre.h>
 #include <algorithm>
-#include <ts/string_view.h>
+#include <string_view>
 
 class Regex
 {
@@ -43,8 +43,8 @@ public:
 
   bool compile(const char *pattern, const unsigned flags = 0);
   // It is safe to call exec() concurrently on the same object instance
-  bool exec(ts::string_view src) const;
-  bool exec(ts::string_view src, int *ovector, int ovecsize) const;
+  bool exec(std::string_view src) const;
+  bool exec(std::string_view src, int *ovector, int ovecsize) const;
   int get_capture_count();
   ~Regex();
 

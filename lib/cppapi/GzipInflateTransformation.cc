@@ -24,7 +24,7 @@
 #include <vector>
 #include <zlib.h>
 #include <cinttypes>
-#include <ts/string_view.h>
+#include <string_view>
 #include "atscppapi/TransformationPlugin.h"
 #include "atscppapi/GzipInflateTransformation.h"
 #include "logging_internal.h"
@@ -83,7 +83,7 @@ GzipInflateTransformation::~GzipInflateTransformation()
 }
 
 void
-GzipInflateTransformation::consume(ts::string_view data)
+GzipInflateTransformation::consume(std::string_view data)
 {
   if (data.size() == 0) {
     return;
@@ -122,7 +122,7 @@ GzipInflateTransformation::consume(ts::string_view data)
 
     LOG_DEBUG("Iteration %d: Gzip inflated a total of %d bytes, producingOutput...", iteration,
               (inflate_block_size - state_->z_stream_.avail_out));
-    produce(ts::string_view(&buffer[0], (inflate_block_size - state_->z_stream_.avail_out)));
+    produce(std::string_view(&buffer[0], (inflate_block_size - state_->z_stream_.avail_out)));
     state_->bytes_produced_ += (inflate_block_size - state_->z_stream_.avail_out);
   }
   state_->z_stream_.next_out = nullptr;

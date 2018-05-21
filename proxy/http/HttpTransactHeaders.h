@@ -63,7 +63,7 @@ public:
 
   enum class ProtocolStackDetail { Compact, Standard, Full };
 
-  static int write_hdr_protocol_stack(char *hdr_string, size_t len, ProtocolStackDetail pSDetail, ts::string_view *proto_buf,
+  static int write_hdr_protocol_stack(char *hdr_string, size_t len, ProtocolStackDetail pSDetail, std::string_view *proto_buf,
                                       int n_proto, char separator = ' ');
 
   // Removing handle_conditional_headers.  Functionality appears to be elsewhere (issue_revalidate)

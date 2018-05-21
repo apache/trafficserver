@@ -1316,13 +1316,6 @@ tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TS
 */
 tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
 
-/** Get SSL object of this session.
-    Retrieves the SSL object of the SSL connection.
-
-    @return SSL object of this session
- */
-tsapi void *TSHttpSsnSSLConnectionGet(TSHttpSsn ssnp); /* returns SSL * */
-
 /** Get client address for transaction @a txnp.
     Retrieves the socket address of the remote client that has
     connected to Traffic Server for transaction @a txnp. The
@@ -2361,6 +2354,9 @@ tsapi int TSHttpTxnIsWebsocket(TSHttpTxn txnp);
 
 /* Get the Txn's (HttpSM's) unique identifier, which is a sequence number since server start) */
 tsapi uint64_t TSHttpTxnIdGet(TSHttpTxn txnp);
+
+/* Get the Ssn's unique identifier */
+tsapi int64_t TSHttpSsnIdGet(TSHttpSsn ssnp);
 
 /* Expose internal Base64 Encoding / Decoding */
 tsapi TSReturnCode TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length);

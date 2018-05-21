@@ -14,31 +14,31 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-.. include:: ../../../common.defs
+.. default-domain:: c
 
-.. This is basically a holding pen to avoid dangling references as I can't find a better way to deal with
-   non-ATS types. Some of this was handled by the "EXTERNAL_TYPES" in ext/traffic-server.py but that's
-   even uglier than this.
+TSHttpSsnIdGet
+*******************
 
-System Types
-************
+Returns the unique identifier for client session.
 
 Synopsis
 ========
 
-This is a place for defining compiler or system provided types to avoid dangling references.
+`#include <ts/ts.h>`
+
+.. function:: int64_t TSHttpSsnIdGet(TSHttpSsn ssnp)
 
 Description
 ===========
 
-These types are provided by the compiler ("built-in") or from a required operating system, POSIX, or package header.
+:func:`TSHttpSsnIdGet` returns the unique identifier for this client session.
 
-.. cpp:type:: uint24_t
+Return Values
+=============
 
-.. cpp:class:: IpEndpoint
+Returns a :type:`int64_t` as the unique ID
 
-   A wrapper for :code:`sockaddr` types.
+See also
+========
 
-.. cpp:class:: IpAddr
-
-   Storage for an IP address.
+:manpage:`TSAPI(3ts)`

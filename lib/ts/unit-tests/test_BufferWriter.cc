@@ -23,12 +23,11 @@
 
 #include "catch.hpp"
 #include <ts/BufferWriter.h>
-#include <ts/string_view.h>
 #include <cstring>
 
 namespace
 {
-ts::string_view three[] = {"a", "", "bcd"};
+std::string_view three[] = {"a", "", "bcd"};
 }
 
 TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
@@ -83,6 +82,16 @@ TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
     }
     X &clip(size_t) override { return *this; }
     X &extend(size_t) override { return *this; }
+    std::ostream &
+    operator>>(std::ostream &stream) const override
+    {
+      return stream;
+    }
+    ssize_t
+    operator>>(int fd) const override
+    {
+      return 0;
+    }
   };
 
   X x;
@@ -164,7 +173,7 @@ twice(BWType &bw)
 
   bw.reduce(0);
 
-  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(ts::string_view("brown", 5));
+  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(std::string_view("brown", 5));
 
   if ((bw.capacity() != 20) or bw.error() or (bw.remaining() != (21 - sizeof("The quick brown")))) {
     return false;
@@ -276,7 +285,7 @@ TEST_CASE("Concrete Buffer Writers 2", "[BWC2]")
   REQUIRE(bw20.extent() == 10);
   REQUIRE(bw20.size() == 10);
 
-  auto abw = bw20.auxWriter();
+  ts::FixedBufferWriter abw{bw20.auxWriter()};
   REQUIRE(abw.remaining() == 10);
   abw.write("abcdefghijklmnopqrstuvwxyz");
   bw20.fill(abw.extent());
@@ -305,7 +314,7 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
 
   bw.reduce(0);
 
-  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(ts::string_view("brown", 5));
+  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(std::string_view("brown", 5));
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown") - 1));

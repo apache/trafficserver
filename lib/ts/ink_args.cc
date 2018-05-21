@@ -41,6 +41,7 @@ Process arguments
 const char *file_arguments[MAX_FILE_ARGUMENTS] = {nullptr};
 const char *program_name                       = (char *)"Traffic Server";
 unsigned n_file_arguments                      = 0;
+int cmd_disable_pfreelist                      = 0;
 
 //
 //  Local variables

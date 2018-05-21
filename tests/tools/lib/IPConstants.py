@@ -1,3 +1,5 @@
+'''
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,7 +16,33 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/cache_promote/cache_promote.la
+import ipaddress
 
-experimental_cache_promote_cache_promote_la_SOURCES = \
-  experimental/cache_promote/cache_promote.cc
+# convenience functions
+
+IPkw = {'INADDR_LOOPBACK':'127.0.0.1',
+		'IN6ADDR_LOOPBACK':'::1',
+		'INADDR_ANY':'0.0.0.0',
+		'IN6ADDR_ANY':'::'}
+
+def isIPv6(addr):
+	if addr in IPkw:
+		addr = IPkw[addr]
+
+
+	return ipaddress.ip_address(addr).version == 6
+
+
+def isIPv4(addr):
+	if addr in IPkw:
+		addr = IPkw[addr]
+
+	return ipaddress.ip_address(addr).version == 4
+
+
+def getIP(addr):
+	if addr in IPkw:
+		addr = IPkw[addr]
+
+	return str(ipaddress.ip_address(addr))
+ 

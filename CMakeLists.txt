@@ -64,7 +64,6 @@ add_executable(traffic_crashlog
 add_executable(traffic_ctl
         cmd/traffic_ctl/alarm.cc
         cmd/traffic_ctl/config.cc
-        cmd/traffic_ctl/metric.cc
         cmd/traffic_ctl/plugin.cc
         cmd/traffic_ctl/server.cc
         cmd/traffic_ctl/storage.cc
@@ -84,11 +83,6 @@ add_executable(traffic_layout
 
 add_executable(traffic_manager
         cmd/traffic_manager/AddConfigFilesHere.cc
-        cmd/traffic_manager/metrics.cc
-        cmd/traffic_manager/metrics.h
-        cmd/traffic_manager/MgmtHandlers.cc
-        cmd/traffic_manager/MgmtHandlers.h
-        cmd/traffic_manager/test_metrics.cc
         cmd/traffic_manager/traffic_manager.cc
 )
 
@@ -338,8 +332,6 @@ add_executable(ats
         lib/bindings/bindings.h
         lib/bindings/lua.cc
         lib/bindings/lua.h
-        lib/bindings/metrics.cc
-        lib/bindings/metrics.h
         lib/bindings/repl.cc
         lib/bindings/repl.h
         lib/cppapi/include/atscppapi/Async.h
@@ -647,6 +639,7 @@ add_executable(ats
         plugins/background_fetch/headers.h
         plugins/background_fetch/rules.cc
         plugins/background_fetch/rules.h
+        plugins/cache_promote/cache_promote.cc
         plugins/conf_remap/conf_remap.cc
         plugins/esi/fetcher/FetchedDataProcessor.h
         plugins/esi/fetcher/HttpDataFetcher.h
@@ -708,7 +701,6 @@ add_executable(ats
         plugins/experimental/balancer/roundrobin.cc
         plugins/experimental/buffer_upload/buffer_upload.cc
         plugins/experimental/cache_key_genid/cache_key_genid.c
-        plugins/experimental/cache_promote/cache_promote.cc
         plugins/experimental/cache_range_requests/cache_range_requests.cc
         plugins/experimental/collapsed_connection/collapsed_connection.cc
         plugins/experimental/collapsed_connection/MurmurHash3.cc
@@ -716,7 +708,6 @@ add_executable(ats
         plugins/experimental/collapsed_connection/P_collapsed_connection.h
         plugins/experimental/collapsed_forwarding/collapsed_forwarding.cc
         plugins/experimental/custom_redirect/custom_redirect.cc
-        plugins/experimental/escalate/escalate.cc
         plugins/experimental/geoip_acl/acl.cc
         plugins/experimental/geoip_acl/acl.h
         plugins/experimental/geoip_acl/geoip_acl.cc
@@ -1150,6 +1141,7 @@ add_library(libtsutil SHARED
         lib/ts/BaseLogFile.h
         lib/ts/Bitops.cc
         lib/ts/Bitops.h
+        lib/ts/bwf_std_format.h
         lib/ts/BufferWriter.h
         lib/ts/BufferWriterForward.h
         lib/ts/BufferWriterFormat.cc
@@ -1238,7 +1230,6 @@ add_library(libtsutil SHARED
         lib/ts/ink_sprintf.h
         lib/ts/ink_stack_trace.cc
         lib/ts/ink_stack_trace.h
-        lib/ts/ink_std_compat.h
         lib/ts/ink_string++.cc
         lib/ts/ink_string++.h
         lib/ts/ink_string.cc
@@ -1269,6 +1260,8 @@ add_library(libtsutil SHARED
         lib/ts/Map.h
         lib/ts/MatcherUtils.cc
         lib/ts/MatcherUtils.h
+        lib/ts/MemArena.h
+        lib/ts/MemArena.cc
         lib/ts/MemSpan.h
         lib/ts/mkdfa.c
         lib/ts/MMH.cc
@@ -1296,7 +1289,6 @@ add_library(libtsutil SHARED
         lib/ts/SimpleTokenizer.h
         lib/ts/SourceLocation.cc
         lib/ts/SourceLocation.h
-        lib/ts/string_view.h
         lib/ts/test_arena.cc
         lib/ts/test_atomic.cc
         lib/ts/test_freelist.cc
@@ -1332,9 +1324,10 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_ink_inet.cc
 	lib/ts/unit-tests/test_IpMap.cc
 	lib/ts/unit-tests/test_layout.cc
+	lib/ts/unit-tests/test_MemArena.cc
+	lib/ts/unit-tests/test_MemSpan.cc
 	lib/ts/unit-tests/test_MT_hashtable.cc
 	lib/ts/unit-tests/test_Scalar.cc
-	lib/ts/unit-tests/test_string_view.cc
 	lib/ts/unit-tests/test_scoped_resource.cc
 	lib/ts/unit-tests/test_TextView.cc
 )
@@ -1416,6 +1409,10 @@ add_library(plugin_cachekey SHARED
         plugins/cachekey/pattern.cc
         plugins/cachekey/pattern.h
         plugins/cachekey/plugin.cc
+        )
+
+add_library(plugin_escalate SHARED
+        plugins/escalate/escalate.cc
         )
 
 # CacheTool

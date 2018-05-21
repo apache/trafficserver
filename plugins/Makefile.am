@@ -30,7 +30,9 @@ AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 include authproxy/Makefile.inc
 include background_fetch/Makefile.inc
 include cachekey/Makefile.inc
+include cache_promote/Makefile.inc
 include conf_remap/Makefile.inc
+include escalate/Makefile.inc
 include esi/Makefile.inc
 include generator/Makefile.inc
 include compress/Makefile.inc
@@ -50,12 +52,10 @@ if BUILD_EXPERIMENTAL_PLUGINS
 include experimental/acme/Makefile.inc
 include experimental/balancer/Makefile.inc
 include experimental/buffer_upload/Makefile.inc
-include experimental/cache_promote/Makefile.inc
 include experimental/cache_range_requests/Makefile.inc
 include experimental/collapsed_connection/Makefile.inc
 include experimental/collapsed_forwarding/Makefile.inc
 include experimental/custom_redirect/Makefile.inc
-include experimental/escalate/Makefile.inc
 include experimental/fq_pacing/Makefile.inc
 include experimental/geoip_acl/Makefile.inc
 include experimental/header_freq/Makefile.inc

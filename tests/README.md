@@ -7,7 +7,7 @@ This directory contains different tests for Apache Trafficserver. It is recommen
 The current layout is:
 
 **gold_tests/** - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)
-**tools/** - contain programs used to help with testing. 
+**tools/** - contain programs used to help with testing.
 
 In the future a directory called **"unit/"** will be added for adding unit tests based on some standardized testing system.
 
@@ -28,7 +28,7 @@ AuTest can be install manually instead of using the wrapper script. The advange 
 1. run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
 2. The other way is to make sure you install python 3.5 or better on your system. From there install these python packages ( ie pip install ):
   - hyper
-  - git+https://bitbucket.org/dragon512/reusable-gold-testing-system.git 
+  - git+https://bitbucket.org/dragon512/reusable-gold-testing-system.git
 
 # Writting tests for AuTest
 When writting for the AuTest system please refer to the current documenation on the [online wiki](https://bitbucket.org/dragon512/reusable-gold-testing-system/wiki/Home) for general use of the system.
@@ -60,15 +60,15 @@ tr=Test.AddTestRun()
 tr.Processes.Default.Command='traffic_ctl'
 tr.Processes.Default.ReturnCode=0
 # set the environment for traffic_control to run in to be the same as the "ts" ATS instance
-tr.Processes.Default.Env=ts.Env 
+tr.Processes.Default.Env=ts.Env
 ```
 
 #### Variables
-These are the current variable that are define dynamically 
+These are the current variable that are define dynamically
 
-port - the ipv4 port to listen on  
-portv6 - the ipv4 port to listen on  
-manager_port - the manager port used. This is set even is select_port is False  
+port - the ipv4 port to listen on
+portv6 - the ipv4 port to listen on
+manager_port - the manager port used. This is set even is select_port is False
 admin_port - the admin port used. This is set even is select_port is False
 
 #### File objects
@@ -78,7 +78,7 @@ A number of file object are define to help with adding values to a given configu
  * squid.log
  * error.log
  * diags.log
-    
+
 ##### config files
  * records.config
  * cache.config
@@ -87,7 +87,6 @@ A number of file object are define to help with adding values to a given configu
  * ip_allow.config
  * log_hosts.config
  * logging.config
- * metrics.config
  * parent.config
  * plugin.config
  * remap.config
@@ -124,7 +123,7 @@ Add value to a configuration file
 # setup some config file for this server
 ts.Disk.records_config.update({
             'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
-            'proxy.config.http.cache.generation':-1, # Start with cache turned off 
+            'proxy.config.http.cache.generation':-1, # Start with cache turned off
             'proxy.config.config_update_interval_ms':1,
         })
 ts.Disk.plugin_config.AddLine('xdebug.so')
@@ -150,7 +149,7 @@ This function copies a given configuration file the location of a given traffics
 
 #### Examples
 
-Copy a file over 
+Copy a file over
 
 ```python
 ts1 = Test.MakeATSProcess("ts1",select_ports=False)
@@ -168,9 +167,9 @@ Test.Setup.ts.CopyConfig('config/records_8090.config','records.config',Test.Proc
 ## Setting up Origin Server
 ### Test.MakeOriginServer(Name)
  * name - A name for this instance of Origin Server.
- 
+
  This function returns a AuTest process object that launches the python-based microserver. Micro-Server is a mock server which responds to client http requests. Microserver needs to be setup for the tests that require an origin server behind ATS. The server reads a JSON-formatted data file that contains request headers and the corresponding response headers. Microserver responds with payload if the response header contains Content-Length or Transfer-Enconding specified.
- 
+
 ### addResponse(filename, request_header, response_header)
 * filename - name of the file where the request header and response header will be written to in JSON format
 * request_header - dictionary of request header
@@ -202,12 +201,12 @@ ts.Disk.remap_config.AddLine(
  This function returns a AuTest process object that launches the python-based microDNS (uDNS). uDNS is a mock DNS which responds to DNS queries. uDNS needs to be setup for the tests that require made-up domains. The server reads a JSON-formatted data file that contains mappings of domain to IP addresses. uDNS responds with the approriate IP addresses if the requested domain is in uDNS' mappings.
 
  * addRecords(records=None, jsonFile=None)
- 
- This function adds records using either a dictionary, *records*, or a json file, *jsonFile*.  
 
- The supplied dictionary must be in the form of ```{ 'domain A': [IP1, IP2], 'domain B': [IP3, IP4] }```.  
+ This function adds records using either a dictionary, *records*, or a json file, *jsonFile*.
 
- The supplied json file must take the form of 
+ The supplied dictionary must be in the form of ```{ 'domain A': [IP1, IP2], 'domain B': [IP3, IP4] }```.
+
+ The supplied json file must take the form of
  ```
  {
      "mappings": [
@@ -220,7 +219,7 @@ ts.Disk.remap_config.AddLine(
  ### Examples
  There are 3 ways to utilize uDNS -
 
- Easy way if everything is done on localhost - by adding default option to Test.MakeDNServer:  
+ Easy way if everything is done on localhost - by adding default option to Test.MakeDNServer:
  *uDNS by default returns NXDOMAIN for any unknown mappings*
 
  ```python
@@ -274,7 +273,7 @@ ts.Disk.remap_config.AddLine(
 ## Condition Testing
 ### Condition.HasATSFeature(feature)
  * feature - The feature to test for
- 
+
  This function tests for Traffic server for possible feature it has been compiled with. Current Features you can test for are:
  * TS_HAS_LIBZ
  * TS_HAS_LZMA
@@ -305,7 +304,7 @@ ts.Disk.remap_config.AddLine(
  * TS_HAS_TESTS
  * TS_HAS_WCCP
  * SPLIT_DNS
-                                
+
 ### Example
 ```python
 #create the origin server process
@@ -316,9 +315,9 @@ Test.SkipUnless(
 
 ### Condition.HasCurlFeature(feature)
  * feature - The feature to test for
- 
+
  This function tests for Curl for possible feature it has been compiled with. Consult Curl documenation for feature set.
-                                
+
 ### Example
 ```python
 #create the origin server process
@@ -329,9 +328,9 @@ Test.SkipUnless(
 
 ### Condition.PluginExists(pluginname)
  * pluginname - The plugin to test for
- 
+
  This function tests for existence of a certain plugin in TrafficServer.
-                                
+
 ### Example
 ```python
 Test.SkipUnless(

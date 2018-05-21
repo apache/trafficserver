@@ -49,9 +49,11 @@ Plugins that are considered stable are installed by default in |TS| releases.
    AuthProxy <authproxy.en>
    Background Fetch <background_fetch.en>
    Cache Key Manipulation <cachekey.en>
+   Cache Promotion Policies <cache_promote.en>
    Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
    ESI <esi.en>
+   Escalate <escalate.en>
    Compress <compress.en>
    Generator <generator.en>
    Header Rewrite <header_rewrite.en>
@@ -75,6 +77,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Cache Key Manipulation <cachekey.en>`
    Allows some common cache key manipulations based on various HTTP request elements.
 
+:doc:`Cache Promotion Policies <cache_promote.en>`
+   Allows for control over which assets should be written to cache, or not.
+
 :doc:`Combo Handler <combo_handler.en>`
    Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
 
@@ -84,11 +89,16 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`ESI <esi.en>`
    Implements the Edge Side Includes (ESI) specification.
 
+:doc:`Escalate <escalate.en>`
+   Escalate: when the origin returns specific status codes, retry the request at a secondary origin (failover/fail-action)
+
 :doc:`Generator <generator.en>`
    Generate arbitrary response data.
 
-:doc:`GZip <gzip.en>`
+:doc:`Compress <compress.en>`
     Compress or deflate cache responses.
+
+    .. sidebar: Formerly "gzip".
 
 :doc:`Header Rewrite <header_rewrite.en>`
     Modify requests and responses based on incoming and outgoing headers and
@@ -129,10 +139,8 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
-   Cache Promote <cache_promote.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    Epic <epic.en>
-   Escalate <escalate.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
@@ -156,18 +164,12 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Buffer Upload <buffer_upload.en>`
    Buffers POST data before connecting to the Origin server.
 
-:doc:`Cache Promote <cache_promote.en>`
-   Provides additional control over when an object should be allowed into the cache.
-
 :doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
    Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
    all clients in parallel.
 
 :doc:`Epic <epic.en>`
    Emits Traffic Server metrics in a format that is consumed by the Epic Network Monitoring System.
-
-:doc:`Escalate <escalate.en>`
-   Escalate: when the origin returns specific status codes, retry the request at a secondary origin (failover/fail-action)
 
 :doc:`FQ Pacing <fq_pacing.en>`
    FQ Pacing: Rate Limit TCP connections using Linux's Fair Queuing queue discipline

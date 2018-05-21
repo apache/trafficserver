@@ -19,7 +19,7 @@
 from ports import get_port
 import json
 import os
-
+import sys
 
 # AddRecord registers a list of ip address against hostname
 def AddRecord(hostname, list_ip_addr):
@@ -68,7 +68,7 @@ def addRecords(self, records=None, jsonFile=None):
         f.write(json.dumps(jsondata))
 
 
-def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1', rr=False, default=None, options={}):
+def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOOPBACK', rr=False, default=None, options={}):
     server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microDNS/uDNS.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     filepath = os.path.join(data_dir, filename)
@@ -90,7 +90,7 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1'
     p = obj.Processes.Process(name)
     if (port == False):
         port = get_port(p, "Port")
-    command = "python3 {3} {0} {1} {2}".format(IP, port, filepath, server_path)
+    command = "python3 {0} {1} {2} {3}".format(server_path, ip, port, filepath)
 
     if rr:
         command += " --rr"
@@ -100,7 +100,16 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, IP='127.0.0.1'
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
     p.ReturnCode = 0
-    p.Ready = When.PortOpen(port)
+
+    # to get the IP keywords in tools/lib
+    sys.path.append(obj.Variables.AtsTestToolsDir)
+    import lib.IPConstants as IPConstants
+
+    if IPConstants.isIPv6(ip):
+        p.Ready = When.PortOpenv6(port)
+    else:
+        p.Ready = When.PortOpenv4(port)
+        
     AddMethodToInstance(p, AddRecord)
     AddMethodToInstance(p, addRecords)
 
