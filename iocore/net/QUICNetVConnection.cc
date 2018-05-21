@@ -756,7 +756,7 @@ QUICNetVConnection::populate_protocol(std::string_view *results, int n) const
 const char *
 QUICNetVConnection::protocol_contains(std::string_view prefix) const
 {
-  const char *retval  = nullptr;
+  const char *retval   = nullptr;
   std::string_view tag = IP_PROTO_TAG_QUIC;
   if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
     retval = tag.data();
