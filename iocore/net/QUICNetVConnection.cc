@@ -1117,23 +1117,27 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
     buf = ats_unique_malloc(max_size);
   }
 
-  size_t l = 0;
-
-  // TODO: check debug build
-  char msg[1024];
-  QUICConDebug("[TX] %s", msg);
-
   ink_assert(max_size > len);
+
+  char msg[1024];
+  size_t l = 0;
   size_t n = frame->store(buf.get() + len, &l, max_size - len);
   if (n > 0) {
+    // TODO: check debug build
     frame->debug_msg(msg, sizeof(msg));
+    QUICConDebug("[TX] %s", msg);
+
     len += l;
     return;
   }
 
   // split frame
   auto new_frame = QUICFrameFactory::split_frame(frame.get(), max_size - len);
+
+  // TODO: check debug build
   frame->debug_msg(msg, sizeof(msg));
+  QUICConDebug("[TX] %s", msg);
+
   ink_assert(frame->store(buf.get() + len, &l, max_size - len) > 0);
   ink_assert(new_frame != nullptr);
 
