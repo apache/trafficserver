@@ -73,6 +73,10 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, id, "Received DATA frame");
 
+  if (cstate.get_zombie_event()) {
+    Warning("Data frame for zombied session %" PRId64, cstate.ua_session->connection_id());
+  }
+
   // If a DATA frame is received whose stream identifier field is 0x0, the
   // recipient MUST
   // respond with a connection error of type PROTOCOL_ERROR.
@@ -363,6 +367,10 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received PRIORITY frame");
 
+  if (cstate.get_zombie_event()) {
+    Warning("Priority frame for zombied sessoin %" PRId64, cstate.ua_session->connection_id());
+  }
+
   // If a PRIORITY frame is received with a stream identifier of 0x0, the
   // recipient MUST respond with a connection error of type PROTOCOL_ERROR.
   if (stream_id == 0) {
@@ -488,6 +496,10 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received SETTINGS frame");
 
+  if (cstate.get_zombie_event()) {
+    Warning("Setting frame for zombied sessoin %" PRId64, cstate.ua_session->connection_id());
+  }
+
   // [RFC 7540] 6.5. The stream identifier for a SETTINGS frame MUST be zero.
   // If an endpoint receives a SETTINGS frame whose stream identifier field is
   // anything other than 0x0, the endpoint MUST respond with a connection
@@ -574,6 +586,8 @@ rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   const Http2StreamId stream_id = frame.header().streamid;
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received PING frame");
+
+  cstate.schedule_zombie_event();
 
   //  If a PING frame is received with a stream identifier field value other
   //  than 0x0, the recipient MUST respond with a connection error of type
@@ -840,7 +854,10 @@ static const http2_frame_dispatch frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
-  if (edata == fini_event) {
+  if (edata == zombie_event) {
+    // zombie session is still around. Assert
+    ink_release_assert(zombie_event == nullptr);
+  } else if (edata == fini_event) {
     fini_event = nullptr;
   }
   ++recursion;
@@ -984,7 +1001,10 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 int
 Http2ConnectionState::state_closed(int /* event */, void *edata)
 {
-  if (edata == fini_event) {
+  if (edata == zombie_event) {
+    // Zombie session is still around.  Assert!
+    ink_release_assert(zombie_event == nullptr);
+  } else if (edata == fini_event) {
     fini_event = nullptr;
   }
   return 0;
@@ -1056,6 +1076,11 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     ++client_streams_out_count;
   }
   ++total_client_streams_count;
+
+  if (zombie_event != nullptr) {
+    zombie_event->cancel();
+    zombie_event = nullptr;
+  }
 
   new_stream->set_parent(ua_session);
   new_stream->mutex                     = new_ProxyMutex();
@@ -1222,7 +1247,11 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
         // ua_session = nullptr;
       } else if (shutdown_state == HTTP2_SHUTDOWN_IN_PROGRESS && fini_event == nullptr) {
         fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      } else {
+        schedule_zombie_event();
       }
+    } else if (fini_received) {
+      schedule_zombie_event();
     }
   }
 }

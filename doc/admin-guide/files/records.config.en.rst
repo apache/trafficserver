@@ -3518,6 +3518,15 @@ HTTP/2 Configuration
    misconfigured or misbehaving clients are opening a large number of
    connections without submitting requests.
 
+.. ts:cv:: CONFIG proxy.config.http2.zombie_debug_timeout_in INT 0
+   :reloadable:
+
+   This timeout enables the zombie debugging feature.  If it is non-zero, it sets a zombie event to go off that
+   many seconds in the future when the HTTP2 session reaches one but not both of the terminating events, i.e received 
+   a close event (via client goaway or timeout) and the number of active streams has gone to zero.  If the event is executed,
+   the Traffic Server process will assert.  This mechanism is useful to debug potential leaks in the HTTP2 Stream and Session 
+   processing.
+
 .. ts:cv:: CONFIG proxy.config.http2.push_diary_size INT 256
    :reloadable:
 

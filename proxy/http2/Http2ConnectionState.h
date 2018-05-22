@@ -275,6 +275,23 @@ public:
   Http2ConnectionState(const Http2ConnectionState &) = delete;
   Http2ConnectionState &operator=(const Http2ConnectionState &) = delete;
 
+  Event *
+  get_zombie_event()
+  {
+    return zombie_event;
+  }
+
+  void
+  schedule_zombie_event()
+  {
+    if (Http2::zombie_timeout_in) { // If we have zombie debugging enabled
+      if (zombie_event) {
+        zombie_event->cancel();
+      }
+      zombie_event = this_ethread()->schedule_in(this, HRTIME_SECONDS(Http2::zombie_timeout_in));
+    }
+  }
+
 private:
   unsigned _adjust_concurrent_stream();
 
@@ -313,4 +330,5 @@ private:
   Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
   Event *shutdown_cont_event        = nullptr;
   Event *fini_event                 = nullptr;
+  Event *zombie_event               = nullptr;
 };
