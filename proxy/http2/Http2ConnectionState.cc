@@ -1128,7 +1128,7 @@ Http2ConnectionState::cleanup_streams()
     if (this->tx_error_code.cls != ProxyErrorClass::NONE) {
       s->set_tx_error_code(this->tx_error_code);
     }
-    this->delete_stream(s);
+    s->initiating_close();
     ink_assert(s != next);
     s = next;
   }
@@ -1182,8 +1182,8 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
     ink_assert(client_streams_out_count > 0);
     --client_streams_out_count;
   }
-  // total_client_streams_count will be decremented in release_stream(), because it's a counter include streams in the process of
-  // shutting down.
+  // total_client_streams_count will be decremented in release_stream(), because that counter is used to determine
+  // whether it is safe to destroy the Session
 
   stream->initiating_close();
 

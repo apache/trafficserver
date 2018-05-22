@@ -438,7 +438,7 @@ Http2Stream::initiating_close()
     } else if (!sent_write_complete) {
       // Transaction is already gone or not started. Kill yourself
       do_io_close();
-      destroy();
+      transaction_done(); // Mark that it is safe to kill the stream
     }
   }
 }
