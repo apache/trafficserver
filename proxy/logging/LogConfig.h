@@ -200,7 +200,6 @@ public:
 
 private:
   bool evaluate_config();
-  char **read_log_hosts_file(size_t *nhosts);
 
   void setup_default_values();
   void setup_collation(LogConfig *prev_config);

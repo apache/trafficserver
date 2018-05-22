@@ -214,33 +214,6 @@ following format object:
      Format = '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
    }
 
-Separating Logs by Origin
-=========================
-
-The default :file:`log_hosts.config` file is located in the |TS| ``config``
-directory. To record HTTP transactions for different origin servers in separate
-log files, you must specify the hostname of each origin server on a separate
-line in :file:`log_hosts.config`. For example, if you specify the keyword
-``sports``, then |TS| records all HTTP transactions from ``sports.yahoo.com``
-and ``www.foxsports.com`` in a log file called ``squid-sports.log`` (if the
-Squid format is enabled).
-
-.. important::
-
-   If |TS| is clustered and you enable log file collation, then you should use
-   the same :file:`log_hosts.config` file on every |TS| node in the cluster.
-
-To edit the log hosts list:
-
-#. Enter the hostname of each origin server on a separate line in
-   :file:`log_hosts.config`. ::
-
-       webserver1
-       webserver2
-       webserver3
-
-#. Run the command :option:`traffic_ctl config reload` to apply the changes.
-
 Hourly Rotated Squid Proxy Logs
 ===============================
 
