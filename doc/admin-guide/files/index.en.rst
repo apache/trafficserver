@@ -28,7 +28,6 @@ Configuration Files
    cache.config.en
    hosting.config.en
    ip_allow.config.en
-   log_hosts.config.en
    logging.config.en
    parent.config.en
    plugin.config.en
@@ -52,9 +51,6 @@ Configuration Files
 :doc:`ip_allow.config.en`
    Controls access to the |TS| cache based on source IP addresses and networks
    including limiting individual HTTP methods.
-
-:doc:`log_hosts.config.en`
-   Defines origin servers for which separate logs should be maintained.
 
 :doc:`logging.config.en`
    Defines custom log file formats, filters, and processing options.

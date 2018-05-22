@@ -531,7 +531,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.collation_secret
  proxy.config.log.file_stat_frequency
  proxy.config.log.hostname
- proxy.config.log.hosts_config_file
  proxy.config.log.log_buffer_size
  proxy.config.log.logfile_dir
  proxy.config.log.logfile_perm
