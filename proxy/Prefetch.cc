@@ -435,7 +435,7 @@ PrefetchTransform::handle_event(int event, void *edata)
   } else {
     switch (event) {
     case VC_EVENT_ERROR:
-      m_write_vio._cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
+      m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
       break;
 
     case VC_EVENT_WRITE_COMPLETE:
@@ -506,12 +506,12 @@ PrefetchTransform::handle_event(int event, void *edata)
       if (m_write_vio.ntodo() > 0) {
         if (towrite > 0) {
           m_output_vio->reenable();
-          m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+          m_write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
         }
       } else {
         m_output_vio->nbytes = m_write_vio.ndone;
         m_output_vio->reenable();
-        m_write_vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
+        m_write_vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
       }
 
       break;
