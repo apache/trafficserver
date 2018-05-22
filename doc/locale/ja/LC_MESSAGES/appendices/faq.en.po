@@ -1127,20 +1127,6 @@ msgstr ""
 "は自動的に再起動されます。 ``no_cop`` は Traffic Server が明示的に再起動され"
 "るまでは停止状態を保つようにします。"
 
-#: ../../../appendices/faq.en.rst:500
-msgid "Warning in the system log file when manually editing vaddrs.config"
-msgstr "vaddrs.config を手動で編集したときのシステムログファイルの警告"
-
-#: ../../../appendices/faq.en.rst:502
-msgid ""
-"If you manually edit :file:`vaddrs.config` as a non-root user, then Traffic "
-"Server issues a warning message in the system log file similar to the "
-"following::"
-msgstr ""
-"もしあなたが :file:`vaddrs.config` を非 root ユーザで手動で編集したら、 "
-"Traffic Server はシステムログファイルに以下のような警告メッセージを出力しま"
-"す ::"
-
 #: ../../../appendices/faq.en.rst:508
 msgid ""
 "You can safely ignore this message as Traffic Server will still apply your "
