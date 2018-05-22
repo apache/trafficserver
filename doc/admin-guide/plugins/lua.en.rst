@@ -2373,6 +2373,26 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.ssn_id
+--------------
+**syntax:** *ts.http.ssn_id()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to tell id of a client session
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local id = ts.http.ssn_id()
+        ts.debug(id)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.is_internal_request
 ---------------------------
 **syntax:** *ts.http.is_internal_request()*
