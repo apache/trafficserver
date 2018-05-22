@@ -549,7 +549,7 @@ SSLTicketParams::LoadTicket()
     keyblock = ssl_create_ticket_keyblock(nullptr);
   }
   if (!keyblock) {
-    Error("ticket key reloaded from %s", ticket_key_filename);
+    Error("Could not load ticket key from %s", ticket_key_filename);
     return false;
   }
   default_global_keyblock = keyblock;
