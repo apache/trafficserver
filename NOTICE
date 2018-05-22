@@ -88,11 +88,6 @@ The algorithm info can be found at: https://131002.net/siphash/
 
 ~~
 
-lib/raft developed by Google.
-Copyright 2014 Google Inc. All Rights Reserved.
-
-~~
-
 plugins/experimental/memcache/protocol_binary.h developed by Sun Microsystems, Inc.
 Copyright (c) <2008>, Sun Microsystems, Inc.  All rights reserved.
 
