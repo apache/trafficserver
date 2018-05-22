@@ -126,6 +126,8 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
   }
 
+  cstate.ua_session->reset_inactivity_timeout();
+
   // If Data length is 0, do nothing.
   if (payload_length == 0) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -224,6 +226,8 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       return error;
     }
   }
+
+  cstate.ua_session->reset_inactivity_timeout();
 
   // keep track of how many bytes we get in the frame
   stream->request_header_length += payload_length;
@@ -363,6 +367,8 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received PRIORITY frame");
 
+  cstate.ua_session->reset_inactivity_timeout();
+
   // If a PRIORITY frame is received with a stream identifier of 0x0, the
   // recipient MUST respond with a connection error of type PROTOCOL_ERROR.
   if (stream_id == 0) {
@@ -488,6 +494,8 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received SETTINGS frame");
 
+  cstate.ua_session->reset_inactivity_timeout();
+
   // [RFC 7540] 6.5. The stream identifier for a SETTINGS frame MUST be zero.
   // If an endpoint receives a SETTINGS frame whose stream identifier field is
   // anything other than 0x0, the endpoint MUST respond with a connection
@@ -575,6 +583,8 @@ rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received PING frame");
 
+  // Not resetting the inactivity timer for client initiated ping
+
   //  If a PING frame is received with a stream identifier field value other
   //  than 0x0, the recipient MUST respond with a connection error of type
   //  PROTOCOL_ERROR.
@@ -643,6 +653,8 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   char buf[HTTP2_WINDOW_UPDATE_LEN];
   uint32_t size;
   const Http2StreamId stream_id = frame.header().streamid;
+
+  cstate.ua_session->reset_inactivity_timeout();
 
   //  A WINDOW_UPDATE frame with a length other than 4 octets MUST be
   //  treated as a connection error of type FRAME_SIZE_ERROR.
@@ -745,6 +757,8 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                       "continuation bad client id");
   }
+
+  cstate.ua_session->reset_inactivity_timeout();
 
   // Find opened stream
   // CONTINUATION frames MUST be associated with a stream.  If a
@@ -1297,6 +1311,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
     break;
   }
 
+  ua_session->reset_inactivity_timeout();
   this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
   return;
 }
@@ -1367,6 +1382,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+  ua_session->reset_inactivity_timeout();
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {

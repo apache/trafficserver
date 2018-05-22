@@ -322,6 +322,10 @@ public:
   Http2ClientSession(Http2ClientSession &) = delete;
   Http2ClientSession &operator=(const Http2ClientSession &) = delete;
 
+  void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void clear_inactive_timer();
+  void reset_inactivity_timeout();
+
 private:
   int main_event_handler(int, void *);
 
@@ -355,6 +359,10 @@ private:
   bool kill_me          = false;
   bool half_close_local = false;
   int recursion         = 0;
+
+  ink_hrtime inactive_timeout    = 0;
+  ink_hrtime inactive_timeout_at = 0;
+  Event *inactive_event          = nullptr;
 
   InkHashTable *h2_pushed_urls = nullptr;
   uint32_t h2_pushed_urls_size = 0;
