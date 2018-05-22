@@ -69,7 +69,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
     0x55,                                           // DCIL/SCIL
     0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Destination Connection ID
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Source Connection ID
-    0xff, 0x00, 0x00, 0x0b,                         // Supported Version
+    0xff, 0x00, 0x00, 0x0c,                         // Supported Version
   };
   uint8_t buf[1024] = {0};
   size_t buf_len;
