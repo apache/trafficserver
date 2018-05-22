@@ -52,13 +52,13 @@ public:
   // preprocess the given buffer data before sent to target host
   // and try to delete it when its reference become zero.
   //
-  bool preproc_and_try_delete(LogBuffer *lb);
+  bool preproc_and_try_delete(LogBuffer *&lb);
 
   //
   // write the given buffer data to orphan file and
   // try to delete it when its reference become zero.
   //
-  void orphan_write_and_try_delete(LogBuffer *lb);
+  void orphan_write_and_try_delete(LogBuffer *&lb);
 
   const char *
   name() const
