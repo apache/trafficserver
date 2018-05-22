@@ -526,9 +526,6 @@ add_executable(ats
         lib/luajit/src/luajit.c
         lib/luajit/src/luajit.h
         lib/luajit/src/lualib.h
-        lib/raft/raft.h
-        lib/raft/raft_impl.h
-        lib/raft/raft_test.cc
         lib/records/I_RecAlarms.h
         lib/records/I_RecCore.h
         lib/records/I_RecDefs.h
