@@ -87,6 +87,7 @@ static int ts_lua_http_server_push(lua_State *L);
 static int ts_lua_http_is_websocket(lua_State *L);
 static int ts_lua_http_get_plugin_tag(lua_State *L);
 static int ts_lua_http_get_id(lua_State *L);
+static int ts_lua_http_get_ssn_id(lua_State *L);
 static int ts_lua_http_is_internal_request(lua_State *L);
 static int ts_lua_http_skip_remapping_set(lua_State *L);
 static int ts_lua_http_transaction_count(lua_State *L);
@@ -213,6 +214,9 @@ ts_lua_inject_http_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_get_id);
   lua_setfield(L, -2, "id");
+
+  lua_pushcfunction(L, ts_lua_http_get_ssn_id);
+  lua_setfield(L, -2, "ssn_id");
 
   lua_pushcfunction(L, ts_lua_http_is_internal_request);
   lua_setfield(L, -2, "is_internal_request");
@@ -659,6 +663,19 @@ ts_lua_http_get_id(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   uint64_t id = TSHttpTxnIdGet(http_ctx->txnp);
+  lua_pushnumber(L, id);
+
+  return 1;
+}
+
+static int
+ts_lua_http_get_ssn_id(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  int64_t id = TSHttpSsnIdGet(TSHttpTxnSsnGet(http_ctx->txnp));
   lua_pushnumber(L, id);
 
   return 1;
