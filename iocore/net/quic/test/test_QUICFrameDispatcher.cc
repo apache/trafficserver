@@ -50,7 +50,7 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   // STREAM frame
   uint8_t buf[4096] = {0};
   size_t len        = 0;
-  streamFrame.store(buf, &len);
+  streamFrame.store(buf, &len, 4096);
   bool should_send_ack;
   quicFrameDispatcher.receive_frames(buf, len, should_send_ack);
   CHECK(connection->getTotalFrameCount() == 0);
@@ -58,7 +58,7 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   // CONNECTION_CLOSE frame
   QUICConnectionCloseFrame connectionCloseFrame({});
-  connectionCloseFrame.store(buf, &len);
+  connectionCloseFrame.store(buf, &len, 4096);
   quicFrameDispatcher.receive_frames(buf, len, should_send_ack);
   CHECK(connection->getTotalFrameCount() == 1);
   CHECK(streamManager->getTotalFrameCount() == 1);

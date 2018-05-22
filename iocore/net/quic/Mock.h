@@ -315,7 +315,7 @@ class MockQUICCongestionController : public QUICCongestionController
 public:
   // Override
   virtual void
-  on_packets_lost(std::map<QUICPacketNumber, PacketInfo &> packets) override
+  on_packets_lost(std::map<QUICPacketNumber, PacketInfo *> &packets) override
   {
     for (auto &p : packets) {
       lost_packets.insert(p.first);
