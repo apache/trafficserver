@@ -1149,7 +1149,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   if (f.close_complete) {
     recursive++;
     ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
-    vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, (void *)&vio);
+    vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, (void *)&vio);
     recursive--;
   }
   return free_CacheVC(this);

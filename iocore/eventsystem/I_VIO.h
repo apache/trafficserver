@@ -165,7 +165,7 @@ public:
     call with events for this operation.
 
   */
-  Continuation *_cont;
+  Continuation *cont;
 
   /**
     Number of bytes to be done for this operation.

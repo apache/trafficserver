@@ -79,8 +79,8 @@ static inline int
 read_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
-  if (vc->read.vio._cont) {
-    vc->read.vio._cont->handleEvent(event, &vc->read.vio);
+  if (vc->read.vio.cont) {
+    vc->read.vio.cont->handleEvent(event, &vc->read.vio);
   } else {
     switch (event) {
     case VC_EVENT_EOS:
@@ -110,8 +110,8 @@ static inline int
 write_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
-  if (vc->write.vio._cont) {
-    vc->write.vio._cont->handleEvent(event, &vc->write.vio);
+  if (vc->write.vio.cont) {
+    vc->write.vio.cont->handleEvent(event, &vc->write.vio);
   } else {
     switch (event) {
     case VC_EVENT_EOS:
@@ -186,7 +186,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ProxyMutex *mutex = thread->mutex.get();
   int64_t r         = 0;
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
+  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio.cont);
 
   if (!lock.is_locked()) {
     read_reschedule(nh, vc);
@@ -365,7 +365,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   NetState *s       = &vc->write;
   ProxyMutex *mutex = thread->mutex.get();
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
+  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio.cont);
 
   if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
     write_reschedule(nh, vc);
@@ -594,7 +594,7 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   }
   read.vio.op        = VIO::READ;
   read.vio.mutex     = c ? c->mutex : this->mutex;
-  read.vio._cont     = c;
+  read.vio.cont      = c;
   read.vio.nbytes    = nbytes;
   read.vio.ndone     = 0;
   read.vio.vc_server = (VConnection *)this;
@@ -619,7 +619,7 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
   }
   write.vio.op        = VIO::WRITE;
   write.vio.mutex     = c ? c->mutex : this->mutex;
-  write.vio._cont     = c;
+  write.vio.cont      = c;
   write.vio.nbytes    = nbytes;
   write.vio.ndone     = 0;
   write.vio.vc_server = (VConnection *)this;
@@ -646,11 +646,11 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   read.vio.buffer.clear();
   read.vio.nbytes = 0;
   read.vio.op     = VIO::NONE;
-  read.vio._cont  = nullptr;
+  read.vio.cont   = nullptr;
   write.vio.buffer.clear();
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
-  write.vio._cont  = nullptr;
+  write.vio.cont   = nullptr;
 
   EThread *t        = this_ethread();
   bool close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
@@ -683,7 +683,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
-    read.vio._cont  = nullptr;
+    read.vio.cont   = nullptr;
     f.shutdown |= NET_VC_SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
@@ -691,7 +691,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     write.enabled = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
-    write.vio._cont  = nullptr;
+    write.vio.cont   = nullptr;
     f.shutdown |= NET_VC_SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
@@ -702,8 +702,8 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     read.vio.nbytes = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
-    read.vio._cont   = nullptr;
-    write.vio._cont  = nullptr;
+    read.vio.cont    = nullptr;
+    write.vio.cont   = nullptr;
     f.shutdown       = NET_VC_SHUTDOWN_READ | NET_VC_SHUTDOWN_WRITE;
     break;
   default:
@@ -1177,7 +1177,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
 
   *signal_timeout    = nullptr;
   *signal_timeout_at = 0;
-  writer_cont        = write.vio._cont;
+  writer_cont        = write.vio.cont;
 
   if (closed) {
     nh->free_netvc(this);
@@ -1185,14 +1185,14 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   }
 
   if (read.vio.op == VIO::READ && !(f.shutdown & NET_VC_SHUTDOWN_READ)) {
-    reader_cont = read.vio._cont;
+    reader_cont = read.vio.cont;
     if (read_signal_and_update(signal_event, this) == EVENT_DONE) {
       return EVENT_DONE;
     }
   }
 
   if (!*signal_timeout && !*signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
-      reader_cont != write.vio._cont && writer_cont == write.vio._cont) {
+      reader_cont != write.vio.cont && writer_cont == write.vio.cont) {
     if (write_signal_and_update(signal_event, this) == EVENT_DONE) {
       return EVENT_DONE;
     }
@@ -1336,8 +1336,8 @@ UnixNetVConnection::clear()
   write.triggered     = 0;
   read.enabled        = 0;
   write.enabled       = 0;
-  read.vio._cont      = nullptr;
-  write.vio._cont     = nullptr;
+  read.vio.cont       = nullptr;
+  write.vio.cont      = nullptr;
   read.vio.vc_server  = nullptr;
   write.vio.vc_server = nullptr;
   options.reset();

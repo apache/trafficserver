@@ -460,7 +460,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
+  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio.cont);
   if (!lock.is_locked()) {
     readReschedule(nh);
     return;
