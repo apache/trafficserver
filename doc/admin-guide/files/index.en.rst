@@ -37,7 +37,6 @@ Configuration Files
    ssl_multicert.config.en
    ssl_server_name.config.en
    storage.config.en
-   vaddrs.config.en
    volume.config.en
 
 :doc:`cache.config.en`
@@ -81,9 +80,6 @@ Configuration Files
 
 :doc:`storage.config.en`
    Configures all storage devices and paths to be used for the |TS| cache.
-
-:doc:`vaddrs.config.en`
-   Deprecated file formerly used for cluster configuration.
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.
