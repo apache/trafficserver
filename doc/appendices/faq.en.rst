@@ -464,18 +464,6 @@ port. Traffic Server clusters should ideally be configured to use a
 separate network interface and cluster on a private subnet, so that
 client machines have no access to the cluster ports.
 
-Warning in the system log file when manually editing vaddrs.config
-------------------------------------------------------------------
-
-If you manually edit :file:`vaddrs.config` as a non-root user, then
-Traffic Server issues a warning message in the system log file similar
-to the following::
-
-   WARNING: interface is ignored: Operation not permitted
-
-You can safely ignore this message as Traffic Server will still apply your
-configuration edits.
-
 Traffic Server is running but no log files are created
 ------------------------------------------------------
 
