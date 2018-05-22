@@ -20,4 +20,4 @@ compress_compress_la_SOURCES = compress/compress.cc compress/configuration.cc co
 compress_compress_la_LDFLAGS = \
   $(AM_LDFLAGS) $(LIB_BROTLIENC)
 
-compress_compress_la_CFLAGS = $(AM_CFLAGS) $(CFLAGS_BROTLIENC)
+compress_compress_la_CXXFLAGS = $(AM_CXXFLAGS) $(CFLAGS_BROTLIENC)
