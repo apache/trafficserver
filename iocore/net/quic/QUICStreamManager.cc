@@ -68,12 +68,12 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
   }
 
   if (this->_local_tp) {
-    this->_local_maximum_stream_id_bidi = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI);
-    this->_local_maximum_stream_id_uni  = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI);
+    this->_local_maximum_stream_id_bidi = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS);
+    this->_local_maximum_stream_id_uni  = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS);
   }
   if (this->_remote_tp) {
-    this->_remote_maximum_stream_id_bidi = this->_remote_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI);
-    this->_remote_maximum_stream_id_uni  = this->_remote_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI);
+    this->_remote_maximum_stream_id_bidi = this->_remote_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS);
+    this->_remote_maximum_stream_id_uni  = this->_remote_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS);
   }
 }
 

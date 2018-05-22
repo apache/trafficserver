@@ -61,7 +61,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, len);
     CHECK(len == 2);
     CHECK(memcmp(data, "\x0a\x0b", 2) == 0);
 

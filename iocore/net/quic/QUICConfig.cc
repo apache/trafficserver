@@ -217,27 +217,27 @@ QUICConfigParams::initial_max_stream_data() const
 }
 
 uint16_t
-QUICConfigParams::initial_max_stream_id_bidi_in() const
+QUICConfigParams::initial_max_bidi_streams_in() const
 {
-  return this->_initial_max_stream_id_bidi_in;
+  return this->_initial_max_bidi_streams_in;
 }
 
 uint16_t
-QUICConfigParams::initial_max_stream_id_bidi_out() const
+QUICConfigParams::initial_max_bidi_streams_out() const
 {
-  return this->_initial_max_stream_id_bidi_out;
+  return this->_initial_max_bidi_streams_out;
 }
 
 uint16_t
-QUICConfigParams::initial_max_stream_id_uni_in() const
+QUICConfigParams::initial_max_uni_streams_in() const
 {
-  return this->_initial_max_stream_id_uni_in;
+  return this->_initial_max_uni_streams_in;
 }
 
 uint16_t
-QUICConfigParams::initial_max_stream_id_uni_out() const
+QUICConfigParams::initial_max_uni_streams_out() const
 {
-  return this->_initial_max_stream_id_uni_out;
+  return this->_initial_max_uni_streams_out;
 }
 
 const char *

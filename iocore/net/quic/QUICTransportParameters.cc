@@ -188,13 +188,13 @@ QUICTransportParameters::_validate_parameters() const
   }
 
   // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
       return -3;
     }
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
       return -5;
     }
@@ -508,7 +508,7 @@ QUICTransportParametersInNewSessionTicket::_validate_parameters() const
   }
 
   // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
       return -3;
     }
@@ -518,7 +518,7 @@ QUICTransportParametersInNewSessionTicket::_validate_parameters() const
     }
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
       return -5;
     }

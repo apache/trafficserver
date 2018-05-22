@@ -397,8 +397,8 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
   // MAYs
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_in());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_in());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_in());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_in());
   // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
 
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
@@ -417,8 +417,8 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_out()));
 
   // MAYs
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_BIDI, params->initial_max_stream_id_bidi_out());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_ID_UNI, params->initial_max_stream_id_uni_out());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_out());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_out());
 
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
