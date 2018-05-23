@@ -986,8 +986,7 @@ QUICNetVConnection::_state_common_receive_packet()
         if (this->_alt_con_manager->migrate_to(p->destination_cid(), this->_reset_token)) {
           // Migrate connection
           // TODO Address Validation
-          // TODO Adjust expected packet number with a gap computed based on info.seq_num
-          this->_update_local_cid(p->destination_cid());
+          this->_quic_connection_id = p->destination_cid();
           Connection con;
           con.setRemote(&p->from().sa);
           this->con.move(con);
