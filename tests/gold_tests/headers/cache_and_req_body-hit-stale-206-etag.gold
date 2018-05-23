@@ -1,13 +1,13 @@
-HTTP/1.1 200 OK
-Last-Modified: ``
+HTTP/1.1 206 Partial Content
 Cache-Control: max-age=1
-Content-Length: 3
+Content-Length: 2
 Date: ``
-Age: 0
+Etag: myetag
+Age: ``
 Connection: keep-alive
 Via: ``
 Server: ``
 X-Cache-Key: http://127.0.0.1``
-X-Cache: miss
+X-Cache: hit-stale
 
-xxx
+xx

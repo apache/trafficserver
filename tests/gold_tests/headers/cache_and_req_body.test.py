@@ -36,7 +36,7 @@ server = Test.MakeOriginServer("server")
 #**testname is required**
 testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=300\r\n\r\n", "timestamp": "1469733493.993", "body": "xxx"}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1\r\n\r\n", "timestamp": "1469733493.993", "body": "xxx"}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # ATS Configuration
@@ -82,4 +82,3 @@ tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n''x-debug: x-cache,x-c
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit_close.gold"
 tr.StillRunningAfter = ts
-
