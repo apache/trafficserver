@@ -77,14 +77,6 @@ enum class QUICPacketType : uint8_t {
   UNINITIALIZED      = 0xFF, // Not on the spec. but just for convenience
 };
 
-// To detect length of Packet Number
-enum class QUICPacketShortHeaderType : int {
-  ONE           = 0x0,
-  TWO           = 0x1,
-  THREE         = 0x2,
-  UNINITIALIZED = 0x3,
-};
-
 // XXX If you add or remove QUICFrameType, you might also need to change QUICFrame::type(const uint8_t *)
 enum class QUICFrameType : uint8_t {
   PADDING = 0x00,
@@ -329,7 +321,8 @@ public:
   static QUICStreamType detect_stream_type(QUICStreamId id);
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
-  static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf, uint8_t n);
+  static int read_QUICPacketNumberLen(const uint8_t *buf);
+  static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf);
   static QUICVersion read_QUICVersion(const uint8_t *buf);
   static QUICStreamId read_QUICStreamId(const uint8_t *buf);
   static QUICOffset read_QUICOffset(const uint8_t *buf);

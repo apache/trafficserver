@@ -86,10 +86,32 @@ QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
   return {buf, len};
 }
 
-QUICPacketNumber
-QUICTypeUtil::read_QUICPacketNumber(const uint8_t *buf, uint8_t len)
+int
+QUICTypeUtil::read_QUICPacketNumberLen(const uint8_t *buf)
 {
-  return static_cast<QUICPacketNumber>(QUICIntUtil::read_nbytes_as_uint(buf, len));
+  if (buf[0] & 0xC0) {
+    return 4;
+  } else if (buf[0] & 0x10) {
+    return 2;
+  } else {
+    return 1;
+  }
+}
+
+QUICPacketNumber
+QUICTypeUtil::read_QUICPacketNumber(const uint8_t *buf)
+{
+  int encoded_length = QUICTypeUtil::read_QUICPacketNumberLen(buf);
+  uint64_t pn        = QUICIntUtil::read_nbytes_as_uint(buf, encoded_length);
+
+  // Remove length indicator
+  if (encoded_length == 1) {
+    pn &= 0x7F;
+  } else {
+    pn &= (0x3FFFFFFF >> ((4 - encoded_length) * 8));
+  }
+
+  return static_cast<QUICPacketNumber>(pn);
 }
 
 QUICVersion
@@ -138,7 +160,17 @@ QUICTypeUtil::write_QUICConnectionId(QUICConnectionId connection_id, uint8_t *bu
 void
 QUICTypeUtil::write_QUICPacketNumber(QUICPacketNumber packet_number, uint8_t n, uint8_t *buf, size_t *len)
 {
-  QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(packet_number), n, buf, len);
+  uint64_t pn = static_cast<uint64_t>(packet_number);
+  if (n == 1) {
+    // Do nothing
+  } else if (n == 2) {
+    pn |= 0x8000;
+  } else if (n == 4) {
+    pn |= 0xC0000000;
+  } else {
+    ink_assert(!"Encoded length must be 1, 2 or 4");
+  }
+  QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(pn), n, buf, len);
 }
 
 void

@@ -225,9 +225,7 @@ public:
   void store(uint8_t *buf, size_t *len) const;
 
 private:
-  QUICPacketShortHeaderType _discover_packet_number_type(QUICPacketNumber packet_number, QUICPacketNumber base_packet_number) const;
-  int _packet_number_len() const;
-  QUICPacketShortHeaderType _packet_number_type = QUICPacketShortHeaderType::UNINITIALIZED;
+  int _packet_number_len;
   uint8_t _dcil;
 };
 
