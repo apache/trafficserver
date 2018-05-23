@@ -80,30 +80,6 @@ typedef enum {
 } TSMgmtError;
 
 /***************************************************************************
- * Constants
- ***************************************************************************/
-
-#define TS_INVALID_HANDLE NULL
-#define TS_INVALID_LIST TS_INVALID_HANDLE
-#define TS_INVALID_CFG_CONTEXT TS_INVALID_HANDLE
-#define TS_INVALID_THREAD TS_INVALID_HANDLE
-#define TS_INVALID_MUTEX TS_INVALID_HANDLE
-
-#define TS_INVALID_IP_ADDR NULL
-#define TS_INVALID_IP_CIDR -1
-#define TS_INVALID_PORT 0
-
-#define TS_SSPEC_TIME 0x1
-#define TS_SSPEC_SRC_IP 0x2
-#define TS_SSPEC_PREFIX 0x4
-#define TS_SSPEC_SUFFIX 0x8
-#define TS_SSPEC_PORT 0x10
-#define TS_SSPEC_METHOD 0x20
-#define TS_SSPEC_SCHEME 0x40
-
-#define TS_ENCRYPT_PASSWD_LEN 23
-
-/***************************************************************************
  * Types
  ***************************************************************************/
 
@@ -150,16 +126,6 @@ typedef enum {
   TS_EVENT_PRIORITY_UNDEFINED
 } TSEventPriorityT;
 
-/*--- abstract file operations --------------------------------------------*/
-
-typedef enum {
-  TS_ACCESS_NONE,           /* no access */
-  TS_ACCESS_MONITOR,        /* monitor only access */
-  TS_ACCESS_MONITOR_VIEW,   /* monitor and view configuration access */
-  TS_ACCESS_MONITOR_CHANGE, /* monitor and change configuration access */
-  TS_ACCESS_UNDEFINED
-} TSAccessT;
-
 typedef enum {
   TS_REC_INT,
   TS_REC_COUNTER,
@@ -167,24 +133,6 @@ typedef enum {
   TS_REC_STRING,
   TS_REC_UNDEFINED,
 } TSRecordT;
-
-/* ToDo: This should be moved over to the core, into the GenericParser.h */
-typedef enum {
-  TS_FNAME_CACHE_OBJ,       /* cache.config */
-  TS_FNAME_HOSTING,         /* hosting.config */
-  TS_FNAME_IP_ALLOW,        /* ip_allow.config */
-  TS_FNAME_PARENT_PROXY,    /* parent.config */
-  TS_FNAME_VOLUME,          /* volume.config */
-  TS_FNAME_PLUGIN,          /* plugin.config */
-  TS_FNAME_REMAP,           /* remap.config */
-  TS_FNAME_SOCKS,           /* socks.config */
-  TS_FNAME_SPLIT_DNS,       /* splitdns.config */
-  TS_FNAME_STORAGE,         /* storage.config */
-  TS_FNAME_VSCAN,           /* vscan.config */
-  TS_FNAME_VS_TRUSTED_HOST, /* trusted-host.config */
-  TS_FNAME_VS_EXTENSION,    /* extensions.config */
-  TS_FNAME_UNDEFINED
-} TSFileNameT;
 
 /* These are initialization options for the Init() function. */
 typedef enum {
@@ -270,13 +218,6 @@ typedef struct {
   char *description;         /* predefined events have default */
   TSEventPriorityT priority; /* WARNING, ERROR, FATAL */
 } TSMgmtEvent;
-
-/* Will not be used until new Cougar Event Processor */
-typedef struct {
-  char *name;
-  /*int signalCount; */         /* 0 is inactive, >= 1 is active event */
-  /*unsigned long timestamp; */ /* only applies to active events */
-} TSActiveEvent;
 
 /***************************************************************************
  * Function Types
