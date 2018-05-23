@@ -369,6 +369,10 @@ QUICTransportParametersInClientHello::_validate_parameters() const
     return -1;
   }
 
+  if ((ite = this->_parameters.find(QUICTransportParameterId::PREFERRED_ADDRESS)) != this->_parameters.end()) {
+    return -2;
+  }
+
   return 0;
 }
 
@@ -460,6 +464,13 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
     }
   } else {
     return -2;
+  }
+
+  // MAYs
+  if ((ite = this->_parameters.find(QUICTransportParameterId::PREFERRED_ADDRESS)) != this->_parameters.end()) {
+    if (ite->second->len() < QUICPreferredAddress::MIN_LEN || QUICPreferredAddress::MAX_LEN < ite->second->len()) {
+      return -3;
+    }
   }
 
   return 0;

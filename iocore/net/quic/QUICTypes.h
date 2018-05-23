@@ -286,6 +286,15 @@ private:
   void _gen_token(uint64_t data);
 };
 
+class QUICPreferredAddress
+{
+public:
+  constexpr static int16_t MIN_LEN = 26;
+  constexpr static int16_t MAX_LEN = 295;
+
+  QUICPreferredAddress() {}
+};
+
 enum class QUICStreamType : uint8_t {
   CLIENT_BIDI = 0x00,
   SERVER_BIDI,
