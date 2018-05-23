@@ -30,7 +30,8 @@ libinkutils_a_SOURCES = \
 	I_OneWayTunnel.h \
 	Machine.cc \
 	OneWayMultiTunnel.cc \
-	OneWayTunnel.cc
+	OneWayTunnel.cc \
+  SharedAccess.cc 
 
 include $(top_srcdir)/build/tidy.mk
 

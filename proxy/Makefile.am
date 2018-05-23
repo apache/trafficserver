@@ -181,22 +181,23 @@ traffic_server_SOURCES += \
 endif
 
 traffic_server_LDADD = \
-	http/libhttp.a \
-	http2/libhttp2.a \
-	http/remap/libhttp_remap.a \
-	logging/liblogging.a \
-	logging/liblogcollation.a \
-	hdrs/libhdrs.a \
-	shared/libdiagsconfig.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
-	$(top_builddir)/iocore/utils/libinkutils.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/cache/libinkcache.a \
-	$(top_builddir)/iocore/aio/libinkaio.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/lib/bindings/libbindings.la
+  http/libhttp.a \
+  http2/libhttp2.a \
+  http/remap/libhttp_remap.a \
+  logging/liblogging.a \
+  logging/liblogcollation.a \
+  hdrs/libhdrs.a  \
+  shared/libdiagsconfig.a  \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/iocore/utils/libinkutils.a \
+  $(top_builddir)/iocore/dns/libinkdns.a \
+  $(top_builddir)/iocore/hostdb/libinkhostdb.a \
+  $(top_builddir)/iocore/dns/libinkdns.a \
+  $(top_builddir)/iocore/cache/libinkcache.a \
+  $(top_builddir)/iocore/aio/libinkaio.a \
+  $(top_builddir)/iocore/nexthop/libtsnexthop.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/bindings/libbindings.la
 
 if BUILD_LUAJIT
 traffic_server_LDADD += \
