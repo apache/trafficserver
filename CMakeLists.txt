@@ -590,8 +590,6 @@ add_executable(ats
         mgmt/api/EventCallback.h
         mgmt/api/EventControlMain.cc
         mgmt/api/EventControlMain.h
-        mgmt/api/GenericParser.cc
-        mgmt/api/GenericParser.h
         mgmt/api/INKMgmtAPI.cc
         mgmt/api/NetworkMessage.cc
         mgmt/api/NetworkMessage.h
@@ -774,7 +772,6 @@ add_executable(ats
         plugins/experimental/remap_purge/remap_purge.c
         plugins/experimental/remap_stats/remap_stats.c
         plugins/experimental/server_push_preload/server_push_preload.cc
-        plugins/experimental/ssl_cert_loader/ats-util.h
         plugins/experimental/ssl_cert_loader/domain-tree.cc
         plugins/experimental/ssl_cert_loader/domain-tree.h
         plugins/experimental/ssl_cert_loader/ssl-cert-loader.cc
