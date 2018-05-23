@@ -142,7 +142,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     this->_offset      = 0;
   }
 
-  quic_packet = this->_packet_factory.create(this->_from, std::move(pkt), pkt_len, this->largest_received_packet_number(), result);
+  quic_packet = this->_packet_factory.create(this->_from, std::move(pkt), pkt_len, this->_largest_received_packet_number, result);
 
   if (udp_packet) {
     udp_packet->free();
@@ -172,12 +172,6 @@ uint32_t
 QUICPacketReceiveQueue::size()
 {
   return this->_queue.size;
-}
-
-QUICPacketNumber
-QUICPacketReceiveQueue::largest_received_packet_number()
-{
-  return this->_largest_received_packet_number;
 }
 
 void

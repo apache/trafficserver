@@ -90,11 +90,11 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
 
   QUICPacketUPtr packet = factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
                                                       QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4),
-                                                      1234, std::move(payload), sizeof(raw), false);
+                                                      std::move(payload), sizeof(raw), false);
   CHECK(packet->type() == QUICPacketType::RETRY);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
-  CHECK(packet->packet_number() == 1234);
+  CHECK(packet->packet_number() == 0);
   CHECK(packet->version() == 0x11223344);
 }
 

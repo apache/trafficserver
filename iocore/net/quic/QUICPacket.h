@@ -370,8 +370,8 @@ public:
   QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
-  QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICPacketNumber packet_number,
-                                     ats_unique_buf payload, size_t len, bool retransmittable);
+  QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, ats_unique_buf payload,
+                                     size_t len, bool retransmittable);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                          bool retransmittable);

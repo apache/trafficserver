@@ -889,15 +889,12 @@ QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICC
   return this->_create_encrypted_packet(std::move(header), true);
 }
 
-/*
- * Unlike other create_*_packet, the 2nd argument is not base packet number.
- */
 QUICPacketUPtr
-QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                       QUICPacketNumber packet_number, ats_unique_buf payload, size_t len, bool retransmittable)
+QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, ats_unique_buf payload,
+                                       size_t len, bool retransmittable)
 {
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::RETRY, destination_cid, source_cid, packet_number, 0,
-                                                        this->_version, std::move(payload), len);
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::build(QUICPacketType::RETRY, destination_cid, source_cid, 0, 0, this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 

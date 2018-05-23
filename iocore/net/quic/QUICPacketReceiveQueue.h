@@ -36,7 +36,6 @@ public:
   void enqueue(UDPPacket *packet);
   QUICPacketUPtr dequeue(QUICPacketCreationResult &result);
   uint32_t size();
-  QUICPacketNumber largest_received_packet_number();
   void reset();
 
 private:
