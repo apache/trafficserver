@@ -184,6 +184,7 @@ QUICStream::state_stream_closed(int event, void *data)
   return EVENT_DONE;
 }
 
+// this->_read_vio.nbytes should be INT64_MAX until receive FIN flag
 VIO *
 QUICStream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
@@ -272,25 +273,17 @@ QUICStream::reenable(VIO *vio)
 }
 
 void
-QUICStream::set_read_vio_nbytes(int64_t nbytes)
-{
-  this->_read_vio.nbytes = nbytes;
-}
-
-void
-QUICStream::set_write_vio_nbytes(int64_t nbytes)
-{
-  this->_write_vio.nbytes = nbytes;
-}
-
-void
 QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &frame)
 {
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
 
-  int bytes_added = this->_read_vio.buffer.writer()->write(frame->data(), frame->data_length());
-  this->_read_vio.nbytes += bytes_added;
-  // frame->offset() + frame->data_length() == this->_recv_offset
+  uint64_t bytes_added = this->_read_vio.buffer.writer()->write(frame->data(), frame->data_length());
+
+  // Until receive FIN flag, keep nbytes INT64_MAX
+  if (frame->has_fin_flag() && bytes_added == frame->data_length()) {
+    this->_read_vio.nbytes = frame->offset() + frame->data_length();
+  }
+
   this->_local_flow_controller.forward_limit(frame->offset() + frame->data_length() + this->_flow_control_buffer_size);
   QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                     this->_local_flow_controller.current_limit());
@@ -408,8 +401,9 @@ QUICStream::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_si
   len = std::min(data_len, static_cast<int64_t>(
                              std::min(static_cast<uint64_t>(maximum_frame_size),
                                       std::min(this->_remote_flow_controller.credit(), static_cast<uint64_t>(connection_credit)))));
-  if (len >= bytes_avail) {
-    fin = this->_fin;
+
+  if (this->_write_vio.ntodo() == bytes_avail) {
+    fin = true;
   }
 
   if (len > 0) {
@@ -557,18 +551,6 @@ void
 QUICStream::reset(QUICStreamErrorUPtr error)
 {
   this->_reset_reason = std::move(error);
-}
-
-void
-QUICStream::shutdown()
-{
-  this->_fin = true;
-}
-
-size_t
-QUICStream::nbytes_to_read()
-{
-  return this->_read_vio.ntodo();
 }
 
 QUICOffset

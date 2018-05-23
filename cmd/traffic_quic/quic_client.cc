@@ -147,7 +147,7 @@ QUICClientApp::start(const char *path)
   QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
 
   stream_io->write(reinterpret_cast<uint8_t *>(request), request_len);
-  stream_io->shutdown();
+  stream_io->write_done();
   stream_io->write_reenable();
 }
 
@@ -189,6 +189,11 @@ QUICClientApp::main_event_handler(int event, Event *data)
     if (this->_filename) {
       f_stream.close();
       std::cout.rdbuf(default_stream);
+    }
+
+    if (stream_io->is_read_done()) {
+      // Connection Close Exercise
+      this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
     }
 
     break;

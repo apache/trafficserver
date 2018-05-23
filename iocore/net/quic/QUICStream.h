@@ -74,8 +74,6 @@ public:
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
-  void set_read_vio_nbytes(int64_t);
-  void set_write_vio_nbytes(int64_t);
 
   QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamFrame> frame);
   QUICErrorUPtr recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
@@ -83,9 +81,6 @@ public:
   QUICErrorUPtr recv(const std::shared_ptr<const QUICStopSendingFrame> frame);
 
   void reset(QUICStreamErrorUPtr error);
-  void shutdown();
-
-  size_t nbytes_to_read();
 
   QUICOffset largest_offset_received();
   QUICOffset largest_offset_sent();
@@ -106,7 +101,6 @@ private:
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
 
   QUICStreamState _state;
-  bool _fin                         = false;
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICConnectionId _connection_id   = QUICConnectionId::ZERO();
   QUICStreamId _id                  = 0;

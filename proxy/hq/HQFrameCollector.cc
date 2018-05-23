@@ -49,7 +49,7 @@ HQFrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
   }
 
   if (all_done) {
-    stream_io->shutdown();
+    stream_io->write_done();
   }
 
   return HQErrorUPtr(new HQNoError());

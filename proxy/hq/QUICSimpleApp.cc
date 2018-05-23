@@ -65,7 +65,7 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
     return -1;
   }
 
-  QUICStreamId stream_id   = stream_io->get_transaction_id();
+  QUICStreamId stream_id   = stream_io->stream_id();
   HQClientTransaction *txn = this->_client_session->get_transaction(stream_id);
 
   switch (event) {

@@ -494,9 +494,6 @@ HQClientTransaction::_process_write_vio()
       int64_t headers_size   = headers->read_avail();
       reader->consume(headers_size);
       this->_write_vio.ndone += headers_size;
-
-      // The size of respons to client
-      this->_stream_io->set_write_vio_nbytes(this->_write_vio.nbytes - headers_size);
     }
 
     // Write HTTP/1.1 response body
@@ -520,7 +517,8 @@ HQClientTransaction::_process_write_vio()
     // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
     // is CHUNK_READ_DONE and set FIN flag
     if (this->_write_vio.ntodo() == 0) {
-      this->_stream_io->shutdown();
+      // The size of respons to client
+      this->_stream_io->write_done();
     }
 
     return total_written;
@@ -541,7 +539,7 @@ HQClientTransaction::transaction_done()
 int
 HQClientTransaction::get_transaction_id() const
 {
-  return this->_stream_io->get_transaction_id();
+  return this->_stream_io->stream_id();
 }
 
 bool

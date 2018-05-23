@@ -32,26 +32,31 @@
 class QUICApplication;
 
 /**
- * @brief QUICStream I/O interface from QUIC Application
+ @brief QUICStream I/O Interface for QUICApplication
  */
 class QUICStreamIO
 {
 public:
   QUICStreamIO(QUICApplication *app, QUICStream *stream);
-  virtual ~QUICStreamIO(){};
+  virtual ~QUICStreamIO();
 
-  int64_t read_avail();
-  bool is_read_avail_more_than(int64_t size);
+  uint32_t stream_id() const;
+
   int64_t read(uint8_t *buf, int64_t len);
-  int64_t write_avail();
-  int64_t write(const uint8_t *buf, int64_t len);
-  int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
-  void set_write_vio_nbytes(int64_t);
+  bool is_read_done();
   virtual void read_reenable();
+
+  int64_t write(const uint8_t *buf, int64_t len);
+  int64_t write(IOBufferReader *r, int64_t len);
+  int64_t write(IOBufferBlock *b);
+  void write_done();
   virtual void write_reenable();
-  IOBufferReader *get_read_buffer_reader();
-  void shutdown();
-  uint32_t get_transaction_id() const;
+
+  [[deprecated]] int64_t read_avail();
+  [[deprecated]] bool is_read_avail_more_than(int64_t size);
+  [[deprecated]] int64_t write_avail();
+  [[deprecated]] void set_write_vio_nbytes(int64_t);
+  [[deprecated]] IOBufferReader *get_read_buffer_reader();
 
 protected:
   MIOBuffer *_read_buffer  = nullptr;
@@ -65,6 +70,10 @@ private:
 
   VIO *_read_vio  = nullptr;
   VIO *_write_vio = nullptr;
+
+  // Track how much data is written to _write_vio. When total size of data become clear,
+  // set it to _write_vio.nbytes.
+  uint64_t _nwritten = 0;
 };
 
 /**

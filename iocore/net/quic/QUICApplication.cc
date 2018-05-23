@@ -34,13 +34,95 @@ QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStream *stream) : _stream(s
   this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
   this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
 
-  this->_read_buffer_reader  = _read_buffer->alloc_reader();
-  this->_write_buffer_reader = _write_buffer->alloc_reader();
+  this->_read_buffer_reader  = this->_read_buffer->alloc_reader();
+  this->_write_buffer_reader = this->_write_buffer->alloc_reader();
 
   this->_read_vio  = stream->do_io_read(app, INT64_MAX, this->_read_buffer);
   this->_write_vio = stream->do_io_write(app, INT64_MAX, this->_write_buffer_reader);
 }
 
+QUICStreamIO::~QUICStreamIO()
+{
+  // All readers will be deallocated
+  free_MIOBuffer(this->_read_buffer);
+  free_MIOBuffer(this->_write_buffer);
+};
+
+uint32_t
+QUICStreamIO::stream_id() const
+{
+  return this->_stream->id();
+}
+
+int64_t
+QUICStreamIO::read(uint8_t *buf, int64_t len)
+{
+  int64_t nread = this->_read_buffer_reader->read(const_cast<uint8_t *>(buf), len);
+  if (nread > 0) {
+    this->_read_vio->ndone += nread;
+  }
+
+  return nread;
+}
+
+bool
+QUICStreamIO::is_read_done()
+{
+  return this->_read_vio->ntodo() == 0;
+}
+
+int64_t
+QUICStreamIO::write(const uint8_t *buf, int64_t len)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
+
+  int64_t nwritten = this->_write_buffer->write(buf, len);
+  if (nwritten > 0) {
+    this->_nwritten += nwritten;
+  }
+
+  return len;
+}
+
+int64_t
+QUICStreamIO::write(IOBufferReader *r, int64_t len)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
+
+  int64_t bytes_avail = this->_write_buffer->write_avail();
+
+  if (bytes_avail > 0) {
+    Debug(tag, "nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->nbytes,
+          this->_write_vio->ndone, bytes_avail, len);
+
+    int64_t bytes_len = std::min(bytes_avail, len);
+    int64_t nwritten  = this->_write_buffer->write(r, bytes_len);
+
+    if (nwritten > 0) {
+      this->_nwritten += nwritten;
+    }
+
+    return nwritten;
+  } else {
+    return 0;
+  }
+}
+
+// TODO: Similar to other "write" apis, but do not copy.
+int64_t
+QUICStreamIO::write(IOBufferBlock *b)
+{
+  ink_assert(!"not implemented yet");
+  return 0;
+}
+
+void
+QUICStreamIO::write_done()
+{
+  this->_write_vio->nbytes = this->_nwritten;
+}
+
+// !!! DEPRECATED !!!
 int64_t
 QUICStreamIO::read_avail()
 {
@@ -54,42 +136,9 @@ QUICStreamIO::is_read_avail_more_than(int64_t size)
 }
 
 int64_t
-QUICStreamIO::read(uint8_t *buf, int64_t len)
-{
-  int64_t read_len = this->_read_buffer_reader->read(const_cast<uint8_t *>(buf), len);
-  this->_read_vio->ndone += read_len;
-  return read_len;
-}
-
-int64_t
-QUICStreamIO::write(const uint8_t *buf, int64_t len)
-{
-  SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
-
-  return this->_write_buffer->write(buf, len);
-}
-
-int64_t
 QUICStreamIO::write_avail()
 {
   return this->_write_buffer->write_avail();
-}
-
-int64_t
-QUICStreamIO::write(IOBufferReader *r, int64_t alen, int64_t offset)
-{
-  SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
-
-  int64_t bytes_avail = this->_write_buffer->write_avail();
-  Debug(tag, "nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->nbytes,
-        this->_write_vio->ndone, bytes_avail, alen);
-
-  if (bytes_avail > 0) {
-    int64_t len = std::min(bytes_avail, alen);
-    return this->_write_buffer->write(r, len, offset);
-  } else {
-    return 0;
-  }
 }
 
 void
@@ -114,18 +163,6 @@ IOBufferReader *
 QUICStreamIO::get_read_buffer_reader()
 {
   return this->_read_buffer_reader;
-}
-
-void
-QUICStreamIO::shutdown()
-{
-  return this->_stream->shutdown();
-}
-
-uint32_t
-QUICStreamIO::get_transaction_id() const
-{
-  return this->_stream->id();
 }
 
 //
