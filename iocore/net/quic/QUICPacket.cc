@@ -1005,22 +1005,11 @@ QUICPacketFactory::set_dcil(uint8_t len)
 //
 // QUICPacketNumberGenerator
 //
-QUICPacketNumberGenerator::QUICPacketNumberGenerator()
-{
-  this->randomize();
-}
-
-QUICPacketNumber
-QUICPacketNumberGenerator::randomize()
-{
-  std::random_device rnd;
-  this->_current = (rnd() & 0xFFFFFFFF) - 1024;
-
-  return this->_current;
-}
+QUICPacketNumberGenerator::QUICPacketNumberGenerator() {}
 
 QUICPacketNumber
 QUICPacketNumberGenerator::next()
 {
+  // TODO Increment the number at least one but not only always one
   return this->_current++;
 }

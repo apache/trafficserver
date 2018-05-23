@@ -333,11 +333,10 @@ class QUICPacketNumberGenerator
 {
 public:
   QUICPacketNumberGenerator();
-  QUICPacketNumber randomize();
   QUICPacketNumber next();
 
 private:
-  std::atomic<QUICPacketNumber> _current;
+  std::atomic<QUICPacketNumber> _current = 0;
 };
 
 using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
