@@ -212,10 +212,17 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
           "retrying cache open write...",
           master_sm->sm_id, open_write_tries);
 
-    open_write(
-      &cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
-      (time_t)((master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
-      retry_write, false);
+    if (master_sm->t_state.txn_conf->cache_open_write_fail_action != HttpTransact::CACHE_WL_FAIL_ACTION_COLLAPSED_FORWARDING) {
+      open_write(
+        &cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
+        (time_t)((master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
+        retry_write, false);
+    } else {
+      Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure INTERVAL. Saw CF, not attempting write",
+            master_sm->sm_id);
+      open_write_tries++;
+      master_sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, data);
+    }
     break;
 
   default:
