@@ -73,6 +73,7 @@ enum SSL_Stats {
   ssl_total_tickets_renewed_stat,
   ssl_total_dyn_def_tls_record_count,
   ssl_total_dyn_max_tls_record_count,
+  ssl_total_dyn_redo_tls_record_count,
   ssl_session_cache_hit,
   ssl_session_cache_miss,
   ssl_session_cache_eviction,

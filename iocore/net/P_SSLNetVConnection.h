@@ -330,6 +330,7 @@ private:
   Continuation *npnEndpoint;
   SessionAccept *sessionAcceptPtr;
   bool sslTrace;
+  int64_t redoWriteSize;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
