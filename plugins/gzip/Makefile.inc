@@ -20,4 +20,4 @@ gzip_gzip_la_SOURCES = gzip/gzip.cc gzip/configuration.cc gzip/misc.cc
 gzip_gzip_la_LDFLAGS = \
   $(AM_LDFLAGS) $(LIB_BROTLIENC)
 
-gzip_gzip_la_CFLAGS = $(AM_CFLAGS) $(CFLAGS_BROTLIENC)
+gzip_gzip_la_CXXFLAGS = $(AM_CXXFLAGS) $(CFLAGS_BROTLIENC)
