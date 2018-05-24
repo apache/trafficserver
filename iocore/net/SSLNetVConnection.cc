@@ -714,18 +714,26 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     // TS-2365: If the SSL max record size is set and we have
     // more data than that, break this into smaller write
     // operations.
-    if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
-      l = SSLConfigParams::ssl_maxrecord;
-    } else if (SSLConfigParams::ssl_maxrecord == -1) {
-      if (sslTotalBytesSent < SSL_DEF_TLS_RECORD_BYTE_THRESHOLD) {
-        dynamic_tls_record_size = SSL_DEF_TLS_RECORD_SIZE;
-        SSL_INCREMENT_DYN_STAT(ssl_total_dyn_def_tls_record_count);
-      } else {
-        dynamic_tls_record_size = SSL_MAX_TLS_RECORD_SIZE;
-        SSL_INCREMENT_DYN_STAT(ssl_total_dyn_max_tls_record_count);
-      }
-      if (l > dynamic_tls_record_size) {
-        l = dynamic_tls_record_size;
+    //
+    // TS-4424: Don't mess with record size if last SSL_write failed with
+    // needs write
+    if (redoWriteSize) {
+      l             = redoWriteSize;
+      redoWriteSize = 0;
+    } else {
+      if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
+        l = SSLConfigParams::ssl_maxrecord;
+      } else if (SSLConfigParams::ssl_maxrecord == -1) {
+        if (sslTotalBytesSent < SSL_DEF_TLS_RECORD_BYTE_THRESHOLD) {
+          dynamic_tls_record_size = SSL_DEF_TLS_RECORD_SIZE;
+          SSL_INCREMENT_DYN_STAT(ssl_total_dyn_def_tls_record_count);
+        } else {
+          dynamic_tls_record_size = SSL_MAX_TLS_RECORD_SIZE;
+          SSL_INCREMENT_DYN_STAT(ssl_total_dyn_max_tls_record_count);
+        }
+        if (l > dynamic_tls_record_size) {
+          l = dynamic_tls_record_size;
+        }
       }
     }
 
@@ -764,6 +772,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     sslLastWriteTime = now;
     sslTotalBytesSent += total_written;
   }
+  redoWriteSize = 0;
   if (num_really_written > 0) {
     needs |= EVENTIO_WRITE;
   } else {
@@ -781,6 +790,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     case SSL_ERROR_WANT_X509_LOOKUP: {
       if (SSL_ERROR_WANT_WRITE == err) {
         SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
+        redoWriteSize = l;
       } else if (SSL_ERROR_WANT_X509_LOOKUP == err) {
         SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
         TraceOut(trace, get_remote_addr(), get_remote_port(), "Want X509 lookup");
