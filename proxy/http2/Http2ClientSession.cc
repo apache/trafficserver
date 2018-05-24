@@ -66,6 +66,12 @@ Http2ClientSession::destroy()
   if (!in_destroy) {
     in_destroy = true;
     Http2SsnDebug("session destroy");
+
+    // Clear the H2 level inactivity tracking
+    // before going in the session callbacks with
+    // their different handlers
+    this->clear_inactive_timer();
+
     // Let everyone know we are going down
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }
@@ -156,6 +162,36 @@ Http2ClientSession::start()
 }
 
 void
+Http2ClientSession::set_inactivity_timeout(ink_hrtime timeout_in)
+{
+  inactive_timeout = timeout_in;
+  if (inactive_timeout > 0) {
+    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    if (!inactive_event) {
+      inactive_event = this_ethread()->schedule_every(this, HRTIME_SECONDS(1));
+    } else {
+      clear_inactive_timer();
+    }
+  }
+}
+
+void
+Http2ClientSession::reset_inactivity_timeout()
+{
+  set_inactivity_timeout(inactive_timeout);
+}
+
+void
+Http2ClientSession::clear_inactive_timer()
+{
+  inactive_timeout_at = 0;
+  if (inactive_event) {
+    inactive_event->cancel();
+    inactive_event = nullptr;
+  }
+}
+
+void
 Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
@@ -169,6 +205,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->con_id    = ProxyClientSession::next_connection_id();
   this->client_vc = new_vc;
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
+  this->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
   this->schedule_event = nullptr;
   this->mutex          = new_vc->mutex;
   this->in_destroy     = false;
@@ -303,6 +340,14 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   Event *e = static_cast<Event *>(edata);
   if (e == schedule_event) {
     schedule_event = nullptr;
+  } else if (e == inactive_event) {
+    if (inactive_timeout_at && inactive_timeout_at < Thread::get_hrtime()) {
+      event = VC_EVENT_INACTIVITY_TIMEOUT;
+      clear_inactive_timer();
+    } else {
+      // Not timed out
+      event = VC_EVENT_NONE;
+    }
   }
 
   switch (event) {
@@ -325,6 +370,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
+    this->set_dying_event(event);
     this->do_io_close();
     retval = 0;
     break;
@@ -391,6 +437,7 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
     HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
 
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::no_activity_timeout_in));
+    this->set_inactivity_timeout(HRTIME_SECONDS(Http2::no_activity_timeout_in));
     client_vc->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
 
     // XXX start the write VIO ...
