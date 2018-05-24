@@ -171,6 +171,13 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED:
+    if (master_sm->t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY) {
+      // Use open read retry settings, if we dont fail here we will do write_retries*read_retries nested retries
+      Debug("http_cache",
+            "state cache openwrite, cachesm, got open_write_failed, wfail is read retry, set retries to max to schedule");
+      open_read_tries  = 0;
+      open_write_tries = master_sm->t_state.txn_conf->max_cache_open_write_retries;
+    }
     if (open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
       // Retry open write;
       open_write_cb = false;
@@ -196,10 +203,17 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
           "retrying cache open write...",
           master_sm->sm_id, open_write_tries);
 
-    open_write(&cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
-               static_cast<time_t>(
-                 (master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
-               retry_write, false);
+    if (master_sm->t_state.txn_conf->cache_open_write_fail_action != HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY) {
+      open_write(
+        &cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
+        (time_t)((master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
+        retry_write, false);
+    } else {
+      Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure INTERVAL. Saw CF, not attempting write",
+            master_sm->sm_id);
+      open_write_cb = false;
+      master_sm->handleEvent(CACHE_EVENT_OPEN_READ, data);
+    }
     break;
 
   default:

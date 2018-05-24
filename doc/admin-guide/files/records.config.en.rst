@@ -2304,14 +2304,7 @@ Dynamic Content & Content Negotiation
    ===== ======================================================================
    ``0`` Default. Disable cache and go to origin server.
    ``1`` Return a ``502`` error on a cache miss.
-   ``2`` Serve stale if object's age is under
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
-   ``3`` Return a ``502`` error on a cache miss or serve stale on a cache
-         revalidate if object's age is under
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
-   ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
+   ``2`` Retry a cache read. This will do another cache lookup for max_open_read_retries attempts, collapsing requests
    ===== ======================================================================
 
 Customizable User Response Pages

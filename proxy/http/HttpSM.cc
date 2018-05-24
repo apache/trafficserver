@@ -2439,8 +2439,7 @@ HttpSM::state_cache_open_write(int event, void *data)
       break;
     } else {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
-      if (!t_state.cache_info.object_read ||
-          (t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE)) {
+      if (!t_state.cache_info.object_read) {
         // cache miss, set wl_state to fail
         SMDebug("http", "[%" PRId64 "] cache object read %p, cache_wl_fail_action %d", sm_id, t_state.cache_info.object_read,
                 t_state.cache_open_write_fail_action);
@@ -2453,6 +2452,14 @@ HttpSM::state_cache_open_write(int event, void *data)
   case CACHE_EVENT_OPEN_READ:
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
+    // We might not have an object here, if so we want to retry
+    if (!t_state.cache_info.object_read) {
+      ink_assert(t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
+      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
+      break;
+    }
+
     cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
     // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
     if (cache_sm.cache_read_vc->is_ram_cache_hit()) {
@@ -2463,6 +2470,7 @@ HttpSM::state_cache_open_write(int event, void *data)
 
     ink_assert(t_state.cache_info.object_read != nullptr);
     t_state.source = HttpTransact::SOURCE_CACHE;
+
     // clear up CACHE_LOOKUP_MISS, let Freshness function decide
     // hit status
     t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;

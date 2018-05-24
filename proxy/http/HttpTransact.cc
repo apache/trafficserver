@@ -2874,8 +2874,6 @@ HttpTransact::handle_cache_write_lock(State *s)
     s->cache_info.action = CACHE_DO_NO_ACTION;
     switch (s->cache_open_write_fail_action) {
     case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS:
-    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE:
-    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE:
       TxnDebug("http_error", "cache_open_write_fail_action %d, cache miss, return error", s->cache_open_write_fail_action);
       s->cache_info.write_status = CACHE_WRITE_ERROR;
       build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect");
@@ -2897,6 +2895,14 @@ HttpTransact::handle_cache_write_lock(State *s)
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       return;
+      /*
+          case CACHE_WL_FAIL_ACTION_READ_RETRY:
+            s->request_sent_time      = UNDEFINED_TIME;
+            s->response_received_time = UNDEFINED_TIME;
+            s->cache_info.action      = CACHE_DO_LOOKUP;
+            remove_ims                = true;
+            TRANSACT_RETURN(SM_ACTION_CACHE_LOOKUP, nullptr);
+            return;*/
     default:
       s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
       remove_ims                 = true;
@@ -2911,7 +2917,17 @@ HttpTransact::handle_cache_write_lock(State *s)
     s->request_sent_time      = UNDEFINED_TIME;
     s->response_received_time = UNDEFINED_TIME;
     s->cache_info.action      = CACHE_DO_LOOKUP;
-    remove_ims                = true;
+    if (!s->cache_info.object_read) {
+      ink_assert(s->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+      StateMachineAction_t next;
+      next           = SM_ACTION_CACHE_LOOKUP;
+      s->next_action = next;
+      s->hdr_info.server_request.destroy();
+      TRANSACT_RETURN(next, nullptr);
+      return;
+    }
+    remove_ims = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_CACHE);
     break;
   case CACHE_WL_INIT:
@@ -7078,13 +7094,6 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   ink_time_t current_age, response_date;
   uint32_t cc_mask, cooked_cc_mask;
   uint32_t os_specifies_revalidate;
-
-  if (s->cache_open_write_fail_action & CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE) {
-    if (is_stale_cache_response_returnable(s)) {
-      TxnDebug("http_match", "[what_is_document_freshness] cache_serve_stale_on_write_lock_fail, return FRESH");
-      return (FRESHNESS_FRESH);
-    }
-  }
 
   //////////////////////////////////////////////////////
   // If config file has a ttl-in-cache field set,     //
