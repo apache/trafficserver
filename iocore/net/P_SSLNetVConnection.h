@@ -351,6 +351,7 @@ private:
   SessionAccept *sessionAcceptPtr  = nullptr;
   bool sslTrace                    = false;
   bool SNIMapping                  = false;
+  int64_t redoWriteSize            = 0;
 #ifdef SSL_MODE_ASYNC
   EventIO signalep;
 #endif
