@@ -2295,7 +2295,6 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
 {
   CacheHTTPInfo *&obj = s->cache_info.object_read;
 
-  ink_release_assert((s->request_sent_time == UNDEFINED_TIME) && (s->response_received_time == UNDEFINED_TIME));
   TxnDebug("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] Hit in cache");
 
   if (delete_all_document_alternates_and_return(s, true)) {
@@ -2918,6 +2917,25 @@ HttpTransact::handle_cache_write_lock(State *s)
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
       return;
+    case CACHE_WL_FAIL_ACTION_COLLAPSED_FORWARDING:
+      if (s->state_machine->get_cache_sm().get_open_write_tries() < s->txn_conf->max_cache_open_write_retries) {
+        // Only log the first CF try, then log the max if hit
+        if (s->state_machine->get_cache_sm().get_open_write_tries() == 1) {
+          TxnDebug("http_error", "cache_open_write_fail_action %d, cache miss, retry read with collapsed forwarding try #%d",
+                   s->cache_open_write_fail_action, s->state_machine->get_cache_sm().get_open_write_tries());
+        }
+        s->request_sent_time       = UNDEFINED_TIME;
+        s->response_received_time  = UNDEFINED_TIME;
+        s->cache_info.action       = CACHE_DO_LOOKUP;
+        s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+        break;
+      } else {
+        TxnDebug("http_error", "cache_open_write_fail_action %d, miss, ran out of write retries, doing default",
+                 s->cache_open_write_fail_action);
+        s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+        remove_ims                 = true;
+        break;
+      }
     default:
       s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
       remove_ims                 = true;
@@ -2967,6 +2985,13 @@ HttpTransact::handle_cache_write_lock(State *s)
     TxnDebug("http_error", "calling hdr_info.server_request.destroy");
     s->hdr_info.server_request.destroy();
     HandleCacheOpenReadHitFreshness(s);
+  } else if ((s->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_COLLAPSED_FORWARDING) &&
+             (s->state_machine->get_cache_sm().get_open_write_tries() < s->txn_conf->max_cache_open_write_retries)) {
+    StateMachineAction_t next;
+    next           = SM_ACTION_CACHE_LOOKUP;
+    s->next_action = next;
+    s->hdr_info.server_request.destroy();
+    TRANSACT_RETURN(next, nullptr);
   } else {
     StateMachineAction_t next;
     next = how_to_open_connection(s);
