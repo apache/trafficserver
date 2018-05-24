@@ -93,11 +93,17 @@ AsyncTimer::run()
 void
 AsyncTimer::cancel()
 {
-  if (!state_->cont_) {
+  // Assume this object is locked and the state isn't being updated elsewhere.
+  // Note that is not the same as the contained continuation being locked.
+  TSCont contp{state_->cont_}; // save this
+  if (!contp) {
     LOG_DEBUG("Already canceled");
     return;
   }
-  TSMutexLock(TSContMutexGet(state_->cont_)); // mutex will be unlocked in destroy
+
+  auto mutex{TSContMutexGet(contp)};
+  TSMutexLock(mutex); // prevent event dispatch for the continuation during this cancel.
+
   if (state_->initial_timer_action_) {
     LOG_DEBUG("Canceling initial timer action");
     TSActionCancel(state_->initial_timer_action_);
@@ -106,9 +112,12 @@ AsyncTimer::cancel()
     LOG_DEBUG("Canceling periodic timer action");
     TSActionCancel(state_->periodic_timer_action_);
   }
-  LOG_DEBUG("Destroying cont");
-  TSContDestroy(state_->cont_);
   state_->cont_ = nullptr;
+
+  TSMutexUnlock(mutex);
+
+  LOG_DEBUG("Destroying cont");
+  TSContDestroy(contp);
 }
 
 AsyncTimer::~AsyncTimer()
