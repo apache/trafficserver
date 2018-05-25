@@ -1959,6 +1959,12 @@ QUICRetransmissionFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   return *len;
 }
 
+int
+QUICRetransmissionFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "type=%s size=%zu (retransmission)", QUICDebugNames::frame_type(this->type()), this->size());
+}
+
 QUICPacketType
 QUICRetransmissionFrame::packet_type() const
 {
