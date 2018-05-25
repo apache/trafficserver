@@ -30,7 +30,6 @@ dist_sysconf_DATA =	\
 	cache.config.default \
 	hosting.config.default \
 	ip_allow.config.default \
-	log_hosts.config.default \
 	logging.config.default \
 	parent.config.default \
 	plugin.config.default \

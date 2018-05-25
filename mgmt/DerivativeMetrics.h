@@ -1,4 +1,9 @@
-/*
+/** @file
+
+  Calculate some derivative metrics (for convenience).
+
+  @section license License
+
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -7,33 +12,30 @@
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-*/
+ */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <lua.h>
+#pragma once
 
-static void ts_lua_inject_number_variables(lua_State *L);
+#include <tuple>
 
-void
-ts_lua_inject_constant_api(lua_State *L)
+#include "I_RecLocal.h"
+
+using DerivativeSum = std::tuple<const char *, RecDataT, std::vector<const char *>>;
+
+class DerivativeMetrics
 {
-  ts_lua_inject_number_variables(L);
-}
+public:
+  DerivativeMetrics();
+  void Update();
 
-static void
-ts_lua_inject_number_variables(lua_State *L)
-{
-  lua_pushinteger(L, INT64_MAX);
-  lua_setglobal(L, "TS_LUA_INT64_MAX");
-
-  lua_pushinteger(L, INT64_MIN);
-  lua_setglobal(L, "TS_LUA_INT64_MIN");
-}
+  // Don't allow copy and assign
+  DerivativeMetrics(DerivativeMetrics const &) = delete;
+  DerivativeMetrics &operator=(DerivativeMetrics const &) = delete;
+};

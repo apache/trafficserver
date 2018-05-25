@@ -551,7 +551,6 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.rolling_size_mb",
     "proxy.config.log.auto_delete_rolled_files",
     "proxy.config.log.config.filename",
-    "proxy.config.log.hosts_config_file",
     "proxy.config.log.sampling_frequency",
     "proxy.config.log.file_stat_frequency",
     "proxy.config.log.space_used_frequency",
@@ -929,70 +928,4 @@ LogConfig::evaluate_config()
   }
 
   return false;
-}
-
-/*-------------------------------------------------------------------------
-  LogConfig::read_log_hosts_file
-
-  This routine will read the log_hosts.config file to build a set of
-  filters for splitting logs based on hostname fields that match the
-  entries in this file.
-  -------------------------------------------------------------------------*/
-
-char **
-LogConfig::read_log_hosts_file(size_t *num_hosts)
-{
-  ats_scoped_str config_path(RecConfigReadConfigPath("proxy.config.log.hosts_config_file", "log_hosts.config"));
-  char line[LOG_MAX_FORMAT_LINE];
-  char **hosts = nullptr;
-
-  Debug("log-config", "Reading log hosts from %s", (const char *)config_path);
-
-  size_t nhosts = 0;
-  int fd        = open(config_path, O_RDONLY);
-  if (fd < 0) {
-    Warning("Traffic Server can't open %s for reading log hosts for splitting: %s.", (const char *)config_path, strerror(errno));
-  } else {
-    //
-    // First, count the number of hosts in the file
-    //
-    while (ink_file_fd_readline(fd, LOG_MAX_FORMAT_LINE, line) > 0) {
-      //
-      // Ignore blank Lines and lines that begin with a '#'.
-      //
-      if (*line == '\n' || *line == '#') {
-        continue;
-      }
-      ++nhosts;
-    }
-    //
-    // Now read the hosts from the file and set-up the array entries.
-    //
-    if (nhosts) {
-      if (lseek(fd, 0, SEEK_SET) != 0) {
-        Warning("lseek failed on file %s: %s", (const char *)config_path, strerror(errno));
-        nhosts = 0;
-      } else {
-        hosts = new char *[nhosts];
-        ink_assert(hosts != nullptr);
-
-        size_t i = 0;
-        while (ink_file_fd_readline(fd, LOG_MAX_FORMAT_LINE, line) > 0) {
-          //
-          // Ignore blank Lines and lines that begin with a '#'.
-          //
-          if (*line == '\n' || *line == '#') {
-            continue;
-          }
-          LogUtils::strip_trailing_newline(line);
-          hosts[i] = ats_strdup(line);
-          ++i;
-        }
-        ink_assert(i == nhosts);
-      }
-    }
-    close(fd);
-  }
-  *num_hosts = nhosts;
-  return hosts;
 }

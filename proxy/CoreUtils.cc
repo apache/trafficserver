@@ -740,7 +740,7 @@ void
 CoreUtils::print_netstate(NetState *n)
 {
   printf("      enabled: %d\n", n->enabled);
-  printf("      op: %d  _cont: 0x%p\n", n->vio.op, n->vio._cont);
+  printf("      op: %d  cont: 0x%p\n", n->vio.op, n->vio.cont);
   printf("      nbytes: %d  done: %d\n", (int)n->vio.nbytes, (int)n->vio.ndone);
   printf("      vc_server: 0x%p   mutex: 0x%p\n\n", n->vio.vc_server, n->vio.mutex.m_ptr);
 }

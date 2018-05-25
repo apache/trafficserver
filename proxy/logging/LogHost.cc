@@ -248,7 +248,7 @@ LogHost::disconnect()
 // and try to delete it when its reference become zero.
 //
 bool
-LogHost::preproc_and_try_delete(LogBuffer *lb)
+LogHost::preproc_and_try_delete(LogBuffer *&lb)
 {
   if (lb == nullptr) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
@@ -272,7 +272,7 @@ LogHost::preproc_and_try_delete(LogBuffer *lb)
     ink_assert(m_log_collation_client_sm != nullptr);
   }
 
-  // send log_buffer;
+  // send log_buffer
   if (m_log_collation_client_sm->send(lb) <= 0) {
     goto done;
   }
@@ -289,7 +289,7 @@ done:
 // try to delete it when its reference become zero.
 //
 void
-LogHost::orphan_write_and_try_delete(LogBuffer *lb)
+LogHost::orphan_write_and_try_delete(LogBuffer *&lb)
 {
   RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_num_lost_before_sent_to_network_stat,
                  lb->header()->entry_count);
@@ -418,33 +418,22 @@ LogHostList::preproc_and_try_delete(LogBuffer *lb)
     available_host = lh;
 
     do {
-#ifndef __clang_analyzer__
       ink_atomic_increment(&lb->m_references, 1);
-      success = lh->preproc_and_try_delete(lb);
-#else
-      /* clang-analyzer cannot be sure that lb->m_references
-       * isn't being modified problematically simultaneously
-       * in other threads. It, however, mustn't be or all is
-       * already lost. Suppress clang-analyzer for this case
-       * so that it does not erroneously believe a use after
-       * free occurs here.
-       */
-      success = false;
-#endif
+      success     = lh->preproc_and_try_delete(lb);
       need_orphan = need_orphan && (success == false);
     } while (lb && (success == false) && (lh = lh->failover_link.next));
 
     nr--;
   }
 
-#ifndef __clang_analyzer__
-  if (need_orphan && available_host) {
+  if (lb != nullptr && need_orphan && available_host) {
     ink_atomic_increment(&lb->m_references, 1);
     available_host->orphan_write_and_try_delete(lb);
   }
-#endif
 
-  LogBuffer::destroy(lb);
+  if (lb != nullptr) {
+    LogBuffer::destroy(lb);
+  }
   return 0;
 }
 

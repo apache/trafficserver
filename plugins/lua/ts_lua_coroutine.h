@@ -20,9 +20,9 @@
 #define _TS_LUA_COROUTINE_H
 
 #include <stdio.h>
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
 #include <ts/ts.h>
 
 struct async_item;

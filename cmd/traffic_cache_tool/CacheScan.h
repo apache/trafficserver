@@ -43,13 +43,14 @@ class CacheScan
 
 public:
   CacheScan(Stripe *str) : stripe(str){};
+  int unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);
   Errata Scan();
   Errata get_alternates(const char *buf, int length);
   Errata unmarshal(char *buf, int len, RefCountObj *block_ref);
-  Errata unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);
   Errata unmarshal(HTTPHdrImpl *obj, intptr_t offset);
   Errata unmarshal(MIMEHdrImpl *obj, intptr_t offset);
   Errata unmarshal(URLImpl *obj, intptr_t offset);
+  Errata unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset);
 };
 } // namespace ct
 

@@ -263,7 +263,7 @@ PluginVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   // Note: we set vio.op last because process_read_side looks at it to
   //  tell if the VConnection is active.
   read_state.vio.mutex     = c ? c->mutex : this->mutex;
-  read_state.vio._cont     = c;
+  read_state.vio.cont      = c;
   read_state.vio.nbytes    = nbytes;
   read_state.vio.ndone     = 0;
   read_state.vio.vc_server = (VConnection *)this;
@@ -295,7 +295,7 @@ PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, 
   // Note: we set vio.op last because process_write_side looks at it to
   //  tell if the VConnection is active.
   write_state.vio.mutex     = c ? c->mutex : this->mutex;
-  write_state.vio._cont     = c;
+  write_state.vio.cont      = c;
   write_state.vio.nbytes    = nbytes;
   write_state.vio.ndone     = 0;
   write_state.vio.vc_server = (VConnection *)this;
@@ -512,7 +512,7 @@ PluginVC::process_write_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
   if (other_side->closed || other_side->read_state.shutdown) {
-    write_state.vio._cont->handleEvent(VC_EVENT_ERROR, &write_state.vio);
+    write_state.vio.cont->handleEvent(VC_EVENT_ERROR, &write_state.vio);
     return;
   }
 
@@ -520,7 +520,7 @@ PluginVC::process_write_side(bool other_side_call)
     if (ntodo > 0) {
       // Notify the continuation that we are "disabling"
       //  ourselves due to to nothing to write
-      write_state.vio._cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
+      write_state.vio.cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
     }
     return;
   }
@@ -548,9 +548,9 @@ PluginVC::process_write_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_write_side; added %" PRId64 "", core_obj->id, PVC_TYPE, added);
 
   if (write_state.vio.ntodo() == 0) {
-    write_state.vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &write_state.vio);
+    write_state.vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &write_state.vio);
   } else {
-    write_state.vio._cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
+    write_state.vio.cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
   }
 
   update_inactive_time();
@@ -631,7 +631,7 @@ PluginVC::process_read_side(bool other_side_call)
 
   if (act_on <= 0) {
     if (other_side->closed || other_side->write_state.shutdown) {
-      read_state.vio._cont->handleEvent(VC_EVENT_EOS, &read_state.vio);
+      read_state.vio.cont->handleEvent(VC_EVENT_EOS, &read_state.vio);
     }
     return;
   }
@@ -663,9 +663,9 @@ PluginVC::process_read_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_read_side; added %" PRId64 "", core_obj->id, PVC_TYPE, added);
 
   if (read_state.vio.ntodo() == 0) {
-    read_state.vio._cont->handleEvent(VC_EVENT_READ_COMPLETE, &read_state.vio);
+    read_state.vio.cont->handleEvent(VC_EVENT_READ_COMPLETE, &read_state.vio);
   } else {
-    read_state.vio._cont->handleEvent(VC_EVENT_READ_READY, &read_state.vio);
+    read_state.vio.cont->handleEvent(VC_EVENT_READ_READY, &read_state.vio);
   }
 
   update_inactive_time();
@@ -765,7 +765,7 @@ PluginVC::process_timeout(Event **e, int event_to_send)
       return;
     }
     *e = nullptr;
-    read_state.vio._cont->handleEvent(event_to_send, &read_state.vio);
+    read_state.vio.cont->handleEvent(event_to_send, &read_state.vio);
   } else if (write_state.vio.op == VIO::WRITE && !write_state.shutdown && write_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, write_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
@@ -776,7 +776,7 @@ PluginVC::process_timeout(Event **e, int event_to_send)
       return;
     }
     *e = nullptr;
-    write_state.vio._cont->handleEvent(event_to_send, &write_state.vio);
+    write_state.vio.cont->handleEvent(event_to_send, &write_state.vio);
   } else {
     *e = nullptr;
   }
