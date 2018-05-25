@@ -888,7 +888,9 @@ void
 SSLPostConfigInitialize()
 {
   if (SSLConfigParams::engine_conf_file) {
+#ifndef OPENSSL_IS_BORINGSSL
     ENGINE_load_dynamic();
+#endif
 
     OPENSSL_load_builtin_modules();
     if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
@@ -1505,7 +1507,12 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 #ifdef SSL3_ST_SR_CLNT_HELLO_A
     if (state == SSL3_ST_SR_CLNT_HELLO_A) {
 #else
+#ifdef SSL_ST_RENEGOTIATE
+    // This is for BoringSSL
+    if (state == SSL_ST_RENEGOTIATE) {
+#else
     if (state == TLS_ST_SR_CLNT_HELLO) {
+#endif
 #endif
 #endif
       netvc->setSSLClientRenegotiationAbort(true);
