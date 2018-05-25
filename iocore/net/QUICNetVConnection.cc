@@ -830,17 +830,21 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
     return error;
   }
 
-  error = this->_handshake_handler->negotiate_version(packet.get(), &this->_packet_factory);
+  if (this->_handshake_handler->is_version_negotiated()) {
+    QUICConDebug("ignore VN - already negotiated");
+  } else {
+    error = this->_handshake_handler->negotiate_version(packet.get(), &this->_packet_factory);
 
-  // discard all transport state except packet number
-  this->_stream_manager->reset_send_offset();
-  this->_stream_manager->reset_recv_offset();
-  this->_loss_detector->reset();
+    // discard all transport state except packet number
+    this->_stream_manager->reset_send_offset();
+    this->_stream_manager->reset_recv_offset();
+    this->_loss_detector->reset();
 
-  // start handshake over
-  this->_handshake_handler->reset();
-  this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-  this->_schedule_packet_write_ready();
+    // start handshake over
+    this->_handshake_handler->reset();
+    this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    this->_schedule_packet_write_ready();
+  }
 
   return error;
 }
