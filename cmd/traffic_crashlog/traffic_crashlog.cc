@@ -37,6 +37,7 @@ static int debug_mode     = false;
 static int wait_mode      = false;
 static char *host_triplet = nullptr;
 static int target_pid     = getppid();
+static char *user         = nullptr;
 
 // If pid_t is not sizeof(int), we will have to jiggle argument parsing.
 extern char __pid_size_static_assert[sizeof(pid_t) == sizeof(int) ? 0 : -1];
@@ -48,6 +49,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"wait", '-', "Stop until signalled at startup", "F", &wait_mode, nullptr, nullptr},
   {"syslog", '-', "Syslog after writing a crash log", "F", &syslog_mode, nullptr, nullptr},
   {"debug", '-', "Enable debugging mode", "F", &debug_mode, nullptr, nullptr},
+  {"user", '-', "Username used to set privileges", "S*", &user, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
   RUNROOT_ARGUMENT_DESCRIPTION()};
@@ -85,6 +87,48 @@ crashlog_open(const char *path)
   return (fd == -1) ? nullptr : fdopen(fd, "w");
 }
 
+static unsigned
+max_passwd_size()
+{
+#if defined(_SC_GETPW_R_SIZE_MAX)
+  long val = sysconf(_SC_GETPW_R_SIZE_MAX);
+  if (val > 0) {
+    return (unsigned)val;
+  }
+#endif
+
+  return 4096;
+}
+
+static void
+change_privileges()
+{
+  struct passwd *pwd;
+  struct passwd pbuf;
+  char buf[max_passwd_size()];
+
+  if (getpwnam_r(user, &pbuf, buf, sizeof(buf), &pwd) != 0) {
+    Error("missing password database entry for username '%s': %s", user, strerror(errno));
+    return;
+  }
+
+  if (pwd == nullptr) {
+    // Password entry not found ...
+    Error("missing password database entry for '%s'", user);
+    return;
+  }
+
+  if (setegid(pwd->pw_gid) != 0) {
+    Error("setegid(%d) failed: %s", pwd->pw_gid, strerror(errno));
+    return;
+  }
+
+  if (setreuid(pwd->pw_uid, 0) != 0) {
+    Error("setreuid(%d, %d) failed: %s", pwd->pw_uid, 0, strerror(errno));
+    return;
+  }
+}
+
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
@@ -101,6 +145,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Process command line arguments and dump into variables
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
+  // XXX This is a hack. traffic_manager starts traffic_server with the euid of the admin user. We are still
+  // privileged, but won't be able to open files in /proc or ptrace the target. This really should be fixed
+  // in traffic_manager.
+  if (getuid() == 0) {
+    change_privileges();
+  }
+
   if (wait_mode) {
     EnableDeathSignal(SIGKILL);
     kill(getpid(), SIGSTOP);
@@ -110,13 +161,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // emit a crashlog because traffic_server is gone.
   if (getppid() != parent) {
     return 0;
-  }
-
-  // XXX This is a hack. traffic_manager starts traffic_server with the euid of the admin user. We are still
-  // privileged, but won't be able to open files in /proc or ptrace the target. This really should be fixed
-  // in traffic_manager.
-  if (getuid() == 0) {
-    ATS_UNUSED_RETURN(seteuid(0));
   }
 
   runroot_handler(argv);
