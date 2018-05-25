@@ -38,6 +38,7 @@ constexpr static std::string_view LABEL_FOR_CLIENT_PP_SECRET("EXPORTER-QUIC clie
 constexpr static std::string_view LABEL_FOR_SERVER_PP_SECRET("EXPORTER-QUIC server 1rtt"sv);
 constexpr static std::string_view LABEL_FOR_KEY("key"sv);
 constexpr static std::string_view LABEL_FOR_IV("iv"sv);
+constexpr static std::string_view LABEL_FOR_PN("pn"sv);
 
 std::unique_ptr<KeyMaterial>
 QUICKeyGenerator::generate(QUICConnectionId cid)
@@ -61,7 +62,7 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
     break;
   }
 
-  this->_generate(km->key, &km->key_len, km->iv, &km->iv_len, hkdf, secret, secret_len, cipher);
+  this->_generate(*km, hkdf, secret, secret_len, cipher);
 
   return km;
 }
@@ -78,7 +79,7 @@ QUICKeyGenerator::generate_0rtt(SSL *ssl)
   QUICHKDF hkdf(md);
 
   this->_generate_0rtt_secret(secret, &secret_len, hkdf, ssl, EVP_MD_size(md));
-  this->_generate(km->key, &km->key_len, km->iv, &km->iv_len, hkdf, secret, secret_len, cipher);
+  this->_generate(*km, hkdf, secret, secret_len, cipher);
 
   return km;
 }
@@ -105,20 +106,22 @@ QUICKeyGenerator::generate(SSL *ssl)
     break;
   }
 
-  this->_generate(km->key, &km->key_len, km->iv, &km->iv_len, hkdf, secret, secret_len, cipher);
+  this->_generate(*km, hkdf, secret, secret_len, cipher);
 
   return km;
 }
 
 int
-QUICKeyGenerator::_generate(uint8_t *key, size_t *key_len, uint8_t *iv, size_t *iv_len, QUICHKDF &hkdf, const uint8_t *secret,
-                            size_t secret_len, const QUIC_EVP_CIPHER *cipher)
+QUICKeyGenerator::_generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
+                            const QUIC_EVP_CIPHER *cipher)
 {
   // Generate a key and a IV
   //   key = QHKDF-Expand(S, "key", "", key_length)
   //   iv  = QHKDF-Expand(S, "iv", "", iv_length)
-  this->_generate_key(key, key_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
-  this->_generate_iv(iv, iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
+  //   pn_key = QHKDF-Expand(S, "pn", pn_key_length)
+  this->_generate_key(km.key, &km.key_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
+  this->_generate_iv(km.iv, &km.iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
+  this->_generate_pn(km.pn, &km.pn_len, hkdf, secret, secret_len, 12);
 
   return 0;
 }
@@ -186,4 +189,11 @@ QUICKeyGenerator::_generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, co
                                size_t iv_length) const
 {
   return hkdf.expand(out, out_len, secret, secret_len, LABEL_FOR_IV.data(), LABEL_FOR_IV.length(), iv_length);
+}
+
+int
+QUICKeyGenerator::_generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
+                               size_t pn_length) const
+{
+  return hkdf.expand(out, out_len, secret, secret_len, LABEL_FOR_PN.data(), LABEL_FOR_PN.length(), pn_length);
 }

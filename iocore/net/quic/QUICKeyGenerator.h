@@ -38,8 +38,10 @@ struct KeyMaterial {
   // uint8_t iv[EVP_MAX_IV_LENGTH]   = {0};
   uint8_t key[512] = {0};
   uint8_t iv[512]  = {0};
+  uint8_t pn[512]  = {0};
   size_t key_len   = 512;
   size_t iv_len    = 512;
+  size_t pn_len    = 512;
 };
 
 class QUICKeyGenerator
@@ -70,8 +72,7 @@ private:
   uint8_t _last_secret[256];
   size_t _last_secret_len = 0;
 
-  int _generate(uint8_t *key, size_t *key_len, uint8_t *iv, size_t *iv_len, QUICHKDF &hkdf, const uint8_t *secret,
-                size_t secret_len, const QUIC_EVP_CIPHER *cipher);
+  int _generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher);
   int _generate_cleartext_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
                                  size_t label_len, size_t length);
   int _generate_pp_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, const char *label, size_t label_len,
@@ -80,6 +81,7 @@ private:
   int _generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                     size_t key_length) const;
   int _generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t iv_length) const;
+  int _generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t pn_length) const;
   size_t _get_key_len(const QUIC_EVP_CIPHER *cipher) const;
   size_t _get_iv_len(const QUIC_EVP_CIPHER *cipher) const;
   const QUIC_EVP_CIPHER *_get_cipher_for_cleartext() const;
