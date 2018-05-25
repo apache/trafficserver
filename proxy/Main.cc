@@ -1655,19 +1655,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     REC_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
   }
 
-  // Set up crash logging. We need to do this while we are still privileged so that the crash
-  // logging helper runs as root. Don't bother setting up a crash logger if we are going into
-  // command mode since that's not going to daemonize or run for a long time unattended.
-  if (!command_flag) {
-    crash_logger_init();
-    signal_register_crash_handler(crash_logger_invoke);
-  }
-
   ats_scoped_str user(MAX_LOGIN + 1);
 
   *user        = '\0';
   admin_user_p = ((REC_ERR_OKAY == REC_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) && (*user != '\0') &&
                   (0 != strcmp(user, "#-1")));
+
+  // Set up crash logging. We need to do this while we are still privileged so that the crash
+  // logging helper runs as root. Don't bother setting up a crash logger if we are going into
+  // command mode since that's not going to daemonize or run for a long time unattended.
+  if (!command_flag) {
+    crash_logger_init(user);
+    signal_register_crash_handler(crash_logger_invoke);
+  }
 
 #if TS_USE_POSIX_CAP
   // Change the user of the process.
