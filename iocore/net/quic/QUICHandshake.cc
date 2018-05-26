@@ -129,7 +129,7 @@ QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled
 }
 
 QUICErrorUPtr
-QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory)
+QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory, bool &need_challenge)
 {
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
@@ -141,6 +141,10 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         QUICHSDebug("Version negotiation succeeded: %x", initial_packet->version());
         this->_load_local_server_transport_parameters(initial_packet->version());
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
+
+        if ((++this->_initial_packet_count) > 3) {
+          need_challenge = true;
+        }
       } else {
         this->_qc->transmit_packet(packet_factory->create_version_negotiation_packet(initial_packet));
         QUICHSDebug("Version negotiation failed: %x", initial_packet->version());
@@ -149,6 +153,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
       return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
     }
   }
+
   return QUICErrorUPtr(new QUICNoError());
 }
 
