@@ -340,7 +340,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     CHECK(stream_frame->offset() == 0x100000000);
     CHECK(stream_frame->stream_id() == 0x01);
     CHECK(stream_frame->data_length() == 10);
-    QUICStreamFrame *stream_frame2 = stream_frame->split(16);
+    QUICStreamFrame *stream_frame2 = dynamic_cast<QUICStreamFrame *>(stream_frame->split(16));
     CHECK(stream_frame->stream_id() == 0x01);
     CHECK(stream_frame->data_length() == 5);
     CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04\x05", stream_frame->data_length()) == 0);
@@ -1176,6 +1176,43 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
   factory.set_hs_protocol(&hs_protocol);
   QUICPacketUPtr packet = factory.create_server_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0,
                                                                  {nullptr, [](void *p) { ats_free(p); }}, 0, true);
+  SECTION("STREAM frame split")
+  {
+    size_t len;
+    uint8_t buf1[] = {
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x01,                                           // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x0a,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+      0x11, 0x22, 0x33, 0x44, 0x55,
+    };
+
+    uint8_t expected[]{
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x01,                                           // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, // Offset
+      0x05,                                           // Data Length
+      0x11, 0x22, 0x33, 0x44, 0x55,                   // Stream Data
+    };
+
+    uint8_t expected2[]{
+      0x16,                                           // 0b00010OLF (OLF=110)
+      0x01,                                           // Stream ID
+      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
+      0x05,                                           // Data Length
+      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
+    };
+
+    uint8_t buffer[128];
+
+    QUICFrameUPtr frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    auto frame           = QUICFrameFactory::create_retransmission_frame(std::move(frame1), *packet);
+    auto frame2          = frame->split(16);
+
+    CHECK(frame2->store(buffer, &len, 128));
+    CHECK(memcmp(buffer, expected, sizeof(expected)) == 0);
+  }
 
   SECTION("STREAM frame")
   {
