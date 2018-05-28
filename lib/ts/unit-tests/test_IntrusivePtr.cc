@@ -43,11 +43,19 @@ struct Obscure : private ts::IntrusivePtrCounter {
   friend class ts::IntrusivePtr<Obscure>;
 };
 
+struct Item : public ts::IntrusivePtrCounter {
+  ts::IntrusivePtr<Item> _next;
+  Item() { ++_count; }
+  ~Item() { --_count; }
+  static int _count; // instance count.
+};
+
 struct Atomic : ts::IntrusivePtrAtomicCounter {
   int _q{0};
 };
 
 int Thing::_count{0};
+int Item::_count{0};
 
 TEST_CASE("IntrusivePtr", "[libts][IntrusivePtr]")
 {
@@ -83,6 +91,84 @@ TEST_CASE("IntrusivePtr", "[libts][IntrusivePtr]")
   // of ts::InstrusivePtrCounter if IntrusivePtr is declared a friend.
   ts::IntrusivePtr<Obscure> op{new Obscure};
   op->_text.assign("Text");
+}
+
+// List test.
+TEST_CASE("IntrusivePtr List", "[libts][IntrusivePtr]")
+{
+  // The clang analyzer claims this type of list manipularion leads to use after free because of
+  // premature class destruction but these tests verify that is a false positive.
+
+  using LP = ts::IntrusivePtr<Item>;
+
+  LP list{new Item}; // start a list
+  {
+    // Add an item to the front of the list.
+    LP item{new Item};
+
+    REQUIRE(Item::_count == 2);
+    REQUIRE(list.use_count() == 1);
+    REQUIRE(item.use_count() == 1);
+    item->_next = list;
+    REQUIRE(Item::_count == 2);
+    REQUIRE(list.use_count() == 2);
+    REQUIRE(item.use_count() == 1);
+    list = item;
+    REQUIRE(Item::_count == 2);
+    REQUIRE(list.use_count() == 2);
+  }
+  REQUIRE(Item::_count == 2);
+  REQUIRE(list.use_count() == 1);
+  REQUIRE(list->_next.use_count() == 1);
+
+  {
+    // add an item after the first element in a non-empty list.
+    LP item{new Item};
+
+    REQUIRE(Item::_count == 3);
+    REQUIRE(list.use_count() == 1);
+    REQUIRE(item.use_count() == 1);
+    item->_next = list->_next;
+    REQUIRE(Item::_count == 3);
+    REQUIRE(list.use_count() == 1);
+    REQUIRE(item.use_count() == 1);
+    REQUIRE(item->_next.use_count() == 2);
+    list->_next = item;
+    REQUIRE(Item::_count == 3);
+    REQUIRE(item.use_count() == 2);
+    REQUIRE(list->_next.get() == item.get());
+    REQUIRE(item->_next.use_count() == 1);
+  }
+  REQUIRE(Item::_count == 3);
+  REQUIRE(list.use_count() == 1);
+  REQUIRE(list->_next.use_count() == 1);
+  list.reset();
+  REQUIRE(Item::_count == 0);
+
+  list.reset(new Item); // start a list
+  REQUIRE(Item::_count == 1);
+  {
+    // Add item after first in singleton list.
+    LP item{new Item};
+    REQUIRE(Item::_count == 2);
+    REQUIRE(list.use_count() == 1);
+    REQUIRE(item.use_count() == 1);
+    REQUIRE(!list->_next);
+    item->_next = list->_next;
+    REQUIRE(!item->_next);
+    REQUIRE(Item::_count == 2);
+    REQUIRE(list.use_count() == 1);
+    REQUIRE(item.use_count() == 1);
+    list->_next = item;
+    REQUIRE(Item::_count == 2);
+    REQUIRE(item.use_count() == 2);
+    REQUIRE(list->_next.get() == item.get());
+  }
+  REQUIRE(Item::_count == 2);
+  REQUIRE(list.use_count() == 1);
+  REQUIRE(list->_next.use_count() == 1);
+  list.reset();
+  REQUIRE(Item::_count == 0);
 }
 
 // Cross type tests.

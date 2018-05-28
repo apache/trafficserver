@@ -24,113 +24,87 @@
 
 #include <algorithm>
 
-#include "MemArena.h"
+#include <ts/MemArena.h>
 #include <ts/ink_memory.h>
 #include <ts/ink_assert.h>
 
 using namespace ts;
 
-/**
-    Allocates a new internal block of memory. If there are no existing blocks, this becomes the head of the
-     ll. If there are existing allocations, the new block is inserted in the current list.
-     If @custom == true, the new block is pushed into the generation but @current doesn't change.
-        @custom == false, the new block is pushed to the head and becomes the @current internal block.
-  */
-inline MemArena::Block *
-MemArena::newInternalBlock(size_t n, bool custom)
+void
+MemArena::Block::operator delete(void *ptr)
 {
-  // Allocate Block header and actual underlying memory together for locality and fewer calls.
-  // ALLOC_HEADER_SIZE to account for malloc/free headers to try to minimize pages required.
-  static constexpr size_t FREE_SPACE_PER_PAGE = DEFAULT_PAGE_SIZE - sizeof(Block) - ALLOC_HEADER_SIZE;
-  static_assert(ALLOC_MIN_SIZE > ALLOC_HEADER_SIZE,
-                "ALLOC_MIN_SIZE must be larger than ALLOC_HEADER_SIZE to ensure positive allocation request size.");
+  ::free(ptr);
+}
 
-  // If post-freeze or reserved, bump up block size then clear.
-  n               = std::max({n, next_block_size, ALLOC_MIN_SIZE});
-  next_block_size = 0;
-
-  if (n <= FREE_SPACE_PER_PAGE) { // will fit within one page, just allocate.
-    n += sizeof(Block);           // can just allocate that much with the Block.
-  } else {
-    // Round up to next power of 2 and allocate that.
-    --n;
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    n |= n >> 32;
-    ++n;                    // power of 2 now.
-    n -= ALLOC_HEADER_SIZE; // clip presumed malloc header size.
+MemArena::BlockPtr
+MemArena::make_block(size_t n)
+{
+  // If post-freeze or reserved, allocate at least that much.
+  n               = std::max<size_t>(n, next_block_size);
+  next_block_size = 0; // did this, clear for next time.
+  // Add in overhead and round up to paragraph units.
+  n = Paragraph{round_up(n + ALLOC_HEADER_SIZE + sizeof(Block))};
+  // If a page or more, round up to page unit size and clip back to account for alloc header.
+  if (n >= Page::SCALE) {
+    n = Page{round_up(n)} - ALLOC_HEADER_SIZE;
   }
 
-  // Allocate space for the Block instance and the request memory.
-  std::shared_ptr<Block> block(new (ats_malloc(n)) Block(n - sizeof(Block)));
-
-  if (current) {
-    if (!custom) {
-      block->next = current;
-      current     = block;
-    } else {
-      // Situation where we do not have enough space for a large block of memory. We don't want
-      //  to update @current because it would be wasting memory. Create a new block for the entire
-      //  allocation and just add it to the generation.
-      block->next   = current->next; // here, current always exists.
-      current->next = block;
-    }
-  } else { // empty
-    current = block;
-  }
-
-  return block.get();
+  // Allocate space for the Block instance and the request memory and construct a Block at the front.
+  // In theory this could use ::operator new(n) but this causes a size mismatch during ::operator delete.
+  // Easier to use malloc and not carry a memory block size value around.
+  return BlockPtr(new (::malloc(n)) Block(n - sizeof(Block)));
 }
 
 MemArena::MemArena(size_t n)
 {
-  next_block_size = 0; // don't force larger size.
-  this->newInternalBlock(n, true);
+  next_block_size = 0; // Don't use default size.
+  current         = this->make_block(n);
 }
 
-/**
-    Returns a span of memory of @n bytes. If necessary, alloc will create a new internal block
-     of memory in order to serve the required number of bytes.
- */
 MemSpan
 MemArena::alloc(size_t n)
 {
-  Block *block = nullptr;
-
+  MemSpan zret;
   current_alloc += n;
 
   if (!current) {
-    block = this->newInternalBlock(n, false);
-  } else {
-    if (current->size - current->allocated /* remaining size */ < n) {
-      if (n >= DEFAULT_PAGE_SIZE && n >= (current->size / 2)) {
-        block = this->newInternalBlock(n, true);
-      } else {
-        block = this->newInternalBlock(current->size * 2, false);
-      }
-    } else {
-      block = current.get();
+    current = this->make_block(n);
+    zret    = current->alloc(n);
+  } else if (n > current->remaining()) { // too big, need another block
+    if (next_block_size < n) {
+      next_block_size = 2 * current->size;
     }
+    BlockPtr block = this->make_block(n);
+    // For the new @a current, pick the block which will have the most free space after taking
+    // the request space out of the new block.
+    zret = block->alloc(n);
+    if (block->remaining() > current->remaining()) {
+      block->next = current;
+      current     = block;
+#if defined(__clang_analyzer__)
+      // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
+      ink_assert(current.use_count() > 1);
+#endif
+    } else {
+      block->next   = current->next;
+      current->next = block;
+#if defined(__clang_analyzer__)
+      // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
+      ink_assert(block.use_count() > 1);
+#endif
+    }
+  } else {
+    zret = current->alloc(n);
   }
-
-  ink_assert(block->data() != nullptr);
-  ink_assert(block->size >= n);
-
-  auto zret = block->remnant().prefix(n);
-  block->allocated += n;
-
   return zret;
 }
 
 MemArena &
 MemArena::freeze(size_t n)
 {
-  prev            = current;
-  prev_alloc      = current_alloc;
-  current         = nullptr;
+  prev       = current;
+  prev_alloc = current_alloc;
+  current.reset();
   next_block_size = n ? n : current_alloc;
   current_alloc   = 0;
 
@@ -141,7 +115,7 @@ MemArena &
 MemArena::thaw()
 {
   prev_alloc = 0;
-  prev       = nullptr;
+  prev.reset();
   return *this;
 }
 
@@ -165,9 +139,9 @@ MemArena::contains(const void *ptr) const
 MemArena &
 MemArena::clear()
 {
-  prev          = nullptr;
-  prev_alloc    = 0;
-  current       = nullptr;
+  prev.reset();
+  prev_alloc = 0;
+  current.reset();
   current_alloc = 0;
 
   return *this;
