@@ -1212,6 +1212,8 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
 
     CHECK(frame2->store(buffer, &len, 128));
     CHECK(memcmp(buffer, expected, sizeof(expected)) == 0);
+    CHECK(frame->store(buffer, &len, 128));
+    CHECK(memcmp(buffer, expected2, sizeof(expected2)) == 0);
   }
 
   SECTION("STREAM frame")

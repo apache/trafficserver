@@ -82,6 +82,12 @@ QUICFrame::debug_msg(char *msg, size_t msg_len) const
   return snprintf(msg, msg_len, "type=%s size=%zu", QUICDebugNames::frame_type(this->type()), this->size());
 }
 
+QUICFrame *
+QUICFrame::split(size_t size)
+{
+  return nullptr;
+}
+
 //
 // STREAM Frame
 //
@@ -377,12 +383,6 @@ QUICStreamFrame::_get_length_field_len() const
 QUICAckFrame::QUICAckFrame(const uint8_t *buf, size_t len, bool protection) : QUICFrame(buf, len, protection)
 {
   this->reset(buf, len);
-}
-
-QUICFrame *
-QUICAckFrame::split(size_t size)
-{
-  return nullptr;
 }
 
 QUICAckFrame::QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, bool protection)
@@ -834,12 +834,6 @@ QUICRstStreamFrame::QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode 
 {
 }
 
-QUICFrame *
-QUICRstStreamFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 QUICFrameType
 QUICRstStreamFrame::type() const
 {
@@ -957,12 +951,6 @@ QUICPingFrame::type() const
   return QUICFrameType::PING;
 }
 
-QUICFrame *
-QUICPingFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 size_t
 QUICPingFrame::size() const
 {
@@ -1014,12 +1002,6 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   return *len;
 }
 
-QUICFrame *
-QUICPaddingFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 //
 // CONNECTION_CLOSE frame
 //
@@ -1030,12 +1012,6 @@ QUICConnectionCloseFrame::QUICConnectionCloseFrame(QUICTransErrorCode error_code
   this->_error_code           = error_code;
   this->_reason_phrase_length = reason_phrase_length;
   this->_reason_phrase        = reason_phrase;
-}
-
-QUICFrame *
-QUICConnectionCloseFrame::split(size_t size)
-{
-  return nullptr;
 }
 
 QUICFrameType
@@ -1145,12 +1121,6 @@ QUICApplicationCloseFrame::QUICApplicationCloseFrame(QUICAppErrorCode error_code
   this->_reason_phrase        = reason_phrase;
 }
 
-QUICFrame *
-QUICApplicationCloseFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 QUICFrameType
 QUICApplicationCloseFrame::type() const
 {
@@ -1254,12 +1224,6 @@ QUICMaxDataFrame::QUICMaxDataFrame(uint64_t maximum_data, bool protection)
   this->_maximum_data = maximum_data;
 }
 
-QUICFrame *
-QUICMaxDataFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 QUICFrameType
 QUICMaxDataFrame::type() const
 {
@@ -1324,12 +1288,6 @@ QUICMaxStreamDataFrame::QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t 
 {
   this->_stream_id           = stream_id;
   this->_maximum_stream_data = maximum_stream_data;
-}
-
-QUICFrame *
-QUICMaxStreamDataFrame::split(size_t size)
-{
-  return nullptr;
 }
 
 QUICFrameType
@@ -1428,12 +1386,6 @@ QUICMaxStreamIdFrame::QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, bool 
   this->_maximum_stream_id = maximum_stream_id;
 }
 
-QUICFrame *
-QUICMaxStreamIdFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 QUICFrameType
 QUICMaxStreamIdFrame::type() const
 {
@@ -1498,12 +1450,6 @@ QUICBlockedFrame::type() const
   return QUICFrameType::BLOCKED;
 }
 
-QUICFrame *
-QUICBlockedFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 size_t
 QUICBlockedFrame::size() const
 {
@@ -1562,12 +1508,6 @@ QUICFrameType
 QUICStreamBlockedFrame::type() const
 {
   return QUICFrameType::STREAM_BLOCKED;
-}
-
-QUICFrame *
-QUICStreamBlockedFrame::split(size_t size)
-{
-  return nullptr;
 }
 
 size_t
@@ -1657,12 +1597,6 @@ QUICStreamIdBlockedFrame::type() const
   return QUICFrameType::STREAM_ID_BLOCKED;
 }
 
-QUICFrame *
-QUICStreamIdBlockedFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 size_t
 QUICStreamIdBlockedFrame::size() const
 {
@@ -1722,12 +1656,6 @@ QUICFrameType
 QUICNewConnectionIdFrame::type() const
 {
   return QUICFrameType::NEW_CONNECTION_ID;
-}
-
-QUICFrame *
-QUICNewConnectionIdFrame::split(size_t size)
-{
-  return nullptr;
 }
 
 size_t
@@ -1832,12 +1760,6 @@ QUICStopSendingFrame::QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorC
 {
 }
 
-QUICFrame *
-QUICStopSendingFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 QUICFrameType
 QUICStopSendingFrame::type() const
 {
@@ -1921,12 +1843,6 @@ QUICPathChallengeFrame::type() const
   return QUICFrameType::PATH_CHALLENGE;
 }
 
-QUICFrame *
-QUICPathChallengeFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 size_t
 QUICPathChallengeFrame::size() const
 {
@@ -1975,12 +1891,6 @@ QUICFrameType
 QUICPathResponseFrame::type() const
 {
   return QUICFrameType::PATH_RESPONSE;
-}
-
-QUICFrame *
-QUICPathResponseFrame::split(size_t size)
-{
-  return nullptr;
 }
 
 size_t
@@ -2200,7 +2110,12 @@ QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUIC
 QUICFrameUPtr
 QUICFrameFactory::split_frame(QUICFrame *frame, size_t size)
 {
-  return QUICFrameUPtr(frame->split(size), &QUICFrameDeleter::delete_stream_frame);
+  auto new_frame = frame->split(size);
+  if (new_frame != nullptr) {
+    return QUICFrameFactory::create_null_frame();
+  }
+
+  return QUICFrameUPtr(new_frame, &QUICFrameDeleter::delete_stream_frame);
 }
 
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
