@@ -44,8 +44,10 @@ quic_new_ssl_ctx()
   SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_3_VERSION);
 
+#ifndef OPENSSL_IS_BORINGSSL
   // FIXME: OpenSSL (1.1.1-alpha) enable this option by default. But this shoule be removed when OpenSSL disable this by default.
   SSL_CTX_clear_options(ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#endif
 
   SSL_CTX_set_max_early_data(ssl_ctx, UINT32_C(0xFFFFFFFF));
 

@@ -32,49 +32,66 @@
 static constexpr char tag[] = "quic_tls";
 
 const EVP_AEAD *
-QUICTLS::_get_evp_aead(const SSL_CIPHER *cipher) const
+QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {
-  ink_assert(SSL_CIPHER_is_AEAD(cipher));
-
-  if (SSL_CIPHER_is_AES128GCM(cipher)) {
+  if (phase == QUICKeyPhase::CLEARTEXT) {
     return EVP_aead_aes_128_gcm();
-  } else if ((cipher->algorithm_enc & 0x00000010L) != 0) {
-    // SSL_AES256GCM is 0x00000010L ( defined in `ssl/internal.h` ).
-    // There're no `SSL_CIPHER_is_AES256GCM(const SSL_CIPHER *cipher)`.
-    return EVP_aead_aes_256_gcm();
-  } else if (SSL_CIPHER_is_CHACHA20POLY1305(cipher)) {
-    return EVP_aead_chacha20_poly1305();
   } else {
-    return nullptr;
+    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
+    if (cipher) {
+      switch (SSL_CIPHER_get_id(cipher)) {
+      case TLS1_CK_AES_128_GCM_SHA256:
+        return EVP_aead_aes_128_gcm();
+      case TLS1_CK_AES_256_GCM_SHA384:
+        return EVP_aead_aes_256_gcm();
+      case TLS1_CK_CHACHA20_POLY1305_SHA256:
+        return EVP_aead_chacha20_poly1305();
+      default:
+        ink_assert(false);
+        return nullptr;
+      }
+    } else {
+      ink_assert(false);
+      return nullptr;
+    }
   }
 }
 
 size_t
-QUICTLS::_get_aead_tag_len(const SSL_CIPHER * /* cipher */) const
+QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
 {
-  return EVP_AEAD_DEFAULT_TAG_LENGTH;
-}
-
-int
-QUICTLS::_hkdf_expand_label(uint8_t *dst, size_t dst_len, const uint8_t *secret, size_t secret_len, const char *label,
-                            size_t label_len, const EVP_MD *digest) const
-{
-  uint8_t info[256] = {0};
-  size_t info_len   = 0;
-  _gen_info(info, info_len, label, label_len, dst_len);
-  return HKDF(dst, dst_len, digest, secret, secret_len, nullptr, 0, info, info_len);
+  if (phase == QUICKeyPhase::CLEARTEXT) {
+    return EVP_GCM_TLS_TAG_LEN;
+  } else {
+    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
+    if (cipher) {
+      switch (SSL_CIPHER_get_id(cipher)) {
+      case TLS1_CK_AES_128_GCM_SHA256:
+      case TLS1_CK_AES_256_GCM_SHA384:
+        return EVP_GCM_TLS_TAG_LEN;
+      case TLS1_CK_CHACHA20_POLY1305_SHA256:
+        return 16;
+      default:
+        ink_assert(false);
+        return -1;
+      }
+    } else {
+      ink_assert(false);
+      return -1;
+    }
+  }
 }
 
 bool
 QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, size_t key_len, const uint8_t *iv,
-                  size_t iv_len, size_t tag_len) const
+                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead,
+                  size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;
-  _gen_nonce(nonce, nonce_len, pkt_num, iv, iv_len);
+  _gen_nonce(nonce, nonce_len, pkt_num, km.iv, km.iv_len);
 
-  EVP_AEAD_CTX *aead_ctx = EVP_AEAD_CTX_new(this->_aead, key, key_len, tag_len);
+  EVP_AEAD_CTX *aead_ctx = EVP_AEAD_CTX_new(aead, km.key, km.key_len, tag_len);
   if (!aead_ctx) {
     Debug(tag, "Failed to create EVP_AEAD_CTX");
     return false;
@@ -92,14 +109,14 @@ QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, co
 
 bool
 QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, size_t key_len, const uint8_t *iv,
-                  size_t iv_len, size_t tag_len) const
+                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead,
+                  size_t tag_len) const
 {
   uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
   size_t nonce_len                 = 0;
-  _gen_nonce(nonce, nonce_len, pkt_num, iv, iv_len);
+  _gen_nonce(nonce, nonce_len, pkt_num, km.iv, km.iv_len);
 
-  EVP_AEAD_CTX *aead_ctx = EVP_AEAD_CTX_new(this->_aead, key, key_len, tag_len);
+  EVP_AEAD_CTX *aead_ctx = EVP_AEAD_CTX_new(aead, km.key, km.key_len, tag_len);
   if (!aead_ctx) {
     Debug(tag, "Failed to create EVP_AEAD_CTX");
     return false;

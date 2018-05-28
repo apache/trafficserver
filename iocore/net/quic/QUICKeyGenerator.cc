@@ -163,8 +163,13 @@ int
 QUICKeyGenerator::_generate_0rtt_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, size_t length)
 {
   *out_len = length;
+#ifndef OPENSSL_IS_BORINGSSL
   SSL_export_keying_material_early(ssl, out, *out_len, LABEL_FOR_CLIENT_0RTT_SECRET.data(), LABEL_FOR_CLIENT_0RTT_SECRET.length(),
                                    reinterpret_cast<const uint8_t *>(""), 0);
+#else
+  SSL_export_early_keying_material(ssl, out, *out_len, LABEL_FOR_CLIENT_0RTT_SECRET.data(), LABEL_FOR_CLIENT_0RTT_SECRET.length(),
+                                   reinterpret_cast<const uint8_t *>(""), 0);
+#endif
 
   return 0;
 }

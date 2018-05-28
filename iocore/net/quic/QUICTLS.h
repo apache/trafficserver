@@ -61,26 +61,14 @@ private:
   QUICKeyGenerator _keygen_for_client = QUICKeyGenerator(QUICKeyGenerator::Context::CLIENT);
   QUICKeyGenerator _keygen_for_server = QUICKeyGenerator(QUICKeyGenerator::Context::SERVER);
   void _gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const;
-#ifdef OPENSSL_IS_BORINGSSL
-  const EVP_AEAD *_get_evp_aead() const;
-#else
-  const EVP_CIPHER *_get_evp_aead(QUICKeyPhase phase) const;
-#endif // OPENSSL_IS_BORINGSSL
+  const QUIC_EVP_CIPHER *_get_evp_aead(QUICKeyPhase phase) const;
   size_t _get_aead_tag_len(QUICKeyPhase phase) const;
 
-#ifdef OPENSSL_IS_BORINGSSL
   bool _encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead,
+                uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead,
                 size_t tag_len) const;
   bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
-                const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead, size_t tag_len) const;
-#else
-  bool _encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead,
-                size_t tag_len) const;
-  bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
-                const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead, size_t tag_len) const;
-#endif // OPENSSL_IS_BORINGSSL
+                const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead, size_t tag_len) const;
 
   SSL *_ssl                              = nullptr;
   QUICPacketProtection *_client_pp       = nullptr;

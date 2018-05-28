@@ -39,24 +39,21 @@ QUICKeyGenerator::_get_iv_len(const QUIC_EVP_CIPHER *cipher) const
 const QUIC_EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_cleartext() const
 {
-  return EVP_aes_128_gcm();
   return EVP_aead_aes_128_gcm();
 }
 
 const QUIC_EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 {
-  ink_assert(SSL_CIPHER_is_AEAD(ssl));
-
-  if (SSL_CIPHER_is_AES128GCM(ssl)) {
+  switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
+  case TLS1_CK_AES_128_GCM_SHA256:
     return EVP_aead_aes_128_gcm();
-  } else if ((cipher->algorithm_enc & 0x00000010L) != 0) {
-    // SSL_AES256GCM is 0x00000010L ( defined in `ssl/internal.h` ).
-    // There're no `SSL_CIPHER_is_AES256GCM(const SSL_CIPHER *cipher)`.
+  case TLS1_CK_AES_256_GCM_SHA384:
     return EVP_aead_aes_256_gcm();
-  } else if (SSL_CIPHER_is_CHACHA20POLY1305(ssl)) {
+  case TLS1_CK_CHACHA20_POLY1305_SHA256:
     return EVP_aead_chacha20_poly1305();
-  } else {
+  default:
+    ink_assert(false);
     return nullptr;
   }
 }
@@ -65,14 +62,14 @@ QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 const EVP_MD *
 QUICKeyGenerator::_get_handshake_digest(const SSL *ssl) const
 {
-  switch (ssl->algorithm_prf) {
-  case 0x2:
-    // SSL_HANDSHAKE_MAC_SHA256:
+  switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
+  case TLS1_CK_AES_128_GCM_SHA256:
+  case TLS1_CK_CHACHA20_POLY1305_SHA256:
     return EVP_sha256();
-  case 0x4:
-    // SSL_HANDSHAKE_MAC_SHA384:
+  case TLS1_CK_AES_256_GCM_SHA384:
     return EVP_sha384();
   default:
+    ink_assert(false);
     return nullptr;
   }
 }

@@ -81,7 +81,11 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
       // Details in https://github.com/openssl/openssl/issues/5235
       if (this->_stateless) {
         // process stateless retry
+#ifndef OPENSSL_IS_BORINGSSL
         ret = SSL_stateless(this->_ssl);
+#else
+        ink_assert(!"stateless retry is not available with boringssl");
+#endif
         if (ret > 0) {
           this->_stateless = false;
           this->_msg_type  = QUICHandshakeMsgType::HANDSHAKE;
@@ -95,7 +99,11 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
             this->_early_data_processed = true;
           }
 
+#ifndef OPENSSL_IS_BORINGSSL
           if (SSL_get_early_data_status(this->_ssl) == SSL_EARLY_DATA_ACCEPTED) {
+#else
+          if (SSL_early_data_accepted(this->_ssl)) {
+#endif
             Debug(tag, "Early data processed");
 
             if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
@@ -110,12 +118,17 @@ QUICTLS::handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint
     } else {
       ret = SSL_connect(this->_ssl);
 
+#ifndef OPENSSL_IS_BORINGSSL
       // FIXME: if SSL_get_state work well on server side, use this for distinction of HANDSHAKE and RERTY
       if (SSL_get_state(this->_ssl) == TLS_ST_CW_CLNT_HELLO) {
         this->_msg_type = QUICHandshakeMsgType::INITIAL;
       } else {
         this->_msg_type = QUICHandshakeMsgType::HANDSHAKE;
       }
+#else
+      // No stateless retry support
+      this->_msg_type = QUICHandshakeMsgType::INITIAL;
+#endif
     }
 
     if (ret < 0) {
@@ -249,7 +262,8 @@ QUICTLS::_read_early_data()
 {
   uint8_t early_data[8];
   size_t early_data_len = 0;
-  int ret               = 0;
+#ifndef OPENSSL_IS_BORINGSSL
+  int ret = 0;
 
   do {
     ERR_clear_error();
@@ -257,6 +271,14 @@ QUICTLS::_read_early_data()
   } while (ret == SSL_READ_EARLY_DATA_SUCCESS);
 
   return ret == SSL_READ_EARLY_DATA_FINISH ? 1 : 0;
+#else
+  do {
+    ERR_clear_error();
+    early_data_len = SSL_read(this->_ssl, early_data, sizeof(early_data));
+  } while (SSL_in_early_data(this->_ssl));
+
+  return 1;
+#endif
 }
 
 void
@@ -309,7 +331,7 @@ QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, con
     Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
-  const EVP_CIPHER *aead = this->_get_evp_aead(phase);
+  const QUIC_EVP_CIPHER *aead = this->_get_evp_aead(phase);
 
   bool ret = _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, aead, tag_len);
   if (!ret) {
@@ -345,8 +367,8 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
     Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
-  const EVP_CIPHER *aead = this->_get_evp_aead(phase);
-  bool ret               = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, aead, tag_len);
+  const QUIC_EVP_CIPHER *aead = this->_get_evp_aead(phase);
+  bool ret = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, aead, tag_len);
   if (!ret) {
     Debug(tag, "Failed to decrypt a packet: pkt_num=%" PRIu64, pkt_num);
   }
