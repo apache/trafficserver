@@ -212,6 +212,8 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
   this->_frame_dispatcher->add_handler(this->_path_validator);
+
+  this->_validate_new_path();
 }
 
 void
@@ -602,7 +604,9 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   }
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_close_path_validation_timeout(data);
-    this->_switch_to_close_state();
+    if (!this->_path_validator->is_validated()) {
+      this->_switch_to_close_state();
+    }
     break;
   case EVENT_IMMEDIATE: {
     // Start Immediate Close because of Idle Timeout
@@ -637,7 +641,9 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     break;
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_close_path_validation_timeout(data);
-    this->_switch_to_close_state();
+    if (!this->_path_validator->is_validated()) {
+      this->_switch_to_close_state();
+    }
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
@@ -668,7 +674,9 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     break;
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_close_path_validation_timeout(data);
-    this->_switch_to_close_state();
+    if (!this->_path_validator->is_validated()) {
+      this->_switch_to_close_state();
+    }
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
@@ -690,6 +698,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
   case QUIC_EVENT_SHUTDOWN: {
     this->_unschedule_packet_write_ready();
     this->_unschedule_closing_timeout();
+    this->_unschedule_path_validation_timeout();
     this->_close_closed_event(data);
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
@@ -945,11 +954,7 @@ QUICNetVConnection::_state_common_receive_packet()
           Connection con;
           con.setRemote(&p->from().sa);
           this->con.move(con);
-          this->_path_validator->validate();
-          // Not sure how long we should wait. The spec says just "enough time".
-          // Use the same time amount as the closing timeout.
-          ink_hrtime rto = this->_loss_detector->current_rto_period();
-          this->_schedule_path_validation_timeout(3 * rto);
+          this->_validate_new_path();
         } else {
           // TODO Send some error?
         }
@@ -1706,6 +1711,7 @@ void
 QUICNetVConnection::_switch_to_close_state()
 {
   this->_unschedule_closing_timeout();
+  this->_unschedule_path_validation_timeout();
 
   if (this->_complete_handshake_if_possible() != 0) {
     QUICConDebug("Switching state without handshake completion");
@@ -1722,4 +1728,14 @@ QUICNetVConnection::_handle_idle_timeout()
   this->_switch_to_draining_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
 
   // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
+}
+
+void
+QUICNetVConnection::_validate_new_path()
+{
+  this->_path_validator->validate();
+  // Not sure how long we should wait. The spec says just "enough time".
+  // Use the same time amount as the closing timeout.
+  ink_hrtime rto = this->_loss_detector->current_rto_period();
+  this->_schedule_path_validation_timeout(3 * rto);
 }

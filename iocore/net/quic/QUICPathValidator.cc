@@ -62,7 +62,9 @@ QUICPathValidator::_validate_response(std::shared_ptr<const QUICPathResponseFram
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
-  if (memcmp(this->_outgoing_challenge, frame->data(), QUICPathChallengeFrame::DATA_LEN) != 0) {
+  if (memcmp(this->_outgoing_challenge, frame->data(), QUICPathChallengeFrame::DATA_LEN) == 0) {
+    this->_state = ValidationState::VALIDATED;
+  } else {
     error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE));
   }
 

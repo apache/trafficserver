@@ -316,6 +316,7 @@ private:
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICErrorUPtr error);
   QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
+  void _validate_new_path();
 
   int _complete_handshake_if_possible();
   void _switch_to_handshake_state();
