@@ -223,7 +223,7 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
       // Deal with long options ...
       for (i = 0; i < n_argument_descriptions; i++) {
         // handle the runroot arg
-        std::string cur_argv = *argv + 2;
+        std::string_view cur_argv = *argv + 2;
         if (cur_argv.size() >= 8 && cur_argv.substr(0, 8) == "run-root") {
           break;
         }
