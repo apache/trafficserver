@@ -27,8 +27,7 @@ NOCLEAN=${NOCLEAN:-}
 OUTPUT_BASE=${OUTPUT_BASE:-/home/jenkins/clang-analyzer}
 
 # Options
-#options="--status-bugs --keep-empty"
-options="--keep-empty"
+options="--status-bugs --keep-empty"
 configure="--enable-experimental-plugins"
 
 # Additional checkers
@@ -102,5 +101,4 @@ if [ -x "/admin/bin/clean-clang.sh" ]; then
 fi
 
 # Exit with the scan-build exit code (thanks to --status-bugs)
-exit 0
-#exit $status
+exit $status
