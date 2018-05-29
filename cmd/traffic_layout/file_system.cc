@@ -58,7 +58,7 @@ remove_slash(std::string &path)
 }
 
 bool
-exists(std::string const &dir)
+exists(const std::string &dir)
 {
   struct stat buffer;
   int result = stat(dir.c_str(), &buffer);
@@ -66,7 +66,7 @@ exists(std::string const &dir)
 }
 
 bool
-is_directory(std::string const &directory)
+is_directory(const std::string &directory)
 {
   struct stat buffer;
   int result = stat(directory.c_str(), &buffer);
