@@ -169,6 +169,12 @@ public:
     return QUICFiveTuple();
   }
 
+  std::string_view
+  cids() const override
+  {
+    return std::string_view("00000000-00000000"sv);
+  }
+
   uint32_t
   transmit_packet(QUICPacketUPtr packet) override
   {

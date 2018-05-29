@@ -74,6 +74,9 @@
 
 #define QUIC_OP_HANDSHAKE 0x16
 
+// Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
+static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
+
 // class QUICNextProtocolSet;
 // struct QUICCertLookup;
 
@@ -195,6 +198,7 @@ public:
   QUICConnectionId peer_connection_id() const override;
   QUICConnectionId original_connection_id() const override;
   QUICConnectionId connection_id() const override;
+  std::string_view cids() const override;
   const QUICFiveTuple five_tuple() const override;
   uint32_t maximum_quic_packet_size() const override;
   uint32_t minimum_quic_packet_size() override;
@@ -228,10 +232,13 @@ private:
   QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
   std::random_device _rnd;
 
-  QUICConnectionId _peer_quic_connection_id;
-  QUICConnectionId _original_quic_connection_id;
-  QUICConnectionId _quic_connection_id;
+  QUICConnectionId _peer_quic_connection_id;     // dst cid
+  QUICConnectionId _original_quic_connection_id; // dst cid of initial packet from client
+  QUICConnectionId _quic_connection_id;          // src cid
   QUICFiveTuple _five_tuple;
+
+  char _cids_data[MAX_CIDS_SIZE] = {0};
+  std::string_view _cids;
 
   UDPConnection *_udp_con            = nullptr;
   QUICPacketHandler *_packet_handler = nullptr;
@@ -331,6 +338,9 @@ private:
   void _start_application();
 
   void _handle_idle_timeout();
+
+  void _update_cids();
+  void _update_peer_cid(const QUICConnectionId &new_cid);
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;

@@ -42,13 +42,15 @@
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 
-#define QUICConDebug(fmt, ...) Debug("quic_net", "[%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__)
+#define QUICConDebug(fmt, ...) Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
-#define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__)
+#define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
-#define QUICError(fmt, ...)                                                                     \
-  Debug("quic_net", "[%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__); \
-  Error("quic_net [%" PRIx64 "] " fmt, this->_peer_quic_connection_id.l64(), ##__VA_ARGS__)
+#define QUICFCDebug(fmt, ...) Debug("quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+
+#define QUICError(fmt, ...)                                           \
+  Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__); \
+  Error("quic_net [%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 static constexpr uint32_t IPV4_HEADER_SIZE            = 20;
 static constexpr uint32_t IPV6_HEADER_SIZE            = 40;
@@ -84,8 +86,10 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
     this->_ctable->insert(this->_original_quic_connection_id, this);
   }
 
-  QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, this->_original_quic_connection_id.l64(),
-               this->_quic_connection_id.l64());
+  this->_update_cids();
+
+  // TODO: print full cids
+  QUICConDebug("dcid=%08" PRIx32 " scid=%08" PRIx32, this->_peer_quic_connection_id.h32(), this->_quic_connection_id.h32());
 }
 
 bool
@@ -339,6 +343,12 @@ QUICNetVConnection::connection_id() const
   return this->_quic_connection_id;
 }
 
+std::string_view
+QUICNetVConnection::cids() const
+{
+  return this->_cids;
+}
+
 const QUICFiveTuple
 QUICNetVConnection::five_tuple() const
 {
@@ -457,8 +467,8 @@ QUICNetVConnection::handle_frame(std::shared_ptr<const QUICFrame> frame)
   switch (frame->type()) {
   case QUICFrameType::MAX_DATA:
     this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data());
-    Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
-          this->_remote_flow_controller->current_offset(), this->_remote_flow_controller->current_limit());
+    QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
+                this->_remote_flow_controller->current_limit());
     this->_schedule_packet_write_ready();
 
     break;
@@ -1247,8 +1257,8 @@ QUICNetVConnection::_packetize_frames()
     ++frame_count;
     if (frame->type() == QUICFrameType::STREAM) {
       int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
-      Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
-            this->_remote_flow_controller->current_offset(), this->_remote_flow_controller->current_limit());
+      QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
+                  this->_remote_flow_controller->current_limit());
       ink_assert(ret == 0);
     }
     this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
@@ -1319,8 +1329,8 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
   }
 
   int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
-        this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
+  QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+              this->_local_flow_controller->current_limit());
   if (ret != 0) {
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
@@ -1410,10 +1420,10 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
 
   this->_local_flow_controller->set_limit(local_initial_max_data);
   this->_remote_flow_controller->set_limit(remote_initial_max_data);
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [LOCAL] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
-        this->_local_flow_controller->current_offset(), this->_local_flow_controller->current_limit());
-  Debug("quic_flow_ctrl", "Connection [%" PRIx64 "] [REMOTE] %" PRIu64 "/%" PRIu64, this->_peer_quic_connection_id.l64(),
-        this->_remote_flow_controller->current_offset(), this->_remote_flow_controller->current_limit());
+  QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+              this->_local_flow_controller->current_limit());
+  QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
+              this->_remote_flow_controller->current_limit());
 }
 
 void
@@ -1451,7 +1461,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
       // FIXME src connection id could be zero ? if so, check packet header type.
       if (src_cid != QUICConnectionId::ZERO()) {
         if (this->_peer_quic_connection_id != src_cid) {
-          this->_peer_quic_connection_id = src_cid;
+          this->_update_peer_cid(src_cid);
         }
       }
     }
@@ -1751,4 +1761,22 @@ QUICNetVConnection::_validate_new_path()
   // Use the same time amount as the closing timeout.
   ink_hrtime rto = this->_loss_detector->current_rto_period();
   this->_schedule_path_validation_timeout(3 * rto);
+}
+
+void
+QUICNetVConnection::_update_cids()
+{
+  snprintf(this->_cids_data, sizeof(this->_cids_data), "%08" PRIx32 "-%08" PRIx32 "", this->_peer_quic_connection_id.h32(),
+           this->_quic_connection_id.h32());
+
+  this->_cids = {this->_cids_data, sizeof(this->_cids_data)};
+}
+
+void
+QUICNetVConnection::_update_peer_cid(const QUICConnectionId &new_cid)
+{
+  QUICConDebug("dcid: %08" PRIx32 " -> %08" PRIx32, this->_peer_quic_connection_id.h32(), new_cid.h32());
+
+  this->_peer_quic_connection_id = new_cid;
+  this->_update_cids();
 }

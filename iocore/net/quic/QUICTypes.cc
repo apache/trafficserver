@@ -285,3 +285,9 @@ QUICConnectionId::l64() const
   }
   return v;
 }
+
+uint32_t
+QUICConnectionId::h32() const
+{
+  return static_cast<uint32_t>(QUICIntUtil::read_nbytes_as_uint(this->_id, 4));
+}

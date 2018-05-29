@@ -39,6 +39,7 @@ public:
   virtual QUICConnectionId peer_connection_id() const     = 0;
   virtual QUICConnectionId original_connection_id() const = 0;
   virtual QUICConnectionId connection_id() const          = 0;
+  virtual std::string_view cids() const                   = 0;
   virtual const QUICFiveTuple five_tuple() const          = 0;
 
   /*
