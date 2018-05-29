@@ -88,7 +88,7 @@ public:
   LINK(QUICStream, link);
 
   // QUICFrameGenerator
-  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size) override;
+  QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) override;
   bool will_generate_frame() override;
 
 private:

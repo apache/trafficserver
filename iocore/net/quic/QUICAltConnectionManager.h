@@ -40,7 +40,7 @@ public:
 
   // QUICFrameGenerator
   bool will_generate_frame();
-  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size);
+  QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size);
 
 private:
   class AltConnectionInfo

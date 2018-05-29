@@ -113,7 +113,7 @@ QUICPathValidator::will_generate_frame()
 }
 
 QUICFrameUPtr
-QUICPathValidator::generate_frame(uint16_t connection_credit, uint16_t maximum_quic_packet_size)
+QUICPathValidator::generate_frame(uint64_t connection_credit, uint16_t maximum_quic_packet_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
 

@@ -372,7 +372,7 @@ QUICStream::will_generate_frame()
 }
 
 QUICFrameUPtr
-QUICStream::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
+QUICStream::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 

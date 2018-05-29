@@ -124,7 +124,7 @@ QUICAckFrameCreator::will_generate_frame()
 }
 
 QUICFrameUPtr
-QUICAckFrameCreator::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
+QUICAckFrameCreator::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   // FIXME fix size
   return this->_create_frame();

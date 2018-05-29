@@ -102,7 +102,7 @@ QUICAltConnectionManager::will_generate_frame()
 }
 
 QUICFrameUPtr
-QUICAltConnectionManager::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
+QUICAltConnectionManager::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
   int count           = this->_nids;

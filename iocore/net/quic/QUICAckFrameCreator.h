@@ -72,7 +72,7 @@ public:
   /*
    * Calls create directly.
    */
-  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size) override;
+  QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
   /*

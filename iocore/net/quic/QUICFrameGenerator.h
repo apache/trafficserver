@@ -30,5 +30,5 @@ class QUICFrameGenerator
 public:
   virtual ~QUICFrameGenerator(){};
   virtual bool will_generate_frame()                                                            = 0;
-  virtual QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size) = 0;
+  virtual QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) = 0;
 };

@@ -370,7 +370,7 @@ QUICStreamManager::will_generate_frame()
 }
 
 QUICFrameUPtr
-QUICStreamManager::generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size)
+QUICStreamManager::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   // FIXME We should pick a stream based on priority
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
