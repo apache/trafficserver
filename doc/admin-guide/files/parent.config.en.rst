@@ -131,11 +131,45 @@ The following list shows the possible actions and their allowed values.
 .. _parent-config-format-secondary-parent:
 
 ``secondary_parent``
-    An optional ordered list of secondary parent servers.  This optional
-    list may only be used when ``round_robin`` is set to ``consistent_hash``.
-    If the request cannot be handled by a parent server from the ``parent``
-    list, then the request will be re-tried from a server found in this list
-    using a consistent hash of the url.
+    An optional ordered list of secondary parent servers.  This
+    optional list may only be used when ``round_robin`` is set to
+    ``consistent_hash``.  If the request cannot be handled by the
+    first parent server chosen from the ``parent`` list, then the
+    request will be re-tried from a server found in this list using a
+    consistent hash of the url. The parent servers in this list will
+    be exhausted before the selection function will revert to trying
+    alternative parents in the ``parent`` list.
+
+``secondary_mode``
+    One of the following values:
+
+    - ``1`` This is the default. The parent selection will first
+      attempt to choose a parent from the ``parent`` list. If the
+      chosen parent is not available or marked down then another
+      parent will be chosen from the ``secondary_parent`` list.
+      Choices in the ``secondary_parent`` list will be exhausted
+      before attempting to choose another parent from the ``parent``
+      list.
+
+    - ``2`` The parent selection will first attempt to choose a parent
+      from the ``parent`` list. If the chosen parent is not available
+      or marked down then another parent will be chosen from the
+      ``parent`` list.  Choices in the ``parent`` list will be
+      exhausted before attempting to choose another parent from the
+      ``secondary_parent`` list.
+
+    - ``3`` The parent selection will first attempt to choose a parent
+      from the ``parent`` list.
+
+      - If the chosen parent is marked down then another parent will
+        be chosen from the ``secondary_parent`` list. The
+        ``secondary_parent`` list will be exhausted before attempting
+        to choose another parent in the ``parent`` list.
+
+      - If the chosen parent is unavailable but not marked down then
+        another parent will be chosen from the ``parent`` list. The
+        ``parent`` list will be exhausted before attempting to choose
+        another parent in the ``secondary_parent`` list.
 
 .. _parent-config-format-parent-is-proxy:
 
