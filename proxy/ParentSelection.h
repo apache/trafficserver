@@ -38,6 +38,7 @@
 #include "ts/ConsistentHash.h"
 #include "ts/Tokenizer.h"
 #include "ts/ink_apidefs.h"
+#include "HostStatus.h"
 
 #include <algorithm>
 #include <vector>
@@ -144,6 +145,7 @@ public:
   ParentRetry_t parent_retry                                         = PARENT_RETRY_NONE;
   int max_simple_retries                                             = 1;
   int max_unavailable_server_retries                                 = 1;
+  int secondary_mode                                                 = 1;
 };
 
 // If the parent was set by the external customer api,
@@ -159,6 +161,8 @@ struct ParentResult {
   const char *hostname;
   int port;
   bool retry;
+  bool chash_init[2]               = {false, false};
+  HostStatus_t first_choice_status = HostStatus_t::HOST_STATUS_INIT;
 
   void
   reset()
