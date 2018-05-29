@@ -40,7 +40,7 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 // Global Vars for Parent Selection
 static const char modulePrefix[]                             = "[ParentSelection]";
 static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = nullptr;
-static int self_detect                                       = 1;
+static int self_detect                                       = 2;
 
 // Config var names
 static const char *file_var      = "proxy.config.http.parent_proxy.file";
@@ -353,6 +353,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
   std::string str;
   Machine *machine                   = Machine::instance();
   constexpr char PARENT_DELIMITERS[] = ";, ";
+  HostStatus &hs                     = HostStatus::instance();
 
   token = strtok_r(_val, PARENT_DELIMITERS, &savePtr);
   while (token != nullptr) {
@@ -362,15 +363,28 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
       memset(fqdn, 0, sizeof(fqdn));
       strncpy(fqdn, token, len);
       if (self_detect && machine->is_self(fqdn)) {
-        Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
-        token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
-        continue;
+        if (self_detect == 1) {
+          Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
+          token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
+          continue;
+        } else {
+          Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", fqdn, line_num);
+          hs.createHostStat(fqdn);
+          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN);
+        }
       }
     } else {
       if (self_detect && machine->is_self(token)) {
-        Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", token, line_num);
-        token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
-        continue;
+        if (self_detect == 1) {
+          Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", token, line_num);
+          token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
+          continue;
+        } else {
+          Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", token,
+                line_num);
+          hs.createHostStat(token);
+          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN);
+        }
       }
     }
 
@@ -585,7 +599,7 @@ ParentRecord::Init(matcher_line *line_info)
   bool used              = false;
   ParentRR_t round_robin = P_NO_ROUND_ROBIN;
   char buf[128];
-  RecInt rec_self_detect = 1;
+  RecInt rec_self_detect = 2;
 
   this->line_num = line_info->line_num;
   this->scheme   = nullptr;

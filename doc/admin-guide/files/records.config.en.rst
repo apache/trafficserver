@@ -1186,10 +1186,20 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
 
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 1
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 2
 
-   Filter out hosts that are determined to be the same as the current host, e.g., localhost,
-   that have been specified in any parent and secondary_parent lists in the parent.config file.
+   For each host that has been specified in a ``parent`` or ``secondary_parent`` list in the
+   :file:`parent.config` file, determine if the host is the same as the current host.
+   Obvious examples include ``localhost`` and ``127.0.0.1``. If a match is found,
+   take an action depending upon the value below.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables the feature by not checking for matches.
+   ``1`` Remove the matching host from the list.
+   ``2`` Mark the host down. This is the default.
+   ===== ======================================================================
 
 HTTP Connection Timeouts
 ========================
