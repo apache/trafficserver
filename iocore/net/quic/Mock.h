@@ -146,25 +146,25 @@ public:
   };
 
   QUICConnectionId
-  connection_id() override
+  connection_id() const override
   {
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
   QUICConnectionId
-  peer_connection_id() override
+  peer_connection_id() const override
   {
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
   QUICConnectionId
-  original_connection_id() override
+  original_connection_id() const override
   {
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
   const QUICFiveTuple
-  five_tuple() override
+  five_tuple() const override
   {
     return QUICFiveTuple();
   }
@@ -210,31 +210,31 @@ public:
   }
 
   uint32_t
-  maximum_quic_packet_size() override
+  maximum_quic_packet_size() const override
   {
     return 1200;
   }
 
   uint32_t
-  pmtu() override
+  pmtu() const override
   {
     return 1280;
   }
 
   QUICPacketNumber
-  largest_acked_packet_number() override
+  largest_acked_packet_number() const override
   {
     return 0;
   }
 
   NetVConnectionContext_t
-  direction() override
+  direction() const override
   {
     return _direction;
   }
 
   SSLNextProtocolSet *
-  next_protocol_set() override
+  next_protocol_set() const override
   {
     return nullptr;
   }
@@ -257,7 +257,7 @@ public:
   }
 
   bool
-  is_closed() override
+  is_closed() const override
   {
     return false;
   }

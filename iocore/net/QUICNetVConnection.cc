@@ -322,37 +322,37 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
 }
 
 QUICConnectionId
-QUICNetVConnection::peer_connection_id()
+QUICNetVConnection::peer_connection_id() const
 {
   return this->_peer_quic_connection_id;
 }
 
 QUICConnectionId
-QUICNetVConnection::original_connection_id()
+QUICNetVConnection::original_connection_id() const
 {
   return this->_original_quic_connection_id;
 }
 
 QUICConnectionId
-QUICNetVConnection::connection_id()
+QUICNetVConnection::connection_id() const
 {
   return this->_quic_connection_id;
 }
 
 const QUICFiveTuple
-QUICNetVConnection::five_tuple()
+QUICNetVConnection::five_tuple() const
 {
   return this->_five_tuple;
 }
 
 uint32_t
-QUICNetVConnection::pmtu()
+QUICNetVConnection::pmtu() const
 {
   return this->_pmtu;
 }
 
 NetVConnectionContext_t
-QUICNetVConnection::direction()
+QUICNetVConnection::direction() const
 {
   return this->netvc_context;
 }
@@ -371,7 +371,7 @@ QUICNetVConnection::minimum_quic_packet_size()
 }
 
 uint32_t
-QUICNetVConnection::maximum_quic_packet_size()
+QUICNetVConnection::maximum_quic_packet_size() const
 {
   if (this->options.ip_family == PF_INET6) {
     return this->_pmtu - UDP_HEADER_SIZE - IPV6_HEADER_SIZE;
@@ -785,19 +785,19 @@ QUICNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
 }
 
 bool
-QUICNetVConnection::is_closed()
+QUICNetVConnection::is_closed() const
 {
   return this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed);
 }
 
 SSLNextProtocolSet *
-QUICNetVConnection::next_protocol_set()
+QUICNetVConnection::next_protocol_set() const
 {
   return this->_next_protocol_set;
 }
 
 QUICPacketNumber
-QUICNetVConnection::largest_acked_packet_number()
+QUICNetVConnection::largest_acked_packet_number() const
 {
   return this->_loss_detector->largest_acked_packet_number();
 }

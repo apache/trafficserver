@@ -33,20 +33,20 @@ class QUICStreamManager;
 class UDPPacket;
 class SSLNextProtocolSet;
 
-class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler
+class QUICConnectionInfo
 {
 public:
-  virtual QUICConnectionId peer_connection_id()     = 0;
-  virtual QUICConnectionId original_connection_id() = 0;
-  virtual QUICConnectionId connection_id()          = 0;
-  virtual const QUICFiveTuple five_tuple()          = 0;
+  virtual QUICConnectionId peer_connection_id() const     = 0;
+  virtual QUICConnectionId original_connection_id() const = 0;
+  virtual QUICConnectionId connection_id() const          = 0;
+  virtual const QUICFiveTuple five_tuple() const          = 0;
 
   /*
    * Retruns the maximum packet size at the time called
    *
    * The size depends on PMTU.
    */
-  virtual uint32_t maximum_quic_packet_size() = 0;
+  virtual uint32_t maximum_quic_packet_size() const = 0;
 
   /*
    * Returns the mimimum packet size at the time called
@@ -56,13 +56,17 @@ public:
    */
   virtual uint32_t minimum_quic_packet_size() = 0;
 
-  virtual QUICStreamManager *stream_manager() = 0;
+  virtual uint32_t pmtu() const                                = 0;
+  virtual NetVConnectionContext_t direction() const            = 0;
+  virtual SSLNextProtocolSet *next_protocol_set() const        = 0;
+  virtual bool is_closed() const                               = 0;
+  virtual QUICPacketNumber largest_acked_packet_number() const = 0;
+};
 
-  virtual uint32_t pmtu()                                 = 0;
-  virtual NetVConnectionContext_t direction()             = 0;
-  virtual SSLNextProtocolSet *next_protocol_set()         = 0;
+class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler, public QUICConnectionInfo
+{
+public:
+  virtual QUICStreamManager *stream_manager()             = 0;
   virtual void close(QUICConnectionErrorUPtr error)       = 0;
-  virtual QUICPacketNumber largest_acked_packet_number()  = 0;
   virtual void handle_received_packet(UDPPacket *packeet) = 0;
-  virtual bool is_closed()                                = 0;
 };

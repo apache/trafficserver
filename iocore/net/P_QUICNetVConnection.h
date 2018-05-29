@@ -187,20 +187,22 @@ public:
   void registerNextProtocolSet(SSLNextProtocolSet *s);
 
   // QUICConnection
-  QUICConnectionId peer_connection_id() override;
-  QUICConnectionId original_connection_id() override;
-  QUICConnectionId connection_id() override;
-  const QUICFiveTuple five_tuple() override;
-  uint32_t maximum_quic_packet_size() override;
-  uint32_t minimum_quic_packet_size() override;
   QUICStreamManager *stream_manager() override;
-  uint32_t pmtu() override;
-  NetVConnectionContext_t direction() override;
-  SSLNextProtocolSet *next_protocol_set() override;
   void close(QUICConnectionErrorUPtr error) override;
-  QUICPacketNumber largest_acked_packet_number() override;
   void handle_received_packet(UDPPacket *packet) override;
-  bool is_closed() override;
+
+  // QUICConnection (QUICConnectionInfo)
+  QUICConnectionId peer_connection_id() const override;
+  QUICConnectionId original_connection_id() const override;
+  QUICConnectionId connection_id() const override;
+  const QUICFiveTuple five_tuple() const override;
+  uint32_t maximum_quic_packet_size() const override;
+  uint32_t minimum_quic_packet_size() override;
+  uint32_t pmtu() const override;
+  NetVConnectionContext_t direction() const override;
+  SSLNextProtocolSet *next_protocol_set() const override;
+  QUICPacketNumber largest_acked_packet_number() const override;
+  bool is_closed() const override;
 
   // QUICConnection (QUICPacketTransmitter)
   virtual uint32_t transmit_packet(QUICPacketUPtr packet) override;
