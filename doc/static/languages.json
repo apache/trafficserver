@@ -1,4 +1,20 @@
 {
-  "en": { "name": "English", "versions": ["latest","7.1.x","6.2.x","5.3.x"] },
-  "ja": { "name": "日本語", "versions": ["latest","7.1.x","6.2.x","5.3.x"] }
+    "en": {
+        "name": "English",
+        "versions": [
+            "latest",
+            "8.0.x",
+            "7.1.x",
+            "6.2.x"
+        ]
+    },
+    "ja": {
+        "name": "日本語",
+        "versions": [
+            "latest",
+            "8.0.x",
+            "7.1.x",
+            "6.2.x"
+        ]
+    }
 }
