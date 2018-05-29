@@ -192,6 +192,7 @@ QUICNetVConnection::start()
     this->_handshake_handler = new QUICHandshake(this, params->client_ssl_ctx());
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
   }
+
   this->_application_map = new QUICApplicationMap();
   this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 
@@ -213,7 +214,9 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_loss_detector);
   this->_frame_dispatcher->add_handler(this->_path_validator);
 
-  this->_validate_new_path();
+  if (this->direction() == NET_VCONNECTION_IN) {
+    this->_validate_new_path();
+  }
 }
 
 void
