@@ -108,9 +108,9 @@ runroot_handler(const char **argv, bool json)
 
   int i = 0;
   while (argv[i]) {
-    std::string command = argv[i];
+    std::string_view command = argv[i];
     if (command.substr(0, prefix.size()) == prefix) {
-      arg = command;
+      arg = command.data();
       break;
     }
     i++;
