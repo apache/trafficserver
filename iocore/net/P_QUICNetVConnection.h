@@ -332,6 +332,9 @@ private:
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
+
+  // This is for limiting number of packets that a server can send without path validation
+  unsigned int _handshake_packets_sent = 0;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

@@ -49,11 +49,11 @@ private:
     VALIDATING,
     VALIDATED,
   };
-  ValidationState _state       = ValidationState::NOT_VALIDATED;
-  bool _has_outgoing_challenge = false;
-  bool _has_outgoing_response  = false;
+  ValidationState _state      = ValidationState::NOT_VALIDATED;
+  int _has_outgoing_challenge = 0;
+  bool _has_outgoing_response = false;
   uint8_t _incoming_challenge[QUICPathChallengeFrame::DATA_LEN];
-  uint8_t _outgoing_challenge[QUICPathChallengeFrame::DATA_LEN];
+  uint8_t _outgoing_challenge[QUICPathChallengeFrame::DATA_LEN * 3];
 
   void _generate_challenge();
   void _generate_response(std::shared_ptr<const QUICPathChallengeFrame> frame);

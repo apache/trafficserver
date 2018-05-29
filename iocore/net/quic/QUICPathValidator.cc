@@ -47,7 +47,7 @@ QUICPathValidator::_generate_challenge()
     // TODO Randomize challenge data
     this->_outgoing_challenge[i] = i;
   }
-  this->_has_outgoing_challenge = true;
+  this->_has_outgoing_challenge = 3;
 }
 
 void
@@ -60,12 +60,16 @@ QUICPathValidator::_generate_response(std::shared_ptr<const QUICPathChallengeFra
 QUICErrorUPtr
 QUICPathValidator::_validate_response(std::shared_ptr<const QUICPathResponseFrame> frame)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE));
 
-  if (memcmp(this->_outgoing_challenge, frame->data(), QUICPathChallengeFrame::DATA_LEN) == 0) {
-    this->_state = ValidationState::VALIDATED;
-  } else {
-    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE));
+  for (int i = 0; i < 3; ++i) {
+    if (memcmp(this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * i), frame->data(),
+               QUICPathChallengeFrame::DATA_LEN) == 0) {
+      this->_state                  = ValidationState::VALIDATED;
+      this->_has_outgoing_challenge = 0;
+      error                         = QUICErrorUPtr(new QUICNoError());
+      break;
+    }
   }
 
   return error;
@@ -117,8 +121,10 @@ QUICPathValidator::generate_frame(uint16_t connection_credit, uint16_t maximum_q
     frame                        = QUICFrameFactory::create_path_response_frame(this->_incoming_challenge);
     this->_has_outgoing_response = false;
   } else if (this->_has_outgoing_challenge) {
-    frame                         = QUICFrameFactory::create_path_challenge_frame(this->_outgoing_challenge);
-    this->_has_outgoing_challenge = false;
+    frame = QUICFrameFactory::create_path_challenge_frame(this->_outgoing_challenge +
+                                                          (QUICPathChallengeFrame::DATA_LEN * (this->_has_outgoing_challenge - 1)));
+    --this->_has_outgoing_challenge;
+    ink_assert(this->_has_outgoing_challenge >= 0);
   }
   return frame;
 }

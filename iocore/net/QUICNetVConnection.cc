@@ -1028,12 +1028,20 @@ QUICNetVConnection::_state_common_send_packet()
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   uint32_t packet_count = 0;
   while ((packet = this->_packet_send_queue.dequeue()) != nullptr) {
+    if (packet->type() == QUICPacketType::HANDSHAKE && !this->_path_validator->is_validated() &&
+        this->_handshake_packets_sent >= 3) {
+      this->_packet_send_queue.push(packet);
+      break;
+    }
     if (!this->_congestion_controller->check_credit()) {
       this->_packet_send_queue.push(packet);
       break;
     }
 
     this->_packet_handler->send_packet(*packet, this);
+    if (packet->type() == QUICPacketType::HANDSHAKE) {
+      ++this->_handshake_packets_sent;
+    }
     this->_loss_detector->on_packet_sent(QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet));
     packet_count++;
   }
@@ -1192,14 +1200,12 @@ QUICNetVConnection::_packetize_frames()
   }
 
   // PATH_CHALLENGE, PATH_RESPOSNE
-  frame = this->_path_validator->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
-  while (frame) {
-    ++frame_count;
-    this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
-    if (frame_count >= FRAME_PER_EVENT) {
-      break;
-    }
+  if (this->_stream_manager->will_generate_frame()) {
     frame = this->_path_validator->generate_frame(this->_remote_flow_controller->credit(), this->_maximum_stream_frame_data_size());
+    if (frame) {
+      ++frame_count;
+      this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+    }
   }
 
   // NEW_CONNECTION_ID
