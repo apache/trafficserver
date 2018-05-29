@@ -67,19 +67,17 @@ QUICPacketRetransmitter::generate_frame(uint16_t connection_credit, uint16_t max
   if (!this->_retransmission_frames.empty()) {
     frame = std::move(this->_retransmission_frames.front());
     this->_retransmission_frames.pop();
-  }
 
-  if (maximum_frame_size >= frame->size()) {
-    return frame;
+    if (maximum_frame_size < frame->size()) {
+      auto new_frame = QUICFrameFactory::split_frame(frame.get(), maximum_frame_size);
+      if (new_frame) {
+        this->_retransmission_frames.push(std::move(new_frame));
+      } else {
+        // failed to split frame return nullptr
+        this->_retransmission_frames.push(std::move(frame));
+        frame = QUICFrameFactory::create_null_frame();
+      }
+    }
   }
-
-  auto new_frame = QUICFrameFactory::split_frame(frame.get(), maximum_frame_size);
-  if (new_frame) {
-    this->_retransmission_frames.push(std::move(new_frame));
-    return frame;
-  }
-
-  // failed to split frame return nullptr
-  this->_retransmission_frames.push(std::move(frame));
-  return QUICFrameFactory::create_null_frame();
+  return frame;
 }
