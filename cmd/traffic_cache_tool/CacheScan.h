@@ -48,9 +48,9 @@ public:
   Errata get_alternates(const char *buf, int length);
   Errata unmarshal(char *buf, int len, RefCountObj *block_ref);
   Errata unmarshal(HTTPHdrImpl *obj, intptr_t offset);
-  Errata unmarshal(MIMEHdrImpl *obj, intptr_t offset);
   Errata unmarshal(URLImpl *obj, intptr_t offset);
   Errata unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset);
+  Errata unmarshal(MIMEHdrImpl *obj, intptr_t offset);
 };
 } // namespace ct
 
