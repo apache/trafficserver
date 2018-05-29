@@ -1943,6 +1943,12 @@ QUICRetransmissionFrame::QUICRetransmissionFrame(QUICFrameUPtr original_frame, c
   this->_frame = std::move(original_frame);
 }
 
+QUICFrameType
+QUICRetransmissionFrame::type() const
+{
+  return this->_frame->type();
+}
+
 size_t
 QUICRetransmissionFrame::size() const
 {
