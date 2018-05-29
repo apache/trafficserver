@@ -210,7 +210,10 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   while (obj_data < hh->m_free_start) {
     HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
-    ink_assert(obj_is_aligned(obj));
+    if (!obj_is_aligned(obj)) {
+      std::cout << "Invalid alignmgnt of object of type HdrHeapObjImpl" << std::endl;
+      return zret;
+    }
 
     if (obj->m_type == (unsigned)obj_type && *found_obj == nullptr) {
       *found_obj = obj;
