@@ -224,16 +224,6 @@ msgid ""
 "have Apache Traffic Server combine the components into one response."
 msgstr ""
 
-#: ../../../admin-guide/plugins/index.en.rst:150
-msgid ":doc:`Epic <epic.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:150
-msgid ""
-"Emits Traffic Server metrics in a format that is consumed by the Epic "
-"Network Monitoring System."
-msgstr ""
-
 #: ../../../admin-guide/plugins/index.en.rst:153
 msgid ":doc:`Escalate <escalate.en>`"
 msgstr ""
