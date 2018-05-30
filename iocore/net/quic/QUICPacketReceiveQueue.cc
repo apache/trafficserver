@@ -71,7 +71,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   if (!this->_payload) {
     udp_packet = this->_queue.dequeue();
     if (!udp_packet) {
-      result = QUICPacketCreationResult::NOT_READY;
+      result = QUICPacketCreationResult::NO_PACKET;
       return quic_packet;
     }
 

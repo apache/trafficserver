@@ -124,6 +124,7 @@ enum class QUICKeyPhase : int {
 enum class QUICPacketCreationResult {
   SUCCESS,
   FAILED,
+  NO_PACKET,
   NOT_READY,
   IGNORED,
   UNSUPPORTED,

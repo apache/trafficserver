@@ -938,6 +938,8 @@ QUICNetVConnection::_state_common_receive_packet()
     QUICPacketUPtr p = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::FAILED) {
       return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
+    } else if (result == QUICPacketCreationResult::NO_PACKET) {
+      return QUICErrorUPtr(new QUICNoError());
     } else if (result == QUICPacketCreationResult::NOT_READY) {
       return QUICErrorUPtr(new QUICNoError());
     } else if (result == QUICPacketCreationResult::IGNORED) {
@@ -1460,6 +1462,8 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 
   // Debug prints
   switch (result) {
+  case QUICPacketCreationResult::NO_PACKET:
+    break;
   case QUICPacketCreationResult::NOT_READY:
     QUICConDebug("Not ready to decrypt the packet");
     break;
