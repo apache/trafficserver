@@ -1277,6 +1277,10 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     con.is_bound     = true;
   }
 
+  // Did not fail, increment connection count
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+  ink_release_assert(con.fd != NO_FD);
+
   // Must connect after EventIO::Start() to avoid a race condition
   // when edge triggering is used.
   if ((res = get_NetHandler(t)->startIO(this)) < 0) {
