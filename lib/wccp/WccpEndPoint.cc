@@ -1165,7 +1165,7 @@ Cache::~Cache() {}
 EndPoint::ImplType *
 Cache::make()
 {
-  m_ptr.assign(new ImplType);
+  m_ptr.reset(new ImplType);
   return m_ptr.get();
 }
 
@@ -1219,7 +1219,7 @@ Router::~Router() {}
 EndPoint::ImplType *
 Router::make()
 {
-  m_ptr.assign(new ImplType);
+  m_ptr.reset(new ImplType);
   return m_ptr.get();
 }
 
