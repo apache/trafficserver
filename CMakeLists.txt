@@ -1319,6 +1319,7 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_BufferWriter.cc
 	lib/ts/unit-tests/test_BufferWriterFormat.cc
 	lib/ts/unit-tests/test_ink_inet.cc
+	lib/ts/unit-tests/test_IntrusivePtr.cc
 	lib/ts/unit-tests/test_IpMap.cc
 	lib/ts/unit-tests/test_layout.cc
 	lib/ts/unit-tests/test_MemArena.cc
