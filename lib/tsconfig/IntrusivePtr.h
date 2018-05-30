@@ -1,193 +1,184 @@
-#if !defined(TS_INTRUSIVE_PTR_HEADER)
-#define TS_INTRUSIVE_PTR_HEADER
-
 /** @file
 
-    This is a simple shared pointer class for restricted use. It is not a
-    completely general class. The most significant missing feature is the
-    lack of thread safety. For its intended use, this is acceptable and
-    provides a performance improvement. However, it does restrict how the
-    class may be used.
+    This is an intrusive shared pointer class designed for internal use in various containers inside
+    Traffic Server. It is not dependent on TS and could be used elsewhere. The design tries to
+    follow that of @c std::shared_ptr as it performs a similar function. The key difference is
+    this shared pointer requires the reference count to be in the target class. This is done by
+    inheriting a class containing the counter. This has the benefits
 
-    This style of shared pointer also requires explicit support from the
-    target class, which must provide an internal reference counter.
+    - improved locality for instances of the class and the reference count
+    - the ability to reliably construct shared pointers from raw pointers.
+    - lower overhead (a single reference counter).
+
+    The requirement of modifying the target class limits the generality of this class but it is
+    still quite useful in specific cases (particularly containers and their internal node classes).
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
  */
 
+#pragma once
+
 #include <sys/types.h>
+#include <type_traits>
 #include <cassert>
 #include <functional>
+#include <atomic>
 
 namespace ts
 {
-class IntrusivePtrCounter;
 
-/** This class exists solely to be declared a friend of @c IntrusivePtrCounter.
+template < typename T > class IntrusivePtr; // forward declare
 
-    @internal This is done because we can't declare the template a
-    friend, so rather than burden the client with the declaration we
-    do it here. It provides a single method that allows the smart pointer
-    to get access to the protected reference count.
-
- */
-class IntrusivePtrBase
-{
-public:
-  /// Type used for reference counter.
-  typedef long Counter;
-
-protected:
-  Counter *getCounter(IntrusivePtrCounter *c ///< Cast object with reference counter.
-                      ) const;
-};
-/* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
 /** Reference counter mixin.
 
-    To add support for @c IntrusivePtr to class @a T, it
-    should inherit from @c IntrusivePtrCounter<T> in order to
+    To add support for @c IntrusivePtr to class @a T, it must publicly inherit
+    @c IntrusivePtrCounter. Doing so
 
-    - provide a reference count member
-    - force the reference count to initialize to zero
-    - define the add and release global functions required by @c IntrusivePtr
+    - provides a reference count member
+    - forces the reference count to initialize to zero
+    - prevents reference count copying on copy construction or assignment
+    - provides access to the reference counter from the shared pointer
+    - provides the `use_count` method to check the reference count.
 
-    In general this class should be inherited publicly. This will
-    provide methods which mimic the @c Boost.shared_ptr interface ( @c
-    unique() , @c use_count() ).
-
-    If this class is not inherited publically or the destructor is
-    non-public then the host class (@a T) must declare this class ( @c
-    reference_counter<T> ) as a friend.
-
-    @internal Due to changes in the C++ standard and design decisions
-    in gcc, it is no longer possible to declare a template parameter
-    as a friend class.  (Basically, you can't use a typedef in a
-    friend declaration and gcc treats template parameters as
-    typedefs).
-
-    @note You can use this with insulated (by name only) classes. The
-    important thing is to make sure that any such class that uses @c
-    IntrusivePtr has all of its constructors and destructors declared
-    in the header and defined in the implementation translation
-    unit. If the compiler generates any of those, it will not compile
-    due to missing functions or methods
+    @note You can use this with insulated (by name only) classes. The important thing is to make
+    sure that any such class that uses @c IntrusivePtr has all of its constructors and destructors
+    declared in the header and defined in the implementation translation unit. If the compiler
+    generates any of those, it will not compile due to missing functions or methods
 
   */
 class IntrusivePtrCounter
 {
-  friend class IntrusivePtrBase;
+  template < typename T > friend class IntrusivePtr;
 
+  using self_type = IntrusivePtrCounter;
 public:
   /** Copy constructor.
 
-      @internal We have to define this to explicitly _not_ copy the
-      reference count. Otherwise any client that uses a default copy
-      constructor will _copy the ref count into the new object_. That
-      way lies madness.
+      @internal We have to define this to explicitly _not_ copy the reference count. Otherwise any
+      client that uses a default copy constructor will _copy the ref count into the new object_.
+      That way lies madness.
   */
-
-  IntrusivePtrCounter(IntrusivePtrCounter const & ///< Source object.
-                      );
+  IntrusivePtrCounter(self_type const & that);
+  /// No move constructor - that won't work for an object that is the target of a shared pointer.
+  IntrusivePtrCounter(self_type && that) = delete;
 
   /** Assignment operator.
 
-      @internal We need this for the same reason as the copy
-      constructor. The reference counter must not participate in
-      assignment.
+      @internal We need this for the same reason as the copy constructor. The reference count must
+      not be copied.
    */
-  IntrusivePtrCounter &operator=(IntrusivePtrCounter const &);
+  self_type &operator=(self_type const &that);
+  /// No move assignment - that won't work for an object that is the target of a shared pointer.
+  self_type &operator=(self_type &&that) = delete;
 
 protected:
-  IntrusivePtrBase::Counter m_intrusive_pointer_reference_count;
+  /// The reference counter type is signed because detecting underflow is more important than having
+  /// more than 2G references.
+  using intrusive_ptr_reference_counter_type = long int;
+  /// The reference counter.
+  intrusive_ptr_reference_counter_type m_intrusive_pointer_reference_count{0};
   /// Default constructor (0 init counter).
   /// @internal Only subclasses can access this.
   IntrusivePtrCounter();
 };
-/* ----------------------------------------------------------------------- */
-/* ----------------------------------------------------------------------- */
-/** Shared pointer.
 
-    This is a reference counted smart pointer. A single object is jointly
-    ownded by a set of pointers. When the last of the pointers is destructed
-    the target object is also destructed.
-
-    The smart pointer actions can be changed through class specific policy
-    by specializing the @c IntrusivePtrPolicy template class.
-*/
-template <typename T> class IntrusivePtr : private IntrusivePtrBase
+/** Atomic reference counting mixin.
+ */
+class IntrusivePtrAtomicCounter
 {
-private:                          /* don't pollute client with these typedefs */
-  typedef IntrusivePtrBase super; ///< Parent type.
-  typedef IntrusivePtr self;      ///< Self reference type.
+  template < typename T > friend class IntrusivePtr;
+
+  using self_type = IntrusivePtrAtomicCounter;
 
 public:
-  /// Promote type for reference counter.
-  typedef super::Counter Counter;
+  IntrusivePtrAtomicCounter(self_type const & that);
+  /// No move constructor - that won't work for an object that is the target of a shared pointer.
+  IntrusivePtrAtomicCounter(self_type && that) = delete;
 
-  /// Default constructor (0 initialized).
+  self_type &operator=(self_type const &that);
+  /// No move assignment - that won't work for an object that is the target of a shared pointer.
+  self_type &operator=(self_type &&that) = delete;
+
+protected:
+  /// The reference counter type is signed because detecting underflow is more important than having
+  /// more than 2G references.
+  using intrusive_ptr_reference_counter_type = std::atomic<long int>;
+  /// The reference counter.
+  intrusive_ptr_reference_counter_type m_intrusive_pointer_reference_count{0};
+  /// Default constructor (0 init counter).
+  /// @internal Only subclasses can access this.
+  IntrusivePtrAtomicCounter();
+};
+
+/* ----------------------------------------------------------------------- */
+/** Intrusive shared pointer.
+
+    This is a reference counted smart pointer. A single object is jointly ownded by a set of
+    pointers. When the last of the pointers is destructed the target object is also destructed.
+
+    The smart pointer actions can be changed through class specific policy by specializing the @c
+    IntrusivePtrPolicy template class.
+*/
+template <typename T> class IntrusivePtr
+{
+private:                          /* don't pollute client with these typedefs */
+  using self_type = IntrusivePtr;      ///< Self reference type.
+  template < typename U > friend class IntrusivePtr; /// Make friends wih our clones.
+public:
+  /// The underlying (integral) type of the reference counter.
+  using count_type = long int;
+
+  /// Default constructor (nullptr initialized).
   IntrusivePtr();
   /// Construct from instance.
   /// The instance becomes referenced and owned by the pointer.
-  IntrusivePtr(T *obj);
+  explicit IntrusivePtr(T *obj);
   /// Destructor.
   ~IntrusivePtr();
 
-  /// Copy constructor.
-  IntrusivePtr(const self &src);
-  /// Self assignement.
-  self &operator=(const self &src);
-  /** Assign from instance.
-      The instance becomes referenced and owned by the pointer.
-      The reference to the current object is dropped.
-  */
-  self &operator=(T *obj ///< Target instance.
-                  );
-
-  /** Assign from instance.
-      The instance becomes referenced and owned by the pointer.
-      The reference to the current object is dropped.
-      @note A synonym for @c operator= for compatibility.
-  */
-  self &assign(T *obj ///< Target instance.
-               );
+  /// Copy constructor
+  IntrusivePtr(self_type const& that);
+  /// Move constructor.
+  IntrusivePtr(self_type && that);
+  /// Self assignment.
+  self_type& operator=(self_type const& that);
+  /// Move assignment.
+  self_type& operator=(self_type && that);
 
   /** Assign from instance.
       The instance becomes referenced and owned by the pointer.
       The reference to the current object is dropped.
   */
-  void reset(T *obj);
+  void reset(T *obj = nullptr);
+
   /** Clear reference without cleanup.
 
-      This unsets this smart pointer and decrements the reference
-      count, but does @b not perform any finalization on the
-      target object. This can easily lead to memory leaks and
-      in some sense vitiates the point of this class, but it is
-      occasionally the right thing to do. Use with caution.
+      This unsets this smart pointer and decrements the reference count, but does @b not perform any
+      finalization on the target object. This can easily lead to memory leaks and in some sense
+      vitiates the point of this class, but it is occasionally the right thing to do. Use with
+      caution.
 
       @return @c true if there are no references upon return,
       @c false if the reference count is not zero.
    */
-  bool release();
+  T* release();
 
-  /// Test if the pointer is zero (@c NULL).
-  bool isNull() const;
+  /// Test for not @c nullptr
+  explicit operator bool() const;
 
   /// Member dereference.
   T *operator->() const;
@@ -198,53 +189,41 @@ public:
 
   /** User conversion to raw pointer.
 
-      @internal allow implicit conversion to the underlying
-      pointer. This allows for the form "if (handle)" and is not
-      particularly dangerous (as it would be for a scope_ptr or
-      std::shared_ptr) because the counter is carried with the object and
-      so can't get lost or duplicated.
+      @internal allow implicit conversion to the underlying pointer which is one of the advantages
+      of intrusive pointers because the reference count doesn't get lost.
 
   */
   operator T *() const;
 
   /** Cross type construction.
-      This succeeds if an @a X* can be implicitly converted to a @a T*.
+      This succeeds if an @a U* can be implicitly converted to a @a T*.
   */
-  template <typename X ///< Foreign pointer type.
-            >
-  IntrusivePtr(IntrusivePtr<X> const &that ///< Foreign pointer.
-               );
+  template <typename U>
+  IntrusivePtr(IntrusivePtr<U> const &that);
+
+  template <typename U>
+  IntrusivePtr(IntrusivePtr<U> && that);
 
   /** Cross type assignment.
-      This succeeds if an @a X* can be implicitily converted to a @a T*.
+      This succeeds if an @a U* can be implicitily converted to a @a T*.
   */
-  template <typename X ///< Foreign pointer type.
-            >
-  self &operator=(IntrusivePtr<X> const &that ///< Foreign pointer.
-                  );
+  template <typename U>
+  self_type &operator=(IntrusivePtr<U> const &that);
 
-  /// Check for multiple references.
-  /// @return @c true if more than one smart pointer references the object,
-  /// @c false otherwise.
-  bool isShared() const;
-  /// Check for a single reference (@c std::shared_ptr compatibility)
-  /// @return @c true if this object is not shared.
-  bool unique() const;
+  template <typename U>
+  self_type &operator=(IntrusivePtr<U> && that);
+
   /// Reference count.
   /// @return Number of references.
-  Counter useCount() const;
+  count_type use_count() const;
 
 private:
-  T *m_obj; ///< Pointer to object.
+  T *m_obj{nullptr}; ///< Pointer to object.
 
   /// Reference @a obj.
-  void set(T *obj ///< Target object.
-           );
+  void set(T *obj);
   /// Drop the current reference.
   void unset();
-
-  /// Get a pointer to the reference counter of the target object.
-  Counter *getCounter() const;
 };
 
 /** Pointer dynamic cast.
@@ -260,11 +239,9 @@ private:
     the_b = dynamic_ptr_cast<B>(really_b);
     @endcode
 */
-template <typename T, ///< Target type.
-          typename X  ///< Source type.
-          >
+template <typename T, typename U>
 IntrusivePtr<T>
-dynamic_ptr_cast(IntrusivePtr<X> const &src ///< Source pointer.
+dynamic_ptr_cast(IntrusivePtr<U> const &src ///< Source pointer.
                  )
 {
   return IntrusivePtr<T>(dynamic_cast<T *>(src.get()));
@@ -285,10 +262,10 @@ dynamic_ptr_cast(IntrusivePtr<X> const &src ///< Source pointer.
     @endcode
 */
 template <typename T, ///< Target type.
-          typename X  ///< Source type.
+          typename U  ///< Source type.
           >
 IntrusivePtr<T>
-ptr_cast(IntrusivePtr<X> const &src ///< Source pointer.
+ptr_cast(IntrusivePtr<U> const &src ///< Source pointer.
          )
 {
   return IntrusivePtr<T>(static_cast<T *>(src.get()));
@@ -357,27 +334,29 @@ typedef IntrusivePtrPolicy<IntrusivePtrDefaultPolicyTag> IntrusivePtrDefaultPoli
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
 /* Inline Methods */
-inline IntrusivePtrCounter::IntrusivePtrCounter() : m_intrusive_pointer_reference_count(0)
-{
-}
+inline IntrusivePtrCounter::IntrusivePtrCounter() {}
 
-inline IntrusivePtrCounter::IntrusivePtrCounter(IntrusivePtrCounter const &) : m_intrusive_pointer_reference_count(0)
-{
-}
+inline IntrusivePtrCounter::IntrusivePtrCounter(self_type const &) {}
 
 inline IntrusivePtrCounter &
-IntrusivePtrCounter::operator=(IntrusivePtrCounter const &)
+IntrusivePtrCounter::operator=(self_type const &)
 {
   return *this;
 }
 
-inline IntrusivePtrBase::Counter *
-IntrusivePtrBase::getCounter(IntrusivePtrCounter *c) const
+inline IntrusivePtrAtomicCounter::IntrusivePtrAtomicCounter() {}
+
+inline IntrusivePtrAtomicCounter::IntrusivePtrAtomicCounter(self_type const &) {}
+
+inline IntrusivePtrAtomicCounter &
+IntrusivePtrAtomicCounter::operator=(self_type const &)
 {
-  return &(c->m_intrusive_pointer_reference_count);
+  return *this;
 }
+
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
+
 template <typename T>
 void
 IntrusivePtrPolicy<T>::dereferenceCheck(T *)
@@ -399,9 +378,7 @@ IntrusivePtrPolicy<T>::Order::operator()(IntrusivePtr<T> const &lhs, IntrusivePt
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
-template <typename T> IntrusivePtr<T>::IntrusivePtr() : m_obj(nullptr)
-{
-}
+template <typename T> IntrusivePtr<T>::IntrusivePtr() {}
 
 template <typename T> IntrusivePtr<T>::IntrusivePtr(T *obj)
 {
@@ -413,50 +390,81 @@ template <typename T> IntrusivePtr<T>::~IntrusivePtr()
   this->unset();
 }
 
-template <typename T> IntrusivePtr<T>::IntrusivePtr(const self &that)
+template < typename T >
+IntrusivePtr<T>::IntrusivePtr(self_type const &that)
 {
   this->set(that.m_obj);
 }
 
 template <typename T>
-template <typename X>
-IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<X> const &that ///< Foreign pointer.
-                              )
-  : super(that.get())
+template <typename U>
+IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<U> const &that)
 {
+  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
+  this->set(that.m_obj);
+}
+
+template < typename T >
+IntrusivePtr<T>::IntrusivePtr(self_type && that)
+{
+  std::swap<T*>(m_obj, that.m_obj);
 }
 
 template <typename T>
-IntrusivePtr<T> &
-IntrusivePtr<T>::operator=(const self &that)
+template <typename U>
+IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<U> && that)
 {
-  this->reset(that.m_obj);
-  return *this;
+  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
+  std::swap<T*>(m_obj, that.get());
 }
 
-template <typename T>
-template <typename X>
+template < typename T >
 IntrusivePtr<T> &
-IntrusivePtr<T>::operator=(IntrusivePtr<X> const &that ///< Foreign pointer.
-                           )
+IntrusivePtr<T>::operator=(self_type const& that)
 {
   this->reset(that.get());
   return *this;
 }
 
+
 template <typename T>
+template <typename U>
 IntrusivePtr<T> &
-IntrusivePtr<T>::operator=(T *obj)
+IntrusivePtr<T>::operator=(IntrusivePtr<U> const& that)
 {
-  this->reset(obj);
+  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
+  this->reset(that.get());
+  return *this;
+}
+
+template < typename T >
+IntrusivePtr<T> &
+IntrusivePtr<T>::operator=(self_type && that)
+{
+  if (m_obj != that.m_obj) {
+    this->unset();
+    m_obj = that.m_obj;
+    that.m_obj = nullptr;
+  } else {
+    that.unset();
+  }
   return *this;
 }
 
 template <typename T>
+template <typename U>
 IntrusivePtr<T> &
-IntrusivePtr<T>::assign(T *obj)
+IntrusivePtr<T>::operator=(IntrusivePtr<U> && that)
 {
-  return *this = obj;
+  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
+  if (m_obj != that.m_obj) {
+    this->unset();
+    m_obj = that.m_obj;
+    that.m_obj = nullptr;
+  } else {
+    that.unset();
+  }
+  return *this;
 }
 
 template <typename T> T *IntrusivePtr<T>::operator->() const
@@ -479,21 +487,14 @@ IntrusivePtr<T>::get() const
   return m_obj;
 }
 
-template <typename T>
-typename IntrusivePtr<T>::Counter *
-IntrusivePtr<T>::getCounter() const
-{
-  return super::getCounter(static_cast<IntrusivePtrCounter *>(m_obj));
-}
-
 /* The Set/Unset methods are the basic implementation of our
  * reference counting. The Reset method is the standard way
  * of invoking the pair, although splitting them allows some
  * additional efficiency in certain situations.
  */
 
-/* set and unset are two half operations that don't do checks.
-   It is the callers responsibility to do that.
+/* @c set and @c unset are two half operations that don't do checks.
+   It is the caller's responsibility to do that.
 */
 
 template <typename T>
@@ -506,16 +507,16 @@ IntrusivePtr<T>::unset()
      * super class. We call the super class method to get a raw pointer
      * to the counter variable.
      */
-    Counter *cp = this->getCounter();
+    auto &cp = m_obj->m_intrusive_pointer_reference_count;
 
     /* If you hit this assert you've got a cycle of objects that
        reference each other. A delete in the cycle will eventually
        result in one of the objects getting deleted twice, which is
        what this assert indicates.
     */
-    assert(*cp);
+    assert(cp);
 
-    if (0 == --*cp) {
+    if (0 == --cp) {
       IntrusivePtrPolicy<T>::finalize(m_obj);
     }
     m_obj = nullptr;
@@ -528,7 +529,7 @@ IntrusivePtr<T>::set(T *obj)
 {
   m_obj = obj;    /* update to new object */
   if (nullptr != m_obj) /* if a real object, bump the ref count */
-    ++(*(this->getCounter()));
+    ++(m_obj->m_intrusive_pointer_reference_count);
 }
 
 template <typename T>
@@ -542,28 +543,25 @@ IntrusivePtr<T>::reset(T *obj)
 }
 
 template <typename T>
-bool
+T*
 IntrusivePtr<T>::release()
 {
-  bool zret = true;
+  T* zret = m_obj;
   if (m_obj) {
-    Counter *cp = this->getCounter();
-    zret        = *cp <= 1;
+    auto &cp = m_obj->m_intrusive_pointer_reference_count;
     // If the client is using this method, they're doing something funky
     // so be extra careful with the reference count.
-    if (*cp > 0)
-      --*cp;
+    if (cp > 0)
+      --cp;
     m_obj = nullptr;
   }
   return zret;
 }
 
-/* Simple method to check for invalid pointer */
 template <typename T>
-bool
-IntrusivePtr<T>::isNull() const
+IntrusivePtr<T>::operator bool() const
 {
-  return 0 == m_obj;
+  return m_obj != nullptr;
 }
 
 /* Pointer comparison */
@@ -588,63 +586,17 @@ operator<(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs)
   return lhs.get() < rhs.get();
 }
 
-template <typename T>
-bool
-operator==(IntrusivePtr<T> const &lhs, int rhs)
-{
-  assert(0 == rhs);
-  return lhs.get() == 0;
-}
-
-template <typename T>
-bool
-operator==(int lhs, IntrusivePtr<T> const &rhs)
-{
-  assert(0 == lhs);
-  return rhs.get() == nullptr;
-}
-
-template <typename T>
-bool
-operator!=(int lhs, IntrusivePtr<T> const &rhs)
-{
-  return !(lhs == rhs);
-}
-
-template <typename T>
-bool
-operator!=(IntrusivePtr<T> const &lhs, int rhs)
-{
-  return !(lhs == rhs);
-}
-
 template <typename T> IntrusivePtr<T>::operator T *() const
 {
   return m_obj;
 }
 
 template <typename T>
-bool
-IntrusivePtr<T>::isShared() const
+typename IntrusivePtr<T>::count_type
+IntrusivePtr<T>::use_count() const
 {
-  return m_obj && *(this->getCounter()) > 1;
-}
-
-template <typename T>
-bool
-IntrusivePtr<T>::unique() const
-{
-  return 0 == m_obj || *(this->getCounter()) <= 1;
-}
-
-template <typename T>
-typename IntrusivePtr<T>::Counter
-IntrusivePtr<T>::useCount() const
-{
-  return m_obj ? *(this->getCounter()) : 0;
+  return m_obj ? count_type{m_obj->m_intrusive_pointer_reference_count} : count_type{0};
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
-} // namespace ats
-/* ----------------------------------------------------------------------- */
-#endif // TS_INTRUSIVE_PTR_HEADER
+} // namespace ts
