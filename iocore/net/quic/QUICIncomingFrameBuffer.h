@@ -51,7 +51,6 @@ private:
   QUICOffset _max_offset  = 0;
   QUICOffset _fin_offset  = UINT64_MAX;
 
-  std::shared_ptr<const QUICStreamFrame> _clone(std::shared_ptr<const QUICStreamFrame> frame);
   QUICErrorUPtr _check_and_set_fin_flag(QUICOffset offset, size_t len = 0, bool fin_flag = false);
 
   std::queue<std::shared_ptr<const QUICStreamFrame>> _recv_buffer;

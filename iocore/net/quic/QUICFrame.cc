@@ -141,6 +141,13 @@ QUICStreamFrame::split(size_t size)
   return frame;
 }
 
+QUICFrameUPtr
+QUICStreamFrame::clone() const
+{
+  return QUICFrameFactory::create_stream_frame(this->data(), this->data_length(), this->stream_id(), this->offset(),
+                                               this->has_fin_flag(), this->is_protected());
+}
+
 QUICFrameType
 QUICStreamFrame::type() const
 {
@@ -409,6 +416,15 @@ QUICAckFrame::reset(const uint8_t *buf, size_t len)
     delete this->_ack_block_section;
   }
   this->_ack_block_section = new AckBlockSection(buf + this->_get_ack_block_section_offset(), this->ack_block_count());
+}
+
+QUICFrameUPtr
+QUICAckFrame::clone() const
+{
+  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> newframe = QUICFrameFactory::create_ack_frame(
+    this->largest_acknowledged(), this->ack_delay(), this->ack_block_section()->first_ack_block(), this->is_protected());
+  // TODO Copy ack block section
+  return newframe;
 }
 
 QUICFrameType
@@ -834,6 +850,12 @@ QUICRstStreamFrame::QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode 
 {
 }
 
+QUICFrameUPtr
+QUICRstStreamFrame::clone() const
+{
+  return QUICFrameFactory::create_rst_stream_frame(this->stream_id(), this->error_code(), this->final_offset());
+}
+
 QUICFrameType
 QUICRstStreamFrame::type() const
 {
@@ -945,6 +967,13 @@ QUICRstStreamFrame::_get_final_offset_field_length() const
 //
 // PING frame
 //
+
+QUICFrameUPtr
+QUICPingFrame::clone() const
+{
+  return QUICFrameFactory::create_ping_frame();
+}
+
 QUICFrameType
 QUICPingFrame::type() const
 {
@@ -978,6 +1007,14 @@ QUICPingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 //
 // PADDING frame
 //
+
+QUICFrameUPtr
+QUICPaddingFrame::clone() const
+{
+  ink_assert(!"You shouldn't clone padding frames");
+  return QUICFrameFactory::create_null_frame();
+}
+
 QUICFrameType
 QUICPaddingFrame::type() const
 {
@@ -1012,6 +1049,12 @@ QUICConnectionCloseFrame::QUICConnectionCloseFrame(QUICTransErrorCode error_code
   this->_error_code           = error_code;
   this->_reason_phrase_length = reason_phrase_length;
   this->_reason_phrase        = reason_phrase;
+}
+
+QUICFrameUPtr
+QUICConnectionCloseFrame::clone() const
+{
+  return QUICFrameFactory::create_connection_close_frame(this->error_code(), this->reason_phrase_length(), this->reason_phrase());
 }
 
 QUICFrameType
@@ -1121,6 +1164,12 @@ QUICApplicationCloseFrame::QUICApplicationCloseFrame(QUICAppErrorCode error_code
   this->_reason_phrase        = reason_phrase;
 }
 
+QUICFrameUPtr
+QUICApplicationCloseFrame::clone() const
+{
+  return QUICFrameFactory::create_application_close_frame(this->error_code(), this->reason_phrase_length(), this->reason_phrase());
+}
+
 QUICFrameType
 QUICApplicationCloseFrame::type() const
 {
@@ -1224,6 +1273,12 @@ QUICMaxDataFrame::QUICMaxDataFrame(uint64_t maximum_data, bool protection)
   this->_maximum_data = maximum_data;
 }
 
+QUICFrameUPtr
+QUICMaxDataFrame::clone() const
+{
+  return QUICFrameFactory::create_max_data_frame(this->maximum_data());
+}
+
 QUICFrameType
 QUICMaxDataFrame::type() const
 {
@@ -1288,6 +1343,12 @@ QUICMaxStreamDataFrame::QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t 
 {
   this->_stream_id           = stream_id;
   this->_maximum_stream_data = maximum_stream_data;
+}
+
+QUICFrameUPtr
+QUICMaxStreamDataFrame::clone() const
+{
+  return QUICFrameFactory::create_max_stream_data_frame(this->stream_id(), this->maximum_stream_data());
 }
 
 QUICFrameType
@@ -1386,6 +1447,12 @@ QUICMaxStreamIdFrame::QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, bool 
   this->_maximum_stream_id = maximum_stream_id;
 }
 
+QUICFrameUPtr
+QUICMaxStreamIdFrame::clone() const
+{
+  return QUICFrameFactory::create_max_stream_id_frame(this->maximum_stream_id());
+}
+
 QUICFrameType
 QUICMaxStreamIdFrame::type() const
 {
@@ -1444,6 +1511,12 @@ QUICMaxStreamIdFrame::_get_max_stream_id_field_length() const
 //
 // BLOCKED frame
 //
+QUICFrameUPtr
+QUICBlockedFrame::clone() const
+{
+  return QUICFrameFactory::create_blocked_frame(this->offset());
+}
+
 QUICFrameType
 QUICBlockedFrame::type() const
 {
@@ -1504,6 +1577,12 @@ QUICBlockedFrame::_get_offset_field_length() const
 //
 // STREAM_BLOCKED frame
 //
+QUICFrameUPtr
+QUICStreamBlockedFrame::clone() const
+{
+  return QUICFrameFactory::create_stream_blocked_frame(this->stream_id(), this->offset());
+}
+
 QUICFrameType
 QUICStreamBlockedFrame::type() const
 {
@@ -1591,6 +1670,12 @@ QUICStreamBlockedFrame::_get_offset_field_length() const
 //
 // STREAM_ID_BLOCKED frame
 //
+QUICFrameUPtr
+QUICStreamIdBlockedFrame::clone() const
+{
+  return QUICFrameFactory::create_stream_id_blocked_frame(this->stream_id());
+}
+
 QUICFrameType
 QUICStreamIdBlockedFrame::type() const
 {
@@ -1651,6 +1736,12 @@ QUICStreamIdBlockedFrame::_get_stream_id_field_length() const
 //
 // NEW_CONNECTION_ID frame
 //
+QUICFrameUPtr
+QUICNewConnectionIdFrame::clone() const
+{
+  // FIXME: Connection ID and Stateless rese token have to be the same
+  return QUICFrameFactory::create_stream_id_blocked_frame(this->sequence());
+}
 
 QUICFrameType
 QUICNewConnectionIdFrame::type() const
@@ -1760,6 +1851,12 @@ QUICStopSendingFrame::QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorC
 {
 }
 
+QUICFrameUPtr
+QUICStopSendingFrame::clone() const
+{
+  return QUICFrameFactory::create_stop_sending_frame(this->stream_id(), this->error_code());
+}
+
 QUICFrameType
 QUICStopSendingFrame::type() const
 {
@@ -1837,6 +1934,12 @@ QUICStopSendingFrame::_get_error_code_field_offset() const
 //
 // PATH_CHALLENGE frame
 //
+QUICFrameUPtr
+QUICPathChallengeFrame::clone() const
+{
+  return QUICFrameFactory::create_path_challenge_frame(this->data());
+}
+
 QUICFrameType
 QUICPathChallengeFrame::type() const
 {
@@ -1887,6 +1990,12 @@ QUICPathChallengeFrame::_data_offset() const
 //
 // PATH_RESPONSE frame
 //
+QUICFrameUPtr
+QUICPathResponseFrame::clone() const
+{
+  return QUICFrameFactory::create_path_response_frame(this->data());
+}
+
 QUICFrameType
 QUICPathResponseFrame::type() const
 {
@@ -1941,6 +2050,13 @@ QUICRetransmissionFrame::QUICRetransmissionFrame(QUICFrameUPtr original_frame, c
   : QUICFrame(original_frame->is_protected()), _packet_type(original_packet.type())
 {
   this->_frame = std::move(original_frame);
+}
+
+QUICFrameUPtr
+QUICRetransmissionFrame::clone() const
+{
+  ink_assert(!"Retransmission frames shouldn't be cloned");
+  return QUICFrameFactory::create_null_frame();
 }
 
 QUICFrameType
@@ -2187,6 +2303,14 @@ QUICFrameFactory::create_max_stream_data_frame(QUICStreamId stream_id, uint64_t 
   QUICMaxStreamDataFrame *frame = quicMaxStreamDataFrameAllocator.alloc();
   new (frame) QUICMaxStreamDataFrame(stream_id, maximum_data);
   return std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_data_frame);
+}
+
+std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_max_stream_id_frame(QUICStreamId maximum_stream_id)
+{
+  QUICMaxStreamIdFrame *frame = quicMaxStreamIdFrameAllocator.alloc();
+  new (frame) QUICMaxStreamIdFrame(maximum_stream_id);
+  return std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_id_frame);
 }
 
 std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc>

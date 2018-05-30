@@ -46,8 +46,7 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     case QUICFrameType::ACK:
       break;
     default:
-      frame = QUICFrameFactory::create_retransmission_frame(std::move(frame), packet);
-      // FIXME We should probably reframe STREAM frames so that it can fit in new packets
+      frame = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);
       this->_retransmission_frames.push(std::move(frame));
       break;
     }
