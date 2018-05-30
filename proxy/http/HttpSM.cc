@@ -1764,14 +1764,14 @@ HttpSM::state_http_server_open(int event, void *data)
     // save the errno from the connect fail for future use (passed as negative value, flip back)
     t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
 
-    /* If we get this error, then we simply can't bind to the 4-tuple to make the connection.  There's no hope of
-       retries succeeding in the near future. The best option is to just shut down the connection without further
-       comment. The only known cause for this is outbound transparency combined with use client target address / source
-       port, as noted in TS-1424. If the keep alives desync the current connection can be attempting to rebind the 4
-       tuple simultaneously with the shut down of an existing connection. Dropping the client side will cause it to pick
-       a new source port and recover from this issue.
+    /* If we get this error in transparent mode, then we simply can't bind to the 4-tuple to make the connection.  There's no hope
+       of retries succeeding in the near future. The best option is to just shut down the connection without further comment. The
+       only known cause for this is outbound transparency combined with use client target address / source port, as noted in
+       TS-1424. If the keep alives desync the current connection can be attempting to rebind the 4 tuple simultaneously with the
+       shut down of an existing connection. Dropping the client side will cause it to pick a new source port and recover from this
+       issue.
     */
-    if (EADDRNOTAVAIL == t_state.current.server->connect_result) {
+    if (EADDRNOTAVAIL == t_state.current.server->connect_result && t_state.client_info.is_transparent) {
       if (is_debug_tag_set("http_tproxy")) {
         ip_port_text_buffer ip_c, ip_s;
         Debug("http_tproxy", "Force close of client connect (%s->%s) due to EADDRNOTAVAIL [%" PRId64 "]",
