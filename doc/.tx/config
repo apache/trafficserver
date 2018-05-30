@@ -402,9 +402,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/geoip_acl.en.po
 source_file = _build/locale/pot/admin-guide/plugins/geoip_acl.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--gzip_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/gzip.en.po
-source_file = _build/locale/pot/admin-guide/plugins/gzip.en.pot
+[apache-traffic-server-6x.admin-guide--plugins--compress_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/compress.en.po
+source_file = _build/locale/pot/admin-guide/plugins/compress.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--plugins--header_rewrite_en]
