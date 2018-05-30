@@ -402,7 +402,7 @@ QUICStream::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_si
                              std::min(static_cast<uint64_t>(maximum_frame_size),
                                       std::min(this->_remote_flow_controller.credit(), static_cast<uint64_t>(connection_credit)))));
 
-  if (this->_write_vio.ntodo() == bytes_avail) {
+  if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
     fin = true;
   }
 
