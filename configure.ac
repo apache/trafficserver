@@ -1339,6 +1339,11 @@ AM_CONDITIONAL([BUILD_URI_SIGNING_PLUGIN], [test ! -z "${LIBCJOSE}" -a ! -z "${L
 AC_SUBST([LIBCJOSE])
 AC_SUBST([LIBJANSSON])
 
+# Check for yaml-cpp library
+#
+TS_CHECK_YAML_CPP
+AM_CONDITIONAL([BUILD_YAML_CPP], [test x"$has_yaml_cpp" = x"no"])
+
 # Check for backtrace() support
 has_backtrace=0
 AC_CHECK_HEADERS([execinfo.h], [has_backtrace=1],[])
@@ -2051,6 +2056,7 @@ AC_CONFIG_FILES([
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
   lib/wccp/Makefile
+  lib/yamlcpp/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
