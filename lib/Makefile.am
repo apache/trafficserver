@@ -26,6 +26,10 @@ if BUILD_WCCP
 SUBDIRS += wccp
 endif
 
+#if BUILD_YAML_CPP
+SUBDIRS += yamlcpp
+#endif
+
 LOCAL =
 
 if BUILD_LUAJIT

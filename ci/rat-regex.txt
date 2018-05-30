@@ -64,3 +64,4 @@ port\.h
 ^protocol_binary.h$
 ^override.css$
 ^catch[.]hpp$
+^yamlcpp$
