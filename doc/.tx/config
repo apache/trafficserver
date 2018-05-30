@@ -387,11 +387,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/conf_remap.en.po
 source_file = _build/locale/pot/admin-guide/plugins/conf_remap.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--epic_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/epic.en.po
-source_file = _build/locale/pot/admin-guide/plugins/epic.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--plugins--esi_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/esi.en.po
 source_file = _build/locale/pot/admin-guide/plugins/esi.en.pot
