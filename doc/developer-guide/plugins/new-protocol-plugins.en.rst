@@ -304,10 +304,10 @@ typical transaction.
    :c:func`TSContCreate`. The handler for the transaction state machine
    is ``main_handler``, which is in the ``TxnSM.c`` file.
 
-#. When ``accept_event`` receives :c:macro`TS_EVENT_NET_ACCEPT`, it
+#. When ``accept_event`` receives :c:macro:`TS_EVENT_NET_ACCEPT`, it
    calls the transaction state machine (
    ``TSContCall (txn_sm, 0, NULL);`` ). The event passed to
-   ``main_handler`` is ``0`` (:c:macro`TS_EVENT_NONE`).
+   ``main_handler`` is ``0`` (:c:macro:`TS_EVENT_NONE`).
 
 #. The first thing ``main_handler`` does is examine the current
    ``txn_sm`` state by calling :c:func:`TSContDataGet`. The state is
