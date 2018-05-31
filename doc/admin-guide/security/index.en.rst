@@ -148,9 +148,7 @@ Client/Traffic Server connections, you must do the following:
 
         CONFIG proxy.config.ssl.CA.cert.path STRING "/opt/CA/certs/private-ca.pem"
 
-#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server on the
-   local node or :option:`traffic_ctl cluster restart` to restart Traffic Server on all
-   the nodes in a cluster.
+#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
 
 .. _traffic-server-and-origin-server-connections:
 
@@ -235,9 +233,7 @@ and origin server connections, you must do the following:
         CONFIG proxy.config.ssl.client.CA.cert.path STRING "/opt/ts/etc/ssl/certs/"
         CONFIG proxy.config.ssl.client.CA.cert.filename STRING "CAs.pem"
 
-#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server on the
-   local node or :option:`traffic_ctl cluster restart` to restart Traffic Server on all
-   the nodes in a cluster.
+#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
 
 .. _admin-rotating-tls-session-ticket-keys:
 

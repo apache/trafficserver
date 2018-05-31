@@ -59,14 +59,6 @@ msgstr ""
 msgid "Display and manipulate Traffic Server alarms"
 msgstr ""
 
-#: ../../../appendices/command-line/traffic_ctl.en.rst:41
-msgid ":program:`traffic_ctl cluster`"
-msgstr ""
-
-#: ../../../appendices/command-line/traffic_ctl.en.rst:42
-msgid "Stop, restart and examine the cluster"
-msgstr ""
-
 #: ../../../appendices/command-line/traffic_ctl.en.rst:43
 msgid ":program:`traffic_ctl config`"
 msgstr ""
@@ -140,21 +132,6 @@ msgid ""
 "Clear (acknowledge) an alarm event. The arguments are a specific alarm "
 "number (e.g. ''1''), or an alarm string identifier (e.g. "
 "''MGMT_ALARM_PROXY_CONFIG_ERROR'')."
-msgstr ""
-
-#: ../../../appendices/command-line/traffic_ctl.en.rst:89
-msgid "traffic_ctl cluster"
-msgstr ""
-
-#: ../../../appendices/command-line/traffic_ctl.en.rst:93
-msgid ""
-"Shut down and immediately restart Traffic Server, node by node across the "
-"cluster. The *--drain* and *--manager* options have the same behavior as "
-"for the :option:`traffic_ctl server restart` subcommand."
-msgstr ""
-
-#: ../../../appendices/command-line/traffic_ctl.en.rst:100
-msgid "Show the current cluster status."
 msgstr ""
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:103
@@ -231,8 +208,7 @@ msgstr ""
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:176
 msgid ""
-"Reset all statistics to zero. The *--cluster* option applies this across "
-"all cluster nodes."
+"Reset all statistics to zero."
 msgstr ""
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:182
@@ -247,8 +223,7 @@ msgstr ""
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:193
 msgid ""
-"Reset the named statistics to zero. The *--cluster* option applies this "
-"across all cluster nodes."
+"Reset the named statistics to zero."
 msgstr ""
 
 #: ../../../appendices/command-line/traffic_ctl.en.rst:197

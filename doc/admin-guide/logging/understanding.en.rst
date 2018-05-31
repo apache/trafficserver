@@ -71,10 +71,9 @@ System Logs
 
 System log files record system information, including messages about the state
 of |TS| and any errors or warnings it produces.  This kind of information might
-include a note that event log files were rolled, a warning that cluster
-communication timed out, or an error indicating that |TS| was restarted. If
-|TS| is failing to start properly on your system(s), this is the first place
-you'll want to look for possible hints as to the cause.
+include a note that event log files were rolled or an error indicating that |TS|
+was restarted. If |TS| is failing to start properly on your system(s), this is
+the first place you'll want to look for possible hints as to the cause.
 
 All system information messages are logged with the system-wide logging
 facility :manpage:`syslog` under the daemon facility. The

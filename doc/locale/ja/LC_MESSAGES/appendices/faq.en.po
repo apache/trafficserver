@@ -929,14 +929,6 @@ msgstr ""
 "指定された Traffic Server のパスから Traffic Line コマンドが実行されていない"
 "場合。**"
 
-#: ../../../appendices/faq.en.rst:397
-msgid ""
-"You observe inconsistent behavior when one node obtains an object from "
-"another node in the cluster"
-msgstr ""
-"クラスター内の他のノードからあるノードがオブジェクトを取得する際に矛盾した振"
-"る舞いを観測した"
-
 #: ../../../appendices/faq.en.rst:399
 msgid ""
 "As part of the initial system preparation, you must synchronize the clocks "
@@ -1078,27 +1070,6 @@ msgstr "システムログファイル内の 'DrainIncomingChannel' というメ
 #: ../../../appendices/faq.en.rst:466
 msgid "The following messages may appear in the system log file: ::"
 msgstr "次のメッセージがシステムログファイルに現れるかもしれません。"
-
-#: ../../../appendices/faq.en.rst:472
-msgid ""
-"These error messages indicate that a browser is sending HTTP requests to "
-"one of the Traffic Server cluster ports, either ``rsport`` (default port "
-"8088) or ``mcport`` (default port 8089). Traffic Server discards these "
-"requests. This error does not cause any Traffic Server problems. The "
-"misconfigured browser must be reconfigured to use the correct proxy port. "
-"Traffic Server clusters should ideally be configured to use a separate "
-"network interface and cluster on a private subnet, so that client machines "
-"have no access to the cluster ports."
-msgstr ""
-"これらのエラーメッセージは Traffic Server  のクラスターポート ``rsport`` (デ"
-"フォルトは 8088 番ポート) か ``mcport`` (デフォルトは 8089 番ポート)にブラウ"
-"ザが HTTP リクエストを送っていることを意味しています。 Traffic Server はこれ"
-"らのリクエストを破棄します。このエラーは Traffic Server に何か問題を引き起こ"
-"すわけではありません。設定を間違えたブラウザはプロキシーの正しいポートを使う"
-"ように設定を変更しなければなりません。 Traffic Server は理想的には別のネット"
-"ワークインターフェースを使用してクラスターはプライベートなサブネットを使うよ"
-"うに設定し、クライアントマシンがクラスターのポートにアクセスできないようにす"
-"るべきです。"
 
 #: ../../../appendices/faq.en.rst:482
 msgid "'No cop file' message in the system log file"

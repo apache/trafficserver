@@ -27,29 +27,14 @@ The :file:`records.config` file (by default (:ts:cv:`proxy.config.config_dir`), 
 the |TS| software. Many of the variables in :file:`records.config` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
 modify :file:`records.config`, run the command :option:`traffic_ctl config reload`
-to apply the changes. When you apply changes to one node in a cluster, |TS|
-automatically applies the changes to all other nodes in the cluster.
+to apply the changes.
 
 Format
 ======
 
 Each variable has the following format::
 
-   SCOPE variable_name DATATYPE variable_value
-
-Scope
------
-
-All variables are defined within a scope, which is related to clustering, and
-determines the level at which the variable is applied. The value for ``SCOPE``
-must be one of:
-
-========== ====================================================================
-Scope      Description
-========== ====================================================================
-``CONFIG`` All members of the cluster.
-``LOCAL``  Only the local machine.
-========== ====================================================================
+   CONFIG variable_name DATATYPE variable_value
 
 Data Type
 ---------
@@ -141,10 +126,10 @@ a yes/no flag. A value of ``0`` (zero) disables the option; a value of
 
    CONFIG proxy.config.arm.enabled INT 0
 
-In the following example, the variable sets the cluster startup timeout
-to 10 seconds. ::
+In the following example, the variable sets the time to wait for a
+DNS response to 10 seconds. ::
 
-   CONFIG proxy.config.cluster.startup_timeout INT 10
+   CONFIG proxy.config.hostdb.lookup_timeout INT 10
 
 The last examples configures a 64GB RAM cache, using a human readable
 prefix. ::
@@ -511,62 +496,6 @@ Network
    :reloadable:
 
    When we trigger a throttling scenario, this how long our accept() are delayed.
-
-Cluster
-=======
-
-.. ts:cv:: LOCAL proxy.local.cluster.type INT 3
-
-   Sets the clustering mode:
-
-   ===== =====================
-   Value Effect
-   ===== =====================
-   ``1`` Full-clustering mode.
-   ``2`` Management-only mode.
-   ``3`` No clustering.
-   ===== =====================
-
-.. ts:cv:: CONFIG proxy.config.cluster.ethernet_interface INT eth0
-
-   The network interface to be used for cluster communication. This has to be
-   identical on all members of a clsuter. ToDo: Is that reasonable ?? Should
-   this be local"
-
-.. ts:cv:: CONFIG proxy.config.cluster.rsport INT 8088
-
-   The reliable service port. The reliable service port is used to send
-   configuration information between the nodes in a cluster. All nodes in a
-   cluster must use the same reliable service port.
-
-.. ts:cv:: CONFIG proxy.config.cluster.threads INT 1
-
-   The number of threads for cluster communication. On heavy clusters, the
-   number should be adjusted. It is recommend to use the thread CPU usage as a
-   reference when adjusting.
-
-.. ts:cv:: CONFIG proxy.config.clustger.ethernet_interface STRING
-
-   Set the interface to use for cluster communications.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.cluster_cache_local INT 0
-   :overridable:
-
-   This turns on the local caching of objects in cluster mode. The point of
-   this is to allow for popular or *hot* content to be cached on all nodes
-   in a cluster. Be aware that the primary way to configure this behavior is
-   via the :file:`cache.config` configuration file using
-   ``action=cluster-cache-local`` directives.
-
-   This particular :file:`records.config` configuration can be controlled per
-   transaction or per remap rule. As such, it augments the
-   :file:`cache.config` directives, since you can turn on the local caching
-   feature without complex regular expression matching.
-
-   This implies that turning this on in your global :file:`records.config` is
-   almost never what you want; instead, you want to use this either via
-   e.g. ``conf_remap.so`` overrides for a certain remap rule, or through a
-   custom plugin using the appropriate APIs.
 
 Local Manager
 =============
@@ -3522,9 +3451,9 @@ HTTP/2 Configuration
    :reloadable:
 
    This timeout enables the zombie debugging feature.  If it is non-zero, it sets a zombie event to go off that
-   many seconds in the future when the HTTP2 session reaches one but not both of the terminating events, i.e received 
+   many seconds in the future when the HTTP2 session reaches one but not both of the terminating events, i.e received
    a close event (via client goaway or timeout) and the number of active streams has gone to zero.  If the event is executed,
-   the Traffic Server process will assert.  This mechanism is useful to debug potential leaks in the HTTP2 Stream and Session 
+   the Traffic Server process will assert.  This mechanism is useful to debug potential leaks in the HTTP2 Stream and Session
    processing.
 
 .. ts:cv:: CONFIG proxy.config.http2.push_diary_size INT 256
