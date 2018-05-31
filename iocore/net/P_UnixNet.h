@@ -408,7 +408,7 @@ check_net_throttle(ThrottleType t)
 {
   int connections = net_connections_to_throttle(t);
 
-  if (connections >= net_connections_throttle)
+  if (net_connections_throttle != 0 && connections >= net_connections_throttle)
     return true;
 
   return false;
@@ -435,9 +435,11 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
   (void)value;
   (void)data;
   int throttle = fds_limit - THROTTLE_FD_HEADROOM;
-  if (fds_throttle < 0)
+  if (fds_throttle == 0) {
+    net_connections_throttle = fds_throttle;
+  } else if (fds_throttle < 0) {
     net_connections_throttle = throttle;
-  else {
+  } else {
     net_connections_throttle = fds_throttle;
     if (net_connections_throttle > throttle)
       net_connections_throttle = throttle;
