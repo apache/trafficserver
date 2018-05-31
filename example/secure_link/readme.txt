@@ -6,7 +6,7 @@ The plugin can be used in the plugins chain in remap.config and it expects two @
 1. secret - the word, which is known only to the application that generated link
    and Traffic Server.
 2. policy - if set to 'strict' and checksums not match or expire value
-   lower than current time the client will receive 403 Frobidden response.
+   lower than current time the client will receive 403 Forbidden response.
    Used for debugging.
 
 For example request
