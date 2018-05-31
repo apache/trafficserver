@@ -191,7 +191,7 @@ public:
   void close(QUICConnectionErrorUPtr error) override;
   void handle_received_packet(UDPPacket *packet) override;
 
-  // QUICConnection (QUICConnectionInfo)
+  // QUICConnection (QUICConnectionInfoProvider)
   QUICConnectionId peer_connection_id() const override;
   QUICConnectionId original_connection_id() const override;
   QUICConnectionId connection_id() const override;

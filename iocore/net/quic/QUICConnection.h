@@ -33,7 +33,7 @@ class QUICStreamManager;
 class UDPPacket;
 class SSLNextProtocolSet;
 
-class QUICConnectionInfo
+class QUICConnectionInfoProvider
 {
 public:
   virtual QUICConnectionId peer_connection_id() const     = 0;
@@ -63,7 +63,7 @@ public:
   virtual QUICPacketNumber largest_acked_packet_number() const = 0;
 };
 
-class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler, public QUICConnectionInfo
+class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler, public QUICConnectionInfoProvider
 {
 public:
   virtual QUICStreamManager *stream_manager()             = 0;
