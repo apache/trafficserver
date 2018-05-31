@@ -27,7 +27,6 @@
 void
 QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
 {
-  Debug("quic_con", "Retransmit packet #%" PRIu64 " type %s", packet.packet_number(), QUICDebugNames::packet_type(packet.type()));
   ink_assert(packet.type() != QUICPacketType::VERSION_NEGOTIATION && packet.type() != QUICPacketType::UNINITIALIZED);
 
   // Get payload from a header because packet.payload() is encrypted

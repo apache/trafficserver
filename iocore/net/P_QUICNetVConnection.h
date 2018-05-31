@@ -232,9 +232,9 @@ private:
   QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
   std::random_device _rnd;
 
-  QUICConnectionId _peer_quic_connection_id;     // dst cid
+  QUICConnectionId _peer_quic_connection_id;     // dst cid in local
   QUICConnectionId _original_quic_connection_id; // dst cid of initial packet from client
-  QUICConnectionId _quic_connection_id;          // src cid
+  QUICConnectionId _quic_connection_id;          // src cid in local
   QUICFiveTuple _five_tuple;
 
   char _cids_data[MAX_CIDS_SIZE] = {0};

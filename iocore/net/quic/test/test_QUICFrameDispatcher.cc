@@ -37,7 +37,11 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   auto connection    = new MockQUICConnection();
   auto streamManager = new MockQUICStreamManager();
-  auto lossDetector  = new MockQUICLossDetector();
+  auto tx            = new MockQUICPacketTransmitter();
+  auto info          = new MockQUICConnectionInfoProvider();
+  auto cc            = new MockQUICCongestionController(info);
+  auto lossDetector  = new MockQUICLossDetector(tx, info, cc);
+
   QUICFrameDispatcher quicFrameDispatcher;
   quicFrameDispatcher.add_handler(connection);
   quicFrameDispatcher.add_handler(streamManager);

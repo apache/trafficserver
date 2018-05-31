@@ -28,10 +28,11 @@
 #include "QUICConfig.h"
 #include "QUICEvents.h"
 
-#define QUICLDDebug(fmt, ...) Debug("quic_loss_detector", "[%" PRIx64 "] " fmt, this->_connection_id.l64(), ##__VA_ARGS__)
+#define QUICLDDebug(fmt, ...) Debug("quic_loss_detector", "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc)
-  : _transmitter(transmitter), _cc(cc)
+QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info,
+                                   QUICCongestionController *cc)
+  : _transmitter(transmitter), _info(info), _cc(cc)
 {
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
@@ -131,10 +132,6 @@ QUICLossDetector::largest_acked_packet_number()
 void
 QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
 {
-  if (this->_connection_id.is_zero() && packet->type() != QUICPacketType::VERSION_NEGOTIATION) {
-    this->_connection_id = packet->destination_cid();
-  }
-
   bool is_handshake   = false;
   QUICPacketType type = packet->type();
 

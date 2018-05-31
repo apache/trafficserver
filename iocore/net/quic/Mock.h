@@ -284,6 +284,81 @@ public:
   NetVConnectionContext_t _direction;
 };
 
+class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
+{
+  QUICConnectionId
+  connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  peer_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  original_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  const QUICFiveTuple
+  five_tuple() const override
+  {
+    return QUICFiveTuple();
+  }
+
+  std::string_view
+  cids() const override
+  {
+    return std::string_view("00000000-00000000"sv);
+  }
+
+  uint32_t
+  minimum_quic_packet_size() override
+  {
+    return 1200;
+  }
+
+  uint32_t
+  maximum_quic_packet_size() const override
+  {
+    return 1200;
+  }
+
+  uint32_t
+  pmtu() const override
+  {
+    return 1280;
+  }
+
+  QUICPacketNumber
+  largest_acked_packet_number() const override
+  {
+    return 0;
+  }
+
+  NetVConnectionContext_t
+  direction() const override
+  {
+    return NET_VCONNECTION_OUT;
+  }
+
+  SSLNextProtocolSet *
+  next_protocol_set() const override
+  {
+    return nullptr;
+  }
+
+  bool
+  is_closed() const override
+  {
+    return false;
+  }
+};
+
 class MockQUICPacketTransmitter : public QUICPacketTransmitter
 {
 public:
@@ -319,6 +394,7 @@ public:
 class MockQUICCongestionController : public QUICCongestionController
 {
 public:
+  MockQUICCongestionController(QUICConnectionInfoProvider *info) : QUICCongestionController(info) {}
   // Override
   virtual void
   on_packets_lost(std::map<QUICPacketNumber, PacketInfo *> &packets) override
@@ -363,7 +439,10 @@ private:
 class MockQUICLossDetector : public QUICLossDetector
 {
 public:
-  MockQUICLossDetector() : QUICLossDetector(new MockQUICPacketTransmitter(), new MockQUICCongestionController()) {}
+  MockQUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc)
+    : QUICLossDetector(transmitter, info, cc)
+  {
+  }
   void
   rcv_frame(std::shared_ptr<const QUICFrame>)
   {

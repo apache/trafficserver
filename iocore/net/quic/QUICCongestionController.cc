@@ -28,19 +28,17 @@
 
 #define QUICCCDebug(fmt, ...)                                                \
   Debug("quic_cc",                                                           \
-        "[%" PRIx64 "] "                                                     \
+        "[%s] "                                                              \
         "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt, \
-        this->_connection_id.l64(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
+        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
 
 #define QUICCCError(fmt, ...)                                                \
   Error("quic_cc",                                                           \
-        "[%" PRIx64 "] "                                                     \
+        "[%s] "                                                              \
         "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt, \
-        this->_connection_id.l64(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
+        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
 
-QUICCongestionController::QUICCongestionController() : QUICCongestionController(QUICConnectionId::ZERO()) {}
-
-QUICCongestionController::QUICCongestionController(QUICConnectionId connection_id) : _connection_id(connection_id)
+QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *info) : _info(info)
 {
   QUICConfig::scoped_config params;
   this->_k_default_mss           = params->cc_default_mss();

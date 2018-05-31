@@ -205,13 +205,12 @@ QUICNetVConnection::start()
   this->_packet_factory.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
-  this->_congestion_controller  = new QUICCongestionController(this->peer_connection_id());
-  this->_loss_detector          = new QUICLossDetector(this, this->_congestion_controller);
+  this->_congestion_controller  = new QUICCongestionController(this);
+  this->_loss_detector          = new QUICLossDetector(this, this, this->_congestion_controller);
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(this->_loss_detector, UINT64_MAX);
   this->_path_validator         = new QUICPathValidator();
-  this->_stream_manager =
-    new QUICStreamManager(this->_loss_detector, this->peer_connection_id(), this->_application_map, this->netvc_context);
+  this->_stream_manager         = new QUICStreamManager(this->_loss_detector, this, this->_application_map, this->netvc_context);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
@@ -343,6 +342,12 @@ QUICNetVConnection::connection_id() const
   return this->_quic_connection_id;
 }
 
+/*
+ Return combination of dst connection id and src connection id for debug log
+ e.g. "aaaaaaaa-bbbbbbbb"
+   - "aaaaaaaa" : high 32 bit of dst connection id
+   - "bbbbbbbb" : high 32 bit of src connection id
+ */
 std::string_view
 QUICNetVConnection::cids() const
 {
@@ -427,6 +432,8 @@ QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
 void
 QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 {
+  QUICConDebug("Retransmit packet #%" PRIu64 " type %s", packet.packet_number(), QUICDebugNames::packet_type(packet.type()));
+
   this->_packet_retransmitter.retransmit_packet(packet);
 }
 
@@ -1775,6 +1782,7 @@ QUICNetVConnection::_update_cids()
 void
 QUICNetVConnection::_update_peer_cid(const QUICConnectionId &new_cid)
 {
+  // TODO: print full cids
   QUICConDebug("dcid: %08" PRIx32 " -> %08" PRIx32, this->_peer_quic_connection_id.h32(), new_cid.h32());
 
   this->_peer_quic_connection_id = new_cid;

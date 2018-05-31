@@ -28,22 +28,22 @@
 #include "QUICStreamManager.h"
 #include "QUICDebugNames.h"
 
-#define QUICStreamDebug(fmt, ...)                                                                      \
-  Debug("quic_stream", "[%" PRIx64 "] [%" PRIx64 "] [%s] " fmt, this->_connection_id.l64(), this->_id, \
+#define QUICStreamDebug(fmt, ...)                                                             \
+  Debug("quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
-#define QUICVStreamDebug(fmt, ...)                                                                       \
-  Debug("v_quic_stream", "[%" PRIx64 "] [%" PRIx64 "] [%s] " fmt, this->_connection_id.l64(), this->_id, \
+#define QUICVStreamDebug(fmt, ...)                                                              \
+  Debug("v_quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
-#define QUICStreamFCDebug(fmt, ...)                                                                       \
-  Debug("quic_flow_ctrl", "[%" PRIx64 "] [%" PRIx64 "] [%s] " fmt, this->_connection_id.l64(), this->_id, \
+#define QUICStreamFCDebug(fmt, ...)                                                              \
+  Debug("quic_flow_ctrl", "[%s] [%" PRIx64 "] [%s] " fmt, this->_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
-QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data,
-                       uint64_t send_max_stream_data)
+QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid,
+                       uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
   : VConnection(nullptr),
-    _connection_id(cid),
+    _info(info),
     _id(sid),
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),

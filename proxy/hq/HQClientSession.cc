@@ -85,7 +85,7 @@ HQClientSession::start()
 void
 HQClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
-  this->con_id = ProxyClientSession::next_connection_id();
+  this->con_id = static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(new_vc))->connection_id();
 
   return;
 }

@@ -139,11 +139,9 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   }
 
   // Setup QUICNetVConnection
-  QUICConnectionId scid;
-  QUICConnectionId dcid;
-  scid.randomize();
-  dcid.randomize();
-  vc->init(scid, dcid, con, packet_handler);
+  QUICConnectionId client_dst_cid;
+  client_dst_cid.randomize();
+  vc->init(client_dst_cid, client_dst_cid, con, packet_handler);
   packet_handler->init(vc);
 
   // Connection ID will be changed

@@ -112,8 +112,7 @@ QUICClient::state_http_server_open(int event, void *data)
 //
 // QUICClientApp
 //
-#define QUICClientAppDebug(fmt, ...) \
-  Debug("quic_client_app", "[%" PRIx64 "] " fmt, static_cast<uint64_t>(this->_qc->connection_id()), ##__VA_ARGS__)
+#define QUICClientAppDebug(fmt, ...) Debug("quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 QUICClientApp::QUICClientApp(QUICNetVConnection *qvc, const char *filename) : QUICApplication(qvc), _filename(filename)
 {

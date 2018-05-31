@@ -34,6 +34,7 @@
 #include "QUICIncomingFrameBuffer.h"
 #include "QUICFrameGenerator.h"
 #include "QUICLossDetector.h"
+#include "QUICConnection.h"
 
 class QUICNetVConnection;
 class QUICStreamState;
@@ -53,7 +54,7 @@ public:
       _received_stream_frame_buffer(this)
   {
   }
-  QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICStreamId sid, uint64_t recv_max_stream_data = 0,
+  QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid, uint64_t recv_max_stream_data = 0,
              uint64_t send_max_stream_data = 0);
   ~QUICStream();
   // void start();
@@ -102,7 +103,7 @@ private:
 
   QUICStreamState _state;
   QUICStreamErrorUPtr _reset_reason = nullptr;
-  QUICConnectionId _connection_id   = QUICConnectionId::ZERO();
+  QUICConnectionInfoProvider *_info = nullptr;
   QUICStreamId _id                  = 0;
   QUICOffset _send_offset           = 0;
 

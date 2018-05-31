@@ -38,7 +38,7 @@ class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   QUICStreamManager(){};
-  QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionId cid, QUICApplicationMap *app_map,
+  QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICApplicationMap *app_map,
                     NetVConnectionContext_t context);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
@@ -77,7 +77,8 @@ private:
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
   QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
 
-  QUICConnectionId _connection_id                           = QUICConnectionId::ZERO();
+  QUICConnectionInfoProvider *_info                         = nullptr;
+  QUICRTTProvider *_rtt_provider                            = nullptr;
   QUICApplicationMap *_app_map                              = nullptr;
   NetVConnectionContext_t _netvc_context                    = NET_VCONNECTION_UNSET;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
@@ -89,5 +90,4 @@ private:
   QUICStreamId _next_stream_id_uni                          = 0;
   QUICStreamId _next_stream_id_bidi                         = 0;
   uint64_t _total_offset_sent                               = 0;
-  QUICRTTProvider *_rtt_provider                            = nullptr;
 };

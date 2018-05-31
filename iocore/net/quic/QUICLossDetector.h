@@ -36,6 +36,7 @@
 #include "QUICFrame.h"
 #include "QUICFrameHandler.h"
 #include "QUICPacketTransmitter.h"
+#include "QUICConnection.h"
 
 class QUICLossDetector;
 
@@ -57,8 +58,7 @@ public:
 class QUICCongestionController
 {
 public:
-  QUICCongestionController();
-  QUICCongestionController(QUICConnectionId connection_id);
+  QUICCongestionController(QUICConnectionInfoProvider *info);
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(QUICPacketNumber acked_packet_number, size_t acked_packet_size);
@@ -85,7 +85,7 @@ private:
   QUICPacketNumber _end_of_recovery = 0;
   uint32_t _ssthresh                = UINT32_MAX;
 
-  QUICConnectionId _connection_id = QUICConnectionId::ZERO();
+  QUICConnectionInfoProvider *_info = nullptr;
 
   bool _in_recovery(QUICPacketNumber packet_number);
 };
@@ -93,7 +93,7 @@ private:
 class QUICLossDetector : public Continuation, public QUICFrameHandler, public QUICRTTProvider
 {
 public:
-  QUICLossDetector(QUICPacketTransmitter *transmitter, QUICCongestionController *cc);
+  QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
@@ -108,8 +108,6 @@ public:
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;
-
-  QUICConnectionId _connection_id = QUICConnectionId::ZERO();
 
   // TODO QUICCongestionController *cc = nullptr;
 
@@ -174,5 +172,6 @@ private:
   void _send_two_packets();
 
   QUICPacketTransmitter *_transmitter = nullptr;
+  QUICConnectionInfoProvider *_info   = nullptr;
   QUICCongestionController *_cc       = nullptr;
 };

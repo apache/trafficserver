@@ -36,9 +36,9 @@
 
 static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 
-#define QUICHSDebug(fmt, ...) Debug("quic_handshake", "[%" PRIx64 "] " fmt, this->_qc->peer_connection_id().l64(), ##__VA_ARGS__)
+#define QUICHSDebug(fmt, ...) Debug("quic_handshake", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
-#define QUICVHSDebug(fmt, ...) Debug("v_quic_handshake", "[%" PRIx64 "] " fmt, this->_qc->peer_connection_id().l64(), ##__VA_ARGS__)
+#define QUICVHSDebug(fmt, ...) Debug("v_quic_handshake", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                            \
   {                                                                                                                                \

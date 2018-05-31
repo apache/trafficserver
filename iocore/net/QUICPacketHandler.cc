@@ -30,6 +30,12 @@
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 
+#define QUICDebugQC(qc, fmt, ...) Debug("quic_sec", "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
+
+// ["local dcid" - "local scid"]
+#define QUICDebugDS(dcid, scid, fmt, ...) \
+  Debug("quic_sec", "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+
 //
 // QUICPacketHandler
 //
@@ -74,8 +80,13 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
 
   // NOTE: p will be enqueued to udpOutQueue of UDPNetHandler
   ip_port_text_buffer ipb;
-  Debug("quic_sec", "[%" PRIx64 "] send %s packet to %s, size=%" PRId64, packet.destination_cid().l64(),
-        QUICDebugNames::packet_type(packet.type()), ats_ip_nptop(&udp_packet->to.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+  QUICConnectionId dcid = packet.destination_cid();
+  QUICConnectionId scid = QUICConnectionId::ZERO();
+  if (packet.type() != QUICPacketType::PROTECTED) {
+    scid = packet.source_cid();
+  }
+  QUICDebugDS(dcid, scid, "send %s packet to %s size=%" PRId64, QUICDebugNames::packet_type(packet.type()),
+              ats_ip_nptop(&udp_packet->to.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
 
   udp_con->send(c, udp_packet);
 }
@@ -178,14 +189,15 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
   if (is_debug_tag_set("quic_sec")) {
     ip_port_text_buffer ipb;
+    QUICConnectionId dcid = this->_read_destination_connection_id(block);
+    QUICConnectionId scid = QUICConnectionId::ZERO();
     if (QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      QUICConnectionId cid = this->_read_source_connection_id(block);
-      Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, cid.l64(),
-            ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
-    } else {
-      Debug("quic_sec", "received packet from %s, size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
-            udp_packet->getPktLength());
+      scid = this->_read_source_connection_id(block);
     }
+    // Remote dst cid is src cid in local
+    // TODO: print packet type
+    QUICDebugDS(scid, dcid, "recv packet from %s, size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
+                udp_packet->getPktLength());
   }
 
   QUICConnection *qc =
@@ -299,13 +311,10 @@ QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *
 void
 QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  IOBufferBlock *block = udp_packet->getIOBlockChain();
-
-  QUICConnectionId cid = this->_read_destination_connection_id(block);
-
   ip_port_text_buffer ipb;
-  Debug("quic_sec", "[%" PRIx64 "] received packet from %s, size=%" PRId64, cid.l64(),
-        ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+  // TODO: print packet type
+  QUICDebugQC(this->_vc, "recv packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
+              udp_packet->getPktLength());
 
   this->_vc->handle_received_packet(udp_packet);
   eventProcessor.schedule_imm(this->_vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);

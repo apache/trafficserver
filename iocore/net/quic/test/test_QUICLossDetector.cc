@@ -34,11 +34,12 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   QUICPacketFactory pf;
   pf.set_hs_protocol(&hs_protocol);
 
-  QUICAckFrameCreator *afc         = new QUICAckFrameCreator();
-  QUICConnectionId connection_id   = {reinterpret_cast<const uint8_t *>("\x01"), 1};
-  MockQUICPacketTransmitter *tx    = new MockQUICPacketTransmitter();
-  MockQUICCongestionController *cc = new MockQUICCongestionController();
-  QUICLossDetector detector(tx, cc);
+  QUICAckFrameCreator *afc             = new QUICAckFrameCreator();
+  QUICConnectionId connection_id       = {reinterpret_cast<const uint8_t *>("\x01"), 1};
+  MockQUICPacketTransmitter *tx        = new MockQUICPacketTransmitter();
+  MockQUICConnectionInfoProvider *info = new MockQUICConnectionInfoProvider();
+  MockQUICCongestionController *cc     = new MockQUICCongestionController(info);
+  QUICLossDetector detector(tx, info, cc);
   ats_unique_buf payload              = ats_unique_malloc(16);
   size_t payload_len                  = 16;
   QUICPacketUPtr packet               = QUICPacketFactory::create_null_packet();
@@ -160,9 +161,10 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
 TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
 {
-  MockQUICPacketTransmitter *tx    = new MockQUICPacketTransmitter();
-  MockQUICCongestionController *cc = new MockQUICCongestionController();
-  QUICLossDetector detector(tx, cc);
+  MockQUICPacketTransmitter *tx        = new MockQUICPacketTransmitter();
+  MockQUICConnectionInfoProvider *info = new MockQUICConnectionInfoProvider();
+  MockQUICCongestionController *cc     = new MockQUICCongestionController(info);
+  QUICLossDetector detector(tx, info, cc);
 
   // Check initial state
   CHECK(tx->retransmitted.size() == 0);
