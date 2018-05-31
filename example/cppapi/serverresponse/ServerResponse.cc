@@ -52,7 +52,7 @@ public:
       // Give this user an error page and don't make a request to an origin.
       cout << "Sending this request an error page" << endl;
       transaction.error("This is the error response, but the response code is 500."
-                        "In this example no request was made to the orgin.");
+                        "In this example no request was made to the origin.");
       // HTTP/1.1 500 INKApi Error
     } else {
       transaction.resume();

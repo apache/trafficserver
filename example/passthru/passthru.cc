@@ -328,7 +328,7 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
   status = PassthruListen();
   TSReleaseAssert(status == TS_SUCCESS);
 
-  // Now that succeded, we can register.
+  // Now that succeeded, we can register.
   status = TSPluginRegister(&info);
   TSReleaseAssert(status == TS_SUCCESS);
 }
