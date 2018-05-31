@@ -173,7 +173,7 @@ modify_header(TSHttpTxn txnp)
      * in the in-process response in order to have the cached response
      * become invalid.
      */
-    TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probaby should check for errrors */
+    TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
 
     /* mimehdr1_name : TSstrdup( "x-num-served-from-cache" ) ; */
 

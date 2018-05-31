@@ -692,7 +692,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     TSDebug(PLUGIN_NAME, "nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
-    /* Since the first write is through TSVConnWrite, which aleady consume
+    /* Since the first write is through TSVConnWrite, which already consume
        the data in cache_buffer_reader, don't consume it again. */
     if (txn_sm->q_cache_response_length > 0 && txn_sm->q_block_bytes_read > 0) {
       TSIOBufferReaderConsume(txn_sm->q_cache_response_buffer_reader, txn_sm->q_block_bytes_read);
@@ -709,7 +709,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 
     if (txn_sm->q_cache_response_length >= txn_sm->q_server_response_length) {
       /* Write is complete, close the cache_vc. */
-      TSDebug(PLUGIN_NAME, "close cache_vc, cache_response_length is %d, server_response_lenght is %d",
+      TSDebug(PLUGIN_NAME, "close cache_vc, cache_response_length is %d, server_response_length is %d",
               txn_sm->q_cache_response_length, txn_sm->q_server_response_length);
       TSVConnClose(txn_sm->q_cache_vc);
       txn_sm->q_cache_vc        = NULL;
