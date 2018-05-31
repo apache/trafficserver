@@ -321,6 +321,47 @@ QUICSendStreamState::update(const QUICStreamState &opposite_side)
 
 // ---------QUICBidirectionalStreamState -----------
 
+QUICStreamState::State
+QUICBidirectionalStreamState::get() const
+{
+  QUICStreamState::State s_state = this->_send_stream_state.get();
+  QUICStreamState::State r_state = this->_recv_stream_state.get();
+
+  if (s_state == State::Ready || s_state == State::Send || s_state == State::DataSent) {
+    if (r_state == State::Recv || r_state == State::SizeKnown) {
+      return State::Open;
+    } else if (r_state == State::DataRecvd || r_state == State::DataRead) {
+      return State::HC_R;
+    } else if (r_state == State::ResetRecvd || r_state == State::ResetRead) {
+      return State::HC_R;
+    } else {
+      return State::_Invalid;
+    }
+  } else if (s_state == State::DataRecvd) {
+    if (r_state == State::Recv || r_state == State::SizeKnown) {
+      return State::HC_L;
+    } else if (r_state == State::DataRecvd || r_state == State::DataRead) {
+      return State::Closed;
+    } else if (r_state == State::ResetRecvd || r_state == State::ResetRead) {
+      return State::Closed;
+    } else {
+      return State::_Invalid;
+    }
+  } else if (s_state == State::ResetSent || s_state == State::ResetRecvd) {
+    if (r_state == State::Recv || r_state == State::SizeKnown) {
+      return State::HC_L;
+    } else if (r_state == State::DataRecvd || r_state == State::DataRead) {
+      return State::Closed;
+    } else if (r_state == State::ResetRecvd || r_state == State::ResetRead) {
+      return State::Closed;
+    } else {
+      return State::_Invalid;
+    }
+  } else {
+    return State::_Invalid;
+  }
+}
+
 void
 QUICBidirectionalStreamState::update_with_sending_frame(const QUICFrame &frame)
 {

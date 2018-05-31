@@ -220,6 +220,14 @@ QUICDebugNames::stream_state(const QUICStreamState &state)
     return "DATA_READ";
   case QUICStreamState::State::ResetRead:
     return "RESET_READ";
+  case QUICStreamState::State::Open:
+    return "OPEN";
+  case QUICStreamState::State::HC_L:
+    return "HC_L";
+  case QUICStreamState::State::HC_R:
+    return "HC_R";
+  case QUICStreamState::State::Closed:
+    return "CLOSED";
   case QUICStreamState::State::_Invalid:
     return "INVALID";
   default:

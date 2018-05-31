@@ -29,23 +29,33 @@ class QUICStreamState
 {
 public:
   enum class State {
+    // Common
     _Init,
+    _Invalid,
+    // SendStreamState
     Ready,
     Send,
     DataSent,
     DataRecvd,
     ResetSent,
     ResetRecvd,
+    // ReceiveStreamState
     Recv,
     SizeKnown,
-    /* DataRecvd, */ DataRead,
-    /* ResetRecvd, */ ResetRead,
-    _Invalid
+    /* DataRecvd, */
+    DataRead,
+    /* ResetRecvd, */
+    ResetRead,
+    // Bidirectional
+    Open,
+    HC_R,
+    HC_L,
+    Closed
   };
 
   virtual ~QUICStreamState() {}
 
-  State
+  virtual State
   get() const
   {
     return this->_state;
@@ -95,6 +105,8 @@ public:
 class QUICBidirectionalStreamState : public QUICStreamState
 {
 public:
+  State get() const override;
+
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
 
