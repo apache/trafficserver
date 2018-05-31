@@ -2340,7 +2340,7 @@ QUICFrameFactory::create_path_response_frame(const uint8_t *data)
 
   QUICPathResponseFrame *frame = quicPathResponseFrameAllocator.alloc();
   new (frame) QUICPathResponseFrame(std::move(buf), false);
-  return std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_path_challenge_frame);
+  return std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_path_response_frame);
 }
 
 std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc>
