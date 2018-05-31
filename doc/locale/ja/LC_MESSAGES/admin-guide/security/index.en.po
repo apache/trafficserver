@@ -237,8 +237,7 @@ msgstr ""
 #: ../../../admin-guide/security/index.en.rst:238
 msgid ""
 "Run the command :option:`traffic_ctl server restart` to restart Traffic "
-"Server on the local node or :option:`traffic_ctl cluster restart` to "
-"restart Traffic Server on all the nodes in a cluster."
+"Server."
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:158

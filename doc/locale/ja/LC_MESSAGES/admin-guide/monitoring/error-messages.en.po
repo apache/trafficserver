@@ -83,12 +83,6 @@ msgid "Generic logging error."
 msgstr "一般的なロギングエラーです。"
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:48
-msgid ""
-"``Bad cluster major version range <version1-version2> for node <IP address> "
-"connect failed``"
-msgstr ""
-
-#: ../../../admin-guide/monitoring/error-messages.en.rst:48
 msgid "Incompatible software versions causing a problem."
 msgstr "互換性の無いソフトウェアのバージョンが問題を引き起こしています。"
 
@@ -120,12 +114,6 @@ msgstr ""
 #: ../../../admin-guide/monitoring/error-messages.en.rst:58
 msgid "Congestion is approaching."
 msgstr "輻輳が発生しそうです。"
-
-#: ../../../admin-guide/monitoring/error-messages.en.rst:61
-msgid ""
-"``Different clustering minor versions <version1, version2> for node <IP "
-"address> continuing``"
-msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:61
 msgid "Incompatible software versions are causing a problem."

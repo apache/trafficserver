@@ -97,22 +97,6 @@ msgstr ""
 msgid "Local statistic."
 msgstr ""
 
-#: ../../../developer-guide/config-vars.en.rst:90
-msgid "``RECT_CLUSTER``"
-msgstr ""
-
-#: ../../../developer-guide/config-vars.en.rst:90
-msgid "Cluster statistic."
-msgstr ""
-
-#: ../../../developer-guide/config-vars.en.rst:93
-msgid "``RECT_LOCAL``"
-msgstr ""
-
-#: ../../../developer-guide/config-vars.en.rst:93
-msgid "Configuration variable that is explicitly not shared across a cluster."
-msgstr ""
-
 #: ../../../developer-guide/config-vars.en.rst:96
 msgid "``RECT_PLUGIN``"
 msgstr ""
@@ -123,11 +107,7 @@ msgstr ""
 
 #: ../../../developer-guide/config-vars.en.rst:98
 msgid ""
-"In general, ``RECT_CONFIG`` should be used unless it is required that the "
-"value not be shared among members of a cluster, in which case "
-"``RECT_LOCAL`` should be used. If you use ``RECT_LOCAL``, you must also "
-"start the line with ``LOCAL`` instead of ``CONFIG`` and the name should use "
-"``.local.`` instead of ``.config.``."
+"In general, ``RECT_CONFIG`` should be used."
 msgstr ""
 
 #: ../../../developer-guide/config-vars.en.rst:108

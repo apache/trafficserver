@@ -379,17 +379,6 @@ executing the Traffic Control command from the active Traffic Server path
 specified in ``/etc/trafficserver``**
 
 
-You observe inconsistent behavior when one node obtains an object from another node in the cluster
---------------------------------------------------------------------------------------------------
-
-As part of the initial system preparation, you must synchronize the
-clocks on all nodes in your cluster. Minor time differences do not cause
-problems, but differences of more than a few minutes can affect Traffic
-Server operation.
-
-You should run a clock synchronization daemon such as xntpd. To obtain
-the latest version of xntpd, go to `<http://www.eecis.udel.edu/~ntp/>`_.
-
 Web browsers display an error document with a 'data missing' message
 --------------------------------------------------------------------
 
@@ -445,24 +434,6 @@ the cache, modify the :ts:cv:`proxy.config.cache.max_doc_size`
 variable in the records.config file. If you do not want to limit the
 size of objects in the cache, then set the document size
 to ``0`` (zero).
-
-'DrainIncomingChannel' message in the system log file
------------------------------------------------------
-
-The following messages may appear in the system log file: ::
-
-     Feb 20 23:53:40 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.telechamada.pt/ HTTP/1.0'
-     Feb 20 23:53:46 louis last message repeated 1 time
-     Feb 20 23:53:58 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.ip.pt/ HTTP/1.0'
-
-These error messages indicate that a browser is sending HTTP requests to
-one of the Traffic Server cluster ports, either ``rsport`` (default
-port 8088) or ``mcport`` (default port 8089). Traffic Server discards
-these requests. This error does not cause any Traffic Server problems. The
-misconfigured browser must be reconfigured to use the correct proxy
-port. Traffic Server clusters should ideally be configured to use a
-separate network interface and cluster on a private subnet, so that
-client machines have no access to the cluster ports.
 
 Traffic Server is running but no log files are created
 ------------------------------------------------------
