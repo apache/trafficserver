@@ -2284,6 +2284,7 @@ all the different user-agent versions of documents it encounters.
          :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
          origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
+   ``5`` *Experimental Collapsed Forwarding* Enters a read-write loop for write_retries*read_retry_time. Every retry if it fails to obtain the write lock then it will attempt a cache lookup instead. If this fails all retries then go to origin server. 
    ===== ======================================================================
 
 Customizable User Response Pages
