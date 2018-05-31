@@ -134,6 +134,13 @@ QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
   return error;
 }
 
+void
+QUICStreamManager::reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error)
+{
+  auto stream = this->_find_stream(stream_id);
+  stream->reset(std::move(error));
+}
+
 QUICErrorUPtr
 QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
 {

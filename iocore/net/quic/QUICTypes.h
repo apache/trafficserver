@@ -200,12 +200,12 @@ class QUICStreamError : public QUICError
 {
 public:
   QUICStreamError() : QUICError() {}
-  QUICStreamError(QUICStream *s, const QUICTransErrorCode error_code, const char *error_msg = nullptr)
+  QUICStreamError(const QUICStream *s, const QUICTransErrorCode error_code, const char *error_msg = nullptr)
     : QUICError(error_code, error_msg), stream(s){};
-  QUICStreamError(QUICStream *s, const QUICAppErrorCode error_code, const char *error_msg = nullptr)
+  QUICStreamError(const QUICStream *s, const QUICAppErrorCode error_code, const char *error_msg = nullptr)
     : QUICError(error_code, error_msg), stream(s){};
 
-  QUICStream *stream;
+  const QUICStream *stream;
 };
 
 using QUICErrorUPtr           = std::unique_ptr<QUICError>;

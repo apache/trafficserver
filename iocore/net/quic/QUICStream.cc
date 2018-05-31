@@ -87,7 +87,7 @@ QUICStream::id() const
 }
 
 QUICOffset
-QUICStream::final_offset()
+QUICStream::final_offset() const
 {
   // TODO Return final offset
   return 0;

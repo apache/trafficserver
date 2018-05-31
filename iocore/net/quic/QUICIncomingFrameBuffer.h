@@ -32,7 +32,7 @@
 class QUICIncomingFrameBuffer
 {
 public:
-  QUICIncomingFrameBuffer(QUICStream *stream) : _stream(stream) {}
+  QUICIncomingFrameBuffer(const QUICStream *stream) : _stream(stream) {}
   ~QUICIncomingFrameBuffer();
 
   std::shared_ptr<const QUICStreamFrame> pop();
@@ -56,5 +56,5 @@ private:
   std::queue<std::shared_ptr<const QUICStreamFrame>> _recv_buffer;
   std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _out_of_order_queue;
 
-  QUICStream *_stream = nullptr;
+  const QUICStream *_stream = nullptr;
 };

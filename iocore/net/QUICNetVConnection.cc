@@ -1447,7 +1447,7 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
   if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
     // Stream Error
     QUICStreamError *serror = static_cast<QUICStreamError *>(error.release());
-    serror->stream->reset(QUICStreamErrorUPtr(serror));
+    this->_stream_manager->reset_stream(serror->stream->id(), QUICStreamErrorUPtr(serror));
   } else {
     // Connection Error
     QUICConnectionError *cerror = static_cast<QUICConnectionError *>(error.release());

@@ -64,7 +64,7 @@ public:
   void init_flow_control_params(uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
 
   QUICStreamId id() const;
-  QUICOffset final_offset();
+  QUICOffset final_offset() const;
   void reset_send_offset();
   void reset_recv_offset();
   QUICStreamFrameUPtr generete_frame(uint16_t flow_control_credit, uint16_t maximum_frame_size);
