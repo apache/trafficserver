@@ -230,7 +230,12 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     // Create a new NetVConnection
     QUICConnectionId original_cid = this->_read_destination_connection_id(block);
     QUICConnectionId peer_cid     = this->_read_source_connection_id(block);
-    vc                            = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
+
+    char client_dcid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+    original_cid.hex(client_dcid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+    QUICDebugDS(peer_cid, original_cid, "client initial dcid=%s", client_dcid_hex_str);
+
+    vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
     vc->init(peer_cid, original_cid, udp_packet->getConnection(), this, this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);

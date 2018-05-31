@@ -215,7 +215,8 @@ using QUICStreamErrorUPtr     = std::unique_ptr<QUICStreamError>;
 class QUICConnectionId
 {
 public:
-  static const int MAX_LENGTH = 18;
+  static const int MAX_LENGTH            = 18;
+  static const size_t MAX_HEX_STR_LENGTH = MAX_LENGTH * 2 + 1;
   static QUICConnectionId ZERO();
   QUICConnectionId();
   QUICConnectionId(const uint8_t *buf, uint8_t len);
@@ -246,6 +247,7 @@ public:
    */
   uint64_t l64() const;
   uint32_t h32() const;
+  int hex(char *buf, size_t len) const;
 
   uint8_t length() const;
   bool is_zero() const;

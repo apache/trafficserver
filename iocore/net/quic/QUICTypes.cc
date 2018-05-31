@@ -25,6 +25,26 @@
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
 
+// TODO: move to somewhere in lib/ts/
+static int
+to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len)
+{
+  if (dst_len < src_len * 2 + 1) {
+    return -1;
+  }
+
+  static char hex_digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+  for (size_t i = 0; i < src_len; ++i) {
+    *dst       = hex_digits[src[i] >> 4];
+    *(dst + 1) = hex_digits[src[i] & 0xf];
+    dst += 2;
+  }
+  *dst = '\0';
+
+  return 0;
+}
+
 bool
 #include <algorithm>
 QUICTypeUtil::has_long_header(const uint8_t *buf)
@@ -290,4 +310,10 @@ uint32_t
 QUICConnectionId::h32() const
 {
   return static_cast<uint32_t>(QUICIntUtil::read_nbytes_as_uint(this->_id, 4));
+}
+
+int
+QUICConnectionId::hex(char *buf, size_t len) const
+{
+  return to_hex_str(buf, len, this->_id, this->_len);
 }
