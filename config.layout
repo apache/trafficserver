@@ -77,7 +77,7 @@
     bindir:        ${exec_prefix}/bin
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib
-    libexecdir:    ${exec_prefix}/libexec
+    libexecdir:    ${exec_prefix}/libexec+
     infodir:       ${prefix}/info
     mandir:        ${prefix}/share/man
     sysconfdir:    ${prefix}/etc+
