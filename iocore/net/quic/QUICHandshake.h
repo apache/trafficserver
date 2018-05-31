@@ -90,7 +90,6 @@ private:
   std::shared_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
 
   QUICVersionNegotiator *_version_negotiator = nullptr;
-  NetVConnectionContext_t _netvc_context     = NET_VCONNECTION_UNSET;
   QUICStatelessResetToken _reset_token;
   bool _initial         = false;
   bool _stateless_retry = false;

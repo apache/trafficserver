@@ -32,11 +32,10 @@ static constexpr char tag[] = "quic_stream_manager";
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
 ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
 
-QUICStreamManager::QUICStreamManager(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICApplicationMap *app_map,
-                                     NetVConnectionContext_t context)
-  : _info(info), _rtt_provider(rtt_provider), _app_map(app_map), _netvc_context(context)
+QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map)
+  : _info(info), _rtt_provider(rtt_provider), _app_map(app_map)
 {
-  if (this->_netvc_context == NET_VCONNECTION_OUT) {
+  if (this->_info->direction() == NET_VCONNECTION_OUT) {
     // stream 0 is for handshake, smallest client bidi stream id is 4
     this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::CLIENT_BIDI) + 4;
     this->_next_stream_id_uni  = static_cast<uint32_t>(QUICStreamType::CLIENT_UNI);

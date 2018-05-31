@@ -94,7 +94,6 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
     _ssl(SSL_new(ssl_ctx)),
     _hs_protocol(new QUICTLS(this->_ssl, qc->direction(), stateless_retry)),
     _version_negotiator(new QUICVersionNegotiator()),
-    _netvc_context(qc->direction()),
     _reset_token(token),
     _stateless_retry(stateless_retry)
 {
@@ -102,7 +101,7 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
   this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id());
 
-  if (this->_netvc_context == NET_VCONNECTION_OUT) {
+  if (this->_qc->direction() == NET_VCONNECTION_OUT) {
     this->_initial = true;
   }
 
@@ -156,7 +155,7 @@ QUICErrorUPtr
 QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet_factory)
 {
   // Client side only
-  ink_assert(this->_netvc_context == NET_VCONNECTION_OUT);
+  ink_assert(this->_qc->direction() == NET_VCONNECTION_OUT);
 
   // If already negotiated, just ignore it
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NEGOTIATED ||
