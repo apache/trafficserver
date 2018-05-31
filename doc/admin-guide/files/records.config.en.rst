@@ -411,7 +411,7 @@ Network
    given time. Roughly 10% of these connections are reserved for origin server
    connections, i.e. from the default, only ~9,000 client connections can be
    handled. This should be tuned according to your memory size, and expected
-   work load.
+   work load.  If this is set to 0, the throttling logic is disabled.
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:
