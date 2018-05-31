@@ -32,8 +32,6 @@ Options
 
 .. option:: -n COUNT, --net_threads COUNT
 
-.. option:: -Z COUNT, --cluster_threads COUNT
-
 .. option:: -U COUNT, --udp_threads COUNT
 
 .. option:: -a, --accepts_thread
@@ -41,8 +39,6 @@ Options
 .. option:: -b, --accept_till_done
 
 .. option:: -p PORT, --httpport PORT
-
-.. option:: -P PORT, --cluster_port PORT
 
 .. option:: -f, --disable_freelist
 

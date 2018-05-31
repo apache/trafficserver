@@ -47,11 +47,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/index.en.po
 source_file = _build/locale/pot/admin-guide/configuration/index.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--configuration--multi-server-caches_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/multi-server-caches.en.po
-source_file = _build/locale/pot/admin-guide/configuration/multi-server-caches.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--configuration--redirecting-http-requests_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/redirecting-http-requests.en.po
 source_file = _build/locale/pot/admin-guide/configuration/redirecting-http-requests.en.pot
@@ -245,11 +240,6 @@ source_lang = en
 [apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cache_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cache.en.po
 source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cache.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cluster_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cluster.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cluster.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--monitoring--statistics--core--dns_en]

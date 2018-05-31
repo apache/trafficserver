@@ -217,15 +217,6 @@ msgstr ":ts:cv:`proxy.config.reverse_proxy.enabled` ``1``"
 msgid ":ts:cv:`proxy.config.url_remap.remap_required` ``0``"
 msgstr ":ts:cv:`proxy.config.url_remap.remap_required` ``0``"
 
-#: ../../../admin-guide/transparent-proxy/bridge.en.rst:134
-msgid ""
-"You may also need to set :ts:cv:`proxy.config.cluster.ethernet_interface` "
-"to \"br0\" (the name of the bridge interface from the Bridge Commands)."
-msgstr ""
-":ts:cv:`proxy.config.cluster.ethernet_interface` を \"br0\" (Bridge "
-"Commands からのブリッジインターフェースの名前) に設定する必要もあるかもしれ"
-"ません。"
-
 #: ../../../admin-guide/transparent-proxy/bridge.en.rst:138
 msgid "Additional troubleshooting"
 msgstr "追加のトラブルシューティング"

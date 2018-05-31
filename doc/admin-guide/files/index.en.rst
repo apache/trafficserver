@@ -62,8 +62,7 @@ Configuration Files
    configurations.
 
 :doc:`records.config.en`
-   Contains many configuration variables affecting |TS| operation, both the
-   local node as well as a cluster in which the node may be a member.
+   Contains many configuration variables affecting |TS| operation.
 
 :doc:`remap.config.en`
    Defines mapping rules used by |TS| to properly route all incoming requests.

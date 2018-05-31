@@ -44,21 +44,12 @@ Process Warnings
 ``<Logfile> error: error_number``
    Generic logging error.
 
-``Bad cluster major version range <version1-version2> for node <IP address> connect failed``
-   Incompatible software versions causing a problem.
-
 ``Connect by disallowed client <IP address>, closing``
    The specified client is not allowed to connect to Traffic Server;
    the client IP address is not listed in the ``ip_allow.config`` file.
 
 ``Could not rename log <filename> to <rolled filename>``
    System error when renaming log file during roll.
-
-``Did <this amount> of backup; still to do <remaining amount>``
-   Congestion is approaching.
-
-``Different clustering minor versions <version1, version2> for node <IP address> continuing``
-   Incompatible software versions are causing a problem.
 
 ``Log format symbol <symbol name> not found``
    Custom log format references a field symbol that does not exist.

@@ -38,9 +38,7 @@ msgid ""
 "software. Many of the variables in :file:`records.config` are set "
 "automatically when you set configuration options in Traffic Line. After you "
 "modify :file:`records.config`, run the command :option:`traffic_ctl config "
-"reload` to apply the changes. When you apply changes to one node in a "
-"cluster, |TS| automatically applies the changes to all other nodes in the "
-"cluster."
+"reload` to apply the changes."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:34
@@ -56,13 +54,6 @@ msgstr "それぞれの変数は次のフォーマットとなっています"
 #, fuzzy
 msgid "Scope"
 msgstr "compress"
-
-#: ../../../admin-guide/files/records.config.en.rst:43
-msgid ""
-"All variables are defined within a scope, which is related to clustering, "
-"and determines the level at which the variable is applied. The value for "
-"``SCOPE`` must be one of:"
-msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:48
 #: ../../../admin-guide/files/records.config.en.rst:60
@@ -107,18 +98,6 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:50
 msgid "``CONFIG``"
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:50
-msgid "All members of the cluster."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:51
-msgid "``LOCAL``"
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:51
-msgid "Only the local machine."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:55
@@ -324,14 +303,6 @@ msgid ""
 msgstr ""
 "次の例で、``proxy.config.arm.enabled`` 変数は yes/no フラグです。値 ``0`` "
 "(ゼロ) はオプションを無効化し、値 ``1`` はオプションを有効化します。 ::"
-
-#: ../../../admin-guide/files/records.config.en.rst:144
-msgid ""
-"In the following example, the variable sets the cluster startup timeout to "
-"10 seconds. ::"
-msgstr ""
-"次の例で、変数はクラスターのスタートアップタイムアウトを 10 秒に設定しま"
-"す。 ::"
 
 #: ../../../admin-guide/files/records.config.en.rst:149
 msgid ""
@@ -1001,60 +972,6 @@ msgstr ""
 msgid ""
 "When we trigger a throttling scenario, this how long our accept() are "
 "delayed."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:494
-msgid "Cluster"
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:498
-msgid "Sets the clustering mode:"
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:503
-msgid "Full-clustering mode."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:504
-msgid "Management-only mode."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:505
-msgid "No clustering."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:510
-msgid ""
-"The network interface to be used for cluster communication. This has to be "
-"identical on all members of a clsuter. ToDo: Is that reasonable ?? Should "
-"this be local\""
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:516
-msgid ""
-"The reliable service port. The reliable service port is used to send "
-"configuration information between the nodes in a cluster. All nodes in a "
-"cluster must use the same reliable service port."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:522
-msgid ""
-"The number of threads for cluster communication. On heavy clusters, the "
-"number should be adjusted. It is recommend to use the thread CPU usage as a "
-"reference when adjusting."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:528
-msgid "Set the interface to use for cluster communications."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:533
-msgid ""
-"This turns on the local caching of objects in cluster mode. The point of "
-"this is to allow for popular or *hot* content to be cached on all nodes in "
-"a cluster. Be aware that the primary way to configure this behavior is via "
-"the :file:`cache.config` configuration file using ``action=cluster-cache-"
-"local`` directives."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:539
@@ -5356,13 +5273,6 @@ msgstr ""
 
 #~ msgid "where"
 #~ msgstr "この中の"
-
-#~ msgid ""
-#~ "``SCOPE`` is related to clustering and is either ``CONFIG`` (all members "
-#~ "of the cluster) or ``LOCAL`` (only the local machine)"
-#~ msgstr ""
-#~ "``SCOPE`` はクラスタリングに関係しており、``CONFIG`` (クラスターの全メン"
-#~ "バー) もしくは ``LOCAL`` (ローカルマシンのみ)  のどちらかです。"
 
 #~ msgid "``K`` Kilobytes (1024 bytes)"
 #~ msgstr "``K`` キロバイト (1024 バイト)"

@@ -55,9 +55,8 @@ msgstr ""
 msgid ""
 "*System log files* record system information, including messages about the "
 "state of Traffic Server and errors/warnings it produces. This kind of "
-"information might include a note that event log files were rolled, a "
-"warning that cluster communication timed out, or an error indicating that "
-"Traffic Server was restarted."
+"information might include a note that event log files were rolled or "
+"an error indicating that Traffic Server was restarted."
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/understanding.en.rst:41
