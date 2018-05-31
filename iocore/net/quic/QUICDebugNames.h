@@ -36,7 +36,7 @@ public:
   static const char *error_class(QUICErrorClass cls);
   static const char *error_code(QUICTransErrorCode code);
   static const char *transport_parameter_id(QUICTransportParameterId id);
-  static const char *stream_state(QUICStreamState state);
+  static const char *stream_state(const QUICStreamState &state);
   static const char *quic_event(int event);
   static const char *key_phase(QUICKeyPhase phase);
 };

@@ -101,7 +101,9 @@ private:
 
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
 
-  QUICStreamState _state;
+  // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
+  QUICBidirectionalStreamState _state;
+
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICConnectionInfoProvider *_info = nullptr;
   QUICStreamId _id                  = 0;

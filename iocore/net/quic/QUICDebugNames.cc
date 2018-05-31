@@ -195,21 +195,33 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
 }
 
 const char *
-QUICDebugNames::stream_state(QUICStreamState state)
+QUICDebugNames::stream_state(const QUICStreamState &state)
 {
   switch (state.get()) {
-  case QUICStreamState::State::idle:
-    return "IDLE";
-  case QUICStreamState::State::open:
-    return "OPEN";
-  case QUICStreamState::State::half_closed_remote:
-    return "HC_REMOTE";
-  case QUICStreamState::State::half_closed_local:
-    return "HC_LOCAL";
-  case QUICStreamState::State::closed:
-    return "CLOSED";
-  case QUICStreamState::State::illegal:
-    return "ILLEGAL";
+  case QUICStreamState::State::_Init:
+    return "INIT";
+  case QUICStreamState::State::Ready:
+    return "READY";
+  case QUICStreamState::State::Send:
+    return "SEND";
+  case QUICStreamState::State::DataSent:
+    return "DATA_SENT";
+  case QUICStreamState::State::DataRecvd:
+    return "DATA_RECVD";
+  case QUICStreamState::State::ResetSent:
+    return "RESET_SENT";
+  case QUICStreamState::State::ResetRecvd:
+    return "RESET_RECVD";
+  case QUICStreamState::State::Recv:
+    return "RECV";
+  case QUICStreamState::State::SizeKnown:
+    return "SIZE_KNOWN";
+  case QUICStreamState::State::DataRead:
+    return "DATA_READ";
+  case QUICStreamState::State::ResetRead:
+    return "RESET_READ";
+  case QUICStreamState::State::_Invalid:
+    return "INVALID";
   default:
     return "UNKNOWN";
   }

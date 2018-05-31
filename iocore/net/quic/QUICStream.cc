@@ -288,7 +288,7 @@ QUICStream::_write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &fra
   QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                     this->_local_flow_controller.current_limit());
 
-  this->_state.update_with_received_frame(*frame);
+  this->_state.update_with_receiving_frame(*frame);
 }
 
 /**
@@ -305,6 +305,7 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
 
   // Check stream state - Do this first before accept the frame
   if (!this->_state.is_allowed_to_receive(*frame)) {
+    QUICStreamDebug("Canceled receiving %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
     return QUICErrorUPtr(new QUICStreamError(this, QUICTransErrorCode::STREAM_STATE_ERROR));
   }
 
@@ -359,7 +360,7 @@ QUICStream::recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame)
 QUICErrorUPtr
 QUICStream::recv(const std::shared_ptr<const QUICStopSendingFrame> frame)
 {
-  this->_state.update_with_received_frame(*frame);
+  this->_state.update_with_receiving_frame(*frame);
   this->_reset_reason = QUICStreamErrorUPtr(new QUICStreamError(this, QUIC_APP_ERROR_CODE_STOPPING));
   // We received and processed STOP_SENDING frame, so return NO_ERROR here
   return QUICErrorUPtr(new QUICNoError());
@@ -428,7 +429,7 @@ QUICStream::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_si
     reader->consume(len);
     this->_write_vio.ndone += len;
     this->_signal_write_event();
-    this->_state.update_with_sent_frame(*frame);
+    this->_state.update_with_sending_frame(*frame);
   } else if (ret != 0) {
     QUICStreamDebug("Flow Controller blocked sending a STREAM frame");
     frame = this->_remote_flow_controller.generate_frame();

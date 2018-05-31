@@ -28,27 +28,80 @@
 class QUICStreamState
 {
 public:
-  // 10.1.  Life of a Stream
   enum class State {
-    idle,
-    open,
-    half_closed_remote,
-    half_closed_local,
-    closed,
-    illegal // not on the specification, just for internal use
+    _Init,
+    Ready,
+    Send,
+    DataSent,
+    DataRecvd,
+    ResetSent,
+    ResetRecvd,
+    Recv,
+    SizeKnown,
+    /* DataRecvd, */ DataRead,
+    /* ResetRecvd, */ ResetRead,
+    _Invalid
   };
-  const State get() const;
-  bool is_allowed_to_send(const QUICFrame &frame) const;
-  bool is_allowed_to_receive(const QUICFrame &frame) const;
 
-  /*
-   * Updates its internal state
-   * Internal state will be "illegal" state if inappropriate frame was passed
-   */
-  void update_with_received_frame(const QUICFrame &frame);
-  void update_with_sent_frame(const QUICFrame &frame);
+  virtual ~QUICStreamState() {}
+
+  State
+  get() const
+  {
+    return this->_state;
+  }
+
+  virtual void update_with_sending_frame(const QUICFrame &frame)   = 0;
+  virtual void update_with_receiving_frame(const QUICFrame &frame) = 0;
+
+  virtual bool is_allowed_to_send(const QUICFrame &frame) const    = 0;
+  virtual bool is_allowed_to_receive(const QUICFrame &frame) const = 0;
+
+protected:
+  void _set_state(State s);
 
 private:
-  void _set_state(State s);
-  State _state = State::idle;
+  State _state = State::_Init;
+};
+
+class QUICUnidirectionalStreamState : public QUICStreamState
+{
+public:
+  virtual void update(const QUICStreamState &opposite_side) = 0;
+};
+
+class QUICSendStreamState : public QUICUnidirectionalStreamState
+{
+public:
+  void update_with_sending_frame(const QUICFrame &frame) override;
+  void update_with_receiving_frame(const QUICFrame &frame) override;
+  void update(const QUICStreamState &opposite_side) override;
+
+  bool is_allowed_to_send(const QUICFrame &frame) const override;
+  bool is_allowed_to_receive(const QUICFrame &frame) const override;
+};
+
+class QUICReceiveStreamState : public QUICUnidirectionalStreamState
+{
+public:
+  void update_with_sending_frame(const QUICFrame &frame) override;
+  void update_with_receiving_frame(const QUICFrame &frame) override;
+  void update(const QUICStreamState &opposite_side) override;
+
+  bool is_allowed_to_send(const QUICFrame &frame) const override;
+  bool is_allowed_to_receive(const QUICFrame &frame) const override;
+};
+
+class QUICBidirectionalStreamState : public QUICStreamState
+{
+public:
+  void update_with_sending_frame(const QUICFrame &frame) override;
+  void update_with_receiving_frame(const QUICFrame &frame) override;
+
+  bool is_allowed_to_send(const QUICFrame &frame) const override;
+  bool is_allowed_to_receive(const QUICFrame &frame) const override;
+
+private:
+  QUICSendStreamState _send_stream_state;
+  QUICReceiveStreamState _recv_stream_state;
 };
