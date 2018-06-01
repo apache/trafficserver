@@ -420,12 +420,15 @@ QUICLossDetector::_retransmit_handshake_packets()
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   std::set<QUICPacketNumber> retransmitted_handshake_packets;
+  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
 
   for (auto &info : this->_sent_packets) {
     retransmitted_handshake_packets.insert(info.first);
+    lost_packets.insert({info.first, info.second.get()});
     this->_transmitter->retransmit_packet(*info.second->packet);
   }
 
+  this->_cc->on_packets_lost(lost_packets);
   for (auto packet_number : retransmitted_handshake_packets) {
     this->_remove_from_sent_packet_list(packet_number);
   }
