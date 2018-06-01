@@ -2233,7 +2233,7 @@ QUICFrameUPtr
 QUICFrameFactory::split_frame(QUICFrame *frame, size_t size)
 {
   auto new_frame = frame->split(size);
-  if (new_frame != nullptr) {
+  if (!new_frame) {
     return QUICFrameFactory::create_null_frame();
   }
 
