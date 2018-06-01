@@ -43,6 +43,7 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     switch (frame->type()) {
     case QUICFrameType::PADDING:
     case QUICFrameType::ACK:
+    case QUICFrameType::PATH_CHALLENGE:
       break;
     default:
       frame = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);
