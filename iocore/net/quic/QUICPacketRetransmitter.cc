@@ -67,7 +67,19 @@ QUICPacketRetransmitter::generate_frame(uint64_t connection_credit, uint16_t max
     frame = std::move(this->_retransmission_frames.front());
     this->_retransmission_frames.pop();
 
-    if (maximum_frame_size < frame->size()) {
+    // maximum_frame_size is actually for payload size. So we should compare it
+    // with data_length(). Howeever, because data_length() is STREAM frame
+    // specific, we need a branch here.
+    // See also where maximum_frame_size come from.
+    bool split = false;
+    if (frame->type() == QUICFrameType::STREAM) {
+      QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame.get());
+      split                         = stream_frame->data_length() > maximum_frame_size;
+    } else {
+      split = frame->size() > maximum_frame_size;
+    }
+
+    if (split) {
       auto new_frame = QUICFrameFactory::split_frame(frame.get(), maximum_frame_size);
       if (new_frame) {
         this->_retransmission_frames.push(std::move(new_frame));
