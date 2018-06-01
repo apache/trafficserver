@@ -295,7 +295,7 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
       timed_rr_ctime = now;
     }
     for (int i = 0; i < good; i++) {
-      best_any = current++ % good;
+      best_any = (current + i) % good;
       if (info(best_any).is_alive(now, fail_window)) {
         best_up = best_any;
         break;
