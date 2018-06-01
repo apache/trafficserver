@@ -382,13 +382,14 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
     ink_hrtime time_since_sent = Thread::get_hrtime() - unacked.second->time;
     uint64_t packet_delta      = largest_acked_packet_number - unacked.second->packet_number;
     if (time_since_sent > delay_until_lost) {
-      QUICLDDebug("Lost: time since sent is too long (sent=%" PRId64 ", delay=%lf, fraction=%lf, lrtt=%" PRId64 ", srtt=%" PRId64
-                  ")",
-                  time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt, this->_smoothed_rtt);
+      QUICLDDebug("Lost: time since sent is too long (PN=%" PRId64 " sent=%" PRId64 ", delay=%lf, fraction=%lf, lrtt=%" PRId64
+                  ", srtt=%" PRId64 ")",
+                  unacked.first, time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt,
+                  this->_smoothed_rtt);
       lost_packets.insert({unacked.first, unacked.second.get()});
     } else if (packet_delta > this->_reordering_threshold) {
-      QUICLDDebug("Lost: packet delta is too large (largest=%" PRId64 " unacked=%" PRId64 " threshold=%" PRId32 ")",
-                  largest_acked_packet_number, unacked.second->packet_number, this->_reordering_threshold);
+      QUICLDDebug("Lost: packet delta is too large (PN=%" PRId64 " largest=%" PRId64 " unacked=%" PRId64 " threshold=%" PRId32 ")",
+                  unacked.first, largest_acked_packet_number, unacked.second->packet_number, this->_reordering_threshold);
       lost_packets.insert({unacked.first, unacked.second.get()});
     } else if (this->_loss_time == 0 && delay_until_lost != INFINITY) {
       this->_loss_time = Thread::get_hrtime() + delay_until_lost - time_since_sent;
