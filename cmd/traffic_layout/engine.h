@@ -73,9 +73,9 @@ struct RunrootEngine {
   std::string path;
 
   // vector containing all directory names
-  std::vector<std::string> dir_vector = {"prefix",     "exec_prefix", "bindir", "sbindir",    "sysconfdir",
-                                         "datadir",    "includedir",  "libdir", "libexecdir", "localstatedir",
-                                         "runtimedir", "logdir",      "mandir", "cachedir"};
+  std::vector<std::string> dir_vector = {"prefix",     "exec_prefix", "bindir",  "sbindir",    "sysconfdir",
+                                         "datadir",    "includedir",  "libdir",  "libexecdir", "localstatedir",
+                                         "runtimedir", "logdir",      "cachedir"};
 
   // map for yaml file emit
   std::unordered_map<std::string, std::string> path_map;
