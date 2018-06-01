@@ -451,8 +451,11 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
       path_map[it.first] = Layout::relative_to(".", join_path);
     }
 
-    if (!copy_directory(old_path, new_path)) {
-      ink_warning("Copy failed for '%s' - %s", it.first.c_str(), strerror(errno));
+    // don't copy the prefix, mandir and localstatedir
+    if (it.first != "exec_prefix" && it.first != "localstatedir" && it.first != "mandir") {
+      if (!copy_directory(old_path, new_path, it.first)) {
+        ink_warning("Copy failed for '%s' - %s", it.first.c_str(), strerror(errno));
+      }
     }
   }
 
@@ -674,7 +677,7 @@ RunrootEngine::verify_runroot()
     std::cout << name << ": \x1b[1m" + path_map[name] + "\x1b[0m" << std::endl;
 
     // output read permission
-    if (name == "includedir" || name == "mandir" || name == "sysconfdir" || name == "datadir") {
+    if (name == "includedir" || name == "sysconfdir" || name == "datadir") {
       output_read_permission(permission);
     }
     // output write permission
