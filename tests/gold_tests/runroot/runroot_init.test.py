@@ -61,3 +61,29 @@ tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(os.path.join(path4, "runroot_path.yml"))
 f.Exists = True
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Forcing creating runroot", "force message")
+
+# create runroot with junk to guarantee only traffic server related files are copied
+path5 = os.path.join(ts_root, "runroot5")
+junk1 = os.path.join(path1, "bin/junk1")
+junk2 = os.path.join(path1, "lib/junk2")
+junk3 = os.path.join(path1, "include/junk3")
+tr = Test.AddTestRun("Test traffic_layout init #5")
+# create the junk files in runroot1 and create(init and copy) runroot5 from runroot 1
+tr.Processes.Default.Command = "touch " + junk1 + ";" + "touch " + junk2 + ";" + \
+    "touch " + junk3 + ";" + path1 + "/bin/traffic_layout init --path " + path5
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File(os.path.join(path5, "runroot_path.yml"))
+f.Exists = True
+# check if the junk file is created and not copied to the new runroot
+f = tr.Disk.File(junk1)
+f.Exists = True
+f = tr.Disk.File(os.path.join(path5, "bin/junk"))
+f.Exists = False
+f = tr.Disk.File(junk2)
+f.Exists = True
+f = tr.Disk.File(os.path.join(path5, "lib/junk"))
+f.Exists = False
+f = tr.Disk.File(junk3)
+f.Exists = True
+f = tr.Disk.File(os.path.join(path5, "include/junk"))
+f.Exists = False

@@ -47,4 +47,4 @@ bool remove_directory(const std::string &dir);
 // remove everything inside this directory
 bool remove_inside_directory(const std::string &dir);
 
-bool copy_directory(const std::string &src, const std::string &dst);
+bool copy_directory(const std::string &src, const std::string &dst, const std::string &dir = "");
