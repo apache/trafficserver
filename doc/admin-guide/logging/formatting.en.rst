@@ -48,11 +48,12 @@ logging destinations.
 A very simple exampe, which contains only the timestamp of when the event began
 and the canonical URL of the request, would look like:
 
-.. code:: lua
+.. code:: yaml
 
-   myformat = format {
-     Format = "%<cqtq> %<cauc>"
-   }
+   formats:
+   - name: myformat
+     format: '%<cqtq> %<cauc>'
+
 
 You may include as many custom field codes as you wish. The full list of codes
 available can be found in :ref:`admin-logging-fields`. You may also include
@@ -61,11 +62,11 @@ the timestamp and canonical URL in our customer format above with a slash
 instead of a space, or even a slash surrounded by spaces, we could do so by
 just adding the desired characters to the format string:
 
-.. code:: lua
+.. code:: yaml
 
-   myformat = format {
-     Format = "%<cqtq> / %<cauc>"
-   }
+   formats:
+   - name: myformat
+     format: '%<cqtq> / %<cauc>'
 
 You may define as many custom formats as you wish. To apply changes to custom
 formats, you will need to run the command :option:`traffic_ctl config reload`
