@@ -294,18 +294,6 @@ QUICConnectionId::_hashcode() const
          (this->_id[5] << 16) + (this->_id[6] << 8) + this->_id[7];
 }
 
-uint64_t
-QUICConnectionId::l64() const
-{
-  uint64_t v = 0;
-  int ndigit = std::min(8U, static_cast<unsigned int>(this->_len));
-  int offset = static_cast<unsigned int>(this->_len) - ndigit;
-  for (int i = 0; i < ndigit; i++) {
-    v += static_cast<uint64_t>(this->_id[offset + i]) << (8 * (ndigit - i - 1));
-  }
-  return v;
-}
-
 uint32_t
 QUICConnectionId::h32() const
 {

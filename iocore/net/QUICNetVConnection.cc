@@ -917,9 +917,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
   this->_stream_manager->reset_recv_offset();
 
   // Generate new Connection ID
-  QUICConnectionId tmp = this->_original_quic_connection_id;
-  this->_original_quic_connection_id.randomize();
-  QUICConDebug("Connection ID %" PRIx64 " has been changed to %" PRIx64, tmp.l64(), this->_original_quic_connection_id.l64());
+  this->_rerandomize_original_cid();
 
   this->_hs_protocol->initialize_key_materials(this->_original_quic_connection_id);
 
@@ -976,7 +974,7 @@ QUICNetVConnection::_state_common_receive_packet()
           // Migrate connection
           // TODO Address Validation
           // TODO Adjust expected packet number with a gap computed based on info.seq_num
-          this->_quic_connection_id = p->destination_cid();
+          this->_update_local_cid(p->destination_cid());
           Connection con;
           con.setRemote(&p->from().sa);
           this->con.move(con);
@@ -1795,4 +1793,33 @@ QUICNetVConnection::_update_peer_cid(const QUICConnectionId &new_cid)
 
   this->_peer_quic_connection_id = new_cid;
   this->_update_cids();
+}
+
+void
+QUICNetVConnection::_update_local_cid(const QUICConnectionId &new_cid)
+{
+  char old_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+  char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+  this->_quic_connection_id.hex(old_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+  new_cid.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+
+  QUICConDebug("scid: %s -> %s", old_cid_str, new_cid_str);
+
+  this->_quic_connection_id = new_cid;
+  this->_update_cids();
+}
+
+void
+QUICNetVConnection::_rerandomize_original_cid()
+{
+  char old_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+  char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+
+  QUICConnectionId tmp = this->_original_quic_connection_id;
+  tmp.hex(old_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+
+  this->_original_quic_connection_id.randomize();
+  this->_original_quic_connection_id.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+
+  QUICConDebug("original cid: %s -> %s", old_cid_str, new_cid_str);
 }

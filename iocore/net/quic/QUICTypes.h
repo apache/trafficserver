@@ -245,7 +245,6 @@ public:
   /*
    * This is just for debugging.
    */
-  uint64_t l64() const;
   uint32_t h32() const;
   int hex(char *buf, size_t len) const;
 

@@ -341,6 +341,8 @@ private:
 
   void _update_cids();
   void _update_peer_cid(const QUICConnectionId &new_cid);
+  void _update_local_cid(const QUICConnectionId &new_cid);
+  void _rerandomize_original_cid();
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
