@@ -143,6 +143,9 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
       this->_set_state(State::Recv);
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
         this->_set_state(State::SizeKnown);
+        if (this->_in_progress->is_transfer_complete()) {
+          this->_set_state(State::DataRecvd);
+        }
       }
     } else if (frame.type() == QUICFrameType::RST_STREAM) {
       this->_set_state(State::Recv);
@@ -157,13 +160,20 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
     if (frame.type() == QUICFrameType::STREAM) {
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
         this->_set_state(State::SizeKnown);
+        if (this->_in_progress->is_transfer_complete()) {
+          this->_set_state(State::DataRecvd);
+        }
       }
     } else if (frame.type() == QUICFrameType::RST_STREAM) {
       this->_set_state(State::ResetRecvd);
     }
     break;
   case State::SizeKnown:
-    if (frame.type() == QUICFrameType::RST_STREAM) {
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (this->_in_progress->is_transfer_complete()) {
+        this->_set_state(State::DataRecvd);
+      }
+    } else if (frame.type() == QUICFrameType::RST_STREAM) {
       this->_set_state(State::ResetRecvd);
     }
     break;
@@ -357,6 +367,8 @@ QUICBidirectionalStreamState::get() const
     } else {
       return State::_Invalid;
     }
+  } else if (s_state == State::_Init && r_state == State::_Init) {
+    return State::_Init;
   } else {
     return State::_Invalid;
   }

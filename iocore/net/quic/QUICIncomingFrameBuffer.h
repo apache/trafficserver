@@ -28,8 +28,9 @@
 
 #include "QUICTypes.h"
 #include "QUICFrame.h"
+#include "QUICTransferProgressProvider.h"
 
-class QUICIncomingFrameBuffer
+class QUICIncomingFrameBuffer : public QUICTransferProgressProvider
 {
 public:
   QUICIncomingFrameBuffer(const QUICStream *stream) : _stream(stream) {}
@@ -45,6 +46,12 @@ public:
   void clear();
 
   bool empty();
+
+  // QUICTransferProgressProvider
+  bool is_transfer_goal_set() const override;
+  bool is_transfer_complete() const override;
+  uint64_t transfer_progress() const override;
+  uint64_t transfer_goal() const override;
 
 private:
   QUICOffset _recv_offset = 0;

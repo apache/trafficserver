@@ -134,3 +134,30 @@ QUICIncomingFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t len, 
 
   return QUICErrorUPtr(new QUICNoError());
 }
+
+/*
+ *QUICTransferProgressProvider
+ */
+bool
+QUICIncomingFrameBuffer::is_transfer_goal_set() const
+{
+  return this->_fin_offset != UINT64_MAX;
+}
+
+bool
+QUICIncomingFrameBuffer::is_transfer_complete() const
+{
+  return this->is_transfer_goal_set() && this->transfer_progress() == this->transfer_goal();
+}
+
+uint64_t
+QUICIncomingFrameBuffer::transfer_progress() const
+{
+  return this->_max_offset;
+}
+
+uint64_t
+QUICIncomingFrameBuffer::transfer_goal() const
+{
+  return this->_fin_offset;
+}

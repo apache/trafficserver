@@ -51,7 +51,8 @@ public:
     : VConnection(nullptr),
       _remote_flow_controller(0, 0),
       _local_flow_controller(nullptr, 0, 0),
-      _received_stream_frame_buffer(this)
+      _received_stream_frame_buffer(this),
+      _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
   QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid, uint64_t recv_max_stream_data = 0,
@@ -101,9 +102,6 @@ private:
 
   void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
 
-  // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
-  QUICBidirectionalStreamState _state;
-
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICConnectionInfoProvider *_info = nullptr;
   QUICStreamId _id                  = 0;
@@ -122,4 +120,7 @@ private:
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
   QUICIncomingFrameBuffer _received_stream_frame_buffer;
+
+  // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
+  QUICBidirectionalStreamState _state;
 };

@@ -24,6 +24,7 @@
 #pragma once
 
 #include "QUICFrame.h"
+#include "QUICTransferProgressProvider.h"
 
 class QUICStreamState
 {
@@ -77,12 +78,24 @@ private:
 class QUICUnidirectionalStreamState : public QUICStreamState
 {
 public:
+  QUICUnidirectionalStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
+    : _in_progress(in), _out_progress(out)
+  {
+  }
   virtual void update(const QUICStreamState &opposite_side) = 0;
+
+protected:
+  QUICTransferProgressProvider *_in_progress  = nullptr;
+  QUICTransferProgressProvider *_out_progress = nullptr;
 };
 
 class QUICSendStreamState : public QUICUnidirectionalStreamState
 {
 public:
+  QUICSendStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out) : QUICUnidirectionalStreamState(in, out)
+  {
+  }
+
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
   void update(const QUICStreamState &opposite_side) override;
@@ -94,6 +107,11 @@ public:
 class QUICReceiveStreamState : public QUICUnidirectionalStreamState
 {
 public:
+  QUICReceiveStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
+    : QUICUnidirectionalStreamState(in, out)
+  {
+  }
+
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
   void update(const QUICStreamState &opposite_side) override;
@@ -105,6 +123,11 @@ public:
 class QUICBidirectionalStreamState : public QUICStreamState
 {
 public:
+  QUICBidirectionalStreamState(QUICTransferProgressProvider *send_in, QUICTransferProgressProvider *send_out,
+                               QUICTransferProgressProvider *recv_in, QUICTransferProgressProvider *recv_out)
+    : _send_stream_state(send_in, send_out), _recv_stream_state(recv_in, recv_out)
+  {
+  }
   State get() const override;
 
   void update_with_sending_frame(const QUICFrame &frame) override;
