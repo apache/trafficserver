@@ -37,11 +37,10 @@ By default this is named :file:`ssl_server_name.config`. The file can be changed
 :ts:cv:`proxy.config.ssl.servername.filename`. This file is loaded on start up and by
 :option:`traffic_ctl config reload` if the file has been modified since process start.
 
-The configuration file is Lua based. After parsing and executing the Lua code, the global Lua
-variable :code:`server_config` is examined. Its value should be a list of tables. Each table is a set
-of key / value pairs that create a configuration item. This configuration file accepts wildcard entries. To apply an SNI based
-setting on all the servernames with a common upper level domain name, the user needs to enter the fqdn in the configuration
-with a ``*.`` followed by the common domain name. (``*.yahoo.com`` for e.g.,).
+The configuration file is yaml-based. After parsing the configuration, a list of tables will be the result.
+Each table is a set of key / value pairs that create a configuration item. This configuration file accepts
+wildcard entries. To apply an SNI based setting on all the servernames with a common upper level domain name,
+the user needs to enter the fqdn in the configuration with a ``*.`` followed by the common domain name. (``*.yahoo.com`` for e.g.,).
 
 ======================= ==============================================================================
 Key                     Meaning
@@ -108,31 +107,28 @@ Examples
 
 Disable HTTP/2 for ``no-http2.example.com``.
 
-.. code-block:: lua
+.. code-block:: yaml
 
-   server_config = {{ fqdn="no-http2.example.com", disable_h2=true }}
+   - fqdn: no-http2.example.com
+     disable_h2: true
 
 Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (for e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certficate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
 
-.. code-block:: lua
+.. code-block:: yaml
 
-   server_config = {
-      { fqdn="example.com", verify_client='MODERATE' },
-      { fqdn="*.yahoo.com", verify_client='STRICT' }
-   }
+   - fqdn: example.com
+     verify_client: MODERATE
+   - fqdn: '*.yahoo.com'
+     verify_client: STRICT
 
 Disable outbound server certificate verification for ``trusted.example.com`` and require a valid
 client certificate.
 
-.. code-block:: lua
+.. code-block:: yaml
 
-   server_config = {
-      {
-         fqdn="trusted.example.com",
-         verify_origin_server='NONE',
-         verify_client='STRICT'
-      }
-   }
+   - fqdn: trusted.example.com
+     verify_origin_server: NONE
+     verify_client: STRICT
 
 See Also
 ========
