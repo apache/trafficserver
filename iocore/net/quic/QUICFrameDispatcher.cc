@@ -26,9 +26,12 @@
 
 static constexpr char tag[] = "quic_net";
 
+#define QUICDebug(fmt, ...) Debug(tag, "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
+
 //
 // Frame Dispatcher
 //
+QUICFrameDispatcher::QUICFrameDispatcher(QUICConnectionInfoProvider *info) : _info(info) {}
 
 void
 QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
@@ -49,18 +52,17 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size, bool 
   while (cursor < size) {
     frame = this->_frame_factory.fast_create(payload + cursor, size - cursor);
     if (frame == nullptr) {
-      Debug(tag, "Failed to create a frame (%u bytes skipped)", size - cursor);
+      QUICDebug("Failed to create a frame (%u bytes skipped)", size - cursor);
       break;
     }
     cursor += frame->size();
 
     QUICFrameType type = frame->type();
 
-    // TODO: check debug build
-    if (type != QUICFrameType::PADDING) {
+    if (is_debug_tag_set(tag) && type != QUICFrameType::PADDING) {
       char msg[1024];
       frame->debug_msg(msg, sizeof(msg));
-      Debug(tag, "[RX] %s", msg);
+      QUICDebug("[RX] %s", msg);
     }
 
     should_send_ack |= (type != QUICFrameType::PADDING && type != QUICFrameType::ACK);

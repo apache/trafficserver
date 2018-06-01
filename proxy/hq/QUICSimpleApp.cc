@@ -31,7 +31,8 @@
 #include "HQClientTransaction.h"
 #include "../IPAllow.h"
 
-static constexpr char tag[] = "quic_simple_app";
+static constexpr char tag[]   = "quic_simple_app";
+static constexpr char tag_v[] = "v_quic_simple_app";
 
 QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc) : QUICApplication(client_vc)
 {
@@ -55,13 +56,13 @@ QUICSimpleApp::~QUICSimpleApp()
 int
 QUICSimpleApp::main_event_handler(int event, Event *data)
 {
-  Debug(tag, "[%" PRIx64 "] %s (%d)", static_cast<uint64_t>(this->_qc->connection_id()), get_vc_event_name(event), event);
+  Debug(tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);
 
   if (stream_io == nullptr) {
-    Debug(tag, "[%" PRIx64 "] Unknown Stream", static_cast<uint64_t>(this->_qc->connection_id()));
+    Debug(tag, "[%s] Unknown Stream", this->_qc->cids().data());
     return -1;
   }
 

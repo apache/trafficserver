@@ -209,7 +209,7 @@ QUICNetVConnection::start()
   this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 
   this->_hs_protocol      = this->_handshake_handler->protocol();
-  this->_frame_dispatcher = new QUICFrameDispatcher();
+  this->_frame_dispatcher = new QUICFrameDispatcher(this);
   this->_packet_factory.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers

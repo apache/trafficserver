@@ -50,7 +50,7 @@ QUICNextProtocolAccept::mainEvent(int event, void *edata)
 {
   QUICNetVConnection *netvc = quic_netvc_cast(event, edata);
 
-  Debug("quic", "[QUICNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
+  Debug("v_quic", "[%s] event %d netvc %p", netvc->cids().data(), event, netvc);
   switch (event) {
   case NET_EVENT_ACCEPT:
     ink_release_assert(netvc != nullptr);

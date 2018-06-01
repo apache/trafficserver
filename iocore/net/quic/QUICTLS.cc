@@ -309,7 +309,6 @@ QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, con
                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
   QUICPacketProtection *pp = nullptr;
-  Debug(tag, "Encrypting packet using %s key", QUICDebugNames::key_phase(phase));
 
   switch (this->_netvc_context) {
   case NET_VCONNECTION_IN: {
@@ -345,7 +344,6 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
   QUICPacketProtection *pp = nullptr;
-  Debug(tag, "Decrypting packet using %s key", QUICDebugNames::key_phase(phase));
 
   switch (this->_netvc_context) {
   case NET_VCONNECTION_IN: {

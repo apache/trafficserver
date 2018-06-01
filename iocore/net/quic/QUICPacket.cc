@@ -27,6 +27,11 @@
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
 
+static constexpr std::string_view tag = "quic_packet"sv;
+
+#define QUICDebug(dcid, scid, fmt, ...) \
+  Debug(tag.data(), "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__);
+
 ClassAllocator<QUICPacket> quicPacketAllocator("quicPacketAllocator");
 ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator("quicPacketLongHeaderAllocator");
 ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator("quicPacketShortHeaderAllocator");
@@ -719,6 +724,11 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
 
   QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number, this->_dcil);
 
+  QUICConnectionId dcid = header->destination_cid();
+  QUICConnectionId scid = header->source_cid();
+  QUICDebug(scid, dcid, "Decrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
+            header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
+
   if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
     if (header->type() == QUICPacketType::VERSION_NEGOTIATION) {
       // version of VN packet is 0x00000000
@@ -732,7 +742,6 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
     memcpy(plain_txt.get(), header->payload(), header->payload_size());
     plain_txt_len = header->payload_size();
   } else {
-    Debug("quic_packet", "Decrypting %s packet #%" PRIu64, QUICDebugNames::packet_type(header->type()), header->packet_number());
     switch (header->type()) {
     case QUICPacketType::STATELESS_RESET:
       // These packets are unprotected. Just copy the payload
@@ -935,14 +944,18 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool re
   ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
   size_t cipher_txt_len     = 0;
 
-  Debug("quic_packet", "Encrypting %s packet #%" PRIu64, QUICDebugNames::packet_type(header->type()), header->packet_number());
+  QUICConnectionId dcid = header->destination_cid();
+  QUICConnectionId scid = header->source_cid();
+  QUICDebug(dcid, scid, "Encrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
+            header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
+
   QUICPacket *packet = nullptr;
   if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                                   header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(std::move(header), std::move(cipher_txt), cipher_txt_len, retransmittable);
   } else {
-    Debug("quic_packet", "Failed to encrypt a packet");
+    QUICDebug(dcid, scid, "Failed to encrypt a packet");
   }
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);

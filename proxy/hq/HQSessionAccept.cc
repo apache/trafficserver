@@ -47,11 +47,11 @@ HQSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader 
   }
   netvc->attributes = this->options.transport_type;
 
-  if (is_debug_tag_set("quic_seq")) {
+  if (is_debug_tag_set("hq")) {
     ip_port_text_buffer ipb;
 
-    Debug("quic_seq", "[%" PRIx64 "] accepted connection from %s transport type = %d",
-          static_cast<uint64_t>(static_cast<QUICConnection *>(static_cast<QUICNetVConnection *>(netvc))->connection_id()),
+    Debug("hq", "[%s] accepted connection from %s transport type = %d",
+          static_cast<QUICConnection *>(static_cast<QUICNetVConnection *>(netvc))->cids().data(),
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 

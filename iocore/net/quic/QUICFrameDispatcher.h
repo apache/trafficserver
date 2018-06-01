@@ -23,13 +23,17 @@
 
 #pragma once
 
+#include <vector>
+
+#include "QUICConnection.h"
 #include "QUICFrame.h"
 #include "QUICFrameHandler.h"
-#include <vector>
 
 class QUICFrameDispatcher
 {
 public:
+  QUICFrameDispatcher(QUICConnectionInfoProvider *info);
+
   /*
    * Returns true if ACK frame should be sent
    */
@@ -38,6 +42,7 @@ public:
   void add_handler(QUICFrameHandler *handler);
 
 private:
+  QUICConnectionInfoProvider *_info = nullptr;
   QUICFrameFactory _frame_factory;
   std::vector<QUICFrameHandler *> _handlers[256];
 };
