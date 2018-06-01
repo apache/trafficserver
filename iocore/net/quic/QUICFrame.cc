@@ -1740,7 +1740,7 @@ QUICFrameUPtr
 QUICNewConnectionIdFrame::clone() const
 {
   // FIXME: Connection ID and Stateless rese token have to be the same
-  return QUICFrameFactory::create_stream_id_blocked_frame(this->sequence());
+  return QUICFrameFactory::create_new_connection_id_frame(this->sequence(), this->connection_id(), this->stateless_reset_token());
 }
 
 QUICFrameType
