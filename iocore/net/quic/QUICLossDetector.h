@@ -67,6 +67,7 @@ public:
   bool check_credit() const;
 
   // Debug
+  uint32_t credit() const;
   uint32_t bytes_in_flight() const;
   uint32_t congestion_window() const;
   uint32_t current_ssthresh() const;

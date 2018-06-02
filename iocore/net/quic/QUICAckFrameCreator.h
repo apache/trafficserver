@@ -39,6 +39,7 @@ public:
   size_t size();
   void clear();
   void sort();
+  void print();
 
   QUICPacketNumber largest_ack_number();
   ink_hrtime largest_ack_received_time();
