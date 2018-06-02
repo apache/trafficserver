@@ -502,19 +502,7 @@ void
 IntrusivePtr<T>::unset()
 {
   if (nullptr != m_obj) {
-    /* magic: our target is required to inherit from IntrusivePtrCounter,
-     * which provides a protected counter variable and access via our
-     * super class. We call the super class method to get a raw pointer
-     * to the counter variable.
-     */
     auto &cp = m_obj->m_intrusive_pointer_reference_count;
-
-    /* If you hit this assert you've got a cycle of objects that
-       reference each other. A delete in the cycle will eventually
-       result in one of the objects getting deleted twice, which is
-       what this assert indicates.
-    */
-    assert(cp);
 
     if (0 == --cp) {
       IntrusivePtrPolicy<T>::finalize(m_obj);
