@@ -585,6 +585,7 @@ Status Codes
 .. _pfsc:
 .. _pssc:
 .. _sssc:
+.. _prrp:
 
 These log fields provide a variety of status codes, some numeric and some as
 strings, relating to client, proxy, and origin transactions.
@@ -601,6 +602,8 @@ pfsc  Proxy Request         Finish status code specifying whether the proxy
                             request from |TS| to the origin server was
                             successfully completed (``FIN``), interrupted
                             (``INTR``), or timed out (``TIMEOUT``).
+prrp  Proxy Response        HTTP response reason phrase sent by |TS| proxy to the
+                            client.
 pssc  Proxy Response        HTTP response status code sent by |TS| proxy to the
                             client.
 sssc  Origin Response       HTTP response status code sent by the origin server

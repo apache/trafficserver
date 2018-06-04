@@ -32,9 +32,7 @@ Traffic Server uses the :file:`parent.config` file only when the parent
 caching option is enabled (refer to :ref:`configuring-traffic-server-to-use-a-parent-cache`).
 
 After you modify the :file:`parent.config` file, run the :option:`traffic_ctl config reload`
-command to apply your changes. When you apply the changes to one node in
-a cluster, Traffic Server automatically applies the changes to all other
-nodes in the cluster.
+command to apply your changes.
 
 Format
 ======

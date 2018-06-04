@@ -79,7 +79,7 @@ use case.
    example ::
 
     map http://example.com http://music.example.com \
-      @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam= US
+      @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam=US \
       @pparam=regex::/etc/music.regex
 
 This tells the plugin that in the situation where there is no matching

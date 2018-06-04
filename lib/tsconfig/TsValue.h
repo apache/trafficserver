@@ -642,7 +642,7 @@ namespace detail {
   inline size_t ValueTable::size() const { return _ptr ? _ptr->_values.size() : 0; }
   inline Generation ValueTable::generation() const { return _ptr ? _ptr->_generation : Generation(0); }
   inline ValueItem const& ValueTable::operator [] (ValueIndex idx) const { return const_cast<self*>(this)->operator [] (idx); }
-  inline ValueTable& ValueTable::reset() { _ptr = nullptr; return *this; }
+  inline ValueTable& ValueTable::reset() { _ptr.reset(); return *this; }
 
   inline ValueItem::ValueItem() : _type(VoidValue), _local_index(0), _srcLine(0), _srcColumn(0) {}
   inline ValueItem::ValueItem(ValueType type) : _type(type), _local_index(0), _srcLine(0), _srcColumn(0) {}
@@ -716,7 +716,7 @@ inline Value& Value::setSource(int line, int col) {
 inline Path::ImplType::ImplType() { }
 
 inline Path::Path() { }
-inline Path::ImplType* Path::instance() { if (!_ptr) _ptr = new ImplType; return _ptr.get(); }
+inline Path::ImplType* Path::instance() { if (!_ptr) _ptr.reset(new ImplType); return _ptr.get(); }
 inline Path& Path::append(ConstBuffer const& tag) { this->instance()->_elements.push_back(tag); return *this; }
 inline Path& Path::append(size_t index) { this->instance()->_elements.push_back(ConstBuffer(nullptr, index)); return *this; }
 inline size_t Path::count() const { return _ptr ? _ptr->_elements.size() : 0; }

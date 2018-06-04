@@ -1291,6 +1291,10 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     }
   }
 
+  // Did not fail, increment connection count
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+  ink_release_assert(con.fd != NO_FD);
+
   // Setup a timeout callback handler.
   SET_HANDLER(&UnixNetVConnection::mainEvent);
   // Send this netvc to InactivityCop.

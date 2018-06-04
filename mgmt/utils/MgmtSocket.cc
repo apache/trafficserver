@@ -337,9 +337,7 @@ mgmt_get_peereid(int fd, uid_t *euid, gid_t *egid)
   *egid = -1;
 
 #if HAVE_GETPEEREID
-  int err = getpeereid(fd, euid, egid);
-  fprintf(stderr, "getpeereid -> %d (%d, %s)", err, errno, strerror(errno));
-  return err;
+  return getpeereid(fd, euid, egid);
 #elif HAVE_GETPEERUCRED
   ucred_t *ucred;
 

@@ -208,9 +208,9 @@ their log data to one or more |TS| instances acting as collation servers.
 
 This allows you to centralize your |TS| logging for (potentially) easier
 analysis and reporting in environments with many |TS| instances. Collation
-servers may be members of a |TS| cluster or entirely independent servers
-running a stripped down configuration aimed at log collation only (and omitting
-any configuration for actual traffic proxying or caching).
+servers may be |TS| instance running a stripped down configuration aimed
+at log collation only (and omitting any configuration for actual traffic
+proxying or caching).
 
 When a |TS| node generates a buffer of event log entries, it first determines
 if it is the collation server or a collation client. The collation server node
@@ -314,7 +314,5 @@ To collate custom event log files:
         CollationHosts = { '192.168.1.100:4567', '192.168.1.101:4567' }
       }
 
-#. Run the command :option:`traffic_ctl config reload` to restart |TS| on the
-   local node or :option:`traffic_ctl config reload` to restart |TS| on all
-   the nodes in a cluster.
+#. Run the command :option:`traffic_ctl config reload` to restart |TS|.
 

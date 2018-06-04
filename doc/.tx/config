@@ -47,11 +47,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/index.en.po
 source_file = _build/locale/pot/admin-guide/configuration/index.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--configuration--multi-server-caches_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/multi-server-caches.en.po
-source_file = _build/locale/pot/admin-guide/configuration/multi-server-caches.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--configuration--redirecting-http-requests_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/redirecting-http-requests.en.po
 source_file = _build/locale/pot/admin-guide/configuration/redirecting-http-requests.en.pot
@@ -247,11 +242,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/c
 source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cache.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cluster_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cluster.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cluster.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--monitoring--statistics--core--dns_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/dns.en.po
 source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/dns.en.pot
@@ -387,11 +377,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/conf_remap.en.po
 source_file = _build/locale/pot/admin-guide/plugins/conf_remap.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--epic_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/epic.en.po
-source_file = _build/locale/pot/admin-guide/plugins/epic.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--plugins--esi_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/esi.en.po
 source_file = _build/locale/pot/admin-guide/plugins/esi.en.pot
@@ -407,9 +392,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/geoip_acl.en.po
 source_file = _build/locale/pot/admin-guide/plugins/geoip_acl.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--gzip_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/gzip.en.po
-source_file = _build/locale/pot/admin-guide/plugins/gzip.en.pot
+[apache-traffic-server-6x.admin-guide--plugins--compress_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/compress.en.po
+source_file = _build/locale/pot/admin-guide/plugins/compress.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--plugins--header_rewrite_en]

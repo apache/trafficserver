@@ -526,9 +526,6 @@ add_executable(ats
         lib/luajit/src/luajit.c
         lib/luajit/src/luajit.h
         lib/luajit/src/lualib.h
-        lib/raft/raft.h
-        lib/raft/raft_impl.h
-        lib/raft/raft_test.cc
         lib/records/I_RecAlarms.h
         lib/records/I_RecCore.h
         lib/records/I_RecDefs.h
@@ -1322,6 +1319,7 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_BufferWriter.cc
 	lib/ts/unit-tests/test_BufferWriterFormat.cc
 	lib/ts/unit-tests/test_ink_inet.cc
+	lib/ts/unit-tests/test_IntrusivePtr.cc
 	lib/ts/unit-tests/test_IpMap.cc
 	lib/ts/unit-tests/test_layout.cc
 	lib/ts/unit-tests/test_MemArena.cc

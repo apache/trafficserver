@@ -29,22 +29,23 @@
 // Produce output about compile time features, useful for checking how things were built, as well
 // as for our TSQA test harness.
 static void
-print_feature(const char *name, int value, bool json, bool last = false)
+print_feature(std::string_view name, int value, bool json, bool last = false)
 {
   if (json) {
-    printf("    \"%s\": %d%s", name, value, last ? "\n" : ",\n");
+    printf("    \"%.*s\": %d%s", static_cast<int>(name.size()), name.data(), value, last ? "\n" : ",\n");
   } else {
-    printf("#define %s %d\n", name, value);
+    printf("#define %.*s %d\n", static_cast<int>(name.size()), name.data(), value);
   }
 }
 
 static void
-print_feature(const char *name, const char *value, bool json, bool last = false)
+print_feature(std::string_view name, std::string_view value, bool json, bool last = false)
 {
   if (json) {
-    printf(R"(    "%s": "%s"%s)", name, value, last ? "\n" : ",\n");
+    printf(R"(    "%.*s": "%.*s"%s)", static_cast<int>(name.size()), name.data(), static_cast<int>(value.size()), value.data(),
+           last ? "\n" : ",\n");
   } else {
-    printf("#define %s \"%s\"\n", name, value);
+    printf("#define %.*s \"%.*s\"\n", static_cast<int>(name.size()), name.data(), static_cast<int>(value.size()), value.data());
   }
 }
 

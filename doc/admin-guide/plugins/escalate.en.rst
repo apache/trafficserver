@@ -1,3 +1,5 @@
+.. include:: ../../common.defs
+
 .. _escalate-plugin:
 
 Escalate Plugin
@@ -52,7 +54,7 @@ Example
 
 With this line in :file:`remap.config` ::
 
-    map cdn.example.com origin.example.com
+    map cdn.example.com origin.example.com \
       @plugin=escalate.so @pparam=401,404,410,502:second-origin.example.com @pparam=--pristine
 
 Traffic Server would accept a request for ``cdn.example.com`` and, on a cache miss, proxy the

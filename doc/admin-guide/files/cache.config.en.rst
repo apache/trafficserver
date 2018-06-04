@@ -33,8 +33,7 @@ caching rules to specify the following:
 .. important::
 
    After modifying :file:`cache.config`, run :option:`traffic_ctl config reload`
-   to apply changes. When you apply the changes to one node in a cluster, |TS|
-   automatically applies the changes to all other nodes in the cluster.
+   to apply changes.
 
 Format
 ======
@@ -155,8 +154,6 @@ specifiers of the rule in question.
                                client requests.
    ``ignore-server-no-cache``  Ignore ``Cache-Control: no-cache`` headers from
                                origin server responses.
-   ``cluster-cache-local``     Allow for this content to be stored locally on
-                               every cluster node.
    =========================== ================================================
 
 .. _cache-responses-to-cookies:

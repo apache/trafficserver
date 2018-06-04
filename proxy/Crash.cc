@@ -79,7 +79,7 @@ check_logger_path(const char *path)
 }
 
 void
-crash_logger_init()
+crash_logger_init(const char *user)
 {
   ats_scoped_str logger(create_logger_path());
   const char *basename;
@@ -119,7 +119,8 @@ crash_logger_init()
       }
     }
 
-    ink_release_assert(execl(logger, basename, "--syslog", "--wait", "--host", TS_BUILD_CANONICAL_HOST, NULL) != -1);
+    ink_release_assert(execl(logger, basename, "--syslog", "--wait", "--host", TS_BUILD_CANONICAL_HOST, "--user", user, NULL) !=
+                       -1);
     return; // not reached.
   }
 
