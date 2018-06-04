@@ -132,12 +132,15 @@ SplitDNSConfig::reconfigure()
     return;
   }
 
+  Note("loading splitdns.config");
+
   SplitDNS *params = new SplitDNS;
 
   params->m_SplitDNSlEnable = gsplit_dns_enabled;
   params->m_DNSSrvrTable    = new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
 
   if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
+    Error("problem loading splitdns.config");
     Warning("No NAMEDs provided! Disabling SplitDNS");
     gsplit_dns_enabled = 0;
     delete params;
@@ -157,6 +160,8 @@ SplitDNSConfig::reconfigure()
   if (is_debug_tag_set("splitdns_config")) {
     SplitDNSConfig::print();
   }
+
+  Note("splitdns.config done reloading!");
 }
 
 /* --------------------------------------------------------------

@@ -881,7 +881,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   SSLConfig::scoped_config params;
   if (!SSLInitClientContext(params)) {
     exitStatus |= (1 << 4);
-    fprintf(stderr, "Can't initialize the SSL client, HTTPS in remap rules will not function %d\n\n", exitStatus);
+    fprintf(stderr, "ERROR: Can't initialize the SSL client, HTTPS in remap rules will not function %d\n\n", exitStatus);
   } else {
     fprintf(stderr, "INFO: Successfully initialized SSL client context\n\n");
   }

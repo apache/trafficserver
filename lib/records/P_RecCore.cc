@@ -636,16 +636,22 @@ RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const
 RecErrT
 RecReadConfigFile(bool inc_version)
 {
+  Note("loading %s", g_rec_config_fpath);
+
   RecDebug(DL_Note, "Reading '%s'", g_rec_config_fpath);
 
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
 
-  // Parse the actual fileand hash the values.
-  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry, inc_version);
+  // Parse the actual file and hash the values.
+  if (RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry, inc_version) != REC_ERR_OKAY) {
+    Error("problem loading records.config");
+  }
 
   // release our hash table
   ink_rwlock_unlock(&g_records_rwlock);
+
+  Note("records.config done reloading!");
 
   return REC_ERR_OKAY;
 }

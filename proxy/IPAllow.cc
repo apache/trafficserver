@@ -77,12 +77,14 @@ IpAllow::reconfigure()
 {
   self_type *new_table;
 
-  Note("ip_allow.config updated, reloading");
+  Note("loading ip_allow.config");
 
   new_table = new self_type("proxy.config.cache.ip_allow.filename");
   new_table->BuildTable();
 
   configid = configProcessor.set(configid, new_table);
+
+  Note("ip_allow.config done reloading!");
 }
 
 IpAllow *

@@ -279,6 +279,8 @@ ParentConfig::startup()
 void
 ParentConfig::reconfigure()
 {
+  Note("loading parent.config");
+
   ParentConfigParams *params = nullptr;
 
   // Allocate parent table
@@ -292,6 +294,8 @@ ParentConfig::reconfigure()
   if (is_debug_tag_set("parent_config")) {
     ParentConfig::print();
   }
+
+  Note("parent.config done reloading!");
 }
 
 // void ParentConfig::print
@@ -882,6 +886,8 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
 void
 SocksServerConfig::reconfigure()
 {
+  Note("loading socks.config");
+
   char *default_val = nullptr;
   int retry_time    = 30;
   int fail_threshold;
@@ -923,6 +929,8 @@ SocksServerConfig::reconfigure()
   if (is_debug_tag_set("parent_config")) {
     SocksServerConfig::print();
   }
+
+  Note("socks.config done reloading!");
 }
 
 void
