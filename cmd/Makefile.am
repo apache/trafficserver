@@ -20,6 +20,8 @@ SUBDIRS = \
 	traffic_crashlog \
 	traffic_ctl \
 	traffic_layout \
+	traffic_logcat \
+	traffic_logstats \
 	traffic_manager \
 	traffic_top \
 	traffic_via
@@ -27,7 +29,5 @@ SUBDIRS = \
 TESTS = $(check_PROGRAMS)
 
 if BUILD_WCCP
-
 SUBDIRS += traffic_wccp
-
 endif

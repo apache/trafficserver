@@ -81,6 +81,14 @@ add_executable(traffic_layout
         cmd/traffic_layout/traffic_layout.cc
 )
 
+add_executable(traffic_logcat
+        cmd/traffic_logcat/logcat.cc
+)
+
+add_executable(traffic_logstats
+        cmd/traffic_logstats/logstats.cc
+)
+
 add_executable(traffic_manager
         cmd/traffic_manager/AddConfigFilesHere.cc
         cmd/traffic_manager/traffic_manager.cc
@@ -1068,8 +1076,6 @@ add_executable(ats
         proxy/InkIOCoreAPI.cc
         proxy/IPAllow.cc
         proxy/IPAllow.h
-        proxy/logcat.cc
-        proxy/logstats.cc
         proxy/Main.cc
         proxy/Main.h
         proxy/Milestones.h
