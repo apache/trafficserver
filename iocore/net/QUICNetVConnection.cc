@@ -1126,6 +1126,9 @@ QUICNetVConnection::_generate_packet()
     }
   };
 
+  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
+
   // create frames
   this->_packetize_frames(send_list, limit);
 
