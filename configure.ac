@@ -2032,6 +2032,8 @@ AC_CONFIG_FILES([
   cmd/traffic_crashlog/Makefile
   cmd/traffic_ctl/Makefile
   cmd/traffic_layout/Makefile
+  cmd/traffic_logcat/Makefile
+  cmd/traffic_logstats/Makefile
   cmd/traffic_manager/Makefile
   cmd/traffic_top/Makefile
   cmd/traffic_via/Makefile
