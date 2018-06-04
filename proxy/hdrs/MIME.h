@@ -278,11 +278,9 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
  ***********************************************************************/
 
 struct MIMEScanner {
-  char *m_line; // buffered line being built up
-  // int m_type;               // what kind of scanner: raw line, or field (this has never been used)
+  char *m_line;           // buffered line being built up
   int m_line_length;      // size of real live data in buffer
   int m_line_size;        // total allocated size of buffer
-                          //  int m_state;                  // state of scanning state machine
   MimeParseState m_state; ///< Parsing machine state.
 };
 

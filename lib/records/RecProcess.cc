@@ -222,25 +222,6 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
     return REC_ERR_FAIL;
   }
 
-  /* -- defer RecMessageInit() until ProcessManager is initialized and
-   *    started
-   if (RecMessageInit(mode_type) == REC_ERR_FAIL) {
-   return REC_ERR_FAIL;
-   }
-
-   if (RecMessageRegisterRecvCb(recv_message_cb__process, nullptr)) {
-   return REC_ERR_FAIL;
-   }
-
-   ink_cond_init(&g_force_req_cond);
-   ink_mutex_init(&g_force_req_mutex);
-   if (mode_type == RECM_CLIENT) {
-   send_pull_message(RECG_PULL_REQ);
-   ink_cond_wait(&g_force_req_cond, &g_force_req_mutex);
-   ink_mutex_release(&g_force_req_mutex);
-   }
-   */
-
   initialized_p = true;
 
   return REC_ERR_OKAY;

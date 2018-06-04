@@ -58,10 +58,8 @@ struct SocksProxy : public Continuation {
 
   ~SocksProxy() override {}
 
-  // int startEvent(int event, void * data);
   int mainEvent(int event, void *data);
   int setupHttpRequest(unsigned char *p);
-  // int setupServerTunnel(unsigned char * p);
 
   int sendResp(bool granted);
 
@@ -120,7 +118,6 @@ SocksProxy::mainEvent(int event, void *data)
 
   VIO *vio;
   int64_t n_read_avail;
-  // int n_consume;
 
   recursion++;
 
@@ -198,7 +195,6 @@ SocksProxy::mainEvent(int event, void *data)
             port_ptr                  = &p[2];
             clientVC->socks_addr.type = SOCKS_ATYPE_IPV4;
             reader->consume(i + 1);
-            // n_consume = i+1;
             ret = EVENT_DONE;
           }
         }
@@ -522,7 +518,6 @@ int
 socks5ServerAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
 {
   int ret = 0;
-  // bool no_auth_needed=true;
 
   switch (event) {
   case SOCKS_AUTH_READ_COMPLETE:
