@@ -534,9 +534,9 @@ SSLCertificateConfig::reconfigure()
   }
 
   if (retStatus) {
-    Note("ssl_multicert.config done reloading!");
+    Note("ssl_multicert.config finished loading");
   } else {
-    Note("failed to reload ssl_multicert.config");
+    Error("ssl_multicert.config failed to load");
   }
 
   return retStatus;

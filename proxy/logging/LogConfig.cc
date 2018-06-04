@@ -972,14 +972,14 @@ LogConfig::evaluate_config()
     return false;
   }
 
-  Note("loading logging.yaml");
+  Note("logging.yaml loading ...");
   YamlLogConfig y(this);
 
   bool zret = y.parse(path.get());
   if (zret) {
-    Note("logging.yaml done reloading!");
+    Note("logging.yaml finished loading");
   } else {
-    Note("failed to reload logging.yaml");
+    Note("logging.yaml failed to load");
   }
 
   return zret;

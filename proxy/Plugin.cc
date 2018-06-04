@@ -234,10 +234,11 @@ plugin_init(bool validateOnly)
     INIT_ONCE  = false;
   }
 
+  Note("plugin.config loading ...");
   path = RecConfigReadConfigPath(nullptr, "plugin.config");
   fd   = open(path, O_RDONLY);
   if (fd < 0) {
-    Warning("unable to open plugin config file '%s': %d, %s", (const char *)path, errno, strerror(errno));
+    Warning("plugin.config failed to load: %d, %s", errno, strerror(errno));
     return false;
   }
 
@@ -312,5 +313,10 @@ plugin_init(bool validateOnly)
   }
 
   close(fd);
+  if (retVal) {
+    Note("plugin.config finished loading");
+  } else {
+    Error("plugin.config failed to load");
+  }
   return retVal;
 }

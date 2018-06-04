@@ -178,7 +178,7 @@ tr2.Processes.Default.ReturnCode = 0
 # At that point the new ssl_server_name settings are ready to go
 def ssl_server_name_reload_done(tsenv):
   def done_reload(process, hasRunFor, **kw):
-    cmd = "grep 'ssl_server_name.yaml done reloading!' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
+    cmd = "grep 'ssl_server_name.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
     retval = subprocess.run(cmd, shell=True, env=tsenv)
     if retval.returncode == 0:
       cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)
