@@ -220,7 +220,6 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     } else {
       Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure INTERVAL. Saw CF, not attempting write",
             master_sm->sm_id);
-      open_write_tries++;
       master_sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, data);
     }
     break;
