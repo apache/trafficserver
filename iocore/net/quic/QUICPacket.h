@@ -108,6 +108,7 @@ public:
 
   virtual bool has_key_phase() const = 0;
   virtual bool has_version() const   = 0;
+  virtual bool is_valid() const      = 0;
 
   /***** STATIC members *****/
 
@@ -181,6 +182,7 @@ public:
   QUICConnectionId source_cid() const;
   QUICPacketNumber packet_number() const;
   bool has_version() const;
+  bool is_valid() const;
   QUICVersion version() const;
   const uint8_t *payload() const;
   QUICKeyPhase key_phase() const;
@@ -192,7 +194,7 @@ private:
   QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
   QUICConnectionId _source_cid      = QUICConnectionId::ZERO();
-  uint8_t *_payload_start;
+  size_t _payload_offset            = 0;
 };
 
 class QUICPacketShortHeader : public QUICPacketHeader
@@ -214,6 +216,7 @@ public:
   }
   QUICPacketNumber packet_number() const;
   bool has_version() const;
+  bool is_valid() const;
   QUICVersion version() const;
   const uint8_t *payload() const;
   QUICKeyPhase key_phase() const;

@@ -138,21 +138,21 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
   if (scil) {
     scil += 3;
   }
-  uint8_t *offset        = raw_buf + LONG_HDR_OFFSET_CONNECTION_ID;
-  this->_destination_cid = {offset, dcil};
+  size_t offset          = LONG_HDR_OFFSET_CONNECTION_ID;
+  this->_destination_cid = {raw_buf + offset, dcil};
   offset += dcil;
-  this->_source_cid = {offset, scil};
+  this->_source_cid = {raw_buf + offset, scil};
   offset += scil;
 
   if (this->type() == QUICPacketType::VERSION_NEGOTIATION) {
-    this->_payload_start  = offset;
-    this->_payload_length = len - (offset - raw_buf);
+    this->_payload_offset = offset;
+    this->_payload_length = len - offset;
   } else {
-    this->_payload_length = QUICIntUtil::read_QUICVariableInt(offset);
-    offset += QUICVariableInt::size(offset);
-    QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(offset, 4), 4,
+    this->_payload_length = QUICIntUtil::read_QUICVariableInt(raw_buf + offset);
+    offset += QUICVariableInt::size(raw_buf + offset);
+    QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(raw_buf + offset, 4), 4,
                                      this->_base_packet_number);
-    this->_payload_start = offset + 4;
+    this->_payload_offset = offset + 4;
   }
 }
 
@@ -219,6 +219,22 @@ QUICPacketLongHeader::has_version() const
   return true;
 }
 
+bool
+QUICPacketLongHeader::is_valid() const
+{
+  if (this->_buf && this->_buf_len != this->_payload_offset + this->_payload_length) {
+    QUICDebug(this->_source_cid, this->_destination_cid,
+              "Invalid packet: packet_size(%zu) should be header_size(%zu) + payload_size(%zu)", this->_buf_len,
+              this->_payload_offset, this->_payload_length);
+    Warning("Invalid packet: packet_size(%zu) should be header_size(%zu) + payload_size(%zu)", this->_buf_len,
+            this->_payload_offset, this->_payload_length);
+
+    return false;
+  }
+
+  return true;
+}
+
 QUICVersion
 QUICPacketLongHeader::version() const
 {
@@ -233,7 +249,8 @@ const uint8_t *
 QUICPacketLongHeader::payload() const
 {
   if (this->_buf) {
-    return this->_payload_start;
+    uint8_t *raw = this->_buf.get();
+    return raw + this->_payload_offset;
   } else {
     return this->_payload.get();
   }
@@ -382,6 +399,12 @@ bool
 QUICPacketShortHeader::has_version() const
 {
   return false;
+}
+
+bool
+QUICPacketShortHeader::is_valid() const
+{
+  return true;
 }
 
 QUICVersion
@@ -723,6 +746,11 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
   size_t plain_txt_len     = 0;
 
   QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number, this->_dcil);
+  if (!header->is_valid()) {
+    // PROTOCOL_VIOLATION ?
+    result = QUICPacketCreationResult::FAILED;
+    return QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_packet);
+  }
 
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();
