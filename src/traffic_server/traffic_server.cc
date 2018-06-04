@@ -791,9 +791,8 @@ cmd_clear(char *cmd)
 {
   Note("CLEAR");
 
-  bool c_all = !strcmp(cmd, "clear");
-  bool c_hdb = !strcmp(cmd, "clear_hostdb");
-  // bool c_adb = !strcmp(cmd, "clear_authdb");
+  bool c_all   = !strcmp(cmd, "clear");
+  bool c_hdb   = !strcmp(cmd, "clear_hostdb");
   bool c_cache = !strcmp(cmd, "clear_cache");
 
   if (c_all || c_hdb) {
@@ -817,16 +816,6 @@ cmd_clear(char *cmd)
       return CMD_OK;
     }
   }
-
-  //#ifndef INK_NO_ACC
-  //  if (c_adb || c_all) {
-  //   if (!acc.clear_cache()) {
-  //    return CMD_FAILED;
-  //  }
-  // if (c_adb)
-  //  return CMD_OK;
-  //  }
-  //#endif
 
   if (c_all || c_cache) {
     Note("Clearing Cache");

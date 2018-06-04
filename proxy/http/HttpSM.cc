@@ -969,10 +969,6 @@ HttpSM::state_read_push_response_header(int event, void *data)
   int64_t data_size  = 0;
   int64_t bytes_used = 0;
 
-  // Not used here.
-  // bool parse_error = false;
-  // VIO* vio = (VIO*) data;
-
   switch (event) {
   case VC_EVENT_EOS:
     ua_entry->eos = true;
