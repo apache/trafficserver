@@ -168,15 +168,6 @@ RecLocalInit(Diags *_diags)
     return REC_ERR_FAIL;
   }
 
-  /* -- defer RecMessageInit() until LocalManager is initialized
-     if (RecMessageInit(RECM_SERVER) == REC_ERR_FAIL) {
-     return REC_ERR_FAIL;
-     }
-
-     if (RecMessageRegisterRecvCb(recv_message_cb, nullptr)) {
-     return REC_ERR_FAIL;
-     }
-   */
   initialized_p = true;
 
   return REC_ERR_OKAY;

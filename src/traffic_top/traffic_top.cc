@@ -152,8 +152,6 @@ size_t
 write_data(void *ptr, size_t size, size_t nmemb, void * /* stream */)
 {
   response.append((char *)ptr, size * nmemb);
-  // cout << "appending: " << size * nmemb << endl;
-  // int written = fwrite(ptr, size, nmemb, (FILE *)stream);
   return size * nmemb;
 }
 
