@@ -2212,7 +2212,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
 
   const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
 
-  Note("loading SSL certificate configuration from %s", params->configFilePath);
+  Note("ssl_multicert.config loading ...");
 
   if (params->configFilePath) {
     file_buf = readIntoBuffer(params->configFilePath, __func__, nullptr);

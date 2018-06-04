@@ -641,7 +641,7 @@ RecReadConfigFile(bool inc_version)
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
 
-  // Parse the actual fileand hash the values.
+  // Parse the actual file and hash the values.
   RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry, inc_version);
 
   // release our hash table

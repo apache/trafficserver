@@ -244,6 +244,8 @@ int fstat_wrapper(int fd, struct stat *s);
 int
 CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_buf)
 {
+  Note("hosting.config loading ...");
+
   // Table build locals
   Tokenizer bufTok("\n");
   tok_iter_state i_state;
@@ -323,6 +325,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     if (gen_host_rec.Init(type)) {
       Warning("Problems encountered while initializing the Generic Volume");
     }
+    Note("hosting.config finished loading");
     return 0;
   }
 
@@ -370,6 +373,8 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     last    = current;
     current = current->next;
     ats_free(last);
+
+    Note("hosting.config finished loading");
   }
 
   if (!generic_rec_initd) {
@@ -591,14 +596,20 @@ ConfigVolumes::read_config_file()
   config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
   ink_release_assert(config_path);
 
+  Note("volume.config loading ...");
+
   file_buf = readIntoBuffer(config_path, "[CacheVolition]", nullptr);
   if (file_buf == nullptr) {
+    Error("volume.config failed to load");
     Warning("Cannot read the config file: %s", (const char *)config_path);
     return;
   }
 
   BuildListFromString(config_path, file_buf);
   ats_free(file_buf);
+
+  Note("volume.config finished loading");
+
   return;
 }
 

@@ -64,9 +64,11 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table  = new UrlRewrite();
 
+  Note("remap.config loading ...");
   if (!rewrite_table->is_valid()) {
-    Fatal("unable to load remap.config");
+    Fatal("remap.config failed to load");
   }
+  Note("remap.config finished loading");
 
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
@@ -134,10 +136,11 @@ reloadUrlRewrite()
 {
   UrlRewrite *newTable, *oldTable;
 
+  Note("remap.config loading ...");
   Debug("url_rewrite", "remap.config updated, reloading...");
   newTable = new UrlRewrite();
   if (newTable->is_valid()) {
-    static const char *msg = "remap.config done reloading!";
+    static const char *msg = "remap.config finished loading";
 
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
@@ -154,11 +157,11 @@ reloadUrlRewrite()
     Note("%s", msg);
     return true;
   } else {
-    static const char *msg = "failed to reload remap.config, not replacing!";
+    static const char *msg = "remap.config failed to load";
 
     delete newTable;
     Debug("url_rewrite", "%s", msg);
-    Warning("%s", msg);
+    Error("%s", msg);
     return false;
   }
 }
