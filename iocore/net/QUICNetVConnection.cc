@@ -598,6 +598,12 @@ QUICNetVConnection::state_handshake(int event, Event *data)
 
     break;
   }
+  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
+    this->_close_path_validation_timeout(data);
+    if (!this->_path_validator->is_validated()) {
+      this->_switch_to_close_state();
+    }
+    break;
   case EVENT_IMMEDIATE:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
@@ -1519,9 +1525,9 @@ QUICNetVConnection::_schedule_packet_write_ready(bool delay)
   if (!this->_packet_write_ready) {
     QUICConVDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
     if (delay) {
-      this->_packet_write_ready = this_ethread()->schedule_in(this, WRITE_READY_INTERVAL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+      this->_packet_write_ready = this->thread->schedule_in(this, WRITE_READY_INTERVAL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
     } else {
-      this->_packet_write_ready = this_ethread()->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
+      this->_packet_write_ready = this->thread->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
     }
   }
 }
@@ -1549,7 +1555,7 @@ QUICNetVConnection::_schedule_closing_timeout(ink_hrtime interval)
 {
   if (!this->_closing_timeout) {
     QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_CLOSING_TIMEOUT));
-    this->_closing_timeout = this_ethread()->schedule_in_local(this, interval, QUIC_EVENT_CLOSING_TIMEOUT);
+    this->_closing_timeout = this->thread->schedule_in_local(this, interval, QUIC_EVENT_CLOSING_TIMEOUT);
   }
 }
 
@@ -1574,7 +1580,7 @@ QUICNetVConnection::_schedule_closed_event()
 {
   if (!this->_closed_event) {
     QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_SHUTDOWN));
-    this->_closed_event = this_ethread()->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
+    this->_closed_event = this->thread->schedule_imm(this, QUIC_EVENT_SHUTDOWN, nullptr);
   }
 }
 
@@ -1618,7 +1624,7 @@ QUICNetVConnection::_schedule_path_validation_timeout(ink_hrtime interval)
 {
   if (!this->_path_validation_timeout) {
     QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT));
-    this->_path_validation_timeout = this_ethread()->schedule_in_local(this, interval, QUIC_EVENT_PATH_VALIDATION_TIMEOUT);
+    this->_path_validation_timeout = this->thread->schedule_in_local(this, interval, QUIC_EVENT_PATH_VALIDATION_TIMEOUT);
   }
 }
 
