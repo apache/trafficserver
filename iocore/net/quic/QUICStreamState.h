@@ -94,6 +94,7 @@ class QUICSendStreamState : public QUICUnidirectionalStreamState
 public:
   QUICSendStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out) : QUICUnidirectionalStreamState(in, out)
   {
+    this->_set_state(State::Ready);
   }
 
   void update_with_sending_frame(const QUICFrame &frame) override;
