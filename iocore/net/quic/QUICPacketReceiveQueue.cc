@@ -26,8 +26,15 @@
 #include "QUICIntUtil.h"
 
 // FIXME: workaround for coalescing packets
+static constexpr int LONG_HDR_OFFSET_VERSION       = 1;
 static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
 static constexpr int LONG_HDR_PKT_NUM_LEN          = 4;
+
+static bool
+is_vn(uint8_t *buf)
+{
+  return QUICTypeUtil::read_QUICVersion(buf + LONG_HDR_OFFSET_VERSION) == 0x00;
+}
 
 static size_t
 long_hdr_pkt_len(uint8_t *buf)
@@ -92,10 +99,13 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   size_t pkt_len     = 0;
 
   if (QUICTypeUtil::has_long_header(this->_payload.get())) {
-    if (QUICTypeUtil::has_long_header(this->_payload.get() + this->_offset)) {
+    size_t remaining_len = this->_payload_len - this->_offset;
+    if (is_vn(this->_payload.get() + this->_offset)) {
+      pkt_len = remaining_len;
+    } else if (QUICTypeUtil::has_long_header(this->_payload.get() + this->_offset)) {
       pkt_len = long_hdr_pkt_len(this->_payload.get() + this->_offset);
     } else {
-      pkt_len = this->_payload_len - this->_offset;
+      pkt_len = remaining_len;
     }
 
     if (pkt_len < this->_payload_len) {
