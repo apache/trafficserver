@@ -264,8 +264,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     lp = loc->str(buf, sizeof(buf));
     if (lp) {
       format_writer.write('<');
-      format_writer.write(lp, std::min(strlen(lp), sizeof(buf)));
+      format_writer.write(lp, std::min(std::min(strlen(lp), sizeof(buf)), 40UL));
       format_writer.write("> ", 2);
+      format_writer.write("                                        ", 40 - std::min(std::min(strlen(lp), sizeof(buf)), 40UL));
     }
   }
   //////////////////////////
@@ -276,6 +277,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     format_writer.write('(');
     format_writer.write(debug_tag, strlen(debug_tag));
     format_writer.write(") ", 2);
+    format_writer.write("                              ", 30 - strlen(debug_tag));
   }
   //////////////////////////////////////////////////////
   // append original format string, ensure there is a //
