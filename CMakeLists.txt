@@ -94,6 +94,22 @@ add_executable(traffic_manager
         cmd/traffic_manager/traffic_manager.cc
 )
 
+add_executable(traffic_server
+        cmd/traffic_server/CoreUtils.cc
+        cmd/traffic_server/CoreUtils.h
+        cmd/traffic_server/Crash.cc
+        cmd/traffic_server/EventName.cc
+        cmd/traffic_server/EventName.h
+        cmd/traffic_server/FetchSM.cc
+        cmd/traffic_server/FetchSM.h
+        cmd/traffic_server/HostStatus.cc
+        cmd/traffic_server/InkAPI.cc
+        cmd/traffic_server/InkAPITest.cc
+        cmd/traffic_server/InkIOCoreAPI.cc
+        cmd/traffic_server/SocksProxy.cc
+        cmd/traffic_server/traffic_server.cc
+)
+
 add_executable(ats
         cmd/traffic_via/traffic_via.cc
         cmd/traffic_wccp/wccp_client.cc
@@ -1054,26 +1070,13 @@ add_executable(ats
         proxy/shared/UglyLogStubs.cc
         proxy/CacheControl.cc
         proxy/CacheControl.h
-        proxy/CompletionUtil.h
         proxy/ControlBase.cc
         proxy/ControlBase.h
         proxy/ControlMatcher.cc
         proxy/ControlMatcher.h
-        proxy/CoreUtils.cc
-        proxy/CoreUtils.h
-        proxy/Crash.cc
-        proxy/EventName.cc
-        proxy/EventName.h
-        proxy/FetchSM.cc
-        proxy/FetchSM.h
-        proxy/InkAPI.cc
         proxy/InkAPIInternal.h
-        proxy/InkAPITest.cc
-        proxy/InkAPITestTool.cc
-        proxy/InkIOCoreAPI.cc
         proxy/IPAllow.cc
         proxy/IPAllow.h
-        proxy/Main.cc
         proxy/Main.h
         proxy/Milestones.h
         proxy/ParentConsistentHash.cc
@@ -1098,14 +1101,12 @@ add_executable(ats
         proxy/ReverseProxy.cc
         proxy/ReverseProxy.h
         proxy/Show.h
-        proxy/SocksProxy.cc
         proxy/StatPages.cc
         proxy/StatPages.h
         proxy/TimeTrace.h
         proxy/Transform.cc
         proxy/Transform.h
         proxy/TransformInternal.h
-        proxy/UnixCompletionUtil.h
         tests/gold_tests/tls/ssl-post.c
         tests/include/catch.hpp
         tests/tools/plugins/continuations_verify.cc

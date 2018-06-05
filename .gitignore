@@ -57,6 +57,7 @@ cmd/traffic_layout/traffic_layout
 cmd/traffic_logcat/traffic_logcat
 cmd/traffic_logstats/traffic_logstats
 cmd/traffic_manager/traffic_manager
+cmd/traffic_server/traffic_server
 cmd/traffic_top/traffic_top
 cmd/traffic_via/traffic_via
 cmd/traffic_wccp/traffic_wccp
@@ -129,9 +130,6 @@ mgmt/tools/traffic_vip_config
 mgmt/api/api_cli_remote
 mgmt/tools/shmem_clean
 mgmt/utils/test_marshall
-
-proxy/traffic_server
-proxy/test_xml_parser
 
 libtool
 m4/libtool.m4

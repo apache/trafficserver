@@ -38,7 +38,7 @@ m4_define([TS_VERSION_N],[9000000])
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/_aux])
-AC_CONFIG_SRCDIR([proxy/Main.cc])
+AC_CONFIG_SRCDIR([cmd/traffic_server/traffic_server.cc])
 AC_CONFIG_MACRO_DIR([build])
 
 # NOTE: we turn off portability warnings because the clang-tidy targets use
@@ -2035,6 +2035,7 @@ AC_CONFIG_FILES([
   cmd/traffic_logcat/Makefile
   cmd/traffic_logstats/Makefile
   cmd/traffic_manager/Makefile
+  cmd/traffic_server/Makefile
   cmd/traffic_top/Makefile
   cmd/traffic_via/Makefile
   cmd/traffic_wccp/Makefile
