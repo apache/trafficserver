@@ -134,3 +134,13 @@ QUICCongestionController::current_ssthresh() const
 {
   return this->_ssthresh;
 }
+
+uint32_t
+QUICCongestionController::credit() const
+{
+  if (this->_bytes_in_flight >= this->_congestion_window) {
+    return 0;
+  }
+
+  return this->_congestion_window - this->_bytes_in_flight;
+}

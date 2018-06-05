@@ -196,3 +196,13 @@ QUICAckPacketNumbers::sort()
   std::sort(this->_packet_numbers.begin(), this->_packet_numbers.end(),
             [](QUICPacketNumber a, QUICPacketNumber b) -> bool { return b < a; });
 }
+
+void
+QUICAckPacketNumbers::print()
+{
+  std::cout << "dump packet number vector" << std::endl;
+  for (auto it = this->_packet_numbers.begin(); it != this->_packet_numbers.end(); it++) {
+    std::cout << *it << " ";
+  }
+  std::cout << std::endl;
+}

@@ -267,7 +267,6 @@ private:
   QUICPathValidator *_path_validator                = nullptr;
 
   QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory};
-  CountQueue<QUICPacket> _packet_send_queue;
 
   QUICConnectionErrorUPtr _connection_error  = nullptr;
   uint32_t _state_closing_recv_packet_count  = 0;
@@ -297,8 +296,11 @@ private:
   uint32_t _transmit_packet(QUICPacketUPtr packet);
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                     QUICFrameUPtr frame);
-  void _packetize_frames();
+  void _packetize_frames(std::queue<QUICFrameUPtr> &send_list, size_t limit);
   void _packetize_closing_frame();
+  QUICPacketUPtr _generate_packet();
+  QUICPacketUPtr _packetize_frame_buffer(ats_unique_buf &buf, size_t &len, bool retransmittable,
+                                         QUICPacketType current_packet_type);
   QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
 
@@ -346,6 +348,8 @@ private:
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
+
+  std::queue<QUICFrameUPtr> _send_frames_queue;
 
   // This is for limiting number of packets that a server can send without path validation
   unsigned int _handshake_packets_sent = 0;
