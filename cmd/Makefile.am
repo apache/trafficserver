@@ -23,6 +23,7 @@ SUBDIRS = \
 	traffic_logcat \
 	traffic_logstats \
 	traffic_manager \
+	traffic_server \
 	traffic_top \
 	traffic_via
 
