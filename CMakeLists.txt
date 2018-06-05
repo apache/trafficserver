@@ -1107,20 +1107,10 @@ add_executable(ats
         proxy/StatPages.cc
         proxy/StatPages.h
         proxy/StufferUdpReceiver.cc
-        proxy/TestClock.cc
-        proxy/TestDNS.cc
-        proxy/TestPreProc.cc
-        proxy/TestPreProc.h
-        proxy/TestRegex.cc
-        proxy/TestSimpleProxy.cc
         proxy/TimeTrace.h
         proxy/Transform.cc
         proxy/Transform.h
         proxy/TransformInternal.h
-        proxy/UDPAPIClientTest.cc
-        proxy/UDPAPIClientTest.h
-        proxy/UDPAPITest.cc
-        proxy/UDPAPITest.h
         proxy/UnixCompletionUtil.h
         tests/gold_tests/tls/ssl-post.c
         tests/include/catch.hpp
