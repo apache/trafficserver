@@ -18,35 +18,69 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-# Note that hdrs is targeted from ../Makefile.am
-SUBDIRS = http http2 logging config
-noinst_LIBRARIES =
-bin_PROGRAMS = \
-	traffic_server
+SUBDIRS = hdrs shared http http2 logging config
+
+noinst_LIBRARIES = libproxy.a
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/lib/records \
 	-I$(abs_srcdir)/http \
-	-I$(abs_srcdir)/http2 \
 	-I$(abs_srcdir)/logging \
 	-I$(abs_srcdir)/http/remap \
 	-I$(abs_srcdir)/hdrs \
-	-I$(abs_srcdir)/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	-I$(abs_top_srcdir)/lib \
-	$(TS_INCLUDES) \
-	@OPENSSL_INCLUDES@
+	$(TS_INCLUDES)
 
 # NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
 # building libtool archives, change these to only apply to the executables.
 AM_LDFLAGS += \
-	$(LUAJIT_LDFLAGS) \
-	@OPENSSL_LDFLAGS@
+	$(LUAJIT_LDFLAGS)
 
 noinst_HEADERS = \
 	Show.h
+
+libproxy_a_SOURCES = \
+	CacheControl.cc \
+	CacheControl.h \
+	ControlBase.cc \
+	ControlBase.h \
+	ControlMatcher.cc \
+	ControlMatcher.h \
+	IPAllow.cc \
+	IPAllow.h \
+	ParentConsistentHash.cc \
+	ParentConsistentHash.h \
+	ParentRoundRobin.cc \
+	ParentRoundRobin.h \
+	ParentSelectionStrategy.cc \
+	ParentSelection.cc \
+	ParentSelection.h \
+	Plugin.cc \
+	Plugin.h \
+	PluginVC.cc \
+	PluginVC.h \
+	ProtocolProbeSessionAccept.cc \
+	ProtocolProbeSessionAccept.h \
+	ProxyClientSession.cc \
+	ProxyClientSession.h \
+	ProxyClientTransaction.cc \
+	ProxyClientTransaction \
+	ReverseProxy.cc \
+	ReverseProxy.h \
+	StatPages.cc \
+	StatPages.h \
+	Transform.cc \
+	Transform.h
+
+if BUILD_TESTS
+libproxy_a_SOURCES += \
+	RegressionSM.h \
+	RegressionSM.cc
+endif
+
 
 # These are currently built separate, as part of building the lib/ tree, using
 # the normal LuaJIT build system. We are using the .o's directly, instead of the
@@ -117,114 +151,7 @@ LUAJIT = \
 	lj_vmevent.o \
 	lj_vmmath.o
 
-EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
-
-traffic_server_SOURCES = \
-	CacheControl.cc \
-	CacheControl.h \
-	ControlBase.cc \
-	ControlBase.h \
-	ControlMatcher.cc \
-	ControlMatcher.h \
-	CoreUtils.cc \
-	CoreUtils.h \
-	Crash.cc \
-	EventName.cc \
-	FetchSM.cc \
-	HostStatus.cc \
-	HostStatus.h \
-	IPAllow.cc \
-	IPAllow.h \
-	InkAPI.cc \
-	InkAPIInternal.h \
-	InkIOCoreAPI.cc \
-	Main.cc \
-	Main.h \
-	Milestones.h \
-	ParentConsistentHash.cc \
-	ParentConsistentHash.h \
-	ParentRoundRobin.cc \
-	ParentRoundRobin.h \
-	ParentSelectionStrategy.cc \
-	ParentSelection.cc \
-	ParentSelection.h \
-	Plugin.cc \
-	Plugin.h \
-	PluginVC.cc \
-	PluginVC.h \
-	ProtocolProbeSessionAccept.cc \
-	ProtocolProbeSessionAccept.h \
-	ProxyClientSession.cc \
-	ProxyClientSession.h \
-	ProxyClientTransaction.cc \
-	ProxyClientTransaction.h \
-	ReverseProxy.cc \
-	ReverseProxy.h \
-	SocksProxy.cc \
-	StatPages.cc \
-	StatPages.h \
-	Transform.cc \
-	Transform.h \
-	TransformInternal.h
-
-if BUILD_TESTS
-traffic_server_SOURCES += \
-	InkAPITest.cc \
-	RegressionSM.h \
-	RegressionSM.cc
-endif
-
-traffic_server_LDADD = \
-	http/libhttp.a \
-	http2/libhttp2.a \
-	http/remap/libhttp_remap.a \
-	logging/liblogging.a \
-	logging/liblogcollation.a \
-	hdrs/libhdrs.a \
-	shared/libdiagsconfig.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
-	$(top_builddir)/iocore/utils/libinkutils.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
-	$(top_builddir)/iocore/dns/libinkdns.a \
-	$(top_builddir)/iocore/cache/libinkcache.a \
-	$(top_builddir)/iocore/aio/libinkaio.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/lib/bindings/libbindings.la
-
-if BUILD_LUAJIT
-traffic_server_LDADD += \
-	$(top_builddir)/lib/luajit/src/libluajit.a
-endif
-
-traffic_server_LDADD += \
-	$(top_builddir)/iocore/net/libinknet.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/records/librecords_p.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
-	@HWLOC_LIBS@ \
-	@LIBPCRE@ \
-	@LIBTCL@ \
-	@LIBRESOLV@ \
-	@LIBZ@ \
-	@LIBLZMA@ \
-	@LIBPROFILER@ \
-	@OPENSSL_LIBS@ \
-	-lm
-
-if BUILD_LUAJIT
-traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
-endif
-
-if SYSTEM_LUAJIT
-traffic_server_LDADD += @LIBLUAJIT@
-endif
-
-versiondir = $(pkgsysconfdir)
-
-clang-tidy-local: $(noinst_HEADERS) $(traffic_server_SOURCES)
-	$(CXX_Clang_Tidy)
+EXTRA_DIST = example_alarm_bin.sh example_prep.sh
 
 install-data-local:
 	if [ `id -un` != "root" ]; then \

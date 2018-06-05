@@ -28,12 +28,11 @@ export CCACHE_BASEDIR
 
 # proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
+SUBDIRS = proxy/api/ts lib iocore proxy mgmt cmd plugins tools example rc
 
-SUBDIRS = proxy/api/ts lib iocore proxy/hdrs proxy/shared mgmt proxy cmd plugins tools example rc
 if BUILD_DOCS
 SUBDIRS += doc
 endif
-
 
 DIST_BUILD_USER=`id -nu`
 DIST_BUILD_USER_GROUP=`id -ng`
