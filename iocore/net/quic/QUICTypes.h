@@ -233,13 +233,16 @@ public:
     if (this->_len != x._len) {
       return false;
     }
-    return memcmp(this->_id, x._id, sizeof(this->_len)) == 0;
+    return memcmp(this->_id, x._id, this->_len) == 0;
   }
 
   bool
   operator!=(const QUICConnectionId &x) const
   {
-    return memcmp(this->_id, x._id, sizeof(this->_id)) != 0;
+    if (this->_len != x._len) {
+      return true;
+    }
+    return memcmp(this->_id, x._id, this->_len) != 0;
   }
 
   /*
