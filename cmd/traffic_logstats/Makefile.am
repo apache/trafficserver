@@ -19,6 +19,7 @@
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/lib/records \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/logging \
