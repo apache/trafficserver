@@ -31,9 +31,9 @@ static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
 static constexpr int LONG_HDR_PKT_NUM_LEN          = 4;
 
 static bool
-is_vn(uint8_t *buf)
+is_vn(QUICVersion v)
 {
-  return QUICTypeUtil::read_QUICVersion(buf + LONG_HDR_OFFSET_VERSION) == 0x00;
+  return v == 0x0;
 }
 
 static size_t
@@ -99,11 +99,19 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   size_t pkt_len     = 0;
 
   if (QUICTypeUtil::has_long_header(this->_payload.get())) {
+    uint8_t *buf         = this->_payload.get() + this->_offset;
     size_t remaining_len = this->_payload_len - this->_offset;
-    if (is_vn(this->_payload.get() + this->_offset)) {
-      pkt_len = remaining_len;
-    } else if (QUICTypeUtil::has_long_header(this->_payload.get() + this->_offset)) {
-      pkt_len = long_hdr_pkt_len(this->_payload.get() + this->_offset);
+
+    if (QUICTypeUtil::has_long_header(buf)) {
+      QUICVersion version = QUICTypeUtil::read_QUICVersion(buf + LONG_HDR_OFFSET_VERSION);
+      if (is_vn(version)) {
+        pkt_len = remaining_len;
+      } else if (!QUICTypeUtil::is_supported_version(version)) {
+        result  = QUICPacketCreationResult::UNSUPPORTED;
+        pkt_len = remaining_len;
+      } else {
+        pkt_len = long_hdr_pkt_len(this->_payload.get() + this->_offset);
+      }
     } else {
       pkt_len = remaining_len;
     }
@@ -140,15 +148,21 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     udp_packet->free();
   }
 
-  if (result == QUICPacketCreationResult::NOT_READY) {
+  switch (result) {
+  case QUICPacketCreationResult::NOT_READY:
     // FIXME: unordered packet should be buffered and retried
     if (this->_queue.size > 0) {
       result = QUICPacketCreationResult::IGNORED;
     }
-  }
 
-  if (quic_packet && quic_packet->packet_number() > this->_largest_received_packet_number) {
-    this->_largest_received_packet_number = quic_packet->packet_number();
+    break;
+  case QUICPacketCreationResult::UNSUPPORTED:
+    // do nothing - if the packet is unsupported version, we don't know packet number
+    break;
+  default:
+    if (quic_packet && quic_packet->packet_number() > this->_largest_received_packet_number) {
+      this->_largest_received_packet_number = quic_packet->packet_number();
+    }
   }
 
   return quic_packet;

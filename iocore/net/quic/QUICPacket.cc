@@ -746,11 +746,6 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
   size_t plain_txt_len     = 0;
 
   QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number, this->_dcil);
-  if (!header->is_valid()) {
-    // PROTOCOL_VIOLATION ?
-    result = QUICPacketCreationResult::FAILED;
-    return QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_packet);
-  }
 
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();
@@ -762,13 +757,13 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       // version of VN packet is 0x00000000
       // This packet is unprotected. Just copy the payload
       result = QUICPacketCreationResult::SUCCESS;
+      memcpy(plain_txt.get(), header->payload(), header->payload_size());
+      plain_txt_len = header->payload_size();
     } else {
       // We can't decrypt packets that have unknown versions
+      // What we can use is invariant field of Long Header - version, dcid, and scid
       result = QUICPacketCreationResult::UNSUPPORTED;
     }
-
-    memcpy(plain_txt.get(), header->payload(), header->payload_size());
-    plain_txt_len = header->payload_size();
   } else {
     switch (header->type()) {
     case QUICPacketType::STATELESS_RESET:
