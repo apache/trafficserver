@@ -1090,8 +1090,6 @@ add_executable(ats
         proxy/Plugin.h
         proxy/PluginVC.cc
         proxy/PluginVC.h
-        proxy/Prefetch.cc
-        proxy/Prefetch.h
         proxy/ProtocolProbeSessionAccept.cc
         proxy/ProtocolProbeSessionAccept.h
         proxy/ProxyClientSession.cc
@@ -1106,7 +1104,6 @@ add_executable(ats
         proxy/SocksProxy.cc
         proxy/StatPages.cc
         proxy/StatPages.h
-        proxy/StufferUdpReceiver.cc
         proxy/TimeTrace.h
         proxy/Transform.cc
         proxy/Transform.h
