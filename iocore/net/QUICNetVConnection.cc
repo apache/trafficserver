@@ -234,7 +234,6 @@ void
 QUICNetVConnection::free(EThread *t)
 {
   QUICConDebug("Free connection");
-  this->remove_connection_ids();
 
   /* TODO: Uncmment these blocks after refactoring read / write process
     this->_udp_con        = nullptr;
