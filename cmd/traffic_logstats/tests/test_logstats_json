@@ -20,9 +20,9 @@ set -e # exit on error
 
 TMPDIR=${TMPDIR:-/tmp}
 tmpfile=$(mktemp "$TMPDIR/logstats.XXXXXX")
-srcdir=$(cd $srcdir && pwd)
+srcdir=$(cd $srcdir && pwd)/traffic_logstats
 
 # Note that the JSON has a timestamp in it that we have to filter out ...
-./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --json | fgrep -v 'timestamp' | fgrep -v 'symbol xid' > "$tmpfile"
+./traffic_logstats/traffic_logstats --log_file "$srcdir/tests/logstats.blog" --json | fgrep -v 'timestamp' | fgrep -v 'symbol xid' >"$tmpfile"
 diff "$tmpfile" "$srcdir/tests/logstats.json"
 rm -f -- "$tmpfile"

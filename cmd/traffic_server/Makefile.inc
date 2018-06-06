@@ -17,7 +17,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS += \
+bin_PROGRAMS += traffic_server/traffic_server
+
+traffic_server_traffic_server_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/lib/records \
 	-I$(abs_top_srcdir)/proxy \
@@ -32,28 +35,26 @@ AM_CPPFLAGS += \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@
 
-bin_PROGRAMS = traffic_server
-
-traffic_server_SOURCES = \
-	CoreUtils.cc \
-	CoreUtils.h \
-	Crash.cc \
-	EventName.cc \
-	EventName.h \
-	FetchSM.cc \
-	FetchSM.h \
-	HostStatus.cc \
-	InkAPI.cc \
-	InkIOCoreAPI.cc \
-	SocksProxy.cc \
-	traffic_server.cc
+traffic_server_traffic_server_SOURCES = \
+	traffic_server/CoreUtils.cc \
+	traffic_server/CoreUtils.h \
+	traffic_server/Crash.cc \
+	traffic_server/EventName.cc \
+	traffic_server/EventName.h \
+	traffic_server/FetchSM.cc \
+	traffic_server/FetchSM.h \
+	traffic_server/HostStatus.cc \
+	traffic_server/InkAPI.cc \
+	traffic_server/InkIOCoreAPI.cc \
+	traffic_server/SocksProxy.cc \
+	traffic_server/traffic_server.cc
 
 if BUILD_TESTS
-traffic_server_SOURCES += \
-	InkAPITest.cc
+traffic_server_traffic_server_SOURCES += \
+	traffic_server/InkAPITest.cc
 endif
 
-traffic_server_LDADD = \
+traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
@@ -75,11 +76,11 @@ traffic_server_LDADD = \
 
 # ToDo: When we remove this, we hould merge the two _LDADD rules here
 if BUILD_LUAJIT
-traffic_server_LDADD += \
+traffic_server_traffic_server_LDADD += \
 	$(top_builddir)/lib/luajit/src/libluajit.a
 endif
 
-traffic_server_LDADD += \
+traffic_server_traffic_server_LDADD += \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/records/librecords_p.a \
@@ -96,16 +97,11 @@ traffic_server_LDADD += \
 	-lm
 
 if BUILD_LUAJIT
-traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
+traffic_server_traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
 endif
 
 if SYSTEM_LUAJIT
-traffic_server_LDADD += @LIBLUAJIT@
+traffic_server_traffic_server_LDADD += @LIBLUAJIT@
 endif
 
 versiondir = $(pkgsysconfdir)
-
-include $(top_srcdir)/build/tidy.mk
-
-clang-tidy-local: $(noinst_HEADERS) $(traffic_server_SOURCES)
-	$(CXX_Clang_Tidy)

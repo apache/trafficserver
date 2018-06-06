@@ -15,35 +15,34 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-bin_PROGRAMS = traffic_crashlog
+bin_PROGRAMS += traffic_layout/traffic_layout
 
-AM_CPPFLAGS += \
-	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
-	-I$(abs_top_srcdir)/mgmt/api/include \
-	$(TS_INCLUDES)
+traffic_layout_traffic_layout_CPPFLAGS = \
+    $(AM_CPPFLAGS) \
+    $(iocore_include_dirs) \
+    -I$(abs_top_srcdir)/lib \
+    -I$(abs_top_srcdir)/lib/records \
+    -I$(abs_top_srcdir)/mgmt \
+    -I$(abs_top_srcdir)/mgmt/utils \
+    $(TS_INCLUDES)
 
-AM_LDFLAGS += \
-	@OPENSSL_LDFLAGS@
+traffic_layout_traffic_layout_LDFLAGS =	\
+    $(AM_LDFLAGS) \
+    @OPENSSL_LDFLAGS@
 
-traffic_crashlog_SOURCES = \
-	procinfo.cc \
-	traffic_crashlog.cc \
-	traffic_crashlog.h
+traffic_layout_traffic_layout_SOURCES = \
+	traffic_layout/traffic_layout.cc \
+	traffic_layout/file_system.cc \
+	traffic_layout/file_system.h \
+	traffic_layout/engine.cc \
+	traffic_layout/engine.h \
+	traffic_layout/info.cc \
+	traffic_layout/info.h
 
-traffic_crashlog_LDADD = \
+traffic_layout_traffic_layout_LDADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/api/libtsmgmt.la \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	@LIBTCL@ @HWLOC_LIBS@
-
-include $(top_srcdir)/build/tidy.mk
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)

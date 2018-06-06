@@ -15,20 +15,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
-	traffic_cache_tool \
-	traffic_crashlog \
-	traffic_ctl \
-	traffic_layout \
-	traffic_logcat \
-	traffic_logstats \
-	traffic_manager \
-	traffic_server \
-	traffic_top \
-	traffic_via
+include $(top_srcdir)/build/tidy.mk
 
-TESTS = $(check_PROGRAMS)
+bin_PROGRAMS =
+check_PROGRAMS =
+TESTS =
+
+include traffic_cache_tool/Makefile.inc
+include traffic_via/Makefile.inc
+include traffic_top/Makefile.inc
+include traffic_manager/Makefile.inc
+include traffic_server/Makefile.inc
+include traffic_logstats/Makefile.inc
+include traffic_crashlog/Makefile.inc
+include traffic_ctl/Makefile.inc
+include traffic_layout/Makefile.inc
+include traffic_logcat/Makefile.inc
 
 if BUILD_WCCP
-SUBDIRS += traffic_wccp
+include traffic_wccp/Makefile.inc
 endif
+
+TESTS += \
+	$(check_PROGRAMS)
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
+	$(CC_Clang_Tidy)

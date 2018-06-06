@@ -1,6 +1,4 @@
 #
-# Makefile.am for the Enterprise Management module.
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,48 +15,39 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS += \
+# We only build traffic_top if libcurses and libcurl are available.
+if BUILD_TRAFFIC_TOP
+
+bin_PROGRAMS += traffic_top/traffic_top
+
+traffic_top_traffic_top_CPPFLAGS = \
+    $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/lib/records \
-	-I$(abs_top_srcdir)/proxy \
-	-I$(abs_top_srcdir)/proxy/logging \
-	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	$(TS_INCLUDES) \
+	@CURL_CFLAGS@ \
+	@CURSES_CFLAGS@
 
-bin_PROGRAMS = traffic_logstats
+traffic_top_traffic_top_LDFLAGS = \
+    $(AM_LDFLAGS) \
+	@CURSES_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
-TESTS = \
-	tests/test_logstats_json \
-	tests/test_logstats_summary
+traffic_top_traffic_top_SOURCES = \
+    traffic_top/traffic_top.cc
 
-traffic_logstats_SOURCES = logstats.cc
-traffic_logstats_LDADD = \
-	$(top_builddir)/proxy/logging/liblogging.a \
-	$(top_builddir)/proxy/shared/libdiagsconfig.a \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
+traffic_top_traffic_top_LDADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	$(top_builddir)/mgmt/api/libtsmgmt.la \
 	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/lib/bindings/libbindings.la
+	@CURL_LIBS@ \
+	@CURSES_LIBS@ \
+	@LIBTCL@ @HWLOC_LIBS@
 
-if BUILD_LUAJIT
-traffic_logstats_LDADD += \
-  $(top_builddir)/lib/luajit/src/libluajit.a
 endif
-
-traffic_logstats_LDADD += \
-  @LIBTCL@ @HWLOC_LIBS@ \
-  @LIBPROFILER@ -lm
-
-if SYSTEM_LUAJIT
-traffic_logstats_LDADD += @LIBLUAJIT@
-endif
-
-include $(top_srcdir)/build/tidy.mk
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
