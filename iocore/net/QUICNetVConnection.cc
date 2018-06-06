@@ -1169,13 +1169,14 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
 
   ink_assert(max_size > len);
 
-  char msg[1024];
   size_t l = 0;
   size_t n = frame->store(buf.get() + len, &l, max_size - len);
   if (n > 0) {
-    // TODO: check debug build
-    frame->debug_msg(msg, sizeof(msg));
-    QUICConDebug("[TX] %s", msg);
+    if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
+      char msg[1024];
+      frame->debug_msg(msg, sizeof(msg));
+      QUICConDebug("[TX] %s", msg);
+    }
 
     len += l;
     return;
@@ -1184,9 +1185,11 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   // split frame
   auto new_frame = QUICFrameFactory::split_frame(frame.get(), max_size - len);
 
-  // TODO: check debug build
-  frame->debug_msg(msg, sizeof(msg));
-  QUICConDebug("[TX] %s", msg);
+  if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
+    char msg[1024];
+    frame->debug_msg(msg, sizeof(msg));
+    QUICConDebug("[TX] %s", msg);
+  }
 
   ink_assert(frame->store(buf.get() + len, &l, max_size - len) > 0);
   ink_assert(new_frame != nullptr);
