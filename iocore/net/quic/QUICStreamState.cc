@@ -345,6 +345,7 @@ QUICBidirectionalStreamState::get() const
     } else if (r_state == State::ResetRecvd || r_state == State::ResetRead) {
       return State::HC_R;
     } else {
+      ink_assert(false);
       return State::_Invalid;
     }
   } else if (s_state == State::DataRecvd) {
@@ -355,6 +356,7 @@ QUICBidirectionalStreamState::get() const
     } else if (r_state == State::ResetRecvd || r_state == State::ResetRead) {
       return State::Closed;
     } else {
+      ink_assert(false);
       return State::_Invalid;
     }
   } else if (s_state == State::ResetSent || s_state == State::ResetRecvd) {
@@ -365,11 +367,13 @@ QUICBidirectionalStreamState::get() const
     } else if (r_state == State::ResetRecvd || r_state == State::ResetRead) {
       return State::Closed;
     } else {
+      ink_assert(false);
       return State::_Invalid;
     }
   } else if (s_state == State::_Init && r_state == State::_Init) {
     return State::_Init;
   } else {
+    ink_assert(false);
     return State::_Invalid;
   }
 }

@@ -128,6 +128,7 @@ public:
                                QUICTransferProgressProvider *recv_in, QUICTransferProgressProvider *recv_out)
     : _send_stream_state(send_in, send_out), _recv_stream_state(recv_in, recv_out)
   {
+    this->_recv_stream_state.update(this->_send_stream_state);
   }
   State get() const override;
 
