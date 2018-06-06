@@ -107,7 +107,6 @@
 
 #define JTEST_DONE 0
 #define JTEST_CONT 1
-#define JTEST_ERR -1
 
 static AppVersionInfo appVersionInfo;
 
@@ -3271,8 +3270,6 @@ interval_report()
 #define BUCKETS (URL_HASH_ENTRIES / ENTRIES_PER_BUCKET)
 #define BYTES_PER_BUCKET (BYTES_PER_ENTRY * ENTRIES_PER_BUCKET)
 #define URL_HASH_BYTES (BYTES_PER_ENTRY * (URL_HASH_ENTRIES + OVERFLOW_ENTRIES))
-#define CHANCE_OF_COLLISION (((double)ENTRIES_PER_BUCKET) / ((double)(1 << (8 * 3))))
-#define WANT_FILESIZE 0
 
 // NOTE: change to match BYTES_PER_ENTRY
 #define ENTRY_TAG(_x) (((unsigned int)_x[0] << 16) + ((unsigned int)_x[1] << 8) + (unsigned int)_x[2])
