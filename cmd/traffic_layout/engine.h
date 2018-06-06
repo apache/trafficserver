@@ -66,6 +66,8 @@ struct RunrootEngine {
   bool abs_flag     = false;
   bool verify_flag  = false;
   bool fix_flag     = false;
+  // verify the default layout or not
+  bool verify_default = false;
   // for parsing
   int command_num = 0;
 

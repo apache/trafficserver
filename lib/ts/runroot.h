@@ -35,6 +35,8 @@ std::string check_parent_path(const std::string &path);
 
 void runroot_handler(const char **argv, bool json = false);
 
+// get a map from default layout
+std::unordered_map<std::string, std::string> runroot_map_default();
 // get runroot map from yaml path and prefix
 std::unordered_map<std::string, std::string> runroot_map(const std::string &prefix);
 
