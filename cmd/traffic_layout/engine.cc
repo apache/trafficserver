@@ -258,7 +258,11 @@ RunrootEngine::sanity_check()
   path = path_handler(path, run_flag, _argv[0]);
 
   if (path.empty()) {
-    ink_fatal("Path not valild (runroot_path.yml not found)");
+    if (!verify_flag) {
+      ink_fatal("Path not valild (runroot_path.yml not found)");
+    } else {
+      verify_default = true;
+    }
   }
 
   if (run_flag) {
@@ -379,13 +383,13 @@ RunrootEngine::create_runroot()
   std::cout << "creating runroot - " + ts_runroot << std::endl;
 
   // check for existing runroot to use rather than create new one
-  if (check_file.good()) {
+  if (!force_flag && check_file.good()) {
     std::cout << "Using existing runroot...\n"
                  "Please remove the old runroot if new runroot is needed"
               << std::endl;
     return;
   }
-  if (!check_parent_path(ts_runroot).empty()) {
+  if (!force_flag && !check_parent_path(ts_runroot).empty()) {
     ink_fatal("Cannot create runroot inside another runroot");
   }
 
@@ -454,7 +458,12 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
     // don't copy the prefix, mandir and localstatedir
     if (it.first != "exec_prefix" && it.first != "localstatedir" && it.first != "mandir") {
       if (!copy_directory(old_path, new_path, it.first)) {
-        ink_warning("Copy failed for '%s' - %s", it.first.c_str(), strerror(errno));
+        ink_warning("Unable to copy '%s' - %s", it.first.c_str(), strerror(errno));
+        ink_notice("Creating '%s': %s", it.first.c_str(), new_path.c_str());
+        // if copy failed for certain directory, we create it in runroot
+        if (!create_directory(new_path)) {
+          ink_warning("Unable to create '%s' - %s", it.first.c_str(), strerror(errno));
+        }
       }
     }
   }
@@ -541,8 +550,8 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
 
     struct stat stat_buffer;
     if (stat(path.c_str(), &stat_buffer) < 0) {
-      ink_error("unable to stat() destination path %s: %s", path.c_str(), strerror(errno));
-      exit(70);
+      ink_warning("unable to stat() destination path %s: %s", path.c_str(), strerror(errno));
+      continue;
     }
 
     if (usergroup == "owner") {
@@ -563,6 +572,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
       if (chmod(path.c_str(), stat_buffer.st_mode | read_permission) < 0) {
         ink_warning("Unable to change file mode on %s: %s", path.c_str(), strerror(errno));
       }
+      std::cout << "Read permission fixed for '" + name + "': " + path << std::endl;
     }
     if (name == "localstatedir" || name == "logdir" || name == "runtimedir" || name == "cachedir") {
       // write
@@ -570,6 +580,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
         if (chmod(path.c_str(), stat_buffer.st_mode | read_permission | write_permission) < 0) {
           ink_warning("Unable to change file mode on %s: %s", path.c_str(), strerror(errno));
         }
+        std::cout << "Write permission fixed for '" + name + "': " + path << std::endl;
       }
     }
     if (name == "bindir" || name == "sbindir" || name == "libdir" || name == "libexecdir") {
@@ -578,6 +589,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
         if (chmod(path.c_str(), stat_buffer.st_mode | read_permission | execute_permission) < 0) {
           ink_warning("Unable to change file mode on %s: %s", path.c_str(), strerror(errno));
         }
+        std::cout << "Execute permission fixed for '" + name + "': " + path << std::endl;
       }
     }
   }
@@ -599,15 +611,15 @@ set_permission(std::vector<std::string> &dir_vector, RunrootMapType &path_map, R
   // set up permission map for all permissions
   for (uint i = 0; i < dir_vector.size(); i++) {
     std::string name  = dir_vector[i];
-    std::string value = path_map[dir_vector[i]];
+    std::string value = path_map[name];
 
     if (name == "prefix" || name == "exec_prefix") {
       continue;
     }
 
     if (stat(value.c_str(), &stat_buffer) < 0) {
-      ink_error("unable to stat() destination path %s: %s", value.c_str(), strerror(errno));
-      exit(70);
+      ink_warning("unable to stat() destination path %s: %s", value.c_str(), strerror(errno));
+      continue;
     }
     int path_gid = int(stat_buffer.st_gid);
     int path_uid = int(stat_buffer.st_uid);
@@ -658,7 +670,15 @@ RunrootEngine::verify_runroot()
 {
   std::cout << "trafficserver user: " << TS_PKGSYSUSER << std::endl << std::endl;
 
-  RunrootMapType path_map = runroot_map(path);
+  // put paths from yaml file or default paths to path_map
+  RunrootMapType path_map;
+  if (verify_default) {
+    path_map = runroot_map_default();
+    std::cout << "Verifying default build ..." << std::endl;
+  } else {
+    path_map = runroot_map(path);
+  }
+
   RunrootMapType permission_map; // contains rwx bits
   RunrootMapType usergroup_map;  // map: owner, group, others
 

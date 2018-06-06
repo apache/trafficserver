@@ -182,6 +182,30 @@ runroot_handler(const char **argv, bool json)
   return;
 }
 
+// return a map of all path with default layout
+std::unordered_map<std::string, std::string>
+runroot_map_default()
+{
+  std::unordered_map<std::string, std::string> map;
+
+  map["prefix"]        = Layout::get()->prefix;
+  map["exec_prefix"]   = Layout::get()->exec_prefix;
+  map["bindir"]        = Layout::get()->bindir;
+  map["sbindir"]       = Layout::get()->sbindir;
+  map["sysconfdir"]    = Layout::get()->sysconfdir;
+  map["datadir"]       = Layout::get()->datadir;
+  map["includedir"]    = Layout::get()->includedir;
+  map["libdir"]        = Layout::get()->libdir;
+  map["libexecdir"]    = Layout::get()->libexecdir;
+  map["localstatedir"] = Layout::get()->localstatedir;
+  map["runtimedir"]    = Layout::get()->runtimedir;
+  map["logdir"]        = Layout::get()->logdir;
+  // mandir is not needed for runroot
+  map["cachedir"] = Layout::get()->cachedir;
+
+  return map;
+}
+
 // return a map of all path in runroot_path.yml
 std::unordered_map<std::string, std::string>
 runroot_map(const std::string &prefix)
