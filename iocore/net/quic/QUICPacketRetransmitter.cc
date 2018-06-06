@@ -53,6 +53,14 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
   }
 }
 
+void
+QUICPacketRetransmitter::reset()
+{
+  while (!this->_retransmission_frames.empty()) {
+    this->_retransmission_frames.pop();
+  }
+}
+
 bool
 QUICPacketRetransmitter::will_generate_frame()
 {

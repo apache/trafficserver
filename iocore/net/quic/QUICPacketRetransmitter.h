@@ -32,6 +32,7 @@ class QUICPacketRetransmitter : public QUICFrameGenerator
 {
 public:
   void retransmit_packet(const QUICPacket &packet);
+  void reset();
 
   // QUICFrameGenerator
   bool will_generate_frame() override;
