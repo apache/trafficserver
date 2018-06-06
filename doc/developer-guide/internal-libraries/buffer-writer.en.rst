@@ -704,6 +704,30 @@ These are types for which there exists a type specific BWF formatter.
         bw.print("{:>20: =a}",addr); // -> "     172. 19.  3.105"
       }
 
+Format Classes
+++++++++++++++
+
+Although the extension for a format can be overloaded to provide additional features, this can become
+too confusing and complex to use if it is used for fundamentally different semantics on the same
+based type. In that case it is better to provide a format wrapper class that holds the base type
+but can be overloaded to produce different (wrapper class based) output. The classic example is
+:code:`errno` which is an integral type but frequently should be formatted with additional information
+such as the descriptive string for the value. To do this the format wrapper class :code:`ts::bwf::Errno`
+is provided. Using it is simple::
+
+    w.print("File not open - {}", ts::bwf::Errno(errno));
+
+which will produce output that looks like
+
+    "File not open - EACCES: Permission denied [13]"
+
+For :code:`errno` this is handy in another way as :code:`ts::bwf::Errno` will preserve the value of
+:code:`errno` across other calls that might change it. E.g.::
+
+    ts::bwf::Errno last_err(errno);
+    // some other code generating diagnostics that might tweak errno.
+    w.print("File not open - {}", last_err);
+
 Global Names
 ++++++++++++
 
