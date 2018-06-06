@@ -2028,17 +2028,6 @@ AS_IF([test "x$RPATH" != "x"], [
 AC_CONFIG_FILES([
   Makefile
   cmd/Makefile
-  cmd/traffic_cache_tool/Makefile
-  cmd/traffic_crashlog/Makefile
-  cmd/traffic_ctl/Makefile
-  cmd/traffic_layout/Makefile
-  cmd/traffic_logcat/Makefile
-  cmd/traffic_logstats/Makefile
-  cmd/traffic_manager/Makefile
-  cmd/traffic_server/Makefile
-  cmd/traffic_top/Makefile
-  cmd/traffic_via/Makefile
-  cmd/traffic_wccp/Makefile
   doc/Makefile
   doc/ext/local-config.py
   doc/uml/Makefile
