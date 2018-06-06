@@ -17,44 +17,32 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS += \
-	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
-	-I$(abs_top_srcdir)/proxy \
-	-I$(abs_top_srcdir)/proxy/logging \
-	-I$(abs_top_srcdir)/proxy/shared \
-	-I$(abs_top_srcdir)/mgmt \
-	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
+bin_PROGRAMS += traffic_ctl/traffic_ctl
 
-bin_PROGRAMS = traffic_logcat
+traffic_ctl_traffic_ctl_CPPFLAGS = \
+    $(AM_CPPFLAGS) \
+    $(iocore_include_dirs) \
+    -I$(abs_top_srcdir)/lib \
+    -I$(abs_top_srcdir)/lib/records \
+    -I$(abs_top_srcdir)/mgmt \
+    -I$(abs_top_srcdir)/mgmt/api/include \
+    $(TS_INCLUDES)
 
-traffic_logcat_SOURCES = logcat.cc
-traffic_logcat_LDADD = \
-	$(top_builddir)/proxy/logging/liblogging.a \
-	$(top_builddir)/proxy/shared/libdiagsconfig.a \
-	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
+traffic_ctl_traffic_ctl_SOURCES = \
+	traffic_ctl/alarm.cc \
+	traffic_ctl/config.cc \
+	traffic_ctl/metric.cc \
+	traffic_ctl/plugin.cc \
+	traffic_ctl/server.cc \
+	traffic_ctl/storage.cc \
+	traffic_ctl/host.cc \
+	traffic_ctl/traffic_ctl.cc
+
+traffic_ctl_traffic_ctl_LDADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	$(top_builddir)/mgmt/api/libtsmgmt.la \
 	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/lib/bindings/libbindings.la
-
-if BUILD_LUAJIT
-traffic_logcat_LDADD += \
-	$(top_builddir)/lib/luajit/src/libluajit.a
-endif
-
-traffic_logcat_LDADD += \
-	@LIBTCL@ @HWLOC_LIBS@\
-	@LIBPROFILER@ -lm
-
-if SYSTEM_LUAJIT
-traffic_logcat_LDADD += @LIBLUAJIT@
-endif
-
-include $(top_srcdir)/build/tidy.mk
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+	@LIBTCL@ @HWLOC_LIBS@

@@ -15,10 +15,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-bin_PROGRAMS = traffic_manager
+bin_PROGRAMS += traffic_manager/traffic_manager
 
-AM_CPPFLAGS += \
-	$(LUAJIT_CPPFLAGS) \
+traffic_manager_traffic_manager_CPPFLAGS = \
+    $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/lib/records \
 	-I$(abs_top_srcdir)/proxy/hdrs \
@@ -31,58 +31,53 @@ AM_CPPFLAGS += \
 	$(TS_INCLUDES)
 
 if BUILD_LUAJIT
-AM_CPPFLAGS += \
+traffic_manager_traffic_manager_CPPFLAGS += \
 	-I$(abs_top_srcdir)/lib/luajit/src
 endif
 
-AM_LDFLAGS += \
+traffic_manager_traffic_manager_LDFLAGS = \
+    $(AM_LDFLAGS) \
 	@OPENSSL_LDFLAGS@
 
-traffic_manager_SOURCES = \
-	AddConfigFilesHere.cc \
-	traffic_manager.cc
+traffic_manager_traffic_manager_SOURCES = \
+	traffic_manager/AddConfigFilesHere.cc \
+	traffic_manager/traffic_manager.cc
 
-traffic_manager_LDADD = \
+traffic_manager_traffic_manager_LDADD = \
 	$(top_builddir)/mgmt/api/libmgmtapilocal.la \
 	$(top_builddir)/mgmt/libmgmt_lm.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/records/librecords_lm.a \
-	$(top_builddir)/proxy/shared/libdiagsconfig.a
-
-AM_LDFLAGS += \
-	$(LUAJIT_LDFLAGS)
-
-if SYSTEM_LUAJIT
-traffic_manager_LDADD +=\
-	@LIBLUAJIT@
-endif
-
-traffic_manager_LDADD +=\
-	$(LIBUNWIND_LIBS) \
+	$(top_builddir)/proxy/shared/libdiagsconfig.a \
+   	$(LIBUNWIND_LIBS) \
 	@LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
 	-lm
 
+if BUILD_LUAJIT
+traffic_manager_traffic_manager_LDFLAGS += \
+    $(AM_LDFLAGS) \
+	$(LUAJIT_LDFLAGS)
+endif
+
+if SYSTEM_LUAJIT
+traffic_manager_traffic_manager_LDADD += \
+	@LIBLUAJIT@
+endif
+
 # Must do it this way or the dependencies aren't detected.
 if BUILD_WCCP
-
-traffic_manager_LDADD += \
+traffic_manager_traffic_manager_LDADD += \
 	$(top_builddir)/lib/wccp/libwccp.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@OPENSSL_LIBS@
-
 endif
 
-traffic_manager_LDADD += \
+traffic_manager_traffic_manager_LDADD += \
 	$(top_builddir)/lib/bindings/libbindings.la
 
 if BUILD_LUAJIT
-traffic_manager_LDADD += \
+traffic_manager_traffic_manager_LDADD += \
 	$(top_builddir)/lib/luajit/src/libluajit.a
 endif
-
-include $(top_srcdir)/build/tidy.mk
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
