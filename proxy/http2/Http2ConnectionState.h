@@ -157,6 +157,9 @@ public:
     if (fini_event) {
       fini_event->cancel();
     }
+    if (zombie_event) {
+      zombie_event->cancel();
+    }
   }
 
   // Event handlers
