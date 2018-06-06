@@ -34,3 +34,17 @@ bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, std::atomic<T> const &v)
   return ts::bwformat(w, spec, v.load());
 }
 } // end namespace std
+
+namespace ts
+{
+namespace bwf
+{
+  struct Errno {
+    int _e;
+    explicit Errno(int e) : _e(e) {}
+  };
+} // namespace bwf
+
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e);
+
+} // namespace ts
