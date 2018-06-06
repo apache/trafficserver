@@ -505,6 +505,16 @@ TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
   bw.reduce(0);
 }
 
+TEST_CASE("bwstring std formats", "[libts][bwprint]")
+{
+  ts::LocalBufferWriter<120> w;
+
+  w.print("{}", ts::bwf::Errno(13));
+  REQUIRE(w.view() == "EACCES: Permission denied [13]"sv);
+  w.reset().print("{}", ts::bwf::Errno(134));
+  REQUIRE(w.view().substr(0, 22) == "Unknown: Unknown error"sv);
+}
+
 // Normally there's no point in running the performance tests, but it's worth keeping the code
 // for when additional testing needs to be done.
 #if 0

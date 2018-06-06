@@ -22,6 +22,7 @@
  */
 
 #include <ts/BufferWriter.h>
+#include <ts/bwf_std_format.h>
 #include <unistd.h>
 #include <sys/param.h>
 #include <cctype>
@@ -755,6 +756,164 @@ bwf_register_global(std::string_view name, BWGlobalNameSignature formatter)
   return ts::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
 }
 
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
+{
+  // Hand rolled, might not be totally compliant everywhere, but probably close enough.
+  // The long string will be locally accurate.
+  // Clang requires the double braces. Why, Turing only knows.
+  static const std::array<std::string_view, 134> SHORT_NAME = {{
+    "SUCCESS: ",
+    "EPERM: ",
+    "ENOENT: ",
+    "ESRCH: ",
+    "EINTR: ",
+    "EIO: ",
+    "ENXIO: ",
+    "E2BIG ",
+    "ENOEXEC: ",
+    "EBADF: ",
+    "ECHILD: ",
+    "EAGAIN: ",
+    "ENOMEM: ",
+    "EACCES: ",
+    "EFAULT: ",
+    "ENOTBLK: ",
+    "EBUSY: ",
+    "EEXIST: ",
+    "EXDEV: ",
+    "ENODEV: ",
+    "ENOTDIR: ",
+    "EISDIR: ",
+    "EINVAL: ",
+    "ENFILE: ",
+    "EMFILE: ",
+    "ENOTTY: ",
+    "ETXTBSY: ",
+    "EFBIG: ",
+    "ENOSPC: ",
+    "ESPIPE: ",
+    "EROFS: ",
+    "EMLINK: ",
+    "EPIPE: ",
+    "EDOM: ",
+    "ERANGE: ",
+    "EDEADLK: ",
+    "ENAMETOOLONG: ",
+    "ENOLCK: ",
+    "ENOSYS: ",
+    "ENOTEMPTY: ",
+    "ELOOP: ",
+    "EWOULDBLOCK: ",
+    "ENOMSG: ",
+    "EIDRM: ",
+    "ECHRNG: ",
+    "EL2NSYNC: ",
+    "EL3HLT: ",
+    "EL3RST: ",
+    "ELNRNG: ",
+    "EUNATCH: ",
+    "ENOCSI: ",
+    "EL2HTL: ",
+    "EBADE: ",
+    "EBADR: ",
+    "EXFULL: ",
+    "ENOANO: ",
+    "EBADRQC: ",
+    "EBADSLT: ",
+    "EDEADLOCK: ",
+    "EBFONT: ",
+    "ENOSTR: ",
+    "ENODATA: ",
+    "ETIME: ",
+    "ENOSR: ",
+    "ENONET: ",
+    "ENOPKG: ",
+    "EREMOTE: ",
+    "ENOLINK: ",
+    "EADV: ",
+    "ESRMNT: ",
+    "ECOMM: ",
+    "EPROTO: ",
+    "EMULTIHOP: ",
+    "EDOTDOT: ",
+    "EBADMSG: ",
+    "EOVERFLOW: ",
+    "ENOTUNIQ: ",
+    "EBADFD: ",
+    "EREMCHG: ",
+    "ELIBACC: ",
+    "ELIBBAD: ",
+    "ELIBSCN: ",
+    "ELIBMAX: ",
+    "ELIBEXEC: ",
+    "EILSEQ: ",
+    "ERESTART: ",
+    "ESTRPIPE: ",
+    "EUSERS: ",
+    "ENOTSOCK: ",
+    "EDESTADDRREQ: ",
+    "EMSGSIZE: ",
+    "EPROTOTYPE: ",
+    "ENOPROTOOPT: ",
+    "EPROTONOSUPPORT: ",
+    "ESOCKTNOSUPPORT: ",
+    "EOPNOTSUPP: ",
+    "EPFNOSUPPORT: ",
+    "EAFNOSUPPORT: ",
+    "EADDRINUSE: ",
+    "EADDRNOTAVAIL: ",
+    "ENETDOWN: ",
+    "ENETUNREACH: ",
+    "ENETRESET: ",
+    "ECONNABORTED: ",
+    "ECONNRESET: ",
+    "ENOBUFS: ",
+    "EISCONN: ",
+    "ENOTCONN: ",
+    "ESHUTDOWN: ",
+    "ETOOMANYREFS: ",
+    "ETIMEDOUT: ",
+    "ECONNREFUSED: ",
+    "EHOSTDOWN: ",
+    "EHOSTUNREACH: ",
+    "EALREADY: ",
+    "EINPROGRESS: ",
+    "ESTALE: ",
+    "EUCLEAN: ",
+    "ENOTNAM: ",
+    "ENAVAIL: ",
+    "EISNAM: ",
+    "EREMOTEIO: ",
+    "EDQUOT: ",
+    "ENOMEDIUM: ",
+    "EMEDIUMTYPE: ",
+    "ECANCELED: ",
+    "ENOKEY: ",
+    "EKEYEXPIRED: ",
+    "EKEYREVOKED: ",
+    "EKEYREJECTED: ",
+    "EOWNERDEAD: ",
+    "ENOTRECOVERABLE: ",
+    "ERFKILL: ",
+    "EHWPOISON: ",
+  }};
+  // This provides convenient safe access to the errno short name array.
+  auto short_name = [](int n) { return n < static_cast<int>(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
+  static const BWFormat number_fmt{"[{}]"sv}; // numeric value format.
+  if (spec.has_numeric_type()) {              // if numeric type, print just the numeric part.
+    w.print(number_fmt, e._e);
+  } else {
+    w.write(short_name(e._e));
+    w.write(strerror(e._e));
+    if (spec._type != 's' && spec._type != 'S') {
+      w.write(' ');
+      w.print(number_fmt, e._e);
+    }
+  }
+  return w;
+}
+
 } // namespace ts
 
 namespace
@@ -808,6 +967,7 @@ static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
   ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
   return true;
 }();
+
 } // namespace
 
 namespace std
