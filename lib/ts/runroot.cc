@@ -33,7 +33,7 @@ Example: ./traffic_server --run-root=/path/to/sandbox
 Need a yaml file in the sandbox with key value pairs of all directory locations for other programs to use
 
 Directories needed in the yaml file:
-prefix, exec_prefix, includedir, localstatedir, bindir, logdir, mandir, sbindir, sysconfdir,
+prefix, exec_prefix, includedir, localstatedir, bindir, logdir, sbindir, sysconfdir,
 datadir, libexecdir, libdir, runtimedir, cachedir.
 */
 
@@ -183,7 +183,7 @@ runroot_handler(const char **argv, bool json)
 }
 
 // return a map of all path in runroot_path.yml
-std::unordered_map<std::string, std::string>
+RunrootMapType
 runroot_map(const std::string &prefix)
 {
   std::string yaml_path = Layout::relative_to(prefix, "runroot_path.yml");
@@ -191,11 +191,11 @@ runroot_map(const std::string &prefix)
   file.open(yaml_path);
   if (!file.good()) {
     ink_warning("Bad path '%s', continue with default value", prefix.c_str());
-    return std::unordered_map<std::string, std::string>{};
+    return RunrootMapType{};
   }
 
   std::ifstream yamlfile(yaml_path);
-  std::unordered_map<std::string, std::string> map;
+  RunrootMapType map;
   std::string str;
   while (std::getline(yamlfile, str)) {
     int pos                 = str.find(':');
@@ -214,11 +214,11 @@ runroot_map(const std::string &prefix)
 // check for the using of runroot
 // a map of all path will be returned
 // if we do not use runroot, a empty map will be returned.
-std::unordered_map<std::string, std::string>
+RunrootMapType
 check_runroot()
 {
   if (using_runroot.empty()) {
-    return std::unordered_map<std::string, std::string>{};
+    return RunrootMapType{};
   }
 
   int len = using_runroot.size();
