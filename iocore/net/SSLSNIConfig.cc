@@ -36,10 +36,6 @@
 #include "ts/ink_memory.h"
 #include <ts/TextView.h>
 
-#define SNI_NAME_TAG "dest_host"
-#define SNI_ACTION_TAG "action"
-#define SNI_PARAM_TAG "param"
-
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
 Map<int, SSLNextProtocolSet *> snpsMap;

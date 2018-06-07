@@ -29,7 +29,6 @@
 #include "mgmtapi.h"
 #include "NetworkMessage.h"
 
-#define MAX_OPERATION_BUFSZ 1024
 #define MAX_OPERATION_FIELDS 16
 
 struct NetCmdOperation {

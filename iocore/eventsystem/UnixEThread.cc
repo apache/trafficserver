@@ -34,7 +34,6 @@
 
 struct AIOCallback;
 
-#define MAX_HEARTBEATS_MISSED 10
 #define NO_HEARTBEAT -1
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 

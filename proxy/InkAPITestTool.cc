@@ -44,7 +44,6 @@
 #define SYNSERVER_LISTEN_PORT 3300
 #define SYNSERVER_DUMMY_PORT -1
 
-#define PROXY_CONFIG_NAME_HTTP_PORT "proxy.config.http.server_port"
 #define PROXY_HTTP_DEFAULT_PORT 8080
 
 #define REQUEST_MAX_SIZE 4095
