@@ -1001,7 +1001,7 @@ ICPRequestCont::ICPRequestCont(ICPProcessor *pr, Continuation *c, URL *u)
   _act           = c;
   memset((void *)&_ICPmsg, 0, sizeof(_ICPmsg));
   memset((void *)&_sendMsgHdr, 0, sizeof(_sendMsgHdr));
-  memset((void *)&_sendMsgIOV, 0, sizeof(_sendMsgIOV[MSG_IOVECS]));
+  memset((void *)&_sendMsgIOV, 0, sizeof(_sendMsgIOV));
 
   if (c) {
     this->mutex = c->mutex;
