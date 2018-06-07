@@ -29,6 +29,8 @@
 #include <string>
 #include <unordered_map>
 
+typedef std::unordered_map<std::string, std::string> RunrootMapType;
+
 std::string check_path(const std::string &path);
 
 std::string check_parent_path(const std::string &path);
@@ -38,7 +40,7 @@ void runroot_handler(const char **argv, bool json = false);
 // get a map from default layout
 std::unordered_map<std::string, std::string> runroot_map_default();
 // get runroot map from yaml path and prefix
-std::unordered_map<std::string, std::string> runroot_map(const std::string &prefix);
+RunrootMapType runroot_map(const std::string &prefix);
 
 // help check runroot for layout
-std::unordered_map<std::string, std::string> check_runroot();
+RunrootMapType check_runroot();

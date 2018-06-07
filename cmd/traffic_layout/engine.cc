@@ -433,6 +433,7 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
   original_map["runtimedir"]    = TS_BUILD_RUNTIMEDIR;
   original_map["logdir"]        = TS_BUILD_LOGDIR;
   original_map["mandir"]        = TS_BUILD_MANDIR;
+  original_map["infodir"]       = TS_BUILD_INFODIR;
   original_map["cachedir"]      = TS_BUILD_CACHEDIR;
 
   // copy each directory to the runroot path
@@ -455,8 +456,8 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
       path_map[it.first] = Layout::relative_to(".", join_path);
     }
 
-    // don't copy the prefix, mandir and localstatedir
-    if (it.first != "exec_prefix" && it.first != "localstatedir" && it.first != "mandir") {
+    // don't copy the prefix, mandir, localstatedir and infodir
+    if (it.first != "exec_prefix" && it.first != "localstatedir" && it.first != "mandir" && it.first != "infodir") {
       if (!copy_directory(old_path, new_path, it.first)) {
         ink_warning("Unable to copy '%s' - %s", it.first.c_str(), strerror(errno));
         ink_notice("Creating '%s': %s", it.first.c_str(), new_path.c_str());
@@ -574,7 +575,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
       }
       std::cout << "Read permission fixed for '" + name + "': " + path << std::endl;
     }
-    if (name == "localstatedir" || name == "logdir" || name == "runtimedir" || name == "cachedir") {
+    if (name == "logdir" || name == "runtimedir" || name == "cachedir") {
       // write
       if (permission[1] != '1') {
         if (chmod(path.c_str(), stat_buffer.st_mode | read_permission | write_permission) < 0) {
@@ -697,11 +698,11 @@ RunrootEngine::verify_runroot()
     std::cout << name << ": \x1b[1m" + path_map[name] + "\x1b[0m" << std::endl;
 
     // output read permission
-    if (name == "includedir" || name == "sysconfdir" || name == "datadir") {
+    if (name == "localstatedir" || name == "includedir" || name == "sysconfdir" || name == "datadir") {
       output_read_permission(permission);
     }
     // output write permission
-    if (name == "localstatedir" || name == "logdir" || name == "runtimedir" || name == "cachedir") {
+    if (name == "logdir" || name == "runtimedir" || name == "cachedir") {
       output_read_permission(permission);
       output_write_permission(permission);
     }
