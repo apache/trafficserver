@@ -95,5 +95,6 @@ struct Layout {
   std::string runtimedir;
   std::string logdir;
   std::string mandir;
+  std::string infodir;
   std::string cachedir;
 };

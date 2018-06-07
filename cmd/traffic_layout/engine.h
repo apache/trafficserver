@@ -80,5 +80,5 @@ struct RunrootEngine {
                                          "runtimedir", "logdir",      "cachedir"};
 
   // map for yaml file emit
-  std::unordered_map<std::string, std::string> path_map;
+  RunrootMapType path_map;
 };
