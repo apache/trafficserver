@@ -37,10 +37,6 @@ using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 inkcoreapi ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
 
-#if defined(linux) && !defined(DEBUG)
-#define NODIAGS
-#endif
-
 //
 // Global Data
 //

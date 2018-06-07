@@ -61,7 +61,6 @@
   "Access logging to local log directory suspended - " \
   "configured space allocation almost exhausted."
 #define DISK_IS_ACTUAL_LOW_MESSAGE "Access logging to local log directory suspended - partition space is low."
-#define DUP_FORMAT_MESSAGE "Format named %s already exists; duplicate format names are not allowed."
 
 #define PARTITION_HEADROOM_MB 10
 
