@@ -106,17 +106,7 @@ extern "C" int plock(int);
 //
 // Global Data
 //
-#define DEFAULT_HTTP_ACCEPT_PORT_NUMBER 0
 #define DEFAULT_COMMAND_FLAG 0
-
-#define DEFAULT_VERBOSE_FLAG 0
-#define DEFAULT_STACK_TRACE_FLAG 0
-
-#if DEFAULT_COMMAND_FLAG
-#define DEFAULT_COMMAND_FLAG_TYPE "f"
-#else
-#define DEFAULT_COMMAND_FLAG_TYPE "F"
-#endif
 
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG 0
 #define DIAGS_LOG_FILENAME "diags.log"
