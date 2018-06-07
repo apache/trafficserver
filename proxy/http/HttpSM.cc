@@ -329,7 +329,7 @@ HttpSM::HttpSM()
     parse_range_done(false)
 {
   memset(&history, 0, sizeof(history));
-  memset(&vc_table, 0, sizeof(vc_table));
+  memset(static_cast<void *>(&vc_table), 0, sizeof(vc_table));
   memset(&http_parser, 0, sizeof(http_parser));
 }
 

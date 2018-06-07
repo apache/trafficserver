@@ -495,7 +495,7 @@ ICPConfiguration::UpdatePeerConfig()
     // Broken on DEC and Solaris x86
     // *_peer_cdata[i] = *_peer_cdata_current[i];
     //
-    memcpy(_peer_cdata[i], _peer_cdata_current[i], sizeof(*_peer_cdata[i]));
+    memcpy(static_cast<void *>(_peer_cdata[i]), _peer_cdata_current[i], sizeof(*_peer_cdata[i]));
     // Setup IP address
     if ((_peer_cdata[i]->_ip_addr.isValid()) && _peer_cdata[i]->_hostname[0]) {
       // IP address not specified, lookup using hostname.

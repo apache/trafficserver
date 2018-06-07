@@ -223,7 +223,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
   int i;
   AIO_Reqs *request = (AIO_Reqs *)ats_malloc(sizeof(AIO_Reqs));
 
-  memset(request, 0, sizeof(AIO_Reqs));
+  memset(static_cast<void *>(request), 0, sizeof(AIO_Reqs));
 
   INK_WRITE_MEMORY_BARRIER;
 
