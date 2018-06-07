@@ -626,7 +626,9 @@ print_remap_ele(TSRemapEle *ele)
   }
   // from port
   if (ele->from_port != TS_INVALID_PORT) {
-    snprintf(buf, sizeof(buf), "%s:%d", buf, ele->from_port);
+    char port_buf[16];
+    snprintf(port_buf, sizeof(port_buf), ":%d", ele->from_port);
+    ink_strlcat(buf, port_buf, sizeof(buf));
   }
   // from host path
   if (ele->from_path_prefix) {
@@ -657,7 +659,9 @@ print_remap_ele(TSRemapEle *ele)
   }
   // to port
   if (ele->to_port != TS_INVALID_PORT) {
-    snprintf(buf, sizeof(buf), "%s:%d", buf, ele->to_port);
+    char port_buf[16];
+    snprintf(port_buf, sizeof(port_buf), ":%d", ele->to_port);
+    ink_strlcat(buf, port_buf, sizeof(buf));
   }
   // to host path
   if (ele->to_path_prefix) {
