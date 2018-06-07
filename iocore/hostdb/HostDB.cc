@@ -1523,7 +1523,7 @@ HostDBContinuation::do_get_response(Event * /* e ATS_UNUSED */)
   //
   HostDB_get_message msg;
 
-  memset(&msg, 0, sizeof(msg));
+  memset(static_cast<void *>(&msg), 0, sizeof(msg));
   int len = make_get_message((char *)&msg, sizeof(HostDB_get_message));
 
   // Setup this continuation, with a timeout
@@ -1566,7 +1566,7 @@ HostDBContinuation::make_put_message(HostDBInfo *r, Continuation *c, char *buf, 
   ink_assert(size >= (int)sizeof(HostDB_put_message));
 
   HostDB_put_message *msg = reinterpret_cast<HostDB_put_message *>(buf);
-  memset(msg, 0, sizeof(HostDB_put_message));
+  memset(static_cast<void *>(msg), 0, sizeof(HostDB_put_message));
 
   msg->md5  = md5.hash;
   msg->cont = c;
