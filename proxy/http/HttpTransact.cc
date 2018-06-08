@@ -242,7 +242,6 @@ is_negative_caching_appropriate(HttpTransact::State *s)
   switch (s->hdr_info.server_response.status_get()) {
   case HTTP_STATUS_NO_CONTENT:
   case HTTP_STATUS_USE_PROXY:
-  case HTTP_STATUS_BAD_REQUEST:
   case HTTP_STATUS_FORBIDDEN:
   case HTTP_STATUS_NOT_FOUND:
   case HTTP_STATUS_METHOD_NOT_ALLOWED:
