@@ -117,7 +117,7 @@ readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
       goto error;
     } else if (err == 0) {
       buffer[idx] = '\0';
-      close(sock);
+      ink_release_assert(0 == close(sock));
       return TS_ERR_OKAY;
     } else {
       idx += err;
