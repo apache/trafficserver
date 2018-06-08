@@ -153,7 +153,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
     int pn_len = QUICTypeUtil::read_QUICPacketNumberLen(raw_buf + offset);
     QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(raw_buf + offset), pn_len,
                                      this->_base_packet_number);
-    this->_payload_start = offset + pn_len;
+    this->_payload_offset = offset + pn_len;
   }
 }
 
