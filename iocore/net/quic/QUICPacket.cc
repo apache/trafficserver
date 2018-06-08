@@ -27,7 +27,8 @@
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
 
-static constexpr std::string_view tag = "quic_packet"sv;
+static constexpr std::string_view tag  = "quic_packet"sv;
+static constexpr uint64_t aead_tag_len = 16;
 
 #define QUICDebug(dcid, scid, fmt, ...) \
   Debug(tag.data(), "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__);
@@ -176,7 +177,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId
       LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() + this->_payload_length;
   } else {
     this->_buf_len = LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() +
-                     QUICVariableInt::size(this->_payload_length) + 4 + this->_payload_length;
+                     QUICVariableInt::size(this->_payload_length + aead_tag_len) + 4 + this->_payload_length;
   }
 }
 
@@ -307,7 +308,7 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   *len += n;
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
-    QUICIntUtil::write_QUICVariableInt(this->_payload_length + 16, buf + *len, &n);
+    QUICIntUtil::write_QUICVariableInt(this->_payload_length + aead_tag_len, buf + *len, &n);
     *len += n;
 
     QUICPacketNumber dst = 0;
