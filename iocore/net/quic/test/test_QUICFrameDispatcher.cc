@@ -42,7 +42,7 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   auto cc            = new MockQUICCongestionController(info);
   auto lossDetector  = new MockQUICLossDetector(tx, info, cc);
 
-  QUICFrameDispatcher quicFrameDispatcher;
+  QUICFrameDispatcher quicFrameDispatcher(info);
   quicFrameDispatcher.add_handler(connection);
   quicFrameDispatcher.add_handler(streamManager);
   quicFrameDispatcher.add_handler(lossDetector);

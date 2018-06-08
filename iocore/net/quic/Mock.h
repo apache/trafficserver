@@ -597,3 +597,30 @@ class MockQUICRTTProvider : public QUICRTTProvider
     return HRTIME_MSECONDS(1);
   }
 };
+
+class MockQUICTransferProgressProvider : public QUICTransferProgressProvider
+{
+  bool
+  is_transfer_goal_set() const override
+  {
+    return false;
+  }
+
+  bool
+  is_transfer_complete() const override
+  {
+    return false;
+  }
+
+  uint64_t
+  transfer_progress() const override
+  {
+    return 0;
+  }
+
+  uint64_t
+  transfer_goal() const override
+  {
+    return 0;
+  }
+};
