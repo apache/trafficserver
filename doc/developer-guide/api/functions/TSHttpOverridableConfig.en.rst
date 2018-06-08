@@ -131,8 +131,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED`             :ts:cv:`proxy.config.http.negative_revalidating_enabled`
 :c:macro:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME`            :ts:cv:`proxy.config.http.negative_revalidating_lifetime`
 :c:macro:`TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS`                    :ts:cv:`proxy.config.http.number_of_redirections`
-:c:macro:`TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS`                    :ts:cv:`proxy.config.http.origin_max_connections`
-:c:macro:`TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE`              :ts:cv:`proxy.config.http.origin_max_connections_queue`
 :c:macro:`TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS`       :ts:cv:`proxy.config.http.parent_proxy.total_connect_attempts`
 :c:macro:`TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB`                  :ts:cv:`proxy.config.http.parent_proxy.mark_down_hostdb`
 :c:macro:`TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED`         :ts:cv:`proxy.config.http.post.check.content_length.enabled`
@@ -171,6 +169,8 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_NORMALIZE_AE`                              :ts:cv:`proxy.config.http.normalize_ae`
 :c:macro:`TS_CONFIG_HTTP_ALLOW_MULTI_RANGE`                         :ts:cv:`proxy.config.http.allow_multi_range`
 :c:macro:`TS_CONFIG_HTTP_ALLOW_HALF_OPEN`                           :ts:cv:`proxy.config.http.allow_half_open`
+:c:macro:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX`                 :ts:cv:`proxy.config.http.per_server.connection.max`
+:c:macro:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH`               :ts:cv:`proxy.config.http.per_server.connection.match`
 ==================================================================  ====================================================================
 
 Examples

@@ -56,6 +56,8 @@ HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
     return "TRANSACTION_COMPLETE";
   case HttpTransact::PARENT_RETRY:
     return "PARENT_RETRY";
+  case HttpTransact::OUTBOUND_CONGESTION:
+    return "OUTBOUND_CONGESTION";
   }
 
   return ("unknown state name");
