@@ -728,6 +728,33 @@ For :code:`errno` this is handy in another way as :code:`ts::bwf::Errno` will pr
     // some other code generating diagnostics that might tweak errno.
     w.print("File not open - {}", last_err);
 
+These are the existing format classes in header file ``bfw_std_format.h``. All are in the :code:`ts::bwf` namespace.
+
+.. class:: Errno
+
+    Formating for :code:`errno`.
+
+    .. function:: Errno(int errno)
+
+.. class:: Date
+
+    Date formatting in the :code:`strftime` style.
+
+    .. function:: Date(time_t epoch, std::string_view fmt = "%Y %b %d %H:%M:%S")
+
+        :arg:`epoch` is the time to print. :arg:`fmt` is the format for printing which is identical to that of `strftime <https://linux.die.net/man/3/strftime>`__. The default format looks like "2018 Jun 08 13:55:37".
+
+    .. function:: Date(std::string_view fmt = "%Y %b %d %H:%M:%S")
+
+         As previous except the epoch is the current epoch at the time the constructor is invoked. Therefore if the current time is to be printed the default constructor can be used.
+
+   When used the format specification can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
+   ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will
+   When used the format specification can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
+   ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will
+   print the hour and minute in the local time zone. ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is
+   desired.
+
 Global Names
 ++++++++++++
 
@@ -826,7 +853,7 @@ Reference
       Write to the buffer starting at :arg:`data` for at most :arg:`length` bytes. If there is not
       enough room to fit all the data, none is written.
 
-   .. function:: BufferWriter & write(string_view str)
+   .. function:: BufferWriter & write(std::string_view str)
 
       Write the string :arg:`str` to the buffer. If there is not enough room to write the string no
       data is written.

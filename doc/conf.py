@@ -174,6 +174,7 @@ nitpick_ignore = [ ('cpp:typeOrConcept', 'std')
                  , ('cpp:typeOrConcept', 'std::shared_ptr')
                  , ('cpp:typeOrConcept', 'std::ostream')
                  , ('cpp:typeOrConcept', 'std::string')
+                 , ('cpp:typeOrConcept', 'std::string_view')
                  , ('cpp:typeOrConcept', 'std::tuple')
                  , ('cpp:typeOrConcept', 'V') # template arguments which should be matched but aren't.
                  , ('cpp:typeOrConcept', 'Args')
