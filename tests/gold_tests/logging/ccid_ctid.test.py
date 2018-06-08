@@ -15,7 +15,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 import subprocess
 
@@ -92,11 +92,15 @@ tr.Processes.Default.Command = 'curl "https://127.0.0.1:{0}" "https://127.0.0.1:
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+
 # Delay to allow TS to flush report to disk, then validate generated log.
 #
 tr = Test.AddTestRun()
 tr.DelayStart = 10
-tr.Processes.Default.Command = 'python {0} < {1}'.format(
+tr.Processes.Default.Command = '{0} {1} < {2}'.format(
+    executable,
     os.path.join(Test.TestDirectory, 'ccid_ctid_observer.py'),
     os.path.join(ts.Variables.LOGDIR, 'test_ccid_ctid.log'))
 tr.Processes.Default.ReturnCode = 0

@@ -1,4 +1,6 @@
 '''
+Checks versions of Python interpreter and AuTest package, and sets
+up command-line arguments for this test suite.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,8 +17,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-import os
 
 import sys
 if sys.version_info < (3, 5, 0):

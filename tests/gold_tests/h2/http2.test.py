@@ -1,4 +1,5 @@
 '''
+Test a basic remap of a http connection
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,7 +16,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 Test.Summary = '''
 Test a basic remap of a http connection
@@ -52,7 +53,7 @@ server.addResponse("sessionlog.json",
 
 post_body = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
 server.addResponse("sessionlog.jason",
-                   {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
+                   {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
                     "timestamp": "1469733493.993",
                      "body": post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
@@ -88,9 +89,12 @@ ts.Setup.CopyAs('h2bigclient.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2chunked.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
 
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+
 # Test Case 1:  basic H2 interaction
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 h2client.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = '{0} h2client.py -p {1}'.format(executable, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
@@ -100,14 +104,14 @@ tr.StillRunningAfter = server
 
 # Test Case 2: Make sure all the big file gets back.  Regression test for issue 1646
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 h2bigclient.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = '{0} h2bigclient.py -p {1}'.format(executable, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/bigfile.gold"
 tr.StillRunningAfter = server
 
 # Test Case 3: Chunked content
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 h2chunked.py -p {0}  -u /{1}'.format(ts.Variables.ssl_port, requestLocation)
+tr.Processes.Default.Command = '{0} h2chunked.py -p {1}  -u /{2}'.format(executable, ts.Variables.ssl_port, requestLocation)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
 tr.StillRunningAfter = server
@@ -115,15 +119,15 @@ tr.StillRunningAfter = server
 # Test Case 4: Multiple request
 client_path = os.path.join(Test.Variables.AtsTestToolsDir, 'traffic-replay/')
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = "python3 {0} -type {1} -log_dir {2} -port {3} -host '127.0.0.1' -s_port {4} -v -colorize False".format(
-    client_path, 'h2', server.Variables.DataDir, ts.Variables.port, ts.Variables.ssl_port)
+tr.Processes.Default.Command = "{5} {0} -type {1} -log_dir {2} -port {3} -host '127.0.0.1' -s_port {4} -v -colorize False".format(
+    client_path, 'h2', server.Variables.DataDir, ts.Variables.port, ts.Variables.ssl_port, executable)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/replay.gold"
 tr.StillRunningAfter = server
 
 # Test Case 5:h2_active_timeout
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = '{0} h2active_timeout.py -p {1}'.format(executable, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server

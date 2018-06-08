@@ -63,6 +63,9 @@ tr.Processes.Default.Streams.stderr = 'gold/http_200.gold'
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 check_threads.py -t {0} -e {1} -a {2}'.format(ts.Env['TS_ROOT'], 100, 10)
+tr.Processes.Default.Command = '{0} check_threads.py -t {1} -e {2} -a {3}'.format(executable, ts.Env['TS_ROOT'], 100, 10)
 tr.Processes.Default.ReturnCode = 0

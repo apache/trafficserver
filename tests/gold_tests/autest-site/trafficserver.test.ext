@@ -1,5 +1,9 @@
 '''
+This module is responsible for setting up a mock ATS instance,
+utilizing the compiled binaries, shared object files, and
+various configuration files of the host system.
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,20 +20,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from __future__ import print_function
 import os
-import socket
+import typing
 from ports import get_port
 
 
-def make_id(s):
+def make_id(s: str) -> str:
+    """Strips out bad word-separators for ids"""
     return s.replace(".", "_").replace('-', '_')
 
 
 # this forms is for the global process define
 
 
-def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
+def MakeATSProcess(obj,
+                   name:         str,
+                   command:      str = 'traffic_server',
+                   select_ports: bool = True) -> 'Process':
+    """Constructs and returns an ATS instance as a `Process` object"""
     #####################################
     # common locations
 
@@ -177,8 +185,8 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Disk.diags_log.Content += Testers.ExcludesExpression(
         "FATAL:", "diags.log should not contain errors")
 
-    # config files
-    def MakeConfigFile(self, fname):
+    def MakeConfigFile(self, fname: str) -> 'File':
+        """config files"""
         tmpname = os.path.join(config_dir, fname)
         return self.File(tmpname, id=make_id(fname), typename="ats:config")
 
@@ -306,22 +314,28 @@ class Config(File):
         self.content = content
         self._added = False
 
-    def AddLines(self, lines):
+    def AddLines(self, lines: typing.Sequence[str]):
+        '''
+        Convenience function to add multiple lines from an iterable
+        '''
         for line in lines:
             self.AddLine(line)
 
-    def _do_write(self, name):
+    def _do_write(self, name: str) -> typing.Tuple[bool, str, str]:
         '''
         Write contents to disk
         '''
-        host.WriteVerbosef('ats-config-file', "Writting out file {0}",
+        host.WriteVerbosef('ats-config-file', "Writing out file {0}",
                            self.Name)
         if self.content is not None:
             with open(name, 'w') as f:
                 f.write(self.content)
         return (False, "Appended file {0}".format(self.Name), "Success")
 
-    def AddLine(self, line):
+    def AddLine(self, line: str):
+        """
+        Adds a single line to the config.
+        """
         if not self._added:
             self.WriteCustomOn(self._do_write)
             self._added = True
@@ -368,14 +382,17 @@ class RecordsConfig(Config, dict):
             runtime=True)
         self.WriteCustomOn(self._do_write)
 
-    def _do_write(self, name):
+    def _do_write(self, name: str) -> typing.Tuple[bool, str, str]:
+        '''
+        Write contents to disk
+        '''
         host.WriteVerbosef('ats-config-file', "Writting out file {0}", name)
-        if len(self) > 0:
+        if self:
             with open(name, 'w') as f:
-                for name, val in self.items():
+                for option, val in self.items():
                     f.write(
                         self.line_template.format(
-                            name=name,
+                            name=option,
                             kind=self.reverse_kind_map[type(val)],
                             val=val)
                     )
@@ -387,7 +404,10 @@ class RecordsConfig(Config, dict):
 ##########################################################################
 
 
-def addSSLfile(self, filename):
+def addSSLfile(self, filename: str):
+    '''
+    adds an ssl file to the current execution environment
+    '''
     self.Setup.CopyAs(filename, self.Variables.SSLDir)
 
 

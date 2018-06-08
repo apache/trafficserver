@@ -1,5 +1,8 @@
 '''
+Defines helper functions working with ports, and stores the list of
+ports that the localhost isn't using.
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -31,28 +34,23 @@ except ImportError:
 g_ports = None  # ports we can use
 
 
-def PortOpen(port, address=None):
-
-    ret = False
-    if address is None:
-        address = "localhost"
-
-    address = (address, port)
-
+def PortOpen(port, address: str = "localhost") -> bool:
+    '''
+    Checks if the given port is open, optionally at a specified address
+    '''
     try:
-        s = socket.create_connection(address, timeout=.5)
-        s.close()
-        ret = True
-    except socket.error:
-        s = None
-        ret = False
-    except socket.timeout:
-        s = None
+        with socket.create_connection((address, port), timeout=.5) as s:
+            pass
+    except (socket.error, socket.timeout):
+        return False
 
-    return ret
+    return True
 
 
-def setup_port_queue(amount=1000):
+def setup_port_queue(amount: int = 1000):
+    '''
+    Populates `g_ports`  with all of the closed ports on the localhost
+    '''
     global g_ports
     if g_ports is None:
         g_ports = Queue.LifoQueue()
@@ -61,8 +59,8 @@ def setup_port_queue(amount=1000):
     try:
         # some docker setups don't have sbin setup correctly
         new_env = os.environ.copy()
-        new_env['PATH'] = "/sbin:/usr/sbin:" + new_env['PATH']
-        if 'Darwin' == platform.system():
+        new_env['PATH'] = ':'.join(("/sbin", "/usr/sbin", new_env['PATH']))
+        if platform.system() == 'Darwin':
             dmin = subprocess.check_output(
                 ["sysctl", "net.inet.ip.portrange.first"],
                 env=new_env
@@ -78,7 +76,7 @@ def setup_port_queue(amount=1000):
             ).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
-    except:
+    except (subprocess.CalledProcessError, OSError):
         host.WriteWarning("Unable to call sysctrl!\n Tests may fail because of bad port selection!")
         return
 
@@ -102,11 +100,11 @@ def setup_port_queue(amount=1000):
             port += 1
 
 
-def get_port(obj, name):
+def get_port(obj, name: str) -> int:
     '''
     Get a port and set it to a variable on the object
-
     '''
+    global g_ports
 
     setup_port_queue()
     if g_ports.qsize():
@@ -120,9 +118,10 @@ def get_port(obj, name):
         return port
 
     # use old code
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('', 0))  # bind to all interfaces on an ephemeral port
-    port = sock.getsockname()[1]
+    with socket.socket() as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(('', 0))  # bind to all interfaces on an ephemeral port
+        port = sock.getsockname()[1]
+
     obj.Variables[name] = port
     return port

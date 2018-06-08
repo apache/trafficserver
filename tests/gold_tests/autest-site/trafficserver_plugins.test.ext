@@ -19,7 +19,7 @@ Builds, installs, and enables an ATS plugin in the sandbox environment
 
 import os
 
-def prepare_plugin(self, path, tsproc, plugin_args = ""):
+def prepare_plugin(self, path: os.PathLike, tsproc: 'Process', plugin_args: str = ""):
     """Builds, installs, and enables an ATS plugin in the sandbox environment
 
     The source file at the given path is copied to the sandbox directory of the
@@ -33,7 +33,7 @@ def prepare_plugin(self, path, tsproc, plugin_args = ""):
 
     tsxs = os.path.join(self.Variables.BINDIR,'tsxs')
     # get the top level object ( ie Test) to add a condition
-    # need to change this API in AuTest to be a better name as it now has value 
+    # need to change this API in AuTest to be a better name as it now has value
     # to be called by user API - dragon512
     self._RootRunable.SkipUnless(
         Condition.HasProgram(tsxs, "tsxs needs be installed with trafficserver package for this test to run")

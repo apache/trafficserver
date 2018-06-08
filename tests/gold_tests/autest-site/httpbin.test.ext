@@ -1,4 +1,6 @@
 '''
+This module defines a function for creating an HTTP server, then adds it
+to the Test
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,19 +17,30 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import os
+import typing
 from ports import get_port
 
 
-def MakeHttpBinServer(self, name, port=False, ip=False, delay=False, public_ip=False, ssl=False, options={}):
+def MakeHttpBinServer(self,
+                      name:    str,
+                      port:    int = None,
+                      ip:      str = None,
+                      delay:   int = False,
+                      options: typing.Dict[str, str] = {}) -> 'Process':
+    '''
+    Sets up an http server with the passed options.
+    '''
+
     data_dir = os.path.join(self.RunDirectory, name)
+
     # create Process
     p = self.Processes.Process(name)
-    if (port == False):
+    if not port:
         port = get_port(p, "Port")
-    if (ip == False):
+    if not ip:
         ip = '127.0.0.1'
-    if (delay == False):
+    if not delay:
         delay = 0
 
     self._RootRunable.SkipUnless(

@@ -1,5 +1,8 @@
 '''
+Defines a class for copying ATS config files from the system's
+installation into a particular test's environment
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,25 +19,35 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
-from future.utils import native_str
-
+import typing
 
 class CopyATSConfig(SetupItem):
-    def __init__(self, file, targetname=None, process=None):
+    '''
+    This class is responsible for attaching a config file
+    to a testing process.
+    '''
+
+    def __init__(self, file, targetname:typing.Union[str, 'Process']=None, process:'Process'=None):
         super(CopyATSConfig, self).__init__(itemname="CopyATSConfig")
         self.file = file
         # some protection
-        if process is None and not isinstance(targetname, native_str):
+        if process is None and not isinstance(targetname, str):
             self.process = targetname
         else:
             self.process = process
         self.targetname = targetname
 
     def setup(self):
+        '''
+        Does the actual work of copying a config file into
+        the process's execution environment.
+
+        Raises a SetupError if the environment is not properly initialized.
+        '''
         process = self.process if self.process else self
         try:
             ts_dir = process.Env['TS_ROOT']
-        except:
+        except KeyError:
             if self.process:
                 raise SetupError(
                     'TS_ROOT is not defined. Cannot copy ats config file without location to copy to.'
@@ -46,7 +59,7 @@ class CopyATSConfig(SetupItem):
 
         # set up the config path for test manually
         config_dir = os.path.join(ts_dir, "config")
-        
+
         host.WriteVerbose("CopyATSConfig", "Copying {0} to {1}".format(
             self.file, config_dir))
         self.CopyAs(self.file, config_dir, self.targetname)

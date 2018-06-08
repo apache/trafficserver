@@ -16,7 +16,7 @@ Tests 304 responses
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 
 Test.Summary = '''
@@ -50,8 +50,10 @@ tr = Test.AddTestRun("Test domain {0}".format(DEFAULT_304_HOST))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-cmd_tpl = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
-tr.Processes.Default.Command = cmd_tpl.format(ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_304_HOST))
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+cmd_tpl = "{0} tcp_client.py 127.0.0.1 {1} {2} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
+tr.Processes.Default.Command = cmd_tpl.format(executable, ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_304_HOST))
 tr.Processes.Default.TimeOut = 5  # seconds
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http-304.gold"

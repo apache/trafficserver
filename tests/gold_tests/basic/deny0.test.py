@@ -18,6 +18,7 @@ Test that Trafficserver rejects requests for host 0
 #  limitations under the License.
 
 import os
+import sys
 import socket
 Test.Summary = '''
 Test that Trafficserver rejects requests for host 0
@@ -54,7 +55,10 @@ with open(os.path.join(data_path, 'deny0.gold'), 'w') as f:
     f.write('HTTP/1.1 400 Bad Destination Address\r\n')
 
 isFirstTest = True
-def buildMetaTest(testName, requestString):
+def buildMetaTest(testName: str, requestString: str):
+  '''
+  a 'meta' test that constructs and runs redirect tests for specific requests
+  '''
   tr = Test.AddTestRun(testName)
   global isFirstTest
   if isFirstTest:
@@ -64,7 +68,9 @@ def buildMetaTest(testName, requestString):
     tr.Processes.Default.StartBefore(dns)
   with open(os.path.join(data_path, tr.Name), 'w') as f:
       f.write(requestString)
-  tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | head -1".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
+  # This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined.
+  executable = sys.executable if sys.executable else 'python3'
+  tr.Processes.Default.Command = "{0} tcp_client.py 127.0.0.1 {1} {2} | head -1".format(executable, ts.Variables.port, os.path.join(data_dirname, tr.Name))
   tr.ReturnCode = 0
   tr.Processes.Default.Streams.stdout = gold_filepath
   tr.StillRunningAfter = ts

@@ -18,6 +18,7 @@ Tests that plugins may break HTTP by sending 204 respose bodies
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Tests that plugins may break HTTP by sending 204 respose bodies
@@ -48,8 +49,10 @@ tr = Test.AddTestRun("Test domain {0}".format(CUSTOM_PLUGIN_204_HOST))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
-    format(ts.Variables.port, 'data/{0}_get.txt'.format(CUSTOM_PLUGIN_204_HOST))
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+tr.Processes.Default.Command = "{0} tcp_client.py 127.0.0.1 {1} {2} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+    format(executable, ts.Variables.port, 'data/{0}_get.txt'.format(CUSTOM_PLUGIN_204_HOST))
 tr.Processes.Default.TimeOut = 5  # seconds
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http-204-custom-plugin.gold"

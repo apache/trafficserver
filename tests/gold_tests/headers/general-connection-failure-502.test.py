@@ -16,7 +16,7 @@ Test response when connection to origin fails
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 
 Test.Summary = '''
@@ -25,7 +25,7 @@ Test response when connection to origin fails
 ts = Test.MakeATSProcess("ts")
 
 HOST = 'www.connectfail502.test'
-server = Test.MakeOriginServer("server", ssl=False) # Reserves a port across autest.
+server = Test.MakeOriginServer("server", use_ssl=False) # Reserves a port across autest.
 
 ts.Disk.remap_config.AddLine(
         'map http://{host} http://{ip}:{uport}'.format(host=HOST, ip='127.0.0.1', uport=server.Variables.Port)
@@ -36,10 +36,13 @@ Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, 'tcp_client.py'))
 data_file=Test.Disk.File("www.connectfail502.test-get.txt", id="datafile")
 data_file.WriteOn("GET / HTTP/1.1\r\nHost: {host}\r\n\r\n".format(host=HOST))
 
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 # Do not start the origin server: We wish to simulate connection refused while hopefully no one else uses this port.
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | sed -e '/^Date: /d' -e '/^Server: ATS\//d'"\
-        .format(ts.Variables.port, "www.connectfail502.test-get.txt")
+tr.Processes.Default.Command = "{0} tcp_client.py 127.0.0.1 {1} {2} | sed -e '/^Date: /d' -e '/^Server: ATS\//d'"\
+        .format(executable, ts.Variables.port, "www.connectfail502.test-get.txt")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'general-connection-failure-502.gold'

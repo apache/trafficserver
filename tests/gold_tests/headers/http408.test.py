@@ -1,5 +1,5 @@
 '''
-Test the 408 reponse header. 
+Test the 408 reponse header.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,7 +16,7 @@ Test the 408 reponse header.
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 import subprocess
 
@@ -48,11 +48,14 @@ ts.Disk.records_config.update({
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
 
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'python tcp_client.py 127.0.0.1 {0} {1} --delay-after-send {2}'\
-        .format(ts.Variables.port, 'data/{0}.txt'.format(HTTP_408_HOST), TIMEOUT + 2)
+tr.Processes.Default.Command = '{0} tcp_client.py 127.0.0.1 {1} {2} --delay-after-send {3}'\
+        .format(executable, ts.Variables.port, 'data/{0}.txt'.format(HTTP_408_HOST), TIMEOUT + 2)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = "http408.gold"

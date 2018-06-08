@@ -1,4 +1,5 @@
 '''
+Test post_err
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,7 +16,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 Test.Summary = '''
 Test post_error
@@ -31,9 +32,12 @@ Test.ContinueOnFail = True
 tr=Test.Build(target='post_server',sources=['post_server.c'])
 tr.Setup.Copy('post_server.c')
 
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+
 tr = Test.AddTestRun()
 tr.Setup.Copy('create_post_body.py')
-tr.Processes.Default.Command = "python create_post_body.py"
+tr.Processes.Default.Command = "%s create_post_body.py" % executable
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)

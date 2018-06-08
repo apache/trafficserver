@@ -1,4 +1,5 @@
 '''
+This module defines condition helper functions for tests to check against before running
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,13 +16,26 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import os
 
-def HasOpenSSLVersion(self, version):
+def HasOpenSSLVersion(self, version: str) -> bool:
+    '''
+    Returns whether the current testing environment has OpenSSL version >= `version`
+    '''
     return self.EnsureVersion(["openssl","version"],min_version=version)
 
-def HasCurlFeature(self, feature):
+def HasCurlFeature(self, feature: str) -> bool:
+    '''
+    Returns whether or not the system's 'curl' supports `feature`.
+    '''
 
-    def default(output):
+    def default(output: str) -> bool:
+        '''
+        A function that operates on the output of 'curl --version'
+        to supply the information needed by `HasCurlFeature`
+        '''
+        nonlocal feature
+
         FEATURE_TAG = 'Features:'
         tag = feature.lower()
         for line in output.splitlines():
@@ -29,9 +43,8 @@ def HasCurlFeature(self, feature):
             if line.startswith(FEATURE_TAG):
                 # get a features and lower case then for safety
                 line = line[len(FEATURE_TAG):].lower()
-                tokens = line.split()
-                for t in tokens:
-                    if t == tag:
+                for token in line.split():
+                    if token == tag:
                         return True
         return False
 
@@ -42,24 +55,28 @@ def HasCurlFeature(self, feature):
     )
 
 
-def HasATSFeature(self, feature):
+def HasATSFeature(self, feature: str) -> bool:
+    '''
+    Checks for the presence of `feature` in the testing environment's ATS installation
+    '''
 
     val = self.Variables.get(feature, None)
 
     return self.Condition(
-        lambda: val == True,
+        lambda: bool(val),
         "ATS feature not enabled: {feature}".format(feature=feature)
     )
 
-#test if a plugin exists in the libexec folder
-def PluginExists(self, pluginname):
+def PluginExists(self, pluginname: str) -> bool:
+    '''
+    test if a plugin exists in the libexec folder
+    '''
 
     path = os.path.join(self.Variables.PLUGINDIR, pluginname)
-    return self.Condition(lambda: os.path.isfile(path) == True, path + " not found." )
+    return self.Condition(lambda: os.path.isfile(path), path + " not found." )
 
 
 ExtendCondition(HasOpenSSLVersion)
 ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlFeature)
 ExtendCondition(PluginExists)
-

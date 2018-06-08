@@ -14,6 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import sys
+
 Test.Summary = '''
 Test xdebug plugin X-Remap header
 '''
@@ -52,12 +54,14 @@ tr.Processes.Default.Command = "cp {}/tcp_client.py {}/tcp_client.py".format(
     Test.Variables.AtsTestToolsDir, Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 
-def sendMsg(msgFile):
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
 
+def sendMsg(msgFile):
     tr = Test.AddTestRun()
     tr.Processes.Default.Command = (
-        "( python {}/tcp_client.py 127.0.0.1 {} {}/{}.in".format(
-            Test.RunDirectory, ts.Variables.port, Test.TestDirectory, msgFile) +
+        "( {} {}/tcp_client.py 127.0.0.1 {} {}/{}.in".format(
+            executable, Test.RunDirectory, ts.Variables.port, Test.TestDirectory, msgFile) +
         " ; echo '======' ) | sed 's/:{}/:SERVER_PORT/' >>  {}/out.log 2>&1 ".format(
             server.Variables.Port, Test.RunDirectory)
     )

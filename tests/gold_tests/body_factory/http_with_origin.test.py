@@ -16,7 +16,7 @@ Tests that HEAD requests return proper responses
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 
 Test.Summary = '''
@@ -70,14 +70,17 @@ server.addResponse("sessionfile.log", {
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
 
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
+
 trhead200 = Test.AddTestRun("Test domain {0}".format(HOST))
 trhead200.Processes.Default.StartBefore(Test.Processes.ts)
 trhead200.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 trhead200.StillRunningAfter = ts
 trhead200.StillRunningAfter = server
 
-trhead200.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
-    format(ts.Variables.port, 'data/{0}_head_200.txt'.format(HOST))
+trhead200.Processes.Default.Command = "{0} tcp_client.py 127.0.0.1 {1} {2} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+    format(executable, ts.Variables.port, 'data/{0}_head_200.txt'.format(HOST))
 trhead200.Processes.Default.TimeOut = 5  # seconds
 trhead200.Processes.Default.ReturnCode = 0
 trhead200.Processes.Default.Streams.stdout = "gold/http-head-200.gold"
@@ -89,8 +92,8 @@ trget200.StillRunningBefore = server
 trget200.StillRunningAfter = ts
 trget200.StillRunningAfter = server
 
-trget200.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
-    format(ts.Variables.port, 'data/{0}_get_200.txt'.format(HOST))
+trget200.Processes.Default.Command = "{0} tcp_client.py 127.0.0.1 {1} {2} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+    format(executable, ts.Variables.port, 'data/{0}_get_200.txt'.format(HOST))
 trget200.Processes.Default.TimeOut = 5  # seconds
 trget200.Processes.Default.ReturnCode = 0
 trget200.Processes.Default.Streams.stdout = "gold/http-get-200.gold"
@@ -102,8 +105,8 @@ trget304.StillRunningBefore = server
 trget304.StillRunningAfter = ts
 trget304.StillRunningAfter = server
 
-cmd_tpl = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
-trget304.Processes.Default.Command = cmd_tpl.format(ts.Variables.port, 'data/{0}_get_304.txt'.format(HOST))
+cmd_tpl = "{0} tcp_client.py 127.0.0.1 {1} {2} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
+trget304.Processes.Default.Command = cmd_tpl.format(executable, ts.Variables.port, 'data/{0}_get_304.txt'.format(HOST))
 trget304.Processes.Default.TimeOut = 5  # seconds
 trget304.Processes.Default.ReturnCode = 0
 trget304.Processes.Default.Streams.stdout = "gold/http-get-304.gold"

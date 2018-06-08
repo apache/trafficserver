@@ -16,7 +16,7 @@ Tests that 204 responses conform to rfc2616, unless custom templates override.
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
 
 Test.Summary = '''
@@ -70,6 +70,8 @@ ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(
     '//.*/ http://127.0.0.1:{0} @status=204'
     .format(server.Variables.Port)
 )
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
@@ -78,8 +80,8 @@ defaultTr = Test.AddTestRun("Test domain {0}".format(DEFAULT_204_HOST))
 defaultTr.Processes.Default.StartBefore(Test.Processes.ts)
 defaultTr.StillRunningAfter = ts
 
-defaultTr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
-    format(ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_204_HOST))
+defaultTr.Processes.Default.Command = "{0} tcp_client.py 127.0.0.1 {1} {2} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+    format(executable, ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_204_HOST))
 defaultTr.Processes.Default.TimeOut = 5  # seconds
 defaultTr.Processes.Default.ReturnCode = 0
 defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
@@ -88,8 +90,8 @@ defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
 customTemplateTr = Test.AddTestRun("Test domain {0}".format(CUSTOM_TEMPLATE_204_HOST))
 customTemplateTr.StillRunningBefore = ts
 customTemplateTr.StillRunningAfter = ts
-customTemplateTr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
-    format(ts.Variables.port, 'data/{0}_get.txt'.format(CUSTOM_TEMPLATE_204_HOST))
+customTemplateTr.Processes.Default.Command = "{0} tcp_client.py 127.0.0.1 {1} {2} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+    format(executable, ts.Variables.port, 'data/{0}_get.txt'.format(CUSTOM_TEMPLATE_204_HOST))
 customTemplateTr.Processes.Default.TimeOut = 5  # seconds
 customTemplateTr.Processes.Default.ReturnCode = 0
 customTemplateTr.Processes.Default.Streams.stdout = "gold/http-204-custom.gold"

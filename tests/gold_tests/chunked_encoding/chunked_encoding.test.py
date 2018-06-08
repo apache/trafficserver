@@ -30,7 +30,7 @@ Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server")
-server2 = Test.MakeOriginServer("server2", ssl=True)
+server2 = Test.MakeOriginServer("server2", use_ssl=True)
 server3 = Test.MakeOriginServer("server3")
 
 testName = ""

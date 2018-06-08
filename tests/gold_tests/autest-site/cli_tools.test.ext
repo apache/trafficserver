@@ -1,6 +1,7 @@
 '''
 Tools to help with TestRun commands
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -24,32 +25,38 @@ Tools to help with TestRun commands
 # curlcmd = 'curl -vs -k https:127.0.0.1:{port}'.format(port = ts.Variables.port)
 #
 # tr = Test.AddTestRun()
-# ps = tr.SpawnCommands(cmdstr=cmdstr, count=25)
+# ps = tr.SpawnCommands(cmd=cmdstr, count=25)
 # tr.Processes.Default.StartBefore(ts)
 # ts.StartAfter(*ps)
 # tr.StillRunningAfter = ts
 #
-# Note that by default, the Default Process is created in this function. 
+# Note that by default, the Default Process is created in this function.
 
-def spawn_commands(self, cmdstr, count, retcode = 0, use_default=True):
-    ret=[] 
+def spawn_commands(self, cmd: str, count: int, retcode: int = 0, use_default: bool=True) -> list:
+    '''
+    Returns a list of `count` processes used to run `cmd` and expected to return `retcode`
+
+    If use_default is True (default), sets the tests's default process.
+    '''
+
+    ret=[]
 
     if use_default:
-        count = int(count) - 1  
-    for cnt in range(0,count):  
-        ret.append(  
-            self.Processes.Process(  
-                name="cmdline-{num}".format(num=cnt),  
-                cmdstr = cmdstr,  
+        count = int(count) - 1
+    for cnt in range(count):
+        ret.append(
+            self.Processes.Process(
+                name="cmdline-{num}".format(num=cnt),
+                cmdstr = cmd,
                 returncode = retcode
-                )  
+                )
             )
     if use_default:
-        self.Processes.Default.Command = cmdstr
+        self.Processes.Default.Command = cmd
         self.Processes.Default.ReturnCode = retcode
         self.Processes.Default.StartBefore(
             *ret
         )
-    return ret 
+    return ret
 
 ExtendTestRun(spawn_commands, name="SpawnCommands")

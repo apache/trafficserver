@@ -15,8 +15,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import sys
 import os
+
+
+# This sets up a reasonable fallback in the event the absolute path to this interpreter cannot be determined
+executable = sys.executable if sys.executable else 'python3'
 
 
 class SlowPostAttack:
@@ -60,7 +64,7 @@ class SlowPostAttack:
 
     def run(self):
         tr = Test.AddTestRun()
-        tr.Processes.Default.Command = 'python3 {0} -p {1} -c {2}'.format(
+        tr.Processes.Default.Command = '{0} {1} -p {2} -c {3}'.format( executable,
             self._slow_post_client, self._ts.Variables.port, self._origin_max_connections)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._server)

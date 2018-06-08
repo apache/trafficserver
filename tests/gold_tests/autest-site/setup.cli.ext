@@ -1,4 +1,7 @@
 '''
+This module is responsible for checking the status of the ATS install at
+runtime, and also for setting up the testing environment and logging all
+of this information.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -42,9 +45,8 @@ if ENV['ATS_BIN'] is not None:
         out = subprocess.check_output([traffic_layout, "--json"])
     except subprocess.CalledProcessError:
         host.WriteError("traffic_layout is broken. Aborting tests - The build of traffic server is bad.", show_stack=False)
-    out = json.loads(out.decode("utf-8"))
-    for k, v in out.items():
-        out[k] = v[:-1] if v.endswith('/') else v
+    out = {k: v.rstrip('/') for k,v in json.loads(out.decode()).items()}
+
     Variables.update(out)
     host.WriteVerbose(['ats'], "Traffic server layout Data:\n", pprint.pformat(out))
     # if the above worked this should as well
@@ -54,11 +56,11 @@ if ENV['ATS_BIN'] is not None:
     Variables.update(out)
     host.WriteVerbose(['ats'], "Traffic server feature data:\n", pprint.pformat(out))
 
-    # update version number 
-    out = subprocess.check_output([traffic_layout, "--version"]) 
-    out = Version(out.decode("utf-8").split("-")[2].strip()) 
+    # update version number
+    out = subprocess.check_output([traffic_layout, "--version"])
+    out = Version(out.decode("utf-8").split("-")[2].strip())
     Variables.trafficserver_version = out
-    host.WriteVerbose(['ats'], "Traffic server version:", out) 
+    host.WriteVerbose(['ats'], "Traffic server version:", out)
 
     # this querys tsxs for build flags so we can build code for the tests and get certain
     # useful flags as which openssl to use when we don't use the system version
@@ -69,7 +71,7 @@ if ENV['ATS_BIN'] is not None:
         'CXX': ''
     }
     if os.path.isfile(tsxs):
-        for flag in out.keys():
+        for flag in out:
             try:
                 data = subprocess.check_output([tsxs, "-q", flag])
                 out[flag] = data.decode("utf-8")[:-1]

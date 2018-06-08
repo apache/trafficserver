@@ -1,4 +1,5 @@
 '''
+This module defines tools for creating and configuring a minimal DNS server.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,59 +17,62 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ports import get_port
 import json
 import os
 import sys
+import typing
+from ports import get_port
 
-# AddRecord registers a list of ip address against hostname
-def AddRecord(hostname, list_ip_addr):
+def addRecords(self, records: typing.Dict[str, typing.List[str]]=None, jsonFile: str=None):
+    '''
+    Registers a dictionary `records` of DNS mappings with a microDNS server.
 
-    record = dict()
-    record[hostname] = list_ip_addr
-    return record
-
-# dict in format {'domain': [IPs]}
-# json file in the same mappings/otherwise format that uDNS takes
-
-
-def addRecords(self, records=None, jsonFile=None):
-    jsondata = None
+    dict in format {'domain': [IPs]}
+    json file in the same mappings/otherwise format that uDNS takes
+    '''
+    records = records if records else {}
 
     # at this point the default file and fields should have been created
     if os.path.exists(self.Variables.zone_file):
-        with open(self.Variables.zone_file, 'r') as f:
+        with open(self.Variables.zone_file) as f:
             jsondata = json.load(f)
     else:
         raise FileNotFoundError("default zone file doesn't exist, but it should.")
 
-    if records:
-        for domain in records:
-            # Let's do this for the test writer's convenience.
-            normalized_domain = domain
-            if normalized_domain[-1] != '.':
-                normalized_domain += '.'
-            record = AddRecord(normalized_domain, records[domain])
+    for domain, ips in records.items():
+        # Let's do this for the test writer's convenience.
+        if not domain.endswith('.'):
+            domain += '.'
 
-            jsondata["mappings"].append(record)
+        jsondata["mappings"].append({domain: ips})
 
     if jsonFile:
         jsonFile = os.path.join(self.TestDirectory, jsonFile)
         self.Setup.Copy(jsonFile, self.Variables.DataDir)
 
-        with open(jsonFile, 'r') as f:
+        with open(jsonFile) as f:
             entries = json.load(f)
 
-            if entries:
-                # not copying over entries['otherwise']. dont see the need to
-                for record in entries["mappings"]:
-                    jsondata["mappings"].append(record)
+        if entries and "mappings" in entries:
+            # not copying over entries['otherwise']. dont see the need to
+            jsondata["mappings"].extend(entries["mappings"])
 
     with open(self.Variables.zone_file, 'w+') as f:
         f.write(json.dumps(jsondata))
 
 
-def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOOPBACK', rr=False, default=None, options={}):
+def MakeDNServer(obj,
+                 name: str,
+                 filename: str = "dns_file.json",
+                 port: int = None,
+                 ip: str = 'INADDR_LOOPBACK',
+                 rr: bool = False,
+                 default: typing.Dict[str, typing.List[str]] = None) -> 'Process':
+    '''
+    Starts up a uDNS server, optionally with some default records, and returns a
+    'Process' object which refers to it.
+    '''
+
     server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microDNS/uDNS.py')
     data_dir = os.path.join(obj.RunDirectory, name)
     filepath = os.path.join(data_dir, filename)
@@ -88,9 +92,16 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
 
     # create Process
     p = obj.Processes.Process(name)
-    if (port == False):
+    if not port:
         port = get_port(p, "Port")
-    command = "python3 {0} {1} {2} {3}".format(server_path, ip, port, filepath)
+
+    # Sometimes the absolute interpreter path cannot be determined, so this sets
+    # up a reasonable default.
+    command = " ".join((sys.executable if sys.executable else 'python3',
+                        server_path,
+                        ip,
+                        str(port),
+                        filepath))
 
     if rr:
         command += " --rr"
@@ -103,14 +114,13 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
 
     # to get the IP keywords in tools/lib
     sys.path.append(obj.Variables.AtsTestToolsDir)
-    import lib.IPConstants as IPConstants
+    from lib import IPConstants
 
     if IPConstants.isIPv6(ip):
         p.Ready = When.PortOpenv6(port)
     else:
         p.Ready = When.PortOpenv4(port)
-        
-    AddMethodToInstance(p, AddRecord)
+
     AddMethodToInstance(p, addRecords)
 
     return p

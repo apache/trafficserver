@@ -1,6 +1,7 @@
 '''
 Build random code for running as part of a test
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -18,23 +19,36 @@ Build random code for running as part of a test
 #  limitations under the License.
 
 import re
+import typing
 import autest.common.is_a as is_a
 
 
-def Build(Test, target, sources, CPPFLAGS='', LDFLAGS='', LIBS='', CC=None):
+def Build(Test,
+          target: str,
+          sources: typing.Union[typing.Sequence[str], str],
+          CPPFLAGS: str = '',
+          LDFLAGS: str = '',
+          LIBS: str = '',
+          CC: str = None) -> 'TestRun':
+    '''
+    Builds c++ source files using compiler `CC`, compiler flags `CPPFLAGS`,
+    linker flags `LDFLAGS` and libraries `LIBS`, outputting to `target`.
+
+    If not specified, uses the system's default values for flags, libraries,
+    and compiler.
+    '''
     if is_a.OrderedSequence(sources):
         sources = " ".join(sources)
     tr = Test.AddTestRun("Build", "Build test files: {0}".format(sources))
-    vars = Test.ComposeVariables()
-    if CC is None:
-        cc = vars.CXX
-    else:
-        cc = CC
+
+    variables = Test.ComposeVariables()
+
+    cc = CC if CC else variables.CXX
 
     tr.Processes.Default.Command = '{cc} -o {target} {cppflags} {sources} {ldflags} {libs}'.format(
-        cppflags="{0} {1}".format(vars.CPPFLAGS, CPPFLAGS),
-        ldflags="{0} {1}".format(vars.LDFLAGS, LDFLAGS),
-        libs="{0} {1}".format(vars.LIBS, LIBS),
+        cppflags="{0} {1}".format(variables.CPPFLAGS, CPPFLAGS),
+        ldflags="{0} {1}".format(variables.LDFLAGS, LDFLAGS),
+        libs="{0} {1}".format(variables.LIBS, LIBS),
         target=target,
         sources=sources,
         cc=cc
