@@ -113,6 +113,7 @@ QUICClient::state_http_server_open(int event, void *data)
 // QUICClientApp
 //
 #define QUICClientAppDebug(fmt, ...) Debug("quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define QUICClientAppVDebug(fmt, ...) Debug("v_quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 QUICClientApp::QUICClientApp(QUICNetVConnection *qvc, const char *filename) : QUICApplication(qvc), _filename(filename)
 {
@@ -153,7 +154,7 @@ QUICClientApp::start(const char *path)
 int
 QUICClientApp::main_event_handler(int event, Event *data)
 {
-  QUICClientAppDebug("%s (%d)", get_vc_event_name(event), event);
+  QUICClientAppVDebug("%s (%d)", get_vc_event_name(event), event);
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);

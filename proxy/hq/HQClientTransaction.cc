@@ -37,6 +37,11 @@
         static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->parent->get_netvc()))->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
+#define HQTransVDebug(fmt, ...)                                                                                          \
+  Debug("v_hq_trans", "[%s] [%" PRIx32 "] " fmt,                                                                         \
+        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->parent->get_netvc()))->cids().data(), \
+        this->get_transaction_id(), ##__VA_ARGS__)
+
 // static void
 // dump_io_buffer(IOBufferReader *reader)
 // {
@@ -119,7 +124,7 @@ int
 HQClientTransaction::state_stream_open(int event, void *edata)
 {
   // TODO: should check recursive call?
-  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
+  HQTransVDebug("%s (%d)", get_vc_event_name(event), event);
 
   if (this->_thread != this_ethread()) {
     // Send on to the owning thread
@@ -176,7 +181,7 @@ HQClientTransaction::state_stream_open(int event, void *edata)
 int
 HQClientTransaction::state_stream_closed(int event, void *data)
 {
-  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
+  HQTransVDebug("%s (%d)", get_vc_event_name(event), event);
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -358,7 +363,7 @@ HQClientTransaction::_signal_read_event()
     this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
   }
 
-  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
+  HQTransVDebug("%s (%d)", get_vc_event_name(event), event);
 }
 
 /**
@@ -379,7 +384,7 @@ HQClientTransaction::_signal_write_event()
     this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
   }
 
-  HQTransDebug("%s (%d)", get_vc_event_name(event), event);
+  HQTransVDebug("%s (%d)", get_vc_event_name(event), event);
 }
 
 // Convert HTTP/0.9 to HTTP/1.1
@@ -498,8 +503,6 @@ HQClientTransaction::_process_write_vio()
     // Write HTTP/1.1 response body
     int64_t bytes_avail   = reader->read_avail();
     int64_t total_written = 0;
-
-    HQTransDebug("%" PRId64, bytes_avail);
 
     while (total_written < bytes_avail) {
       int64_t data_len      = reader->block_read_avail();

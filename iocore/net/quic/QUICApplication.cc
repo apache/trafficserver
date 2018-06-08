@@ -24,7 +24,11 @@
 #include "QUICApplication.h"
 #include "QUICStream.h"
 
-static constexpr char tag[] = "quic_app";
+static constexpr char tag_stream_io[] = "quic_stream_io";
+static constexpr char tag_app[]       = "quic_app";
+
+#define QUICStreamIODebug(fmt, ...) \
+  Debug(tag_stream_io, "[%s] [%" PRIu64 "] " fmt, this->_stream->info()->cids().data(), this->_stream->id(), ##__VA_ARGS__)
 
 //
 // QUICStreamIO
@@ -57,6 +61,11 @@ QUICStreamIO::stream_id() const
 int64_t
 QUICStreamIO::read(uint8_t *buf, int64_t len)
 {
+  if (is_debug_tag_set(tag_stream_io)) {
+    QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " read_avail=%" PRId64 " read_len=%" PRId64, this->_read_vio->nbytes,
+                      this->_read_vio->ndone, this->_read_buffer_reader->read_avail(), len);
+  }
+
   int64_t nread = this->_read_buffer_reader->read(const_cast<uint8_t *>(buf), len);
   if (nread > 0) {
     this->_read_vio->ndone += nread;
@@ -92,8 +101,10 @@ QUICStreamIO::write(IOBufferReader *r, int64_t len)
   int64_t bytes_avail = this->_write_buffer->write_avail();
 
   if (bytes_avail > 0) {
-    Debug(tag, "nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->nbytes,
-          this->_write_vio->ndone, bytes_avail, len);
+    if (is_debug_tag_set(tag_stream_io)) {
+      QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->nbytes,
+                        this->_write_vio->ndone, bytes_avail, len);
+    }
 
     int64_t bytes_len = std::min(bytes_avail, len);
     int64_t nwritten  = this->_write_buffer->write(r, bytes_len);
@@ -199,7 +210,7 @@ QUICApplication::reenable(QUICStream *stream)
     stream_io->read_reenable();
     stream_io->write_reenable();
   } else {
-    Debug(tag, "[%s] Unknown Stream id=%" PRIx64, this->_qc->cids().data(), stream->id());
+    Debug(tag_app, "[%s] Unknown Stream id=%" PRIx64, this->_qc->cids().data(), stream->id());
   }
 
   return;

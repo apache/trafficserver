@@ -334,7 +334,7 @@ QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, con
 
   bool ret = _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, aead, tag_len);
   if (!ret) {
-    Debug(tag, "Failed to encrypt a packet: pkt_num=%" PRIu64, pkt_num);
+    Debug(tag, "Failed to encrypt a packet #%" PRIu64, pkt_num);
   }
   return ret;
 }
@@ -368,7 +368,7 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
   const QUIC_EVP_CIPHER *aead = this->_get_evp_aead(phase);
   bool ret = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, aead, tag_len);
   if (!ret) {
-    Debug(tag, "Failed to decrypt a packet: pkt_num=%" PRIu64, pkt_num);
+    Debug(tag, "Failed to decrypt a packet #%" PRIu64, pkt_num);
   }
   return ret;
 }

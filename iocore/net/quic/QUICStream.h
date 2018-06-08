@@ -65,6 +65,7 @@ public:
   void init_flow_control_params(uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
 
   QUICStreamId id() const;
+  const QUICConnectionInfoProvider *info() const;
   QUICOffset final_offset() const;
   void reset_send_offset();
   void reset_recv_offset();

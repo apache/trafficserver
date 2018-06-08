@@ -420,7 +420,7 @@ QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
 
   if (packet) {
-    QUICConDebug("Enqueue %s pkt_num=%" PRIu64 " size=%hu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+    QUICConDebug("Enqueue %s packet #%" PRIu64 " size=%hu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                  packet->size());
     // TODO Remove const_cast
     this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
@@ -439,7 +439,7 @@ QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
 void
 QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 {
-  QUICConDebug("Retransmit packet #%" PRIu64 " type %s", packet.packet_number(), QUICDebugNames::packet_type(packet.type()));
+  QUICConDebug("Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet.type()), packet.packet_number());
 
   this->_packet_retransmitter.retransmit_packet(packet);
 }
@@ -1510,7 +1510,7 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
       QUICConDebug("Dequeue %s size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
     } else {
-      QUICConDebug("Dequeue %s pkt_num=%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+      QUICConDebug("Dequeue %s packet #%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                    packet->size());
     }
     break;

@@ -87,6 +87,12 @@ QUICStream::id() const
   return this->_id;
 }
 
+const QUICConnectionInfoProvider *
+QUICStream::info() const
+{
+  return this->_info;
+}
+
 QUICOffset
 QUICStream::final_offset() const
 {
