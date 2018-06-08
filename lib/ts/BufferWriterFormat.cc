@@ -914,6 +914,43 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
   return w;
 }
 
+bwf::Date::Date(std::string_view fmt) : _epoch(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())), _fmt(fmt) {}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date)
+{
+  if (spec.has_numeric_type()) {
+    bwformat(w, spec, date._epoch);
+  } else {
+    struct tm t;
+    auto r = w.remaining();
+    size_t n{0};
+    // Verify @a fmt is null terminated, even outside the bounds of the view.
+    ink_assert(date._fmt.data()[date._fmt.size() - 1] == 0 || date._fmt.data()[date._fmt.size()] == 0);
+    // Get the time, GMT or local if specified.
+    if (spec._ext == "local"sv) {
+      localtime_r(&date._epoch, &t);
+    } else {
+      gmtime_r(&date._epoch, &t);
+    }
+    // Try a direct write, faster if it works.
+    if (r > 0) {
+      n = strftime(w.auxBuffer(), r, date._fmt.data(), &t);
+    }
+    if (n > 0) {
+      w.fill(n);
+    } else {
+      // Direct write didn't work. Unfortunately need to write to a temporary buffer or the sizing
+      // isn't correct if @a w is clipped because @c strftime returns 0 if the buffer isn't large
+      // enough.
+      char buff[256]; // hope for the best - no real way to resize appropriately on failure.
+      n = strftime(buff, sizeof(buff), date._fmt.data(), &t);
+      w.write(buff, n);
+    }
+  }
+  return w;
+}
+
 } // namespace ts
 
 namespace
@@ -926,7 +963,7 @@ BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
   char buff[32];
   std::time_t t = std::time(nullptr);
   auto n        = strftime(buff, sizeof(buff), "%Y %b %d %H:%M:%S", std::localtime(&t));
-  w.write(std::string_view{buff, n});
+  w.write(buff, n);
 }
 
 void
