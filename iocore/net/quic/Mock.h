@@ -480,6 +480,13 @@ public:
 
 class MockQUICStream : public QUICStream
 {
+public:
+  MockQUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid, uint64_t recv_max_stream_data,
+                 uint64_t send_max_stream_data)
+    : QUICStream(rtt_provider, info, sid, recv_max_stream_data, send_max_stream_data)
+  {
+  }
+
 private:
   int64_t
   _process_read_vio() override
