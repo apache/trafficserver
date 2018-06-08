@@ -131,4 +131,4 @@ HTTP Connection
 .. ts:stat:: global proxy.process.http.origin_connections_throttled_out integer
    :type: counter
 
-This tracks the number of origin connections denied due to being over the :ts:cv:`proxy.config.http.origin_max_connections` limit.
+   This tracks the number of origin connections denied due to being over the :ts:cv:`proxy.config.http.per_server.connection.max` limit.

@@ -29,6 +29,7 @@
 
 #pragma once
 
+// This is use to signal apidefs.h to not define these again.
 #ifndef _HTTP_PROXY_API_ENUMS_H_
 #define _HTTP_PROXY_API_ENUMS_H_
 
@@ -45,4 +46,13 @@ typedef enum {
   TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
   TS_SERVER_SESSION_SHARING_POOL_THREAD,
 } TSServerSessionSharingPoolType;
+
+/// Values for per server outbound connection tracking group definition.
+/// See proxy.config.http.per_server.match
+typedef enum {
+  TS_SERVER_OUTBOUND_MATCH_IP,
+  TS_SERVER_OUTBOUND_MATCH_PORT,
+  TS_SERVER_OUTBOUND_MATCH_HOST,
+  TS_SERVER_OUTBOUND_MATCH_BOTH
+} TSOutboundConnectionMatchType;
 #endif

@@ -42,6 +42,7 @@
 #include "HttpPages.h"
 #include "IPAllow.h"
 #include "ts/I_Layout.h"
+#include "ts/bwf_std_format.h"
 
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
@@ -80,6 +81,9 @@ static const int boundary_size   = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
 static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
 static const int len_100_continue_response   = strlen(str_100_continue_response);
+
+// Handy typedef for short (single line) message generation.
+using lbw = ts::LocalBufferWriter<256>;
 
 namespace
 {
@@ -1720,22 +1724,18 @@ HttpSM::state_http_server_open(int event, void *data)
                 httpServerSessionAllocator.alloc();
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
-    // If origin_max_connections or origin_min_keep_alive_connections is
-    // set then we are metering the max and or min number
-    // of connections per host.  Set enable_origin_connection_limiting
-    // to true in the server session so it will increment and decrement
-    // the connection count.
-    if (t_state.txn_conf->origin_max_connections > 0 || t_state.http_config_param->origin_min_keep_alive_connections > 0) {
-      SMDebug("http_ss", "[%" PRId64 "] max number of connections: %" PRIu64, sm_id, t_state.txn_conf->origin_max_connections);
-      session->enable_origin_connection_limiting = true;
-    }
-    /*UnixNetVConnection * vc = (UnixNetVConnection*)(ua_txn->client_vc);
-       UnixNetVConnection *server_vc = (UnixNetVConnection*)data;
-       printf("client fd is :%d , server fd is %d\n",vc->con.fd,
-       server_vc->con.fd); */
+
     session->attach_hostname(t_state.current.server->name);
     session->new_connection(static_cast<NetVConnection *>(data));
     session->state = HSS_ACTIVE;
+
+    // If origin_max_connections or origin_min_keep_alive_connections is set then we are metering
+    // the max and or min number of connections per host. Transfer responsibility for this to the
+    // session object.
+    if (t_state.outbound_conn_track_state.is_active()) {
+      SMDebug("http_ss", "[%" PRId64 "] max number of outbound connections: %d", sm_id, t_state.txn_conf->outbound_conntrack.max);
+      session->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
+    }
 
     attach_server_session(session);
     if (t_state.current.request_to == HttpTransact::PARENT_PROXY) {
@@ -1759,6 +1759,7 @@ HttpSM::state_http_server_open(int event, void *data)
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
     t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
+    t_state.outbound_conn_track_state.clear();
 
     /* If we get this error in transparent mode, then we simply can't bind to the 4-tuple to make the connection.  There's no hope
        of retries succeeding in the near future. The best option is to just shut down the connection without further comment. The
@@ -4620,7 +4621,7 @@ void
 HttpSM::send_origin_throttled_response()
 {
   t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries;
-  t_state.current.state    = HttpTransact::CONNECTION_ERROR;
+  t_state.current.state    = HttpTransact::OUTBOUND_CONGESTION;
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
@@ -4644,6 +4645,10 @@ HttpSM::do_http_server_open(bool raw)
   }
   pending_action = nullptr;
   ink_assert(server_entry == nullptr);
+
+  // Clean up connection tracking info if any. Need to do it now so the selected group
+  // is consistent with the actual upstream in case of retry.
+  t_state.outbound_conn_track_state.clear();
 
   // ua_entry can be null if a scheduled update is also a reverse proxy
   // request. Added REVPROXY to the assert below, and then changed checks
@@ -4845,56 +4850,59 @@ HttpSM::do_http_server_open(bool raw)
       return;
     }
   }
-  // Check to see if we have reached the max number of connections on this
-  // host.
-  if (t_state.txn_conf->origin_max_connections > 0) {
-    ConnectionCount *connections = ConnectionCount::getInstance();
 
-    CryptoHash hostname_hash;
-    CryptoContext().hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
-                                   static_cast<int>(strlen(t_state.current.server->name)));
+  // See if the outbound connection tracker data is needed. If so, get it here for consistency.
+  if (t_state.txn_conf->outbound_conntrack.max > 0 || t_state.http_config_param->origin_min_keep_alive_connections > 0) {
+    t_state.outbound_conn_track_state = OutboundConnTrack::obtain(
+      t_state.txn_conf->outbound_conntrack, std::string_view{t_state.current.server->name}, t_state.current.server->dst_addr);
+  }
 
-    auto ccount = connections->getCount(t_state.current.server->dst_addr, hostname_hash,
-                                        (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match);
-    if (ccount >= t_state.txn_conf->origin_max_connections) {
-      ip_port_text_buffer addrbuf;
-      ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
-      SMDebug("http", "[%" PRId64 "] too many connections (%d) for this host (%" PRId64 "): %s", sm_id, ccount,
-              t_state.txn_conf->origin_max_connections, addrbuf);
-      Warning("[%" PRId64 "] too many connections (%d) for this host (%" PRId64 "): %s", sm_id, ccount,
-              t_state.txn_conf->origin_max_connections, addrbuf);
-      ink_assert(pending_action == nullptr);
+  // Check to see if we have reached the max number of connections on this upstream host.
+  if (t_state.txn_conf->outbound_conntrack.max > 0) {
+    auto &ct_state = t_state.outbound_conn_track_state;
+    auto ccount    = ct_state.reserve();
+    if (ccount > t_state.txn_conf->outbound_conntrack.max) {
+      ct_state.release();
 
-      // if we were previously queued, or the queue is disabled-- just reschedule
-      if (t_state.origin_request_queued || t_state.txn_conf->origin_max_connections_queue < 0) {
-        pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
-        return;
-      } else if (t_state.txn_conf->origin_max_connections_queue > 0) { // If we have a queue, lets see if there is a slot
-        ConnectionCountQueue *waiting_connections = ConnectionCountQueue::getInstance();
-        // if there is space in the queue
-        if (waiting_connections->getCount(t_state.current.server->dst_addr, hostname_hash,
-                                          (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match) <
-            t_state.txn_conf->origin_max_connections_queue) {
-          t_state.origin_request_queued = true;
-          Debug("http", "[%" PRId64 "] queued for this host: %s", sm_id,
-                ats_ip_ntop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-          waiting_connections->incrementCount(t_state.current.server->dst_addr, hostname_hash,
-                                              (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match, 1);
-          pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
-        } else { // the queue is full
+      ink_assert(pending_action == nullptr); // in case of reschedule must not have already pending.
+
+      // If the queue is disabled, reschedule.
+      if (t_state.http_config_param->outbound_conntrack.queue_size < 0) {
+        ct_state.enqueue();
+        ct_state.rescheduled();
+        pending_action =
+          eventProcessor.schedule_in(this, HRTIME_MSECONDS(t_state.http_config_param->outbound_conntrack.queue_delay.count()));
+      } else if (t_state.http_config_param->outbound_conntrack.queue_size > 0) { // queue enabled, check for a slot
+        auto wcount = ct_state.enqueue();
+        if (wcount < t_state.http_config_param->outbound_conntrack.queue_size) {
+          ct_state.rescheduled();
+          SMDebug("http", "%s", lbw().print("[{}] queued for {}\0", sm_id, t_state.current.server->dst_addr).data());
+          pending_action =
+            eventProcessor.schedule_in(this, HRTIME_MSECONDS(t_state.http_config_param->outbound_conntrack.queue_delay.count()));
+        } else {              // the queue is full
+          ct_state.dequeue(); // release the queue slot
+          ct_state.blocked(); // note the blockage.
           HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
           send_origin_throttled_response();
         }
-      } else { // the queue is set to 0
+      } else { // queue size is 0, always block.
+        ct_state.blocked();
         HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
         send_origin_throttled_response();
       }
+
+      ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
+                            debug_on && is_debug_tag_set("http") ? "http" : nullptr);
+
       return;
+    } else {
+      ct_state.Note_Unblocked(&t_state.txn_conf->outbound_conntrack, ccount, &t_state.current.server->dst_addr.sa);
     }
+
+    ct_state.update_max_count(ccount);
   }
 
-  // We did not manage to get an existing session
-  //  and need to open a new connection
+  // We did not manage to get an existing session and need to open a new connection
   Action *connect_action_handle;
 
   NetVCOptions opt;
@@ -4908,7 +4916,7 @@ HttpSM::do_http_server_open(bool raw)
   if (ua_txn) {
     opt.local_port = ua_txn->get_outbound_port();
 
-    const IpAddr &outbound_ip = AF_INET6 == ip_family ? ua_txn->get_outbound_ip6() : ua_txn->get_outbound_ip4();
+    const IpAddr &outbound_ip = AF_INET6 == opt.ip_family ? ua_txn->get_outbound_ip6() : ua_txn->get_outbound_ip4();
     if (outbound_ip.isValid()) {
       opt.addr_binding = NetVCOptions::INTF_ADDR;
       opt.local_ip     = outbound_ip;
@@ -5332,18 +5340,8 @@ HttpSM::handle_post_failure()
 void
 HttpSM::handle_http_server_open()
 {
-  // if we were a queued request, we need to decrement the queue size-- as we got a connection
-  if (t_state.origin_request_queued) {
-    CryptoHash hostname_hash;
-    CryptoContext().hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
-                                   strlen(t_state.current.server->name));
-
-    ConnectionCountQueue *waiting_connections = ConnectionCountQueue::getInstance();
-    waiting_connections->incrementCount(t_state.current.server->dst_addr, hostname_hash,
-                                        (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match, -1);
-    // The request is now not queued. This is important if the request will ever retry, the t_state is re-used
-    t_state.origin_request_queued = false;
-  }
+  // The request is now not queued. This is important because server retries reuse the t_state.
+  t_state.outbound_conn_track_state.dequeue();
 
   // [bwyatt] applying per-transaction OS netVC options here
   //          IFF they differ from the netVC's current options.

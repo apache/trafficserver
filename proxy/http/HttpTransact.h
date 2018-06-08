@@ -73,6 +73,8 @@ struct HttpConfigParams;
 class HttpSM;
 
 #include "ts/InkErrno.h"
+#include "HttpConnectionCount.h"
+
 #define UNKNOWN_INTERNAL_ERROR (INK_START_ERRNO - 1)
 
 enum ViaStringIndex_t {
@@ -351,7 +353,8 @@ public:
     OPEN_RAW_ERROR,
     PARSE_ERROR,
     TRANSACTION_COMPLETE,
-    PARENT_RETRY
+    PARENT_RETRY,
+    OUTBOUND_CONGESTION
   };
 
   enum CacheWriteStatus_t {
@@ -692,6 +695,7 @@ public:
     CacheLookupInfo cache_info;
     DNSLookupInfo dns_info;
     RedirectInfo redirect_info;
+    OutboundConnTrack::TxnState outbound_conn_track_state;
     unsigned int updated_server_version   = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
     bool force_dns                        = false;
     MgmtByte cache_open_write_fail_action = 0;
@@ -740,9 +744,6 @@ public:
     // Some WebSocket state
     bool is_websocket        = false;
     bool did_upgrade_succeed = false;
-
-    // Some queue info
-    bool origin_request_queued = false;
 
     char *internal_msg_buffer                       = nullptr; // out
     char *internal_msg_buffer_type                  = nullptr; // out
@@ -899,6 +900,7 @@ public:
       arena.reset();
       unmapped_url.clear();
       hostdb_entry.clear();
+      outbound_conn_track_state.clear();
 
       delete[] ranges;
       ranges      = nullptr;

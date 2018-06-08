@@ -21,237 +21,401 @@
   limitations under the License.
  */
 
-//
-#include "ts/ink_platform.h"
-#include "ts/ink_inet.h"
-#include "ts/ink_mutex.h"
-#include "ts/Map.h"
-#include "ts/Diags.h"
-#include "ts/CryptoHash.h"
-#include "ts/ink_config.h"
-#include "HttpProxyAPIEnums.h"
-#include "Show.h"
-#include <sstream>
-
 #pragma once
 
+#include <string_view>
+#include <chrono>
+#include <atomic>
+#include <sstream>
+#include <tuple>
+#include <mutex>
+#include <ts/ink_platform.h>
+#include <ts/ink_config.h>
+#include <ts/ink_mutex.h>
+#include <ts/ink_inet.h>
+#include <ts/Map.h>
+#include <ts/Diags.h>
+#include <ts/CryptoHash.h>
+#include <ts/BufferWriterForward.h>
+#include <ts/TextView.h>
+#include <MgmtDefs.h>
+#include "HttpProxyAPIEnums.h"
+#include "Show.h"
+
 /**
- * Singleton class to keep track of the number of connections per host
+ * Singleton class to keep track of the number of outbound connnections.
+ *
+ * Outbound connections are divided in to equivalence classes (called "groups" here) based on the
+ * session matching setting. Tracking data is stored for each group.
  */
-class ConnectionCount
+class OutboundConnTrack
 {
+  using self_type = OutboundConnTrack; ///< Self reference type.
+
 public:
-  /**
-   * Static method to get the instance of the class
-   * @return Returns a pointer to the instance of the class
-   */
-  static ConnectionCount *
-  getInstance()
-  {
-    return &_connectionCount;
-  }
+  // Non-copyable.
+  OutboundConnTrack(const self_type &) = delete;
+  self_type &operator=(const self_type &) = delete;
 
-  /**
-   * Gets the number of connections for the host
-   * @param ip IP address of the host
-   * @return Number of connections
-   */
-  int
-  getCount(const IpEndpoint &addr, const CryptoHash &hostname_hash, TSServerSessionSharingMatchType match_type)
-  {
-    if (TS_SERVER_SESSION_SHARING_MATCH_NONE == match_type) {
-      return 0; // We can never match a node if match type is NONE
-    }
-
-    ink_mutex_acquire(&_mutex);
-    int count = _hostCount.get(ConnAddr(addr, hostname_hash, match_type));
-    ink_mutex_release(&_mutex);
-    return count;
-  }
-
-  /**
-   * Change (increment/decrement) the connection count
-   * @param ip IP address of the host
-   * @param delta Default is +1, can be set to negative to decrement
-   */
-  void
-  incrementCount(const IpEndpoint &addr, const CryptoHash &hostname_hash, TSServerSessionSharingMatchType match_type,
-                 const int delta = 1)
-  {
-    if (TS_SERVER_SESSION_SHARING_MATCH_NONE == match_type) {
-      return; // We can never match a node if match type is NONE.
-    }
-
-    ConnAddr caddr(addr, hostname_hash, match_type);
-    ink_mutex_acquire(&_mutex);
-    int count = _hostCount.get(caddr);
-    _hostCount.put(caddr, count + delta);
-    ink_mutex_release(&_mutex);
-  }
-  /**
-   * dump to JSON for stat page.
-   * @return JSON string for _hostCount
-   */
-  std::string dumpToJSON();
-
-  struct ConnAddr {
-    IpEndpoint _addr;
-    CryptoHash _hostname_hash;
-    TSServerSessionSharingMatchType _match_type;
-
-    ConnAddr() : _match_type(TS_SERVER_SESSION_SHARING_MATCH_NONE)
-    {
-      ink_zero(_addr);
-      ink_zero(_hostname_hash);
-    }
-
-    ConnAddr(int x) : _match_type(TS_SERVER_SESSION_SHARING_MATCH_NONE)
-    {
-      ink_release_assert(x == 0);
-      ink_zero(_addr);
-      ink_zero(_hostname_hash);
-    }
-
-    ConnAddr(const IpEndpoint &addr, const CryptoHash &hostname_hash, TSServerSessionSharingMatchType match_type)
-      : _addr(addr), _hostname_hash(hostname_hash), _match_type(match_type)
-    {
-    }
-
-    ConnAddr(const IpEndpoint &addr, const char *hostname, TSServerSessionSharingMatchType match_type)
-      : _addr(addr), _match_type(match_type)
-    {
-      CryptoContext().hash_immediate(_hostname_hash, static_cast<const void *>(hostname), strlen(hostname));
-    }
-
-    operator bool() { return ats_is_ip(&_addr); }
-    std::string
-    getIpStr()
-    {
-      std::string str;
-      if (*this) {
-        ip_text_buffer buf;
-        const char *ret = ats_ip_ntop(&_addr.sa, buf, sizeof(buf));
-        if (ret) {
-          str.assign(ret);
-        }
-      }
-      return str;
-    }
-
-    std::string
-    getHostnameHashStr()
-    {
-      char hashBuffer[CRYPTO_HEX_SIZE];
-      return std::string(_hostname_hash.toHexStr(hashBuffer));
-    }
+  /// Definition of an upstream server group equivalence class.
+  enum MatchType {
+    MATCH_IP   = TS_SERVER_OUTBOUND_MATCH_IP,   ///< Match by IP address.
+    MATCH_PORT = TS_SERVER_OUTBOUND_MATCH_PORT, ///< Match by IP address and port.
+    MATCH_HOST = TS_SERVER_OUTBOUND_MATCH_HOST, ///< Match by hostname (FQDN).
+    MATCH_BOTH = TS_SERVER_OUTBOUND_MATCH_BOTH, ///< Hostname, IP Address and port.
   };
 
-  class ConnAddrHashFns
-  {
-  public:
-    static uintptr_t
-    hash(ConnAddr &addr)
-    {
-      if (addr._match_type == TS_SERVER_SESSION_SHARING_MATCH_IP) {
-        return (uintptr_t)ats_ip_port_hash(&addr._addr.sa);
-      } else if (addr._match_type == TS_SERVER_SESSION_SHARING_MATCH_HOST) {
-        return (uintptr_t)addr._hostname_hash.u64[0];
-      } else if (addr._match_type == TS_SERVER_SESSION_SHARING_MATCH_BOTH) {
-        return ((uintptr_t)ats_ip_port_hash(&addr._addr.sa) ^ (uintptr_t)addr._hostname_hash.u64[0]);
-      } else {
-        return 0; // they will never be equal() because of it returns false for NONE matches.
-      }
-    }
+  /// String equivalents for @c MatchType.
+  static const std::array<std::string_view, static_cast<int>(MATCH_BOTH) + 1> MATCH_TYPE_NAME;
 
-    static int
-    equal(ConnAddr &a, ConnAddr &b)
-    {
-      char addrbuf1[INET6_ADDRSTRLEN];
-      char addrbuf2[INET6_ADDRSTRLEN];
-      char crypto_hashbuf1[CRYPTO_HEX_SIZE];
-      char crypto_hashbuf2[CRYPTO_HEX_SIZE];
-      a._hostname_hash.toHexStr(crypto_hashbuf1);
-      b._hostname_hash.toHexStr(crypto_hashbuf2);
-      Debug("conn_count", "Comparing hostname hash %s dest %s match method %d to hostname hash %s dest %s match method %d",
-            crypto_hashbuf1, ats_ip_nptop(&a._addr.sa, addrbuf1, sizeof(addrbuf1)), a._match_type, crypto_hashbuf2,
-            ats_ip_nptop(&b._addr.sa, addrbuf2, sizeof(addrbuf2)), b._match_type);
-
-      if (a._match_type != b._match_type || a._match_type == TS_SERVER_SESSION_SHARING_MATCH_NONE) {
-        Debug("conn_count", "result = 0, a._match_type != b._match_type || a._match_type == TS_SERVER_SESSION_SHARING_MATCH_NONE");
-        return 0;
-      }
-
-      if (a._match_type == TS_SERVER_SESSION_SHARING_MATCH_IP) {
-        if (ats_ip_addr_port_eq(&a._addr.sa, &b._addr.sa)) {
-          Debug("conn_count", "result = 1, a._match_type == TS_SERVER_SESSION_SHARING_MATCH_IP");
-          return 1;
-        } else {
-          Debug("conn_count", "result = 0, a._match_type == TS_SERVER_SESSION_SHARING_MATCH_IP");
-          return 0;
-        }
-      }
-
-      if (a._match_type == TS_SERVER_SESSION_SHARING_MATCH_HOST) {
-        if ((a._hostname_hash.u64[0] == b._hostname_hash.u64[0] && a._hostname_hash.u64[1] == b._hostname_hash.u64[1])) {
-          Debug("conn_count", "result = 1, a._match_type == TS_SERVER_SESSION_SHARING_MATCH_HOST");
-          return 1;
-        } else {
-          Debug("conn_count", "result = 0, a._match_type == TS_SERVER_SESSION_SHARING_MATCH_HOST");
-          return 0;
-        }
-      }
-
-      if (a._match_type == TS_SERVER_SESSION_SHARING_MATCH_BOTH) {
-        if ((ats_ip_addr_port_eq(&a._addr.sa, &b._addr.sa)) &&
-            (a._hostname_hash.u64[0] == b._hostname_hash.u64[0] && a._hostname_hash.u64[1] == b._hostname_hash.u64[1])) {
-          Debug("conn_count", "result = 1, a._match_type == TS_SERVER_SESSION_SHARING_MATCH_BOTH");
-
-          return 1;
-        }
-      }
-
-      Debug("conn_count", "result = 0, a._match_type == TS_SERVER_SESSION_SHARING_MATCH_BOTH");
-      return 0;
-    }
+  /// Per transaction configuration values.
+  struct TxnConfig {
+    int max{0};                ///< Maximum concurrent connections.
+    MatchType match{MATCH_IP}; ///< Match type.
   };
+
+  /** Static configuration values. */
+  struct GlobalConfig {
+    int queue_size{0};                          ///< Maximum delayed transactions.
+    std::chrono::milliseconds queue_delay{100}; ///< Reschedule / queue delay in ms.
+    std::chrono::seconds alert_delay{60};       ///< Alert delay in seconds.
+  };
+
+  // The names of the configuration values.
+  // Unfortunately these are not used in RecordsConfig.cc so that must be made consistent by hand.
+  // Note: These need to be @c constexpr or there are static initialization ordering risks.
+  static constexpr std::string_view CONFIG_VAR_MAX{"proxy.config.http.per_server.connection.max"_sv};
+  static constexpr std::string_view CONFIG_VAR_MATCH{"proxy.config.http.per_server.connection.match"_sv};
+  static constexpr std::string_view CONFIG_VAR_QUEUE_SIZE{"proxy.config.http.per_server.connection.queue_size"_sv};
+  static constexpr std::string_view CONFIG_VAR_QUEUE_DELAY{"proxy.config.http.per_server.connection.queue_delay"_sv};
+  static constexpr std::string_view CONFIG_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"_sv};
+
+  /// A record for the outbound connection count.
+  /// These are stored per outbound session equivalence class, as determined by the session matching.
+  struct Group {
+    /// Base clock.
+    using Clock = std::chrono::system_clock;
+    /// Time point type, based on the clock to be used.
+    using TimePoint = Clock::time_point;
+    /// Raw type for clock / time point counts.
+    using Ticker = TimePoint::rep;
+    /// Length of time to suppress alerts for a group.
+    static const std::chrono::seconds ALERT_DELAY;
+
+    /// Equivalence key - two groups are equivalent if their keys are equal.
+    struct Key {
+      IpEndpoint const &_addr;      ///< Remote IP address.
+      CryptoHash const &_hash;      ///< Hash of the FQDN.
+      MatchType const &_match_type; ///< Type of matching.
+    };
+
+    IpEndpoint _addr;      ///< Remote IP address.
+    CryptoHash _hash;      ///< Hash of the FQDN.
+    MatchType _match_type; ///< Type of matching.
+    std::string _fqdn;     ///< Expanded FQDN, set if matching on FQDN.
+    Key _key;              ///< Pre-assembled key which references the following members.
+
+    // Counting data.
+    std::atomic<int> _count{0};         ///< Number of outbound connections.
+    std::atomic<int> _count_max{0};     ///< largest observed @a count value.
+    std::atomic<int> _blocked{0};       ///< Number of outbound connections blocked since last alert.
+    std::atomic<int> _rescheduled{0};   ///< # of connection reschedules.
+    std::atomic<int> _in_queue{0};      ///< # of connections queued, waiting for a connection.
+    std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
+
+    LINK(Group, _link); ///< Intrusive hash table support.
+
+    /** Constructor.
+     * Construct from @c Key because the use cases do a table lookup first so the @c Key is already constructed.
+     * @param key A populated @c Key structure - values are copied to the @c Group.
+     * @param fqdn The full FQDN.
+     */
+    Group(Key const &key, std::string_view fqdn);
+    /// Key equality checker.
+    static bool equal(Key const &lhs, Key const &rhs);
+    /// Hashing function.
+    static uint64_t hash(Key const &);
+    /// Check and clear alert enable.
+    /// This is a modifying call - internal state will be updated to prevent too frequent alerts.
+    /// @param lat The last alert time, in epoch seconds, if the method returns @c true.
+    /// @return @c true if an alert should be generated, @c false otherwise.
+    bool should_alert(std::time_t *lat = nullptr);
+    /// Time of the last alert in epoch seconds.
+    std::time_t get_last_alert_epoch_time() const;
+  };
+
+  /// Container for per transaction state and operations.
+  struct TxnState {
+    Group *_g{nullptr};      ///< Active group for this transaction.
+    bool _reserved_p{false}; ///< Set if a connection slot has been reserved.
+    bool _queued_p{false};   ///< Set if the connection is delayed / queued.
+
+    /// Check if tracking is active.
+    bool is_active();
+
+    /// Reserve a connection.
+    int reserve();
+    /// Release a connection reservation.
+    void release();
+    /// Reserve a queue / retry slot.
+    int enqueue();
+    /// Release a block
+    void dequeue();
+    /// Note blocking a transaction.
+    void blocked();
+    /// Note a rescheduling
+    void rescheduled();
+    /// Clear all reservations.
+    void clear();
+    /// Drop the reservation - assume it will be cleaned up elsewhere.
+    /// @return The group for this reservation.
+    Group *drop();
+    /// Update the maximum observed count if needed against @a count.
+    void update_max_count(int count);
+
+    /** Generate a Notice that the group has become unblocked.
+     *
+     * @param config Transaction local configuration.
+     * @param count Current connection count for display in message.
+     * @param addr IP address of the upstream.
+     */
+    void Note_Unblocked(TxnConfig *config, int count, const sockaddr *addr);
+
+    /** Generate a Warning that a connection was blocked.
+     *
+     * @param config Transaction local configuration.
+     * @param sm_id State machine ID to display in Warning.
+     * @param count Count value to display in Warning.
+     * @param addr IP address of the upstream.
+     * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
+     */
+    void Warn_Blocked(TxnConfig *config, int64_t sm_id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
+  };
+
+  /** Get or create the @c Group for the specified session properties.
+   * @param txn_cnf The transaction local configuration.
+   * @param fqdn The fully qualified domain name of the upstream.
+   * @param addr The IP address of the upstream.
+   * @return A @c Group for the arguments, existing if possible and created if not.
+   */
+  static TxnState obtain(TxnConfig const &txn_cnf, std::string_view fqdn, const IpEndpoint &addr);
+
+  /** Get the currently existing groups.
+   * @param [out] groups parameter - pointers to the groups are pushed in to this container.
+   *
+   * The groups are loaded in to @a groups, which is cleared before loading. Note the groups returned will remain valid
+   * although data inside the groups is volatile.
+   */
+  static void get(std::vector<Group const *> &groups);
+  /** Write the connection tracking data to JSON.
+   * @return string containing a JSON encoding of the table.
+   */
+  static std::string to_json_string();
+  /** Write the groups to @a f.
+   * @param f Output file.
+   */
+  static void dump(FILE *f);
+  /** Do global initialization.
+   *
+   * This sets up the global configuration and any configuration update callbacks needed. It is presumed
+   * the caller has set up the actual storage where the global configuration data is stored.
+   *
+   * @param config The storage for the global configuration data.
+   * @param txn The storage for the default per transaction data.
+   */
+  static void config_init(GlobalConfig *global, TxnConfig *txn);
+
+  /// Tag used for debugging otuput.
+  static constexpr char const *const DEBUG_TAG{"conn_track"};
+
+  /** Convert a string to a match type.
+   *
+   * @a type is updated only if this method returns @c true.
+   *
+   * @param [in] tag Tag to look up.
+   * @param [out] type Resulting type.
+   * @return @c true if @a tag was valid and @a type was updated, otherwise @c false.
+   */
+  static bool lookup_match_type(std::string_view tag, MatchType &type);
+
+  /** Generate a warning message for a bad @c MatchType tag.
+   *
+   * @param tag The invalid tag.
+   */
+  static void Warning_Bad_Match_Type(std::string_view tag);
+
+  // Converters for overridable values for use in the TS API.
+  static const MgmtConverter MAX_CONV;
+  static const MgmtConverter MATCH_CONV;
 
 protected:
-  // Hide the constructor and copy constructor
-  ConnectionCount() { ink_mutex_init(&_mutex); }
-  ConnectionCount(const ConnectionCount & /* x ATS_UNUSED */) {}
-  static ConnectionCount _connectionCount;
-  HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;
-  ink_mutex _mutex;
+  static GlobalConfig *_global_config; ///< Global configuration data.
 
-private:
-  void
-  appendJSONPair(std::ostringstream &oss, const std::string &key, const int value)
-  {
-    oss << '\"' << key << "\": " << value;
-  }
+  /// Types and methods for the hash table.
+  struct HashDescriptor {
+    using ID       = uint64_t;
+    using Key      = Group::Key const &;
+    using Value    = Group;
+    using ListHead = DList(Value, _link);
 
-  void
-  appendJSONPair(std::ostringstream &oss, const std::string &key, const std::string &value)
-  {
-    oss << '\"' << key << "\": \"" << value << '"';
-  }
+    static ID
+    hash(Key key)
+    {
+      return Group::hash(key);
+    }
+    static Key
+    key(Value *v)
+    {
+      return v->_key;
+    }
+    static bool
+    equal(Key lhs, Key rhs)
+    {
+      return Group::equal(lhs, rhs);
+    }
+  };
+
+  /// Internal implementation class instance.
+  struct Imp {
+    TSHashTable<HashDescriptor> _table; ///< Hash table of upstream groups.
+    std::mutex _mutex;                  ///< Lock for insert & find.
+  };
+  static Imp _imp;
+
+  /// Get the implementation instance.
+  /// @note This is done purely to allow subclasses to reuse methods in this class.
+  Imp &instance();
 };
 
-class ConnectionCountQueue : public ConnectionCount
+inline OutboundConnTrack::Imp &
+OutboundConnTrack::instance()
 {
-public:
-  /**
-   * Static method to get the instance of the class
-   * @return Returns a pointer to the instance of the class
-   */
-  static ConnectionCountQueue *
-  getInstance()
-  {
-    return &_connectionCount;
-  }
+  return _imp;
+}
 
-private:
-  static ConnectionCountQueue _connectionCount;
-};
+inline OutboundConnTrack::Group::Group(Key const &key, std::string_view fqdn)
+  : _hash(key._hash), _match_type(key._match_type), _key{_addr, _hash, _match_type}
+{
+  // store the host name if relevant.
+  if (MATCH_HOST == _match_type || MATCH_BOTH == _match_type) {
+    _fqdn.assign(fqdn);
+  }
+  // store the IP address if relevant.
+  if (MATCH_HOST == _match_type) {
+    _addr.setToAnyAddr(AF_INET);
+  } else {
+    ats_ip_copy(_addr, key._addr);
+  }
+}
+
+inline uint64_t
+OutboundConnTrack::Group::hash(const Key &key)
+{
+  switch (key._match_type) {
+  case MATCH_IP:
+    return ats_ip_hash(&key._addr.sa);
+  case MATCH_PORT:
+    return ats_ip_port_hash(&key._addr.sa);
+  case MATCH_HOST:
+    return key._hash.fold();
+  case MATCH_BOTH:
+    return ats_ip_port_hash(&key._addr.sa) ^ key._hash.fold();
+  default:
+    return 0;
+  }
+}
+
+inline bool
+OutboundConnTrack::TxnState::is_active()
+{
+  return nullptr != _g;
+}
+
+inline int
+OutboundConnTrack::TxnState::reserve()
+{
+  _reserved_p = true;
+  return ++_g->_count;
+}
+
+inline void
+OutboundConnTrack::TxnState::release()
+{
+  if (_reserved_p) {
+    _reserved_p = false;
+    --_g->_count;
+  }
+}
+
+inline OutboundConnTrack::Group *
+OutboundConnTrack::TxnState::drop()
+{
+  _reserved_p = false;
+  return _g;
+}
+
+inline int
+OutboundConnTrack::TxnState::enqueue()
+{
+  _queued_p = true;
+  return ++_g->_in_queue;
+}
+
+inline void
+OutboundConnTrack::TxnState::dequeue()
+{
+  if (_queued_p) {
+    _queued_p = false;
+    --_g->_in_queue;
+  }
+}
+
+inline void
+OutboundConnTrack::TxnState::clear()
+{
+  if (_g) {
+    this->dequeue();
+    this->release();
+    _g = nullptr;
+  }
+}
+
+inline void
+OutboundConnTrack::TxnState::update_max_count(int count)
+{
+  auto cmax = _g->_count_max.load();
+  if (count > cmax) {
+    _g->_count_max.compare_exchange_weak(cmax, count);
+  }
+}
+
+inline void
+OutboundConnTrack::TxnState::blocked()
+{
+  ++_g->_blocked;
+}
+
+inline void
+OutboundConnTrack::TxnState::rescheduled()
+{
+  ++_g->_rescheduled;
+}
 
 Action *register_ShowConnectionCount(Continuation *, HTTPHdr *);
+
+namespace ts
+{
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::MatchType type)
+{
+  if (spec.has_numeric_type()) {
+    bwformat(w, spec, static_cast<unsigned int>(type));
+  } else {
+    bwformat(w, spec, OutboundConnTrack::MATCH_TYPE_NAME[type]);
+  }
+  return w;
+}
+
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group::Key const &key);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group const &g);
+} // namespace ts

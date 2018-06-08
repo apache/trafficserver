@@ -66,29 +66,22 @@ enum {
 
 class HttpServerSession : public VConnection
 {
+  using super_type = VConnection;
+
 public:
-  HttpServerSession()
-    : VConnection(nullptr),
-      hostname_hash(),
-      con_id(0),
-      transact_count(0),
-      state(HSS_INIT),
-      to_parent_proxy(false),
-      server_trans_stat(0),
-      private_session(false),
-      sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
-      sharing_pool(TS_SERVER_SESSION_SHARING_POOL_GLOBAL),
-      enable_origin_connection_limiting(false),
-      connection_count(nullptr),
-      read_buffer(nullptr),
-      server_vc(nullptr),
-      magic(HTTP_SS_MAGIC_DEAD),
-      buf_reader(nullptr)
-  {
-  }
+  HttpServerSession() : super_type(nullptr) {}
 
   void destroy();
   void new_connection(NetVConnection *new_vc);
+
+  /** Enable tracking the number of outbound session.
+   *
+   * @param group The connection tracking group.
+   *
+   * The @a group must have already incremented the connection count. It will be cleaned up when the
+   * session terminates.
+   */
+  void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
 
   void
   reset_read_buffer(void)
@@ -139,28 +132,28 @@ public:
 
   CryptoHash hostname_hash;
 
-  int64_t con_id;
-  int transact_count;
-  HSS_State state;
+  int64_t con_id     = 0;
+  int transact_count = 0;
+  HSS_State state    = HSS_INIT;
 
   // Used to determine whether the session is for parent proxy
   // it is session to orgin server
   // We need to determine whether a closed connection was to
   // close parent proxy to update the
   // proxy.process.http.current_parent_proxy_connections
-  bool to_parent_proxy;
+  bool to_parent_proxy = false;
 
   // Used to verify we are recording the server
   //   transaction stat properly
-  int server_trans_stat;
+  int server_trans_stat = 0;
 
   // Sessions become if authentication headers
   //  are sent over them
-  bool private_session;
+  bool private_session = false;
 
   // Copy of the owning SM's server session sharing settings
-  TSServerSessionSharingMatchType sharing_match;
-  TSServerSessionSharingPoolType sharing_pool;
+  TSServerSessionSharingMatchType sharing_match{TS_SERVER_SESSION_SHARING_MATCH_BOTH};
+  TSServerSessionSharingPoolType sharing_pool{TS_SERVER_SESSION_SHARING_POOL_GLOBAL};
   //  int share_session;
 
   LINK(HttpServerSession, ip_hash_link);
@@ -168,8 +161,7 @@ public:
 
   // Keep track of connection limiting and a pointer to the
   // singleton that keeps track of the connection counts.
-  bool enable_origin_connection_limiting;
-  ConnectionCount *connection_count;
+  OutboundConnTrack::Group *conn_track_group = nullptr;
 
   // The ServerSession owns the following buffer which use
   //   for parsing the headers.  The server session needs to
@@ -178,7 +170,7 @@ public:
   //   changing the buffer we are doing I/O on.  We can
   //   not change the buffer for I/O without issuing a
   //   an asyncronous cancel on NT
-  MIOBuffer *read_buffer;
+  MIOBuffer *read_buffer = nullptr;
 
   virtual int
   populate_protocol(std::string_view *result, int size) const
@@ -197,10 +189,10 @@ public:
 private:
   HttpServerSession(HttpServerSession &);
 
-  NetVConnection *server_vc;
-  int magic;
+  NetVConnection *server_vc = nullptr;
+  int magic                 = HTTP_SS_MAGIC_DEAD;
 
-  IOBufferReader *buf_reader;
+  IOBufferReader *buf_reader = nullptr;
 };
 
 extern ClassAllocator<HttpServerSession> httpServerSessionAllocator;
