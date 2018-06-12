@@ -17,298 +17,241 @@
  * under the License.
  */
 
-/*
- * This plugin looks for range requests and then creates a new
- * cache key url so that each individual range requests is written
- * to the cache as a individual object so that subsequent range
- * requests are read accross different disk drives reducing I/O
- * wait and load averages when there are large numbers of range
- * requests.
- */
-
 #include "slice.h"
 
-#include "config.h"
-#include "data.h"
+//#include "TransformData.h"
+#include "HttpHeader.h"
+//#include "transform.h"
 
 #include "ts/remap.h"
+#include "ts/ts.h"
 
 #include <cassert>
-#include <cstdio>
+#include <iostream>
 
-/**
- * Entry point when used as a global plugin.
- */
-static
-void
-handle_read_request_header
-	( TSCont txn_contp
-	, TSEvent event
-	, void * edata
-	)
+std::string
+rangeRequestStringFor
+  ( std::string const & bytesstr
+  )
 {
-	DEBUG_LOG("Global plugin handle begin");
-/*
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  range_header_check(txnp);
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-*/
+  std::string get_request;
+  get_request.append(TS_HTTP_METHOD_GET);
+  get_request.append(" http://localhost:6010/voidlinux.iso HTTP/1.1\r\n");
+  get_request.append(TS_MIME_FIELD_HOST);
+  get_request.append(": localhost:6010\r\n");
+  get_request.append(TS_MIME_FIELD_USER_AGENT);
+  get_request.append(": ATS/whatever\r\n");
+  get_request.append(TS_MIME_FIELD_ACCEPT);
+  get_request.append(": */*\r\n");
+  get_request.append(TS_MIME_FIELD_RANGE);
+  get_request.append(": ");
+  get_request.append(bytesstr);
+  get_request.append("\r\n");
+  get_request.append("X-Skip-Me");
+  get_request.append(": absolutely\r\n");
+  get_request.append("\r\n");
+  return get_request;
 }
 
-/**
- * continuation handler
- */
+struct State
+{
+  TSHttpTxn txnp;
+
+  TSVConn vc;
+  TSVIO read_vio;
+  TSVIO write_vio;
+
+  TSIOBuffer req_buffer;
+  TSIOBuffer resp_buffer;
+  TSIOBuffer resp_reader;
+};
+
 static
 int
-cont_handler
-	( TSCont contp
-	, TSEvent event
-	, void * edata
-	)
+intercept_hook
+  ( TSCont contp
+  , TSEvent event
+  , void * edata
+  )
 {
-	DEBUG_LOG("cont_handler: %s", TSHttpEventNameLookup(event));
+  if (TS_EVENT_NET_ACCEPT == event)
+  {
+    TSVConn const downvc = (TSVConn)edata;
 
-	switch (event)
-	{
-		case TS_EVENT_HTTP_TXN_CLOSE:
-		{
-			DEBUG_LOG("transaction close");
-			SliceData * const slicedata
-				= static_cast<SliceData*>(TSContDataGet(contp));
-			delete slicedata;
-			TSContDestroy(contp);
-//			TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-		}
-		break;
-		default:
-		{
-//			TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-		}
-		break;
-	}
+    // set up the 
+    Stage * const stagedown = new Stage(downvc);
+    stagedown->readio = Channel::forRead(downvc, contp);
 
-	return 0;
+    TSHttpTxn const txnp((TSHttpTxn)TSContDataGet(contp)); // this is a hack
+    sockaddr const * const client_addr = TSHttpTxnClientAddrGet(txnp);
+
+    {
+      std::string const get_request
+        (rangeRequestStringFor("bytes=0-1048575"));
+
+std::cerr << get_request << std::endl;
+
+      TSVConn const vconn = TSHttpConnect(client_addr);
+/*
+      Stage * const stagedown(new Stage);
+      state->txnp = txnp;
+      state->vc = downvc;
+      state->req_buffer = TSIOBufferCreate();
+      state->resp_buffer = TSIOBufferCreate();
+      state->resp_reader = TSIOBufferReaderAlloc(state->resp_buffer);
+*/
+
+      TSIOBuffer req_buffer = TSIOBufferCreate();
+      TSIOBufferReader reader = TSIOBufferReaderAlloc(req_buffer);
+      int64_t const written
+        ( TSIOBufferWrite
+          ( req_buffer
+          , get_request.data()
+          , get_request.size() ) );
+
+      TSVIO const vio = TSVConnWrite
+        ( vconn
+        , contp
+        , reader
+        , TSIOBufferReaderAvail(reader) );
+/*
+      TSFetchEvent event_ids = { 0, 0, 0 };
+      TSFetchUrl
+        ( get_request.c_str()
+        , get_request.size()
+        , client_addr
+        , contp
+        , NO_CALLBACK
+        , event_ids );
+*/
+    }
+  }
+  else
+  {
+std::cerr << "intercept_hook got another event: " << event << std::endl;
+  }
+
+  return 0;
 }
 
-/**
- * Remap initialization.
- */
-SLICER_EXPORT
-TSReturnCode
-TSRemapInit
-	( TSRemapInterface * api_info
-	, char * errbuf
-	, int errbuf_size
-	)
+static
+bool
+read_request
+  ( TSHttpTxn txnp
+  )
 {
-  DEBUG_LOG("Slice Plugin Init");
-
-  if (nullptr == api_info)
+  HttpHeader const headcreq(txnp, TSHttpTxnClientReqGet);
+  if (headcreq.isMethodGet())
   {
-    strncpy
-	 	( errbuf
-		, "[tsremap_init] - Invalid TSRemapInterface argument"
-		, errbuf_size - 1);
-    return TS_ERROR;
+    if (headcreq.skipMe())
+    {
+std::cerr << "Got a skip me directive, passing through" << std::endl;
+    }
+    else
+    {
+      // we'll intercept this GET and do it ourselfs
+      TSCont const icontp
+        (TSContCreate(intercept_hook, TSMutexCreate()));
+      TSContDataSet(icontp, (void*)txnp);
+      TSHttpTxnIntercept(icontp, txnp);
+std::cerr << "created intercept hook" << std::endl;
+      return true;
+    }
   }
 
-  if (api_info->tsremap_version < TSREMAP_VERSION)
-  {
-    snprintf
-	 	( errbuf
-		, errbuf_size
-		, "[TSRemapInit] - Incorrect API version %ld.%ld"
-		, api_info->tsremap_version >> 16
-		, api_info->tsremap_version & 0xffff );
-    return TS_ERROR;
-  }
+  return false;
+}
 
-  DEBUG_LOG("slice remap is successfully initialized.");
+static
+int
+global_read_request_hook
+  ( TSCont // contp
+  , TSEvent // event
+  , void * edata
+  )
+{
+  TSHttpTxn const txnp = static_cast<TSHttpTxn>(edata);
+  read_request(txnp);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+///// remap plugin engine
+
+SLICE_EXPORT
+TSRemapStatus
+TSRemapDoRemap
+  ( void * // ih
+  , TSHttpTxn txnp
+  , TSRemapRequestInfo * //rri
+  )
+{
+  if (read_request(txnp))
+  {
+    return TSREMAP_DID_REMAP;
+  }
+  else
+  {
+    return TSREMAP_NO_REMAP;
+  }
+}
+
+///// remap plugin setup and teardown
+SLICE_EXPORT
+void
+TSRemapOSResponse
+  ( void* // ih
+  , TSHttpTxn // rh
+  , int // os_response_type
+  )
+{
+}
+
+SLICE_EXPORT
+TSReturnCode
+TSRemapNewInstance
+  ( int // argc
+  , char * /* argv */[]
+  , void ** //ih
+  , char * // errbuf
+  , int // errbuf_size
+)
+{
   return TS_SUCCESS;
 }
 
-/**
- * Origin server response
- */
-SLICER_EXPORT
-void
-TSRemapOSResponse
-	( void * ih
-	, TSHttpTxn txn
-	, int os_response_type
-	)
-{
-	DEBUG_LOG("Origin Server Response");
-}
-
-/**
- * Initialize the configuration based on remap options
- */
-SLICER_EXPORT
-TSReturnCode
-TSRemapNewInstance
-	( int argc
-	, char * argv[]
-	, void ** ih
-	, char * errbuf
-	, int errbuf_size
-	)
-{
-	DEBUG_LOG("New Instance");
-	SliceConfig * const config = new SliceConfig;
-	if (! config->parseArguments(argc, argv, errbuf, errbuf_size))
-	{
-		DEBUG_LOG("Couldn't parse slice remap arguments");
-		delete config;
-		return TS_ERROR;
-	}
-
-	*ih = static_cast<void*>(config);
-
-	return TS_SUCCESS;
-}
-
-/**
- * Delete the configuration based on remap options
- */
-SLICER_EXPORT
+SLICE_EXPORT
 void
 TSRemapDeleteInstance
-	 ( void * ih
-	 )
+  ( void * // ih
+  )
 {
-	DEBUG_LOG("Delete Instance");
-	if (nullptr != ih)
-	{
-		SliceConfig * const config = static_cast<SliceConfig*>(ih);
-		delete config;
-	}
 }
 
-/**
- * guard to make sure a TSMLoc is deallocated with scope.
- */
-struct GuardMloc
+SLICE_EXPORT
+TSReturnCode
+TSRemapInit
+  ( TSRemapInterface * // api_info
+  , char * // errbug
+  , int // errbuf_size
+  )
 {
-	TSMBuffer & buf;
-	TSMLoc & loc;
-
-	explicit
-	GuardMloc
-		( TSMBuffer & _bufin
-		, TSMLoc & _locin
-		)
-		: buf(_bufin)
-		, loc(_locin)
-	{ }
-
-	~GuardMloc
-		()
-	{
-		TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
-	}
-};
-
-/**
- * slice handles GET requests only
- */
-static
-bool
-isGetRequest
-	( TSHttpTxn const & txnp
-	)
-{
-	// intercept GET requests only
-	TSMBuffer reqbuf;
-	TSMLoc reqloc; // allocated by call
-
-	TSReturnCode rc(TSHttpTxnClientReqGet(txnp, &reqbuf, &reqloc));
-	if (TS_SUCCESS != rc)
-	{
-		return TSREMAP_NO_REMAP;
-	}
-
-	// takes responsibility for reqloc memory
-	GuardMloc const reqrai(reqbuf, reqloc);
-
-	int match_len(0);
-	char const * method = TSHttpHdrMethodGet(reqbuf, reqloc, &match_len);
-	if ( NULL == method || 3 != match_len || 0 != strcmp("GET", method) )
-	{
-		if (NULL == method)
-		{
-			DEBUG_LOG("No method found in header");
-		}
-		else
-		{
-			DEBUG_LOG("Method %s not handled", method);
-		}
-		return false;
-	}
-
-	return true;
+  return TS_SUCCESS;
 }
 
-/**
- * Entry point for slicing.
- */
-SLICER_EXPORT
-TSRemapStatus
-TSRemapDoRemap
-	( void * ih
-	, TSHttpTxn txnp
-	, TSRemapRequestInfo * // rri
-	)
-{
-	DEBUG_LOG("TSRemapDoRemap hit");
 
-	if (nullptr == ih)
-	{
-		ERROR_LOG("Slice config not available");
-		return TSREMAP_NO_REMAP;
-	}
-
-	// simple check to handle
-	if (! isGetRequest(txnp))
-	{
-		return TSREMAP_NO_REMAP;
-	}
-
-	// configure and set up continuation
-	SliceConfig * const sliceconfig = static_cast<SliceConfig*>(ih);
-
-	// slice data with view into the config
-	SliceData * const slicedata = new SliceData(sliceconfig, txnp);
-
-	// set up our continuation
-	TSCont contp = TSContCreate(cont_handler, NULL);
-	TSContDataSet(contp, static_cast<void*>(slicedata));
-
-	// add in hooks of interest
-
-	// set up transform hook if necessary
-	TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-
-	// transaction close, cleanup
-	TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
-
-	return TSREMAP_NO_REMAP;
-}
-
-/**
- * Global plugin initialization.
- */
-SLICER_EXPORT
+///// global plugin
+SLICE_EXPORT
 void
 TSPluginInit
-	( int // argc
-	, char const * /* argv */[]
-	)
+  ( int // argc
+  , char const * /* argv */[]
+  )
 {
   TSPluginRegistrationInfo info;
   info.plugin_name   = (char *)PLUGIN_NAME;
   info.vendor_name   = (char *)"Comcast";
-  info.support_email = (char *)"brian_olsen2@comcast.com";
+  info.support_email = (char *)"support@comcast.com";
 
   if (TS_SUCCESS != TSPluginRegister(&info))
   {
@@ -317,18 +260,9 @@ TSPluginInit
     return;
   }
 
-  TSCont const txnp_cont
-    ( TSContCreate
-	 	( (TSEventFunc)handle_read_request_header
-		, nullptr ) );
+  TSCont const contp(TSContCreate(global_read_request_hook, nullptr));
+assert(nullptr != contp);
 
-  if (nullptr == txnp_cont)
-  {
-    ERROR_LOG("failed to create the transaction continuation handler.");
-    return;
-  }
-  else
-  {
-    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, txnp_cont);
-  }
+  // Called immediately after the request header is read from the client
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
 }

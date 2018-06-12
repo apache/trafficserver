@@ -1,15 +1,12 @@
 all: slice 
 
 slice_la_SOURCES = \
+	HttpHeader.cc \
 	slice.cc \
-	config.cc \
-	data.cc \
-	util.cc \
 
 slice_la_HEADERS = \
-	config.h \
-	data.h \
-	util.h \
+	HttpHeader.h \
+	slice.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
 	tsxs -v -i -o slice.so $(slice_la_SOURCES)
