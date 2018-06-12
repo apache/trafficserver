@@ -5354,6 +5354,7 @@ TSHttpTxnAborted(TSHttpTxn txnp)
   HttpSM *sm = (HttpSM *)txnp;
   switch (sm->t_state.squid_codes.log_code) {
   case SQUID_LOG_ERR_CLIENT_ABORT:
+  case SQUID_LOG_ERR_CLIENT_READ_ERROR:
   case SQUID_LOG_TCP_SWAPFAIL:
     // check for client abort and cache read error
     return TS_SUCCESS;
