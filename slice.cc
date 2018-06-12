@@ -21,6 +21,7 @@
 
 //#include "TransformData.h"
 #include "HttpHeader.h"
+#include "Data.h"
 //#include "transform.h"
 
 #include "ts/remap.h"
@@ -36,7 +37,7 @@ rangeRequestStringFor
 {
   std::string get_request;
   get_request.append(TS_HTTP_METHOD_GET);
-  get_request.append(" http://localhost:6010/voidlinux.iso HTTP/1.1\r\n");
+  get_request.append(" /voidlinux.iso HTTP/1.1\r\n");
   get_request.append(TS_MIME_FIELD_HOST);
   get_request.append(": localhost:6010\r\n");
   get_request.append(TS_MIME_FIELD_USER_AGENT);
@@ -53,18 +54,177 @@ rangeRequestStringFor
   return get_request;
 }
 
-struct State
+static
+int
+handle_client_req
+  ( TSCont contp
+  , TSEvent event
+  , Data * const data
+  )
 {
-  TSHttpTxn txnp;
+  // at the moment toss, we'll make one up
+  if (TS_EVENT_VCONN_READ_READY == event)
+  {
+    // parse incoming request header here
+    int64_t const bytesavail
+        (TSIOBufferReaderAvail(data->dnstream->read->reader));
+std::cerr << "Incoming header: " << bytesavail << std::endl;
+    TSIOBufferReaderConsume(data->dnstream->read->reader, bytesavail);
 
-  TSVConn vc;
-  TSVIO read_vio;
-  TSVIO write_vio;
+    // no longer want anything from client
+    TSVConnShutdown(data->dnstream->vc, 1, 0);
 
-  TSIOBuffer req_buffer;
-  TSIOBuffer resp_buffer;
-  TSIOBuffer resp_reader;
-};
+    // create header
+    std::string const get_request
+      (rangeRequestStringFor("bytes=0-1048575"));
+
+std::cerr << get_request << std::endl;
+
+    TSVConn const upvc = TSHttpConnect((sockaddr*)data->ipaddr->ip());
+
+    data->upstream = new Stage(upvc);
+    data->upstream->setupWriter(contp);
+
+    TSIOBufferWrite
+      ( data->upstream->write->iobuf
+      , get_request.data()
+      , get_request.size() );
+    TSVIOReenable(data->upstream->write->vio);
+
+    // no longer want server requesting from us
+
+    // get ready for data coming back
+    data->upstream->setupReader(contp);
+  }
+
+  return 0;
+}
+
+static
+int
+handle_server_resp
+  ( TSCont contp
+  , TSEvent event
+  , Data * const data
+  )
+{
+  if (TS_EVENT_VCONN_READ_READY == event)
+  {
+    int64_t read_avail
+      (TSIOBufferReaderAvail(data->upstream->read->reader));
+
+    if (0 < read_avail)
+    {
+      if (nullptr == data->dnstream->write)
+      {
+        data->dnstream->setupWriter(contp);
+      }
+      else
+      {
+std::cerr << "writer already set up" << std::endl;
+      }
+
+      int64_t const copied
+        ( TSIOBufferCopy
+          ( data->dnstream->write->iobuf
+          , data->upstream->read->reader
+          , read_avail
+          , 0 ) );
+
+std::cerr << "copied: " << copied << std::endl;
+
+      TSVIOReenable(data->dnstream->write->vio);
+
+/*
+      int64_t consumed(0);
+      TSIOBufferBlock block = TSIOBufferReaderStart
+          (data->upstream->read->reader);
+
+      while (nullptr != block && 0 < read_avail)
+      {
+        int64_t read_block(0);
+        char const * const block_start = TSIOBufferBlockReadStart
+            (block, data->upstream->read->reader, &read_block);
+        if (0 < read_block)
+        {
+          int64_t const tocopy(std::min(read_block, read_avail));
+          std::cerr << std::string(block_start, block_start + tocopy);
+          read_avail -= tocopy;
+          consumed += tocopy;
+          block = TSIOBufferBlockNext(block);
+        }
+      }
+
+      TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
+*/
+    }
+  }
+
+  return 0;
+}
+
+static
+int
+handle_client_resp
+  ( TSCont contp
+  , TSEvent event
+  , Data * const data
+  )
+{
+  if (TS_EVENT_VCONN_WRITE_READY == event)
+  {
+    int64_t read_avail
+      (TSIOBufferReaderAvail(data->upstream->read->reader));
+
+    if (0 < read_avail)
+    {
+      if (nullptr == data->dnstream->write)
+      {
+        data->dnstream->setupWriter(contp);
+      }
+      else
+      {
+std::cerr << "writer already set up" << std::endl;
+      }
+
+      int64_t const copied
+        ( TSIOBufferCopy
+          ( data->dnstream->write->iobuf
+          , data->upstream->read->reader
+          , read_avail
+          , 0 ) );
+
+std::cerr << "copied: " << copied << std::endl;
+
+      TSVIOReenable(data->dnstream->write->vio);
+
+/*
+      int64_t consumed(0);
+      TSIOBufferBlock block = TSIOBufferReaderStart
+          (data->upstream->read->reader);
+
+      while (nullptr != block && 0 < read_avail)
+      {
+        int64_t read_block(0);
+        char const * const block_start = TSIOBufferBlockReadStart
+            (block, data->upstream->read->reader, &read_block);
+        if (0 < read_block)
+        {
+          int64_t const tocopy(std::min(read_block, read_avail));
+          std::cerr << std::string(block_start, block_start + tocopy);
+          read_avail -= tocopy;
+          consumed += tocopy;
+          block = TSIOBufferBlockNext(block);
+        }
+      }
+
+      TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
+*/
+    }
+  }
+
+  return 0;
+}
 
 static
 int
@@ -74,62 +234,55 @@ intercept_hook
   , void * edata
   )
 {
+  Data * const data = (Data*)TSContDataGet(contp);
+
+std::cerr << "intercept_hook event: " << event << std::endl;
+
   if (TS_EVENT_NET_ACCEPT == event)
   {
+    // set up reader from client
     TSVConn const downvc = (TSVConn)edata;
-
-    // set up the 
-    Stage * const stagedown = new Stage(downvc);
-    stagedown->readio = Channel::forRead(downvc, contp);
-
-    TSHttpTxn const txnp((TSHttpTxn)TSContDataGet(contp)); // this is a hack
-    sockaddr const * const client_addr = TSHttpTxnClientAddrGet(txnp);
-
-    {
-      std::string const get_request
-        (rangeRequestStringFor("bytes=0-1048575"));
-
-std::cerr << get_request << std::endl;
-
-      TSVConn const vconn = TSHttpConnect(client_addr);
-/*
-      Stage * const stagedown(new Stage);
-      state->txnp = txnp;
-      state->vc = downvc;
-      state->req_buffer = TSIOBufferCreate();
-      state->resp_buffer = TSIOBufferCreate();
-      state->resp_reader = TSIOBufferReaderAlloc(state->resp_buffer);
-*/
-
-      TSIOBuffer req_buffer = TSIOBufferCreate();
-      TSIOBufferReader reader = TSIOBufferReaderAlloc(req_buffer);
-      int64_t const written
-        ( TSIOBufferWrite
-          ( req_buffer
-          , get_request.data()
-          , get_request.size() ) );
-
-      TSVIO const vio = TSVConnWrite
-        ( vconn
-        , contp
-        , reader
-        , TSIOBufferReaderAvail(reader) );
-/*
-      TSFetchEvent event_ids = { 0, 0, 0 };
-      TSFetchUrl
-        ( get_request.c_str()
-        , get_request.size()
-        , client_addr
-        , contp
-        , NO_CALLBACK
-        , event_ids );
-*/
-    }
+    data->dnstream = new Stage(downvc);
+    data->dnstream->setupReader(contp);
+  }
+  else // more data from client
+  if ( nullptr != data->dnstream
+    && nullptr != data->dnstream->read
+    && edata == data->dnstream->read->vio )
+  {
+    handle_client_req(contp, event, data);
+  }
+  else // origin wants more data from us
+  if ( nullptr != data->upstream
+    && nullptr != data->upstream->write
+    && edata == data->upstream->write->vio )
+  {
+std::cerr << "origin wants data from us, tell it to shut up" << std::endl;
+    TSVConnShutdown(data->upstream->vc, 0, 1);
+  }
+  else // origin has data for us
+  if ( nullptr != data->upstream
+    && nullptr != data->upstream->read
+    && edata == data->upstream->read->vio )
+  {
+std::cerr << "origin has data for us" << std::endl;
+    handle_server_resp(contp, event, data);
+  }
+  else // client wants more data from us
+  if ( nullptr != data->dnstream
+    && nullptr != data->dnstream->write
+    && edata == data->dnstream->write->vio )
+  {
+std::cerr << "client wants data from us" << std::endl;
+    handle_client_resp(contp, event, data);
   }
   else
   {
-std::cerr << "intercept_hook got another event: " << event << std::endl;
+std::cerr << "unhandled event: " << event << std::endl;
   }
+
+/*
+*/
 
   return 0;
 }
@@ -143,19 +296,25 @@ read_request
   HttpHeader const headcreq(txnp, TSHttpTxnClientReqGet);
   if (headcreq.isMethodGet())
   {
-    if (headcreq.skipMe())
-    {
-std::cerr << "Got a skip me directive, passing through" << std::endl;
-    }
-    else
+    if (! headcreq.skipMe())
     {
       // we'll intercept this GET and do it ourselfs
       TSCont const icontp
         (TSContCreate(intercept_hook, TSMutexCreate()));
-      TSContDataSet(icontp, (void*)txnp);
+
+      // turn off any caching
+      TSHttpTxnServerRespNoStoreSet(txnp, 1);
+
+      // connect back to ATS
+      sockaddr const * const client_addr = TSHttpTxnClientAddrGet(txnp);
+      TSContDataSet(icontp, (void*)new Data(client_addr));
       TSHttpTxnIntercept(icontp, txnp);
 std::cerr << "created intercept hook" << std::endl;
       return true;
+    }
+    else
+    {
+std::cerr << "Got a skip me directive, passing through" << std::endl;
     }
   }
 
@@ -215,8 +374,9 @@ TSRemapNewInstance
   , void ** //ih
   , char * // errbuf
   , int // errbuf_size
-)
+  )
 {
+  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
   return TS_SUCCESS;
 }
 

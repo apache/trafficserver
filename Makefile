@@ -2,10 +2,12 @@ all: slice
 
 slice_la_SOURCES = \
 	HttpHeader.cc \
+	IPAddress.cc \
 	slice.cc \
 
 slice_la_HEADERS = \
 	HttpHeader.h \
+	IPAddress.cc \
 	slice.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
