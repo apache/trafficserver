@@ -72,7 +72,8 @@ TSAssert(0 < content_range_len);
 std::cerr << __func__ << '\n' << get_request << std::endl;
 
   // virtual connection
-  TSVConn const upvc = TSHttpConnect((sockaddr*)&data->m_client_ip);
+  TSVConn const upvc = TSHttpConnectWithPluginId
+    ((sockaddr*)&data->m_client_ip, "slicer", 0);
 
   // set up connection with the HttpConnect server
   data->m_upstream.setupConnection(upvc);
@@ -109,6 +110,10 @@ handle_client_req
         (TSIOBufferReaderAvail(data->m_dnstream.m_read.m_reader));
 std::cerr << __func__ << ": incoming header: " << bytesavail << std::endl;
     TSIOBufferReaderConsume(data->m_dnstream.m_read.m_reader, bytesavail);
+
+    TSVIONDoneSet
+      ( data->m_dnstream.m_read.m_vio
+      , TSVIONDoneGet(data->m_dnstream.m_read.m_vio) + bytesavail );
 
     // simulate request header
     std::string const req_header(simClientRequestHeader());
@@ -173,8 +178,10 @@ TSAssert(nullptr != ptr);
       }
     }
 */
-
-
+    if (nullptr == data->m_dnstream.m_write.m_vio)
+    {
+      data->m_dnstream.setupVioWrite(contp);
+    }
 
     if (0 < read_avail)
     {
@@ -184,9 +191,14 @@ TSAssert(nullptr != ptr);
           , data->m_upstream.m_read.m_reader
           , read_avail
           , 0 ) );
-std::cerr << __func__ << ": copied: " << copied << std::endl;
+std::cerr << __func__ << ": copied: " << copied
+  << " of: " << read_avail << std::endl;
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
+
+      TSVIONDoneSet
+        ( data->m_upstream.m_read.m_vio
+        , TSVIONDoneGet (data->m_upstream.m_read.m_vio) + copied );
 
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
 
@@ -214,6 +226,16 @@ std::cerr << __func__ << ": copied: " << copied << std::endl;
 */
     }
   }
+  else // we have all the data we're going to get
+  if (TS_EVENT_VCONN_EOS == event)
+  {
+    ++data->m_blocknum;
+    if (blockIsInRange
+      (data->m_blocksize, data->m_blocknum, data->m_range_begend))
+    {
+      request_block(contp, data);
+    }
+  }
   else
   {
 std::cerr << __func__ << ": unhandled event: " << event << std::endl;
@@ -230,8 +252,7 @@ handle_client_resp
   , Data * const data
   )
 {
-  if (TS_EVENT_VCONN_WRITE_READY == event
-    && data->m_upstream.m_read.isValid() )  // temporary
+  if (TS_EVENT_VCONN_WRITE_READY == event)
   {
     int64_t read_avail
       (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
@@ -274,10 +295,10 @@ std::cerr << "copied: " << copied << std::endl;
       TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
 */
     }
-    else // close it all out???
-    {
+  }
+  else // close it all out???
+  {
 std::cerr << __func__ << ": unhandled event: " << event << std::endl;
-    }
   }
 
   return 0;
@@ -292,7 +313,7 @@ intercept_hook
 {
   Data * const data = (Data*)TSContDataGet(contp);
 
-std::cerr << __func__ << ": event: " << event << std::endl;
+//std::cerr << __func__ << ": event: " << event << std::endl;
 
   // After the initial TS_EVENT_NET_ACCEPT
   // any "events" will be handled by the vio read or write channel handler
@@ -308,7 +329,7 @@ std::cerr << __func__ << ": event: " << event << std::endl;
     // to handle times when we have no data yet
     // (in between blocks, etc) when the
     // client still wants more.
-    data->m_dnstream.setupVioWrite(contp);
+//    data->m_dnstream.setupVioWrite(contp);
   }
   else // data from client -- only the initial header
   if ( data->m_dnstream.m_read.isValid()
@@ -321,7 +342,7 @@ std::cerr << __func__ << ": event: " << event << std::endl;
   if ( data->m_upstream.m_write.isValid()
     && edata == data->m_upstream.m_write.m_vio )
   {
-    // header was already sent, not interested
+    // header was already sent to server, not interested
     TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
   }
   else // server has data for us

@@ -65,9 +65,7 @@ TSAssert(nullptr != vc);
     {
       drainReader();
     }
-
     m_vio = TSVConnWrite(vc, contp, m_reader, bytesout);
-
     return nullptr != m_vio;
   }
 
