@@ -68,7 +68,7 @@ TSAssert(0 < content_range_len);
   std::string const get_request
     (rangeRequestStringFor(content_range));
 
-std::cerr << get_request << std::endl;
+std::cerr << __func__ << '\n' << get_request << std::endl;
 
   // virtual connection
   TSVConn const upvc = TSHttpConnect((sockaddr*)&data->m_client_ip);
@@ -103,7 +103,7 @@ handle_client_req
     // parse incoming request header here (TOSS FOR TEST)
     int64_t const bytesavail
         (TSIOBufferReaderAvail(data->m_dnstream.m_read.m_reader));
-std::cerr << "Incoming header: " << bytesavail << std::endl;
+std::cerr << __func__ << ": incoming header: " << bytesavail << std::endl;
     TSIOBufferReaderConsume(data->m_dnstream.m_read.m_reader, bytesavail);
 
     // simulate request header
@@ -130,6 +130,14 @@ handle_server_resp
 {
   if (TS_EVENT_VCONN_READ_READY == event)
   {
+    // do we expect a header???
+    
+
+
+
+    // otherwise
+
+
     int64_t read_avail
       (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
 
@@ -141,7 +149,7 @@ handle_server_resp
           , data->m_upstream.m_read.m_reader
           , read_avail
           , 0 ) );
-std::cerr << "copied: " << copied << std::endl;
+std::cerr << __func__ << ": copied: " << copied << std::endl;
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
 
@@ -170,6 +178,10 @@ std::cerr << "copied: " << copied << std::endl;
       TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
 */
     }
+  }
+  else
+  {
+std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
   return 0;
@@ -229,7 +241,7 @@ std::cerr << "copied: " << copied << std::endl;
     }
     else // close it all out???
     {
-      
+std::cerr << __func__ << ": unhandled event: " << event << std::endl;
     }
   }
 
@@ -245,7 +257,7 @@ intercept_hook
 {
   Data * const data = (Data*)TSContDataGet(contp);
 
-std::cerr << "intercept_hook event: " << event << std::endl;
+std::cerr << __func__ << ": event: " << event << std::endl;
 
   // After the initial TS_EVENT_NET_ACCEPT
   // any "events" will be handled by the vio read or write channel handler
@@ -291,7 +303,7 @@ std::cerr << "intercept_hook event: " << event << std::endl;
   }
   else
   {
-std::cerr << "unhandled event: " << event << std::endl;
+std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
   return 0;
