@@ -71,17 +71,16 @@ handle_client_req
 std::cerr << "Incoming header: " << bytesavail << std::endl;
     TSIOBufferReaderConsume(data->dnstream->read->reader, bytesavail);
 
-    // no longer want anything from client
-    TSVConnShutdown(data->dnstream->vc, 1, 0);
-
     // create header
     std::string const get_request
       (rangeRequestStringFor("bytes=0-1048575"));
 
 std::cerr << get_request << std::endl;
 
+    // virtual connection
     TSVConn const upvc = TSHttpConnect((sockaddr*)data->ipaddr->ip());
 
+    // set up and write to the server
     data->upstream = new Stage(upvc);
     data->upstream->setupWriter(contp);
 
@@ -91,10 +90,10 @@ std::cerr << get_request << std::endl;
       , get_request.size() );
     TSVIOReenable(data->upstream->write->vio);
 
-    // no longer want server requesting from us
-
     // get ready for data coming back
     data->upstream->setupReader(contp);
+
+    // no longer want anything from client
   }
 
   return 0;
@@ -115,13 +114,8 @@ handle_server_resp
 
     if (0 < read_avail)
     {
-      if (nullptr == data->dnstream->write)
-      {
+      if (nullptr == data->dnstream->write) {
         data->dnstream->setupWriter(contp);
-      }
-      else
-      {
-std::cerr << "writer already set up" << std::endl;
       }
 
       int64_t const copied
@@ -178,14 +172,7 @@ handle_client_resp
 
     if (0 < read_avail)
     {
-      if (nullptr == data->dnstream->write)
-      {
-        data->dnstream->setupWriter(contp);
-      }
-      else
-      {
-std::cerr << "writer already set up" << std::endl;
-      }
+      TSAssert(nullptr != data->dnstream->write);
 
       int64_t const copied
         ( TSIOBufferCopy
@@ -221,6 +208,10 @@ std::cerr << "copied: " << copied << std::endl;
       TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
 */
     }
+    else // close it all out???
+    {
+      
+    }
   }
 
   return 0;
@@ -251,21 +242,22 @@ std::cerr << "intercept_hook event: " << event << std::endl;
     && edata == data->dnstream->read->vio )
   {
     handle_client_req(contp, event, data);
+    TSVConnShutdown(data->dnstream->vc, 1, 0);
   }
-  else // origin wants more data from us
+  else // server wants more data from us
   if ( nullptr != data->upstream
     && nullptr != data->upstream->write
     && edata == data->upstream->write->vio )
   {
-std::cerr << "origin wants data from us, tell it to shut up" << std::endl;
+    // already sent, not interested
     TSVConnShutdown(data->upstream->vc, 0, 1);
   }
-  else // origin has data for us
+  else // server has data for us
   if ( nullptr != data->upstream
     && nullptr != data->upstream->read
     && edata == data->upstream->read->vio )
   {
-std::cerr << "origin has data for us" << std::endl;
+std::cerr << "server has data for us" << std::endl;
     handle_server_resp(contp, event, data);
   }
   else // client wants more data from us

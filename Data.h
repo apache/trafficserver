@@ -52,14 +52,8 @@ struct Channel
   ~Channel
     ()
   {
-    if (nullptr != reader)
-    {
-      TSIOBufferReaderFree(reader);
-    }
-    if (nullptr != iobuf)
-    {
-      TSIOBufferDestroy(iobuf);
-    }
+    if (nullptr != reader) { TSIOBufferReaderFree(reader); }
+    if (nullptr != iobuf) { TSIOBufferDestroy(iobuf); }
   }
 
   bool
@@ -70,14 +64,14 @@ struct Channel
   }
 };
 
-struct Stage // upstream or downstream
+struct Stage // upstream or downstream (server or client)
 {
   Stage(Stage const &) = delete;
   Stage & operator=(Stage const &) = delete;
 
   TSVConn vc;
-  Channel * read { nullptr }; // the vconn's reader
-  Channel * write { nullptr }; // the vconn's writer
+  Channel * read { nullptr };
+  Channel * write { nullptr };
 
   explicit Stage(TSVConn vci) : vc(vci) { }
 
@@ -112,15 +106,13 @@ struct Data
   Data & operator=(Data const &) = delete;
 
   IPAddress * ipaddr;
-  Stage * upstream;
-  Stage * dnstream;
+  Stage * upstream { nullptr };
+  Stage * dnstream { nullptr };
 
   Data
     ( sockaddr const * const client_addri
     )
     : ipaddr(new IPAddress(client_addri))
-    , upstream(nullptr)
-    , dnstream(nullptr)
   { }
 
   ~Data()
