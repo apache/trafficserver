@@ -6,61 +6,77 @@
 
 struct Channel
 {
-  TSVIO vio;
-  TSIOBuffer iobuf;
-  TSIOBufferReader reader;
+  TSVIO m_vio { nullptr };
+  TSIOBuffer m_iobuf { nullptr };
+  TSIOBufferReader m_reader { nullptr };
 
-  static
-  Channel
-  forRead
+  ~Channel
+    ()
+  {
+    if (nullptr != m_reader) { TSIOBufferReaderFree(m_reader); }
+    if (nullptr != m_iobuf) { TSIOBufferDestroy(m_iobuf); }
+  }
+
+  void
+  drainReader
+    ()
+  {
+TSAssert(nullptr != m_reader);
+    int64_t const bytes_avail = TSIOBufferReaderAvail(m_reader);
+    TSIOBufferReaderConsume(m_reader, bytes_avail);
+  }
+
+  bool
+  setForRead
     ( TSVConn vc
     , TSCont contp
     , int64_t const bytesin=INT64_MAX
     )
   {
-    Channel chan;
-    TSAssert(nullptr == chan.vio);
-    chan.iobuf = TSIOBufferCreate();
-    chan.reader = TSIOBufferReaderAlloc(chan.iobuf);
-    chan.vio = TSVConnRead(vc, contp, chan.iobuf, bytesin);
-    return chan;
+TSAssert(nullptr != vc);
+    if (nullptr == m_iobuf)
+    {
+      m_iobuf = TSIOBufferCreate();
+      m_reader = TSIOBufferReaderAlloc(m_iobuf);
+    }
+    else
+    {
+      drainReader();
+    }
+    m_vio = TSVConnRead(vc, contp, m_iobuf, bytesin);
+    return nullptr != m_vio;
   }
 
-  static
-  Channel
-  forWrite
+  bool
+  setForWrite
     ( TSVConn vc
     , TSCont contp
     , int64_t const bytesout=INT64_MAX
     )
   {
-    Channel chan;
-    TSAssert(nullptr == chan.vio);
-    chan.iobuf = TSIOBufferCreate();
-    chan.reader = TSIOBufferReaderAlloc(chan.iobuf);
-    chan.vio = TSVConnWrite(vc, contp, chan.reader, bytesout);
-    return chan;
-  }
+TSAssert(nullptr != vc);
+    if (nullptr == m_iobuf)
+    {
+      m_iobuf = TSIOBufferCreate();
+      m_reader = TSIOBufferReaderAlloc(m_iobuf);
+    }
+    else
+    {
+      drainReader();
+    }
 
-  Channel
-    ()
-    : vio(nullptr)
-    , iobuf(nullptr)
-    , reader(nullptr)
-  { }
+    m_vio = TSVConnWrite(vc, contp, m_reader, bytesout);
 
-  ~Channel
-    ()
-  {
-    if (nullptr != reader) { TSIOBufferReaderFree(reader); }
-    if (nullptr != iobuf) { TSIOBufferDestroy(iobuf); }
+    return nullptr != m_vio;
   }
 
   bool
   isValid
     () const
   {
-    return nullptr != vio;
+    return nullptr != m_iobuf
+      && nullptr != m_reader
+      && nullptr != m_vio ;
   }
 };
 
@@ -69,56 +85,63 @@ struct Stage // upstream or downstream (server or client)
   Stage(Stage const &) = delete;
   Stage & operator=(Stage const &) = delete;
 
-  TSVConn vc;
-  Channel * read { nullptr };
-  Channel * write { nullptr };
+  Stage() { }
 
-  explicit Stage(TSVConn vci) : vc(vci) { }
+  TSVConn m_vc { nullptr };
+  Channel m_read;
+  Channel m_write;
 
-  ~Stage()
+  void
+  setupConnection
+    ( TSVConn vc
+    )
   {
-    if (nullptr != read) { delete read; }
-    if (nullptr != write) { delete write; }
+    m_vc = vc;
+    m_read.m_vio = nullptr;
+    m_write.m_vio = nullptr;
   }
 
   void
-  setupReader
+  setupVioRead
     ( TSCont contp
     )
   {
-    TSAssert(nullptr == read);
-    read = new Channel(Channel::forRead(this->vc, contp));
+    m_read.setForRead(m_vc, contp);
   }
 
   void
-  setupWriter
+  setupVioWrite
     ( TSCont contp
     )
   {
-    TSAssert(nullptr == write);
-    write = new Channel(Channel::forWrite(this->vc, contp));
+    m_write.setForWrite(m_vc, contp);
+  }
+
+  bool
+  isValid
+    () const
+  {
+    return nullptr != m_vc && m_read.isValid() && m_write.isValid() ;
   }
 };
 
 struct Data
 {
-  Data(Stage const &) = delete;
+  Data(Data const &) = delete;
   Data & operator=(Data const &) = delete;
 
-  IPAddress * ipaddr;
-  Stage * upstream { nullptr };
-  Stage * dnstream { nullptr };
+  IPAddress * m_ipaddr;
+  Stage m_upstream;
+  Stage m_dnstream;
 
   Data
-    ( sockaddr const * const client_addri
+    ( sockaddr const * const client_addr
     )
-    : ipaddr(new IPAddress(client_addri))
+    : m_ipaddr(new IPAddress(client_addr))
   { }
 
   ~Data()
   {
-    if (nullptr != ipaddr) { delete ipaddr; }
-    if (nullptr != upstream) { delete upstream; }
-    if (nullptr != dnstream) { delete dnstream; }
+    if (nullptr != m_ipaddr) { delete m_ipaddr; }
   }
 };
