@@ -87,6 +87,9 @@ std::cerr << __func__ << '\n' << get_request << std::endl;
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp);
 
+  // reset the header parsed flag
+  data->m_server_res_header_parsed = false;
+
   return 0;
 }
 
@@ -131,7 +134,35 @@ handle_server_resp
   if (TS_EVENT_VCONN_READ_READY == event)
   {
     // do we expect a header???
-    
+/*
+    if (! data->m_server_res_header_parsed)
+    {
+      TSHttpParser const http_parser = data->httpParse();
+TSAssert(nullptr != parser);
+
+      TSIOBufferBlock block = TSIOBufferReaderStart
+        (data->m_upstream.m_read.m_reader);
+      while (nullptr != block && ! data->m_server_res_header_parsed)
+      {
+        int64_t datalen = 0;
+        char const * const data = TSIOBufferBlockReadStart
+            (block, data->m_upstream.m_read.m_reader, datalen);
+TSAssert(nullptr != data);
+        char const * endptr = data + datalen;
+
+        TSParseResult const parseres = TSHttpHdrParseReq
+            ( http_parser
+            , data->m_upstream.m_read.m_iobuf
+            , ?req // BNOBNO
+
+        if (TS_PARSE_DONE == parseres)
+        {
+        }
+      }
+
+      data->m_server_res_header_parsed = true;
+    }
+*/
 
 
 

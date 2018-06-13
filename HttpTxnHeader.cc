@@ -1,4 +1,4 @@
-#include "HttpHeader.h"
+#include "HttpTxnHeader.h"
 
 #include "slice.h"
 
@@ -84,26 +84,24 @@ parseRange
 } // namespace
 
 // default constructor
-HttpHeader :: HttpHeader
+HttpTxnHeader :: HttpTxnHeader
   ()
-  : m_txnp(nullptr)
-  , m_buffer(nullptr)
+  : m_buffer(nullptr)
   , m_lochdr(nullptr)
 {
 }
 
-HttpHeader :: HttpHeader
-  ( TSHttpTxn const & txnpi
+HttpTxnHeader :: HttpTxnHeader
+  ( TSHttpTxn const & txnp
   , HeaderGetFunc const & func
   )
-  : m_txnp(txnpi)
-  , m_buffer(nullptr)
+  : m_buffer(nullptr)
   , m_lochdr(nullptr)
 {
-  func(m_txnp, &m_buffer, &m_lochdr);
+  func(txnp, &m_buffer, &m_lochdr);
 }
 
-HttpHeader :: ~HttpHeader
+HttpTxnHeader :: ~HttpTxnHeader
   ()
 {
   if (nullptr != m_buffer)
@@ -113,14 +111,14 @@ HttpHeader :: ~HttpHeader
 }
 
 bool
-HttpHeader :: isValid
+HttpTxnHeader :: isValid
   () const
 {
   return nullptr != m_buffer && nullptr != m_lochdr;
 }
 
 bool
-HttpHeader :: isMethodGet
+HttpTxnHeader :: isMethodGet
   () const
 {
   if (! isValid())
@@ -135,7 +133,7 @@ HttpHeader :: isMethodGet
 }
 
 std::pair<int64_t, int64_t>
-HttpHeader :: firstRange
+HttpTxnHeader :: firstRange
    () const
 {
   std::pair<int64_t, int64_t> range
@@ -169,7 +167,7 @@ HttpHeader :: firstRange
 }
 
 bool
-HttpHeader :: skipMe
+HttpTxnHeader :: skipMe
   () const
 {
   if (! isValid())
@@ -189,7 +187,7 @@ HttpHeader :: skipMe
 }
 
 bool
-HttpHeader :: setSkipMe
+HttpTxnHeader :: setSkipMe
   ()
 {
   if (! isValid())
@@ -218,21 +216,8 @@ HttpHeader :: setSkipMe
   return status;
 }
 
-bool
-HttpHeader :: isStatusOkay
-  () const
-{
-  if (! isValid())
-  {
-    return false;
-  }
-
-  TSHttpStatus const stat(TSHttpHdrStatusGet(m_buffer, m_lochdr));
-  return TS_HTTP_STATUS_OK == stat;
-}
-
 int64_t
-HttpHeader :: contentBytes
+HttpTxnHeader :: contentBytes
   () const
 {
   int64_t bytes(0);

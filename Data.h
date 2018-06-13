@@ -136,10 +136,12 @@ struct Data
 
   int64_t m_blocknum; //!< block number to work on
 
-/*
-  TSIOBuffer m_client_req_header;
-  TSIOBuffer m_client_resp_header;
-*/
+  TSHttpParser m_http_parser;
+
+  TSIOBuffer m_client_req_header; // request header as read
+  TSIOBuffer m_client_res_header; // response header as generated
+
+  bool m_server_res_header_parsed;
 
   sockaddr_storage m_client_ip;
   Stage m_upstream;
@@ -152,5 +154,36 @@ struct Data
     : m_blocksize(blocksize)
     , m_range_begend(-1, -1)
     , m_blocknum(-1)
+    , m_http_parser(nullptr)
+    , m_client_req_header(nullptr)
+    , m_client_res_header(nullptr)
+    , m_server_res_header_parsed(false)
   { }
+
+  ~Data
+    ()
+  {
+    if (nullptr != m_http_parser) {
+      TSHttpParserDestroy(m_http_parser);
+    }
+    if (nullptr != m_client_req_header) {
+      TSIOBufferDestroy(m_client_req_header);
+    }
+    if (nullptr != m_client_res_header) {
+      TSIOBufferDestroy(m_client_res_header);
+    }
+  }
+
+  TSHttpParser
+  httpParser
+    ()
+  {
+    if (nullptr == m_http_parser) {
+      m_http_parser = TSHttpParserCreate();
+    } else {
+      TSHttpParserClear(m_http_parser);
+    }
+
+    return m_http_parser;
+  }
 };

@@ -4,27 +4,32 @@
 
 #include <utility>
 
-class HttpHeader
+class HttpTxnHeader
 {
-  HttpHeader(HttpHeader const &) = delete;
-  HttpHeader & operator=(HttpHeader const &) = delete;
+  HttpTxnHeader(HttpTxnHeader const &) = delete;
+  HttpTxnHeader & operator=(HttpTxnHeader const &) = delete;
 
 public:
 
   typedef TSReturnCode(*HeaderGetFunc)(TSHttpTxn, TSMBuffer *, TSMLoc*);
 
   // default null constructor
-  HttpHeader
+  HttpTxnHeader
     ();
 
   explicit
-  HttpHeader
+  HttpTxnHeader
     ( TSHttpTxn const & txnp
     , HeaderGetFunc const & func
-      // 
+      // TSHttpTxnClientReqGet
+      // TSHttpTxnClientRespGet
+      // TSHttpTxnServerReqGet
+      // TSHttpTxnServerRespGet
+      // TSHttpTxnCachedReqGet
+      // TSHttpTxnCachedRespGet
     );
 
-  ~HttpHeader
+  ~HttpTxnHeader
     ();
 
   bool
@@ -47,11 +52,6 @@ public:
 
   bool
   skipMe
-    () const;
-
-  // hack for hard coded respoinse check (refactor)
-  bool
-  isStatusOkay
     () const;
 
   // hack for hard coded content type check (refactor)
