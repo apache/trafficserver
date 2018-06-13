@@ -281,6 +281,30 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
   REQUIRE(std::string_view(buff) == "|Deep Silent Complete by Nightwish|");
   snprintf(buff, sizeof(buff), "|%s|", bw.reset().print("Deep Silent Complete by {}\0elided junk", "Nightwish"sv).data());
   REQUIRE(std::string_view(buff) == "|Deep Silent Complete by Nightwish|");
+
+  // Special tests for clang analyzer failures - special asserts are needed to make it happy but
+  // those can break functionality.
+  fmt = "Did you know? {}{} is {}"sv;
+  s.resize(0);
+  ts::bwprint(s, fmt, "Lady "sv, "Persia"sv, "not mean");
+  REQUIRE(s == "Did you know? Lady Persia is not mean");
+  s.resize(0);
+  ts::bwprint(s, fmt, ""sv, "Phil", "correct");
+  REQUIRE(s == "Did you know? Phil is correct");
+  s.resize(0);
+  ts::bwprint(s, fmt, std::string_view(), "Leif", "confused");
+  REQUIRE(s == "Did you know? Leif is confused");
+
+  {
+    std::string out;
+    ts::bwprint(out, fmt, ""sv, "Phil", "correct");
+    REQUIRE(out == "Did you know? Phil is correct");
+  }
+  {
+    std::string out;
+    ts::bwprint(out, fmt, std::string_view(), "Leif", "confused");
+    REQUIRE(out == "Did you know? Leif is confused");
+  }
 }
 
 TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
