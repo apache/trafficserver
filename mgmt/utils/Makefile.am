@@ -56,7 +56,6 @@ libutils_p_la_SOURCES = \
 	MgmtProcessCleanup.cc
 
 test_marshall_LDFLAGS = \
-	-static-libstdc++ \
 	@AM_LDFLAGS@ \
 	@OPENSSL_LDFLAGS@
 
