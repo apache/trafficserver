@@ -171,7 +171,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
       line.erase(0, 1);
     }
 
-    while (std::isspace(line[line.length() - 1])) {
+    while (line.length() > 0 && std::isspace(line[line.length() - 1])) {
       line.erase(line.length() - 1, 1);
     }
 
