@@ -1,6 +1,7 @@
 #include "intercept.h"
 
 #include "Data.h"
+#include "HttpHeader.h"
 #include "range.h"
 
 #include <cinttypes>
@@ -133,44 +134,47 @@ handle_server_resp
 {
   if (TS_EVENT_VCONN_READ_READY == event)
   {
-    // do we expect a header???
+    int64_t read_avail
+      (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
+
 /*
     if (! data->m_server_res_header_parsed)
     {
+      TSHttpHeader header;
       TSHttpParser const http_parser = data->httpParse();
-TSAssert(nullptr != parser);
 
       TSIOBufferBlock block = TSIOBufferReaderStart
         (data->m_upstream.m_read.m_reader);
       while (nullptr != block && ! data->m_server_res_header_parsed)
       {
-        int64_t datalen = 0;
-        char const * const data = TSIOBufferBlockReadStart
-            (block, data->m_upstream.m_read.m_reader, datalen);
-TSAssert(nullptr != data);
-        char const * endptr = data + datalen;
+        int64_t nbytes = 0;
+        char const * ptr = TSIOBufferBlockReadStart
+            (block, data->m_upstream.m_read.m_reader, &nbytes);
+TSAssert(nullptr != ptr);
+        char const * endptr = ptr + &nbytes;
 
         TSParseResult const parseres = TSHttpHdrParseReq
             ( http_parser
             , data->m_upstream.m_read.m_iobuf
-            , ?req // BNOBNO
+            , header.m_buffer
+            , header.m_lochdr
+            , &ptr, endptr );
 
         if (TS_PARSE_DONE == parseres)
         {
+          data->m_server_res_header_parsed = true;
         }
       }
 
-      data->m_server_res_header_parsed = true;
+      // the server response header didn't fit into a single block ???
+      if (! data->m_server_res_header_parsed)
+      {
+        return 0;
+      }
     }
 */
 
 
-
-    // otherwise
-
-
-    int64_t read_avail
-      (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
 
     if (0 < read_avail)
     {
