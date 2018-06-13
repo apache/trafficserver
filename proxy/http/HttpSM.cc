@@ -276,10 +276,6 @@ HttpSM::cleanup()
   tunnel.mutex.clear();
   cache_sm.mutex.clear();
   transform_cache_sm.mutex.clear();
-  if (second_cache_sm) {
-    second_cache_sm->mutex.clear();
-    delete second_cache_sm;
-  }
   magic    = HTTP_SM_MAGIC_DEAD;
   debug_on = false;
 }
@@ -2436,19 +2432,6 @@ HttpSM::state_cache_open_write(int event, void *data)
     ink_release_assert(0);
   }
 
-  if (t_state.api_lock_url != HttpTransact::LOCK_URL_FIRST) {
-    if (event == CACHE_EVENT_OPEN_WRITE || event == CACHE_EVENT_OPEN_WRITE_FAILED) {
-      if (t_state.api_lock_url == HttpTransact::LOCK_URL_SECOND) {
-        t_state.api_lock_url = HttpTransact::LOCK_URL_ORIGINAL;
-        do_cache_prepare_action(second_cache_sm, t_state.cache_info.second_object_read, true);
-        return 0;
-      } else {
-        t_state.api_lock_url = HttpTransact::LOCK_URL_DONE;
-      }
-    } else if (event != CACHE_EVENT_OPEN_READ || t_state.api_lock_url != HttpTransact::LOCK_URL_SECOND) {
-      t_state.api_lock_url = HttpTransact::LOCK_URL_QUIT;
-    }
-  }
   // The write either succeeded or failed, notify transact
   call_transact_and_set_next_state(nullptr);
 
@@ -4539,11 +4522,8 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
 inline void
 HttpSM::do_cache_prepare_write()
 {
-  // statistically no need to retry when we are trying to lock
-  // LOCK_URL_SECOND url because the server's behavior is unlikely to change
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN] = Thread::get_hrtime();
-  bool retry                                      = (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST);
-  do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, retry);
+  do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, true);
 }
 
 inline void
@@ -4586,26 +4566,18 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
 
   ink_assert(!pending_action);
 
-  if (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST) {
-    if (t_state.redirect_info.redirect_in_process) {
-      o_url = &(t_state.redirect_info.original_url);
-      ink_assert(o_url->valid());
-      restore_client_request = true;
-      s_url                  = o_url;
-    } else {
-      o_url = &(t_state.cache_info.original_url);
-      if (o_url->valid()) {
-        s_url = o_url;
-      } else {
-        s_url = t_state.cache_info.lookup_url;
-      }
-    }
-  } else if (t_state.api_lock_url == HttpTransact::LOCK_URL_SECOND) {
-    s_url = &t_state.cache_info.lookup_url_storage;
-  } else {
-    ink_assert(t_state.api_lock_url == HttpTransact::LOCK_URL_ORIGINAL);
-    s_url                  = &(t_state.cache_info.original_url);
+  if (t_state.redirect_info.redirect_in_process) {
+    o_url = &(t_state.redirect_info.original_url);
+    ink_assert(o_url->valid());
     restore_client_request = true;
+    s_url                  = o_url;
+  } else {
+    o_url = &(t_state.cache_info.original_url);
+    if (o_url->valid()) {
+      s_url = o_url;
+    } else {
+      s_url = t_state.cache_info.lookup_url;
+    }
   }
 
   // modify client request to make it have the url we are going to
@@ -6792,9 +6764,6 @@ HttpSM::kill_this()
     }
 
     cache_sm.end_both();
-    if (second_cache_sm) {
-      second_cache_sm->end_both();
-    }
     transform_cache_sm.end_both();
     vc_table.cleanup_all();
 
