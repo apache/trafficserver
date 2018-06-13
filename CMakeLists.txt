@@ -56,63 +56,63 @@ include_directories(lib
         lib/luajit/src)
 
 add_executable(traffic_crashlog
-        cmd/traffic_crashlog/procinfo.cc
-        cmd/traffic_crashlog/traffic_crashlog.cc
-        cmd/traffic_crashlog/traffic_crashlog.h
+        src/traffic_crashlog/procinfo.cc
+        src/traffic_crashlog/traffic_crashlog.cc
+        src/traffic_crashlog/traffic_crashlog.h
 )
 
 add_executable(traffic_ctl
-        cmd/traffic_ctl/alarm.cc
-        cmd/traffic_ctl/config.cc
-        cmd/traffic_ctl/plugin.cc
-        cmd/traffic_ctl/server.cc
-        cmd/traffic_ctl/storage.cc
-        cmd/traffic_ctl/traffic_ctl.cc
-        cmd/traffic_ctl/traffic_ctl.h
-        cmd/traffic_layout/engine.cc
+        src/traffic_ctl/alarm.cc
+        src/traffic_ctl/config.cc
+        src/traffic_ctl/plugin.cc
+        src/traffic_ctl/server.cc
+        src/traffic_ctl/storage.cc
+        src/traffic_ctl/traffic_ctl.cc
+        src/traffic_ctl/traffic_ctl.h
+        src/traffic_layout/engine.cc
 )
 
 add_executable(traffic_layout
-        cmd/traffic_layout/engine.h
-        cmd/traffic_layout/file_system.cc
-        cmd/traffic_layout/file_system.h
-        cmd/traffic_layout/info.cc
-        cmd/traffic_layout/info.h
-        cmd/traffic_layout/traffic_layout.cc
+        src/traffic_layout/engine.h
+        src/traffic_layout/file_system.cc
+        src/traffic_layout/file_system.h
+        src/traffic_layout/info.cc
+        src/traffic_layout/info.h
+        src/traffic_layout/traffic_layout.cc
 )
 
 add_executable(traffic_logcat
-        cmd/traffic_logcat/logcat.cc
+        src/traffic_logcat/logcat.cc
 )
 
 add_executable(traffic_logstats
-        cmd/traffic_logstats/logstats.cc
+        src/traffic_logstats/logstats.cc
 )
 
 add_executable(traffic_manager
-        cmd/traffic_manager/AddConfigFilesHere.cc
-        cmd/traffic_manager/traffic_manager.cc
+        src/traffic_manager/AddConfigFilesHere.cc
+        src/traffic_manager/traffic_manager.cc
 )
 
 add_executable(traffic_server
-        cmd/traffic_server/CoreUtils.cc
-        cmd/traffic_server/CoreUtils.h
-        cmd/traffic_server/Crash.cc
-        cmd/traffic_server/EventName.cc
-        cmd/traffic_server/EventName.h
-        cmd/traffic_server/FetchSM.cc
-        cmd/traffic_server/FetchSM.h
-        cmd/traffic_server/HostStatus.cc
-        cmd/traffic_server/InkAPI.cc
-        cmd/traffic_server/InkAPITest.cc
-        cmd/traffic_server/InkIOCoreAPI.cc
-        cmd/traffic_server/SocksProxy.cc
-        cmd/traffic_server/traffic_server.cc
+        src/traffic_server/CoreUtils.cc
+        src/traffic_server/CoreUtils.h
+        src/traffic_server/Crash.cc
+        src/traffic_server/EventName.cc
+        src/traffic_server/EventName.h
+        src/traffic_server/FetchSM.cc
+        src/traffic_server/FetchSM.h
+        src/traffic_server/HostStatus.cc
+        src/traffic_server/InkAPI.cc
+        src/traffic_server/InkAPITest.cc
+        src/traffic_server/InkIOCoreAPI.cc
+        src/traffic_server/SocksProxy.cc
+        src/traffic_server/traffic_server.cc
 )
 
 add_executable(ats
-        cmd/traffic_via/traffic_via.cc
-        cmd/traffic_wccp/wccp_client.cc
+        src/traffic_via/traffic_via.cc
+        src/traffic_wccp/wccp_client.cc
         example/add_header/add_header.c
         example/append_transform/append_transform.c
         example/basic_auth/basic_auth.c
@@ -1406,12 +1406,12 @@ add_library(plugin_escalate SHARED
 
 # CacheTool
 add_executable(traffic_cache_tool
-	cmd/traffic_cache_tool/CacheStore.h
-	cmd/traffic_cache_tool/CacheDefs.h
-	cmd/traffic_cache_tool/CacheDefs.cc
-	cmd/traffic_cache_tool/CacheTool.cc
-	cmd/traffic_cache_tool/Command.h
-	cmd/traffic_cache_tool/Command.cc
-	cmd/traffic_cache_tool/File.h
-	cmd/traffic_cache_tool/File.cc
+	src/traffic_cache_tool/CacheStore.h
+	src/traffic_cache_tool/CacheDefs.h
+	src/traffic_cache_tool/CacheDefs.cc
+	src/traffic_cache_tool/CacheTool.cc
+	src/traffic_cache_tool/Command.h
+	src/traffic_cache_tool/Command.cc
+	src/traffic_cache_tool/File.h
+	src/traffic_cache_tool/File.cc
 )

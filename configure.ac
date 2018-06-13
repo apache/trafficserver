@@ -38,7 +38,7 @@ m4_define([TS_VERSION_N],[9000000])
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/_aux])
-AC_CONFIG_SRCDIR([cmd/traffic_server/traffic_server.cc])
+AC_CONFIG_SRCDIR([src/traffic_server/traffic_server.cc])
 AC_CONFIG_MACRO_DIR([build])
 
 # NOTE: we turn off portability warnings because the clang-tidy targets use
@@ -2027,7 +2027,7 @@ AS_IF([test "x$RPATH" != "x"], [
 
 AC_CONFIG_FILES([
   Makefile
-  cmd/Makefile
+  src/Makefile
   doc/Makefile
   doc/ext/local-config.py
   doc/uml/Makefile
