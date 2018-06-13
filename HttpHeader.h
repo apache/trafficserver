@@ -55,11 +55,6 @@ public:
     () const;
 
   // hack for hard coded content type check (refactor)
-  bool
-  isContentText
-    () const;
-
-  // hack for hard coded content type check (refactor)
   int64_t
   contentBytes
     () const;
@@ -72,8 +67,8 @@ private:  // methods
 
 private: // data
 
-  TSHttpTxn txnp;
-  TSMBuffer buffer; //!< buffer from header get func
-  TSMLoc lochdr; //!< location of header from get func
+  TSHttpTxn m_txnp;
+  TSMBuffer m_buffer; //!< buffer from header get func
+  TSMLoc m_lochdr; //!< location of header from get func
 
 };

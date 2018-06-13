@@ -86,29 +86,29 @@ parseRange
 // default constructor
 HttpHeader :: HttpHeader
   ()
-  : txnp(nullptr)
-  , buffer(nullptr)
-  , lochdr(nullptr)
+  : m_txnp(nullptr)
+  , m_buffer(nullptr)
+  , m_lochdr(nullptr)
 {
 }
 
 HttpHeader :: HttpHeader
-    ( TSHttpTxn const & txnpi
-    , HeaderGetFunc const & func
-    )
-    : txnp(txnpi)
-    , buffer(nullptr)
-    , lochdr(nullptr)
+  ( TSHttpTxn const & txnpi
+  , HeaderGetFunc const & func
+  )
+  : m_txnp(txnpi)
+  , m_buffer(nullptr)
+  , m_lochdr(nullptr)
 {
-  func(this->txnp, &this->buffer, &this->lochdr);
+  func(m_txnp, &m_buffer, &m_lochdr);
 }
 
 HttpHeader :: ~HttpHeader
   ()
 {
-  if (nullptr != this->buffer)
+  if (nullptr != m_buffer)
   {
-    TSHandleMLocRelease(this->buffer, TS_NULL_MLOC, this->lochdr);
+    TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
   }
 }
 
@@ -116,7 +116,7 @@ bool
 HttpHeader :: isValid
   () const
 {
-  return nullptr != this->buffer && nullptr != this->lochdr;
+  return nullptr != m_buffer && nullptr != m_lochdr;
 }
 
 bool
@@ -130,7 +130,7 @@ HttpHeader :: isMethodGet
 
   int methodlen(0);
   char const * const method = TSHttpHdrMethodGet
-      (this->buffer, this->lochdr, &methodlen);
+      (m_buffer, m_lochdr, &methodlen);
   return TS_HTTP_METHOD_GET == method;
 }
 
@@ -143,8 +143,8 @@ HttpHeader :: firstRange
 
   TSMLoc const locfield
     ( TSMimeHdrFieldFind
-      ( this->buffer
-      , this->lochdr
+      ( m_buffer
+      , m_lochdr
       , TS_MIME_FIELD_RANGE
       , TS_MIME_LEN_RANGE ) );
 
@@ -152,7 +152,7 @@ HttpHeader :: firstRange
   {
     int value_len = 0;
     char const * const value = TSMimeHdrFieldValueStringGet
-        (this->buffer, this->lochdr, locfield, 0, &value_len);
+        (m_buffer, m_lochdr, locfield, 0, &value_len);
 
     if (0 < value_len && value_len < 255)
     {
@@ -162,7 +162,7 @@ HttpHeader :: firstRange
       range = parseRange(rangearr);
     }
 
-    TSHandleMLocRelease(this->buffer, this->lochdr, locfield);
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
   
   return range;
@@ -178,10 +178,10 @@ HttpHeader :: skipMe
   }
 
   TSMLoc const locfield(TSMimeHdrFieldFind
-    (this->buffer, this->lochdr, skipmestr, strlen(skipmestr)));
+    (m_buffer, m_lochdr, skipmestr, strlen(skipmestr)));
   if (nullptr != locfield)
   {
-    TSHandleMLocRelease(this->buffer, this->lochdr, locfield);
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
     return true;
   }
 
@@ -201,18 +201,18 @@ HttpHeader :: setSkipMe
 
   TSMLoc locfield;
   int rcode(TSMimeHdrFieldCreateNamed
-    (this->buffer, this->lochdr, skipmestr, strlen(skipmestr), &locfield));
+    (m_buffer, m_lochdr, skipmestr, strlen(skipmestr), &locfield));
   if (TS_SUCCESS == rcode)
   {
     rcode = TSMimeHdrFieldValueStringSet
-      (this->buffer, this->lochdr, locfield, 0, yesstr, strlen(yesstr));
+      (m_buffer, m_lochdr, locfield, 0, yesstr, strlen(yesstr));
     if (TS_SUCCESS == rcode)
     {
-      rcode = TSMimeHdrFieldAppend(this->buffer, this->lochdr, locfield);
+      rcode = TSMimeHdrFieldAppend(m_buffer, m_lochdr, locfield);
       status = (TS_SUCCESS == rcode);
     }
 
-    TSHandleMLocRelease(this->buffer, this->lochdr, locfield);
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 
   return status;
@@ -227,43 +227,8 @@ HttpHeader :: isStatusOkay
     return false;
   }
 
-  TSHttpStatus const stat(TSHttpHdrStatusGet(this->buffer, this->lochdr));
+  TSHttpStatus const stat(TSHttpHdrStatusGet(m_buffer, m_lochdr));
   return TS_HTTP_STATUS_OK == stat;
-}
-
-bool
-HttpHeader :: isContentText
-  () const
-{
-  bool status(false);
-  if (! isValid())
-  {
-    return status;
-  }
-
-static const char * const contentstr = "text/plain";
-
-  TSMLoc const locfield
-    ( TSMimeHdrFieldFind
-      ( this->buffer
-      , this->lochdr
-      , TS_MIME_FIELD_CONTENT_TYPE
-      , TS_MIME_LEN_CONTENT_TYPE ) );
-
-  if (nullptr != locfield)
-  {
-    int valuelen(0);
-    char const * const value
-      ( TSMimeHdrFieldValueStringGet
-        ( this->buffer, this->lochdr, locfield, 0, &valuelen ) );
-    if (nullptr != value)
-    {
-      status = (0 == strncmp(value, contentstr, valuelen));
-    }
-    TSHandleMLocRelease(this->buffer, this->lochdr, locfield);
-  }
-
-  return status;
 }
 
 int64_t
@@ -278,16 +243,16 @@ HttpHeader :: contentBytes
 
   TSMLoc const locfield
     ( TSMimeHdrFieldFind
-      ( this->buffer
-      , this->lochdr
+      ( m_buffer
+      , m_lochdr
       , TS_MIME_FIELD_CONTENT_LENGTH
       , TS_MIME_LEN_CONTENT_LENGTH ) );
 
   if (nullptr != locfield)
   {
     bytes = TSMimeHdrFieldValueInt64Get
-      (this->buffer, this->lochdr, locfield, -1);
-    TSHandleMLocRelease(this->buffer, this->lochdr, locfield);
+      (m_buffer, m_lochdr, locfield, -1);
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 
   return bytes;
