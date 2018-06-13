@@ -749,6 +749,7 @@ Span::loadDevice()
           }
           _len = _header->num_blocks;
         } else {
+          zret = Errata::Message(0, 0, _path, " header is uninitialized or invalid");
           std::cout << "Span: " << _path << " header is uninitialized or invalid" << std::endl;
           _len = round_down(_geometry.totalsz) - _base;
         }
@@ -1351,26 +1352,35 @@ Get_Response(FilePath const &input_file_path)
   return zret;
 }
 
-void static scan_span(Span *span)
+void static scan_span(Span *span, ts::FilePath const &regex_path)
 {
   for (auto strp : span->_stripes) {
     strp->loadMeta();
     strp->loadDir();
-    CacheScan cs(strp);
-    cs.Scan();
+
+    if (regex_path.has_path()) {
+      CacheScan cs(strp, regex_path);
+      cs.Scan(true);
+    } else {
+      CacheScan cs(strp);
+      cs.Scan(false);
+    }
   }
 }
 
 Errata
-Scan_Cache()
+Scan_Cache(ts::FilePath const &regex_path)
 {
   Errata zret;
   Cache cache;
   std::vector<std::thread> threadPool;
   if ((zret = cache.loadSpan(SpanFile))) {
+    if (zret.size()) {
+      return zret;
+    }
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
     for (auto sp : cache._spans) {
-      threadPool.emplace_back(scan_span, sp); // move constructor is necessary since std::thread is non copyable
+      threadPool.emplace_back(scan_span, sp, regex_path);
     }
     for (auto &th : threadPool)
       th.join();
@@ -1443,7 +1453,7 @@ main(int argc, char *argv[])
   Commands.add(std::string("init"), std::string(" Initializes uninitialized span"),
                [&](int, char *argv[]) { return Init_disk(input_url_file); });
   Commands.add(std::string("scan"), std::string(" Scans the whole cache and lists the urls of the cached contents"),
-               [&](int, char *argv[]) { return Scan_Cache(); });
+               [&](int, char *argv[]) { return Scan_Cache(input_url_file); });
   Commands.setArgIndex(optind);
 
   if (help) {
