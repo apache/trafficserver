@@ -49,18 +49,18 @@ doc/xml/
 MYMETA.*
 pm_to_blib
 
-cmd/traffic_cache_tool/traffic_cache_tool
-cmd/traffic_cop/traffic_cop
-cmd/traffic_crashlog/traffic_crashlog
-cmd/traffic_ctl/traffic_ctl
-cmd/traffic_layout/traffic_layout
-cmd/traffic_logcat/traffic_logcat
-cmd/traffic_logstats/traffic_logstats
-cmd/traffic_manager/traffic_manager
-cmd/traffic_server/traffic_server
-cmd/traffic_top/traffic_top
-cmd/traffic_via/traffic_via
-cmd/traffic_wccp/traffic_wccp
+src/traffic_cache_tool/traffic_cache_tool
+src/traffic_cop/traffic_cop
+src/traffic_crashlog/traffic_crashlog
+src/traffic_ctl/traffic_ctl
+src/traffic_layout/traffic_layout
+src/traffic_logcat/traffic_logcat
+src/traffic_logstats/traffic_logstats
+src/traffic_manager/traffic_manager
+src/traffic_server/traffic_server
+src/traffic_top/traffic_top
+src/traffic_via/traffic_via
+src/traffic_wccp/traffic_wccp
 
 lib/stamp-h1
 lib/ink_autoconf.h

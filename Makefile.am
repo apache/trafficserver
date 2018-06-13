@@ -28,7 +28,7 @@ export CCACHE_BASEDIR
 
 # proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
-SUBDIRS = proxy/api/ts lib iocore proxy mgmt cmd plugins tools example rc
+SUBDIRS = proxy/api/ts lib iocore proxy mgmt src plugins tools example rc
 
 if BUILD_DOCS
 SUBDIRS += doc
@@ -118,7 +118,7 @@ clang-format: 	clang-format-cmd clang-format-example clang-format-iocore clang-f
 		clang-format-plugins clang-format-proxy clang-format-tools clang-format-tests
 
 clang-format-cmd:
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/cmd
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/src
 
 clang-format-example:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/example
