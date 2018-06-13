@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IPAddress.h"
+#include <netinet/in.h>
 
 #include "ts/ts.h"
 
@@ -130,18 +130,15 @@ struct Data
   Data(Data const &) = delete;
   Data & operator=(Data const &) = delete;
 
-  IPAddress * m_ipaddr;
+  int64_t m_blocksize;
+  sockaddr_storage m_client_ip;
   Stage m_upstream;
   Stage m_dnstream;
 
+  explicit
   Data
-    ( sockaddr const * const client_addr
+    ( int64_t const blocksize
     )
-    : m_ipaddr(new IPAddress(client_addr))
+    : m_blocksize(blocksize)
   { }
-
-  ~Data()
-  {
-    if (nullptr != m_ipaddr) { delete m_ipaddr; }
-  }
 };

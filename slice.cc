@@ -29,6 +29,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <netinet/in.h>
 
 static
 bool
@@ -41,6 +42,23 @@ read_request
   {
     if (! headcreq.skipMe())
     {
+      // connection back into ATS
+      sockaddr const * const ip = TSHttpTxnClientAddrGet(txnp);
+      if (nullptr == ip)
+      {
+        return false;
+      }
+
+      struct sockaddr_storage client_ip;
+
+      if (AF_INET == ip->sa_family) {
+        memcpy(&client_ip, ip, sizeof(sockaddr_in));
+      } else if (AF_INET6 == ip->sa_family) {
+        memcpy(&client_ip, ip, sizeof(sockaddr_in6));
+      } else {
+        return false;
+      }
+
       // we'll intercept this GET and do it ourselfs
       TSCont const icontp
         (TSContCreate(intercept_hook, TSMutexCreate()));
@@ -48,9 +66,9 @@ read_request
       // turn off any caching
       TSHttpTxnServerRespNoStoreSet(txnp, 1);
 
-      // connect back to ATS
-      sockaddr const * const client_addr = TSHttpTxnClientAddrGet(txnp);
-      TSContDataSet(icontp, (void*)new Data(client_addr));
+      Data * const data = new Data(1024 * 1024);
+      memcpy(&data->m_client_ip, &client_ip, sizeof(sockaddr_storage));
+      TSContDataSet(icontp, (void*)data);
       TSHttpTxnIntercept(icontp, txnp);
 std::cerr << "created intercept hook" << std::endl;
       return true;

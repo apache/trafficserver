@@ -2,13 +2,11 @@ all: slice
 
 slice_la_SOURCES = \
 	HttpHeader.cc \
-	IPAddress.cc \
 	intercept.cc \
 	slice.cc \
 
 slice_la_HEADERS = \
 	HttpHeader.h \
-	IPAddress.cc \
 	intercept.h \
 	slice.h \
 

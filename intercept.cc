@@ -52,7 +52,7 @@ std::cerr << "Incoming header: " << bytesavail << std::endl;
 std::cerr << get_request << std::endl;
 
     // virtual connection
-    TSVConn const upvc = TSHttpConnect((sockaddr*)data->m_ipaddr->ip());
+    TSVConn const upvc = TSHttpConnect((sockaddr*)&data->m_client_ip);
 
     // set up connection with the HttpConnect server
     data->m_upstream.setupConnection(upvc);
