@@ -258,12 +258,12 @@ public:
   {
     const size_t newSize = _attempted + length;
 
-    if (newSize <= _capacity) {
-      ink_assert(_buf != nullptr); // make clang-analyzer happy.
-      std::memcpy(_buf + _attempted, data, length);
-    } else if (_attempted < _capacity) {
-      ink_assert(_buf != nullptr); // make clang-analyzer happy.
-      std::memcpy(_buf + _attempted, data, _capacity - _attempted);
+    if (_buf) {
+      if (newSize <= _capacity) {
+        std::memcpy(_buf + _attempted, data, length);
+      } else if (_attempted < _capacity) {
+        std::memcpy(_buf + _attempted, data, _capacity - _attempted);
+      }
     }
     _attempted = newSize;
 
