@@ -1,8 +1,9 @@
 #pragma once
 
-#include <netinet/in.h>
-
 #include "ts/ts.h"
+
+#include <netinet/in.h>
+#include <utility>
 
 struct Channel
 {
@@ -131,6 +132,15 @@ struct Data
   Data & operator=(Data const &) = delete;
 
   int64_t m_blocksize;
+  std::pair<int64_t, int64_t> m_range_begend;
+
+  int64_t m_blocknum; //!< block number to work on
+
+/*
+  TSIOBuffer m_client_req_header;
+  TSIOBuffer m_client_resp_header;
+*/
+
   sockaddr_storage m_client_ip;
   Stage m_upstream;
   Stage m_dnstream;
@@ -140,5 +150,7 @@ struct Data
     ( int64_t const blocksize
     )
     : m_blocksize(blocksize)
+    , m_range_begend(-1, -1)
+    , m_blocknum(-1)
   { }
 };

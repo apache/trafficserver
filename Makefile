@@ -3,11 +3,13 @@ all: slice
 slice_la_SOURCES = \
 	HttpHeader.cc \
 	intercept.cc \
+	range.cc \
 	slice.cc \
 
 slice_la_HEADERS = \
 	HttpHeader.h \
 	intercept.h \
+	range.h \
 	slice.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
