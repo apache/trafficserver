@@ -3,70 +3,10 @@
 #include "Data.h"
 #include "HttpHeader.h"
 #include "range.h"
+#include "sim.h"
 
 #include <cinttypes>
 #include <iostream>
-
-std::string
-simClientRequestHeader
-  ()
-{
-  std::string get_request;
-  get_request.append(TS_HTTP_METHOD_GET);
-  get_request.append(" /voidlinux.iso HTTP/1.1\r\n");
-  get_request.append(TS_MIME_FIELD_HOST);
-  get_request.append(": localhost:6010\r\n");
-  get_request.append(TS_MIME_FIELD_USER_AGENT);
-  get_request.append(": ATS/slicer\r\n");
-  get_request.append(TS_MIME_FIELD_ACCEPT);
-  get_request.append(": */*\r\n");
-  get_request.append("\r\n");
-  return get_request;
-}
-
-std::string
-simClientResponseHeader
-  ()
-{
-  std::string const response
-    ( "HTTP/1.1 200 Partial Content\r\n"
-      "Date: Wed, 13 Jun 2018 22:50:48 GMT\r\n"
-      "Server: biteme/6.6.6\r\n"
-      "Last-Modified: Mon, 07 May 2018 16:07:31 GMT\r\n"
-      "ETag: \"12500000-56b9fddf5ac99\"\r\n"
-      "Accept-Ranges: bytes\r\n"
-      "Content-Length: 10485760000\r\n"
-      "Cache-Control: public, max-age=900, s-maxage=900\r\n"
-      "Content-Type: application/octet-stream\r\n"
-      "Age: 0\r\n"
-      "Connection: keep-alive\r\n"
-      "\r\n" );
-  return response;
-}
-
-std::string
-rangeRequestStringFor
-  ( std::string const & bytesstr
-  )
-{
-  std::string get_request;
-  get_request.append(TS_HTTP_METHOD_GET);
-  get_request.append(" /voidlinux.iso HTTP/1.1\r\n");
-  get_request.append(TS_MIME_FIELD_HOST);
-  get_request.append(": localhost:6010\r\n");
-  get_request.append(TS_MIME_FIELD_USER_AGENT);
-  get_request.append(": ATS/whatever\r\n");
-  get_request.append(TS_MIME_FIELD_ACCEPT);
-  get_request.append(": */*\r\n");
-  get_request.append(TS_MIME_FIELD_RANGE);
-  get_request.append(": ");
-  get_request.append(bytesstr);
-  get_request.append("\r\n");
-  get_request.append("X-Skip-Me");
-  get_request.append(": absolutely\r\n");
-  get_request.append("\r\n");
-  return get_request;
-}
 
 static
 int
@@ -109,9 +49,6 @@ std::cerr << __func__ << '\n' << get_request << std::endl;
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp);
 
-  // reset the header parsed flag
-  data->m_server_res_header_parsed = false;
-
   return 0;
 }
 
@@ -139,9 +76,7 @@ std::cerr << __func__ << ": incoming header: " << bytesavail << std::endl;
 
     // simulate request header
     std::string const req_header(simClientRequestHeader());
-
     std::pair<int64_t, int64_t> const rangebegend(0, 1024 * 1024 * 2);
-
     data->m_range_begend = rangebegend;
     data->m_blocknum = firstBlockInRange(data->m_blocksize, rangebegend);
 
@@ -264,7 +199,7 @@ std::cerr << __func__ << ": copied: " << copied
 */
     }
   }
-  else // we have all the data we're going to get
+  else // server block done, onto the next
   if (TS_EVENT_VCONN_EOS == event)
   {
     ++data->m_blocknum;
@@ -272,6 +207,13 @@ std::cerr << __func__ << ": copied: " << copied
       (data->m_blocksize, data->m_blocknum, data->m_range_begend))
     {
       request_block(contp, data);
+
+      // reset the server header parsed flag
+      data->m_server_res_header_parsed = false;
+    }
+    else
+    {
+      data->m_blocknum = -1; // signal value that we are done
     }
   }
   else
@@ -333,6 +275,19 @@ std::cerr << "copied: " << copied << std::endl;
       TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
 */
     }
+    else
+    {
+      if (-1 == data->m_blocknum) // signal value
+      {
+std::cerr << "this is a good place to clean up" << std::endl;
+
+TSAssert(nullptr != data);
+
+        TSVConnShutdown(data->m_dnstream.m_vc, 0, 1);
+        delete data;
+        TSContDataSet(contp, nullptr);
+      }
+    }
   }
   else // close it all out???
   {
@@ -369,31 +324,43 @@ intercept_hook
     // client still wants more.
 //    data->m_dnstream.setupVioWrite(contp);
   }
-  else // data from client -- only the initial header
-  if ( data->m_dnstream.m_read.isValid()
-    && edata == data->m_dnstream.m_read.m_vio )
+  else if (nullptr == data)
   {
-    handle_client_req(contp, event, data);
-    TSVConnShutdown(data->m_dnstream.m_vc, 1, 0);
+    TSContDestroy(contp);
   }
-  else // server wants more data from us
-  if ( data->m_upstream.m_write.isValid()
-    && edata == data->m_upstream.m_write.m_vio )
+  else if (nullptr != data)
   {
-    // header was already sent to server, not interested
-    TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
-  }
-  else // server has data for us
-  if ( data->m_upstream.m_read.isValid()
-    && edata == data->m_upstream.m_read.m_vio )
-  {
-    handle_server_resp(contp, event, data);
-  }
-  else // client wants more data from us
-  if ( data->m_dnstream.m_write.isValid()
-    && edata == data->m_dnstream.m_write.m_vio )
-  {
-    handle_client_resp(contp, event, data);
+    // data from client -- only the initial header
+    if ( data->m_dnstream.m_read.isValid()
+      && edata == data->m_dnstream.m_read.m_vio )
+    {
+      handle_client_req(contp, event, data);
+      TSVConnShutdown(data->m_dnstream.m_vc, 1, 0);
+    }
+    else // server wants more data from us
+    if ( data->m_upstream.m_write.isValid()
+      && edata == data->m_upstream.m_write.m_vio )
+    {
+      // header was already sent to server, not interested
+      TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
+    }
+    else // server has data for us
+    if ( data->m_upstream.m_read.isValid()
+      && edata == data->m_upstream.m_read.m_vio )
+    {
+      handle_server_resp(contp, event, data);
+    }
+    else // client wants more data from us
+    if ( data->m_dnstream.m_write.isValid()
+      && edata == data->m_dnstream.m_write.m_vio )
+    {
+      handle_client_resp(contp, event, data);
+    }
+    else
+    {
+std::cerr << __func__
+  << ": events received after intercept state torn down" << std::endl;
+    }
   }
   else
   {

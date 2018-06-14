@@ -132,7 +132,7 @@ struct Data
   int64_t m_blocksize;
   std::pair<int64_t, int64_t> m_range_begend;
 
-  int64_t m_blocknum; //!< block number to work on
+  int64_t m_blocknum; //!< block number to work on, -1 bad/stop
 
   TSHttpParser m_http_parser;
 
