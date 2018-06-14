@@ -1,0 +1,209 @@
+{
+  "$schema": "https://github.com/apache/trafficserver/tree/master/tests/tools/lib/replay_schema.json",
+  "title": "Traffic Server Replay File",
+  "description": "Data for Traffic Server sessions and transactions. Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "description": "Metadata for the file.",
+      "type": "object",
+      "properties": {
+        "version": {
+          "description": "File format version.",
+          "type": "string"
+        }
+      }
+    },
+    "sessions": {
+      "description": "List of sessions",
+      "type": "array",
+      "items": {
+        "title": "Session",
+        "description": "Session data.",
+        "type": "object",
+        "required": [ "transactions" ],
+        "properties": {
+          "protocol": {
+            "description": "The network protocol stack of the inbound connection.",
+            "type": "array",
+            "items": {
+              "description": "Protocol tag",
+              "type": "string"
+            }
+          },
+          "connect-time": {
+            "description": "User Agent connection time.",
+            "type": "number"
+          },
+          "transactions": {
+            "description": "List of transactions",
+            "type": "array",
+            "items": {
+              "description": "Transaction",
+              "type": "object",
+              "required": [ "client-request", "server-response" ],
+              "properties": {
+                "uuid": {
+                  "description": "UUID to identify this specific transaction.",
+                  "type": "string"
+                },
+                "start-time": {
+                  "description": "Start time in epoch format",
+                  "type": "number"
+                },
+                "client-request": {
+                  "description": "Request sent by the inbound (downstream) connection.",
+                  "$ref": "#/definitions/request"
+                },
+                "proxy-request": {
+                  "description": "Request sent by the proxy.",
+                  "$ref": "#/definitions/request"
+                },
+                "server-response": {
+                  "description": "Response from the outbound (upstream) connection.",
+                  "$ref": "#/definitions/response"
+                },
+                "proxy-response": {
+                  "description": "Response sent by the proxy.",
+                  "$ref": "#/definitions/response"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "encoding": {
+      "description": "Text encoding format.",
+      "type": "string",
+      "enum": ["plain", "uri", "esc_json"]
+    },
+    "content": {
+      "description": "HTTP payload.",
+      "anyOf" : [
+        {
+          "type": "object",
+          "description": "Explicit payload.",
+          "required": ["data"],
+          "properties": {
+            "encoding": {
+              "description": "Content data encoding for JSON compatibility.",
+              "$ref": "#/definitions/encoding"
+            },
+            "size": {
+              "description": "Size of the payload in bytes. This must match the actual size of the 'data' field.",
+              "type": "number"
+            },
+            "data": {
+              "description": "Content data.",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Synthesized payload (only size specified)",
+          "required": ["size"],
+          "properties": {
+            "encoding": {
+              "description": "Content data encoding for JSON compatibility.",
+              "$ref": "#/definitions/encoding"
+            },
+            "size": {
+              "description": "Size of the payload in bytes.",
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "header-fields": {
+      "description": "HTTP header fields.",
+      "type": "object",
+      "required": ["fields"],
+      "properties": {
+        "encoding": {
+          "description": "Encoding applied to field values.",
+          "$ref": "#/definitions/encoding"
+        },
+        "fields": {
+          "description": "The field name and value pairs.",
+          "type": "array",
+          "items": {
+            "description": "HTTP field.",
+            "type": "array",
+            "items": [
+              {
+                "description": "Name of the field.",
+                "type": "string"
+              }, {
+                "description": "Value of the field.",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "request": {
+      "title": "request",
+      "description": "HTTP request.",
+      "type": "object",
+      "required": [ "method", "url" ],
+      "properties": {
+        "version": {
+          "description": "HTTP version",
+          "type": "string",
+          "enum": ["0.9", "1.0", "1.1"]
+        },
+        "scheme": {
+          "description": "HTTP scheme (request).",
+          "type": "string"
+        },
+        "method": {
+          "description": "HTTP method (request)",
+          "type": "string"
+        },
+        "url": {
+          "description": "URL path, anchor, and parameters.",
+          "type": "string"
+        },
+        "content": {
+          "description": "Payload for this request",
+          "$ref": "#/definitions/content"
+        },
+        "headers": {
+          "description": "HTTP header fields.",
+          "$ref": "#/definitions/header-fields"
+        }
+      }
+    },
+    "response": {
+      "title": "response",
+      "description": "HTTP response.",
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "description": "Status code.",
+          "type": "number"
+        },
+        "reason": {
+          "description": "Reason phrase.",
+          "type": "string"
+        },
+        "content": {
+          "description": "HTTP Payload",
+          "$ref": "#/definitions/content"
+        },
+        "headers": {
+          "description": "HTTP header fields.",
+          "$ref": "#/definitions/header-fields"
+        }
+      }
+    }
+  }
+}

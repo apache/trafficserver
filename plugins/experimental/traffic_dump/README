@@ -1,0 +1,16 @@
+Traffic Dump
+
+Description:
+Traffic Dump captures traffic through trafficserver on a per session basis. A sampling ratio can be set via plugin.config or traffic_ctl to dump one out of n sessions. The dump file schema can be found https://github.com/apache/trafficserver/tree/master/tests/tools/lib/replay_schema.json.
+
+Configuration:
+Traffic Dump is a global plugin and is configured by arguments in plugin.config.
+--logdir <path>
+  Specify a log directory for writing all dump files. If path is relative, it is relative to the Traffic Server directory. The plugin will use first three chars of client ip to create subdirs to spread dumps evenly and avoid too many files in a single directory.
+
+--sample <N>
+  The sampling ratio. By setting this number to N, Traffic Dump will capture every one out of N sessions. This ratio can also be changed via traffic_ctl without restarting ATS.
+
+Traffic_Ctl Command:
+traffic_ctl plugin msg traffic_dump.sample N
+  Same as setting --sample=N in plugin.config.
