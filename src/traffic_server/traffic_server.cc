@@ -1800,8 +1800,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
 
-  naVecMutex             = new_ProxyMutex();
-  started_et_net_threads = 0;
+  naVecMutex = new_ProxyMutex();
 
   // Do the inits for NetProcessors that use ET_NET threads. MUST be before starting those threads.
   netProcessor.init();

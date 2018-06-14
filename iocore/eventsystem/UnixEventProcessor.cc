@@ -278,7 +278,6 @@ EventProcessor::EventProcessor() : thread_initializer(this)
 {
   ink_zero(all_ethreads);
   ink_zero(all_dthreads);
-  ink_zero(thread_group);
   ink_mutex_init(&dedicated_thread_spawn_mutex);
   // Because ET_NET is compile time set to 0 it *must* be the first type registered.
   this->register_event_type("ET_NET");
@@ -329,7 +328,7 @@ EventProcessor::register_event_type(char const *name)
   ThreadGroupDescriptor *tg = &(thread_group[n_thread_groups++]);
   ink_release_assert(n_thread_groups <= MAX_EVENT_TYPES); // check for overflow
 
-  tg->_name = ats_strdup(name);
+  tg->_name = name;
   return n_thread_groups - 1;
 }
 
@@ -377,13 +376,13 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
   // the group. Some thread set up depends on knowing the total number of threads but that can't be
   // safely updated until all the EThread instances are created and stored in the table.
   for (i = 0; i < n_threads; ++i) {
-    Debug("iocore_thread_start", "Created %s thread #%d", tg->_name.get(), i + 1);
-    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", tg->_name.get(), i);
+    Debug("iocore_thread_start", "Created %s thread #%d", tg->_name.c_str(), i + 1);
+    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[%s %d]", tg->_name.c_str(), i);
     void *stack = Thread_Affinity_Initializer.alloc_stack(tg->_thread[i], stacksize);
     tg->_thread[i]->start(thr_name, stack, stacksize);
   }
 
-  Debug("iocore_thread", "Created thread group '%s' id %d with %d threads", tg->_name.get(), ev_type, n_threads);
+  Debug("iocore_thread", "Created thread group '%s' id %d with %d threads", tg->_name.c_str(), ev_type, n_threads);
 
   return ev_type; // useless but not sure what would be better.
 }
@@ -395,6 +394,7 @@ EventProcessor::initThreadState(EThread *t)
 {
   // Run all thread type initialization continuations that match the event types for this thread.
   for (int i = 0; i < MAX_EVENT_TYPES; ++i) {
+    thread_group[i]._started++;
     if (t->is_event_type(i)) { // that event type done here, roll thread start events of that type.
       // To avoid race conditions on the event in the spawn queue, create a local one to actually send.
       // Use the spawn queue event as a read only model.
