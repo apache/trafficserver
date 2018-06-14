@@ -27,6 +27,7 @@
 #include "I_Continuation.h"
 #include "I_Processor.h"
 #include "I_Event.h"
+#include <atomic>
 
 #ifdef TS_MAX_THREADS_IN_EACH_THREAD_TYPE
 constexpr int MAX_THREADS_IN_EACH_TYPE = TS_MAX_THREADS_IN_EACH_THREAD_TYPE;
@@ -301,12 +302,12 @@ public:
   /// Data kept for each thread group.
   /// The thread group ID is the index into an array of these and so is not stored explicitly.
   struct ThreadGroupDescriptor {
-    ats_scoped_str _name;         ///< Name for the thread group.
-    int _count;                   ///< # of threads of this type.
-    int _next_round_robin;        ///< Index of thread to use for events assigned to this group.
-    Que(Event, link) _spawnQueue; ///< Events to dispatch when thread is spawned.
-    /// The actual threads in this group.
-    EThread *_thread[MAX_THREADS_IN_EACH_TYPE];
+    std::string _name;                               ///< Name for the thread group.
+    int _count                = 0;                   ///< # of threads of this type.
+    std::atomic<int> _started = 0;                   ///< # of started threads of this type.
+    int _next_round_robin     = 0;                   ///< Index of thread to use for events assigned to this group.
+    Que(Event, link) _spawnQueue;                    ///< Events to dispatch when thread is spawned.
+    EThread *_thread[MAX_THREADS_IN_EACH_TYPE] = {}; ///< The actual threads in this group.
   };
 
   /// Storage for per group data.

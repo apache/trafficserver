@@ -49,8 +49,6 @@ HttpSessionAccept *plugin_http_transparent_accept = nullptr;
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
 
-// used to keep count of how many et_net threads we have started
-std::atomic<int> started_et_net_threads;
 std::mutex proxyServerMutex;
 std::condition_variable proxyServerCheck;
 bool et_net_threads_ready = false;
@@ -316,8 +314,7 @@ init_accept_HttpProxyServer(int n_accept_threads)
 void
 init_HttpProxyServer(EThread *)
 {
-  auto check_et_net_num = ++started_et_net_threads;
-  if (check_et_net_num == num_of_net_threads) {
+  if (eventProcessor.thread_group[ET_NET]._started == num_of_net_threads) {
     std::unique_lock<std::mutex> lock(proxyServerMutex);
     et_net_threads_ready = true;
     lock.unlock();
