@@ -279,15 +279,21 @@ std::cerr << "copied: " << copied << std::endl;
     {
       if (-1 == data->m_blocknum) // signal value
       {
-std::cerr << "this is a good place to clean up" << std::endl;
-
-TSAssert(nullptr != data);
-
+std::cerr << __func__ << "this is a good place to clean up" << std::endl;
         TSVConnShutdown(data->m_dnstream.m_vc, 0, 1);
         delete data;
         TSContDataSet(contp, nullptr);
+        TSContDestroy(contp);
       }
     }
+  }
+  else
+  if (TS_EVENT_ERROR == event)
+  {
+    delete data;
+    TSContDataSet(contp, nullptr);
+    TSContDestroy(contp);
+std::cerr << __func__ << ": " << "TS_EVENT_ERROR" << std::endl;
   }
   else // close it all out???
   {
