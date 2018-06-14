@@ -20,7 +20,7 @@
 #include "slice.h"
 
 //#include "TransformData.h"
-#include "HttpTxnHeader.h"
+#include "HttpHeader.h"
 #include "Data.h"
 #include "intercept.h"
 
@@ -37,8 +37,10 @@ read_request
   ( TSHttpTxn txnp
   )
 {
-  HttpTxnHeader const headcreq(txnp, TSHttpTxnClientReqGet);
-  if (headcreq.isMethodGet())
+  TxnHeader txnheader;
+  txnheader.populateFrom(txnp, TSHttpTxnClientReqGet);
+  HttpHeader const headcreq(txnheader.header());
+  if (TS_HTTP_METHOD_GET == headcreq.method())
   {
     if (! headcreq.skipMe())
     {

@@ -62,17 +62,11 @@ handle_client_req
 {
   if (TS_EVENT_VCONN_READ_READY == event)
   {
-    // parse incoming request header here (TOSS FOR TEST)
-    int64_t const bytesavail
-        (TSIOBufferReaderAvail(data->m_dnstream.m_read.m_reader));
-std::cerr << __func__ << ": incoming header: " << bytesavail << std::endl;
-    TSIOBufferReaderConsume(data->m_dnstream.m_read.m_reader, bytesavail);
-
-/* what does this do again?
-    TSVIONDoneSet
-      ( data->m_dnstream.m_read.m_vio
-      , TSVIONDoneGet(data->m_dnstream.m_read.m_vio) + bytesavail );
-*/
+    TSParseResult const parse_res
+      = data->m_client_req_header.populateFrom
+        ( data->httpParser()
+        , data->m_dnstream.m_read.m_reader
+        , TSHttpHdrParseReq);
 
     // simulate request header
     std::string const req_header(simClientRequestHeader());
@@ -143,6 +137,7 @@ TSAssert(nullptr != ptr);
       if (! data->m_client_header_sent) // <-- may be redudant
       {
         std::string const headerstr(simClientResponseHeader());
+
         int64_t const byteswritten
           ( TSIOBufferWrite
             ( data->m_dnstream.m_write.m_iobuf
@@ -162,8 +157,7 @@ TSAssert(nullptr != ptr);
           , data->m_upstream.m_read.m_reader
           , read_avail
           , 0 ) );
-std::cerr << __func__ << ": copied: " << copied
-  << " of: " << read_avail << std::endl;
+std::cerr << __func__ << ": copied: " << copied << " of: " << read_avail << std::endl;
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
 
@@ -246,10 +240,9 @@ handle_client_resp
           , read_avail
           , 0 ) );
 
-std::cerr << "copied: " << copied << std::endl;
+std::cerr << __func__ << " copied: " << copied << std::endl;
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
-
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
 
 /*
@@ -279,7 +272,7 @@ std::cerr << "copied: " << copied << std::endl;
     {
       if (-1 == data->m_blocknum) // signal value
       {
-std::cerr << __func__ << "this is a good place to clean up" << std::endl;
+std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
         TSVConnShutdown(data->m_dnstream.m_vc, 0, 1);
         delete data;
         TSContDataSet(contp, nullptr);

@@ -2,6 +2,8 @@
 
 #include "ts/ts.h"
 
+#include "HttpHeader.h"
+
 #include <netinet/in.h>
 #include <utility>
 
@@ -38,6 +40,7 @@ TSAssert(nullptr != vc);
     if (nullptr == m_iobuf)
     {
       m_iobuf = TSIOBufferCreate();
+//      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
     }
     else
@@ -59,6 +62,7 @@ TSAssert(nullptr != vc);
     if (nullptr == m_iobuf)
     {
       m_iobuf = TSIOBufferCreate();
+//      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
     }
     else
@@ -142,8 +146,8 @@ struct Data
 
   TSHttpParser m_http_parser;
 
-  TSIOBuffer m_client_req_header; // request header as read
-  TSIOBuffer m_client_res_header; // response header as generated
+  ParseHeader m_client_req_header; // request header as read
+  ParseHeader m_client_resp_header; // response header as generated
 
   bool m_server_res_header_parsed;
   bool m_client_header_sent;
@@ -160,8 +164,8 @@ struct Data
     , m_range_begend(-1, -1)
     , m_blocknum(-1)
     , m_http_parser(nullptr)
-    , m_client_req_header(nullptr)
-    , m_client_res_header(nullptr)
+    , m_client_req_header()
+    , m_client_resp_header()
     , m_server_res_header_parsed(false)
     , m_client_header_sent(false)
   { }
@@ -171,12 +175,6 @@ struct Data
   {
     if (nullptr != m_http_parser) {
       TSHttpParserDestroy(m_http_parser);
-    }
-    if (nullptr != m_client_req_header) {
-      TSIOBufferDestroy(m_client_req_header);
-    }
-    if (nullptr != m_client_res_header) {
-      TSIOBufferDestroy(m_client_res_header);
     }
   }
 

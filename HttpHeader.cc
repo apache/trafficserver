@@ -1,4 +1,4 @@
-#include "HttpTxnHeader.h"
+#include "HttpHeader.h"
 
 #include "slice.h"
 
@@ -83,57 +83,17 @@ parseRange
 
 } // namespace
 
-// default constructor
-HttpTxnHeader :: HttpTxnHeader
-  ()
-  : m_buffer(nullptr)
-  , m_lochdr(nullptr)
-{
-}
-
-HttpTxnHeader :: HttpTxnHeader
-  ( TSHttpTxn const & txnp
-  , HeaderGetFunc const & func
-  )
-  : m_buffer(nullptr)
-  , m_lochdr(nullptr)
-{
-  func(txnp, &m_buffer, &m_lochdr);
-}
-
-HttpTxnHeader :: ~HttpTxnHeader
-  ()
-{
-  if (nullptr != m_buffer)
-  {
-    TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
-  }
-}
-
-bool
-HttpTxnHeader :: isValid
+char const *
+HttpHeader :: method
   () const
 {
-  return nullptr != m_buffer && nullptr != m_lochdr;
-}
-
-bool
-HttpTxnHeader :: isMethodGet
-  () const
-{
-  if (! isValid())
-  {
-    return false;
-  }
-
-  int methodlen(0);
-  char const * const method = TSHttpHdrMethodGet
-      (m_buffer, m_lochdr, &methodlen);
-  return TS_HTTP_METHOD_GET == method;
+  TSAssert(isValid());
+  int methodlen = 0;
+  return TSHttpHdrMethodGet(m_buffer, m_lochdr, &methodlen);
 }
 
 std::pair<int64_t, int64_t>
-HttpTxnHeader :: firstRange
+HttpHeader :: firstRange
    () const
 {
   std::pair<int64_t, int64_t> range
@@ -167,7 +127,7 @@ HttpTxnHeader :: firstRange
 }
 
 bool
-HttpTxnHeader :: skipMe
+HttpHeader :: skipMe
   () const
 {
   if (! isValid())
@@ -187,7 +147,7 @@ HttpTxnHeader :: skipMe
 }
 
 bool
-HttpTxnHeader :: setSkipMe
+HttpHeader :: setSkipMe
   ()
 {
   if (! isValid())
@@ -217,7 +177,7 @@ HttpTxnHeader :: setSkipMe
 }
 
 int64_t
-HttpTxnHeader :: contentBytes
+HttpHeader :: contentBytes
   () const
 {
   int64_t bytes(0);
@@ -241,4 +201,65 @@ HttpTxnHeader :: contentBytes
   }
 
   return bytes;
+}
+
+/////// ParseHeader
+
+TSParseResult
+ParseHeader :: populateFrom
+  ( TSHttpParser const http_parser
+  , TSIOBufferReader const reader
+  , HeaderParseFunc const parsefunc
+  )
+{
+  TSParseResult parse_res = TS_PARSE_CONT;
+
+  if (nullptr == m_buffer && nullptr == m_lochdr)
+  {
+    m_buffer = TSMBufferCreate();
+    m_lochdr = TSHttpHdrCreate(m_buffer);
+  }
+
+  int64_t read_avail = TSIOBufferReaderAvail(reader);
+  if (0 < read_avail)
+  {
+    TSIOBufferBlock block = TSIOBufferReaderStart(reader);
+    int64_t consumed = 0;
+
+    parse_res = TS_PARSE_CONT;
+
+    while (nullptr != block && 0 < read_avail)
+    {
+      int64_t blockbytes = 0;
+      char const * const bstart = TSIOBufferBlockReadStart
+        (block, reader, &blockbytes);
+
+      char const * ptr = bstart;
+      char const * endptr = ptr + blockbytes;
+
+      parse_res = parsefunc
+          ( http_parser
+          , m_buffer
+          , m_lochdr
+          , &ptr
+          , endptr );
+
+      int64_t const bytes_parsed(ptr - bstart);
+
+      consumed += bytes_parsed;
+      read_avail -= bytes_parsed;
+
+      if (TS_PARSE_CONT == parse_res)
+      {
+        block = TSIOBufferBlockNext(block);
+      }
+      else
+      {
+        break;
+      }
+    }
+    TSIOBufferReaderConsume(reader, consumed);
+  }
+
+  return parse_res;
 }

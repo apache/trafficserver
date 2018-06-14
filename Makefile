@@ -1,13 +1,13 @@
 all: slice 
 
 slice_la_SOURCES = \
-	HttpTxnHeader.cc \
+	HttpHeader.cc \
 	intercept.cc \
 	range.cc \
 	slice.cc \
 
 slice_la_HEADERS = \
-	HttpTxnHeader.h \
+	HttpHeader.h \
 	intercept.h \
 	range.h \
 	slice.h \
