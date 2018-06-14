@@ -86,6 +86,8 @@ struct Stage // upstream or downstream (server or client)
 
   Stage() { }
 
+  ~Stage() { if (nullptr != m_vc) { TSVConnClose(m_vc); } }
+
   TSVConn m_vc { nullptr };
   Channel m_read;
   Channel m_write;
@@ -95,6 +97,10 @@ struct Stage // upstream or downstream (server or client)
     ( TSVConn vc
     )
   {
+    if (nullptr != m_vc)
+    {
+      TSVConnClose(m_vc);
+    }
     m_vc = vc;
     m_read.m_vio = nullptr;
     m_write.m_vio = nullptr;
