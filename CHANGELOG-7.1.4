@@ -1,0 +1,34 @@
+Changes with Apache Traffic Server 7.1.4
+  #1967 - gitignore .vscode/
+  #3033 - Expanding the cases where the server_entry gets cleared on error.
+  #3362 - Issue 3350: traffic_server using 100% CPU
+  #3446 - Fix #pragma once error in WCCP.
+  #3459 - Fix cache_read_busy_success_stat
+  #3476 - Fixes a build issue with latest XCode / clang
+  #3486 - Separate mutex of Http2ClientSession and Http2Stream
+  #3487 - Use #pragma once
+  #3495 - Fix test to support fix in autest 1.5.0
+  #3506 - Acquire mutex lock of Http2Stream before starting new transaction
+  #3521 - Log actual SSL error string on failure opening connection
+  #3550 - Corrects marshaling of source ip and port
+  #3560 - Option to enable stand-alone Leak Sanitizer
+  #3562 - Downgrade 'previously indexed' cert warning to debug
+  #3563 - Parent Selection -- Balance treatment of primary and secondary parent…
+  #3566 - Fix parsing of runroot from ink_args of 7.1.x
+  #3576 - Coverity ID 1390803: Fixes unreachable code in OCSP
+  #3588 - clang6 fix in DNS.cc
+  #3590 - Fixes uninitialized argument value use in HttpTransact::issue_revalidate
+  #3612 - Fixed off-by-one error in select_best_srv.
+  #3628 - Added a first cut of this share file for Visual Code users
+  #3688 - Adds a couple of more include dirs to vscode
+  #3727 - Fixes compiler flags used for gzip plugin
+  #3731 - Changes to compile on Fedora 28 with gcc 8.1.1
+  #3738 - Removes stray debug message on environments with getpeerid
+  #3766 - HostDB timed RR fix
+  #3781 - Clarifies error when failing to load ticket key
+  #3792 - Change MIMEHdr::value_append_or_set to handle duplicate headers
+  #3799 - Add gcc 8 support for 7.1.x
+  #3814 - Redirection_tries should not be incremented twice
+  #3820 - TS-2365: Fix crash in tls dynamic record size
+  #3823 - Fix off-by-one access in header_rewrite config parser
+  #3833 - Clear server_entry in case of ERROR as well as NO_ACTIVITY_TIMEOUT
