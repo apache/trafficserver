@@ -96,6 +96,8 @@ struct Stage // upstream or downstream (server or client)
   Channel m_read;
   Channel m_write;
 
+  ParseHdrMgr m_hdr_mgr; // header manager
+
   void
   setupConnection
     ( TSVConn vc
@@ -146,9 +148,6 @@ struct Data
 
   TSHttpParser m_http_parser;
 
-  ParseHdrMgr m_client_req_header; // request header as read
-  ParseHdrMgr m_client_resp_header; // response header as generated
-
   bool m_server_res_header_parsed;
   bool m_client_header_sent;
 
@@ -164,8 +163,6 @@ struct Data
     , m_range_begend(-1, -1)
     , m_blocknum(-1)
     , m_http_parser(nullptr)
-    , m_client_req_header()
-    , m_client_resp_header()
     , m_server_res_header_parsed(false)
     , m_client_header_sent(false)
   { }
@@ -184,8 +181,6 @@ struct Data
   {
     if (nullptr == m_http_parser) {
       m_http_parser = TSHttpParserCreate();
-    } else {
-      TSHttpParserClear(m_http_parser);
     }
 
     return m_http_parser;

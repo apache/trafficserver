@@ -93,7 +93,7 @@ HttpHeader :: method
 }
 
 std::pair<int64_t, int64_t>
-HttpHeader :: firstRange
+HttpHeader :: firstRangeClosed
    () const
 {
   std::pair<int64_t, int64_t> range

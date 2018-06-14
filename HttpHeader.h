@@ -18,9 +18,12 @@
 
 #include <utility>
 
+/**
+  Designed to be a cheap throwaway struct which allows a
+  consumer to make various calls to manipulate headers.
+*/
 struct HttpHeader
 {
-
   TSMBuffer m_buffer;
   TSMLoc m_lochdr;
 
@@ -48,12 +51,12 @@ struct HttpHeader
   skipMe
     () const;
 
-  //! parse the first range of interest (for now)
+  //! parse the first range of interest -- inclusive!!!
   std::pair<int64_t, int64_t>
-  firstRange
+  firstRangeClosed
     () const;
 
-  // hack for hard coded content type check (refactor)
+  // 
   int64_t
   contentBytes
     () const;
@@ -105,6 +108,13 @@ public:
     return TS_SUCCESS == func(txnp, &m_buffer, &m_lochdr);
   }
 
+  bool
+  isValid
+    () const
+  {
+    return nullptr != m_lochdr;
+  }
+
   HttpHeader
   header
     () const
@@ -154,6 +164,13 @@ public:
     , TSIOBufferReader const reader
     , HeaderParseFunc const parsefunc
     );
+
+  bool
+  isValid
+    () const
+  {
+    return nullptr != m_lochdr;
+  }
 
   HttpHeader
   header

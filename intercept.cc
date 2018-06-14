@@ -9,6 +9,18 @@
 #include <iostream>
 
 static
+void
+shutdown
+  ( TSCont contp
+  , Data * const data
+  )
+{
+  delete data;
+  TSContDataSet(contp, nullptr);
+  TSContDestroy(contp);
+}
+
+static
 int
 request_block
   ( TSCont contp
@@ -62,19 +74,45 @@ handle_client_req
 {
   if (TS_EVENT_VCONN_READ_READY == event)
   {
+    TSHttpParser parser = data->httpParser();
     TSParseResult const parse_res
-      = data->m_client_req_header.populateFrom
-        ( data->httpParser()
+      = data->m_dnstream.m_hdr_mgr.populateFrom
+        ( parser
         , data->m_dnstream.m_read.m_reader
-        , TSHttpHdrParseReq);
+        , TSHttpHdrParseReq );
+    if (parse_res == TS_PARSE_DONE)
+    {
+      TSHttpParserClear(parser); // for server response headers
 
+      HttpHeader const header = data->m_dnstream.m_hdr_mgr.header();
+
+      // go from closed to half open
+      std::pair<int64_t, int64_t> rangebe = header.firstRangeClosed();
+      rangebe.second += 1;
+
+      if (! rangeIsValid(rangebe))
+      {
+        // send 416 header and shutdown
+std::cerr << "Please send a 416 header and shutdown" << std::endl;
+        shutdown(contp, data);
+      }
+      else
+      {
+        data->m_range_begend = rangebe;
+        data->m_blocknum = firstBlockInRange
+          (data->m_blocksize, data->m_range_begend);
+        request_block(contp, data);
+      }
+    }
+
+/*
     // simulate request header
     std::string const req_header(simClientRequestHeader());
     std::pair<int64_t, int64_t> const rangebegend(0, 1024 * 1024 * 2);
     data->m_range_begend = rangebegend;
     data->m_blocknum = firstBlockInRange(data->m_blocksize, rangebegend);
+*/
 
-    request_block(contp, data);
   }
 
   return 0;
@@ -273,20 +311,15 @@ std::cerr << __func__ << " copied: " << copied << std::endl;
       if (-1 == data->m_blocknum) // signal value
       {
 std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
-        TSVConnShutdown(data->m_dnstream.m_vc, 0, 1);
-        delete data;
-        TSContDataSet(contp, nullptr);
-        TSContDestroy(contp);
+        shutdown(contp, data);
       }
     }
   }
   else
   if (TS_EVENT_ERROR == event)
   {
-    delete data;
-    TSContDataSet(contp, nullptr);
-    TSContDestroy(contp);
 std::cerr << __func__ << ": " << "TS_EVENT_ERROR" << std::endl;
+    shutdown(contp, data);
   }
   else // close it all out???
   {

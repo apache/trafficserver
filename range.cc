@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-static
-inline
 bool
 rangeIsValid
   ( std::pair<int64_t, int64_t> const & range
