@@ -25,6 +25,26 @@ simClientRequestHeader
 }
 
 std::string
+simClientResponseHeader
+  ()
+{
+  std::string const response
+    ( "HTTP/1.1 200 Partial Content\r\n"
+      "Date: Wed, 13 Jun 2018 22:50:48 GMT\r\n"
+      "Server: biteme/6.6.6\r\n"
+      "Last-Modified: Mon, 07 May 2018 16:07:31 GMT\r\n"
+      "ETag: \"12500000-56b9fddf5ac99\"\r\n"
+      "Accept-Ranges: bytes\r\n"
+      "Content-Length: 10485760000\r\n"
+      "Cache-Control: public, max-age=900, s-maxage=900\r\n"
+      "Content-Type: application/octet-stream\r\n"
+      "Age: 0\r\n"
+      "Connection: keep-alive\r\n"
+      "\r\n" );
+  return response;
+}
+
+std::string
 rangeRequestStringFor
   ( std::string const & bytesstr
   )
@@ -111,9 +131,11 @@ handle_client_req
 std::cerr << __func__ << ": incoming header: " << bytesavail << std::endl;
     TSIOBufferReaderConsume(data->m_dnstream.m_read.m_reader, bytesavail);
 
+/* what does this do again?
     TSVIONDoneSet
       ( data->m_dnstream.m_read.m_vio
       , TSVIONDoneGet(data->m_dnstream.m_read.m_vio) + bytesavail );
+*/
 
     // simulate request header
     std::string const req_header(simClientRequestHeader());
@@ -178,9 +200,23 @@ TSAssert(nullptr != ptr);
       }
     }
 */
+    // create the downstream connection and write out the header
     if (nullptr == data->m_dnstream.m_write.m_vio)
     {
       data->m_dnstream.setupVioWrite(contp);
+
+      if (! data->m_client_header_sent) // <-- may be redudant
+      {
+        std::string const headerstr(simClientResponseHeader());
+        int64_t const byteswritten
+          ( TSIOBufferWrite
+            ( data->m_dnstream.m_write.m_iobuf
+            , headerstr.data()
+            , headerstr.size() ) );
+        data->m_client_header_sent = true;
+        
+        TSVIOReenable(data->m_dnstream.m_write.m_vio);
+      }
     }
 
     if (0 < read_avail)
@@ -196,9 +232,11 @@ std::cerr << __func__ << ": copied: " << copied
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
 
+/* what does this do again?
       TSVIONDoneSet
         ( data->m_upstream.m_read.m_vio
-        , TSVIONDoneGet (data->m_upstream.m_read.m_vio) + copied );
+        , TSVIONDoneGet(data->m_upstream.m_read.m_vio) + copied );
+*/
 
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
 

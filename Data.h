@@ -140,6 +140,7 @@ struct Data
   TSIOBuffer m_client_res_header; // response header as generated
 
   bool m_server_res_header_parsed;
+  bool m_client_header_sent;
 
   sockaddr_storage m_client_ip;
   Stage m_upstream;
@@ -156,6 +157,7 @@ struct Data
     , m_client_req_header(nullptr)
     , m_client_res_header(nullptr)
     , m_server_res_header_parsed(false)
+    , m_client_header_sent(false)
   { }
 
   ~Data
