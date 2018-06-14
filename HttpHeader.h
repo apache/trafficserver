@@ -1,11 +1,26 @@
 #pragma once
 
+/**
+ An ATS Http header exists in a marshall buffer at a given location.
+ Unfortunately how that marshall buffer is created and how that
+ location is determined depends on where those buffers came from.
+
+ A TSHttpTxn manages the buffer itself and creates a location which
+ has to be managed.
+
+ A TSHttpParsed populates a created buffer that has had TSHttpHdrCreate
+ run against it which creates a location against it.  End users
+ need to manage the created buffer, the location and invoke
+ TSHttpHdrDestroy.
+*/
+
 #include "ts/ts.h"
 
 #include <utility>
 
 struct HttpHeader
 {
+
   TSMBuffer m_buffer;
   TSMLoc m_lochdr;
 
@@ -49,22 +64,22 @@ struct HttpHeader
     ();
 };
 
-class TxnHeader
+struct TxnHdrMgr
 {
-  TxnHeader(TxnHeader const &) = delete;
-  TxnHeader & operator=(TxnHeader const &) = delete;
+  TxnHdrMgr(TxnHdrMgr const &) = delete;
+  TxnHdrMgr & operator=(TxnHdrMgr const &) = delete;
 
   TSMBuffer m_buffer;
   TSMLoc m_lochdr;
 
 public:
 
-  TxnHeader()
+  TxnHdrMgr()
     : m_buffer(nullptr)
     , m_lochdr(nullptr)
   { }
 
-  ~TxnHeader()
+  ~TxnHdrMgr()
   {
     if (nullptr != m_lochdr) {
       TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
@@ -99,22 +114,22 @@ TSAssert(nullptr != m_buffer && nullptr != m_lochdr);
   }
 };
 
-class ParseHeader
+class ParseHdrMgr
 {
-  ParseHeader(ParseHeader const &) = delete;
-  ParseHeader & operator=(ParseHeader const &) = delete;
+  ParseHdrMgr(ParseHdrMgr const &) = delete;
+  ParseHdrMgr & operator=(ParseHdrMgr const &) = delete;
 
 public:
 
   TSMBuffer m_buffer;
   TSMLoc m_lochdr;
 
-  ParseHeader()
+  ParseHdrMgr()
     : m_buffer(nullptr)
     , m_lochdr(nullptr)
   { }
 
-  ~ParseHeader
+  ~ParseHdrMgr
     ()
   {
     if (nullptr != m_buffer && nullptr != m_lochdr) {

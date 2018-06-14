@@ -37,9 +37,10 @@ read_request
   ( TSHttpTxn txnp
   )
 {
-  TxnHeader txnheader;
-  txnheader.populateFrom(txnp, TSHttpTxnClientReqGet);
-  HttpHeader const headcreq(txnheader.header());
+  TxnHdrMgr hdrmgr;
+  hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
+  HttpHeader const headcreq(hdrmgr.header());
+
   if (TS_HTTP_METHOD_GET == headcreq.method())
   {
     if (! headcreq.skipMe())

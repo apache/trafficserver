@@ -146,8 +146,8 @@ struct Data
 
   TSHttpParser m_http_parser;
 
-  ParseHeader m_client_req_header; // request header as read
-  ParseHeader m_client_resp_header; // response header as generated
+  ParseHdrMgr m_client_req_header; // request header as read
+  ParseHdrMgr m_client_resp_header; // response header as generated
 
   bool m_server_res_header_parsed;
   bool m_client_header_sent;

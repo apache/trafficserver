@@ -203,10 +203,10 @@ HttpHeader :: contentBytes
   return bytes;
 }
 
-/////// ParseHeader
+/////// ParseHdrMgr
 
 TSParseResult
-ParseHeader :: populateFrom
+ParseHdrMgr :: populateFrom
   ( TSHttpParser const http_parser
   , TSIOBufferReader const reader
   , HeaderParseFunc const parsefunc
