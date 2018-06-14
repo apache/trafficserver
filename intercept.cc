@@ -98,7 +98,12 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
       }
       else
       {
-        data->m_range_begend = rangebe;
+        // for now quantize the range so we can
+        // construct a valid response header
+
+//        data->m_range_begend = rangebe;
+        data->m_range_begend = quantizeRange(data->m_blocksize, rangebe);
+
         data->m_blocknum = firstBlockInRange
           (data->m_blocksize, data->m_range_begend);
         request_block(contp, data);

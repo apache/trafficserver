@@ -2,15 +2,9 @@
 
 #include <algorithm>
 
-bool
-rangeIsValid
-  ( std::pair<int64_t, int64_t> const & range
-  )
+namespace
 {
-  return range.first < range.second;
-}
 
-static
 inline
 std::pair<int64_t, int64_t>
 rangeIntersection
@@ -21,6 +15,33 @@ rangeIntersection
   return std::make_pair
     ( std::max(lhs.first, rhs.first)
     , std::min(lhs.second, rhs.second) );
+}
+
+}
+
+bool
+rangeIsValid
+  ( std::pair<int64_t, int64_t> const & range
+  )
+{
+  return range.first < range.second;
+}
+
+std::pair<int64_t, int64_t>
+quantizeRange
+  ( int64_t const blocksize
+  , std::pair<int64_t, int64_t> const & rangebe
+  )
+{
+  if (blocksize <= 0 || ! rangeIsValid(rangebe))
+  {
+    return std::make_pair(-1, -1);
+  }
+
+  int64_t const blockbeg(rangebe.first / blocksize);
+  int64_t const blockend((rangebe.second + blocksize - 1) / blocksize);
+
+  return std::make_pair(blockbeg * blocksize, blockend * blocksize);
 }
 
 int64_t
