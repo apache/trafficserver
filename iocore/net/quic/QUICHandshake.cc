@@ -141,8 +141,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         this->_load_local_server_transport_parameters(initial_packet->version());
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
-        this->_qc->transmit_packet(packet_factory->create_version_negotiation_packet(initial_packet));
-        QUICHSDebug("Version negotiation failed: %x", initial_packet->version());
+        ink_assert(!"Unsupported version initial packet should be droped QUICPakcetHandler");
       }
     } else {
       return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));

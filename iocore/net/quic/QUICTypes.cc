@@ -24,6 +24,7 @@
 #include <algorithm>
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
+#include "QUICConfig.h"
 
 // TODO: move to somewhere in lib/ts/
 static int
@@ -46,7 +47,6 @@ to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len)
 }
 
 bool
-#include <algorithm>
 QUICTypeUtil::has_long_header(const uint8_t *buf)
 {
   return (buf[0] & 0x80) != 0;
@@ -336,4 +336,98 @@ int
 QUICConnectionId::hex(char *buf, size_t len) const
 {
   return to_hex_str(buf, len, this->_id, this->_len);
+}
+
+//
+// QUICInvariants
+//
+bool
+QUICInvariants::is_long_header(const uint8_t *buf)
+{
+  return (buf[0] & 0x80) != 0;
+}
+
+bool
+QUICInvariants::is_version_negotiation(QUICVersion v)
+{
+  return v == 0x0;
+}
+
+bool
+QUICInvariants::version(QUICVersion &dst, const uint8_t *buf, uint64_t buf_len)
+{
+  if (!QUICInvariants::is_long_header(buf) || buf_len < QUICInvariants::LH_DCIL_OFFSET) {
+    return false;
+  }
+
+  dst = QUICTypeUtil::read_QUICVersion(buf + QUICInvariants::LH_VERSION_OFFSET);
+
+  return true;
+}
+
+bool
+QUICInvariants::dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len)
+{
+  uint8_t dcil       = 0;
+  size_t dcid_offset = 0;
+
+  if (QUICInvariants::is_long_header(buf)) {
+    if (buf_len < QUICInvariants::LH_DCIL_OFFSET) {
+      return false;
+    }
+
+    dcil = buf[QUICInvariants::LH_DCIL_OFFSET] >> 4;
+    if (dcil) {
+      dcil += QUICInvariants::CIL_BASE;
+    } else {
+      dst = QUICConnectionId::ZERO();
+      return true;
+    }
+
+    dcid_offset = QUICInvariants::LH_DCID_OFFSET;
+  } else {
+    // remote dcil is local scil
+    dcil        = QUICConfigParams::SCIL + QUICInvariants::CIL_BASE;
+    dcid_offset = QUICInvariants::SH_DCID_OFFSET;
+  }
+
+  if (dcid_offset + dcil > buf_len) {
+    return false;
+  }
+
+  dst = QUICTypeUtil::read_QUICConnectionId(buf + dcid_offset, dcil);
+
+  return true;
+}
+
+bool
+QUICInvariants::scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len)
+{
+  ink_assert(QUICInvariants::is_long_header(buf));
+
+  if (buf_len < QUICInvariants::LH_DCIL_OFFSET) {
+    return false;
+  }
+
+  uint8_t dcil = buf[QUICInvariants::LH_DCIL_OFFSET] >> 4;
+  if (dcil) {
+    dcil += CIL_BASE;
+  }
+
+  uint8_t scid_offset = QUICInvariants::LH_DCID_OFFSET + dcil;
+  uint8_t scil        = buf[QUICInvariants::LH_DCIL_OFFSET] & 0x0F;
+  if (scil) {
+    scil += CIL_BASE;
+  } else {
+    dst = QUICConnectionId::ZERO();
+    return true;
+  }
+
+  if (scid_offset + scil > buf_len) {
+    return false;
+  }
+
+  dst = QUICTypeUtil::read_QUICConnectionId(buf + scid_offset, scil);
+
+  return true;
 }

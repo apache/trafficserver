@@ -121,7 +121,8 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     QUICPacketUPtr initial_packet = packet_factory.create_initial_packet({}, {}, 0, ats_unique_malloc(0), 0);
 
     // Server send VN packet based on Initial packet
-    QUICPacketUPtr vn_packet = packet_factory.create_version_negotiation_packet(initial_packet.get());
+    QUICPacketUPtr vn_packet =
+      packet_factory.create_version_negotiation_packet(initial_packet->source_cid(), initial_packet->destination_cid());
 
     // Negotiate version
     vn.negotiate(vn_packet.get());

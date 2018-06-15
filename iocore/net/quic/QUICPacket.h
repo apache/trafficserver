@@ -362,10 +362,12 @@ class QUICPacketFactory
 {
 public:
   static QUICPacketUPtr create_null_packet();
+  static QUICPacketUPtr create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid);
+  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
+                                                      QUICStatelessResetToken stateless_reset_token);
 
   QUICPacketUPtr create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
                         QUICPacketCreationResult &result);
-  QUICPacketUPtr create_version_negotiation_packet(const QUICPacket *packet_sent_by_client);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
   QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, ats_unique_buf payload,
@@ -375,18 +377,16 @@ public:
                                          bool retransmittable);
   QUICPacketUPtr create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                 ats_unique_buf payload, size_t len, bool retransmittable);
-  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
-                                                      QUICStatelessResetToken stateless_reset_token);
   void set_version(QUICVersion negotiated_version);
   void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
-  void set_dcil(uint8_t len);
+  [[deprecated]] void set_dcil(uint8_t len);
 
 private:
   QUICVersion _version                = QUIC_SUPPORTED_VERSIONS[0];
   QUICHandshakeProtocol *_hs_protocol = nullptr;
   QUICPacketNumberGenerator _packet_number_generator;
-  uint8_t _dcil = 0;
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
   QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable);
+  [[deprecated]] uint8_t _dcil = 0;
 };

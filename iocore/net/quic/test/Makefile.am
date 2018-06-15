@@ -18,6 +18,7 @@
 
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = \
+  test_QUICInvariants \
   test_QUICPacket \
   test_QUICPacketFactory \
   test_QUICFrame \
@@ -78,6 +79,22 @@ test_LDADD = \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBTCL@ @OPENSSL_LIBS@ \
   @HWLOC_LIBS@
+
+#
+# test_QUICInvariants
+#
+test_QUICInvariants_CPPFLAGS = \
+  $(AM_CPPFLAGS)
+
+test_QUICInvariants_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_QUICInvariants_SOURCES = \
+  $(catch_main) \
+  test_QUICInvariants.cc
+
+test_QUICInvariants_LDADD = \
+  $(test_LDADD)
 
 #
 # test_QUICPacket

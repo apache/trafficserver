@@ -30,11 +30,13 @@
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 
-#define QUICDebugQC(qc, fmt, ...) Debug("quic_sec", "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
+static constexpr char tag[] = "quic_sec";
+
+#define QUICDebug(fmt, ...) Debug(tag, fmt, ##__VA_ARGS__)
+#define QUICDebugQC(qc, fmt, ...) Debug(tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
 
 // ["local dcid" - "local scid"]
-#define QUICDebugDS(dcid, scid, fmt, ...) \
-  Debug("quic_sec", "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+#define QUICDebugDS(dcid, scid, fmt, ...) Debug(tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
 
 //
 // QUICPacketHandler
@@ -78,31 +80,19 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
 
   UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload);
 
-  // NOTE: p will be enqueued to udpOutQueue of UDPNetHandler
-  ip_port_text_buffer ipb;
-  QUICConnectionId dcid = packet.destination_cid();
-  QUICConnectionId scid = QUICConnectionId::ZERO();
-  if (packet.type() != QUICPacketType::PROTECTED) {
-    scid = packet.source_cid();
+  if (is_debug_tag_set(tag)) {
+    ip_port_text_buffer ipb;
+    QUICConnectionId dcid = packet.destination_cid();
+    QUICConnectionId scid = QUICConnectionId::ZERO();
+    if (packet.type() != QUICPacketType::PROTECTED) {
+      scid = packet.source_cid();
+    }
+    QUICDebugDS(dcid, scid, "send %s packet to %s size=%" PRId64, QUICDebugNames::packet_type(packet.type()),
+                ats_ip_nptop(&udp_packet->to.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
   }
-  QUICDebugDS(dcid, scid, "send %s packet to %s size=%" PRId64, QUICDebugNames::packet_type(packet.type()),
-              ats_ip_nptop(&udp_packet->to.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
 
+  // NOTE: packet will be enqueued to udpOutQueue of UDPNetHandler
   udp_con->send(c, udp_packet);
-}
-
-QUICConnectionId
-QUICPacketHandler::_read_destination_connection_id(IOBufferBlock *block)
-{
-  const uint8_t *buf = reinterpret_cast<const uint8_t *>(block->buf());
-  return QUICPacket::destination_connection_id(buf);
-}
-
-QUICConnectionId
-QUICPacketHandler::_read_source_connection_id(IOBufferBlock *block)
-{
-  const uint8_t *buf = reinterpret_cast<const uint8_t *>(block->buf());
-  return QUICPacket::source_connection_id(buf);
 }
 
 //
@@ -182,54 +172,91 @@ QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
 void
 QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  EThread *eth           = nullptr;
-  QUICPollEvent *qe      = nullptr;
-  QUICNetVConnection *vc = nullptr;
-  IOBufferBlock *block   = udp_packet->getIOBlockChain();
+  // Assumption: udp_packet has only one IOBufferBlock
+  IOBufferBlock *block = udp_packet->getIOBlockChain();
+  const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
+  uint64_t buf_len     = block->size();
 
-  if (is_debug_tag_set("quic_sec")) {
-    ip_port_text_buffer ipb;
-    QUICConnectionId dcid = this->_read_destination_connection_id(block);
-    QUICConnectionId scid = QUICConnectionId::ZERO();
-    if (QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) {
-      scid = this->_read_source_connection_id(block);
-    }
-    // Remote dst cid is src cid in local
-    // TODO: print packet type
-    QUICDebugDS(scid, dcid, "recv packet from %s, size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
-                udp_packet->getPktLength());
-  }
-
-  QUICConnection *qc =
-    this->_ctable->lookup(reinterpret_cast<const uint8_t *>(block->buf()), {udp_packet->from, udp_packet->to, SOCK_DGRAM});
-
-  vc = static_cast<QUICNetVConnection *>(qc);
-  // 7.1. Matching Packets to Connections
-  // A server that discards a packet that cannot be associated with a connection MAY also generate a stateless reset
-  // Send stateless reset if the packet is not a initial packet or connection is closed.
-  if ((!vc && !QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) || (vc && vc->in_closed_queue)) {
-    Connection con;
-    con.setRemote(&udp_packet->from.sa);
-    QUICConnectionId cid = this->_read_destination_connection_id(block);
-    QUICStatelessResetToken token;
-    {
-      QUICConfig::scoped_config params;
-      token.generate(cid, params->server_id());
-    }
-    auto packet = QUICPacketFactory::create_stateless_reset_packet(cid, token);
-    this->_send_packet(this, *packet, udp_packet->getConnection(), con.addr, 1200);
+  if (buf_len == 0) {
+    QUICDebug("Ignore packet - payload is too small");
     udp_packet->free();
     return;
   }
 
+  QUICConnectionId dcid = QUICConnectionId::ZERO();
+  QUICConnectionId scid = QUICConnectionId::ZERO();
+
+  // TODO: lookup by 5-Tuple
+  // When ATS omits SCID, endpoint omits DCID. In this case, we can't get DCID from SH packet, we need to lookup QC by 5-Tuple.
+  if (!QUICInvariants::dcid(dcid, buf, buf_len)) {
+    QUICDebug("Ignore packet - payload is too small");
+    udp_packet->free();
+    return;
+  }
+
+  if (QUICInvariants::is_long_header(buf)) {
+    if (!QUICInvariants::scid(scid, buf, buf_len)) {
+      QUICDebug("Ignore packet - payload is too small");
+      udp_packet->free();
+      return;
+    }
+
+    if (is_debug_tag_set(tag)) {
+      ip_port_text_buffer ipb;
+      QUICDebugDS(scid, dcid, "recv LH packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
+                  udp_packet->getPktLength());
+    }
+
+    QUICVersion v;
+    if (unlikely(!QUICInvariants::version(v, buf, buf_len))) {
+      QUICDebug("Ignore packet - payload is too small");
+      udp_packet->free();
+      return;
+    }
+
+    if (!QUICInvariants::is_version_negotiation(v) && !QUICTypeUtil::is_supported_version(v)) {
+      QUICDebugDS(scid, dcid, "Unsupported version: 0x%x", v);
+
+      QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid);
+      this->_send_packet(this, *vn, udp_packet->getConnection(), udp_packet->from, 1200);
+      udp_packet->free();
+      return;
+    }
+  } else {
+    if (is_debug_tag_set(tag)) {
+      ip_port_text_buffer ipb;
+      QUICDebugDS(scid, dcid, "recv SH packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
+                  udp_packet->getPktLength());
+    }
+  }
+
+  QUICConnection *qc     = this->_ctable->lookup(buf, {udp_packet->from, udp_packet->to, SOCK_DGRAM});
+  QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(qc);
+
+  // 7.1. Matching Packets to Connections
+  // A server that discards a packet that cannot be associated with a connection MAY also generate a stateless reset
+  // Send stateless reset if the packet is not a initial packet or connection is closed.
+  if ((!vc && !QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) || (vc && vc->in_closed_queue)) {
+    QUICStatelessResetToken token;
+    {
+      QUICConfig::scoped_config params;
+      token.generate(dcid, params->server_id());
+    }
+    auto packet = QUICPacketFactory::create_stateless_reset_packet(dcid, token);
+    this->_send_packet(this, *packet, udp_packet->getConnection(), udp_packet->from, 1200);
+    udp_packet->free();
+    return;
+  }
+
+  EThread *eth = nullptr;
   if (!vc) {
+    // Create a new NetVConnection
     Connection con;
     con.setRemote(&udp_packet->from.sa);
 
-    eth = eventProcessor.assign_thread(ET_NET);
-    // Create a new NetVConnection
-    QUICConnectionId original_cid = this->_read_destination_connection_id(block);
-    QUICConnectionId peer_cid     = this->_read_source_connection_id(block);
+    eth                           = eventProcessor.assign_thread(ET_NET);
+    QUICConnectionId original_cid = dcid;
+    QUICConnectionId peer_cid     = scid;
 
     if (is_debug_tag_set("quic_sec")) {
       char client_dcid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
@@ -256,11 +283,12 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     eth = vc->thread;
   }
 
-  qe = quicPollEventAllocator.alloc();
-
+  QUICPollEvent *qe = quicPollEventAllocator.alloc();
   qe->init(qc, static_cast<UDPPacketInternal *>(udp_packet));
   // Push the packet into QUICPollCont
   get_QUICPollCont(eth)->inQueue.push(qe);
+
+  return;
 }
 
 // TODO: Should be called via eventProcessor?

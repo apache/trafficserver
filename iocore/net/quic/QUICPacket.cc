@@ -21,11 +21,14 @@
  *  limitations under the License.
  */
 
+#include "QUICPacket.h"
+
 #include <ts/ink_assert.h>
 #include <ts/Diags.h>
+
 #include "QUICIntUtil.h"
-#include "QUICPacket.h"
 #include "QUICDebugNames.h"
+#include "QUICConfig.h"
 
 static constexpr std::string_view tag  = "quic_packet"sv;
 static constexpr uint64_t aead_tag_len = 16;
@@ -821,7 +824,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_sent_by_client)
+QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid)
 {
   size_t len = sizeof(QUICVersion) * countof(QUIC_SUPPORTED_VERSIONS);
   ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)), [](void *p) { ats_free(p); });
@@ -835,8 +838,7 @@ QUICPacketFactory::create_version_negotiation_packet(const QUICPacket *packet_se
 
   // VN packet dosen't have packet number field and version field is always 0x00000000
   QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, packet_sent_by_client->source_cid(),
-                            packet_sent_by_client->destination_cid(), 0x00, 0x00, 0x00, std::move(versions), len);
+    QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, dcid, scid, 0x00, 0x00, 0x00, std::move(versions), len);
 
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }

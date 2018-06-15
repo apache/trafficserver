@@ -69,6 +69,8 @@ public:
   uint32_t cc_minimum_window() const;
   float cc_loss_reduction_factor() const;
 
+  static const uint8_t SCIL = 5;
+
 private:
   static int _connection_table_size;
 

@@ -32,32 +32,16 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
 
-  uint8_t initial_packet_header[] = {
-    0xFF,                                           // Type
-    0xaa, 0xbb, 0xcc, 0xdd,                         // Version
-    0x55,                                           // DCIL/SCIL
-    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection id
-    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection id
-    0x01,                                           // Payload Length
-    0x00, 0x00, 0x00, 0x00,                         // Packet number
-  };
-  uint8_t initial_packet_payload[] = {
-    0x00 // Payload
-  };
+  const uint8_t raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  const uint8_t raw_scid[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
+  QUICConnectionId dcid(raw_dcid, 8);
+  QUICConnectionId scid(raw_scid, 8);
 
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::load({}, {initial_packet_header, [](void *) {}}, sizeof(initial_packet_header), 0, 8);
-
-  QUICPacket initial_packet(std::move(header), ats_unique_buf(initial_packet_payload, [](void *) {}),
-                            sizeof(initial_packet_payload), 0);
-
-  QUICPacketUPtr vn_packet = factory.create_version_negotiation_packet(&initial_packet);
+  QUICPacketUPtr vn_packet = factory.create_version_negotiation_packet(scid, dcid);
   CHECK(vn_packet->type() == QUICPacketType::VERSION_NEGOTIATION);
 
-  uint8_t dst_cid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-  uint8_t src_cid[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
-  CHECK((vn_packet->source_cid() == QUICConnectionId(dst_cid, sizeof(dst_cid))));
-  CHECK((vn_packet->destination_cid() == QUICConnectionId(src_cid, sizeof(src_cid))));
+  CHECK(vn_packet->destination_cid() == scid);
+  CHECK(vn_packet->source_cid() == dcid);
   CHECK(vn_packet->version() == 0x00);
 
   QUICVersion supported_version = QUICTypeUtil::read_QUICVersion(vn_packet->payload());

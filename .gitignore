@@ -99,6 +99,7 @@ iocore/net/quic/test/test_QUICFrameDispatcher
 iocore/net/quic/test/test_QUICLossDetector
 iocore/net/quic/test/test_QUICHandshake
 iocore/net/quic/test/test_QUICIncomingFrameBuffer
+iocore/net/quic/test/test_QUICInvariants
 iocore/net/quic/test/test_QUICKeyGenerator
 iocore/net/quic/test/test_QUICPacket
 iocore/net/quic/test/test_QUICPacketFactory
