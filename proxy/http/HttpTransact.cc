@@ -2953,8 +2953,11 @@ HttpTransact::handle_cache_write_lock(State *s)
     HandleCacheOpenReadHitFreshness(s);
   } else if ((s->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_COLLAPSED_FORWARDING) &&
              (s->state_machine->get_cache_sm().get_open_write_tries() < s->txn_conf->max_cache_open_write_retries)) {
-    TxnDebug("http_error", "calling DecideCacheLookup for collapsed forwarding");
-    HttpTransact::DecideCacheLookup(s);
+    TxnDebug("http_error", "setting SM_ACTION_CACHE_LOOKUP for collapsed forwarding");
+    StateMachineAction_t next;
+    next           = SM_ACTION_CACHE_LOOKUP;
+    s->next_action = next;
+    TRANSACT_RETURN(next, nullptr);
   } else {
     StateMachineAction_t next;
     next = how_to_open_connection(s);
