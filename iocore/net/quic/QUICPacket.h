@@ -117,7 +117,7 @@ public:
    *
    * This creates either a QUICPacketShortHeader or a QUICPacketLongHeader.
    */
-  static QUICPacketHeaderUPtr load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base, uint8_t dcil = 0);
+  static QUICPacketHeaderUPtr load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
 
   /*
    * Build a QUICPacketHeader
@@ -202,7 +202,7 @@ class QUICPacketShortHeader : public QUICPacketHeader
 public:
   QUICPacketShortHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketShortHeader(){};
-  QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base, uint8_t dcil);
+  QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
@@ -226,7 +226,6 @@ public:
 
 private:
   int _packet_number_len;
-  uint8_t _dcil;
 };
 
 class QUICPacketHeaderDeleter
@@ -379,7 +378,6 @@ public:
                                                 ats_unique_buf payload, size_t len, bool retransmittable);
   void set_version(QUICVersion negotiated_version);
   void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
-  [[deprecated]] void set_dcil(uint8_t len);
 
 private:
   QUICVersion _version                = QUIC_SUPPORTED_VERSIONS[0];
@@ -388,5 +386,4 @@ private:
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
   QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable);
-  [[deprecated]] uint8_t _dcil = 0;
 };

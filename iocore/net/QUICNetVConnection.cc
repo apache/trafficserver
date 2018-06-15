@@ -1490,7 +1490,6 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     }
 
     this->_last_received_packet_type = packet->type();
-    this->_packet_factory.set_dcil(packet->destination_cid().length());
   }
 
   // Debug prints

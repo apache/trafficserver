@@ -43,8 +43,6 @@ ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator("quicPacket
 static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
 static constexpr int LONG_HDR_OFFSET_VERSION       = 1;
 
-static constexpr int SHORT_HDR_OFFSET_CONNECTION_ID = 1;
-
 //
 // QUICPacketHeader
 //
@@ -74,7 +72,7 @@ QUICPacketHeader::packet_size() const
 }
 
 QUICPacketHeaderUPtr
-QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base, uint8_t dcil)
+QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
 {
   QUICPacketHeaderUPtr header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
   if (QUICTypeUtil::has_long_header(buf.get())) {
@@ -83,7 +81,7 @@ QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QU
     header = QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
   } else {
     QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
-    new (short_header) QUICPacketShortHeader(from, std::move(buf), len, base, dcil);
+    new (short_header) QUICPacketShortHeader(from, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
   }
   return header;
@@ -326,17 +324,16 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 // QUICPacketShortHeader
 //
 
-QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base,
-                                             uint8_t dcil)
-  : QUICPacketHeader(from, std::move(buf), len, base), _dcil(dcil)
+QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+  : QUICPacketHeader(from, std::move(buf), len, base)
 {
-  this->_connection_id = QUICTypeUtil::read_QUICConnectionId(this->_buf.get() + 1, dcil);
+  QUICInvariants::dcid(this->_connection_id, this->_buf.get(), len);
 
   int offset               = 1 + this->_connection_id.length();
   this->_packet_number_len = QUICTypeUtil::read_QUICPacketNumberLen(this->_buf.get() + offset);
   QUICPacketNumber src     = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + offset);
   QUICPacket::decode_packet_number(this->_packet_number, src, this->_packet_number_len, this->_base_packet_number);
-  this->_payload_length = len - (1 + this->_dcil + this->_packet_number_len);
+  this->_payload_length = len - (1 + QUICConfigParams::scid_len() + this->_packet_number_len);
 }
 
 QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
@@ -388,7 +385,9 @@ QUICConnectionId
 QUICPacketShortHeader::destination_cid() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICConnectionId(this->_buf.get() + SHORT_HDR_OFFSET_CONNECTION_ID, this->_dcil);
+    QUICConnectionId dcid = QUICConnectionId::ZERO();
+    QUICInvariants::dcid(dcid, this->_buf.get(), this->_buf_len);
+    return dcid;
   } else {
     return _connection_id;
   }
@@ -710,7 +709,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
   ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
   size_t plain_txt_len     = 0;
 
-  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number, this->_dcil);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number);
 
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();
@@ -955,12 +954,6 @@ void
 QUICPacketFactory::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
 {
   this->_hs_protocol = hs_protocol;
-}
-
-void
-QUICPacketFactory::set_dcil(uint8_t len)
-{
-  this->_dcil = len;
 }
 
 //

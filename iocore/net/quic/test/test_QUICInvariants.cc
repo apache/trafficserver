@@ -203,7 +203,7 @@ TEST_CASE("Short Header - regular case", "[quic]")
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, //
     0x10, 0x11,                                     //
   };
-  QUICConnectionId expected_dcid(raw_dcid, 18);
+  QUICConnectionId expected_dcid(raw_dcid, sizeof(raw_dcid));
 
   QUICConnectionId dcid = QUICConnectionId::ZERO();
 
