@@ -49,11 +49,14 @@ public:
   QUICConnection *erase(QUICConnectionId cid);
 
   /*
-   *  Lookup QUICConnection
-   *
-   *  If packet doesn't have CID, 5-tuple(endpoint) will be used to lookup CID.
+   *  Lookup QUICConnection by 5-tuple
    */
-  QUICConnection *lookup(const uint8_t *packet, QUICFiveTuple endpoint);
+  QUICConnection *lookup(QUICFiveTuple endpoint);
+
+  /*
+   *  Lookup QUICConnection by cid
+   */
+  QUICConnection *lookup(QUICConnectionId cid);
 
 private:
   MTHashTable<QUICConnectionId, QUICConnection *> _connections;

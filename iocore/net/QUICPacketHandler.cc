@@ -230,7 +230,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
   }
 
-  QUICConnection *qc     = this->_ctable->lookup(buf, {udp_packet->from, udp_packet->to, SOCK_DGRAM});
+  QUICConnection *qc     = this->_ctable->lookup(dcid);
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(qc);
 
   // 7.1. Matching Packets to Connections
