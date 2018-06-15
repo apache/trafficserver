@@ -336,6 +336,12 @@ QUICConfigParams::cc_loss_reduction_factor() const
   return _cc_loss_reduction_factor;
 }
 
+uint8_t
+QUICConfigParams::scid_len()
+{
+  return QUICConfigParams::_scid_len;
+}
+
 //
 // QUICConfig
 //

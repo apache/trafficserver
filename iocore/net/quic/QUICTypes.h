@@ -249,7 +249,7 @@ public:
 
 private:
   uint64_t _hashcode() const;
-  uint8_t _id[18];
+  uint8_t _id[MAX_LENGTH];
   uint8_t _len = 0;
 };
 
@@ -317,7 +317,7 @@ class QUICTypeUtil
 {
 public:
   [[deprecated]] static bool has_long_header(const uint8_t *buf);
-  static bool has_connection_id(const uint8_t *buf);
+  [[deprecated]] static bool has_connection_id(const uint8_t *buf);
   static bool is_supported_version(QUICVersion version);
   static QUICStreamType detect_stream_type(QUICStreamId id);
 
@@ -349,14 +349,16 @@ public:
   static bool is_long_header(const uint8_t *buf);
   static bool is_version_negotiation(QUICVersion v);
   static bool version(QUICVersion &dst, const uint8_t *buf, uint64_t buf_len);
+  static bool dcil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len);
+  static bool scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len);
   static bool dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len);
   static bool scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len);
 
-  const static size_t CIL_BASE          = 3;
-  const static size_t LH_VERSION_OFFSET = 1;
-  const static size_t LH_DCIL_OFFSET    = 5;
-  const static size_t LH_DCID_OFFSET    = 6;
-  const static size_t SH_DCID_OFFSET    = 1;
-  const static size_t LH_MIN_LEN        = 6;
-  const static size_t SH_MIN_LEN        = 1;
+  static const size_t CIL_BASE          = 3;
+  static const size_t LH_VERSION_OFFSET = 1;
+  static const size_t LH_CIL_OFFSET     = 5;
+  static const size_t LH_DCID_OFFSET    = 6;
+  static const size_t SH_DCID_OFFSET    = 1;
+  static const size_t LH_MIN_LEN        = 6;
+  static const size_t SH_MIN_LEN        = 1;
 };

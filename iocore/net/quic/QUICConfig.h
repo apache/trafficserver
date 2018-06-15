@@ -44,7 +44,6 @@ public:
   uint16_t initial_max_uni_streams_in() const;
   uint16_t initial_max_uni_streams_out() const;
   uint32_t server_id() const;
-  static int connection_table_size();
   uint32_t max_alt_connection_ids() const;
   uint32_t stateless_retry() const;
   uint32_t vn_exercise_enabled() const;
@@ -69,10 +68,13 @@ public:
   uint32_t cc_minimum_window() const;
   float cc_loss_reduction_factor() const;
 
-  static const uint8_t SCIL = 5;
+  static int connection_table_size();
+  static uint8_t scid_len();
 
 private:
   static int _connection_table_size;
+  // TODO: make configurable
+  static const uint8_t _scid_len = 18; //< Length of Source Connection ID
 
   // FIXME Fill appropriate default values in RecordsConfig.cc
   uint32_t _no_activity_timeout_in  = 0;

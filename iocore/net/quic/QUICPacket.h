@@ -291,8 +291,8 @@ public:
   const uint8_t *payload() const;
   bool is_retransmittable() const;
 
-  static QUICConnectionId destination_connection_id(const uint8_t *packet);
-  static QUICConnectionId source_connection_id(const uint8_t *packet);
+  [[deprecated]] static QUICConnectionId destination_connection_id(const uint8_t *packet);
+  [[deprecated]] static QUICConnectionId source_connection_id(const uint8_t *packet);
 
   /*
    * Size of whole QUIC packet (header + payload + integrity check)
