@@ -16,7 +16,10 @@
 
 #include "ts/ts.h"
 
+#include <string>
 #include <utility>
+
+static char const * const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
 
 /**
   Designed to be a cheap throwaway struct which allows a
@@ -24,9 +27,10 @@
 */
 struct HttpHeader
 {
-  TSMBuffer m_buffer;
-  TSMLoc m_lochdr;
+  TSMBuffer const m_buffer;
+  TSMLoc const m_lochdr;
 
+  explicit
   HttpHeader
     ( TSMBuffer buffer
     , TSMLoc lochdr
@@ -42,29 +46,107 @@ struct HttpHeader
     return nullptr != m_buffer && nullptr != m_lochdr;
   }
 
+  typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int*);
+
   // returns nullptr or TS_HTTP_METHOD_*
   char const *
   method
-    () const;
+    ( int * const len=nullptr
+    ) const
+  {
+    return getCharPtr(TSHttpHdrMethodGet, len);
+  }
+
+  char const *
+  host
+    ( int * const len
+    ) const
+  {
+    return getCharPtr(TSHttpHdrHostGet, len);
+  }
+
+  char const *
+  reason
+    ( int * const len
+    ) const
+  {
+    return getCharPtr(TSHttpHdrReasonGet, len);
+  }
+
+/*
+  char const *
+  urlScheme
+    ( int * const len
+    ) const
+  {
+    return getCharPtr(TSUrlSchemeGet, len);
+  }
+
+  char const *
+  urlUser
+    ( int * const len
+    ) const
+  {
+    return getCharPtr(TSUrlUserGet, len);
+  }
+*/
 
   bool
-  skipMe
-    () const;
+  hasKey
+    ( char const * const key
+    , int const keylen
+    ) const;
 
-  //! parse the first range of interest -- inclusive!!!
-  std::pair<int64_t, int64_t>
-  firstRangeClosed
-    () const;
-
-  // 
-  int64_t
-  contentBytes
-    () const;
-
-  //! set skip me header for self Http Connect
+  // returns false if header invalid or something went wrong with removal.
   bool
-  setSkipMe
-    ();
+  removeKey
+    ( char const * const key
+    , int const keylen
+    );
+
+  bool
+  valueForKey
+    ( char const * const keystr
+    , int const keylen
+    , char * const valstr // <-- return string value
+    , int * const vallen // <-- pass in capacity, returns len of string
+    , int const index = -1 // sets all values
+    ) const;
+
+  /**
+    Sets or adds a key/value
+  */
+  bool
+  setKeyVal
+    ( char const * const key
+    , int const keylen
+    , char const * const val
+    , int const vallen
+    , int const index = -1 // sets all values
+    );
+
+  /** dump header into provided char buffer
+   */
+  std::string
+  toString
+    () const;
+
+private:
+
+  /**
+    To be used with
+    TSHttpHdrMethodGet
+    TSHttpHdrHostGet
+    TSHttpHdrReasonGet
+    TSUrlSchemeGet
+    TSUrlUserGet
+   */
+  char const *
+  getCharPtr
+    ( CharPtrGetFunc func
+    , int * const len
+    ) const;
+
 };
 
 struct TxnHdrMgr
@@ -74,8 +156,6 @@ struct TxnHdrMgr
 
   TSMBuffer m_buffer;
   TSMLoc m_lochdr;
-
-public:
 
   TxnHdrMgr()
     : m_buffer(nullptr)
@@ -124,22 +204,20 @@ TSAssert(nullptr != m_buffer && nullptr != m_lochdr);
   }
 };
 
-class ParseHdrMgr
+struct HdrMgr
 {
-  ParseHdrMgr(ParseHdrMgr const &) = delete;
-  ParseHdrMgr & operator=(ParseHdrMgr const &) = delete;
-
-public:
+  HdrMgr(HdrMgr const &) = delete;
+  HdrMgr & operator=(HdrMgr const &) = delete;
 
   TSMBuffer m_buffer;
   TSMLoc m_lochdr;
 
-  ParseHdrMgr()
+  HdrMgr()
     : m_buffer(nullptr)
     , m_lochdr(nullptr)
   { }
 
-  ~ParseHdrMgr
+  ~HdrMgr
     ()
   {
     if (nullptr != m_buffer && nullptr != m_lochdr) {
@@ -151,18 +229,27 @@ public:
 
   typedef TSParseResult(*HeaderParseFunc)
     (TSHttpParser, TSMBuffer, TSMLoc, char const **, char const *);
+
   /** Clear/create the parser before calling this and don't
    use the parser on another header until done with this one.
    use one of the following:
      TSHttpHdrParseReq
      TSHttpHdrParseResp
-    Call this multiple times if necessary
+    Call this multiple times if necessary.
   */
   TSParseResult
   populateFrom
     ( TSHttpParser const http_parser
     , TSIOBufferReader const reader
     , HeaderParseFunc const parsefunc
+    );
+
+
+  //! returns false if buffers already allocated or clone fails
+  bool
+  cloneFrom
+    ( TSMBuffer buffersrc
+    , TSMLoc locsrc
     );
 
   bool

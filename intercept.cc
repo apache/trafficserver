@@ -5,8 +5,9 @@
 #include "range.h"
 #include "sim.h"
 
-#include <cinttypes>
+#include <cstring>
 #include <iostream>
+#include <limits>
 
 static
 void
@@ -27,22 +28,28 @@ request_block
   , Data * const data
   )
 {
-  std::pair<int64_t, int64_t> const blockrange
-    (rangeForBlock(data->m_blocksize, data->m_blocknum));
+  std::pair<int64_t, int64_t> const blockbe
+    (range::forBlock(data->m_blocksize, data->m_blocknum));
 
-  char content_range[1024];
-  int const content_range_len(snprintf
-    ( content_range, 1024
-    , "bytes=%" PRId64 "-%" PRId64
-    , blockrange.first, blockrange.second - 1 ) );
-TSAssert(0 < content_range_len);
+std::cerr << __func__ << " trying to build header" << std::endl;
 
-  // create header
-  std::string const get_request
-    (rangeRequestStringFor(content_range));
+  char rangestr[1024];
+  int rangelen = 1023;
+  bool const rpstat = range::closedStringFor
+    (blockbe, rangestr, &rangelen);
+TSAssert(rpstat);
 
-std::cerr << __func__ << '\n' << get_request << std::endl;
+  HttpHeader header = data->m_dnstream.m_hdr_mgr.header();
 
+  // add sub range key and add slicer tag
+  header.setKeyVal
+    ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
+    , rangestr, rangelen );
+
+  header.setKeyVal
+    ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
+    , ";", 1 );
+ 
   // virtual connection
   TSVConn const upvc = TSHttpConnectWithPluginId
     ((sockaddr*)&data->m_client_ip, "slicer", 0);
@@ -51,10 +58,17 @@ std::cerr << __func__ << '\n' << get_request << std::endl;
   data->m_upstream.setupConnection(upvc);
   data->m_upstream.setupVioWrite(contp);
 
+  TSHttpHdrPrint
+    ( header.m_buffer
+    , header.m_lochdr
+    , data->m_upstream.m_write.m_iobuf );
+
+/*
   TSIOBufferWrite
     ( data->m_upstream.m_write.m_iobuf
     , get_request.data()
     , get_request.size() );
+*/
 
   TSVIOReenable(data->m_upstream.m_write.m_vio);
 
@@ -84,13 +98,26 @@ handle_client_req
     {
       TSHttpParserClear(parser); // for server response headers
 
-      HttpHeader const header = data->m_dnstream.m_hdr_mgr.header();
+      // get the header
+      HttpHeader header = data->m_dnstream.m_hdr_mgr.header();
 
-      // go from closed to half open
-      std::pair<int64_t, int64_t> rangebe = header.firstRangeClosed();
-      rangebe.second += 1;
+      std::pair<int64_t, int64_t> rangebe
+        (0, std::numeric_limits<int64_t>::max());
 
-      if (! rangeIsValid(rangebe))
+      // first range only, returns string of closed interval
+      char rangestr[1024];
+      int rangelen = 1024;
+      bool const vstat = header.valueForKey
+        ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
+        , rangestr, &rangelen
+        , 0 );
+
+      if (vstat)
+      {
+        rangebe = range::parseHalfOpenFrom(rangestr);
+      }
+
+      if (! range::isValid(rangebe))
       {
         // send 416 header and shutdown
 std::cerr << "Please send a 416 header and shutdown" << std::endl;
@@ -102,22 +129,37 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
         // construct a valid response header
 
 //        data->m_range_begend = rangebe;
-        data->m_range_begend = quantizeRange(data->m_blocksize, rangebe);
+        data->m_range_begend = range::quantize
+          (data->m_blocksize, rangebe);
 
-        data->m_blocknum = firstBlockInRange
+        data->m_blocknum = range::firstBlock
           (data->m_blocksize, data->m_range_begend);
         request_block(contp, data);
       }
+
+      // whack some ATS keys
+      header.removeKey
+        ( TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA );
+      header.removeKey
+        ( TS_MIME_FIELD_X_FORWARDED_FOR
+        , TS_MIME_LEN_X_FORWARDED_FOR );
+
+
+      // normalize the range and set the info to it
+      char bufrange[1024];
+      int buflen = 1024;
+      range::closedStringFor
+        (data->m_range_begend, bufrange, &buflen);
+
+      // add in a blank ats key
+      header.setKeyVal
+        ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
+        , bufrange, buflen );
+
+// dump this friggin header
+std::cerr << "cleaned header: " << '\n' << header.toString() << std::endl;
+//shutdown(contp, data);
     }
-
-/*
-    // simulate request header
-    std::string const req_header(simClientRequestHeader());
-    std::pair<int64_t, int64_t> const rangebegend(0, 1024 * 1024 * 2);
-    data->m_range_begend = rangebegend;
-    data->m_blocknum = firstBlockInRange(data->m_blocksize, rangebegend);
-*/
-
   }
 
   return 0;
@@ -240,8 +282,8 @@ std::cerr << __func__ << ": copied: " << copied << " of: " << read_avail << std:
   if (TS_EVENT_VCONN_EOS == event)
   {
     ++data->m_blocknum;
-    if (blockIsInRange
-      (data->m_blocksize, data->m_blocknum, data->m_range_begend))
+    if (range::blockIsInside
+        (data->m_blocksize, data->m_blocknum, data->m_range_begend))
     {
       request_block(contp, data);
 

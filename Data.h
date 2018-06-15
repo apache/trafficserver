@@ -96,7 +96,7 @@ struct Stage // upstream or downstream (server or client)
   Channel m_read;
   Channel m_write;
 
-  ParseHdrMgr m_hdr_mgr; // header manager
+  HdrMgr m_hdr_mgr; // header manager
 
   void
   setupConnection

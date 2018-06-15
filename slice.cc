@@ -43,7 +43,8 @@ read_request
 
   if (TS_HTTP_METHOD_GET == headcreq.method())
   {
-    if (! headcreq.skipMe())
+    if (! headcreq.hasKey
+      (SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)))
     {
       // connection back into ATS
       sockaddr const * const ip = TSHttpTxnClientAddrGet(txnp);
