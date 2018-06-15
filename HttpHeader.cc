@@ -8,10 +8,20 @@
 #include <iostream>
 #include <limits>
 
-namespace
-{
 
-} // namespace
+TSHttpType
+HttpHeader :: type
+  () const
+{
+  if (isValid())
+  {
+    return TSHttpHdrTypeGet(m_buffer, m_lochdr);
+  }
+  else
+  {
+    return TS_HTTP_TYPE_UNKNOWN;
+  }
+}
 
 char const *
 HttpHeader :: getCharPtr
@@ -34,52 +44,6 @@ HttpHeader :: getCharPtr
   return res;
 }
 
-/*
-  char content_range[1024];
-  int const content_range_len(snprintf
-    ( content_range, 1024
-    , "bytes=%" PRId64 "-%" PRId64
-    , rangebe.first, rangebe.second - 1 ) );
-*/
-
-/*
-std::pair<int64_t, int64_t>
-HttpHeader :: firstRangeHalfOpen
-   () const
-{
-  std::pair<int64_t, int64_t> range
-    (0, std::numeric_limits<int64_t>::max());
-
-  TSMLoc const locfield
-    ( TSMimeHdrFieldFind
-      ( m_buffer
-      , m_lochdr
-      , TS_MIME_FIELD_RANGE
-      , TS_MIME_LEN_RANGE ) );
-
-  if (nullptr != locfield)
-  {
-    int value_len = 0;
-    char const * const value = TSMimeHdrFieldValueStringGet
-        (m_buffer, m_lochdr, locfield, 0, &value_len);
-
-    if (0 < value_len && value_len < 255)
-    {
-      char rangearr[256];
-      memcpy(rangearr, value, value_len);
-      rangearr[value_len + 1] = '\0';
-      range = parseRange(rangearr);
-      range.second += 1;
-    }
-
-    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
-  }
-  
-  return range;
-}
-
-*/
-
 bool
 HttpHeader :: hasKey
   ( char const * const key
@@ -91,10 +55,13 @@ HttpHeader :: hasKey
     return false;
   }
 
+std::cerr << "Searching for key: '" << std::string(key, keylen) << "'" << std::endl;
+
   TSMLoc const locfield
     (TSMimeHdrFieldFind(m_buffer, m_lochdr, key, keylen));
   if (nullptr != locfield)
   {
+std::cerr << "Found key: " << key << std::endl;
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
     return true;
   }
@@ -232,16 +199,64 @@ HttpHeader :: toString
 
   if (! isValid())
   {
-    return res;
+    return "<null>";
   }
 
-  res.append(method());
-  res.append(" ");
-/*
-  int uslen = 0;
-  char const * const urlscheme(urlScheme(&uslen));
-  res.append(urlscheme, uslen);
-*/
+  TSHttpType const htype(type());
+
+  switch (htype)
+  {
+    case TS_HTTP_TYPE_REQUEST:
+    {
+      res.append(method());
+
+      TSMLoc locurl = nullptr;
+      TSReturnCode const rcode = TSHttpHdrUrlGet
+        (m_buffer, m_lochdr, &locurl);
+      if (TS_SUCCESS == rcode && nullptr != locurl)
+      {
+        int urllen = 0;
+        char * const urlstr = TSUrlStringGet
+          (m_buffer, locurl, &urllen);
+        res.append(" ");
+        res.append(urlstr, urllen);
+        TSfree(urlstr);
+
+        TSHandleMLocRelease(m_buffer, m_lochdr, locurl);
+      }
+      else
+      {
+        res.append(" UnknownURL");
+      }
+
+      res.append(" HTTP/unparsed");
+    }
+    break;
+
+    case TS_HTTP_TYPE_RESPONSE:
+    {
+      char buf[1024];
+      int const version = TSHttpHdrVersionGet(m_buffer, m_lochdr);
+      snprintf(buf, 1023, "%d ", version);
+      res.append(buf);
+
+      int const status = TSHttpHdrStatusGet(m_buffer, m_lochdr);
+      snprintf(buf, 1023, " %d ", status);
+      res.append(buf);
+
+      int reasonlen = 0;
+      char const * const hreason = reason(&reasonlen);
+
+      res.append(hreason, reasonlen);
+    }
+    break;
+
+    default:
+    case TS_HTTP_TYPE_UNKNOWN:
+      res.append("UNKNOWN");
+    break;
+  }
+
   res.append("\r\n");
 
   int const numhdrs = TSMimeHdrFieldsCount(m_buffer, m_lochdr);
@@ -271,35 +286,6 @@ HttpHeader :: toString
 
   return res;
 }
-
-/*
-int64_t
-HttpHeader :: contentBytes
-  () const
-{
-  int64_t bytes(0);
-  if (! isValid())
-  {
-    return bytes;
-  }
-
-  TSMLoc const locfield
-    ( TSMimeHdrFieldFind
-      ( m_buffer
-      , m_lochdr
-      , TS_MIME_FIELD_CONTENT_LENGTH
-      , TS_MIME_LEN_CONTENT_LENGTH ) );
-
-  if (nullptr != locfield)
-  {
-    bytes = TSMimeHdrFieldValueInt64Get
-      (m_buffer, m_lochdr, locfield, -1);
-    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
-  }
-
-  return bytes;
-}
-*/
 
 /////// HdrMgr
 

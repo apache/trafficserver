@@ -43,6 +43,10 @@ read_request
 
   if (TS_HTTP_METHOD_GET == headcreq.method())
   {
+
+std::cerr << "Coming from HttpConnect" << std::endl;
+std::cerr << headcreq.toString() << std::endl;
+
     if (! headcreq.hasKey
       (SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)))
     {
@@ -63,15 +67,25 @@ read_request
         return false;
       }
 
+/*
+      // turn off any and all caching
+      TSHttpTxnServerRespNoStoreSet(txnp, 1);
+*/
+
       // we'll intercept this GET and do it ourselfs
       TSCont const icontp
         (TSContCreate(intercept_hook, TSMutexCreate()));
 
-      // turn off any caching
-      TSHttpTxnServerRespNoStoreSet(txnp, 1);
+static int64_t const blocksize(1024 * 1024);
+      Data * const data = new Data(blocksize);
 
-      Data * const data = new Data(1024 * 1024);
       memcpy(&data->m_client_ip, &client_ip, sizeof(sockaddr_storage));
+/*
+      TSReturnCode const rcode = TSHttpTxnPristineUrlGet
+        (txnp, &data->m_url_buffer, &data->m_url_loc);
+TSAssert(TS_SUCCESS == rcode);
+*/
+
       TSContDataSet(icontp, (void*)data);
       TSHttpTxnIntercept(icontp, txnp);
 std::cerr << "created intercept hook" << std::endl;

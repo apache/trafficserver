@@ -46,9 +46,11 @@ TSAssert(rpstat);
     ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
     , rangestr, rangelen );
 
+/*
   header.setKeyVal
     ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
     , ";", 1 );
+*/
  
   // virtual connection
   TSVConn const upvc = TSHttpConnectWithPluginId
@@ -58,22 +60,21 @@ TSAssert(rpstat);
   data->m_upstream.setupConnection(upvc);
   data->m_upstream.setupVioWrite(contp);
 
+std::cerr << __func__ << " sending header" << std::endl;
+std::cerr << header.toString() << std::endl;
+
   TSHttpHdrPrint
     ( header.m_buffer
     , header.m_lochdr
     , data->m_upstream.m_write.m_iobuf );
 
-/*
-  TSIOBufferWrite
-    ( data->m_upstream.m_write.m_iobuf
-    , get_request.data()
-    , get_request.size() );
-*/
-
   TSVIOReenable(data->m_upstream.m_write.m_vio);
 
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp);
+
+  // anticipate the next server response header
+  TSHttpParserClear(data->httpParser());
 
   return 0;
 }
@@ -89,15 +90,13 @@ handle_client_req
   if (TS_EVENT_VCONN_READ_READY == event)
   {
     TSHttpParser parser = data->httpParser();
-    TSParseResult const parse_res
+    TSParseResult const parseres
       = data->m_dnstream.m_hdr_mgr.populateFrom
         ( parser
         , data->m_dnstream.m_read.m_reader
         , TSHttpHdrParseReq );
-    if (parse_res == TS_PARSE_DONE)
+    if (TS_PARSE_DONE == parseres)
     {
-      TSHttpParserClear(parser); // for server response headers
-
       // get the header
       HttpHeader header = data->m_dnstream.m_hdr_mgr.header();
 
@@ -122,20 +121,18 @@ handle_client_req
         // send 416 header and shutdown
 std::cerr << "Please send a 416 header and shutdown" << std::endl;
         shutdown(contp, data);
+        return 0;
       }
-      else
-      {
-        // for now quantize the range so we can
-        // construct a valid response header
 
-//        data->m_range_begend = rangebe;
-        data->m_range_begend = range::quantize
-          (data->m_blocksize, rangebe);
+      // for now quantize the range so we can
+      // construct a valid response header
 
-        data->m_blocknum = range::firstBlock
-          (data->m_blocksize, data->m_range_begend);
-        request_block(contp, data);
-      }
+//       data->m_range_begend = rangebe;
+       data->m_range_begend = range::quantize
+         (data->m_blocksize, rangebe);
+
+       data->m_blocknum = range::firstBlock
+         (data->m_blocksize, data->m_range_begend);
 
       // whack some ATS keys
       header.removeKey
@@ -144,10 +141,9 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
         ( TS_MIME_FIELD_X_FORWARDED_FOR
         , TS_MIME_LEN_X_FORWARDED_FOR );
 
-
       // normalize the range and set the info to it
       char bufrange[1024];
-      int buflen = 1024;
+      int buflen = 1023;
       range::closedStringFor
         (data->m_range_begend, bufrange, &buflen);
 
@@ -156,8 +152,10 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , bufrange, buflen );
 
+      request_block(contp, data);
+
 // dump this friggin header
-std::cerr << "cleaned header: " << '\n' << header.toString() << std::endl;
+std::cerr << "cleaned header\n\n" << header.toString() << std::endl;
 //shutdown(contp, data);
     }
   }
@@ -175,32 +173,16 @@ handle_server_resp
 {
   if (TS_EVENT_VCONN_READ_READY == event)
   {
-    int64_t read_avail
-      (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
-
-/*
     if (! data->m_server_res_header_parsed)
     {
-      TSHttpHeader header;
-      TSHttpParser const http_parser = data->httpParse();
-
-      TSIOBufferBlock block = TSIOBufferReaderStart
-        (data->m_upstream.m_read.m_reader);
-      while (nullptr != block && ! data->m_server_res_header_parsed)
+      TSHttpParser parser = data->httpParser();
+      TSParseResult const parseres
+        = data->m_upstream.m_hdr_mgr.populateFrom
+          ( parser
+          , data->m_upstream.m_read.m_reader
+          , TSHttpHdrParseResp );
+      if (TS_PARSE_DONE == parseres)
       {
-        int64_t nbytes = 0;
-        char const * ptr = TSIOBufferBlockReadStart
-            (block, data->m_upstream.m_read.m_reader, &nbytes);
-TSAssert(nullptr != ptr);
-        char const * endptr = ptr + &nbytes;
-
-        TSParseResult const parseres = TSHttpHdrParseReq
-            ( http_parser
-            , data->m_upstream.m_read.m_iobuf
-            , header.m_buffer
-            , header.m_lochdr
-            , &ptr, endptr );
-
         if (TS_PARSE_DONE == parseres)
         {
           data->m_server_res_header_parsed = true;
@@ -212,8 +194,15 @@ TSAssert(nullptr != ptr);
       {
         return 0;
       }
+      else
+      {
+        // get the header
+        HttpHeader header = data->m_upstream.m_hdr_mgr.header();
+std::cerr << "response header\n" << header.toString() << std::endl;
+      }
     }
-*/
+
+
     // create the downstream connection and write out the header
     if (nullptr == data->m_dnstream.m_write.m_vio)
     {
@@ -233,6 +222,9 @@ TSAssert(nullptr != ptr);
         TSVIOReenable(data->m_dnstream.m_write.m_vio);
       }
     }
+
+    int64_t read_avail
+      (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
 
     if (0 < read_avail)
     {

@@ -142,6 +142,12 @@ struct Data
   Data & operator=(Data const &) = delete;
 
   int64_t m_blocksize;
+  sockaddr_storage m_client_ip;
+/*
+  TSMBuffer m_url_buffer;
+  TSMLoc m_url_loc;
+*/
+
   std::pair<int64_t, int64_t> m_range_begend;
 
   int64_t m_blocknum; //!< block number to work on, -1 bad/stop
@@ -151,7 +157,6 @@ struct Data
   bool m_server_res_header_parsed;
   bool m_client_header_sent;
 
-  sockaddr_storage m_client_ip;
   Stage m_upstream;
   Stage m_dnstream;
 
@@ -160,6 +165,11 @@ struct Data
     ( int64_t const blocksize
     )
     : m_blocksize(blocksize)
+    , m_client_ip()
+/*
+    , m_url_buffer(nullptr)
+    , m_url_loc(nullptr)
+*/
     , m_range_begend(-1, -1)
     , m_blocknum(-1)
     , m_http_parser(nullptr)
@@ -170,6 +180,14 @@ struct Data
   ~Data
     ()
   {
+/*
+    if (nullptr != m_url_loc) {
+      TSHandleMLocRelease(m_url_buffer, TS_NULL_MLOC, m_url_loc);
+    }
+    if (nullptr != m_url_buffer) {
+      TSMBufferDestroy(m_url_buffer);
+    }
+*/
     if (nullptr != m_http_parser) {
       TSHttpParserDestroy(m_http_parser);
     }

@@ -46,9 +46,19 @@ struct HttpHeader
     return nullptr != m_buffer && nullptr != m_lochdr;
   }
 
+  // TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST, TS_HTTP_TYPE_RESPONSE
+  TSHttpType
+  type
+    () const;
+
+  // response status code
+  TSHttpStatus
+  status
+    () const;
+
   typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int*);
 
-  // returns nullptr or TS_HTTP_METHOD_*
+  // request method TS_HTTP_METHOD_*
   char const *
   method
     ( int * const len=nullptr
@@ -57,6 +67,7 @@ struct HttpHeader
     return getCharPtr(TSHttpHdrMethodGet, len);
   }
 
+  // host
   char const *
   host
     ( int * const len
@@ -65,6 +76,7 @@ struct HttpHeader
     return getCharPtr(TSHttpHdrHostGet, len);
   }
 
+  // response reason
   char const *
   reason
     ( int * const len
@@ -72,24 +84,6 @@ struct HttpHeader
   {
     return getCharPtr(TSHttpHdrReasonGet, len);
   }
-
-/*
-  char const *
-  urlScheme
-    ( int * const len
-    ) const
-  {
-    return getCharPtr(TSUrlSchemeGet, len);
-  }
-
-  char const *
-  urlUser
-    ( int * const len
-    ) const
-  {
-    return getCharPtr(TSUrlUserGet, len);
-  }
-*/
 
   bool
   hasKey
@@ -138,8 +132,6 @@ private:
     TSHttpHdrMethodGet
     TSHttpHdrHostGet
     TSHttpHdrReasonGet
-    TSUrlSchemeGet
-    TSUrlUserGet
    */
   char const *
   getCharPtr
