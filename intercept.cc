@@ -46,12 +46,6 @@ TSAssert(rpstat);
     ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
     , rangestr, rangelen );
 
-/*
-  header.setKeyVal
-    ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
-    , ";", 1 );
-*/
- 
   // virtual connection
   TSVConn const upvc = TSHttpConnectWithPluginId
     ((sockaddr*)&data->m_client_ip, "slicer", 0);
@@ -79,6 +73,7 @@ std::cerr << header.toString() << std::endl;
   return 0;
 }
 
+// this is called once per transaction when the client sends a req header
 static
 int
 handle_client_req
@@ -106,12 +101,12 @@ handle_client_req
       // first range only, returns string of closed interval
       char rangestr[1024];
       int rangelen = 1024;
-      bool const vstat = header.valueForKey
+      bool const rstat = header.valueForKey
         ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
         , rangestr, &rangelen
         , 0 );
 
-      if (vstat)
+      if (rstat)
       {
         rangebe = range::parseHalfOpenFrom(rangestr);
       }
@@ -131,6 +126,7 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
        data->m_range_begend = range::quantize
          (data->m_blocksize, rangebe);
 
+       // set up the first block
        data->m_blocknum = range::firstBlock
          (data->m_blocksize, data->m_range_begend);
 
@@ -141,28 +137,25 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
         ( TS_MIME_FIELD_X_FORWARDED_FOR
         , TS_MIME_LEN_X_FORWARDED_FOR );
 
-      // normalize the range and set the info to it
+      // normalize the range and set the X-Slicer-Info private tag
       char bufrange[1024];
       int buflen = 1023;
       range::closedStringFor
         (data->m_range_begend, bufrange, &buflen);
 
-      // add in a blank ats key
       header.setKeyVal
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , bufrange, buflen );
 
+      // send off the block request
       request_block(contp, data);
-
-// dump this friggin header
-std::cerr << "cleaned header\n\n" << header.toString() << std::endl;
-//shutdown(contp, data);
     }
   }
 
   return 0;
 }
 
+// this is called every time the server has data for us
 static
 int
 handle_server_resp
@@ -196,14 +189,13 @@ handle_server_resp
       }
       else
       {
-        // get the header
+        // get the header (just print it for now)
         HttpHeader header = data->m_upstream.m_hdr_mgr.header();
 std::cerr << "response header\n" << header.toString() << std::endl;
       }
     }
 
-
-    // create the downstream connection and write out the header
+    // if necessary create downstream and a manufactured header
     if (nullptr == data->m_dnstream.m_write.m_vio)
     {
       data->m_dnstream.setupVioWrite(contp);
@@ -295,6 +287,7 @@ std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   return 0;
 }
 
+// this is when the client starts asking us for more data
 static
 int
 handle_client_resp
