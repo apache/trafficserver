@@ -1758,6 +1758,7 @@ HttpSM::state_http_server_open(int event, void *data)
     }
     break;
   case VC_EVENT_ERROR:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
