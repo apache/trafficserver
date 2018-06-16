@@ -2321,8 +2321,6 @@ tsapi void TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int ur
    @return the url string
 */
 tsapi const char *TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr);
-/*   This is deprecated as of v5.0.0. */
-tsapi TS_DEPRECATED const char *TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr);
 
 /**
    Return the number of redirection retries we have done. This starts off
