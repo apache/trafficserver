@@ -302,19 +302,6 @@ tsapi TSReturnCode TSMBufferDestroy(TSMBuffer bufp);
 tsapi TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc *locp);
 
 /**
-    Destroys the URL located at url_loc within the marshal buffer
-    bufp. Do not forget to release the TSMLoc url_loc with a call
-    to TSHandleMLocRelease().
-
-    @param bufp marshal buffer containing the URL to be destroyed.
-    @param offset location of the URL to be destroyed.
-
- */
-/** @deprecated There is no reason to destroy the URL, just release
-    the marshal buffers. Should be removed for v5.0.0 */
-tsapi TS_DEPRECATED TSReturnCode TSUrlDestroy(TSMBuffer bufp, TSMLoc offset);
-
-/**
     Copies the URL located at src_url within src_bufp to a URL
     location within the marshal buffer dest_bufp, and returns the
     TSMLoc location of the copied URL. Unlike TSUrlCopy(), you do
