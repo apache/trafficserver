@@ -2018,11 +2018,6 @@ TSUrlCreate(TSMBuffer bufp, TSMLoc *locp)
   return TS_ERROR;
 }
 
-TSReturnCode TSUrlDestroy(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc /* url_loc ATS_UNUSED */)
-{
-  return TS_SUCCESS;
-}
-
 TSReturnCode
 TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc *locp)
 {
