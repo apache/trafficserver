@@ -7566,13 +7566,6 @@ TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
   return sm->redirect_url;
 }
 
-// Deprecated, remove for v6.0.0
-const char *
-TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
-{
-  return TSHttpTxnRedirectUrlGet(txnp, url_len_ptr);
-}
-
 int
 TSHttpTxnRedirectRetries(TSHttpTxn txnp)
 {
