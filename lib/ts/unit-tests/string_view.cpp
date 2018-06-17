@@ -276,11 +276,11 @@ TEST_CASE("Access & iterators", "[string_view] [access]")
   {
     ts::string_view sv("abcde");
 
-    REQUIRE_THROWS_AS(sv.at(100), std::out_of_range);
-    REQUIRE_THROWS_AS(sv.at(-1), std::out_of_range);
+    REQUIRE_THROWS_AS(sv.at(100), std::out_of_range&);
+    REQUIRE_THROWS_AS(sv.at(-1), std::out_of_range&);
 
-    REQUIRE_THROWS_AS(sv[100], std::out_of_range);
-    REQUIRE_THROWS_AS(sv[-1], std::out_of_range);
+    REQUIRE_THROWS_AS(sv[100], std::out_of_range&);
+    REQUIRE_THROWS_AS(sv[-1], std::out_of_range&);
   }
 }
 
@@ -368,8 +368,8 @@ TEST_CASE("Operations", "[string_view] [operation]")
   SECTION("exception case")
   {
     ts::string_view sv("hello");
-    REQUIRE_THROWS_AS(sv.substr(100, 0), std::out_of_range);
-    REQUIRE_THROWS_AS(sv.substr(-1, -1), std::out_of_range);
+    REQUIRE_THROWS_AS(sv.substr(100, 0), std::out_of_range&);
+    REQUIRE_THROWS_AS(sv.substr(-1, -1), std::out_of_range&);
   }
 }
 
@@ -413,9 +413,9 @@ TEST_CASE("Compare", "[string_view] [compare]")
   SECTION("exception case")
   {
     ts::string_view sv("hello");
-    REQUIRE_THROWS_AS(sv.compare(100, 1, "hel"), std::out_of_range);
-    REQUIRE_THROWS_AS(sv.compare(100, 100, "hel"), std::out_of_range);
-    REQUIRE_THROWS_AS(sv.compare(-1, -1, "hel"), std::out_of_range);
+    REQUIRE_THROWS_AS(sv.compare(100, 1, "hel"), std::out_of_range&);
+    REQUIRE_THROWS_AS(sv.compare(100, 100, "hel"), std::out_of_range&);
+    REQUIRE_THROWS_AS(sv.compare(-1, -1, "hel"), std::out_of_range&);
   }
 }
 
