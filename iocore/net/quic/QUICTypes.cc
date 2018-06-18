@@ -53,12 +53,6 @@ QUICTypeUtil::has_long_header(const uint8_t *buf)
 }
 
 bool
-QUICTypeUtil::has_connection_id(const uint8_t *buf)
-{
-  return ((buf[0] & 0x80) != 0) || ((buf[0] & 0x40) == 0);
-}
-
-bool
 QUICTypeUtil::is_supported_version(QUICVersion version)
 {
   for (auto v : QUIC_SUPPORTED_VERSIONS) {

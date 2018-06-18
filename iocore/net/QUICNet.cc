@@ -67,13 +67,6 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   uint8_t *buf           = (uint8_t *)p->getIOBlockChain()->buf();
 
-  if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
-    // TODO: Some packets may not have connection id
-    e->free();
-    p->free();
-    return;
-  }
-
   QUICPacketType ptype = static_cast<QUICPacketType>(buf[0] & 0x7f);
   if (ptype == QUICPacketType::INITIAL && !vc->read.triggered) {
     vc->read.triggered = 1;
@@ -105,17 +98,8 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 void
 QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
-  uint8_t *buf;
   UDPPacketInternal *p   = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
-  buf                    = (uint8_t *)p->getIOBlockChain()->buf();
-
-  if (!QUICTypeUtil::has_connection_id(reinterpret_cast<const uint8_t *>(buf))) {
-    // TODO: Some packets may not have connection id
-    p->free();
-    e->free();
-    return;
-  }
 
   vc->read.triggered = 1;
   vc->handle_received_packet(p);
