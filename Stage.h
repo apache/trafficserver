@@ -37,7 +37,7 @@ TSAssert(nullptr != vc);
     if (nullptr == m_iobuf)
     {
       m_iobuf = TSIOBufferCreate();
-//      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
+      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
     }
     else
@@ -59,7 +59,7 @@ TSAssert(nullptr != vc);
     if (nullptr == m_iobuf)
     {
       m_iobuf = TSIOBufferCreate();
-//      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
+      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
     }
     else

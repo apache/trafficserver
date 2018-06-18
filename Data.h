@@ -23,6 +23,9 @@ struct Data
 
   int64_t m_blocknum; //!< block number to work on, -1 bad/stop
 
+  int64_t m_bytestosend; //!< header + content bytes to send
+  int64_t m_bytessent; //!< number of content bytes sent
+
   bool m_server_block_header_parsed;
   bool m_server_first_header_parsed;
   bool m_client_header_sent;
@@ -42,6 +45,7 @@ struct Data
     , m_range_begend(-1, -1)
     , m_contentlen(-1)
     , m_blocknum(-1)
+    , m_bytessent(0)
     , m_server_block_header_parsed(false)
     , m_server_first_header_parsed(false)
     , m_client_header_sent(false)

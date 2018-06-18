@@ -61,6 +61,7 @@ TSAssert(rpstat);
   data->m_upstream.setupConnection(upvc);
   data->m_upstream.setupVioWrite(contp);
 
+std::cerr << std::endl;
 std::cerr << __func__ << " sending header to server" << std::endl;
 std::cerr << header.toString() << std::endl;
 
@@ -103,6 +104,10 @@ handle_client_req
       HttpHeader header
         ( data->m_dnstream.m_hdr_mgr.m_buffer
         , data->m_dnstream.m_hdr_mgr.m_lochdr );
+
+std::cerr << std::endl;
+std::cerr << __func__ << " received header from client" << std::endl;
+std::cerr << header.toString() << std::endl;
 
       std::pair<int64_t, int64_t> rangebe
         (0, std::numeric_limits<int64_t>::max());
@@ -190,6 +195,10 @@ handle_server_resp
           ( data->m_upstream.m_hdr_mgr.m_buffer
           , data->m_upstream.m_hdr_mgr.m_lochdr );
 
+std::cerr << std::endl;
+std::cerr << "got a response header from server" << std::endl;
+std::cerr << header.toString() << std::endl;
+
         // only process a 206, everything else gets a pass through
         TSHttpStatus const status = header.status();
         if (TS_HTTP_STATUS_PARTIAL_CONTENT != status)
@@ -253,16 +262,21 @@ TSAssert(crstat);
                 , TS_MIME_LEN_CONTENT_RANGE
                 , rangestr, rangelen );
 
+              data->m_bytestosend = crange.rangeSize();
+
               char bufstr[256];
               int const buflen = snprintf
                 ( bufstr, 255
                 , "%" PRId64
-                , crange.rangeSize() );
+                , data->m_bytestosend );
 
               header.setKeyVal
                 ( TS_MIME_FIELD_CONTENT_LENGTH
                 , TS_MIME_LEN_CONTENT_LENGTH
                 , bufstr, buflen );
+
+              data->m_bytestosend += TSHttpHdrLengthGet
+                (header.m_buffer, header.m_lochdr);
 
               data->m_server_first_header_parsed = true;
             }
@@ -295,6 +309,8 @@ TSAssert(! data->m_client_header_sent);
       HttpHeader header
         ( data->m_upstream.m_hdr_mgr.m_buffer
         , data->m_upstream.m_hdr_mgr.m_lochdr );
+
+std::cerr << std::endl;
 std::cerr << __func__ << " sending header to client" << std::endl;
 std::cerr << header.toString() << std::endl;
 
@@ -304,11 +320,6 @@ std::cerr << header.toString() << std::endl;
         , header.m_lochdr
         , data->m_dnstream.m_write.m_iobuf );
 
-/*
-      TSIOBufferWrite
-        (data->m_dnstream.m_write.m_iobuf, "\r\n", 2);
-*/
-
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
 
       data->m_client_header_sent = true;
@@ -317,7 +328,6 @@ std::cerr << header.toString() << std::endl;
     // start pushing bytes to the client
     int64_t read_avail
       (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
-
     if (0 < read_avail)
     {
       int64_t const copied
@@ -326,16 +336,13 @@ std::cerr << header.toString() << std::endl;
           , data->m_upstream.m_read.m_reader
           , read_avail
           , 0 ) );
-std::cerr << __func__ << ": copied: " << copied << " of: " << read_avail << std::endl;
+std::cerr << __func__ << " copied: " << copied << " of: " << read_avail << std::endl;
+
+      data->m_bytessent += copied;
+
+      std::cerr << "tsviondone: " << TSVIONDoneGet(data->m_dnstream.m_write.m_vio) << std::endl;
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
-
-/* what does this do again?
-      TSVIONDoneSet
-        ( data->m_upstream.m_read.m_vio
-        , TSVIONDoneGet(data->m_upstream.m_read.m_vio) + copied );
-*/
-
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
     }
   }
@@ -388,9 +395,8 @@ handle_client_resp
 {
   if (TS_EVENT_VCONN_WRITE_READY == event)
   {
-    int64_t read_avail
+    int64_t const read_avail
       (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
-
     if (0 < read_avail)
     {
       int64_t const copied
@@ -400,37 +406,16 @@ handle_client_resp
           , read_avail
           , 0 ) );
 
-std::cerr << __func__ << " copied: " << copied << std::endl;
+      data->m_bytessent += copied;
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
-
-/*
-      int64_t consumed(0);
-      TSIOBufferBlock block = TSIOBufferReaderStart
-          (data->upstream->read->reader);
-
-      while (nullptr != block && 0 < read_avail)
-      {
-        int64_t read_block(0);
-        char const * const block_start = TSIOBufferBlockReadStart
-            (block, data->upstream->read->reader, &read_block);
-        if (0 < read_block)
-        {
-          int64_t const tocopy(std::min(read_block, read_avail));
-          std::cerr << std::string(block_start, block_start + tocopy);
-          read_avail -= tocopy;
-          consumed += tocopy;
-          block = TSIOBufferBlockNext(block);
-        }
-      }
-
-      TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
-*/
     }
     else
     {
-      if (-1 == data->m_blocknum) // signal value
+      int64_t const bytessent
+        (TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
+      if (data->m_bytestosend == bytessent)
       {
 std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
         shutdown(contp, data);
