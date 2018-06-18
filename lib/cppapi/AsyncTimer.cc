@@ -30,12 +30,17 @@ struct atscppapi::AsyncTimerState {
   AsyncTimer::Type type_;
   int period_in_ms_;
   int initial_period_in_ms_;
+  TSThreadPool thread_pool_;
   TSAction initial_timer_action_  = nullptr;
   TSAction periodic_timer_action_ = nullptr;
   AsyncTimer *timer_              = nullptr;
   std::shared_ptr<AsyncDispatchControllerBase> dispatch_controller_{};
-  AsyncTimerState(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms, AsyncTimer *timer)
-    : type_(type), period_in_ms_(period_in_ms), initial_period_in_ms_(initial_period_in_ms), timer_(timer)
+  AsyncTimerState(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms, TSThreadPool thread_pool, AsyncTimer *timer)
+    : type_(type),
+      period_in_ms_(period_in_ms),
+      initial_period_in_ms_(initial_period_in_ms),
+      thread_pool_(thread_pool),
+      timer_(timer)
   {
   }
 };
@@ -51,7 +56,7 @@ handleTimerEvent(TSCont cont, TSEvent event, void *edata)
     state->initial_timer_action_ = nullptr; // mark it so that it won't be canceled later on
     if (state->type_ == AsyncTimer::TYPE_PERIODIC) {
       LOG_DEBUG("Scheduling periodic event now");
-      state->periodic_timer_action_ = TSContScheduleEvery(state->cont_, state->period_in_ms_, TS_THREAD_POOL_DEFAULT);
+      state->periodic_timer_action_ = TSContScheduleEvery(state->cont_, state->period_in_ms_, state->thread_pool_);
     }
   }
   if (!state->dispatch_controller_->dispatch()) {
@@ -62,9 +67,9 @@ handleTimerEvent(TSCont cont, TSEvent event, void *edata)
 }
 } // namespace
 
-AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms)
+AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms, TSThreadPool thread_pool)
 {
-  state_        = new AsyncTimerState(type, period_in_ms, initial_period_in_ms, this);
+  state_        = new AsyncTimerState(type, period_in_ms, initial_period_in_ms, thread_pool, this);
   state_->cont_ = TSContCreate(handleTimerEvent, TSMutexCreate());
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }
@@ -83,10 +88,10 @@ AsyncTimer::run()
   }
   if (one_off_timeout_in_ms) {
     LOG_DEBUG("Scheduling initial/one-off event");
-    state_->initial_timer_action_ = TSContSchedule(state_->cont_, one_off_timeout_in_ms, TS_THREAD_POOL_DEFAULT);
+    state_->initial_timer_action_ = TSContSchedule(state_->cont_, one_off_timeout_in_ms, state_->thread_pool_);
   } else if (regular_timeout_in_ms) {
     LOG_DEBUG("Scheduling regular timer events");
-    state_->periodic_timer_action_ = TSContScheduleEvery(state_->cont_, regular_timeout_in_ms, TS_THREAD_POOL_DEFAULT);
+    state_->periodic_timer_action_ = TSContScheduleEvery(state_->cont_, regular_timeout_in_ms, state_->thread_pool_);
   }
 }
 
