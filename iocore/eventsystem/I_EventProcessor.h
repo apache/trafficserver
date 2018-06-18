@@ -373,6 +373,13 @@ public:
     return {all_dthreads, n_dthreads};
   }
 
+  active_threads_type
+  active_group_threads(int type) const
+  {
+    ThreadGroupDescriptor const &group{thread_group[type]};
+    return {group._thread, group._count};
+  }
+
 private:
   void initThreadState(EThread *);
 
