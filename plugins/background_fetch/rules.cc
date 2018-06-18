@@ -73,16 +73,16 @@ check_content_length(const uint32_t len, const char *cfg_val)
 ///////////////////////////////////////////////////////////////////////////
 // Check if a header excludes us from running the background fetch
 //
-static bool
-check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_val)
+bool
+BgFetchRule::check_field_configured(TSHttpTxn txnp) const
 {
   // check for client-ip first
-  if (!strcmp(field_name, "Client-IP")) {
-    if (!strcmp(cfg_val, "*")) {
+  if (!strcmp(_field, "Client-IP")) {
+    if (!strcmp(_value, "*")) {
       TSDebug(PLUGIN_NAME, "Found client_ip wild card");
       return true;
     }
-    if (check_client_ip_configured(txnp, cfg_val)) {
+    if (check_client_ip_configured(txnp, _value)) {
       TSDebug(PLUGIN_NAME, "Found client_ip match");
       return true;
     }
@@ -93,14 +93,14 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
   TSMLoc hdr_loc;
 
   // Check response headers. ToDo: This doesn't check e.g. Content-Type :-/.
-  if (!strcmp(field_name, "Content-Length")) {
+  if (!strcmp(_field, "Content-Length")) {
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &hdr_bufp, &hdr_loc)) {
-      TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, field_name, -1);
+      TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1);
 
       if (TS_NULL_MLOC != loc) {
         unsigned int content_len = TSMimeHdrFieldValueUintGet(hdr_bufp, hdr_loc, loc, 0 /* index */);
 
-        if (check_content_length(content_len, cfg_val)) {
+        if (check_content_length(content_len, _value)) {
           TSDebug(PLUGIN_NAME, "Found content-length match");
           hdr_found = true;
         }
@@ -117,11 +117,11 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
 
   // Check request headers
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &hdr_loc)) {
-    TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, field_name, -1);
+    TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1);
 
     if (TS_NULL_MLOC != loc) {
-      if (!strcmp(cfg_val, "*")) {
-        TSDebug(PLUGIN_NAME, "Found %s wild card", field_name);
+      if (!strcmp(_value, "*")) {
+        TSDebug(PLUGIN_NAME, "Found %s wild card", _field);
         hdr_found = true;
       } else {
         int val_len         = 0;
@@ -130,15 +130,15 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
         if (!val_str || val_len <= 0) {
           TSDebug(PLUGIN_NAME, "invalid field");
         } else {
-          TSDebug(PLUGIN_NAME, "comparing with %s", cfg_val);
-          if (nullptr != strstr(val_str, cfg_val)) {
+          TSDebug(PLUGIN_NAME, "comparing with %s", _value);
+          if (nullptr != strstr(val_str, _value)) {
             hdr_found = true;
           }
         }
       }
       TSHandleMLocRelease(hdr_bufp, hdr_loc, loc);
     } else {
-      TSDebug(PLUGIN_NAME, "no field %s in request header", field_name);
+      TSDebug(PLUGIN_NAME, "no field %s in request header", _field);
     }
     TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
   } else {
@@ -146,30 +146,4 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
   }
 
   return hdr_found;
-}
-
-///////////////////////////////////////////////////////////////////////////
-// Check the configuration (either per remap, or global), and decide if
-// this request is allowed to trigger a background fetch.
-//
-bool
-BgFetchRule::bgFetchAllowed(TSHttpTxn txnp) const
-{
-  TSDebug(PLUGIN_NAME, "Testing: request is internal?");
-  if (TSHttpTxnIsInternal(txnp)) {
-    return false;
-  }
-
-  bool allow_bg_fetch = true;
-
-  // We could do this recursively, but following the linked list is probably more efficient.
-  for (const BgFetchRule *r = this; nullptr != r; r = r->_next) {
-    if (check_field_configured(txnp, r->_field, r->_value)) {
-      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, (int)r->_exclude);
-      allow_bg_fetch = !r->_exclude;
-      break;
-    }
-  }
-
-  return allow_bg_fetch;
 }
