@@ -79,8 +79,8 @@ EventMetricStatSync(const char *, RecDataT, RecData *, RecRawStatBlock *rsb, int
   EThread::EventMetrics summary[EThread::N_EVENT_TIMESCALES];
 
   // scan the thread local values
-  for (int i = 0; i < eventProcessor.n_ethreads; ++i) {
-    eventProcessor.all_ethreads[i]->summarize_stats(summary);
+  for (EThread *t : eventProcessor.active_group_threads(ET_CALL)) {
+    t->summarize_stats(summary);
   }
 
   ink_mutex_acquire(&(rsb->mutex));
