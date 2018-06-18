@@ -43,10 +43,10 @@ read_request
 
   if (TS_HTTP_METHOD_GET == headcreq.method())
   {
-
+/*
 std::cerr << "Coming from HttpConnect" << std::endl;
 std::cerr << headcreq.toString() << std::endl;
-
+*/
     if (! headcreq.hasKey
       (SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)))
     {
@@ -91,10 +91,12 @@ TSAssert(TS_SUCCESS == rcode);
 std::cerr << "created intercept hook" << std::endl;
       return true;
     }
+/*
     else
     {
 std::cerr << "Got a skip me directive, passing through" << std::endl;
     }
+*/
   }
 
   return false;

@@ -35,7 +35,7 @@ request_block
   std::pair<int64_t, int64_t> const blockbe
     (range::forBlock(data->m_blocksize, data->m_blocknum));
 
-std::cerr << __func__ << " trying to build header" << std::endl;
+//std::cerr << __func__ << " trying to build header" << std::endl;
 
   char rangestr[1024];
   int rangelen = 1023;
@@ -61,9 +61,11 @@ TSAssert(rpstat);
   data->m_upstream.setupConnection(upvc);
   data->m_upstream.setupVioWrite(contp);
 
+/*
 std::cerr << std::endl;
 std::cerr << __func__ << " sending header to server" << std::endl;
 std::cerr << header.toString() << std::endl;
+*/
 
   TSHttpHdrPrint
     ( header.m_buffer
@@ -105,9 +107,11 @@ handle_client_req
         ( data->m_dnstream.m_hdr_mgr.m_buffer
         , data->m_dnstream.m_hdr_mgr.m_lochdr );
 
+/*
 std::cerr << std::endl;
 std::cerr << __func__ << " received header from client" << std::endl;
 std::cerr << header.toString() << std::endl;
+*/
 
       std::pair<int64_t, int64_t> rangebe
         (0, std::numeric_limits<int64_t>::max());
@@ -123,6 +127,13 @@ std::cerr << header.toString() << std::endl;
       if (rstat)
       {
         rangebe = range::parseHalfOpenFrom(rangestr);
+      }
+      else
+      {
+//std::cerr << "setting full range for unknow file length" << std::endl;
+        rangebe.first = 0;
+        rangebe.second
+          = std::numeric_limits<int64_t>::max() - data->m_blocksize;
       }
 
       if (! range::isValid(rangebe))
@@ -195,9 +206,11 @@ handle_server_resp
           ( data->m_upstream.m_hdr_mgr.m_buffer
           , data->m_upstream.m_hdr_mgr.m_lochdr );
 
+/*
 std::cerr << std::endl;
 std::cerr << "got a response header from server" << std::endl;
 std::cerr << header.toString() << std::endl;
+*/
 
         // only process a 206, everything else gets a pass through
         TSHttpStatus const status = header.status();
@@ -310,9 +323,11 @@ TSAssert(! data->m_client_header_sent);
         ( data->m_upstream.m_hdr_mgr.m_buffer
         , data->m_upstream.m_hdr_mgr.m_lochdr );
 
+/*
 std::cerr << std::endl;
 std::cerr << __func__ << " sending header to client" << std::endl;
 std::cerr << header.toString() << std::endl;
+*/
 
       // dump the manipulated upstream header to the client
       TSHttpHdrPrint
@@ -336,11 +351,11 @@ std::cerr << header.toString() << std::endl;
           , data->m_upstream.m_read.m_reader
           , read_avail
           , 0 ) );
-std::cerr << __func__ << " copied: " << copied << " of: " << read_avail << std::endl;
+//std::cerr << __func__ << " copied: " << copied << " of: " << read_avail << std::endl;
 
       data->m_bytessent += copied;
 
-      std::cerr << "tsviondone: " << TSVIONDoneGet(data->m_dnstream.m_write.m_vio) << std::endl;
+//      std::cerr << "tsviondone: " << TSVIONDoneGet(data->m_dnstream.m_write.m_vio) << std::endl;
 
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
@@ -417,7 +432,7 @@ handle_client_resp
         (TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
       if (data->m_bytestosend == bytessent)
       {
-std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
+//std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
         shutdown(contp, data);
       }
     }

@@ -67,13 +67,10 @@ HttpHeader :: hasKey
     return false;
   }
 
-std::cerr << "Searching for key: '" << std::string(key, keylen) << "'" << std::endl;
-
   TSMLoc const locfield
     (TSMimeHdrFieldFind(m_buffer, m_lochdr, key, keylen));
   if (nullptr != locfield)
   {
-std::cerr << "Found key: " << key << std::endl;
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
     return true;
   }
