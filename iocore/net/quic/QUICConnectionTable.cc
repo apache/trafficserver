@@ -55,15 +55,6 @@ QUICConnectionTable::erase(QUICConnectionId cid)
 }
 
 QUICConnection *
-QUICConnectionTable::lookup(QUICFiveTuple endpoint)
-{
-  ink_assert(false);
-  // TODO: find cid with five tuples
-  // cid = this->_cids.get(endpoint);
-  return nullptr;
-}
-
-QUICConnection *
 QUICConnectionTable::lookup(QUICConnectionId cid)
 {
   SCOPED_MUTEX_LOCK(lock, _connections.lock_for_key(cid), this_ethread());

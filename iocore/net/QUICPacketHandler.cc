@@ -186,8 +186,6 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   QUICConnectionId dcid = QUICConnectionId::ZERO();
   QUICConnectionId scid = QUICConnectionId::ZERO();
 
-  // TODO: lookup by 5-Tuple
-  // When ATS omits SCID, endpoint omits DCID. In this case, we can't get DCID from SH packet, we need to lookup QC by 5-Tuple.
   if (!QUICInvariants::dcid(dcid, buf, buf_len)) {
     QUICDebug("Ignore packet - payload is too small");
     udp_packet->free();
@@ -222,7 +220,13 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       udp_packet->free();
       return;
     }
+
+    if (dcid == QUICConnectionId::ZERO()) {
+      // TODO: lookup DCID by 5-tuple when ATS omits SCID
+      return;
+    }
   } else {
+    // TODO: lookup DCID by 5-tuple when ATS omits SCID
     if (is_debug_tag_set(tag)) {
       ip_port_text_buffer ipb;
       QUICDebugDS(scid, dcid, "recv SH packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
@@ -233,9 +237,9 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   QUICConnection *qc     = this->_ctable->lookup(dcid);
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(qc);
 
-  // 7.1. Matching Packets to Connections
-  // A server that discards a packet that cannot be associated with a connection MAY also generate a stateless reset
-  // Send stateless reset if the packet is not a initial packet or connection is closed.
+  // [draft-12] 6.1.2.  Server Packet Handling
+  // Servers MUST drop incoming packets under all other circumstances. They SHOULD send a Stateless Reset (Section 6.10.4) if a
+  // connection ID is present in the header.
   if ((!vc && !QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) || (vc && vc->in_closed_queue)) {
     QUICStatelessResetToken token;
     {

@@ -49,11 +49,6 @@ public:
   QUICConnection *erase(QUICConnectionId cid);
 
   /*
-   *  Lookup QUICConnection by 5-tuple
-   */
-  QUICConnection *lookup(QUICFiveTuple endpoint);
-
-  /*
    *  Lookup QUICConnection by cid
    */
   QUICConnection *lookup(QUICConnectionId cid);
