@@ -98,11 +98,11 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   ats_unique_buf pkt = {nullptr, [](void *p) { ats_free(p); }};
   size_t pkt_len     = 0;
 
-  if (QUICTypeUtil::has_long_header(this->_payload.get())) {
+  if (QUICInvariants::is_long_header(this->_payload.get())) {
     uint8_t *buf         = this->_payload.get() + this->_offset;
     size_t remaining_len = this->_payload_len - this->_offset;
 
-    if (QUICTypeUtil::has_long_header(buf)) {
+    if (QUICInvariants::is_long_header(buf)) {
       QUICVersion version = QUICTypeUtil::read_QUICVersion(buf + LONG_HDR_OFFSET_VERSION);
       if (is_vn(version)) {
         pkt_len = remaining_len;

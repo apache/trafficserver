@@ -316,7 +316,6 @@ private:
 class QUICTypeUtil
 {
 public:
-  [[deprecated]] static bool has_long_header(const uint8_t *buf);
   static bool is_supported_version(QUICVersion version);
   static QUICStreamType detect_stream_type(QUICStreamId id);
 

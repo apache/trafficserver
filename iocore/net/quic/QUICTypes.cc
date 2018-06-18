@@ -47,12 +47,6 @@ to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len)
 }
 
 bool
-QUICTypeUtil::has_long_header(const uint8_t *buf)
-{
-  return (buf[0] & 0x80) != 0;
-}
-
-bool
 QUICTypeUtil::is_supported_version(QUICVersion version)
 {
   for (auto v : QUIC_SUPPORTED_VERSIONS) {

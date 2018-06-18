@@ -143,9 +143,11 @@ QUICPollCont::pollEvent(int, Event *)
 
   while ((e = result.pop())) {
     buf = (uint8_t *)e->packet->getIOBlockChain()->buf();
-    if (QUICTypeUtil::has_long_header(buf)) { // Long Header Packet with Connection ID, has a valid type value.
+    if (QUICInvariants::is_long_header(buf)) {
+      // Long Header Packet with Connection ID, has a valid type value.
       this->_process_long_header_packet(e, nh);
-    } else { // Short Header Packet with Connection ID, has a valid type value.
+    } else {
+      // Short Header Packet with Connection ID, has a valid type value.
       this->_process_short_header_packet(e, nh);
     }
   }

@@ -240,7 +240,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   // [draft-12] 6.1.2.  Server Packet Handling
   // Servers MUST drop incoming packets under all other circumstances. They SHOULD send a Stateless Reset (Section 6.10.4) if a
   // connection ID is present in the header.
-  if ((!vc && !QUICTypeUtil::has_long_header(reinterpret_cast<const uint8_t *>(block->buf()))) || (vc && vc->in_closed_queue)) {
+  if ((!vc && !QUICInvariants::is_long_header(buf)) || (vc && vc->in_closed_queue)) {
     QUICStatelessResetToken token;
     {
       QUICConfig::scoped_config params;

@@ -75,7 +75,7 @@ QUICPacketHeaderUPtr
 QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
 {
   QUICPacketHeaderUPtr header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
-  if (QUICTypeUtil::has_long_header(buf.get())) {
+  if (QUICInvariants::is_long_header(buf.get())) {
     QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
     new (long_header) QUICPacketLongHeader(from, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
