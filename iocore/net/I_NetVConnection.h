@@ -631,6 +631,19 @@ public:
     is_transparent = state;
   }
 
+  /// Get the proxy protocol enabled flag
+  bool
+  get_is_proxy_protocol() const
+  {
+    return is_proxy_protocol;
+  }
+  /// Set the proxy protocol enabled flag on the port
+  void
+  set_is_proxy_protocol(bool state = true)
+  {
+    is_proxy_protocol = state;
+  }
+
   virtual int
   populate_protocol(ts::string_view *results, int n) const
   {
@@ -764,6 +777,8 @@ protected:
   bool is_internal_request;
   /// Set if this connection is transparent.
   bool is_transparent;
+  /// Set if proxy protocol is enabled
+  bool is_proxy_protocol;
   /// Set if the next write IO that empties the write buffer should generate an event.
   int write_buffer_empty_event;
   /// NetVConnection Context.
@@ -778,6 +793,7 @@ inline NetVConnection::NetVConnection()
     got_remote_addr(false),
     is_internal_request(false),
     is_transparent(false),
+    is_proxy_protocol(false),
     write_buffer_empty_event(0),
     netvc_context(NET_VCONNECTION_UNSET)
 {
