@@ -59,6 +59,35 @@ QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
   }
 }
 
+const EVP_CIPHER *
+QUICTLS::_get_evp_aead_for_pne(QUICKeyPhase phase) const
+{
+  if (phase == QUICKeyPhase::CLEARTEXT) {
+    return EVP_aes_128_ctr();
+  } else {
+    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
+    if (cipher) {
+      switch (SSL_CIPHER_get_id(cipher)) {
+      case TLS1_3_CK_AES_128_GCM_SHA256:
+        return EVP_aes_128_ctr();
+      case TLS1_3_CK_AES_256_GCM_SHA384:
+        return EVP_aes_256_ctr();
+      case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+        return EVP_chacha20();
+      case TLS1_3_CK_AES_128_CCM_SHA256:
+      case TLS1_3_CK_AES_128_CCM_8_SHA256:
+        return EVP_aes_128_ctr();
+      default:
+        ink_assert(false);
+        return nullptr;
+      }
+    } else {
+      ink_assert(false);
+      return nullptr;
+    }
+  }
+}
+
 size_t
 QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
 {
@@ -190,4 +219,50 @@ QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const
     Debug(tag, "Failed to decrypt");
     return false;
   }
+}
+
+bool
+QUICTLS::_encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+                     const uint8_t *sample, const KeyMaterial &km, const EVP_CIPHER *aead) const
+{
+  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  int len             = 0;
+
+  if (!ctx || !EVP_EncryptInit_ex(ctx, aead, nullptr, km.pn, sample)) {
+    return false;
+  }
+  if (!EVP_EncryptUpdate(ctx, protected_pn, &len, unprotected_pn, unprotected_pn_len)) {
+    return false;
+  }
+  protected_pn_len = len;
+  if (!EVP_EncryptFinal_ex(ctx, protected_pn + len, &len)) {
+    return false;
+  }
+  protected_pn_len += len;
+  EVP_CIPHER_CTX_free(ctx);
+
+  return true;
+}
+
+bool
+QUICTLS::_decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_len,
+                     const uint8_t *sample, const KeyMaterial &km, const EVP_CIPHER *aead) const
+{
+  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  int len             = 0;
+
+  if (!ctx || !EVP_DecryptInit_ex(ctx, aead, nullptr, km.pn, sample)) {
+    return false;
+  }
+  if (!EVP_DecryptUpdate(ctx, unprotected_pn, &len, protected_pn, protected_pn_len)) {
+    return false;
+  }
+  unprotected_pn_len = len;
+  if (!EVP_DecryptFinal_ex(ctx, unprotected_pn, &len)) {
+    return false;
+  }
+  unprotected_pn_len += len;
+  EVP_CIPHER_CTX_free(ctx);
+
+  return true;
 }

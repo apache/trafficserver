@@ -308,24 +308,8 @@ bool
 QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
-  QUICPacketProtection *pp = nullptr;
-
-  switch (this->_netvc_context) {
-  case NET_VCONNECTION_IN: {
-    pp = this->_server_pp;
-    break;
-  }
-  case NET_VCONNECTION_OUT: {
-    pp = this->_client_pp;
-    break;
-  }
-  default:
-    ink_assert(false);
-    return false;
-  }
-
   size_t tag_len        = this->_get_aead_tag_len(phase);
-  const KeyMaterial *km = pp->get_key(phase);
+  const KeyMaterial *km = this->_get_km(phase, true);
   if (!km) {
     Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
@@ -343,24 +327,8 @@ bool
 QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
 {
-  QUICPacketProtection *pp = nullptr;
-
-  switch (this->_netvc_context) {
-  case NET_VCONNECTION_IN: {
-    pp = this->_client_pp;
-    break;
-  }
-  case NET_VCONNECTION_OUT: {
-    pp = this->_server_pp;
-    break;
-  }
-  default:
-    ink_assert(false);
-    return false;
-  }
-
   size_t tag_len        = this->_get_aead_tag_len(phase);
-  const KeyMaterial *km = pp->get_key(phase);
+  const KeyMaterial *km = this->_get_km(phase, false);
   if (!km) {
     Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
@@ -369,6 +337,42 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
   bool ret = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, aead, tag_len);
   if (!ret) {
     Debug(tag, "Failed to decrypt a packet #%" PRIu64, pkt_num);
+  }
+  return ret;
+}
+
+bool
+QUICTLS::encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+                    const uint8_t *sample, QUICKeyPhase phase) const
+{
+  const KeyMaterial *km = this->_get_km(phase, true);
+  if (!km) {
+    Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
+    return false;
+  }
+
+  const QUIC_EVP_CIPHER *aead = this->_get_evp_aead_for_pne(phase);
+  bool ret = this->_encrypt_pn(protected_pn, protected_pn_len, unprotected_pn, unprotected_pn_len, sample, *km, aead);
+  if (!ret) {
+    Debug(tag, "Failed to encrypt a packet number");
+  }
+  return ret;
+}
+
+bool
+QUICTLS::decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_len,
+                    const uint8_t *sample, QUICKeyPhase phase) const
+{
+  const KeyMaterial *km = this->_get_km(phase, false);
+  if (!km) {
+    Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
+    return false;
+  }
+
+  const QUIC_EVP_CIPHER *aead = this->_get_evp_aead_for_pne(phase);
+  bool ret = this->_decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, *km, aead);
+  if (!ret) {
+    Debug(tag, "Failed to decrypt a packet number");
   }
   return ret;
 }
@@ -399,4 +403,31 @@ QUICTLS::_gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const u
   for (size_t i = 0; i < 8; ++i) {
     nonce[iv_len - 8 + i] ^= p[i];
   }
+}
+
+const KeyMaterial *
+QUICTLS::_get_km(QUICKeyPhase phase, bool for_encryption) const
+{
+  QUICPacketProtection *pp = nullptr;
+
+  switch (this->_netvc_context) {
+  case NET_VCONNECTION_IN:
+    if (for_encryption) {
+      pp = this->_server_pp;
+    } else {
+      pp = this->_client_pp;
+    }
+    break;
+  case NET_VCONNECTION_OUT:
+    if (for_encryption) {
+      pp = this->_client_pp;
+    } else {
+      pp = this->_server_pp;
+    }
+    break;
+  default:
+    return nullptr;
+  }
+
+  return pp->get_key(phase);
 }

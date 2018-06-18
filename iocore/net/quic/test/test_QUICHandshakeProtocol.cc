@@ -596,3 +596,90 @@ TEST_CASE("QUICHandshakeProtocol 1-RTT HRR statless & key_share mismatch", "[qui
   delete client;
   delete server;
 }
+
+TEST_CASE("QUICHandshakeProtocol PNE", "[quic]")
+{
+  // Client
+  SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+  QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
+
+  // Server
+  SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+  BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
+  SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
+  BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
+  SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
+  QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
+
+  uint8_t expected[] = {0x01, 0x02, 0x03, 0x04, 0x05};
+  uint8_t sample[16] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f};
+  uint8_t protected_pn[18], unprotected_pn[18];
+  size_t protected_pn_len = 0, unprotected_pn_len = 0;
+
+  // # Before handshake
+  CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+  CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+
+  // ## Client -> Server
+  client->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
+  server->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+  CHECK(unprotected_pn_len == sizeof(expected));
+  CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
+  // ## Server -> Client
+  server->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
+  client->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+  CHECK(unprotected_pn_len == sizeof(expected));
+  CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
+
+  // # After handshake
+  uint8_t client_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_hello_len                     = 0;
+  CHECK(client->handshake(client_hello, client_hello_len, MAX_HANDSHAKE_MSG_LEN, nullptr, 0) == SSL_ERROR_WANT_READ);
+  std::cout << "### Client Hello" << std::endl;
+  print_hex(client_hello, client_hello_len);
+
+  // Server Hello
+  uint8_t server_hello[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t server_hello_len                     = 0;
+  CHECK(server->handshake(server_hello, server_hello_len, MAX_HANDSHAKE_MSG_LEN, client_hello, client_hello_len) ==
+        SSL_ERROR_WANT_READ);
+  std::cout << "### Server Hello" << std::endl;
+  print_hex(server_hello, server_hello_len);
+
+  // Client Fnished
+  uint8_t client_finished[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t client_finished_len                     = 0;
+  CHECK(client->handshake(client_finished, client_finished_len, MAX_HANDSHAKE_MSG_LEN, server_hello, server_hello_len) ==
+        SSL_ERROR_NONE);
+  std::cout << "### Client Finished" << std::endl;
+  print_hex(client_finished, client_finished_len);
+
+  CHECK(client->update_key_materials());
+
+  // Post Handshake Msg
+  uint8_t post_handshake_msg[MAX_HANDSHAKE_MSG_LEN] = {0};
+  size_t post_handshake_msg_len                     = 0;
+  CHECK(server->handshake(post_handshake_msg, post_handshake_msg_len, MAX_HANDSHAKE_MSG_LEN, client_finished,
+                          client_finished_len) == SSL_ERROR_NONE);
+  std::cout << "### Post Handshake Message" << std::endl;
+  print_hex(post_handshake_msg, post_handshake_msg_len);
+
+  CHECK(server->update_key_materials());
+
+  // ## Client -> Server
+  client->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
+  server->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+  CHECK(unprotected_pn_len == sizeof(expected));
+  CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
+  // ## Server -> Client
+  server->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
+  client->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+  CHECK(unprotected_pn_len == sizeof(expected));
+  CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
+}

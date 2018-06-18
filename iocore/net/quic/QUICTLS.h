@@ -53,6 +53,10 @@ public:
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
   bool decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
+  bool encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+                  const uint8_t *sample, QUICKeyPhase phase) const override;
+  bool decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_lenn,
+                  const uint8_t *sample, QUICKeyPhase phase) const override;
 
   // FIXME SSL handle should not be exported
   SSL *ssl_handle();
@@ -62,14 +66,19 @@ private:
   QUICKeyGenerator _keygen_for_server = QUICKeyGenerator(QUICKeyGenerator::Context::SERVER);
   void _gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const;
   const QUIC_EVP_CIPHER *_get_evp_aead(QUICKeyPhase phase) const;
+  const QUIC_EVP_CIPHER *_get_evp_aead_for_pne(QUICKeyPhase phase) const;
   size_t _get_aead_tag_len(QUICKeyPhase phase) const;
+  const KeyMaterial *_get_km(QUICKeyPhase phase, bool for_encryption) const;
 
   bool _encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
                 uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead,
                 size_t tag_len) const;
   bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
                 const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead, size_t tag_len) const;
-
+  bool _encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+                   const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
+  bool _decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_len,
+                   const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
   SSL *_ssl                              = nullptr;
   QUICPacketProtection *_client_pp       = nullptr;
   QUICPacketProtection *_server_pp       = nullptr;

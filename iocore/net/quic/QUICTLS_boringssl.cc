@@ -131,3 +131,20 @@ QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const
 
   return true;
 }
+
+bool
+QUICTLS::_encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+                     const uint8_t *sample, const KeyMaterial &km, const EVP_AEAD *aead)
+{
+  {
+    ink_assert(!"not implemented");
+    return false;
+  }
+
+  bool QUICTLS::_decrypt_pn(uint8_t * protected_pn, size_t & protected_pn_len, const uint8_t *unprotected_pn,
+                            size_t unprotected_pn_len, const uint8_t *sample, const KeyMaterial &km, const EVP_AEAD *aead)
+  {
+    {
+      ink_assert(!"not implemented");
+      return false;
+    }
