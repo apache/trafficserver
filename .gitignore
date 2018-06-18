@@ -2,4 +2,4 @@
 *.lo
 *.swp
 private
-slicer_test
+slice_test

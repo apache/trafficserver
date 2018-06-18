@@ -1,5 +1,6 @@
 #include "intercept.h"
 
+#include "ContentRange.h"
 #include "Data.h"
 #include "HttpHeader.h"
 #include "range.h"
@@ -21,6 +22,7 @@ shutdown
   TSContDestroy(contp);
 }
 
+// create and issue a block request
 static
 int
 request_block
@@ -43,12 +45,12 @@ TSAssert(rpstat);
     ( data->m_dnstream.m_hdr_mgr.m_buffer
     , data->m_dnstream.m_hdr_mgr.m_lochdr );
 
-  // add sub range key and add slicer tag
+  // add/set sub range key and add slicer tag
   header.setKeyVal
     ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
     , rangestr, rangelen );
 
-  // virtual connection
+  // create virtual connection back into ATS
   TSVConn const upvc = TSHttpConnectWithPluginId
     ((sockaddr*)&data->m_client_ip, "slicer", 0);
 
@@ -151,7 +153,7 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , bufrange, buflen );
 
-      // send off the block request
+      // send off the first block request
       request_block(contp, data);
     }
   }
@@ -170,9 +172,10 @@ handle_server_resp
 {
   if (TS_EVENT_VCONN_READ_READY == event)
   {
+    // has the first server reponse header been parsed??
     if (! data->m_server_res_header_parsed)
     {
-      TSHttpParser parser = data->httpParser();
+      TSHttpParser parser = data->httpParser(); // reset by request_block
       TSParseResult const parseres
         = data->m_upstream.m_hdr_mgr.populateFrom
           ( parser
@@ -180,10 +183,48 @@ handle_server_resp
           , TSHttpHdrParseResp );
       if (TS_PARSE_DONE == parseres)
       {
-        if (TS_PARSE_DONE == parseres)
+        HttpHeader header
+          ( data->m_upstream.m_hdr_mgr.m_buffer
+          , data->m_upstream.m_hdr_mgr.m_lochdr );
+
+        // only process a 206, everything else gets a pass through
+        TSHttpStatus const status = header.status();
+        if (TS_HTTP_STATUS_PARTIAL_CONTENT != status)
         {
-          data->m_server_res_header_parsed = true;
+          data->m_passthru = true;
         }
+        /**
+          Pull content length off the response header
+          and manipulate it into a client response header
+          */
+        else
+        {
+          char rangestr[1024];
+          int rangelen = 1023;
+
+          if ( header.valueForKey
+              ( TS_MIME_FIELD_CONTENT_RANGE
+              , TS_MIME_LEN_CONTENT_RANGE
+              , rangestr
+              , &rangelen ) )
+          {
+            ContentRange crange;
+            // abort transaction ????
+            if (! crange.fromStringClosed(rangestr))
+            {
+              TSError("Unable to parse range: %s", rangestr);
+            }
+
+            data->m_contentlen = crange.m_length;
+
+            // trim the end of the requested range if necessary
+            data->m_rangebegend.second = std::min
+              ( data->m_rangebegend.second
+              , crange.m_length );
+          }
+        }
+
+        data->m_server_res_header_parsed = true;
       }
 
       // the server response header didn't fit into a single block ???
@@ -191,6 +232,7 @@ handle_server_resp
       {
         return 0;
       }
+/*
       else
       {
         // get the header (just print it for now)
@@ -199,6 +241,7 @@ handle_server_resp
           , data->m_upstream.m_hdr_mgr.m_lochdr );
 std::cerr << "response header\n" << header.toString() << std::endl;
       }
+*/
     }
 
     // if necessary create downstream and a manufactured header
@@ -206,6 +249,19 @@ std::cerr << "response header\n" << header.toString() << std::endl;
     {
       data->m_dnstream.setupVioWrite(contp);
 
+      // at this point the upstream header has been manipulated
+      HttpHeader header
+        ( data->m_upstream.m_hdr_mgr.m_buffer
+        , data->m_upstream.m_hdr_mgr.m_lochdr );
+
+      TSHttpHdrPrint
+        ( header.m_buffer
+        , header.m_lochdr
+        , data->m_dnstream.m_write.m_iobuf );
+
+      TSVIOReenable(data->m_dnstream.m_write.m_vio);
+
+/*
       if (! data->m_client_header_sent) // <-- may be redudant
       {
         std::string const headerstr(simClientResponseHeader());
@@ -216,10 +272,11 @@ std::cerr << "response header\n" << header.toString() << std::endl;
             , headerstr.data()
             , headerstr.size() ) );
         data->m_client_header_sent = true;
-        
-        TSVIOReenable(data->m_dnstream.m_write.m_vio);
       }
+*/
     }
+
+    // start pushing bytes to the client
 
     int64_t read_avail
       (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
@@ -243,32 +300,9 @@ std::cerr << __func__ << ": copied: " << copied << " of: " << read_avail << std:
 */
 
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
-
-/*
-      int64_t consumed(0);
-      TSIOBufferBlock block = TSIOBufferReaderStart
-          (data->upstream->read->reader);
-
-      while (nullptr != block && 0 < read_avail)
-      {
-        int64_t read_block(0);
-        char const * const block_start = TSIOBufferBlockReadStart
-            (block, data->upstream->read->reader, &read_block);
-        if (0 < read_block)
-        {
-          int64_t const tocopy(std::min(read_block, read_avail));
-          std::cerr << std::string(block_start, block_start + tocopy);
-          read_avail -= tocopy;
-          consumed += tocopy;
-          block = TSIOBufferBlockNext(block);
-        }
-      }
-
-      TSIOBufferReaderConsume(data->upstream->read->reader, consumed);
-*/
     }
   }
-  else // server block done, onto the next
+  else // server block done, onto the next server request
   if (TS_EVENT_VCONN_EOS == event)
   {
     ++data->m_blocknum;

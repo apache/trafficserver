@@ -90,7 +90,7 @@ range :: closedStringFor
     , "bytes=%" PRId64 "-%" PRId64
     , rangebegend.first, rangebegend.second - 1 );
 
-  return (*buflen < lenin);
+  return (0 < *buflen && *buflen < lenin);
 }
 
 namespace

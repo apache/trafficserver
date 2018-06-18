@@ -37,6 +37,8 @@
 	(strrchr(__FILE__, '/') \
 		? strrchr(__FILE__, '/') + 1 : __FILE__)
 
+#if ! defined(UNITTEST)
+
 #define DEBUG_LOG(fmt, ...) \
 	TSDebug(PLUGIN_NAME, "[%s:%04d] %s(): " fmt\
 		, __FILENAME__\
@@ -60,4 +62,8 @@
 		, __func__\
 		, ##__VA_ARGS__)
 
-#define ALLOC_DEBUG_LOG(fmt, ...)
+#else
+#define DEBUG_LOG(fmt, ...)
+#define ERROR_LOG(fmt, ...)
+
+#endif
