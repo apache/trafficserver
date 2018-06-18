@@ -39,7 +39,9 @@ std::cerr << __func__ << " trying to build header" << std::endl;
     (blockbe, rangestr, &rangelen);
 TSAssert(rpstat);
 
-  HttpHeader header = data->m_dnstream.m_hdr_mgr.header();
+  HttpHeader header
+    ( data->m_dnstream.m_hdr_mgr.m_buffer
+    , data->m_dnstream.m_hdr_mgr.m_lochdr );
 
   // add sub range key and add slicer tag
   header.setKeyVal
@@ -93,7 +95,9 @@ handle_client_req
     if (TS_PARSE_DONE == parseres)
     {
       // get the header
-      HttpHeader header = data->m_dnstream.m_hdr_mgr.header();
+      HttpHeader header
+        ( data->m_dnstream.m_hdr_mgr.m_buffer
+        , data->m_dnstream.m_hdr_mgr.m_lochdr );
 
       std::pair<int64_t, int64_t> rangebe
         (0, std::numeric_limits<int64_t>::max());
@@ -190,7 +194,9 @@ handle_server_resp
       else
       {
         // get the header (just print it for now)
-        HttpHeader header = data->m_upstream.m_hdr_mgr.header();
+        HttpHeader header
+          ( data->m_upstream.m_hdr_mgr.m_buffer
+          , data->m_upstream.m_hdr_mgr.m_lochdr );
 std::cerr << "response header\n" << header.toString() << std::endl;
       }
     }

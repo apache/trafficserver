@@ -138,7 +138,6 @@ private:
     ( CharPtrGetFunc func
     , int * const len
     ) const;
-
 };
 
 struct TxnHdrMgr
@@ -185,14 +184,6 @@ struct TxnHdrMgr
     () const
   {
     return nullptr != m_lochdr;
-  }
-
-  HttpHeader
-  header
-    () const
-  {
-TSAssert(nullptr != m_buffer && nullptr != m_lochdr);
-    return HttpHeader(m_buffer, m_lochdr);
   }
 };
 
@@ -249,13 +240,5 @@ struct HdrMgr
     () const
   {
     return nullptr != m_lochdr;
-  }
-
-  HttpHeader
-  header
-    () const
-  {
-TSAssert(nullptr != m_buffer && nullptr != m_lochdr);
-    return HttpHeader(m_buffer, m_lochdr);
   }
 };

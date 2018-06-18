@@ -39,7 +39,7 @@ read_request
 {
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
-  HttpHeader const headcreq(hdrmgr.header());
+  HttpHeader const headcreq(hdrmgr.m_buffer, hdrmgr.m_lochdr);
 
   if (TS_HTTP_METHOD_GET == headcreq.method())
   {
