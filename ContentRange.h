@@ -43,4 +43,11 @@ struct ContentRange
     ( char * const rangestr
     , int * const rangelen
     ) const;
+
+  int64_t
+  rangeSize
+    () const
+  {
+    return m_end - m_begin;
+  }
 };

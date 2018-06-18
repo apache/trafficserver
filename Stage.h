@@ -30,7 +30,7 @@ TSAssert(nullptr != m_reader);
   setForRead
     ( TSVConn vc
     , TSCont contp
-    , int64_t const bytesin=INT64_MAX
+    , int64_t const bytesin//=INT64_MAX
     )
   {
 TSAssert(nullptr != vc);
@@ -52,7 +52,7 @@ TSAssert(nullptr != vc);
   setForWrite
     ( TSVConn vc
     , TSCont contp
-    , int64_t const bytesout=INT64_MAX
+    , int64_t const bytesout//=INT64_MAX
     )
   {
 TSAssert(nullptr != vc);
@@ -112,17 +112,19 @@ struct Stage // upstream or downstream (server or client)
   void
   setupVioRead
     ( TSCont contp
+    , int64_t const bytesin=INT64_MAX
     )
   {
-    m_read.setForRead(m_vc, contp);
+    m_read.setForRead(m_vc, contp, bytesin);
   }
 
   void
   setupVioWrite
     ( TSCont contp
+    , int64_t const bytesout=INT64_MAX
     )
   {
-    m_write.setForWrite(m_vc, contp);
+    m_write.setForWrite(m_vc, contp, bytesout);
   }
 
   bool

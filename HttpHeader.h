@@ -203,6 +203,13 @@ struct HdrMgr
   ~HdrMgr
     ()
   {
+    destroy();
+  }
+
+  void
+  destroy
+    ()
+  {
     if (nullptr != m_buffer && nullptr != m_lochdr) {
       TSHttpHdrDestroy(m_buffer, m_lochdr);
       TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);

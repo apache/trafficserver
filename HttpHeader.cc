@@ -247,14 +247,17 @@ HttpHeader :: toString
 
     case TS_HTTP_TYPE_RESPONSE:
     {
-      char buf[1024];
+      char bufstr[1024];
+/*
       int const version = TSHttpHdrVersionGet(m_buffer, m_lochdr);
-      snprintf(buf, 1023, "%d ", version);
-      res.append(buf);
+      snprintf(bufstr, 1023, "%d ", version);
+      res.append(bufstr);
+*/
+      res.append("HTTP/unparsed");
 
       int const status = TSHttpHdrStatusGet(m_buffer, m_lochdr);
-      snprintf(buf, 1023, " %d ", status);
-      res.append(buf);
+      snprintf(bufstr, 1023, " %d ", status);
+      res.append(bufstr);
 
       int reasonlen = 0;
       char const * const hreason = reason(&reasonlen);

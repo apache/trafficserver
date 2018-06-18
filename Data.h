@@ -23,13 +23,14 @@ struct Data
 
   int64_t m_blocknum; //!< block number to work on, -1 bad/stop
 
-  TSHttpParser m_http_parser; //! cached for reuse
-
-  bool m_server_res_header_parsed;
+  bool m_server_block_header_parsed;
+  bool m_server_first_header_parsed;
   bool m_client_header_sent;
 
   Stage m_upstream;
   Stage m_dnstream;
+
+  TSHttpParser m_http_parser; //!< cached for reuse
 
   explicit
   Data
@@ -41,9 +42,10 @@ struct Data
     , m_range_begend(-1, -1)
     , m_contentlen(-1)
     , m_blocknum(-1)
-    , m_http_parser(nullptr)
-    , m_server_res_header_parsed(false)
+    , m_server_block_header_parsed(false)
+    , m_server_first_header_parsed(false)
     , m_client_header_sent(false)
+    , m_http_parser(nullptr)
   { }
 
   ~Data

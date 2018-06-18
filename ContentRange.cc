@@ -3,8 +3,7 @@
 #include <cinttypes>
 #include <cstdio>
 
-static char const * const format
-  = "bytes %" PRId64 "-%" PRId64 "/%" PRId64;
+static char const * const format = "bytes %" PRId64 "-%" PRId64 "/%" PRId64;
 
 bool
 ContentRange :: fromStringClosed
@@ -46,7 +45,7 @@ ContentRange :: toStringClosed
   *rangelen = snprintf
     ( rangestr, lenin
     , format
-    , m_begin, m_end - 1, m_length );
+    , m_begin, (m_end - 1), m_length );
 
   return (0 < *rangelen && *rangelen < lenin);
 }

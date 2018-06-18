@@ -6,6 +6,8 @@
 #include "range.h"
 #include "sim.h"
 
+#include <cinttypes>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <limits>
@@ -41,6 +43,7 @@ std::cerr << __func__ << " trying to build header" << std::endl;
     (blockbe, rangestr, &rangelen);
 TSAssert(rpstat);
 
+  // reuse the incoming client header, just change the range
   HttpHeader header
     ( data->m_dnstream.m_hdr_mgr.m_buffer
     , data->m_dnstream.m_hdr_mgr.m_lochdr );
@@ -58,7 +61,7 @@ TSAssert(rpstat);
   data->m_upstream.setupConnection(upvc);
   data->m_upstream.setupVioWrite(contp);
 
-std::cerr << __func__ << " sending header" << std::endl;
+std::cerr << __func__ << " sending header to server" << std::endl;
 std::cerr << header.toString() << std::endl;
 
   TSHttpHdrPrint
@@ -173,7 +176,7 @@ handle_server_resp
   if (TS_EVENT_VCONN_READ_READY == event)
   {
     // has the first server reponse header been parsed??
-    if (! data->m_server_res_header_parsed)
+    if (! data->m_server_block_header_parsed)
     {
       TSHttpParser parser = data->httpParser(); // reset by request_block
       TSParseResult const parseres
@@ -192,6 +195,16 @@ handle_server_resp
         if (TS_HTTP_STATUS_PARTIAL_CONTENT != status)
         {
           data->m_passthru = true;
+          data->m_blocknum = -1;
+
+          data->m_dnstream.setupVioWrite(contp);
+
+          TSHttpHdrPrint
+            ( header.m_buffer
+            , header.m_lochdr
+            , data->m_dnstream.m_write.m_iobuf );
+
+          return 0;
         }
         /**
           Pull content length off the response header
@@ -209,75 +222,99 @@ handle_server_resp
               , &rangelen ) )
           {
             ContentRange crange;
-            // abort transaction ????
             if (! crange.fromStringClosed(rangestr))
             {
+              // abort transaction ????
               TSError("Unable to parse range: %s", rangestr);
             }
 
-            data->m_contentlen = crange.m_length;
+            if (! data->m_server_first_header_parsed)
+            {
+              // set the resource content length
+              data->m_contentlen = crange.m_length;
 
-            // trim the end of the requested range if necessary
-            data->m_rangebegend.second = std::min
-              ( data->m_rangebegend.second
-              , crange.m_length );
+              // trim the end of the requested range if necessary
+              data->m_range_begend.second = std::min
+                ( data->m_range_begend.second
+                , crange.m_length );
+
+TSAssert(data->m_range_begend.first < data->m_range_begend.second);
+
+              // convert block content range to response content range
+              crange.m_begin = data->m_range_begend.first;
+              crange.m_end = data->m_range_begend.second;
+
+              rangelen = sizeof(rangestr) - 1;
+              bool const crstat =
+                  crange.toStringClosed(rangestr, &rangelen);
+TSAssert(crstat);
+              header.setKeyVal
+                ( TS_MIME_FIELD_CONTENT_RANGE
+                , TS_MIME_LEN_CONTENT_RANGE
+                , rangestr, rangelen );
+
+              char bufstr[256];
+              int const buflen = snprintf
+                ( bufstr, 255
+                , "%" PRId64
+                , crange.rangeSize() );
+
+              header.setKeyVal
+                ( TS_MIME_FIELD_CONTENT_LENGTH
+                , TS_MIME_LEN_CONTENT_LENGTH
+                , bufstr, buflen );
+
+              data->m_server_first_header_parsed = true;
+            }
+            else
+            {
+TSAssert(data->m_contentlen == crange.m_length);
+            }
           }
         }
 
-        data->m_server_res_header_parsed = true;
+        data->m_server_block_header_parsed = true;
       }
 
       // the server response header didn't fit into a single block ???
-      if (! data->m_server_res_header_parsed)
+      if (! data->m_server_block_header_parsed)
       {
         return 0;
       }
-/*
-      else
-      {
-        // get the header (just print it for now)
-        HttpHeader header
-          ( data->m_upstream.m_hdr_mgr.m_buffer
-          , data->m_upstream.m_hdr_mgr.m_lochdr );
-std::cerr << "response header\n" << header.toString() << std::endl;
-      }
-*/
     }
 
     // if necessary create downstream and a manufactured header
     if (nullptr == data->m_dnstream.m_write.m_vio)
     {
+TSAssert(data->m_server_first_header_parsed);
+TSAssert(! data->m_client_header_sent);
+
       data->m_dnstream.setupVioWrite(contp);
 
-      // at this point the upstream header has been manipulated
+      // write the copied and manipulated header to the client
       HttpHeader header
         ( data->m_upstream.m_hdr_mgr.m_buffer
         , data->m_upstream.m_hdr_mgr.m_lochdr );
+std::cerr << __func__ << " sending header to client" << std::endl;
+std::cerr << header.toString() << std::endl;
 
+      // dump the manipulated upstream header to the client
       TSHttpHdrPrint
         ( header.m_buffer
         , header.m_lochdr
         , data->m_dnstream.m_write.m_iobuf );
 
+/*
+      TSIOBufferWrite
+        (data->m_dnstream.m_write.m_iobuf, "\r\n", 2);
+*/
+
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
 
-/*
-      if (! data->m_client_header_sent) // <-- may be redudant
-      {
-        std::string const headerstr(simClientResponseHeader());
-
-        int64_t const byteswritten
-          ( TSIOBufferWrite
-            ( data->m_dnstream.m_write.m_iobuf
-            , headerstr.data()
-            , headerstr.size() ) );
-        data->m_client_header_sent = true;
-      }
-*/
+      data->m_client_header_sent = true;
     }
 
     // start pushing bytes to the client
-
     int64_t read_avail
       (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
 
@@ -306,13 +343,26 @@ std::cerr << __func__ << ": copied: " << copied << " of: " << read_avail << std:
   if (TS_EVENT_VCONN_EOS == event)
   {
     ++data->m_blocknum;
-    if (range::blockIsInside
+
+    // when we get a "bytes=-<end>" last N bytes request the plugin
+    // (like nginx) issues a request for the first block
+    // in that case fast forward to the first in range block
+    bool adjusted = false;
+    int64_t const firstblock
+      (range::firstBlock(data->m_blocksize, data->m_range_begend));
+    if (data->m_blocknum < firstblock)
+    {
+      data->m_blocknum = firstblock;
+      adjusted = true;
+    }
+
+    if (adjusted || range::blockIsInside
         (data->m_blocksize, data->m_blocknum, data->m_range_begend))
     {
       request_block(contp, data);
 
-      // reset the server header parsed flag
-      data->m_server_res_header_parsed = false;
+      // reset the per block server header parsed flag
+      data->m_server_block_header_parsed = false;
     }
     else
     {
