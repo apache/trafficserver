@@ -23,6 +23,18 @@ HttpHeader :: type
   }
 }
 
+TSHttpStatus
+HttpHeader :: status
+  () const
+{
+  TSHttpStatus res = TS_HTTP_STATUS_NONE;
+  if (isValid())
+  {
+    res = TSHttpHdrStatusGet(m_buffer, m_lochdr);
+  }
+  return res;
+}
+
 char const *
 HttpHeader :: getCharPtr
   ( CharPtrGetFunc func
