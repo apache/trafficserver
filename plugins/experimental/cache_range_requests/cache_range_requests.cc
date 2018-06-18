@@ -37,6 +37,7 @@
 
 struct txndata {
   char *range_value;
+  bool has_read_response_callback;
 };
 
 static int handle_read_request_header(TSCont, TSEvent, void *);
@@ -95,8 +96,9 @@ range_header_check(TSHttpTxn txnp)
         if (nullptr == (txn_contp = TSContCreate(transaction_handler, nullptr))) {
           ERROR_LOG("failed to create the transaction handler continuation.");
         } else {
-          txn_state              = (struct txndata *)TSmalloc(sizeof(struct txndata));
-          txn_state->range_value = TSstrndup(hdr_value, length);
+          txn_state                             = (struct txndata *)TSmalloc(sizeof(struct txndata));
+          txn_state->range_value                = TSstrndup(hdr_value, length);
+          txn_state->has_read_response_callback = false;
           DEBUG_LOG("length: %d, txn_state->range_value: %s", length, txn_state->range_value);
           txn_state->range_value[length] = '\0'; // workaround for bug in core
 
@@ -147,7 +149,14 @@ handle_send_origin_request(TSCont contp, TSHttpTxn txnp, struct txndata *txn_sta
     if (set_header(hdr_bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, txn_state->range_value,
                    strlen(txn_state->range_value))) {
       DEBUG_LOG("Added range header: %s", txn_state->range_value);
-      TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+      /*
+       * make sure this is only scheduled once per transaction as a parent failover
+       * results in this function handle_send_origin_request() to be called for eache failover.
+       */
+      if (!txn_state->has_read_response_callback) {
+        TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+        txn_state->has_read_response_callback = true;
+      }
     }
   }
   TSHandleMLocRelease(hdr_bufp, req_hdrs, nullptr);
