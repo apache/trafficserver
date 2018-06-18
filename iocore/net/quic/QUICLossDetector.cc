@@ -47,6 +47,7 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConne
   this->_k_delayed_ack_timeout       = params->ld_delayed_ack_timeout();
   this->_k_default_initial_rtt       = params->ld_default_initial_rtt();
 
+  // [draft-11 recovery] 3.5.3.  Initialization
   if (this->_k_using_time_loss_detection) {
     this->_reordering_threshold     = UINT32_MAX;
     this->_time_reordering_fraction = this->_k_time_reordering_fraction;

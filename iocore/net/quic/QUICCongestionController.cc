@@ -46,7 +46,7 @@ QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *i
   this->_k_minimum_window        = params->cc_minimum_window();
   this->_k_loss_reduction_factor = params->cc_loss_reduction_factor();
 
-  // 4.7.3.  Initialization
+  // [draft-11 recovery] 4.7.3.  Initialization
   this->_congestion_window = this->_k_initial_window;
 }
 

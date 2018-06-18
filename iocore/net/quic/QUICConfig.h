@@ -98,7 +98,7 @@ private:
   SSL_CTX *_server_ssl_ctx = nullptr;
   SSL_CTX *_client_ssl_ctx = nullptr;
 
-  // [draft-10 recovery] - 3.4.1.  Constants of interest
+  // [draft-11 recovery] 3.5.1.  Constants of interest
   uint32_t _ld_max_tlps              = 2;
   uint32_t _ld_reordering_threshold  = 3;
   float _ld_time_reordering_fraction = 0.125;
@@ -108,7 +108,7 @@ private:
   ink_hrtime _ld_delayed_ack_timeout = HRTIME_MSECONDS(25);
   ink_hrtime _ld_default_initial_rtt = HRTIME_MSECONDS(100);
 
-  // [draft-10 recovery] - 4.7.1.  Constants of interest
+  // [draft-11 recovery] 4.7.1.  Constants of interest
   uint32_t _cc_default_mss          = 1460;
   uint32_t _cc_initial_window_scale = 10; // Actual initial window size is this value multiplied by the _cc_default_mss
   uint32_t _cc_minimum_window_scale = 2;  // Actual minimum window size is this value multiplied by the _cc_default_mss

@@ -72,14 +72,14 @@ public:
   uint32_t current_ssthresh() const;
 
 private:
-  // 4.7.1. Constants of interest (draft-10)
+  // [draft-11 recovery] 4.7.1. Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
   uint32_t _k_default_mss        = 0;
   uint32_t _k_initial_window     = 0;
   uint32_t _k_minimum_window     = 0;
   float _k_loss_reduction_factor = 0.0;
 
-  // 4.7.2. Variables of interest
+  // [draft-11 recovery] 4.7.2. Variables of interest
   uint32_t _bytes_in_flight         = 0;
   uint32_t _congestion_window       = 0;
   QUICPacketNumber _end_of_recovery = 0;
@@ -111,7 +111,7 @@ private:
 
   // TODO QUICCongestionController *cc = nullptr;
 
-  // 3.4.1.  Constants of interest (draft-10)
+  // [draft-11 recovery] 3.5.1.  Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
   uint32_t _k_max_tlps              = 0;
   uint32_t _k_reordering_threshold  = 0;
@@ -122,7 +122,7 @@ private:
   ink_hrtime _k_delayed_ack_timeout = 0;
   ink_hrtime _k_default_initial_rtt = 0;
 
-  // 3.4.2.  Variables of interest (draft-10)
+  // [draft-11 recovery] 3.5.2.  Variables of interest
   // Keep the order as the same as the spec so that we can see the difference easily.
   Action *_loss_detection_alarm        = nullptr;
   uint32_t _handshake_count            = 0;
@@ -135,7 +135,7 @@ private:
   ink_hrtime _latest_rtt               = 0;
   ink_hrtime _smoothed_rtt             = 0;
   ink_hrtime _rttvar                   = 0;
-  ink_hrtime _min_rtt                  = 0;
+  ink_hrtime _min_rtt                  = INT64_MAX;
   ink_hrtime _max_ack_delay            = 0;
   uint32_t _reordering_threshold       = 0;
   double _time_reordering_fraction     = 0.0;
