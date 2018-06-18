@@ -68,11 +68,11 @@ Synopsis
 Installation
 ============
 
-This plugin is only built if the configure option
+This plugin is only built if LuaJIT (>2.0.4) is installed and the configure option
 
 ::
 
-    --enable-experimental-plugins
+    --enable-luajit
 
 is given at build time.
 
