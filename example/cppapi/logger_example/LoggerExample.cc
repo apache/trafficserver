@@ -103,7 +103,9 @@ private:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  RegisterGlobalPlugin("CPP_Example_Logger", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_Logger", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   // Create a new logger
   // This will create a log file with the name logger_example.log (since we left off
   //    the extension it will automatically add .log)

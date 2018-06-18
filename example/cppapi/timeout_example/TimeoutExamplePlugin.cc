@@ -61,7 +61,9 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  RegisterGlobalPlugin("CPP_Example_Timeout", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_Timeout", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   TS_DEBUG(TAG, "TSPluginInit");
   plugin = new TimeoutExamplePlugin();
 }
