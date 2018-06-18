@@ -673,13 +673,13 @@ TEST_CASE("QUICHandshakeProtocol PNE", "[quic]")
   CHECK(server->update_key_materials());
 
   // ## Client -> Server
-  client->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
-  server->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+  client->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
+  server->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::PHASE_0);
   CHECK(unprotected_pn_len == sizeof(expected));
   CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
   // ## Server -> Client
-  server->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
-  client->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+  server->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
+  client->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::PHASE_0);
   CHECK(unprotected_pn_len == sizeof(expected));
   CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
 }
