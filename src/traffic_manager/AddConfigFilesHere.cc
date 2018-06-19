@@ -61,7 +61,7 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  configFiles->addFile("logging.config", false);
+  configFiles->addFile("logging.yaml", false);
   configFiles->addFile("storage.config", false);
   configFiles->addFile("socks.config", false);
   configFiles->addFile("records.config", false);

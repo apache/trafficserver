@@ -55,7 +55,7 @@ ts.Disk.remap_config.AddLine(
     'map / http://localhost:{}/'.format(server.Variables.Port)
 )
 
-ts.Disk.logging_config.AddLines(
+ts.Disk.logging_yaml.AddLines(
     '''
 formats:
   - name: custom

@@ -17,10 +17,10 @@
 
 .. include:: ../../common.defs
 
-ssl_server_name.config
+ssl_server_name.yaml
 **********************
 
-.. configfile:: ssl_server_name.config
+.. configfile:: ssl_server_name.yaml
 
 Description
 ===========
@@ -33,7 +33,7 @@ the items specified by this file and if there is a match, the values specified i
 the defaults. This is done during the inbound connection processing and be some outbound properties
 can be overridden again later, such as via :file:`remap.config` or plugins.
 
-By default this is named :file:`ssl_server_name.config`. The file can be changed by settting
+By default this is named :file:`ssl_server_name.yaml`. The file can be changed by settting
 :ts:cv:`proxy.config.ssl.servername.filename`. This file is loaded on start up and by
 :option:`traffic_ctl config reload` if the file has been modified since process start.
 

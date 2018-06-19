@@ -27,7 +27,7 @@ exhaustive of all possibilities (|TS| logging is quite flexible), these entries
 should hopefully get most administrators headed onto the right path.
 
 Unless otherwise noted, the example configurations here are to be applied in
-:file:`logging.config`.
+:file:`logging.yaml`.
 
 Online Event Log Builder
 ========================
@@ -65,7 +65,7 @@ No. Field  Description
 7   pscl   The length of the |TS| response to the client in bytes.
 === ====== ====================================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml
@@ -112,7 +112,7 @@ No. Field Description
           of the response back to the client.
 === ===== =====================================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml
@@ -151,7 +151,7 @@ No.  Field Description
            listed in :ref:`admin-logging-crc`.
 === ====== ===============================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml
@@ -205,7 +205,7 @@ No. Field    Description
              from the |TS| response header.
 === ======== ==================================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml

@@ -1244,4 +1244,4 @@ could each be tagged with a consistent name to make finding logs easier.::
    cond %{REMAP_PSEUDO_HOOK}
    set-header @PropertyName "someproperty"
 
-(Then in :file:`logging.config`, log ``%<{@PropertyName}cqh>``)
+(Then in :file:`logging.yaml`, log ``%<{@PropertyName}cqh>``)

@@ -987,7 +987,7 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "hosting.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.hosting_filename");
 
-  } else if (strcmp(fname, "logging.config") == 0) {
+  } else if (strcmp(fname, "logging.yaml") == 0) {
     lmgmt->signalFileChange("proxy.config.log.config.filename");
 
   } else if (strcmp(fname, "splitdns.config") == 0) {

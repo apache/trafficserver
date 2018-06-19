@@ -2723,7 +2723,7 @@ Logging Configuration
 
    For information on sending custom formats to the collation server,
    refer to :ref:`admin-logging-collating-custom-formats` and
-   :file:`logging.config`.
+   :file:`logging.yaml`.
 
 .. note::
 
@@ -2845,11 +2845,11 @@ Logging Configuration
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
 
-.. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.config
+.. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
 
    This configuration value specifies the path to the
-   :file:`logging.config` configuration file. If this is a relative
+   :file:`logging.yaml` configuration file. If this is a relative
    path, |TS| loads it relative to the ``SYSCONFDIR`` directory.
 
 Diagnostic Logging Configuration
@@ -3130,9 +3130,9 @@ SSL Termination
    ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
 
-.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.config
+.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
 
-   The filename of the :file:`ssl_server_name.config` configuration file. If relative, it is relative to the
+   The filename of the :file:`ssl_server_name.yaml` configuration file. If relative, it is relative to the
    configuration directory (ts:cv:`proxy.config.config_dir`).
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0

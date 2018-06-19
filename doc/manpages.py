@@ -37,7 +37,7 @@ man_pages = [
     ('admin-guide/files/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),
     ('admin-guide/files/hosting.config.en', 'hosting.config', u'Traffic Server domain hosting configuration file', None, '5'),
     ('admin-guide/files/ip_allow.config.en', 'ip_allow.config', u'Traffic Server IP access control configuration file', None, '5'),
-    ('admin-guide/files/logging.config.en', 'logging.config', u'Traffic Server logging configuration file', None, '5'),
+    ('admin-guide/files/logging.yaml.en', 'logging.yaml', u'Traffic Server logging configuration file', None, '5'),
     ('admin-guide/files/parent.config.en', 'parent.config', u'Traffic Server parent cache configuration file', None, '5'),
     ('admin-guide/files/plugin.config.en', 'plugin.config', u'Traffic Server global plugin configuration file', None, '5'),
     ('admin-guide/files/records.config.en', 'records.config', u'Traffic Server configuration file', None, '5'),
