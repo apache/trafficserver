@@ -6,54 +6,67 @@ plugins to build large scale web applications.
 
 1. DIRECTORY STRUCTURE
 
-  traffic/ ............... top src dir
-  |-- ci/ ................ quality assurance and other CI tools and configs
-  |-- src/ ............... source for all the main binaries / applications
-      |-- traffic_crashlog/
-      |-- traffic_ctl/ ... traffic_ctl command line management application
-      |-- traffic_layout/
-      |-- traffic_manager/
-      |-- traffic_top/ ... traffic_top application
-      |-- traffic_via/ ...
-      |-- traffic_wccp/ ..
-  |-- contrib ............ various contributed auxiliary pieces
-  |-- doc/ ...............
-      |-- admin/ ......... Admin guide documentations
-      |-- dot/ ........... Graphviz source files for docs pictures
-      |-- man/ ........... Unix style man-pages
-      |-- plugins/ ....... Documentation for our core plugins
-      |-- sdk/ ........... Plugin developer guide
-  |-- example/ ........... example plugins
-  |-- install/ ........... installation programs and scripts
-  |-- iocore/ ............
-      |-- aio/ ........... Asynchronous I/O core
-      |-- cache/ ......... Disk and RAM cache
-      |-- dns/ ........... DNS (asynchronous)
-      |-- hostdb/ ........ Internal DNS cache
-      |-- net/ ........... Network
-  |-- lib/ ...............
-      |-- cppapi/ ........ C++ api wrapper for plugin developers
-      |-- records/ ....... library for config files
-      |-- perl/ .......... Perl libraries for e.g. mgmt access and configurations
-      |-- ts/ ............ Base / core library
-      |-- tsconfig/....... New config parser and library (experimental)
-      |-- wccp/ .......... WCCP implementation
-  |-- m4/ ................ custom macros for configure.ac
-  |-- mgmt/ .............. Management server and tools (including traffic_manager)
-  |-- plugins/ ........... Stable core plugins
-      |-- experimental/ .. Experimental core plugins
-  |-- proxy/ ............. HTTP proxy logic
-      |-- api/ ........... Plugin API includes
-      |-- config/ ........ Configurations
-      |-- hdrs/ .......... Headers parsing and management
-      |-- http/ .......... The actual HTTP protocol implementation
-      |---http2/ ......... HTTP/2 implementation
-      |-- logging/ ....... Flexible logging
-  |-- README ............. intro, links, build info
-  |-- README-EC2 ......... info on EC2 support
-  |-- REVIEWERS .......... (incomplete) list of areas with committer interest
-  |-- LICENSE ............ full license text
-  `-- NOTICE ............. copyright notices
+  trafficserver/ ............ Top src dir
+  |-- build/ ................ Custom macros for configure.ac
+  |-- ci/ ................... Quality assurance and other CI tools and configs
+  |-- contrib/ .............. Various contributed auxiliary pieces
+  |-- doc/ ..................
+      |-- admin/ ............ Admin guide documentations
+      |-- dot/ .............. Graphviz source files for docs pictures
+      |-- man/ .............. Unix style man-pages
+      |-- plugins/ .......... Documentation for our core plugins
+      |-- sdk/ .............. Plugin developer guide
+  |-- example/ .............. Example plugins
+  |-- iocore/ ...............
+      |-- aio/ .............. Asynchronous I/O core
+      |-- cache/ ............ Disk and RAM cache
+      |-- eventsystem/ ...... Event Driven Engine
+      |-- dns/ .............. DNS (asynchronous)
+      |-- hostdb/ ........... Internal DNS cache
+      |-- net/ .............. Network
+      |-- utils/ ............ Utilities
+  |-- lib/ ..................
+      |-- cppapi/ ........... C++ api wrapper for plugin developers
+      |-- perl/ ............. Perl libraries for e.g. mgmt access and configurations
+      |-- records/ .......... Library for config files
+      |-- ts/ ............... Base / core library
+      |-- tsconfig/.......... New config parser and library (experimental)
+      |-- wccp/ ............. WCCP implementation
+      |-- yamlcpp/ .......... Library for YAML of C++
+  |-- mgmt/ ................. Management server and tools
+  |-- plugins/ .............. Stable core plugins
+      |-- experimental/ ..... Experimental core plugins
+  |-- proxy/ ................ HTTP proxy logic
+      |-- api/ .............. Plugin API includes
+      |-- config/ ........... Configurations
+      |-- hdrs/ ............. Headers parsing and management
+      |-- http/ ............. The actual HTTP protocol implementation
+      |---http2/ ............ HTTP/2 implementation
+      |-- logging/ .......... Flexible logging
+      |-- shared/ ........... Shared files
+  |-- rc/ ................... Installation programs and scripts
+  |-- src/ .................. Source for all the main binaries / applications
+      |-- traffic_cache_tool/ Tool to interact with the Traffic Server cache
+      |-- traffic_crashlog/ . Helper process that catches Traffic Server crashes
+      |-- traffic_ctl/ ...... Command line management tool
+      |-- traffic_layout/ ... Display information on the build and runtime directory structure
+      |-- traffic_logcat/ ... Convert binary log file to plain text
+      |-- traffic_logstats/ . Log parsing and metrics calculation utility
+      |-- traffic_manager/ .. The manager process for Traffic Server
+      |-- traffic_server/ ... Main proxy server
+      |-- traffic_top/ ...... Top like tool for viewing Traffic Server statistics
+      |-- traffic_via/ ...... Tool for decoding the Traffic Server Via header codes
+      |-- traffic_wccp/ ..... Program speaking the client side of the WCCP
+  |-- tests/ ................ Different tests for Traffic Server
+  |-- tools/ ................ Directory of various tools
+  |-- INSTALL ............... Build and installation guide
+  |-- LAYOUT ................ Traffic Server default layout
+  |-- LICENSE ............... Full license text
+  |-- NOTICE ................ Copyright notices
+  |-- README ................ Intro, links, build info
+  |-- README-EC2 ............ Info on EC2 support
+  |-- REVIEWERS ............. (Incomplete) list of areas with committer interest
+  `-- STATUS ................ Release history and information
 
 2. REQUIREMENTS
 
