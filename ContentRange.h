@@ -28,7 +28,7 @@ struct ContentRange
   isValid
     () const
   {
-    return 0 <= m_begin && m_begin < m_end && m_end < m_length ;
+    return 0 <= m_begin && m_begin < m_end && m_end <= m_length ;
   }
 
   // null terminated input string, closed range
