@@ -87,8 +87,11 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2Stream *stream = cstate.find_stream(id);
   if (stream == nullptr) {
-    if (cstate.is_valid_streamid(id)) {
+    if (cstate.is_valid_streamid(id) &&
+        cstate.get_client_stream_count() >= cstate.server_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
       // This error occurs fairly often, and is probably innocuous (SM initiates the shutdown)
+      // Only send a stream error if we are over the number of current streams.  Always sending stream errors if the stream id is
+      // only valid breaks the 5.1-11 test with h2spec
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED, nullptr);
     } else {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
