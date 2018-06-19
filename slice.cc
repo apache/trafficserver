@@ -47,7 +47,7 @@ DEBUG_LOG("slice read_request");
     if (! headcreq.hasKey
       (SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)))
     {
-std::cerr << "incoming slicer request" << std::endl;
+//std::cerr << "incoming slicer request" << std::endl;
       // turn off any and all transaction caching (shouldn't matter)
       TSHttpTxnServerRespNoStoreSet(txnp, 1);
       TSHttpTxnRespCacheableSet(txnp, 0);

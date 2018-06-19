@@ -365,10 +365,14 @@ HdrMgr :: populateFrom
 {
   TSParseResult parse_res = TS_PARSE_CONT;
 
-  destroy();
-
-  m_buffer = TSMBufferCreate();
-  m_lochdr = TSHttpHdrCreate(m_buffer);
+  if (nullptr == m_buffer)
+  {
+    m_buffer = TSMBufferCreate();
+  }
+  if (nullptr == m_lochdr)
+  {
+    m_lochdr = TSHttpHdrCreate(m_buffer);
+  }
 
   int64_t read_avail = TSIOBufferReaderAvail(reader);
   if (0 < read_avail)

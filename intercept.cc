@@ -6,6 +6,7 @@
 #include "range.h"
 #include "slice.h"
 
+#include <cassert>
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
@@ -97,6 +98,8 @@ std::cerr << header.toString() << std::endl;
 
   // anticipate the next server response header
   TSHttpParserClear(data->httpParser());
+  data->m_upstream.m_hdr_mgr.resetHeader();
+
 
   return TS_EVENT_CONTINUE;
 }
@@ -346,7 +349,11 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
         rangelen = sizeof(rangestr) - 1;
         bool const crstat =
             crange.toStringClosed(rangestr, &rangelen);
-TSAssert(crstat);
+
+        if (! crstat)
+        {
+          DEBUG_LOG("Bad/invalid response content range");
+        }
         header.setKeyVal
           ( TS_MIME_FIELD_CONTENT_RANGE
           , TS_MIME_LEN_CONTENT_RANGE
