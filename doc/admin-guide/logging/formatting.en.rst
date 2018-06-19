@@ -445,7 +445,6 @@ Network Addresses, Ports, and Interfaces
 .. _php:
 .. _pqsi:
 .. _pqsp:
-.. _pqsn:
 .. _shi:
 .. _shn:
 
@@ -467,8 +466,6 @@ pqsi  Proxy Request  IP address from which |TS| issued the proxy request to the
                      origin server. Cache hits will result in a value of ``0``.
 pqsp  Proxy Request  Port number from which |TS| issued the proxy request to
                      the origin server. Cache hits will yield a value of ``0``.
-pqsn  Proxy Request  Host name of the interface from which |TS| issues the
-                     proxy request to the origin server.
 shi   Origin Server  IP address resolved via DNS by |TS| for the origin server.
                      For hosts with multiple IP addresses, the address used by
                      |TS| for the connection will be reported. See note below

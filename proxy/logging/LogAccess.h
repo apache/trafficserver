@@ -220,7 +220,6 @@ public:
   inkcoreapi virtual int marshal_proxy_req_header_len(char *);  // INT
   inkcoreapi virtual int marshal_proxy_req_squid_len(char *);   // INT
   inkcoreapi virtual int marshal_proxy_req_content_len(char *); // INT
-  inkcoreapi virtual int marshal_proxy_req_server_name(char *); // STR
   inkcoreapi virtual int marshal_proxy_req_server_ip(char *);   // INT
   inkcoreapi virtual int marshal_proxy_req_server_port(char *); // INT
   inkcoreapi virtual int marshal_proxy_hierarchy_route(char *); // INT

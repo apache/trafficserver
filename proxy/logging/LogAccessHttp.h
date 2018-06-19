@@ -105,7 +105,6 @@ public:
   int marshal_proxy_req_header_len(char *) override;  // INT
   int marshal_proxy_req_content_len(char *) override; // INT
   int marshal_proxy_req_squid_len(char *) override;   // INT
-  int marshal_proxy_req_server_name(char *) override; // STR
   int marshal_proxy_req_server_ip(char *) override;   // INT
   int marshal_proxy_req_server_port(char *) override; // INT
   int marshal_proxy_hierarchy_route(char *) override; // INT
