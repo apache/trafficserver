@@ -23,6 +23,7 @@
 */
 
 #include <cstdlib>
+#include <string_view>
 
 #include "configs.h"
 #include "rules.h"
@@ -131,7 +132,7 @@ BgFetchRule::check_field_configured(TSHttpTxn txnp) const
           TSDebug(PLUGIN_NAME, "invalid field");
         } else {
           TSDebug(PLUGIN_NAME, "comparing with %s", _value);
-          if (nullptr != strstr(val_str, _value)) {
+          if (std::string_view::npos != std::string_view(val_str, val_len).find(_value)) {
             hdr_found = true;
           }
         }
