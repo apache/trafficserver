@@ -186,16 +186,78 @@ QUICPacketType
 QUICPacketLongHeader::type() const
 {
   if (this->_buf) {
-    uint8_t type = this->_buf.get()[0] & 0x7F;
-    if (this->version() == 0x00) {
-      return QUICPacketType::VERSION_NEGOTIATION;
-    } else {
-      // any other version-specific type?
-      return static_cast<QUICPacketType>(type);
-    }
+    QUICPacketType type;
+    QUICPacketLongHeader::type(type, this->_buf.get(), this->_buf_len);
+    return type;
   } else {
     return this->_type;
   }
+}
+
+bool
+QUICPacketLongHeader::type(QUICPacketType &type, const uint8_t *packet, size_t packet_len)
+{
+  if (packet_len < 1) {
+    return false;
+  }
+
+  uint8_t raw_type = packet[0] & 0x7F;
+  QUICVersion version;
+  if (QUICPacketLongHeader::version(version, packet, packet_len) && version == 0x00) {
+    type = QUICPacketType::VERSION_NEGOTIATION;
+  } else {
+    type = static_cast<QUICPacketType>(raw_type);
+  }
+  return true;
+}
+
+bool
+QUICPacketLongHeader::version(QUICVersion &version, const uint8_t *packet, size_t packet_len)
+{
+  if (packet_len < 5) {
+    return false;
+  }
+
+  version = QUICTypeUtil::read_QUICVersion(packet + LONG_HDR_OFFSET_VERSION);
+  return true;
+}
+
+bool
+QUICPacketLongHeader::dcil(uint8_t &dcil, const uint8_t *packet, size_t packet_len)
+{
+  if (QUICInvariants::dcil(dcil, packet, packet_len)) {
+    dcil += 3;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool
+QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_len)
+{
+  if (QUICInvariants::scil(scil, packet, packet_len)) {
+    scil += 3;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool
+QUICPacketLongHeader::payload_length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
+{
+  uint8_t dcil, scil;
+
+  QUICPacketLongHeader::dcil(dcil, packet, packet_len);
+  QUICPacketLongHeader::scil(scil, packet, packet_len);
+
+  size_t payload_len_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
+  length                    = QUICIntUtil::read_QUICVariableInt(packet + payload_len_offset);
+  if (field_len) {
+    *field_len = QUICVariableInt::size(packet + payload_len_offset);
+  }
+  return true;
 }
 
 QUICConnectionId
@@ -242,7 +304,9 @@ QUICVersion
 QUICPacketLongHeader::version() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICVersion(this->_buf.get() + LONG_HDR_OFFSET_VERSION);
+    QUICVersion version;
+    QUICPacketLongHeader::version(version, this->_buf.get(), this->_buf_len);
+    return version;
   } else {
     return this->_version;
   }
@@ -437,14 +501,26 @@ QUICKeyPhase
 QUICPacketShortHeader::key_phase() const
 {
   if (this->_buf) {
-    if (this->_buf.get()[0] & 0x40) {
-      return QUICKeyPhase::PHASE_1;
-    } else {
-      return QUICKeyPhase::PHASE_0;
-    }
+    QUICKeyPhase phase;
+    QUICPacketShortHeader::key_phase(phase, this->_buf.get(), this->_buf_len);
+    return phase;
   } else {
-    return _key_phase;
+    return this->_key_phase;
   }
+}
+
+bool
+QUICPacketShortHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, size_t packet_len)
+{
+  if (packet_len < 1) {
+    return false;
+  }
+  if (packet[0] & 0x40) {
+    phase = QUICKeyPhase::PHASE_1;
+  } else {
+    phase = QUICKeyPhase::PHASE_0;
+  }
+  return true;
 }
 
 /**

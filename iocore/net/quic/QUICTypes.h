@@ -347,7 +347,13 @@ public:
   static bool is_long_header(const uint8_t *buf);
   static bool is_version_negotiation(QUICVersion v);
   static bool version(QUICVersion &dst, const uint8_t *buf, uint64_t buf_len);
+  /**
+   * This function returns the raw value. You'll need to add 3 to the returned value to get the actual connection id length.
+   */
   static bool dcil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len);
+  /**
+   * This function returns the raw value. You'll need to add 3 to the returned value to get the actual connection id length.
+   */
   static bool scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len);
   static bool dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len);
   static bool scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len);

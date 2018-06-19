@@ -190,6 +190,18 @@ public:
   uint16_t size() const;
   void store(uint8_t *buf, size_t *len) const;
 
+  static bool type(QUICPacketType &type, const uint8_t *packet, size_t packet_len);
+  static bool version(QUICVersion &version, const uint8_t *packet, size_t packet_len);
+  /**
+   * Unlike QUICInvariants::dcil(), this returns actual connection id length
+   */
+  static bool dcil(uint8_t &dcil, const uint8_t *packet, size_t packet_len);
+  /**
+   * Unlike QUICInvariants::scil(), this returns actual connection id length
+   */
+  static bool scil(uint8_t &scil, const uint8_t *packet, size_t packet_len);
+  static bool payload_length(size_t &payload_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
+
 private:
   QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
@@ -223,6 +235,8 @@ public:
   bool has_key_phase() const;
   uint16_t size() const;
   void store(uint8_t *buf, size_t *len) const;
+
+  static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
 
 private:
   int _packet_number_len;
