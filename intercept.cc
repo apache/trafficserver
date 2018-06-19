@@ -32,8 +32,10 @@ request_block
   , Data * const data
   )
 {
-  std::pair<int64_t, int64_t> const blockbe
+  std::pair<int64_t, int64_t> blockbe
     (range::forBlock(data->m_blocksize, data->m_blocknum));
+
+  // fix up end of block for full content
 
 //std::cerr << __func__ << " trying to build header" << std::endl;
 
@@ -112,6 +114,7 @@ DEBUG_LOG("handle_client_req");
 
   if (TS_EVENT_VCONN_READ_READY == event)
   {
+//std::cerr << "handle_client_request has stuff ready for us" << std::endl;
     TSHttpParser parser = data->httpParser();
     TSParseResult const parseres
       = data->m_dnstream.m_hdr_mgr.populateFrom
@@ -306,18 +309,13 @@ std::cerr << header.toString() << std::endl;
       char rangestr[1024];
       int rangelen = 1023;
 
-      if ( ! header.valueForKeyLast
+      if ( ! header.valueForKey
           ( TS_MIME_FIELD_CONTENT_RANGE
           , TS_MIME_LEN_CONTENT_RANGE
           , rangestr
           , &rangelen ) )
       {
-std::cerr << "some header came back without a Content-Range header"
-  << std::endl;
-std::cerr << "response header" << std::endl;
-std::string const headerstr = header.toString();
-std::cerr << headerstr << std::endl;
-
+        std::string const headerstr = header.toString();
         DEBUG_LOG("invalid response header\n%s", headerstr.c_str());
         shutdown(contp, data);
       }
@@ -527,7 +525,7 @@ DEBUG_LOG("intercept_hook: %d", event);
       && edata == data->m_dnstream.m_read.m_vio )
     {
       handle_client_req(contp, event, data);
-      TSVConnShutdown(data->m_dnstream.m_vc, 1, 0);
+//      TSVConnShutdown(data->m_dnstream.m_vc, 1, 0);
     }
     else // server wants more data from us
     if ( data->m_upstream.m_write.isValid()
