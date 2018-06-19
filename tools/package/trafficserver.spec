@@ -21,10 +21,13 @@
 %define _hardened_build 1
 %endif
 
+# This can be overriden via command line option, e.g.  --define “release 12"
+%{!?release: %define release 1}
+
 Summary:	Apache Traffi Server, a reverse, forward and transparent HTTP proxy cache
 Name:		trafficserver
-Version:	7.1.2
-Release:	3%{?dist}
+Version:	9.0.0
+Release:	%{release}%{?dist}
 License:	Apache Software License 2.0 (AL2)
 Group:		System Environment/Daemons
 URL:		https://trafficserver.apache.org/
@@ -98,9 +101,9 @@ make DESTDIR=%{buildroot} install
 mkdir -p %{buildroot}/lib/systemd/system
 cp rc/trafficserver.service %{buildroot}/lib/systemd/system
 %else
-mkdir -p %{buildroot}/etc/init.d  
-mv %{buildroot}%{_bindir}/trafficserver %{buildroot}/etc/init.d  
-%endif  
+mkdir -p %{buildroot}/etc/init.d
+mv %{buildroot}%{_bindir}/trafficserver %{buildroot}/etc/init.d
+%endif
 
 # Remove libtool archives and static libs
 find %{buildroot} -type f -name "*.la" -delete
@@ -122,7 +125,7 @@ mv %{buildroot}%{_libdir}/trafficserver/pkgconfig/trafficserver.pc %{buildroot}%
 /sbin/ldconfig
 %if %{?fedora}0 > 0 || %{?rhel}0 >= 70
 %systemd_post trafficserver.service
-%endif  
+%endif
 
 # These UID/GIDs are retained from the upstream Fedora .spec, not sure if there's a registry for these?
 %pre
@@ -132,14 +135,14 @@ getent passwd ats >/dev/null || useradd -r -u 176 -g ats -d / -s /sbin/nologin -
 %preun
 %if %{?fedora}0 > 0 || %{?rhel}0 >= 70
 %systemd_preun trafficserver.service
-%endif  
+%endif
 
 %postun
 /sbin/ldconfig
 
 %if %{?fedora}0 > 0 || %{?rhel}0 >= 70
 %systemd_postun_with_restart trafficserver.service
-%endif  
+%endif
 
 %files
 %defattr(-, root, root, -)
@@ -160,7 +163,7 @@ getent passwd ats >/dev/null || useradd -r -u 176 -g ats -d / -s /sbin/nologin -
 /lib/systemd/system/trafficserver.service
 %else
 %config(noreplace) /etc/init.d/trafficserver
-%endif  
+%endif
 
 %attr(0755, ats, ats) %dir /var/log/trafficserver
 %attr(0755, ats, ats) %dir /run/trafficserver
