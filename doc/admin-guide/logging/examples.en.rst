@@ -199,7 +199,7 @@ No. Field    Description
              hex.
 8   caun     The username of the authenticated client. A hyphen (``-``)
              means that no authentication was required.
-9   phr/pqsn The proxy hierarchy route. The route |TS| used to retrieve the
+9   phr/shn The proxy hierarchy route. The route |TS| used to retrieve the
              object.
 10  psct     The proxy response content type. The object content type taken
              from the |TS| response header.
@@ -212,7 +212,7 @@ following format object:
 
    formats:
    - name: squid
-     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
 
 Hourly Rotated Squid Proxy Logs
 ===============================
@@ -225,7 +225,7 @@ policy.
 
    formats:
    - name: squid
-     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
 
    logs:
    - mode: ascii
