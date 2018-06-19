@@ -28,7 +28,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy/http \
 	$(TS_INCLUDES) \
-	@OPENSSL_INCLUDES@
+	@OPENSSL_INCLUDES@ \
+	@YAMLCPP_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
 
@@ -37,7 +38,8 @@ noinst_LIBRARIES = libinknet.a
 
 test_certlookup_LDFLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ \
+	@YAMLCPP_LDFLAGS@
 
 test_certlookup_SOURCES = \
 	test_certlookup.cc \
@@ -48,7 +50,7 @@ test_certlookup_LDADD = \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	@LIB_YAMLCPP@
+	@YAMLCPP_LIBS@
 
 test_UDPNet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -63,7 +65,8 @@ test_UDPNet_CPPFLAGS = \
 
 test_UDPNet_LDFLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ \
+	@YAMLCPP_LDFLAGS@
 
 test_UDPNet_LDADD = \
 	libinknet.a \
@@ -73,7 +76,7 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
-	@LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@ @LIB_YAMLCPP@
+	@LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@ @YAMLCPP_LIBS@
 
 test_UDPNet_SOURCES = \
 	test_I_UDPNet.cc

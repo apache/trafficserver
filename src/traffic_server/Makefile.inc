@@ -36,6 +36,10 @@ traffic_server_traffic_server_CPPFLAGS = \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@
 
+traffic_server_traffic_server_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	@YAMLCPP_LDFLAGS@
+
 traffic_server_traffic_server_SOURCES = \
 	traffic_server/CoreUtils.cc \
 	traffic_server/CoreUtils.h \
@@ -89,5 +93,5 @@ traffic_server_traffic_server_LDADD += \
 	@LIBLZMA@ \
 	@LIBPROFILER@ \
 	@OPENSSL_LIBS@ \
-	@LIB_YAMLCPP@ \
+	@YAMLCPP_LIBS@ \
 	-lm

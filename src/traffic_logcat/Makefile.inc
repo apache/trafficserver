@@ -31,8 +31,12 @@ traffic_logcat_traffic_logcat_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES)
 
+traffic_logcat_traffic_logcat_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	@YAMLCPP_LDFLAGS@
+
 traffic_logcat_traffic_logcat_SOURCES = \
-    traffic_logcat/logcat.cc
+	traffic_logcat/logcat.cc
 
 traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/proxy/logging/liblogging.a \
@@ -45,5 +49,5 @@ traffic_logcat_traffic_logcat_LDADD = \
 
 traffic_logcat_traffic_logcat_LDADD += \
 	@LIBTCL@ @HWLOC_LIBS@ \
-	@LIB_YAMLCPP@ \
+	@YAMLCPP_LIBS@ \
 	@LIBPROFILER@ -lm
