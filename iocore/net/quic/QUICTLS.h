@@ -53,9 +53,9 @@ public:
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
   bool decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
-  bool encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+  bool encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
                   const uint8_t *sample, QUICKeyPhase phase) const override;
-  bool decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_lenn,
+  bool decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
                   const uint8_t *sample, QUICKeyPhase phase) const override;
 
   // FIXME SSL handle should not be exported
@@ -75,9 +75,9 @@ private:
                 size_t tag_len) const;
   bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
                 const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead, size_t tag_len) const;
-  bool _encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+  bool _encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
                    const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
-  bool _decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_len,
+  bool _decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
                    const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
   SSL *_ssl                              = nullptr;
   QUICPacketProtection *_client_pp       = nullptr;

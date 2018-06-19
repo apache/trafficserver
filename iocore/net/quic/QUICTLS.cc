@@ -342,7 +342,7 @@ QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const 
 }
 
 bool
-QUICTLS::encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+QUICTLS::encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
                     const uint8_t *sample, QUICKeyPhase phase) const
 {
   const KeyMaterial *km = this->_get_km(phase, true);
@@ -360,7 +360,7 @@ QUICTLS::encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8
 }
 
 bool
-QUICTLS::decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_len,
+QUICTLS::decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
                     const uint8_t *sample, QUICKeyPhase phase) const
 {
   const KeyMaterial *km = this->_get_km(phase, false);
