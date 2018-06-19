@@ -81,8 +81,7 @@ formats:
 
     # Extended Log Format.
     - name: 'extended'
-      formatX: |-
-          %<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>
+      format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
 
      # Extended2 Log Formats
     - name: "extended2"
@@ -90,7 +89,7 @@ formats:
 
 logs:
     - filename: squid
-      format: quid
+      format: squid
       mode: binary
 
 
