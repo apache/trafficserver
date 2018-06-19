@@ -31,6 +31,10 @@ traffic_logstats_traffic_logstats_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES)
 
+traffic_logstats_traffic_logstats_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	@YAMLCPP_LDFLAGS@
+
 TESTS += \
 	traffic_logstats/tests/test_logstats_json \
 	traffic_logstats/tests/test_logstats_summary
@@ -49,5 +53,5 @@ traffic_logstats_traffic_logstats_LDADD = \
 
 traffic_logstats_traffic_logstats_LDADD += \
   @LIBTCL@ @HWLOC_LIBS@ \
-  @LIB_YAMLCPP@ \
+  @YAMLCPP_LIBS@ \
   @LIBPROFILER@ -lm

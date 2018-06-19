@@ -54,17 +54,17 @@ AC_ARG_WITH(yaml-cpp, [AC_HELP_STRING([--with-yaml-cpp=DIR],[use a specific yaml
 if test "$has_yaml_cpp" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
-  yaml_cpp_have_headers=0
-  yaml_cpp_have_libs=0
+
+  YAMLCPP_LIBS=-lyaml-cpp
   if test "$yaml_cpp_base_dir" != "/usr"; then
-    TS_ADDTO(CPPFLAGS, [-I${yaml_cpp_include}])
-    TS_ADDTO(LDFLAGS, [-L${yaml_cpp_ldflags}])
+    YAMLCPP_INCLUDES=-I${yaml_cpp_include}
+    YAMLCPP_LDFLAGS=-L${yaml_cpp_ldflags}
+
     TS_ADDTO_RPATH(${yaml_cpp_ldflags})
   fi
 
   if test "$yaml_cpp_include" != "0"; then
-    AC_SUBST([LIB_YAMLCPP], [-lyaml-cpp])
-    AC_SUBST([CFLAGS_YAMLCPP], [-I${yaml_cpp_include}])
+    YAMLCPP_INCLUDES=-I${yaml_cpp_include}
   else
     has_yaml_cpp=no
     CPPFLAGS=$saved_cppflags
@@ -74,9 +74,13 @@ fi
 ],
 [
   has_yaml_cpp=no
-  TS_ADDTO(CPPFLAGS, [-I\${abs_top_srcdir}/lib/yamlcpp/include])
-  TS_ADDTO(LDFLAGS, [-L\${abs_top_builddir}/lib/yamlcpp])
-  AC_SUBST([LIB_YAMLCPP], [-lyamlcpp])
+  YAMLCPP_INCLUDES=-I\${abs_top_srcdir}/lib/yamlcpp/include
+  YAMLCPP_LIBS=-lyamlcpp
+  YAMLCPP_LDFLAGS=-L\${abs_top_builddir}/lib/yamlcpp
 ])
+
+AC_SUBST([YAMLCPP_INCLUDES])
+AC_SUBST([YAMLCPP_LIBS])
+AC_SUBST([YAMLCPP_LDFLAGS])
 
 ])
