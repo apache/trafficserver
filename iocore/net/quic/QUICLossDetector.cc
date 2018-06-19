@@ -170,14 +170,19 @@ QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_ack_on
                                   QUICPacketUPtr packet)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  this->_time_of_last_sent_packet = Thread::get_hrtime();
-  this->_largest_sent_packet      = packet_number;
+  ink_hrtime now             = Thread::get_hrtime();
+  this->_largest_sent_packet = packet_number;
   // FIXME Should we really keep actual packet object?
 
   std::unique_ptr<PacketInfo> packet_info(
-    new PacketInfo({packet_number, this->_time_of_last_sent_packet, is_ack_only, is_handshake, sent_bytes, std::move(packet)}));
+    new PacketInfo({packet_number, now, is_ack_only, is_handshake, sent_bytes, std::move(packet)}));
   this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
+
   if (!is_ack_only) {
+    if (is_handshake) {
+      this->_time_of_last_sent_handshake_packet = now;
+    }
+    this->_time_of_last_sent_retransmittable_packet = now;
     this->_cc->on_packet_sent(sent_bytes);
     this->_set_loss_detection_alarm();
   }
@@ -293,10 +298,12 @@ QUICLossDetector::_set_loss_detection_alarm()
     }
     alarm_duration = std::max(alarm_duration + this->_max_ack_delay, this->_k_min_tlp_timeout);
     alarm_duration = alarm_duration * (1 << this->_handshake_count);
+
+    this->_loss_detection_alarm_at = this->_time_of_last_sent_handshake_packet + alarm_duration;
     QUICLDDebug("Handshake retransmission alarm will be set");
   } else if (this->_loss_time != 0) {
     // Early retransmit timer or time loss detection.
-    alarm_duration = this->_loss_time - this->_time_of_last_sent_packet;
+    alarm_duration = this->_loss_time - this->_time_of_last_sent_retransmittable_packet;
     QUICLDDebug("Early retransmit timer or time loss detection will be set");
   } else if (this->_tlp_count < this->_k_max_tlps) {
     // Tail Loss Probe
@@ -321,7 +328,7 @@ QUICLossDetector::_set_loss_detection_alarm()
   if (this->_loss_detection_alarm_at) {
     this->_loss_detection_alarm_at = std::min(this->_loss_detection_alarm_at, Thread::get_hrtime() + alarm_duration);
   } else {
-    this->_loss_detection_alarm_at = this->_time_of_last_sent_packet + alarm_duration;
+    this->_loss_detection_alarm_at = this->_time_of_last_sent_retransmittable_packet + alarm_duration;
   }
   QUICLDDebug("Loss detection alarm has been set to %" PRId64 "ms", alarm_duration / HRTIME_MSECOND);
 

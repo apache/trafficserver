@@ -124,22 +124,23 @@ private:
 
   // [draft-11 recovery] 3.5.2.  Variables of interest
   // Keep the order as the same as the spec so that we can see the difference easily.
-  Action *_loss_detection_alarm        = nullptr;
-  uint32_t _handshake_count            = 0;
-  uint32_t _tlp_count                  = 0;
-  uint32_t _rto_count                  = 0;
-  uint32_t _largest_sent_before_rto    = 0;
-  ink_hrtime _time_of_last_sent_packet = 0;
-  uint32_t _largest_sent_packet        = 0;
-  uint32_t _largest_acked_packet       = 0;
-  ink_hrtime _latest_rtt               = 0;
-  ink_hrtime _smoothed_rtt             = 0;
-  ink_hrtime _rttvar                   = 0;
-  ink_hrtime _min_rtt                  = INT64_MAX;
-  ink_hrtime _max_ack_delay            = 0;
-  uint32_t _reordering_threshold       = 0;
-  double _time_reordering_fraction     = 0.0;
-  ink_hrtime _loss_time                = 0;
+  Action *_loss_detection_alarm                        = nullptr;
+  uint32_t _handshake_count                            = 0;
+  uint32_t _tlp_count                                  = 0;
+  uint32_t _rto_count                                  = 0;
+  uint32_t _largest_sent_before_rto                    = 0;
+  ink_hrtime _time_of_last_sent_retransmittable_packet = 0;
+  ink_hrtime _time_of_last_sent_handshake_packet       = 0;
+  uint32_t _largest_sent_packet                        = 0;
+  uint32_t _largest_acked_packet                       = 0;
+  ink_hrtime _latest_rtt                               = 0;
+  ink_hrtime _smoothed_rtt                             = 0;
+  ink_hrtime _rttvar                                   = 0;
+  ink_hrtime _min_rtt                                  = INT64_MAX;
+  ink_hrtime _max_ack_delay                            = 0;
+  uint32_t _reordering_threshold                       = 0;
+  double _time_reordering_fraction                     = 0.0;
+  ink_hrtime _loss_time                                = 0;
   std::map<QUICPacketNumber, std::unique_ptr<PacketInfo>> _sent_packets;
 
   // These are not defined on the spec but expected to be count
