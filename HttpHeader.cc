@@ -152,6 +152,61 @@ HttpHeader :: valueForKey
 }
 
 bool
+HttpHeader :: valueForKeyLast
+  ( char const * const keystrin
+  , int const keylenin
+  , char * const valstr
+  , int * const vallen
+  , int const index
+  ) const
+{
+  if (! isValid())
+  {
+    return false;
+  }
+
+  bool status = false;
+
+  int const numhdrs = TSMimeHdrFieldsCount(m_buffer, m_lochdr);
+
+  int const valcap = *vallen;
+
+  for (int indexhdr = 0 ; indexhdr < numhdrs ; ++indexhdr)
+  {
+    TSMLoc const locfield = TSMimeHdrFieldGet
+        (m_buffer, m_lochdr, indexhdr);
+
+    int keylen = 0;
+    char const * const keystr = TSMimeHdrFieldNameGet
+      (m_buffer, m_lochdr, locfield, &keylen);
+
+    if (keylen == keylenin && 0 == strncasecmp(keystr, keystrin, keylen))
+    {
+      int getlen = 0;
+      char const * const getstr = TSMimeHdrFieldValueStringGet
+          (m_buffer, m_lochdr, locfield, 0, &getlen);
+
+      if (nullptr != getstr && 0 < getlen && getlen < (valcap - 1))
+      {
+        char * const endp = stpncpy(valstr, getstr, getlen);
+      
+        *vallen = endp - valstr;
+        status = (*vallen < valcap);
+
+        if (status)
+        {
+          *endp = '\0';
+        }
+      }
+    }
+
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
+  }
+
+  return status;
+}
+
+bool
 HttpHeader :: setKeyVal
   ( char const * const keystr
   , int const keylen

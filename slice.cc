@@ -37,19 +37,22 @@ read_request
   ( TSHttpTxn txnp
   )
 {
+DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
   HttpHeader const headcreq(hdrmgr.m_buffer, hdrmgr.m_lochdr);
 
   if (TS_HTTP_METHOD_GET == headcreq.method())
   {
-/*
-std::cerr << "Coming from HttpConnect" << std::endl;
-std::cerr << headcreq.toString() << std::endl;
-*/
     if (! headcreq.hasKey
       (SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)))
     {
+      // turn off any and all transaction caching (shouldn't matter)
+      TSHttpTxnServerRespNoStoreSet(txnp, 1);
+      TSHttpTxnRespCacheableSet(txnp, 0);
+      TSHttpTxnReqCacheableSet(txnp, 0);
+
+DEBUG_LOG("slice accepting and slicing");
       // connection back into ATS
       sockaddr const * const ip = TSHttpTxnClientAddrGet(txnp);
       if (nullptr == ip)
@@ -57,46 +60,33 @@ std::cerr << headcreq.toString() << std::endl;
         return false;
       }
 
-      struct sockaddr_storage client_ip;
-
-      if (AF_INET == ip->sa_family) {
-        memcpy(&client_ip, ip, sizeof(sockaddr_in));
-      } else if (AF_INET6 == ip->sa_family) {
-        memcpy(&client_ip, ip, sizeof(sockaddr_in6));
-      } else {
-        return false;
-      }
-
-/*
-      // turn off any and all caching
-      TSHttpTxnServerRespNoStoreSet(txnp, 1);
-*/
-
-      // we'll intercept this GET and do it ourselfs
-      TSCont const icontp
-        (TSContCreate(intercept_hook, TSMutexCreate()));
-
 static int64_t const blocksize(1024 * 1024);
       Data * const data = new Data(blocksize);
 
-      memcpy(&data->m_client_ip, &client_ip, sizeof(sockaddr_storage));
+      // set up feedback connect
+      if (AF_INET == ip->sa_family) {
+        memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in));
+      } else if (AF_INET6 == ip->sa_family) {
+        memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in6));
+      } else {
+        return false;
+      }
 /*
       TSReturnCode const rcode = TSHttpTxnPristineUrlGet
         (txnp, &data->m_url_buffer, &data->m_url_loc);
 TSAssert(TS_SUCCESS == rcode);
 */
-
+      // we'll intercept this GET and do it ourselfs
+      TSCont const icontp
+        (TSContCreate(intercept_hook, TSMutexCreate()));
       TSContDataSet(icontp, (void*)data);
       TSHttpTxnIntercept(icontp, txnp);
-//std::cerr << "created intercept hook" << std::endl;
       return true;
     }
-/*
     else
     {
-std::cerr << "Got a skip me directive, passing through" << std::endl;
+DEBUG_LOG("slice passing GET request downstream");
     }
-*/
   }
 
   return false;
@@ -128,7 +118,7 @@ TSRemapDoRemap
 {
   if (read_request(txnp))
   {
-    return TSREMAP_DID_REMAP;
+    return TSREMAP_DID_REMAP_STOP;
   }
   else
   {

@@ -4,7 +4,7 @@
 #include "Data.h"
 #include "HttpHeader.h"
 #include "range.h"
-#include "sim.h"
+#include "slice.h"
 
 #include <cinttypes>
 #include <cstdio>
@@ -43,6 +43,8 @@ request_block
     (blockbe, rangestr, &rangelen);
 TSAssert(rpstat);
 
+DEBUG_LOG("request_block: %*s", rangelen, rangestr);
+
   // reuse the incoming client header, just change the range
   HttpHeader header
     ( data->m_dnstream.m_hdr_mgr.m_buffer
@@ -54,13 +56,26 @@ TSAssert(rpstat);
     , rangestr, rangelen );
 TSAssert(rangestat);
 
-  // create virtual connection back into ATS
-  TSVConn const upvc = TSHttpConnectWithPluginId
-    ((sockaddr*)&data->m_client_ip, "slicer", 0);
+/*
+  if ( nullptr == data->m_upstream.m_vc
+    || TSVConnClosedGet(data->m_upstream.m_vc) )
+*/
+  {
+//std::cerr << "having to create a virtual connection" << std::endl;
+    // create virtual connection back into ATS
+    TSVConn const upvc = TSHttpConnectWithPluginId
+      ((sockaddr*)&data->m_client_ip, "slicer", 0);
 
-  // set up connection with the HttpConnect server
-  data->m_upstream.setupConnection(upvc);
-  data->m_upstream.setupVioWrite(contp);
+    // set up connection with the HttpConnect server
+    data->m_upstream.setupConnection(upvc);
+    data->m_upstream.setupVioWrite(contp);
+  }
+/*
+  else
+  {
+std::cerr << "trying to reuse http connect" << std::endl;
+  }
+*/
 
 /*
 std::cerr << std::endl;
@@ -73,7 +88,7 @@ std::cerr << header.toString() << std::endl;
     , header.m_lochdr
     , data->m_upstream.m_write.m_iobuf );
 
-  TSVIOReenable(data->m_upstream.m_write.m_vio);
+  TSVIOReenable(data->m_upstream.m_write.m_vio); // not necessary signal
 
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp);
@@ -81,7 +96,7 @@ std::cerr << header.toString() << std::endl;
   // anticipate the next server response header
   TSHttpParserClear(data->httpParser());
 
-  return 0;
+  return TS_EVENT_CONTINUE;
 }
 
 // this is called once per transaction when the client sends a req header
@@ -93,6 +108,8 @@ handle_client_req
   , Data * const data
   )
 {
+DEBUG_LOG("handle_client_req");
+
   if (TS_EVENT_VCONN_READ_READY == event)
   {
     TSHttpParser parser = data->httpParser();
@@ -114,27 +131,32 @@ std::cerr << __func__ << " received header from client" << std::endl;
 std::cerr << header.toString() << std::endl;
 */
 
+      // first range only, returns string of closed interval
       std::pair<int64_t, int64_t> rangebe
         (0, std::numeric_limits<int64_t>::max());
 
-      // first range only, returns string of closed interval
       char rangestr[1024];
       int rangelen = 1024;
       bool const rstat = header.valueForKey
         ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
         , rangestr, &rangelen
         , 0 );
-
       if (rstat)
       {
         rangebe = range::parseHalfOpenFrom(rangestr);
+
+        // write parsed header into meta tag
+        header.setKeyVal
+          ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
+          , rangestr, rangelen );
       }
       else
       {
-//std::cerr << "setting full range for unknow file length" << std::endl;
-        rangebe.first = 0;
-        rangebe.second
-          = std::numeric_limits<int64_t>::max() - data->m_blocksize;
+static char const * const valstr = "200 request";
+static size_t const vallen = strlen(valstr);
+        header.setKeyVal
+          ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
+          , valstr, vallen );
       }
 
       if (! range::isValid(rangebe))
@@ -142,31 +164,27 @@ std::cerr << header.toString() << std::endl;
         // send 416 header and shutdown
 std::cerr << "Please send a 416 header and shutdown" << std::endl;
         shutdown(contp, data);
-        return 0;
+        return TS_EVENT_CONTINUE;
       }
 
        // set the initial range begin/end, we'll correct it later
        data->m_range_begend = rangebe;
 
-       // set up the first block
+       // set to the first block in range, or speculate
        data->m_blocknum = range::firstBlock
          (data->m_blocksize, data->m_range_begend);
 
       // whack some ATS keys
       header.removeKey
-        ( TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA );
+        (TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA);
       header.removeKey
-        ( TS_MIME_FIELD_X_FORWARDED_FOR
-        , TS_MIME_LEN_X_FORWARDED_FOR );
+        (TS_MIME_FIELD_X_FORWARDED_FOR, TS_MIME_LEN_X_FORWARDED_FOR);
 
-      // normalize the range and set the X-Slicer-Info private tag
-      char bufrange[1024];
-      int buflen = 1023;
-      range::closedStringFor
-        (data->m_range_begend, bufrange, &buflen);
+static char const * const keepstr = "keep-alive";
+static size_t const keeplen = strlen(keepstr);
       header.setKeyVal
-        ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
-        , bufrange, buflen );
+        ( TS_MIME_FIELD_CONNECTION, TS_MIME_LEN_CONNECTION
+        , keepstr, keeplen );
 
       // send off the first block request
 //std::cerr << __func__ << " calling request_block" << std::endl;
@@ -174,7 +192,7 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
     }
   }
 
-  return 0;
+  return TS_EVENT_CONTINUE;
 }
 
 // transfer bytes from the server to the client
@@ -184,11 +202,13 @@ transfer_bytes
   ( Data * const data
   )
 {
+DEBUG_LOG("transfer_bytes");
   int64_t consumed = 0;
 
   int64_t read_avail
     (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
 
+  // handle offset into block
   int64_t const toskip
     (std::min(data->m_skipbytes, read_avail));
   if (0 < toskip)
@@ -230,6 +250,7 @@ handle_server_resp
   , Data * const data
   )
 {
+DEBUG_LOG("handle_server_resp");
   if (TS_EVENT_VCONN_READ_READY == event)
   {
     // has the first server reponse header been parsed??
@@ -245,7 +266,7 @@ handle_server_resp
       // the server response header didn't fit into a single block ???
       if (TS_PARSE_DONE != parseres)
       {
-        return 0;
+        return TS_EVENT_CONTINUE;
       }
 
       HttpHeader header
@@ -274,7 +295,7 @@ std::cerr << header.toString() << std::endl;
             , data->m_dnstream.m_write.m_iobuf );
         }
 
-        return 0;
+        return TS_EVENT_CONTINUE;
       }
 
 
@@ -285,7 +306,7 @@ std::cerr << header.toString() << std::endl;
       char rangestr[1024];
       int rangelen = 1023;
 
-      if ( ! header.valueForKey
+      if ( ! header.valueForKeyLast
           ( TS_MIME_FIELD_CONTENT_RANGE
           , TS_MIME_LEN_CONTENT_RANGE
           , rangestr
@@ -294,7 +315,10 @@ std::cerr << header.toString() << std::endl;
 std::cerr << "some header came back without a Content-Range header"
   << std::endl;
 std::cerr << "response header" << std::endl;
-std::cerr << header.toString() << std::endl;
+std::string const headerstr = header.toString();
+std::cerr << headerstr << std::endl;
+
+        DEBUG_LOG("invalid response header\n%s", headerstr.c_str());
         shutdown(contp, data);
       }
 
@@ -338,17 +362,6 @@ TSAssert(crstat);
         header.setKeyVal
           ( TS_MIME_FIELD_CONTENT_LENGTH
           , TS_MIME_LEN_CONTENT_LENGTH
-          , bufstr, buflen );
-
-        // fixup request header slicer tag
-        buflen = 255;
-        range::closedStringFor
-          (data->m_range_begend, bufstr, &buflen);
-        HttpHeader headerout
-          ( data->m_dnstream.m_hdr_mgr.m_buffer
-          , data->m_dnstream.m_hdr_mgr.m_lochdr );
-        headerout.setKeyVal
-          ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
           , bufstr, buflen );
 
         // add the header length to the total bytes to send
@@ -404,6 +417,7 @@ std::cerr << header.toString() << std::endl;
   else // server block done, onto the next server request
   if (TS_EVENT_VCONN_EOS == event)
   {
+DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
     ++data->m_blocknum;
 
     // when we get a "bytes=-<end>" last N bytes request the plugin
@@ -438,7 +452,7 @@ std::cerr << header.toString() << std::endl;
 std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
-  return 0;
+  return TS_EVENT_CONTINUE;
 }
 
 // this is when the client starts asking us for more data
@@ -450,6 +464,7 @@ handle_client_resp
   , Data * const data
   )
 {
+DEBUG_LOG("handle_client_resp");
   if (TS_EVENT_VCONN_WRITE_READY == event)
   {
     if (0 == transfer_bytes(data))
@@ -460,6 +475,7 @@ handle_client_resp
       {
 //std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
         shutdown(contp, data);
+        return TS_EVENT_CONTINUE;
       }
     }
   }
@@ -474,7 +490,7 @@ std::cerr << __func__ << ": " << "TS_EVENT_ERROR" << std::endl;
 std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
-  return 0;
+  return TS_EVENT_CONTINUE;
 }
 
 int
@@ -484,6 +500,8 @@ intercept_hook
   , void * edata
   )
 {
+DEBUG_LOG("intercept_hook: %d", event);
+
   Data * const data = (Data*)TSContDataGet(contp);
 
   // After the initial TS_EVENT_NET_ACCEPT
@@ -502,10 +520,6 @@ intercept_hook
     // client still wants more.
 //    data->m_dnstream.setupVioWrite(contp);
   }
-  else if (nullptr == data)
-  {
-    TSContDestroy(contp);
-  }
   else if (nullptr != data)
   {
     // data from client -- only the initial header
@@ -520,7 +534,8 @@ intercept_hook
       && edata == data->m_upstream.m_write.m_vio )
     {
       // header was already sent to server, not interested
-      TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
+DEBUG_LOG("server asking for more data after header");
+//      TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
     }
     else // server has data for us
     if ( data->m_upstream.m_read.isValid()
@@ -540,10 +555,15 @@ std::cerr << __func__
   << ": events received after intercept state torn down" << std::endl;
     }
   }
+  else if (nullptr == data) // should never get here ever
+  {
+    TSContDestroy(contp);
+    return TS_EVENT_ERROR;
+  }
   else
   {
 std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
-  return 0;
+  return TS_EVENT_CONTINUE;
 }

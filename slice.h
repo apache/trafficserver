@@ -45,10 +45,12 @@
 		, __LINE__\
 		, __func__\
 		, ##__VA_ARGS__)\
+/*
 	; fprintf(stderr, "[%s:%04d]: " fmt "\n"\
 		, __FILENAME__\
 		, __LINE__\
 		, ##__VA_ARGS__)
+*/
 
 #define ERROR_LOG(fmt, ...) \
 	TSError("[%s:%04d] %s(): " fmt\
