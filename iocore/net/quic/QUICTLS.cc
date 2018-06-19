@@ -194,6 +194,8 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
     Debug("vv_quic_crypto", "client key 0x%s", print_buf);
     to_hex(print_buf, km->iv, km->iv_len);
     Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
+    to_hex(print_buf, km->pn, km->pn_len);
+    Debug("vv_quic_crypto", "client pn 0x%s", print_buf);
   }
   this->_client_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 
@@ -203,6 +205,8 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
     Debug("vv_quic_crypto", "server key 0x%s", print_buf);
     to_hex(print_buf, km->iv, km->iv_len);
     Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
+    to_hex(print_buf, km->pn, km->pn_len);
+    Debug("vv_quic_crypto", "server pn 0x%s", print_buf);
   }
   this->_server_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 
