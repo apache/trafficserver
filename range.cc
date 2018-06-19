@@ -61,7 +61,7 @@ range :: parseHalfOpenFrom
   int64_t back = strtoll(pback, &pfb, 10);
 
   if (pfb == pback) { // blank value, assume end of (unknown) file
-    back = std::numeric_limits<int64_t>::max();
+    back = std::numeric_limits<int64_t>::max() - 1;
   }
 
   if (front <= back)
@@ -85,10 +85,21 @@ range :: closedStringFor
   }
 
   int const lenin = *buflen;
-  *buflen = snprintf
-    ( bufstr, lenin
-    , "bytes=%" PRId64 "-%" PRId64
-    , rangebegend.first, rangebegend.second - 1 );
+
+  static int64_t const threshold(std::numeric_limits<int64_t>::max() / 2);
+
+  if (rangebegend.second < threshold)
+  {
+    *buflen = snprintf
+      ( bufstr, lenin
+      , "bytes=%" PRId64 "-%" PRId64
+      , rangebegend.first, rangebegend.second - 1 );
+  }
+  else
+  {
+    *buflen = snprintf
+      (bufstr, lenin, "bytes=%" PRId64 "-" , rangebegend.first);
+  }
 
   return (0 < *buflen && *buflen < lenin);
 }
@@ -171,4 +182,23 @@ range :: blockIsInside
     (intersection
       (rangebegend, range::forBlock(blocksize, blocknum)));
   return isValid(rangeisect);
+}
+
+int64_t
+range :: skipBytesForBlock
+  ( int64_t const blocksize
+  , int64_t const blocknum
+  , std::pair<int64_t, int64_t> const & rangebegend
+  )
+{
+  int64_t const blockstart(blocksize * blocknum);
+
+  if (rangebegend.first < blockstart)
+  {
+    return 0;
+  }
+  else
+  {
+    return rangebegend.first - blockstart;
+  }
 }

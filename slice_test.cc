@@ -23,7 +23,9 @@
 #include "ContentRange.h"
 #include "range.h"
 
+#include <cassert>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <vector>
 
@@ -99,6 +101,71 @@ testContentRange()
   return oss.str();
 }
 
+std::string
+testParseRange()
+{
+	std::ostringstream oss;
+
+	std::vector<std::string> const teststrings =
+		{ "bytes=0-1023"
+		, "bytes=1-1024"
+		, "bytes=11-11"
+		, "bytes=1-" // 2nd byte to end
+		, "Range: bytes=-13" // final 13 bytes
+		, "bytes=3-17,23-29" // open
+		, "bytes=3 -17 ,18-29" // adjacent
+		, "bytes=3- 17, 11-29" // overlapping
+		, "bytes=3 - 11,13-17 , 23-29" // unsorted triplet
+		, "bytes=3-11 ,13-17, 23-29" // unsorted triplet
+		, "bytes=0-0,-1" // first and last bytes
+
+		, "bytes=17-13" // degenerate
+		, "bytes 0-1023/146515" // this should be rejected (Content-range)
+		}; // invalid
+
+	std::vector<std::pair<int64_t, int64_t> > const exps =
+		{ { 0, 1023 + 1 }
+		, { 1, 1024 + 1 }
+		, { 11, 11 + 1 }
+		, { 1, std::numeric_limits<int64_t>::max() }
+		, { -1, -1 }
+		, { 3, 17 + 1 }
+		, { 3, 17 + 1 }
+		, { 3, 17 + 1 }
+		, { 3, 11 + 1 }
+		, { 3, 11 + 1 }
+		, { 0, 1 }
+		, { -1, -1 }
+		, { -1, -1 }
+		};
+
+assert(exps.size() == teststrings.size());
+
+	std::vector<std::pair<int64_t, int64_t> > gots;
+	gots.reserve(exps.size());
+
+	for (std::string const & str : teststrings)
+	{
+		gots.push_back(range::parseHalfOpenFrom(str.c_str()));
+	}
+
+assert(gots.size() == exps.size());
+
+	for (size_t index(0) ; index < gots.size() ; ++index)
+	{
+		if (exps[index] != gots[index])
+		{
+			oss << "Eror parsing index: " << index << std::endl;
+			oss << "test: '" << teststrings[index] << "'" << std::endl;
+			oss << "exp: " << exps[index].first
+				<< ' ' << exps[index].second << std::endl;
+			oss << "got: " << gots[index].first
+				<< ' ' << gots[index].second << std::endl;
+		}
+	}
+
+	return oss.str();
+}
 
 struct Tests
 {
@@ -148,5 +215,6 @@ main()
 {
   Tests tests;
   tests.add(testContentRange, "testContentRange");
+  tests.add(testParseRange, "testParseRange");
   return tests.run();
 }

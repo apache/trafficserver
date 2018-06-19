@@ -59,4 +59,11 @@ blockIsInside
   , std::pair<int64_t, int64_t> const & rangebegend
   );
 
+int64_t
+skipBytesForBlock
+  ( int64_t const blocksize
+  , int64_t const blocknum
+  , std::pair<int64_t, int64_t> const & rangebegend
+  );
+
 } // namespace range

@@ -49,9 +49,10 @@ TSAssert(rpstat);
     , data->m_dnstream.m_hdr_mgr.m_lochdr );
 
   // add/set sub range key and add slicer tag
-  header.setKeyVal
+  bool const rangestat = header.setKeyVal
     ( TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE
     , rangestr, rangelen );
+TSAssert(rangestat);
 
   // create virtual connection back into ATS
   TSVConn const upvc = TSHttpConnectWithPluginId
@@ -163,17 +164,61 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
       int buflen = 1023;
       range::closedStringFor
         (data->m_range_begend, bufrange, &buflen);
-
       header.setKeyVal
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , bufrange, buflen );
 
       // send off the first block request
+//std::cerr << __func__ << " calling request_block" << std::endl;
       request_block(contp, data);
     }
   }
 
   return 0;
+}
+
+// transfer bytes from the server to the client
+static
+int64_t
+transfer_bytes
+  ( Data * const data
+  )
+{
+  int64_t consumed = 0;
+
+  int64_t read_avail
+    (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
+
+  int64_t const toskip
+    (std::min(data->m_skipbytes, read_avail));
+  if (0 < toskip)
+  {
+    TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, toskip);
+    data->m_skipbytes -= toskip;
+    read_avail -= toskip;
+  }
+
+  if (0 < read_avail)
+  {
+    int64_t const bytesleft(data->m_bytestosend - data->m_bytessent);
+    int64_t const tocopy(std::min(read_avail, bytesleft));
+
+    int64_t const copied
+      ( TSIOBufferCopy
+        ( data->m_dnstream.m_write.m_iobuf
+        , data->m_upstream.m_read.m_reader
+        , tocopy
+        , 0 ) );
+
+    data->m_bytessent += copied;
+
+    TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
+    TSVIOReenable(data->m_dnstream.m_write.m_vio);
+
+    consumed = copied;
+  }
+
+  return consumed;
 }
 
 // this is called every time the server has data for us
@@ -240,71 +285,91 @@ std::cerr << header.toString() << std::endl;
       char rangestr[1024];
       int rangelen = 1023;
 
-      if ( header.valueForKey
+      if ( ! header.valueForKey
           ( TS_MIME_FIELD_CONTENT_RANGE
           , TS_MIME_LEN_CONTENT_RANGE
           , rangestr
           , &rangelen ) )
       {
-        ContentRange crange;
-        if (! crange.fromStringClosed(rangestr))
-        {
-          // abort transaction ????
-          TSError("Unable to parse range: %s", rangestr);
-        }
+std::cerr << "some header came back without a Content-Range header"
+  << std::endl;
+std::cerr << "response header" << std::endl;
+std::cerr << header.toString() << std::endl;
+        shutdown(contp, data);
+      }
 
-        if (! data->m_server_first_header_parsed)
-        {
-          // set the resource content length
-          data->m_contentlen = crange.m_length;
+      ContentRange crange;
+      if (! crange.fromStringClosed(rangestr))
+      {
+        // abort transaction ????
+        TSError("Unable to parse range: %s", rangestr);
+      }
 
-          // trim the end of the requested range if necessary
-          data->m_range_begend.second = std::min
-            ( data->m_range_begend.second
-            , crange.m_length );
+      if (! data->m_server_first_header_parsed)
+      {
+        // set the resource content length
+        data->m_contentlen = crange.m_length;
+
+        // trim the end of the requested range if necessary
+        data->m_range_begend.second = std::min
+          ( data->m_range_begend.second
+          , crange.m_length );
 
 TSAssert(data->m_range_begend.first < data->m_range_begend.second);
 
-          // convert block content range to response content range
-          crange.m_begin = data->m_range_begend.first;
-          crange.m_end = data->m_range_begend.second;
+        // convert block content range to response content range
+        crange.m_begin = data->m_range_begend.first;
+        crange.m_end = data->m_range_begend.second;
 
-          rangelen = sizeof(rangestr) - 1;
-          bool const crstat =
-              crange.toStringClosed(rangestr, &rangelen);
+        rangelen = sizeof(rangestr) - 1;
+        bool const crstat =
+            crange.toStringClosed(rangestr, &rangelen);
 TSAssert(crstat);
-          header.setKeyVal
-            ( TS_MIME_FIELD_CONTENT_RANGE
-            , TS_MIME_LEN_CONTENT_RANGE
-            , rangestr, rangelen );
+        header.setKeyVal
+          ( TS_MIME_FIELD_CONTENT_RANGE
+          , TS_MIME_LEN_CONTENT_RANGE
+          , rangestr, rangelen );
 
-          data->m_bytestosend = crange.rangeSize();
+        data->m_bytestosend = crange.rangeSize();
 
-          char bufstr[256];
-          int const buflen = snprintf
-            ( bufstr, 255
-            , "%" PRId64
-            , data->m_bytestosend );
+        char bufstr[256];
+        int buflen = snprintf
+          (bufstr, 255, "%" PRId64, data->m_bytestosend);
+        header.setKeyVal
+          ( TS_MIME_FIELD_CONTENT_LENGTH
+          , TS_MIME_LEN_CONTENT_LENGTH
+          , bufstr, buflen );
 
-          header.setKeyVal
-            ( TS_MIME_FIELD_CONTENT_LENGTH
-            , TS_MIME_LEN_CONTENT_LENGTH
-            , bufstr, buflen );
+        // fixup request header slicer tag
+        buflen = 255;
+        range::closedStringFor
+          (data->m_range_begend, bufstr, &buflen);
+        HttpHeader headerout
+          ( data->m_dnstream.m_hdr_mgr.m_buffer
+          , data->m_dnstream.m_hdr_mgr.m_lochdr );
+        headerout.setKeyVal
+          ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
+          , bufstr, buflen );
 
-          // add the header length to the total bytes to send
-          data->m_bytestosend += TSHttpHdrLengthGet
-            (header.m_buffer, header.m_lochdr);
+        // add the header length to the total bytes to send
+        data->m_bytestosend += TSHttpHdrLengthGet
+          (header.m_buffer, header.m_lochdr);
 
-          data->m_server_first_header_parsed = true;
-        }
-        else
-        {
-TSAssert(data->m_contentlen == crange.m_length);
-        }
+        data->m_server_first_header_parsed = true;
       }
+      else
+      {
+TSAssert(data->m_contentlen == crange.m_length);
+      }
+
+      // fast forward into the data
+      data->m_skipbytes = range::skipBytesForBlock
+          (data->m_blocksize, data->m_blocknum, data->m_range_begend);
 
       data->m_server_block_header_parsed = true;
     }
+
+// send data down to the reader
 
     // if necessary create downstream and a manufactured header
     if (nullptr == data->m_dnstream.m_write.m_vio)
@@ -331,33 +396,10 @@ std::cerr << header.toString() << std::endl;
         , header.m_lochdr
         , data->m_dnstream.m_write.m_iobuf );
 
-      TSVIOReenable(data->m_dnstream.m_write.m_vio);
-
       data->m_client_header_sent = true;
     }
 
-/*
-    // start pushing bytes to the client
-    int64_t read_avail
-      (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
-    if (0 < read_avail)
-    {
-      int64_t const copied
-        ( TSIOBufferCopy
-          ( data->m_dnstream.m_write.m_iobuf
-          , data->m_upstream.m_read.m_reader
-          , read_avail
-          , 0 ) );
-//std::cerr << __func__ << " copied: " << copied << " of: " << read_avail << std::endl;
-
-      data->m_bytessent += copied;
-
-//      std::cerr << "tsviondone: " << TSVIONDoneGet(data->m_dnstream.m_write.m_vio) << std::endl;
-
-      TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
-      TSVIOReenable(data->m_dnstream.m_write.m_vio);
-    }
-*/
+    transfer_bytes(data);
   }
   else // server block done, onto the next server request
   if (TS_EVENT_VCONN_EOS == event)
@@ -372,6 +414,7 @@ std::cerr << header.toString() << std::endl;
       (range::firstBlock(data->m_blocksize, data->m_range_begend));
     if (data->m_blocknum < firstblock)
     {
+//std::cerr << "setting first block" << std::endl;
       data->m_blocknum = firstblock;
       adjusted = true;
     }
@@ -379,6 +422,7 @@ std::cerr << header.toString() << std::endl;
     if (adjusted || range::blockIsInside
         (data->m_blocksize, data->m_blocknum, data->m_range_begend))
     {
+//std::cerr << __func__ << " calling request_block" << std::endl;
       request_block(contp, data);
 
       // reset the per block server header parsed flag
@@ -408,27 +452,11 @@ handle_client_resp
 {
   if (TS_EVENT_VCONN_WRITE_READY == event)
   {
-    int64_t const read_avail
-      (TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader));
-    if (0 < read_avail)
-    {
-      int64_t const copied
-        ( TSIOBufferCopy
-          ( data->m_dnstream.m_write.m_iobuf
-          , data->m_upstream.m_read.m_reader
-          , read_avail
-          , 0 ) );
-
-      data->m_bytessent += copied;
-
-      TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
-      TSVIOReenable(data->m_dnstream.m_write.m_vio);
-    }
-    else
+    if (0 == transfer_bytes(data))
     {
       int64_t const bytessent
         (TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
-      if (data->m_bytestosend == bytessent)
+      if (data->m_bytestosend <= bytessent)
       {
 //std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
         shutdown(contp, data);
@@ -457,8 +485,6 @@ intercept_hook
   )
 {
   Data * const data = (Data*)TSContDataGet(contp);
-
-//std::cerr << __func__ << ": event: " << event << std::endl;
 
   // After the initial TS_EVENT_NET_ACCEPT
   // any "events" will be handled by the vio read or write channel handler

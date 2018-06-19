@@ -88,7 +88,7 @@ TSAssert(TS_SUCCESS == rcode);
 
       TSContDataSet(icontp, (void*)data);
       TSHttpTxnIntercept(icontp, txnp);
-std::cerr << "created intercept hook" << std::endl;
+//std::cerr << "created intercept hook" << std::endl;
       return true;
     }
 /*
