@@ -26,6 +26,8 @@
 #include "QUICKeyGenerator.h"
 #include "QUICTypes.h"
 
+class QUICHandshakeProtocol;
+
 class QUICPacketProtection
 {
 public:
@@ -41,6 +43,21 @@ private:
   std::unique_ptr<KeyMaterial> _phase_0_key   = nullptr;
   std::unique_ptr<KeyMaterial> _phase_1_key   = nullptr;
   QUICKeyPhase _key_phase                     = QUICKeyPhase::CLEARTEXT;
+};
+
+class QUICPacketNumberProtector
+{
+public:
+  bool protect(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
+               const uint8_t *sample, QUICKeyPhase phase) const;
+  bool unprotect(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
+                 const uint8_t *sample, QUICKeyPhase phase) const;
+
+  // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICPacketProtection instead.
+  void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
+
+private:
+  QUICHandshakeProtocol *_hs_protocol = nullptr;
 };
 
 class QUICHandshakeProtocol

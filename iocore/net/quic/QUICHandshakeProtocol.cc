@@ -78,6 +78,32 @@ QUICPacketProtection::key_phase() const
 }
 
 //
+// QUICPacketNumberProtector
+//
+
+bool
+QUICPacketNumberProtector::protect(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn,
+                                   uint8_t unprotected_pn_len, const uint8_t *sample, QUICKeyPhase phase) const
+{
+  // FIXME HandshakeProtocol shouldn't do this. The logic should be moved from there to here.
+  return this->_hs_protocol->encrypt_pn(protected_pn, protected_pn_len, unprotected_pn, unprotected_pn_len, sample, phase);
+}
+
+bool
+QUICPacketNumberProtector::unprotect(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn,
+                                     uint8_t protected_pn_len, const uint8_t *sample, QUICKeyPhase phase) const
+{
+  // FIXME HandshakeProtocol shouldn't do this. The logic should be moved from there to here.
+  return this->_hs_protocol->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, phase);
+}
+
+void
+QUICPacketNumberProtector::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
+{
+  this->_hs_protocol = hs_protocol;
+}
+
+//
 // QUICHandshakeProtocol
 //
 QUICHandshakeMsgType

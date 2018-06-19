@@ -246,6 +246,7 @@ private:
   QUICFrameFactory _frame_factory;
   QUICAckFrameCreator _ack_frame_creator;
   QUICPacketRetransmitter _packet_retransmitter;
+  QUICPacketNumberProtector _pn_protector;
   QUICApplicationMap *_application_map = nullptr;
 
   uint32_t _pmtu = 1280;
@@ -266,7 +267,7 @@ private:
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
 
-  QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory};
+  QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory, this->_pn_protector};
   CountQueue<QUICPacket> _packet_send_queue;
 
   QUICConnectionErrorUPtr _connection_error  = nullptr;
