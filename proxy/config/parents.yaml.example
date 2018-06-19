@@ -1,0 +1,64 @@
+
+## remap.config
+map /foo http://bob parents=foo.yaml
+map /bar http://bob parents=foo.yaml
+map /leif http://bob parents=ourhosts.yaml,bar.yaml # if we didn't have a include thing
+
+##
+# ourhosts.yaml
+hosts:
+  p1: &anchornameforp1 # shorthand name of host object, with an "anchor name"
+    host: p1.foo.com  # name or IP of host
+    protocol:
+      - http: 80
+      - https: 443
+    healthcheck:
+      url: tcp://192.168.1.1:80
+    future_stuff: "..."
+  p2: &anchornameforp2
+    host: p2.foo.com
+    protocol:
+      - http: 80
+      - https: 443
+    healthcheck:
+      url: tcp://192.168.1.2:80
+    future_stuff: "..."
+  s1: #... ommitted for brevity
+  s2: #... ommitted for brevity
+
+##########
+## bar.yaml
+
+#
+#include ourhosts.yaml
+#
+strategy:
+  policy: # Selection strategy policy: Enum of 'consistent_hash' or 'first_live' or 'rr_strict' or 'rr_ip' or 'latched'
+  hash_key: # optional key to use for Hashing. Enum of 'url' or 'uri' or 'hostname' or 'path' or 'path+query' or 'cache_key' or 'path+fragment'
+  primary_ring: # required: list of servers and their weights
+    hosts: # required list of servers
+      - <<: *anchornameforp1  # merges in alias the named "anchor" in line 10.
+          weight: 1.0 # optional: weights used for this server just in this strategy
+          # perhaps future stuff here
+      - <<: *anchornameforp2
+          weight: 2.0
+  secondary_ring: # optional list of servers and their weights as of now will be used only if the strategy is consistent_hash
+    hosts: # required
+      - <<: *anchornamefors1
+          weight: .1
+      - <<: *anchornamefors2
+  protocol: https  # optional & enumerated. by default uses the remapped protocol
+  failover: # optional: defines the conditions to failover to a different server. This was "retries" in <= ATS 7
+    ring_mode: exhaust_ring # enumerated as exhaust_rings or alternate_rings
+      #1) in 'exhaust_ring' mode all the servers in a ring are exhausted before failing over to secondary ring
+      #2) in 'alternate_rings' mode causes the failover to another server in secondary ring.
+    response_codes: # defines the responses codes for failover in exhaust_rings mode
+      - 404
+      - 502
+    health_check: # specifies the list of healthchecks that should be considered for failover. A list of enums: 'passive' or 'active'
+      - passsive
+
+
+##########
+## foo.yaml
+(concatenate ourhosts.yaml and bar.yaml)
