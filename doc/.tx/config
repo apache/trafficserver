@@ -82,9 +82,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/ip_allow.config.en.po
 source_file = _build/locale/pot/admin-guide/files/ip_allow.config.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--files--logging.config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/logging.config.en.po
-source_file = _build/locale/pot/admin-guide/files/logging.config.en.pot
+[apache-traffic-server-6x.admin-guide--files--logging.yaml_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/logging.yaml.en.po
+source_file = _build/locale/pot/admin-guide/files/logging.yaml.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--files--parent_config_en]

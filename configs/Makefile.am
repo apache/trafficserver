@@ -30,14 +30,14 @@ dist_sysconf_DATA =	\
 	cache.config.default \
 	hosting.config.default \
 	ip_allow.config.default \
-	logging.config.default \
+	logging.yaml.default \
 	parent.config.default \
 	plugin.config.default \
 	remap.config.default \
 	socks.config.default \
 	splitdns.config.default \
 	ssl_multicert.config.default \
-	ssl_server_name.config.default \
+	ssl_server_name.yaml.default \
 	volume.config.default
 
 install-exec-hook:

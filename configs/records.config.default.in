@@ -137,7 +137,7 @@ CONFIG proxy.config.cache.min_average_object_size INT 8000
 ##############################################################################
 # Logging Config. Docs:
 #    https://docs.trafficserver.apache.org/records.config#logging-configuration
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/logging.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/logging.yaml.en.html
 ##############################################################################
 CONFIG proxy.config.log.logging_enabled INT 3
 CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
