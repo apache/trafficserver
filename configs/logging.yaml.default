@@ -69,11 +69,11 @@ formats:
     # The following is the squid format but with a seconds-only timestamp
     # (cqts) instead of a seconds and milliseconds timestamp (cqtq).
     - name: squid_seconds_only_timestamp
-      format: '%<cqts> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
+      format: '%<cqts> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
 
     # Squid Log Format.
     - name: squid
-      format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
+      format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
 
     # Common Log Format.
     - name: common

@@ -2,41 +2,41 @@
 
 Request Result                         Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
-Cache hit                                  0      0.00%      0.00KB      0.00%
-Cache hit RAM                              0      0.00%      0.00KB      0.00%
+Cache hit                                 19     47.50%      8.79MB     64.52%
+Cache hit RAM                              8     20.00%      1.42MB     10.41%
 Cache hit IMS                              0      0.00%      0.00KB      0.00%
 Cache hit refresh                          0      0.00%      0.00KB      0.00%
 Cache hit other                            0      0.00%      0.00KB      0.00%
-Cache hit total                            0      0.00%      0.00KB      0.00%
+Cache hit total                           27     67.50%     10.21MB     74.93%
 
-Cache miss                                56     83.58%      5.60MB     88.98%
+Cache miss                                13     32.50%      3.42MB     25.07%
 Cache miss IMS                             0      0.00%      0.00KB      0.00%
-Cache miss refresh                        10     14.93%    710.16KB     11.02%
+Cache miss refresh                         0      0.00%      0.00KB      0.00%
 Cache miss other                           0      0.00%      0.00KB      0.00%
-Cache miss total                          66     98.51%      6.30MB    100.00%
+Cache miss total                          13     32.50%      3.42MB     25.07%
 
-Client aborted                             1      1.49%      0.00KB      0.00%
+Client aborted                             0      0.00%      0.00KB      0.00%
 Client read error                          0      0.00%      0.00KB      0.00%
 Connect failed                             0      0.00%      0.00KB      0.00%
 Invalid request                            0      0.00%      0.00KB      0.00%
 Unknown error(99)                          0      0.00%      0.00KB      0.00%
 Other errors                               0      0.00%      0.00KB      0.00%
-Errors total                               1      1.49%      0.00KB      0.00%
+Errors total                               0      0.00%      0.00KB      0.00%
 ..............................................................................
-Total requests                            67    100.00%      6.30MB    100.00%
+Total requests                            40    100.00%     13.62MB    100.00%
 
 
 HTTP return codes                      Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
 100 Continue                               0      0.00%      0.00KB      0.00%
-200 OK                                    66     98.51%      6.30MB    100.00%
+200 OK                                    40    100.00%     13.62MB    100.00%
 201 Created                                0      0.00%      0.00KB      0.00%
 202 Accepted                               0      0.00%      0.00KB      0.00%
 203 Non-Authoritative Info                 0      0.00%      0.00KB      0.00%
 204 No content                             0      0.00%      0.00KB      0.00%
 205 Reset Content                          0      0.00%      0.00KB      0.00%
 206 Partial content                        0      0.00%      0.00KB      0.00%
-2xx Total                                 66     98.51%      6.30MB    100.00%
+2xx Total                                 40    100.00%     13.62MB    100.00%
 
 300 Multiple Choices                       0      0.00%      0.00KB      0.00%
 301 Moved permanently                      0      0.00%      0.00KB      0.00%
@@ -75,16 +75,16 @@ HTTP return codes                      Count    Percent       Bytes    Percent
 505 HTTP Ver. Not Supported                0      0.00%      0.00KB      0.00%
 5xx Total                                  0      0.00%      0.00KB      0.00%
 
-000 Unknown                                1      1.49%      0.00KB      0.00%
+000 Unknown                                0      0.00%      0.00KB      0.00%
 
 
 Origin hierarchies                     Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
-NONE                                       0      0.00%      0.00KB      0.00%
-DIRECT                                    66     98.51%      6.30MB    100.00%
+NONE                                      27     67.50%     10.21MB     74.93%
+DIRECT                                    13     32.50%      3.42MB     25.07%
 SIBLING                                    0      0.00%      0.00KB      0.00%
 PARENT                                     0      0.00%      0.00KB      0.00%
-EMPTY                                      1      1.49%      0.00KB      0.00%
+EMPTY                                      0      0.00%      0.00KB      0.00%
 invalid                                    0      0.00%      0.00KB      0.00%
 other                                      0      0.00%      0.00KB      0.00%
 
@@ -92,7 +92,7 @@ other                                      0      0.00%      0.00KB      0.00%
 HTTP Methods                           Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
 OPTIONS                                    0      0.00%      0.00KB      0.00%
-GET                                       67    100.00%      6.30MB    100.00%
+GET                                       36     90.00%     13.61MB     99.91%
 HEAD                                       0      0.00%      0.00KB      0.00%
 POST                                       0      0.00%      0.00KB      0.00%
 PUT                                        0      0.00%      0.00KB      0.00%
@@ -101,20 +101,20 @@ TRACE                                      0      0.00%      0.00KB      0.00%
 CONNECT                                    0      0.00%      0.00KB      0.00%
 PURGE                                      0      0.00%      0.00KB      0.00%
 none (-)                                   0      0.00%      0.00KB      0.00%
-other                                      0      0.00%      0.00KB      0.00%
+other                                      4     10.00%     12.91KB      0.09%
 
 
 URL Schemes                            Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
-HTTP (port 80)                            67    100.00%      6.30MB    100.00%
+HTTP (port 80)                            36     90.00%     13.61MB     99.91%
 HTTPS (port 443)                           0      0.00%      0.00KB      0.00%
 none                                       0      0.00%      0.00KB      0.00%
-other                                      0      0.00%      0.00KB      0.00%
+other                                      4     10.00%     12.91KB      0.09%
 
 
 Protocols                              Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
-IPv4                                      67    100.00%      6.30MB    100.00%
+IPv4                                      40    100.00%     13.62MB    100.00%
 IPv6                                       0      0.00%      0.00KB      0.00%
 
 
@@ -122,18 +122,18 @@ Content Types                          Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
 text/javascript                            0      0.00%      0.00KB      0.00%
 text/css                                   0      0.00%      0.00KB      0.00%
-text/html                                 49     73.13%      4.13MB     65.59%
+text/html                                  8     20.00%     59.27KB      0.42%
 text/xml                                   0      0.00%      0.00KB      0.00%
 text/plain                                 0      0.00%      0.00KB      0.00%
 text/ other                                0      0.00%      0.00KB      0.00%
-text/ total                               49     73.13%      4.13MB     65.59%
+text/ total                                8     20.00%     59.27KB      0.42%
 
-image/jpeg                                 0      0.00%      0.00KB      0.00%
-image/gif                                  1      1.49%      2.60KB      0.04%
+image/jpeg                                20     50.00%      1.69MB     12.41%
+image/gif                                  8     20.00%     11.86MB     87.08%
 image/png                                  0      0.00%      0.00KB      0.00%
 image/bmp                                  0      0.00%      0.00KB      0.00%
-image/ other                               1      1.49%      1.43KB      0.02%
-image/ total                               2      2.99%      4.03KB      0.06%
+image/ other                               0      0.00%      0.00KB      0.00%
+image/ total                              28     70.00%     13.55MB     99.48%
 
 audio/x-wav                                0      0.00%      0.00KB      0.00%
 audio/x-mpeg                               0      0.00%      0.00KB      0.00%
@@ -146,26 +146,26 @@ application/x-quicktime                    0      0.00%      0.00KB      0.00%
 application/zip                            0      0.00%      0.00KB      0.00%
 application/rss+xml                        0      0.00%      0.00KB      0.00%
 application/rss+atom                       0      0.00%      0.00KB      0.00%
-application/ other                        15     22.39%      2.16MB     34.35%
-application/ total                        15     22.39%      2.16MB     34.35%
+application/ other                         0      0.00%      0.00KB      0.00%
+application/ total                         0      0.00%      0.00KB      0.00%
 
-none                                       1      1.49%      0.00KB      0.00%
+none                                       4     10.00%     12.91KB      0.09%
 other                                      0      0.00%      0.00KB      0.00%
 
 
 Elapsed time stats          Min          Max              Avg    Std Deviation
 ------------------------------------------------------------------------------
-Cache hit                     0            0             0.00             0.00
+Cache hit                     2          269            59.16            88.68
 Cache hit RAM                 0            0             0.00             0.00
 Cache hit IMS                 0            0             0.00             0.00
 Cache hit refresh             0            0             0.00             0.00
 Cache hit other               0            0             0.00             0.00
-Cache hit total               0            0             0.00             0.00
-Cache miss                   88        1,059           449.64           199.97
+Cache hit total               2          269            61.69            89.72
+Cache miss                   72          344           206.77            90.67
 Cache miss IMS                0            0             0.00             0.00
-Cache miss refresh          168          491           278.80           117.47
+Cache miss refresh            0            0             0.00             0.00
 Cache miss other              0            0             0.00             0.00
-Cache miss total             88        1,059           423.76           199.43
+Cache miss total             72          344           206.77            90.67
 
 ______________________________________________________________________________
 
