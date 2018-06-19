@@ -18,7 +18,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-SUBDIRS = hdrs shared http http2 logging config
+SUBDIRS = hdrs shared http http2 logging
 
 noinst_LIBRARIES = libproxy.a
 

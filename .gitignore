@@ -40,6 +40,9 @@ config.status
 config.nice
 config.h
 
+configs/records.config.default
+configs/storage.config.default
+
 doc/_build/html/api/
 doc/_build/locale/
 doc/docbuild/
@@ -99,8 +102,6 @@ iocore/eventsystem/test_Event
 iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
-proxy/config/records.config.default
-proxy/config/storage.config.default
 proxy/hdrs/test_mime
 proxy/http/test_ForwardedConfig
 proxy/http2/test_Huffmancode

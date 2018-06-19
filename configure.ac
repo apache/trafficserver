@@ -2024,6 +2024,11 @@ AS_IF([test "x$RPATH" != "x"], [
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
+  configs/Makefile
+  configs/body_factory/Makefile
+  configs/body_factory/default/Makefile
+  configs/records.config.default
+  configs/storage.config.default
   doc/Makefile
   doc/ext/local-config.py
   doc/uml/Makefile
@@ -2054,11 +2059,6 @@ AC_CONFIG_FILES([
   plugins/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
-  proxy/config/Makefile
-  proxy/config/body_factory/Makefile
-  proxy/config/body_factory/default/Makefile
-  proxy/config/records.config.default
-  proxy/config/storage.config.default
   proxy/hdrs/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
