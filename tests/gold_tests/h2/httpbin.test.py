@@ -65,7 +65,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http2',
 
 })
-ts.Disk.logging_config.AddLines(
+ts.Disk.logging_yaml.AddLines(
     '''
 formats:
   # Extended Log Format.

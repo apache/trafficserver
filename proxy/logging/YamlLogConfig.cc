@@ -50,12 +50,12 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   YAML::Node config = YAML::LoadFile(cfgFilename);
 
   if (config.IsNull()) {
-    Warning("logging.config is empty");
+    Warning("logging.yaml is empty");
     return false;
   }
 
   if (!config.IsMap()) {
-    Error("malformed logging.config file; expected a map");
+    Error("malformed logging.yaml file; expected a map");
     return false;
   }
 

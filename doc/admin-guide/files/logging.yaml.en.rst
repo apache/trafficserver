@@ -17,12 +17,12 @@
 
 .. include:: ../../common.defs
 
-.. configfile:: logging.config
+.. configfile:: logging.yaml
 
-logging.config
+logging.yaml
 **************
 
-The :file:`logging.config` file defines all custom log file formats, filters,
+The :file:`logging.yaml` file defines all custom log file formats, filters,
 and processing options. The file itself is a Lua script.
 
 .. important::
@@ -56,7 +56,7 @@ Formats
 -------
 
 Custom logging formats may be provided directly to a log definition, or they
-may be defined as a reusable variable in your :file:`logging.config` for ease
+may be defined as a reusable variable in your :file:`logging.yaml` for ease
 of reference, particularly when you may have more than one log using the same
 format. Which approach you use is entirely up to you, though it's strongly
 recommended to create an explicit format object if you intend to reuse the same
@@ -328,7 +328,7 @@ per-log basis by passing appropriate values for the ``rolling_enabled`` key. The
 latter method may also be used to effect different rolling settings for
 individual logs. The numeric values that may be passed are the same as used by
 :ts:cv:`proxy.config.log.rolling_enabled`. For convenience and readability,
-the following predefined variables may also be used in :file:`logging.config`:
+the following predefined variables may also be used in :file:`logging.yaml`:
 
 log.roll.none
     Disable log rolling.

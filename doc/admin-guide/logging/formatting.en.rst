@@ -23,7 +23,7 @@ Formatting Log Files
 ********************
 
 This section covers the creation of logging formats. All but a few logging
-output related settings in |TS| are performed in :file:`logging.config` and
+output related settings in |TS| are performed in :file:`logging.yaml` and
 consulting the documentation for that file is recommended in addition to this
 section. Any configurations or settings performed outside that file will be
 clearly noted.
@@ -33,7 +33,7 @@ clearly noted.
 Defining Formats
 ================
 
-Logging formats in |TS| are defined by editing :file:`logging.config`
+Logging formats in |TS| are defined by editing :file:`logging.yaml`
 and adding new format entries for each format you wish to define. The syntax is
 fairly simple: every format must contain a ``Format`` attribute, which is the
 string defining the contents of each line in the log, and may also contain an
@@ -70,7 +70,7 @@ just adding the desired characters to the format string:
 
 You may define as many custom formats as you wish. To apply changes to custom
 formats, you will need to run the command :option:`traffic_ctl config reload`
-after saving your changes to :file:`logging.config`.
+after saving your changes to :file:`logging.yaml`.
 
 .. _admin-logging-fields:
 
