@@ -34,11 +34,13 @@ isValid
   ( std::pair<int64_t, int64_t> const & range
   );
 
+/* testing block aligned data
 std::pair<int64_t, int64_t>
 quantize
   ( int64_t const blocksize
   , std::pair<int64_t, int64_t> const & range
   );
+*/
 
 int64_t
 firstBlock

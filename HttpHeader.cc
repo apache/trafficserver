@@ -151,6 +151,7 @@ HttpHeader :: valueForKey
   return status;
 }
 
+/*
 bool
 HttpHeader :: valueForKeyLast
   ( char const * const keystrin
@@ -205,6 +206,7 @@ HttpHeader :: valueForKeyLast
 
   return status;
 }
+*/
 
 bool
 HttpHeader :: setKeyVal
@@ -418,6 +420,7 @@ HdrMgr :: populateFrom
   return parse_res;
 }
 
+/*
 bool
 HdrMgr :: cloneFrom
   ( TSMBuffer buffersrc
@@ -438,3 +441,4 @@ HdrMgr :: cloneFrom
 
   return status;
 }
+*/

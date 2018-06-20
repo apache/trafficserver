@@ -129,6 +129,7 @@ range :: isValid
   return range.first < range.second;
 }
 
+/*
 std::pair<int64_t, int64_t>
 range :: quantize
   ( int64_t const blocksize
@@ -145,6 +146,7 @@ range :: quantize
 
   return std::make_pair(blockbeg * blocksize, blockend * blocksize);
 }
+*/
 
 int64_t
 range :: firstBlock

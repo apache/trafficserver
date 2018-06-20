@@ -107,6 +107,7 @@ struct HttpHeader
     , int const index = -1 // sets all values
     ) const;
 
+/*
   bool
   valueForKeyLast
     ( char const * const keystr
@@ -115,6 +116,7 @@ struct HttpHeader
     , int * const vallen // <-- pass in capacity, returns len of string
     , int const index = -1 // sets all values
     ) const;
+*/
 
   /**
     Sets or adds a key/value
@@ -253,12 +255,14 @@ struct HdrMgr
     );
 
 
+/*
   //! returns false if buffers already allocated or clone fails
   bool
   cloneFrom
     ( TSMBuffer buffersrc
     , TSMLoc locsrc
     );
+*/
 
   bool
   isValid

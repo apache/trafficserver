@@ -47,6 +47,7 @@ struct Data
     , m_contentlen(-1)
     , m_blocknum(-1)
     , m_skipbytes(0)
+    , m_bytestosend(0)
     , m_bytessent(0)
     , m_server_block_header_parsed(false)
     , m_server_first_header_parsed(false)

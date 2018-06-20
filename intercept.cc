@@ -278,8 +278,11 @@ std::cerr << header.toString() << std::endl;
           ( TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE
           , rangestr, &rangelen ) )
       {
+/*
         std::string const headerstr = header.toString();
         DEBUG_LOG("invalid response header\n%s", headerstr.c_str());
+*/
+        DEBUG_LOG("invalid response header, no Content-Range");
         shutdown(contp, data);
       }
 
@@ -468,7 +471,7 @@ intercept_hook
 {
 DEBUG_LOG("intercept_hook: %d", event);
 
-  Data * const data = (Data*)TSContDataGet(contp);
+  Data * const data = static_cast<Data*>(TSContDataGet(contp));
 
   // After the initial TS_EVENT_NET_ACCEPT
   // any "events" will be handled by the vio read or write channel handler
@@ -509,21 +512,17 @@ DEBUG_LOG("intercept_hook: %d", event);
     }
     else
     {
-      DEBUG_LOG("Events received after intercept torn down");
+      DEBUG_LOG("Unhandled event: %d", event);
 std::cerr << __func__
   << ": events received after intercept state torn down"
   << std::endl;
     }
   }
-  else if (nullptr == data)
+  else // if (nullptr == data)
   {
+    DEBUG_LOG("Events handled after data already torn down");
     TSContDestroy(contp);
     return TS_EVENT_ERROR;
-  }
-  else
-  {
-    DEBUG_LOG("Unhandled event: %d", event);
-std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
   return TS_EVENT_CONTINUE;
