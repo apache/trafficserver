@@ -18,7 +18,7 @@ struct Data
 
   TSHttpStatus m_statustype; // 200 or 206
 
-  bool m_passthru; // non 206/200 response
+  bool m_bail; // non 206/200 response
 
   std::pair<int64_t, int64_t> m_range_begend;
   int64_t m_contentlen;
@@ -45,7 +45,7 @@ struct Data
     : m_blocksize(blocksize)
     , m_client_ip()
     , m_statustype(TS_HTTP_STATUS_NONE)
-    , m_passthru(false)
+    , m_bail(false)
     , m_range_begend(-1, -1)
     , m_contentlen(-1)
     , m_blocknum(-1)

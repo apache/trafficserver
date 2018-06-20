@@ -220,6 +220,54 @@ DEBUG_LOG("transfer_content_bytes");
   return consumed;
 }
 
+// transfer all bytes from the server (error condition)
+int64_t
+transfer_all_bytes
+  ( Data * const data
+  )
+{
+DEBUG_LOG("transfer_all_bytes");
+  int64_t consumed = 0;
+  int64_t const read_avail = TSIOBufferReaderAvail
+    (data->m_upstream.m_read.m_reader);
+
+  if (0 < read_avail)
+  {
+    int64_t const copied
+      ( TSIOBufferCopy
+        ( data->m_dnstream.m_write.m_iobuf
+        , data->m_upstream.m_read.m_reader
+        , read_avail
+        , 0 ) );
+
+    TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
+    TSVIOReenable(data->m_dnstream.m_write.m_vio);
+
+    consumed = copied;
+  }
+
+  return consumed;
+}
+
+// canned body string for a 416, stolen from nginx
+std::string
+bodyString416
+  ()
+{
+  std::string bodystr;
+  bodystr.append("<html>\n");
+  bodystr.append("<head><title>416 Requested Range Not Satisfiable</title></head>\n");
+  bodystr.append("<body bgcolor=\"white\">\n");
+  bodystr.append("<center><h1>416 Requested Range Not Satisfiable</h1></center>");
+  bodystr.append("<hr><center>ATS/");
+  bodystr.append(TS_VERSION_STRING);
+  bodystr.append("</center>\n");
+  bodystr.append("</body>\n");
+  bodystr.append("</html>\n");
+  
+  return bodystr;
+}
+
 // this is called every time the server has data for us
 int
 handle_server_resp
@@ -256,7 +304,7 @@ std::cerr << header.toString() << std::endl;
       // only process a 206, everything else gets a pass through
       if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status())
       {
-        data->m_passthru = true;
+        data->m_bail = true;
         data->m_blocknum = -1;
 
         if (nullptr == data->m_dnstream.m_write.m_vio)
@@ -267,6 +315,8 @@ std::cerr << header.toString() << std::endl;
             , header.m_lochdr
             , data->m_dnstream.m_write.m_iobuf );
         }
+
+        transfer_all_bytes(data);
 
         return TS_EVENT_CONTINUE;
       }
@@ -315,6 +365,54 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
         crange.m_begin = data->m_range_begend.first;
         crange.m_end = rend;
 
+        data->m_bytestosend = crange.rangeSize();
+
+//std::cerr << "bytes to send:" << data->m_bytestosend << std::endl;
+
+        if (data->m_bytestosend <= 0) // assume 416 needs to be sent
+        {
+          header.setStatus(TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE);
+          char const * const reason = TSHttpHdrReasonLookup
+            (TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE);
+          header.setReason(reason, strlen(reason));
+
+          std::string const bodystr(bodyString416());
+
+          char bufstr[256];
+          int buflen = snprintf
+            (bufstr, 255, "%" PRId64, bodystr.size());
+          header.setKeyVal
+            ( TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH
+            , bufstr, buflen );
+
+static char const * const ctypestr = "text/html";
+static int const ctypelen = strlen(ctypestr);
+          header.setKeyVal
+            ( TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE
+            , ctypestr, ctypelen );
+            
+          buflen = snprintf
+            (bufstr, 255, "*/%" PRId64, data->m_contentlen );
+          header.setKeyVal
+            ( TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE
+            , bufstr, buflen );
+
+          data->m_dnstream.setupVioWrite(contp);
+
+          TSHttpHdrPrint
+            ( header.m_buffer
+            , header.m_lochdr
+            , data->m_dnstream.m_write.m_iobuf );
+
+          TSIOBufferWrite
+            ( data->m_dnstream.m_write.m_iobuf
+            , bodystr.data(), bodystr.size() );
+
+          data->m_bail = true;
+          
+          return TS_EVENT_CONTINUE;
+        }
+        else
         if (TS_HTTP_STATUS_PARTIAL_CONTENT == data->m_statustype)
         {
           rangelen = sizeof(rangestr) - 1;
@@ -338,8 +436,6 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
           header.removeKey
             (TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
         }
-
-        data->m_bytestosend = crange.rangeSize();
 
         char bufstr[256];
         int buflen = snprintf
@@ -446,6 +542,12 @@ handle_client_resp
   , Data * const data
   )
 {
+  if (data->m_bail)
+  {
+    shutdown(contp, data);
+    return TS_EVENT_CONTINUE;
+  }
+
   if (TS_EVENT_VCONN_WRITE_READY == event)
   {
 DEBUG_LOG("client wants more data");
