@@ -13,7 +13,9 @@
 #include <iostream>
 #include <limits>
 
-static
+namespace
+{
+
 void
 shutdown
   ( TSCont contp
@@ -26,7 +28,6 @@ shutdown
 }
 
 // create and issue a block request
-static
 int
 request_block
   ( TSCont contp
@@ -105,7 +106,6 @@ std::cerr << header.toString() << std::endl;
 }
 
 // this is called once per transaction when the client sends a req header
-static
 int
 handle_client_req
   ( TSCont contp
@@ -191,7 +191,6 @@ std::cerr << "Please send a 416 header and shutdown" << std::endl;
 }
 
 // transfer bytes from the server to the client
-static
 int64_t
 transfer_content_bytes
   ( Data * const data
@@ -235,7 +234,6 @@ DEBUG_LOG("transfer_content_bytes");
 }
 
 // this is called every time the server has data for us
-static
 int
 handle_server_resp
   ( TSCont contp
@@ -246,7 +244,7 @@ handle_server_resp
   if (TS_EVENT_VCONN_READ_READY == event)
   {
 DEBUG_LOG("server has data ready to read");
-    // has the first server reponse header been parsed??
+    // has block reponse header been parsed??
     if (! data->m_server_block_header_parsed)
     {
       // the server response header didn't fit into the input buffer??
@@ -309,6 +307,7 @@ std::cerr << header.toString() << std::endl;
         TSError("Unable to parse range: %s", rangestr);
       }
 
+      // Is this the very first response header?
       if (! data->m_server_first_header_parsed)
       {
         // set the resource content length
@@ -332,8 +331,7 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
         }
 
         header.setKeyVal
-          ( TS_MIME_FIELD_CONTENT_RANGE
-          , TS_MIME_LEN_CONTENT_RANGE
+          ( TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE
           , rangestr, rangelen );
 
         data->m_bytestosend = crange.rangeSize();
@@ -372,7 +370,7 @@ TSAssert(data->m_server_first_header_parsed);
 TSAssert(nullptr == data->m_dnstream.m_write.m_vio);
       data->m_dnstream.setupVioWrite(contp);
 
-      // write the copied and manipulated header to the client
+      // write the (previously) manipulated server resp header to the client
       HttpHeader header
         ( data->m_upstream.m_hdr_mgr.m_buffer
         , data->m_upstream.m_hdr_mgr.m_lochdr );
@@ -382,8 +380,6 @@ std::cerr << std::endl;
 std::cerr << __func__ << " sending header to client" << std::endl;
 std::cerr << header.toString() << std::endl;
 */
-
-      // dump the manipulated upstream header to the client
       TSHttpHdrPrint
         ( header.m_buffer
         , header.m_lochdr
@@ -392,6 +388,7 @@ std::cerr << header.toString() << std::endl;
       data->m_client_header_sent = true;
     }
 
+    // transfer any remaining content data
     transfer_content_bytes(data);
   }
   else // server block done, onto the next server request
@@ -403,6 +400,7 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
     // when we get a "bytes=-<end>" last N bytes request the plugin
     // (like nginx) issues a speculative request for the first block
     // in that case fast forward to the real first in range block
+    // Btw this isn't implemented yet, to be handled
     bool adjusted = false;
     int64_t const firstblock
       (range::firstBlock(data->m_blocksize, data->m_range_begend));
@@ -436,7 +434,6 @@ std::cerr << __func__ << ": unhandled event: " << event << std::endl;
 }
 
 // this is when the client starts asking us for more data
-static
 int
 handle_client_resp
   ( TSCont contp
@@ -472,6 +469,8 @@ std::cerr << __func__ << ": unhandled event: " << event << std::endl;
 
   return TS_EVENT_CONTINUE;
 }
+
+} // private namespace
 
 int
 intercept_hook
