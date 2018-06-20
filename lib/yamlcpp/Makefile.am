@@ -22,13 +22,9 @@ include $(top_srcdir)/build/tidy.mk
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/lib/yamlcpp/include
 
-#WCCP_DEFS = @WCCP_DEFS@
-#DEFS += $(WCCP_DEFS)
+noinst_LTLIBRARIES = libyamlcpp.la
 
-noinst_LIBRARIES = libyamlcpp.a
-# noinst_PROGRAMS = test-cache
-
-libyamlcpp_a_SOURCES = src/binary.cpp \
+libyamlcpp_la_SOURCES = src/binary.cpp \
 src/convert.cpp \
 src/directives.cpp \
 src/emit.cpp \
@@ -56,11 +52,6 @@ src/simplekey.cpp \
 src/singledocparser.cpp \
 src/stream.cpp \
 src/tag.cpp
-
-# test_cache_SOURCES = \
-#		wccp-test-cache.cc
-
-# test_cache_LDADD = $(LDADD) -L$(top_builddir)/lib/tsconfig -ltsconfig -L$(top_builddir)/lib/wccp -lwccp -L$(top_builddir)/lib/ts -ltsutil
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
