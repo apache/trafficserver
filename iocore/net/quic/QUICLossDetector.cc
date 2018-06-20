@@ -401,7 +401,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_loss_time = 0;
-  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
+  std::map<QUICPacketNumber, const PacketInfo *> lost_packets;
   double delay_until_lost = INFINITY;
 
   if (this->_k_using_time_loss_detection) {
@@ -468,7 +468,7 @@ QUICLossDetector::_retransmit_all_unacked_handshake_data()
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   std::set<QUICPacketNumber> retransmitted_handshake_packets;
-  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
+  std::map<QUICPacketNumber, const PacketInfo *> lost_packets;
 
   for (auto &info : this->_sent_packets) {
     retransmitted_handshake_packets.insert(info.first);

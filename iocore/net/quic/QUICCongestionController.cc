@@ -82,7 +82,7 @@ QUICCongestionController::on_packet_acked(const PacketInfo &acked_packet)
 }
 
 void
-QUICCongestionController::on_packets_lost(std::map<QUICPacketNumber, PacketInfo *> &lost_packets)
+QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, const PacketInfo *> &lost_packets)
 {
   // Remove lost packets from bytes_in_flight.
   for (auto &lost_packet : lost_packets) {

@@ -64,7 +64,7 @@ public:
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const PacketInfo &acked_packet);
-  virtual void on_packets_lost(std::map<QUICPacketNumber, PacketInfo *> &packets);
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, const PacketInfo *> &packets);
   void on_retransmission_timeout_verified();
   bool check_credit() const;
   void reset();
