@@ -62,21 +62,21 @@ QUICCongestionController::_in_recovery(QUICPacketNumber packet_number)
 }
 
 void
-QUICCongestionController::on_packet_acked(QUICPacketNumber acked_packet_number, size_t acked_packet_size)
+QUICCongestionController::on_packet_acked(const PacketInfo &acked_packet)
 {
   // Remove from bytes_in_flight.
-  this->_bytes_in_flight -= acked_packet_size;
-  if (this->_in_recovery(acked_packet_number)) {
+  this->_bytes_in_flight -= acked_packet.bytes;
+  if (this->_in_recovery(acked_packet.packet_number)) {
     // Do not increase congestion window in recovery period.
     return;
   }
   if (this->_congestion_window < this->_ssthresh) {
     // Slow start.
-    this->_congestion_window += acked_packet_size;
+    this->_congestion_window += acked_packet.bytes;
     QUICCCDebug("slow start window chaged");
   } else {
     // Congestion avoidance.
-    this->_congestion_window += this->_k_default_mss * acked_packet_size / this->_congestion_window;
+    this->_congestion_window += this->_k_default_mss * acked_packet.bytes / this->_congestion_window;
     QUICCCDebug("Congestion avoidance window changed");
   }
 }
