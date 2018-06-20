@@ -46,8 +46,7 @@ QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *i
   this->_k_minimum_window        = params->cc_minimum_window();
   this->_k_loss_reduction_factor = params->cc_loss_reduction_factor();
 
-  // [draft-11 recovery] 4.7.3.  Initialization
-  this->_congestion_window = this->_k_initial_window;
+  this->reset();
 }
 
 void
@@ -133,4 +132,14 @@ uint32_t
 QUICCongestionController::current_ssthresh() const
 {
   return this->_ssthresh;
+}
+
+// [draft-11 recovery] 4.7.3.  Initialization
+void
+QUICCongestionController::reset()
+{
+  this->_bytes_in_flight         = 0;
+  this->_congestion_window       = this->_k_initial_window;;
+  this->_end_of_recovery = 0;
+  this->_ssthresh                = UINT32_MAX;
 }

@@ -882,6 +882,7 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
     this->_stream_manager->reset_send_offset();
     this->_stream_manager->reset_recv_offset();
     this->_loss_detector->reset();
+    this->_congestion_controller->reset();
     SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
     this->_packet_retransmitter.reset();
 
@@ -921,6 +922,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
   // discard all transport state
   this->_stream_manager->reset_send_offset();
   this->_loss_detector->reset();
+  this->_congestion_controller->reset();
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   this->_packet_retransmitter.reset();
 

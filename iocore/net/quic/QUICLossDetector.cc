@@ -47,17 +47,7 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConne
   this->_k_delayed_ack_timeout       = params->ld_delayed_ack_timeout();
   this->_k_default_initial_rtt       = params->ld_default_initial_rtt();
 
-  // [draft-11 recovery] 3.5.3.  Initialization
-  if (this->_k_using_time_loss_detection) {
-    this->_reordering_threshold     = UINT32_MAX;
-    this->_time_reordering_fraction = this->_k_time_reordering_fraction;
-  } else {
-    this->_reordering_threshold     = this->_k_reordering_threshold;
-    this->_time_reordering_fraction = INFINITY;
-  }
-
-  this->_handshake_outstanding       = 0;
-  this->_retransmittable_outstanding = 0;
+  this->reset();
 
   SET_HANDLER(&QUICLossDetector::event_handler);
 }
@@ -68,6 +58,8 @@ QUICLossDetector::~QUICLossDetector()
     this->_loss_detection_alarm->cancel();
     this->_loss_detection_alarm = nullptr;
   }
+
+  this->_sent_packets.clear();
 
   this->_transmitter = nullptr;
   this->_cc          = nullptr;
@@ -161,8 +153,17 @@ QUICLossDetector::reset()
 
   this->_sent_packets.clear();
 
+  // [draft-11 recovery] 3.5.3.  Initialization
   this->_handshake_outstanding       = 0;
   this->_retransmittable_outstanding = 0;
+
+  if (this->_k_using_time_loss_detection) {
+    this->_reordering_threshold     = UINT32_MAX;
+    this->_time_reordering_fraction = this->_k_time_reordering_fraction;
+  } else {
+    this->_reordering_threshold     = this->_k_reordering_threshold;
+    this->_time_reordering_fraction = INFINITY;
+  }
 }
 
 void
