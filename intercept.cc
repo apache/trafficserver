@@ -216,11 +216,6 @@ DEBUG_LOG("transfer_content_bytes");
     int64_t const bytesleft(data->m_bytestosend - data->m_bytessent);
     int64_t const tocopy(std::min(read_avail, bytesleft));
 
-std::cerr << "read_avail: " << read_avail << std::endl;
-std::cerr << "bytesleft: " << bytesleft << std::endl;
-std::cerr << "tocopy: " << tocopy << std::endl;
-std::cerr << "contentlen: " << data->m_contentlen << std::endl;
-
     int64_t const copied
       ( TSIOBufferCopy
         ( data->m_dnstream.m_write.m_iobuf
@@ -267,9 +262,11 @@ DEBUG_LOG("server has data ready to read");
         ( data->m_upstream.m_hdr_mgr.m_buffer
         , data->m_upstream.m_hdr_mgr.m_lochdr );
 
+/*
 std::cerr << std::endl;
 std::cerr << "got a response header from server" << std::endl;
 std::cerr << header.toString() << std::endl;
+*/
 
       // only process a 206, everything else gets a pass through
       if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status())
@@ -316,7 +313,6 @@ std::cerr << header.toString() << std::endl;
       {
         // set the resource content length
         data->m_contentlen = crange.m_length;
-std::cerr << "received content length: " << crange.m_length << std::endl;
 TSAssert(data->m_range_begend.first < data->m_range_begend.second);
 
         // fix up request range end
@@ -346,8 +342,7 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
         int buflen = snprintf
           (bufstr, 255, "%" PRId64, data->m_bytestosend);
         header.setKeyVal
-          ( TS_MIME_FIELD_CONTENT_LENGTH
-          , TS_MIME_LEN_CONTENT_LENGTH
+          ( TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH
           , bufstr, buflen );
 
         // add the response header length to the total bytes to send
@@ -361,7 +356,7 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
 TSAssert(data->m_contentlen == crange.m_length);
       }
 
-      // fast forward into the data
+      // how much to fast forward into the first data block
       data->m_skipbytes = range::skipBytesForBlock
           (data->m_blocksize, data->m_blocknum, data->m_range_begend);
 
@@ -382,9 +377,11 @@ TSAssert(nullptr == data->m_dnstream.m_write.m_vio);
         ( data->m_upstream.m_hdr_mgr.m_buffer
         , data->m_upstream.m_hdr_mgr.m_lochdr );
 
+/*
 std::cerr << std::endl;
 std::cerr << __func__ << " sending header to client" << std::endl;
 std::cerr << header.toString() << std::endl;
+*/
 
       // dump the manipulated upstream header to the client
       TSHttpHdrPrint
