@@ -268,6 +268,38 @@ bodyString416
   return bodystr;
 }
 
+void
+form416HeaderAndBody
+  ( HttpHeader & header
+  , int64_t const contentlen
+  , std::string const & bodystr
+  )
+{
+  header.setStatus(TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE);
+  char const * const reason = TSHttpHdrReasonLookup
+    (TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE);
+  header.setReason(reason, strlen(reason));
+
+  char bufstr[256];
+  int buflen = snprintf
+    (bufstr, 255, "%" PRId64, bodystr.size());
+  header.setKeyVal
+    ( TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH
+    , bufstr, buflen );
+
+static char const * const ctypestr = "text/html";
+static int const ctypelen = strlen(ctypestr);
+  header.setKeyVal
+    ( TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE
+    , ctypestr, ctypelen );
+            
+  buflen = snprintf
+    (bufstr, 255, "*/%" PRId64, contentlen);
+  header.setKeyVal
+    ( TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE
+    , bufstr, buflen );
+}
+
 // this is called every time the server has data for us
 int
 handle_server_resp
@@ -371,31 +403,8 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
 
         if (data->m_bytestosend <= 0) // assume 416 needs to be sent
         {
-          header.setStatus(TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE);
-          char const * const reason = TSHttpHdrReasonLookup
-            (TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE);
-          header.setReason(reason, strlen(reason));
-
           std::string const bodystr(bodyString416());
-
-          char bufstr[256];
-          int buflen = snprintf
-            (bufstr, 255, "%" PRId64, bodystr.size());
-          header.setKeyVal
-            ( TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH
-            , bufstr, buflen );
-
-static char const * const ctypestr = "text/html";
-static int const ctypelen = strlen(ctypestr);
-          header.setKeyVal
-            ( TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE
-            , ctypestr, ctypelen );
-            
-          buflen = snprintf
-            (bufstr, 255, "*/%" PRId64, data->m_contentlen );
-          header.setKeyVal
-            ( TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE
-            , bufstr, buflen );
+          form416HeaderAndBody(header, data->m_contentlen, bodystr);
 
           data->m_dnstream.setupVioWrite(contp);
 
