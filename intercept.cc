@@ -136,7 +136,16 @@ std::cerr << header.toString() << std::endl;
         , rangestr, rangelen );
       rangebe = range::parseHalfOpenFrom(rangestr);
 
-      data->m_statustype = TS_HTTP_STATUS_PARTIAL_CONTENT;
+      if (range::isValid(rangebe))
+      {
+        data->m_statustype = TS_HTTP_STATUS_PARTIAL_CONTENT;
+      }
+      else // reset the range
+      {
+        rangebe = std::make_pair
+          (0, std::numeric_limits<int64_t>::max() - data->m_blocksize);
+        data->m_statustype = TS_HTTP_STATUS_OK;
+      }
     }
     else
     {
@@ -145,16 +154,7 @@ static size_t const vallen = strlen(valstr);
       header.setKeyVal
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , valstr, vallen );
-
       data->m_statustype = TS_HTTP_STATUS_OK;
-    }
-
-    if (! range::isValid(rangebe))
-    {
-        // send 416 header and shutdown
-std::cerr << "Please send a 416 header and shutdown" << std::endl;
-      shutdown(contp, data);
-      return TS_EVENT_CONTINUE;
     }
 
      // set the initial range begin/end, we'll correct it later
