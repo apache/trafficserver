@@ -34,10 +34,8 @@ request_block
   , Data * const data
   )
 {
-  std::pair<int64_t, int64_t> blockbe
+  std::pair<int64_t, int64_t> const blockbe
     (range::forBlock(data->m_blocksize, data->m_blocknum));
-
-  // fix up end of block for full content
 
 //std::cerr << __func__ << " trying to build header" << std::endl;
 
@@ -47,7 +45,7 @@ request_block
     (blockbe, rangestr, &rangelen);
 TSAssert(rpstat);
 
-DEBUG_LOG("request_block: %*s", rangelen, rangestr);
+DEBUG_LOG("request_block: %s", rangestr);
 
   // reuse the incoming client header, just change the range
   HttpHeader header
@@ -60,33 +58,19 @@ DEBUG_LOG("request_block: %*s", rangelen, rangestr);
     , rangestr, rangelen );
 TSAssert(rangestat);
 
-/*
-  if ( nullptr == data->m_upstream.m_vc
-    || TSVConnClosedGet(data->m_upstream.m_vc) )
-*/
-  {
-//std::cerr << "having to create a virtual connection" << std::endl;
-    // create virtual connection back into ATS
-    TSVConn const upvc = TSHttpConnectWithPluginId
-      ((sockaddr*)&data->m_client_ip, "slicer", 0);
+  // create virtual connection back into ATS
+  TSVConn const upvc = TSHttpConnectWithPluginId
+    ((sockaddr*)&data->m_client_ip, "slicer", 0);
 
-    // set up connection with the HttpConnect server
-    data->m_upstream.setupConnection(upvc);
-    data->m_upstream.setupVioWrite(contp);
-  }
-/*
-  else
-  {
-std::cerr << "trying to reuse http connect" << std::endl;
-  }
-*/
+  // set up connection with the HttpConnect server
+  data->m_upstream.setupConnection(upvc);
+  data->m_upstream.setupVioWrite(contp);
 
 /*
 std::cerr << std::endl;
 std::cerr << __func__ << " sending header to server" << std::endl;
 std::cerr << header.toString() << std::endl;
 */
-
   TSHttpHdrPrint
     ( header.m_buffer
     , header.m_lochdr
@@ -100,7 +84,6 @@ std::cerr << header.toString() << std::endl;
   // anticipate the next server response header
   TSHttpParserClear(data->httpParser());
   data->m_upstream.m_hdr_mgr.resetHeader();
-
 
   return TS_EVENT_CONTINUE;
 }
@@ -305,6 +288,8 @@ std::cerr << header.toString() << std::endl;
       {
         // abort transaction ????
         TSError("Unable to parse range: %s", rangestr);
+        shutdown(contp, data);
+        return TS_EVENT_CONTINUE;
       }
 
       // Is this the very first response header?
@@ -319,7 +304,7 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
           (crange.m_length, data->m_range_begend.second);
         data->m_range_begend.second = rend;
 
-        // convert block content range to response content range
+        // convert block content range to client response content range
         crange.m_begin = data->m_range_begend.first;
         crange.m_end = rend;
 
@@ -354,7 +339,7 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
 TSAssert(data->m_contentlen == crange.m_length);
       }
 
-      // how much to fast forward into the first data block
+      // how much to fast forward into the (first) data block
       data->m_skipbytes = range::skipBytesForBlock
           (data->m_blocksize, data->m_blocknum, data->m_range_begend);
 
@@ -363,7 +348,7 @@ TSAssert(data->m_contentlen == crange.m_length);
 
 // send data down to the reader
 
-    // if necessary create downstream and a manufactured header
+    // if necessary create downstream and send the manufactured header
     if (! data->m_client_header_sent)
     {
 TSAssert(data->m_server_first_header_parsed);
@@ -450,20 +435,22 @@ DEBUG_LOG("client wants more data");
         (TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
       if (data->m_bytestosend <= bytessent)
       {
-//std::cerr << __func__ << ": this is a good place to clean up" << std::endl;
+        // everything has been sent, close down !!!
         shutdown(contp, data);
         return TS_EVENT_CONTINUE;
       }
     }
   }
   else
-  if (TS_EVENT_ERROR == event)
+  if (TS_EVENT_ERROR == event) // client closed connection
   {
+    DEBUG_LOG("got a TS_EVENT_ERROR from the client");
 std::cerr << __func__ << ": " << "TS_EVENT_ERROR" << std::endl;
     shutdown(contp, data);
   }
   else // close it all out???
   {
+    DEBUG_LOG("Unhandled event: %d", event);
 std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
@@ -505,7 +492,7 @@ DEBUG_LOG("intercept_hook: %d", event);
     if ( data->m_upstream.m_write.isValid()
       && edata == data->m_upstream.m_write.m_vio )
     {
-DEBUG_LOG("server asking for more data after header already sent");
+      DEBUG_LOG("server asking for more data after header already sent");
       TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
     }
     else // server has data for us
@@ -522,6 +509,7 @@ DEBUG_LOG("server asking for more data after header already sent");
     }
     else
     {
+      DEBUG_LOG("Events received after intercept torn down");
 std::cerr << __func__
   << ": events received after intercept state torn down"
   << std::endl;
@@ -534,6 +522,7 @@ std::cerr << __func__
   }
   else
   {
+    DEBUG_LOG("Unhandled event: %d", event);
 std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
