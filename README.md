@@ -46,3 +46,52 @@ Range: bytes=<begin>-
 ```
 are supported as multi part range responses are non trivial to implement.
 This matches with the cache_range_requests.so plugin.
+
+Basic shared data:
+```
+
+struct Channel
+{
+  TSVIO m_vio { nullptr };
+  TSIOBuffer m_iobuf { nullptr };
+  TSIOBufferReader m_reader { nullptr };
+};
+
+struct Stage // upstream or downstream (server or client)
+{
+  TSVConn m_vc { nullptr };
+  Channel m_read;
+  Channel m_write;
+
+  HdrMgr m_hdr_mgr; // header memory manager
+};
+
+struct Data
+{
+  int64_t m_blocksize;
+  sockaddr_storage m_client_ip;
+
+  TSHttpStatus m_statustype; // 200 or 206
+
+  bool m_bail; // non 206/200 response
+
+  std::pair<int64_t, int64_t> m_range_begend;
+  int64_t m_contentlen;
+
+  int64_t m_blocknum; //!< block number to work on, -1 bad/stop
+  int64_t m_skipbytes; //!< number of bytes to skip in this block
+
+  int64_t m_bytestosend; //!< header + content bytes to send
+  int64_t m_bytessent; //!< number of content bytes sent
+
+  bool m_server_block_header_parsed;
+  bool m_server_first_header_parsed;
+  bool m_client_header_sent;
+
+  Stage m_upstream;
+  Stage m_dnstream;
+
+  TSHttpParser m_http_parser; //!< cached for reuse
+};
+
+```
