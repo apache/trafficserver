@@ -421,8 +421,8 @@ QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
 
   if (packet) {
-    QUICConDebug("Enqueue %s packet #%" PRIu64 " size=%hu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
-                 packet->size());
+    QUICConDebug("Enqueue %s packet #%" PRIu64 " size=%hu %s", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+                 packet->size(), (!packet->is_retransmittable()) ? "ack_only" : "");
     // TODO Remove const_cast
     this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
   }
