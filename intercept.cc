@@ -35,7 +35,7 @@ request_block
   )
 {
   std::pair<int64_t, int64_t> const blockbe
-    (range::forBlock(data->m_blocksize, data->m_blocknum));
+    = range::forBlock(data->m_blocksize, data->m_blocknum);
 
 //std::cerr << __func__ << " trying to build header" << std::endl;
 
@@ -185,7 +185,7 @@ DEBUG_LOG("transfer_content_bytes");
     (data->m_upstream.m_read.m_reader);
 
   // handle offset into (first) block
-  int64_t const toskip(std::min(data->m_skipbytes, read_avail));
+  int64_t const toskip = std::min(data->m_skipbytes, read_avail);
   if (0 < toskip)
   {
     TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, toskip);
@@ -195,8 +195,8 @@ DEBUG_LOG("transfer_content_bytes");
 
   if (0 < read_avail)
   {
-    int64_t const bytesleft(data->m_bytestosend - data->m_bytessent);
-    int64_t const tocopy(std::min(read_avail, bytesleft));
+    int64_t const bytesleft = (data->m_bytestosend - data->m_bytessent);
+    int64_t const tocopy = std::min(read_avail, bytesleft);
 
     int64_t const copied
       ( TSIOBufferCopy
