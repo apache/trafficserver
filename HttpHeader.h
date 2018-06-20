@@ -168,8 +168,8 @@ struct TxnHdrMgr
   TxnHdrMgr(TxnHdrMgr const &) = delete;
   TxnHdrMgr & operator=(TxnHdrMgr const &) = delete;
 
-  TSMBuffer m_buffer;
-  TSMLoc m_lochdr;
+  TSMBuffer m_buffer { nullptr };
+  TSMLoc m_lochdr { nullptr };
 
   TxnHdrMgr()
     : m_buffer(nullptr)
@@ -215,8 +215,8 @@ struct HdrMgr
   HdrMgr(HdrMgr const &) = delete;
   HdrMgr & operator=(HdrMgr const &) = delete;
 
-  TSMBuffer m_buffer;
-  TSMLoc m_lochdr;
+  TSMBuffer m_buffer { nullptr };
+  TSMLoc m_lochdr { nullptr };
 
   HdrMgr()
     : m_buffer(nullptr)

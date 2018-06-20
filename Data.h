@@ -36,7 +36,7 @@ struct Data
   Stage m_upstream;
   Stage m_dnstream;
 
-  TSHttpParser m_http_parser; //!< cached for reuse
+  TSHttpParser m_http_parser { nullptr }; //!< cached for reuse
 
   explicit
   Data

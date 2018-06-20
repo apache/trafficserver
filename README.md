@@ -50,6 +50,12 @@ This matches with the cache_range_requests.so plugin.
 Basic shared data:
 ```
 
+struct HdrMgr
+{
+  TSMBuffer m_buffer { nullptr };
+  TSMLoc m_lochdr { nullptr };
+};
+
 struct Channel
 {
   TSVIO m_vio { nullptr };
@@ -91,7 +97,7 @@ struct Data
   Stage m_upstream;
   Stage m_dnstream;
 
-  TSHttpParser m_http_parser; //!< cached for reuse
+  TSHttpParser m_http_parser { nullptr }; //!< cached for reuse
 };
 
 ```
