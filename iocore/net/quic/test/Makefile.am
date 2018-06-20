@@ -180,7 +180,7 @@ test_QUICFrameDispatcher_LDFLAGS = \
   @AM_LDFLAGS@
 
 test_QUICFrameDispatcher_SOURCES = \
-  $(catch_main) \
+  $(catch_event_processor_main) \
   test_QUICFrameDispatcher.cc \
   ../QUICGlobals.cc \
   ../QUICConfig.cc \
