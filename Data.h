@@ -62,6 +62,7 @@ struct Data
     }
   }
 
+  //! recycleable http parser (call TSHttpParserClear per header)
   TSHttpParser
   httpParser
     ()
