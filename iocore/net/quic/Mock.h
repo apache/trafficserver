@@ -578,14 +578,14 @@ public:
   }
 
   bool
-  encrypt_pn(uint8_t *protected_pn, size_t &protected_pn_len, const uint8_t *unprotected_pn, size_t unprotected_pn_len,
+  encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
              const uint8_t *sample, QUICKeyPhase phase) const override
   {
     return true;
   }
 
   bool
-  decrypt_pn(uint8_t *unprotected_pn, size_t &unprotected_pn_len, const uint8_t *protected_pn, size_t protected_pn_len,
+  decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
              const uint8_t *sample, QUICKeyPhase phase) const override
   {
     return true;

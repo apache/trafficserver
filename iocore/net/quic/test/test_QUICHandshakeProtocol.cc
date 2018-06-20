@@ -620,7 +620,7 @@ TEST_CASE("QUICHandshakeProtocol PNE", "[quic]")
   uint8_t expected[] = {0x01, 0x02, 0x03, 0x04, 0x05};
   uint8_t sample[16] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f};
   uint8_t protected_pn[18], unprotected_pn[18];
-  size_t protected_pn_len = 0, unprotected_pn_len = 0;
+  uint8_t protected_pn_len = 0, unprotected_pn_len = 0;
 
   // # Before handshake
   CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
