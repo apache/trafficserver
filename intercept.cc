@@ -135,6 +135,8 @@ std::cerr << header.toString() << std::endl;
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , rangestr, rangelen );
       rangebe = range::parseHalfOpenFrom(rangestr);
+
+      data->m_statustype = TS_HTTP_STATUS_PARTIAL_CONTENT;
     }
     else
     {
@@ -143,6 +145,8 @@ static size_t const vallen = strlen(valstr);
       header.setKeyVal
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , valstr, vallen );
+
+      data->m_statustype = TS_HTTP_STATUS_OK;
     }
 
     if (! range::isValid(rangebe))
@@ -311,16 +315,29 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
         crange.m_begin = data->m_range_begend.first;
         crange.m_end = rend;
 
-        rangelen = sizeof(rangestr) - 1;
-        bool const crstat = crange.toStringClosed(rangestr, &rangelen);
-        if (! crstat)
+        if (TS_HTTP_STATUS_PARTIAL_CONTENT == data->m_statustype)
         {
-          DEBUG_LOG("Bad/invalid response content range");
-        }
+          rangelen = sizeof(rangestr) - 1;
+          bool const crstat = crange.toStringClosed(rangestr, &rangelen);
+          if (! crstat)
+          {
+            DEBUG_LOG("Bad/invalid response content range");
+          }
 
-        header.setKeyVal
-          ( TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE
-          , rangestr, rangelen );
+          header.setKeyVal
+            ( TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE
+            , rangestr, rangelen );
+        }
+        else // fix up for 200 response
+        if (TS_HTTP_STATUS_OK == data->m_statustype)
+        {
+          header.setStatus(TS_HTTP_STATUS_OK);
+          char const * const reason
+            = TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK);
+          header.setReason(reason, strlen(reason));
+          header.removeKey
+            (TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
+        }
 
         data->m_bytestosend = crange.rangeSize();
 
@@ -447,8 +464,13 @@ DEBUG_LOG("client wants more data");
   else
   if (TS_EVENT_ERROR == event) // client closed connection
   {
-    DEBUG_LOG("got a TS_EVENT_ERROR from the client");
+    DEBUG_LOG("got a TS_EVENT_ERROR from the client -- it probably bailed");
+/*
 std::cerr << __func__ << ": " << "TS_EVENT_ERROR" << std::endl;
+      int64_t const bytessent
+        (TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
+std::cerr << "bytes: sent " << bytessent << " of " << data->m_bytestosend << std::endl;
+*/
     shutdown(contp, data);
   }
   else // close it all out???

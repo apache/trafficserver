@@ -56,6 +56,12 @@ struct HttpHeader
   status
     () const;
 
+  // response status code
+  bool
+  setStatus
+    ( TSHttpStatus const newstatus
+    );
+
   typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int*);
 
   // request method TS_HTTP_METHOD_*
@@ -84,6 +90,12 @@ struct HttpHeader
   {
     return getCharPtr(TSHttpHdrReasonGet, len);
   }
+
+  bool
+  setReason
+    ( char const * const valstr
+    , int const vallen
+    );
 
   bool
   hasKey

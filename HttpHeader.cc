@@ -35,6 +35,40 @@ HttpHeader :: status
   return res;
 }
 
+bool
+HttpHeader :: setStatus
+  ( TSHttpStatus const newstatus
+  )
+{
+  if (isValid())
+  {
+    return TS_SUCCESS == TSHttpHdrStatusSet
+      (m_buffer, m_lochdr, newstatus);
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
+bool
+HttpHeader :: setReason
+  ( char const * const valstr
+  , int const vallen
+  )
+{
+  if (isValid())
+  {
+    return TS_SUCCESS == TSHttpHdrReasonSet
+      (m_buffer, m_lochdr, valstr, vallen);
+  }
+  else
+  {
+    return false;
+  }
+}
+
 char const *
 HttpHeader :: getCharPtr
   ( CharPtrGetFunc func
