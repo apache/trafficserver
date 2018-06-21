@@ -20,8 +20,6 @@
 .. highlight:: cpp
 .. default-domain:: cpp
 
-.. _Extendible:
-
 write_ptr
 **********
 
