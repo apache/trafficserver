@@ -36,18 +36,19 @@ is_vn(QUICVersion v)
 }
 
 static size_t
-long_hdr_pkt_len(uint8_t *buf)
+long_hdr_pkt_len(uint8_t *buf, size_t len)
 {
   uint8_t dcil, scil;
-  QUICPacketLongHeader::dcil(dcil, buf, 6);
-  QUICPacketLongHeader::scil(scil, buf, 6);
+  QUICPacketLongHeader::dcil(dcil, buf, len);
+  QUICPacketLongHeader::scil(scil, buf, len);
 
-  size_t payload_len_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
+  size_t length_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
 
-  size_t payload_len;
-  uint8_t payload_len_field_len;
-  QUICPacketLongHeader::payload_length(payload_len, &payload_len_field_len, buf, payload_len_offset + 4);
-  return payload_len_offset + payload_len_field_len + QUICTypeUtil::read_QUICPacketNumberLen(buf) + payload_len;
+  size_t length;
+  uint8_t length_field_len;
+  QUICPacketLongHeader::length(length, &length_field_len, buf, len);
+
+  return length_offset + length_field_len + length;
 }
 
 QUICPacketReceiveQueue::QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketNumberProtector &pn_protector)
@@ -105,7 +106,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
         result  = QUICPacketCreationResult::UNSUPPORTED;
         pkt_len = remaining_len;
       } else {
-        pkt_len = long_hdr_pkt_len(this->_payload.get() + this->_offset);
+        pkt_len = long_hdr_pkt_len(this->_payload.get() + this->_offset, remaining_len);
       }
     } else {
       pkt_len = remaining_len;

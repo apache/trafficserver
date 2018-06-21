@@ -53,8 +53,8 @@ QUICPacketHeader::buf()
     return this->_buf.get();
   } else {
     // TODO Reuse serialzied data if nothing has changed
-    size_t dummy;
-    this->store(this->_serialized, &dummy);
+    this->store(this->_serialized, &this->_buf_len);
+    this->_buf_len += this->_payload_length;
     return this->_serialized;
   }
 }
@@ -148,15 +148,14 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
 
   if (this->type() == QUICPacketType::VERSION_NEGOTIATION) {
     this->_payload_offset = offset;
-    this->_payload_length = len - offset;
   } else {
-    this->_payload_length = QUICIntUtil::read_QUICVariableInt(raw_buf + offset);
     offset += QUICVariableInt::size(raw_buf + offset);
     int pn_len = QUICTypeUtil::read_QUICPacketNumberLen(raw_buf + offset);
     QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(raw_buf + offset), pn_len,
                                      this->_base_packet_number);
     this->_payload_offset = offset + pn_len;
   }
+  this->_payload_length = len - this->_payload_offset;
 }
 
 QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
@@ -177,8 +176,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId
     this->_buf_len =
       LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() + this->_payload_length;
   } else {
-    this->_buf_len = LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() +
-                     QUICVariableInt::size(this->_payload_length + aead_tag_len) + 4 + this->_payload_length;
+    // this->_buf_len will be updated when buf() is called
   }
 }
 
@@ -245,17 +243,17 @@ QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_l
 }
 
 bool
-QUICPacketLongHeader::payload_length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
 {
   uint8_t dcil, scil;
 
   QUICPacketLongHeader::dcil(dcil, packet, packet_len);
   QUICPacketLongHeader::scil(scil, packet, packet_len);
 
-  size_t payload_len_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
-  length                    = QUICIntUtil::read_QUICVariableInt(packet + payload_len_offset);
+  size_t length_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
+  length               = QUICIntUtil::read_QUICVariableInt(packet + length_offset);
   if (field_len) {
-    *field_len = QUICVariableInt::size(packet + payload_len_offset);
+    *field_len = QUICVariableInt::size(packet + length_offset);
   }
   return true;
 }
@@ -373,13 +371,22 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   *len += n;
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
-    QUICIntUtil::write_QUICVariableInt(this->_payload_length + aead_tag_len, buf + *len, &n);
+    QUICPacketNumber pn = 0;
+    size_t pn_len       = 4;
+    QUICPacket::encode_packet_number(pn, this->_packet_number, pn_len);
+
+    if (pn < 0x100) {
+      pn_len = 1;
+    } else if (pn < 0x4000) {
+      pn_len = 2;
+    } else {
+      pn_len = 4;
+    }
+
+    QUICIntUtil::write_QUICVariableInt(QUICVariableInt::size(pn_len) + this->_payload_length + aead_tag_len, buf + *len, &n);
     *len += n;
 
-    QUICPacketNumber dst = 0;
-    size_t dst_len       = 4;
-    QUICPacket::encode_packet_number(dst, this->_packet_number, dst_len);
-    QUICTypeUtil::write_QUICPacketNumber(dst, dst_len, buf + *len, &n);
+    QUICTypeUtil::write_QUICPacketNumber(pn, pn_len, buf + *len, &n);
     *len += n;
   }
 }

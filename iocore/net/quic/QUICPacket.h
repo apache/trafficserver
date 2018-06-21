@@ -200,7 +200,7 @@ public:
    * Unlike QUICInvariants::scil(), this returns actual connection id length
    */
   static bool scil(uint8_t &scil, const uint8_t *packet, size_t packet_len);
-  static bool payload_length(size_t &payload_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
+  static bool length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
 
 private:
   QUICPacketNumber _packet_number;
