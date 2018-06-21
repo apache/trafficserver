@@ -200,13 +200,10 @@ HttpHeader :: valueForKeyLast
     return false;
   }
 
-  bool status = false;
-
   int const numhdrs = TSMimeHdrFieldsCount(m_buffer, m_lochdr);
-
   int const valcap = *vallen;
 
-  for (int indexhdr = 0 ; indexhdr < numhdrs ; ++indexhdr)
+  for (int indexhdr = numhdrs - 1 ; 0 <= indexhdr ; --indexhdr)
   {
     TSMLoc const locfield = TSMimeHdrFieldGet
         (m_buffer, m_lochdr, indexhdr);
@@ -226,11 +223,10 @@ HttpHeader :: valueForKeyLast
         char * const endp = stpncpy(valstr, getstr, getlen);
       
         *vallen = endp - valstr;
-        status = (*vallen < valcap);
-
-        if (status)
+        if (*vallen < valcap)
         {
           *endp = '\0';
+          return true;
         }
       }
     }
@@ -238,7 +234,7 @@ HttpHeader :: valueForKeyLast
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 
-  return status;
+  return false;
 }
 */
 
