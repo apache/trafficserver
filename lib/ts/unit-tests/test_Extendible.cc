@@ -172,9 +172,9 @@ TEST_CASE("Extendible", "")
 
   INFO("C API add int field")
   {
-    FieldId_c cf_a = Derived::schema.addField_c("cf_a", 4, nullptr, nullptr);
+    FieldId_C cf_a = Derived::schema.addField_C("cf_a", 4, nullptr, nullptr);
     CHECK(Derived::schema.size() == sizeof(std::string) + 1 + sizeof(std::atomic_int) * 2 + 4);
-    CHECK(Derived::schema.find_c("cf_a") == cf_a);
+    CHECK(Derived::schema.find_C("cf_a") == cf_a);
   }
 
   INFO("C API alloc instance")
@@ -187,8 +187,8 @@ TEST_CASE("Extendible", "")
   {
     shared_ptr<Derived> sptr(new Derived());
     Derived &ref   = *sptr;
-    FieldId_c cf_a = Derived::schema.find_c("cf_a");
-    uint8_t *data8 = (uint8_t *)ref.get_c(cf_a);
+    FieldId_C cf_a = Derived::schema.find_C("cf_a");
+    uint8_t *data8 = (uint8_t *)ref.get(cf_a);
     CHECK(data8[0] == 0);
     ink_atomic_increment(data8, 1);
     *(data8 + 1) = 5;
@@ -196,7 +196,7 @@ TEST_CASE("Extendible", "")
 
     ref.m_str = "Hello";
 
-    uint32_t *data32 = (uint32_t *)ref.get_c(cf_a);
+    uint32_t *data32 = (uint32_t *)ref.get(cf_a);
     CHECK(*data32 == 0x00070501);
     CHECK(ref.m_str == "Hello");
   }
@@ -206,7 +206,7 @@ TEST_CASE("Extendible", "")
   {
     REQUIRE(Derived::schema.addField(tf_a, "tf_a"));
     CHECK(Derived::schema.size() == sizeof(std::string) + 1 + sizeof(std::atomic_int) * 2 + 4 + sizeof(std::shared_ptr<testField>));
-    REQUIRE(Derived::FieldId<COPYSWAP, testField>::find("tf_a").isValid());
+    REQUIRE(Derived::schema.find<COPYSWAP, testField>("tf_a").isValid());
   }
 
   INFO("COPYSWAP test")
@@ -214,7 +214,7 @@ TEST_CASE("Extendible", "")
     shared_ptr<Derived> sptr(new Derived());
     Derived &ref = *sptr;
     // ref.m_str    = "Hello";
-    auto tf_a = Derived::FieldId<COPYSWAP, testField>::find("tf_a");
+    auto tf_a = Derived::schema.find<COPYSWAP, testField>("tf_a");
     {
       std::shared_ptr<const testField> tf_a_sptr = ref.get(tf_a);
       const testField &dv                        = *tf_a_sptr;
@@ -251,7 +251,7 @@ TEST_CASE("Extendible", "")
   }
   INFO("COPYSWAP block-free reader")
   {
-    auto tf_a = Derived::FieldId<COPYSWAP, testField>::find("tf_a");
+    auto tf_a = Derived::schema.find<COPYSWAP, testField>("tf_a");
     REQUIRE(tf_a.isValid());
     Derived &d = *(new Derived());
     CHECK(d.get(tf_a)->arr[0] == 1);
