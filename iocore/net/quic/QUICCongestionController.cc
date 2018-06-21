@@ -138,8 +138,9 @@ QUICCongestionController::current_ssthresh() const
 void
 QUICCongestionController::reset()
 {
-  this->_bytes_in_flight         = 0;
-  this->_congestion_window       = this->_k_initial_window;;
+  this->_bytes_in_flight   = 0;
+  this->_congestion_window = this->_k_initial_window;
+  ;
   this->_end_of_recovery = 0;
-  this->_ssthresh                = UINT32_MAX;
+  this->_ssthresh        = UINT32_MAX;
 }

@@ -388,7 +388,8 @@ QUICLossDetector::_on_loss_detection_alarm()
 
   if (is_debug_tag_set("v_quic_loss_detector")) {
     for (auto &unacked : this->_sent_packets) {
-      QUICLDVDebug("#%" PRIu64 " is_handshake=%i is_ack_only=%i size=%zu", unacked.first, unacked.second->handshake, unacked.second->ack_only, unacked.second->bytes);
+      QUICLDVDebug("#%" PRIu64 " is_handshake=%i is_ack_only=%i size=%zu", unacked.first, unacked.second->handshake,
+                   unacked.second->ack_only, unacked.second->bytes);
     }
   }
 
@@ -424,7 +425,8 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
                     unacked.first, time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt,
                     this->_smoothed_rtt);
       } else {
-        QUICLDDebug("Lost: packet delta is too large (PN=%" PRId64 " largest=%" PRId64 " unacked=%" PRId64 " threshold=%" PRId32 ")",
+        QUICLDDebug("Lost: packet delta is too large (PN=%" PRId64 " largest=%" PRId64 " unacked=%" PRId64 " threshold=%" PRId32
+                    ")",
                     unacked.first, largest_acked_packet_number, unacked.second->packet_number, this->_reordering_threshold);
       }
 
