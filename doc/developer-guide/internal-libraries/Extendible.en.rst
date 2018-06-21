@@ -48,7 +48,7 @@ A data class that inherits from Extendible, uses a CRTP (Curiously Recursive Tem
 Structures
 ----------
 * FieldId<AccessType_, FieldType> - the handle used to access a field. These are templated to prevent human error, and branching logic.
-* FieldId_c - the handle used to access a field through C API. Human error not allowed by convention.
+* FieldId_C - the handle used to access a field through C API. Human error not allowed by convention.
 * FieldSchema - stores attributes, constructor and destructor of a field.
 * Schema - manages fields and memory layout of an Extendible type. 
 * Extendible<DerivedType> - allocates block of memory, uses FieldId or schema to access slices of memory.
