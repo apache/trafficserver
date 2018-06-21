@@ -40,11 +40,11 @@ read_request
 DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
-  HttpHeader const headcreq(hdrmgr.m_buffer, hdrmgr.m_lochdr);
+  HttpHeader const header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
 
-  if (TS_HTTP_METHOD_GET == headcreq.method())
+  if (TS_HTTP_METHOD_GET == header.method())
   {
-    if (! headcreq.hasKey
+    if (! header.hasKey
       (SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)))
     {
 //std::cerr << "incoming slicer request" << std::endl;
@@ -70,13 +70,39 @@ static int64_t const blocksize(1024 * 1024);
       } else if (AF_INET6 == ip->sa_family) {
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in6));
       } else {
+        delete data;
         return false;
       }
+
+      data->m_hostlen = sizeof(data->m_hostname) - 1;
+      if (! header.valueForKey
+          ( TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST
+          , data->m_hostname, &data->m_hostlen ) )
+      {
+        DEBUG_LOG("Unable to get hostname from header");
+        delete data;
+        return false;
+      }
+
+      // need the pristine url, especially for global plugins
 /*
-      TSReturnCode const rcode = TSHttpTxnPristineUrlGet
-        (txnp, &data->m_url_buffer, &data->m_url_loc);
-TSAssert(TS_SUCCESS == rcode);
+      TSMBuffer urlbuf;
+      TSMLoc urlloc;
+      TSReturnCode rcode
+        = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
+
+      if (TS_SUCCESS == rcode)
+      {
+        data->m_urlbuffer = TSMBufferCreate();
+        rcode = TSUrlCreate(data->m_urlbuffer, &data->m_urlloc);
+        if (TS_SUCCESS == rcode)
+        {
+          TSUrlCopy(data->m_urlbuffer, data->m_urlloc, urlbuf, urlloc);
+        }
+        TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
+      }
 */
+
       // we'll intercept this GET and do it ourselfs
       TSCont const icontp
         (TSContCreate(intercept_hook, TSMutexCreate()));

@@ -71,6 +71,7 @@ std::cerr << std::endl;
 std::cerr << __func__ << " sending header to server" << std::endl;
 std::cerr << header.toString() << std::endl;
 */
+
   TSHttpHdrPrint
     ( header.m_buffer
     , header.m_lochdr
@@ -124,6 +125,13 @@ std::cerr << __func__ << " received header from client" << std::endl;
 std::cerr << header.toString() << std::endl;
 */
 
+    // set the request url back to pristine in case of plugin stacking
+//    header.setUrl(data->m_urlbuffer, data->m_urlloc);
+
+    header.setKeyVal
+      ( TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST
+      , data->m_hostname, data->m_hostlen );
+
     // default: whole file (unknown, wait for first server response)
     std::pair<int64_t, int64_t> rangebe
       (0, std::numeric_limits<int64_t>::max() - data->m_blocksize);
@@ -162,12 +170,12 @@ static size_t const vallen = strlen(valstr);
       data->m_statustype = TS_HTTP_STATUS_OK;
     }
 
-     // set the initial range begin/end, we'll correct it later
-     data->m_range_begend = rangebe;
+    // set the initial range begin/end, we'll correct it later
+    data->m_range_begend = rangebe;
 
-     // set to the first block in range
-     data->m_blocknum = range::firstBlock
-       (data->m_blocksize, data->m_range_begend);
+    // set to the first block in range
+    data->m_blocknum = range::firstBlock
+      (data->m_blocksize, data->m_range_begend);
 
     // whack some ATS keys (avoid 404)
     header.removeKey
@@ -628,13 +636,14 @@ DEBUG_LOG("intercept_hook: %d", event);
       && edata == data->m_dnstream.m_read.m_vio )
     {
       handle_client_req(contp, event, data);
+      DEBUG_LOG("shutting down read from client pipe");
       TSVConnShutdown(data->m_dnstream.m_vc, 1, 0);
     }
     else // server wants more data from us
     if ( data->m_upstream.m_write.isValid()
       && edata == data->m_upstream.m_write.m_vio )
     {
-      DEBUG_LOG("server asking for more data after header already sent");
+      DEBUG_LOG("shutting down send to server pipe");
       TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
     }
     else // server has data for us

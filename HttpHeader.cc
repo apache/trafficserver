@@ -40,17 +40,46 @@ HttpHeader :: setStatus
   ( TSHttpStatus const newstatus
   )
 {
-  if (isValid())
-  {
-    return TS_SUCCESS == TSHttpHdrStatusSet
-      (m_buffer, m_lochdr, newstatus);
-  }
-  else
+  if (! isValid())
   {
     return false;
   }
+
+  return TS_SUCCESS == TSHttpHdrStatusSet
+    (m_buffer, m_lochdr, newstatus);
 }
 
+bool
+HttpHeader :: setUrl
+  ( TSMBuffer const bufurl
+  , TSMLoc const locurl
+  )
+{
+  if (! isValid())
+  {
+    return false;
+  }
+
+  TSMLoc locurlout;
+  TSReturnCode rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurlout);
+  if (TS_SUCCESS != rcode)
+  {
+    return false;
+  }
+
+  // copy the url
+  rcode = TSUrlCopy(m_buffer, locurlout, bufurl, locurl);
+
+  // set url active
+  if (TS_SUCCESS == rcode)
+  {
+    rcode = TSHttpHdrUrlSet(m_buffer, m_lochdr, locurlout);
+  }
+
+  TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, locurlout);
+
+  return TS_SUCCESS == rcode;
+}
 
 bool
 HttpHeader :: setReason
@@ -200,10 +229,12 @@ HttpHeader :: valueForKeyLast
     return false;
   }
 
+  bool status = false;
+
   int const numhdrs = TSMimeHdrFieldsCount(m_buffer, m_lochdr);
   int const valcap = *vallen;
 
-  for (int indexhdr = numhdrs - 1 ; 0 <= indexhdr ; --indexhdr)
+  for (int indexhdr = numhdrs - 1 ; 0 <= indexhdr && ! status ; --indexhdr)
   {
     TSMLoc const locfield = TSMimeHdrFieldGet
         (m_buffer, m_lochdr, indexhdr);
@@ -226,7 +257,7 @@ HttpHeader :: valueForKeyLast
         if (*vallen < valcap)
         {
           *endp = '\0';
-          return true;
+          status = true;
         }
       }
     }
@@ -234,7 +265,7 @@ HttpHeader :: valueForKeyLast
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 
-  return false;
+  return status;
 }
 */
 

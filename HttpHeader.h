@@ -62,6 +62,13 @@ struct HttpHeader
     ( TSHttpStatus const newstatus
     );
 
+  // set url
+  bool
+  setUrl
+    ( TSMBuffer const bufurl
+    , TSMLoc const locurl
+    );
+
   typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int*);
 
   // request method TS_HTTP_METHOD_*
@@ -75,7 +82,7 @@ struct HttpHeader
 
   // host
   char const *
-  host
+  hostname
     ( int * const len
     ) const
   {
