@@ -24,6 +24,7 @@ Changes with Apache Traffic Server 7.1.4
   #3727 - Fixes compiler flags used for gzip plugin
   #3731 - Changes to compile on Fedora 28 with gcc 8.1.1
   #3738 - Removes stray debug message on environments with getpeerid
+  #3757 - Allow disable throttling.
   #3766 - HostDB timed RR fix
   #3781 - Clarifies error when failing to load ticket key
   #3792 - Change MIMEHdr::value_append_or_set to handle duplicate headers
@@ -35,3 +36,7 @@ Changes with Apache Traffic Server 7.1.4
   #3844 - 7.1.x: Fix WCCP for gcc 8.
   #3845 - 7.1.x: Fix string_view test for gcc 8.
   #3852 - Fix method call on null object for background_fetch
+  #3860 - Move %<pqsn> logic to %<shn> for 7.x
+  #3863 - background_fetch heap-buffer-overflow fix
+  #3865 - Set verify locations in the initializer function only
+  #3869 - background_fetch heap-buffer-overflow fix (7.1.x)
