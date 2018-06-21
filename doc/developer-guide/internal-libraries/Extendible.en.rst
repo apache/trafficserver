@@ -20,8 +20,6 @@
 .. highlight:: cpp
 .. default-domain:: cpp
 
-.. _Extendible:
-
 Extendible
 **********
 
@@ -56,7 +54,7 @@ Structures
 * Extendible<DerivedType> - allocates block of memory, uses FieldId or schema to access slices of memory.
 
 
-During system init, code and plugins can add fields to the Extendible's schema. This will update the `Memory Layout`_ of the schema, and the memory offsets of all fields. The schema does not know the remember the FieldType, but it stores the byte size and creates lambdas of the type's constructor and destructor. And to avoid corruption, the code asserts that no instances are in use when adding fields. 
+During system init, code and plugins can add fields to the Extendible's schema. This will update the `Memory Layout`_ of the schema, and the memory offsets of all fields. The schema does not know the FieldType, but it stores the byte size and creates lambdas of the type's constructor and destructor. And to avoid corruption, the code asserts that no instances are in use when adding fields. 
 
 .. code-block:: cpp
 
@@ -67,7 +65,7 @@ During system init, code and plugins can add fields to the Extendible's schema. 
    }
 
 
-When an Extendible derived class is instanced, new() will allocate a block of memory for the derived class and all added fields. There is zero memory overhead per instance, unless using COPYSWAP_ field access type.
+When an Extendible derived class is instantiated, new() will allocate a block of memory for the derived class and all added fields. There is zero memory overhead per instance, unless using COPYSWAP_ field access type.
 
 .. code-block:: cpp
 
@@ -123,7 +121,7 @@ ATOMIC      std::atomic<FieldType>                    :code:`get(FieldId)`      
 BIT         1 bit from packed bits                    :code:`get(FieldId), readBit(FieldId), writeBit(FieldId)`      Memory efficient.                          Cannot return reference. 
 CONST       FieldType                                 :code:`get(FieldId), writeConst(FieldId)`                      Direct reference. Fast.                    No thread protection.
 COPYSWAP_   shared_ptr<FieldType> = new FieldType()   :code:`get(FieldId), writeCopySwap(FieldId)`                   Avoid skew in non-atomic structures.       Non-contiguous memory allocations. Uses locking.
-C_API       a number of bytes                         :code:`get_c()`                                                Can use in C.                              No thread protection.
+C_API       a number of bytes                         :code:`get()`                                                Can use in C.                              No thread protection.
 =========   =======================================   ============================================================   ========================================   =====================================
 
 :code:`operator[](FieldId)` has been overridden to call :code:`get(FieldId)`.
