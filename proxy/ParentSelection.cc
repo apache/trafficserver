@@ -369,8 +369,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
           continue;
         } else {
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", fqdn, line_num);
-          hs.createHostStat(fqdn);
-          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN, 0);
+          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
         }
       }
     } else {
@@ -382,8 +381,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
         } else {
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", token,
                 line_num);
-          hs.createHostStat(token);
-          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN, 0);
+          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
         }
       }
     }
@@ -414,7 +412,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   int numTok          = 0;
   const char *current = nullptr;
   int port            = 0;
-  char *tmp = nullptr, *tmp2 = nullptr;
+  char *tmp = nullptr, *tmp2 = nullptr, *tmp3 = nullptr;
   const char *errPtr = nullptr;
   float weight       = 1.0;
 
@@ -467,23 +465,27 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       }
     }
 
+    tmp3 = (char *)strchr(current, '&');
+
     // Make sure that is no garbage beyond the parent
-    //   port or weight
-    char *scan;
-    if (tmp2) {
-      scan = tmp2 + 1;
-    } else {
-      scan = tmp + 1;
-    }
-    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || *scan == '.'); scan++) {
-      ;
-    }
-    for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++) {
-      ;
-    }
-    if (*scan != '\0') {
-      errPtr = "Garbage trailing entry or invalid separator";
-      goto MERROR;
+    //  port or weight
+    if (!tmp3) {
+      char *scan;
+      if (tmp2) {
+        scan = tmp2 + 1;
+      } else {
+        scan = tmp + 1;
+      }
+      for (; *scan != '\0' && (ParseRules::is_digit(*scan) || *scan == '.'); scan++) {
+        ;
+      }
+      for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++) {
+        ;
+      }
+      if (*scan != '\0') {
+        errPtr = "Garbage trailing entry or invalid separator";
+        goto MERROR;
+      }
     }
     // Check to make sure that the string will fit in the
     //  pRecord
@@ -506,7 +508,13 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->parents[i].name                    = this->parents[i].hostname;
       this->parents[i].available               = true;
       this->parents[i].weight                  = weight;
-      hs.createHostStat(this->parents[i].hostname);
+      if (tmp3) {
+        memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
+        this->parents[i].name = this->parents[i].hash_string;
+      }
+      if (hs.getHostStatus(this->parents[i].hostname) == HostStatus_t::HOST_STATUS_INIT) {
+        hs.setHostStatus(this->parents[i].hostname, HOST_STATUS_UP, 0, Reason::MANUAL);
+      }
     } else {
       memcpy(this->secondary_parents[i].hostname, current, tmp - current);
       this->secondary_parents[i].hostname[tmp - current] = '\0';
@@ -518,8 +526,15 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->secondary_parents[i].name                    = this->secondary_parents[i].hostname;
       this->secondary_parents[i].available               = true;
       this->secondary_parents[i].weight                  = weight;
-      hs.createHostStat(this->secondary_parents[i].hostname);
+      if (tmp3) {
+        memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
+        this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
+      }
+      if (hs.getHostStatus(this->secondary_parents[i].hostname) == HostStatus_t::HOST_STATUS_INIT) {
+        hs.setHostStatus(this->secondary_parents[i].hostname, HOST_STATUS_UP, 0, Reason::MANUAL);
+      }
     }
+    tmp3 = nullptr;
   }
 
   if (isPrimary) {
@@ -804,7 +819,7 @@ ParentRecord::Print()
 {
   printf("\t\t");
   for (int i = 0; i < num_parents; i++) {
-    printf(" %s:%d ", parents[i].hostname, parents[i].port);
+    printf(" %s:%d|%f&%s ", parents[i].hostname, parents[i].port, parents[i].weight, parents[i].name);
   }
   printf(" direct=%s\n", (go_direct == true) ? "true" : "false");
   printf(" parent_is_proxy=%s\n", (parent_is_proxy == true) ? "true" : "false");
@@ -1429,7 +1444,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // Test 184
   // mark fuzzy down with HostStatus API.
   HostStatus &_st = HostStatus::instance();
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
 
   ST(184);
   REINIT;
@@ -1440,7 +1455,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 185
   // mark fluffy down and expect furry to be chosen
-  _st.setHostStatus("fluffy", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("fluffy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
 
   ST(185);
   REINIT;
@@ -1451,9 +1466,9 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 186
   // mark furry and frisky down, fuzzy up and expect fuzzy to be chosen
-  _st.setHostStatus("furry", HOST_STATUS_DOWN, 0);
-  _st.setHostStatus("frisky", HOST_STATUS_DOWN, 0);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("furry", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
 
   ST(186);
   REINIT;
@@ -1471,10 +1486,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REBUILD;
 
   // mark all up.
-  _st.setHostStatus("furry", HOST_STATUS_UP, 0);
-  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0);
-  _st.setHostStatus("frisky", HOST_STATUS_UP, 0);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("furry", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
 
   REINIT;
   br(request, "i.am.rabbit.net");
@@ -1484,7 +1499,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 188
   // mark fuzzy down and expect fluffy.
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
 
   ST(188);
   REINIT;
@@ -1495,7 +1510,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 189
   // mark fuzzy back up and expect fuzzy.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
 
   ST(189);
   REINIT;
@@ -1511,7 +1526,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // because the host status is set to down.
   params->markParentDown(result, fail_threshold, retry_time);
   // set host status down
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
   // sleep long enough so that fuzzy is retryable
   sleep(params->policy.ParentRetryTime + 1);
   ST(190);
@@ -1522,7 +1537,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // now set the host staus on fuzzy to up and it should now
   // be retried.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
   ST(191);
   REINIT;
   br(request, "i.am.rabbit.net");
@@ -1535,10 +1550,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=false go_direct=true\n");
   REBUILD;
   // mark all up.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
-  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0);
-  _st.setHostStatus("furry", HOST_STATUS_UP, 0);
-  _st.setHostStatus("frisky", HOST_STATUS_UP, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("furry", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", HOST_STATUS_UP, 0, Reason::MANUAL);
   // fuzzy should be chosen.
   sleep(1);
   REINIT;
@@ -1553,7 +1568,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   sleep(params->policy.ParentRetryTime + 1);
   // since the host status is down even though fuzzy is
   // retryable, fluffy should be chosen
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1563,7 +1578,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // set the host status for fuzzy  back up and since its
   // retryable fuzzy should be chosen
   ST(194);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1684,7 +1699,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   T("dest_domain=rabbit.net parent=fuzzy:80|1.0;fluffy:80|1.0 secondary_parent=furry:80|1.0;frisky:80|1.0 "
     "round_robin=consistent_hash go_direct=false secondary_mode=3\n");
   REBUILD;
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0);
+  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1719,6 +1734,52 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   sleep(1);
   RE(verify(result, PARENT_FAIL, nullptr, 80), 208);
+
+  // Tests 209 through 211 test that host selection is based upon the hash_string
+
+  // Test 209
+  // fuzzy { curly larry, moe } fluffy
+  tbl[0] = '\0';
+  ST(209);
+  T("dest_domain=stooges.net parent=curly:80|1.0&myhash;joe:80|1.0&hishash;larry:80|1.0&ourhash "
+    "round_robin=consistent_hash go_direct=false\n");
+  REBUILD;
+  REINIT;
+  br(request, "i.am.stooges.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "larry", 80), 209);
+
+  // Test 210
+  // fuzzy { curly larry, moe } fluffy
+  tbl[0] = '\0';
+  ST(210);
+  T("dest_domain=stooges.net parent=curly:80|1.0&ourhash;joe:80|1.0&hishash;larry:80|1.0&myhash "
+    "round_robin=consistent_hash go_direct=false\n");
+  REBUILD;
+  REINIT;
+  br(request, "i.am.stooges.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "curly", 80), 210);
+
+  // Test 211
+  // fuzzy { curly larry, moe } fluffy
+  tbl[0] = '\0';
+  ST(211);
+  T("dest_domain=stooges.net parent=curly:80|1.0&ourhash;joe:80|1.0&hishash;larry:80|1.0&myhash "
+    "secondary_parent=carol:80|1.0&ourhash;betty:80|1.0&hishash;donna:80|1.0&myhash "
+    "round_robin=consistent_hash go_direct=false\n");
+  REBUILD;
+  REINIT;
+  _st.setHostStatus("curly", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  br(request, "i.am.stooges.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
+
+  // cleanup, allow changes to be persisted to records.snap
+  // so that subsequent test runs do not fail unexpectedly.
+  _st.setHostStatus("curly", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  sleep(2);
 
   delete request;
   delete result;
