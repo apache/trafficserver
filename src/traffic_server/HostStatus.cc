@@ -25,13 +25,40 @@
 
 static RecRawStatBlock *host_status_rsb = nullptr;
 
+inline void
+getStatName(std::string &stat_name, const char *name)
+{
+  stat_name = stat_prefix + name;
+}
+
 static void *
 mgmt_host_status_up_callback(void *x, char *data, int len)
 {
+  MgmtInt op;
+  MgmtMarshallString name;
+  MgmtMarshallInt down_time;
+  MgmtMarshallString reason_str;
+  std::string stat_name;
+  char buf[1024]                         = {0};
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+  Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
+
+  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason_str, &down_time) == -1) {
+    Error("Plugin message - RPC parsing error - message discarded.");
+  }
+  Debug("host_statuses", "op: %ld, name: %s, down_time: %d, reason_str: %s", static_cast<long>(op), name,
+        static_cast<int>(down_time), reason_str);
+
+  unsigned int reason = Reason::getReason(reason_str);
+
+  getStatName(stat_name, name);
   if (data != nullptr) {
     Debug("host_statuses", "marking up server %s", data);
     HostStatus &hs = HostStatus::instance();
-    hs.setHostStatus(data, HostStatus_t::HOST_STATUS_UP, 0);
+    if (hs.getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
+      hs.createHostStat(name);
+    }
+    hs.setHostStatus(name, HostStatus_t::HOST_STATUS_UP, down_time, reason);
   }
   return nullptr;
 }
@@ -42,86 +69,291 @@ mgmt_host_status_down_callback(void *x, char *data, int len)
   MgmtInt op;
   MgmtMarshallString name;
   MgmtMarshallInt down_time;
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+  MgmtMarshallString reason_str;
+  std::string stat_name;
+  char buf[1024]                         = {0};
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
   Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
 
-  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &down_time) == -1) {
+  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason_str, &down_time) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
   }
-  Debug("host_statuses", "op: %ld, name: %s, down_time: %d", static_cast<long>(op), name, static_cast<int>(down_time));
+  Debug("host_statuses", "op: %ld, name: %s, down_time: %d, reason_str: %s", static_cast<long>(op), name,
+        static_cast<int>(down_time), reason_str);
+
+  unsigned int reason = Reason::getReason(reason_str);
 
   if (data != nullptr) {
     Debug("host_statuses", "marking down server %s", name);
     HostStatus &hs = HostStatus::instance();
-    hs.setHostStatus(name, HostStatus_t::HOST_STATUS_DOWN, down_time);
+    if (hs.getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
+      hs.createHostStat(name);
+    }
+    hs.setHostStatus(name, HostStatus_t::HOST_STATUS_DOWN, down_time, reason);
   }
   return nullptr;
 }
 
+HostStatRec::HostStatRec()
+  : status(HOST_STATUS_UP),
+    reasons(0),
+    active_marked_down(0),
+    local_marked_down(0),
+    manual_marked_down(0),
+    self_detect_marked_down(0),
+    active_down_time(0),
+    local_down_time(0),
+    manual_down_time(0),
+    self_detect_down_time(0){};
+
+HostStatRec::HostStatRec(std::string str)
+{
+  std::vector<std::string> v1;
+  std::stringstream ss1(str);
+
+  reasons = 0;
+
+  // parse the csv strings from the stat record value string.
+  while (ss1.good()) {
+    char b1[64];
+    ss1.getline(b1, 64, ',');
+    v1.push_back(b1);
+  }
+
+  // v1 contains 5 strings.
+  ink_assert(v1.size() == 5);
+
+  // set the status and reasons fields.
+  for (unsigned int i = 0; i < v1.size(); i++) {
+    if (i == 0) { // set the status field
+      if (v1.at(i).compare("HOST_STATUS_UP") == 0) {
+        status = HOST_STATUS_UP;
+      } else if (v1.at(i).compare("HOST_STATUS_DOWN") == 0) {
+        status = HOST_STATUS_DOWN;
+      }
+    } else { // parse and set remaining reason fields.
+      std::vector<std::string> v2;
+      v2.clear();
+      std::stringstream ss2(v1.at(i));
+      while (ss2.good()) {
+        char b2[64];
+        ss2.getline(b2, 64, ':');
+        v2.push_back(b2);
+      }
+      // v2 contains 4 strings.
+      ink_assert(v2.size() == 4);
+
+      if (v2.at(0).compare("ACTIVE") == 0) {
+        if (v2.at(1).compare("DOWN") == 0) {
+          reasons |= Reason::ACTIVE;
+        } else if (reasons & Reason::ACTIVE) {
+          reasons ^= Reason::ACTIVE;
+        }
+        active_marked_down = atoi(v2.at(2).c_str());
+        active_down_time   = atoi(v2.at(3).c_str());
+      }
+      if (v2.at(0).compare("LOCAL") == 0) {
+        if (v2.at(1).compare("DOWN") == 0) {
+          reasons |= Reason::LOCAL;
+        } else if (reasons & Reason::LOCAL) {
+          reasons ^= Reason::LOCAL;
+        }
+        local_marked_down = atoi(v2.at(2).c_str());
+        local_down_time   = atoi(v2.at(3).c_str());
+      }
+      if (v2.at(0).compare("MANUAL") == 0) {
+        if (v2.at(1).compare("DOWN") == 0) {
+          reasons |= Reason::MANUAL;
+        } else if (reasons & Reason::MANUAL) {
+          reasons ^= Reason::MANUAL;
+        }
+        manual_marked_down = atoi(v2.at(2).c_str());
+        manual_down_time   = atoi(v2.at(3).c_str());
+      }
+      if (v2.at(0).compare("SELF_DETECT") == 0) {
+        if (v2.at(1).compare("DOWN") == 0) {
+          reasons |= Reason::SELF_DETECT;
+        } else if (reasons & Reason::SELF_DETECT) {
+          reasons ^= Reason::SELF_DETECT;
+        }
+        self_detect_marked_down = atoi(v2.at(2).c_str());
+        self_detect_down_time   = atoi(v2.at(3).c_str());
+      }
+    }
+  }
+}
+
+static void
+handle_record_read(const RecRecord *rec, void *edata)
+{
+  HostStatus &hs = HostStatus::instance();
+  std::string hostname;
+
+  if (rec) {
+    Debug("host_statuses", "name: %s", rec->name);
+
+    // parse the hostname from the stat name
+    char *s = const_cast<char *>(rec->name);
+    // 1st move the pointer past the stat prefix.
+    s += stat_prefix.length();
+    hostname = s;
+    hs.createHostStat(hostname.c_str(), rec->data.rec_string);
+    HostStatRec h(rec->data.rec_string);
+    hs.loadRecord(hostname, h);
+  }
+}
+
 HostStatus::HostStatus()
 {
-  hosts_statuses  = ink_hash_table_create(InkHashTableKeyType_String);
-  hosts_stats_ids = ink_hash_table_create(InkHashTableKeyType_String);
   ink_rwlock_init(&host_status_rwlock);
-  ink_rwlock_init(&host_statids_rwlock);
-  Debug("host_statuses", "registering ostas");
-  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, mgmt_host_status_up_callback, nullptr);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, mgmt_host_status_down_callback, nullptr);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
   host_status_rsb = RecAllocateRawStatBlock((int)TS_MAX_API_STATS);
 }
 
 HostStatus::~HostStatus()
 {
-  // release host_statues hash table.
-  InkHashTableIteratorState ht_iter;
-  InkHashTableEntry *ht_entry = nullptr;
-  ht_entry                    = ink_hash_table_iterator_first(hosts_statuses, &ht_iter);
-
-  while (ht_entry != nullptr) {
-    HostStatRec_t *value = static_cast<HostStatRec_t *>(ink_hash_table_entry_value(hosts_statuses, ht_entry));
-    ats_free(value);
-    ht_entry = ink_hash_table_iterator_next(hosts_statuses, &ht_iter);
+  for (auto &&it : hosts_statuses) {
+    ats_free(it.second);
   }
-  ink_hash_table_destroy(hosts_statuses);
-
-  // release host_stats_ids hash and the read and writer locks.
-  ink_hash_table_destroy(hosts_stats_ids);
+  // release the read and writer locks.
   ink_rwlock_destroy(&host_status_rwlock);
-  ink_rwlock_destroy(&host_statids_rwlock);
 }
 
 void
-HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned int down_time)
+HostStatus::loadHostStatusFromStats()
 {
-  int stat_id = getHostStatId(name);
-  if (stat_id != -1) {
-    if (status == HostStatus_t::HOST_STATUS_UP) {
-      Debug("host_statuses", "set stat for :  name: %s, status: %d", name, status);
-      RecSetRawStatCount(host_status_rsb, stat_id, 1);
-      RecSetRawStatSum(host_status_rsb, stat_id, 1);
+  if (RecLookupMatchingRecords(RECT_PROCESS, stat_prefix.c_str(), handle_record_read, nullptr) != REC_ERR_OKAY) {
+    Error("[HostStatus] - While loading HostStatus stats, there was an Error reading HostStatus stats.");
+  }
+}
+
+void
+HostStatus::loadRecord(std::string &name, HostStatRec &h)
+{
+  HostStatRec *host_stat = nullptr;
+  Debug("host_statuses", "loading host status record for %s", name.c_str());
+  ink_rwlock_wrlock(&host_status_rwlock);
+  {
+    if (auto it = hosts_statuses.find(name.c_str()); it != hosts_statuses.end()) {
+      host_stat = it->second;
     } else {
-      RecSetRawStatCount(host_status_rsb, stat_id, 0);
-      RecSetRawStatSum(host_status_rsb, stat_id, 0);
-      Debug("host_statuses", "clear stat for :  name: %s, status: %d", name, status);
+      host_stat  = static_cast<HostStatRec *>(ats_malloc(sizeof(HostStatRec)));
+      *host_stat = h;
+      hosts_statuses.emplace(name, host_stat);
+    }
+  }
+  ink_rwlock_unlock(&host_status_rwlock);
+
+  *host_stat = h;
+}
+
+void
+HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned int down_time, const unsigned int reason)
+{
+  std::string stat_name;
+  char buf[1024] = {0};
+
+  getStatName(stat_name, name);
+
+  if (getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
+    createHostStat(name);
+  }
+
+  int result = getHostStat(stat_name, buf, 1024);
+
+  // update / insert status.
+  // using the hash table pointer to store the HostStatus_t value.
+  HostStatRec *host_stat = nullptr;
+  ink_rwlock_wrlock(&host_status_rwlock);
+  {
+    if (auto it = hosts_statuses.find(name); it != hosts_statuses.end()) {
+      host_stat = it->second;
+    } else {
+      host_stat = static_cast<HostStatRec *>(ats_malloc(sizeof(HostStatRec)));
+      bzero(host_stat, sizeof(HostStatRec));
+      hosts_statuses.emplace(name, host_stat);
+    }
+    if (reason & Reason::ACTIVE) {
+      Debug("host_statuses", "for host %s set status: %s, Reason:ACTIVE", name, HostStatusNames[status]);
+      if (status == HostStatus_t::HOST_STATUS_DOWN) {
+        host_stat->active_marked_down = time(0);
+        host_stat->active_down_time   = down_time;
+        host_stat->reasons |= Reason::ACTIVE;
+      } else {
+        host_stat->active_marked_down = 0;
+        host_stat->active_down_time   = 0;
+        if (host_stat->reasons & Reason::ACTIVE) {
+          host_stat->reasons ^= Reason::ACTIVE;
+        }
+      }
+    }
+    if (reason & Reason::LOCAL) {
+      Debug("host_statuses", "for host %s set status: %s, Reason:LOCAL", name, HostStatusNames[status]);
+      if (status == HostStatus_t::HOST_STATUS_DOWN) {
+        host_stat->local_marked_down = time(0);
+        host_stat->local_down_time   = down_time;
+        host_stat->reasons |= Reason::LOCAL;
+      } else {
+        host_stat->local_marked_down = 0;
+        host_stat->local_down_time   = 0;
+        if (host_stat->reasons & Reason::LOCAL) {
+          host_stat->reasons ^= Reason::LOCAL;
+        }
+      }
+    }
+    if (reason & Reason::MANUAL) {
+      Debug("host_statuses", "for host %s set status: %s, Reason:MANUAL", name, HostStatusNames[status]);
+      if (status == HostStatus_t::HOST_STATUS_DOWN) {
+        host_stat->manual_marked_down = time(0);
+        host_stat->manual_down_time   = down_time;
+        host_stat->reasons |= Reason::MANUAL;
+      } else {
+        host_stat->manual_marked_down = 0;
+        host_stat->manual_down_time   = 0;
+        if (host_stat->reasons & Reason::MANUAL) {
+          host_stat->reasons ^= Reason::MANUAL;
+        }
+      }
+    }
+    if (reason & Reason::SELF_DETECT) {
+      Debug("host_statuses", "for host %s set status: %s, Reason:SELF_DETECT", name, HostStatusNames[status]);
+      if (status == HostStatus_t::HOST_STATUS_DOWN) {
+        host_stat->self_detect_marked_down = time(0);
+        host_stat->self_detect_down_time   = down_time;
+        host_stat->reasons |= Reason::SELF_DETECT;
+      } else {
+        host_stat->self_detect_marked_down = 0;
+        host_stat->self_detect_down_time   = 0;
+        if (host_stat->reasons & Reason::SELF_DETECT) {
+          host_stat->reasons ^= Reason::SELF_DETECT;
+        }
+      }
+    }
+    if (status == HostStatus_t::HOST_STATUS_UP) {
+      if (host_stat->reasons == 0) {
+        host_stat->status = HostStatus_t::HOST_STATUS_UP;
+      }
+      Debug("host_statuses", "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
+    } else {
+      host_stat->status = status;
+      Debug("host_statuses", "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
+    }
+  }
+  ink_rwlock_unlock(&host_status_rwlock);
+
+  // update the stats
+  if (result == REC_ERR_OKAY) {
+    std::stringstream status_rec;
+    status_rec << *host_stat;
+    RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true, false);
+    if (status == HostStatus_t::HOST_STATUS_UP) {
+      Debug("host_statuses", "set status up for name: %s, status: %d, stat_name: %s", name, status, stat_name.c_str());
+    } else {
+      Debug("host_statuses", "set status down for name: %s, status: %d, stat_name: %s", name, status, stat_name.c_str());
     }
   }
   Debug("host_statuses", "name: %s, status: %d", name, status);
-  // update / insert status.
-  // using the hash table pointer to store the HostStatus_t value.
-  HostStatRec_t *host_stat = nullptr;
-  ink_rwlock_wrlock(&host_status_rwlock);
-  if (ink_hash_table_lookup(hosts_statuses, name, reinterpret_cast<InkHashTableValue *>(&host_stat)) == 0) {
-    host_stat = static_cast<HostStatRec_t *>(ats_malloc(sizeof(HostStatRec_t)));
-    ink_hash_table_insert(hosts_statuses, name, reinterpret_cast<InkHashTableValue *>(host_stat));
-  }
-  host_stat->status    = status;
-  host_stat->down_time = down_time;
-  if (status == HostStatus_t::HOST_STATUS_DOWN) {
-    host_stat->marked_down = time(0);
-  } else {
-    host_stat->marked_down = 0;
-  }
-  ink_rwlock_unlock(&host_status_rwlock);
 
   // log it.
   if (status == HostStatus_t::HOST_STATUS_DOWN) {
@@ -134,55 +366,93 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
 HostStatus_t
 HostStatus::getHostStatus(const char *name)
 {
-  HostStatRec_t *_status;
-  int lookup = 0;
-  time_t now = time(0);
+  HostStatRec *_status = 0;
+  time_t now           = time(0);
+  bool lookup          = false;
 
   // the hash table value pointer has the HostStatus_t value.
   ink_rwlock_rdlock(&host_status_rwlock);
-  lookup = ink_hash_table_lookup(hosts_statuses, name, reinterpret_cast<void **>(&_status));
-  ink_rwlock_unlock(&host_status_rwlock);
-  Debug("host_statuses", "name: %s, status: %d", name, static_cast<int>(_status->status));
-
-  // if the host was marked down and it's down_time has elapsed, mark it up.
-  if (lookup == 1 && _status->status == HostStatus_t::HOST_STATUS_DOWN && _status->down_time > 0) {
-    if ((_status->down_time + _status->marked_down) < now) {
-      Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld", name, now, _status->down_time,
-            _status->marked_down);
-      setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0);
-      return HostStatus_t::HOST_STATUS_UP;
+  {
+    auto it = hosts_statuses.find(name);
+    lookup  = it != hosts_statuses.end();
+    if (lookup) {
+      _status = it->second;
     }
   }
-  return lookup == 1 ? static_cast<HostStatus_t>(_status->status) : HostStatus_t::HOST_STATUS_INIT;
+  ink_rwlock_unlock(&host_status_rwlock);
+
+  // if the host was marked down and it's down_time has elapsed, mark it up.
+  if (lookup && _status->status == HostStatus_t::HOST_STATUS_DOWN) {
+    unsigned int reasons = _status->reasons;
+    if ((_status->reasons & Reason::ACTIVE) && _status->active_down_time > 0) {
+      if ((_status->active_down_time + _status->active_marked_down) < now) {
+        Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", name, now,
+              _status->active_down_time, _status->active_marked_down, Reason::ACTIVE_REASON);
+        setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0, Reason::ACTIVE);
+        reasons ^= Reason::ACTIVE;
+      }
+    }
+    if ((_status->reasons & Reason::LOCAL) && _status->local_down_time > 0) {
+      if ((_status->local_down_time + _status->local_marked_down) < now) {
+        Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", name, now,
+              _status->local_down_time, _status->local_marked_down, Reason::LOCAL_REASON);
+        setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0, Reason::LOCAL);
+        reasons ^= Reason::LOCAL;
+      }
+    }
+    if ((_status->reasons & Reason::MANUAL) && _status->manual_down_time > 0) {
+      if ((_status->manual_down_time + _status->manual_marked_down) < now) {
+        Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", name, now,
+              _status->manual_down_time, _status->manual_marked_down, Reason::MANUAL_REASON);
+        setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0, Reason::MANUAL);
+        reasons ^= Reason::MANUAL;
+      }
+    }
+    if ((_status->reasons & Reason::SELF_DETECT) && _status->self_detect_down_time > 0) {
+      if ((_status->self_detect_down_time + _status->self_detect_marked_down) < now) {
+        Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", name, now,
+              _status->self_detect_down_time, _status->self_detect_marked_down, Reason::SELF_DETECT_REASON);
+        setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0, Reason::SELF_DETECT);
+        reasons ^= Reason::SELF_DETECT;
+      }
+    }
+    if (reasons == 0) {
+      return HostStatus_t::HOST_STATUS_UP;
+    } else {
+      return HostStatus_t::HOST_STATUS_DOWN;
+    }
+  }
+  // didn't find this host in host status db, create the record
+  if (!lookup) {
+    createHostStat(name);
+  }
+
+  return lookup ? static_cast<HostStatus_t>(_status->status) : HostStatus_t::HOST_STATUS_UP;
 }
 
 void
-HostStatus::createHostStat(const char *name)
+HostStatus::createHostStat(const char *name, const char *data)
 {
-  InkHashTableEntry *entry;
-  entry = ink_hash_table_lookup_entry(hosts_stats_ids, name);
-  if (entry == nullptr) {
-    RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (stat_prefix + name).c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)next_stat_id, RecRawStatSyncSum);
-    Debug("host_statuses", "name: %s, id: %d", name, next_stat_id);
-    ink_rwlock_wrlock(&host_statids_rwlock);
-    ink_hash_table_insert(hosts_stats_ids, name, reinterpret_cast<void *>(next_stat_id));
-    ink_rwlock_unlock(&host_statids_rwlock);
-    setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0);
-    next_stat_id++;
+  char buf[1024] = {0};
+  HostStatRec r;
+
+  std::string stat_name;
+  std::stringstream status_rec;
+  if (data != nullptr) {
+    HostStatRec h(data);
+    r = h;
+  }
+  status_rec << r;
+  getStatName(stat_name, name);
+
+  if (getHostStat(stat_name, buf, 1024) == REC_ERR_FAIL) {
+    RecRegisterStatString(RECT_PROCESS, stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), RECP_PERSISTENT);
+    Debug("host_statuses", "stat name: %s, data: %s", stat_name.c_str(), status_rec.str().c_str());
   }
 }
 
 int
-HostStatus::getHostStatId(const char *name)
+HostStatus::getHostStat(std::string &stat_name, char *buf, unsigned int buf_len)
 {
-  int lookup   = 0;
-  intptr_t _id = -1;
-
-  ink_rwlock_rdlock(&host_statids_rwlock);
-  lookup = ink_hash_table_lookup(hosts_stats_ids, name, reinterpret_cast<void **>(&_id));
-  ink_rwlock_unlock(&host_statids_rwlock);
-  Debug("host_statuses", "name: %s, id: %d", name, static_cast<int>(_id));
-
-  return lookup == 1 ? static_cast<int>(_id) : -1;
+  return RecGetRecordString(stat_name.c_str(), buf, buf_len, true);
 }

@@ -258,21 +258,59 @@ traffic_ctl host
     Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache heirarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
 
 .. program:: traffic_ctl host
-.. option:: down --time seconds HOSTNAME [HOSTNAME ...]
+.. option:: down --time seconds --reason 'all|active|local|manual|self_detect' HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as down so that they will not be chosen as a next hop parent.
-    If the --time option is included, the host is marked down for the specified number of
-    seconds after which the host will automatically be marked up.  0 seconds marks the host
-    down indefinately until marked up manually and is the default.
+    If the --time option is included, the host is marked down for the specified number of 
+    seconds after which the host will automatically be marked up.  0 seconds marks the host 
+    down indefinitely until marked up manually and is the default. A reason tag may be used
+    when marking a host down.  Valid values are 'manual', 'active', 'local', 'self_detect',
+    or 'all', 'manual' is used as the default.  The tags are used to indicate wether the host 
+    was marked down manually or by an 'active' or 'local' health check.  'self_detect' indicates
+    that a parent entry in parent.config was marked down because the entry refers to the
+    local host so, it is automatically marked down to prevent requests from looping. A host is
+    not marked up until all reason codes are cleared by marking up the host for the specified
+    reason code. The 'all' reason should be used very carefully as in the case of marking up,
+    it would clear the 'self_detect' reason and could result in trasaction failures due to
+    looping.  
+    
+    A stat is created for each host, with a the host fqdn and is prefixed with the string 
+    `proxy.process.host_status` with a string value.  The string value is a 
+    serialized representation of the Host status struct showing all current data ie, reasons, 
+    marked down times, and down time for each host.  The stats may be viewed using the 
+    `traffic_ctl metric` command or through the `stats_over_http` endpoint.
 
 .. program:: traffic_ctl host
-.. option:: up HOSTNAME [HOSTNAME ...]
+.. option:: up --reason 'all|active|local|manual|self_detect' HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as up so that they will be available for use as a next hop parent.
+    By default, the 'manual' reason tag is used when marking up a host.  Use the --reason
+    tag to mark the host reason code as up using one of 'manual', 'active', 'local', 'all',
+    or 'self_detect'  Be careful with the 'all' reason as it clears all reason codes including
+    'self_detect' which is used to prevent a transaction from looping.
 
 Examples
 ========
 
+Mark down a host with `traffic_ctl` and view the associated host stats::
+=======
+
+$ traffic_ctl host down cdn-cache-02.foo.com --reason manual
+
+$ /opt/trafficserver/bin/traffic_ctl metric match host_status
+proxy.process.host_status.cdn-cache-01.foo.com HOST_STATUS_DOWN,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:DOWN:1556896844:0,SELF_DETECT:UP:0:0
+proxy.process.host_status.cdn-cache-02.foo.com HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0:0
+proxy.process.host_status.cdn-cache-origin-01.foo.com HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0:0
+
+In the example above, 'cdn-cache-01.foo.com' is unavailable, `HOST_STATUS_DOWN` and was marked down 
+for the `manual` reason, `MANUAL:DOWN:1556896844:0`, at the time indicated by the UNIX time stamp 
+`1556896844`.  To make the host available, one would have to clear the `manual` reason using:: 
+`traffic_ctl host up cdn-cache-01.foo.com --reason manual`
+
+Configure Traffic Server to insert ``Via`` header in the response to
+the client::
+
+=======
 Configure Traffic Server to log in Squid format::
 
     $ traffic_ctl config set proxy.config.log.squid_log_enabled 1

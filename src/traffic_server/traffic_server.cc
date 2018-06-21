@@ -1861,6 +1861,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RecProcessStart();
     initCacheControl();
     IpAllow::startup();
+    HostStatus::instance().loadHostStatusFromStats();
+    netProcessor.init_socks();
     ParentConfig::startup();
     HostStatus::instance();
 #ifdef SPLIT_DNS
