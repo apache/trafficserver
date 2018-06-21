@@ -23,15 +23,17 @@
 
 /*****************************************************************************
  *
- *  HostSelection.h - Interface to Host Selection System
+ *  HostStatus.h - Interface to Host Status System
  *
  *
  ****************************************************************************/
 
 #pragma once
 
-#include "ControlBase.h"
-#include "ControlMatcher.h"
+#include <time.h>
+#include <string>
+#include "ts/ink_hash_table.h"
+#include "ts/ink_rwlock.h"
 #include "P_RecProcess.h"
 
 enum HostStatus_t {
@@ -46,7 +48,26 @@ struct HostStatRec_t {
   unsigned int down_time; // number of seconds that the host should be down, 0 is indefinately
 };
 
-const std::string stat_prefix = "host_status.";
+struct Reasons {
+  static constexpr const char *ACTIVE = "active";
+  static constexpr const char *LOCAL  = "local";
+  static constexpr const char *MANUAL = "manual";
+
+  static constexpr const char *reasons[3] = {ACTIVE, LOCAL, MANUAL};
+
+  static bool
+  validReason(const char *reason)
+  {
+    for (const char *i : reasons) {
+      if (strcmp(i, reason) == 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+};
+
+static const std::string stat_prefix = "proxy.process.host_status.";
 
 /**
  * Singleton placeholder for next hop status.
@@ -60,7 +81,7 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time);
+  void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time, const char *reason);
   HostStatus_t getHostStatus(const char *name);
   void createHostStat(const char *name);
 

@@ -26,6 +26,7 @@ traffic_ctl_traffic_ctl_CPPFLAGS = \
     -I$(abs_top_srcdir)/lib/records \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/api/include \
+    -I$(abs_top_srcdir)/proxy \
     $(TS_INCLUDES)
 
 traffic_ctl_traffic_ctl_SOURCES = \

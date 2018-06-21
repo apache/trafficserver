@@ -258,17 +258,23 @@ traffic_ctl host
     Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache heirarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
 
 .. program:: traffic_ctl host
-.. option:: down --time seconds HOSTNAME [HOSTNAME ...]
+.. option:: down --time seconds --reason 'manual|active|local' HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as down so that they will not be chosen as a next hop parent.
     If the --time option is included, the host is marked down for the specified number of 
     seconds after which the host will automatically be marked up.  0 seconds marks the host 
-    down indefinately until marked up manually and is the default.
+    down indefinitely until marked up manually and is the default. A reason tag may be used
+    when marking a host down.  Valid values are 'manual', 'active', or 'local', 'manual' is 
+    used as the default.  The tags are used to indicate wehter the host was marked down
+    manually or by an 'active' or 'local' health check.  There are three reason tag 
+    metrics for each host that may be viewed to see the reason a host was marked down.
 
 .. program:: traffic_ctl host
-.. option:: up HOSTNAME [HOSTNAME ...]
+.. option:: up --reason 'manual|active|local' HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as up so that they will be available for use as a next hop parent.
+    By default, the 'manual' reason tag is used when marking up a host.  Use the --reason
+    tag to mark the host reason stat as up using one of 'manual', 'active', or 'local'.
 
 Examples
 ========
