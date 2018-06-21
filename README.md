@@ -68,8 +68,6 @@ struct Stage // upstream or downstream (server or client)
   TSVConn m_vc { nullptr };
   Channel m_read;
   Channel m_write;
-
-  HdrMgr m_hdr_mgr; // header memory manager
 };
 
 struct Data
@@ -96,6 +94,9 @@ struct Data
 
   Stage m_upstream;
   Stage m_dnstream;
+
+  HdrMgr m_req_hdrmgr; // header memory manager
+  HdrMgr m_resp_hdrmgr; // header memory manager
 
   TSHttpParser m_http_parser { nullptr }; //!< cached for reuse
 };

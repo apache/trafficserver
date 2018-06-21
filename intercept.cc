@@ -49,8 +49,8 @@ DEBUG_LOG("request_block: %s", rangestr);
 
   // reuse the incoming client header, just change the range
   HttpHeader header
-    ( data->m_dnstream.m_hdr_mgr.m_buffer
-    , data->m_dnstream.m_hdr_mgr.m_lochdr );
+    ( data->m_req_hdrmgr.m_buffer
+    , data->m_req_hdrmgr.m_lochdr );
 
   // add/set sub range key and add slicer tag
   bool const rangestat = header.setKeyVal
@@ -82,8 +82,8 @@ std::cerr << header.toString() << std::endl;
   data->m_upstream.setupVioRead(contp);
 
   // anticipate the next server response header
-  TSHttpParserClear(data->httpParser());
-  data->m_upstream.m_hdr_mgr.resetHeader();
+  TSHttpParserClear(data->m_http_parser);
+  data->m_resp_hdrmgr.resetHeader();
 
   return TS_EVENT_CONTINUE;
 }
@@ -99,9 +99,14 @@ handle_client_req
   if (TS_EVENT_VCONN_READ_READY == event)
   {
 DEBUG_LOG("client has data ready to read");
+    if (nullptr == data->m_http_parser)
+    {
+      data->m_http_parser = TSHttpParserCreate();
+    }
+
     // the client request header didn't fit into the input buffer:
-    if (TS_PARSE_DONE != data->m_dnstream.m_hdr_mgr.populateFrom
-        ( data->httpParser()
+    if (TS_PARSE_DONE != data->m_req_hdrmgr.populateFrom
+        ( data->m_http_parser
         , data->m_dnstream.m_read.m_reader
         , TSHttpHdrParseReq ) )
     {
@@ -110,8 +115,8 @@ DEBUG_LOG("client has data ready to read");
 
     // get the header
     HttpHeader header
-      ( data->m_dnstream.m_hdr_mgr.m_buffer
-      , data->m_dnstream.m_hdr_mgr.m_lochdr );
+      ( data->m_req_hdrmgr.m_buffer
+      , data->m_req_hdrmgr.m_lochdr );
 
 /*
 std::cerr << std::endl;
@@ -282,7 +287,8 @@ form416HeaderAndBody
 
   char bufstr[256];
   int buflen = snprintf
-    (bufstr, 255, "%" PRId64, bodystr.size());
+//    (bufstr, 255, "%" PRId64, bodystr.size());
+    (bufstr, 255, "%lu", bodystr.size());
   header.setKeyVal
     ( TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH
     , bufstr, buflen );
@@ -315,8 +321,8 @@ DEBUG_LOG("server has data ready to read");
     if (! data->m_server_block_header_parsed)
     {
       // the server response header didn't fit into the input buffer??
-      if ( TS_PARSE_DONE != data->m_upstream.m_hdr_mgr.populateFrom
-            ( data->httpParser()
+      if ( TS_PARSE_DONE != data->m_resp_hdrmgr.populateFrom
+            ( data->m_http_parser
             , data->m_upstream.m_read.m_reader
             , TSHttpHdrParseResp ) )
       {
@@ -324,8 +330,8 @@ DEBUG_LOG("server has data ready to read");
       }
 
       HttpHeader header
-        ( data->m_upstream.m_hdr_mgr.m_buffer
-        , data->m_upstream.m_hdr_mgr.m_lochdr );
+        ( data->m_resp_hdrmgr.m_buffer
+        , data->m_resp_hdrmgr.m_lochdr );
 
 /*
 std::cerr << std::endl;
@@ -482,8 +488,8 @@ TSAssert(nullptr == data->m_dnstream.m_write.m_vio);
 
       // write the (previously) manipulated server resp header to the client
       HttpHeader header
-        ( data->m_upstream.m_hdr_mgr.m_buffer
-        , data->m_upstream.m_hdr_mgr.m_lochdr );
+        ( data->m_resp_hdrmgr.m_buffer
+        , data->m_resp_hdrmgr.m_lochdr );
 
 /*
 std::cerr << std::endl;

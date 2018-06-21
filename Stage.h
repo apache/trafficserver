@@ -93,8 +93,6 @@ struct Stage // upstream or downstream (server or client)
   Channel m_read;
   Channel m_write;
 
-  HdrMgr m_hdr_mgr; // header manager
-
   void
   setupConnection
     ( TSVConn vc
