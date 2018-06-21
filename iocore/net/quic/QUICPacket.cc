@@ -176,7 +176,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId
     this->_buf_len =
       LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() + this->_payload_length;
   } else {
-    // this->_buf_len will be updated when buf() is called
+    this->buf();
   }
 }
 
@@ -397,7 +397,7 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
       pn_len = 4;
     }
 
-    QUICIntUtil::write_QUICVariableInt(QUICVariableInt::size(pn_len) + this->_payload_length + aead_tag_len, buf + *len, &n);
+    QUICIntUtil::write_QUICVariableInt(pn_len + this->_payload_length + aead_tag_len, buf + *len, &n);
     *len += n;
 
     QUICTypeUtil::write_QUICPacketNumber(pn, pn_len, buf + *len, &n);
