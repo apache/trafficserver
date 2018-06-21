@@ -25,13 +25,37 @@
 
 static RecRawStatBlock *host_status_rsb = nullptr;
 
+static void
+getStatName(std::string &stat_name, const char *name, const char *reason)
+{
+  stat_name = stat_prefix + name + "_";
+
+  if (reason == nullptr) {
+    stat_name += Reasons::MANUAL;
+  } else {
+    stat_name += reason;
+  }
+}
+
 static void *
 mgmt_host_status_up_callback(void *x, char *data, int len)
 {
+  MgmtInt op;
+  MgmtMarshallString name;
+  MgmtMarshallInt down_time;
+  MgmtMarshallString reason;
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+  Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
+
+  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason, &down_time) == -1) {
+    Error("Plugin message - RPC parsing error - message discarded.");
+  }
+  Debug("host_statuses", "op: %ld, name: %s, down_time: %d, reason: %s", static_cast<long>(op), name, static_cast<int>(down_time),
+        reason);
   if (data != nullptr) {
     Debug("host_statuses", "marking up server %s", data);
     HostStatus &hs = HostStatus::instance();
-    hs.setHostStatus(data, HostStatus_t::HOST_STATUS_UP, 0);
+    hs.setHostStatus(name, HostStatus_t::HOST_STATUS_UP, down_time, reason);
   }
   return nullptr;
 }
@@ -42,18 +66,20 @@ mgmt_host_status_down_callback(void *x, char *data, int len)
   MgmtInt op;
   MgmtMarshallString name;
   MgmtMarshallInt down_time;
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+  MgmtMarshallString reason;
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
   Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
 
-  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &down_time) == -1) {
+  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason, &down_time) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
   }
-  Debug("host_statuses", "op: %ld, name: %s, down_time: %d", static_cast<long>(op), name, static_cast<int>(down_time));
+  Debug("host_statuses", "op: %ld, name: %s, down_time: %d, reason: %s", static_cast<long>(op), name, static_cast<int>(down_time),
+        reason);
 
   if (data != nullptr) {
     Debug("host_statuses", "marking down server %s", name);
     HostStatus &hs = HostStatus::instance();
-    hs.setHostStatus(name, HostStatus_t::HOST_STATUS_DOWN, down_time);
+    hs.setHostStatus(name, HostStatus_t::HOST_STATUS_DOWN, down_time, reason);
   }
   return nullptr;
 }
@@ -64,7 +90,6 @@ HostStatus::HostStatus()
   hosts_stats_ids = ink_hash_table_create(InkHashTableKeyType_String);
   ink_rwlock_init(&host_status_rwlock);
   ink_rwlock_init(&host_statids_rwlock);
-  Debug("host_statuses", "registering ostas");
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, mgmt_host_status_up_callback, nullptr);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, mgmt_host_status_down_callback, nullptr);
   host_status_rsb = RecAllocateRawStatBlock((int)TS_MAX_API_STATS);
@@ -91,21 +116,28 @@ HostStatus::~HostStatus()
 }
 
 void
-HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned int down_time)
+HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned int down_time, const char *reason)
 {
-  int stat_id = getHostStatId(name);
+  std::string reason_stat;
+
+  getStatName(reason_stat, name, reason);
+
+  int stat_id = getHostStatId(reason_stat.c_str());
+
+  // update the stats
   if (stat_id != -1) {
     if (status == HostStatus_t::HOST_STATUS_UP) {
-      Debug("host_statuses", "set stat for :  name: %s, status: %d", name, status);
+      Debug("host_statuses", "set status up for :  name: %s, status: %d, reason_stat: %s", name, status, reason_stat.c_str());
       RecSetRawStatCount(host_status_rsb, stat_id, 1);
       RecSetRawStatSum(host_status_rsb, stat_id, 1);
     } else {
+      Debug("host_statuses", "set status down for :  name: %s, status: %d, reason_stat: %s", name, status, reason_stat.c_str());
       RecSetRawStatCount(host_status_rsb, stat_id, 0);
       RecSetRawStatSum(host_status_rsb, stat_id, 0);
-      Debug("host_statuses", "clear stat for :  name: %s, status: %d", name, status);
     }
   }
   Debug("host_statuses", "name: %s, status: %d", name, status);
+
   // update / insert status.
   // using the hash table pointer to store the HostStatus_t value.
   HostStatRec_t *host_stat = nullptr;
@@ -149,7 +181,7 @@ HostStatus::getHostStatus(const char *name)
     if ((_status->down_time + _status->marked_down) < now) {
       Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld", name, now, _status->down_time,
             _status->marked_down);
-      setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0);
+      setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0, nullptr);
       return HostStatus_t::HOST_STATUS_UP;
     }
   }
@@ -160,29 +192,40 @@ void
 HostStatus::createHostStat(const char *name)
 {
   InkHashTableEntry *entry;
-  entry = ink_hash_table_lookup_entry(hosts_stats_ids, name);
-  if (entry == nullptr) {
-    RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (stat_prefix + name).c_str(), RECD_INT, RECP_NON_PERSISTENT,
-                       (int)next_stat_id, RecRawStatSyncSum);
-    Debug("host_statuses", "name: %s, id: %d", name, next_stat_id);
-    ink_rwlock_wrlock(&host_statids_rwlock);
-    ink_hash_table_insert(hosts_stats_ids, name, reinterpret_cast<void *>(next_stat_id));
-    ink_rwlock_unlock(&host_statids_rwlock);
-    setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0);
-    next_stat_id++;
+
+  ink_rwlock_wrlock(&host_statids_rwlock);
+  {
+    for (const char *i : Reasons::reasons) {
+      std::string reason_stat;
+      getStatName(reason_stat, name, i);
+      entry = ink_hash_table_lookup_entry(hosts_stats_ids, reason_stat.c_str());
+      if (entry == nullptr) {
+        RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (reason_stat).c_str(), RECD_INT, RECP_NON_PERSISTENT, (int)next_stat_id,
+                           RecRawStatSyncSum);
+        RecSetRawStatCount(host_status_rsb, next_stat_id, 1);
+        RecSetRawStatSum(host_status_rsb, next_stat_id, 1);
+
+        ink_hash_table_insert(hosts_stats_ids, reason_stat.c_str(), reinterpret_cast<void *>(next_stat_id));
+
+        Debug("host_statuses", "stat name: %s, id: %d", reason_stat.c_str(), next_stat_id);
+        next_stat_id++;
+      }
+    }
   }
+  ink_rwlock_unlock(&host_statids_rwlock);
+  setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0, nullptr);
 }
 
 int
-HostStatus::getHostStatId(const char *name)
+HostStatus::getHostStatId(const char *stat_name)
 {
   int lookup   = 0;
   intptr_t _id = -1;
 
   ink_rwlock_rdlock(&host_statids_rwlock);
-  lookup = ink_hash_table_lookup(hosts_stats_ids, name, reinterpret_cast<void **>(&_id));
+  lookup = ink_hash_table_lookup(hosts_stats_ids, stat_name, reinterpret_cast<void **>(&_id));
   ink_rwlock_unlock(&host_statids_rwlock);
-  Debug("host_statuses", "name: %s, id: %d", name, static_cast<int>(_id));
+  Debug("host_statuses", "name: %s, id: %d", stat_name, static_cast<int>(_id));
 
   return lookup == 1 ? static_cast<int>(_id) : -1;
 }
