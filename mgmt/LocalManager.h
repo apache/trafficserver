@@ -96,7 +96,7 @@ public:
   void rollLogFiles();
   void clearStats(const char *name = nullptr);
   void hostStatusSetDown(const char *marshalled_req, int len);
-  void hostStatusSetUp(const char *marshalled_req);
+  void hostStatusSetUp(const char *marshalled_req, int len);
 
   bool processRunning();
 
