@@ -885,11 +885,12 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
  *-------------------------------------------------------------------------
  * Sets the HOST status to Down
  *
- * 'marshalled_req' is marshalled here, (host_name and down_time).
+ * 'marshalled_req' is marshalled here, (host_name and down_time, na).
  * 'len' is the length of the 'req' marshaled data.
+ * 'na' unused.
  */
 TSMgmtError
-HostStatusSetDown(const char *marshalled_req, int len)
+HostStatusSetDown(const char *marshalled_req, int len, const char *na)
 {
   lmgmt->hostStatusSetDown(marshalled_req, len);
   return TS_ERR_OKAY;
@@ -901,11 +902,13 @@ HostStatusSetDown(const char *marshalled_req, int len)
  * Sets the HOST status to Up
  *
  * 'marshalled_req' is marshalled here, host_name.
+ * 'len' is the length of 'req'
+ * 'na' unused.
  */
 TSMgmtError
-HostStatusSetUp(const char *marshalled_req)
+HostStatusSetUp(const char *marshalled_req, int len, const char *na)
 {
-  lmgmt->hostStatusSetUp(marshalled_req);
+  lmgmt->hostStatusSetUp(marshalled_req, len);
   return TS_ERR_OKAY;
 }
 

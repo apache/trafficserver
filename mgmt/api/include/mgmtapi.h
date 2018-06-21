@@ -428,8 +428,8 @@ tsapi TSMgmtError TSReadFromUrl(char *url, char **header, int *headerSize, char 
  * NOTE: header and headerSize can be NULL
  */
 tsapi TSMgmtError TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
-tsapi TSMgmtError TSHostStatusSetUp(const char *host_name);
-tsapi TSMgmtError TSHostStatusSetDown(const char *host_name, int down_time);
+tsapi TSMgmtError TSHostStatusSetUp(const char *host_name, int down_time, const char *reason);
+tsapi TSMgmtError TSHostStatusSetDown(const char *host_name, int down_time, const char *reason);
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
  * Outpue: TSErrr
