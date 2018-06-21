@@ -127,7 +127,7 @@ range_header_check(TSHttpTxn txnp)
     } else {
       DEBUG_LOG("no range request header.");
     }
-    TSHandleMLocRelease(hdr_bufp, req_hdrs, nullptr);
+    TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
   } else {
     DEBUG_LOG("failed to retrieve the server request");
   }
@@ -150,7 +150,7 @@ handle_send_origin_request(TSCont contp, TSHttpTxn txnp, struct txndata *txn_sta
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
   }
-  TSHandleMLocRelease(hdr_bufp, req_hdrs, nullptr);
+  TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
 }
 
 /**
@@ -194,8 +194,8 @@ handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
   } else {
     DEBUG_LOG("failed to get Request Headers");
   }
-  TSHandleMLocRelease(response, resp_hdr, nullptr);
-  TSHandleMLocRelease(hdr_bufp, req_hdrs, nullptr);
+  TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
+  TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
 }
 
 /**
@@ -227,7 +227,7 @@ handle_server_read_response(TSHttpTxn txnp, struct txndata *txn_state)
       }
     }
   }
-  TSHandleMLocRelease(response, resp_hdr, nullptr);
+  TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
 }
 
 /**
