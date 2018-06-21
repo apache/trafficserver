@@ -134,9 +134,9 @@ LocalManager::hostStatusSetDown(const char *marshalled_req, int len)
 }
 
 void
-LocalManager::hostStatusSetUp(const char *marshalled_req)
+LocalManager::hostStatusSetUp(const char *marshalled_req, int len)
 {
-  signalEvent(MGMT_EVENT_HOST_STATUS_UP, marshalled_req);
+  signalEvent(MGMT_EVENT_HOST_STATUS_UP, marshalled_req, len);
   return;
 }
 
