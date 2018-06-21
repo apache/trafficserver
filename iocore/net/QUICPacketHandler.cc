@@ -71,7 +71,7 @@ QUICPacketHandler::close_conenction(QUICNetVConnection *conn)
 
 void
 QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
-                                QUICPacketNumberProtector *pn_protector)
+                                QUICPacketNumberProtector *pn_protector, int dcil)
 {
   size_t udp_len;
   Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
@@ -80,7 +80,7 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
   udp_payload->fill(udp_len);
 
   if (pn_protector) {
-    QUICPacket::protect_packet_number(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_len, pn_protector);
+    QUICPacket::protect_packet_number(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_len, pn_protector, dcil);
   }
 
   UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload);
@@ -221,7 +221,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       QUICDebugDS(scid, dcid, "Unsupported version: 0x%x", v);
 
       QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid);
-      this->_send_packet(this, *vn, udp_packet->getConnection(), udp_packet->from, 1200, nullptr);
+      this->_send_packet(this, *vn, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
       udp_packet->free();
       return;
     }
@@ -252,7 +252,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       token.generate(dcid, params->server_id());
     }
     auto packet = QUICPacketFactory::create_stateless_reset_packet(dcid, token);
-    this->_send_packet(this, *packet, udp_packet->getConnection(), udp_packet->from, 1200, nullptr);
+    this->_send_packet(this, *packet, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
     udp_packet->free();
     return;
   }
@@ -304,7 +304,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 void
 QUICPacketHandlerIn::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector)
 {
-  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector);
+  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
 }
 
 //
@@ -350,7 +350,7 @@ void
 QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector)
 {
   // TODO Pass QUICPacketNumberProtector
-  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), nullptr);
+  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), nullptr, 0);
 }
 
 void

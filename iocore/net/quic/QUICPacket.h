@@ -238,7 +238,7 @@ public:
   void store(uint8_t *buf, size_t *len) const;
 
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
-  static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len);
+  static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil);
 
 private:
   int _packet_number_len;
@@ -330,7 +330,7 @@ public:
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
   static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked);
 
-  static bool protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector);
+  static bool protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector, int dcil);
   static bool unprotect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector);
 
   LINK(QUICPacket, link);

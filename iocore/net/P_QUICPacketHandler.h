@@ -45,7 +45,7 @@ public:
 
 protected:
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
-                           QUICPacketNumberProtector *pn_protector);
+                           QUICPacketNumberProtector *pn_protector, int dcil);
 
   Event *_collector_event                       = nullptr;
   QUICClosedConCollector *_closed_con_collector = nullptr;

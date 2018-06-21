@@ -545,10 +545,9 @@ QUICPacketShortHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, siz
 }
 
 bool
-QUICPacketShortHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len)
+QUICPacketShortHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil)
 {
-  int connection_id_len = QUICConfigParams::scid_len();
-  pn_offset             = 1 + connection_id_len;
+  pn_offset = 1 + dcil;
   return true;
 }
 
@@ -756,7 +755,7 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 }
 
 bool
-QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector)
+QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector, int dcil)
 {
   size_t pn_offset             = 0;
   uint8_t pn_len               = 4;
@@ -779,7 +778,7 @@ QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacket
     QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
   } else {
     QUICPacketShortHeader::key_phase(phase, packet, packet_len);
-    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len);
+    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, dcil);
   }
   sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
   sample_len    = 16; // On draft-12, the length is always 16 (See 5.6.1 and 5.6.2)
@@ -818,7 +817,7 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, QUICPack
     QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
   } else {
     QUICPacketShortHeader::key_phase(phase, packet, packet_len);
-    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len);
+    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConfigParams::scid_len());
   }
   sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
   sample_len    = 16; // On draft-12, the length is always 16 (See 5.6.1 and 5.6.2)
