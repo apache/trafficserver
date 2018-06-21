@@ -53,19 +53,18 @@ tsapi size_t _TSstrlcat(char *dst, const char *str, size_t siz);
 tsapi void _TSfree(void *ptr);
 
 /* --------------------------------------------------------------------------
-   Component object handles */
+   Field object handles */
 /**
-    Releases the TSMLoc mloc created from the TSMLoc parent.
-    If there is no parent TSMLoc, use TS_NULL_MLOC.
+    Releases the MIME header field created from the MIME header parent.
 
-    @param bufp marshal buffer containing the TSMLoc handle to be
+    @param bufp marshal buffer containing the TSMimeHdrFldLoc handle to be
       released.
     @param parent location of the parent object from which the handle
       was created.
     @param mloc location of the handle to be released.
 
  */
-tsapi TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc);
+tsapi TSReturnCode TSMimeHdrFldRelease(TSMBuffer bufp, TSMimeHdrLoc parent, TSMimeHdrFldLoc compLoc);
 
 /* --------------------------------------------------------------------------
    Install and plugin locations */
@@ -296,26 +295,25 @@ tsapi TSReturnCode TSMBufferDestroy(TSMBuffer bufp);
     location for the URL within the marshal buffer.
 
     @param bufp marshal buffer containing the new URL.
-    @param locp pointer to a TSMLoc to store the MLoc into.
+    @param locp pointer to a TSUrlHdrLoc to store the header URL location into.
 
  */
-tsapi TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc *locp);
+tsapi TSReturnCode TSUrlCreate(TSMBuffer bufp, TSUrlHdrLoc *locp);
 
 /**
     Copies the URL located at src_url within src_bufp to a URL
     location within the marshal buffer dest_bufp, and returns the
-    TSMLoc location of the copied URL. Unlike TSUrlCopy(), you do
-    not have to create the destination URL before cloning. Release
-    the returned TSMLoc handle with a call to TSHandleMLocRelease().
+    TSUrlHdrLoc location of the copied URL. Unlike TSUrlCopy(), you do
+    not have to create the destination URL before cloning.
 
     @param dest_bufp marshal buffer containing the cloned URL.
     @param src_bufp marshal buffer containing the URL to be cloned.
     @param src_url location of the URL to be cloned, within the marshal
       buffer src_bufp.
-    @param locp pointer to a TSMLoc to store the MLoc into.
+    @param locp pointer to a TSUrlHdrLoc to store the header URL location into.
 
  */
-tsapi TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc *locp);
+tsapi TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSUrlHdrLoc src_url, TSUrlHdrLoc *locp);
 
 /**
     Copies the contents of the URL at location src_loc within the
@@ -330,7 +328,7 @@ tsapi TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc sr
     @param src_offset location of the source URL within src_bufp.
 
  */
-tsapi TSReturnCode TSUrlCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer src_bufp, TSMLoc src_offset);
+tsapi TSReturnCode TSUrlCopy(TSMBuffer dest_bufp, TSUrlHdrLoc dest_offset, TSMBuffer src_bufp, TSUrlHdrLoc src_offset);
 
 /**
     Formats a URL stored in an TSMBuffer into an TSIOBuffer.
@@ -340,7 +338,7 @@ tsapi TSReturnCode TSUrlCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer 
     @param iobufp destination TSIOBuffer for the URL.
 
  */
-tsapi void TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
+tsapi void TSUrlPrint(TSMBuffer bufp, TSUrlHdrLoc offset, TSIOBuffer iobufp);
 
 /**
     Parses a URL. The start pointer is both an input and an output
@@ -361,7 +359,7 @@ tsapi void TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
     @return TS_PARSE_ERROR or TS_PARSE_DONE.
 
  */
-tsapi TSParseResult TSUrlParse(TSMBuffer bufp, TSMLoc offset, const char **start, const char *end);
+tsapi TSParseResult TSUrlParse(TSMBuffer bufp, TSUrlHdrLoc offset, const char **start, const char *end);
 
 /**
     Calculates the length of the URL located at url_loc within the
@@ -373,7 +371,7 @@ tsapi TSParseResult TSUrlParse(TSMBuffer bufp, TSMLoc offset, const char **start
     @return string length of the URL.
 
  */
-tsapi int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset);
+tsapi int TSUrlLengthGet(TSMBuffer bufp, TSUrlHdrLoc offset);
 
 /**
     Constructs a string representation of the URL located at url_loc
@@ -392,7 +390,7 @@ tsapi int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset);
     @return The URL as a string.
 
  */
-tsapi char *TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi char *TSUrlStringGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Retrieves the scheme portion of the URL located at url_loc within
@@ -406,7 +404,7 @@ tsapi char *TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @return The scheme portion of the URL, as a string.
 
  */
-tsapi const char *TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlSchemeGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the scheme portion of the URL located at url_loc within
@@ -422,7 +420,7 @@ tsapi const char *TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @param length string stored in value.
 
  */
-tsapi TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /* --------------------------------------------------------------------------
    Internet specific URLs */
@@ -437,7 +435,7 @@ tsapi TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSMLoc offset, const char *val
     @return user portion of the URL.
 
  */
-tsapi const char *TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlUserGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the user portion of the URL located at url_loc within bufp
@@ -453,7 +451,7 @@ tsapi const char *TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @param length string length of value.
 
  */
-tsapi TSReturnCode TSUrlUserSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlUserSet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /**
     Retrieves the password portion of the URL located at url_loc
@@ -467,7 +465,7 @@ tsapi TSReturnCode TSUrlUserSet(TSMBuffer bufp, TSMLoc offset, const char *value
     @return password portion of the URL.
 
  */
-tsapi const char *TSUrlPasswordGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlPasswordGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the password portion of the URL located at url_loc within
@@ -483,7 +481,7 @@ tsapi const char *TSUrlPasswordGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @param length of the new password.
 
  */
-tsapi TSReturnCode TSUrlPasswordSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlPasswordSet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /**
     Retrieves the host portion of the URL located at url_loc
@@ -496,7 +494,7 @@ tsapi TSReturnCode TSUrlPasswordSet(TSMBuffer bufp, TSMLoc offset, const char *v
     @return Host portion of the URL.
 
  */
-tsapi const char *TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlHostGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the host portion of the URL at url_loc to the string value.
@@ -511,7 +509,7 @@ tsapi const char *TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @param length string length of the new host name of the URL.
 
  */
-tsapi TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /**
     Retrieves the port portion of the URL located at url_loc.
@@ -521,7 +519,7 @@ tsapi TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char *value
     @return port portion of the URL.
 
  */
-tsapi int TSUrlPortGet(TSMBuffer bufp, TSMLoc offset);
+tsapi int TSUrlPortGet(TSMBuffer bufp, TSUrlHdrLoc offset);
 
 /**
     Sets the port portion of the URL located at url_loc.
@@ -531,7 +529,7 @@ tsapi int TSUrlPortGet(TSMBuffer bufp, TSMLoc offset);
     @param port new port setting for the URL.
 
  */
-tsapi TSReturnCode TSUrlPortSet(TSMBuffer bufp, TSMLoc offset, int port);
+tsapi TSReturnCode TSUrlPortSet(TSMBuffer bufp, TSUrlHdrLoc offset, int port);
 
 /* --------------------------------------------------------------------------
    HTTP specific URLs */
@@ -547,7 +545,7 @@ tsapi TSReturnCode TSUrlPortSet(TSMBuffer bufp, TSMLoc offset, int port);
     @return path portion of the URL.
 
  */
-tsapi const char *TSUrlPathGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlPathGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the path portion of the URL located at url_loc within bufp
@@ -562,7 +560,7 @@ tsapi const char *TSUrlPathGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @param length of the new path string.
 
  */
-tsapi TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /* --------------------------------------------------------------------------
    FTP specific URLs */
@@ -574,7 +572,7 @@ tsapi TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSMLoc offset, const char *value
     @return FTP type of the URL.
 
  */
-tsapi int TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc offset);
+tsapi int TSUrlFtpTypeGet(TSMBuffer bufp, TSUrlHdrLoc offset);
 
 /**
     Sets the FTP type portion of the URL located at url_loc within
@@ -585,7 +583,7 @@ tsapi int TSUrlFtpTypeGet(TSMBuffer bufp, TSMLoc offset);
     @param type new FTP type for the URL.
 
  */
-tsapi TSReturnCode TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc offset, int type);
+tsapi TSReturnCode TSUrlFtpTypeSet(TSMBuffer bufp, TSUrlHdrLoc offset, int type);
 
 /* --------------------------------------------------------------------------
    HTTP specific URLs */
@@ -601,7 +599,7 @@ tsapi TSReturnCode TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc offset, int type);
     @return HTTP params portion of the URL.
 
  */
-tsapi const char *TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlHttpParamsGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the HTTP params portion of the URL located at url_loc within
@@ -617,7 +615,7 @@ tsapi const char *TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int *length)
     @param length string length of the new HTTP params value.
 
  */
-tsapi TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /**
     Retrieves the HTTP query portion of the URL located at url_loc
@@ -631,7 +629,7 @@ tsapi TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc offset, const char 
     @return HTTP query portion of the URL.
 
  */
-tsapi const char *TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlHttpQueryGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the HTTP query portion of the URL located at url_loc within
@@ -646,7 +644,7 @@ tsapi const char *TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @param length of the new HTTP query string.
 
  */
-tsapi TSReturnCode TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlHttpQuerySet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /**
     Retrieves the HTTP fragment portion of the URL located at url_loc
@@ -660,7 +658,7 @@ tsapi TSReturnCode TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc offset, const char *
     @return HTTP fragment portion of the URL.
 
  */
-tsapi const char *TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc offset, int *length);
+tsapi const char *TSUrlHttpFragmentGet(TSMBuffer bufp, TSUrlHdrLoc offset, int *length);
 
 /**
     Sets the HTTP fragment portion of the URL located at url_loc
@@ -676,7 +674,7 @@ tsapi const char *TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc offset, int *lengt
     @param length of the new HTTP query string.
 
  */
-tsapi TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSUrlHdrLoc offset, const char *value, int length);
 
 /**
    Perform percent-encoding of the string in the buffer, storing the
@@ -705,7 +703,7 @@ tsapi TSReturnCode TSStringPercentEncode(const char *str, int str_len, char *dst
    @param map optional (can be NULL) map of characters to encode.
 
 */
-tsapi TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char *dst, size_t dst_size, size_t *length,
+tsapi TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSUrlHdrLoc offset, char *dst, size_t dst_size, size_t *length,
                                       const unsigned char *map);
 
 /**
@@ -752,14 +750,13 @@ tsapi void TSMimeParserClear(TSMimeParser parser);
 tsapi void TSMimeParserDestroy(TSMimeParser parser);
 
 /**
-    Creates a new MIME header within bufp. Release with a call to
-    TSHandleMLocRelease().
+    Creates a new MIME header within bufp.
 
     @param bufp marshal buffer to contain the new MIME header.
-    @param locp buffer pointer to contain the MLoc
+    @param locp buffer pointer to contain the MIME header loc.
 
  */
-tsapi TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp);
+tsapi TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMimeHdrLoc *locp);
 
 /**
     Destroys the MIME header located at hdr_loc within bufp.
@@ -768,14 +765,13 @@ tsapi TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp);
     @param offset location of the MIME header.
 
  */
-tsapi TSReturnCode TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc offset);
+tsapi TSReturnCode TSMimeHdrDestroy(TSMBuffer bufp, TSMimeHdrLoc offset);
 
 /**
     Copies a specified MIME header to a specified marshal buffer,
     and returns the location of the copied MIME header within the
     destination marshal buffer. Unlike TSMimeHdrCopy(), you do not
-    have to create the destination MIME header before cloning. Release
-    the returned TSMLoc handle with a call to TSHandleMLocRelease().
+    have to create the destination MIME header before cloning.
 
     @param dest_bufp destination marshal buffer.
     @param src_bufp source marshal buffer.
@@ -783,7 +779,7 @@ tsapi TSReturnCode TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc offset);
     @param locp where to store the location of the copied MIME header.
 
  */
-tsapi TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp);
+tsapi TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMimeHdrLoc src_hdr, TSMimeHdrLoc *locp);
 
 /**
     Copies the contents of the MIME header located at src_loc
@@ -799,7 +795,7 @@ tsapi TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLo
     @param src_offset
 
  */
-tsapi TSReturnCode TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer src_bufp, TSMLoc src_offset);
+tsapi TSReturnCode TSMimeHdrCopy(TSMBuffer dest_bufp, TSMimeHdrLoc dest_offset, TSMBuffer src_bufp, TSMimeHdrLoc src_offset);
 
 /**
     Formats the MIME header located at hdr_loc within bufp into the
@@ -811,7 +807,7 @@ tsapi TSReturnCode TSMimeHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuf
     @param iobufp target TSIOBuffer.
 
  */
-tsapi void TSMimeHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
+tsapi void TSMimeHdrPrint(TSMBuffer bufp, TSMimeHdrLoc offset, TSIOBuffer iobufp);
 
 /**
     Parses a MIME header. The MIME header must have already been
@@ -837,7 +833,7 @@ tsapi void TSMimeHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
         because the end of the buffer was reached.
 
  */
-tsapi TSParseResult TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc offset, const char **start, const char *end);
+tsapi TSParseResult TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMimeHdrLoc offset, const char **start, const char *end);
 
 /**
     Calculates the length of the MIME header located at hdr_loc if it
@@ -849,7 +845,7 @@ tsapi TSParseResult TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc o
     @return string length of the MIME header located at hdr_loc.
 
  */
-tsapi int TSMimeHdrLengthGet(TSMBuffer bufp, TSMLoc offset);
+tsapi int TSMimeHdrLengthGet(TSMBuffer bufp, TSMimeHdrLoc offset);
 
 /**
     Removes and destroys all the MIME fields within the MIME header
@@ -859,7 +855,7 @@ tsapi int TSMimeHdrLengthGet(TSMBuffer bufp, TSMLoc offset);
     @param offset location of the MIME header.
 
  */
-tsapi TSReturnCode TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc offset);
+tsapi TSReturnCode TSMimeHdrFieldsClear(TSMBuffer bufp, TSMimeHdrLoc offset);
 
 /**
     Returns a count of the number of MIME fields within the MIME header
@@ -871,15 +867,14 @@ tsapi TSReturnCode TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc offset);
       at hdr_loc.
 
  */
-tsapi int TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc offset);
+tsapi int TSMimeHdrFieldsCount(TSMBuffer bufp, TSMimeHdrLoc offset);
 
 /**
     Retrieves the location of a specified MIME field within the
     MIME header located at hdr_loc within bufp. The idx parameter
     specifies which field to retrieve. The fields are numbered from 0
     to TSMimeHdrFieldsCount(bufp, hdr_loc) - 1. If idx does not lie
-    within that range then TSMimeHdrFieldGet returns 0. Release the
-    returned handle with a call to TSHandleMLocRelease.
+    within that range then TSMimeHdrFieldGet returns 0.
 
     @param bufp marshal buffer containing the MIME header.
     @param hdr location of the MIME header.
@@ -887,16 +882,16 @@ tsapi int TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc offset);
     @return location of the specified MIME field.
 
  */
-tsapi TSMLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr, int idx);
+tsapi TSMimeHdrFldLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMimeHdrLoc hdr, int idx);
 
 /**
-    Retrieves the TSMLoc location of a specified MIME field from within
+    Retrieves the TSMimeHdrFldLoc location of a specified MIME field from within
     the MIME header located at hdr. The name and length parameters
     specify which field to retrieve. For each MIME field in the MIME
     header, a case insensitive string comparison is done between
     the field name and name. If TSMimeHdrFieldFind() cannot find the
-    requested field, it returns TS_NULL_MLOC. Release the returned
-    TSMLoc handle with a call to TSHandleMLocRelease().
+    requested field, it returns nullptr. Release the returned
+    TSMimeHdrFldLoc handle with a call to TSMimeHdrFldRelease().
 
     @param bufp marshal buffer containing the MIME header field to find.
     @param hdr location of the MIME header containing the field.
@@ -904,13 +899,13 @@ tsapi TSMLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr, int idx);
     @param length string length of the string name. If length is -1,
       then name is assumed to be null-terminated.
     @return location of the requested MIME field. If the field could
-      not be found, returns TS_NULL_MLOC.
+      not be found, returns nullptr.
 
  */
-tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length);
+tsapi TSMimeHdrFldLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMimeHdrLoc hdr, const char *name, int length);
 
 /**
-    Returns the TSMLoc location of a specified MIME field from within
+    Returns the TSMIMHdrFldLoc location of a specified MIME field from within
     the MIME header located at hdr. The retrieved_str parameter
     specifies which field to retrieve. For each MIME field in the
     MIME header, a pointer comparison is done between the field name
@@ -918,8 +913,8 @@ tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, in
     than TSMimeHdrFieldFind() since it obviates the need for a
     string comparison. However, retrieved_str must be one of the
     predefined field names of the form TS_MIME_FIELD_XXX for the
-    call to succeed. Release the returned TSMLoc handle with a call
-    to TSHandleMLocRelease().
+    call to succeed. Release the returned TSMIMHdrFldLoc handle with a call
+    to TSMimeHdrFldRelease().
 
     @param bufp marshal buffer containing the MIME field.
     @param hdr location of the MIME header containing the field.
@@ -929,7 +924,7 @@ tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, in
       field cannot be found, returns 0.
 
  */
-tsapi TSReturnCode TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
+tsapi TSReturnCode TSMimeHdrFieldAppend(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
 
 /**
     Removes the MIME field located at field within bufp from the
@@ -942,7 +937,7 @@ tsapi TSReturnCode TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field
     can be reattached with a call to TSMimeHdrFieldAppend(). If you
     do not use the detached field you should destroy it with a call to
     TSMimeHdrFieldDestroy() and release the handle field with a call
-    to TSHandleMLocRelease().
+    to TSMimeHdrFldRelease().
 
     @param bufp contains the MIME field to remove.
     @param hdr location of the header containing the MIME field to
@@ -950,18 +945,19 @@ tsapi TSReturnCode TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field
     @param field is the location of the field to remove.
 
  */
-tsapi TSReturnCode TSMimeHdrFieldRemove(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
+tsapi TSReturnCode TSMimeHdrFieldRemove(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
 
-tsapi TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc *locp);
+tsapi TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc *locp);
 
 /****************************************************************************
  *  Create a new field and assign it a name all in one call
  ****************************************************************************/
-tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp);
+tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMimeHdrLoc hdr, const char *name, int name_len,
+                                             TSMimeHdrFldLoc *locp);
 
 /**
     Destroys the MIME field located at field within bufp. You must
-    release the TSMLoc field with a call to TSHandleMLocRelease().
+    release the field with a call to TSMimeHdrFldRelease().
 
     @param bufp contains the MIME field to be destroyed.
     @param hdr location of the parent header containing the field
@@ -970,43 +966,47 @@ tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, con
     @param field location of the field to be destroyed.
 
  */
-tsapi TSReturnCode TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
+tsapi TSReturnCode TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
 
-tsapi TSReturnCode TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field,
-                                       TSMLoc *locp);
-tsapi TSReturnCode TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr,
-                                      TSMLoc src_field);
-tsapi TSReturnCode TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp,
-                                            TSMLoc src_hdr, TSMLoc src_field);
-tsapi TSMLoc TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
-tsapi TSMLoc TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
-tsapi int TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
-tsapi const char *TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length);
-tsapi TSReturnCode TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name, int length);
+tsapi TSReturnCode TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMimeHdrLoc dest_hdr, TSMBuffer src_bufp, TSMimeHdrLoc src_hdr,
+                                       TSMimeHdrFldLoc src_field, TSMimeHdrFldLoc *locp);
+tsapi TSReturnCode TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMimeHdrLoc dest_hdr, TSMimeHdrFldLoc dest_field, TSMBuffer src_bufp,
+                                      TSMimeHdrLoc src_hdr, TSMimeHdrFldLoc src_field);
+tsapi TSReturnCode TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMimeHdrLoc dest_hdr, TSMimeHdrFldLoc dest_field,
+                                            TSMBuffer src_bufp, TSMimeHdrLoc src_hdr, TSMimeHdrFldLoc src_field);
+tsapi TSMimeHdrFldLoc TSMimeHdrFieldNext(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
+tsapi TSMimeHdrFldLoc TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
+tsapi int TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
+tsapi const char *TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int *length);
+tsapi TSReturnCode TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, const char *name, int length);
 
-tsapi TSReturnCode TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
-tsapi int TSMimeHdrFieldValuesCount(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
+tsapi TSReturnCode TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
+tsapi int TSMimeHdrFieldValuesCount(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
 
-tsapi const char *TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int *value_len_ptr);
-tsapi int TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
-tsapi int64_t TSMimeHdrFieldValueInt64Get(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
-tsapi unsigned int TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
-tsapi time_t TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
-tsapi TSReturnCode TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length);
-tsapi TSReturnCode TSMimeHdrFieldValueIntSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value);
-tsapi TSReturnCode TSMimeHdrFieldValueInt64Set(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int64_t value);
-tsapi TSReturnCode TSMimeHdrFieldValueUintSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value);
-tsapi TSReturnCode TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value);
+tsapi const char *TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx,
+                                               int *value_len_ptr);
+tsapi int TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx);
+tsapi int64_t TSMimeHdrFieldValueInt64Get(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx);
+tsapi unsigned int TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx);
+tsapi time_t TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field);
+tsapi TSReturnCode TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx, const char *value,
+                                                int length);
+tsapi TSReturnCode TSMimeHdrFieldValueIntSet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx, int value);
+tsapi TSReturnCode TSMimeHdrFieldValueInt64Set(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx, int64_t value);
+tsapi TSReturnCode TSMimeHdrFieldValueUintSet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx, unsigned int value);
+tsapi TSReturnCode TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, time_t value);
 
-tsapi TSReturnCode TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length);
+tsapi TSReturnCode TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx, const char *value,
+                                             int length);
 /* These Insert() APIs should be considered. Use the corresponding Set() API instead */
-tsapi TSReturnCode TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value,
-                                                   int length);
-tsapi TSReturnCode TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value);
-tsapi TSReturnCode TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value);
-tsapi TSReturnCode TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value);
+tsapi TSReturnCode TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx,
+                                                   const char *value, int length);
+tsapi TSReturnCode TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx, int value);
+tsapi TSReturnCode TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx,
+                                                 unsigned int value);
+tsapi TSReturnCode TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, time_t value);
 
-tsapi TSReturnCode TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
+tsapi TSReturnCode TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMimeHdrLoc hdr, TSMimeHdrFldLoc field, int idx);
 
 /* --------------------------------------------------------------------------
    HTTP headers */
@@ -1043,21 +1043,21 @@ tsapi void TSHttpParserDestroy(TSHttpParser parser);
         span multiple buffers).
 
  */
-tsapi TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start, const char *end);
+tsapi TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSHttpHdrLoc offset, const char **start,
+                                      const char *end);
 
-tsapi TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start, const char *end);
+tsapi TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSHttpHdrLoc offset, const char **start,
+                                       const char *end);
 
-tsapi TSMLoc TSHttpHdrCreate(TSMBuffer bufp);
+tsapi TSHttpHdrLoc TSHttpHdrCreate(TSMBuffer bufp);
 
 /**
     Destroys the HTTP header located at hdr_loc within the marshal
-    buffer bufp. Do not forget to release the handle hdr_loc with a
-    call to TSHandleMLocRelease().
-
+    buffer bufp.
  */
-tsapi void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset);
+tsapi void TSHttpHdrDestroy(TSMBuffer bufp, TSHttpHdrLoc offset);
 
-tsapi TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp);
+tsapi TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSHttpHdrLoc src_hdr, TSHttpHdrLoc *locp);
 
 /**
     Copies the contents of the HTTP header located at src_loc within
@@ -1077,28 +1077,28 @@ tsapi TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLo
     @param src_offset location of the source header.
 
  */
-tsapi TSReturnCode TSHttpHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer src_bufp, TSMLoc src_offset);
+tsapi TSReturnCode TSHttpHdrCopy(TSMBuffer dest_bufp, TSHttpHdrLoc dest_offset, TSMBuffer src_bufp, TSHttpHdrLoc src_offset);
 
-tsapi void TSHttpHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
+tsapi void TSHttpHdrPrint(TSMBuffer bufp, TSHttpHdrLoc offset, TSIOBuffer iobufp);
 
-tsapi int TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc offset);
+tsapi int TSHttpHdrLengthGet(TSMBuffer bufp, TSHttpHdrLoc offset);
 
-tsapi TSHttpType TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc offset);
-tsapi TSReturnCode TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc offset, TSHttpType type);
+tsapi TSHttpType TSHttpHdrTypeGet(TSMBuffer bufp, TSHttpHdrLoc offset);
+tsapi TSReturnCode TSHttpHdrTypeSet(TSMBuffer bufp, TSHttpHdrLoc offset, TSHttpType type);
 
-tsapi int TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc offset);
-tsapi TSReturnCode TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc offset, int ver);
+tsapi int TSHttpHdrVersionGet(TSMBuffer bufp, TSHttpHdrLoc offset);
+tsapi TSReturnCode TSHttpHdrVersionSet(TSMBuffer bufp, TSHttpHdrLoc offset, int ver);
 
-tsapi const char *TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc offset, int *length);
-tsapi TSReturnCode TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
-tsapi const char *TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc offset, int *length);
-tsapi TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc *locp);
-tsapi TSReturnCode TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc offset, TSMLoc url);
+tsapi const char *TSHttpHdrMethodGet(TSMBuffer bufp, TSHttpHdrLoc offset, int *length);
+tsapi TSReturnCode TSHttpHdrMethodSet(TSMBuffer bufp, TSHttpHdrLoc offset, const char *value, int length);
+tsapi const char *TSHttpHdrHostGet(TSMBuffer bufp, TSHttpHdrLoc offset, int *length);
+tsapi TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSUrlHdrLoc offset, TSUrlHdrLoc *locp);
+tsapi TSReturnCode TSHttpHdrUrlSet(TSMBuffer bufp, TSUrlHdrLoc offset, TSUrlHdrLoc url);
 
-tsapi TSHttpStatus TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc offset);
-tsapi TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status);
-tsapi const char *TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc offset, int *length);
-tsapi TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+tsapi TSHttpStatus TSHttpHdrStatusGet(TSMBuffer bufp, TSHttpHdrLoc offset);
+tsapi TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSHttpHdrLoc offset, TSHttpStatus status);
+tsapi const char *TSHttpHdrReasonGet(TSMBuffer bufp, TSHttpHdrLoc offset, int *length);
+tsapi TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSHttpHdrLoc offset, const char *value, int length);
 tsapi const char *TSHttpHdrReasonLookup(TSHttpStatus status);
 
 /* --------------------------------------------------------------------------
@@ -1138,7 +1138,7 @@ tsapi TSCacheKey TSCacheKeyCreate(void);
  */
 tsapi TSReturnCode TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length);
 
-tsapi TSReturnCode TSCacheKeyDigestFromUrlSet(TSCacheKey key, TSMLoc url);
+tsapi TSReturnCode TSCacheKeyDigestFromUrlSet(TSCacheKey key, TSUrlHdrLoc url);
 
 /**
     Associates a host name to the cache key. Use this function if the
@@ -1247,19 +1247,19 @@ tsapi void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
 tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);
 
 /* Gets the client request header for a specified HTTP transaction. */
-tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 /* Gets the client response header for a specified HTTP transaction. */
-tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 /* Gets the server request header from a specified HTTP transaction. */
-tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 /* Gets the server response header from a specified HTTP transaction. */
-tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 /* Gets the cached request header for a specified HTTP transaction. */
-tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 /* Gets the cached response header for a specified HTTP transaction. */
-tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 
-tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc);
+tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSUrlHdrLoc *url_loc);
 
 /** Get the effective URL for the transaction.
     The effective URL is the URL taking in to account both the explicit
@@ -1291,11 +1291,11 @@ tsapi void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag);
 */
 tsapi TSReturnCode TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag);
 
-tsapi TSReturnCode TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 tsapi char *TSFetchRespGet(TSHttpTxn txnp, int *length);
 tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status);
 
-tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 
 /** Set the @a port value for the inbound (user agent) connection in the transaction @a txnp.
     This is used primarily where the conection is synthetic and therefore does not have a port.
@@ -1476,8 +1476,8 @@ tsapi TSReturnCode TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname
  */
 tsapi void TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port);
 
-tsapi TSReturnCode TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
-tsapi TSReturnCode TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+tsapi TSReturnCode TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSUrlHdrLoc obj);
+tsapi TSReturnCode TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSUrlHdrLoc obj);
 
 tsapi void TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on);
 tsapi void TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on);
@@ -1681,9 +1681,9 @@ tsapi int TSHttpSsnIsInternal(TSHttpSsn ssnp);
 
 /* --------------------------------------------------------------------------
    HTTP alternate selection */
-tsapi TSReturnCode TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
-tsapi TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
-tsapi TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSHttpHdrLoc *offset);
+tsapi TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSHttpHdrLoc *offset);
+tsapi TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 tsapi void TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
 
 /* --------------------------------------------------------------------------
@@ -2329,10 +2329,10 @@ tsapi int TSHttpCurrentCacheConnectionsGet(void);
 tsapi int TSHttpCurrentServerConnectionsGet(void);
 
 /* =====  Http Transactions =====  */
-tsapi TSReturnCode TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+tsapi TSReturnCode TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSHttpHdrLoc *offset);
 tsapi TSReturnCode TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup);
-tsapi TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
-tsapi TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+tsapi TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSUrlHdrLoc obj);
+tsapi TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSUrlHdrLoc obj);
 tsapi TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
 tsapi int TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp);
 tsapi int TSHttpTxnIsWebsocket(TSHttpTxn txnp);
@@ -2437,13 +2437,13 @@ tsapi const char *TSRegisterProtocolTag(char const *tag);
 // variable pointed to by urlLocp, and returns TS_SUCCESS.  (The URL object will be within memory allocated to the transaction
 // object.)  Otherwise, the function returns TS_ERROR.
 //
-tsapi TSReturnCode TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
+tsapi TSReturnCode TSRemapFromUrlGet(TSHttpTxn txnp, TSUrlHdrLoc *urlLocp);
 
 // If, for the given transaction, the URL has been remapped, this function puts the memory location of the "to" URL object in the
 // variable pointed to by urlLocp, and returns TS_SUCCESS.  (The URL object will be within memory allocated to the transaction
 // object.)  Otherwise, the function returns TS_ERROR.
 //
-tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
+tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSUrlHdrLoc *urlLocp);
 
 /*
  * Get a TSIOBufferReader to read the buffered body. The return value needs to be freed.
