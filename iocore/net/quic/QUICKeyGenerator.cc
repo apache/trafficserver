@@ -121,7 +121,7 @@ QUICKeyGenerator::_generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secr
   //   pn_key = QHKDF-Expand(S, "pn", pn_key_length)
   this->_generate_key(km.key, &km.key_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
   this->_generate_iv(km.iv, &km.iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
-  this->_generate_pn(km.pn, &km.pn_len, hkdf, secret, secret_len, 12);
+  this->_generate_pn(km.pn, &km.pn_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
 
   return 0;
 }
