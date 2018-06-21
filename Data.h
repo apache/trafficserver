@@ -36,6 +36,9 @@ struct Data
   Stage m_upstream;
   Stage m_dnstream;
 
+  HdrMgr m_req_hdrmgr; //!< manager for server request
+  HdrMgr m_resp_hdrmgr; //!< manager for client response
+
   TSHttpParser m_http_parser { nullptr }; //!< cached for reuse
 
   explicit
@@ -64,17 +67,5 @@ struct Data
     if (nullptr != m_http_parser) {
       TSHttpParserDestroy(m_http_parser);
     }
-  }
-
-  //! recycleable http parser (call TSHttpParserClear per header)
-  TSHttpParser
-  httpParser
-    ()
-  {
-    if (nullptr == m_http_parser) {
-      m_http_parser = TSHttpParserCreate();
-    }
-
-    return m_http_parser;
   }
 };
