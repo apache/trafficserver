@@ -138,7 +138,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     this->_offset      = 0;
   }
 
-  if (this->_unprotect_packet_number(pkt.get(), pkt_len)) {
+  if (QUICPacket::unprotect_packet_number(pkt.get(), pkt_len, &this->_pn_protector)) {
     quic_packet = this->_packet_factory.create(this->_from, std::move(pkt), pkt_len, this->_largest_received_packet_number, result);
   } else {
     result = QUICPacketCreationResult::FAILED;
@@ -178,53 +178,4 @@ void
 QUICPacketReceiveQueue::reset()
 {
   this->_largest_received_packet_number = 0;
-}
-
-bool
-QUICPacketReceiveQueue::_unprotect_packet_number(uint8_t *packet, size_t packet_len)
-{
-  size_t pn_offset             = 0;
-  uint8_t pn_len               = 4;
-  size_t sample_offset         = 0;
-  uint8_t sample_len           = 0;
-  constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
-  int connection_id_len        = QUICConfigParams::scid_len();
-  QUICKeyPhase phase;
-
-  if (QUICInvariants::is_long_header(packet)) {
-    QUICPacketType type;
-    QUICPacketLongHeader::type(type, packet, packet_len);
-    switch (type) {
-    case QUICPacketType::ZERO_RTT_PROTECTED:
-      phase = QUICKeyPhase::ZERORTT;
-      break;
-    default:
-      phase = QUICKeyPhase::CLEARTEXT;
-      break;
-    }
-
-    uint8_t dcil, scil;
-    size_t payload_length;
-    uint8_t payload_length_field_len;
-    if (!QUICPacketLongHeader::dcil(dcil, packet, packet_len) || !QUICPacketLongHeader::scil(scil, packet, packet_len) ||
-        !QUICPacketLongHeader::payload_length(payload_length, &payload_length_field_len, packet, packet_len)) {
-      return false;
-    }
-    pn_offset = 6 + dcil + scil + payload_length_field_len;
-  } else {
-    QUICPacketShortHeader::key_phase(phase, packet, packet_len);
-    pn_offset = 1 + connection_id_len;
-  }
-  sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
-  sample_len    = 16; // On draft-12, the length is always 16 (See 5.6.1 and 5.6.2)
-
-  uint8_t unprotected_pn[4]  = {0};
-  uint8_t unprotected_pn_len = 0;
-  if (!this->_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, packet + pn_offset, pn_len, packet + sample_offset,
-                                     phase)) {
-    return false;
-  }
-  unprotected_pn_len = QUICTypeUtil::read_QUICPacketNumberLen(unprotected_pn);
-  memcpy(packet + pn_offset, unprotected_pn, unprotected_pn_len);
-  return true;
 }

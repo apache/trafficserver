@@ -258,6 +258,20 @@ QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *
   return true;
 }
 
+bool
+QUICPacketLongHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len)
+{
+  uint8_t dcil, scil;
+  size_t length;
+  uint8_t length_field_len;
+  if (!QUICPacketLongHeader::dcil(dcil, packet, packet_len) || !QUICPacketLongHeader::scil(scil, packet, packet_len) ||
+      !QUICPacketLongHeader::length(length, &length_field_len, packet, packet_len)) {
+    return false;
+  }
+  pn_offset = 6 + dcil + scil + length_field_len;
+  return true;
+}
+
 QUICConnectionId
 QUICPacketLongHeader::destination_cid() const
 {
@@ -530,6 +544,14 @@ QUICPacketShortHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, siz
   return true;
 }
 
+bool
+QUICPacketShortHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len)
+{
+  int connection_id_len = QUICConfigParams::scid_len();
+  pn_offset             = 1 + connection_id_len;
+  return true;
+}
+
 /**
  * Header Length (doesn't include payload length)
  */
@@ -730,6 +752,84 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
     dst = candidate2;
   }
 
+  return true;
+}
+
+bool
+QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector)
+{
+  size_t pn_offset             = 0;
+  uint8_t pn_len               = 4;
+  size_t sample_offset         = 0;
+  uint8_t sample_len           = 0;
+  constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
+  QUICKeyPhase phase;
+
+  if (QUICInvariants::is_long_header(packet)) {
+    QUICPacketType type;
+    QUICPacketLongHeader::type(type, packet, packet_len);
+    switch (type) {
+    case QUICPacketType::ZERO_RTT_PROTECTED:
+      phase = QUICKeyPhase::ZERORTT;
+      break;
+    default:
+      phase = QUICKeyPhase::CLEARTEXT;
+      break;
+    }
+    QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
+  } else {
+    QUICPacketShortHeader::key_phase(phase, packet, packet_len);
+    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len);
+  }
+  sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
+  sample_len    = 16; // On draft-12, the length is always 16 (See 5.6.1 and 5.6.2)
+
+  uint8_t protected_pn[4]  = {0};
+  uint8_t protected_pn_len = 0;
+  pn_len                   = QUICTypeUtil::read_QUICPacketNumberLen(packet + pn_offset);
+  if (!pn_protector->protect(protected_pn, protected_pn_len, packet + pn_offset, pn_len, packet + sample_offset, phase)) {
+    return false;
+  }
+  memcpy(packet + pn_offset, protected_pn, pn_len);
+  return true;
+}
+
+bool
+QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector)
+{
+  size_t pn_offset             = 0;
+  uint8_t pn_len               = 4;
+  size_t sample_offset         = 0;
+  uint8_t sample_len           = 0;
+  constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
+  QUICKeyPhase phase;
+
+  if (QUICInvariants::is_long_header(packet)) {
+    QUICPacketType type;
+    QUICPacketLongHeader::type(type, packet, packet_len);
+    switch (type) {
+    case QUICPacketType::ZERO_RTT_PROTECTED:
+      phase = QUICKeyPhase::ZERORTT;
+      break;
+    default:
+      phase = QUICKeyPhase::CLEARTEXT;
+      break;
+    }
+    QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
+  } else {
+    QUICPacketShortHeader::key_phase(phase, packet, packet_len);
+    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len);
+  }
+  sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
+  sample_len    = 16; // On draft-12, the length is always 16 (See 5.6.1 and 5.6.2)
+
+  uint8_t unprotected_pn[4]  = {0};
+  uint8_t unprotected_pn_len = 0;
+  if (!pn_protector->unprotect(unprotected_pn, unprotected_pn_len, packet + pn_offset, pn_len, packet + sample_offset, phase)) {
+    return false;
+  }
+  unprotected_pn_len = QUICTypeUtil::read_QUICPacketNumberLen(unprotected_pn);
+  memcpy(packet + pn_offset, unprotected_pn, unprotected_pn_len);
   return true;
 }
 

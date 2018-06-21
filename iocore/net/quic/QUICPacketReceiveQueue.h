@@ -48,6 +48,4 @@ private:
   size_t _payload_len     = 0;
   size_t _offset          = 0;
   IpEndpoint _from;
-
-  bool _unprotect_packet_number(uint8_t *packet, size_t packet_len);
 };

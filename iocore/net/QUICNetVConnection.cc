@@ -1077,7 +1077,7 @@ QUICNetVConnection::_state_common_send_packet()
       break;
     }
 
-    this->_packet_handler->send_packet(*packet, this);
+    this->_packet_handler->send_packet(*packet, this, this->_pn_protector);
     if (packet->type() == QUICPacketType::HANDSHAKE) {
       ++this->_handshake_packets_sent;
     }
@@ -1116,7 +1116,7 @@ QUICNetVConnection::_state_handshake_send_retry_packet()
   }
 
   QUICPacketUPtr packet = this->_build_packet(std::move(buf), len, retransmittable, QUICPacketType::RETRY);
-  this->_packet_handler->send_packet(*packet, this);
+  this->_packet_handler->send_packet(*packet, this, this->_pn_protector);
   this->_loss_detector->on_packet_sent(std::move(packet));
 
   QUIC_INCREMENT_DYN_STAT_EX(QUICStats::total_packets_sent_stat, 1);
@@ -1137,7 +1137,7 @@ QUICNetVConnection::_state_closing_send_packet()
   // that an endpoint maintains for a closing connection, endpoints MAY
   // send the exact same packet.
   if (this->_the_final_packet) {
-    this->_packet_handler->send_packet(*this->_the_final_packet, this);
+    this->_packet_handler->send_packet(*this->_the_final_packet, this, this->_pn_protector);
   }
   return QUICErrorUPtr(new QUICNoError());
 }
