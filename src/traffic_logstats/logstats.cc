@@ -56,6 +56,7 @@
 #include <fcntl.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <string_view>
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
@@ -1253,7 +1254,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
 
   LogEntryHeader *entry;
   LogBufferIterator buf_iter(buf_header);
-  LogField *field;
+  LogField *field = nullptr;
   ParseStates state;
 
   char *read_from;
@@ -1275,6 +1276,18 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
     bool agg = false;
     LogFormat::parse_symbol_string(buf_header->fmt_fieldlist(), fieldlist, &agg);
   }
+
+  // Validate the fieldlist
+  field                                = fieldlist->first();
+  const std::string_view test_fields[] = {"cqtq", "ttms", "chi", "crc", "pssc", "psql", "cqhm", "cquc", "caun", "phr", "pqsn"};
+  for (auto i : test_fields) {
+    if (i != field->symbol()) {
+      cerr << "Error parsing log file - expected field: " << i << ", but read field: " << field->symbol() << endl;
+      return 1;
+    }
+    field = fieldlist->next(field);
+  }
+
   // Loop over all entries
   while ((entry = buf_iter.next())) {
     read_from = (char *)entry + sizeof(LogEntryHeader);
