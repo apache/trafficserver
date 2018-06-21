@@ -130,7 +130,6 @@ Traffic Server **URL functions** are listed below:
 :c:func:`TSUrlClone`
 :c:func:`TSUrlCopy`
 :c:func:`TSUrlCreate`
-:c:func:`TSUrlDestroy`
 :c:func:`TSUrlPrint`
 :c:func:`TSUrlFtpTypeGet`
 :c:func:`TSUrlFtpTypeSet`

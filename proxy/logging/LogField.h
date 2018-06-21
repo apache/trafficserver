@@ -177,7 +177,7 @@ public:
   static void init_milestone_container(void);
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
-  static bool fieldlist_contains_aggregates(char *fieldlist);
+  static bool fieldlist_contains_aggregates(const char *fieldlist);
 
 private:
   char *m_name;

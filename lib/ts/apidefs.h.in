@@ -92,8 +92,6 @@ extern "C" {
 #define TS_RES_MEM_PATH TS_RES_PATH("memory/")
 #endif
 
-#define TS_MAX_USER_NAME_LEN 256
-
 #ifndef TS_DEPRECATED
 #define TS_DEPRECATED __attribute__((deprecated))
 #endif

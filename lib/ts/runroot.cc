@@ -33,7 +33,7 @@ Example: ./traffic_server --run-root=/path/to/sandbox
 Need a yaml file in the sandbox with key value pairs of all directory locations for other programs to use
 
 Directories needed in the yaml file:
-prefix, exec_prefix, includedir, localstatedir, bindir, logdir, mandir, sbindir, sysconfdir,
+prefix, exec_prefix, includedir, localstatedir, bindir, logdir, sbindir, sysconfdir,
 datadir, libexecdir, libdir, runtimedir, cachedir.
 */
 
@@ -182,8 +182,32 @@ runroot_handler(const char **argv, bool json)
   return;
 }
 
-// return a map of all path in runroot_path.yml
+// return a map of all path with default layout
 std::unordered_map<std::string, std::string>
+runroot_map_default()
+{
+  std::unordered_map<std::string, std::string> map;
+
+  map["prefix"]        = Layout::get()->prefix;
+  map["exec_prefix"]   = Layout::get()->exec_prefix;
+  map["bindir"]        = Layout::get()->bindir;
+  map["sbindir"]       = Layout::get()->sbindir;
+  map["sysconfdir"]    = Layout::get()->sysconfdir;
+  map["datadir"]       = Layout::get()->datadir;
+  map["includedir"]    = Layout::get()->includedir;
+  map["libdir"]        = Layout::get()->libdir;
+  map["libexecdir"]    = Layout::get()->libexecdir;
+  map["localstatedir"] = Layout::get()->localstatedir;
+  map["runtimedir"]    = Layout::get()->runtimedir;
+  map["logdir"]        = Layout::get()->logdir;
+  // mandir is not needed for runroot
+  map["cachedir"] = Layout::get()->cachedir;
+
+  return map;
+}
+
+// return a map of all path in runroot_path.yml
+RunrootMapType
 runroot_map(const std::string &prefix)
 {
   std::string yaml_path = Layout::relative_to(prefix, "runroot_path.yml");
@@ -191,11 +215,11 @@ runroot_map(const std::string &prefix)
   file.open(yaml_path);
   if (!file.good()) {
     ink_warning("Bad path '%s', continue with default value", prefix.c_str());
-    return std::unordered_map<std::string, std::string>{};
+    return RunrootMapType{};
   }
 
   std::ifstream yamlfile(yaml_path);
-  std::unordered_map<std::string, std::string> map;
+  RunrootMapType map;
   std::string str;
   while (std::getline(yamlfile, str)) {
     int pos                 = str.find(':');
@@ -214,11 +238,11 @@ runroot_map(const std::string &prefix)
 // check for the using of runroot
 // a map of all path will be returned
 // if we do not use runroot, a empty map will be returned.
-std::unordered_map<std::string, std::string>
+RunrootMapType
 check_runroot()
 {
   if (using_runroot.empty()) {
-    return std::unordered_map<std::string, std::string>{};
+    return RunrootMapType{};
   }
 
   int len = using_runroot.size();

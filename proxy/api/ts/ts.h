@@ -203,7 +203,7 @@ tsapi void TSfclose(TSFile filep);
       while reading the file, it returns -1.
 
  */
-tsapi size_t TSfread(TSFile filep, void *buf, size_t length);
+tsapi ssize_t TSfread(TSFile filep, void *buf, size_t length);
 
 /**
     Attempts to write length bytes of data from the buffer buf
@@ -220,7 +220,7 @@ tsapi size_t TSfread(TSFile filep, void *buf, size_t length);
       writing, it returns the number of bytes successfully written.
 
  */
-tsapi size_t TSfwrite(TSFile filep, const void *buf, size_t length);
+tsapi ssize_t TSfwrite(TSFile filep, const void *buf, size_t length);
 
 /**
     Flushes pending data that has been buffered up in memory from
@@ -300,19 +300,6 @@ tsapi TSReturnCode TSMBufferDestroy(TSMBuffer bufp);
 
  */
 tsapi TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc *locp);
-
-/**
-    Destroys the URL located at url_loc within the marshal buffer
-    bufp. Do not forget to release the TSMLoc url_loc with a call
-    to TSHandleMLocRelease().
-
-    @param bufp marshal buffer containing the URL to be destroyed.
-    @param offset location of the URL to be destroyed.
-
- */
-/** @deprecated There is no reason to destroy the URL, just release
-    the marshal buffers. Should be removed for v5.0.0 */
-tsapi TS_DEPRECATED TSReturnCode TSUrlDestroy(TSMBuffer bufp, TSMLoc offset);
 
 /**
     Copies the URL located at src_url within src_bufp to a URL
@@ -2321,8 +2308,6 @@ tsapi void TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int ur
    @return the url string
 */
 tsapi const char *TSHttpTxnRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr);
-/*   This is deprecated as of v5.0.0. */
-tsapi TS_DEPRECATED const char *TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr);
 
 /**
    Return the number of redirection retries we have done. This starts off

@@ -32,13 +32,13 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[8.0.0])
-m4_define([TS_VERSION_N],[8000000])
+m4_define([TS_VERSION_S],[9.0.0])
+m4_define([TS_VERSION_N],[9000000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/_aux])
-AC_CONFIG_SRCDIR([proxy/Main.cc])
+AC_CONFIG_SRCDIR([src/traffic_server/traffic_server.cc])
 AC_CONFIG_MACRO_DIR([build])
 
 # NOTE: we turn off portability warnings because the clang-tidy targets use
@@ -349,16 +349,15 @@ AC_ARG_WITH([profiler],
 AC_MSG_RESULT([$with_profiler])
 
 # System luajit
-AC_MSG_CHECKING([whether to enable system luajit])
-AC_ARG_ENABLE([system-luajit],
-  [AS_HELP_STRING([--enable-system-luajit],[enable support for system-installed luajit])],
-  [enable_system_luajit=yes],
-  [enable_system_luajit=no]
+AC_MSG_CHECKING([whether to enable luajit])
+AC_ARG_ENABLE([luajit],
+  [AS_HELP_STRING([--enable-luajit],[enable support for system-installed luajit])],
+  [enable_luajit=yes],
+  [enable_luajit=no]
 )
-AC_MSG_RESULT([$enable_system_luajit])
-TS_ARG_ENABLE_VAR([has],[system_luajit])
-AM_CONDITIONAL([BUILD_LUAJIT], [test 0 -eq $has_system_luajit])
-AM_CONDITIONAL([SYSTEM_LUAJIT], [test 0 -ne $has_system_luajit])
+AC_MSG_RESULT([$enable_luajit])
+TS_ARG_ENABLE_VAR([has],[luajit])
+AM_CONDITIONAL([HAS_LUAJIT], [test 0 -ne $has_luajit])
 
 
 # Disable all static library builds
@@ -851,7 +850,6 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -analyzer-disable-all-checks -Wno-varargs"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -875,7 +873,6 @@ case $host_os_def in
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -Wno-varargs"
     ], [
       AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
@@ -896,7 +893,6 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare -Wno-varargs"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -1264,7 +1260,7 @@ TS_CHECK_LZMA
 # System LuaJIT
 #
 
-if test "x$enable_system_luajit" == "xyes"; then
+if test "x$enable_luajit" == "xyes"; then
     saveLIBS=$LIBS
     LIBS=""
     AC_CHECK_HEADER(lua.h, [],
@@ -1275,7 +1271,14 @@ if test "x$enable_system_luajit" == "xyes"; then
         PKG_CHECK_MODULES([LUAJIT], [luajit < 2.1.0, luajit >= 2.0.0], [
             AC_SUBST([LIBLUAJIT], [$LUAJIT_LIBS])
             TS_ADDTO(AM_CPPFLAGS, [$LUAJIT_CFLAGS])
-        ], [AC_MSG_ERROR([*** system luajit requested but either libluajit-5.1 or lua.h cannot be found ***])])
+            # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
+            # http://luajit.org/install.html.
+            case $host_os_def in
+            darwin)
+                LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
+                ;;
+            esac
+        ], [AC_MSG_ERROR([*** luajit requested but either libluajit-5.1 or lua.h cannot be found ***])])
     else
         AC_SUBST([LIBLUAJIT], [$LIBS])
     fi
@@ -1366,6 +1369,11 @@ AC_CHECK_LIB([crypto],[HMAC],[has_libcrypto=1],[has_libcrypto=0])
 AM_CONDITIONAL([BUILD_URI_SIGNING_PLUGIN], [test ! -z "${LIBCJOSE}" -a ! -z "${LIBJANSSON}" -a "x${enable_pcre}" = "xyes" -a "x${has_libcrypto}" = "x1"])
 AC_SUBST([LIBCJOSE])
 AC_SUBST([LIBJANSSON])
+
+# Check for yaml-cpp library
+#
+TS_CHECK_YAML_CPP
+AM_CONDITIONAL([BUILD_YAML_CPP], [test x"$has_yaml_cpp" = x"no"])
 
 # Check for backtrace() support
 has_backtrace=0
@@ -1634,18 +1642,6 @@ TS_CHECK_TCMALLOC
 #
 # Check for libreadline/libedit
 AX_LIB_READLINE
-
-# On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
-# http://luajit.org/install.html.
-case $host_os_def in
-  darwin)
-    LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
-    ;;
-esac
-
-# Flags for building and linking against our internal copy of LuaJIT.
-AC_SUBST([LUAJIT_LDFLAGS])
-AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(abs_top_srcdir)/lib/luajit/src'])
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
@@ -2056,16 +2052,7 @@ AS_IF([test "x$RPATH" != "x"], [
 
 AC_CONFIG_FILES([
   Makefile
-  cmd/Makefile
-  cmd/traffic_cache_tool/Makefile
-  cmd/traffic_crashlog/Makefile
-  cmd/traffic_ctl/Makefile
-  cmd/traffic_layout/Makefile
-  cmd/traffic_manager/Makefile
-  cmd/traffic_quic/Makefile
-  cmd/traffic_top/Makefile
-  cmd/traffic_via/Makefile
-  cmd/traffic_wccp/Makefile
+  src/Makefile
   doc/Makefile
   doc/ext/local-config.py
   doc/uml/Makefile
@@ -2082,7 +2069,6 @@ AC_CONFIG_FILES([
   iocore/utils/Makefile
   lib/Makefile
   lib/cppapi/Makefile
-  lib/bindings/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
@@ -2091,6 +2077,7 @@ AC_CONFIG_FILES([
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
   lib/wccp/Makefile
+  lib/yamlcpp/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
@@ -2142,7 +2129,4 @@ AC_MSG_NOTICE([Build option summary:
     TS_INCLUDES:        $TS_INCLUDES
     OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
-    LUAJIT_CFLAGS:      $LUAJIT_CFLAGS
-    LUAJIT_CPPFLAGS:    $LUAJIT_CPPFLAGS
-    LUAJIT_LDFLAGS:     $LUAJIT_LDFLAGS
 ])

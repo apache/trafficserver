@@ -102,13 +102,15 @@ class IntrusivePtrAtomicCounter
 {
   template < typename T > friend class IntrusivePtr;
 
-  using self_type = IntrusivePtrAtomicCounter;
+  using self_type = IntrusivePtrAtomicCounter; ///< Self reference type.
 
 public:
+  /// Copy constructor - do not copy reference count.
   IntrusivePtrAtomicCounter(self_type const & that);
   /// No move constructor - that won't work for an object that is the target of a shared pointer.
   IntrusivePtrAtomicCounter(self_type && that) = delete;
 
+  /// Self assignment - do not copy reference count.
   self_type &operator=(self_type const &that);
   /// No move assignment - that won't work for an object that is the target of a shared pointer.
   self_type &operator=(self_type &&that) = delete;
@@ -130,6 +132,13 @@ protected:
     This is a reference counted smart pointer. A single object is jointly ownded by a set of
     pointers. When the last of the pointers is destructed the target object is also destructed.
 
+    To use @c IntrusivePtr on type @a T, @a T must inherit from a reference counter class,
+    such as @c IntrusivePtrCounter or @c IntrusivePtrAtomicCounter. If this inheritance is @c public
+    then no other support is required. If the inheritance is not @c public then @a T must declare
+    @c IntrusivePtr<T> as a @c friend class.
+
+    If it is not possible to have @a T inherit from a reference counter class, use @c std::shared_ptr.
+
     The smart pointer actions can be changed through class specific policy by specializing the @c
     IntrusivePtrPolicy template class.
 */
@@ -137,31 +146,34 @@ template <typename T> class IntrusivePtr
 {
 private:                          /* don't pollute client with these typedefs */
   using self_type = IntrusivePtr;      ///< Self reference type.
-  template < typename U > friend class IntrusivePtr; /// Make friends wih our clones.
+  template < typename U > friend class IntrusivePtr; // Make friends with siblings for cross type casts.
 public:
-  /// The underlying (integral) type of the reference counter.
-  using count_type = long int;
+  /// The externally used type for the reference count.
+  using counter_type = long int;
 
-  /// Default constructor (nullptr initialized).
+  /// Default constructor (@c nullptr initialized).
   IntrusivePtr();
   /// Construct from instance.
   /// The instance becomes referenced and owned by the pointer.
   explicit IntrusivePtr(T *obj);
-  /// Destructor.
+  /// Destructor. If last referencing pointer, the contained instance is destroyed.
   ~IntrusivePtr();
 
-  /// Copy constructor
+  /// Copy constructor. A new reference to the object is created.
   IntrusivePtr(self_type const& that);
-  /// Move constructor.
+  /// Move constructor. The reference in @a that is moved to @a this.
   IntrusivePtr(self_type && that);
-  /// Self assignment.
+  /// Self assignment. A new reference to the object is created.
   self_type& operator=(self_type const& that);
-  /// Move assignment.
+  /// Move assignment. The reference in @a that is moved to @a this.
   self_type& operator=(self_type && that);
 
   /** Assign from instance.
-      The instance becomes referenced and owned by the pointer.
-      The reference to the current object is dropped.
+
+      The instance becomes referenced and owned by the pointer. The reference to the current object
+      is dropped.
+
+      @internal Direct assignment of a raw pointer was supported but I think that is too dangerous.
   */
   void reset(T *obj = nullptr);
 
@@ -171,6 +183,9 @@ public:
       finalization on the target object. This can easily lead to memory leaks and in some sense
       vitiates the point of this class, but it is occasionally the right thing to do. Use with
       caution.
+
+      @internal Unfortunately this is current used and can't be removed at this time. Hopefully some
+      refactoring elsewhere will make it obsolete.
 
       @return @c true if there are no references upon return,
       @c false if the reference count is not zero.
@@ -215,7 +230,7 @@ public:
 
   /// Reference count.
   /// @return Number of references.
-  count_type use_count() const;
+  counter_type use_count() const;
 
 private:
   T *m_obj{nullptr}; ///< Pointer to object.
@@ -227,9 +242,14 @@ private:
 };
 
 /** Pointer dynamic cast.
-    This allows a smart pointer to be cast from one type to another.
-    It must be used when the types do not implicitly convert (generally
-    a downcast).
+
+    This allows a smart pointer to be cast from one type to another.  It must be used when the types
+    do not implicitly convert (generally a downcast).
+
+    @tparam T Type of the resulting intrusive pointer. Must be explicit.
+    @tparam U Type of the intrusive pointer @a src - can be deduced.
+    @param src The original intrusive pointer.
+    @return An intrusive pointer to @a T pointing at the same object as @a src.
 
     @code
     class A { ... };
@@ -241,17 +261,22 @@ private:
 */
 template <typename T, typename U>
 IntrusivePtr<T>
-dynamic_ptr_cast(IntrusivePtr<U> const &src ///< Source pointer.
-                 )
+dynamic_ptr_cast(IntrusivePtr<U> const &src)
 {
   return IntrusivePtr<T>(dynamic_cast<T *>(src.get()));
 }
 
 /** Pointer cast.
+
     This allows a smart pointer to be cast from one type to another.
     It must be used when the types do not implicitly convert (generally
     a downcast). This uses @c static_cast and so performs only compile
     time checks.
+
+    @tparam T Type of the resulting intrusive pointer. Must be explicit.
+    @tparam U Type of the intrusive pointer @a src - can be deduced.
+    @param src The original intrusive pointer.
+    @return An intrusive pointer to @a T pointing at the same object as @a src.
 
     @code
     class A { ... };
@@ -261,12 +286,9 @@ dynamic_ptr_cast(IntrusivePtr<U> const &src ///< Source pointer.
     the_b = ptr_cast<B>(really_b);
     @endcode
 */
-template <typename T, ///< Target type.
-          typename U  ///< Source type.
-          >
+template <typename T, typename U>
 IntrusivePtr<T>
-ptr_cast(IntrusivePtr<U> const &src ///< Source pointer.
-         )
+ptr_cast(IntrusivePtr<U> const &src)
 {
   return IntrusivePtr<T>(static_cast<T *>(src.get()));
 }
@@ -274,13 +296,12 @@ ptr_cast(IntrusivePtr<U> const &src ///< Source pointer.
 /* ----------------------------------------------------------------------- */
 /** Default policy class for intrusive pointers.
 
-    This allows per type policy, although not per target instance.
-    Clients can override policy by specializing this class for the
-    target type.
+    This allows per type policy, although not per target instance. Clients can override policy by
+    specializing @c IntrusivePtrPolicy and inheriting from this class to provide default actions.
 
     @code
     template <> IntrusivePtrPolicy<SomeType>
-      : IntrusivePtrDefaultPolicy {
+      : IntrusivePtrDefaultPolicy<SomeType> {
      ... Redefinition of methods and nested types ...
     };
     @endcode
@@ -291,30 +312,27 @@ ptr_cast(IntrusivePtr<U> const &src ///< Source pointer.
     anyway.
 */
 
-template <typename T> class IntrusivePtrPolicy
+template <typename T> class IntrusivePtrDefaultPolicy
 {
 public:
   /// Called when the pointer is dereferenced.
   /// Default is empty (no action).
-  static void dereferenceCheck(T * ///< Target object.
-                               );
+  static void dereferenceCheck(T *);
 
   /** Perform clean up on a target object that is no longer referenced.
 
-      Default is calling @c delete. Any specialization that overrides this
-      @b must clean up the object. The primary use of this is to perform
-      a clean up other than @c delete.
+      @param t Instance to finalize.
 
-      @note When this is called, the target object reference count
-      is zero. If it is necessary to pass a smart pointer to the
-      target object, it will be necessary to call
-      @c IntrusivePtr::release to drop the reference without
-      another finalization. Further care must be taken that none of
-      the called logic keeps a copy of the smart pointer. Use with
-      caution.
+      Default is calling @c delete. Any specialization that overrides this @b must clean up the
+      object. The primary use of this is to perform a clean up other than @c delete.
+
+      @note When this is called, the target object reference count is zero. If it is necessary to
+      pass a smart pointer to the target object, it will be necessary to call @c
+      IntrusivePtr::release to drop the reference without another finalization. Further care must be
+      taken that none of the called logic keeps a copy of the smart pointer. Use with caution.
   */
-  static void finalize(T *t ///< Target object.
-                       );
+  static void finalize(T *t);
+
   /// Strict weak order for STL containers.
   class Order : public std::binary_function<IntrusivePtr<T>, IntrusivePtr<T>, bool>
   {
@@ -322,15 +340,12 @@ public:
     /// Default constructor.
     Order() {}
     /// Compare by raw pointer.
-    bool operator()(IntrusivePtr<T> const &lhs, ///< Left hand operand.
-                    IntrusivePtr<T> const &rhs  ///< Right hand operand.
-                    ) const;
+    bool operator()(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs) const;
   };
 };
 
-struct IntrusivePtrDefaultPolicyTag {
-};
-typedef IntrusivePtrPolicy<IntrusivePtrDefaultPolicyTag> IntrusivePtrDefaultPolicy;
+// If no specialization is provided then use the default;
+template < typename T > struct IntrusivePtrPolicy : public IntrusivePtrDefaultPolicy<T> {};
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
 /* Inline Methods */
@@ -359,20 +374,20 @@ IntrusivePtrAtomicCounter::operator=(self_type const &)
 
 template <typename T>
 void
-IntrusivePtrPolicy<T>::dereferenceCheck(T *)
+IntrusivePtrDefaultPolicy<T>::dereferenceCheck(T *)
 {
 }
 
 template <typename T>
 void
-IntrusivePtrPolicy<T>::finalize(T *obj)
+IntrusivePtrDefaultPolicy<T>::finalize(T *obj)
 {
   delete obj;
 }
 
 template <typename T>
 bool
-IntrusivePtrPolicy<T>::Order::operator()(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs) const
+IntrusivePtrDefaultPolicy<T>::Order::operator()(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs) const
 {
   return lhs.get() < rhs.get();
 }
@@ -580,10 +595,10 @@ template <typename T> IntrusivePtr<T>::operator T *() const
 }
 
 template <typename T>
-typename IntrusivePtr<T>::count_type
+typename IntrusivePtr<T>::counter_type
 IntrusivePtr<T>::use_count() const
 {
-  return m_obj ? count_type{m_obj->m_intrusive_pointer_reference_count} : count_type{0};
+  return m_obj ? counter_type{m_obj->m_intrusive_pointer_reference_count} : counter_type{0};
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */

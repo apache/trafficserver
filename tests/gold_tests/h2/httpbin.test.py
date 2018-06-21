@@ -67,14 +67,15 @@ ts.Disk.records_config.update({
 })
 ts.Disk.logging_config.AddLines(
     '''
--- Extended Log Format.
-access = format {
-  Format = '[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
-}
+formats:
+  # Extended Log Format.
+  - name: access
+    format: |-
+[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>
 
-log.ascii {
-  Format = access,
-  Filename = 'access'
+logs:
+  - filename: access
+    format: access
 }
 '''.split("\n")
 )

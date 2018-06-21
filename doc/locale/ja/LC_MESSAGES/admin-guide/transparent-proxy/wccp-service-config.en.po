@@ -45,7 +45,7 @@ msgstr ""
 
 #: ../../admin-guide/transparent-proxy/wccp-service-config.en.rst:27
 msgid ""
-"A sample service group file is included in the source tree under cmd/"
+"A sample service group file is included in the source tree under src/"
 "traffic_wccp."
 msgstr ""
 

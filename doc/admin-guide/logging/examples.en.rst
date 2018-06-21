@@ -68,11 +68,11 @@ No. Field  Description
 To recreate this as a log format in :file:`logging.config` you would define the
 following format object:
 
-.. code:: lua
+.. code:: yaml
 
-   common = format {
-     Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
-   }
+   formats:
+   - name: common
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
 
 .. _admin-logging-examples-extended:
 
@@ -115,11 +115,11 @@ No. Field Description
 To recreate this as a log format in :file:`logging.config` you would define the
 following format object:
 
-.. code:: lua
+.. code:: yaml
 
-   extended = format {
-     Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
-   }
+   formats:
+   - name: extended
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
 
 .. _admin-logging-examples-extended2:
 
@@ -154,11 +154,11 @@ No.  Field Description
 To recreate this as a log format in :file:`logging.config` you would define the
 following format object:
 
-.. code:: lua
+.. code:: yaml
 
-   extended2 = format {
-     Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
-   }
+   formats:
+   - name: extended2
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
 
 .. _admin-logging-examples-squid:
 
@@ -208,11 +208,11 @@ No. Field    Description
 To recreate this as a log format in :file:`logging.config` you would define the
 following format object:
 
-.. code:: lua
+.. code:: yaml
 
-   squid = format {
-     Format = '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
-   }
+   formats:
+   - name: squid
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
 
 Hourly Rotated Squid Proxy Logs
 ===============================
@@ -221,19 +221,19 @@ The following example demonstrates the creation of a Squid-compatible log
 format, which is then applied to a log object containing an hourly rotation
 policy.
 
-.. code:: lua
+.. code:: yaml
 
-   squid = format {
-     Format = '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
-   }
+   formats:
+   - name: squid
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
 
-   log.ascii {
-     Format = squid,
-     Filename = 'squid',
-     RollingEnabled = 1,
-     RollingIntervalSec = 3600,
-     RollingOffsetHr = 0
-   }
+   logs:
+   - mode: ascii
+     format: squid
+     filename: squid
+     rolling_enabled: time
+     rolling_interval_sec: 3600
+     rolling_offset_hr: 0
 
 Summarizing Number of Requests and Total Bytes Sent Every 10 Seconds
 ====================================================================
@@ -243,12 +243,12 @@ contains the timestamp of the last entry of the interval, a count of the number
 of entries seen within that 10-second interval, and the sum of all bytes sent
 to clients:
 
-.. code:: lua
+.. code:: yaml
 
-   mysummary = format {
-      Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>",
-      Interval = "10"
-   }
+   formats:
+   - name: mysummary
+     format: '%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>'
+     interval: 10
 
 Dual Output to Compact Binary Logs and ASCII Pipes
 ==================================================
@@ -258,7 +258,7 @@ a hypothetical scenario where we may wish to keep a compact form of our logs
 available for archival purposes, while performing live log analysis on a stream
 of the event data.
 
-.. code:: lua
+.. code:: yaml
 
    ourformat = format {
      Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
@@ -282,19 +282,22 @@ off all sorts of alarms. To accomplish this, we demonstrate the use of a filter
 object that matches events against these particular canaries and emits log data
 for them to a UNIX pipe that the alerting software can constantly read from.
 
-.. code:: lua
+.. code:: yaml
 
-   canaryformat = format {
-     Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
-   }
+   formats:
+   - name: canaryformat
+     format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
 
-   canaryfilter = filter.accept('cqup MATCH "/nightmare/scenario/dont/touch"')
+   filters:
+   - name: canaryfilter
+     accept: cqup MATCH "/nightmare/scenario/dont/touch"
 
-   log.pipe {
-     Format = canaryformat,
-     Filters = [ canaryfilter ],
-     Filename = 'alerting_canaries'
-   }
+   logs:
+   - mode: pipe
+     format: canaryformat
+     filters:
+     - canaryfilter
+     filename: alerting_canaries
 
 Summarizing Origin Responses by Hour
 ====================================
@@ -305,18 +308,21 @@ servers (where we assume that any cache result code without the string ``HIT``
 in it signals origin access), as well as the average time it took to fulfill
 the request to clients during that hour.
 
-.. code:: lua
+.. code:: yaml
 
-   originrepformat = format {
-     Format = '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>',
-     Interval = 3600
-   }
+   formats:
+   - name: originrepformat
+     format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>'
+     interval: 3600
 
-   originfilter = filter.reject('crc CONTAINS "HIT"')
+   filters:
+   - name: originfilter
+     reject: crc CONTAINS "HIT"
 
-   log.ascii {
-     Format = originrepformat,
-     Filters = [ originfilter ],
-     Filename = 'origin_access_summary'
-   }
+   logs:
+   - mode: ascii
+     format: originrepformat
+     filters:
+     - originfilter
+     filename: origin_access_summary
 

@@ -22,6 +22,7 @@
  */
 
 #include <ts/BufferWriter.h>
+#include <ts/bwf_std_format.h>
 #include <unistd.h>
 #include <sys/param.h>
 #include <cctype>
@@ -755,6 +756,201 @@ bwf_register_global(std::string_view name, BWGlobalNameSignature formatter)
   return ts::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
 }
 
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
+{
+  // Hand rolled, might not be totally compliant everywhere, but probably close enough.
+  // The long string will be locally accurate.
+  // Clang requires the double braces. Why, Turing only knows.
+  static const std::array<std::string_view, 134> SHORT_NAME = {{
+    "SUCCESS: ",
+    "EPERM: ",
+    "ENOENT: ",
+    "ESRCH: ",
+    "EINTR: ",
+    "EIO: ",
+    "ENXIO: ",
+    "E2BIG ",
+    "ENOEXEC: ",
+    "EBADF: ",
+    "ECHILD: ",
+    "EAGAIN: ",
+    "ENOMEM: ",
+    "EACCES: ",
+    "EFAULT: ",
+    "ENOTBLK: ",
+    "EBUSY: ",
+    "EEXIST: ",
+    "EXDEV: ",
+    "ENODEV: ",
+    "ENOTDIR: ",
+    "EISDIR: ",
+    "EINVAL: ",
+    "ENFILE: ",
+    "EMFILE: ",
+    "ENOTTY: ",
+    "ETXTBSY: ",
+    "EFBIG: ",
+    "ENOSPC: ",
+    "ESPIPE: ",
+    "EROFS: ",
+    "EMLINK: ",
+    "EPIPE: ",
+    "EDOM: ",
+    "ERANGE: ",
+    "EDEADLK: ",
+    "ENAMETOOLONG: ",
+    "ENOLCK: ",
+    "ENOSYS: ",
+    "ENOTEMPTY: ",
+    "ELOOP: ",
+    "EWOULDBLOCK: ",
+    "ENOMSG: ",
+    "EIDRM: ",
+    "ECHRNG: ",
+    "EL2NSYNC: ",
+    "EL3HLT: ",
+    "EL3RST: ",
+    "ELNRNG: ",
+    "EUNATCH: ",
+    "ENOCSI: ",
+    "EL2HTL: ",
+    "EBADE: ",
+    "EBADR: ",
+    "EXFULL: ",
+    "ENOANO: ",
+    "EBADRQC: ",
+    "EBADSLT: ",
+    "EDEADLOCK: ",
+    "EBFONT: ",
+    "ENOSTR: ",
+    "ENODATA: ",
+    "ETIME: ",
+    "ENOSR: ",
+    "ENONET: ",
+    "ENOPKG: ",
+    "EREMOTE: ",
+    "ENOLINK: ",
+    "EADV: ",
+    "ESRMNT: ",
+    "ECOMM: ",
+    "EPROTO: ",
+    "EMULTIHOP: ",
+    "EDOTDOT: ",
+    "EBADMSG: ",
+    "EOVERFLOW: ",
+    "ENOTUNIQ: ",
+    "EBADFD: ",
+    "EREMCHG: ",
+    "ELIBACC: ",
+    "ELIBBAD: ",
+    "ELIBSCN: ",
+    "ELIBMAX: ",
+    "ELIBEXEC: ",
+    "EILSEQ: ",
+    "ERESTART: ",
+    "ESTRPIPE: ",
+    "EUSERS: ",
+    "ENOTSOCK: ",
+    "EDESTADDRREQ: ",
+    "EMSGSIZE: ",
+    "EPROTOTYPE: ",
+    "ENOPROTOOPT: ",
+    "EPROTONOSUPPORT: ",
+    "ESOCKTNOSUPPORT: ",
+    "EOPNOTSUPP: ",
+    "EPFNOSUPPORT: ",
+    "EAFNOSUPPORT: ",
+    "EADDRINUSE: ",
+    "EADDRNOTAVAIL: ",
+    "ENETDOWN: ",
+    "ENETUNREACH: ",
+    "ENETRESET: ",
+    "ECONNABORTED: ",
+    "ECONNRESET: ",
+    "ENOBUFS: ",
+    "EISCONN: ",
+    "ENOTCONN: ",
+    "ESHUTDOWN: ",
+    "ETOOMANYREFS: ",
+    "ETIMEDOUT: ",
+    "ECONNREFUSED: ",
+    "EHOSTDOWN: ",
+    "EHOSTUNREACH: ",
+    "EALREADY: ",
+    "EINPROGRESS: ",
+    "ESTALE: ",
+    "EUCLEAN: ",
+    "ENOTNAM: ",
+    "ENAVAIL: ",
+    "EISNAM: ",
+    "EREMOTEIO: ",
+    "EDQUOT: ",
+    "ENOMEDIUM: ",
+    "EMEDIUMTYPE: ",
+    "ECANCELED: ",
+    "ENOKEY: ",
+    "EKEYEXPIRED: ",
+    "EKEYREVOKED: ",
+    "EKEYREJECTED: ",
+    "EOWNERDEAD: ",
+    "ENOTRECOVERABLE: ",
+    "ERFKILL: ",
+    "EHWPOISON: ",
+  }};
+  // This provides convenient safe access to the errno short name array.
+  auto short_name = [](int n) { return n < static_cast<int>(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
+  static const BWFormat number_fmt{"[{}]"sv}; // numeric value format.
+  if (spec.has_numeric_type()) {              // if numeric type, print just the numeric part.
+    w.print(number_fmt, e._e);
+  } else {
+    w.write(short_name(e._e));
+    w.write(strerror(e._e));
+    if (spec._type != 's' && spec._type != 'S') {
+      w.write(' ');
+      w.print(number_fmt, e._e);
+    }
+  }
+  return w;
+}
+
+bwf::Date::Date(std::string_view fmt) : _epoch(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())), _fmt(fmt) {}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date)
+{
+  if (spec.has_numeric_type()) {
+    bwformat(w, spec, date._epoch);
+  } else {
+    struct tm t;
+    auto r = w.remaining();
+    size_t n{0};
+    // Verify @a fmt is null terminated, even outside the bounds of the view.
+    ink_assert(date._fmt.data()[date._fmt.size() - 1] == 0 || date._fmt.data()[date._fmt.size()] == 0);
+    // Get the time, GMT or local if specified.
+    if (spec._ext == "local"sv) {
+      localtime_r(&date._epoch, &t);
+    } else {
+      gmtime_r(&date._epoch, &t);
+    }
+    // Try a direct write, faster if it works.
+    if (r > 0) {
+      n = strftime(w.auxBuffer(), r, date._fmt.data(), &t);
+    }
+    if (n > 0) {
+      w.fill(n);
+    } else {
+      // Direct write didn't work. Unfortunately need to write to a temporary buffer or the sizing
+      // isn't correct if @a w is clipped because @c strftime returns 0 if the buffer isn't large
+      // enough.
+      char buff[256]; // hope for the best - no real way to resize appropriately on failure.
+      n = strftime(buff, sizeof(buff), date._fmt.data(), &t);
+      w.write(buff, n);
+    }
+  }
+  return w;
+}
+
 } // namespace ts
 
 namespace
@@ -767,7 +963,7 @@ BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
   char buff[32];
   std::time_t t = std::time(nullptr);
   auto n        = strftime(buff, sizeof(buff), "%Y %b %d %H:%M:%S", std::localtime(&t));
-  w.write(std::string_view{buff, n});
+  w.write(buff, n);
 }
 
 void
@@ -808,6 +1004,7 @@ static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
   ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
   return true;
 }();
+
 } // namespace
 
 namespace std

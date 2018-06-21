@@ -118,7 +118,7 @@ Layout::Layout(std::string_view const _prefix)
   } else {
     std::string path;
     int len;
-    std::unordered_map<std::string, std::string> dir_map = check_runroot();
+    RunrootMapType dir_map = check_runroot();
     if (dir_map.size() != 0) {
       prefix        = dir_map["prefix"];
       exec_prefix   = dir_map["exec_prefix"];
@@ -133,6 +133,7 @@ Layout::Layout(std::string_view const _prefix)
       runtimedir    = dir_map["runtimedir"];
       logdir        = dir_map["logdir"];
       mandir        = dir_map["mandir"];
+      infodir       = dir_map["infodir"];
       cachedir      = dir_map["cachedir"];
       return;
     }
@@ -164,6 +165,7 @@ Layout::Layout(std::string_view const _prefix)
   runtimedir    = layout_relative(prefix, TS_BUILD_RUNTIMEDIR);
   logdir        = layout_relative(prefix, TS_BUILD_LOGDIR);
   mandir        = layout_relative(prefix, TS_BUILD_MANDIR);
+  infodir       = layout_relative(prefix, TS_BUILD_INFODIR);
   cachedir      = layout_relative(prefix, TS_BUILD_CACHEDIR);
 }
 

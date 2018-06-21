@@ -67,7 +67,7 @@ CB_NetAcceptReady(TSCont contp, TSEvent event, void *cb_data)
 {
   switch (event) {
   case TS_EVENT_LIFECYCLE_PORTS_READY:
-    // The accept objecs are all created and ready at this point.  We
+    // The accept objects are all created and ready at this point.  We
     // can now iterate over them.
     for (int i = 0, totalNA = TSAcceptorCount(); i < totalNA; ++i) {
       TSAcceptor netaccept = TSAcceptorGetbyID(i);

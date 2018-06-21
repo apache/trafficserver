@@ -58,8 +58,8 @@ public:
 
   // Main evaluation entry point.
   bool bgFetchAllowed(TSHttpTxn txnp) const;
+  bool check_field_configured(TSHttpTxn txnp) const;
 
-private:
   bool _exclude;
   const char *_field;
   const char *_value;

@@ -21,24 +21,16 @@
   limitations under the License.
  */
 
-#define _HOSTDB_CC_
-
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
 #include "ts/I_Layout.h"
 #include "Show.h"
 #include "ts/Tokenizer.h"
+#include "ts/ink_apidefs.h"
 
 #include <utility>
 #include <vector>
 #include <algorithm>
-
-// dxu: turn off all Diags.h 's function.
-//#define Debug
-//#define Warning
-//#define Note
-
-#include "ts/ink_apidefs.h"
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;

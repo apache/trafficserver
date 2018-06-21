@@ -306,13 +306,15 @@ To collate custom event log files:
    ``CollationHosts`` attribute to the relevant logs. For example, adding two
    collation hosts to an ASCII log that uses the Squid format would look like:
 
-   .. code:: lua
+   .. code:: yaml
 
-      log.ascii {
-        Format = squid,
-        Filename = 'squid',
-        CollationHosts = { '192.168.1.100:4567', '192.168.1.101:4567' }
-      }
+      logs:
+      - mode: ascii
+        format: squid
+        filename: squid
+        collationhosts:
+        - 192.168.1.100:4567
+        - 192.168.1.101:4567
 
 #. Run the command :option:`traffic_ctl config reload` to restart |TS|.
 

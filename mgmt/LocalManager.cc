@@ -122,16 +122,16 @@ LocalManager::rollLogFiles()
 }
 
 void
-LocalManager::hostStatusSetDown(const char *name)
+LocalManager::hostStatusSetDown(const char *marshalled_req, int len)
 {
-  signalEvent(MGMT_EVENT_HOST_STATUS_DOWN, name);
+  signalEvent(MGMT_EVENT_HOST_STATUS_DOWN, marshalled_req, len);
   return;
 }
 
 void
-LocalManager::hostStatusSetUp(const char *name)
+LocalManager::hostStatusSetUp(const char *marshalled_req)
 {
-  signalEvent(MGMT_EVENT_HOST_STATUS_UP, name);
+  signalEvent(MGMT_EVENT_HOST_STATUS_UP, marshalled_req);
   return;
 }
 

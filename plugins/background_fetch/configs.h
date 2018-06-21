@@ -70,6 +70,8 @@ public:
   // This parses and populates the BgFetchRule linked list (_rules).
   bool readConfig(const char *file_name);
 
+  bool bgFetchAllowed(TSHttpTxn txnp) const;
+
 private:
   ~BgFetchConfig()
   {

@@ -35,7 +35,7 @@ TSPluginInit(int argc, const char *argv[])
   // Get the version:
   const char *ts_version = TSTrafficServerVersionGet();
   if (!ts_version) {
-    TSError("[%s] Can't get Traffic Server verion.", PLUGIN_NAME);
+    TSError("[%s] Can't get Traffic Server version.", PLUGIN_NAME);
     return;
   }
 
@@ -45,7 +45,7 @@ TSPluginInit(int argc, const char *argv[])
   int patch_ts_version = 0;
 
   if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3) {
-    TSError("[%s] Can't extract verions.", PLUGIN_NAME);
+    TSError("[%s] Can't extract versions.", PLUGIN_NAME);
     return;
   }
 

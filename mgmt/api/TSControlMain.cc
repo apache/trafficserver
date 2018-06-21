@@ -832,10 +832,11 @@ handle_host_status_down(int fd, void *req, size_t reqlen)
   OpType optype;
   MgmtMarshallString name = nullptr;
   MgmtMarshallInt err;
+  MgmtMarshallInt down_time;
 
-  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_DOWN, &optype, &name);
+  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_DOWN, &optype, &name, &down_time);
   if (err == TS_ERR_OKAY) {
-    err = HostStatusSetDown(name);
+    lmgmt->signalEvent(MGMT_EVENT_HOST_STATUS_DOWN, static_cast<char *>(req), reqlen);
   }
 
   ats_free(name);

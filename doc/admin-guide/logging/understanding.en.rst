@@ -147,12 +147,12 @@ Summary logs are defined in :file:`logging.config` just like regular event
 logs, with the only two differences being the exclusive use of the
 aforementioned aggregate functions and the specification of an interval, as so:
 
-.. code:: lua
+.. code:: yaml
 
-    mysummary = format {
-      Format = "%<operator(field)> : %<operator(field)>",
-      Interval = "n"
-    }
+   formats:
+   - name: mysummary
+     format: '%<operator(field)> : %<operator(field)>'
+     interval: n
 
 The interval itself is given with *n* as the number of seconds for each period
 of aggregation. There is no default value.

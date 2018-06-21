@@ -26,6 +26,7 @@
 #include "ts/ink_platform.h"
 #include "P_RecProcess.h"
 #include "ProxyConfig.h"
+#include "LogObject.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -167,6 +168,9 @@ public:
   bool roll_log_files_now; // signal that files must be rolled
 
   LogObjectManager log_object_manager;
+
+  LogFilterList filter_list;
+  LogFormatList format_list;
 
   int log_buffer_size;
   int max_secs_per_buffer;

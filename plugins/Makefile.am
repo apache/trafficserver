@@ -39,7 +39,9 @@ include compress/Makefile.inc
 include header_rewrite/Makefile.inc
 include healthchecks/Makefile.inc
 include libloader/Makefile.inc
+if HAS_LUAJIT
 include lua/Makefile.inc
+endif
 include regex_remap/Makefile.inc
 include regex_revalidate/Makefile.inc
 include s3_auth/Makefile.inc

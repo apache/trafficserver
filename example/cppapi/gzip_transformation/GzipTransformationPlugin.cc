@@ -39,7 +39,7 @@ GlobalPlugin *plugin;
 
 /*
  * Note, the GzipInflateTransformation and GzipDeflateTransformation do not
- * check headers to determine if the content was gziped and it doesn't check
+ * check headers to determine if the content was gzipped and it doesn't check
  * headers to make sure the client supports gzip, this is entirely up to the plugin
  * to verify that the content-encoding is gzipped, it's also up to the client
  * to make sure the user's accept-encoding supports gzip.
@@ -145,7 +145,7 @@ public:
   handleSendRequestHeaders(Transaction &transaction) override
   {
     // Since we can only decompress gzip we will change the accept encoding header
-    // to gzip, even if the user cannot accept gziped content we will return to them
+    // to gzip, even if the user cannot accept gzipped content we will return to them
     // uncompressed content in that case since we have to be able to transform the content.
     string original_accept_encoding = transaction.getServerRequest().getHeaders().values("Accept-Encoding");
 
@@ -163,14 +163,14 @@ public:
     // We're guaranteed to have been returned either gzipped content or Identity.
 
     if (Helpers::serverReturnedGzip(transaction)) {
-      // If the returned content was gziped we will inflate it so we can transform it.
-      TS_DEBUG(TAG, "Creating Inflate Transformation because the server returned gziped content");
+      // If the returned content was gzipped we will inflate it so we can transform it.
+      TS_DEBUG(TAG, "Creating Inflate Transformation because the server returned gzipped content");
       transaction.addPlugin(new GzipInflateTransformation(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
     }
 
     transaction.addPlugin(new SomeTransformationPlugin(transaction));
 
-    // Even if the server didn't return gziped content, if the user supports it we will gzip it.
+    // Even if the server didn't return gzipped content, if the user supports it we will gzip it.
     if (Helpers::clientAcceptsGzip(transaction)) {
       TS_DEBUG(TAG, "The client supports gzip so we will deflate the content on the way out.");
       transaction.addPlugin(new GzipDeflateTransformation(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));

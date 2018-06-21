@@ -276,10 +276,6 @@ HttpSM::cleanup()
   tunnel.mutex.clear();
   cache_sm.mutex.clear();
   transform_cache_sm.mutex.clear();
-  if (second_cache_sm) {
-    second_cache_sm->mutex.clear();
-    delete second_cache_sm;
-  }
   magic    = HTTP_SM_MAGIC_DEAD;
   debug_on = false;
 }
@@ -1603,7 +1599,6 @@ HttpSM::handle_api_return()
     // state_read_server_reponse_header and never get into this logic again.
     if (enable_redirection && !t_state.redirect_info.redirect_in_process && is_redirect_required() &&
         (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
-      ++redirection_tries;
       do_redirect();
     } else if (redirection_tries > t_state.txn_conf->number_of_redirections) {
       t_state.squid_codes.subcode = SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED;
@@ -1759,6 +1754,7 @@ HttpSM::state_http_server_open(int event, void *data)
     }
     break;
   case VC_EVENT_ERROR:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
@@ -1937,9 +1933,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
-    if (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
-      ++redirection_tries;
-    } else {
+    if (!(enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections))) {
       this->disable_redirect();
     }
 
@@ -2438,19 +2432,6 @@ HttpSM::state_cache_open_write(int event, void *data)
     ink_release_assert(0);
   }
 
-  if (t_state.api_lock_url != HttpTransact::LOCK_URL_FIRST) {
-    if (event == CACHE_EVENT_OPEN_WRITE || event == CACHE_EVENT_OPEN_WRITE_FAILED) {
-      if (t_state.api_lock_url == HttpTransact::LOCK_URL_SECOND) {
-        t_state.api_lock_url = HttpTransact::LOCK_URL_ORIGINAL;
-        do_cache_prepare_action(second_cache_sm, t_state.cache_info.second_object_read, true);
-        return 0;
-      } else {
-        t_state.api_lock_url = HttpTransact::LOCK_URL_DONE;
-      }
-    } else if (event != CACHE_EVENT_OPEN_READ || t_state.api_lock_url != HttpTransact::LOCK_URL_SECOND) {
-      t_state.api_lock_url = HttpTransact::LOCK_URL_QUIT;
-    }
-  }
   // The write either succeeded or failed, notify transact
   call_transact_and_set_next_state(nullptr);
 
@@ -4541,11 +4522,8 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
 inline void
 HttpSM::do_cache_prepare_write()
 {
-  // statistically no need to retry when we are trying to lock
-  // LOCK_URL_SECOND url because the server's behavior is unlikely to change
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN] = Thread::get_hrtime();
-  bool retry                                      = (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST);
-  do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, retry);
+  do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, true);
 }
 
 inline void
@@ -4588,26 +4566,18 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
 
   ink_assert(!pending_action);
 
-  if (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST) {
-    if (t_state.redirect_info.redirect_in_process) {
-      o_url = &(t_state.redirect_info.original_url);
-      ink_assert(o_url->valid());
-      restore_client_request = true;
-      s_url                  = o_url;
-    } else {
-      o_url = &(t_state.cache_info.original_url);
-      if (o_url->valid()) {
-        s_url = o_url;
-      } else {
-        s_url = t_state.cache_info.lookup_url;
-      }
-    }
-  } else if (t_state.api_lock_url == HttpTransact::LOCK_URL_SECOND) {
-    s_url = &t_state.cache_info.lookup_url_storage;
-  } else {
-    ink_assert(t_state.api_lock_url == HttpTransact::LOCK_URL_ORIGINAL);
-    s_url                  = &(t_state.cache_info.original_url);
+  if (t_state.redirect_info.redirect_in_process) {
+    o_url = &(t_state.redirect_info.original_url);
+    ink_assert(o_url->valid());
     restore_client_request = true;
+    s_url                  = o_url;
+  } else {
+    o_url = &(t_state.cache_info.original_url);
+    if (o_url->valid()) {
+      s_url = o_url;
+    } else {
+      s_url = t_state.cache_info.lookup_url;
+    }
   }
 
   // modify client request to make it have the url we are going to
@@ -4637,7 +4607,7 @@ void
 HttpSM::send_origin_throttled_response()
 {
   t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries;
-  // t_state.current.state = HttpTransact::CONNECTION_ERROR;
+  t_state.current.state    = HttpTransact::CONNECTION_ERROR;
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
@@ -5461,16 +5431,13 @@ HttpSM::handle_server_setup_error(int event, void *data)
     }
   }
 
-  if (event == VC_EVENT_ERROR) {
-    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
-  }
-
   switch (event) {
   case VC_EVENT_EOS:
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     break;
   case VC_EVENT_ERROR:
-    t_state.current.state = HttpTransact::CONNECTION_ERROR;
+    t_state.current.state        = HttpTransact::CONNECTION_ERROR;
+    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
     break;
   case VC_EVENT_ACTIVE_TIMEOUT:
     t_state.current.state = HttpTransact::ACTIVE_TIMEOUT;
@@ -5482,13 +5449,17 @@ HttpSM::handle_server_setup_error(int event, void *data)
     //   server failed
     // In case of TIMEOUT, the iocore sends back
     // server_entry->read_vio instead of the write_vio
-    // if (vio->op == VIO::WRITE && vio->ndone == 0) {
-    if (server_entry && server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
+    if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
     } else {
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;
     }
+    break;
+  default:
+    ink_release_assert(0);
+  }
 
+  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR) {
     // Clean up the vc_table entry so any events in play to the timed out server vio
     // don't get handled.  The connection isn't there.
     if (server_entry) {
@@ -5497,9 +5468,6 @@ HttpSM::handle_server_setup_error(int event, void *data)
       server_entry   = nullptr;
       server_session = nullptr;
     }
-    break;
-  default:
-    ink_release_assert(0);
   }
 
   // Closedown server connection and deallocate buffers
@@ -6796,9 +6764,6 @@ HttpSM::kill_this()
     }
 
     cache_sm.end_both();
-    if (second_cache_sm) {
-      second_cache_sm->end_both();
-    }
     transform_cache_sm.end_both();
     vc_table.cleanup_all();
 
@@ -7644,6 +7609,7 @@ HttpSM::do_redirect()
         }
       }
 
+      ++redirection_tries;
       if (redirect_url != nullptr) {
         redirect_request(redirect_url, redirect_url_len);
         ats_free((void *)redirect_url);

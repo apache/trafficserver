@@ -59,14 +59,14 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.logging_config.AddLines(
-    '''custom = format {
-  Format = "%<ccid> %<ctid>"
-}
-
-log.ascii {
-  Format = custom,
-  Filename = 'test_ccid_ctid'
-}'''.split("\n")
+    '''
+formats:
+  - name: custom
+    format: "%<ccid> %<ctid>"
+logs:
+  - filename: test_ccid_ctid
+    format: custom
+'''.split("\n")
 )
 
 tr = Test.AddTestRun()

@@ -509,7 +509,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
   } else {
     switch (event) {
     case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-      if (config->getRules()->bgFetchAllowed(txnp)) {
+      if (config->bgFetchAllowed(txnp)) {
         TSMBuffer response;
         TSMLoc resp_hdr;
 

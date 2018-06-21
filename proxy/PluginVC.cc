@@ -80,9 +80,6 @@
 #define PVC_DEFAULT_MAX_BYTES 32768
 #define MIN_BLOCK_TRANSFER_BYTES 128
 
-#define EVENT_PTR_LOCKED (void *)0x1
-#define EVENT_PTR_CLOSED (void *)0x2
-
 #define PVC_TYPE ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
 
 PluginVC::PluginVC(PluginVCCore *core_obj)

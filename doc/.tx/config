@@ -1412,11 +1412,6 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlCreat
 source_file = _build/locale/pot/developer-guide/api/functions/TSUrlCreate.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--functions--TSUrlDestroy_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlDestroy.en.po
-source_file = _build/locale/pot/developer-guide/api/functions/TSUrlDestroy.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.developer-guide--api--functions--TSUrlFtpTypeGet_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlFtpTypeGet.en.po
 source_file = _build/locale/pot/developer-guide/api/functions/TSUrlFtpTypeGet.en.pot
