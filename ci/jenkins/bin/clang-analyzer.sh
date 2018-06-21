@@ -75,6 +75,12 @@ ${LLVM_BASE}/bin/scan-build ./configure ${configure} \
     CXXFLAGS="-stdlib=libc++ -I${LLVM_BASE}/include/c++/v1 -std=c++17" \
     LDFLAGS="-L${LLVM_BASE}/lib64 -Wl,-rpath=${LLVM_BASE}/lib64"
 
+# Since we don't want the analyzer to look at yamlcpp, build it first
+# without scan-build. The subsequent make will then skip it.
+# the all-local can be taken out and lib changed to lib/yamlcpp 
+# by making yaml cpp a SUBDIRS in lib/Makefile.am.
+${ATS_MAKE} -j $NPROCS -C lib all-local V=1 Q=
+
 ${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} \
     --html-title="clang-analyzer: ${ATS_BRANCH}${github_pr}" \
     ${ATS_MAKE} -j $NPROCS V=1 Q=
