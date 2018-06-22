@@ -45,6 +45,7 @@ datadir, libexecdir, libdir, runtimedir, cachedir.
 #include <fstream>
 #include <set>
 #include <unistd.h>
+#include <yaml-cpp/yaml.h>
 
 static std::string using_runroot = {};
 
@@ -210,27 +211,21 @@ runroot_map_default()
 RunrootMapType
 runroot_map(const std::string &prefix)
 {
-  std::string yaml_path = Layout::relative_to(prefix, "runroot_path.yml");
-  std::ifstream file;
-  file.open(yaml_path);
-  if (!file.good()) {
-    ink_warning("Bad path '%s', continue with default value", prefix.c_str());
-    return RunrootMapType{};
-  }
-
-  std::ifstream yamlfile(yaml_path);
   RunrootMapType map;
-  std::string str;
-  while (std::getline(yamlfile, str)) {
-    int pos                 = str.find(':');
-    map[str.substr(0, pos)] = str.substr(pos + 2);
-  }
-
-  // change it to absolute path in the map
-  for (auto it : map) {
-    if (it.second[0] != '/') {
-      map[it.first] = Layout::relative_to(prefix, it.second);
+  try {
+    YAML::Node yamlfile = YAML::LoadFile(Layout::relative_to(prefix, "runroot_path.yml"));
+    for (auto it : yamlfile) {
+      // key value pairs of dirs
+      std::string value = it.second.as<std::string>();
+      if (value[0] != '/') {
+        value = Layout::relative_to(prefix, value);
+      }
+      map[it.first.as<std::string>()] = value;
     }
+  } catch (YAML::Exception &e) {
+    ink_warning("Unable to read runroot_path.yml from '%s': %s", prefix.c_str(), e.what());
+    ink_notice("Continuing with default value");
+    return RunrootMapType{};
   }
   return map;
 }

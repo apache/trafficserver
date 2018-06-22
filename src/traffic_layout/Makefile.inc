@@ -24,11 +24,13 @@ traffic_layout_traffic_layout_CPPFLAGS = \
     -I$(abs_top_srcdir)/lib/records \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/utils \
+    @YAMLCPP_INCLUDES@ \
     $(TS_INCLUDES)
 
 traffic_layout_traffic_layout_LDFLAGS =	\
     $(AM_LDFLAGS) \
-    @OPENSSL_LDFLAGS@
+    @OPENSSL_LDFLAGS@ \
+    @YAMLCPP_LDFLAGS@
 
 traffic_layout_traffic_layout_SOURCES = \
 	traffic_layout/traffic_layout.cc \
@@ -45,4 +47,4 @@ traffic_layout_traffic_layout_LDADD = \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/ts/libtsutil.la \
-	@LIBTCL@ @HWLOC_LIBS@
+	@LIBTCL@ @HWLOC_LIBS@ @YAMLCPP_LIBS@

@@ -35,9 +35,10 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/lib/records \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
-libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
+libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@
 libtsutil_la_LIBADD = \
 	@HWLOC_LIBS@ \
 	@LIBOBJS@ \
@@ -46,6 +47,7 @@ libtsutil_la_LIBADD = \
 	@LIBTCL@ \
 	@LIBRESOLV@ \
 	@LIBCAP@ \
+	@YAMLCPP_LIBS@ \
 	-lc
 
 libtsutil_la_SOURCES = \
