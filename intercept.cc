@@ -22,6 +22,7 @@ shutdown
   , Data * const data
   )
 {
+DEBUG_LOG("shutting down transaction");
   delete data;
   TSContDataSet(contp, nullptr);
   TSContDestroy(contp);
@@ -592,8 +593,6 @@ DEBUG_LOG("client wants more data");
     DEBUG_LOG("got a TS_EVENT_ERROR from the client -- it probably bailed");
 /*
 std::cerr << __func__ << ": " << "TS_EVENT_ERROR" << std::endl;
-      int64_t const bytessent
-        (TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
 std::cerr << "bytes: sent " << bytessent << " of " << data->m_bytestosend << std::endl;
 */
     shutdown(contp, data);
