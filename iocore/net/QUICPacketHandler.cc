@@ -350,7 +350,7 @@ void
 QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector)
 {
   // TODO Pass QUICPacketNumberProtector
-  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), nullptr, 0);
+  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
 }
 
 void
