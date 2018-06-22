@@ -3,7 +3,7 @@
 #include "ContentRange.h"
 #include "Data.h"
 #include "HttpHeader.h"
-#include "range.h"
+#include "Range.h"
 #include "slice.h"
 
 #include <cassert>
@@ -39,15 +39,14 @@ request_block
   , Data * const data
   )
 {
-  std::pair<int64_t, int64_t> const blockbe
-    = range::forBlock(data->m_blocksize, data->m_blocknum);
+  int64_t const blockbeg = (data->m_blocksize * data->m_blocknum);
+  Range blockbe(blockbeg, blockbeg + data->m_blocksize);
 
 //std::cerr << __func__ << " trying to build header" << std::endl;
 
   char rangestr[1024];
   int rangelen = 1023;
-  bool const rpstat = range::closedStringFor
-    (blockbe, rangestr, &rangelen);
+  bool const rpstat = blockbe.toStringClosed(rangestr, &rangelen);
 TSAssert(rpstat);
 
 DEBUG_LOG("request_block: %s", rangestr);
@@ -138,9 +137,10 @@ std::cerr << header.toString() << std::endl;
       ( TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST
       , data->m_hostname, data->m_hostlen );
 
+    static int64_t const max64_t = std::numeric_limits<int64_t>::max();
+
     // default: whole file (unknown, wait for first server response)
-    std::pair<int64_t, int64_t> rangebe
-      (0, std::numeric_limits<int64_t>::max() - data->m_blocksize);
+    Range rangebe(0, max64_t - data->m_blocksize);
 
     char rangestr[1024];
     int rangelen = 1024;
@@ -153,16 +153,16 @@ std::cerr << header.toString() << std::endl;
       header.setKeyVal
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , rangestr, rangelen );
-      rangebe = range::parseHalfOpenFrom(rangestr);
+      rangebe.fromStringClosed(rangestr);
 
-      if (range::isValid(rangebe))
+      if (rangebe.isValid())
       {
         data->m_statustype = TS_HTTP_STATUS_PARTIAL_CONTENT;
       }
       else // reset the range
       {
-        rangebe = std::make_pair
-          (0, std::numeric_limits<int64_t>::max() - data->m_blocksize);
+        rangebe.m_beg = 0;
+        rangebe.m_end = max64_t - data->m_blocksize;
         data->m_statustype = TS_HTTP_STATUS_OK;
       }
     }
@@ -177,11 +177,11 @@ static size_t const vallen = strlen(valstr);
     }
 
     // set the initial range begin/end, we'll correct it later
-    data->m_range_begend = rangebe;
+    data->m_range_beg = rangebe.m_beg;
+    data->m_range_end = rangebe.m_end;
 
     // set to the first block in range
-    data->m_blocknum = range::firstBlock
-      (data->m_blocksize, data->m_range_begend);
+    data->m_blocknum = rangebe.firstBlockFor(data->m_blocksize);
 
     // whack some ATS keys (avoid 404)
     header.removeKey
@@ -417,15 +417,13 @@ std::cerr << header.toString() << std::endl;
       {
         // set the resource content length
         data->m_contentlen = crange.m_length;
-TSAssert(data->m_range_begend.first < data->m_range_begend.second);
 
         // fix up request range end
-        int64_t const rend = std::min
-          (crange.m_length, data->m_range_begend.second);
-        data->m_range_begend.second = rend;
+        int64_t const rend = std::min(crange.m_length, data->m_range_end);
+        data->m_range_end = rend;
 
         // convert block content range to client response content range
-        crange.m_begin = data->m_range_begend.first;
+        crange.m_beg = data->m_range_beg;
         crange.m_end = rend;
 
         data->m_bytestosend = crange.rangeSize();
@@ -496,8 +494,9 @@ TSAssert(data->m_contentlen == crange.m_length);
       }
 
       // how much to fast forward into the (first) data block
-      data->m_skipbytes = range::skipBytesForBlock
-          (data->m_blocksize, data->m_blocknum, data->m_range_begend);
+      Range const rangebe(data->m_range_beg, data->m_range_end);
+      data->m_skipbytes = rangebe.skipBytesForBlock
+          (data->m_blocksize, data->m_blocknum);
 
       data->m_server_block_header_parsed = true;
     }
@@ -543,8 +542,8 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
     // in that case fast forward to the real first in range block
     // Btw this isn't implemented yet, to be handled
     bool adjusted = false;
-    int64_t const firstblock
-      (range::firstBlock(data->m_blocksize, data->m_range_begend));
+    Range const rangebe(data->m_range_beg, data->m_range_end);
+    int64_t const firstblock(rangebe.firstBlockFor(data->m_blocksize));
     if (data->m_blocknum < firstblock)
     {
 //std::cerr << "setting first block" << std::endl;
@@ -552,8 +551,8 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
       adjusted = true;
     }
 
-    if (adjusted || range::blockIsInside
-        (data->m_blocksize, data->m_blocknum, data->m_range_begend))
+    if ( adjusted
+      || rangebe.blockIsInside(data->m_blocksize, data->m_blocknum) )
     {
 //std::cerr << __func__ << " calling request_block" << std::endl;
       request_block(contp, data);

@@ -17,7 +17,6 @@
 #include "ts/ts.h"
 
 #include <string>
-#include <utility>
 
 static char const * const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
 

@@ -6,7 +6,6 @@
 #include "Stage.h"
 
 #include <netinet/in.h>
-#include <utility>
 
 struct Data
 {
@@ -27,7 +26,8 @@ struct Data
 
   bool m_bail; // non 206/200 response
 
-  std::pair<int64_t, int64_t> m_range_begend;
+  int64_t m_range_beg;
+  int64_t m_range_end;
   int64_t m_contentlen;
 
   int64_t m_blocknum; //!< block number to work on, -1 bad/stop
@@ -61,7 +61,8 @@ struct Data
     , m_hostlen(0)
     , m_statustype(TS_HTTP_STATUS_NONE)
     , m_bail(false)
-    , m_range_begend(-1, -1)
+    , m_range_beg(-1)
+    , m_range_end(-1)
     , m_contentlen(-1)
     , m_blocknum(-1)
     , m_skipbytes(0)

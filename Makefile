@@ -3,19 +3,22 @@ all: slice
 slice_la_SOURCES = \
 	ContentRange.cc \
 	HttpHeader.cc \
+	Range.cc \
 	intercept.cc \
-	range.cc \
 	slice.cc \
 
 slice_la_HEADERS = \
 	ContentRange.h \
 	HttpHeader.h \
+	Range.h \
 	intercept.h \
-	range.h \
 	slice.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
-	tsxs -v -i -o slice.so $(slice_la_SOURCES)
+	tsxs -v -o slice.so $(slice_la_SOURCES)
+
+install: slice
+	tsxs -v -i slice.so
 
 CXX = c++ -std=c++11
 #CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
