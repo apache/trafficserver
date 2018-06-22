@@ -70,6 +70,22 @@ TSAssert(nullptr != vc);
     return nullptr != m_vio;
   }
 
+  void
+  close
+    ()
+  {
+    if (nullptr != m_reader)
+    {
+      TSIOBufferReaderFree(m_reader);
+      m_reader = nullptr;
+    }
+    if (nullptr != m_iobuf)
+    {
+      TSIOBufferDestroy(m_iobuf);
+      m_iobuf = nullptr;
+    }
+  }
+
   bool
   isValid
     () const
@@ -123,6 +139,20 @@ struct Stage // upstream or downstream (server or client)
     )
   {
     m_write.setForWrite(m_vc, contp, bytesout);
+  }
+
+  void
+  close
+    ()
+  {
+    if (nullptr != m_vc)
+    {
+      TSVConnClose(m_vc);
+      m_vc = nullptr;
+    }
+
+    m_read.close();
+    m_write.close();
   }
 
   bool

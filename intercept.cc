@@ -23,9 +23,13 @@ shutdown
   )
 {
 DEBUG_LOG("shutting down transaction");
+  data->m_upstream.close();
+  data->m_dnstream.close();
+/*
   delete data;
   TSContDataSet(contp, nullptr);
   TSContDestroy(contp);
+*/
 }
 
 // create and issue a block request
@@ -98,7 +102,8 @@ handle_client_req
   , Data * const data
   )
 {
-  if (TS_EVENT_VCONN_READ_READY == event)
+  if ( TS_EVENT_VCONN_READ_READY == event
+    || TS_EVENT_VCONN_READ_COMPLETE == event )
   {
 DEBUG_LOG("client has data ready to read");
     if (nullptr == data->m_http_parser)
@@ -323,7 +328,14 @@ handle_server_resp
   , Data * const data
   )
 {
-  if (TS_EVENT_VCONN_READ_READY == event)
+  if (data->m_bail)
+  {
+    shutdown(contp, data);
+    return TS_EVENT_CONTINUE;
+  }
+
+  if ( TS_EVENT_VCONN_READ_READY == event
+    || TS_EVENT_VCONN_READ_COMPLETE == event )
   {
 DEBUG_LOG("server has data ready to read");
     // has block reponse header been parsed??
@@ -351,19 +363,23 @@ std::cerr << header.toString() << std::endl;
       // only process a 206, everything else gets a pass through
       if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status())
       {
-        data->m_bail = true;
-        data->m_blocknum = -1;
-
-        if (nullptr == data->m_dnstream.m_write.m_vio)
+        // this is the first server response
+        if (! data->m_client_header_sent)
         {
-          data->m_dnstream.setupVioWrite(contp);
-          TSHttpHdrPrint
-            ( header.m_buffer
-            , header.m_lochdr
-            , data->m_dnstream.m_write.m_iobuf );
-        }
+          data->m_bail = true;
+          data->m_blocknum = -1;
 
-        transfer_all_bytes(data);
+          // same as ! data->m_client_header_sent
+          if (nullptr == data->m_dnstream.m_write.m_vio)
+          {
+            data->m_dnstream.setupVioWrite(contp);
+            TSHttpHdrPrint
+              ( header.m_buffer
+              , header.m_lochdr
+              , data->m_dnstream.m_write.m_iobuf );
+            transfer_all_bytes(data);
+          }
+        }
 
         return TS_EVENT_CONTINUE;
       }
@@ -572,7 +588,8 @@ handle_client_resp
     return TS_EVENT_CONTINUE;
   }
 
-  if (TS_EVENT_VCONN_WRITE_READY == event)
+  if ( TS_EVENT_VCONN_WRITE_READY == event
+    || TS_EVENT_VCONN_WRITE_COMPLETE == event )
   {
 DEBUG_LOG("client wants more data");
     if (0 == transfer_content_bytes(data))
@@ -627,6 +644,19 @@ DEBUG_LOG("intercept_hook: %d", event);
     TSVConn const downvc = (TSVConn)edata;
     data->m_dnstream.setupConnection(downvc);
     data->m_dnstream.setupVioRead(contp);
+  }
+  else
+  if ( TS_EVENT_VCONN_INACTIVITY_TIMEOUT == event
+    || TS_EVENT_VCONN_ACTIVE_TIMEOUT == event )
+  {
+    shutdown(contp, data);
+  }
+  else
+  if (TS_EVENT_HTTP_TXN_CLOSE == event)
+  {
+DEBUG_LOG("TS_EVENT_HTTP_TXN_CLOSE");
+    delete data;
+    TSContDestroy(contp);
   }
   else if (nullptr != data)
   {
