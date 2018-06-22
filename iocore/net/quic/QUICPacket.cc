@@ -804,6 +804,12 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, QUICPack
   QUICKeyPhase phase;
 
   if (QUICInvariants::is_long_header(packet)) {
+#ifdef DEBUG
+    QUICVersion version;
+    QUICPacketLongHeader::version(version, packet, packet_len);
+    ink_assert(version != 0x0);
+#endif
+
     QUICPacketType type;
     QUICPacketLongHeader::type(type, packet, packet_len);
     switch (type) {
