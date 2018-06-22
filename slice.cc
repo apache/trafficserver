@@ -107,7 +107,7 @@ static int64_t const blocksize(1024 * 1024);
       TSCont const icontp
         (TSContCreate(intercept_hook, TSMutexCreate()));
       TSContDataSet(icontp, (void*)data);
-      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, icontp);
+//      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, icontp);
       TSHttpTxnIntercept(icontp, txnp);
       return true;
     }

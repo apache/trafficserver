@@ -23,13 +23,13 @@ shutdown
   )
 {
 DEBUG_LOG("shutting down transaction");
+/*
   data->m_upstream.close();
   data->m_dnstream.close();
-/*
+*/
   delete data;
   TSContDataSet(contp, nullptr);
   TSContDestroy(contp);
-*/
 }
 
 // create and issue a block request
@@ -651,13 +651,14 @@ DEBUG_LOG("intercept_hook: %d", event);
   {
     shutdown(contp, data);
   }
-  else
-  if (TS_EVENT_HTTP_TXN_CLOSE == event)
+/*
+  else if (TS_EVENT_HTTP_TXN_CLOSE == event)
   {
 DEBUG_LOG("TS_EVENT_HTTP_TXN_CLOSE");
     delete data;
     TSContDestroy(contp);
   }
+*/
   else if (nullptr != data)
   {
     // data from client -- only the initial header
