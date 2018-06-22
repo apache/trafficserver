@@ -177,8 +177,7 @@ static size_t const vallen = strlen(valstr);
     }
 
     // set the initial range begin/end, we'll correct it later
-    data->m_range_beg = rangebe.m_beg;
-    data->m_range_end = rangebe.m_end;
+    data->m_req_range = rangebe;
 
     // set to the first block in range
     data->m_blocknum = rangebe.firstBlockFor(data->m_blocksize);
@@ -419,11 +418,12 @@ std::cerr << header.toString() << std::endl;
         data->m_contentlen = crange.m_length;
 
         // fix up request range end
-        int64_t const rend = std::min(crange.m_length, data->m_range_end);
-        data->m_range_end = rend;
+        int64_t const rend = std::min
+          (crange.m_length, data->m_req_range.m_end);
+        data->m_req_range.m_end = rend;
 
         // convert block content range to client response content range
-        crange.m_beg = data->m_range_beg;
+        crange.m_beg = data->m_req_range.m_beg;
         crange.m_end = rend;
 
         data->m_bytestosend = crange.rangeSize();
@@ -494,8 +494,7 @@ TSAssert(data->m_contentlen == crange.m_length);
       }
 
       // how much to fast forward into the (first) data block
-      Range const rangebe(data->m_range_beg, data->m_range_end);
-      data->m_skipbytes = rangebe.skipBytesForBlock
+      data->m_skipbytes = data->m_req_range.skipBytesForBlock
           (data->m_blocksize, data->m_blocknum);
 
       data->m_server_block_header_parsed = true;
@@ -542,8 +541,8 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
     // in that case fast forward to the real first in range block
     // Btw this isn't implemented yet, to be handled
     bool adjusted = false;
-    Range const rangebe(data->m_range_beg, data->m_range_end);
-    int64_t const firstblock(rangebe.firstBlockFor(data->m_blocksize));
+    int64_t const firstblock
+      (data->m_req_range.firstBlockFor(data->m_blocksize));
     if (data->m_blocknum < firstblock)
     {
 //std::cerr << "setting first block" << std::endl;
@@ -551,8 +550,8 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
       adjusted = true;
     }
 
-    if ( adjusted
-      || rangebe.blockIsInside(data->m_blocksize, data->m_blocknum) )
+    if ( adjusted || data->m_req_range.blockIsInside
+          (data->m_blocksize, data->m_blocknum) )
     {
 //std::cerr << __func__ << " calling request_block" << std::endl;
       request_block(contp, data);

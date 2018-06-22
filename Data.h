@@ -4,6 +4,7 @@
 
 #include "HttpHeader.h"
 #include "Stage.h"
+#include "Range.h"
 
 #include <netinet/in.h>
 
@@ -26,8 +27,7 @@ struct Data
 
   bool m_bail; // non 206/200 response
 
-  int64_t m_range_beg;
-  int64_t m_range_end;
+  Range m_req_range;
   int64_t m_contentlen;
 
   int64_t m_blocknum; //!< block number to work on, -1 bad/stop
@@ -61,8 +61,7 @@ struct Data
     , m_hostlen(0)
     , m_statustype(TS_HTTP_STATUS_NONE)
     , m_bail(false)
-    , m_range_beg(-1)
-    , m_range_end(-1)
+    , m_req_range(-1, -1)
     , m_contentlen(-1)
     , m_blocknum(-1)
     , m_skipbytes(0)
