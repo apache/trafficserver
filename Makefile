@@ -15,7 +15,11 @@ slice_la_HEADERS = \
 	slice.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
-	tsxs -v -i -o slice.so $(slice_la_SOURCES)
+	tsxs -v -o slice.so $(slice_la_SOURCES)
+#	tsxs -v -i -o slice.so $(slice_la_SOURCES)
+
+install: slice
+	tsxs -v -i slice.so
 
 CXX = c++ -std=c++11
 #CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16

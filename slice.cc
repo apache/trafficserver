@@ -28,13 +28,50 @@
 #include "ts/ts.h"
 
 #include <cassert>
+#include <cinttypes>
 #include <iostream>
 #include <netinet/in.h>
 
-static
+namespace
+{
+
+int64_t const BLOCKBYTESMIN = 1024 * 32;
+int64_t const BLOCKBYTESMAX = 1024 * 1024 * 32;
+int64_t const BLOCKBYTESDEF = 1024 * 1024;
+
+int64_t globalBlockBytes = BLOCKBYTESDEF;
+
+struct Config
+{
+  int64_t m_blockbytes { BLOCKBYTESDEF };
+
+  void
+  fromString
+    ( char const * const bytesstr
+    )
+  {
+    char * endp = nullptr;
+    int64_t const bytesread = strtoll(bytesstr, &endp, 10);
+    if ( bytesstr != endp
+      && BLOCKBYTESMIN <= bytesread
+      && bytesread <= BLOCKBYTESMAX )
+    {
+      m_blockbytes = bytesread;
+      DEBUG_LOG("Override blockbytes %" PRId64, m_blockbytes);
+    }
+    else
+    {
+      ERROR_LOG("Invalid incoming blockbytes %s", bytesstr);
+    }
+  }
+};
+
+Config globalConfig;
+
 bool
 read_request
   ( TSHttpTxn txnp
+  , int64_t const blockbytes
   )
 {
 DEBUG_LOG("slice read_request");
@@ -84,6 +121,8 @@ static int64_t const blocksize(1024 * 1024);
         return false;
       }
 
+      data->m_blocksize = blockbytes;
+
       // need the pristine url, especially for global plugins
 /*
       TSMBuffer urlbuf;
@@ -120,7 +159,6 @@ DEBUG_LOG("slice passing GET request downstream");
   return false;
 }
 
-static
 int
 global_read_request_hook
   ( TSCont // contp
@@ -129,22 +167,26 @@ global_read_request_hook
   )
 {
   TSHttpTxn const txnp = static_cast<TSHttpTxn>(edata);
-  read_request(txnp);
+  read_request(txnp, globalBlockBytes);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
+
+} // private namespace
 
 ///// remap plugin engine
 
 SLICE_EXPORT
 TSRemapStatus
 TSRemapDoRemap
-  ( void * // ih
+  ( void * ih
   , TSHttpTxn txnp
   , TSRemapRequestInfo * //rri
   )
 {
-  if (read_request(txnp))
+  Config * const config = static_cast<Config *>(ih);
+
+  if (read_request(txnp, config->m_blockbytes))
   {
     return TSREMAP_DID_REMAP_STOP;
   }
@@ -168,13 +210,20 @@ TSRemapOSResponse
 SLICE_EXPORT
 TSReturnCode
 TSRemapNewInstance
-  ( int // argc
-  , char * /* argv */[]
-  , void ** //ih
+  ( int argc
+  , char * argv[]
+  , void ** ih
   , char * // errbuf
   , int // errbuf_size
   )
 {
+  Config * const config = new Config;
+  if (1 < argc)
+  {
+    config->fromString(argv[1]);
+  }
+  *ih = static_cast<void*>(config);
+
   std::cerr << "TSRemapNewInstance: slicer" << std::endl;
   return TS_SUCCESS;
 }
@@ -182,9 +231,11 @@ TSRemapNewInstance
 SLICE_EXPORT
 void
 TSRemapDeleteInstance
-  ( void * // ih
+  ( void * ih
   )
 {
+  Config * const config = static_cast<Config*>(ih);
+  delete config;
 }
 
 SLICE_EXPORT
@@ -203,8 +254,8 @@ TSRemapInit
 SLICE_EXPORT
 void
 TSPluginInit
-  ( int // argc
-  , char const * /* argv */[]
+  ( int argc
+  , char const * argv[]
   )
 {
   TSPluginRegistrationInfo info;
@@ -219,8 +270,12 @@ TSPluginInit
     return;
   }
 
+  if (1 < argc)
+  {
+    globalConfig.fromString(argv[1]);
+  }
+
   TSCont const contp(TSContCreate(global_read_request_hook, nullptr));
-assert(nullptr != contp);
 
   // Called immediately after the request header is read from the client
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);

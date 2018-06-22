@@ -9,9 +9,9 @@ using a preconfigured block size.
 To enable the plugin, specify the plugin library via @plugin at the end
 of a remap line as follows:
 
-map http://ats-server/somepath/ http://originserver/somepath @plugin=slicer.so @pparam=blocksize=1m @plugin=cache_range_requests.so
+map http://ats-server/somepath/ http://originserver/somepath @plugin=slicer.so @pparam=2097152 @plugin=cache_range_requests.so
 
-**Note**: blocksize is defined in megabytes. 1MB is the default.
+**Note**: blocksize is defined in bytes. 1048576 (1MB) is the default.
 
 __To build the plugin__, just set your path to include the tsxs binary in your path and run make.
 
@@ -101,4 +101,34 @@ struct Data
   TSHttpParser m_http_parser { nullptr }; //!< cached for reuse
 };
 
+```
+
+
+If interested in running this as a global plugin, this patch needs to
+be applied to cache_range_requests.cc
+
+```
+diff --git a/plugins/experimental/cache_range_requests/cache_range_requests.cc b/plugins/experimental/cache_range_requests/cache_range_requests.cc
+index c3ecab8..1a5cf65 100644
+--- a/plugins/experimental/cache_range_requests/cache_range_requests.cc
++++ b/plugins/experimental/cache_range_requests/cache_range_requests.cc
+@@ -85,6 +85,18 @@ range_header_check(TSHttpTxn txnp)
+   TSCont txn_contp;
+ 
+   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs)) {
++
++static char const * const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
++    loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs
++      , SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO) );
++    if (TS_NULL_MLOC == loc) {
++      DEBUG_LOG("no slice header found, falling through");
++      TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
++      TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
++      return;
++    }
++    TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
++
+     loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+     if (TS_NULL_MLOC != loc) {
+       const char *hdr_value = TSMimeHdrFieldValueStringGet(hdr_bufp, req_hdrs, loc, 0, &length);
 ```
