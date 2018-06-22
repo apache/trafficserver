@@ -135,7 +135,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
   uint8_t dcil = 0;
   uint8_t scil = 0;
   QUICPacketLongHeader::dcil(dcil, raw_buf, len);
-  QUICPacketLongHeader::dcil(scil, raw_buf, len);
+  QUICPacketLongHeader::scil(scil, raw_buf, len);
 
   size_t offset          = LONG_HDR_OFFSET_CONNECTION_ID;
   this->_destination_cid = {raw_buf + offset, dcil};
