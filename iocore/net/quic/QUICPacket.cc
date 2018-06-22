@@ -760,7 +760,6 @@ QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, const QUIC
   size_t pn_offset             = 0;
   uint8_t pn_len               = 4;
   size_t sample_offset         = 0;
-  uint8_t sample_len           = 0;
   constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
   QUICKeyPhase phase;
 
@@ -781,7 +780,6 @@ QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, const QUIC
     QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, dcil);
   }
   sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
-  sample_len    = 16; // On draft-12, the length is always 16 (See 5.6.1 and 5.6.2)
 
   uint8_t protected_pn[4]  = {0};
   uint8_t protected_pn_len = 0;
@@ -799,7 +797,6 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
   size_t pn_offset             = 0;
   uint8_t pn_len               = 4;
   size_t sample_offset         = 0;
-  uint8_t sample_len           = 0;
   constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
   QUICKeyPhase phase;
 
@@ -826,7 +823,6 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
     QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConfigParams::scid_len());
   }
   sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
-  sample_len    = 16; // On draft-12, the length is always 16 (See 5.6.1 and 5.6.2)
 
   uint8_t unprotected_pn[4]  = {0};
   uint8_t unprotected_pn_len = 0;
