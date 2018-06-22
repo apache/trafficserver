@@ -457,16 +457,13 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
 
   decltype(this->_parameters)::const_iterator ite;
 
-  // MUSTs
+  // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
     if (ite->second->len() != QUICStatelessResetToken::LEN) {
       return -1;
     }
-  } else {
-    return -2;
   }
 
-  // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::PREFERRED_ADDRESS)) != this->_parameters.end()) {
     if (ite->second->len() < QUICPreferredAddress::MIN_LEN || QUICPreferredAddress::MAX_LEN < ite->second->len()) {
       return -3;
@@ -509,16 +506,13 @@ QUICTransportParametersInNewSessionTicket::_validate_parameters() const
 
   decltype(this->_parameters)::const_iterator ite;
 
-  // MUSTs
+  // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
     if (ite->second->len() != QUICStatelessResetToken::LEN) {
       return -1;
     }
-  } else {
-    return -2;
   }
 
-  // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 4) {
       return -3;
