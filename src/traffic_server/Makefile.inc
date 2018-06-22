@@ -75,12 +75,6 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	$(top_builddir)/proxy/libproxy.a
 
-if ENABLE_QUIC
-traffic_server_traffic_server_LDADD += \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/proxy/hq/libhq.a
-endif
-
 # ToDo: When we remove this, we hould merge the two _LDADD rules here
 traffic_server_traffic_server_LDADD += \
 	$(top_builddir)/iocore/net/libinknet.a \
@@ -98,3 +92,9 @@ traffic_server_traffic_server_LDADD += \
 	@OPENSSL_LIBS@ \
 	@LIB_YAMLCPP@ \
 	-lm
+
+if ENABLE_QUIC
+traffic_server_traffic_server_LDADD += \
+  $(top_builddir)/proxy/hq/libhq.a \
+  $(top_builddir)/iocore/net/quic/libquic.a
+endif
