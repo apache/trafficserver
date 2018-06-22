@@ -40,6 +40,7 @@
 #include <iostream>
 #include <ftw.h>
 #include <pwd.h>
+#include <yaml-cpp/yaml.h>
 
 // for nftw check_directory
 std::string directory_check = "";
@@ -402,15 +403,18 @@ RunrootEngine::create_runroot()
   // create new root & copy from original to new runroot. then fill in the map
   copy_runroot(original_root, ts_runroot);
 
-  // create and emit to yaml file the key value pairs of path
-  std::ofstream yamlfile;
-  std::string yaml_path = Layout::relative_to(ts_runroot, "runroot_path.yml");
-  yamlfile.open(yaml_path);
-
+  YAML::Emitter yamlfile;
+  // emit key value pairs to the yaml file
+  yamlfile << YAML::BeginMap;
   for (uint i = 0; i < dir_vector.size(); i++) {
-    // out put key value pairs of path
-    yamlfile << dir_vector[i] << ": " << path_map[dir_vector[i]] << std::endl;
+    yamlfile << YAML::Key << dir_vector[i];
+    yamlfile << YAML::Value << path_map[dir_vector[i]];
   }
+  yamlfile << YAML::EndMap;
+
+  // create the file
+  std::ofstream f(Layout::relative_to(ts_runroot, "runroot_path.yml"));
+  f << yamlfile.c_str();
 }
 
 // copy the stuff from original_root to ts_runroot
