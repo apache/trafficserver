@@ -40,12 +40,12 @@ public:
   QUICPacketHandler();
   ~QUICPacketHandler();
 
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector) = 0;
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketNumberProtector &pn_protector) = 0;
   virtual void close_conenction(QUICNetVConnection *conn);
 
 protected:
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
-                           QUICPacketNumberProtector *pn_protector, int dcil);
+                           const QUICPacketNumberProtector *pn_protector, int dcil);
 
   Event *_collector_event                       = nullptr;
   QUICClosedConCollector *_closed_con_collector = nullptr;
@@ -70,7 +70,8 @@ public:
   void init_accept(EThread *t) override;
 
   // QUICPacketHandler
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector) override;
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc,
+                           const QUICPacketNumberProtector &pn_protector) override;
 
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
@@ -92,7 +93,8 @@ public:
   int event_handler(int event, Event *data);
 
   // QUICPacketHandler
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector) override;
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc,
+                           const QUICPacketNumberProtector &pn_protector) override;
 
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;

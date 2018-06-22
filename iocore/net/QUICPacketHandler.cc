@@ -71,7 +71,7 @@ QUICPacketHandler::close_conenction(QUICNetVConnection *conn)
 
 void
 QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
-                                QUICPacketNumberProtector *pn_protector, int dcil)
+                                const QUICPacketNumberProtector *pn_protector, int dcil)
 {
   size_t udp_len;
   Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
@@ -302,7 +302,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
 // TODO: Should be called via eventProcessor?
 void
-QUICPacketHandlerIn::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector)
+QUICPacketHandlerIn::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketNumberProtector &pn_protector)
 {
   this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
 }
@@ -347,9 +347,8 @@ QUICPacketHandlerOut::event_handler(int event, Event *data)
 }
 
 void
-QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, QUICPacketNumberProtector &pn_protector)
+QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketNumberProtector &pn_protector)
 {
-  // TODO Pass QUICPacketNumberProtector
   this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
 }
 

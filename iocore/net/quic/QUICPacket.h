@@ -330,8 +330,8 @@ public:
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
   static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked);
 
-  static bool protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector, int dcil);
-  static bool unprotect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector);
+  static bool protect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector, int dcil);
+  static bool unprotect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector);
 
   LINK(QUICPacket, link);
 

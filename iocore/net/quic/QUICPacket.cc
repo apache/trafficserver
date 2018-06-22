@@ -755,7 +755,7 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 }
 
 bool
-QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector, int dcil)
+QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector, int dcil)
 {
   size_t pn_offset             = 0;
   uint8_t pn_len               = 4;
@@ -794,7 +794,7 @@ QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, QUICPacket
 }
 
 bool
-QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, QUICPacketNumberProtector *pn_protector)
+QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector)
 {
   size_t pn_offset             = 0;
   uint8_t pn_len               = 4;
