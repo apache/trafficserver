@@ -57,7 +57,7 @@ src/traffic_layout/traffic_layout
 src/traffic_logcat/traffic_logcat
 src/traffic_logstats/traffic_logstats
 src/traffic_manager/traffic_manager
-cmd/traffic_quic/traffic_quic
+src/traffic_quic/traffic_quic
 src/traffic_server/traffic_server
 src/traffic_top/traffic_top
 src/traffic_via/traffic_via
