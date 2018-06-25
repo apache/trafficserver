@@ -73,10 +73,11 @@ enum AccessEnum { ATOMIC, BIT, CONST, COPYSWAP, C_API, NUM_ACCESS_TYPES };
  *
  */
 template <typename Derived_t> struct Extendible {
-  // internal classes
-  class Schema;                                                        // memory layout
-  class FieldSchema;                                                   // field descriptor
+  //////////////////////////////////////////
+  // Internal classes
   template <AccessEnum FieldAccess_e, typename Field_t> class FieldId; // field handle (strongly type)
+  struct FieldSchema;                                                  // field descriptor
+  class Schema;                                                        // memory layout, field container
   // aliases
   using BitFieldId = FieldId<BIT, bool>;
 
@@ -182,6 +183,7 @@ template <typename Derived_t> struct Extendible {
   }; // end Schema struct
 
 private:
+  // Extendible convience methods
   char *this_as_char_ptr();
   char const *this_as_char_ptr() const;
 
@@ -219,6 +221,7 @@ private:
     return *offset_ptr;
   }
 };
+
 ////////////////////////////////////////////////////
 // Extendible::Schema Method Definitions
 //
