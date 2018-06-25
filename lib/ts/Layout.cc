@@ -120,21 +120,21 @@ Layout::Layout(std::string_view const _prefix)
     int len;
     RunrootMapType dir_map = check_runroot();
     if (dir_map.size() != 0) {
-      prefix        = dir_map["prefix"];
-      exec_prefix   = dir_map["exec_prefix"];
-      bindir        = dir_map["bindir"];
-      sbindir       = dir_map["sbindir"];
-      sysconfdir    = dir_map["sysconfdir"];
-      datadir       = dir_map["datadir"];
-      includedir    = dir_map["includedir"];
-      libdir        = dir_map["libdir"];
-      libexecdir    = dir_map["libexecdir"];
-      localstatedir = dir_map["localstatedir"];
-      runtimedir    = dir_map["runtimedir"];
-      logdir        = dir_map["logdir"];
-      mandir        = dir_map["mandir"];
-      infodir       = dir_map["infodir"];
-      cachedir      = dir_map["cachedir"];
+      prefix        = dir_map[LAYOUT_PREFIX];
+      exec_prefix   = dir_map[LAYOUT_EXEC_PREFIX];
+      bindir        = dir_map[LAYOUT_BINDIR];
+      sbindir       = dir_map[LAYOUT_SBINDIR];
+      sysconfdir    = dir_map[LAYOUT_SYSCONFDIR];
+      datadir       = dir_map[LAYOUT_DATADIR];
+      includedir    = dir_map[LAYOUT_INCLUDEDIR];
+      libdir        = dir_map[LAYOUT_LIBDIR];
+      libexecdir    = dir_map[LAYOUT_LIBEXECDIR];
+      localstatedir = dir_map[LAYOUT_LOCALSTATEDIR];
+      runtimedir    = dir_map[LAYOUT_RUNTIMEDIR];
+      logdir        = dir_map[LAYOUT_LOGDIR];
+      mandir        = dir_map[LAYOUT_MANDIR];
+      infodir       = dir_map[LAYOUT_INFODIR];
+      cachedir      = dir_map[LAYOUT_CACHEDIR];
       return;
     }
     if (getenv("TS_ROOT") != nullptr) {

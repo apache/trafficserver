@@ -27,6 +27,7 @@
 
 #include "ts/ink_error.h"
 #include "ts/I_Layout.h"
+#include "ts/runroot.h"
 #include "file_system.h"
 
 #include <iostream>
@@ -44,9 +45,9 @@ static std::string copy_dir; // the current dir we are copying. e.x. sysconfdir,
 static std::string remove_path;
 
 // list of all executables of traffic server
-std::set<std::string> executables = {"traffic_crashlog", "traffic_ctl",     "traffic_layout", "traffic_logcat",
-                                     "traffic_logstats", "traffic_manager", "traffic_server", "traffic_top",
-                                     "traffic_via",      "trafficserver",   "tspush",         "tsxs"};
+std::set<std::string> const executables = {"traffic_crashlog", "traffic_ctl",     "traffic_layout", "traffic_logcat",
+                                           "traffic_logstats", "traffic_manager", "traffic_server", "traffic_top",
+                                           "traffic_via",      "trafficserver",   "tspush",         "tsxs"};
 
 void
 append_slash(std::string &path)
@@ -200,17 +201,17 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
   // copying a directory
   case FTW_D:
     // ----- filter traffic server related files -----
-    if (copy_dir == "bindir" || copy_dir == "sbindir") {
+    if (copy_dir == LAYOUT_BINDIR || copy_dir == LAYOUT_SBINDIR) {
       // no directory from bindir and sbindir should be copied.
       break;
     }
-    if (copy_dir == "libdir") {
+    if (copy_dir == LAYOUT_LIBDIR) {
       // valid directory of libdir are perl5 and pkgconfig. If not one of those, end the copying.
       if (dst_path.find("/perl5") == std::string::npos && dst_path.find("/pkgconfig") == std::string::npos) {
         break;
       }
     }
-    if (copy_dir == "includedir") {
+    if (copy_dir == LAYOUT_INCLUDEDIR) {
       // valid directory of includedir are atscppapi and ts. If not one of those, end the copying.
       if (dst_path.find("/atscppapi") == std::string::npos && dst_path.find("/ts") == std::string::npos) {
         break;
@@ -225,13 +226,13 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
   // copying a file
   case FTW_F:
     // ----- filter traffic server related files -----
-    if (copy_dir == "bindir" || copy_dir == "sbindir") {
+    if (copy_dir == LAYOUT_BINDIR || copy_dir == LAYOUT_SBINDIR) {
       // check if executable is in the list of traffic server executables. If not, end the copying.
       if (executables.find(dst_path.substr(dst_path.find_last_of("/") + 1)) == executables.end()) {
         break;
       }
     }
-    if (copy_dir == "libdir") {
+    if (copy_dir == LAYOUT_LIBDIR) {
       // check if library file starts with libats, libts or contained in perl5/ and pkgconfig/.
       // If not, end the copying.
       if (dst_path.find("/perl5/") == std::string::npos && dst_path.find("/pkgconfig/") == std::string::npos &&
@@ -239,7 +240,7 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
         break;
       }
     }
-    if (copy_dir == "includedir") {
+    if (copy_dir == LAYOUT_INCLUDEDIR) {
       // check if include file is contained in atscppapi/ and ts/. If not, end the copying.
       if (dst_path.find("/atscppapi/") == std::string::npos && dst_path.find("/ts/") == std::string::npos) {
         break;
