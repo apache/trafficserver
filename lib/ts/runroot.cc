@@ -188,20 +188,20 @@ runroot_map_default()
 {
   std::unordered_map<std::string, std::string> map;
 
-  map["prefix"]        = Layout::get()->prefix;
-  map["exec_prefix"]   = Layout::get()->exec_prefix;
-  map["bindir"]        = Layout::get()->bindir;
-  map["sbindir"]       = Layout::get()->sbindir;
-  map["sysconfdir"]    = Layout::get()->sysconfdir;
-  map["datadir"]       = Layout::get()->datadir;
-  map["includedir"]    = Layout::get()->includedir;
-  map["libdir"]        = Layout::get()->libdir;
-  map["libexecdir"]    = Layout::get()->libexecdir;
-  map["localstatedir"] = Layout::get()->localstatedir;
-  map["runtimedir"]    = Layout::get()->runtimedir;
-  map["logdir"]        = Layout::get()->logdir;
+  map[LAYOUT_PREFIX]        = Layout::get()->prefix;
+  map[LAYOUT_EXEC_PREFIX]   = Layout::get()->exec_prefix;
+  map[LAYOUT_BINDIR]        = Layout::get()->bindir;
+  map[LAYOUT_SBINDIR]       = Layout::get()->sbindir;
+  map[LAYOUT_SYSCONFDIR]    = Layout::get()->sysconfdir;
+  map[LAYOUT_DATADIR]       = Layout::get()->datadir;
+  map[LAYOUT_INCLUDEDIR]    = Layout::get()->includedir;
+  map[LAYOUT_LIBDIR]        = Layout::get()->libdir;
+  map[LAYOUT_LIBEXECDIR]    = Layout::get()->libexecdir;
+  map[LAYOUT_LOCALSTATEDIR] = Layout::get()->localstatedir;
+  map[LAYOUT_RUNTIMEDIR]    = Layout::get()->runtimedir;
+  map[LAYOUT_LOGDIR]        = Layout::get()->logdir;
   // mandir is not needed for runroot
-  map["cachedir"] = Layout::get()->cachedir;
+  map[LAYOUT_CACHEDIR] = Layout::get()->cachedir;
 
   return map;
 }
