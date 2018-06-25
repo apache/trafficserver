@@ -1614,12 +1614,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Local process manager
   initialize_process_manager();
 
-  // Ensure only one copy of traffic server is running, unless it's a command
-  // that doesn't require a lock.
-  if (!(command_valid && commands[command_index].no_process_lock)) {
-    check_lockfile();
-  }
-
   // Set the core limit for the process
   init_core_size();
   init_system();
@@ -1672,6 +1666,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RestrictCapabilities();
   }
 #endif
+
+  // Ensure only one copy of traffic server is running, unless it's a command
+  // that doesn't require a lock.
+  if (!(command_valid && commands[command_index].no_process_lock)) {
+    check_lockfile();
+  }
 
   // Can't generate a log message yet, do that right after Diags is
   // setup.
