@@ -2065,7 +2065,6 @@ AC_CONFIG_FILES([
   iocore/hostdb/Makefile
   iocore/net/Makefile
   iocore/net/quic/Makefile
-  iocore/net/quic/test/Makefile
   iocore/utils/Makefile
   lib/Makefile
   lib/cppapi/Makefile
@@ -2095,7 +2094,6 @@ AC_CONFIG_FILES([
   proxy/http/remap/Makefile
   proxy/http2/Makefile
   proxy/hq/Makefile
-  proxy/hq/test/Makefile
   proxy/logging/Makefile
   proxy/shared/Makefile
   rc/Makefile

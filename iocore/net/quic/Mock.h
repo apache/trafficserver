@@ -20,6 +20,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+#pragma once
+
 #include "P_Net.h"
 
 #include "QUICApplication.h"
@@ -591,13 +594,6 @@ public:
     return true;
   }
 };
-
-void NetVConnection::cancel_OOB(){};
-Action *
-NetVConnection::send_OOB(Continuation *, char *, int)
-{
-  return nullptr;
-}
 
 class MockContinuation : public Continuation
 {

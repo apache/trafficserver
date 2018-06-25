@@ -41,3 +41,11 @@ SSLConfig::release(SSLConfigParams *)
 {
   return;
 }
+
+#include "P_SSLNextProtocolSet.h"
+
+bool
+SSLNextProtocolSet::advertiseProtocols(const unsigned char **out, unsigned *len) const
+{
+  return true;
+}

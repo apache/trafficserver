@@ -17,10 +17,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/tidy.mk
-
-SUBDIRS = test
-
 AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/proxy/api/ts \
@@ -50,6 +46,36 @@ libhq_a_SOURCES = \
   HQHeaderVIOAdaptor.cc \
   HQStreamDataVIOAdaptor.cc \
   QUICSimpleApp.cc
+
+#
+# Check Programs
+#
+check_PROGRAMS = \
+  test_libhq
+
+TESTS = $(check_PROGRAMS)
+
+test_libhq_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -I$(abs_top_srcdir)/tests/include
+
+test_libhq_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_libhq_SOURCES = \
+  ./test/main.cc \
+  ./test/test_HQFrame.cc \
+  ./test/test_HQFrameDispatcher.cc
+
+test_libhq_LDADD = \
+  libhq.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/lib/ts/libtsutil.la
+
+#
+# clang-tidy
+#
+include $(top_srcdir)/build/tidy.mk
 
 tidy-local: $(libhq_a_SOURCES) \
 	$(CXX_Clang_Tidy)

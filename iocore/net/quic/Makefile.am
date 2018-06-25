@@ -16,8 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = test
-
 AM_CPPFLAGS += \
   $(iocore_include_dirs) \
   -I$(abs_top_srcdir)/lib \
@@ -79,6 +77,57 @@ libquic_a_SOURCES = \
   QUICPathValidator.cc \
   QUICStatelessRetry.cc
 
+#
+# Check Programs
+#
+
+check_PROGRAMS = \
+  test_libquic
+
+test_libquic_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -I$(abs_top_srcdir)/tests/include
+
+test_libquic_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_libquic_LDADD = \
+  libquic.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ @OPENSSL_LIBS@ \
+  @HWLOC_LIBS@
+
+test_libquic_SOURCES = \
+  ./test/event_processor_main.cc \
+  ./test/stub.cc \
+  ./test/test_QUICAckFrameCreator.cc \
+  ./test/test_QUICFlowController.cc \
+  ./test/test_QUICFrame.cc \
+  ./test/test_QUICFrameDispatcher.cc \
+  ./test/test_QUICLossDetector.cc \
+  ./test/test_QUICHandshake.cc \
+  ./test/test_QUICHandshakeProtocol.cc \
+  ./test/test_QUICIncomingFrameBuffer.cc \
+  ./test/test_QUICInvariants.cc \
+  ./test/test_QUICKeyGenerator.cc \
+  ./test/test_QUICPacket.cc \
+  ./test/test_QUICPacketFactory.cc \
+  ./test/test_QUICStream.cc \
+  ./test/test_QUICStreamManager.cc \
+  ./test/test_QUICStreamState.cc \
+  ./test/test_QUICTransportParameters.cc \
+  ./test/test_QUICTypeUtil.cc \
+  ./test/test_QUICVersionNegotiator.cc
+
+TESTS = $(check_PROGRAMS)
+
+#
+# clang-tidy
+#
 include $(top_srcdir)/build/tidy.mk
 
 tidy-local: $(DIST_SOURCES)

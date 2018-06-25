@@ -40,7 +40,7 @@ static constexpr uint32_t MAX_HANDSHAKE_MSG_LEN = 2048;
 
 #include "./server_cert.h"
 
-void
+static void
 print_hex(const uint8_t *v, size_t len)
 {
   for (size_t i = 0; i < len; i++) {

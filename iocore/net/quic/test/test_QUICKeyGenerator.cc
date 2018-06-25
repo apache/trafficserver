@@ -35,22 +35,6 @@
 #include "Mock.h"
 #include "QUICKeyGenerator.h"
 
-void
-print_hex(const uint8_t *v, size_t len)
-{
-  for (size_t i = 0; i < len; i++) {
-    std::cout << std::setw(2) << std::setfill('0') << std::hex << static_cast<uint32_t>(v[i]) << " ";
-
-    if (i != 0 && (i + 1) % 32 == 0 && i != len - 1) {
-      std::cout << std::endl;
-    }
-  }
-
-  std::cout << std::endl;
-
-  return;
-}
-
 TEST_CASE("QUICKeyGenerator", "[quic]")
 {
   SECTION("CLIENT Cleartext")

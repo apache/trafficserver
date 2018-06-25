@@ -94,25 +94,8 @@ lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
-iocore/net/quic/test/test_QUICAckFrameCreator
-iocore/net/quic/test/test_QUICHandshakeProtocol
-iocore/net/quic/test/test_QUICFlowController
-iocore/net/quic/test/test_QUICFrame
-iocore/net/quic/test/test_QUICFrameDispatcher
-iocore/net/quic/test/test_QUICLossDetector
-iocore/net/quic/test/test_QUICHandshake
-iocore/net/quic/test/test_QUICIncomingFrameBuffer
-iocore/net/quic/test/test_QUICInvariants
-iocore/net/quic/test/test_QUICKeyGenerator
-iocore/net/quic/test/test_QUICPacket
-iocore/net/quic/test/test_QUICPacketFactory
-iocore/net/quic/test/test_QUICStream
-iocore/net/quic/test/test_QUICStreamManager
-iocore/net/quic/test/test_QUICStreamState
-iocore/net/quic/test/test_QUICTransportParameters
-iocore/net/quic/test/test_QUICTypeUtil
-iocore/net/quic/test/test_QUICVersionNegotiator
-iocore/net/quic/ts_quic_client
+iocore/net/quic/test_libquic
+iocore/net/quic/test_libquic_w_ep
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
@@ -127,8 +110,7 @@ proxy/http2/test_Huffmancode
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
-proxy/hq/test/test_HQFrame
-proxy/hq/test/test_HQFrameDispatcher
+proxy/hq/test_libhq
 proxy/logging/test_LogUtils
 
 plugins/header_rewrite/header_rewrite_test
