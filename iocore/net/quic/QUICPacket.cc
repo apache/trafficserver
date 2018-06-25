@@ -386,12 +386,12 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
     size_t pn_len       = 4;
     QUICPacket::encode_packet_number(pn, this->_packet_number, pn_len);
 
-    if (pn < 0x100) {
-      pn_len = 1;
-    } else if (pn < 0x4000) {
+    if (pn > 0x3FFF) {
+      pn_len = 4;
+    } else if (pn > 0x7F) {
       pn_len = 2;
     } else {
-      pn_len = 4;
+      pn_len = 1;
     }
 
     QUICIntUtil::write_QUICVariableInt(pn_len + this->_payload_length + aead_tag_len, buf + *len, &n);
@@ -710,9 +710,9 @@ QUICPacket::calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base)
   uint64_t d  = (num - base) * 2;
   uint8_t len = 0;
 
-  if (d > 0xFFFF) {
+  if (d > 0x3FFF) {
     len = 4;
-  } else if (d > 0xFF) {
+  } else if (d > 0x7F) {
     len = 2;
   } else {
     len = 1;
@@ -726,8 +726,22 @@ QUICPacket::encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 {
   ink_assert(len == 1 || len == 2 || len == 4);
 
-  uint64_t mask = (1ULL << (len * 8)) - 1;
-  dst           = src & mask;
+  uint64_t mask = 0;
+  switch (len) {
+  case 1:
+    mask = 0x7F;
+    break;
+  case 2:
+    mask = 0x3FFF;
+    break;
+  case 4:
+    mask = 0x3FFFFFFF;
+    break;
+  default:
+    ink_assert(!"len must be 1, 2, or 4");
+    return false;
+  }
+  dst = src & mask;
   return true;
 }
 

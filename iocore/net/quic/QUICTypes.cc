@@ -77,9 +77,9 @@ QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
 int
 QUICTypeUtil::read_QUICPacketNumberLen(const uint8_t *buf)
 {
-  if (buf[0] & 0xC0) {
+  if ((buf[0] & 0xC0) == 0xC0) {
     return 4;
-  } else if (buf[0] & 0x10) {
+  } else if ((buf[0] & 0x80) == 0x80) {
     return 2;
   } else {
     return 1;
