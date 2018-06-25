@@ -75,4 +75,26 @@ public:
     , int64_t const blocknum
     ) const;
 
+  /** is this coded to indicate last N bytes?
+   */
+  bool
+  isEndBytes
+    () const;
+
+  bool
+  operator=
+    ( Range const & other
+    ) const
+  {
+    return other.m_beg == m_beg && other.m_end == m_end;
+  }
+
+  bool
+  operator!=
+    ( Range const & other
+    ) const
+  {
+    return ! this->operator=(other);
+  }
+
 };

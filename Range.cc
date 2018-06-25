@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <cstring>
+#include <iostream>
 
 bool
 Range :: isValid
@@ -17,10 +18,8 @@ Range :: fromStringClosed
   ( char const * const rangestr
   )
 {
-  static char const DELIM_DASH = '-';
-//  static char const DELIM_MULTI = ',';
-  static char const * const BYTESTR = "bytes=";
-  static size_t const BYTESTRLEN = 6;
+static char const * const BYTESTR = "bytes=";
+static size_t const BYTESTRLEN = strlen(BYTESTR);
 
   // make sure this is in byte units
   if (0 != strncmp(BYTESTR, rangestr, BYTESTRLEN)) {
@@ -28,55 +27,55 @@ Range :: fromStringClosed
   }
 
   // advance past any white space
-  char const * pfront = rangestr + BYTESTRLEN;
-  while ('\0' != *pfront && isblank(*pfront)) {
-    ++pfront;
+  char const * pstr = rangestr + BYTESTRLEN;
+  while ('\0' != *pstr && isblank(*pstr)) {
+    ++pstr;
   }
 
-  // check for last N request
-  if ('-' == *pfront) {
-    ERROR_LOG("Last N byte request not handled");
-    return false;
+  // rip out any whitespace
+  char rangebuf[1024];
+  char * pbuf = rangebuf;
+  while ('\0' != *pstr) {
+    if (! isblank(*pstr)) {
+      *pbuf++ = *pstr;
+    }
+    ++pstr;
+  }
+  *pbuf = '\0';
+
+  char const * const fmtclosed = "%" PRId64 "-%" PRId64;
+  int64_t front = 0;
+  int64_t back = 0;
+
+  // normal range <front>-<back>
+  int const fieldsclosed = sscanf(rangebuf, fmtclosed, &front, &back);
+  if (2 == fieldsclosed) {
+    if (0 <= front && front <= back) {
+      m_beg = front;
+      m_end = back + 1;
+    } else { // ill formed
+      m_beg = 0;
+      m_end = std::numeric_limits<int64_t>::max();
+    }
+    return true;
   }
 
-  if ('\0' == *pfront) {
-    ERROR_LOG("First Range number not found in '%s'", rangestr);
-    return false;
+  // last 'n' bytes use range with negative begin and 0 end
+  int64_t endbytes = 0;
+  char const * const fmtend = "-%" PRId64;
+  int const fieldsend = sscanf(rangebuf, fmtend, &endbytes);
+  if (1 == fieldsend) {
+    m_beg = -endbytes;
+    m_end = 0;
+    return true;
   }
 
-  char const * const pdash = strchr(pfront, DELIM_DASH);
-  if (nullptr == pdash) {
-    ERROR_LOG("Range Delim '%c' not found", DELIM_DASH);
-    return false;
-  }
-
-  // interpret front value
-  char * pfe = nullptr;
-  int64_t const front = strtoll(pfront, &pfe, 10);
-
-  if (pfe == pfront) {
-    ERROR_LOG("Range front invalid: '%s'", rangestr);
-   return false;
-  }
-
-  char const * pback = pdash + 1;
-
-  // interpret back value
-  char * pfb = nullptr;
-  int64_t back = strtoll(pback, &pfb, 10);
-
-  if (pfb == pback) { // blank value, assume end of (unknown) file
-    back = std::numeric_limits<int64_t>::max() - 1;
-  }
-
-  if (front <= back)
-  {
+  front = 0;
+  char const * const fmtbeg = "%" PRId64 "-";
+  int const fieldsbeg = sscanf(rangebuf, fmtbeg, &front);
+  if (1 == fieldsbeg) {
     m_beg = front;
-    m_end = back + 1;
-  }
-  else
-  {
-    return false;
+    m_end = std::numeric_limits<int64_t>::max();
   }
 
   return true;
@@ -168,4 +167,11 @@ Range :: skipBytesForBlock
   {
     return m_beg - blockstart;
   }
+}
+
+bool
+Range :: isEndBytes
+  () const
+{
+  return m_beg < 0 && 0 == m_end;
 }

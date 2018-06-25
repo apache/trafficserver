@@ -27,7 +27,7 @@ struct Data
 
   bool m_bail; // non 206/200 response
 
-  Range m_req_range;
+  Range m_req_range; // converted to half open interval
   int64_t m_contentlen;
 
   int64_t m_blocknum; //!< block number to work on, -1 bad/stop
