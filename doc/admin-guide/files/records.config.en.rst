@@ -2539,16 +2539,16 @@ HostDB
    ``ipv4``   Resolve to an IPv4 address.
    ``ipv6``   Resolve to an IPv6 address.
    ``client`` Resolve to the same family as the client IP address.
-   ``none``   Stop resolving.
+   ``only``   Stop resolving.
    ========== ====================================================
 
    The order of the keywords is critical. When a host name needs to be resolved
    it is resolved in same order as the keywords. If a resolution fails, the
-   next option in the list is tried. The keyword ``none`` means to give up
+   next option in the list is tried. The keyword ``only`` means to give up
    resolution entirely. The keyword list has a maximum length of three
    keywords, more are never needed. By default there is an implicit
    ``ipv4;ipv6`` attached to the end of the string unless the keyword
-   ``none`` appears.
+   ``only`` appears.
 
 .. topic:: Example
 
@@ -2564,13 +2564,13 @@ HostDB
 
    Resolve only to IPv4. ::
 
-      ipv4;none
+      ipv4;only
 
 .. topic:: Example
 
    Resolve only to the same family as the client (do not permit cross family transactions). ::
 
-      client;none
+      client;only
 
    This value is a global default that can be overridden by :ts:cv:`proxy.config.http.server_ports`.
 
