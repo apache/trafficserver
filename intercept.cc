@@ -417,14 +417,24 @@ std::cerr << header.toString() << std::endl;
         // set the resource content length
         data->m_contentlen = crange.m_length;
 
-        // fix up request range end
-        int64_t const rend = std::min
-          (crange.m_length, data->m_req_range.m_end);
-        data->m_req_range.m_end = rend;
+        if (data->m_req_range.isEndBytes())
+        {
+          data->m_req_range.m_end += crange.m_length;
+          data->m_req_range.m_beg += crange.m_length;
+          data->m_req_range.m_beg = std::max
+            ((int64_t)0, data->m_req_range.m_beg);
+        }
+        else
+        {
+          // fix up request range end
+          int64_t const rend = std::min
+            (crange.m_length, data->m_req_range.m_end);
+          data->m_req_range.m_end = rend;
 
-        // convert block content range to client response content range
-        crange.m_beg = data->m_req_range.m_beg;
-        crange.m_end = rend;
+          // convert block content range to client response content range
+          crange.m_beg = data->m_req_range.m_beg;
+          crange.m_end = rend;
+        }
 
         data->m_bytestosend = crange.rangeSize();
 
