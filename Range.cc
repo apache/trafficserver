@@ -13,6 +13,13 @@ Range :: isValid
   return m_beg < m_end;
 }
 
+int64_t
+Range :: size
+  () const
+{
+  return m_end - m_beg;
+}
+
 bool
 Range :: fromStringClosed
   ( char const * const rangestr

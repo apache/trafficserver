@@ -176,11 +176,9 @@ static size_t const vallen = strlen(valstr);
       data->m_statustype = TS_HTTP_STATUS_OK;
     }
 
-    // set the initial range begin/end, we'll correct it later
-    data->m_req_range = rangebe;
-
     // set to the first block in range
     data->m_blocknum = rangebe.firstBlockFor(data->m_blocksize);
+    data->m_req_range = rangebe;
 
     // whack some ATS keys (avoid 404)
     header.removeKey
@@ -402,8 +400,9 @@ std::cerr << header.toString() << std::endl;
         shutdown(contp, data);
       }
 
-      ContentRange crange;
-      if (! crange.fromStringClosed(rangestr))
+      // partial content range from block header
+      ContentRange blockcr;
+      if (! blockcr.fromStringClosed(rangestr))
       {
         // abort transaction ????
         TSError("Unable to parse range: %s", rangestr);
@@ -414,31 +413,29 @@ std::cerr << header.toString() << std::endl;
       // Is this the very first response header?
       if (! data->m_server_first_header_parsed)
       {
-        // set the resource content length
-        data->m_contentlen = crange.m_length;
+        // set the resource content length from block response
+        data->m_contentlen = blockcr.m_length;
 
-        if (data->m_req_range.isEndBytes())
+        if (data->m_req_range.isEndBytes()) // special last N bytes
         {
-          data->m_req_range.m_end += crange.m_length;
-          data->m_req_range.m_beg += crange.m_length;
+          data->m_req_range.m_end += data->m_contentlen;
+          data->m_req_range.m_beg += data->m_contentlen;
           data->m_req_range.m_beg = std::max
             ((int64_t)0, data->m_req_range.m_beg);
         }
         else
         {
           // fix up request range end
-          int64_t const rend = std::min
-            (crange.m_length, data->m_req_range.m_end);
-          data->m_req_range.m_end = rend;
-
-          // convert block content range to client response content range
-          crange.m_beg = data->m_req_range.m_beg;
-          crange.m_end = rend;
+          data->m_req_range.m_end = std::min
+            (data->m_contentlen, data->m_req_range.m_end);
         }
 
-        data->m_bytestosend = crange.rangeSize();
+        data->m_bytestosend = data->m_req_range.size();
 
-//std::cerr << "bytes to send:" << data->m_bytestosend << std::endl;
+        ContentRange respcr;
+        respcr.m_beg = data->m_req_range.m_beg;
+        respcr.m_end = data->m_req_range.m_end;
+        respcr.m_length = data->m_contentlen;
 
         if (data->m_bytestosend <= 0) // assume 416 needs to be sent
         {
@@ -464,7 +461,7 @@ std::cerr << header.toString() << std::endl;
         if (TS_HTTP_STATUS_PARTIAL_CONTENT == data->m_statustype)
         {
           rangelen = sizeof(rangestr) - 1;
-          bool const crstat = crange.toStringClosed(rangestr, &rangelen);
+          bool const crstat = respcr.toStringClosed(rangestr, &rangelen);
           if (! crstat)
           {
             DEBUG_LOG("Bad/invalid response content range");
@@ -498,10 +495,12 @@ std::cerr << header.toString() << std::endl;
 
         data->m_server_first_header_parsed = true;
       }
+/*
       else
       {
-TSAssert(data->m_contentlen == crange.m_length);
+TSAssert(data->m_contentlen == respcr.m_length);
       }
+*/
 
       // how much to fast forward into the (first) data block
       data->m_skipbytes = data->m_req_range.skipBytesForBlock

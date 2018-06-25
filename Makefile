@@ -15,10 +15,10 @@ slice_la_HEADERS = \
 	slice.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
-	tsxs -v -o slice.so $(slice_la_SOURCES)
+	tsxs -v -i -o slice.so $(slice_la_SOURCES)
 
 crr_slice: crr_slice.cc
-	tsxs -v -o crr_slice.so $^
+	tsxs -v -i -o crr_slice.so $^
 
 install: slice
 	tsxs -v -i slice.so

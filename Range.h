@@ -26,8 +26,25 @@ public:
     , m_end(end)
   { }
 
+  Range &
+  operator=
+    ( Range const & other
+    )
+  {
+    if (&other != this)
+    {
+      m_beg = other.m_beg;
+      m_end = other.m_end;
+    }
+    return *this;
+  }
+
   bool
   isValid
+    () const;
+
+  int64_t
+  size
     () const;
 
   /** parse a from a closed request range into a half open range
