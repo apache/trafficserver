@@ -9,7 +9,16 @@ using a preconfigured block size.
 To enable the plugin, specify the plugin library via @plugin at the end
 of a remap line as follows:
 
-map http://ats-server/somepath/ http://originserver/somepath @plugin=slicer.so @pparam=2097152 @plugin=cache_range_requests.so
+```
+map http://ats-server/somepath/ http://originserver/somepath @plugin=slicer.so @pparam=blocksize:2097152 @plugin=cache_range_requests.so @pparam=custom_url:X-Slicer-Info
+```
+
+for global plugins:
+
+```
+slicer.so blocksize:2097152
+cache_range_requests.so custom_url:X-Slicer-Info
+```
 
 **Note**: blocksize is defined in bytes. 1048576 (1MB) is the default.
 
@@ -34,8 +43,6 @@ Example output of a range request:
 ```
 ```
 
-**Note:** This plugin is still currently under heavy development. Nothing here probably works yet.
-
 Debug messages related to object instance construction/deconstruction, see slicer.h.  
 
 At the current time only single range requests or the first part of a 
@@ -43,92 +50,8 @@ multi part range request of the forms:
 ```
 Range: bytes=<begin>-<end>
 Range: bytes=<begin>-
+Range: bytes=-<last N bytes>
 ```
 are supported as multi part range responses are non trivial to implement.
-This matches with the cache_range_requests.so plugin.
-
-Basic shared data:
-```
-
-struct HdrMgr
-{
-  TSMBuffer m_buffer { nullptr };
-  TSMLoc m_lochdr { nullptr };
-};
-
-struct Channel
-{
-  TSVIO m_vio { nullptr };
-  TSIOBuffer m_iobuf { nullptr };
-  TSIOBufferReader m_reader { nullptr };
-};
-
-struct Stage // upstream or downstream (server or client)
-{
-  TSVConn m_vc { nullptr };
-  Channel m_read;
-  Channel m_write;
-};
-
-struct Data
-{
-  int64_t m_blocksize;
-  sockaddr_storage m_client_ip;
-
-  TSHttpStatus m_statustype; // 200 or 206
-
-  bool m_bail; // non 206/200 response
-
-  std::pair<int64_t, int64_t> m_range_begend;
-  int64_t m_contentlen;
-
-  int64_t m_blocknum; //!< block number to work on, -1 bad/stop
-  int64_t m_skipbytes; //!< number of bytes to skip in this block
-
-  int64_t m_bytestosend; //!< header + content bytes to send
-  int64_t m_bytessent; //!< number of content bytes sent
-
-  bool m_server_block_header_parsed;
-  bool m_server_first_header_parsed;
-  bool m_client_header_sent;
-
-  Stage m_upstream;
-  Stage m_dnstream;
-
-  HdrMgr m_req_hdrmgr; // header memory manager
-  HdrMgr m_resp_hdrmgr; // header memory manager
-
-  TSHttpParser m_http_parser { nullptr }; //!< cached for reuse
-};
-
-```
-
-
-If interested in running this as a global plugin, this patch needs to
-be applied to cache_range_requests.cc
-
-```
-diff --git a/plugins/experimental/cache_range_requests/cache_range_requests.cc b/plugins/experimental/cache_range_requests/cache_range_requests.cc
-index c3ecab8..1a5cf65 100644
---- a/plugins/experimental/cache_range_requests/cache_range_requests.cc
-+++ b/plugins/experimental/cache_range_requests/cache_range_requests.cc
-@@ -85,6 +85,18 @@ range_header_check(TSHttpTxn txnp)
-   TSCont txn_contp;
- 
-   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs)) {
-+
-+static char const * const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
-+    loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs
-+      , SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO) );
-+    if (TS_NULL_MLOC == loc) {
-+      DEBUG_LOG("no slice header found, falling through");
-+      TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
-+      TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
-+      return;
-+    }
-+    TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
-+
-     loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
-     if (TS_NULL_MLOC != loc) {
-       const char *hdr_value = TSMimeHdrFieldValueStringGet(hdr_bufp, req_hdrs, loc, 0, &length);
-```
+This matches with the cache_range_requests.so plugin that has custom_url
+capability.

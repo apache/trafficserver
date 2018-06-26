@@ -38,28 +38,44 @@ namespace
 int64_t const BLOCKBYTESMIN = 1024 * 32;
 int64_t const BLOCKBYTESMAX = 1024 * 1024 * 32;
 int64_t const BLOCKBYTESDEF = 1024 * 1024;
+char const * const BLOCKBYTESSTR = "blockbytes";
+size_t const BLOCKBYTESLEN = strlen(BLOCKBYTESSTR);
 
 struct Config
 {
   int64_t m_blockbytes { BLOCKBYTESDEF };
 
-  void
+  bool
   fromString
     ( char const * const bytesstr
     )
   {
+    if (0 != strncasecmp(bytesstr, BLOCKBYTESSTR, BLOCKBYTESLEN))
+    {
+      return false;
+    }
+
+    char const * begp = bytesstr + BLOCKBYTESLEN;
+    if (':' != *begp)
+    {
+      return false;
+    }
+    ++begp;
+
     char * endp = nullptr;
-    int64_t const bytesread = strtoll(bytesstr, &endp, 10);
+    int64_t const bytesread = strtoll(begp, &endp, 10);
     if ( bytesstr != endp
       && BLOCKBYTESMIN <= bytesread
       && bytesread <= BLOCKBYTESMAX )
     {
+      DEBUG_LOG("Override blockbytes: %" PRId64, bytesread);
       m_blockbytes = bytesread;
-      DEBUG_LOG("Override blockbytes %" PRId64, m_blockbytes);
+      return true;
     }
     else
     {
       ERROR_LOG("Invalid incoming blockbytes %s", bytesstr);
+      return false;
     }
   }
 };
