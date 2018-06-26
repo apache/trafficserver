@@ -5,6 +5,7 @@
 #include "HttpHeader.h"
 #include "Stage.h"
 #include "Range.h"
+#include "slice.h"
 
 #include <netinet/in.h>
 
@@ -16,12 +17,14 @@ struct Data
   int64_t m_blocksize;
   sockaddr_storage m_client_ip;
 
+#if defined(RESET_URL_AND_HOST)
   // for pristine url coming in
   TSMBuffer m_urlbuffer { nullptr };
   TSMLoc m_urlloc { nullptr };
 
   char m_hostname[1024];
   int m_hostlen;
+#endif // RESET_URL_AND_HOST
 
   TSHttpStatus m_statustype; // 200 or 206
 
@@ -54,9 +57,11 @@ struct Data
     )
     : m_blocksize(blocksize)
     , m_client_ip()
+#if defined(RESET_URL_AND_HOST)
     , m_urlbuffer(nullptr)
     , m_urlloc(nullptr)
     , m_hostlen(0)
+#endif // RESET_URL_AND_HOST
     , m_statustype(TS_HTTP_STATUS_NONE)
     , m_bail(false)
     , m_req_range(-1, -1)
@@ -70,12 +75,15 @@ struct Data
     , m_client_header_sent(false)
     , m_http_parser(nullptr)
   {
+#if defined(RESET_URL_AND_HOST)
     m_hostname[0] = '\0';
+#endif // RESET_URL_AND_HOST
   }
 
   ~Data
     ()
   {
+#if defined(RESET_URL_AND_HOST)
     if (nullptr != m_urlloc && nullptr != m_urlbuffer)
     {
       TSHandleMLocRelease(m_urlbuffer, TS_NULL_MLOC, m_urlloc);
@@ -84,6 +92,7 @@ struct Data
     {
       TSMBufferDestroy(m_urlbuffer);
     }
+#endif // RESET_URL_AND_HOST
     if (nullptr != m_http_parser)
     {
       TSHttpParserDestroy(m_http_parser);

@@ -129,13 +129,14 @@ std::cerr << std::endl;
 std::cerr << __func__ << " received header from client" << std::endl;
 std::cerr << header.toString() << std::endl;
 */
-
+#if defined(RESET_URL_AND_HOST)
     // set the request url back to pristine in case of plugin stacking
     header.setUrl(data->m_urlbuffer, data->m_urlloc);
 
     header.setKeyVal
       ( TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST
       , data->m_hostname, data->m_hostlen );
+#endif // RESET_URL_AND_HOST
 
     static int64_t const max64_t = std::numeric_limits<int64_t>::max();
 
@@ -658,14 +659,11 @@ intercept_hook
   {
     shutdown(contp, data);
   }
-/*
   else if (TS_EVENT_HTTP_TXN_CLOSE == event)
   {
 DEBUG_LOG("TS_EVENT_HTTP_TXN_CLOSE");
-    delete data;
-    TSContDestroy(contp);
+    shutdown(contp, data);
   }
-*/
   else if (nullptr != data)
   {
     // data from client -- only the initial header

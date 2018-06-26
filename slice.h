@@ -33,6 +33,8 @@
 
 #define PLUGIN_NAME "slice"
 
+#define RESET_URL_AND_HOST 1
+
 #define __FILENAME__ \
 	(strrchr(__FILE__, '/') \
 		? strrchr(__FILE__, '/') + 1 : __FILE__)

@@ -74,6 +74,8 @@ static int64_t const blocksize(1024 * 1024);
         return false;
       }
 
+#if defined(RESET_URL_AND_HOST)
+
       // need to reset the HOST field for global plugin
       data->m_hostlen = sizeof(data->m_hostname) - 1;
       if (! header.valueForKey
@@ -101,6 +103,7 @@ static int64_t const blocksize(1024 * 1024);
         }
         TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
       }
+#endif // RESET_URL_AND_HOST
 
       // we'll intercept this GET and do it ourselfs
       TSCont const icontp
