@@ -1,36 +1,26 @@
---[[
-ssl_server_name.config.default
-This configuration file
-    - sets the SSL actions to be performed based on the servername provided during SSL handhshake phase (SNI extension)
-    - sets the SSL properties required to make SSL connection with the next hop or origin server.
-
-Lua based Configuration file
- Format : 
- Actions available:
-   disable_h2 - removes H2 from the protocol list advertised by ATS; parameter required = None
-   verify_client - sets the verification flag for verifying the client certificate; parameters = Integer [0-2]
-   verify_origin_server - sets the verification flag for verifying the server certificate; parameters = Integer [0-2]
-   client_cert - sets the client certificate to present to the server specified in dest_host; parameters = certificate file .
-                     The location of the certificate file is relative to proxy.config.ssl.server.cert.path directory.
-   tunnel_route  - sets the e2e tunnel route
- Example:
-
-
-params for client verification
-        'NONE', 'MODERATE', 'STRICT'
-
-server_config = {
-                {
-                    fqdn='one.com',
-                    disable_h2 = <true|false>,
-                    verify_origin_server = <'NONE'|'MODERATE'|'STRICT'>,
-                    client_cert = "somepem.pem",
-                    verify_client = <'NONE'|'MODERATE'|'STRICT'>
-                },
-                {
-                    fqdn='two.com',
-                    tunnel_route = 'two.com'
-                }
-};
-
---]]
+# ssl_server_name.config.default
+#
+# This configuration file
+#     - sets the SSL actions to be performed based on the servername provided during SSL handhshake phase (SNI extension)
+#     - sets the SSL properties required to make SSL connection with the next hop or origin server.
+#
+# YAML-based Configuration file
+#  Format :
+#  Actions available:
+#    disable_h2 - removes H2 from the protocol list advertised by ATS; parameter required = None, parameters = true or false
+#    verify_client - sets the verification flag for verifying the client certificate; parameters = one of 'NONE', 'MODERATE' or 'STRICT'
+#    verify_origin_server - sets the verification flag for verifying the server certificate; parameters = one of 'NONE', 'MODERATE' or 'STRICT'
+#    client_cert - sets the client certificate to present to the server specified in dest_host; parameters = certificate file .
+#                      The location of the certificate file is relative to proxy.config.ssl.server.cert.path directory.
+#    tunnel_route  - sets the e2e tunnel route
+#
+#  Example:
+#
+# - fqdn: one.com
+#   disable_h2: true
+#   verify_origin_server: STRICT
+#   client_cert: somepem.pem
+#   verify_client: MODERATE
+# - fqdn: two.com
+#   tunnel_route: two.com
+#
