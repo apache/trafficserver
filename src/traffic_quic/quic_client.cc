@@ -83,13 +83,7 @@ QUICClient::state_http_server_open(int event, void *data)
     Debug("quic_client", "start proxy server ssn/txn");
 
     QUICNetVConnection *conn = static_cast<QUICNetVConnection *>(data);
-
-    const char *filename = nullptr;
-    if (this->_config->output[0] != 0x0) {
-      filename = this->_config->output;
-    }
-
-    QUICClientApp *app = new QUICClientApp(conn, filename);
+    QUICClientApp *app       = new QUICClientApp(conn, this->_config);
     app->start(this->_config->path);
 
     break;
@@ -115,7 +109,7 @@ QUICClient::state_http_server_open(int event, void *data)
 #define QUICClientAppDebug(fmt, ...) Debug("quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 #define QUICClientAppVDebug(fmt, ...) Debug("v_quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
-QUICClientApp::QUICClientApp(QUICNetVConnection *qvc, const char *filename) : QUICApplication(qvc), _filename(filename)
+QUICClientApp::QUICClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config) : QUICApplication(qvc), _config(config)
 {
   this->_qc->stream_manager()->set_default_application(this);
 
@@ -125,6 +119,10 @@ QUICClientApp::QUICClientApp(QUICNetVConnection *qvc, const char *filename) : QU
 void
 QUICClientApp::start(const char *path)
 {
+  if (this->_config->output[0] != 0x0) {
+    this->_filename = this->_config->output;
+  }
+
   if (this->_filename) {
     // Destroy contents if file already exists
     std::ofstream f_stream(this->_filename, std::ios::binary | std::ios::trunc);
@@ -191,7 +189,7 @@ QUICClientApp::main_event_handler(int event, Event *data)
       std::cout.rdbuf(default_stream);
     }
 
-    if (stream_io->is_read_done()) {
+    if (stream_io->is_read_done() && this->_config->close) {
       // Connection Close Exercise
       this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
     }

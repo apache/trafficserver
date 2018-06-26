@@ -30,12 +30,14 @@
 
 #include "QUICApplication.h"
 
+// TODO: add quic version option
 struct QUICClientConfig {
   char addr[1024]       = "127.0.0.1";
   char output[1024]     = {0};
   char port[16]         = "4433";
   char path[1018]       = "/";
   char debug_tags[1024] = "quic";
+  int close             = false;
 };
 
 class QUICClient : public Continuation
@@ -55,11 +57,12 @@ private:
 class QUICClientApp : public QUICApplication
 {
 public:
-  QUICClientApp(QUICNetVConnection *qvc, const char *filename);
+  QUICClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config);
 
   void start(const char *path);
   int main_event_handler(int event, Event *data);
 
 private:
-  const char *_filename = nullptr;
+  const QUICClientConfig *_config = nullptr;
+  const char *_filename           = nullptr;
 };

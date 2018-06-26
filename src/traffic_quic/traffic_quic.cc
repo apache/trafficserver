@@ -57,6 +57,7 @@ main(int argc, const char **argv)
     {"port", 'p', "Port", "S15", config.port, nullptr, nullptr},
     {"path", 'P', "Path", "S1017", config.path, nullptr, nullptr},
     {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", config.debug_tags, nullptr, nullptr},
+    {"close", 'c', "Enable connection close excercise", "F", &config.close, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION(),
