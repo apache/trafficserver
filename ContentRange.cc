@@ -11,16 +11,16 @@ ContentRange :: fromStringClosed
   )
 {
 //TSAssert(nullptr != valstr);
-  int const fields = sscanf(valstr, format, &m_begin, &m_end, &m_length);
+  int const fields = sscanf(valstr, format, &m_beg, &m_end, &m_length);
 
-  if (3 == fields && m_begin <= m_end)
+  if (3 == fields && m_beg <= m_end)
   {
     m_end += 1;
     return true;
   }
   else
   {
-    m_begin = m_end = m_length = -1;
+    m_beg = m_end = m_length = -1;
   }
 
   return false;
@@ -45,7 +45,7 @@ ContentRange :: toStringClosed
   *rangelen = snprintf
     ( rangestr, lenin
     , format
-    , m_begin, (m_end - 1), m_length );
+    , m_beg, (m_end - 1), m_length );
 
   return (0 < *rangelen && *rangelen < lenin);
 }

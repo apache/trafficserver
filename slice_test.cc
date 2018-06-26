@@ -21,7 +21,7 @@
  */
 
 #include "ContentRange.h"
-#include "range.h"
+#include "Range.h"
 
 #include <cassert>
 #include <iostream>
@@ -45,7 +45,7 @@ testContentRange()
   if (! exprange.isValid())
   {
     oss << "Fail: exprange valid" << std::endl;
-    oss << exprange.m_begin
+    oss << exprange.m_beg
       << ' ' << exprange.m_end
       << ' ' << exprange.m_length
       << std::endl;
@@ -85,7 +85,7 @@ testContentRange()
     oss << "fail: gotstat from string" << std::endl;
   }
   else
-  if ( gotrange.m_begin != exprange.m_begin
+  if ( gotrange.m_beg != exprange.m_beg
     || gotrange.m_end != exprange.m_end
     || gotrange.m_length != exprange.m_length )
   {
@@ -118,49 +118,72 @@ testParseRange()
 		, "bytes=3 - 11,13-17 , 23-29" // unsorted triplet
 		, "bytes=3-11 ,13-17, 23-29" // unsorted triplet
 		, "bytes=0-0,-1" // first and last bytes
+		, "bytes=-20" // last 20 bytes of file
 
 		, "bytes=17-13" // degenerate
 		, "bytes 0-1023/146515" // this should be rejected (Content-range)
 		}; // invalid
 
-	std::vector<std::pair<int64_t, int64_t> > const exps =
-		{ { 0, 1023 + 1 }
-		, { 1, 1024 + 1 }
-		, { 11, 11 + 1 }
-		, { 1, std::numeric_limits<int64_t>::max() }
-		, { -1, -1 }
-		, { 3, 17 + 1 }
-		, { 3, 17 + 1 }
-		, { 3, 17 + 1 }
-		, { 3, 11 + 1 }
-		, { 3, 11 + 1 }
-		, { 0, 1 }
-		, { -1, -1 }
-		, { -1, -1 }
+	std::vector<Range> const exps =
+		{ Range{ 0, 1023 + 1 }
+		, Range{ 1, 1024 + 1 }
+		, Range{ 11, 11 + 1 }
+		, Range{ 1, std::numeric_limits<int64_t>::max() }
+		, Range{ -1, -1 }
+		, Range{ 3, 17 + 1 }
+		, Range{ 3, 17 + 1 }
+		, Range{ 3, 17 + 1 }
+		, Range{ 3, 11 + 1 }
+		, Range{ 3, 11 + 1 }
+		, Range{ 0, 1 }
+		, Range{ -20, 0 }
+		, Range{ 0, std::numeric_limits<int64_t>::max() }
+		, Range{ -1, -1 }
 		};
+
+  std::vector<bool> const expsres = 
+    { true
+    , true
+    , true
+    , true
+    , false
+    , true
+    , true
+    , true
+    , true
+    , true
+    , true
+    , true
+    , true
+    , false };
 
 assert(exps.size() == teststrings.size());
 
-	std::vector<std::pair<int64_t, int64_t> > gots;
+	std::vector<Range> gots;
 	gots.reserve(exps.size());
+	std::vector<bool> gotsres;
 
 	for (std::string const & str : teststrings)
 	{
-		gots.push_back(range::parseHalfOpenFrom(str.c_str()));
+    Range rng;
+    gotsres.push_back(rng.fromStringClosed(str.c_str()));
+		gots.push_back(rng);
 	}
 
 assert(gots.size() == exps.size());
 
 	for (size_t index(0) ; index < gots.size() ; ++index)
 	{
-		if (exps[index] != gots[index])
+		if (exps[index] != gots[index] || expsres[index] != gotsres[index])
 		{
 			oss << "Eror parsing index: " << index << std::endl;
 			oss << "test: '" << teststrings[index] << "'" << std::endl;
-			oss << "exp: " << exps[index].first
-				<< ' ' << exps[index].second << std::endl;
-			oss << "got: " << gots[index].first
-				<< ' ' << gots[index].second << std::endl;
+			oss << "exp: " << exps[index].m_beg
+				<< ' ' << exps[index].m_end << std::endl;
+      oss << "expsres: " << (int)expsres[index] << std::endl;
+			oss << "got: " << gots[index].m_beg
+				<< ' ' << gots[index].m_end << std::endl;
+      oss << "gotsres: " << (int)gotsres[index] << std::endl;
 		}
 	}
 

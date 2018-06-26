@@ -2,8 +2,6 @@
 
 #include "ts/ts.h"
 
-#include <utility>
-
 struct Channel
 {
   TSVIO m_vio { nullptr };

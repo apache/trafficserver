@@ -3,15 +3,16 @@
 #include "ts/ts.h"
 
 /**
-  represents value parsed from a Content-Range reponse header field.
-  */
+  represents value parsed from a blocked Content-Range reponse header field.
+  Range is converted from closed range into a half open range for.
+ */
 struct ContentRange
 {
-  int64_t m_begin;
+  int64_t m_beg;
   int64_t m_end; // half open
   int64_t m_length; // full content length
 
-  ContentRange () : m_begin(-1), m_end(-1), m_length(-1) { }
+  ContentRange () : m_beg(-1), m_end(-1), m_length(-1) { }
 
   explicit
   ContentRange
@@ -19,7 +20,7 @@ struct ContentRange
     , int64_t const end
     , int64_t const len
     )
-    : m_begin(begin)
+    : m_beg(begin)
     , m_end(end)
     , m_length(len)
   { }
@@ -28,16 +29,18 @@ struct ContentRange
   isValid
     () const
   {
-    return 0 <= m_begin && m_begin < m_end && m_end <= m_length ;
+    return 0 <= m_beg && m_beg < m_end && m_end <= m_length ;
   }
 
-  // null terminated input string, closed range
+  /** parsed from a Content-Range field
+   */
   bool
   fromStringClosed
     ( char const * const valstr
     );
 
-  // returns null terminated with given length
+  /** usable for Content-Range field
+   */
   bool
   toStringClosed
     ( char * const rangestr
@@ -48,6 +51,6 @@ struct ContentRange
   rangeSize
     () const
   {
-    return m_end - m_begin;
+    return m_end - m_beg;
   }
 };

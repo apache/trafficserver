@@ -81,8 +81,8 @@ DEBUG_LOG("slice read_request");
 
   if (TS_HTTP_METHOD_GET == header.method())
   {
-    if (! header.hasKey
-      (SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)))
+static int const SLICER_MIME_LEN_INFO = strlen(SLICER_MIME_FIELD_INFO);
+    if (! header.hasKey(SLICER_MIME_FIELD_INFO, SLICER_MIME_LEN_INFO))
     {
 //std::cerr << "incoming slicer request" << std::endl;
       // turn off any and all transaction caching (shouldn't matter)
@@ -111,6 +111,9 @@ static int64_t const blocksize(1024 * 1024);
         return false;
       }
 
+#if defined(RESET_URL_AND_HOST)
+
+      // need to reset the HOST field for global plugin
       data->m_hostlen = sizeof(data->m_hostname) - 1;
       if (! header.valueForKey
           ( TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST
@@ -124,7 +127,6 @@ static int64_t const blocksize(1024 * 1024);
       data->m_blocksize = blockbytes;
 
       // need the pristine url, especially for global plugins
-/*
       TSMBuffer urlbuf;
       TSMLoc urlloc;
       TSReturnCode rcode
@@ -140,7 +142,7 @@ static int64_t const blocksize(1024 * 1024);
         }
         TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
       }
-*/
+#endif // RESET_URL_AND_HOST
 
       // we'll intercept this GET and do it ourselfs
       TSCont const icontp

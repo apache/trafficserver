@@ -3,7 +3,7 @@
 #include "ContentRange.h"
 #include "Data.h"
 #include "HttpHeader.h"
-#include "range.h"
+#include "Range.h"
 #include "slice.h"
 
 #include <cassert>
@@ -39,15 +39,14 @@ request_block
   , Data * const data
   )
 {
-  std::pair<int64_t, int64_t> const blockbe
-    = range::forBlock(data->m_blocksize, data->m_blocknum);
+  int64_t const blockbeg = (data->m_blocksize * data->m_blocknum);
+  Range blockbe(blockbeg, blockbeg + data->m_blocksize);
 
 //std::cerr << __func__ << " trying to build header" << std::endl;
 
   char rangestr[1024];
   int rangelen = 1023;
-  bool const rpstat = range::closedStringFor
-    (blockbe, rangestr, &rangelen);
+  bool const rpstat = blockbe.toStringClosed(rangestr, &rangelen);
 TSAssert(rpstat);
 
 DEBUG_LOG("request_block: %s", rangestr);
@@ -130,17 +129,19 @@ std::cerr << std::endl;
 std::cerr << __func__ << " received header from client" << std::endl;
 std::cerr << header.toString() << std::endl;
 */
-
+#if defined(RESET_URL_AND_HOST)
     // set the request url back to pristine in case of plugin stacking
-//    header.setUrl(data->m_urlbuffer, data->m_urlloc);
+    header.setUrl(data->m_urlbuffer, data->m_urlloc);
 
     header.setKeyVal
       ( TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST
       , data->m_hostname, data->m_hostlen );
+#endif // RESET_URL_AND_HOST
+
+    static int64_t const max64_t = std::numeric_limits<int64_t>::max();
 
     // default: whole file (unknown, wait for first server response)
-    std::pair<int64_t, int64_t> rangebe
-      (0, std::numeric_limits<int64_t>::max() - data->m_blocksize);
+    Range rangebe(0, max64_t - data->m_blocksize);
 
     char rangestr[1024];
     int rangelen = 1024;
@@ -153,16 +154,16 @@ std::cerr << header.toString() << std::endl;
       header.setKeyVal
         ( SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO)
         , rangestr, rangelen );
-      rangebe = range::parseHalfOpenFrom(rangestr);
+      rangebe.fromStringClosed(rangestr);
 
-      if (range::isValid(rangebe))
+      if (rangebe.isValid())
       {
         data->m_statustype = TS_HTTP_STATUS_PARTIAL_CONTENT;
       }
       else // reset the range
       {
-        rangebe = std::make_pair
-          (0, std::numeric_limits<int64_t>::max() - data->m_blocksize);
+        rangebe.m_beg = 0;
+        rangebe.m_end = max64_t - data->m_blocksize;
         data->m_statustype = TS_HTTP_STATUS_OK;
       }
     }
@@ -176,12 +177,9 @@ static size_t const vallen = strlen(valstr);
       data->m_statustype = TS_HTTP_STATUS_OK;
     }
 
-    // set the initial range begin/end, we'll correct it later
-    data->m_range_begend = rangebe;
-
     // set to the first block in range
-    data->m_blocknum = range::firstBlock
-      (data->m_blocksize, data->m_range_begend);
+    data->m_blocknum = rangebe.firstBlockFor(data->m_blocksize);
+    data->m_req_range = rangebe;
 
     // whack some ATS keys (avoid 404)
     header.removeKey
@@ -403,8 +401,9 @@ std::cerr << header.toString() << std::endl;
         shutdown(contp, data);
       }
 
-      ContentRange crange;
-      if (! crange.fromStringClosed(rangestr))
+      // partial content range from block header
+      ContentRange blockcr;
+      if (! blockcr.fromStringClosed(rangestr))
       {
         // abort transaction ????
         TSError("Unable to parse range: %s", rangestr);
@@ -415,22 +414,29 @@ std::cerr << header.toString() << std::endl;
       // Is this the very first response header?
       if (! data->m_server_first_header_parsed)
       {
-        // set the resource content length
-        data->m_contentlen = crange.m_length;
-TSAssert(data->m_range_begend.first < data->m_range_begend.second);
+        // set the resource content length from block response
+        data->m_contentlen = blockcr.m_length;
 
-        // fix up request range end
-        int64_t const rend = std::min
-          (crange.m_length, data->m_range_begend.second);
-        data->m_range_begend.second = rend;
+        if (data->m_req_range.isEndBytes()) // special last N bytes
+        {
+          data->m_req_range.m_end += data->m_contentlen;
+          data->m_req_range.m_beg += data->m_contentlen;
+          data->m_req_range.m_beg = std::max
+            ((int64_t)0, data->m_req_range.m_beg);
+        }
+        else
+        {
+          // fix up request range end
+          data->m_req_range.m_end = std::min
+            (data->m_contentlen, data->m_req_range.m_end);
+        }
 
-        // convert block content range to client response content range
-        crange.m_begin = data->m_range_begend.first;
-        crange.m_end = rend;
+        data->m_bytestosend = data->m_req_range.size();
 
-        data->m_bytestosend = crange.rangeSize();
-
-//std::cerr << "bytes to send:" << data->m_bytestosend << std::endl;
+        ContentRange respcr;
+        respcr.m_beg = data->m_req_range.m_beg;
+        respcr.m_end = data->m_req_range.m_end;
+        respcr.m_length = data->m_contentlen;
 
         if (data->m_bytestosend <= 0) // assume 416 needs to be sent
         {
@@ -456,7 +462,7 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
         if (TS_HTTP_STATUS_PARTIAL_CONTENT == data->m_statustype)
         {
           rangelen = sizeof(rangestr) - 1;
-          bool const crstat = crange.toStringClosed(rangestr, &rangelen);
+          bool const crstat = respcr.toStringClosed(rangestr, &rangelen);
           if (! crstat)
           {
             DEBUG_LOG("Bad/invalid response content range");
@@ -490,14 +496,16 @@ TSAssert(data->m_range_begend.first < data->m_range_begend.second);
 
         data->m_server_first_header_parsed = true;
       }
+/*
       else
       {
-TSAssert(data->m_contentlen == crange.m_length);
+TSAssert(data->m_contentlen == respcr.m_length);
       }
+*/
 
       // how much to fast forward into the (first) data block
-      data->m_skipbytes = range::skipBytesForBlock
-          (data->m_blocksize, data->m_blocknum, data->m_range_begend);
+      data->m_skipbytes = data->m_req_range.skipBytesForBlock
+          (data->m_blocksize, data->m_blocknum);
 
       data->m_server_block_header_parsed = true;
     }
@@ -544,7 +552,7 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
     // Btw this isn't implemented yet, to be handled
     bool adjusted = false;
     int64_t const firstblock
-      (range::firstBlock(data->m_blocksize, data->m_range_begend));
+      (data->m_req_range.firstBlockFor(data->m_blocksize));
     if (data->m_blocknum < firstblock)
     {
 //std::cerr << "setting first block" << std::endl;
@@ -552,8 +560,8 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
       adjusted = true;
     }
 
-    if (adjusted || range::blockIsInside
-        (data->m_blocksize, data->m_blocknum, data->m_range_begend))
+    if ( adjusted || data->m_req_range.blockIsInside
+          (data->m_blocksize, data->m_blocknum) )
     {
 //std::cerr << __func__ << " calling request_block" << std::endl;
       request_block(contp, data);
@@ -632,7 +640,7 @@ intercept_hook
   , void * edata
   )
 {
-DEBUG_LOG("intercept_hook: %d", event);
+//DEBUG_LOG("intercept_hook: %d", event);
 
   Data * const data = static_cast<Data*>(TSContDataGet(contp));
 
@@ -651,14 +659,11 @@ DEBUG_LOG("intercept_hook: %d", event);
   {
     shutdown(contp, data);
   }
-/*
   else if (TS_EVENT_HTTP_TXN_CLOSE == event)
   {
 DEBUG_LOG("TS_EVENT_HTTP_TXN_CLOSE");
-    delete data;
-    TSContDestroy(contp);
+    shutdown(contp, data);
   }
-*/
   else if (nullptr != data)
   {
     // data from client -- only the initial header
