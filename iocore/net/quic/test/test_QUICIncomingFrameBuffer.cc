@@ -74,13 +74,17 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
 
   SECTION("Pure FIN")
   {
-    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
-    std::shared_ptr<QUICStreamFrame> stream1_frame_1_r = QUICFrameFactory::create_stream_frame(data, 0, 1, 1024, true);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r      = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_empty    = QUICFrameFactory::create_stream_frame(data, 0, 1, 1024);
+    std::shared_ptr<QUICStreamFrame> stream1_frame_pure_fin = QUICFrameFactory::create_stream_frame(data, 0, 1, 1024, true);
 
     err = buffer.insert(stream1_frame_0_r);
     CHECK(err->cls == QUICErrorClass::NONE);
 
-    err = buffer.insert(stream1_frame_1_r);
+    err = buffer.insert(stream1_frame_empty);
+    CHECK(err->cls == QUICErrorClass::NONE);
+
+    err = buffer.insert(stream1_frame_pure_fin);
     CHECK(err->cls == QUICErrorClass::NONE);
   }
 
@@ -95,14 +99,16 @@ TEST_CASE("QUICIncomingFrameBuffer_pop", "[quic]")
 
   uint8_t data[1024] = {0};
 
-  std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_1_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 1024);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_2_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 2048);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_3_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 3072);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_4_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 4096, true);
+  std::shared_ptr<QUICStreamFrame> stream1_frame_0_r   = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
+  std::shared_ptr<QUICStreamFrame> stream1_frame_1_r   = QUICFrameFactory::create_stream_frame(data, 1024, 1, 1024);
+  std::shared_ptr<QUICStreamFrame> stream1_frame_empty = QUICFrameFactory::create_stream_frame(data, 0, 1, 2048);
+  std::shared_ptr<QUICStreamFrame> stream1_frame_2_r   = QUICFrameFactory::create_stream_frame(data, 1024, 1, 2048);
+  std::shared_ptr<QUICStreamFrame> stream1_frame_3_r   = QUICFrameFactory::create_stream_frame(data, 1024, 1, 3072);
+  std::shared_ptr<QUICStreamFrame> stream1_frame_4_r   = QUICFrameFactory::create_stream_frame(data, 1024, 1, 4096, true);
 
   buffer.insert(stream1_frame_0_r);
   buffer.insert(stream1_frame_1_r);
+  buffer.insert(stream1_frame_empty);
   buffer.insert(stream1_frame_2_r);
   buffer.insert(stream1_frame_3_r);
   buffer.insert(stream1_frame_4_r);

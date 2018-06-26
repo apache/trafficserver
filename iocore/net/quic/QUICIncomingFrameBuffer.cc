@@ -64,6 +64,11 @@ QUICIncomingFrameBuffer::insert(const std::shared_ptr<const QUICStreamFrame> fra
     return err;
   }
 
+  // Ignore empty stream frame except pure fin stream frame
+  if (len == 0 && !frame->has_fin_flag()) {
+    return QUICErrorUPtr(new QUICNoError());
+  }
+
   if (this->_recv_offset > offset) {
     // dup frame;
     return QUICErrorUPtr(new QUICNoError());
