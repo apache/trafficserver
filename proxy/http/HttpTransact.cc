@@ -5345,7 +5345,7 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
     bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
     DebugTxn("http_trans", "client_ip_set = %d", client_ip_set);
 
-    if (client_ip_set == true) {
+    if (client_ip_set == false) {
       request->value_set(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, ip_string, ip_string_size);
       DebugTxn("http_trans", "inserted request header 'Client-ip: %s'", ip_string);
     }
