@@ -94,8 +94,24 @@ lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
-iocore/net/quic/test_libquic
-iocore/net/quic/test_libquic_w_ep
+iocore/net/quic/test_QUICAckFrameCreator
+iocore/net/quic/test_QUICFlowController
+iocore/net/quic/test_QUICFrame
+iocore/net/quic/test_QUICFrameDispatcher
+iocore/net/quic/test_QUICHandshake
+iocore/net/quic/test_QUICHandshakeProtocol
+iocore/net/quic/test_QUICIncomingFrameBuffer
+iocore/net/quic/test_QUICInvariants
+iocore/net/quic/test_QUICKeyGenerator
+iocore/net/quic/test_QUICLossDetector
+iocore/net/quic/test_QUICPacket
+iocore/net/quic/test_QUICPacketFactory
+iocore/net/quic/test_QUICStream
+iocore/net/quic/test_QUICStreamManager
+iocore/net/quic/test_QUICStreamState
+iocore/net/quic/test_QUICTransportParameters
+iocore/net/quic/test_QUICTypeUtil
+iocore/net/quic/test_QUICVersionNegotiator
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
