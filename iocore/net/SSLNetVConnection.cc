@@ -335,12 +335,9 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   return event;
 }
 
-/**
- * Read from socket directly for handshake data.  Store the data in
- * a MIOBuffer.  Place the data in the read BIO so the openssl library
- * has access to it.
- * If for some ready we much abort out of the handshake, we can replay
- * the stored data (e.g. back out to blind tunneling)
+/** Read from socket directly for handshake data.  Store the data in an MIOBuffer.  Place the data in
+ * the read BIO so the openssl library has access to it. If for some reason we must abort out of the
+ * handshake, the stored data can be replayed (e.g. back out to blind tunneling)
  */
 int64_t
 SSLNetVConnection::read_raw_data()
