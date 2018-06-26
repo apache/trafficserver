@@ -39,8 +39,6 @@ int64_t const BLOCKBYTESMIN = 1024 * 32;
 int64_t const BLOCKBYTESMAX = 1024 * 1024 * 32;
 int64_t const BLOCKBYTESDEF = 1024 * 1024;
 
-int64_t globalBlockBytes = BLOCKBYTESDEF;
-
 struct Config
 {
   int64_t m_blockbytes { BLOCKBYTESDEF };
@@ -71,7 +69,7 @@ Config globalConfig;
 bool
 read_request
   ( TSHttpTxn txnp
-  , int64_t const blockbytes
+  , Config const * const config
   )
 {
 DEBUG_LOG("slice read_request");
@@ -124,7 +122,7 @@ static int64_t const blocksize(1024 * 1024);
         return false;
       }
 
-      data->m_blocksize = blockbytes;
+      data->m_blocksize = config->m_blockbytes;
 
       // need the pristine url, especially for global plugins
       TSMBuffer urlbuf;
@@ -169,7 +167,7 @@ global_read_request_hook
   )
 {
   TSHttpTxn const txnp = static_cast<TSHttpTxn>(edata);
-  read_request(txnp, globalBlockBytes);
+  read_request(txnp, &globalConfig);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
@@ -188,7 +186,7 @@ TSRemapDoRemap
 {
   Config * const config = static_cast<Config *>(ih);
 
-  if (read_request(txnp, config->m_blockbytes))
+  if (read_request(txnp, config))
   {
     return TSREMAP_DID_REMAP_STOP;
   }
@@ -220,9 +218,9 @@ TSRemapNewInstance
   )
 {
   Config * const config = new Config;
-  if (1 < argc)
+  if (2 < argc)
   {
-    config->fromString(argv[1]);
+    config->fromString(argv[2]);
   }
   *ih = static_cast<void*>(config);
 
