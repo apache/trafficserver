@@ -131,7 +131,7 @@ std::cerr << header.toString() << std::endl;
 */
 
     // set the request url back to pristine in case of plugin stacking
-//    header.setUrl(data->m_urlbuffer, data->m_urlloc);
+    header.setUrl(data->m_urlbuffer, data->m_urlloc);
 
     header.setKeyVal
       ( TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST
@@ -639,7 +639,7 @@ intercept_hook
   , void * edata
   )
 {
-DEBUG_LOG("intercept_hook: %d", event);
+//DEBUG_LOG("intercept_hook: %d", event);
 
   Data * const data = static_cast<Data*>(TSContDataGet(contp));
 

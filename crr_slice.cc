@@ -31,7 +31,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-#define PLUGIN_NAME "cache_range_requests"
+#define PLUGIN_NAME "crr_slice"
 #define DEBUG_LOG(fmt, ...) TSDebug(PLUGIN_NAME, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
@@ -91,6 +91,7 @@ static char const * const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
 static int const SLICER_MIME_LEN_INFO = strlen(SLICER_MIME_FIELD_INFO);
     loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs,
       SLICER_MIME_FIELD_INFO, SLICER_MIME_LEN_INFO);
+      
     if (TS_NULL_MLOC == loc) {
       DEBUG_LOG("no slice header found, falling through");
       TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
@@ -366,12 +367,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 {
   bool skiprest = false;
   range_header_check(txnp, &skiprest);
+  return TSREMAP_NO_REMAP;
 
+/*
   if (skiprest) {
     return TSREMAP_DID_REMAP_STOP;
   } else {
     return TSREMAP_NO_REMAP;
   }
+*/
 }
 
 /**

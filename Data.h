@@ -16,10 +16,10 @@ struct Data
   int64_t m_blocksize;
   sockaddr_storage m_client_ip;
 
-/* // for pristine url coming in
+  // for pristine url coming in
   TSMBuffer m_urlbuffer { nullptr };
   TSMLoc m_urlloc { nullptr };
-*/
+
   char m_hostname[1024];
   int m_hostlen;
 
@@ -54,10 +54,8 @@ struct Data
     )
     : m_blocksize(blocksize)
     , m_client_ip()
-/*
     , m_urlbuffer(nullptr)
     , m_urlloc(nullptr)
-*/
     , m_hostlen(0)
     , m_statustype(TS_HTTP_STATUS_NONE)
     , m_bail(false)
@@ -78,7 +76,6 @@ struct Data
   ~Data
     ()
   {
-/*
     if (nullptr != m_urlloc && nullptr != m_urlbuffer)
     {
       TSHandleMLocRelease(m_urlbuffer, TS_NULL_MLOC, m_urlloc);
@@ -87,7 +84,6 @@ struct Data
     {
       TSMBufferDestroy(m_urlbuffer);
     }
-*/
     if (nullptr != m_http_parser)
     {
       TSHttpParserDestroy(m_http_parser);
