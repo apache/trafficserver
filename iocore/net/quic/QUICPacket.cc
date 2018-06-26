@@ -750,13 +750,27 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 {
   ink_assert(len == 1 || len == 2 || len == 4);
 
-  uint64_t maximum_diff       = 1ULL << (len * 8);
+  uint64_t maximum_diff = 0;
+  switch (len) {
+  case 1:
+    maximum_diff = 0x80;
+    break;
+  case 2:
+    maximum_diff = 0x4000;
+    break;
+  case 4:
+    maximum_diff = 0x40000000;
+    break;
+  default:
+    ink_assert(!"len must be 1, 2 or 4");
+  }
   QUICPacketNumber base       = largest_acked & (~(maximum_diff - 1));
   QUICPacketNumber candidate1 = base + src;
   QUICPacketNumber candidate2 = base + src + maximum_diff;
+  QUICPacketNumber expected   = largest_acked + 1;
 
-  if (((candidate1 > largest_acked) ? (candidate1 - largest_acked) : (largest_acked - candidate1)) <
-      ((candidate2 > largest_acked) ? (candidate2 - largest_acked) : (largest_acked - candidate2))) {
+  if (((candidate1 > expected) ? (candidate1 - expected) : (expected - candidate1)) <
+      ((candidate2 > expected) ? (candidate2 - expected) : (expected - candidate2))) {
     dst = candidate1;
   } else {
     dst = candidate2;
