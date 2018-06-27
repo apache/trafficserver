@@ -419,8 +419,9 @@ ts_lua_fetch_handler(TSCont contp, TSEvent ev, void *edata ATS_UNUSED)
     break;
   }
 
-  if (fi->over || fi->failed) {
+  if (fmi && (fi->over || fi->failed)) {
     TSContCall(fmi->contp, TS_LUA_EVENT_FETCH_OVER, fi); // error exist
+    ts_lua_destroy_fetch_multi_info(fmi);
   }
 
   return 0;
@@ -519,7 +520,7 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   fmi->done++;
 
-  if (fmi->done != fmi->total) {
+  if (fi->fmi != fmi && fmi->done != fmi->total) {
     return 0;
   }
 
@@ -540,8 +541,6 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
     TSContCall(ci->contp, TS_LUA_EVENT_COROUTINE_CONT, (void *)1);
   }
-
-  ts_lua_fetch_multi_cleanup(ai);
 
   TSMutexUnlock(lmutex);
   return 0;
@@ -591,12 +590,12 @@ ts_lua_fetch_multi_cleanup(ts_lua_async_item *ai)
 
   if (ai->data) {
     fmi = (ts_lua_fetch_multi_info *)ai->data;
-    ts_lua_destroy_fetch_multi_info(fmi);
 
     ai->data = NULL;
+    TSContDestroy(ai->contp);
+    ai->contp = NULL;
   }
 
-  TSContDestroy(ai->contp);
   ai->deleted = 1;
 
   return 0;
