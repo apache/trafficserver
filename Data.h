@@ -32,7 +32,7 @@ struct Data
   Data(Data const &) = delete;
   Data & operator=(Data const &) = delete;
 
-  int64_t m_blocksize;
+  int64_t m_blockbytes;
   sockaddr_storage m_client_ip;
 
 #if defined(RESET_URL_AND_HOST)
@@ -71,9 +71,9 @@ struct Data
 
   explicit
   Data
-    ( int64_t const blocksize
+    ( int64_t const blockbytes
     )
-    : m_blocksize(blocksize)
+    : m_blockbytes(blockbytes)
     , m_client_ip()
 #if defined(RESET_URL_AND_HOST)
     , m_urlbuffer(nullptr)

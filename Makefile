@@ -1,4 +1,4 @@
-all: slice crr_slice
+all: slice
 
 slice_la_SOURCES = \
 	ContentRange.cc \
@@ -15,8 +15,8 @@ slice_la_HEADERS = \
 	slice.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
-	tsxs -v -o slice.so $(slice_la_SOURCES)
 	tsxs -v -i -o slice.so $(slice_la_SOURCES)
+#	tsxs -v -o slice.so $(slice_la_SOURCES)
 
 install: slice
 	tsxs -v -i slice.so

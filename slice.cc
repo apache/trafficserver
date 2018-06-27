@@ -51,12 +51,14 @@ struct Config
   {
     if (0 != strncasecmp(bytesstr, BLOCKBYTESSTR, BLOCKBYTESLEN))
     {
+      DEBUG_LOG("Unhandled flag in %s", bytesstr);
       return false;
     }
 
     char const * begp = bytesstr + BLOCKBYTESLEN;
     if (':' != *begp)
     {
+      DEBUG_LOG("Invalid separator in %s", bytesstr);
       return false;
     }
     ++begp;
@@ -111,8 +113,7 @@ DEBUG_LOG("slice accepting and slicing");
         return false;
       }
 
-static int64_t const blocksize(1024 * 1024);
-      Data * const data = new Data(blocksize);
+      Data * const data = new Data(config->m_blockbytes);
 
       // set up feedback connect
       if (AF_INET == ip->sa_family) {
@@ -136,8 +137,6 @@ static int64_t const blocksize(1024 * 1024);
         delete data;
         return false;
       }
-
-      data->m_blocksize = config->m_blockbytes;
 
       // need the pristine url, especially for global plugins
       TSMBuffer urlbuf;

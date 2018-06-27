@@ -57,8 +57,8 @@ request_block
   , Data * const data
   )
 {
-  int64_t const blockbeg = (data->m_blocksize * data->m_blocknum);
-  Range blockbe(blockbeg, blockbeg + data->m_blocksize);
+  int64_t const blockbeg = (data->m_blockbytes * data->m_blocknum);
+  Range blockbe(blockbeg, blockbeg + data->m_blockbytes);
 
 //std::cerr << __func__ << " trying to build header" << std::endl;
 
@@ -159,7 +159,7 @@ std::cerr << header.toString() << std::endl;
     static int64_t const max64_t = std::numeric_limits<int64_t>::max();
 
     // default: whole file (unknown, wait for first server response)
-    Range rangebe(0, max64_t - data->m_blocksize);
+    Range rangebe(0, max64_t - data->m_blockbytes);
 
     char rangestr[1024];
     int rangelen = 1024;
@@ -181,7 +181,7 @@ std::cerr << header.toString() << std::endl;
       else // reset the range
       {
         rangebe.m_beg = 0;
-        rangebe.m_end = max64_t - data->m_blocksize;
+        rangebe.m_end = max64_t - data->m_blockbytes;
         data->m_statustype = TS_HTTP_STATUS_OK;
       }
     }
@@ -196,7 +196,7 @@ static size_t const vallen = strlen(valstr);
     }
 
     // set to the first block in range
-    data->m_blocknum = rangebe.firstBlockFor(data->m_blocksize);
+    data->m_blocknum = rangebe.firstBlockFor(data->m_blockbytes);
     data->m_req_range = rangebe;
 
     // whack some ATS keys (avoid 404)
@@ -346,7 +346,9 @@ handle_server_resp
 {
   if (data->m_bail)
   {
-    shutdown(contp, data);
+//std::cerr << "bail condition from handle_server_resp" << std::endl;
+// don't shut down while the downstream is still processing the headers
+// shutdown(contp, data);
     return TS_EVENT_CONTINUE;
   }
 
@@ -523,7 +525,7 @@ TSAssert(data->m_contentlen == respcr.m_length);
 
       // how much to fast forward into the (first) data block
       data->m_skipbytes = data->m_req_range.skipBytesForBlock
-          (data->m_blocksize, data->m_blocknum);
+          (data->m_blockbytes, data->m_blocknum);
 
       data->m_server_block_header_parsed = true;
     }
@@ -570,7 +572,7 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
     // Btw this isn't implemented yet, to be handled
     bool adjusted = false;
     int64_t const firstblock
-      (data->m_req_range.firstBlockFor(data->m_blocksize));
+      (data->m_req_range.firstBlockFor(data->m_blockbytes));
     if (data->m_blocknum < firstblock)
     {
 //std::cerr << "setting first block" << std::endl;
@@ -579,7 +581,7 @@ DEBUG_LOG("EOS from server for block %" PRId64, data->m_blocknum);
     }
 
     if ( adjusted || data->m_req_range.blockIsInside
-          (data->m_blocksize, data->m_blocknum) )
+          (data->m_blockbytes, data->m_blocknum) )
     {
 //std::cerr << __func__ << " calling request_block" << std::endl;
       request_block(contp, data);
@@ -643,7 +645,7 @@ std::cerr << "bytes: sent " << bytessent << " of " << data->m_bytestosend << std
   else // close it all out???
   {
     DEBUG_LOG("Unhandled event: %d", event);
-std::cerr << __func__ << ": unhandled event: " << event << std::endl;
+//std::cerr << __func__ << ": unhandled event: " << event << std::endl;
   }
 
   return TS_EVENT_CONTINUE;
@@ -714,9 +716,11 @@ DEBUG_LOG("TS_EVENT_HTTP_TXN_CLOSE");
     else
     {
       DEBUG_LOG("Unhandled event: %d", event);
+/*
 std::cerr << __func__
   << ": events received after intercept state torn down"
   << std::endl;
+*/
     }
   }
   else // if (nullptr == data)
