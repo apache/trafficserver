@@ -41,7 +41,7 @@
 
 #include "ts/ink_memory.h"
 #include "ts/ink_assert.h"
-#include "write_ptr.h"
+#include "AcidPtr.h"
 
 #ifndef ROUNDUP
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
@@ -55,7 +55,7 @@ namespace MT // (multi-threaded)
 /// used to store byte offsets to fields
 using ExtendibleOffset_t = uint16_t;
 /// all types must allow unblocking MT read access
-enum AccessEnum { ATOMIC, BIT, CONST, COPYSWAP, C_API, NUM_ACCESS_TYPES };
+enum AccessEnum { ATOMIC, BIT, CONST, ACIDPTR, C_API, NUM_ACCESS_TYPES };
 
 /**
  * @brief Allows code (and Plugins) to declare member variables during system init.
@@ -118,9 +118,9 @@ template <typename Derived_t> struct Extendible {
   template <typename Field_t> Field_t const &get(FieldId<CONST, Field_t> field) const;
   template <typename Field_t> Field_t &writeConst(FieldId<CONST, Field_t> field);
 
-  /// COPYSWAP API - returns a const shared pointer to last committed field value
-  template <typename Field_t> std::shared_ptr<const Field_t> get(FieldId<COPYSWAP, Field_t> field) const;
-  template <typename Field_t> write_ptr<Field_t> writeCopySwap(FieldId<COPYSWAP, Field_t> field);
+  /// ACIDPTR API - returns a const shared pointer to last committed field value
+  template <typename Field_t> std::shared_ptr<const Field_t> get(FieldId<ACIDPTR, Field_t> field) const;
+  template <typename Field_t> AcidCommitPtr<Field_t> writeAcidPtr(FieldId<ACIDPTR, Field_t> field);
 
   /// C API - returns pointer, no internal thread safety
   void *get(FieldId_C &field);
@@ -161,7 +161,7 @@ template <typename Derived_t> struct Extendible {
     template <AccessEnum Access_t, typename Field_t>
     bool addField(FieldId<Access_t, Field_t> &field_id, std::string const &field_name);
 
-    template <typename Field_t> bool addField(FieldId<COPYSWAP, Field_t> &field_id, std::string const &field_name);
+    template <typename Field_t> bool addField(FieldId<ACIDPTR, Field_t> &field_id, std::string const &field_name);
     template <AccessEnum Access_t, typename Field_t> FieldId<Access_t, Field_t> find(std::string const &field_name);
 
     /// Add a new Field to this record type (for a C API)
@@ -263,18 +263,18 @@ Extendible<Derived_t>::Schema::addField(FieldId<Access_t, Field_t> &field_id, st
 template <typename Derived_t>
 template <typename Field_t>
 bool
-Extendible<Derived_t>::Schema::addField(FieldId<COPYSWAP, Field_t> &field_id, std::string const &field_name)
+Extendible<Derived_t>::Schema::addField(FieldId<ACIDPTR, Field_t> &field_id, std::string const &field_name)
 {
-  static_assert(std::is_copy_constructible<Field_t>::value == true, "Must have a copy constructor to use copyswap.");
+  static_assert(std::is_copy_constructible<Field_t>::value == true, "Must have a copy constructor to use AcidPtr.");
   ink_release_assert(instance_count == 0); // it's too late, we already started allocating.
-  using ptr_t             = read_ptr<Field_t>;
+  using ptr_t             = AcidPtr<Field_t>;
   ExtendibleOffset_t size = sizeof(ptr_t);
 
   // capture the default constructors of the data type
   static auto construct_fn = [](void *ptr) { new (ptr) ptr_t(new Field_t()); };
   static auto destruct_fn  = [](void *ptr) { static_cast<ptr_t *>(ptr)->~ptr_t(); };
 
-  fields[field_name]  = FieldSchema{COPYSWAP, std::type_index(typeid(Field_t)), size, 0, construct_fn, destruct_fn};
+  fields[field_name]  = FieldSchema{ACIDPTR, std::type_index(typeid(Field_t)), size, 0, construct_fn, destruct_fn};
   field_id.offset_ptr = &fields[field_name].offset;
   updateMemOffsets();
   return true;
@@ -484,20 +484,20 @@ Extendible<Derived_t>::writeConst(FieldId<CONST, Field_t> field)
 template <typename Derived_t>
 template <typename Field_t>
 std::shared_ptr<const Field_t> // shared_ptr so the value can be updated while in use.
-Extendible<Derived_t>::get(FieldId<COPYSWAP, Field_t> field) const
+Extendible<Derived_t>::get(FieldId<ACIDPTR, Field_t> field) const
 {
-  const read_ptr<Field_t> &reader = *at_offset<const read_ptr<Field_t> *>(field.offset());
-  return reader.get();
+  const AcidPtr<Field_t> &reader = *at_offset<const AcidPtr<Field_t> *>(field.offset());
+  return reader.getPtr();
 }
 
 /// return a writer created from the last committed field value
 template <typename Derived_t>
 template <typename Field_t>
-write_ptr<Field_t>
-Extendible<Derived_t>::writeCopySwap(FieldId<COPYSWAP, Field_t> field)
+AcidCommitPtr<Field_t>
+Extendible<Derived_t>::writeAcidPtr(FieldId<ACIDPTR, Field_t> field)
 {
-  read_ptr<Field_t> &reader = *at_offset<read_ptr<Field_t> *>(field.offset());
-  return write_ptr<Field_t>(reader);
+  AcidPtr<Field_t> &reader = *at_offset<AcidPtr<Field_t> *>(field.offset());
+  return AcidCommitPtr<Field_t>(reader);
 }
 
 /// C API

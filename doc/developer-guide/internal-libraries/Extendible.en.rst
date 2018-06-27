@@ -65,7 +65,7 @@ During system init, code and plugins can add fields to the Extendible's schema. 
    }
 
 
-When an Extendible derived class is instantiated, new() will allocate a block of memory for the derived class and all added fields. There is zero memory overhead per instance, unless using COPYSWAP_ field access type.
+When an Extendible derived class is instantiated, new() will allocate a block of memory for the derived class and all added fields. There is zero memory overhead per instance, unless using ACIDPTR_ field access type.
 
 .. code-block:: cpp
 
@@ -120,10 +120,10 @@ Enums       Allocates                                 API                       
 ATOMIC      std::atomic<FieldType>                    :code:`get(FieldId)`                                           Leverages std::atomic<> API. No Locking.   Only works on small data types.
 BIT         1 bit from packed bits                    :code:`get(FieldId), readBit(FieldId), writeBit(FieldId)`      Memory efficient.                          Cannot return reference. 
 CONST       FieldType                                 :code:`get(FieldId), writeConst(FieldId)`                      Direct reference. Fast.                    No thread protection.
-COPYSWAP_   shared_ptr<FieldType> = new FieldType()   :code:`get(FieldId), writeCopySwap(FieldId)`                   Avoid skew in non-atomic structures.       Non-contiguous memory allocations. Uses locking.
+ACIDPTR_   shared_ptr<FieldType> = new FieldType()   :code:`get(FieldId), writeAcidPtr(FieldId)`                   Avoid skew in non-atomic structures.       Non-contiguous memory allocations. Uses locking.
 C_API       a number of bytes                         :code:`get()`                                                Can use in C.                              No thread protection.
 =========   =======================================   ============================================================   ========================================   =====================================
 
 :code:`operator[](FieldId)` has been overridden to call :code:`get(FieldId)`.
 
-Unfortunately our data is not "one type fits all". I expect that most config values will be stored as CONST, most states values will be ATOMIC or BIT, while vectored results will be COPYSWAP.
+Unfortunately our data is not "one type fits all". I expect that most config values will be stored as CONST, most states values will be ATOMIC or BIT, while vectored results will be ACIDPTR.
