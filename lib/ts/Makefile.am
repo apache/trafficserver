@@ -209,8 +209,8 @@ libtsutil_la_SOURCES = \
 	Tokenizer.h \
 	Trie.h \
 	TsBuffer.h \
-  write_ptr.cc \
-  write_ptr.h \
+  AcidPtr.cc \
+  AcidPtr.h \
 	Version.cc \
 	X509HostnameValidator.cc \
 	X509HostnameValidator.h

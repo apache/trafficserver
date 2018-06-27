@@ -78,99 +78,121 @@ private:
   LockPool() = delete;
 };
 
-template <typename T> class write_ptr;
-template <typename T> class read_ptr;
+template <typename T> class AcidCommitPtr;
+template <typename T> class AcidPtr;
 
-using ReadMutex_t = std::mutex; // TODO: use shared_mutex when available
-using ReadLock_t  = std::unique_lock<ReadMutex_t>;
-ReadMutex_t &ReadMemMutex(void const *ptr); // used for read, and write swap
+using AcidPtrMutex = std::mutex; // TODO: use shared_mutex when available
+using AcidPtrLock  = std::unique_lock<AcidPtrMutex>;
+AcidPtrMutex &AcidPtrMutexGet(void const *ptr); // used for read, and write swap
 
-using WriteMutex_t = std::mutex;
-using WriteLock_t  = std::unique_lock<WriteMutex_t>;
-WriteMutex_t &WriteMemMutex(void const *ptr); // used for write block
+using AcidCommitMutex = std::mutex;
+using AcidCommitLock  = std::unique_lock<AcidCommitMutex>;
+AcidCommitMutex &AcidCommitMutexGet(void const *ptr); // used for write block
 
 ///////////////////////////////////////////
-/// read_ptr
+/// AcidPtr
 /** just a thread safe shared pointer.
  *
  */
 
-template <typename T> class read_ptr
+template <typename T> class AcidPtr
 {
 private:
   std::shared_ptr<T> data_ptr;
 
 public:
-  read_ptr(const read_ptr &reader) = delete;
-  read_ptr &operator=(const read_ptr &other) = delete;
+  AcidPtr(const AcidPtr &) = delete;
+  AcidPtr &operator=(const AcidPtr &) = delete;
 
-  read_ptr() : data_ptr(new T()) {}
-  read_ptr(T *data) : data_ptr(data) {}
+  AcidPtr() : data_ptr(new T()) {}
+  AcidPtr(T *data) : data_ptr(data) {}
 
   const std::shared_ptr<const T>
-  get() const
-  { // get shared access to the current pointer
-    auto read_lock = ReadLock_t(ReadMemMutex(&data_ptr));
+  getPtr() const
+  { // wait until we have exclusive pointer access.
+    auto ptr_lock = AcidPtrLock(AcidPtrMutexGet(&data_ptr));
     // copy the pointer
     return data_ptr;
-    //[end scope] unlock read_lock
+    //[end scope] unlock ptr_lock
   }
 
   void
-  reset(T *data)
+  commit(T *data)
   {
-    // get exclusive access to the pointer
-    auto write_lock = WriteLock_t(ReadMemMutex(&data_ptr));
-    // copy the pointer
+    // wait until existing commits finish, avoid race conditions
+    auto commit_lock = AcidCommitLock(AcidCommitMutexGet(&data_ptr));
+    // wait until we have exclusive pointer access.
+    auto ptr_lock = AcidPtrLock(AcidPtrMutexGet(&data_ptr));
+    // overwrite the pointer
     data_ptr.reset(data);
-    //[end scope] unlock write_lock
+    //[end scope] unlock commit_lock & ptr_lock
+  }
+
+  AcidCommitPtr<T>
+  startCommit()
+  {
+    return AcidCommitPtr<T>(*this);
+  }
+
+  friend class AcidCommitPtr<T>;
+
+protected:
+  void
+  _finishCommit(T *data)
+  {
+    // wait until we have exclusive pointer access.
+    auto ptr_lock = AcidPtrLock(AcidPtrMutexGet(&data_ptr));
+    // overwrite the pointer
+    data_ptr.reset(data);
+    //[end scope] unlock ptr_lock
   }
 };
 
 ///////////////////////////////////////////
-/// write_ptr
+/// AcidCommitPtr
 
-/// an exclusive write pointer that updates a shared_ptr on destrustion.
+/// a globally exclusive pointer, for commiting changes to AcidPtr.
 /** used for COPY_SWAP functionality.
  * 1. copy data (construct)
  * 2. overwrite data (scope)
  * 3. update live data pointer (destruct)
  */
-template <typename T> class write_ptr : public std::unique_ptr<T>
+template <typename T> class AcidCommitPtr : public std::unique_ptr<T>
 {
 private:
-  WriteLock_t write_lock; // block other writers from starting
-  read_ptr<T> &reader;    // shared read access pointer location
+  AcidCommitLock commit_lock; // block other writers from starting
+  AcidPtr<T> &data;           // data location
 
 public:
-  write_ptr()                  = delete;
-  write_ptr(const write_ptr &) = delete;
-  write_ptr &operator=(const write_ptr<T> &) = delete;
+  AcidCommitPtr()                      = delete;
+  AcidCommitPtr(const AcidCommitPtr &) = delete;
+  AcidCommitPtr &operator=(const AcidCommitPtr<T> &) = delete;
 
-  write_ptr(read_ptr<T> &data_reader) : write_lock(WriteMemMutex(&data_reader)), reader(data_reader)
+  AcidCommitPtr(AcidPtr<T> &data_ptr) : commit_lock(AcidCommitMutexGet(&data_ptr)), data(data_ptr)
   {
-    // wait for exclusive write access to the reader
+    // wait for exclusive commit access to the data
     // copy the data to new memory
-    std::unique_ptr<T>::reset(new T(*reader.get()));
+    std::unique_ptr<T>::reset(new T(*data.getPtr()));
   }
-  write_ptr(write_ptr &&other) : std::unique_ptr<T>(std::move(other)), write_lock(std::move(other.write_lock)), reader(other.reader)
+  AcidCommitPtr(AcidCommitPtr &&other)
+    : std::unique_ptr<T>(std::move(other)), commit_lock(std::move(other.commit_lock)), data(other.data)
   {
   }
 
-  ~write_ptr()
+  ~AcidCommitPtr()
   {
-    if (!write_lock) {
+    if (!commit_lock) {
       return; // previously aborted
     }
 
     // point the existing read ptr to the newly written data
-    reader.reset(std::unique_ptr<T>::release());
+    data._finishCommit(std::unique_ptr<T>::release());
   }
 
   void
   abort()
   {
-    write_lock.unlock();         // allow other writers to start
+    commit_lock.unlock();        // allow other writers to start
     std::unique_ptr<T>::reset(); // delete data copy
   }
 };

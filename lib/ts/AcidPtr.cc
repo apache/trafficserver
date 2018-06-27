@@ -20,24 +20,24 @@
   limitations under the License.
 */
 
-#include "write_ptr.h"
+#include "AcidPtr.h"
 
 const int READLOCKCOUNT = 61; // a prime larger than number of readers
 
-ReadMutex_t &
-ReadMemMutex(void const *ptr)
+AcidPtrMutex &
+AcidPtrMutexGet(void const *ptr)
 {
-  static LockPool<ReadMutex_t> read_locks(READLOCKCOUNT);
+  static LockPool<AcidPtrMutex> read_locks(READLOCKCOUNT);
   static_assert(sizeof(void *) == sizeof(size_t));
   return read_locks.getMutex(reinterpret_cast<size_t>(ptr));
 }
 
 const int WRITELOCKCOUNT = 31; // a prime larger than number of writers
 
-WriteMutex_t &
-WriteMemMutex(void const *ptr)
+AcidCommitMutex &
+AcidCommitMutexGet(void const *ptr)
 {
-  static LockPool<WriteMutex_t> write_locks(WRITELOCKCOUNT);
+  static LockPool<AcidCommitMutex> write_locks(WRITELOCKCOUNT);
   static_assert(sizeof(void *) == sizeof(size_t));
   return write_locks.getMutex(reinterpret_cast<size_t>(ptr));
 }

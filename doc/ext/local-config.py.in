@@ -15,4 +15,4 @@
 # limitations under the License.
 
 plantuml='@JAVA@ -jar {}'.format(os.environ['PLANTUML_JAR'])
-plantuml_output_format='svg'
+plantuml_output_format='png'

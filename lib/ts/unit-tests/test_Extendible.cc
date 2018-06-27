@@ -58,27 +58,27 @@ struct testField {
 };
 int testField::alive = 0;
 
-TEST_CASE("read_ptr write_ptr")
+TEST_CASE("AcidPtr AcidCommitPtr")
 {
-  read_ptr<int> p;
-  REQUIRE(p.get() != nullptr);
-  REQUIRE(p.get().get() != nullptr);
+  AcidPtr<int> p;
+  REQUIRE(p.getPtr() != nullptr);
+  REQUIRE(p.getPtr().get() != nullptr);
   {
-    write_ptr<int> w(p);
+    AcidCommitPtr<int> w(p);
     *w = 40;
   }
-  CHECK(*p.get() == 40);
+  CHECK(*p.getPtr() == 40);
   {
-    write_ptr<int> w = p;
+    AcidCommitPtr<int> w = p;
     *w += 1;
-    CHECK(*p.get() == 40); // new value not commited until end of scope
+    CHECK(*p.getPtr() == 40); // new value not commited until end of scope
   }
-  CHECK(*p.get() == 41);
+  CHECK(*p.getPtr() == 41);
   {
-    *write_ptr<int>(p) += 1; // leaves scope immediately if not named.
-    CHECK(*p.get() == 42);
+    *AcidCommitPtr<int>(p) += 1; // leaves scope immediately if not named.
+    CHECK(*p.getPtr() == 42);
   }
-  CHECK(*p.get() == 42);
+  CHECK(*p.getPtr() == 42);
 }
 
 TEST_CASE("Extendible", "")
@@ -201,20 +201,20 @@ TEST_CASE("Extendible", "")
     CHECK(ref.m_str == "Hello");
   }
 
-  Derived::FieldId<COPYSWAP, testField> tf_a;
-  INFO("COPYSWAP add field")
+  Derived::FieldId<ACIDPTR, testField> tf_a;
+  INFO("ACIDPTR add field")
   {
     REQUIRE(Derived::schema.addField(tf_a, "tf_a"));
     CHECK(Derived::schema.size() == sizeof(std::string) + 1 + sizeof(std::atomic_int) * 2 + 4 + sizeof(std::shared_ptr<testField>));
-    REQUIRE(Derived::schema.find<COPYSWAP, testField>("tf_a").isValid());
+    REQUIRE(Derived::schema.find<ACIDPTR, testField>("tf_a").isValid());
   }
 
-  INFO("COPYSWAP test")
+  INFO("ACIDPTR test")
   {
     shared_ptr<Derived> sptr(new Derived());
     Derived &ref = *sptr;
     // ref.m_str    = "Hello";
-    auto tf_a = Derived::schema.find<COPYSWAP, testField>("tf_a");
+    auto tf_a = Derived::schema.find<ACIDPTR, testField>("tf_a");
     {
       std::shared_ptr<const testField> tf_a_sptr = ref.get(tf_a);
       const testField &dv                        = *tf_a_sptr;
@@ -227,36 +227,36 @@ TEST_CASE("Extendible", "")
     CHECK(testField::alive == 1);
   }
 
-  INFO("COPYSWAP destroyed")
+  INFO("ACIDPTR destroyed")
   {
     //
     CHECK(testField::alive == 0);
   }
 
-  INFO("read_ptr write_ptr casting");
+  INFO("AcidPtr AcidCommitPtr casting");
   {
-    void *mem = malloc(sizeof(read_ptr<testField>));
-    new (mem) read_ptr<testField>();
-    read_ptr<testField> &reader = *static_cast<read_ptr<testField> *>(mem);
+    void *mem = malloc(sizeof(AcidPtr<testField>));
+    new (mem) AcidPtr<testField>();
+    AcidPtr<testField> &reader = *static_cast<AcidPtr<testField> *>(mem);
     {
-      write_ptr<testField> writer = write_ptr<testField>(reader);
+      AcidCommitPtr<testField> writer = AcidCommitPtr<testField>(reader);
       CHECK(writer->arr[0] == 1);
-      CHECK(reader.get()->arr[0] == 1);
+      CHECK(reader.getPtr()->arr[0] == 1);
       writer->arr[0] = 99;
       CHECK(writer->arr[0] == 99);
-      CHECK(reader.get()->arr[0] == 1);
+      CHECK(reader.getPtr()->arr[0] == 1);
     }
-    CHECK(reader.get()->arr[0] == 99);
+    CHECK(reader.getPtr()->arr[0] == 99);
     free(mem);
   }
-  INFO("COPYSWAP block-free reader")
+  INFO("ACIDPTR block-free reader")
   {
-    auto tf_a = Derived::schema.find<COPYSWAP, testField>("tf_a");
+    auto tf_a = Derived::schema.find<ACIDPTR, testField>("tf_a");
     REQUIRE(tf_a.isValid());
     Derived &d = *(new Derived());
     CHECK(d.get(tf_a)->arr[0] == 1);
     { // write 0
-      write_ptr<testField> w = d.writeCopySwap(tf_a);
+      AcidCommitPtr<testField> w = d.writeAcidPtr(tf_a);
       REQUIRE(w != nullptr);
       REQUIRE(w.get() != nullptr);
       w->arr[0] = 0;
@@ -265,8 +265,8 @@ TEST_CASE("Extendible", "")
     CHECK(d.get(tf_a)->arr[0] == 0);
     // write 1 and read 0
     {
-      write_ptr<testField> tf_a_wtr = d.writeCopySwap(tf_a);
-      tf_a_wtr->arr[0]              = 1;
+      AcidCommitPtr<testField> tf_a_wtr = d.writeAcidPtr(tf_a);
+      tf_a_wtr->arr[0]                  = 1;
       CHECK(d.get(tf_a)->arr[0] == 0);
       // [end of scope] write is committed
     }
@@ -275,7 +275,7 @@ TEST_CASE("Extendible", "")
     delete &d;
   }
 
-  INFO("COPYSWAP timing test")
+  INFO("ACIDPTR timing test")
   if (0) {
     const int N = 1000;
     Derived::FieldId<ATOMIC, uint32_t> fld_read_duration;
@@ -297,7 +297,7 @@ TEST_CASE("Extendible", "")
 
     auto writer_test = [sptr, tf_a, fld_write_duration]() {
       auto start = std::chrono::system_clock::now();
-      write_ptr<testField> tf_a_sptr(sptr->writeCopySwap(tf_a));
+      AcidCommitPtr<testField> tf_a_sptr(sptr->writeAcidPtr(tf_a));
       auto end = std::chrono::system_clock::now();
       tf_a_sptr->arr[0]++;
       std::this_thread::sleep_for(std::chrono::nanoseconds(5)); // fake work, holds write locks til end of scope.
