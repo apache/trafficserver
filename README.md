@@ -10,17 +10,18 @@ To enable the plugin, specify the plugin library via @plugin at the end
 of a remap line as follows:
 
 ```
-map http://ats-server/somepath/ http://originserver/somepath @plugin=slicer.so @pparam=blocksize:2097152 @plugin=cache_range_requests.so @pparam=custom_url:X-Slicer-Info
+map http://ats-server/somepath/ http://originserver/somepath @plugin=slice.so @pparam=blockbytes:2097152 @plugin=cache_range_requests.so
 ```
 
-for global plugins:
+for global plugins.
 
 ```
-slicer.so blocksize:2097152
-cache_range_requests.so custom_url:X-Slicer-Info
+slice.so blockbytes:2097152
+cache_range_requests.so
 ```
 
-**Note**: blocksize is defined in bytes. 1048576 (1MB) is the default.
+**Note**: cache_range_requests **MUST** follow slice.so Put these plugins at the end of the plugin list
+**Note**: blockbytes is defined in bytes. 1048576 (1MB) is the default.
 
 __To build the plugin__, just set your path to include the tsxs binary in your path and run make.
 
@@ -43,7 +44,7 @@ Example output of a range request:
 ```
 ```
 
-Debug messages related to object instance construction/deconstruction, see slicer.h.  
+Debug messages related to object instance construction/deconstruction, see slice.h.  
 
 At the current time only single range requests or the first part of a 
 multi part range request of the forms:

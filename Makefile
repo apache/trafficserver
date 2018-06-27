@@ -21,12 +21,8 @@ slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
 install: slice
 	tsxs -v -i slice.so
 
-crr_slice: crr_slice.cc
-	tsxs -v -i -o crr_slice.so $^
-
 install: slice
 	tsxs -v -i slice.so
-	tsxs -v -i crr_slice.so
 
 CXX = c++ -std=c++11
 #CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
