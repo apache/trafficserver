@@ -71,6 +71,7 @@ libtsutil_la_SOURCES = \
 	DynArray.h \
 	EventNotify.cc \
 	EventNotify.h \
+  Extendible.h \
 	fastlz.c \
 	fastlz.h \
 	Hash.cc \
@@ -206,6 +207,8 @@ libtsutil_la_SOURCES = \
 	Tokenizer.h \
 	Trie.h \
 	TsBuffer.h \
+  AcidPtr.cc \
+  AcidPtr.h \
 	Version.cc \
 	X509HostnameValidator.cc \
 	X509HostnameValidator.h
@@ -259,14 +262,14 @@ test_tsutil_SOURCES = \
 test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
-# add you catch based test file here for tslib
 test_tslib_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tslib_LDADD = libtsutil.la $(top_builddir)/iocore/eventsystem/libinkevent.a
 test_tslib_SOURCES = \
 	unit-tests/unit_test_main.cc \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
-	unit-tests/test_ink_inet.cc \
+	unit-tests/test_Extendible.cc \
+  unit-tests/test_ink_inet.cc \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \
 	unit-tests/test_MemSpan.cc \
@@ -275,7 +278,8 @@ test_tslib_SOURCES = \
 	unit-tests/test_Scalar.cc \
 	unit-tests/test_scoped_resource.cc \
 	unit-tests/test_TextView.cc 
-
+# add your catch based test file here for tslib
+ 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
 clean-local:
