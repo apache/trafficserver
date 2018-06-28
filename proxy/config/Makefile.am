@@ -32,6 +32,7 @@ dist_sysconf_DATA =	\
 	ip_allow.config.default \
 	log_hosts.config.default \
 	logging.config.default \
+	metrics.config.default \
 	parent.config.default \
 	plugin.config.default \
 	remap.config.default \

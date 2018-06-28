@@ -50,6 +50,8 @@
 
 #include "P_RecLocal.h"
 
+#include "metrics.h"
+
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
@@ -90,7 +92,7 @@ static const char *recs_conf = "records.config";
 
 static int fds_limit;
 
-// ToDo: Any globals for calculated metrics
+static int metrics_version;
 
 // TODO: Use positive instead negative selection
 //       This should just be #if defined(solaris)
@@ -487,6 +489,9 @@ main(int argc, const char **argv)
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
 
+  int binding_version      = 0;
+  BindingInstance *binding = nullptr;
+
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, nullptr, nullptr},
     {"path", '-', "Path to the management socket", "S*", &mgmt_path, nullptr, nullptr},
@@ -710,15 +715,28 @@ main(int argc, const char **argv)
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
 
+  binding = new BindingInstance;
+  metrics_binding_initialize(*binding);
+  metrics_binding_configure(*binding);
+
   const int MAX_SLEEP_S      = 60; // Max sleep duration
   int sleep_time             = 0;  // sleep_time given in sec
   uint64_t last_start_epoc_s = 0;  // latest start attempt in seconds since epoc
 
-  // ToDo: Initialize whatever is needed for calculated metrics
-
   for (;;) {
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();
+
+    if (binding_version != metrics_version) {
+      metrics_binding_destroy(*binding);
+      delete binding;
+
+      binding = new BindingInstance;
+      metrics_binding_initialize(*binding);
+      metrics_binding_configure(*binding);
+
+      binding_version = metrics_version;
+    }
 
     // Handle rotation of output log (aka traffic.out) as well as DIAGS_LOG_FILENAME (aka manager.log)
     rotateLogs();
@@ -731,7 +749,7 @@ main(int argc, const char **argv)
       mgmt_log("[main] Reading Configuration Files Reread\n");
     }
 
-    // ToDo: Here we should update the calculated metrics
+    metrics_binding_evaluate(*binding);
 
     if (lmgmt->mgmt_shutdown_outstanding != MGMT_PENDING_NONE) {
       Debug("lm", "pending shutdown %d", lmgmt->mgmt_shutdown_outstanding);
@@ -842,7 +860,10 @@ main(int argc, const char **argv)
     }
   }
 
-  // ToDo: Here we should delete anything related to calculated metrics.
+  if (binding) {
+    metrics_binding_destroy(*binding);
+    delete binding;
+  }
 
 #ifndef MGMT_SERVICE
   return 0;
@@ -1004,6 +1025,9 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "proxy.config.body_factory.template_sets_dir") == 0) {
     lmgmt->signalFileChange("proxy.config.body_factory.template_sets_dir");
 
+  } else if (strcmp(fname, "metrics.config") == 0) {
+    ink_atomic_increment(&metrics_version, 1);
+    mgmt_log("[fileUpdated] metrics.config file has been modified\n");
   } else if (strcmp(fname, "proxy.config.ssl.server.ticket_key.filename") == 0) {
     lmgmt->signalFileChange("proxy.config.ssl.server.ticket_key.filename");
   } else if (strcmp(fname, SSL_SERVER_NAME_CONFIG) == 0) {

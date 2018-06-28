@@ -31,6 +31,8 @@ libbindings_la_SOURCES = \
 	bindings.h \
 	lua.cc \
 	lua.h \
+	metrics.cc \
+	metrics.h \
 	repl.cc \
 	repl.h
 
