@@ -262,7 +262,6 @@ DFA *hdrtoken_strs_dfa = nullptr;
  ***********************************************************************/
 
 #define HDRTOKEN_HASH_TABLE_SIZE 65536
-#define HDRTOKEN_HASH_TABLE_MASK HDRTOKEN_HASH_TABLE_SIZE - 1
 
 struct HdrTokenHashBucket {
   const char *wks;

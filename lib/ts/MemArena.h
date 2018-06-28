@@ -23,9 +23,12 @@
 
 #pragma once
 
+#include <new>
 #include <mutex>
 #include <memory>
 #include <ts/MemSpan.h>
+#include <ts/Scalar.h>
+#include <tsconfig/IntrusivePtr.h>
 
 /// Apache Traffic Server commons.
 namespace ts
@@ -43,13 +46,16 @@ namespace ts
 class MemArena
 {
   using self_type = MemArena; ///< Self reference type.
-public:
+protected:
+  struct Block;
+  using BlockPtr = ts::IntrusivePtr<Block>;
+  friend struct IntrusivePtrPolicy<Block>;
   /** Simple internal arena block of memory. Maintains the underlying memory.
    */
-  struct Block {
-    size_t size;                 ///< Actual block size.
-    size_t allocated{0};         ///< Current allocated (in use) bytes.
-    std::shared_ptr<Block> next; ///< Previously allocated block list.
+  struct Block : public ts::IntrusivePtrCounter {
+    size_t size;         ///< Actual block size.
+    size_t allocated{0}; ///< Current allocated (in use) bytes.
+    BlockPtr next;       ///< Previously allocated block list.
 
     /** Construct to have @a n bytes of available storage.
      *
@@ -66,14 +72,31 @@ public:
     size_t remaining() const;
     /// Span of unallocated storage.
     MemSpan remnant();
+    /** Allocate @a n bytes from this block.
+     *
+     * @param n Number of bytes to allocate.
+     * @return The span of memory allocated.
+     */
+    MemSpan alloc(size_t n);
+
     /** Check if the byte at address @a ptr is in this block.
      *
      * @param ptr Address of byte to check.
      * @return @c true if @a ptr is in this block, @c false otherwise.
      */
     bool contains(const void *ptr) const;
+
+    /** Override standard delete.
+     *
+     * This is required because the allocated memory size is larger than the class size which requires
+     * passing different parameters to de-allocate the memory.
+     *
+     * @param ptr Memory to be de-allocated.
+     */
+    static void operator delete(void *ptr);
   };
 
+public:
   /** Default constructor.
    * Construct with no memory.
    */
@@ -95,11 +118,11 @@ public:
   MemSpan alloc(size_t n);
 
   /** Adjust future block allocation size.
-   * This does not cause allocation, but instead makes a note of the size @a n and when a new block
-   * is needed, it will be at least @a n bytes. This is most useful for default constructed instances
-   * where the initial allocation should be delayed until use.
-   * @param n Minimum size of next allocated block.
-   * @return @a this
+      This does not cause allocation, but instead makes a note of the size @a n and when a new block
+      is needed, it will be at least @a n bytes. This is most useful for default constructed instances
+      where the initial allocation should be delayed until use.
+      @param n Minimum size of next allocated block.
+      @return @a this
    */
   self_type &reserve(size_t n);
 
@@ -159,16 +182,22 @@ public:
    */
   size_t extent() const;
 
-private:
-  /// creates a new @Block of size @n and places it within the @allocations list.
-  /// @return a pointer to the block to allocate from.
-  Block *newInternalBlock(size_t n, bool custom);
+protected:
+  /// creates a new @c Block with at least @n free space.
 
-  static constexpr size_t DEFAULT_BLOCK_SIZE = 1 << 15; ///< 32kb
-  static constexpr size_t DEFAULT_PAGE_SIZE  = 1 << 12; ///< 4kb
-  static constexpr size_t ALLOC_HEADER_SIZE  = 16;      ///< Guess of overhead of @c malloc
-  /// Never allocate less than this.
-  static constexpr size_t ALLOC_MIN_SIZE = 2 * ALLOC_HEADER_SIZE;
+  /** Internally allocates a new block of memory of size @a n bytes.
+   *
+   * @param n Size of block to allocate.
+   * @return
+   */
+  BlockPtr make_block(size_t n);
+
+  using Page      = ts::Scalar<4096>; ///< Size for rounding block sizes.
+  using Paragraph = ts::Scalar<16>;   ///< Minimum unit of memory allocation.
+
+  static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
+  /// Initial block size to allocate if not specified via API.
+  static constexpr size_t DEFAULT_BLOCK_SIZE = Page::SCALE - Paragraph{round_up(ALLOC_HEADER_SIZE + sizeof(Block))};
 
   size_t current_alloc = 0; ///< Total allocations in the active generation.
   /// Total allocations in the previous generation. This is only non-zero while the arena is frozen.
@@ -176,8 +205,8 @@ private:
 
   size_t next_block_size = DEFAULT_BLOCK_SIZE; ///< Next internal block size
 
-  std::shared_ptr<Block> prev    = nullptr; ///< Previous generation.
-  std::shared_ptr<Block> current = nullptr; ///< Head of allocations list. Allocate from this.
+  BlockPtr prev;    ///< Previous generation.
+  BlockPtr current; ///< Head of allocations list. Allocate from this.
 };
 
 // Implementation
@@ -207,6 +236,15 @@ inline size_t
 MemArena::Block::remaining() const
 {
   return size - allocated;
+}
+
+inline MemSpan
+MemArena::Block::alloc(size_t n)
+{
+  ink_assert(n <= this->remaining());
+  MemSpan zret = this->remnant().prefix(n);
+  allocated += n;
+  return zret;
 }
 
 inline MemArena::MemArena() {}

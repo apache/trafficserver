@@ -36,9 +36,6 @@ file.
 After you modify hosting.config, navigate to the Traffic Server bin
 directory and run :option:`traffic_ctl config reload` to apply your changes.
 
-When you apply the changes to a node in a cluster, Traffic Server
-automatically applies the changes to all other nodes in the cluster.
-
 Format
 ======
 

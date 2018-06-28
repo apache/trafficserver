@@ -200,10 +200,6 @@ tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
 tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
 tsapi TSReturnCode TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close);
 
-/* TS-1996: These API swill be removed after v3.4.0 is cut. Do not use them! */
-tsapi TSReturnCode TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
-tsapi TSReturnCode TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp);
-
 /****************************************************************************
  *  ??
  *  Return ??

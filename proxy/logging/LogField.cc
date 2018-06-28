@@ -678,9 +678,9 @@ LogField::valid_aggregate_name(char *name)
 }
 
 bool
-LogField::fieldlist_contains_aggregates(char *fieldlist)
+LogField::fieldlist_contains_aggregates(const char *fieldlist)
 {
-  char *match;
+  const char *match;
 
   for (unsigned i = 1; i < countof(aggregate_names); i++) {
     if ((match = strstr(fieldlist, aggregate_names[i])) != nullptr) {

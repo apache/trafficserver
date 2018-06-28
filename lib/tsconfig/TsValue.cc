@@ -62,8 +62,13 @@ detail::ValueTableImpl::~ValueTableImpl() {
 // ---------------------------------------------------------------------------
 detail::ValueTable::ImplType*
 detail::ValueTable::instance() {
-  if (! _ptr) { _ptr.reset(new ImplType);
-}
+  // Stupid workaround for clang analyzer false positive. The new instance isn't leaked because
+  // it's stored in a shared ptr type.
+#if !defined(__clang_analyzer__)
+  if (! _ptr) { _ptr.reset(new ImplType); }
+#else
+  assert(_ptr.get() != nullptr);
+#endif
   return _ptr.get();
 }
 
@@ -229,7 +234,8 @@ Value::makePath(Path const& path, ConstBuffer const& name) {
 Path& Path::reset() {
   if (_ptr) {
     // If we're sharing the instance, make a new one for us.
-    if (_ptr.isShared()) { _ptr = new ImplType;
+    if (_ptr.use_count() > 1) {
+      _ptr.reset(new ImplType);
     } else { // clear out the existing instance.
       _ptr->_elements.clear();
     }

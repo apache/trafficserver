@@ -44,7 +44,9 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  RegisterGlobalPlugin("CPP_Example_GlobalHookPplugin", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_GlobalHookPplugin", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   std::cout << "Hello from " << argv[0] << std::endl;
   plugin = new GlobalHookPlugin();
 }

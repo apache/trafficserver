@@ -28,7 +28,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy/http \
 	$(TS_INCLUDES) \
-	@OPENSSL_INCLUDES@
+	@OPENSSL_INCLUDES@ \
+	@YAMLCPP_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
 
@@ -37,7 +38,8 @@ noinst_LIBRARIES = libinknet.a
 
 test_certlookup_LDFLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ \
+	@YAMLCPP_LDFLAGS@
 
 test_certlookup_SOURCES = \
 	test_certlookup.cc \
@@ -47,11 +49,11 @@ test_certlookup_LDADD = \
 	@OPENSSL_LIBS@ \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/proxy/ParentSelectionStrategy.o
+	$(top_builddir)/proxy/ParentSelectionStrategy.o \
+	@YAMLCPP_LIBS@
 
 test_UDPNet_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	$(LUAJIT_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/hdrs \
@@ -63,7 +65,8 @@ test_UDPNet_CPPFLAGS = \
 
 test_UDPNet_LDFLAGS = \
 	@AM_LDFLAGS@ \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ \
+	@YAMLCPP_LDFLAGS@
 
 test_UDPNet_LDADD = \
 	libinknet.a \
@@ -73,8 +76,7 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
-	$(top_builddir)/lib/luajit/src/libluajit.a \
-	@LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@
+	@LIBTCL@ @HWLOC_LIBS@ @OPENSSL_LIBS@ @YAMLCPP_LIBS@
 
 test_UDPNet_SOURCES = \
 	test_I_UDPNet.cc
@@ -93,8 +95,8 @@ libinknet_a_SOURCES = \
 	Inline.cc \
 	I_SessionAccept.h \
 	SessionAccept.cc \
-	LuaSNIConfig.h \
-	LuaSNIConfig.cc \
+	YamlSNIConfig.h \
+	YamlSNIConfig.cc \
 	Net.cc \
 	NetVConnection.cc \
 	P_SNIActionPerformer.h \
@@ -163,7 +165,6 @@ libinknet_a_SOURCES += \
 endif
 
 libinknet_a_LIBADD = \
-	$(top_builddir)/lib/luajit/src/libluajit.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la
 
 include $(top_srcdir)/build/tidy.mk

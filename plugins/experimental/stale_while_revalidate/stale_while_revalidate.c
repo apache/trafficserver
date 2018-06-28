@@ -378,7 +378,8 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
       } else {
         TSDebug(PLUGIN_NAME, "Attempting new cache lookup");
         if (TSHttpHdrUrlGet(state->req_info->buf, state->req_info->http_hdr_loc, &url_loc) == TS_SUCCESS) {
-          TSHttpTxnNewCacheLookupDo(state->txn, state->req_info->buf, url_loc);
+          // ToDo: This is now completely broken, and we need a different logic here than the second cache lookup
+          // TSHttpTxnNewCacheLookupDo(state->txn, state->req_info->buf, url_loc);
           TSHandleMLocRelease(state->req_info->buf, state->req_info->http_hdr_loc, url_loc);
         } else {
           TSError("[%s] Error getting the URL from the transaction", PLUGIN_NAME);

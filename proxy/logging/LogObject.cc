@@ -392,8 +392,8 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 {
   LogBuffer::LB_ResultCode result_code;
   LogBuffer *buffer;
-  LogBuffer *new_buffer;
-  bool retry = true;
+  LogBuffer *new_buffer = nullptr;
+  bool retry            = true;
   head_p old_h;
 
   do {
@@ -410,7 +410,6 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
     switch (result_code) {
     case LogBuffer::LB_OK:
       // checkout succeded
-      //
       retry = false;
       break;
 
@@ -433,9 +432,10 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
           // another thread is already creating a new buffer,
           // so delete new_buffer and try again next loop iteration
           delete new_buffer;
+          new_buffer = nullptr;
           break;
         }
-      } while (!write_pointer_version(&m_log_buffer, old_h, new_buffer, 0));
+      } while (write_pointer_version(&m_log_buffer, old_h, new_buffer, 0) == false);
 
       if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h)) {
         ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
@@ -451,16 +451,11 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       break;
 
     case LogBuffer::LB_RETRY:
-      // no more room, but another thread should be taking care of
-      // creating a new buffer, so try again
-      //
+      // no more room, but another thread should be taking care of creating a new buffer, so try again
       break;
 
     case LogBuffer::LB_BUFFER_TOO_SMALL:
-
-      // return a null buffer to signal the caller that this
-      // transaction cannot be logged
-      //
+      // return a null buffer to signal the caller that this transaction cannot be logged
       retry = false;
       break;
 
@@ -486,6 +481,12 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
         // Another thread's allocated a new LogBuffer, meaning this LogObject is no longer referencing the old LogBuffer
         ink_atomic_increment(&buffer->m_references, -1);
       }
+    } else {
+#ifdef __clang_analyzer__
+      if (new_buffer != nullptr) {
+        delete new_buffer;
+      }
+#endif
     }
 
   } while (retry && write_offset); // if write_offset is null, we do
@@ -494,6 +495,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
   if (result_code == LogBuffer::LB_BUFFER_TOO_SMALL) {
     buffer = nullptr;
   }
+
   return buffer;
 }
 

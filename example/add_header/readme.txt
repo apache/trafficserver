@@ -40,7 +40,7 @@ HTTP request, using the following functions:
 	TSMimeHdrFieldGet
 	TSMimeHdrFieldCreate
 	TSMimeHdrFieldCopy
-	TSMimeHdrFieldAPpend
+	TSMimeHdrFieldAppend
 	TSMimeHdrFieldNext
 
 When add_header is done, it uses

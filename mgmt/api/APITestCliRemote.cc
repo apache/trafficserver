@@ -97,10 +97,6 @@
 
 #define SET_INT 0
 
-// set to 1 if running as part of installation package
-// set to 0 if being tested in developer environment
-#define INSTALL_TEST 0
-
 /***************************************************************************
  * Printing Helper Functions
  ***************************************************************************/

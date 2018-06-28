@@ -51,6 +51,8 @@ const std::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"sv);
 const std::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"sv);
 const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv); // HTTP/2 over TLS
 
+const std::string_view UNIX_PROTO_TAG{"unix"sv};
+
 uint32_t
 ink_inet_addr(const char *s)
 {
@@ -147,7 +149,18 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
 std::string_view
 ats_ip_family_name(int family)
 {
-  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : "Unspec"sv;
+  switch (family) {
+  case AF_INET:
+    return IP_PROTO_TAG_IPV4;
+  case AF_INET6:
+    return IP_PROTO_TAG_IPV6;
+  case AF_UNIX:
+    return UNIX_PROTO_TAG;
+  case AF_UNSPEC:
+    return "unspec"sv;
+  default:
+    return "unknown"sv;
+  }
 }
 
 const char *

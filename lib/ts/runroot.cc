@@ -33,7 +33,7 @@ Example: ./traffic_server --run-root=/path/to/sandbox
 Need a yaml file in the sandbox with key value pairs of all directory locations for other programs to use
 
 Directories needed in the yaml file:
-prefix, exec_prefix, includedir, localstatedir, bindir, logdir, mandir, sbindir, sysconfdir,
+prefix, exec_prefix, includedir, localstatedir, bindir, logdir, sbindir, sysconfdir,
 datadir, libexecdir, libdir, runtimedir, cachedir.
 */
 
@@ -45,6 +45,7 @@ datadir, libexecdir, libdir, runtimedir, cachedir.
 #include <fstream>
 #include <set>
 #include <unistd.h>
+#include <yaml-cpp/yaml.h>
 
 static std::string using_runroot = {};
 
@@ -108,9 +109,9 @@ runroot_handler(const char **argv, bool json)
 
   int i = 0;
   while (argv[i]) {
-    std::string command = argv[i];
+    std::string_view command = argv[i];
     if (command.substr(0, prefix.size()) == prefix) {
-      arg = command;
+      arg = command.data();
       break;
     }
     i++;
@@ -182,31 +183,49 @@ runroot_handler(const char **argv, bool json)
   return;
 }
 
-// return a map of all path in runroot_path.yml
+// return a map of all path with default layout
 std::unordered_map<std::string, std::string>
+runroot_map_default()
+{
+  std::unordered_map<std::string, std::string> map;
+
+  map[LAYOUT_PREFIX]        = Layout::get()->prefix;
+  map[LAYOUT_EXEC_PREFIX]   = Layout::get()->exec_prefix;
+  map[LAYOUT_BINDIR]        = Layout::get()->bindir;
+  map[LAYOUT_SBINDIR]       = Layout::get()->sbindir;
+  map[LAYOUT_SYSCONFDIR]    = Layout::get()->sysconfdir;
+  map[LAYOUT_DATADIR]       = Layout::get()->datadir;
+  map[LAYOUT_INCLUDEDIR]    = Layout::get()->includedir;
+  map[LAYOUT_LIBDIR]        = Layout::get()->libdir;
+  map[LAYOUT_LIBEXECDIR]    = Layout::get()->libexecdir;
+  map[LAYOUT_LOCALSTATEDIR] = Layout::get()->localstatedir;
+  map[LAYOUT_RUNTIMEDIR]    = Layout::get()->runtimedir;
+  map[LAYOUT_LOGDIR]        = Layout::get()->logdir;
+  // mandir is not needed for runroot
+  map[LAYOUT_CACHEDIR] = Layout::get()->cachedir;
+
+  return map;
+}
+
+// return a map of all path in runroot_path.yml
+RunrootMapType
 runroot_map(const std::string &prefix)
 {
-  std::string yaml_path = Layout::relative_to(prefix, "runroot_path.yml");
-  std::ifstream file;
-  file.open(yaml_path);
-  if (!file.good()) {
-    ink_warning("Bad path '%s', continue with default value", prefix.c_str());
-    return std::unordered_map<std::string, std::string>{};
-  }
-
-  std::ifstream yamlfile(yaml_path);
-  std::unordered_map<std::string, std::string> map;
-  std::string str;
-  while (std::getline(yamlfile, str)) {
-    int pos                 = str.find(':');
-    map[str.substr(0, pos)] = str.substr(pos + 2);
-  }
-
-  // change it to absolute path in the map
-  for (auto it : map) {
-    if (it.second[0] != '/') {
-      map[it.first] = Layout::relative_to(prefix, it.second);
+  RunrootMapType map;
+  try {
+    YAML::Node yamlfile = YAML::LoadFile(Layout::relative_to(prefix, "runroot_path.yml"));
+    for (auto it : yamlfile) {
+      // key value pairs of dirs
+      std::string value = it.second.as<std::string>();
+      if (value[0] != '/') {
+        value = Layout::relative_to(prefix, value);
+      }
+      map[it.first.as<std::string>()] = value;
     }
+  } catch (YAML::Exception &e) {
+    ink_warning("Unable to read runroot_path.yml from '%s': %s", prefix.c_str(), e.what());
+    ink_notice("Continuing with default value");
+    return RunrootMapType{};
   }
   return map;
 }
@@ -214,11 +233,11 @@ runroot_map(const std::string &prefix)
 // check for the using of runroot
 // a map of all path will be returned
 // if we do not use runroot, a empty map will be returned.
-std::unordered_map<std::string, std::string>
+RunrootMapType
 check_runroot()
 {
   if (using_runroot.empty()) {
-    return std::unordered_map<std::string, std::string>{};
+    return RunrootMapType{};
   }
 
   int len = using_runroot.size();

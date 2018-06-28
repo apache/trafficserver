@@ -36,15 +36,15 @@ ts.Disk.remap_config.AddLine(
     'map / http://www.linkedin.com/ @action=deny'
 )
 
-ts.Disk.logging_config.AddLines(
-    '''custom = format {
-  Format = "%<hii> %<hiih>"
-}
-
-log.ascii {
-  Format = custom,
-  Filename = 'test_log_field'
-}'''.split("\n")
+ts.Disk.logging_yaml.AddLines(
+    '''
+formats:
+  - name: custom
+    format: "%<hii> %<hiih>"
+logs:
+  - filename: test_log_field
+    format: custom
+'''.split("\n")
 )
 
 # #########################################################################

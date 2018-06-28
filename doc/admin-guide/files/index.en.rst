@@ -28,17 +28,15 @@ Configuration Files
    cache.config.en
    hosting.config.en
    ip_allow.config.en
-   log_hosts.config.en
-   logging.config.en
+   logging.yaml.en
    parent.config.en
    plugin.config.en
    records.config.en
    remap.config.en
    splitdns.config.en
    ssl_multicert.config.en
-   ssl_server_name.config.en
+   ssl_server_name.yaml.en
    storage.config.en
-   vaddrs.config.en
    volume.config.en
 
 :doc:`cache.config.en`
@@ -53,10 +51,7 @@ Configuration Files
    Controls access to the |TS| cache based on source IP addresses and networks
    including limiting individual HTTP methods.
 
-:doc:`log_hosts.config.en`
-   Defines origin servers for which separate logs should be maintained.
-
-:doc:`logging.config.en`
+:doc:`logging.yaml.en`
    Defines custom log file formats, filters, and processing options.
 
 :doc:`parent.config.en`
@@ -67,8 +62,7 @@ Configuration Files
    configurations.
 
 :doc:`records.config.en`
-   Contains many configuration variables affecting |TS| operation, both the
-   local node as well as a cluster in which the node may be a member.
+   Contains many configuration variables affecting |TS| operation.
 
 :doc:`remap.config.en`
    Defines mapping rules used by |TS| to properly route all incoming requests.
@@ -80,14 +74,11 @@ Configuration Files
    Configures |TS| to use different server certificates for SSL termination
    when listening on multiple addresses or when clients employ SNI.
 
-:doc:`ssl_server_name.config.en`
+:doc:`ssl_server_name.yaml.en`
    Configures SNI based Layer 4 routing.
 
 :doc:`storage.config.en`
    Configures all storage devices and paths to be used for the |TS| cache.
-
-:doc:`vaddrs.config.en`
-   Deprecated file formerly used for cluster configuration.
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.

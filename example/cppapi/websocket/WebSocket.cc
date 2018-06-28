@@ -38,7 +38,9 @@ using namespace atscppapi;
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  RegisterGlobalPlugin("CPP_Example_WebSocket", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_WebSocket", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   plugin = new WebSocketInstaller(); // We keep a pointer to this so that clang-analyzer doesn't think it's a leak
 }
 

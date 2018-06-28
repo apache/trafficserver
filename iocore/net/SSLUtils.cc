@@ -888,7 +888,9 @@ void
 SSLPostConfigInitialize()
 {
   if (SSLConfigParams::engine_conf_file) {
+#ifndef OPENSSL_IS_BORINGSSL
     ENGINE_load_dynamic();
+#endif
 
     OPENSSL_load_builtin_modules();
     if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
@@ -1056,6 +1058,14 @@ SSLInitializeStatistics()
 
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_lock_contention", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_lock_contention, RecRawStatSyncCount);
+
+  /* Track dynamic record size */
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.default_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_dyn_def_tls_record_count, RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.max_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_dyn_max_tls_record_count, RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.redo_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_dyn_redo_tls_record_count, RecRawStatSyncCount);
 
   /* error stats */
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_write", RECD_COUNTER, RECP_PERSISTENT,
@@ -1497,7 +1507,12 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 #ifdef SSL3_ST_SR_CLNT_HELLO_A
     if (state == SSL3_ST_SR_CLNT_HELLO_A) {
 #else
+#ifdef SSL_ST_RENEGOTIATE
+    // This is for BoringSSL
+    if (state == SSL_ST_RENEGOTIATE) {
+#else
     if (state == TLS_ST_SR_CLNT_HELLO) {
+#endif
 #endif
 #endif
       netvc->setSSLClientRenegotiationAbort(true);

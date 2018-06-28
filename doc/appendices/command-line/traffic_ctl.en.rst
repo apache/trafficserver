@@ -258,9 +258,12 @@ traffic_ctl host
     Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache heirarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
 
 .. program:: traffic_ctl host
-.. option:: down HOSTNAME [HOSTNAME ...]
+.. option:: down --time seconds HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as down so that they will not be chosen as a next hop parent.
+    If the --time option is included, the host is marked down for the specified number of 
+    seconds after which the host will automatically be marked up.  0 seconds marks the host 
+    down indefinately until marked up manually and is the default.
 
 .. program:: traffic_ctl host
 .. option:: up HOSTNAME [HOSTNAME ...]

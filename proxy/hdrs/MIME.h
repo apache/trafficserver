@@ -1383,6 +1383,9 @@ MIMEHdr::value_append_or_set(const char *name, const int name_length, char *valu
   MIMEField *field = nullptr;
 
   if ((field = field_find(name, name_length)) != nullptr) {
+    while (field->m_next_dup) {
+      field = field->m_next_dup;
+    }
     field_value_append(field, value, value_length, true);
   } else {
     value_set(name, name_length, value, value_length);

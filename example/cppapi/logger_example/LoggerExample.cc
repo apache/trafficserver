@@ -85,7 +85,7 @@ public:
       }
     }
 
-    // One drawback to usign the Traffic Server Text Loggers is that you're limited in the size of the log
+    // One drawback to using the Traffic Server Text Loggers is that you're limited in the size of the log
     // lines, this limit is now set at 8kb for atscppapi, but this limit might be removed in the future.
     LOG_INFO(log, "This message will be dropped (see error.log) because it's just too big: %s", big_buffer_14kb_);
 
@@ -103,7 +103,9 @@ private:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  RegisterGlobalPlugin("CPP_Example_Logger", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_Logger", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   // Create a new logger
   // This will create a log file with the name logger_example.log (since we left off
   //    the extension it will automatically add .log)
@@ -115,7 +117,7 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   // The fourth argument is the initial logging level this can always be changed with log.setLogLevel().
   //  the default log level is LOG_LEVEL_INFO.
   // The fifth argument is to enable log rolling, this is enabled by default.
-  // The sixth argument is the freuqency in which we will roll the logs, 300 seconds is very low,
+  // The sixth argument is the frequency in which we will roll the logs, 300 seconds is very low,
   //  the default for this argument is 3600.
   log.init("logger_example", true, true, Logger::LOG_LEVEL_DEBUG, true, 300);
 

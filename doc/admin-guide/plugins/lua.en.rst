@@ -68,11 +68,11 @@ Synopsis
 Installation
 ============
 
-This plugin is only built if the configure option
+This plugin is only built if LuaJIT (>2.0.4) is installed and the configure option
 
 ::
 
-    --enable-experimental-plugins
+    --enable-luajit
 
 is given at build time.
 
@@ -220,7 +220,7 @@ TS Basic Internal Information
 **syntax:** *ts.get_plugin_dir()*
 **syntax:** *ts.get_traffic_server_version()*
 
-**context:** global 
+**context:** global
 
 **description**: get basic internal information for the TS instance, such as install directory, runtime directory,
 config directory, plugin directory and version of ATS
@@ -3258,7 +3258,6 @@ Http config constants
     TS_LUA_CONFIG_HTTP_SERVER_TCP_INIT_CWND
     TS_LUA_CONFIG_HTTP_SEND_HTTP11_REQUESTS
     TS_LUA_CONFIG_HTTP_CACHE_HTTP
-    TS_LUA_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL
     TS_LUA_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE
     TS_LUA_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE
     TS_LUA_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE

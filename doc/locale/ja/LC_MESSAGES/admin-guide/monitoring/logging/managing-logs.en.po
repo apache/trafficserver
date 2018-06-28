@@ -392,35 +392,8 @@ msgid ""
 "described above."
 msgstr ""
 
-#: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:227
-msgid "Separating Logs by Origin"
-msgstr ""
-
-#: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:229
-msgid ""
-"The default :file:`log_hosts.config` file is located in the |TS| ``config`` "
-"directory. To record HTTP transactions for different origin servers in "
-"separate log files, you must specify the hostname of each origin server on "
-"a separate line in :file:`log_hosts.config`. For example, if you specify "
-"the keyword ``sports``, then Traffic Server records all HTTP transactions "
-"from ``sports.yahoo.com`` and ``www.foxsports.com`` in a log file called "
-"``squid-sports.log`` (if the Squid format is enabled)."
-msgstr ""
-
-#: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:239
-msgid ""
-"If |TS| is clustered and you enable log file collation, then you should use "
-"the same :file:`log_hosts.config` file on every |TS| node in the cluster."
-msgstr ""
-
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:243
 msgid "To edit the log hosts list:"
-msgstr ""
-
-#: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:245
-msgid ""
-"Enter the hostname of each origin server on a separate line in :file:"
-"`log_hosts.config`. ::"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:252
