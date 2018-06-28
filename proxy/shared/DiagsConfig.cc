@@ -211,7 +211,6 @@ void
 DiagsConfig::config_diags_norecords()
 {
   DiagsConfigState c;
-  ink_zero(c);
 
   //////////////////////////////
   // clear out old tag tables //

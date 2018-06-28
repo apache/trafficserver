@@ -381,9 +381,7 @@ mkprefix(state_t *state, char *prefix, int length)
   transition_t *transitions;
 
   prefixtbl[state->num] = (char *)malloc(sizeof(char) * (length + 1));
-  if (length > 0) {
-    strncpy(prefixtbl[state->num], prefix, length);
-  }
+  strncpy(prefixtbl[state->num], prefix, length);
   prefixtbl[state->num][length] = '\0';
 
   transitions = state->transitions;
