@@ -347,8 +347,12 @@ QUICPacketLongHeader::has_key_phase() const
 QUICKeyPhase
 QUICPacketLongHeader::key_phase() const
 {
-  // TODO LongHeader will also be used for 0-RTT packets
-  return QUICKeyPhase::CLEARTEXT;
+  switch (this->type()) {
+  case QUICPacketType::ZERO_RTT_PROTECTED:
+    return QUICKeyPhase::ZERORTT;
+  default:
+    return QUICKeyPhase::CLEARTEXT;
+  }
 }
 
 uint16_t

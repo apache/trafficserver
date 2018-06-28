@@ -216,6 +216,10 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
 int
 QUICTLS::update_key_materials()
 {
+  if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
+    this->_generate_0rtt_key();
+  }
+
   // Switch key phase
   QUICKeyPhase next_key_phase;
   switch (this->_client_pp->key_phase()) {
