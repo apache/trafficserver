@@ -33,3 +33,5 @@ development team.
    scalar.en
    buffer-writer.en
    MemArena.en
+   AcidPtr.en
+   Extendible.en

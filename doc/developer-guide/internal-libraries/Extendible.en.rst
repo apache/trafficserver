@@ -59,13 +59,13 @@ During system init, code and plugins can add fields to the Extendible's schema. 
 .. code-block:: cpp
 
    ExtendibleExample:FieldId<ATOMIC,int> fld_my_int;
-   ...
+   
    void PluginInit() {
      fld_my_int = ExtendibleExample::schema.addField("my_plugin_int");
    }
 
 
-When an Extendible derived class is instantiated, new() will allocate a block of memory for the derived class and all added fields. There is zero memory overhead per instance, unless using ACIDPTR_ field access type.
+When an Extendible derived class is instantiated, new() will allocate a block of memory for the derived class and all added fields. There is zero memory overhead per instance, unless using :ref:ACIDPTR field access type.
 
 .. code-block:: cpp
 
@@ -114,16 +114,16 @@ Field Access Types
 ------------------
 .. _AccessType:
 
-=========   =======================================   ============================================================   ========================================   =====================================
-Enums       Allocates                                 API                                                            Pros                                       Cons  
-=========   =======================================   ============================================================   ========================================   =====================================
-ATOMIC      std::atomic<FieldType>                    :code:`get(FieldId)`                                           Leverages std::atomic<> API. No Locking.   Only works on small data types.
-BIT         1 bit from packed bits                    :code:`get(FieldId), readBit(FieldId), writeBit(FieldId)`      Memory efficient.                          Cannot return reference. 
-CONST       FieldType                                 :code:`get(FieldId), writeConst(FieldId)`                      Direct reference. Fast.                    No thread protection.
-ACIDPTR_   shared_ptr<FieldType> = new FieldType()   :code:`get(FieldId), writeAcidPtr(FieldId)`                   Avoid skew in non-atomic structures.       Non-contiguous memory allocations. Uses locking.
-C_API       a number of bytes                         :code:`get()`                                                Can use in C.                              No thread protection.
-=========   =======================================   ============================================================   ========================================   =====================================
+============   =======================================   ============================================================   ========================================   ================================================
+Enums          Allocates                                 API                                                            Pros                                       Cons  
+============   =======================================   ============================================================   ========================================   ================================================
+ATOMIC         std::atomic<FieldType>                    :code:`get(FieldId)`                                           Leverages std::atomic<> API. No Locking.   Only works on small data types.
+BIT            1 bit from packed bits                    :code:`get(FieldId), readBit(FieldId), writeBit(FieldId)`      Memory efficient.                          Cannot return reference. 
+CONST          FieldType                                 :code:`get(FieldId), writeConst(FieldId)`                      Direct reference. Fast.                    No thread protection.
+:ref:ACIDPTR   shared_ptr<FieldType> = new FieldType()   :code:`get(FieldId), writeAcidPtr(FieldId)`                    Avoid skew in non-atomic structures.       Non-contiguous memory allocations. Uses locking.
+C_API          a number of bytes                         :code:`get()`                                                  Can use in C.                              No thread protection.
+============   =======================================   ============================================================   ========================================   ================================================
 
 :code:`operator[](FieldId)` has been overridden to call :code:`get(FieldId)`.
 
-Unfortunately our data is not "one type fits all". I expect that most config values will be stored as CONST, most states values will be ATOMIC or BIT, while vectored results will be ACIDPTR.
+Unfortunately our data is not "one type fits all". I expect that most config values will be stored as CONST, most states values will be ATOMIC or BIT, while vectored results will be :ref:ACIDPTR.

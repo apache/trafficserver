@@ -21,7 +21,7 @@
 .. default-domain:: cpp
 
 AcidPtr & AcidCommitPtr
-***************************
+***********************
 
 Synopsis
 ++++++++
@@ -38,28 +38,59 @@ Description
 
 Provides transparent interface for "copy on write" and "commit when done" in a familiar unique_ptr style. 
 
-Named after the desirable properties of a database, ACID acronym: https://en.wikipedia.org/wiki/ACID
+Named after the desirable properties of a database, ACID_ acronym: 
 * Atomic - reads and writes avoid skew, by using mutex locks.
 * Consistent - data can only be changed by a commit, and only one commit can exist at a time per data.
 * Isolated - commits of a single point of data are not concurrent. But commits of seperate data can be conncurrent.
 * Durable - shared_ptr is used to keep older versions of data in memory while references exist.
 
+.. _ACID: https://en.wikipedia.org/wiki/ACID
+
+.. uml:
+   class AcidPtr<T> {
+     -std::shared_ptr<T> data
+     ----
+     +AcidPtr()
+     +AcidPtr(T*)
+     +std::shared_ptr<const T> getPtr()
+     +void commit(T*)
+     +AcidCommmitPtr<T> startCommit()
+     ----
+     ~_finishCommit(T*)
+   }
+   
+   class AcidCommitPtr<T> {
+     -AcidPtr& data_ptr
+     -std::unique_lock commit_lock
+     ----
+     -AcidCommmitPtr() = delete
+     +AcidCommmitPtr(AcidPtr&)
+     +~AcidCommmitPtr()
+     +void abort() 
+   }
+   
+   class std::unique_ptr {
+   
+   }
+   
+   AcidCommitPtr--|>std::unique_ptr
+   
 Performance
 -----------
 Note this code is currently implemented with mutex locks, it is expected to be fast due to the very brief duration of each lock. It would be plausible to change the implementation to use atomics or spin locks. 
 
 
-
+:class:AcidCommitPtr
 * On construction, duplicate values from a shared_ptr to a unique_ptr. (aka copy read to write memory)
 * On destruction, move value ptr to shared_ptr. (aka move write ptr to read ptr) 
 
-The AcidCommitPtr executes this transparent to the writer code. It copies the data on construction, and finalizes on destruction. A MemLock is used to allow exclusive read and write access, however the access is made to as fast as possible.
+The :class:AcidCommitPtr executes this transparent to the writer code. It copies the data on construction, and finalizes on destruction. A MemLock is used to allow exclusive read and write access, however the access is made to as fast as possible.
 
 .. _ACIDPTR:
 
 Use Cases
 ---------
-Implemented for use ACIDPTR_ interface in Extendible_. But could be used elsewhere without modification.
+Implemented for use :ref:ACIDPTR interface in :ref:Extendible. But could be used elsewhere without modification.
 
 .. uml::
    :align: center
