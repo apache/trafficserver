@@ -43,8 +43,7 @@ def repeat(str, count):
     return result
 
 # Need a fairly big body, otherwise the plugin will refuse to compress
-body = repeat("lets go surfin now everybodys learnin how\n", 24)
-body = body + "lets go surfin now everybodys learnin how"
+body = repeat("lets go surfin now everybodys learnin how\n", 25)
 
 # expected response from the origin server
 response_header = {

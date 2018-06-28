@@ -7,6 +7,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts/0/gzip
 > Accept-Encoding: gzip
@@ -15,6 +16,7 @@
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
 < Content-Length: 71
+
 
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts/0/br
@@ -25,12 +27,15 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts/0/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts/1/gzip, deflate, sdch, br
@@ -41,6 +46,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts/1/gzip
 > Accept-Encoding: gzip
@@ -50,19 +56,24 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts/1/br
 > Accept-Encoding: br
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts/1/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts/2/gzip, deflate, sdch, br
@@ -73,6 +84,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts/2/gzip
 > Accept-Encoding: gzip
@@ -81,6 +93,7 @@
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
 < Content-Length: 71
+
 
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts/2/br
@@ -91,12 +104,15 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts/2/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts2/0/gzip
@@ -107,6 +123,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts2/0/gzip
 > Accept-Encoding: gzip
@@ -115,6 +132,7 @@
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
 < Content-Length: 71
+
 
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts2/0/br
@@ -125,12 +143,15 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts2/0/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts2/1/gzip
@@ -141,6 +162,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts2/1/gzip
 > Accept-Encoding: gzip
@@ -149,20 +171,25 @@
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
 < Content-Length: 71
+
 
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts2/1/br
 > Accept-Encoding: br
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts2/1/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts2/2/gzip
@@ -173,6 +200,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts2/2/gzip
 > Accept-Encoding: gzip
@@ -181,6 +209,7 @@
 < Content-Encoding: gzip
 < Vary: Accept-Encoding
 < Content-Length: 71
+
 
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts2/2/br
@@ -191,19 +220,24 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts2/2/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts3/0/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts3/0/gzip
@@ -214,6 +248,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts3/0/br
 > Accept-Encoding: br
@@ -223,19 +258,24 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: ts3/0/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts3/1/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts3/1/gzip
@@ -246,6 +286,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts3/1/br
 > Accept-Encoding: br
@@ -255,19 +296,24 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-1/obj1 HTTP/1.1
 > X-Ats-Compress-Test: ts3/1/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts3/2/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts3/2/gzip
@@ -278,6 +324,7 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 
+
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts3/2/br
 > Accept-Encoding: br
@@ -287,10 +334,13 @@
 < Vary: Accept-Encoding
 < Content-Length: 46
 
+
 > GET http://ae-2/obj2 HTTP/1.1
 > X-Ats-Compress-Test: ts3/2/deflate
 > Accept-Encoding: deflate
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
-< Content-Length: 1049
+< Content-Length: 1050
+
+
 
