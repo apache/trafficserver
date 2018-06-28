@@ -434,6 +434,7 @@ QUICTLS::_get_km(QUICKeyPhase phase, bool for_encryption) const
     }
     break;
   default:
+    ink_assert(!"It should not happen");
     return nullptr;
   }
 

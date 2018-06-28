@@ -843,6 +843,10 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
       break;
     }
     QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
+
+    Debug("quic", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
+          QUICDebugNames::key_phase(phase));
+
   } else {
     QUICPacketShortHeader::key_phase(phase, packet, packet_len);
     QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConfigParams::scid_len());

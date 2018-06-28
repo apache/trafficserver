@@ -988,14 +988,21 @@ QUICNetVConnection::_state_common_receive_packet()
       if (this->_handshake_handler->is_completed() && p->destination_cid() != this->_quic_connection_id) {
         if (this->_alt_con_manager->migrate_to(p->destination_cid(), this->_reset_token)) {
           // Migrate connection
-          // TODO Address Validation
-          this->_quic_connection_id = p->destination_cid();
+          this->_update_local_cid(p->destination_cid());
           Connection con;
           con.setRemote(&p->from().sa);
           this->con.move(con);
+          if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
+            char old_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+            char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+            this->_quic_connection_id.hex(old_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+            p->destination_cid().hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+            QUICConDebug("Connection migrated from %s to %s", old_cid_str, new_cid_str);
+          }
           this->_validate_new_path();
         } else {
-          // TODO Send some error?
+          QUICConDebug("Connection migration failed");
+          ink_assert(!"Connection migration failed");
         }
       }
       error = this->_state_connection_established_process_packet(std::move(p));
