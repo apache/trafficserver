@@ -48,8 +48,6 @@
 
 #define RND16(_x) (((_x) + 15) & ~15)
 
-extern int cmd_disable_pfreelist;
-
 /** Allocator for fixed size memory blocks. */
 class Allocator
 {
@@ -61,35 +59,24 @@ public:
   void *
   alloc_void()
   {
-    return ink_freelist_new(this->fl, freelist_class_ops);
+    return ink_freelist_new(this->fl);
   }
 
-  /**
-    Deallocate a block of memory allocated by the Allocator.
-
-    @param ptr pointer to be freed.
-  */
+  /** Deallocate a block of memory allocated by the Allocator. */
   void
   free_void(void *ptr)
   {
-    ink_freelist_free(this->fl, ptr, freelist_class_ops);
+    ink_freelist_free(this->fl, ptr);
   }
 
-  /**
-    Deallocate blocks of memory allocated by the Allocator.
-
-    @param head pointer to be freed.
-    @param tail pointer to be freed.
-    @param num_item of blocks to be freed.
-  */
+  /** Deallocate blocks of memory allocated by the Allocator. */
   void
   free_void_bulk(void *head, void *tail, size_t num_item)
   {
-    ink_freelist_free_bulk(this->fl, head, tail, num_item, freelist_class_ops);
+    ink_freelist_free_bulk(this->fl, head, tail, num_item);
   }
 
   Allocator() { fl = nullptr; }
-
   /**
     Creates a new allocator.
 
@@ -130,7 +117,7 @@ public:
   C *
   alloc()
   {
-    void *ptr = ink_freelist_new(this->fl, freelist_class_ops);
+    void *ptr = ink_freelist_new(this->fl);
 
     memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
     return (C *)ptr;
@@ -144,20 +131,20 @@ public:
   void
   free(C *ptr)
   {
-    ink_freelist_free(this->fl, ptr, freelist_class_ops);
+    ink_freelist_free(this->fl, ptr);
   }
 
   /**
-    Deallocates objects of the templated type.
+     Deallocates objects of the templated type.
 
-    @param head pointer to be freed.
-    @param tail pointer to be freed.
-    @param num_item of blocks to be freed.
+     @param head pointer to be freed.
+     @param tail pointer to be freed.
+     @param count of blocks to be freed.
    */
   void
   free_bulk(C *head, C *tail, size_t num_item)
   {
-    ink_freelist_free_bulk(this->fl, head, tail, num_item, freelist_class_ops);
+    ink_freelist_free_bulk(this->fl, head, tail, num_item);
   }
 
   /**
@@ -183,13 +170,13 @@ public:
   }
 
   /**
-    Deallocate objects of the templated type via the inherited
-    interface using void pointers.
+      Deallocate objects of the templated type via the inherited
+      interface using void pointers.
 
-    @param head pointer to be freed.
-    @param tail pointer to be freed.
-    @param num_item of blocks.
-  */
+      @param head pointer to be freed.
+      @param tail pointer to be freed.
+      @param count of blocks
+    */
   void
   free_void_bulk(void *head, void *tail, size_t num_item)
   {

@@ -84,7 +84,6 @@ struct ArgumentDescription {
 extern const char *file_arguments[]; // exported by process_args()
 extern unsigned n_file_arguments;    // exported by process_args()
 extern const char *program_name;     // exported by process_args()
-extern int cmd_disable_pfreelist;
 
 /* Print out arguments and values
  */

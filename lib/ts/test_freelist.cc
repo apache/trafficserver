@@ -37,13 +37,12 @@ test(void *d)
 
   id = (intptr_t)d;
 
-  time_t start              = time(nullptr);
-  int count                 = 0;
-  const InkFreeListOps *ops = ink_freelist_freelist_ops();
+  time_t start = time(nullptr);
+  int count    = 0;
   for (;;) {
-    m1 = ink_freelist_new(flist, ops);
-    m2 = ink_freelist_new(flist, ops);
-    m3 = ink_freelist_new(flist, ops);
+    m1 = ink_freelist_new(flist);
+    m2 = ink_freelist_new(flist);
+    m3 = ink_freelist_new(flist);
 
     if ((m1 == m2) || (m1 == m3) || (m2 == m3)) {
       printf("0x%08" PRIx64 "   0x%08" PRIx64 "   0x%08" PRIx64 "\n", (uint64_t)(uintptr_t)m1, (uint64_t)(uintptr_t)m2,
@@ -55,9 +54,9 @@ test(void *d)
     memset(m2, id, 64);
     memset(m3, id, 64);
 
-    ink_freelist_free(flist, m1, ops);
-    ink_freelist_free(flist, m2, ops);
-    ink_freelist_free(flist, m3, ops);
+    ink_freelist_free(flist, m1);
+    ink_freelist_free(flist, m2);
+    ink_freelist_free(flist, m3);
 
     // break out of the test if we have run more then 60 seconds
     if (++count % 1000 == 0 && (start + 60) < time(nullptr)) {

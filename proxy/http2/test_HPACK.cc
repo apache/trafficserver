@@ -45,8 +45,6 @@ static char cmd_output_dir[512] = "";
 
 static const ArgumentDescription argument_descriptions[] = {
   {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, nullptr, nullptr},
-  {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator", "T", &cmd_disable_pfreelist,
-   "PROXY_DPRINTF_LEVEL", nullptr},
   {"input_dir", 'i', "input dir", "S511", &cmd_input_dir, nullptr, nullptr},
   {"output_dir", 'o', "output dir", "S511", &cmd_output_dir, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
@@ -399,8 +397,9 @@ main(int argc, const char **argv)
   appVersionInfo.setup(PACKAGE_NAME, "test_HPACK", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
-  ink_freelist_init_ops(cmd_disable_freelist, cmd_disable_pfreelist);
-
+  if (cmd_disable_freelist) {
+    ink_freelist_init_ops(ink_freelist_malloc_ops());
+  }
   if (*cmd_input_dir) {
     input_dir = cmd_input_dir;
     if (*input_dir.end() != '/') {
