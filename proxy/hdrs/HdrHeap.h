@@ -476,6 +476,7 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle *from)
   m_heap = from->m_heap;
 }
 
+HdrStrHeap *new_HdrStrHeap(int requested_size);
 inkcoreapi HdrHeap *new_HdrHeap(int size = HDR_HEAP_DEFAULT_SIZE);
 
 void hdr_heap_test();

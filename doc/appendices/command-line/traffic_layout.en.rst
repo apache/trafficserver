@@ -18,7 +18,7 @@
 .. include:: ../../common.defs
 
 traffic_layout
-*****************
+**************
 
 Synopsis
 ========
@@ -35,6 +35,13 @@ Options
 .. option:: -V, --version
 
     Print version information and exit.
+
+Environment
+===========
+
+.. envvar:: TS_RUNROOT
+
+   The path to the run root file. It has the same effect as the command line option :option:`--run-root`.
 
 Description
 =============
@@ -82,7 +89,8 @@ Subcommands
       Verify the permission of the sandbox.
 
 Subcommands options
---------------
+-------------------
+
 - Force option: ::
 
       traffic_layout init --force (--path /path/to/sandbox)

@@ -89,7 +89,7 @@ public:
     s += nextWs();
   }
 
-  operator ts::string_view() const { return ts::string_view(s.c_str()); }
+  operator std::string_view() const { return std::string_view(s.c_str()); }
 };
 
 void

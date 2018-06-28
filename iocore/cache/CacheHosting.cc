@@ -495,6 +495,9 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
         }
         s++;
       }
+      if (val == nullptr) {
+        return -1;
+      }
       s = val;
       num_cachevols++;
       cp = (CacheVol **)ats_malloc(num_cachevols * sizeof(CacheVol *));

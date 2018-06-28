@@ -307,9 +307,14 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 
   switch (event) {
   case VC_EVENT_READ_COMPLETE:
-  case VC_EVENT_READ_READY:
-    retval = (this->*session_handler)(event, edata);
+  case VC_EVENT_READ_READY: {
+    bool is_zombie = connection_state.get_zombie_event() != nullptr;
+    retval         = (this->*session_handler)(event, edata);
+    if (is_zombie && connection_state.get_zombie_event() != nullptr) {
+      Warning("Processed read event for zombie session %" PRId64, connection_id());
+    }
     break;
+  }
 
   case HTTP2_SESSION_EVENT_XMIT: {
     Http2Frame *frame = (Http2Frame *)edata;
@@ -325,6 +330,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
+    this->set_dying_event(event);
     this->do_io_close();
     retval = 0;
     break;

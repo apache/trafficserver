@@ -5,7 +5,7 @@
    only as the view doesn't own the memory. Along with generic buffer methods are specialized
    methods to support better string parsing, particularly token based parsing.
 
-   This class is based on @c ts::string_view and is easily and cheaply converted to and from that class.
+   This class is based on @c std::string_view and is easily and cheaply converted to and from that class.
 
 
    @section license License
@@ -34,7 +34,7 @@
 #include <memory.h>
 #include <algorithm>
 #include <string>
-#include <ts/string_view.h>
+#include <string_view>
 
 /// Apache Traffic Server commons.
 namespace ts
@@ -91,17 +91,17 @@ intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
     @c TextView is based on an earlier classes @c ConstBuffer, @c StringView and influenced by @c
     Boost.string_ref and @c std::string_view. None of these were adequate for how use of @c
     ConstBuffer evolved with regard to text based manipulations. @c TextView is a super set of @c
-    std::string_view (and therefore our local implementation, @ts::string_view). It is designed to
+    std::string_view (and therefore our local implementation, @std::string_view). It is designed to
     be a drop in replacement.
 
     @note To simplify the interface there is no constructor just a character pointer. Constructors require
     either a literal string or an explicit length. This avoid ambiguities which are much more annoying that
     explicitly calling @c strlen on a character pointer.
  */
-class TextView : public string_view
+class TextView : public std::string_view
 {
-  using self_type  = TextView;    ///< Self reference type.
-  using super_type = string_view; ///< Parent type.
+  using self_type  = TextView;         ///< Self reference type.
+  using super_type = std::string_view; ///< Parent type.
 
 public:
   /// Default constructor (empty buffer).
@@ -145,7 +145,7 @@ public:
   */
   constexpr TextView(std::nullptr_t);
 
-  /// Construct from a @c ts::string_view.
+  /// Construct from a @c std::string_view.
   constexpr TextView(super_type const &that);
 
   /// Construct from @c std::string, referencing the entire string contents.
@@ -174,7 +174,7 @@ public:
   self_type &operator++();
 
   /** Shift the view to discard the leading @a n bytes.
-      Equivalent to @c ts::string_view::remove_prefix
+      Equivalent to @c std::string_view::remove_prefix
       @return @a this
   */
   self_type &operator+=(size_t n);
@@ -883,7 +883,7 @@ TextView::ltrim(super_type const &delimiters)
 inline TextView &
 TextView::ltrim(const char *delimiters)
 {
-  return this->ltrim(ts::string_view(delimiters));
+  return this->ltrim(std::string_view(delimiters));
 }
 
 inline TextView &
@@ -924,7 +924,7 @@ TextView::trim(super_type const &delimiters)
 inline TextView &
 TextView::trim(const char *delimiters)
 {
-  return this->trim(ts::string_view(delimiters));
+  return this->trim(std::string_view(delimiters));
 }
 
 template <typename F>

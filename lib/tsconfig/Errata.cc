@@ -69,9 +69,8 @@ inline Errata::Errata(ImpPtr const& ptr)
 
 Errata::Data::~Data() {
   if (m_log_on_delete) {
-    Errata tmp(this); // because client API requires a wrapper.
-    for ( auto& f : Sink_List ) { (*f)(tmp);
-}
+    Errata tmp(ImpPtr(this)); // because client API requires a wrapper.
+    for ( auto& f : Sink_List ) { (*f)(tmp); }
     tmp.m_data.release(); // don't delete this again.
   }
 }
@@ -102,11 +101,11 @@ Errata::~Errata() {
 Errata::Data*
 Errata::pre_write() {
   if (m_data) {
-    if (m_data.useCount() > 1) {
-      m_data = new Data(*m_data); // clone current data
+    if (m_data.use_count() > 1) {
+      m_data.reset(new Data(*m_data)); // clone current data
     }
   } else { // create new data
-    m_data = new Data;
+    m_data.reset(new Data);
   }
   return m_data.get();
 }
@@ -114,7 +113,7 @@ Errata::pre_write() {
 // Just create an instance if needed.
 Errata::Data const*
 Errata::instance() {
-  if (!m_data) { m_data = new Data;
+  if (!m_data) { m_data.reset(new Data);
 }
   return m_data.get();
 }
@@ -140,7 +139,7 @@ Errata::operator=(self const& that) {
 Errata&
 Errata::operator = (Message const& msg) {
   // Avoid copy on write in the case where we discard.
-  if (!m_data || m_data.useCount() > 1) {
+  if (!m_data || m_data.use_count() > 1) {
     this->clear();
     this->push(msg);
   } else {

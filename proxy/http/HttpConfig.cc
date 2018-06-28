@@ -188,7 +188,7 @@ http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *c
   if (0 == strcasecmp("proxy.config.http.insert_forwarded", name)) {
     if (RECD_STRING == dtype) {
       ts::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(data.rec_string), error);
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(data.rec_string), error);
       if (!error.size()) {
         c->oride.insert_forwarded = bs;
         valid_p                   = true;
@@ -981,7 +981,7 @@ HttpConfig::startup()
 
     if (REC_ERR_OKAY == RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))) {
       ts::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(str), error);
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
       if (!error.size()) {
         c.oride.insert_forwarded = bs;
       } else {
@@ -1066,6 +1066,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
   HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
+
+  HttpEstablishStaticConfigByte(c.oride.allow_half_open, "proxy.config.http.allow_half_open");
 
   HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_text, "proxy.config.http.cache.vary_default_text");
   HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_images, "proxy.config.http.cache.vary_default_images");
@@ -1347,6 +1349,8 @@ HttpConfig::reconfigure()
   params->oride.cache_vary_default_other  = ats_strdup(m_master.oride.cache_vary_default_other);
 
   params->oride.srv_enabled = m_master.oride.srv_enabled;
+
+  params->oride.allow_half_open = m_master.oride.allow_half_open;
 
   // open read failure retries
   params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;

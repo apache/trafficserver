@@ -1,0 +1,5 @@
+traffic_layout is a easy-to-use tool to:
+- show the location of various installation paths and resources.
+- deal with traffic server runroot.
+
+For detailed information, please refer to doc/appendices/command-line/traffic_layout.en.rst.

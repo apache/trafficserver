@@ -66,18 +66,6 @@ msgid ""
 "cache`."
 msgstr ""
 
-#: ../../admin-guide/files/hosting.config.en.rst:44
-msgid ""
-"The :file:`volume.config` configuration must be the same on all nodes in a "
-"cluster."
-msgstr ""
-
-#: ../../admin-guide/files/hosting.config.en.rst:39
-msgid ""
-"When you apply the changes to a node in a cluster, Traffic Server "
-"automatically applies the changes to all other nodes in the cluster."
-msgstr ""
-
 #: ../../admin-guide/files/hosting.config.en.rst:64
 msgid ""
 "**Note:** To allocate more than one partition to an origin server or "

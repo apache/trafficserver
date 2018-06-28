@@ -22,11 +22,17 @@
  */
 
 #include <ts/BufferWriter.h>
+#include <ts/bwf_std_format.h>
+#include <unistd.h>
+#include <sys/param.h>
 #include <cctype>
 #include <ctime>
 #include <cmath>
 #include <cmath>
 #include <array>
+#include <chrono>
+
+using namespace std::literals;
 
 namespace
 {
@@ -60,12 +66,40 @@ tv_to_positive_decimal(ts::TextView src, ts::TextView *out)
 
 namespace ts
 {
-const ts::BWFSpec ts::BWFSpec::DEFAULT;
+const BWFSpec BWFSpec::DEFAULT;
+
+const BWFSpec::Property BWFSpec::_prop;
+
+#pragma GCC diagnostic ignored "-Wchar-subscripts"
+BWFSpec::Property::Property()
+{
+  memset(_data, 0, sizeof(_data));
+  _data['b'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['B'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['d'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['g'] = TYPE_CHAR;
+  _data['o'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['p'] = TYPE_CHAR;
+  _data['P'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['s'] = TYPE_CHAR;
+  _data['S'] = TYPE_CHAR | UPPER_TYPE_CHAR;
+  _data['x'] = TYPE_CHAR | NUMERIC_TYPE_CHAR;
+  _data['X'] = TYPE_CHAR | NUMERIC_TYPE_CHAR | UPPER_TYPE_CHAR;
+
+  _data[' '] = SIGN_CHAR;
+  _data['-'] = SIGN_CHAR;
+  _data['+'] = SIGN_CHAR;
+
+  _data['<'] = static_cast<uint8_t>(BWFSpec::Align::LEFT);
+  _data['>'] = static_cast<uint8_t>(BWFSpec::Align::RIGHT);
+  _data['^'] = static_cast<uint8_t>(BWFSpec::Align::CENTER);
+  _data['='] = static_cast<uint8_t>(BWFSpec::Align::SIGN);
+}
 
 /// Parse a format specification.
 BWFSpec::BWFSpec(TextView fmt)
 {
-  TextView num;
+  TextView num; // temporary for number parsing.
   intmax_t n;
 
   _name = fmt.take_prefix_at(':');
@@ -184,7 +218,7 @@ namespace bw_fmt
   void
   Err_Bad_Arg_Index(BufferWriter &w, int i, size_t n)
   {
-    static const BWFormat fmt{"{{BAD_ARG_INDEX:{} of {}}}"_sv};
+    static const BWFormat fmt{"{{BAD_ARG_INDEX:{} of {}}}"sv};
     w.print(fmt, i, n);
   }
 
@@ -415,7 +449,7 @@ namespace bw_fmt
       }
     }
     width -= static_cast<int>(n);
-    string_view digits{buff + sizeof(buff) - n, n};
+    std::string_view digits{buff + sizeof(buff) - n, n};
 
     if (spec._align == BWFSpec::Align::SIGN) { // custom for signed case because prefix and digits are seperated.
       if (neg) {
@@ -458,15 +492,15 @@ namespace bw_fmt
   BufferWriter &
   Format_Floating(BufferWriter &w, BWFSpec const &spec, double f, bool neg_p)
   {
-    static const ts::string_view infinity_bwf{"Inf"};
-    static const ts::string_view nan_bwf{"NaN"};
-    static const ts::string_view zero_bwf{"0"};
-    static const ts::string_view subnormal_bwf{"subnormal"};
-    static const ts::string_view unknown_bwf{"unknown float"};
+    static const std::string_view infinity_bwf{"Inf"};
+    static const std::string_view nan_bwf{"NaN"};
+    static const std::string_view zero_bwf{"0"};
+    static const std::string_view subnormal_bwf{"subnormal"};
+    static const std::string_view unknown_bwf{"unknown float"};
 
     // Handle floating values that are not normal
     if (!std::isnormal(f)) {
-      ts::string_view unnormal;
+      std::string_view unnormal;
       switch (std::fpclassify(f)) {
       case FP_INFINITE:
         unnormal = infinity_bwf;
@@ -536,8 +570,8 @@ namespace bw_fmt
     --width; // '.'
     width -= static_cast<int>(r);
 
-    string_view whole_digits{whole + sizeof(whole) - l, l};
-    string_view frac_digits{fraction + sizeof(fraction) - r, r};
+    std::string_view whole_digits{whole + sizeof(whole) - l, l};
+    std::string_view frac_digits{fraction + sizeof(fraction) - r, r};
 
     Write_Aligned(w,
                   [&]() {
@@ -552,7 +586,7 @@ namespace bw_fmt
 
   /// Write out the @a data as hexadecimal, using @a digits as the conversion.
   void
-  Hex_Dump(BufferWriter &w, string_view data, const char *digits)
+  Hex_Dump(BufferWriter &w, std::string_view data, const char *digits)
   {
     const char *ptr = data.data();
     for (auto n = data.size(); n > 0; --n) {
@@ -565,7 +599,7 @@ namespace bw_fmt
 } // namespace bw_fmt
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
+bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
 {
   int width = static_cast<int>(spec._min); // amount left to fill.
   if (spec._prec > 0) {
@@ -591,14 +625,14 @@ bwformat(BufferWriter &w, BWFSpec const &spec, string_view sv)
 BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span)
 {
-  static const BWFormat default_fmt{"{:#x}@{}"};
+  static const BWFormat default_fmt{"{:#x}@{:p}"};
   if (spec._ext.size() && 'd' == spec._ext.front()) {
     const char *digits = 'X' == spec._type ? bw_fmt::UPPER_DIGITS : bw_fmt::LOWER_DIGITS;
     if (spec._radix_lead_p) {
       w.write('0');
       w.write(digits[33]);
     }
-    bw_fmt::Hex_Dump(w, string_view{static_cast<char *>(span.data()), span.usize()}, digits);
+    bw_fmt::Hex_Dump(w, span.view(), digits);
   } else {
     w.print(default_fmt, span.size(), span.data());
   }
@@ -612,8 +646,8 @@ BWFormat::BWFormat(ts::TextView fmt)
   int arg_idx = 0;
 
   while (fmt) {
-    string_view lit_str;
-    string_view spec_str;
+    std::string_view lit_str;
+    std::string_view spec_str;
     bool spec_p = this->parse(fmt, lit_str, spec_str);
 
     if (lit_str.size()) {
@@ -623,46 +657,54 @@ BWFormat::BWFormat(ts::TextView fmt)
     if (spec_p) {
       bw_fmt::GlobalSignature gf = nullptr;
       BWFSpec parsed_spec{spec_str};
-      if (parsed_spec._name.size() == 0) {
+      if (parsed_spec._name.size() == 0) { // no name provided, use implicit index.
         parsed_spec._idx = arg_idx;
       }
-      if (parsed_spec._idx < 0) {
+      if (parsed_spec._idx < 0) { // name wasn't missing or a valid index, assume global name.
         gf = bw_fmt::Global_Table_Find(parsed_spec._name);
+      } else {
+        ++arg_idx; // bump this if not a global name.
       }
       _items.emplace_back(parsed_spec, gf);
-      ++arg_idx;
     }
   }
 }
 
 BWFormat::~BWFormat() {}
 
+/// Parse out the next literal and/or format specifier from the format string.
+/// Pass the results back in @a literal and @a specifier as appropriate.
+/// Update @a fmt to strip the parsed text.
 bool
-BWFormat::parse(ts::TextView &fmt, string_view &literal, string_view &specifier)
+BWFormat::parse(ts::TextView &fmt, std::string_view &literal, std::string_view &specifier)
 {
   TextView::size_type off;
 
+  // Check for brace delimiters.
   off = fmt.find_if([](char c) { return '{' == c || '}' == c; });
   if (off == TextView::npos) {
+    // not found, it's a literal, ship it.
     literal = fmt;
     fmt.remove_prefix(literal.size());
     return false;
   }
 
+  // Processing for braces that don't enclose specifiers.
   if (fmt.size() > off + 1) {
     char c1 = fmt[off];
     char c2 = fmt[off + 1];
     if (c1 == c2) {
+      // double braces count as literals, but must tweak to out only 1 brace.
       literal = fmt.take_prefix_at(off + 1);
       return false;
     } else if ('}' == c1) {
-      throw std::invalid_argument("Unopened }");
+      throw std::invalid_argument("BWFormat:: Unopened } in format string.");
     } else {
-      literal = string_view{fmt.data(), off};
+      literal = std::string_view{fmt.data(), off};
       fmt.remove_prefix(off + 1);
     }
   } else {
-    throw std::invalid_argument("Invalid trailing character");
+    throw std::invalid_argument("BWFormat: Invalid trailing character in format string.");
   }
 
   if (fmt.size()) {
@@ -670,7 +712,7 @@ BWFormat::parse(ts::TextView &fmt, string_view &literal, string_view &specifier)
     // take_prefix_at failed to find the delimiter or found it as the first byte.
     off = fmt.find('}');
     if (off == TextView::npos) {
-      throw std::invalid_argument("Unclosed {");
+      throw std::invalid_argument("BWFormat: Unclosed { in format string");
     }
     specifier = fmt.take_prefix_at(off);
     return true;
@@ -685,7 +727,7 @@ BWFormat::Format_Literal(BufferWriter &w, BWFSpec const &spec)
 }
 
 bw_fmt::GlobalSignature
-bw_fmt::Global_Table_Find(string_view name)
+bw_fmt::Global_Table_Find(std::string_view name)
 {
   if (name.size()) {
     auto spot = bw_fmt::BWF_GLOBAL_TABLE.find(name);
@@ -696,19 +738,280 @@ bw_fmt::Global_Table_Find(string_view name)
   return nullptr;
 }
 
+std::ostream &
+FixedBufferWriter::operator>>(std::ostream &s) const
+{
+  return s << this->view();
+}
+
+ssize_t
+FixedBufferWriter::operator>>(int fd) const
+{
+  return ::write(fd, this->data(), this->size());
+}
+
+bool
+bwf_register_global(std::string_view name, BWGlobalNameSignature formatter)
+{
+  return ts::bw_fmt::BWF_GLOBAL_TABLE.emplace(name, formatter).second;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
+{
+  // Hand rolled, might not be totally compliant everywhere, but probably close enough.
+  // The long string will be locally accurate.
+  // Clang requires the double braces. Why, Turing only knows.
+  static const std::array<std::string_view, 134> SHORT_NAME = {{
+    "SUCCESS: ",
+    "EPERM: ",
+    "ENOENT: ",
+    "ESRCH: ",
+    "EINTR: ",
+    "EIO: ",
+    "ENXIO: ",
+    "E2BIG ",
+    "ENOEXEC: ",
+    "EBADF: ",
+    "ECHILD: ",
+    "EAGAIN: ",
+    "ENOMEM: ",
+    "EACCES: ",
+    "EFAULT: ",
+    "ENOTBLK: ",
+    "EBUSY: ",
+    "EEXIST: ",
+    "EXDEV: ",
+    "ENODEV: ",
+    "ENOTDIR: ",
+    "EISDIR: ",
+    "EINVAL: ",
+    "ENFILE: ",
+    "EMFILE: ",
+    "ENOTTY: ",
+    "ETXTBSY: ",
+    "EFBIG: ",
+    "ENOSPC: ",
+    "ESPIPE: ",
+    "EROFS: ",
+    "EMLINK: ",
+    "EPIPE: ",
+    "EDOM: ",
+    "ERANGE: ",
+    "EDEADLK: ",
+    "ENAMETOOLONG: ",
+    "ENOLCK: ",
+    "ENOSYS: ",
+    "ENOTEMPTY: ",
+    "ELOOP: ",
+    "EWOULDBLOCK: ",
+    "ENOMSG: ",
+    "EIDRM: ",
+    "ECHRNG: ",
+    "EL2NSYNC: ",
+    "EL3HLT: ",
+    "EL3RST: ",
+    "ELNRNG: ",
+    "EUNATCH: ",
+    "ENOCSI: ",
+    "EL2HTL: ",
+    "EBADE: ",
+    "EBADR: ",
+    "EXFULL: ",
+    "ENOANO: ",
+    "EBADRQC: ",
+    "EBADSLT: ",
+    "EDEADLOCK: ",
+    "EBFONT: ",
+    "ENOSTR: ",
+    "ENODATA: ",
+    "ETIME: ",
+    "ENOSR: ",
+    "ENONET: ",
+    "ENOPKG: ",
+    "EREMOTE: ",
+    "ENOLINK: ",
+    "EADV: ",
+    "ESRMNT: ",
+    "ECOMM: ",
+    "EPROTO: ",
+    "EMULTIHOP: ",
+    "EDOTDOT: ",
+    "EBADMSG: ",
+    "EOVERFLOW: ",
+    "ENOTUNIQ: ",
+    "EBADFD: ",
+    "EREMCHG: ",
+    "ELIBACC: ",
+    "ELIBBAD: ",
+    "ELIBSCN: ",
+    "ELIBMAX: ",
+    "ELIBEXEC: ",
+    "EILSEQ: ",
+    "ERESTART: ",
+    "ESTRPIPE: ",
+    "EUSERS: ",
+    "ENOTSOCK: ",
+    "EDESTADDRREQ: ",
+    "EMSGSIZE: ",
+    "EPROTOTYPE: ",
+    "ENOPROTOOPT: ",
+    "EPROTONOSUPPORT: ",
+    "ESOCKTNOSUPPORT: ",
+    "EOPNOTSUPP: ",
+    "EPFNOSUPPORT: ",
+    "EAFNOSUPPORT: ",
+    "EADDRINUSE: ",
+    "EADDRNOTAVAIL: ",
+    "ENETDOWN: ",
+    "ENETUNREACH: ",
+    "ENETRESET: ",
+    "ECONNABORTED: ",
+    "ECONNRESET: ",
+    "ENOBUFS: ",
+    "EISCONN: ",
+    "ENOTCONN: ",
+    "ESHUTDOWN: ",
+    "ETOOMANYREFS: ",
+    "ETIMEDOUT: ",
+    "ECONNREFUSED: ",
+    "EHOSTDOWN: ",
+    "EHOSTUNREACH: ",
+    "EALREADY: ",
+    "EINPROGRESS: ",
+    "ESTALE: ",
+    "EUCLEAN: ",
+    "ENOTNAM: ",
+    "ENAVAIL: ",
+    "EISNAM: ",
+    "EREMOTEIO: ",
+    "EDQUOT: ",
+    "ENOMEDIUM: ",
+    "EMEDIUMTYPE: ",
+    "ECANCELED: ",
+    "ENOKEY: ",
+    "EKEYEXPIRED: ",
+    "EKEYREVOKED: ",
+    "EKEYREJECTED: ",
+    "EOWNERDEAD: ",
+    "ENOTRECOVERABLE: ",
+    "ERFKILL: ",
+    "EHWPOISON: ",
+  }};
+  // This provides convenient safe access to the errno short name array.
+  auto short_name = [](int n) { return n < static_cast<int>(SHORT_NAME.size()) ? SHORT_NAME[n] : "Unknown: "sv; };
+  static const BWFormat number_fmt{"[{}]"sv}; // numeric value format.
+  if (spec.has_numeric_type()) {              // if numeric type, print just the numeric part.
+    w.print(number_fmt, e._e);
+  } else {
+    w.write(short_name(e._e));
+    w.write(strerror(e._e));
+    if (spec._type != 's' && spec._type != 'S') {
+      w.write(' ');
+      w.print(number_fmt, e._e);
+    }
+  }
+  return w;
+}
+
+bwf::Date::Date(std::string_view fmt) : _epoch(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())), _fmt(fmt) {}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date)
+{
+  if (spec.has_numeric_type()) {
+    bwformat(w, spec, date._epoch);
+  } else {
+    struct tm t;
+    auto r = w.remaining();
+    size_t n{0};
+    // Verify @a fmt is null terminated, even outside the bounds of the view.
+    ink_assert(date._fmt.data()[date._fmt.size() - 1] == 0 || date._fmt.data()[date._fmt.size()] == 0);
+    // Get the time, GMT or local if specified.
+    if (spec._ext == "local"sv) {
+      localtime_r(&date._epoch, &t);
+    } else {
+      gmtime_r(&date._epoch, &t);
+    }
+    // Try a direct write, faster if it works.
+    if (r > 0) {
+      n = strftime(w.auxBuffer(), r, date._fmt.data(), &t);
+    }
+    if (n > 0) {
+      w.fill(n);
+    } else {
+      // Direct write didn't work. Unfortunately need to write to a temporary buffer or the sizing
+      // isn't correct if @a w is clipped because @c strftime returns 0 if the buffer isn't large
+      // enough.
+      char buff[256]; // hope for the best - no real way to resize appropriately on failure.
+      n = strftime(buff, sizeof(buff), date._fmt.data(), &t);
+      w.write(buff, n);
+    }
+  }
+  return w;
+}
+
 } // namespace ts
 
 namespace
 {
 void
+BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  // Unfortunately need to write to a temporary buffer or the sizing isn't correct if @a w is clipped
+  // because @c strftime returns 0 if the buffer isn't large enough.
+  char buff[32];
+  std::time_t t = std::time(nullptr);
+  auto n        = strftime(buff, sizeof(buff), "%Y %b %d %H:%M:%S", std::localtime(&t));
+  w.write(buff, n);
+}
+
+void
 BWF_Now(ts::BufferWriter &w, ts::BWFSpec const &spec)
 {
-  std::time_t t = std::time(nullptr);
-  w.fill(std::strftime(w.auxBuffer(), w.remaining(), "%Y%b%d:%H%M%S", std::localtime(&t)));
+  bwformat(w, spec, std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+}
+
+void
+BWF_Tick(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, std::chrono::high_resolution_clock::now().time_since_epoch().count());
+}
+
+void
+BWF_ThreadID(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, pthread_self());
+}
+
+void
+BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+#if defined(__FreeBSD_version)
+  bwformat(w, spec, "thread"sv); // no thread names in FreeBSD.
+#else
+  char name[32]; // manual says at least 16, bump that up a bit.
+  pthread_getname_np(pthread_self(), name, sizeof(name));
+  bwformat(w, spec, std::string_view{name});
+#endif
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
   ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("now", &BWF_Now);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("tick", &BWF_Tick);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("timestamp", &BWF_Timestamp);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-id", &BWF_ThreadID);
+  ts::bw_fmt::BWF_GLOBAL_TABLE.emplace("thread-name", &BWF_ThreadName);
   return true;
 }();
+
 } // namespace
+
+namespace std
+{
+ostream &
+operator<<(ostream &s, ts::FixedBufferWriter &w)
+{
+  return s << w.view();
+}
+} // namespace std

@@ -111,6 +111,7 @@ tr.StillRunningAfter = server
 
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun()
+tr.DelayStart = 10
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -120,6 +121,7 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun()
+tr.DelayStart = 10
 tr.Processes.Default.Command = comparator_command.format('txn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -130,6 +132,7 @@ tr.StillRunningAfter = server
 
 # session count is positive,
 tr = Test.AddTestRun()
+tr.DelayStart = 10
 tr.Processes.Default.Command = "traffic_ctl metric get ssntxnorder_verify.ssn.start"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -140,6 +143,7 @@ tr.StillRunningAfter = server
 
 # and we receive the same number of transactions as we asked it to make
 tr = Test.AddTestRun()
+tr.DelayStart = 10
 tr.Processes.Default.Command = "traffic_ctl metric get ssntxnorder_verify.txn.start"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env

@@ -309,9 +309,13 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
+    if (shutdown_event_system == true) {
+      return -1;
+    }
+
     // Use 'nullptr' to Bypass thread allocator
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(nullptr);
-    if (unlikely(!vc || shutdown_event_system == true)) {
+    if (unlikely(!vc)) {
       return -1;
     }
 

@@ -357,7 +357,7 @@ public:
 
   */
   int64_t
-  read_avail()
+  read_avail() const
   {
     return (int64_t)(_end - _start);
   }
@@ -433,7 +433,7 @@ public:
     @return copy of this IOBufferBlock.
 
   */
-  IOBufferBlock *clone();
+  IOBufferBlock *clone() const;
 
   /**
     Clear the IOBufferData this IOBufferBlock handles. Clears this
@@ -525,6 +525,122 @@ public:
 };
 
 extern inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator;
+
+/** A class for holding a chain of IO buffer blocks.
+    This class is intended to be used as a member variable for other classes that
+    need to anchor an IO Buffer chain but don't need the full @c MIOBuffer machinery.
+    That is, the owner is the only reader/writer of the data.
+
+    This does not handle incremental reads or writes well. The intent is that data is
+    placed in the instance, held for a while, then used and discarded.
+
+    @note Contrast also with @c IOBufferReader which is similar but requires an
+    @c MIOBuffer as its owner.
+*/
+class IOBufferChain
+{
+  using self_type = IOBufferChain; ///< Self reference type.
+
+public:
+  /// Default constructor - construct empty chain.
+  IOBufferChain() = default;
+  /// Shallow copy.
+  self_type &operator=(self_type const &that);
+
+  /// Shallow append.
+  self_type &operator+=(self_type const &that);
+
+  /// Number of bytes of content.
+  int64_t length() const;
+
+  /// Copy a chain of @a blocks in to this object up to @a length bytes.
+  /// If @a offset is greater than 0 that many bytes are skipped. Those bytes do not count
+  /// as part of @a length.
+  /// This creates a new chain using existing data blocks. This
+  /// breaks the original chain so that changes there (such as appending blocks)
+  /// is not reflected in this chain.
+  /// @return The number of bytes written to the chain.
+  int64_t write(IOBufferBlock *blocks, int64_t length, int64_t offset = 0);
+
+  /// Add the content of a buffer block.
+  /// The buffer block is unchanged.
+  int64_t write(IOBufferData *data, int64_t length = 0, int64_t offset = 0);
+
+  /// Remove @a size bytes of content from the front of the chain.
+  /// @return The actual number of bytes removed.
+  int64_t consume(int64_t size);
+
+  /// Clear current chain.
+  void clear();
+
+  /// Get the first block.
+  IOBufferBlock *head();
+  IOBufferBlock const *head() const;
+
+  /// STL Container support.
+
+  /// Block iterator.
+  /// @internal The reason for this is to override the increment operator.
+  class const_iterator : public std::forward_iterator_tag
+  {
+    using self_type = const_iterator; ///< Self reference type.
+  protected:
+    /// Current buffer block.
+    IOBufferBlock *_b = nullptr;
+
+  public:
+    using value_type = const IOBufferBlock; ///< Iterator value type.
+
+    const_iterator() = default; ///< Default constructor.
+
+    /// Copy constructor.
+    const_iterator(self_type const &that);
+
+    /// Assignment.
+    self_type &operator=(self_type const &that);
+
+    /// Equality.
+    bool operator==(self_type const &that) const;
+    /// Inequality.
+    bool operator!=(self_type const &that) const;
+
+    value_type &operator*() const;
+    value_type *operator->() const;
+
+    self_type &operator++();
+    self_type operator++(int);
+  };
+
+  class iterator : public const_iterator
+  {
+    using self_type = iterator; ///< Self reference type.
+  public:
+    using value_type = IOBufferBlock; ///< Dereferenced type.
+
+    value_type &operator*() const;
+    value_type *operator->() const;
+  };
+
+  using value_type = IOBufferBlock;
+
+  iterator begin();
+  const_iterator begin() const;
+
+  iterator end();
+  const_iterator end() const;
+
+protected:
+  /// Append @a block.
+  void append(IOBufferBlock *block);
+
+  /// Head of buffer block chain.
+  Ptr<IOBufferBlock> _head;
+  /// Tail of the block chain.
+  IOBufferBlock *_tail = nullptr;
+  /// The amount of data of interest.
+  /// Not necessarily the amount of data in the chain of blocks.
+  int64_t _len = 0;
+};
 
 /**
   An independent reader from an MIOBuffer. A reader for a set of
@@ -910,6 +1026,17 @@ public:
   */
   inkcoreapi int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
 
+  /** Copy data from the @a chain to this buffer.
+      New IOBufferBlocks are allocated so this gets a copy of the data that is independent of the source.
+      @a offset bytes are skipped at the start of the @a chain. The length is bounded by @a len and the
+      size in the @a chain.
+
+      @return the number of bytes copied.
+
+      @internal I do not like counting @a offset against @a bytes but that's how @c write works...
+  */
+  int64_t write(IOBufferChain const *chain, int64_t len = INT64_MAX, int64_t offset = 0);
+
   int64_t remove_append(IOBufferReader *);
 
   /**
@@ -1078,6 +1205,7 @@ public:
   void alloc(int64_t i = default_large_iobuffer_size);
   void alloc_xmalloc(int64_t buf_size);
   void append_block_internal(IOBufferBlock *b);
+  int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
   int64_t puts(char *buf, int64_t len);
 
   // internal interface
@@ -1404,3 +1532,107 @@ extern IOBufferBlock *iobufferblock_clone(IOBufferBlock *b, int64_t offset, int6
 
 */
 extern IOBufferBlock *iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t write);
+
+inline IOBufferChain &
+IOBufferChain::operator=(self_type const &that)
+{
+  _head = that._head;
+  _tail = that._tail;
+  _len  = that._len;
+  return *this;
+}
+
+inline IOBufferChain &
+IOBufferChain::operator+=(self_type const &that)
+{
+  if (nullptr == _head)
+    *this = that;
+  else {
+    _tail->next = that._head;
+    _tail       = that._tail;
+    _len += that._len;
+  }
+  return *this;
+}
+
+inline int64_t
+IOBufferChain::length() const
+{
+  return _len;
+}
+
+inline IOBufferBlock const *
+IOBufferChain::head() const
+{
+  return _head.get();
+}
+
+inline IOBufferBlock *
+IOBufferChain::head()
+{
+  return _head.get();
+}
+
+inline void
+IOBufferChain::clear()
+{
+  _head = nullptr;
+  _tail = nullptr;
+  _len  = 0;
+}
+
+inline IOBufferChain::const_iterator::const_iterator(self_type const &that) : _b(that._b) {}
+
+inline IOBufferChain::const_iterator &
+IOBufferChain::const_iterator::operator=(self_type const &that)
+{
+  _b = that._b;
+  return *this;
+}
+
+inline bool
+IOBufferChain::const_iterator::operator==(self_type const &that) const
+{
+  return _b == that._b;
+}
+
+inline bool
+IOBufferChain::const_iterator::operator!=(self_type const &that) const
+{
+  return _b != that._b;
+}
+
+inline IOBufferChain::const_iterator::value_type &IOBufferChain::const_iterator::operator*() const
+{
+  return *_b;
+}
+
+inline IOBufferChain::const_iterator::value_type *IOBufferChain::const_iterator::operator->() const
+{
+  return _b;
+}
+
+inline IOBufferChain::const_iterator &
+IOBufferChain::const_iterator::operator++()
+{
+  _b = _b->next.get();
+  return *this;
+}
+
+inline IOBufferChain::const_iterator
+IOBufferChain::const_iterator::operator++(int)
+{
+  self_type pre{*this};
+  ++*this;
+  return pre;
+}
+
+inline IOBufferChain::iterator::value_type &IOBufferChain::iterator::operator*() const
+{
+  return *_b;
+}
+
+inline IOBufferChain::iterator::value_type *IOBufferChain::iterator::operator->() const
+{
+  return _b;
+}

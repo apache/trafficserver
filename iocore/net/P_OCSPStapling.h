@@ -23,8 +23,13 @@
 
 #include <openssl/ssl.h>
 
+#ifdef OCSP_sendreq_new
 #define HAVE_OPENSSL_OCSP_STAPLING 1
+#endif
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
 void ssl_stapling_ex_init();
 bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname);
 void ocsp_update();
 int ssl_callback_ocsp_stapling(SSL *);
+#endif

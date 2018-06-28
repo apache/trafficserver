@@ -115,7 +115,6 @@ char read_buf[10];
 int state_delay_ms = 0;
 
 #define IS_DONE(c) (c.state.state == STATE_DONE || c.state.state == STATE_ERROR)
-#define IS_IDLE(c) (c.state.state == STATE_IDLE)
 
 void main_loop();
 void state_act(Conn *c);

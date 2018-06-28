@@ -38,8 +38,6 @@ of subcommands that control different aspects of Traffic Server:
 
 :program:`traffic_ctl alarm`
     Display and manipulate Traffic Server alarms
-:program:`traffic_ctl cluster`
-    Stop, restart and examine the cluster
 :program:`traffic_ctl config`
     Manipulate and display configuration records
 :program:`traffic_ctl metric`
@@ -88,20 +86,6 @@ traffic_ctl alarm
    Clear (acknowledge) an alarm event. The arguments are a specific
    alarm number (e.g. ''1''), or an alarm string identifier (e.g.
    ''MGMT_ALARM_PROXY_CONFIG_ERROR'').
-
-traffic_ctl cluster
--------------------
-.. program:: traffic_ctl cluster
-.. option:: restart [--drain] [--manager]
-
-    Shut down and immediately restart Traffic Server, node by node across the
-    cluster. The *--drain* and *--manager* options have the same behavior as
-    for the :option:`traffic_ctl server restart` subcommand.
-
-.. program:: traffic_ctl cluster
-.. option:: status
-
-   Show the current cluster status.
 
 traffic_ctl config
 ------------------
@@ -177,12 +161,6 @@ traffic_ctl config
 traffic_ctl metric
 ------------------
 .. program:: traffic_ctl metric
-.. option:: clear [--cluster]
-
-    Reset all statistics to zero. The *--cluster* option
-    applies this across all cluster nodes.
-
-.. program:: traffic_ctl metric
 .. option:: get METRIC [METRIC...]
 
     Display the current value of the specifies statistics.
@@ -194,10 +172,9 @@ traffic_ctl metric
     the given regular expression.
 
 .. program:: traffic_ctl metric
-.. option:: zero [--cluster] METRIC [METRIC...]
+.. option:: zero METRIC [METRIC...]
 
-    Reset the named statistics to zero. The *--cluster* option applies this
-    across all cluster nodes.
+    Reset the named statistics to zero.
 
 traffic_ctl server
 ------------------
@@ -281,9 +258,12 @@ traffic_ctl host
     Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache heirarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
 
 .. program:: traffic_ctl host
-.. option:: down HOSTNAME [HOSTNAME ...]
+.. option:: down --time seconds HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as down so that they will not be chosen as a next hop parent.
+    If the --time option is included, the host is marked down for the specified number of 
+    seconds after which the host will automatically be marked up.  0 seconds marks the host 
+    down indefinately until marked up manually and is the default.
 
 .. program:: traffic_ctl host
 .. option:: up HOSTNAME [HOSTNAME ...]

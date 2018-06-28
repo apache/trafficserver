@@ -48,8 +48,7 @@ To best suit your needs, Traffic Server can be deployed in several ways:
 -  In a cache hierarchy
 
 The following sections provide a summary of these Traffic Server
-deployment options. Please keep in mind that with every one of these options
-Traffic Server can be run as a *single instance*, or as a *multi-node cluster*.
+deployment options.
 
 Traffic Server as a Web Proxy Cache
 -----------------------------------
@@ -182,8 +181,7 @@ requests and manage, control, and monitor the health of the system.
    of the Traffic Server, responsible for launching, monitoring, and
    reconfiguring the :program:`traffic_server` process. The :program:`traffic_manager`
    process is also responsible for the proxy autoconfiguration port, the
-   statistics interface, cluster administration, and virtual IP
-   failover.
+   statistics interface, and virtual IP failover.
 
    If the :program:`traffic_manager` process detects a :program:`traffic_server`
    process failure, it instantly restarts the process but also maintains
@@ -235,7 +233,7 @@ monitoring:
    them requested, and what pages were most popular. You can also see
    why a particular transaction was in error and what state the Traffic
    Server was in at a particular time. For example, you can see that
-   Traffic Server was restarted or that cluster communication timed out.
+   Traffic Server was restarted.
 
    Traffic Server supports several standard log file formats, such as
    Squid and Netscape, and its own custom format. You can analyze the

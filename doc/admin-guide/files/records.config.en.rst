@@ -27,29 +27,14 @@ The :file:`records.config` file (by default (:ts:cv:`proxy.config.config_dir`), 
 the |TS| software. Many of the variables in :file:`records.config` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
 modify :file:`records.config`, run the command :option:`traffic_ctl config reload`
-to apply the changes. When you apply changes to one node in a cluster, |TS|
-automatically applies the changes to all other nodes in the cluster.
+to apply the changes.
 
 Format
 ======
 
 Each variable has the following format::
 
-   SCOPE variable_name DATATYPE variable_value
-
-Scope
------
-
-All variables are defined within a scope, which is related to clustering, and
-determines the level at which the variable is applied. The value for ``SCOPE``
-must be one of:
-
-========== ====================================================================
-Scope      Description
-========== ====================================================================
-``CONFIG`` All members of the cluster.
-``LOCAL``  Only the local machine.
-========== ====================================================================
+   CONFIG variable_name DATATYPE variable_value
 
 Data Type
 ---------
@@ -141,10 +126,10 @@ a yes/no flag. A value of ``0`` (zero) disables the option; a value of
 
    CONFIG proxy.config.arm.enabled INT 0
 
-In the following example, the variable sets the cluster startup timeout
-to 10 seconds. ::
+In the following example, the variable sets the time to wait for a
+DNS response to 10 seconds. ::
 
-   CONFIG proxy.config.cluster.startup_timeout INT 10
+   CONFIG proxy.config.hostdb.lookup_timeout INT 10
 
 The last examples configures a 64GB RAM cache, using a human readable
 prefix. ::
@@ -411,7 +396,7 @@ Network
    given time. Roughly 10% of these connections are reserved for origin server
    connections, i.e. from the default, only ~9,000 client connections can be
    handled. This should be tuned according to your memory size, and expected
-   work load.
+   work load.  If this is set to 0, the throttling logic is disabled.
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:
@@ -511,62 +496,6 @@ Network
    :reloadable:
 
    When we trigger a throttling scenario, this how long our accept() are delayed.
-
-Cluster
-=======
-
-.. ts:cv:: LOCAL proxy.local.cluster.type INT 3
-
-   Sets the clustering mode:
-
-   ===== =====================
-   Value Effect
-   ===== =====================
-   ``1`` Full-clustering mode.
-   ``2`` Management-only mode.
-   ``3`` No clustering.
-   ===== =====================
-
-.. ts:cv:: CONFIG proxy.config.cluster.ethernet_interface INT eth0
-
-   The network interface to be used for cluster communication. This has to be
-   identical on all members of a clsuter. ToDo: Is that reasonable ?? Should
-   this be local"
-
-.. ts:cv:: CONFIG proxy.config.cluster.rsport INT 8088
-
-   The reliable service port. The reliable service port is used to send
-   configuration information between the nodes in a cluster. All nodes in a
-   cluster must use the same reliable service port.
-
-.. ts:cv:: CONFIG proxy.config.cluster.threads INT 1
-
-   The number of threads for cluster communication. On heavy clusters, the
-   number should be adjusted. It is recommend to use the thread CPU usage as a
-   reference when adjusting.
-
-.. ts:cv:: CONFIG proxy.config.clustger.ethernet_interface STRING
-
-   Set the interface to use for cluster communications.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.cluster_cache_local INT 0
-   :overridable:
-
-   This turns on the local caching of objects in cluster mode. The point of
-   this is to allow for popular or *hot* content to be cached on all nodes
-   in a cluster. Be aware that the primary way to configure this behavior is
-   via the :file:`cache.config` configuration file using
-   ``action=cluster-cache-local`` directives.
-
-   This particular :file:`records.config` configuration can be controlled per
-   transaction or per remap rule. As such, it augments the
-   :file:`cache.config` directives, since you can turn on the local caching
-   feature without complex regular expression matching.
-
-   This implies that turning this on in your global :file:`records.config` is
-   almost never what you want; instead, you want to use this either via
-   e.g. ``conf_remap.so`` overrides for a certain remap rule, or through a
-   custom plugin using the appropriate APIs.
 
 Local Manager
 =============
@@ -1257,10 +1186,20 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
 
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 1
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 2
 
-   Filter out hosts that are determined to be the same as the current host, e.g., localhost,
-   that have been specified in any parent and secondary_parent lists in the parent.config file.
+   For each host that has been specified in a ``parent`` or ``secondary_parent`` list in the
+   :file:`parent.config` file, determine if the host is the same as the current host.
+   Obvious examples include ``localhost`` and ``127.0.0.1``. If a match is found,
+   take an action depending upon the value below.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables the feature by not checking for matches.
+   ``1`` Remove the matching host from the list.
+   ``2`` Mark the host down. This is the default.
+   ===== ======================================================================
 
 HTTP Connection Timeouts
 ========================
@@ -2600,16 +2539,16 @@ HostDB
    ``ipv4``   Resolve to an IPv4 address.
    ``ipv6``   Resolve to an IPv6 address.
    ``client`` Resolve to the same family as the client IP address.
-   ``none``   Stop resolving.
+   ``only``   Stop resolving.
    ========== ====================================================
 
    The order of the keywords is critical. When a host name needs to be resolved
    it is resolved in same order as the keywords. If a resolution fails, the
-   next option in the list is tried. The keyword ``none`` means to give up
+   next option in the list is tried. The keyword ``only`` means to give up
    resolution entirely. The keyword list has a maximum length of three
    keywords, more are never needed. By default there is an implicit
    ``ipv4;ipv6`` attached to the end of the string unless the keyword
-   ``none`` appears.
+   ``only`` appears.
 
 .. topic:: Example
 
@@ -2625,13 +2564,13 @@ HostDB
 
    Resolve only to IPv4. ::
 
-      ipv4;none
+      ipv4;only
 
 .. topic:: Example
 
    Resolve only to the same family as the client (do not permit cross family transactions). ::
 
-      client;none
+      client;only
 
    This value is a global default that can be overridden by :ts:cv:`proxy.config.http.server_ports`.
 
@@ -2784,7 +2723,7 @@ Logging Configuration
 
    For information on sending custom formats to the collation server,
    refer to :ref:`admin-logging-collating-custom-formats` and
-   :file:`logging.config`.
+   :file:`logging.yaml`.
 
 .. note::
 
@@ -2906,11 +2845,11 @@ Logging Configuration
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
 
-.. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.config
+.. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
 
    This configuration value specifies the path to the
-   :file:`logging.config` configuration file. If this is a relative
+   :file:`logging.yaml` configuration file. If this is a relative
    path, |TS| loads it relative to the ``SYSCONFDIR`` directory.
 
 Diagnostic Logging Configuration
@@ -3191,9 +3130,9 @@ SSL Termination
    ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
 
-.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.config
+.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
 
-   The filename of the :file:`ssl_server_name.config` configuration file. If relative, it is relative to the
+   The filename of the :file:`ssl_server_name.yaml` configuration file. If relative, it is relative to the
    configuration directory (ts:cv:`proxy.config.config_dir`).
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
@@ -3518,6 +3457,15 @@ HTTP/2 Configuration
    misconfigured or misbehaving clients are opening a large number of
    connections without submitting requests.
 
+.. ts:cv:: CONFIG proxy.config.http2.zombie_debug_timeout_in INT 0
+   :reloadable:
+
+   This timeout enables the zombie debugging feature.  If it is non-zero, it sets a zombie event to go off that
+   many seconds in the future when the HTTP2 session reaches one but not both of the terminating events, i.e received
+   a close event (via client goaway or timeout) and the number of active streams has gone to zero.  If the event is executed,
+   the Traffic Server process will assert.  This mechanism is useful to debug potential leaks in the HTTP2 Stream and Session
+   processing.
+
 .. ts:cv:: CONFIG proxy.config.http2.push_diary_size INT 256
    :reloadable:
 
@@ -3811,6 +3759,13 @@ Sockets
    Turn on or off support for HTTP proxying. This is rarely used, the one
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
+
+.. ts:cv:: CONFIG proxy.config.http.allow_half_open INT 1
+   :reloadable:
+   :overridable:
+
+   Turn on or off support for connection half open for client side. Default is on, so
+   after client sends FIN, the connection is still there.
 
 .. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
 

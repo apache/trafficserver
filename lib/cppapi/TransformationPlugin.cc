@@ -302,7 +302,7 @@ TransformationPlugin::resumeCallback(TSCont cont, TSEvent event, void *edata)
 }
 
 size_t
-TransformationPlugin::doProduce(ts::string_view data)
+TransformationPlugin::doProduce(std::string_view data)
 {
   LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p producing output with length=%ld", this, state_->txn_, data.length());
   int64_t write_length = static_cast<int64_t>(data.length());
@@ -358,7 +358,7 @@ TransformationPlugin::doProduce(ts::string_view data)
 }
 
 size_t
-TransformationPlugin::produce(ts::string_view data)
+TransformationPlugin::produce(std::string_view data)
 {
   if (state_->type_ == REQUEST_TRANSFORMATION) {
     state_->request_xform_output_.append(data.data(), data.length());

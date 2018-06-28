@@ -40,7 +40,6 @@
 
 #include "ts/ink_defs.h"
 #include "ts/ParseRules.h"
-#include "ts/ink_std_compat.h"
 
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
 #define TCPI_PLUGIN_SUPPORTED 1

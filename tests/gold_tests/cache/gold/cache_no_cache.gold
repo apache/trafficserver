@@ -1,7 +1,7 @@
 HTTP/1.1 504 Not Cached ``
 Date: ``
 Connection: keep-alive
-Via: http/1.1 ``[uScMs f p eT:t cCMp s ]``
+Via: http/1.1 ``
 Server: ``
 Cache-Control: no-store
 Content-Type: text/html

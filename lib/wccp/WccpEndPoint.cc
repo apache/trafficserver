@@ -373,7 +373,6 @@ CacheImpl::defineServiceGroup(ServiceGroup const &svc, ServiceGroup::Result *res
   if (spot == m_groups.end()) { // not defined
     group        = &(m_groups[svc_id]);
     group->m_svc = svc;
-    memset(&group->m_id, 0, sizeof(group->m_id));
     group->m_id.initDefaultHash(m_addr);
     zret = ServiceGroup::DEFINED;
   } else {
@@ -1166,7 +1165,7 @@ Cache::~Cache() {}
 EndPoint::ImplType *
 Cache::make()
 {
-  m_ptr.assign(new ImplType);
+  m_ptr.reset(new ImplType);
   return m_ptr.get();
 }
 
@@ -1220,7 +1219,7 @@ Router::~Router() {}
 EndPoint::ImplType *
 Router::make()
 {
-  m_ptr.assign(new ImplType);
+  m_ptr.reset(new ImplType);
   return m_ptr.get();
 }
 

@@ -68,7 +68,7 @@ the following information:
 -  The original log file's name (such as ``access.log``).
 
 -  The hostname of the |TS| node that generated the log file (useful in |TS|
-   clusters and log collation configurations).
+   log collation configurations).
 
 -  Two timestamps separated by a hyphen (``-``). The first timestamp is
    a *lower bound* for the timestamp of the first record in the log
@@ -171,7 +171,7 @@ they reach a certain size, adjust the following settings in
    changes.
 
 You can fine-tune log file rolling settings for individual log files in the
-``log.*`` specification in :file:`logging.config`. The custom log file uses the
+``log.*`` specification in :file:`logging.yaml`. The custom log file uses the
 rolling settings provided in the relevant ``log`` function call, which override
 the default settings you specify in Traffic Manager or :file:`records.config`
 described above.

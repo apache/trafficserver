@@ -41,7 +41,7 @@
 #include "InkAPIInternal.h"
 #include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
-#include <ts/string_view.h>
+#include <string_view>
 #include <ts/History.h>
 //#include "AuthHttpAdapter.h"
 
@@ -299,16 +299,15 @@ public:
   void txn_hook_prepend(TSHttpHookID id, INKContInternal *cont);
   APIHook *txn_hook_get(TSHttpHookID id);
 
-  void add_cache_sm();
   bool is_private();
   bool is_redirect_required();
 
   /// Get the protocol stack for the inbound (client, user agent) connection.
   /// @arg result [out] Array to store the results
   /// @arg n [in] Size of the array @a result.
-  int populate_client_protocol(ts::string_view *result, int n) const;
-  const char *client_protocol_contains(ts::string_view tag_prefix) const;
-  ts::string_view find_proto_string(HTTPVersion version) const;
+  int populate_client_protocol(std::string_view *result, int n) const;
+  const char *client_protocol_contains(std::string_view tag_prefix) const;
+  std::string_view find_proto_string(HTTPVersion version) const;
 
   int64_t sm_id      = -1;
   unsigned int magic = HTTP_SM_MAGIC_DEAD;
@@ -388,7 +387,6 @@ protected:
 
   HttpCacheSM cache_sm;
   HttpCacheSM transform_cache_sm;
-  HttpCacheSM *second_cache_sm = nullptr;
 
   HttpSMHandler default_handler = nullptr;
   Action *pending_action        = nullptr;
@@ -694,22 +692,6 @@ inline APIHook *
 HttpSM::txn_hook_get(TSHttpHookID id)
 {
   return api_hooks.get(id);
-}
-
-inline void
-HttpSM::add_cache_sm()
-{
-  if (second_cache_sm == nullptr) {
-    second_cache_sm = new HttpCacheSM;
-    second_cache_sm->init(this, mutex);
-    if (t_state.cache_info.object_read != nullptr) {
-      second_cache_sm->cache_read_vc        = cache_sm.cache_read_vc;
-      cache_sm.cache_read_vc                = nullptr;
-      second_cache_sm->read_locked          = cache_sm.read_locked;
-      t_state.cache_info.second_object_read = t_state.cache_info.object_read;
-      t_state.cache_info.object_read        = nullptr;
-    }
-  }
 }
 
 inline bool

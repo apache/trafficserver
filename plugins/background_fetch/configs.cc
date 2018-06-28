@@ -123,3 +123,29 @@ BgFetchConfig::readConfig(const char *config_file)
 
   return true;
 }
+
+///////////////////////////////////////////////////////////////////////////
+// Check the configuration (either per remap, or global), and decide if
+// this request is allowed to trigger a background fetch.
+//
+bool
+BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
+{
+  TSDebug(PLUGIN_NAME, "Testing: request is internal?");
+  if (TSHttpTxnIsInternal(txnp)) {
+    return false;
+  }
+
+  bool allow_bg_fetch = true;
+
+  // We could do this recursively, but following the linked list is probably more efficient.
+  for (const BgFetchRule *r = _rules; nullptr != r; r = r->_next) {
+    if (r->check_field_configured(txnp)) {
+      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, (int)r->_exclude);
+      allow_bg_fetch = !r->_exclude;
+      break;
+    }
+  }
+
+  return allow_bg_fetch;
+}

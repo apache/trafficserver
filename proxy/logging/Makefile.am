@@ -29,12 +29,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
-
-if BUILD_LUAJIT
-AM_CPPFLAGS += \
-	-I$(abs_top_srcdir)/lib/luajit/src
-endif
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 EXTRA_DIST = LogStandalone.cc
 
@@ -47,8 +43,6 @@ liblogging_a_SOURCES = \
 	LogAccess.h \
 	LogAccessHttp.cc \
 	LogAccessHttp.h \
-	LogBindings.cc \
-	LogBindings.h \
 	LogBuffer.cc \
 	LogBuffer.h \
 	LogBufferSink.h \
@@ -72,7 +66,10 @@ liblogging_a_SOURCES = \
 	LogSock.cc \
 	LogSock.h \
 	LogUtils.cc \
-	LogUtils.h
+	LogUtils.h \
+	YamlLogConfig.cc \
+	YamlLogConfigDecoders.cc \
+	YamlLogConfig.h
 
 liblogcollation_a_SOURCES = \
 	LogCollationAccept.cc \

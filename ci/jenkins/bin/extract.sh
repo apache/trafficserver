@@ -16,10 +16,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+set +x
 # Setup the build and install area for this build
 mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/build"
 mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/install"
 
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
+echo "Artifact: ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2"
 tar xf ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2
 mv trafficserver-*/* .
+
+echo "build: ${WORKSPACE}/${BUILD_NUMBER}/build"
+echo "install: ${WORKSPACE}/${BUILD_NUMBER}/install"
+
+# Restore verbose shell output
+set -x

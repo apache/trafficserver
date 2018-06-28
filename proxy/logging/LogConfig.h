@@ -26,6 +26,7 @@
 #include "ts/ink_platform.h"
 #include "P_RecProcess.h"
 #include "ProxyConfig.h"
+#include "LogObject.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -168,6 +169,9 @@ public:
 
   LogObjectManager log_object_manager;
 
+  LogFilterList filter_list;
+  LogFormatList format_list;
+
   int log_buffer_size;
   int max_secs_per_buffer;
   int max_space_mb_for_logs;
@@ -200,7 +204,6 @@ public:
 
 private:
   bool evaluate_config();
-  char **read_log_hosts_file(size_t *nhosts);
 
   void setup_default_values();
   void setup_collation(LogConfig *prev_config);

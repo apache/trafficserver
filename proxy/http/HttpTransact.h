@@ -480,14 +480,6 @@ public:
     UPDATE_CACHED_OBJECT_FAIL
   };
 
-  enum LockUrl_t {
-    LOCK_URL_FIRST = 0,
-    LOCK_URL_SECOND,
-    LOCK_URL_ORIGINAL,
-    LOCK_URL_DONE,
-    LOCK_URL_QUIT,
-  };
-
   enum RangeSetup_t {
     RANGE_NONE = 0,
     RANGE_REQUESTED,
@@ -529,11 +521,10 @@ public:
     URL *lookup_url = nullptr;
     URL lookup_url_storage;
     URL original_url;
-    HTTPInfo *object_read        = nullptr;
-    HTTPInfo *second_object_read = nullptr;
     HTTPInfo object_store;
     HTTPInfo transform_store;
     CacheDirectives directives;
+    HTTPInfo *object_read             = nullptr;
     int open_read_retries             = 0;
     int open_write_retries            = 0;
     CacheWriteLock_t write_lock_state = CACHE_WL_INIT;
@@ -818,7 +809,6 @@ public:
     bool api_resp_cacheable                       = false;
     bool api_server_addr_set                      = false;
     UpdateCachedObject_t api_update_cached_object = UPDATE_CACHED_OBJECT_NONE;
-    LockUrl_t api_lock_url                        = LOCK_URL_FIRST;
     StateMachineAction_t saved_update_next_action = SM_ACTION_UNDEFINED;
     CacheAction_t saved_update_cache_action       = CACHE_DO_UNDEFINED;
 

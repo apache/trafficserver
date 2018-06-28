@@ -173,7 +173,7 @@ private:
       TS_DEBUG(TAG, "Response version is [%s], status code %d, reason phrase [%s]",
                HTTP_VERSION_STRINGS[response.getVersion()].c_str(), response.getStatusCode(), response.getReasonPhrase().c_str());
 
-      TS_DEBUG(TAG, "Reponse Headers: \n%s\n", response.getHeaders().str().c_str());
+      TS_DEBUG(TAG, "Response Headers: \n%s\n", response.getHeaders().str().c_str());
 
       const void *body;
       size_t body_size;
@@ -218,6 +218,8 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
-  RegisterGlobalPlugin("CPP_Example_AsyncHttpFetch", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_AsyncHttpFetch", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   plugin = new GlobalHookPlugin();
 }

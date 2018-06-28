@@ -201,17 +201,8 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "log_hosts.config"
-    tmpname = os.path.join(config_dir, fname)
-    # p.Disk.File(tmpname,id=make_id(fname),typename="ats:config").AddLine("#
-    # need something in here")
-
     # magic file that should probally not exist
-    fname = "logging.config"
-    tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
-
-    fname = "metrics.config"
+    fname = "logging.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
@@ -239,7 +230,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "ssl_server_name.config"
+    fname = "ssl_server_name.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 

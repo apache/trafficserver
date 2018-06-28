@@ -26,6 +26,7 @@
 
 **************************************************************************/
 #include "ts/ink_defs.h"
+#include "I_MIOBufferWriter.h"
 #include "P_EventSystem.h"
 
 //
@@ -135,11 +136,21 @@ MIOBuffer::write_and_transfer_left_over_space(IOBufferReader *r, int64_t alen, i
 #endif
 
 int64_t
-MIOBuffer::write(IOBufferReader *r, int64_t alen, int64_t offset)
+MIOBuffer::write(IOBufferReader *r, int64_t len, int64_t offset)
 {
-  int64_t len      = alen;
-  IOBufferBlock *b = r->block.get();
-  offset += r->start_offset;
+  return this->write(r->block.get(), len, offset + r->start_offset);
+}
+
+int64_t
+MIOBuffer::write(IOBufferChain const *chain, int64_t len, int64_t offset)
+{
+  return this->write(chain->head(), std::min(len, chain->length()), offset);
+}
+
+int64_t
+MIOBuffer::write(IOBufferBlock const *b, int64_t alen, int64_t offset)
+{
+  int64_t len = alen;
 
   while (b && len > 0) {
     int64_t max_bytes = b->read_avail();
@@ -276,4 +287,162 @@ IOBufferReader::memcpy(const void *ap, int64_t len, int64_t offset)
   }
 
   return p;
+}
+
+int64_t
+IOBufferChain::write(IOBufferBlock *blocks, int64_t length, int64_t offset)
+{
+  int64_t n = length;
+
+  while (blocks && n > 0) {
+    int64_t block_bytes = blocks->read_avail();
+    if (block_bytes <= offset) { // skip the entire block
+      offset -= block_bytes;
+    } else {
+      int64_t bytes     = std::min(n, block_bytes - offset);
+      IOBufferBlock *bb = blocks->clone();
+      if (offset) {
+        bb->consume(offset);
+        block_bytes -= offset; // bytes really available to use.
+        offset = 0;
+      }
+      if (block_bytes > n)
+        bb->_end -= (block_bytes - n);
+      // Attach the cloned block since its data will be kept.
+      this->append(bb);
+      n -= bytes;
+    }
+    blocks = blocks->next.get();
+  }
+
+  length -= n; // actual bytes written to chain.
+  _len += length;
+  return length;
+}
+
+int64_t
+IOBufferChain::write(IOBufferData *data, int64_t length, int64_t offset)
+{
+  int64_t zret     = 0;
+  IOBufferBlock *b = new_IOBufferBlock();
+
+  if (length < 0)
+    length = 0;
+
+  b->set(data, length, offset);
+  this->append(b);
+
+  zret = b->read_avail();
+  _len += zret;
+  return zret;
+}
+
+void
+IOBufferChain::append(IOBufferBlock *block)
+{
+  if (nullptr == _tail) {
+    _head = block;
+    _tail = block;
+  } else {
+    _tail->next = block;
+    _tail       = block;
+  }
+}
+
+int64_t
+IOBufferChain::consume(int64_t size)
+{
+  int64_t zret = 0;
+  int64_t bytes;
+  size = std::min(size, _len);
+
+  while (_head != nullptr && size > 0 && (bytes = _head->read_avail()) > 0) {
+    if (size >= bytes) {
+      _head = _head->next;
+      zret += bytes;
+      size -= bytes;
+    } else {
+      _head->consume(size);
+      zret += size;
+      size = 0;
+    }
+  }
+  _len -= zret;
+  if (_head == nullptr || _len == 0) {
+    _head = nullptr, _tail = nullptr, _len = 0;
+  }
+  return zret;
+}
+
+//-- MIOBufferWriter
+MIOBufferWriter &
+MIOBufferWriter::write(const void *data_, size_t length)
+{
+  const char *data = static_cast<const char *>(data_);
+
+  while (length) {
+    IOBufferBlock *iobbPtr = _miob->first_write_block();
+
+    if (!iobbPtr) {
+      addBlock();
+
+      iobbPtr = _miob->first_write_block();
+
+      ink_assert(iobbPtr);
+    }
+
+    size_t writeSize = iobbPtr->write_avail();
+
+    if (length < writeSize) {
+      writeSize = length;
+    }
+
+    std::memcpy(iobbPtr->end(), data, writeSize);
+    iobbPtr->fill(writeSize);
+
+    data += writeSize;
+    length -= writeSize;
+
+    _numWritten += writeSize;
+  }
+
+  return *this;
+}
+
+std::ostream &
+MIOBufferWriter::operator>>(std::ostream &stream) const
+{
+  IOBufferReader *r = _miob->alloc_reader();
+  if (r) {
+    IOBufferBlock *b;
+    while (nullptr != (b = r->get_current_block())) {
+      auto n = b->read_avail();
+      stream.write(b->start(), n);
+      r->consume(n);
+    }
+    _miob->dealloc_reader(r);
+  }
+  return stream;
+}
+
+ssize_t
+MIOBufferWriter::operator>>(int fd) const
+{
+  ssize_t zret           = 0;
+  IOBufferReader *reader = _miob->alloc_reader();
+  if (reader) {
+    IOBufferBlock *b;
+    while (nullptr != (b = reader->get_current_block())) {
+      auto n = b->read_avail();
+      auto r = ::write(fd, b->start(), n);
+      if (r <= 0) {
+        break;
+      } else {
+        reader->consume(r);
+        zret += r;
+      }
+    }
+    _miob->dealloc_reader(reader);
+  }
+  return zret;
 }

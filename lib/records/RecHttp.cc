@@ -28,7 +28,7 @@
 #include <ts/Tokenizer.h>
 #include <strings.h>
 #include <ts/ink_inet.h>
-#include <ts/string_view.h>
+#include <string_view>
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
@@ -379,8 +379,8 @@ HttpProxyPort::processOptions(const char *opts)
 
   if (af_set_p) {
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
-      ts::string_view iname{ats_ip_family_name(m_inbound_ip.family())};
-      ts::string_view fname{ats_ip_family_name(m_family)};
+      std::string_view iname{ats_ip_family_name(m_inbound_ip.family())};
+      std::string_view fname{ats_ip_family_name(m_family)};
       Warning("Invalid port descriptor '%s' - the inbound adddress family [%.*s] is not the same type as the explicit family value "
               "[%.*s]",
               opts, static_cast<int>(iname.size()), iname.data(), static_cast<int>(fname.size()), fname.data());

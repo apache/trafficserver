@@ -80,8 +80,6 @@ CacheHashIdElt::setBuckets(bool state)
   return *this;
 }
 
-CacheIdBox::CacheIdBox() : m_base(0), m_tail(0), m_size(0), m_cap(0) {}
-
 size_t
 CacheIdBox::getSize() const
 {

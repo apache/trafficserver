@@ -40,8 +40,6 @@ libmgmtapi_la_SOURCES = \
 	CoreAPIShared.h \
 	EventCallback.cc \
 	EventCallback.h \
-	GenericParser.cc \
-	GenericParser.h \
 	INKMgmtAPI.cc \
 	NetworkMessage.cc \
 	NetworkMessage.h \

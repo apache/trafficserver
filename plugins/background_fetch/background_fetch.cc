@@ -382,7 +382,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     // Setup the NetVC for background fetch
     TSAssert(nullptr == data->vc);
-    if ((data->vc = TSHttpConnect((sockaddr *)&data->client_ip)) != nullptr) {
+    if ((data->vc = TSHttpConnectWithPluginId((sockaddr *)&data->client_ip, PLUGIN_NAME, 0)) != nullptr) {
       TSHttpHdrPrint(data->mbuf, data->hdr_loc, data->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
       TSIOBufferWrite(data->req_io_buf, "\r\n", 2);
@@ -509,7 +509,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
   } else {
     switch (event) {
     case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-      if (config->getRules()->bgFetchAllowed(txnp)) {
+      if (config->bgFetchAllowed(txnp)) {
         TSMBuffer response;
         TSMLoc resp_hdr;
 

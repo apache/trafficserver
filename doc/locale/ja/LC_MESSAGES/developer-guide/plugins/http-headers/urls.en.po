@@ -172,8 +172,8 @@ msgstr ""
 
 #: ../../../developer-guide/plugins/http-headers/urls.en.rst:109
 msgid ""
-":c:func:`TSUrlClone` :c:func:`TSUrlCopy` :c:func:`TSUrlCreate` :c:func:"
-"`TSUrlDestroy` :c:func:`TSUrlPrint` :c:func:`TSUrlFtpTypeGet` :c:func:"
+":c:func:`TSUrlClone` :c:func:`TSUrlCopy` :c:func:`TSUrlCreate`"
+":c:func:`TSUrlPrint` :c:func:`TSUrlFtpTypeGet` :c:func:"
 "`TSUrlFtpTypeSet` :c:func:`TSUrlHostGet` :c:func:`TSUrlHostSet` :c:func:"
 "`TSUrlHttpFragmentGet` :c:func:`TSUrlHttpFragmentSet` :c:func:"
 "`TSUrlHttpParamsGet` :c:func:`TSUrlHttpParamsSet` :c:func:"
