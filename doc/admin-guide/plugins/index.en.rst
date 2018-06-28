@@ -58,7 +58,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Generator <generator.en>
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
-   Lua <lua.en>
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
    Remap Purge <remap_purge.en>
@@ -108,9 +107,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Health Checks <healthchecks.en>`
     Define service health check links.
 
-:doc:`Lua <lua.en>`
-   Allows plugins to be written in Lua instead of C code.
-
 :doc:`Regex Remap <regex_remap.en>`
     Configure remapping rules using regular expressions.
 
@@ -159,6 +155,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
    System Statistics <system_stats.en>
+   TS Lua <ts_lua.en>
    WebP Transform <webp_transform.en>
 
 :doc:`Balancer <balancer.en>`
@@ -218,6 +215,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`System Stats <system_stats.en>`
     Inserts system statistics in to the stats list
+
+:doc:`TS Lua <ts_lua.en>`
+   Allows plugins to be written in Lua instead of C code.
 
 :doc:`WebP Transform <webp_transform.en>`
    Converts jpeg and png images to webp format.
