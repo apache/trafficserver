@@ -29,6 +29,7 @@
 #include <vector>
 #include <string>
 #include <iosfwd>
+#include <ts/ink_std_compat.h>
 
 #include <ts/TextView.h>
 #include <ts/MemSpan.h>

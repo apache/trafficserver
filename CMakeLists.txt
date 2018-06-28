@@ -1237,6 +1237,7 @@ add_library(libtsutil SHARED
         lib/ts/ink_sprintf.h
         lib/ts/ink_stack_trace.cc
         lib/ts/ink_stack_trace.h
+        lib/ts/ink_std_compat.h
         lib/ts/ink_string++.cc
         lib/ts/ink_string++.h
         lib/ts/ink_string.cc
