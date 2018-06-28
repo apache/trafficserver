@@ -70,7 +70,7 @@ Load_Configuration()
 }
 
 /**
-   Somewhat nonscensically exercise some scenarios of proxying
+   Somewhat nonsensically exercise some scenarios of proxying
    and blind tunneling from the SNI callback plugin
 
    Case 1: If the servername ends in facebook.com, blind tunnel

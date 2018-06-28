@@ -696,7 +696,7 @@ dump_psi(TSCont contp)
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
-  /* If script exec succeded, copy its output to the downstream vconn */
+  /* If script exec succeeded, copy its output to the downstream vconn */
   if (data->psi_success == 1) {
     psi_output_len = TSIOBufferReaderAvail(data->psi_reader);
 

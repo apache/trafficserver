@@ -66,7 +66,7 @@ TEST_CASE("layout create test", "[create]")
 TEST_CASE("relative test", "[relative]")
 {
   // relative (1 argument)
-  ts::string_view sv("file");
+  std::string_view sv("file");
   std::string str1 = append_slash(TS_BUILD_PREFIX) + "file";
   REQUIRE(Layout::get()->relative(sv) == str1);
 }

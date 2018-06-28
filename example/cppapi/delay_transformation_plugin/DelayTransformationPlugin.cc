@@ -17,7 +17,7 @@
  */
 
 #include <iostream>
-#include <ts/string_view.h>
+#include <string_view>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/TransformationPlugin.h>
@@ -65,7 +65,7 @@ public:
   }
 
   void
-  consume(ts::string_view data) override
+  consume(std::string_view data) override
   {
     TS_DEBUG(TAG, "Consuming...");
     produce(data);
@@ -116,7 +116,9 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  RegisterGlobalPlugin("CPP_Example_DelayTransformation", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_DelayTransformation", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   TS_DEBUG(TAG, "TSPluginInit");
   plugin = new GlobalHookPlugin();
 }

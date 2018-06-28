@@ -625,7 +625,7 @@ CacheVC::calluser(int event)
 {
   recursive++;
   ink_assert(!vol || this_ethread() != vol->mutex->thread_holding);
-  vio._cont->handleEvent(event, (void *)&vio);
+  vio.cont->handleEvent(event, (void *)&vio);
   recursive--;
   if (closed) {
     die();

@@ -232,6 +232,11 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_content_type, DEFAULT_STR_FIELD)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_reason_phrase, DEFAULT_STR_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_squid_len, DEFAULT_INT_FIELD)
 LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_squid_len, DEFAULT_INT_FIELD)
 LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_squid_len, DEFAULT_INT_FIELD)
@@ -282,11 +287,6 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_header_len, DEFAULT_INT_FIELD)
   -------------------------------------------------------------------------*/
 
 LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_content_len, DEFAULT_INT_FIELD)
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_server_name, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

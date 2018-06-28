@@ -41,10 +41,7 @@ server specification:
    domains are specified
 
 After you modify the :file:`splitdns.config` file,
-run the :option:`traffic_ctl config reload`
-command to apply the changes. When you apply changes to a node in a
-cluster, Traffic Server automatically applies the changes to all other
-nodes in the cluster.
+run the :option:`traffic_ctl config reload` command to apply the changes.
 
 Format
 ======

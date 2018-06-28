@@ -24,7 +24,7 @@
 /* output_header.c: a plugin prints out the client request header
  *                 fields to stdout
  * A sample internal plugin to use the HdrPrint functions and the TSIOBuffers
- * that the functions untilize.
+ * that the functions utilize.
  *
  * The plugin simply prints all the incoming request headers
  *

@@ -43,7 +43,7 @@
  *   in your error page folder with that error code, for example 404 would expect
  *   a page called 404.html. Error codes will try to apply the more specific rule first
  *   for example if you have a 404 and 4xx, the 404 will attempt to match first and would
- *   serve the 404.html page instead of the 4xx.html page. Similiarly, a 403 would
+ *   serve the 404.html page instead of the 4xx.html page. Similarly, a 403 would
  *   serve the 4xx.html page.
  *
  *   EXAMPLE:
@@ -433,7 +433,9 @@ BoomGlobalPlugin::handleReadResponseHeaders(Transaction &transaction)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  RegisterGlobalPlugin("CPP_Example_Boom", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_Boom", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   boom_counter.init(BOOM_COUNTER);
   BoomResponseRegistry *pregistry = new BoomResponseRegistry();
 

@@ -54,7 +54,7 @@ imposes some requirements on the traffic.
 *  The inbound connection must be TLS.
 *  The outbound destination must handle the HTTP ``CONNECT`` method.
 
-SNI routing is configured by :file:`ssl_server_name.config`.
+SNI routing is configured by :file:`ssl_server_name.yaml`.
 
 If SNI Routing is enabled the initial "`CLIENT HELLO
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" data of an inbound TLS connection is
@@ -98,7 +98,7 @@ service-1.example.com      app-server-29:443
 service-2.example.com      app-server-56:4443
 ========================== =====================================
 
-The :file:`ssl_server_name.config` contents would be
+The :file:`ssl_server_name.yaml` contents would be
 
 .. code-block:: lua
 
@@ -123,6 +123,6 @@ is a problem (which it will be in general) a plugin is needed to change the URL 
 In this case the proxy request is available in the :c:macro:`TS_HTTP_TXN_START_HOOK` hook. This
 cannot be done using remap because for a ``CONNECT`` there is no remap phase. Note that for a
 tunneled connection like this, the only transaction hooks that will be triggered are
-:c:macro`TS_HTTP_TXN_START_HOOK` and :c:macro:`TS_HTTP_TXN_CLOSE_HOOK`. In addition, because |TS|
+:c:macro:`TS_HTTP_TXN_START_HOOK` and :c:macro:`TS_HTTP_TXN_CLOSE_HOOK`. In addition, because |TS|
 does not terminate (and thefore does not decrypt) the connection, it cannot be cached or served from
 cache.

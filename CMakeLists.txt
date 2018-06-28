@@ -41,6 +41,7 @@ include_directories(lib
         lib/records
         lib/wccp
         lib/cppapi/include
+        lib/yamlcpp/include
         iocore/eventsystem
         iocore/net
         iocore/dns
@@ -52,49 +53,66 @@ include_directories(lib
         mgmt/api
         mgmt/utils
         mgmt/api/include
-        proxy/api
-        lib/luajit/src)
+        proxy/api)
 
 add_executable(traffic_crashlog
-        cmd/traffic_crashlog/procinfo.cc
-        cmd/traffic_crashlog/traffic_crashlog.cc
-        cmd/traffic_crashlog/traffic_crashlog.h
+        src/traffic_crashlog/procinfo.cc
+        src/traffic_crashlog/traffic_crashlog.cc
+        src/traffic_crashlog/traffic_crashlog.h
 )
 
 add_executable(traffic_ctl
-        cmd/traffic_ctl/alarm.cc
-        cmd/traffic_ctl/config.cc
-        cmd/traffic_ctl/metric.cc
-        cmd/traffic_ctl/plugin.cc
-        cmd/traffic_ctl/server.cc
-        cmd/traffic_ctl/storage.cc
-        cmd/traffic_ctl/traffic_ctl.cc
-        cmd/traffic_ctl/traffic_ctl.h
-        cmd/traffic_layout/engine.cc
+        src/traffic_ctl/alarm.cc
+        src/traffic_ctl/config.cc
+        src/traffic_ctl/plugin.cc
+        src/traffic_ctl/server.cc
+        src/traffic_ctl/storage.cc
+        src/traffic_ctl/traffic_ctl.cc
+        src/traffic_ctl/traffic_ctl.h
+        src/traffic_layout/engine.cc
 )
 
 add_executable(traffic_layout
-        cmd/traffic_layout/engine.h
-        cmd/traffic_layout/file_system.cc
-        cmd/traffic_layout/file_system.h
-        cmd/traffic_layout/info.cc
-        cmd/traffic_layout/info.h
-        cmd/traffic_layout/traffic_layout.cc
+        src/traffic_layout/engine.h
+        src/traffic_layout/file_system.cc
+        src/traffic_layout/file_system.h
+        src/traffic_layout/info.cc
+        src/traffic_layout/info.h
+        src/traffic_layout/traffic_layout.cc
+)
+
+add_executable(traffic_logcat
+        src/traffic_logcat/logcat.cc
+)
+
+add_executable(traffic_logstats
+        src/traffic_logstats/logstats.cc
 )
 
 add_executable(traffic_manager
-        cmd/traffic_manager/AddConfigFilesHere.cc
-        cmd/traffic_manager/metrics.cc
-        cmd/traffic_manager/metrics.h
-        cmd/traffic_manager/MgmtHandlers.cc
-        cmd/traffic_manager/MgmtHandlers.h
-        cmd/traffic_manager/test_metrics.cc
-        cmd/traffic_manager/traffic_manager.cc
+        src/traffic_manager/AddConfigFilesHere.cc
+        src/traffic_manager/traffic_manager.cc
+)
+
+add_executable(traffic_server
+        src/traffic_server/CoreUtils.cc
+        src/traffic_server/CoreUtils.h
+        src/traffic_server/Crash.cc
+        src/traffic_server/EventName.cc
+        src/traffic_server/EventName.h
+        src/traffic_server/FetchSM.cc
+        src/traffic_server/FetchSM.h
+        src/traffic_server/HostStatus.cc
+        src/traffic_server/InkAPI.cc
+        src/traffic_server/InkAPITest.cc
+        src/traffic_server/InkIOCoreAPI.cc
+        src/traffic_server/SocksProxy.cc
+        src/traffic_server/traffic_server.cc
 )
 
 add_executable(ats
-        cmd/traffic_via/traffic_via.cc
-        cmd/traffic_wccp/wccp_client.cc
+        src/traffic_via/traffic_via.cc
+        src/traffic_wccp/wccp_client.cc
         example/add_header/add_header.c
         example/append_transform/append_transform.c
         example/basic_auth/basic_auth.c
@@ -258,8 +276,8 @@ add_executable(ats
         iocore/net/I_UDPNet.h
         iocore/net/I_UDPPacket.h
         iocore/net/Inline.cc
-        iocore/net/LuaSNIConfig.cc
-        iocore/net/LuaSNIConfig.h
+        iocore/net/YamlSNIConfig.cc
+        iocore/net/YamlSNIConfig.h
         iocore/net/Net.cc
         iocore/net/NetVConnection.cc
         iocore/net/NetVCTest.cc
@@ -334,14 +352,6 @@ add_executable(ats
         iocore/utils/Machine.cc
         iocore/utils/OneWayMultiTunnel.cc
         iocore/utils/OneWayTunnel.cc
-        lib/bindings/bindings.cc
-        lib/bindings/bindings.h
-        lib/bindings/lua.cc
-        lib/bindings/lua.h
-        lib/bindings/metrics.cc
-        lib/bindings/metrics.h
-        lib/bindings/repl.cc
-        lib/bindings/repl.h
         lib/cppapi/include/atscppapi/Async.h
         lib/cppapi/include/atscppapi/AsyncHttpFetch.h
         lib/cppapi/include/atscppapi/AsyncTimer.h
@@ -393,150 +403,6 @@ add_executable(ats
         lib/cppapi/Url.cc
         lib/cppapi/utils.cc
         lib/cppapi/utils_internal.cc
-        lib/luajit/dynasm/dasm_arm.h
-        lib/luajit/dynasm/dasm_mips.h
-        lib/luajit/dynasm/dasm_ppc.h
-        lib/luajit/dynasm/dasm_proto.h
-        lib/luajit/dynasm/dasm_x86.h
-        lib/luajit/src/host/buildvm.c
-        lib/luajit/src/host/buildvm.h
-        lib/luajit/src/host/buildvm_asm.c
-        lib/luajit/src/host/buildvm_fold.c
-        lib/luajit/src/host/buildvm_lib.c
-        lib/luajit/src/host/buildvm_peobj.c
-        lib/luajit/src/host/minilua.c
-        lib/luajit/src/lauxlib.h
-        lib/luajit/src/lib_aux.c
-        lib/luajit/src/lib_base.c
-        lib/luajit/src/lib_bit.c
-        lib/luajit/src/lib_debug.c
-        lib/luajit/src/lib_ffi.c
-        lib/luajit/src/lib_init.c
-        lib/luajit/src/lib_io.c
-        lib/luajit/src/lib_jit.c
-        lib/luajit/src/lib_math.c
-        lib/luajit/src/lib_os.c
-        lib/luajit/src/lib_package.c
-        lib/luajit/src/lib_string.c
-        lib/luajit/src/lib_table.c
-        lib/luajit/src/lj_alloc.c
-        lib/luajit/src/lj_alloc.h
-        lib/luajit/src/lj_api.c
-        lib/luajit/src/lj_arch.h
-        lib/luajit/src/lj_asm.c
-        lib/luajit/src/lj_asm.h
-        lib/luajit/src/lj_asm_arm.h
-        lib/luajit/src/lj_asm_mips.h
-        lib/luajit/src/lj_asm_ppc.h
-        lib/luajit/src/lj_asm_x86.h
-        lib/luajit/src/lj_bc.c
-        lib/luajit/src/lj_bc.h
-        lib/luajit/src/lj_bcdump.h
-        lib/luajit/src/lj_bcread.c
-        lib/luajit/src/lj_bcwrite.c
-        lib/luajit/src/lj_carith.c
-        lib/luajit/src/lj_carith.h
-        lib/luajit/src/lj_ccall.c
-        lib/luajit/src/lj_ccall.h
-        lib/luajit/src/lj_ccallback.c
-        lib/luajit/src/lj_ccallback.h
-        lib/luajit/src/lj_cconv.c
-        lib/luajit/src/lj_cconv.h
-        lib/luajit/src/lj_cdata.c
-        lib/luajit/src/lj_cdata.h
-        lib/luajit/src/lj_char.c
-        lib/luajit/src/lj_char.h
-        lib/luajit/src/lj_clib.c
-        lib/luajit/src/lj_clib.h
-        lib/luajit/src/lj_cparse.c
-        lib/luajit/src/lj_cparse.h
-        lib/luajit/src/lj_crecord.c
-        lib/luajit/src/lj_crecord.h
-        lib/luajit/src/lj_ctype.c
-        lib/luajit/src/lj_ctype.h
-        lib/luajit/src/lj_debug.c
-        lib/luajit/src/lj_debug.h
-        lib/luajit/src/lj_def.h
-        lib/luajit/src/lj_dispatch.c
-        lib/luajit/src/lj_dispatch.h
-        lib/luajit/src/lj_emit_arm.h
-        lib/luajit/src/lj_emit_mips.h
-        lib/luajit/src/lj_emit_ppc.h
-        lib/luajit/src/lj_emit_x86.h
-        lib/luajit/src/lj_err.c
-        lib/luajit/src/lj_err.h
-        lib/luajit/src/lj_errmsg.h
-        lib/luajit/src/lj_ff.h
-        lib/luajit/src/lj_ffrecord.c
-        lib/luajit/src/lj_ffrecord.h
-        lib/luajit/src/lj_frame.h
-        lib/luajit/src/lj_func.c
-        lib/luajit/src/lj_func.h
-        lib/luajit/src/lj_gc.c
-        lib/luajit/src/lj_gc.h
-        lib/luajit/src/lj_gdbjit.c
-        lib/luajit/src/lj_gdbjit.h
-        lib/luajit/src/lj_ir.c
-        lib/luajit/src/lj_ir.h
-        lib/luajit/src/lj_ircall.h
-        lib/luajit/src/lj_iropt.h
-        lib/luajit/src/lj_jit.h
-        lib/luajit/src/lj_lex.c
-        lib/luajit/src/lj_lex.h
-        lib/luajit/src/lj_lib.c
-        lib/luajit/src/lj_lib.h
-        lib/luajit/src/lj_load.c
-        lib/luajit/src/lj_mcode.c
-        lib/luajit/src/lj_mcode.h
-        lib/luajit/src/lj_meta.c
-        lib/luajit/src/lj_meta.h
-        lib/luajit/src/lj_obj.c
-        lib/luajit/src/lj_obj.h
-        lib/luajit/src/lj_opt_dce.c
-        lib/luajit/src/lj_opt_fold.c
-        lib/luajit/src/lj_opt_loop.c
-        lib/luajit/src/lj_opt_mem.c
-        lib/luajit/src/lj_opt_narrow.c
-        lib/luajit/src/lj_opt_sink.c
-        lib/luajit/src/lj_opt_split.c
-        lib/luajit/src/lj_parse.c
-        lib/luajit/src/lj_parse.h
-        lib/luajit/src/lj_record.c
-        lib/luajit/src/lj_record.h
-        lib/luajit/src/lj_snap.c
-        lib/luajit/src/lj_snap.h
-        lib/luajit/src/lj_state.c
-        lib/luajit/src/lj_state.h
-        lib/luajit/src/lj_str.c
-        lib/luajit/src/lj_str.h
-        lib/luajit/src/lj_strscan.c
-        lib/luajit/src/lj_strscan.h
-        lib/luajit/src/lj_tab.c
-        lib/luajit/src/lj_tab.h
-        lib/luajit/src/lj_target.h
-        lib/luajit/src/lj_target_arm.h
-        lib/luajit/src/lj_target_mips.h
-        lib/luajit/src/lj_target_ppc.h
-        lib/luajit/src/lj_target_x86.h
-        lib/luajit/src/lj_trace.c
-        lib/luajit/src/lj_trace.h
-        lib/luajit/src/lj_traceerr.h
-        lib/luajit/src/lj_udata.c
-        lib/luajit/src/lj_udata.h
-        lib/luajit/src/lj_vm.h
-        lib/luajit/src/lj_vmevent.c
-        lib/luajit/src/lj_vmevent.h
-        lib/luajit/src/lj_vmmath.c
-        lib/luajit/src/ljamalg.c
-        lib/luajit/src/lua.h
-        lib/luajit/src/lua.hpp
-        lib/luajit/src/luaconf.h
-        lib/luajit/src/luajit.c
-        lib/luajit/src/luajit.h
-        lib/luajit/src/lualib.h
-        lib/raft/raft.h
-        lib/raft/raft_impl.h
-        lib/raft/raft_test.cc
         lib/records/I_RecAlarms.h
         lib/records/I_RecCore.h
         lib/records/I_RecDefs.h
@@ -593,8 +459,6 @@ add_executable(ats
         mgmt/api/EventCallback.h
         mgmt/api/EventControlMain.cc
         mgmt/api/EventControlMain.h
-        mgmt/api/GenericParser.cc
-        mgmt/api/GenericParser.h
         mgmt/api/INKMgmtAPI.cc
         mgmt/api/NetworkMessage.cc
         mgmt/api/NetworkMessage.h
@@ -647,6 +511,7 @@ add_executable(ats
         plugins/background_fetch/headers.h
         plugins/background_fetch/rules.cc
         plugins/background_fetch/rules.h
+        plugins/cache_promote/cache_promote.cc
         plugins/conf_remap/conf_remap.cc
         plugins/esi/fetcher/FetchedDataProcessor.h
         plugins/esi/fetcher/HttpDataFetcher.h
@@ -708,7 +573,6 @@ add_executable(ats
         plugins/experimental/balancer/roundrobin.cc
         plugins/experimental/buffer_upload/buffer_upload.cc
         plugins/experimental/cache_key_genid/cache_key_genid.c
-        plugins/experimental/cache_promote/cache_promote.cc
         plugins/experimental/cache_range_requests/cache_range_requests.cc
         plugins/experimental/collapsed_connection/collapsed_connection.cc
         plugins/experimental/collapsed_connection/MurmurHash3.cc
@@ -716,7 +580,6 @@ add_executable(ats
         plugins/experimental/collapsed_connection/P_collapsed_connection.h
         plugins/experimental/collapsed_forwarding/collapsed_forwarding.cc
         plugins/experimental/custom_redirect/custom_redirect.cc
-        plugins/experimental/escalate/escalate.cc
         plugins/experimental/geoip_acl/acl.cc
         plugins/experimental/geoip_acl/acl.h
         plugins/experimental/geoip_acl/geoip_acl.cc
@@ -778,7 +641,6 @@ add_executable(ats
         plugins/experimental/remap_purge/remap_purge.c
         plugins/experimental/remap_stats/remap_stats.c
         plugins/experimental/server_push_preload/server_push_preload.cc
-        plugins/experimental/ssl_cert_loader/ats-util.h
         plugins/experimental/ssl_cert_loader/domain-tree.cc
         plugins/experimental/ssl_cert_loader/domain-tree.h
         plugins/experimental/ssl_cert_loader/ssl-cert-loader.cc
@@ -793,60 +655,6 @@ add_executable(ats
         plugins/experimental/tls_bridge/regex.cc
         plugins/experimental/tls_bridge/regex.h
         plugins/experimental/tls_bridge/tls_bridge.cc
-        plugins/experimental/ts_lua/ts_lua.c
-        plugins/experimental/ts_lua/ts_lua_cached_response.c
-        plugins/experimental/ts_lua/ts_lua_cached_response.h
-        plugins/experimental/ts_lua/ts_lua_client_request.c
-        plugins/experimental/ts_lua/ts_lua_client_request.h
-        plugins/experimental/ts_lua/ts_lua_client_response.c
-        plugins/experimental/ts_lua/ts_lua_client_response.h
-        plugins/experimental/ts_lua/ts_lua_common.h
-        plugins/experimental/ts_lua/ts_lua_constant.c
-        plugins/experimental/ts_lua/ts_lua_constant.h
-        plugins/experimental/ts_lua/ts_lua_context.c
-        plugins/experimental/ts_lua/ts_lua_context.h
-        plugins/experimental/ts_lua/ts_lua_coroutine.c
-        plugins/experimental/ts_lua/ts_lua_coroutine.h
-        plugins/experimental/ts_lua/ts_lua_crypto.c
-        plugins/experimental/ts_lua/ts_lua_crypto.h
-        plugins/experimental/ts_lua/ts_lua_fetch.c
-        plugins/experimental/ts_lua/ts_lua_fetch.h
-        plugins/experimental/ts_lua/ts_lua_hook.c
-        plugins/experimental/ts_lua/ts_lua_hook.h
-        plugins/experimental/ts_lua/ts_lua_http.c
-        plugins/experimental/ts_lua/ts_lua_http.h
-        plugins/experimental/ts_lua/ts_lua_http_cntl.c
-        plugins/experimental/ts_lua/ts_lua_http_cntl.h
-        plugins/experimental/ts_lua/ts_lua_http_config.c
-        plugins/experimental/ts_lua/ts_lua_http_config.h
-        plugins/experimental/ts_lua/ts_lua_http_intercept.c
-        plugins/experimental/ts_lua/ts_lua_http_intercept.h
-        plugins/experimental/ts_lua/ts_lua_http_milestone.c
-        plugins/experimental/ts_lua/ts_lua_http_milestone.h
-        plugins/experimental/ts_lua/ts_lua_io.c
-        plugins/experimental/ts_lua/ts_lua_io.h
-        plugins/experimental/ts_lua/ts_lua_log.c
-        plugins/experimental/ts_lua/ts_lua_log.h
-        plugins/experimental/ts_lua/ts_lua_mgmt.c
-        plugins/experimental/ts_lua/ts_lua_mgmt.h
-        plugins/experimental/ts_lua/ts_lua_misc.c
-        plugins/experimental/ts_lua/ts_lua_misc.h
-        plugins/experimental/ts_lua/ts_lua_package.c
-        plugins/experimental/ts_lua/ts_lua_package.h
-        plugins/experimental/ts_lua/ts_lua_remap.c
-        plugins/experimental/ts_lua/ts_lua_remap.h
-        plugins/experimental/ts_lua/ts_lua_server_request.c
-        plugins/experimental/ts_lua/ts_lua_server_request.h
-        plugins/experimental/ts_lua/ts_lua_server_response.c
-        plugins/experimental/ts_lua/ts_lua_server_response.h
-        plugins/experimental/ts_lua/ts_lua_stat.c
-        plugins/experimental/ts_lua/ts_lua_stat.h
-        plugins/experimental/ts_lua/ts_lua_string.c
-        plugins/experimental/ts_lua/ts_lua_string.h
-        plugins/experimental/ts_lua/ts_lua_transform.c
-        plugins/experimental/ts_lua/ts_lua_transform.h
-        plugins/experimental/ts_lua/ts_lua_util.c
-        plugins/experimental/ts_lua/ts_lua_util.h
         plugins/experimental/uri_signing/config.c
         plugins/experimental/uri_signing/config.h
         plugins/experimental/uri_signing/cookie.c
@@ -895,6 +703,60 @@ add_executable(ats
         plugins/header_rewrite/value.h
         plugins/healthchecks/healthchecks.c
         plugins/libloader/libloader.c
+        plugins/lua/ts_lua.c
+        plugins/lua/ts_lua_cached_response.c
+        plugins/lua/ts_lua_cached_response.h
+        plugins/lua/ts_lua_client_request.c
+        plugins/lua/ts_lua_client_request.h
+        plugins/lua/ts_lua_client_response.c
+        plugins/lua/ts_lua_client_response.h
+        plugins/lua/ts_lua_common.h
+        plugins/lua/ts_lua_constant.c
+        plugins/lua/ts_lua_constant.h
+        plugins/lua/ts_lua_context.c
+        plugins/lua/ts_lua_context.h
+        plugins/lua/ts_lua_coroutine.c
+        plugins/lua/ts_lua_coroutine.h
+        plugins/lua/ts_lua_crypto.c
+        plugins/lua/ts_lua_crypto.h
+        plugins/lua/ts_lua_fetch.c
+        plugins/lua/ts_lua_fetch.h
+        plugins/lua/ts_lua_hook.c
+        plugins/lua/ts_lua_hook.h
+        plugins/lua/ts_lua_http.c
+        plugins/lua/ts_lua_http.h
+        plugins/lua/ts_lua_http_cntl.c
+        plugins/lua/ts_lua_http_cntl.h
+        plugins/lua/ts_lua_http_config.c
+        plugins/lua/ts_lua_http_config.h
+        plugins/lua/ts_lua_http_intercept.c
+        plugins/lua/ts_lua_http_intercept.h
+        plugins/lua/ts_lua_http_milestone.c
+        plugins/lua/ts_lua_http_milestone.h
+        plugins/lua/ts_lua_io.c
+        plugins/lua/ts_lua_io.h
+        plugins/lua/ts_lua_log.c
+        plugins/lua/ts_lua_log.h
+        plugins/lua/ts_lua_mgmt.c
+        plugins/lua/ts_lua_mgmt.h
+        plugins/lua/ts_lua_misc.c
+        plugins/lua/ts_lua_misc.h
+        plugins/lua/ts_lua_package.c
+        plugins/lua/ts_lua_package.h
+        plugins/lua/ts_lua_remap.c
+        plugins/lua/ts_lua_remap.h
+        plugins/lua/ts_lua_server_request.c
+        plugins/lua/ts_lua_server_request.h
+        plugins/lua/ts_lua_server_response.c
+        plugins/lua/ts_lua_server_response.h
+        plugins/lua/ts_lua_stat.c
+        plugins/lua/ts_lua_stat.h
+        plugins/lua/ts_lua_string.c
+        plugins/lua/ts_lua_string.h
+        plugins/lua/ts_lua_transform.c
+        plugins/lua/ts_lua_transform.h
+        plugins/lua/ts_lua_util.c
+        plugins/lua/ts_lua_util.h
         plugins/regex_remap/regex_remap.cc
         plugins/regex_revalidate/regex_revalidate.c
         plugins/s3_auth/unit-tests/test_aws_auth_v4.cc
@@ -1021,8 +883,6 @@ add_executable(ats
         proxy/logging/LogAccessHttp.h
         proxy/logging/LogAccessTest.cc
         proxy/logging/LogAccessTest.h
-        proxy/logging/LogBindings.cc
-        proxy/logging/LogBindings.h
         proxy/logging/LogBuffer.cc
         proxy/logging/LogBuffer.h
         proxy/logging/LogBufferSink.h
@@ -1061,28 +921,13 @@ add_executable(ats
         proxy/shared/UglyLogStubs.cc
         proxy/CacheControl.cc
         proxy/CacheControl.h
-        proxy/CompletionUtil.h
         proxy/ControlBase.cc
         proxy/ControlBase.h
         proxy/ControlMatcher.cc
         proxy/ControlMatcher.h
-        proxy/CoreUtils.cc
-        proxy/CoreUtils.h
-        proxy/Crash.cc
-        proxy/EventName.cc
-        proxy/EventName.h
-        proxy/FetchSM.cc
-        proxy/FetchSM.h
-        proxy/InkAPI.cc
         proxy/InkAPIInternal.h
-        proxy/InkAPITest.cc
-        proxy/InkAPITestTool.cc
-        proxy/InkIOCoreAPI.cc
         proxy/IPAllow.cc
         proxy/IPAllow.h
-        proxy/logcat.cc
-        proxy/logstats.cc
-        proxy/Main.cc
         proxy/Main.h
         proxy/Milestones.h
         proxy/ParentConsistentHash.cc
@@ -1096,8 +941,6 @@ add_executable(ats
         proxy/Plugin.h
         proxy/PluginVC.cc
         proxy/PluginVC.h
-        proxy/Prefetch.cc
-        proxy/Prefetch.h
         proxy/ProtocolProbeSessionAccept.cc
         proxy/ProtocolProbeSessionAccept.h
         proxy/ProxyClientSession.cc
@@ -1109,25 +952,12 @@ add_executable(ats
         proxy/ReverseProxy.cc
         proxy/ReverseProxy.h
         proxy/Show.h
-        proxy/SocksProxy.cc
         proxy/StatPages.cc
         proxy/StatPages.h
-        proxy/StufferUdpReceiver.cc
-        proxy/TestClock.cc
-        proxy/TestDNS.cc
-        proxy/TestPreProc.cc
-        proxy/TestPreProc.h
-        proxy/TestRegex.cc
-        proxy/TestSimpleProxy.cc
         proxy/TimeTrace.h
         proxy/Transform.cc
         proxy/Transform.h
         proxy/TransformInternal.h
-        proxy/UDPAPIClientTest.cc
-        proxy/UDPAPIClientTest.h
-        proxy/UDPAPITest.cc
-        proxy/UDPAPITest.h
-        proxy/UnixCompletionUtil.h
         tests/gold_tests/tls/ssl-post.c
         tests/include/catch.hpp
         tests/tools/plugins/continuations_verify.cc
@@ -1150,6 +980,7 @@ add_library(libtsutil SHARED
         lib/ts/BaseLogFile.h
         lib/ts/Bitops.cc
         lib/ts/Bitops.h
+        lib/ts/bwf_std_format.h
         lib/ts/BufferWriter.h
         lib/ts/BufferWriterForward.h
         lib/ts/BufferWriterFormat.cc
@@ -1238,7 +1069,6 @@ add_library(libtsutil SHARED
         lib/ts/ink_sprintf.h
         lib/ts/ink_stack_trace.cc
         lib/ts/ink_stack_trace.h
-        lib/ts/ink_std_compat.h
         lib/ts/ink_string++.cc
         lib/ts/ink_string++.h
         lib/ts/ink_string.cc
@@ -1269,6 +1099,8 @@ add_library(libtsutil SHARED
         lib/ts/Map.h
         lib/ts/MatcherUtils.cc
         lib/ts/MatcherUtils.h
+        lib/ts/MemArena.h
+        lib/ts/MemArena.cc
         lib/ts/MemSpan.h
         lib/ts/mkdfa.c
         lib/ts/MMH.cc
@@ -1296,7 +1128,6 @@ add_library(libtsutil SHARED
         lib/ts/SimpleTokenizer.h
         lib/ts/SourceLocation.cc
         lib/ts/SourceLocation.h
-        lib/ts/string_view.h
         lib/ts/test_arena.cc
         lib/ts/test_atomic.cc
         lib/ts/test_freelist.cc
@@ -1330,11 +1161,13 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_BufferWriter.cc
 	lib/ts/unit-tests/test_BufferWriterFormat.cc
 	lib/ts/unit-tests/test_ink_inet.cc
+	lib/ts/unit-tests/test_IntrusivePtr.cc
 	lib/ts/unit-tests/test_IpMap.cc
 	lib/ts/unit-tests/test_layout.cc
+	lib/ts/unit-tests/test_MemArena.cc
+	lib/ts/unit-tests/test_MemSpan.cc
 	lib/ts/unit-tests/test_MT_hashtable.cc
 	lib/ts/unit-tests/test_Scalar.cc
-	lib/ts/unit-tests/test_string_view.cc
 	lib/ts/unit-tests/test_scoped_resource.cc
 	lib/ts/unit-tests/test_TextView.cc
 )
@@ -1384,8 +1217,6 @@ add_library(libtsconfig SHARED
         lib/tsconfig/TsConfigGrammar.c
         lib/tsconfig/TsConfigGrammar.h
         lib/tsconfig/TsConfigLexer.h
-        lib/tsconfig/TsConfigLua.cc
-        lib/tsconfig/TsConfigLua.h
         lib/tsconfig/TsConfigParseEvents.h
         lib/tsconfig/TsConfigSyntax.c
         lib/tsconfig/TsConfigTypes.h
@@ -1418,14 +1249,18 @@ add_library(plugin_cachekey SHARED
         plugins/cachekey/plugin.cc
         )
 
+add_library(plugin_escalate SHARED
+        plugins/escalate/escalate.cc
+        )
+
 # CacheTool
 add_executable(traffic_cache_tool
-	cmd/traffic_cache_tool/CacheStore.h
-	cmd/traffic_cache_tool/CacheDefs.h
-	cmd/traffic_cache_tool/CacheDefs.cc
-	cmd/traffic_cache_tool/CacheTool.cc
-	cmd/traffic_cache_tool/Command.h
-	cmd/traffic_cache_tool/Command.cc
-	cmd/traffic_cache_tool/File.h
-	cmd/traffic_cache_tool/File.cc
+	src/traffic_cache_tool/CacheStore.h
+	src/traffic_cache_tool/CacheDefs.h
+	src/traffic_cache_tool/CacheDefs.cc
+	src/traffic_cache_tool/CacheTool.cc
+	src/traffic_cache_tool/Command.h
+	src/traffic_cache_tool/Command.cc
+	src/traffic_cache_tool/File.h
+	src/traffic_cache_tool/File.cc
 )

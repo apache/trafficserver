@@ -193,7 +193,7 @@ public:
                                   char *alt_printf_str = nullptr);
 
   static void
-  destroy(LogBuffer *lb)
+  destroy(LogBuffer *&lb)
   {
     // ink_atomic_increment() returns the previous value, so when it was 1, we are
     // the thread that decremented to zero and should delete ...
@@ -201,6 +201,7 @@ public:
 
     if (refcnt == 1) {
       delete lb;
+      lb = nullptr;
     }
 
     ink_release_assert(refcnt >= 0);

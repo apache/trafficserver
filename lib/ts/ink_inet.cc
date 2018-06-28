@@ -36,18 +36,22 @@
 
 IpAddr const IpAddr::INVALID;
 
-const ts::string_view IP_PROTO_TAG_IPV4("ipv4"_sv);
-const ts::string_view IP_PROTO_TAG_IPV6("ipv6"_sv);
-const ts::string_view IP_PROTO_TAG_UDP("udp"_sv);
-const ts::string_view IP_PROTO_TAG_TCP("tcp"_sv);
-const ts::string_view IP_PROTO_TAG_TLS_1_0("tls/1.0"_sv);
-const ts::string_view IP_PROTO_TAG_TLS_1_1("tls/1.1"_sv);
-const ts::string_view IP_PROTO_TAG_TLS_1_2("tls/1.2"_sv);
-const ts::string_view IP_PROTO_TAG_TLS_1_3("tls/1.3"_sv);
-const ts::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"_sv);
-const ts::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"_sv);
-const ts::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"_sv);
-const ts::string_view IP_PROTO_TAG_HTTP_2_0("h2"_sv); // HTTP/2 over TLS
+using namespace std::literals;
+
+const std::string_view IP_PROTO_TAG_IPV4("ipv4"sv);
+const std::string_view IP_PROTO_TAG_IPV6("ipv6"sv);
+const std::string_view IP_PROTO_TAG_UDP("udp"sv);
+const std::string_view IP_PROTO_TAG_TCP("tcp"sv);
+const std::string_view IP_PROTO_TAG_TLS_1_0("tls/1.0"sv);
+const std::string_view IP_PROTO_TAG_TLS_1_1("tls/1.1"sv);
+const std::string_view IP_PROTO_TAG_TLS_1_2("tls/1.2"sv);
+const std::string_view IP_PROTO_TAG_TLS_1_3("tls/1.3"sv);
+const std::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"sv);
+const std::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"sv);
+const std::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"sv);
+const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv); // HTTP/2 over TLS
+
+const std::string_view UNIX_PROTO_TAG{"unix"sv};
 
 uint32_t
 ink_inet_addr(const char *s)
@@ -142,10 +146,21 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
   return zret;
 }
 
-ts::string_view
+std::string_view
 ats_ip_family_name(int family)
 {
-  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : "Unspec"_sv;
+  switch (family) {
+  case AF_INET:
+    return IP_PROTO_TAG_IPV4;
+  case AF_INET6:
+    return IP_PROTO_TAG_IPV6;
+  case AF_UNIX:
+    return UNIX_PROTO_TAG;
+  case AF_UNSPEC:
+    return "unspec"sv;
+  default:
+    return "unknown"sv;
+  }
 }
 
 const char *
@@ -157,12 +172,12 @@ ats_ip_nptop(sockaddr const *addr, char *dst, size_t size)
 }
 
 int
-ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, ts::string_view *rest)
+ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *port, std::string_view *rest)
 {
   ts::TextView src(str); /// Easier to work with for parsing.
   // In case the incoming arguments are null, set them here and only check for null once.
   // it doesn't matter if it's all the same, the results will be thrown away.
-  ts::string_view local;
+  std::string_view local;
   if (!addr) {
     addr = &local;
   }
@@ -221,7 +236,7 @@ ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, 
       if (tmp.data() == src.data()) {               // no digits at all
         src.assign(tmp.data() - 1, tmp.size() + 1); // back up to include colon
       } else {
-        *port = ts::string_view(tmp.data(), src.data() - tmp.data());
+        *port = std::string_view(tmp.data(), src.data() - tmp.data());
       }
     }
     *rest = src;
@@ -230,10 +245,10 @@ ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, 
 }
 
 int
-ats_ip_pton(const ts::string_view &src, sockaddr *ip)
+ats_ip_pton(const std::string_view &src, sockaddr *ip)
 {
   int zret = -1;
-  ts::string_view addr, port;
+  std::string_view addr, port;
 
   ats_ip_invalidate(ip);
   if (0 == ats_ip_parse(src, &addr, &port)) {
@@ -242,9 +257,9 @@ ats_ip_pton(const ts::string_view &src, sockaddr *ip)
       char *tmp = static_cast<char *>(alloca(addr.size() + 1));
       memcpy(tmp, addr.data(), addr.size());
       tmp[addr.size()] = 0;
-      addr             = ts::string_view(tmp, addr.size());
+      addr             = std::string_view(tmp, addr.size());
     }
-    if (addr.find(':') != ts::string_view::npos) { // colon -> IPv6
+    if (addr.find(':') != std::string_view::npos) { // colon -> IPv6
       in6_addr addr6;
       if (inet_pton(AF_INET6, addr.data(), &addr6)) {
         zret = 0;
@@ -267,7 +282,7 @@ ats_ip_pton(const ts::string_view &src, sockaddr *ip)
 }
 
 int
-ats_ip_range_parse(ts::string_view src, IpAddr &lower, IpAddr &upper)
+ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper)
 {
   int zret = TS_ERROR;
   IpAddr addr, addr2;
@@ -279,7 +294,7 @@ ats_ip_range_parse(ts::string_view src, IpAddr &lower, IpAddr &upper)
   static const uint64_t ones[]{UINT64_MAX, UINT64_MAX};
   static const IpAddr MAX_ADDR6{reinterpret_cast<in6_addr const &>(ones)};
 
-  auto idx = src.find_first_of("/-"_sv);
+  auto idx = src.find_first_of("/-"sv);
   if (idx != src.npos) {
     if (idx + 1 >= src.size()) { // must have something past the separator or it's bogus.
       zret = TS_ERROR;
@@ -427,7 +442,7 @@ IpAddr::load(const char *text)
 }
 
 int
-IpAddr::load(ts::string_view const &text)
+IpAddr::load(std::string_view const &text)
 {
   IpEndpoint ip;
   int zret = ats_ip_pton(text, &ip.sa);
@@ -529,8 +544,8 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
   int port = 0; // port value to assign if we find an address.
   addrinfo ai_hints;
   addrinfo *ai_result;
-  ts::string_view addr_text, port_text;
-  ts::string_view src(host, strlen(host) + 1);
+  std::string_view addr_text, port_text;
+  std::string_view src(host, strlen(host) + 1);
 
   if (ip4) {
     ats_ip_invalidate(ip4);
@@ -545,7 +560,7 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
       char *tmp = static_cast<char *>(alloca(addr_text.size() + 1));
       memcpy(tmp, addr_text.data(), addr_text.size());
       tmp[addr_text.size()] = 0;
-      addr_text             = ts::string_view(tmp, addr_text.size());
+      addr_text             = std::string_view(tmp, addr_text.size());
     }
     ink_zero(ai_hints);
     ai_hints.ai_family = AF_UNSPEC;
@@ -629,7 +644,7 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
 }
 
 int
-ats_ip_check_characters(ts::string_view text)
+ats_ip_check_characters(std::string_view text)
 {
   bool found_colon = false;
   bool found_hex   = false;
@@ -674,3 +689,253 @@ ats_tcp_somaxconn()
 
   return value;
 }
+
+namespace ts
+{
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, in_addr_t addr)
+{
+  uint8_t *ptr = reinterpret_cast<uint8_t *>(&addr);
+  BWFSpec local_spec{spec}; // Format for address elements.
+  bool align_p = false;
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      align_p          = true;
+      local_spec._fill = '0';
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      align_p          = true;
+      local_spec._fill = spec._ext[0];
+    }
+  }
+
+  if (align_p) {
+    local_spec._min   = 3;
+    local_spec._align = BWFSpec::Align::RIGHT;
+  } else {
+    local_spec._min = 0;
+  }
+
+  bwformat(w, local_spec, ptr[0]);
+  w.write('.');
+  bwformat(w, local_spec, ptr[1]);
+  w.write('.');
+  bwformat(w, local_spec, ptr[2]);
+  w.write('.');
+  bwformat(w, local_spec, ptr[3]);
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, in6_addr const &addr)
+{
+  using QUAD = uint16_t const;
+  BWFSpec local_spec{spec}; // Format for address elements.
+  uint8_t const *ptr   = addr.s6_addr;
+  uint8_t const *limit = ptr + sizeof(addr.s6_addr);
+  QUAD *lower          = nullptr; // the best zero range
+  QUAD *upper          = nullptr;
+  bool align_p         = false;
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      align_p          = true;
+      local_spec._fill = '0';
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      align_p          = true;
+      local_spec._fill = spec._ext[0];
+    }
+  }
+
+  if (align_p) {
+    local_spec._min   = 4;
+    local_spec._align = BWFSpec::Align::RIGHT;
+  } else {
+    local_spec._min = 0;
+    // do 0 compression if there's no internal fill.
+    for (QUAD *spot = reinterpret_cast<QUAD *>(ptr), *last = reinterpret_cast<QUAD *>(limit), *current = nullptr; spot < last;
+         ++spot) {
+      if (0 == *spot) {
+        if (current) {
+          // If there's no best, or this is better, remember it.
+          if (!lower || (upper - lower < spot - current)) {
+            lower = current;
+            upper = spot;
+          }
+        } else {
+          current = spot;
+        }
+      } else {
+        current = nullptr;
+      }
+    }
+  }
+
+  if (!local_spec.has_numeric_type()) {
+    local_spec._type = 'x';
+  }
+
+  for (; ptr < limit; ptr += 2) {
+    if (reinterpret_cast<uint8_t const *>(lower) <= ptr && ptr <= reinterpret_cast<uint8_t const *>(upper)) {
+      if (ptr == addr.s6_addr) {
+        w.write(':'); // only if this is the first quad.
+      }
+      if (ptr == reinterpret_cast<uint8_t const *>(upper)) {
+        w.write(':');
+      }
+    } else {
+      uint16_t f = (ptr[0] << 8) + ptr[1];
+      bwformat(w, local_spec, f);
+      if (ptr != limit - 2) {
+        w.write(':');
+      }
+    }
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, IpAddr const &addr)
+{
+  BWFSpec local_spec{spec}; // Format for address elements and port.
+  bool addr_p{true};
+  bool family_p{false};
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      local_spec._ext.remove_prefix(1);
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      local_spec._ext.remove_prefix(2);
+    }
+  }
+  if (local_spec._ext.size()) {
+    addr_p = false;
+    for (char c : local_spec._ext) {
+      switch (c) {
+      case 'a':
+      case 'A':
+        addr_p = true;
+        break;
+      case 'f':
+      case 'F':
+        family_p = true;
+        break;
+      }
+    }
+  }
+
+  if (addr_p) {
+    if (addr.isIp4()) {
+      bwformat(w, spec, addr._addr._ip4);
+    } else if (addr.isIp6()) {
+      bwformat(w, spec, addr._addr._ip6);
+    } else {
+      w.print("*Not IP address [{}]*", addr.family());
+    }
+  }
+
+  if (family_p) {
+    local_spec._min = 0;
+    if (addr_p) {
+      w.write(' ');
+    }
+    if (spec.has_numeric_type()) {
+      bwformat(w, local_spec, static_cast<uintmax_t>(addr.family()));
+    } else {
+      bwformat(w, local_spec, addr.family());
+    }
+  }
+  return w;
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
+{
+  BWFSpec local_spec{spec}; // Format for address elements and port.
+  bool port_p{true};
+  bool addr_p{true};
+  bool family_p{false};
+  bool local_numeric_fill_p{false};
+  char local_numeric_fill_char{'0'};
+
+  if (spec._type == 'p' || spec._type == 'P') {
+    bwformat(w, spec, static_cast<void const *>(addr));
+    return w;
+  }
+
+  if (spec._ext.size()) {
+    if (spec._ext.front() == '=') {
+      local_numeric_fill_p = true;
+      local_spec._ext.remove_prefix(1);
+    } else if (spec._ext.size() > 1 && spec._ext[1] == '=') {
+      local_numeric_fill_p    = true;
+      local_numeric_fill_char = spec._ext.front();
+      local_spec._ext.remove_prefix(2);
+    }
+  }
+  if (local_spec._ext.size()) {
+    addr_p = port_p = false;
+    for (char c : local_spec._ext) {
+      switch (c) {
+      case 'a':
+      case 'A':
+        addr_p = true;
+        break;
+      case 'p':
+      case 'P':
+        port_p = true;
+        break;
+      case 'f':
+      case 'F':
+        family_p = true;
+        break;
+      }
+    }
+  }
+
+  if (addr_p) {
+    bool bracket_p = false;
+    switch (addr->sa_family) {
+    case AF_INET:
+      bwformat(w, spec, ats_ip4_addr_cast(addr));
+      break;
+    case AF_INET6:
+      if (port_p) {
+        w.write('[');
+        bracket_p = true; // take a note - put in the trailing bracket.
+      }
+      bwformat(w, spec, ats_ip6_addr_cast(addr));
+      break;
+    default:
+      w.print("*Not IP address [{}]*", addr->sa_family);
+      break;
+    }
+    if (bracket_p)
+      w.write(']');
+    if (port_p)
+      w.write(':');
+  }
+  if (port_p) {
+    if (local_numeric_fill_p) {
+      local_spec._min   = 5;
+      local_spec._fill  = local_numeric_fill_char;
+      local_spec._align = BWFSpec::Align::RIGHT;
+    } else {
+      local_spec._min = 0;
+    }
+    bwformat(w, local_spec, static_cast<uintmax_t>(ats_ip_port_host_order(addr)));
+  }
+  if (family_p) {
+    local_spec._min = 0;
+    if (addr_p || port_p)
+      w.write(' ');
+    if (spec.has_numeric_type()) {
+      bwformat(w, local_spec, static_cast<uintmax_t>(addr->sa_family));
+    } else {
+      bwformat(w, local_spec, ats_ip_family_name(addr->sa_family));
+    }
+  }
+  return w;
+}
+
+} // namespace ts

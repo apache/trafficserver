@@ -38,7 +38,7 @@ non-modifying, particularly when temporary "copies" are needed.
 Description
 ===========
 
-:class:`TextView` is a subclass of :class:`string_view` and has all of those methods. In addition it
+:class:`TextView` is a subclass of :code:`std::string_view` and has all of those methods. In addition it
 provides a number of ancillary methods of common string manipulation methods.
 
 A :class:`TextView` should be treated as an enhanced character pointer that both a location and a
@@ -49,11 +49,11 @@ a normal pointer type. Internal for |TS| any place that passes a :code:`char *` 
 excellent candidate for using a :class:`TextView` as it is more convinient and no more risky than
 the existing arguments.
 
-In deciding between :class:`string_view` and :class:`TextView` remember that these easily and
-cheaply cross convert. In general if the string is treated as a block of data, :class:`string_view`
+In deciding between :code:`std::string_view` and :class:`TextView` remember that these easily and
+cheaply cross convert. In general if the string is treated as a block of data, :code:`std::string_view`
 is better. If the contents of the string are to be examined / parsed non-uniformly then
 :class:`TextView` is better. For example, if the string is used simply as a key or a hash source,
-use :class:`string_view`. Or, if the string may contain substrings of interests such as key / value
+use :code:`std::string_view`. Or, if the string may contain substrings of interests such as key / value
 pairs, then use a :class:`TextView`.
 
 :class:`TextView` provides a variety of methods for manipulating the view as a string. These are

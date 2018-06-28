@@ -32,8 +32,6 @@ Options
 
 .. option:: -n COUNT, --net_threads COUNT
 
-.. option:: -Z COUNT, --cluster_threads COUNT
-
 .. option:: -U COUNT, --udp_threads COUNT
 
 .. option:: -a, --accepts_thread
@@ -41,8 +39,6 @@ Options
 .. option:: -b, --accept_till_done
 
 .. option:: -p PORT, --httpport PORT
-
-.. option:: -P PORT, --cluster_port PORT
 
 .. option:: -f, --disable_freelist
 
@@ -52,6 +48,12 @@ option disables these caches, causing :program:`traffic_server` to
 use :manpage:`malloc(3)` for every allocation. Though this option
 should not commonly be needed, it may be beneficial in memory-constrained
 environments or where the working set is highly variable.
+
+.. option:: -F, --disable_pfreelist
+
+Disable free list in ProxyAllocator which were left out by the -f
+option. Please note that this option is a temporary, testing
+option, and will be removed in the future.
 
 .. option:: -o LEVEL, --dprintf_level LEVEL
 

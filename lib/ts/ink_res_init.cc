@@ -515,7 +515,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
           cp++;
         }
         if ((*cp != '\0') && (*cp != '\n')) {
-          ts::string_view host(cp, strcspn(cp, ";# \t\n"));
+          std::string_view host(cp, strcspn(cp, ";# \t\n"));
           if (0 == ats_ip_pton(host, &statp->nsaddr_list[nserv].sa)) {
             // If there was no port in the config, lets use NAMESERVER_PORT
             if (ats_ip_port_host_order(&statp->nsaddr_list[nserv].sa) == 0) {

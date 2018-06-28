@@ -39,9 +39,13 @@ charset = utf-8
 [{*.pm,*.pl}]
 indent_size = 4
 charset = utf-8
+# Shell scripts
+[*.sh]
+indent_size = 4
 # Makefile's
 [*.am]
 trim_trailing_whitespace = false
 indent_style = tab
 [*.rst]
 max_line_length = 80
+indent_size = 3

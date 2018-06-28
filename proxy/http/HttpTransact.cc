@@ -242,7 +242,6 @@ is_negative_caching_appropriate(HttpTransact::State *s)
   switch (s->hdr_info.server_response.status_get()) {
   case HTTP_STATUS_NO_CONTENT:
   case HTTP_STATUS_USE_PROXY:
-  case HTTP_STATUS_BAD_REQUEST:
   case HTTP_STATUS_FORBIDDEN:
   case HTTP_STATUS_NOT_FOUND:
   case HTTP_STATUS_METHOD_NOT_ALLOWED:
@@ -5080,17 +5079,19 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   // Check for chunked encoding
   if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
     MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-    HdrCsvIter enc_val_iter;
-    int enc_val_len;
-    const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
+    if (field) {
+      HdrCsvIter enc_val_iter;
+      int enc_val_len;
+      const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
 
-    while (enc_value) {
-      const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
-      if (wks_value == HTTP_VALUE_CHUNKED) {
-        s->client_info.transfer_encoding = CHUNKED_ENCODING;
-        break;
+      while (enc_value) {
+        const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+        if (wks_value == HTTP_VALUE_CHUNKED) {
+          s->client_info.transfer_encoding = CHUNKED_ENCODING;
+          break;
+        }
+        enc_value = enc_val_iter.get_next(&enc_val_len);
       }
-      enc_value = enc_val_iter.get_next(&enc_val_len);
     }
   }
 

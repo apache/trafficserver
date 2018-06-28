@@ -29,8 +29,6 @@ Description
 
 .. option:: --aconfPort PORT
 .. option:: --action TAGS
-.. option:: --clusterMCPort PORT
-.. option:: --clusterRSPort PORT
 .. option:: --debug TAGS
 .. option:: --groupAddr ADDRESS
 .. option:: --help
@@ -42,14 +40,6 @@ Description
 .. option:: --recordsConf FILE
 .. option:: --tsArgs ARGUMENTS
 .. option:: --version
-
-Environment
-===========
-
-.. envvar:: MGMT_ACONF_PORT
-.. envvar:: MGMT_CLUSTER_MC_PORT
-.. envvar:: MGMT_CLUSTER_RS_PORT
-.. envvar:: MGMT_GROUP_ADDR
 
 Signals
 =======

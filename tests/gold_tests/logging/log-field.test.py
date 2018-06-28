@@ -55,16 +55,15 @@ ts.Disk.remap_config.AddLine(
     'map / http://localhost:{}/'.format(server.Variables.Port)
 )
 
-ts.Disk.logging_config.AddLines(
+ts.Disk.logging_yaml.AddLines(
     '''
-custom = format {
-  Format = '%<{Content-Type}essh>'
-}
+formats:
+  - name: custom
+    format: '%<{Content-Type}essh>'
 
-log.ascii {
-  Format = custom,
-  Filename = 'field-test'
-}
+logs:
+  - filename: field-test
+    format: custom
 '''.split("\n")
 )
 

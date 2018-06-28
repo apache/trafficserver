@@ -107,11 +107,11 @@ public:
 
     /*
      * These will output:
-     * Joining on a non-existant header gives:
+     * Joining on a non-existent header gives:
      * Joining the accept encoding header gives: gzip,identity,my_special_format
      * Joining the accept encoding header with space gives: gzip identity my_special_format
      */
-    cout << "Joining on a non-existant header gives: " << client_request_headers.values("i_dont_exist") << endl;
+    cout << "Joining on a non-existent header gives: " << client_request_headers.values("i_dont_exist") << endl;
     cout << "Joining the accept encoding header gives: " << client_request_headers.values("accept-encoding") << endl;
     cout << "Joining the accept encoding header with space gives: " << client_request_headers.values("accept-encoding", ' ')
          << endl;
@@ -137,6 +137,8 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  RegisterGlobalPlugin("CPP_Example_ClientRequest", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_ClientRequest", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   plugin = new GlobalHookPlugin();
 }

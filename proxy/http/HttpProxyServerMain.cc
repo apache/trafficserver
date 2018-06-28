@@ -49,14 +49,34 @@ HttpSessionAccept *plugin_http_transparent_accept = nullptr;
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
 
-// used to keep count of how many et_net threads we have started
-std::atomic<int> started_et_net_threads;
 std::mutex proxyServerMutex;
 std::condition_variable proxyServerCheck;
 bool et_net_threads_ready = false;
 
 extern int num_of_net_threads;
 extern int num_accept_threads;
+
+/// Global BufferWriter format name functions.
+namespace
+{
+void
+TS_bwf_thread(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, this_thread());
+}
+void
+TS_bwf_ethread(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, this_ethread());
+}
+} // namespace
+
+// File / process scope initializations
+static bool HTTP_SERVER_INITIALIZED __attribute__((unused)) = []() -> bool {
+  ts::bwf_register_global("ts-thread", &TS_bwf_thread);
+  ts::bwf_register_global("ts-ethread", &TS_bwf_ethread);
+  return true;
+}();
 
 bool
 ssl_register_protocol(const char *protocol, Continuation *contp)
@@ -294,8 +314,7 @@ init_accept_HttpProxyServer(int n_accept_threads)
 void
 init_HttpProxyServer(EThread *)
 {
-  auto check_et_net_num = ++started_et_net_threads;
-  if (check_et_net_num == num_of_net_threads) {
+  if (eventProcessor.thread_group[ET_NET]._started == num_of_net_threads) {
     std::unique_lock<std::mutex> lock(proxyServerMutex);
     et_net_threads_ready = true;
     lock.unlock();

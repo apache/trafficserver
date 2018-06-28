@@ -213,10 +213,10 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 
       if (m_write_vio.ntodo() > 0) {
         if (towrite > 0) {
-          m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+          m_write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
         }
       } else {
-        m_write_vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
+        m_write_vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
       }
 
       // We could have closed on the write callback
@@ -226,12 +226,12 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 
       if (m_read_vio.ntodo() > 0) {
         if (m_write_vio.ntodo() <= 0) {
-          m_read_vio._cont->handleEvent(VC_EVENT_EOS, &m_read_vio);
+          m_read_vio.cont->handleEvent(VC_EVENT_EOS, &m_read_vio);
         } else if (towrite > 0) {
-          m_read_vio._cont->handleEvent(VC_EVENT_READ_READY, &m_read_vio);
+          m_read_vio.cont->handleEvent(VC_EVENT_READ_READY, &m_read_vio);
         }
       } else {
-        m_read_vio._cont->handleEvent(VC_EVENT_READ_COMPLETE, &m_read_vio);
+        m_read_vio.cont->handleEvent(VC_EVENT_READ_COMPLETE, &m_read_vio);
       }
     }
   } else {
@@ -256,8 +256,8 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
           m_called_user = 1;
           m_tvc->m_cont->handleEvent(ev, &m_read_vio);
         } else {
-          ink_assert(m_read_vio._cont != nullptr);
-          m_read_vio._cont->handleEvent(ev, &m_read_vio);
+          ink_assert(m_read_vio.cont != nullptr);
+          m_read_vio.cont->handleEvent(ev, &m_read_vio);
         }
       }
 
@@ -639,7 +639,7 @@ NullTransform::handle_event(int event, void *edata)
   } else {
     switch (event) {
     case VC_EVENT_ERROR:
-      m_write_vio._cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
+      m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
       break;
     case VC_EVENT_WRITE_COMPLETE:
       ink_assert(m_output_vio == (VIO *)edata);
@@ -702,12 +702,12 @@ NullTransform::handle_event(int event, void *edata)
       if (m_write_vio.ntodo() > 0) {
         if (towrite > 0) {
           m_output_vio->reenable();
-          m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+          m_write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
         }
       } else {
         m_output_vio->nbytes = m_write_vio.ndone;
         m_output_vio->reenable();
-        m_write_vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
+        m_write_vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
       }
 
       break;
@@ -794,7 +794,7 @@ RangeTransform::handle_event(int event, void *edata)
   } else {
     switch (event) {
     case VC_EVENT_ERROR:
-      m_write_vio._cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
+      m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
       break;
     case VC_EVENT_WRITE_COMPLETE:
       ink_assert(m_output_vio == (VIO *)edata);
@@ -910,7 +910,7 @@ RangeTransform::transform_to_range()
         //   input data, send VC_EVENT_EOS to let the upstream know
         //   that it can rely on us consuming any more data
         int cb_event = (m_write_vio.ntodo() > 0) ? VC_EVENT_EOS : VC_EVENT_WRITE_COMPLETE;
-        m_write_vio._cont->handleEvent(cb_event, &m_write_vio);
+        m_write_vio.cont->handleEvent(cb_event, &m_write_vio);
         return;
       }
 
@@ -946,7 +946,7 @@ RangeTransform::transform_to_range()
   }
 
   m_output_vio->reenable();
-  m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+  m_write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
 }
 
 /*-------------------------------------------------------------------------

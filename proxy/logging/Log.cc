@@ -554,6 +554,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "psct", field);
 
+  field = new LogField("proxy_resp_reason_phrase", "prrp", LogField::STRING, &LogAccess::marshal_proxy_resp_reason_phrase,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "prrp", field);
+
   field = new LogField("proxy_resp_squid_len", "psql", LogField::sINT, &LogAccess::marshal_proxy_resp_squid_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
@@ -661,11 +666,6 @@ Log::init_fields()
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqcl", field);
-
-  field = new LogField("proxy_req_server_name", "pqsn", LogField::STRING, &LogAccess::marshal_proxy_req_server_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "pqsn", field);
 
   field = new LogField("proxy_req_server_ip", "pqsi", LogField::IP, &LogAccess::marshal_proxy_req_server_ip,
                        &LogAccess::unmarshal_ip_to_str);

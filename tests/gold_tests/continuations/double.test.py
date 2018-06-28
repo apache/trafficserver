@@ -93,6 +93,7 @@ tr.Processes.Default.StartBefore(ssn1)
 tr.Processes.Default.StartBefore(ssn2)
 
 tr = Test.AddTestRun()
+tr.DelayStart = 10 # wait for stats to be updated
 tr.Processes.Default.Command = comparator_command.format('txn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -108,6 +109,7 @@ tr.Processes.Default.StartBefore(txn2)
 
 # session count is positive,
 tr = Test.AddTestRun()
+tr.DelayStart = 10 # wait for stats to be updated
 tr.Processes.Default.Command = "traffic_ctl metric get continuations_verify.ssn.close.1"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -116,6 +118,7 @@ tr.StillRunningAfter = ts
 
 # and we receive the same number of transactions as we asked it to make
 tr = Test.AddTestRun()
+tr.DelayStart = 10 # wait for stats to be updated
 tr.Processes.Default.Command = "traffic_ctl metric get continuations_verify.txn.close.1"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env

@@ -28,7 +28,7 @@
 #include "HdrHeap.h"
 #include "ts/CryptoHash.h"
 #include "MIME.h"
-#include <ts/string_view.h>
+#include <string_view>
 
 #include "ts/ink_apidefs.h"
 
@@ -155,7 +155,7 @@ extern int URL_LEN_MMST;
 void url_adjust(MarshalXlate *str_xlate, int num_xlate);
 
 /* Public */
-bool validate_host_name(ts::string_view addr);
+bool validate_host_name(std::string_view addr);
 void url_init();
 
 URLImpl *url_create(HdrHeap *heap);
@@ -329,7 +329,7 @@ URL::create(HdrHeap *heap)
 inline void
 URL::copy(const URL *url)
 {
-  ink_assert(url->valid());
+  ink_assert(url != nullptr && url->valid());
   url_copy_onto(url->m_url_impl, url->m_heap, m_url_impl, m_heap);
 }
 

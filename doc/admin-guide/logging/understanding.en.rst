@@ -71,10 +71,9 @@ System Logs
 
 System log files record system information, including messages about the state
 of |TS| and any errors or warnings it produces.  This kind of information might
-include a note that event log files were rolled, a warning that cluster
-communication timed out, or an error indicating that |TS| was restarted. If
-|TS| is failing to start properly on your system(s), this is the first place
-you'll want to look for possible hints as to the cause.
+include a note that event log files were rolled or an error indicating that |TS|
+was restarted. If |TS| is failing to start properly on your system(s), this is
+the first place you'll want to look for possible hints as to the cause.
 
 All system information messages are logged with the system-wide logging
 facility :manpage:`syslog` under the daemon facility. The
@@ -109,7 +108,7 @@ each transaction |TS| processes and form the true bulk of logging output in
 |TS| installations. Most of the remaining documentation in this chapter applies
 to creating, formatting, rotating, and filtering event logs.
 
-Individual event log outputs are configured in :file:`logging.config` and as
+Individual event log outputs are configured in :file:`logging.yaml` and as
 such, the documentation provided in that configuration file's section should be
 consulted in concert with the sections of this chapter.
 
@@ -144,16 +143,16 @@ Function    Description
             May only be used on numeric fields.
 =========== ===================================================================
 
-Summary logs are defined in :file:`logging.config` just like regular event
+Summary logs are defined in :file:`logging.yaml` just like regular event
 logs, with the only two differences being the exclusive use of the
 aforementioned aggregate functions and the specification of an interval, as so:
 
-.. code:: lua
+.. code:: yaml
 
-    mysummary = format {
-      Format = "%<operator(field)> : %<operator(field)>",
-      Interval = "n"
-    }
+   formats:
+   - name: mysummary
+     format: '%<operator(field)> : %<operator(field)>'
+     interval: n
 
 The interval itself is given with *n* as the number of seconds for each period
 of aggregation. There is no default value.

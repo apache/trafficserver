@@ -37,6 +37,8 @@
 #include <climits>
 #include <string>
 
+using namespace std::literals;
+
 #if TS_USE_TLS_ASYNC
 #include <openssl/async.h>
 #endif
@@ -333,12 +335,9 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   return event;
 }
 
-/**
- * Read from socket directly for handshake data.  Store the data in
- * a MIOBuffer.  Place the data in the read BIO so the openssl library
- * has access to it.
- * If for some ready we much abort out of the handshake, we can replay
- * the stored data (e.g. back out to blind tunneling)
+/** Read from socket directly for handshake data.  Store the data in an MIOBuffer.  Place the data in
+ * the read BIO so the openssl library has access to it. If for some reason we must abort out of the
+ * handshake, the stored data can be replayed (e.g. back out to blind tunneling)
  */
 int64_t
 SSLNetVConnection::read_raw_data()
@@ -458,7 +457,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
+  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio.cont);
   if (!lock.is_locked()) {
     readReschedule(nh);
     return;
@@ -712,18 +711,26 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     // TS-2365: If the SSL max record size is set and we have
     // more data than that, break this into smaller write
     // operations.
-    if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
-      l = SSLConfigParams::ssl_maxrecord;
-    } else if (SSLConfigParams::ssl_maxrecord == -1) {
-      if (sslTotalBytesSent < SSL_DEF_TLS_RECORD_BYTE_THRESHOLD) {
-        dynamic_tls_record_size = SSL_DEF_TLS_RECORD_SIZE;
-        SSL_INCREMENT_DYN_STAT(ssl_total_dyn_def_tls_record_count);
-      } else {
-        dynamic_tls_record_size = SSL_MAX_TLS_RECORD_SIZE;
-        SSL_INCREMENT_DYN_STAT(ssl_total_dyn_max_tls_record_count);
-      }
-      if (l > dynamic_tls_record_size) {
-        l = dynamic_tls_record_size;
+    //
+    // TS-4424: Don't mess with record size if last SSL_write failed with
+    // needs write
+    if (redoWriteSize) {
+      l             = redoWriteSize;
+      redoWriteSize = 0;
+    } else {
+      if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
+        l = SSLConfigParams::ssl_maxrecord;
+      } else if (SSLConfigParams::ssl_maxrecord == -1) {
+        if (sslTotalBytesSent < SSL_DEF_TLS_RECORD_BYTE_THRESHOLD) {
+          dynamic_tls_record_size = SSL_DEF_TLS_RECORD_SIZE;
+          SSL_INCREMENT_DYN_STAT(ssl_total_dyn_def_tls_record_count);
+        } else {
+          dynamic_tls_record_size = SSL_MAX_TLS_RECORD_SIZE;
+          SSL_INCREMENT_DYN_STAT(ssl_total_dyn_max_tls_record_count);
+        }
+        if (l > dynamic_tls_record_size) {
+          l = dynamic_tls_record_size;
+        }
       }
     }
 
@@ -762,6 +769,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     sslLastWriteTime = now;
     sslTotalBytesSent += total_written;
   }
+  redoWriteSize = 0;
   if (num_really_written > 0) {
     needs |= EVENTIO_WRITE;
   } else {
@@ -779,6 +787,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     case SSL_ERROR_WANT_X509_LOOKUP: {
       if (SSL_ERROR_WANT_WRITE == err) {
         SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
+        redoWriteSize = l;
       } else if (SSL_ERROR_WANT_X509_LOOKUP == err) {
         SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
         TraceOut(trace, get_remote_addr(), get_remote_port(), "Want X509 lookup");
@@ -1000,13 +1009,6 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       if (!clientCTX) {
         SSLErrorVC(this, "failed to create SSL client session");
         return EVENT_ERROR;
-      }
-      if (clientVerify && params->clientCACertFilename != nullptr && params->clientCACertPath != nullptr) {
-        if (!SSL_CTX_load_verify_locations(clientCTX, params->clientCACertFilename, params->clientCACertPath)) {
-          SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", params->clientCACertFilename,
-                   params->clientCACertPath);
-          return EVENT_ERROR;
-        }
       }
 
       this->ssl = make_ssl_connection(clientCTX, this);
@@ -1700,10 +1702,10 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   return EVENT_DONE;
 }
 
-ts::string_view
+std::string_view
 SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 {
-  ts::string_view retval{"tls/?.?"_sv}; // return this if the protocol lookup doesn't work.
+  std::string_view retval{"tls/?.?"sv}; // return this if the protocol lookup doesn't work.
 
   if (proto_string) {
     // openSSL guarantees the case of the protocol string.
@@ -1732,7 +1734,7 @@ SSLNetVConnection::map_tls_protocol_to_tag(const char *proto_string) const
 }
 
 int
-SSLNetVConnection::populate_protocol(ts::string_view *results, int n) const
+SSLNetVConnection::populate_protocol(std::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
@@ -1748,10 +1750,10 @@ SSLNetVConnection::populate_protocol(ts::string_view *results, int n) const
 }
 
 const char *
-SSLNetVConnection::protocol_contains(ts::string_view prefix) const
+SSLNetVConnection::protocol_contains(std::string_view prefix) const
 {
-  const char *retval  = nullptr;
-  ts::string_view tag = map_tls_protocol_to_tag(getSSLProtocol());
+  const char *retval   = nullptr;
+  std::string_view tag = map_tls_protocol_to_tag(getSSLProtocol());
   if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
     retval = tag.data();
   } else {

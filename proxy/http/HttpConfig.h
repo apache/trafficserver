@@ -44,7 +44,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
 #include "ts/Regex.h"
-#include "ts/string_view.h"
+#include "string_view"
 #include "ts/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
@@ -387,7 +387,7 @@ using OptionBitSet = std::bitset<NUM_OPTIONS>;
 // Converts string specifier for Forwarded options to bitset of options, and return the result.  If there are errors, an error
 // message will be inserted into 'error'.
 //
-OptionBitSet optStrToBitset(ts::string_view optConfigStr, ts::FixedBufferWriter &error);
+OptionBitSet optStrToBitset(std::string_view optConfigStr, ts::FixedBufferWriter &error);
 
 } // namespace HttpForwarded
 
@@ -450,6 +450,7 @@ struct OverridableHttpConfigParams {
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
       request_buffer_enabled(0),
+      allow_half_open(1),
       ssl_client_verify_server(0),
       redirect_use_orig_cache_key(0),
       number_of_redirections(0),
@@ -628,6 +629,11 @@ struct OverridableHttpConfigParams {
   // Buffer post body before connecting servers //
   ////////////////////////////////////////////////
   MgmtByte request_buffer_enabled;
+
+  /////////////////////////////////////////////////
+  // Keep connection open after client sends FIN //
+  /////////////////////////////////////////////////
+  MgmtByte allow_half_open;
 
   /////////////////////////////
   // server verification mode//

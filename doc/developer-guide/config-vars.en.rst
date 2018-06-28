@@ -86,20 +86,10 @@ type:``RecT``
    ``RECT_NODE``
       Local statistic.
 
-   ``RECT_CLUSTER``
-      Cluster statistic.
-
-   ``RECT_LOCAL``
-      Configuration variable that is explicitly not shared across a cluster.
-
    ``RECT_PLUGIN``
       Plugin created statistic.
 
-   In general, ``RECT_CONFIG`` should be used unless it is required that the
-   value not be shared among members of a cluster, in which case ``RECT_LOCAL``
-   should be used. If you use ``RECT_LOCAL``, you must also start the line with
-   ``LOCAL`` instead of ``CONFIG`` and the name should use ``.local.`` instead
-   of ``.config.``.
+   In general, ``RECT_CONFIG`` should be used.
 
 name:``char const*``
    The fully qualified name of the configuration variable. Although there

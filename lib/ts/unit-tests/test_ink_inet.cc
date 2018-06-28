@@ -22,12 +22,15 @@
 */
 
 #include <ts/TextView.h>
+#include <ts/BufferWriter.h>
 #include <ts/ink_inet.h>
 #include <catch.hpp>
 #include <iostream>
 #include <ts/apidefs.h>
 #include <ts/ink_inet.h>
 #include <ts/BufferWriter.h>
+
+using namespace std::literals;
 
 TEST_CASE("ink_inet", "[libts][inet][ink_inet]")
 {
@@ -55,7 +58,7 @@ TEST_CASE("ink_inet", "[libts][inet][ink_inet]")
   };
 
   for (auto const &s : names) {
-    ts::string_view host, port, rest;
+    std::string_view host, port, rest;
 
     REQUIRE(0 == ats_ip_parse(s.hostspec, &host, &port, &rest));
     REQUIRE(s.host == host);
@@ -86,7 +89,7 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
 
   REQUIRE(TS_SUCCESS != addr.load("Evil Dave Rulz!"));
 
-  REQUIRE(TS_SUCCESS == ats_ip_range_parse("1.1.1.1-2.2.2.2"_sv, lower, upper));
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("1.1.1.1-2.2.2.2"sv, lower, upper));
   REQUIRE(TS_SUCCESS != ats_ip_range_parse("172.16.39.0/", lower, upper));
   REQUIRE(TS_SUCCESS == ats_ip_range_parse("172.16.39.0/24", lower, upper));
   REQUIRE(TS_SUCCESS != ats_ip_range_parse("172.16.39.0-", lower, upper));
@@ -113,20 +116,20 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
   REQUIRE(lower == IpAddr{INADDR_ANY});
   REQUIRE(upper == IpAddr{INADDR_BROADCAST});
 
-  REQUIRE(TS_SUCCESS == ats_ip_range_parse("c600::-d900::"_sv, lower, upper));
+  REQUIRE(TS_SUCCESS == ats_ip_range_parse("c600::-d900::"sv, lower, upper));
   REQUIRE(TS_SUCCESS == ats_ip_range_parse("1300::/96", lower, upper));
   REQUIRE(TS_SUCCESS != ats_ip_range_parse("ffee::24c3:3349:3cee:0143/", lower, upper));
 
   REQUIRE(TS_SUCCESS == ats_ip_range_parse("ffee:1337:beef:dead:24c3:3349:3cee:0143/80", lower, upper));
-  addr.load("ffee:1337:beef:dead:24c3::"_sv);
+  addr.load("ffee:1337:beef:dead:24c3::"sv);
   REQUIRE(lower == addr);
-  addr.load("ffee:1337:beef:dead:24c3:FFFF:FFFF:FFFF"_sv);
+  addr.load("ffee:1337:beef:dead:24c3:FFFF:FFFF:FFFF"sv);
   REQUIRE(upper == addr);
 
   REQUIRE(TS_SUCCESS == ats_ip_range_parse("ffee:1337:beef:dead:24c3:3349:3cee:0143/57", lower, upper));
-  addr.load("ffee:1337:beef:de80::"_sv);
+  addr.load("ffee:1337:beef:de80::"sv);
   REQUIRE(lower == addr);
-  addr.load("ffee:1337:beef:deff:FFFF:FFFF:FFFF:FFFF"_sv);
+  addr.load("ffee:1337:beef:deff:FFFF:FFFF:FFFF:FFFF"sv);
   REQUIRE(upper == addr);
 
   REQUIRE(TS_SUCCESS == ats_ip_range_parse("ffee::24c3:3349:3cee:0143", lower, upper));
@@ -143,4 +146,105 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
   REQUIRE(addr == lower);
   addr.load("c000::ffff:ffff:ffff:ffff:ffff:ffff");
   REQUIRE(addr == upper);
+}
+
+TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
+{
+  IpEndpoint ep;
+  std::string_view addr_1{"[ffee::24c3:3349:3cee:143]:8080"};
+  std::string_view addr_2{"172.17.99.231:23995"};
+  std::string_view addr_3{"[1337:ded:BEEF::]:53874"};
+  std::string_view addr_4{"[1337::ded:BEEF]:53874"};
+  std::string_view addr_5{"[1337:0:0:ded:BEEF:0:0:956]:53874"};
+  std::string_view addr_6{"[1337:0:0:ded:BEEF:0:0:0]:53874"};
+  std::string_view addr_7{"172.19.3.105:4951"};
+  std::string_view addr_null{"[::]:53874"};
+  ts::LocalBufferWriter<1024> w;
+
+  REQUIRE(0 == ats_ip_pton(addr_1, &ep.sa));
+  w.print("{}", ep);
+  REQUIRE(w.view() == addr_1);
+  w.reset().print("{::p}", ep);
+  REQUIRE(w.view() == "8080");
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == addr_1.substr(1, 24)); // check the brackets are dropped.
+  w.reset().print("[{::a}]", ep);
+  REQUIRE(w.view() == addr_1.substr(0, 26)); // check the brackets are dropped.
+  w.reset().print("[{0::a}]:{0::p}", ep);
+  REQUIRE(w.view() == addr_1); // check the brackets are dropped.
+  w.reset().print("{::=a}", ep);
+  REQUIRE(w.view() == "ffee:0000:0000:0000:24c3:3349:3cee:0143");
+  w.reset().print("{:: =a}", ep);
+  REQUIRE(w.view() == "ffee:   0:   0:   0:24c3:3349:3cee: 143");
+  ep.setToLoopback(AF_INET6);
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == "::1");
+  REQUIRE(0 == ats_ip_pton(addr_3, &ep.sa));
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == "1337:ded:beef::");
+  REQUIRE(0 == ats_ip_pton(addr_4, &ep.sa));
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == "1337::ded:beef");
+
+  REQUIRE(0 == ats_ip_pton(addr_5, &ep.sa));
+  w.reset().print("{:X:a}", ep);
+  REQUIRE(w.view() == "1337::DED:BEEF:0:0:956");
+
+  REQUIRE(0 == ats_ip_pton(addr_6, &ep.sa));
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == "1337:0:0:ded:beef::");
+
+  REQUIRE(0 == ats_ip_pton(addr_null, &ep.sa));
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == "::");
+
+  REQUIRE(0 == ats_ip_pton(addr_2, &ep.sa));
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == addr_2.substr(0, 13));
+  w.reset().print("{0::a}", ep);
+  REQUIRE(w.view() == addr_2.substr(0, 13));
+  w.reset().print("{::ap}", ep);
+  REQUIRE(w.view() == addr_2);
+  w.reset().print("{::f}", ep);
+  REQUIRE(w.view() == IP_PROTO_TAG_IPV4);
+  w.reset().print("{::fpa}", ep);
+  REQUIRE(w.view() == "172.17.99.231:23995 ipv4");
+  w.reset().print("{0::a} .. {0::p}", ep);
+  REQUIRE(w.view() == "172.17.99.231 .. 23995");
+  w.reset().print("<+> {0::a} <+> {0::p}", ep);
+  REQUIRE(w.view() == "<+> 172.17.99.231 <+> 23995");
+  w.reset().print("<+> {0::a} <+> {0::p} <+>", ep);
+  REQUIRE(w.view() == "<+> 172.17.99.231 <+> 23995 <+>");
+  w.reset().print("{:: =a}", ep);
+  REQUIRE(w.view() == "172. 17. 99.231");
+  w.reset().print("{::=a}", ep);
+  REQUIRE(w.view() == "172.017.099.231");
+
+  // Documentation examples
+  REQUIRE(0 == ats_ip_pton(addr_7, &ep.sa));
+  w.reset().print("To {}", ep);
+  REQUIRE(w.view() == "To 172.19.3.105:4951");
+  w.reset().print("To {0::a} on port {0::p}", ep); // no need to pass the argument twice.
+  REQUIRE(w.view() == "To 172.19.3.105 on port 4951");
+  w.reset().print("To {::=}", ep);
+  REQUIRE(w.view() == "To 172.019.003.105:04951");
+  w.reset().print("{::a}", ep);
+  REQUIRE(w.view() == "172.19.3.105");
+  w.reset().print("{::=a}", ep);
+  REQUIRE(w.view() == "172.019.003.105");
+  w.reset().print("{::0=a}", ep);
+  REQUIRE(w.view() == "172.019.003.105");
+  w.reset().print("{:: =a}", ep);
+  REQUIRE(w.view() == "172. 19.  3.105");
+  w.reset().print("{:>20:a}", ep);
+  REQUIRE(w.view() == "        172.19.3.105");
+  w.reset().print("{:>20:=a}", ep);
+  REQUIRE(w.view() == "     172.019.003.105");
+  w.reset().print("{:>20: =a}", ep);
+  REQUIRE(w.view() == "     172. 19.  3.105");
+  w.reset().print("{:<20:a}", ep);
+  REQUIRE(w.view() == "172.19.3.105        ");
+
+  w.reset().print("{:p}", reinterpret_cast<sockaddr const *>(0x1337beef));
+  REQUIRE(w.view() == "0x1337beef");
 }

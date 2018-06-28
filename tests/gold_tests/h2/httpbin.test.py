@@ -65,16 +65,17 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http2',
 
 })
-ts.Disk.logging_config.AddLines(
+ts.Disk.logging_yaml.AddLines(
     '''
--- Extended Log Format.
-access = format {
-  Format = '[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
-}
+formats:
+  # Extended Log Format.
+  - name: access
+    format: |-
+[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>
 
-log.ascii {
-  Format = access,
-  Filename = 'access'
+logs:
+  - filename: access
+    format: access
 }
 '''.split("\n")
 )

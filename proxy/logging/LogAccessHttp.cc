@@ -70,6 +70,8 @@ LogAccessHttp::LogAccessHttp(HttpSM *sm)
     m_client_req_url_path_len(0),
     m_proxy_resp_content_type_str(nullptr),
     m_proxy_resp_content_type_len(0),
+    m_proxy_resp_reason_phrase_str(nullptr),
+    m_proxy_resp_reason_phrase_len(0),
     m_cache_lookup_url_canon_str(nullptr),
     m_cache_lookup_url_canon_len(0)
 {
@@ -135,6 +137,7 @@ LogAccessHttp::init()
         LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
       }
     }
+    m_proxy_resp_reason_phrase_str = (char *)m_proxy_response->reason_get(&m_proxy_resp_reason_phrase_len);
   }
   if (hdr->server_request.valid()) {
     m_proxy_request = &(hdr->server_request);
@@ -875,6 +878,19 @@ LogAccessHttp::marshal_proxy_resp_content_type(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_proxy_resp_reason_phrase(char *buf)
+{
+  int len = round_strlen(m_proxy_resp_reason_phrase_len + 1);
+  if (buf) {
+    marshal_mem(buf, m_proxy_resp_reason_phrase_str, m_proxy_resp_reason_phrase_len, len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
   Squid returns the content-length + header length as the total length.
   -------------------------------------------------------------------------*/
 
@@ -1069,23 +1085,6 @@ LogAccessHttp::marshal_proxy_req_squid_len(char *buf)
   return INK_MIN_ALIGN;
 }
 
-int
-LogAccessHttp::marshal_proxy_req_server_name(char *buf)
-{
-  char *str = nullptr;
-  int len   = INK_MIN_ALIGN;
-
-  if (m_http_sm->t_state.current.server) {
-    str = m_http_sm->t_state.current.server->name;
-    len = LogAccess::strlen(str);
-  }
-
-  if (buf) {
-    marshal_str(buf, str, len);
-  }
-  return len;
-}
-
 // TODO: Change marshalling code to support both IPv4 and IPv6 addresses.
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
@@ -1158,21 +1157,18 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
 int
 LogAccessHttp::marshal_server_host_name(char *buf)
 {
-  const char *str = nullptr;
-  int padded_len  = INK_MIN_ALIGN;
-  int actual_len  = 0;
+  char *str = nullptr;
+  int len   = INK_MIN_ALIGN;
 
-  if (m_client_request) {
-    str = m_client_request->host_get(&actual_len);
-
-    if (str) {
-      padded_len = round_strlen(actual_len + 1); // +1 for trailing 0
-    }
+  if (m_http_sm->t_state.current.server) {
+    str = m_http_sm->t_state.current.server->name;
+    len = LogAccess::strlen(str);
   }
+
   if (buf) {
-    marshal_mem(buf, str, actual_len, padded_len);
+    marshal_str(buf, str, len);
   }
-  return padded_len;
+  return len;
 }
 
 /*-------------------------------------------------------------------------

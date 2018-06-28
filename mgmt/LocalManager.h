@@ -94,8 +94,8 @@ public:
   void processDrain(int to_drain = 1);
   void rollLogFiles();
   void clearStats(const char *name = nullptr);
-  void hostStatusSetDown(const char *name);
-  void hostStatusSetUp(const char *name);
+  void hostStatusSetDown(const char *marshalled_req, int len);
+  void hostStatusSetUp(const char *marshalled_req);
 
   bool processRunning();
 

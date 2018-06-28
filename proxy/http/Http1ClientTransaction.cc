@@ -67,3 +67,9 @@ Http1ClientTransaction::transaction_done()
     static_cast<Http1ClientSession *>(parent)->release_transaction();
   }
 }
+
+bool
+Http1ClientTransaction::allow_half_open() const
+{
+  return current_reader ? current_reader->t_state.txn_conf->allow_half_open > 0 : true;
+}

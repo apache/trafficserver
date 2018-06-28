@@ -54,8 +54,8 @@ static int
 fq_is_default_qdisc()
 {
   TSFile f       = 0;
-  size_t s       = 0;
-  char buffer[4] = {};
+  ssize_t s      = 0;
+  char buffer[5] = {};
   int rc         = 0;
 
   f = TSfopen("/proc/sys/net/core/default_qdisc", "r");
