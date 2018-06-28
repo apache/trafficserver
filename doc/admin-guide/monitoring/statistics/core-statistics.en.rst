@@ -47,6 +47,7 @@ component to which they're related.
    core/http-document-size.en
    core/http-header.en
    core/bandwidth.en
+   core/congestion.en
    core/socks.en
    core/websocket.en
    core/misc.en

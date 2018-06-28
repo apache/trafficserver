@@ -95,10 +95,8 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Generator <generator.en>`
    Generate arbitrary response data.
 
-:doc:`Compress <compress.en>`
+:doc:`GZip <gzip.en>`
     Compress or deflate cache responses.
-
-    .. sidebar: Formerly "gzip".
 
 :doc:`Header Rewrite <header_rewrite.en>`
     Modify requests and responses based on incoming and outgoing headers and
