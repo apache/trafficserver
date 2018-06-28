@@ -181,7 +181,6 @@ signal_crash_handler(int signo, siginfo_t *, void *)
 
   // Make sure to drop a core for signals that normally would do so.
   signal_reset_default(signo);
-  raise(signo);
 }
 
 void
