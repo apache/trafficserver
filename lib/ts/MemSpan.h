@@ -29,7 +29,6 @@
 #include <iosfwd>
 #include <iostream>
 #include <cstddef>
-#include <ts/string_view.h>
 
 /// Apache Traffic Server commons.
 namespace ts
@@ -137,26 +136,22 @@ public:
   /// @name Accessors.
   //@{
   /// Pointer to the first byte in the span.
-  char *begin();
-  const char *begin() const;
+  void *begin() const;
 
   /// Pointer to first byte not in the span.
-  char *end();
-  const char *end() const;
+  void *end() const;
 
   /// Number of bytes in the span.
-  constexpr ptrdiff_t ssize() const;
-  size_t size() const;
+  constexpr ptrdiff_t size() const;
+  /// Number of bytes in the span (unsigned).
+  constexpr size_t usize() const;
 
-  /// Pointer to memory in the span.
-  void *data();
-
-  /// Pointer to memory in the span.
-  const void *data() const;
+  /// Memory pointer.
+  /// @note This is equivalent to @c begin currently but it's probably good to have separation.
+  constexpr void *data() const;
 
   /// Memory pointer, one past the last element of the span.
-  void *data_end();
-  const void *data_end() const;
+  void *data_end() const;
 
   /// @return the @a V value at index @a n.
   template <typename V> V at(ptrdiff_t n) const;
@@ -263,18 +258,6 @@ public:
    * @return @c *this
    */
   self_type &remove_suffix(ptrdiff_t n);
-
-  /** Return a view of the memory.
-   *
-   * @return A @c string_view covering the span contents.
-   */
-  string_view view() const;
-
-  /** Support automatic conversion to string_view.
-   *
-   * @return A view of the memory in this span.
-   */
-  operator string_view() const;
 
   /// Internal utility for computing the difference of two void pointers.
   /// @return the byte (char) difference between the pointers, @a lhs - @a rhs
@@ -406,64 +389,40 @@ MemSpan::operator+=(ptrdiff_t n)
   return *this;
 }
 
-inline char *
-MemSpan::begin()
-{
-  return static_cast<char *>(_data);
-}
-
-inline const char *
-MemSpan::begin() const
-{
-  return static_cast<const char *>(_data);
-}
-
 inline void *
-MemSpan::data()
+MemSpan::begin() const
 {
   return _data;
 }
 
-inline const void *
+inline constexpr void *
 MemSpan::data() const
 {
   return _data;
 }
 
-inline char *
-MemSpan::end()
-{
-  return static_cast<char *>(_data) + _size;
-}
-
-inline const char *
+inline void *
 MemSpan::end() const
 {
-  return static_cast<const char *>(_data) + _size;
+  return static_cast<char *>(_data) + _size;
 }
 
 inline void *
-MemSpan::data_end()
-{
-  return static_cast<char *>(_data) + _size;
-}
-
-inline const void *
 MemSpan::data_end() const
 {
   return static_cast<char *>(_data) + _size;
 }
 
 inline constexpr ptrdiff_t
-MemSpan::ssize() const
+MemSpan::size() const
 {
   return _size;
 }
 
-inline size_t
-MemSpan::size() const
+inline constexpr size_t
+MemSpan::usize() const
 {
-  return static_cast<size_t>(_size);
+  return _size;
 }
 
 inline MemSpan &
@@ -593,17 +552,6 @@ MemSpan::find_if(F const &pred)
     if (pred(*p))
       return p;
   return nullptr;
-}
-
-inline string_view
-MemSpan::view() const
-{
-  return {static_cast<const char *>(_data), static_cast<size_t>(_size)};
-}
-
-inline MemSpan::operator string_view() const
-{
-  return this->view();
 }
 
 } // namespace ts
