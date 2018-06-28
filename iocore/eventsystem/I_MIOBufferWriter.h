@@ -24,7 +24,6 @@
 #pragma once
 
 #include <cstring>
-#include <iosfwd>
 
 #include <ts/ink_assert.h>
 #include <ts/BufferWriter.h>
@@ -33,23 +32,49 @@
 #include <I_IOBuffer.h>
 #endif
 
-/** BufferWriter interface on top of IOBuffer blocks.
-
-    @internal This should be changed to IOBufferChain once I port that to open source.
- */
 class MIOBufferWriter : public ts::BufferWriter
 {
-  using self_type = MIOBufferWriter; ///< Self reference type.
-
 public:
-  MIOBufferWriter(MIOBuffer *miob) : _miob(miob) {}
+  MIOBufferWriter(MIOBuffer &miob) : _miob(miob) {}
 
-  self_type &write(const void *data_, size_t length) override;
+  MIOBufferWriter &
+  write(const void *data_, size_t length) override
+  {
+    const char *data = static_cast<const char *>(data_);
 
-  self_type &
+    while (length) {
+      IOBufferBlock *iobbPtr = _miob.first_write_block();
+
+      if (!iobbPtr) {
+        addBlock();
+
+        iobbPtr = _miob.first_write_block();
+
+        ink_assert(iobbPtr);
+      }
+
+      size_t writeSize = iobbPtr->write_avail();
+
+      if (length < writeSize) {
+        writeSize = length;
+      }
+
+      std::memcpy(iobbPtr->end(), data, writeSize);
+      iobbPtr->fill(writeSize);
+
+      data += writeSize;
+      length -= writeSize;
+
+      _numWritten += writeSize;
+    }
+
+    return *this;
+  }
+
+  MIOBufferWriter &
   write(char c) override
   {
-    return this->write(&c, 1);
+    return write(&c, 1);
   }
 
   bool
@@ -61,7 +86,7 @@ public:
   char *
   auxBuffer() override
   {
-    IOBufferBlock *iobbPtr = _miob->first_write_block();
+    IOBufferBlock *iobbPtr = _miob.first_write_block();
 
     if (!iobbPtr) {
       return nullptr;
@@ -73,7 +98,7 @@ public:
   size_t
   auxBufferCapacity() const
   {
-    IOBufferBlock *iobbPtr = _miob->first_write_block();
+    IOBufferBlock *iobbPtr = _miob.first_write_block();
 
     if (!iobbPtr) {
       return 0;
@@ -85,11 +110,11 @@ public:
   // Write the first n characters that have been placed in the auxiliary buffer.  This call invalidates the auxiliary buffer.
   // This function should not be called if no auxiliary buffer is available.
   //
-  self_type &
+  MIOBufferWriter &
   fill(size_t n) override
   {
     if (n) {
-      IOBufferBlock *iobbPtr = _miob->first_write_block();
+      IOBufferBlock *iobbPtr = _miob.first_write_block();
 
       ink_assert(iobbPtr and (n <= size_t(iobbPtr->write_avail())));
 
@@ -117,11 +142,11 @@ public:
 
   // Not useful in this derived class.
   //
-  self_type &clip(size_t) override { return *this; }
+  BufferWriter &clip(size_t) override { return *this; }
 
   // Not useful in this derived class.
   //
-  self_type &extend(size_t) override { return *this; }
+  BufferWriter &extend(size_t) override { return *this; }
 
   // This must not be called for this derived class.
   //
@@ -132,15 +157,8 @@ public:
     return nullptr;
   }
 
-  /// Output the buffer contents to the @a stream.
-  /// @return The destination stream.
-  std::ostream &operator>>(std::ostream &stream) const override;
-  /// Output the buffer contents to the file for file descriptor @a fd.
-  /// @return The number of bytes written.
-  ssize_t operator>>(int fd) const override;
-
 protected:
-  MIOBuffer *_miob;
+  MIOBuffer &_miob;
 
 private:
   size_t _numWritten = 0;
@@ -148,8 +166,8 @@ private:
   virtual void
   addBlock()
   {
-    _miob->add_block();
+    _miob.add_block();
   }
   // INTERNAL - Overload removed, make sure it's not used.
-  self_type &write(size_t n);
+  MIOBufferWriter &write(size_t n);
 };
