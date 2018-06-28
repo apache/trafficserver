@@ -23,8 +23,6 @@
 
 #include "P_Net.h"
 
-using namespace std::literals;
-
 ink_hrtime last_throttle_warning;
 ink_hrtime last_shedding_warning;
 int net_connections_throttle;
@@ -254,24 +252,24 @@ int
 NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, void *)
 {
   uint32_t *updated_member = nullptr; // direct pointer to config member for update.
-  std::string_view name{str};
+  ts::string_view name{str};
 
-  if (name == "proxy.config.net.max_connections_in"sv) {
+  if (name == "proxy.config.net.max_connections_in"_sv) {
     updated_member = &NetHandler::global_config.max_connections_in;
     Debug("net_queue", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.max_active_connections_in"sv) {
+  } else if (name == "proxy.config.net.max_active_connections_in"_sv) {
     updated_member = &NetHandler::global_config.max_connections_active_in;
     Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.inactive_threshold_in"sv) {
+  } else if (name == "proxy.config.net.inactive_threshold_in"_sv) {
     updated_member = &NetHandler::global_config.inactive_threshold_in;
     Debug("net_queue", "proxy.config.net.inactive_threshold_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.transaction_no_activity_timeout_in"sv) {
+  } else if (name == "proxy.config.net.transaction_no_activity_timeout_in"_sv) {
     updated_member = &NetHandler::global_config.transaction_no_activity_timeout_in;
     Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.keep_alive_no_activity_timeout_in"sv) {
+  } else if (name == "proxy.config.net.keep_alive_no_activity_timeout_in"_sv) {
     updated_member = &NetHandler::global_config.keep_alive_no_activity_timeout_in;
     Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.default_inactivity_timeout"sv) {
+  } else if (name == "proxy.config.net.default_inactivity_timeout"_sv) {
     updated_member = &NetHandler::global_config.default_inactivity_timeout;
     Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
   }

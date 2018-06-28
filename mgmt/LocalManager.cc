@@ -31,7 +31,7 @@
 #include "MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "FileManager.h"
-#include <string_view>
+#include <ts/string_view.h>
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -974,7 +974,7 @@ LocalManager::listenForProxy()
 
     // read backlong configuration value and overwrite the default value if found
     bool found;
-    std::string_view fam{ats_ip_family_name(p.m_family)};
+    ts::string_view fam{ats_ip_family_name(p.m_family)};
     RecInt backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
     backlog        = (found && backlog >= 0) ? backlog : ats_tcp_somaxconn();
 

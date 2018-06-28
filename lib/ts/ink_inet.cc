@@ -36,20 +36,18 @@
 
 IpAddr const IpAddr::INVALID;
 
-using namespace std::literals;
-
-const std::string_view IP_PROTO_TAG_IPV4("ipv4"sv);
-const std::string_view IP_PROTO_TAG_IPV6("ipv6"sv);
-const std::string_view IP_PROTO_TAG_UDP("udp"sv);
-const std::string_view IP_PROTO_TAG_TCP("tcp"sv);
-const std::string_view IP_PROTO_TAG_TLS_1_0("tls/1.0"sv);
-const std::string_view IP_PROTO_TAG_TLS_1_1("tls/1.1"sv);
-const std::string_view IP_PROTO_TAG_TLS_1_2("tls/1.2"sv);
-const std::string_view IP_PROTO_TAG_TLS_1_3("tls/1.3"sv);
-const std::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"sv);
-const std::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"sv);
-const std::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"sv);
-const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv); // HTTP/2 over TLS
+const ts::string_view IP_PROTO_TAG_IPV4("ipv4"_sv);
+const ts::string_view IP_PROTO_TAG_IPV6("ipv6"_sv);
+const ts::string_view IP_PROTO_TAG_UDP("udp"_sv);
+const ts::string_view IP_PROTO_TAG_TCP("tcp"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_0("tls/1.0"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_1("tls/1.1"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_2("tls/1.2"_sv);
+const ts::string_view IP_PROTO_TAG_TLS_1_3("tls/1.3"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"_sv);
+const ts::string_view IP_PROTO_TAG_HTTP_2_0("h2"_sv); // HTTP/2 over TLS
 
 uint32_t
 ink_inet_addr(const char *s)
@@ -144,10 +142,10 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
   return zret;
 }
 
-std::string_view
+ts::string_view
 ats_ip_family_name(int family)
 {
-  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : "Unspec"sv;
+  return AF_INET == family ? IP_PROTO_TAG_IPV4 : AF_INET6 == family ? IP_PROTO_TAG_IPV6 : "Unspec"_sv;
 }
 
 const char *
@@ -159,12 +157,12 @@ ats_ip_nptop(sockaddr const *addr, char *dst, size_t size)
 }
 
 int
-ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *port, std::string_view *rest)
+ats_ip_parse(ts::string_view str, ts::string_view *addr, ts::string_view *port, ts::string_view *rest)
 {
   ts::TextView src(str); /// Easier to work with for parsing.
   // In case the incoming arguments are null, set them here and only check for null once.
   // it doesn't matter if it's all the same, the results will be thrown away.
-  std::string_view local;
+  ts::string_view local;
   if (!addr) {
     addr = &local;
   }
@@ -223,7 +221,7 @@ ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *por
       if (tmp.data() == src.data()) {               // no digits at all
         src.assign(tmp.data() - 1, tmp.size() + 1); // back up to include colon
       } else {
-        *port = std::string_view(tmp.data(), src.data() - tmp.data());
+        *port = ts::string_view(tmp.data(), src.data() - tmp.data());
       }
     }
     *rest = src;
@@ -232,10 +230,10 @@ ats_ip_parse(std::string_view str, std::string_view *addr, std::string_view *por
 }
 
 int
-ats_ip_pton(const std::string_view &src, sockaddr *ip)
+ats_ip_pton(const ts::string_view &src, sockaddr *ip)
 {
   int zret = -1;
-  std::string_view addr, port;
+  ts::string_view addr, port;
 
   ats_ip_invalidate(ip);
   if (0 == ats_ip_parse(src, &addr, &port)) {
@@ -244,9 +242,9 @@ ats_ip_pton(const std::string_view &src, sockaddr *ip)
       char *tmp = static_cast<char *>(alloca(addr.size() + 1));
       memcpy(tmp, addr.data(), addr.size());
       tmp[addr.size()] = 0;
-      addr             = std::string_view(tmp, addr.size());
+      addr             = ts::string_view(tmp, addr.size());
     }
-    if (addr.find(':') != std::string_view::npos) { // colon -> IPv6
+    if (addr.find(':') != ts::string_view::npos) { // colon -> IPv6
       in6_addr addr6;
       if (inet_pton(AF_INET6, addr.data(), &addr6)) {
         zret = 0;
@@ -269,7 +267,7 @@ ats_ip_pton(const std::string_view &src, sockaddr *ip)
 }
 
 int
-ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper)
+ats_ip_range_parse(ts::string_view src, IpAddr &lower, IpAddr &upper)
 {
   int zret = TS_ERROR;
   IpAddr addr, addr2;
@@ -281,7 +279,7 @@ ats_ip_range_parse(std::string_view src, IpAddr &lower, IpAddr &upper)
   static const uint64_t ones[]{UINT64_MAX, UINT64_MAX};
   static const IpAddr MAX_ADDR6{reinterpret_cast<in6_addr const &>(ones)};
 
-  auto idx = src.find_first_of("/-"sv);
+  auto idx = src.find_first_of("/-"_sv);
   if (idx != src.npos) {
     if (idx + 1 >= src.size()) { // must have something past the separator or it's bogus.
       zret = TS_ERROR;
@@ -429,7 +427,7 @@ IpAddr::load(const char *text)
 }
 
 int
-IpAddr::load(std::string_view const &text)
+IpAddr::load(ts::string_view const &text)
 {
   IpEndpoint ip;
   int zret = ats_ip_pton(text, &ip.sa);
@@ -531,8 +529,8 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
   int port = 0; // port value to assign if we find an address.
   addrinfo ai_hints;
   addrinfo *ai_result;
-  std::string_view addr_text, port_text;
-  std::string_view src(host, strlen(host) + 1);
+  ts::string_view addr_text, port_text;
+  ts::string_view src(host, strlen(host) + 1);
 
   if (ip4) {
     ats_ip_invalidate(ip4);
@@ -547,7 +545,7 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
       char *tmp = static_cast<char *>(alloca(addr_text.size() + 1));
       memcpy(tmp, addr_text.data(), addr_text.size());
       tmp[addr_text.size()] = 0;
-      addr_text             = std::string_view(tmp, addr_text.size());
+      addr_text             = ts::string_view(tmp, addr_text.size());
     }
     ink_zero(ai_hints);
     ai_hints.ai_family = AF_UNSPEC;
@@ -631,7 +629,7 @@ ats_ip_getbestaddrinfo(const char *host, IpEndpoint *ip4, IpEndpoint *ip6)
 }
 
 int
-ats_ip_check_characters(std::string_view text)
+ats_ip_check_characters(ts::string_view text)
 {
   bool found_colon = false;
   bool found_hex   = false;

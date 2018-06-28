@@ -23,11 +23,12 @@
 
 #include "catch.hpp"
 #include <ts/BufferWriter.h>
+#include <ts/string_view.h>
 #include <cstring>
 
 namespace
 {
-std::string_view three[] = {"a", "", "bcd"};
+ts::string_view three[] = {"a", "", "bcd"};
 }
 
 TEST_CASE("BufferWriter::write(StringView)", "[BWWSV]")
@@ -173,7 +174,7 @@ twice(BWType &bw)
 
   bw.reduce(0);
 
-  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(std::string_view("brown", 5));
+  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(ts::string_view("brown", 5));
 
   if ((bw.capacity() != 20) or bw.error() or (bw.remaining() != (21 - sizeof("The quick brown")))) {
     return false;
@@ -314,7 +315,7 @@ TEST_CASE("Discard Buffer Writer", "[BWD]")
 
   bw.reduce(0);
 
-  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(std::string_view("brown", 5));
+  bw.write("The", 3).write(' ').write("quick", 5).write(' ').write(ts::string_view("brown", 5));
 
   REQUIRE(bw.size() == 0);
   REQUIRE(bw.extent() == (sizeof("The quick brown") - 1));

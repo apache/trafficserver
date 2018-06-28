@@ -24,7 +24,7 @@
 #pragma once
 
 #include <string>
-#include <string_view>
+#include <ts/string_view.h>
 #include "atscppapi/TransformationPlugin.h"
 
 namespace atscppapi
@@ -70,7 +70,7 @@ namespace transformations
      *
      * @param data the input data to compress
      */
-    void consume(std::string_view data) override;
+    void consume(ts::string_view data) override;
 
     /**
      * Any TransformationPlugin must implement handleInputComplete(), this method will

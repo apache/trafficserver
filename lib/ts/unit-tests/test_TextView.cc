@@ -28,7 +28,6 @@
 #include <catch.hpp>
 
 using TV = ts::TextView;
-using namespace std::literals;
 
 TEST_CASE("TextView Constructor", "[libts][TextView]")
 {
@@ -36,8 +35,8 @@ TEST_CASE("TextView Constructor", "[libts][TextView]")
   ts::TextView tv(base);
   ts::TextView a{"Evil Dave Rulez"};
   ts::TextView b{base.data(), base.size()};
-  ts::TextView c{std::string_view(base)};
-  constexpr ts::TextView d{"Grigor!"sv};
+  ts::TextView c{ts::string_view(base)};
+  constexpr ts::TextView d{"Grigor!"_sv};
 }
 
 TEST_CASE("TextView Operations", "[libts][TextView]")

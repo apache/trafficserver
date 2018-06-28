@@ -25,7 +25,7 @@
 #include <string>
 #include <cctype>
 
-#include <string_view>
+#include <ts/string_view.h>
 #include <ts/TextView.h>
 
 #include <HttpConfig.h>
@@ -121,7 +121,7 @@ eqIgnoreCaseWs(ts::TextView sv, const char *target)
 namespace HttpForwarded
 {
 OptionBitSet
-optStrToBitset(std::string_view optConfigStr, ts::FixedBufferWriter &error)
+optStrToBitset(ts::string_view optConfigStr, ts::FixedBufferWriter &error)
 {
   const ts::TextView Delimiters(":|");
 

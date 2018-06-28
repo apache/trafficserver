@@ -24,7 +24,6 @@
 #include "File.h"
 #include <unistd.h>
 #include <fcntl.h>
-#include <errno.h>
 
 namespace ts
 {
@@ -34,7 +33,7 @@ namespace ts
      @return A newly @x ats_malloc string of the combined paths.
 */
 std::string
-path_join(std::string_view lhs, std::string_view rhs)
+path_join(ts::string_view lhs, ts::string_view rhs)
 {
   size_t ln        = lhs.size();
   size_t rn        = rhs.size();

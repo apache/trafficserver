@@ -17,7 +17,7 @@
  */
 
 #include <iostream>
-#include <string_view>
+#include <ts/string_view.h>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/TransformationPlugin.h>
@@ -44,7 +44,7 @@ public:
   }
 
   void
-  consume(std::string_view data) override
+  consume(ts::string_view data) override
   {
     buffer_.append(data.data(), data.length());
   }

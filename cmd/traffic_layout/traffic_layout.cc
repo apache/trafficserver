@@ -36,8 +36,6 @@
 #include <fstream>
 #include <set>
 
-using namespace std::literals;
-
 struct subcommand {
   int (*handler)(int, const char **);
   const std::string name;
@@ -86,7 +84,7 @@ int
 info(int argc, const char **argv)
 {
   // take the "info" out from command line
-  if (argv[1] && argv[1] == "info"sv) {
+  if (argv[1] && argv[1] == "info"_sv) {
     for (int i = 1; i < argc; i++) {
       argv[i] = argv[i + 1];
     }
@@ -94,7 +92,7 @@ info(int argc, const char **argv)
   // detect help command
   int i = 1;
   while (argv[i]) {
-    if (argv[i] == "--help"sv || argv[i] == "-h"sv) {
+    if (argv[i] == "--help"_sv || argv[i] == "-h"_sv) {
       help_usage();
     }
     ++i;
