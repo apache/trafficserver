@@ -87,7 +87,11 @@ public:
     return false;
   }
 
-  bool allow_half_open() const override;
+  bool
+  allow_half_open() const override
+  {
+    return true;
+  }
 
   void set_parent(ProxyClientSession *new_parent) override;
 
