@@ -23,7 +23,7 @@ After=syslog.target network.target
 Type=simple
 EnvironmentFile=-/etc/sysconfig/trafficserver
 PIDFile=@exp_runtimedir@/manager.pid
-ExecStart=@exp_bindir@/traffic_manager $TM_DAEMON_ARGS
+ExecStart=@exp_bindir@/traffic_manager --bind_stdout @exp_logdir@/traffic.out --bind_stderr @exp_logdir@/traffic.out $TM_DAEMON_ARGS
 ExecReload=@exp_bindir@/traffic_ctl config reload
 
 [Install]

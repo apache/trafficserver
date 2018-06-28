@@ -113,9 +113,9 @@ TS_PIDFILE=${TS_PIDFILE:-$TS_BASE@exp_runtimedir@/server.lock}
 # number of times to retry check on pid lock file
 PIDFILE_CHECK_RETRIES=${PIDFILE_CHECK_RETRIES:-30}
 # stdout file of executable
-STDOUTLOG=${STDOUTLOG:-$TS_BASE@exp_logdir@/traffic_server.stdout}
+STDOUTLOG=${STDOUTLOG:-$TS_BASE@exp_logdir@/traffic.out}
 # stderr file of executable
-STDERRLOG=${STDERRLOG:-$TS_BASE@exp_logdir@/traffic_server.stderr}
+STDERRLOG=${STDERRLOG:-$TS_BASE@exp_logdir@/traffic.out}
 
 if [ -d /etc/rc.d/init.d ]; then
     SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
@@ -186,7 +186,7 @@ forkdaemon()
 
     # launch in background, i.e. fork
     # and redirect stdout and stderr to files
-    $* >> $STDOUTLOG 2>> $STDERRLOG &
+    $* --bind_stdout $STDOUTLOG --bind_stderr $STDERRLOG >> $STDOUTLOG 2>> $STDERRLOG &
 
     while (( $i < $PIDFILE_CHECK_RETRIES ))
     do
