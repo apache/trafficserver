@@ -29,6 +29,9 @@
 // size can be changed accordingly
 #define OPEN_MAX_FILE 256
 
+// full copy, hardlink, softlink
+enum CopyStyle { FULL, HARD, SOFT };
+
 // append slash & remove slash of path for convinient use
 void append_slash(std::string &path);
 
@@ -47,4 +50,4 @@ bool remove_directory(const std::string &dir);
 // remove everything inside this directory
 bool remove_inside_directory(const std::string &dir);
 
-bool copy_directory(const std::string &src, const std::string &dst, const std::string &dir = "");
+bool copy_directory(const std::string &src, const std::string &dst, const std::string &dir = "", CopyStyle style = HARD);

@@ -36,6 +36,7 @@
 #include "file_system.h"
 #include "ts/runroot.h"
 
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <ftw.h>
@@ -147,6 +148,7 @@ RunrootEngine::runroot_help_message(const bool runflag, const bool cleanflag, co
                  "--force   Force to create ts_runroot even directory already exists\n"
                  "--absolute    Produce absolute path in the yaml file\n"
                  "--run-root(=/path)  Using specified TS_RUNROOT as sandbox\n"
+                 "--copy-style=[STYLE] Specify style (FULL, HARD, SOFT) when copying executable\n"
               << std::endl;
   }
   if (cleanflag) {
@@ -214,6 +216,18 @@ RunrootEngine::runroot_parse()
     // set fix flag
     if (argument == "--fix") {
       fix_flag = true;
+      continue;
+    }
+    if (argument.substr(0, COPYSTYLE_WORD_LENGTH) == "--copy-style") {
+      std::string style = argument.substr(COPYSTYLE_WORD_LENGTH + 1);
+      transform(style.begin(), style.end(), style.begin(), ::tolower);
+      if (style == "full") {
+        copy_style = FULL;
+      } else if (style == "soft") {
+        copy_style = SOFT;
+      } else {
+        copy_style = HARD;
+      }
       continue;
     }
     if (argument == "--path") {
@@ -463,7 +477,7 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
     // don't copy the prefix, mandir, localstatedir and infodir
     if (it.first != LAYOUT_EXEC_PREFIX && it.first != LAYOUT_LOCALSTATEDIR && it.first != LAYOUT_MANDIR &&
         it.first != LAYOUT_INFODIR) {
-      if (!copy_directory(old_path, new_path, it.first)) {
+      if (!copy_directory(old_path, new_path, it.first, copy_style)) {
         ink_warning("Unable to copy '%s' - %s", it.first.c_str(), strerror(errno));
         ink_notice("Creating '%s': %s", it.first.c_str(), new_path.c_str());
         // if copy failed for certain directory, we create it in runroot
