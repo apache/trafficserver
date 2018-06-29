@@ -1340,7 +1340,13 @@ SSLDefaultServerContext()
 static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scoped_str &completeServerCertPath, const char *keyPath)
 {
-  if (!keyPath) {
+  ENGINE *e = ENGINE_get_default_RSA();
+  if (e != nullptr) {
+    const char *argkey = (keyPath == nullptr || keyPath[0] == '\0') ? completeServerCertPath : keyPath;
+    if (!SSL_CTX_use_PrivateKey(ctx, ENGINE_load_private_key(e, argkey, nullptr, nullptr))) {
+      SSLError("failed to load server private key from engine");
+    }
+  } else if (!keyPath) {
     // assume private key is contained in cert obtained from multicert file.
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", (const char *)completeServerCertPath);
@@ -1360,7 +1366,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
     return false;
   }
 
-  if (!SSL_CTX_check_private_key(ctx)) {
+  if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
     SSLError("server private key does not match the certificate public key");
     return false;
   }
