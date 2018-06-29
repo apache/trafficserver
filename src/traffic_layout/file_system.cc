@@ -43,6 +43,7 @@ static std::string dst_root;
 static std::string src_root;
 static std::string copy_dir; // the current dir we are copying. e.x. sysconfdir, bindir...
 static std::string remove_path;
+CopyStyle copy_style;
 
 // list of all executables of traffic server
 std::set<std::string> const executables = {"traffic_crashlog", "traffic_ctl",     "traffic_layout", "traffic_logcat",
@@ -255,12 +256,18 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
     }
     // hardlink bin executable
     if (sb->st_mode & S_IEXEC) {
-      if (link(src_path, dst_path.c_str()) != 0) {
-        if (errno != EEXIST) {
-          ink_warning("failed to create hard link - %s", strerror(errno));
+      if (copy_style == SOFT) {
+        if (symlink(src_path, dst_path.c_str()) != 0 && errno != EEXIST) {
+          ink_warning("failed to create symlink - %s", strerror(errno));
+        } else {
+          return 0;
         }
-      } else {
-        return 0;
+      } else if (copy_style == HARD) {
+        if (link(src_path, dst_path.c_str()) != 0 && errno != EEXIST) {
+          ink_warning("failed to create hard link - %s", strerror(errno));
+        } else {
+          return 0;
+        }
       }
     }
     // for normal other files
@@ -276,11 +283,12 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
 
 // copy directory recursively using ftw to iterate
 bool
-copy_directory(const std::string &src, const std::string &dst, const std::string &dir)
+copy_directory(const std::string &src, const std::string &dst, const std::string &dir, CopyStyle style)
 {
-  src_root = src;
-  dst_root = dst;
-  copy_dir = dir;
+  src_root   = src;
+  dst_root   = dst;
+  copy_dir   = dir;
+  copy_style = style;
   remove_slash(src_root);
   append_slash(dst_root);
 
