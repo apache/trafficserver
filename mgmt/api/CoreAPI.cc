@@ -183,7 +183,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       ink_strlcat(tsArgs, " -k", sizeof(tsArgs));
     }
 
-    mgmt_log("[ProxyStateSet] Traffic Server Args: '%s %s'\n", lmgmt->proxy_options ? lmgmt->proxy_options : "", tsArgs);
+    mgmt_log("[ProxyStateSet] Traffic Server Args: '%s %s'\n", lmgmt->proxy_options.c_str(), tsArgs);
 
     lmgmt->run_proxy = true;
     lmgmt->listenForProxy();
