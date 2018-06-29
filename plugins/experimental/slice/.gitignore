@@ -1,0 +1,6 @@
+*.so
+*.lo
+*.swp
+private
+slice_test
+rangegetter
