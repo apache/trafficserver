@@ -23,11 +23,14 @@
 
 #pragma once
 
+#include "file_system.h"
+
 #include <vector>
 #include <string>
 #include <unordered_map>
 
 #define RUNROOT_WORD_LENGTH 10
+#define COPYSTYLE_WORD_LENGTH 12
 
 typedef std::unordered_map<std::string, std::string> RunrootMapType;
 
@@ -70,6 +73,8 @@ struct RunrootEngine {
   bool verify_default = false;
   // for parsing
   int command_num = 0;
+
+  CopyStyle copy_style = HARD;
 
   // the path for create & remove
   std::string path;
