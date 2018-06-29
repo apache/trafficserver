@@ -767,7 +767,7 @@ void
 LogFilterIP::init()
 {
   m_type       = IP_FILTER;
-  m_num_values = m_map.getCount();
+  m_num_values = m_map.count();
 }
 
 /*-------------------------------------------------------------------------
@@ -886,7 +886,7 @@ LogFilterIP::display(FILE *fd)
 {
   ink_assert(fd != nullptr);
 
-  if (0 == m_map.getCount()) {
+  if (0 == m_map.count()) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
     fprintf(fd, "Filter \"%s\" %sS records if %s %s ", m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);

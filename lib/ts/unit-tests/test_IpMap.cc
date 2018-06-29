@@ -135,7 +135,7 @@ TEST_CASE("IpMap Basic", "[libts][ipmap]")
   map.mark(ip5, ip9, markA);
   {
     INFO("Coalesce failed");
-    CHECK(map.getCount() == 1);
+    CHECK(map.count() == 1);
   }
   {
     INFO("Range max not found.");
@@ -153,7 +153,7 @@ TEST_CASE("IpMap Basic", "[libts][ipmap]")
   map.fill(ip15, ip100, markB);
   {
     INFO("Fill failed.");
-    CHECK(map.getCount() == 2);
+    CHECK(map.count() == 2);
   }
   {
     INFO("fill interior missing");
@@ -179,13 +179,13 @@ TEST_CASE("IpMap Basic", "[libts][ipmap]")
   map.clear();
   {
     INFO("Clear failed.");
-    CHECK(map.getCount() == 0);
+    CHECK(map.count() == 0);
   }
 
   map.mark(ip20, ip50, markA);
   map.mark(ip100, ip150, markB);
   map.fill(ip10, ip200, markC);
-  CHECK(map.getCount() == 5);
+  CHECK(map.count() == 5);
   {
     INFO("Left span missing");
     CHECK(map.contains(ip15, &mark));
@@ -214,7 +214,7 @@ TEST_CASE("IpMap Basic", "[libts][ipmap]")
   map.unmark(ip140, ip160);
   {
     INFO("unmark failed");
-    CHECK(map.getCount() == 5);
+    CHECK(map.count() == 5);
   }
   {
     INFO("unmark left edge still there.");
@@ -247,7 +247,7 @@ TEST_CASE("IpMap Basic", "[libts][ipmap]")
   map.mark(ip0, ipmax, markC);
   {
     INFO("IpMap: Full range fill left extra ranges.");
-    CHECK(map.getCount() == 1);
+    CHECK(map.count() == 1);
   }
 }
 
@@ -285,12 +285,12 @@ TEST_CASE("IpMap Unmark", "[libts][ipmap]")
   map.mark(&a_0, &a_max, markA);
   {
     INFO("IpMap Unmark: Full range not single.");
-    CHECK(map.getCount() == 1);
+    CHECK(map.count() == 1);
   }
   map.unmark(&a_10_28_56_0, &a_10_28_56_255);
   {
     INFO("IpMap Unmark: Range unmark failed.");
-    CHECK(map.getCount() == 2);
+    CHECK(map.count() == 2);
   }
   // Generic range check.
   {
@@ -420,7 +420,7 @@ TEST_CASE("IpMap Fill", "[libts][ipmap]")
     map.fill(&a0, &a_max, markC);
     {
       INFO("IpMap[2]: Fill failed.");
-      CHECK(map.getCount() == 5);
+      CHECK(map.count() == 5);
     }
     {
       INFO("invalid mark in range gap");
@@ -443,7 +443,7 @@ TEST_CASE("IpMap Fill", "[libts][ipmap]")
     map.fill(&a0, &a_max, deny);
     {
       INFO("range count incorrect");
-      CHECK(map.getCount() == 5);
+      CHECK(map.count() == 5);
     }
     {
       INFO("mark between ranges");
@@ -485,7 +485,7 @@ TEST_CASE("IpMap Fill", "[libts][ipmap]")
 
     {
       INFO("IpMap Fill[pre-refill]: Bad range count.");
-      CHECK(map.getCount() == 10);
+      CHECK(map.count() == 10);
     }
     // These should be ignored by the map as it is completely covered for IPv6.
     map.fill(&a_fe80_9d90, &a_fe80_9d9d, markA);
@@ -493,7 +493,7 @@ TEST_CASE("IpMap Fill", "[libts][ipmap]")
     map.fill(&a_0000_0000, &a_ffff_ffff, markB);
     {
       INFO("IpMap Fill[post-refill]: Bad range count.");
-      CHECK(map.getCount() == 10);
+      CHECK(map.count() == 10);
     }
   }
 
@@ -601,5 +601,5 @@ TEST_CASE("IpMap CloseIntersection", "[libts][ipmap]")
   map.mark(d_2_l, d_2_u, markD);
   CHECK_THAT(map, IsMarkedAt(a_1_m));
 
-  CHECK(map.getCount() == 13);
+  CHECK(map.count() == 13);
 }

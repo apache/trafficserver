@@ -269,6 +269,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
 	unit-tests/test_ink_inet.cc \
+	unit-tests/test_IntrusiveDList.cc \
 	unit-tests/test_IntrusivePtr.cc \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \

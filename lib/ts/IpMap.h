@@ -335,7 +335,7 @@ public:
   /// Iterator past last element.
   iterator end() const;
   /// @return Number of distinct ranges in the map.
-  size_t getCount() const;
+  size_t count() const;
 
   /** Validate internal data structures.
       @note Intended for debugging, not general client use.
