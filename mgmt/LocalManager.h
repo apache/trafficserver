@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "Alarms.h"
 #include "BaseManager.h"
 #include <records/I_RecHttp.h>
@@ -119,7 +121,7 @@ public:
   char *absolute_proxy_binary;
   char *proxy_name;
   char *proxy_binary;
-  char *proxy_options = nullptr; // These options should persist across proxy reboots
+  std::string proxy_options; // These options should persist across proxy reboots
   char *env_prep;
 
   int process_server_sockfd = ts::NO_FD;

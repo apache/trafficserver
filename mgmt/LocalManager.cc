@@ -32,12 +32,17 @@
 #include "ts/ink_cap.h"
 #include "FileManager.h"
 #include <string_view>
+#include <algorithm>
+#include <ts/TextView.h>
+#include <ts/BufferWriter.h>
+#include <ts/bwf_std_format.h>
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
 
-#define MGMT_OPT "-M"
+using namespace std::literals;
+static const std::string_view MGMT_OPT{"-M"};
 
 void
 LocalManager::mgmtCleanup()
@@ -253,7 +258,6 @@ LocalManager::~LocalManager()
   ats_free(absolute_proxy_binary);
   ats_free(proxy_name);
   ats_free(proxy_binary);
-  ats_free(proxy_options);
   ats_free(env_prep);
 }
 
@@ -883,52 +887,48 @@ LocalManager::startProxy(const char *onetime_options)
   } else {
     int i = 0;
     char *options[32], *last, *tok;
-    bool open_ports_p = false;
-    char real_proxy_options[OPTIONS_SIZE];
+    char options_buffer[OPTIONS_SIZE];
+    ts::FixedBufferWriter w{options_buffer, OPTIONS_SIZE};
 
-    ink_strlcpy(real_proxy_options, proxy_options, OPTIONS_SIZE);
-    if (onetime_options && *onetime_options) {
-      ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
-      ink_strlcat(real_proxy_options, onetime_options, OPTIONS_SIZE);
-    }
+    w.clip(1);
+    w.print("{}{}", ts::bwf::OptionalAffix(proxy_options), ts::bwf::OptionalAffix(onetime_options));
 
     // Make sure we're starting the proxy in mgmt mode
-    if (strstr(real_proxy_options, MGMT_OPT) == nullptr) {
-      ink_strlcat(real_proxy_options, " ", OPTIONS_SIZE);
-      ink_strlcat(real_proxy_options, MGMT_OPT, OPTIONS_SIZE);
+    if (w.view().find(MGMT_OPT) == std::string_view::npos) {
+      w.write(MGMT_OPT);
+      w.write(' ');
     }
 
-    // Check if we need to pass down port/fd information to
-    // traffic_server by seeing if there are any open ports.
-    for (int i = 0, limit = m_proxy_ports.size(); !open_ports_p && i < limit; ++i) {
-      if (ts::NO_FD != m_proxy_ports[i].m_fd) {
-        open_ports_p = true;
-      }
-    }
-
-    if (open_ports_p) {
+    // Pass down port/fd information to traffic_server if there are any open ports.
+    if (std::any_of(m_proxy_ports.begin(), m_proxy_ports.end(), [](HttpProxyPort &p) { return ts::NO_FD != p.m_fd; })) {
       char portbuf[128];
       bool need_comma_p = false;
 
-      ink_strlcat(real_proxy_options, " --httpport ", OPTIONS_SIZE);
+      w.write("--httpport "sv);
       for (auto &p : m_proxy_ports) {
         if (ts::NO_FD != p.m_fd) {
           if (need_comma_p) {
-            ink_strlcat(real_proxy_options, ",", OPTIONS_SIZE);
+            w.write(',');
           }
           need_comma_p = true;
           p.print(portbuf, sizeof(portbuf));
-          ink_strlcat(real_proxy_options, (const char *)portbuf, OPTIONS_SIZE);
+          w.write(portbuf);
         }
       }
     }
 
-    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'", absolute_proxy_binary, real_proxy_options);
+    w.extend(1);
+    w.write('\0'); // null terminate.
 
+    Debug("lm", "[LocalManager::startProxy] Launching %s '%s'", absolute_proxy_binary, w.data());
+
+    // Unfortunately the normally obnoxious null writing of strtok is in this case a required
+    // side effect and other alternatives are noticeably more clunky.
     ink_zero(options);
-    options[0]   = absolute_proxy_binary;
-    i            = 1;
-    tok          = strtok_r(real_proxy_options, " ", &last);
+    options[0] = absolute_proxy_binary;
+    i          = 1;
+    tok        = strtok_r(options_buffer, " ", &last);
+    Debug("lm", "opt %d = '%s'", i, tok);
     options[i++] = tok;
     while (i < 32 && (tok = strtok_r(nullptr, " ", &last))) {
       Debug("lm", "opt %d = '%s'", i, tok);
