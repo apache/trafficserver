@@ -20,9 +20,7 @@
 
 #include <string>
 
-std::string
-simClientRequestHeader
-  ()
+std::string simClientRequestHeader()
 {
   std::string get_request;
   get_request.append(TS_HTTP_METHOD_GET);
@@ -37,12 +35,10 @@ simClientRequestHeader
   return get_request;
 }
 
-std::string
-simClientResponseHeader
-  ()
+std::string simClientResponseHeader()
 {
-  std::string const response
-    ( "HTTP/1.1 200 Partial Content\r\n"
+  std::string const response(
+      "HTTP/1.1 200 Partial Content\r\n"
       "Date: Wed, 13 Jun 2018 22:50:48 GMT\r\n"
       "Server: biteme/6.6.6\r\n"
       "Last-Modified: Mon, 07 May 2018 16:07:31 GMT\r\n"
@@ -53,14 +49,11 @@ simClientResponseHeader
       "Content-Type: application/octet-stream\r\n"
       "Age: 0\r\n"
       "Connection: keep-alive\r\n"
-      "\r\n" );
+      "\r\n");
   return response;
 }
 
-std::string
-rangeRequestStringFor
-  ( std::string const & bytesstr
-  )
+std::string rangeRequestStringFor(std::string const& bytesstr)
 {
   std::string get_request;
   get_request.append(TS_HTTP_METHOD_GET);

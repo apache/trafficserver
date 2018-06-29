@@ -36,169 +36,115 @@
 
 #include <string>
 
-static char const * const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
+static char const *const SLICER_MIME_FIELD_INFO = "X-Slicer-Info";
 
 /**
   Designed to be a cheap throwaway struct which allows a
   consumer to make various calls to manipulate headers.
 */
-struct HttpHeader
-{
+struct HttpHeader {
   TSMBuffer const m_buffer;
   TSMLoc const m_lochdr;
 
-  explicit
-  HttpHeader
-    ( TSMBuffer buffer
-    , TSMLoc lochdr
-    )
-    : m_buffer(buffer)
-    , m_lochdr(lochdr)
-  { }
+  explicit HttpHeader(TSMBuffer buffer, TSMLoc lochdr)
+      : m_buffer(buffer), m_lochdr(lochdr)
+  {
+  }
 
-  bool
-  isValid
-    () const 
+  bool isValid() const
   {
     return nullptr != m_buffer && nullptr != m_lochdr;
   }
 
   // TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST, TS_HTTP_TYPE_RESPONSE
-  TSHttpType
-  type
-    () const;
+  TSHttpType type() const;
 
   // response status code
-  TSHttpStatus
-  status
-    () const;
+  TSHttpStatus status() const;
 
   // response status code
-  bool
-  setStatus
-    ( TSHttpStatus const newstatus
-    );
+  bool setStatus(TSHttpStatus const newstatus);
 
   // set url
-  bool
-  setUrl
-    ( TSMBuffer const bufurl
-    , TSMLoc const locurl
-    );
+  bool setUrl(TSMBuffer const bufurl, TSMLoc const locurl);
 
-  typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int*);
+  typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int *);
 
   // request method TS_HTTP_METHOD_*
-  char const *
-  method
-    ( int * const len=nullptr
-    ) const
+  char const *method(int *const len = nullptr) const
   {
     return getCharPtr(TSHttpHdrMethodGet, len);
   }
 
   // host
-  char const *
-  hostname
-    ( int * const len
-    ) const
+  char const *hostname(int *const len) const
   {
     return getCharPtr(TSHttpHdrHostGet, len);
   }
 
   // response reason
-  char const *
-  reason
-    ( int * const len
-    ) const
+  char const *reason(int *const len) const
   {
     return getCharPtr(TSHttpHdrReasonGet, len);
   }
 
-  bool
-  setReason
-    ( char const * const valstr
-    , int const vallen
-    );
+  bool setReason(char const *const valstr, int const vallen);
 
-  bool
-  hasKey
-    ( char const * const key
-    , int const keylen
-    ) const;
+  bool hasKey(char const *const key, int const keylen) const;
 
   // returns false if header invalid or something went wrong with removal.
-  bool
-  removeKey
-    ( char const * const key
-    , int const keylen
-    );
+  bool removeKey(char const *const key, int const keylen);
 
-  bool
-  valueForKey
-    ( char const * const keystr
-    , int const keylen
-    , char * const valstr // <-- return string value
-    , int * const vallen // <-- pass in capacity, returns len of string
-    , int const index = -1 // sets all values
-    ) const;
+  bool valueForKey(char const *const keystr, int const keylen,
+                   char *const valstr  // <-- return string value
+                   ,
+                   int *const vallen  // <-- pass in capacity, returns len
+                                      // of string
+                   ,
+                   int const index = -1  // sets all values
+                   ) const;
 
-/*
-  bool
-  valueForKeyLast
-    ( char const * const keystr
-    , int const keylen
-    , char * const valstr // <-- return string value
-    , int * const vallen // <-- pass in capacity, returns len of string
-    , int const index = -1 // sets all values
-    ) const;
-*/
+  /*
+    bool
+    valueForKeyLast
+      ( char const * const keystr
+      , int const keylen
+      , char * const valstr // <-- return string value
+      , int * const vallen // <-- pass in capacity, returns len of string
+      , int const index = -1 // sets all values
+      ) const;
+  */
 
   /**
     Sets or adds a key/value
   */
-  bool
-  setKeyVal
-    ( char const * const key
-    , int const keylen
-    , char const * const val
-    , int const vallen
-    , int const index = -1 // sets all values
-    );
+  bool setKeyVal(char const *const key, int const keylen,
+                 char const *const val, int const vallen,
+                 int const index = -1  // sets all values
+  );
 
   /** dump header into provided char buffer
    */
-  std::string
-  toString
-    () const;
+  std::string toString() const;
 
-private:
-
+ private:
   /**
     To be used with
     TSHttpHdrMethodGet
     TSHttpHdrHostGet
     TSHttpHdrReasonGet
    */
-  char const *
-  getCharPtr
-    ( CharPtrGetFunc func
-    , int * const len
-    ) const;
+  char const *getCharPtr(CharPtrGetFunc func, int *const len) const;
 };
 
-struct TxnHdrMgr
-{
+struct TxnHdrMgr {
   TxnHdrMgr(TxnHdrMgr const &) = delete;
-  TxnHdrMgr & operator=(TxnHdrMgr const &) = delete;
+  TxnHdrMgr &operator=(TxnHdrMgr const &) = delete;
 
-  TSMBuffer m_buffer { nullptr };
-  TSMLoc m_lochdr { nullptr };
+  TSMBuffer m_buffer{nullptr};
+  TSMLoc m_lochdr{nullptr};
 
-  TxnHdrMgr()
-    : m_buffer(nullptr)
-    , m_lochdr(nullptr)
-  { }
+  TxnHdrMgr() : m_buffer(nullptr), m_lochdr(nullptr) {}
 
   ~TxnHdrMgr()
   {
@@ -207,7 +153,7 @@ struct TxnHdrMgr
     }
   }
 
-  typedef TSReturnCode(*HeaderGetFunc)(TSHttpTxn, TSMBuffer *, TSMLoc*);
+  typedef TSReturnCode (*HeaderGetFunc)(TSHttpTxn, TSMBuffer *, TSMLoc *);
   /** use one of the following:
     TSHttpTxnClientReqGet
     TSHttpTxnClientRespGet
@@ -217,64 +163,45 @@ struct TxnHdrMgr
     TSHttpTxnCachedRespGet
   */
 
-  bool
-  populateFrom
-    ( TSHttpTxn const & txnp
-    , HeaderGetFunc const & func
-    )
+  bool populateFrom(TSHttpTxn const &txnp, HeaderGetFunc const &func)
   {
     return TS_SUCCESS == func(txnp, &m_buffer, &m_lochdr);
   }
 
-  bool
-  isValid
-    () const
-  {
-    return nullptr != m_lochdr;
-  }
+  bool isValid() const { return nullptr != m_lochdr; }
 };
 
-struct HdrMgr
-{
+struct HdrMgr {
   HdrMgr(HdrMgr const &) = delete;
-  HdrMgr & operator=(HdrMgr const &) = delete;
+  HdrMgr &operator=(HdrMgr const &) = delete;
 
-  TSMBuffer m_buffer { nullptr };
-  TSMLoc m_lochdr { nullptr };
+  TSMBuffer m_buffer{nullptr};
+  TSMLoc m_lochdr{nullptr};
 
-  HdrMgr()
-    : m_buffer(nullptr)
-    , m_lochdr(nullptr)
-  { }
+  HdrMgr() : m_buffer(nullptr), m_lochdr(nullptr) {}
 
-  ~HdrMgr
-    ()
+  ~HdrMgr()
   {
-    if (nullptr != m_lochdr)
-    {
+    if (nullptr != m_lochdr) {
       TSHttpHdrDestroy(m_buffer, m_lochdr);
       TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
     }
-    if (nullptr != m_buffer)
-    {
+    if (nullptr != m_buffer) {
       TSMBufferDestroy(m_buffer);
     }
   }
 
-  void
-  resetHeader
-    ()
+  void resetHeader()
   {
-    if (nullptr != m_lochdr)
-    {
+    if (nullptr != m_lochdr) {
       TSHttpHdrDestroy(m_buffer, m_lochdr);
       TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
       m_lochdr = nullptr;
     }
   }
 
-  typedef TSParseResult(*HeaderParseFunc)
-    (TSHttpParser, TSMBuffer, TSMLoc, char const **, char const *);
+  typedef TSParseResult (*HeaderParseFunc)(TSHttpParser, TSMBuffer, TSMLoc,
+                                           char const **, char const *);
 
   /** Clear/create the parser before calling this and don't
    use the parser on another header until done with this one.
@@ -283,27 +210,18 @@ struct HdrMgr
      TSHttpHdrParseResp
     Call this multiple times if necessary.
   */
-  TSParseResult
-  populateFrom
-    ( TSHttpParser const http_parser
-    , TSIOBufferReader const reader
-    , HeaderParseFunc const parsefunc
-    );
+  TSParseResult populateFrom(TSHttpParser const http_parser,
+                             TSIOBufferReader const reader,
+                             HeaderParseFunc const parsefunc);
 
+  /*
+    //! returns false if buffers already allocated or clone fails
+    bool
+    cloneFrom
+      ( TSMBuffer buffersrc
+      , TSMLoc locsrc
+      );
+  */
 
-/*
-  //! returns false if buffers already allocated or clone fails
-  bool
-  cloneFrom
-    ( TSMBuffer buffersrc
-    , TSMLoc locsrc
-    );
-*/
-
-  bool
-  isValid
-    () const
-  {
-    return nullptr != m_lochdr;
-  }
+  bool isValid() const { return nullptr != m_lochdr; }
 };

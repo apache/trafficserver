@@ -25,111 +25,69 @@
   Range is converted from a closed range into a half open.
  */
 
-struct Range
-{
+struct Range {
 
-public:
-
+ public:
   int64_t m_beg;
-  int64_t m_end;// half open
+  int64_t m_end;  // half open
 
-  Range() : m_beg(-1), m_end(-1) { }
+  Range() : m_beg(-1), m_end(-1) {}
 
-  explicit
-  Range
-    ( int64_t const begin
-    , int64_t const end
-    )
-    : m_beg(begin)
-    , m_end(end)
-  { }
-
-  Range &
-  operator=
-    ( Range const & other
-    )
+  explicit Range(int64_t const begin, int64_t const end)
+      : m_beg(begin), m_end(end)
   {
-    if (&other != this)
-    {
+  }
+
+  Range& operator=(Range const& other)
+  {
+    if (&other != this) {
       m_beg = other.m_beg;
       m_end = other.m_end;
     }
     return *this;
   }
 
-  bool
-  isValid
-    () const;
+  bool isValid() const;
 
-  int64_t
-  size
-    () const;
+  int64_t size() const;
 
   /** parse a from a closed request range into a half open range
    */
-  bool
-  fromStringClosed
-    ( char const * const rangestr
-    );
+  bool fromStringClosed(char const* const rangestr);
 
   /** parse a from a closed request range into a half open range
    */
-  bool
-  toStringClosed
-    ( char * const rangestr
-    , int * const rangelen
-    ) const;
+  bool toStringClosed(char* const rangestr, int* const rangelen) const;
 
   /** block number of first range block
    */
-  int64_t
-  firstBlockFor
-    ( int64_t const blockbytes
-    ) const;
+  int64_t firstBlockFor(int64_t const blockbytes) const;
 
   /** block intersection
    */
-  Range
-  intersectedWith
-    ( Range const & other
-    ) const;
+  Range intersectedWith(Range const& other) const;
 
   /** is the given block inside held range?
    */
-  bool
-  blockIsInside
-    ( int64_t const blocksize
-    , int64_t const blocknum
-    ) const;
+  bool blockIsInside(int64_t const blocksize,
+                     int64_t const blocknum) const;
 
   /** number of skip bytes for the given block
    */
-  int64_t
-  skipBytesForBlock
-    ( int64_t const blocksize
-    , int64_t const blocknum
-    ) const;
+  int64_t skipBytesForBlock(int64_t const blocksize,
+                            int64_t const blocknum) const;
 
   /** is this coded to indicate last N bytes?
    */
-  bool
-  isEndBytes
-    () const;
+  bool isEndBytes() const;
 
-  bool
-  operator=
-    ( Range const & other
-    ) const
+  bool operator=(Range const& other) const
   {
     return other.m_beg == m_beg && other.m_end == m_end;
   }
 
-  bool
-  operator!=
-    ( Range const & other
-    ) const
+  bool operator!=(Range const& other) const
   {
-    return ! this->operator=(other);
+    return !this->operator=(other);
   }
-
 };

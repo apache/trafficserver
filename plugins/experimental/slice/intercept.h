@@ -20,9 +20,4 @@
 
 #include "ts/ts.h"
 
-int
-intercept_hook
-  ( TSCont contp
-  , TSEvent event
-  , void * edata
-  );
+int intercept_hook(TSCont contp, TSEvent event, void* edata);

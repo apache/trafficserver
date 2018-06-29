@@ -21,67 +21,48 @@
 #include "slice.h"
 
 #include <cassert>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <limits>
 
-
-TSHttpType
-HttpHeader :: type
-  () const
+TSHttpType HttpHeader ::type() const
 {
-  if (isValid())
-  {
+  if (isValid()) {
     return TSHttpHdrTypeGet(m_buffer, m_lochdr);
   }
-  else
-  {
+  else {
     return TS_HTTP_TYPE_UNKNOWN;
   }
 }
 
-TSHttpStatus
-HttpHeader :: status
-  () const
+TSHttpStatus HttpHeader ::status() const
 {
   TSHttpStatus res = TS_HTTP_STATUS_NONE;
-  if (isValid())
-  {
+  if (isValid()) {
     res = TSHttpHdrStatusGet(m_buffer, m_lochdr);
   }
   return res;
 }
 
-bool
-HttpHeader :: setStatus
-  ( TSHttpStatus const newstatus
-  )
+bool HttpHeader ::setStatus(TSHttpStatus const newstatus)
 {
-  if (! isValid())
-  {
+  if (!isValid()) {
     return false;
   }
 
-  return TS_SUCCESS == TSHttpHdrStatusSet
-    (m_buffer, m_lochdr, newstatus);
+  return TS_SUCCESS == TSHttpHdrStatusSet(m_buffer, m_lochdr, newstatus);
 }
 
-bool
-HttpHeader :: setUrl
-  ( TSMBuffer const bufurl
-  , TSMLoc const locurl
-  )
+bool HttpHeader ::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
 {
-  if (! isValid())
-  {
+  if (!isValid()) {
     return false;
   }
 
   TSMLoc locurlout;
   TSReturnCode rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurlout);
-  if (TS_SUCCESS != rcode)
-  {
+  if (TS_SUCCESS != rcode) {
     return false;
   }
 
@@ -89,8 +70,7 @@ HttpHeader :: setUrl
   rcode = TSUrlCopy(m_buffer, locurlout, bufurl, locurl);
 
   // set url active
-  if (TS_SUCCESS == rcode)
-  {
+  if (TS_SUCCESS == rcode) {
     rcode = TSHttpHdrUrlSet(m_buffer, m_lochdr, locurlout);
   }
 
@@ -99,37 +79,26 @@ HttpHeader :: setUrl
   return TS_SUCCESS == rcode;
 }
 
-bool
-HttpHeader :: setReason
-  ( char const * const valstr
-  , int const vallen
-  )
+bool HttpHeader ::setReason(char const* const valstr, int const vallen)
 {
-  if (isValid())
-  {
-    return TS_SUCCESS == TSHttpHdrReasonSet
-      (m_buffer, m_lochdr, valstr, vallen);
+  if (isValid()) {
+    return TS_SUCCESS ==
+           TSHttpHdrReasonSet(m_buffer, m_lochdr, valstr, vallen);
   }
-  else
-  {
+  else {
     return false;
   }
 }
 
-char const *
-HttpHeader :: getCharPtr
-  ( CharPtrGetFunc func
-  , int * const len
-  ) const
+char const* HttpHeader ::getCharPtr(CharPtrGetFunc func,
+                                    int* const len) const
 {
-  char const * res = nullptr;
-  if (isValid())
-  {
+  char const* res = nullptr;
+  if (isValid()) {
     int reslen = 0;
     res = func(m_buffer, m_lochdr, &reslen);
 
-    if (nullptr != len)
-    {
+    if (nullptr != len) {
       *len = reslen;
     }
   }
@@ -137,21 +106,15 @@ HttpHeader :: getCharPtr
   return res;
 }
 
-bool
-HttpHeader :: hasKey
-  ( char const * const key
-  , int const keylen
-  ) const
+bool HttpHeader ::hasKey(char const* const key, int const keylen) const
 {
-  if (! isValid())
-  {
+  if (!isValid()) {
     return false;
   }
 
-  TSMLoc const locfield
-    (TSMimeHdrFieldFind(m_buffer, m_lochdr, key, keylen));
-  if (nullptr != locfield)
-  {
+  TSMLoc const locfield(
+      TSMimeHdrFieldFind(m_buffer, m_lochdr, key, keylen));
+  if (nullptr != locfield) {
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
     return true;
   }
@@ -159,23 +122,17 @@ HttpHeader :: hasKey
   return false;
 }
 
-bool
-HttpHeader :: removeKey
-  ( char const * const keystr
-  , int const keylen
-  )
+bool HttpHeader ::removeKey(char const* const keystr, int const keylen)
 {
-  if (! isValid())
-  {
+  if (!isValid()) {
     return false;
   }
 
   bool status = true;
 
-  TSMLoc const locfield = TSMimeHdrFieldFind
-    (m_buffer, m_lochdr, keystr, keylen);
-  if (nullptr != locfield)
-  {
+  TSMLoc const locfield =
+      TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
+  if (nullptr != locfield) {
     int const rcode = TSMimeHdrFieldRemove(m_buffer, m_lochdr, locfield);
     status = (TS_SUCCESS == rcode);
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
@@ -184,48 +141,38 @@ HttpHeader :: removeKey
   return status;
 }
 
-bool
-HttpHeader :: valueForKey
-  ( char const * const keystr
-  , int const keylen
-  , char * const valstr
-  , int * const vallen
-  , int const index
-  ) const
+bool HttpHeader ::valueForKey(char const* const keystr, int const keylen,
+                              char* const valstr, int* const vallen,
+                              int const index) const
 {
-  if (! isValid())
-  {
+  if (!isValid()) {
     return false;
   }
 
   bool status = false;
 
-  TSMLoc const locfield = TSMimeHdrFieldFind
-      (m_buffer, m_lochdr, keystr, keylen);
+  TSMLoc const locfield =
+      TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
 
-  if (nullptr != locfield)
-  {
+  if (nullptr != locfield) {
     int getlen = 0;
-    char const * const getstr = TSMimeHdrFieldValueStringGet
-        (m_buffer, m_lochdr, locfield, 0, &getlen);
+    char const* const getstr = TSMimeHdrFieldValueStringGet(
+        m_buffer, m_lochdr, locfield, 0, &getlen);
 
     int const valcap = *vallen;
-    if (nullptr != getstr && 0 < getlen && getlen < (valcap - 1))
-    {
-      char * const endp = stpncpy(valstr, getstr, getlen);
-      
+    if (nullptr != getstr && 0 < getlen && getlen < (valcap - 1)) {
+      char* const endp = stpncpy(valstr, getstr, getlen);
+
       *vallen = endp - valstr;
       status = (*vallen < valcap);
 
-      if (status)
-      {
+      if (status) {
         *endp = '\0';
       }
     }
   }
 
-  if (nullptr != locfield)
-  {
+  if (nullptr != locfield) {
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 
@@ -270,7 +217,7 @@ HttpHeader :: valueForKeyLast
       if (nullptr != getstr && 0 < getlen && getlen < (valcap - 1))
       {
         char * const endp = stpncpy(valstr, getstr, getlen);
-      
+
         *vallen = endp - valstr;
         if (*vallen < valcap)
         {
@@ -287,105 +234,84 @@ HttpHeader :: valueForKeyLast
 }
 */
 
-bool
-HttpHeader :: setKeyVal
-  ( char const * const keystr
-  , int const keylen
-  , char const * const valstr
-  , int const vallen
-  , int const index
-  )
+bool HttpHeader ::setKeyVal(char const* const keystr, int const keylen,
+                            char const* const valstr, int const vallen,
+                            int const index)
 {
-  if (! isValid())
-  {
+  if (!isValid()) {
     return false;
   }
 
   bool status(false);
 
-  TSMLoc locfield
-    (TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen));
+  TSMLoc locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen));
 
-  if (nullptr != locfield)
-  {
-    status = TS_SUCCESS == TSMimeHdrFieldValueStringSet
-      (m_buffer, m_lochdr, locfield, index, valstr, vallen);
+  if (nullptr != locfield) {
+    status = TS_SUCCESS == TSMimeHdrFieldValueStringSet(m_buffer, m_lochdr,
+                                                        locfield, index,
+                                                        valstr, vallen);
   }
-  else
-  {
-    int rcode = TSMimeHdrFieldCreateNamed
-      (m_buffer, m_lochdr, keystr, keylen, &locfield);
+  else {
+    int rcode = TSMimeHdrFieldCreateNamed(m_buffer, m_lochdr, keystr,
+                                          keylen, &locfield);
 
-    if (TS_SUCCESS == rcode)
-    {
-      rcode = TSMimeHdrFieldValueStringSet
-        ( m_buffer, m_lochdr, locfield, index, valstr, vallen );
-      if (TS_SUCCESS == rcode)
-      {
+    if (TS_SUCCESS == rcode) {
+      rcode = TSMimeHdrFieldValueStringSet(m_buffer, m_lochdr, locfield,
+                                           index, valstr, vallen);
+      if (TS_SUCCESS == rcode) {
         rcode = TSMimeHdrFieldAppend(m_buffer, m_lochdr, locfield);
         status = (TS_SUCCESS == rcode);
       }
     }
   }
 
-  if (nullptr != locfield)
-  {
+  if (nullptr != locfield) {
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 
   return status;
 }
 
-std::string
-HttpHeader :: toString
-  () const
+std::string HttpHeader ::toString() const
 {
   std::string res;
 
-  if (! isValid())
-  {
+  if (!isValid()) {
     return "<null>";
   }
 
   TSHttpType const htype(type());
 
-  switch (htype)
-  {
-    case TS_HTTP_TYPE_REQUEST:
-    {
+  switch (htype) {
+    case TS_HTTP_TYPE_REQUEST: {
       res.append(method());
 
       TSMLoc locurl = nullptr;
-      TSReturnCode const rcode = TSHttpHdrUrlGet
-        (m_buffer, m_lochdr, &locurl);
-      if (TS_SUCCESS == rcode && nullptr != locurl)
-      {
+      TSReturnCode const rcode =
+          TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
+      if (TS_SUCCESS == rcode && nullptr != locurl) {
         int urllen = 0;
-        char * const urlstr = TSUrlStringGet
-          (m_buffer, locurl, &urllen);
+        char* const urlstr = TSUrlStringGet(m_buffer, locurl, &urllen);
         res.append(" ");
         res.append(urlstr, urllen);
         TSfree(urlstr);
 
         TSHandleMLocRelease(m_buffer, m_lochdr, locurl);
       }
-      else
-      {
+      else {
         res.append(" UnknownURL");
       }
 
       res.append(" HTTP/unparsed");
-    }
-    break;
+    } break;
 
-    case TS_HTTP_TYPE_RESPONSE:
-    {
+    case TS_HTTP_TYPE_RESPONSE: {
       char bufstr[1024];
-/*
-      int const version = TSHttpHdrVersionGet(m_buffer, m_lochdr);
-      snprintf(bufstr, 1023, "%d ", version);
-      res.append(bufstr);
-*/
+      /*
+            int const version = TSHttpHdrVersionGet(m_buffer, m_lochdr);
+            snprintf(bufstr, 1023, "%d ", version);
+            res.append(bufstr);
+      */
       res.append("HTTP/unparsed");
 
       int const status = TSHttpHdrStatusGet(m_buffer, m_lochdr);
@@ -393,36 +319,34 @@ HttpHeader :: toString
       res.append(bufstr);
 
       int reasonlen = 0;
-      char const * const hreason = reason(&reasonlen);
+      char const* const hreason = reason(&reasonlen);
 
       res.append(hreason, reasonlen);
-    }
-    break;
+    } break;
 
     default:
     case TS_HTTP_TYPE_UNKNOWN:
       res.append("UNKNOWN");
-    break;
+      break;
   }
 
   res.append("\r\n");
 
   int const numhdrs = TSMimeHdrFieldsCount(m_buffer, m_lochdr);
 
-  for (int indexhdr = 0 ; indexhdr < numhdrs ; ++indexhdr)
-  {
-    TSMLoc const locfield = TSMimeHdrFieldGet
-      (m_buffer, m_lochdr, indexhdr);
+  for (int indexhdr = 0; indexhdr < numhdrs; ++indexhdr) {
+    TSMLoc const locfield =
+        TSMimeHdrFieldGet(m_buffer, m_lochdr, indexhdr);
 
     int keylen = 0;
-    char const * const keystr = TSMimeHdrFieldNameGet
-      (m_buffer, m_lochdr, locfield, &keylen);
+    char const* const keystr =
+        TSMimeHdrFieldNameGet(m_buffer, m_lochdr, locfield, &keylen);
 
     res.append(keystr, keylen);
     res.append(": ");
     int vallen = 0;
-    char const * const valstr = TSMimeHdrFieldValueStringGet
-      (m_buffer, m_lochdr, locfield, -1, &vallen);
+    char const* const valstr = TSMimeHdrFieldValueStringGet(
+        m_buffer, m_lochdr, locfield, -1, &vallen);
 
     res.append(valstr, vallen);
     res.append("\r\n");
@@ -437,59 +361,45 @@ HttpHeader :: toString
 
 /////// HdrMgr
 
-TSParseResult
-HdrMgr :: populateFrom
-  ( TSHttpParser const http_parser
-  , TSIOBufferReader const reader
-  , HeaderParseFunc const parsefunc
-  )
+TSParseResult HdrMgr ::populateFrom(TSHttpParser const http_parser,
+                                    TSIOBufferReader const reader,
+                                    HeaderParseFunc const parsefunc)
 {
   TSParseResult parse_res = TS_PARSE_CONT;
 
-  if (nullptr == m_buffer)
-  {
+  if (nullptr == m_buffer) {
     m_buffer = TSMBufferCreate();
   }
-  if (nullptr == m_lochdr)
-  {
+  if (nullptr == m_lochdr) {
     m_lochdr = TSHttpHdrCreate(m_buffer);
   }
 
   int64_t read_avail = TSIOBufferReaderAvail(reader);
-  if (0 < read_avail)
-  {
+  if (0 < read_avail) {
     TSIOBufferBlock block = TSIOBufferReaderStart(reader);
     int64_t consumed = 0;
 
     parse_res = TS_PARSE_CONT;
 
-    while (nullptr != block && 0 < read_avail)
-    {
+    while (nullptr != block && 0 < read_avail) {
       int64_t blockbytes = 0;
-      char const * const bstart = TSIOBufferBlockReadStart
-        (block, reader, &blockbytes);
+      char const* const bstart =
+          TSIOBufferBlockReadStart(block, reader, &blockbytes);
 
-      char const * ptr = bstart;
-      char const * endptr = ptr + blockbytes;
+      char const* ptr = bstart;
+      char const* endptr = ptr + blockbytes;
 
-      parse_res = parsefunc
-          ( http_parser
-          , m_buffer
-          , m_lochdr
-          , &ptr
-          , endptr );
+      parse_res = parsefunc(http_parser, m_buffer, m_lochdr, &ptr, endptr);
 
       int64_t const bytes_parsed(ptr - bstart);
 
       consumed += bytes_parsed;
       read_avail -= bytes_parsed;
 
-      if (TS_PARSE_CONT == parse_res)
-      {
+      if (TS_PARSE_CONT == parse_res) {
         block = TSIOBufferBlockNext(block);
       }
-      else
-      {
+      else {
         break;
       }
     }
@@ -507,7 +417,7 @@ HdrMgr :: cloneFrom
   )
 {
   bool status = false;
-  
+
   if (nullptr == m_buffer && nullptr == m_lochdr)
   {
     m_buffer = TSMBufferCreate();
