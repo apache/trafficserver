@@ -32,4 +32,5 @@ development team.
    MemSpan.en
    scalar.en
    buffer-writer.en
+   intrusive-list.en
    MemArena.en

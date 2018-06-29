@@ -111,7 +111,7 @@ void
 IpAllow::PrintMap(IpMap *map)
 {
   std::ostringstream s;
-  s << map->getCount() << " ACL entries.";
+  s << map->count() << " ACL entries.";
   for (auto &spot : *map) {
     char text[INET6_ADDRSTRLEN];
     AclRecord const *ar = static_cast<AclRecord const *>(spot.data());
@@ -178,7 +178,7 @@ IpAllow::BuildTable()
   bool alarmAlready = false;
 
   // Table should be empty
-  ink_assert(_src_map.getCount() == 0 && _dest_map.getCount() == 0);
+  ink_assert(_src_map.count() == 0 && _dest_map.count() == 0);
 
   file_buf = readIntoBuffer(config_file_path, module_name, nullptr);
 
@@ -297,7 +297,7 @@ IpAllow::BuildTable()
     line = tokLine(nullptr, &tok_state);
   }
 
-  if (_src_map.getCount() == 0 && _dest_map.getCount() == 0) { // TODO: check
+  if (_src_map.count() == 0 && _dest_map.count() == 0) { // TODO: check
     Warning("%s No entries in %s. All IP Addresses will be blocked", module_name, config_file_path);
   } else {
     // convert the coloring from indices to pointers.

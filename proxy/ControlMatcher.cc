@@ -667,7 +667,7 @@ template <class Data, class MatchResult>
 void
 IpMatcher<Data, MatchResult>::Print()
 {
-  printf("\tIp Matcher with %d elements, %zu ranges.\n", num_el, ip_map.getCount());
+  printf("\tIp Matcher with %d elements, %zu ranges.\n", num_el, ip_map.count());
   for (IpMap::iterator spot(ip_map.begin()), limit(ip_map.end()); spot != limit; ++spot) {
     char b1[INET6_ADDRSTRLEN], b2[INET6_ADDRSTRLEN];
     printf("\tRange %s - %s ", ats_ip_ntop(spot->min(), b1, sizeof b1), ats_ip_ntop(spot->max(), b2, sizeof b2));
