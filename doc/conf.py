@@ -167,7 +167,8 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 nitpicky = True
-nitpick_ignore = [
+nitpick_ignore = [ ('cpp:typeOrConcept', 'T')
+                 , ('cpp:typeOrConcept', 'Args')
                  ]
 
 # Autolink issue references.

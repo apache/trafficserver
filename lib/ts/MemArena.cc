@@ -39,9 +39,18 @@ MemArena::Block::operator delete(void *ptr)
 MemArena::BlockPtr
 MemArena::make_block(size_t n)
 {
+  // If there's no reservation hint, use the extent. This is transient because the hint is cleared.
+  if (_reserve_hint == 0) {
+    if (_active_reserved) {
+      _reserve_hint = _active_reserved;
+    } else if (_prev_allocated) {
+      _reserve_hint = _prev_allocated;
+    }
+  }
+
   // If post-freeze or reserved, allocate at least that much.
-  n               = std::max<size_t>(n, next_block_size);
-  next_block_size = 0; // did this, clear for next time.
+  n             = std::max<size_t>(n, _reserve_hint);
+  _reserve_hint = 0; // did this, clear for next time.
   // Add in overhead and round up to paragraph units.
   n = Paragraph{round_up(n + ALLOC_HEADER_SIZE + sizeof(Block))};
   // If a page or more, round up to page unit size and clip back to account for alloc header.
@@ -51,50 +60,43 @@ MemArena::make_block(size_t n)
 
   // Allocate space for the Block instance and the request memory and construct a Block at the front.
   // In theory this could use ::operator new(n) but this causes a size mismatch during ::operator delete.
-  // Easier to use malloc and not carry a memory block size value around.
-  return BlockPtr(new (::malloc(n)) Block(n - sizeof(Block)));
-}
-
-MemArena::MemArena(size_t n)
-{
-  next_block_size = 0; // Don't use default size.
-  current         = this->make_block(n);
+  // Easier to use malloc and override @c delete.
+  auto free_space = n - sizeof(Block);
+  _active_reserved += free_space;
+  return BlockPtr(new (::malloc(n)) Block(free_space));
 }
 
 MemSpan
 MemArena::alloc(size_t n)
 {
   MemSpan zret;
-  current_alloc += n;
+  _active_allocated += n;
 
-  if (!current) {
-    current = this->make_block(n);
-    zret    = current->alloc(n);
-  } else if (n > current->remaining()) { // too big, need another block
-    if (next_block_size < n) {
-      next_block_size = 2 * current->size;
-    }
+  if (!_active) {
+    _active = this->make_block(n);
+    zret    = _active->alloc(n);
+  } else if (n > _active->remaining()) { // too big, need another block
     BlockPtr block = this->make_block(n);
     // For the new @a current, pick the block which will have the most free space after taking
     // the request space out of the new block.
     zret = block->alloc(n);
-    if (block->remaining() > current->remaining()) {
-      block->next = current;
-      current     = block;
+    if (block->remaining() > _active->remaining()) {
+      block->next = _active;
+      _active     = block;
 #if defined(__clang_analyzer__)
       // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
       ink_assert(current.use_count() > 1);
 #endif
     } else {
-      block->next   = current->next;
-      current->next = block;
+      block->next   = _active->next;
+      _active->next = block;
 #if defined(__clang_analyzer__)
       // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
       ink_assert(block.use_count() > 1);
 #endif
     }
   } else {
-    zret = current->alloc(n);
+    zret = _active->alloc(n);
   }
   return zret;
 }
@@ -102,11 +104,15 @@ MemArena::alloc(size_t n)
 MemArena &
 MemArena::freeze(size_t n)
 {
-  prev       = current;
-  prev_alloc = current_alloc;
-  current.reset();
-  next_block_size = n ? n : current_alloc;
-  current_alloc   = 0;
+  _prev = _active;
+  _active.reset(); // it's in _prev now, start fresh.
+  // Update the meta data.
+  _prev_allocated   = _active_allocated;
+  _active_allocated = 0;
+  _prev_reserved    = _active_reserved;
+  _active_reserved  = 0;
+
+  _reserve_hint = n;
 
   return *this;
 }
@@ -114,20 +120,20 @@ MemArena::freeze(size_t n)
 MemArena &
 MemArena::thaw()
 {
-  prev_alloc = 0;
-  prev.reset();
+  _prev.reset();
+  _prev_reserved = _prev_allocated = 0;
   return *this;
 }
 
 bool
 MemArena::contains(const void *ptr) const
 {
-  for (Block *b = current.get(); b; b = b->next.get()) {
+  for (Block *b = _active.get(); b; b = b->next.get()) {
     if (b->contains(ptr)) {
       return true;
     }
   }
-  for (Block *b = prev.get(); b; b = b->next.get()) {
+  for (Block *b = _prev.get(); b; b = b->next.get()) {
     if (b->contains(ptr)) {
       return true;
     }
@@ -137,26 +143,13 @@ MemArena::contains(const void *ptr) const
 }
 
 MemArena &
-MemArena::clear()
+MemArena::clear(size_t n)
 {
-  prev.reset();
-  prev_alloc = 0;
-  current.reset();
-  current_alloc = 0;
+  _reserve_hint = n ? n : _prev_allocated + _active_allocated;
+  _prev.reset();
+  _prev_reserved = _prev_allocated = 0;
+  _active.reset();
+  _active_reserved = _active_allocated = 0;
 
   return *this;
 }
-
-size_t
-MemArena::extent() const
-{
-  size_t zret{0};
-  Block *b;
-  for (b = current.get(); b; b = b->next.get()) {
-    zret += b->size;
-  }
-  for (b = prev.get(); b; b = b->next.get()) {
-    zret += b->size;
-  }
-  return zret;
-};
