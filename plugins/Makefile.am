@@ -81,6 +81,7 @@ include experimental/stream_editor/Makefile.inc
 include experimental/system_stats/Makefile.inc
 include experimental/tls_bridge/Makefile.inc
 include experimental/url_sig/Makefile.inc
+include experimental/prefetch/Makefile.inc
 
 if BUILD_URI_SIGNING_PLUGIN
 include experimental/uri_signing/Makefile.inc
