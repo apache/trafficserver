@@ -159,6 +159,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Stale While Revalidate <stale_while_revalidate.en>
    System Statistics <system_stats.en>
    WebP Transform <webp_transform.en>
+   Prefetch <prefetch.en>
 
 :doc:`Balancer <balancer.en>`
    Balances requests across multiple origin servers.
