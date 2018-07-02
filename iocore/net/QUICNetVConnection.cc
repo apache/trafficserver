@@ -992,13 +992,7 @@ QUICNetVConnection::_state_common_receive_packet()
           Connection con;
           con.setRemote(&p->from().sa);
           this->con.move(con);
-          if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-            char old_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-            char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-            this->_quic_connection_id.hex(old_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-            p->destination_cid().hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-            QUICConDebug("Connection migrated from %s to %s", old_cid_str, new_cid_str);
-          }
+          QUICConDebug("Connection migrated");
           this->_validate_new_path();
         } else {
           QUICConDebug("Connection migration failed");
