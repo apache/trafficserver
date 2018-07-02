@@ -101,7 +101,7 @@ http_has_proxy_v1(IOBufferReader *reader, NetVConnection *netvc)
 bool
 proxy_protov1_parse(NetVConnection *netvc, ts::TextView hdr)
 {
-  static const ts::string_view PREFACE{PROXY_V1_CONNECTION_PREFACE, PROXY_V1_CONNECTION_PREFACE_LEN};
+  static const std::string_view PREFACE{PROXY_V1_CONNECTION_PREFACE, PROXY_V1_CONNECTION_PREFACE_LEN};
   ts::TextView token;
   in_port_t port;
 

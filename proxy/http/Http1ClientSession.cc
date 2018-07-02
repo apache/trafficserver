@@ -78,7 +78,7 @@ Http1ClientSession::Http1ClientSession()
     released_transactions(0),
     f_outbound_transparent(false),
     f_transparent_passthrough(false),
-	f_proxy_protocol(false)
+	  http1clientsession_f_proxy_protocol(false)
 {
 }
 

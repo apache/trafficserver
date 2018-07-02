@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "ts/IpMap.h"
 #include "I_EventSystem.h"
 #include "I_Socks.h"
 struct socks_conf_struct;
@@ -97,7 +98,10 @@ public:
     bool f_inbound_transparent;
 
     /// Proxy Protocol enabled
-    bool f_proxy_protocol;
+    bool netprocessor_acceptoptions_f_proxy_protocol;
+    /// Whitelist of trusted IPs to access PROXY Protocol headers from
+    IpMap np_proxy_protocol_ipmap;  // TODO SF: Do I need this here?
+    IpAddr np_proxy_protocol_ip;    // TODO SF: Do I need this here?
 
     /// Default constructor.
     /// Instance is constructed with default values.

@@ -53,6 +53,8 @@ public:
   ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &) = delete;            // disabled
   ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &) = delete; // disabled
 
+  IpMap *protocolprobesessionaccept_proxy_protocol_ipmap_ref = nullptr;
+
 private:
   int mainEvent(int event, void *netvc) override;
 

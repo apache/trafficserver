@@ -925,6 +925,7 @@ HttpConfig::startup()
 
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", c.inbound_ip4, c.inbound_ip6);
   RecHttpLoadIp("proxy.local.outgoing_ip_to_bind", c.outbound_ip4, c.outbound_ip6);
+  RecHttpLoadIpMap("proxy.config.http.proxy_protocol_to_forwarded", c.config_proxy_protocol_ipmap);
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
@@ -1195,6 +1196,9 @@ HttpConfig::reconfigure()
 
   params->outbound_ip4 = m_master.outbound_ip4;
   params->outbound_ip6 = m_master.outbound_ip6;
+
+  params->proxy_protocol_ip4 = m_master.proxy_protocol_ip4;
+  params->proxy_protocol_ip6 = m_master.proxy_protocol_ip6;
 
   params->proxy_hostname                           = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len                       = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;

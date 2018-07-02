@@ -31,6 +31,7 @@
 #include "I_Net.h"
 #include <records/I_RecHttp.h>
 
+
 namespace detail
 {
 /** Options for @c HttpSessionAccept.
@@ -94,11 +95,13 @@ public:
   /// Set the session protocol preference.
   self &setSessionProtocolPreference(SessionProtocolSet const &);
   /// Proxy Protocol.
-  bool f_proxy_protocol;
+//  bool httpsessionaccept_f_proxy_protocol;
+//  IpMap httpsessionaccept_proxy_protocol_ipmap;
 };
 
 inline HttpSessionAcceptOptions::HttpSessionAcceptOptions()
-  : transport_type(0), outbound_port(0), f_outbound_transparent(false), f_transparent_passthrough(false), backdoor(false), f_proxy_protocol(false)
+  : transport_type(0), outbound_port(0), f_outbound_transparent(false), f_transparent_passthrough(false), backdoor(false)
+//  , httpsessionaccept_f_proxy_protocol(false)
 {
   memcpy(host_res_preference, host_res_default_preference_order, sizeof(host_res_preference));
 }

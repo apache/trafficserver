@@ -1600,9 +1600,13 @@ Proxy User Variables
    is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
    incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
 
-.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_to_forwarded INT 0
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_to_forwarded STRING ```<ip list>```
    :reloadable:
    :overridable:
+
+   This is no longer a binary enable flag.  It is now a list of IPs via IpMap
+   so it can handle CIDR notatation as well....  Fix this up before you ship
+   it!
 
    Enables and disables transforming an incoming Proxy Protocol header to Forwarded: header
 

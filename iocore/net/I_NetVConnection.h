@@ -34,6 +34,7 @@
 #include <ts/apidefs.h>
 #include <string_view>
 #include "ts/TextView.h"
+#include "ts/IpMap.h"
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0
@@ -119,7 +120,7 @@ struct NetVCOptions {
   };
 
   /** Local address for the connection.
-
+   
       For outbound connections this must have the same family as the
       remote address (which is not stored in this structure). For
       inbound connections the family of this value overrides @a
@@ -130,10 +131,17 @@ struct NetVCOptions {
       @see ip_family
   */
   IpAddr local_ip;
+
   /** Local port for connection.
       Set to 0 for "don't care" (default).
-   */
+  */
   uint16_t local_port;
+
+  /** Whitelist of trusted IPs to access PROXY Protocol headers from
+  */
+  //IpAddr proxy_protocol_ip;    // TODO: Do I need this here?
+  IpMap *netvc_options_proxy_protocol_ipmap; 
+
   /// How to bind the local address.
   /// @note Default is @c ANY_ADDR.
   addr_bind_style addr_binding;

@@ -241,7 +241,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
   }
 
-  if (opt.f_proxy_protocol) {
+  if (opt.netprocessor_acceptoptions_f_proxy_protocol) {
     Debug("proxyprotocol", "Proxy Protocol enabled.");
   }
 
