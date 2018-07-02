@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_COMMON_H
-#define _TS_LUA_COMMON_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -175,5 +174,3 @@ typedef struct {
       ih->buffer = NULL;                \
     }                                   \
   } while (0)
-
-#endif

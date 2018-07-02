@@ -31,8 +31,7 @@
  *
  */
 
-#ifndef _LOCAL_MANAGER_H
-#define _LOCAL_MANAGER_H
+#pragma once
 
 #include "Alarms.h"
 #include "BaseManager.h"
@@ -144,5 +143,3 @@ private:
 }; /* End class LocalManager */
 
 extern LocalManager *lmgmt;
-
-#endif /* _LOCAL_MANAGER_H */

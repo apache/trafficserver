@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _MP4_META_H
-#define _MP4_META_H
+#pragma once
 
 #include <cstring>
 #include <cstdlib>
@@ -530,5 +529,3 @@ public:
   u_char mdat_atom_header[16];
   bool meta_complete;
 };
-
-#endif

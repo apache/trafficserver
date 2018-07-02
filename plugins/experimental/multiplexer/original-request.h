@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef ORIGINAL_REQUEST_H
-#define ORIGINAL_REQUEST_H
+
+#pragma once
 
 #include <cassert>
 #include <string>
@@ -59,5 +59,3 @@ public:
   void hostHeader(const std::string &);
   bool xMultiplexerHeader(const std::string &);
 };
-
-#endif // ORIGINAL_REQUEST_H

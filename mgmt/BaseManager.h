@@ -31,8 +31,7 @@
  *
  */
 
-#ifndef _BASE_MANAGER_H
-#define _BASE_MANAGER_H
+#pragma once
 
 #include "ts/ink_thread.h"
 #include "ts/ink_mutex.h"
@@ -132,5 +131,3 @@ protected:
 
 private:
 }; /* End class BaseManager */
-
-#endif /* _BASE_MANAGER_H */

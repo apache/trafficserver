@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_GZIP_H
-#define _ESI_GZIP_H
+#pragma once
 
 #include "ComponentBase.h"
 #include <zlib.h>
@@ -52,5 +51,3 @@ private:
   z_stream _zstrm;
   uLong _crc;
 };
-
-#endif // _ESI_GZIP_H

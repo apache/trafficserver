@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _FETCHER_DOC_NODE_H
-#define _FETCHER_DOC_NODE_H
+#pragma once
 
 #include <cstdint>
 #include <list>
@@ -110,5 +109,3 @@ private:
   static const char DOCNODE_VERSION = 1;
 };
 }; // namespace EsiLib
-
-#endif // _FETCHER_DOC_NODE_H

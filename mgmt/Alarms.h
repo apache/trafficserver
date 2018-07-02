@@ -32,8 +32,7 @@
  *
  */
 
-#ifndef _ALARMS_H
-#define _ALARMS_H
+#pragma once
 
 #include <cstdlib>
 #include <cstdio>
@@ -137,5 +136,3 @@ private:
   int alarmOEMcount;
 
 }; /* End class Alarms */
-
-#endif /* _ALARMS_H */

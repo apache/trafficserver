@@ -21,12 +21,13 @@
   limitations under the License.
  */
 
-#ifndef FAILURE_INFO_H
-#define FAILURE_INFO_H
+#pragma once
+
 #include <ctime>
 #include <vector>
 #include <map>
 #include <sys/time.h>
+
 #if defined(solaris) && !defined(timersub)
 #define timersub(a, b, result)                       \
   do {                                               \
@@ -38,9 +39,12 @@
     }                                                \
   } while (0)
 #endif
+
 #include <string>
 #include <pthread.h>
+
 #include "ComponentBase.h"
+
 using namespace std;
 
 typedef std::vector<std::pair<double, double>> FailureToSuccess;
@@ -106,5 +110,3 @@ public:
   /*Was a reqeust made*/
   bool _requestMade;
 };
-
-#endif

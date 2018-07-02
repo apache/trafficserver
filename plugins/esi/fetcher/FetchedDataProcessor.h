@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _FETCHED_DATA_PROCESSOR_H
-
-#define _FETCHED_DATA_PROCESSOR_H
+#pragma once
 
 class FetchedDataProcessor
 {
@@ -34,5 +32,3 @@ public:
 
   virtual ~FetchedDataProcessor(){};
 };
-
-#endif

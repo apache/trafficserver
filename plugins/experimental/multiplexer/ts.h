@@ -20,8 +20,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef TS_H
-#define TS_H
+
+#pragma once
+
 #include <cassert>
 #include <cstring>
 #include <limits>
@@ -64,4 +65,3 @@ namespace io
 
 } // namespace io
 } // namespace ats
-#endif // TS_H
