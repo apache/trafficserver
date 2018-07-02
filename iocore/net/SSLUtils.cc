@@ -1862,14 +1862,14 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl", "ssl ocsp stapling is enabled");
+    Debug("ssl", "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
   } else {
-    Debug("ssl", "ssl ocsp stapling is disabled");
+    Debug("ssl", "SSL OCSP Stapling is disabled");
   }
 #else
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("fail to enable ssl ocsp stapling, this openssl version does not support it");
+    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
   }
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
@@ -1968,19 +1968,19 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl", "ssl ocsp stapling is enabled");
+    Debug("ssl", "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
     for (auto cert : cert_list) {
       if (!ssl_stapling_init_cert(ctx, cert, certname)) {
-        Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+        Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
       }
     }
   } else {
-    Debug("ssl", "ssl ocsp stapling is disabled");
+    Debug("ssl", "SSL OCSP Stapling is disabled");
   }
 #else
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("fail to enable ssl ocsp stapling, this openssl version does not support it");
+    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
   }
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 

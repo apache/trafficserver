@@ -185,13 +185,13 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
     cinf->uri = sk_OPENSSL_STRING_pop(aia);
   }
   if (!cinf->uri) {
-    Note("no responder URI for %s", certname);
+    Note("no OCSP responder URI for %s", certname);
   }
   if (aia) {
     X509_email_free(aia);
   }
 
-  Note("successfully initialized certinfo for %s into SSL_CTX: %p", certname, ctx);
+  Note("successfully initialized stapling for %s into SSL_CTX: %p", certname, ctx);
   return true;
 }
 
