@@ -163,6 +163,7 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
     net.f_inbound_transparent = port->m_inbound_transparent_p;
     net.ip_family             = port->m_family;
     net.local_port            = port->m_port;
+    net.f_proxy_protocol      = port->m_proxy_protocol;
 
     if (port->m_inbound_ip.isValid()) {
       net.local_ip = port->m_inbound_ip;
@@ -199,6 +200,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   net_opt = make_net_accept_options(&port, nthreads);
 
   accept_opt.f_outbound_transparent = port.m_outbound_transparent_p;
+  accept_opt.f_proxy_protocol       = port.m_proxy_protocol;
   accept_opt.transport_type         = port.m_type;
   accept_opt.setHostResPreference(port.m_host_res_preference);
   accept_opt.setTransparentPassthrough(port.m_transparent_passthrough);
