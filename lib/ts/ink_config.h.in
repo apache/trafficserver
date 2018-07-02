@@ -79,6 +79,7 @@
 #define TS_USE_LINUX_NATIVE_AIO @use_linux_native_aio@
 #define TS_USE_REMOTE_UNWINDING @use_remote_unwinding@
 #define TS_USE_SSLV3_CLIENT @use_sslv3_client@
+#define TS_USE_TLS_OCSP @use_tls_ocsp@
 
 #define TS_HAS_SO_PEERCRED @has_so_peercred@
 

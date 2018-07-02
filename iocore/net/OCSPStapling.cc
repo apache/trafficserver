@@ -20,7 +20,7 @@
  */
 
 #include "P_OCSPStapling.h"
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
+#ifdef TS_USE_TLS_OCSP
 
 #include <openssl/ssl.h>
 #include <openssl/ocsp.h>
@@ -474,4 +474,4 @@ ssl_callback_ocsp_stapling(SSL *ssl)
   }
 }
 
-#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+#endif /* TS_USE_TLS_OCSP */

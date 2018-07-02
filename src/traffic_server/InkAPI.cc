@@ -9195,7 +9195,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname)
   SSLConfigParams *config = SSLConfig::acquire();
   if (config != nullptr) {
     ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
+#ifdef TS_USE_TLS_OCSP
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
         if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname)) {
