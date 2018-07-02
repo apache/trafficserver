@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _STUB_INCLUDE_HANDLER_H
-
-#define _STUB_INCLUDE_HANDLER_H
+#pragma once
 
 #include <list>
 #include "SpecialIncludeHandler.h"
@@ -58,5 +56,3 @@ private:
   int n_includes;
   std::list<char *> heap_strings;
 };
-
-#endif

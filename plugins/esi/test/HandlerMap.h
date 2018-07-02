@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _HANDLER_MAP_H
-
-#define _HANDLER_MAP_H
+#pragma once
 
 #include <string>
 #include <map>
@@ -33,5 +31,3 @@
 typedef std::map<std::string, StubIncludeHandler *> HandlerMap;
 
 extern HandlerMap gHandlerMap;
-
-#endif

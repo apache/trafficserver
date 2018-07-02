@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_STRING_H
-#define _TS_LUA_STRING_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,5 +24,3 @@
 #include <inttypes.h>
 
 u_char *ts_lua_hex_dump(u_char *dst, u_char *src, size_t len);
-
-#endif

@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef GIF_H
-#define GIF_H
+
+#pragma once
 
 #include <algorithm>
 
@@ -46,5 +46,3 @@ namespace inliner
   };
 } // namespace inliner
 } // namespace ats
-
-#endif // GIF_H

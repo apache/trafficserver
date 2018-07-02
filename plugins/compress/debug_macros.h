@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _DBG_MACROS_H
-#define _DBG_MACROS_H
+#pragma once
 
 #include <ts/ts.h>
 
@@ -55,5 +54,3 @@
     TSDebug(TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
     exit(-1);                                                                           \
   } while (0)
-
-#endif //_DBG_MACROS_H

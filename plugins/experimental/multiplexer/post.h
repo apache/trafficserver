@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef POST_H
-#define POST_H
+
+#pragma once
 
 #include <ts/ts.h>
 
@@ -39,5 +39,3 @@ struct PostState {
 };
 
 int handlePost(TSCont, TSEvent, void *);
-
-#endif // POST_H

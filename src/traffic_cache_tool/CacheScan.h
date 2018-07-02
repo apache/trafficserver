@@ -27,8 +27,8 @@
  * Created on April 4, 2018, 10:06 AM
  */
 
-#ifndef CACHESCAN_H
-#define CACHESCAN_H
+#pragma once
+
 #include <thread>
 #include <unordered_map>
 #include "CacheDefs.h"
@@ -61,5 +61,3 @@ public:
   bool check_url(ts::MemSpan &mem, URLImpl *url);
 };
 } // namespace ct
-
-#endif /* CACHESCAN_H */

@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef DISPATCH_H
-#define DISPATCH_H
+
+#pragma once
 
 #include <cassert>
 #include <memory>
@@ -70,5 +70,3 @@ extern size_t timeout;
 void generateRequests(const Origins &, const TSMBuffer, const TSMLoc, Requests &);
 void addBody(Requests &, const TSIOBufferReader);
 void dispatch(Requests &, const int timeout = 0);
-
-#endif // DISPATCH_H
