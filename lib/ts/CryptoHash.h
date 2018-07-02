@@ -23,7 +23,7 @@
 #pragma once
 
 #include <ts/BufferWriter.h>
-#include <ts/string_view.h>
+#include <string_view>
 
 /// Apache Traffic Server commons.
 
@@ -52,7 +52,9 @@ union CryptoHash {
   CryptoHash &
   operator=(CryptoHash const &that)
   {
-    memcpy(this, &that, sizeof(*this));
+    if (this != &that) {
+      memcpy(this, &that, sizeof(*this));
+    }
     return *this;
   }
 
@@ -188,7 +190,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, ats::CryptoHash const &hash)
   BWFSpec local_spec{spec};
   if ('X' != local_spec._type)
     local_spec._type = 'x';
-  return bwformat(w, local_spec, ts::string_view(reinterpret_cast<const char *>(hash.u8), CRYPTO_HASH_SIZE));
+  return bwformat(w, local_spec, std::string_view(reinterpret_cast<const char *>(hash.u8), CRYPTO_HASH_SIZE));
 }
 } // namespace ts
 

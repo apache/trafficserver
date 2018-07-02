@@ -31,7 +31,7 @@
 #include "MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "FileManager.h"
-#include <ts/string_view.h>
+#include <string_view>
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -122,16 +122,16 @@ LocalManager::rollLogFiles()
 }
 
 void
-LocalManager::hostStatusSetDown(const char *name)
+LocalManager::hostStatusSetDown(const char *marshalled_req, int len)
 {
-  signalEvent(MGMT_EVENT_HOST_STATUS_DOWN, name);
+  signalEvent(MGMT_EVENT_HOST_STATUS_DOWN, marshalled_req, len);
   return;
 }
 
 void
-LocalManager::hostStatusSetUp(const char *name)
+LocalManager::hostStatusSetUp(const char *marshalled_req)
 {
-  signalEvent(MGMT_EVENT_HOST_STATUS_UP, name);
+  signalEvent(MGMT_EVENT_HOST_STATUS_UP, marshalled_req);
   return;
 }
 
@@ -974,7 +974,7 @@ LocalManager::listenForProxy()
 
     // read backlong configuration value and overwrite the default value if found
     bool found;
-    ts::string_view fam{ats_ip_family_name(p.m_family)};
+    std::string_view fam{ats_ip_family_name(p.m_family)};
     RecInt backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
     backlog        = (found && backlog >= 0) ? backlog : ats_tcp_somaxconn();
 

@@ -61,14 +61,13 @@ URL data structure (see :doc:`URLs <urls.en>`). The actual data is stored in a
 marshal buffer; the MIME header functions operate on a marshal buffer
 and a location (``TSMLoc``) within the buffer.
 
-After a call to ``TSMimeHdrFieldDestroy``, ``TSMimeHdrFieldRemove``, or
-``TSUrlDestroy`` is made, you must deallocate the ``TSMLoc`` handle with
-a call to ``TSHandleMLocRelease``. You do not need to deallocate a
-``NULL`` handles. For example: if you call
-``TSMimeHdrFieldValueStringGet`` to get the value of the content type
-field and the field does not exist, then it returns ``TS_NULL_MLOC``. In
-such a case, you wouldn't need to deallocate the handle with a call to
-``TSHandleMLocRelease``.
+After a call to ``TSMimeHdrFieldDestroy`` or ``TSMimeHdrFieldRemove`` is
+made, you must deallocate the ``TSMLoc`` handle with a call to
+``TSHandleMLocRelease``. You do not need to deallocate a ``NULL`` handles.
+For example: if you call ``TSMimeHdrFieldValueStringGet`` to get the value of
+the content type field and the field does not exist, then it returns
+``TS_NULL_MLOC``. In such a case, you wouldn't need to deallocate the handle
+with a call to ``TSHandleMLocRelease``.
 
 The location (``TSMLoc``) in the :ref:`MIME header
 functions <MimeHeaderFxns>` can be either an HTTP header location or

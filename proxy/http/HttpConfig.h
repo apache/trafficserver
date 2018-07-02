@@ -43,8 +43,9 @@
 
 #include "ts/ink_platform.h"
 #include "ts/ink_inet.h"
+#include "ts/IpMap.h"
 #include "ts/Regex.h"
-#include "ts/string_view.h"
+#include "string_view"
 #include "ts/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
@@ -387,7 +388,7 @@ using OptionBitSet = std::bitset<NUM_OPTIONS>;
 // Converts string specifier for Forwarded options to bitset of options, and return the result.  If there are errors, an error
 // message will be inserted into 'error'.
 //
-OptionBitSet optStrToBitset(ts::string_view optConfigStr, ts::FixedBufferWriter &error);
+OptionBitSet optStrToBitset(std::string_view optConfigStr, ts::FixedBufferWriter &error);
 
 } // namespace HttpForwarded
 
@@ -450,6 +451,7 @@ struct OverridableHttpConfigParams {
       cache_open_write_fail_action(0),
       post_check_content_length_enabled(1),
       request_buffer_enabled(0),
+      allow_half_open(1),
       ssl_client_verify_server(0),
       redirect_use_orig_cache_key(0),
       number_of_redirections(0),
@@ -629,6 +631,11 @@ struct OverridableHttpConfigParams {
   ////////////////////////////////////////////////
   MgmtByte request_buffer_enabled;
 
+  /////////////////////////////////////////////////
+  // Keep connection open after client sends FIN //
+  /////////////////////////////////////////////////
+  MgmtByte allow_half_open;
+
   /////////////////////////////
   // server verification mode//
   /////////////////////////////
@@ -784,6 +791,8 @@ public:
 public:
   IpAddr inbound_ip4, inbound_ip6;
   IpAddr outbound_ip4, outbound_ip6;
+  IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
+  IpMap config_proxy_protocol_ipmap;
 
   MgmtInt server_max_connections            = 0;
   MgmtInt origin_min_keep_alive_connections = 0; // TODO: This one really ought to be overridable, but difficult right now.
@@ -815,11 +824,6 @@ public:
   MgmtInt post_copy_size = 2048;
   MgmtInt max_post_size  = 0;
 
-  ////////////////////
-  // Local Manager  //
-  ////////////////////
-  MgmtInt synthetic_port = 0;
-
   ///////////////////////////////////////////////////////////////////
   // Put all MgmtByte members down here, avoids additional padding //
   ///////////////////////////////////////////////////////////////////
@@ -843,8 +847,6 @@ public:
 
   MgmtByte reverse_proxy_enabled = 0;
   MgmtByte url_remap_required    = 1;
-
-  MgmtByte record_cop_page = 0;
 
   MgmtByte errors_log_error_pages = 1;
   MgmtByte enable_http_info       = 0;

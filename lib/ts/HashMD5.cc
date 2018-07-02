@@ -19,8 +19,9 @@
   limitations under the License.
  */
 
-#include "ts/HashMD5.h"
 #include "ts/ink_assert.h"
+#include "ts/ink_config.h"
+#include "ts/HashMD5.h"
 
 ATSHashMD5::ATSHashMD5() : md_len(0), finalized(false)
 {
@@ -67,7 +68,13 @@ ATSHashMD5::size() const
 void
 ATSHashMD5::clear()
 {
+#ifndef OPENSSL_IS_BORINGSSL
   int ret = EVP_MD_CTX_reset(ctx);
+#else
+  // OpenSSL's EVP_MD_CTX_reset always returns 1
+  int ret = 1;
+  EVP_MD_CTX_reset(ctx);
+#endif
   ink_assert(ret == 1);
   ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);

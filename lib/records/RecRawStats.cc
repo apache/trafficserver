@@ -23,7 +23,7 @@
 
 #include "P_RecCore.h"
 #include "P_RecProcess.h"
-#include <ts/string_view.h>
+#include <string_view>
 
 //-------------------------------------------------------------------------
 // raw_stat_get_total

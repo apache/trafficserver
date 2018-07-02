@@ -1603,7 +1603,6 @@ HttpSM::handle_api_return()
     // state_read_server_reponse_header and never get into this logic again.
     if (enable_redirection && !t_state.redirect_info.redirect_in_process && is_redirect_required() &&
         (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
-      ++redirection_tries;
       do_redirect();
     } else if (redirection_tries > t_state.txn_conf->number_of_redirections) {
       t_state.squid_codes.subcode = SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED;
@@ -1759,19 +1758,20 @@ HttpSM::state_http_server_open(int event, void *data)
     }
     break;
   case VC_EVENT_ERROR:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
     t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
 
-    /* If we get this error, then we simply can't bind to the 4-tuple to make the connection.  There's no hope of
-       retries succeeding in the near future. The best option is to just shut down the connection without further
-       comment. The only known cause for this is outbound transparency combined with use client target address / source
-       port, as noted in TS-1424. If the keep alives desync the current connection can be attempting to rebind the 4
-       tuple simultaneously with the shut down of an existing connection. Dropping the client side will cause it to pick
-       a new source port and recover from this issue.
+    /* If we get this error in transparent mode, then we simply can't bind to the 4-tuple to make the connection.  There's no hope
+       of retries succeeding in the near future. The best option is to just shut down the connection without further comment. The
+       only known cause for this is outbound transparency combined with use client target address / source port, as noted in
+       TS-1424. If the keep alives desync the current connection can be attempting to rebind the 4 tuple simultaneously with the
+       shut down of an existing connection. Dropping the client side will cause it to pick a new source port and recover from this
+       issue.
     */
-    if (EADDRNOTAVAIL == t_state.current.server->connect_result) {
+    if (EADDRNOTAVAIL == t_state.current.server->connect_result && t_state.client_info.is_transparent) {
       if (is_debug_tag_set("http_tproxy")) {
         ip_port_text_buffer ip_c, ip_s;
         Debug("http_tproxy", "Force close of client connect (%s->%s) due to EADDRNOTAVAIL [%" PRId64 "]",
@@ -1937,9 +1937,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
-    if (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
-      ++redirection_tries;
-    } else {
+    if (!(enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections))) {
       this->disable_redirect();
     }
 
@@ -3200,7 +3198,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     c->write_success          = true;
     t_state.client_info.abort = HttpTransact::DIDNOT_ABORT;
     if (t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
-      if (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_txn->get_server_session()) {
+      if (ua_txn->allow_half_open() &&
+          (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_txn->get_server_session())) {
         // successful keep-alive
         close_connection = false;
       }
@@ -3261,8 +3260,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
         is_eligible_post_request &= !vc->get_is_internal_request();
       }
     }
-    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
-        event == VC_EVENT_WRITE_COMPLETE) {
+    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && ua_txn->allow_half_open() &&
+        c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       ua_txn->set_half_close_flag(true);
     }
 
@@ -3950,10 +3949,7 @@ HttpSM::do_remap_request(bool run_inline)
 {
   SMDebug("http_seq", "[HttpSM::do_remap_request] Remapping request");
   SMDebug("url_rewrite", "Starting a possible remapping for request [%" PRId64 "]", sm_id);
-  bool ret = false;
-  if (t_state.cop_test_page == false) {
-    ret = remapProcessor.setup_for_remap(&t_state, m_remap);
-  }
+  bool ret = remapProcessor.setup_for_remap(&t_state, m_remap);
 
   // Preserve effective url before remap
   t_state.unmapped_url.create(t_state.hdr_info.client_request.url_get()->m_heap);
@@ -4639,7 +4635,7 @@ void
 HttpSM::send_origin_throttled_response()
 {
   t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries;
-  // t_state.current.state = HttpTransact::CONNECTION_ERROR;
+  t_state.current.state    = HttpTransact::CONNECTION_ERROR;
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
@@ -5150,8 +5146,10 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
   if (info->app.http_data.last_failure == 0) {
     char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
     Log::error("CONNECT: could not connect to %s "
-               "for '%s' (setting last failure time)",
-               ats_ip_ntop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_str ? url_str : "<none>");
+               "for '%s' (setting last failure time) connect_result=%d",
+               ats_ip_ntop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_str ? url_str : "<none>",
+               t_state.current.server->connect_result);
+
     if (url_str) {
       t_state.arena.str_free(url_str);
     }
@@ -5461,16 +5459,13 @@ HttpSM::handle_server_setup_error(int event, void *data)
     }
   }
 
-  if (event == VC_EVENT_ERROR) {
-    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
-  }
-
   switch (event) {
   case VC_EVENT_EOS:
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     break;
   case VC_EVENT_ERROR:
-    t_state.current.state = HttpTransact::CONNECTION_ERROR;
+    t_state.current.state        = HttpTransact::CONNECTION_ERROR;
+    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
     break;
   case VC_EVENT_ACTIVE_TIMEOUT:
     t_state.current.state = HttpTransact::ACTIVE_TIMEOUT;
@@ -5482,12 +5477,17 @@ HttpSM::handle_server_setup_error(int event, void *data)
     //   server failed
     // In case of TIMEOUT, the iocore sends back
     // server_entry->read_vio instead of the write_vio
-    // if (vio->op == VIO::WRITE && vio->ndone == 0) {
     if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
     } else {
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;
     }
+    break;
+  default:
+    ink_release_assert(0);
+  }
+
+  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR) {
     // Clean up the vc_table entry so any events in play to the timed out server vio
     // don't get handled.  The connection isn't there.
     if (server_entry) {
@@ -5496,9 +5496,6 @@ HttpSM::handle_server_setup_error(int event, void *data)
       server_entry   = nullptr;
       server_session = nullptr;
     }
-    break;
-  default:
-    ink_release_assert(0);
   }
 
   // Closedown server connection and deallocate buffers
@@ -5989,9 +5986,7 @@ HttpSM::setup_server_send_request()
     t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
 
-  if (!t_state.cop_test_page) {
-    DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), t_state.state_machine_id, "Proxy's Request after hooks");
-  }
+  DUMP_HEADER("http_hdrs", &(t_state.hdr_info.server_request), t_state.state_machine_id, "Proxy's Request after hooks");
 
   // We need a reader so bytes don't fall off the end of
   //  the buffer
@@ -6715,7 +6710,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 
   // If we're half closed, we got a FIN from the client. Forward it on to the origin server
   // now that we have the tunnel operational.
-  if (ua_txn->get_half_close_flag()) {
+  if (ua_txn && ua_txn->get_half_close_flag()) {
     p_ua->vc->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
@@ -6876,22 +6871,20 @@ HttpSM::kill_this()
 
     HTTP_SM_SET_DEFAULT_HANDLER(nullptr);
 
-    if (!t_state.cop_test_page || t_state.http_config_param->record_cop_page) {
-      //////////////
-      // Log Data //
-      //////////////
-      SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
-      if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-        LogAccessHttp accessor(this);
+    //////////////
+    // Log Data //
+    //////////////
+    SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
+    if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
+      LogAccessHttp accessor(this);
 
-        int ret = Log::access(&accessor);
+      int ret = Log::access(&accessor);
 
-        if (ret & Log::FULL) {
-          SMDebug("http", "[update_stats] Logging system indicates FULL.");
-        }
-        if (ret & Log::FAIL) {
-          Log::error("failed to log transaction for at least one log object");
-        }
+      if (ret & Log::FULL) {
+        SMDebug("http", "[update_stats] Logging system indicates FULL.");
+      }
+      if (ret & Log::FAIL) {
+        Log::error("failed to log transaction for at least one log object");
       }
     }
 
@@ -6918,11 +6911,6 @@ void
 HttpSM::update_stats()
 {
   milestones[TS_MILESTONE_SM_FINISH] = Thread::get_hrtime();
-
-  if (t_state.cop_test_page && !t_state.http_config_param->record_cop_page) {
-    SMDebug("http_seq", "Skipping cop heartbeat logging & stats due to config");
-    return;
-  }
 
   if (is_action_tag_set("bad_length_state_dump")) {
     if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
@@ -7289,13 +7277,6 @@ HttpSM::set_next_state()
       break;
     } else if (t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER && t_state.http_config_param->no_dns_forward_to_parent &&
                t_state.parent_result.result != PARENT_UNDEFINED) {
-      if (t_state.cop_test_page) {
-        NetVConnection *vc = t_state.state_machine->ua_txn->get_netvc();
-        if (vc) {
-          ats_ip_copy(t_state.host_db_info.ip(), vc->get_local_addr());
-        }
-      }
-
       t_state.dns_info.lookup_success = true;
       call_transact_and_set_next_state(nullptr);
       break;
@@ -7659,6 +7640,7 @@ HttpSM::do_redirect()
         }
       }
 
+      ++redirection_tries;
       if (redirect_url != nullptr) {
         redirect_request(redirect_url, redirect_url_len);
         ats_free((void *)redirect_url);
@@ -7894,9 +7876,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
     }
   }
 
-  if (!t_state.cop_test_page) {
-    DUMP_HEADER("http_hdrs", &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
-  }
+  DUMP_HEADER("http_hdrs", &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
 }
 
 void
@@ -7998,11 +7978,11 @@ HttpSM::is_redirect_required()
 
 // Fill in the client protocols used.  Return the number of entries returned
 int
-HttpSM::populate_client_protocol(ts::string_view *result, int n) const
+HttpSM::populate_client_protocol(std::string_view *result, int n) const
 {
   int retval = 0;
   if (n > 0) {
-    ts::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+    std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
     if (!proto.empty()) {
       result[retval++] = proto;
       if (n > retval && ua_txn) {
@@ -8015,12 +7995,12 @@ HttpSM::populate_client_protocol(ts::string_view *result, int n) const
 
 // Look for a specific protocol
 const char *
-HttpSM::client_protocol_contains(ts::string_view tag_prefix) const
+HttpSM::client_protocol_contains(std::string_view tag_prefix) const
 {
-  const char *retval    = nullptr;
-  ts::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
+  const char *retval     = nullptr;
+  std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.client_request.version_get());
   if (!proto.empty()) {
-    ts::string_view prefix(tag_prefix);
+    std::string_view prefix(tag_prefix);
     if (prefix.size() <= proto.size() && 0 == strncmp(proto.data(), prefix.data(), prefix.size())) {
       retval = proto.data();
     } else if (ua_txn) {
@@ -8030,7 +8010,7 @@ HttpSM::client_protocol_contains(ts::string_view tag_prefix) const
   return retval;
 }
 
-ts::string_view
+std::string_view
 HttpSM::find_proto_string(HTTPVersion version) const
 {
   if (version == HTTPVersion(1, 1)) {

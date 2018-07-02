@@ -34,3 +34,11 @@ Description
 These types are provided by the compiler ("built-in") or from a required operating system, POSIX, or package header.
 
 .. cpp:type:: uint24_t
+
+.. cpp:class:: IpEndpoint
+
+   A wrapper for :code:`sockaddr` types.
+
+.. cpp:class:: IpAddr
+
+   Storage for an IP address.

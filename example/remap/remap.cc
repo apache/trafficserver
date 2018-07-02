@@ -276,7 +276,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSHttpTxnArgSet((TSHttpTxn)rh, arg_index, (void *)_processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
-  // We wiil do it every other request
+  // We will do it every other request
   if (_processing_counter & 1) {
     char *tmp                   = (char *)TSmalloc(256);
     static int my_local_counter = 0;

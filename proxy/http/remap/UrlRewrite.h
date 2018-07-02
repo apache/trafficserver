@@ -181,9 +181,6 @@ public:
   int nohost_rules;
   int reverse_proxy;
 
-  // Vars for synthetic health checks
-  int mgmt_synthetic_port;
-
   char *ts_name; // Used to send redirects when no host info
 
   char *http_default_redirect_url; // Used if redirect in "referer" filtering was not defined properly

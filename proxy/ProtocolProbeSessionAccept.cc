@@ -66,6 +66,9 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     VIO *vio;
     NetVConnection *netvc;
     ProtoGroupKey key = N_PROTO_GROUPS; // use this as an invalid value.
+    // int f_proxy_protocol = 1;  // these are mocked up variableds
+    // int src_ip = 1;
+    // int the_trusted_whitelist = 1;
 
     vio   = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
@@ -91,9 +94,68 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       goto done;
     }
 
-    if (http_has_proxy_v1(reader, netvc)) {
-      Debug("http", "ioCompletionEvent: http has proxy_v1 header");
+    // if proxy_protocol is enabled via port descriptor AND the src IP is in
+    // the trusted whitelist for proxy protocol, then check to see if it is
+    // present
+
+    IpMap *t_IpMap;
+    t_IpMap  = netvc->options.netvc_options_proxy_protocol_ipmap;
+
+    //IpAddr t_IpAddr;
+    IpMap *t_IpMap2;
+    // protocolprobesessionaccept_proxy_protocol_ipmap_ref
+    // protocolprobesessionaccept_pro
+    //t_IpMap2 = this->probe->protocolprobesessionaccept_proxy_protocol_ipmap_ref; 
+    t_IpMap2 = probeParent->protocolprobesessionaccept_proxy_protocol_ipmap_ref;
+
+    if (t_IpMap2->getCount() > 0) {
+      Debug("http", "ioCompletionEvent: proxy protocol has a configured whitelist of trusted IPs - checking");
     }
+
+
+    if (netvc->get_is_proxy_protocol()) {
+      Debug("http", "ioCompletionEvent: proxy protocol is enabled on this port");
+      if (t_IpMap2->getCount() > 0) {
+        Debug("http", "ioCompletionEvent: proxy protocol has a configured whitelist of trusted IPs - checking");
+        /// This is another test!!!
+        void *payload = nullptr;
+        IpEndpoint src_ip;
+        ats_ip_pton("10.28.56.0", &src_ip);
+
+        if (!t_IpMap2->contains(src_ip, &payload)) {
+//        if (src_ip != the_trusted_whitelist) {  // <= replace this line when I figure out how to get the ipmap this far
+          Debug("http", "ioCompletionEvent: proxy protocol src IP is NOT in the configured whitelist of trusted IPs - closing connection");
+          goto done;
+        } else {
+          char new_host[INET6_ADDRSTRLEN];
+          Debug("http", "ioCompletionEvent: this source IP [%s] is trusted in the whitelist for proxy protocol", ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
+
+          //  Just testing our setup at this point.  This will get removed
+          if (t_IpMap != nullptr) {
+            size_t cnt = t_IpMap->getCount();
+            void *payload = nullptr;
+            IpEndpoint a_10_28_56_0;
+            ats_ip_pton("10.28.56.0", &a_10_28_56_0);
+            if (t_IpMap->contains(a_10_28_56_0, &payload)) {
+              Debug("http", "ioCompletionEvent: SUCCESSFUL: count = %zu", cnt);
+            }  
+            else {
+              Debug("http", "ioCompletionEvent: FAILED: count = %zu", cnt);
+            }
+          }
+          // End of test
+        }
+      } else {
+        Debug("http", "ioCompletionEvent: proxy protocol DOES NOT have a configured whitelist of trusted IPs but proxy protocol is ernabled on this port - processing all connections");
+      }
+
+      if (http_has_proxy_v1(reader, netvc)) {
+        Debug("http", "ioCompletionEvent: http has proxy_v1 header");
+      } else {
+        Debug("http", "ioCompletionEvent: proxy protocol was enabled, but required header was not present in the transaction - closing connection");
+        goto done;
+      }
+    }  // end of Proxy Protocol processing
 
     if (proto_is_http2(reader)) {
       key = PROTO_HTTP2;

@@ -20,7 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 
 library_includedir=$(includedir)/ts
 
-library_include_HEADERS = apidefs.h string_view.h TextView.h
+library_include_HEADERS = apidefs.h TextView.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
@@ -141,7 +141,6 @@ libtsutil_la_SOURCES = \
 	ink_sock.h \
 	ink_sprintf.cc \
 	ink_sprintf.h \
-	ink_std_compat.h \
 	ink_stack_trace.cc \
 	ink_stack_trace.h \
 	ink_string.cc \
@@ -199,7 +198,6 @@ libtsutil_la_SOURCES = \
 	SimpleTokenizer.h \
 	SourceLocation.cc \
 	SourceLocation.h \
-	string_view.h \
 	TestBox.h \
 	TextBuffer.cc \
 	TextBuffer.h \
@@ -211,6 +209,8 @@ libtsutil_la_SOURCES = \
 	Version.cc \
 	X509HostnameValidator.cc \
 	X509HostnameValidator.h
+
+BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 
 #test_UNUSED_SOURCES = \
 #  load_http_hdr.cc \
@@ -267,13 +267,14 @@ test_tslib_SOURCES = \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
 	unit-tests/test_ink_inet.cc \
+	unit-tests/test_IntrusivePtr.cc \
 	unit-tests/test_IpMap.cc \
 	unit-tests/test_layout.cc \
 	unit-tests/test_MemSpan.cc \
 	unit-tests/test_MemArena.cc \
 	unit-tests/test_MT_hashtable.cc \
 	unit-tests/test_Scalar.cc \
-	unit-tests/test_string_view.cc \
+	unit-tests/test_scoped_resource.cc \
 	unit-tests/test_TextView.cc 
 
 CompileParseRules_SOURCES = CompileParseRules.cc

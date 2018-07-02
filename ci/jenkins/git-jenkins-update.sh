@@ -26,19 +26,19 @@ set -e # exit on error
 MASTER=trafficserver
 
 (
-	cd trafficserver
+    cd trafficserver
 
-	# Pick up any new release branches ...
-	for branch in $(git branch -r | egrep 'origin/[0-9.x]+') ; do
-		git checkout -b $(echo $branch | sed -es'|origin/||') $branch || true
-		git checkout master
-	done
+    # Pick up any new release branches ...
+    for branch in $(git branch -r | egrep 'origin/[0-9.x]+'); do
+        git checkout -b $(echo $branch | sed -es'|origin/||') $branch || true
+        git checkout master
+    done
 
-	git pull --all --verbose
+    git pull --all --verbose
 )
 
-for repo in /Users/jenkins/git/trafficserver* ; do
-	( cd $repo && git pull )
+for repo in /Users/jenkins/git/trafficserver*; do
+    (cd $repo && git pull)
 done
 
 # vim: set sw=2 ts=2 sw=2 :

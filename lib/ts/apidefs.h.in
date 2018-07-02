@@ -92,8 +92,6 @@ extern "C" {
 #define TS_RES_MEM_PATH TS_RES_PATH("memory/")
 #endif
 
-#define TS_MAX_USER_NAME_LEN 256
-
 #ifndef TS_DEPRECATED
 #define TS_DEPRECATED __attribute__((deprecated))
 #endif
@@ -627,7 +625,6 @@ typedef enum {
   TS_RECORDUPDATE_DYNAMIC,
   TS_RECORDUPDATE_RESTART_TS,
   TS_RECORDUPDATE_RESTART_TM,
-  TS_RECORDUPDATE_RESTART_TC
 } TSRecordUpdateType;
 
 /* The values of this enum must match enum RecCheckT in I_RecDefs.h */
@@ -770,6 +767,7 @@ typedef enum {
   TS_CONFIG_HTTP_INSERT_FORWARDED,
   TS_CONFIG_HTTP_ALLOW_MULTI_RANGE,
   TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED,
+  TS_CONFIG_HTTP_ALLOW_HALF_OPEN,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 

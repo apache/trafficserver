@@ -416,15 +416,15 @@ TSRecordEleDestroy(TSRecordEle *ele)
 
 /*--- host status operations ----------------------------------------------- */
 tsapi TSMgmtError
-TSHostStatusSetUp(const char *name)
+TSHostStatusSetUp(const char *host_name)
 {
-  return HostStatusSetUp(name);
+  return HostStatusSetUp(host_name);
 }
 
 tsapi TSMgmtError
-TSHostStatusSetDown(const char *name)
+TSHostStatusSetDown(const char *host_name, int down_time)
 {
-  return HostStatusSetDown(name);
+  return HostStatusSetDown(host_name, down_time);
 }
 
 /*--- statistics operations ----------------------------------------------- */

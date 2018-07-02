@@ -27,7 +27,7 @@
 #include "Plugin.h"
 #include "ProxyClientSession.h"
 #include "Http2ConnectionState.h"
-#include <ts/string_view.h>
+#include <string_view>
 #include <ts/ink_inet.h>
 
 // Name                       Edata                 Description
@@ -260,7 +260,7 @@ public:
   }
 
   int
-  populate_protocol(ts::string_view *result, int size) const override
+  populate_protocol(std::string_view *result, int size) const override
   {
     int retval = 0;
     if (size > retval) {
@@ -273,7 +273,7 @@ public:
   }
 
   const char *
-  protocol_contains(ts::string_view prefix) const override
+  protocol_contains(std::string_view prefix) const override
   {
     const char *retval = nullptr;
 

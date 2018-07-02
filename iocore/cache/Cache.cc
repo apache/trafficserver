@@ -752,114 +752,102 @@ CacheProcessor::diskInitialized()
   int n_init    = ink_atomic_increment(&initialize_disk, 1);
   int bad_disks = 0;
   int res       = 0;
-  if (n_init == gndisks - 1) {
-    int i;
-    for (i = 0; i < gndisks; i++) {
-      if (DISK_BAD(gdisks[i])) {
-        bad_disks++;
-      }
+  int i;
+
+  // Wait for all the cache disks are initialized
+  if (n_init != gndisks - 1) {
+    return;
+  }
+
+  // Check and remove bad disks from gdisks[]
+  for (i = 0; i < gndisks; i++) {
+    if (DISK_BAD(gdisks[i])) {
+      delete gdisks[i];
+      gdisks[i] = nullptr;
+      bad_disks++;
+    } else if (bad_disks > 0) {
+      gdisks[i - bad_disks] = gdisks[i];
+      gdisks[i]             = nullptr;
     }
-
-    if (bad_disks != 0) {
-      // Check if this is a fatal error
-      if (this->waitForCache() == 3 || (bad_disks == gndisks && this->waitForCache() == 2)) {
-        // This could be passed off to @c cacheInitialized (as with volume config problems) but I think
-        // the more specific error message here is worth the extra code.
-        CacheProcessor::initialized = CACHE_INIT_FAILED;
-        if (cb_after_init) {
-          cb_after_init();
-        }
-        Fatal("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
+  }
+  if (bad_disks > 0) {
+    // Update the number of available cache disks
+    gndisks -= bad_disks;
+    // Check if this is a fatal error
+    if (this->waitForCache() == 3 || (0 == gndisks && this->waitForCache() == 2)) {
+      // This could be passed off to @c cacheInitialized (as with volume config problems) but I think
+      // the more specific error message here is worth the extra code.
+      CacheProcessor::initialized = CACHE_INIT_FAILED;
+      if (cb_after_init) {
+        cb_after_init();
       }
-
-      // still good, create a new array to hold the valid disks.
-      CacheDisk **p_good_disks;
-      if ((gndisks - bad_disks) > 0) {
-        p_good_disks = (CacheDisk **)ats_malloc((gndisks - bad_disks) * sizeof(CacheDisk *));
-      } else {
-        p_good_disks = nullptr;
-      }
-
-      int insert_at = 0;
-      for (i = 0; i < gndisks; i++) {
-        if (DISK_BAD(gdisks[i])) {
-          delete gdisks[i];
-          continue;
-        }
-        if (p_good_disks != nullptr) {
-          p_good_disks[insert_at++] = gdisks[i];
-        }
-      }
-      ats_free(gdisks);
-      gdisks  = p_good_disks;
-      gndisks = gndisks - bad_disks;
+      Fatal("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
     }
+  }
 
-    /* Practically just took all bad_disks offline so update the stats. */
-    RecSetGlobalRawStatSum(cache_rsb, cache_span_offline_stat, bad_disks);
-    RecIncrGlobalRawStat(cache_rsb, cache_span_failing_stat, -bad_disks);
-    RecSetGlobalRawStatSum(cache_rsb, cache_span_online_stat, gndisks);
+  /* Practically just took all bad_disks offline so update the stats. */
+  RecSetGlobalRawStatSum(cache_rsb, cache_span_offline_stat, bad_disks);
+  RecIncrGlobalRawStat(cache_rsb, cache_span_failing_stat, -bad_disks);
+  RecSetGlobalRawStatSum(cache_rsb, cache_span_online_stat, gndisks);
 
-    /* create the cachevol list only if num volumes are greater
-       than 0. */
-    if (config_volumes.num_volumes == 0) {
-      /* if no volumes, default to just an http cache */
-      res = cplist_reconfigure();
-    } else {
-      // else
-      /* create the cachevol list. */
-      cplist_init();
-      /* now change the cachevol list based on the config file */
-      res = cplist_reconfigure();
-    }
+  /* create the cachevol list only if num volumes are greater than 0. */
+  if (config_volumes.num_volumes == 0) {
+    /* if no volumes, default to just an http cache */
+    res = cplist_reconfigure();
+  } else {
+    // else
+    /* create the cachevol list. */
+    cplist_init();
+    /* now change the cachevol list based on the config file */
+    res = cplist_reconfigure();
+  }
 
-    if (res == -1) {
-      /* problems initializing the volume.config. Punt */
-      gnvol = 0;
-      cacheInitialized();
-      return;
-    } else {
-      CacheVol *cp = cp_list.head;
-      for (; cp; cp = cp->link.next) {
-        cp->vol_rsb = RecAllocateRawStatBlock((int)cache_stat_count);
-        char vol_stat_str_prefix[256];
-        snprintf(vol_stat_str_prefix, sizeof(vol_stat_str_prefix), "proxy.process.cache.volume_%d", cp->vol_number);
-        register_cache_stats(cp->vol_rsb, vol_stat_str_prefix);
-      }
-    }
-
-    gvol = (Vol **)ats_malloc(gnvol * sizeof(Vol *));
-    memset(gvol, 0, gnvol * sizeof(Vol *));
+  if (res == -1) {
+    /* problems initializing the volume.config. Punt */
     gnvol = 0;
-    for (i = 0; i < gndisks; i++) {
-      CacheDisk *d = gdisks[i];
-      if (is_debug_tag_set("cache_hosting")) {
-        int j;
-        Debug("cache_hosting", "Disk: %d:%s: Vol Blocks: %u: Free space: %" PRIu64, i, d->path, d->header->num_diskvol_blks,
-              d->free_space);
-        for (j = 0; j < (int)d->header->num_volumes; j++) {
-          Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
-        }
-        for (j = 0; j < (int)d->header->num_diskvol_blks; j++) {
-          Debug("cache_hosting", "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
-                d->header->vol_info[j].len, d->header->vol_info[j].free);
-        }
+    cacheInitialized();
+    return;
+  } else {
+    CacheVol *cp = cp_list.head;
+    for (; cp; cp = cp->link.next) {
+      cp->vol_rsb = RecAllocateRawStatBlock((int)cache_stat_count);
+      char vol_stat_str_prefix[256];
+      snprintf(vol_stat_str_prefix, sizeof(vol_stat_str_prefix), "proxy.process.cache.volume_%d", cp->vol_number);
+      register_cache_stats(cp->vol_rsb, vol_stat_str_prefix);
+    }
+  }
+
+  gvol = (Vol **)ats_malloc(gnvol * sizeof(Vol *));
+  memset(gvol, 0, gnvol * sizeof(Vol *));
+  gnvol = 0;
+  for (i = 0; i < gndisks; i++) {
+    CacheDisk *d = gdisks[i];
+    if (is_debug_tag_set("cache_hosting")) {
+      int j;
+      Debug("cache_hosting", "Disk: %d:%s: Vol Blocks: %u: Free space: %" PRIu64, i, d->path, d->header->num_diskvol_blks,
+            d->free_space);
+      for (j = 0; j < (int)d->header->num_volumes; j++) {
+        Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
-      if (!check) {
-        d->sync();
+      for (j = 0; j < (int)d->header->num_diskvol_blks; j++) {
+        Debug("cache_hosting", "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
+              d->header->vol_info[j].len, d->header->vol_info[j].free);
       }
     }
-    if (config_volumes.num_volumes == 0) {
-      theCache         = new Cache();
-      theCache->scheme = CACHE_HTTP_TYPE;
-      theCache->open(clear, fix);
-      return;
+    if (!check) {
+      d->sync();
     }
-    if (config_volumes.num_http_volumes != 0) {
-      theCache         = new Cache();
-      theCache->scheme = CACHE_HTTP_TYPE;
-      theCache->open(clear, fix);
-    }
+  }
+  if (config_volumes.num_volumes == 0) {
+    theCache         = new Cache();
+    theCache->scheme = CACHE_HTTP_TYPE;
+    theCache->open(clear, fix);
+    return;
+  }
+  if (config_volumes.num_http_volumes != 0) {
+    theCache         = new Cache();
+    theCache->scheme = CACHE_HTTP_TYPE;
+    theCache->open(clear, fix);
   }
 }
 

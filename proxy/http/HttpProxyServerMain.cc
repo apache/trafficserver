@@ -58,6 +58,28 @@ bool et_net_threads_ready = false;
 extern int num_of_net_threads;
 extern int num_accept_threads;
 
+/// Global BufferWriter format name functions.
+namespace
+{
+void
+TS_bwf_thread(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, this_thread());
+}
+void
+TS_bwf_ethread(ts::BufferWriter &w, ts::BWFSpec const &spec)
+{
+  bwformat(w, spec, this_ethread());
+}
+} // namespace
+
+// File / process scope initializations
+static bool HTTP_SERVER_INITIALIZED __attribute__((unused)) = []() -> bool {
+  ts::bwf_register_global("ts-thread", &TS_bwf_thread);
+  ts::bwf_register_global("ts-ethread", &TS_bwf_ethread);
+  return true;
+}();
+
 bool
 ssl_register_protocol(const char *protocol, Continuation *contp)
 {
@@ -141,6 +163,7 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
     net.f_inbound_transparent = port->m_inbound_transparent_p;
     net.ip_family             = port->m_family;
     net.local_port            = port->m_port;
+    net.f_proxy_protocol      = port->m_proxy_protocol;
 
     if (port->m_inbound_ip.isValid()) {
       net.local_ip = port->m_inbound_ip;
@@ -149,6 +172,20 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
     } else if (AF_INET == port->m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
       net.local_ip = HttpConfig::m_master.inbound_ip4;
     }
+
+    // Configure a trusted IP for accepting PROXY protocol heders from
+    // TODO: This may not be needed after this edit!!!!
+    // net.netprocessor_acceptoptions_f_proxy_protocol      = port->m_proxy_protocol;
+    // if (net.netprocessor_acceptoptions_f_proxy_protocol) {
+    //   net.np_proxy_protocol_ipmap = HttpConfig::m_master.config_proxy_protocol_ipmap;
+      //net
+    // }
+
+    //if (AF_INET6 == port->m_family && HttpConfig::m_master.proxy_protocol_ip6.isIp6()) {
+    //  net.proxy_protocol_ip = HttpConfig::m_master.proxy_protocol_ip6;
+    //} else if (AF_INET == port->m_family && HttpConfig::m_master.proxy_protocol_ip4.isIp4()) {
+    //  net.proxy_protocol_ip = HttpConfig::m_master.proxy_protocol_ip4;
+    //}
   }
 
   return net;
@@ -163,10 +200,13 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   net_opt = make_net_accept_options(&port, nthreads);
 
   accept_opt.f_outbound_transparent = port.m_outbound_transparent_p;
+  accept_opt.f_proxy_protocol       = port.m_proxy_protocol;
   accept_opt.transport_type         = port.m_type;
   accept_opt.setHostResPreference(port.m_host_res_preference);
   accept_opt.setTransparentPassthrough(port.m_transparent_passthrough);
   accept_opt.setSessionProtocolPreference(port.m_session_protocol_preference);
+//  accept_opt.httpsessionaccept_f_proxy_protocol     = port.m_proxy_protocol;
+//  accept_opt.httpsessionaccept_proxy_protocol_ipmap = HttpConfig::m_master.config_proxy_protocol_ipmap;
 
   if (port.m_outbound_ip4.isValid()) {
     accept_opt.outbound_ip4 = port.m_outbound_ip4;
@@ -190,12 +230,13 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
   HttpSessionAccept *http           = nullptr; // don't allocate this unless it will be used.
   probe->proxyPort                  = &port;
+  probe->protocolprobesessionaccept_proxy_protocol_ipmap_ref = &HttpConfig::m_master.config_proxy_protocol_ipmap;
 
   if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
     http = new HttpSessionAccept(accept_opt);
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
   }
-
+  
   if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
   }

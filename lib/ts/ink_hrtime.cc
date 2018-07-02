@@ -37,6 +37,7 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
+#include <string.h>
 #include <sys/time.h>
 
 char *

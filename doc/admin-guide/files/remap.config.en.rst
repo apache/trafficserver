@@ -44,9 +44,7 @@ Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about
 redirecting HTTP requests and using reverse proxy.
 
 After you modify the :file:`remap.config` run the
-:option:`traffic_ctl config reload` to apply the changes. When you apply the
-changes to one node in a cluster, Traffic Server automatically applies
-the changes to all other nodes in the cluster.
+:option:`traffic_ctl config reload` to apply the changes.
 
 Format
 ======

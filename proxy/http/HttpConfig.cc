@@ -188,7 +188,7 @@ http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *c
   if (0 == strcasecmp("proxy.config.http.insert_forwarded", name)) {
     if (RECD_STRING == dtype) {
       ts::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(data.rec_string), error);
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(data.rec_string), error);
       if (!error.size()) {
         c->oride.insert_forwarded = bs;
         valid_p                   = true;
@@ -925,6 +925,7 @@ HttpConfig::startup()
 
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", c.inbound_ip4, c.inbound_ip6);
   RecHttpLoadIp("proxy.local.outgoing_ip_to_bind", c.outbound_ip4, c.outbound_ip6);
+  RecHttpLoadIpMap("proxy.config.http.proxy_protocol_to_forwarded", c.config_proxy_protocol_ipmap);
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
@@ -981,7 +982,7 @@ HttpConfig::startup()
 
     if (REC_ERR_OKAY == RecGetRecordString("proxy.config.http.insert_forwarded", str, sizeof(str))) {
       ts::LocalBufferWriter<1024> error;
-      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(ts::string_view(str), error);
+      HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(str), error);
       if (!error.size()) {
         c.oride.insert_forwarded = bs;
       } else {
@@ -1067,6 +1068,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
   HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
+  HttpEstablishStaticConfigByte(c.oride.allow_half_open, "proxy.config.http.allow_half_open");
+
   HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_text, "proxy.config.http.cache.vary_default_text");
   HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_images, "proxy.config.http.cache.vary_default_images");
   HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_other, "proxy.config.http.cache.vary_default_other");
@@ -1129,8 +1132,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.slow_log_threshold, "proxy.config.http.slow.log.threshold");
   HttpEstablishStaticConfigByte(c.oride.ssl_client_verify_server, "proxy.config.ssl.client.verify.server");
 
-  HttpEstablishStaticConfigByte(c.record_cop_page, "proxy.config.http.record_heartbeat");
-
   HttpEstablishStaticConfigByte(c.oride.send_http11_requests, "proxy.config.http.send_http11_requests");
   HttpEstablishStaticConfigByte(c.oride.allow_multi_range, "proxy.config.http.allow_multi_range");
 
@@ -1171,9 +1172,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
-  // Local Manager
-  HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
-
   http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
   return;
@@ -1198,6 +1196,9 @@ HttpConfig::reconfigure()
 
   params->outbound_ip4 = m_master.outbound_ip4;
   params->outbound_ip6 = m_master.outbound_ip6;
+
+  params->proxy_protocol_ip4 = m_master.proxy_protocol_ip4;
+  params->proxy_protocol_ip6 = m_master.proxy_protocol_ip6;
 
   params->proxy_hostname                           = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len                       = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
@@ -1353,6 +1354,8 @@ HttpConfig::reconfigure()
 
   params->oride.srv_enabled = m_master.oride.srv_enabled;
 
+  params->oride.allow_half_open = m_master.oride.allow_half_open;
+
   // open read failure retries
   params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;
   params->oride.cache_open_read_retry_time  = m_master.oride.cache_open_read_retry_time;
@@ -1404,7 +1407,6 @@ HttpConfig::reconfigure()
   params->url_remap_required               = INT_TO_BOOL(m_master.url_remap_required);
   params->errors_log_error_pages           = INT_TO_BOOL(m_master.errors_log_error_pages);
   params->oride.slow_log_threshold         = m_master.oride.slow_log_threshold;
-  params->record_cop_page                  = INT_TO_BOOL(m_master.record_cop_page);
   params->oride.ssl_client_verify_server   = m_master.oride.ssl_client_verify_server;
   params->oride.send_http11_requests       = m_master.oride.send_http11_requests;
   params->oride.doc_in_cache_skip_dns      = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
@@ -1438,9 +1440,6 @@ HttpConfig::reconfigure()
   params->post_copy_size                    = m_master.post_copy_size;
   params->oride.client_cert_filename        = ats_strdup(m_master.oride.client_cert_filename);
   params->oride.client_cert_filepath        = ats_strdup(m_master.oride.client_cert_filepath);
-
-  // Local Manager
-  params->synthetic_port = m_master.synthetic_port;
 
   m_id = configProcessor.set(m_id, params);
 

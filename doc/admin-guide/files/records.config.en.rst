@@ -27,29 +27,14 @@ The :file:`records.config` file (by default (:ts:cv:`proxy.config.config_dir`), 
 the |TS| software. Many of the variables in :file:`records.config` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
 modify :file:`records.config`, run the command :option:`traffic_ctl config reload`
-to apply the changes. When you apply changes to one node in a cluster, |TS|
-automatically applies the changes to all other nodes in the cluster.
+to apply the changes.
 
 Format
 ======
 
 Each variable has the following format::
 
-   SCOPE variable_name DATATYPE variable_value
-
-Scope
------
-
-All variables are defined within a scope, which is related to clustering, and
-determines the level at which the variable is applied. The value for ``SCOPE``
-must be one of:
-
-========== ====================================================================
-Scope      Description
-========== ====================================================================
-``CONFIG`` All members of the cluster.
-``LOCAL``  Only the local machine.
-========== ====================================================================
+   CONFIG variable_name DATATYPE variable_value
 
 Data Type
 ---------
@@ -141,10 +126,10 @@ a yes/no flag. A value of ``0`` (zero) disables the option; a value of
 
    CONFIG proxy.config.arm.enabled INT 0
 
-In the following example, the variable sets the cluster startup timeout
-to 10 seconds. ::
+In the following example, the variable sets the time to wait for a
+DNS response to 10 seconds. ::
 
-   CONFIG proxy.config.cluster.startup_timeout INT 10
+   CONFIG proxy.config.hostdb.lookup_timeout INT 10
 
 The last examples configures a 64GB RAM cache, using a human readable
 prefix. ::
@@ -168,7 +153,7 @@ not be affected by future configuration changes made in
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
-   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
+   $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_manager &
    $ traffic_ctl config get proxy.config.product_company
 
 .. _configuration-variables:
@@ -235,49 +220,6 @@ System Variables
    :ref:`admin-logging-understanding` for more in-depth discussion
    of the contents and interpretations of log files.
 
-.. ts:cv:: CONFIG proxy.config.cop.core_signal INT 0
-
-   The signal sent to :program:`traffic_cop`'s managed processes to stop them.
-
-   A value of ``0`` means no signal will be sent.
-
-.. ts:cv:: CONFIG proxy.config.cop.linux_min_memfree_kb INT 0
-
-   The minimum amount of free memory space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to
-   prevent the system from hanging.
-
-.. ts:cv:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 0
-
-   The minimum amount of free swap space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to
-   prevent the system from hanging. This configuration variable applies if
-   swap is enabled in Linux 2.2 only.
-
-.. ts:cv:: CONFIG proxy.config.cop.init_sleep_time INT 0
-
-   The minimum amount of addtional duration allowed before Traffic Server detects
-   that the :program:`traffic_server` is not responsive and attempts a restart
-   during startup. This configuration variable allows Traffic Server a longer init
-   time to load potentially large configuration files such as remap config. Note that
-   this applies only during startup of Traffic Server and does not apply to the run
-   time heartbeat checking.
-
-.. ts:cv:: CONFIG proxy.config.cop.active_health_checks INT 3
-
-   Specifies which, if any, of :program:`traffic_server` and
-   :program:`traffic_manager` that :program:`traffic_cop` is allowed to kill
-   in the event of failed health checks. The possible values are:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` :program:`traffic_cop` is not allowed to kill any processes.
-   ``1`` Only :program:`traffic_manager` can be killed on failed health checks.
-   ``2`` Only :program:`traffic_server` can be killed on failed health checks.
-   ``3`` :program:`traffic_server` and :program:`traffic_manager` can be killed
-         on failures (default).
-   ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
@@ -454,7 +396,7 @@ Network
    given time. Roughly 10% of these connections are reserved for origin server
    connections, i.e. from the default, only ~9,000 client connections can be
    handled. This should be tuned according to your memory size, and expected
-   work load.
+   work load.  If this is set to 0, the throttling logic is disabled.
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:
@@ -555,68 +497,8 @@ Network
 
    When we trigger a throttling scenario, this how long our accept() are delayed.
 
-Cluster
-=======
-
-.. ts:cv:: LOCAL proxy.local.cluster.type INT 3
-
-   Sets the clustering mode:
-
-   ===== =====================
-   Value Effect
-   ===== =====================
-   ``1`` Full-clustering mode.
-   ``2`` Management-only mode.
-   ``3`` No clustering.
-   ===== =====================
-
-.. ts:cv:: CONFIG proxy.config.cluster.ethernet_interface INT eth0
-
-   The network interface to be used for cluster communication. This has to be
-   identical on all members of a clsuter. ToDo: Is that reasonable ?? Should
-   this be local"
-
-.. ts:cv:: CONFIG proxy.config.cluster.rsport INT 8088
-
-   The reliable service port. The reliable service port is used to send
-   configuration information between the nodes in a cluster. All nodes in a
-   cluster must use the same reliable service port.
-
-.. ts:cv:: CONFIG proxy.config.cluster.threads INT 1
-
-   The number of threads for cluster communication. On heavy clusters, the
-   number should be adjusted. It is recommend to use the thread CPU usage as a
-   reference when adjusting.
-
-.. ts:cv:: CONFIG proxy.config.clustger.ethernet_interface STRING
-
-   Set the interface to use for cluster communications.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.cluster_cache_local INT 0
-   :overridable:
-
-   This turns on the local caching of objects in cluster mode. The point of
-   this is to allow for popular or *hot* content to be cached on all nodes
-   in a cluster. Be aware that the primary way to configure this behavior is
-   via the :file:`cache.config` configuration file using
-   ``action=cluster-cache-local`` directives.
-
-   This particular :file:`records.config` configuration can be controlled per
-   transaction or per remap rule. As such, it augments the
-   :file:`cache.config` directives, since you can turn on the local caching
-   feature without complex regular expression matching.
-
-   This implies that turning this on in your global :file:`records.config` is
-   almost never what you want; instead, you want to use this either via
-   e.g. ``conf_remap.so`` overrides for a certain remap rule, or through a
-   custom plugin using the appropriate APIs.
-
 Local Manager
 =============
-
-.. ts:cv:: CONFIG proxy.config.admin.synthetic_port INT 8083
-
-   The synthetic healthcheck port.
 
 .. ts:cv:: CONFIG proxy.config.admin.number_config_bak INT 3
 
@@ -663,14 +545,6 @@ Local Manager
    configuration file. Dynamic configuration changes can still be made using
    :program:`traffic_ctl config set`, but these changes will not be persisted
    on service restarts or when :option:`traffic_ctl config reload` is run.
-
-Process Manager
-===============
-
-.. ts:cv:: CONFIG proxy.config.process_manager.mgmt_port  INT 8084
-
-   The port used for internal communication between :program:`traffic_manager`
-   and :program:`traffic_server` processes.
 
 Alarm Configuration
 ===================
@@ -1112,11 +986,6 @@ ip-resolve
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
 
-.. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat logging.
-
 .. ts:cv:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 
    For fully transparent ports use the same origin server address as the client.
@@ -1317,10 +1186,20 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.local.http.parent_proxy.disable_connect_tunneling INT 0
 
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 1
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 2
 
-   Filter out hosts that are determined to be the same as the current host, e.g., localhost,
-   that have been specified in any parent and secondary_parent lists in the parent.config file.
+   For each host that has been specified in a ``parent`` or ``secondary_parent`` list in the
+   :file:`parent.config` file, determine if the host is the same as the current host.
+   Obvious examples include ``localhost`` and ``127.0.0.1``. If a match is found,
+   take an action depending upon the value below.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Disables the feature by not checking for matches.
+   ``1`` Remove the matching host from the list.
+   ``2`` Mark the host down. This is the default.
+   ===== ======================================================================
 
 HTTP Connection Timeouts
 ========================
@@ -1721,6 +1600,26 @@ Proxy User Variables
    is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
    incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
 
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_to_forwarded STRING ```<ip list>```
+   :reloadable:
+   :overridable:
+
+   This is no longer a binary enable flag.  It is now a list of IPs via IpMap
+   so it can handle CIDR notatation as well....  Fix this up before you ship
+   it!
+
+   Enables and disables transforming an incoming Proxy Protocol header to Forwarded: header
+
+   ======== ===================================================================
+   Value    Effect
+   ======== ===================================================================
+   ``0``    Disabled - default value
+   ``1``    Enables transforming Proxy Protocol version 1 to the Forwarded header
+   ======== ===================================================================
+   
+   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header.
+   See :ts:cv:`proxy.config.http.insert_forwarded` for information on configuring the `Forwarded:` header.
+   
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
    :overridable:
@@ -2622,7 +2521,7 @@ HostDB
    Set the file path for an external host file.
 
    If this is set (non-empty) then the file is presumed to be a hosts file in
-   the standard `host file format <http://tools.ietf.org/html/rfc1123#page-13>`_.
+   the standard .
    It is read and the entries there added to the HostDB. The file is
    periodically checked for a more recent modification date in which case it is
    reloaded. The interval is set with :ts:cv:`proxy.config.hostdb.host_file.interval`.
@@ -3146,7 +3045,7 @@ SSL Termination
    The current default, included in the ``records.config.default`` example
    configuration is:
 
-   ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
+   TLS-AES-256-GCM-SHA384:TLS-AES-128-GCM-SHA256:TLS-CHACHA20-POLY1305-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cipher_suite STRING <See notes under proxy.config.ssl.server.cipher_suite.>
 
@@ -3187,15 +3086,21 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
 
    The location of the :file:`ssl_multicert.config` file, relative
-   to the Traffic Server configuration directory. In the following
-   example, if the Traffic Server configuration directory is
-   `/etc/trafficserver`, the Traffic Server SSL configuration file
+   to the |TS| configuration directory. In the following
+   example, if the |TS| configuration directory is
+   `/etc/trafficserver`, the |TS| SSL configuration file
    and the corresponding certificates are located in
    `/etc/trafficserver/ssl`::
 
       CONFIG proxy.config.ssl.server.multicert.filename STRING ssl/ssl_multicert.config
       CONFIG proxy.config.ssl.server.cert.path STRING etc/trafficserver/ssl
       CONFIG proxy.config.ssl.server.private_key.path STRING etc/trafficserver/ssl
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.exit_on_load_fail INT 1
+
+   By default (``1``), |TS| will not start unless all the SSL certificates listed in the
+   :file:`ssl_multicert.config` file successfully load.  If false (``0``), SSL certificate
+   load failures will not prevent |TS| from starting.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
 
@@ -3572,6 +3477,15 @@ HTTP/2 Configuration
    misconfigured or misbehaving clients are opening a large number of
    connections without submitting requests.
 
+.. ts:cv:: CONFIG proxy.config.http2.zombie_debug_timeout_in INT 0
+   :reloadable:
+
+   This timeout enables the zombie debugging feature.  If it is non-zero, it sets a zombie event to go off that
+   many seconds in the future when the HTTP2 session reaches one but not both of the terminating events, i.e received
+   a close event (via client goaway or timeout) and the number of active streams has gone to zero.  If the event is executed,
+   the Traffic Server process will assert.  This mechanism is useful to debug potential leaks in the HTTP2 Stream and Session
+   processing.
+
 .. ts:cv:: CONFIG proxy.config.http2.push_diary_size INT 256
    :reloadable:
 
@@ -3865,6 +3779,13 @@ Sockets
    Turn on or off support for HTTP proxying. This is rarely used, the one
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
+
+.. ts:cv:: CONFIG proxy.config.http.allow_half_open INT 1
+   :reloadable:
+   :overridable:
+
+   Turn on or off support for connection half open for client side. Default is on, so
+   after client sends FIN, the connection is still there.
 
 .. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
 

@@ -32,8 +32,9 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include <ts/apidefs.h>
+#include <string_view>
 #include "ts/TextView.h"
-#include <ts/string_view.h>
+#include "ts/IpMap.h"
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0
@@ -119,7 +120,7 @@ struct NetVCOptions {
   };
 
   /** Local address for the connection.
-
+   
       For outbound connections this must have the same family as the
       remote address (which is not stored in this structure). For
       inbound connections the family of this value overrides @a
@@ -130,10 +131,17 @@ struct NetVCOptions {
       @see ip_family
   */
   IpAddr local_ip;
+
   /** Local port for connection.
       Set to 0 for "don't care" (default).
-   */
+  */
   uint16_t local_port;
+
+  /** Whitelist of trusted IPs to access PROXY Protocol headers from
+  */
+  //IpAddr proxy_protocol_ip;    // TODO: Do I need this here?
+  IpMap *netvc_options_proxy_protocol_ipmap; 
+
   /// How to bind the local address.
   /// @note Default is @c ANY_ADDR.
   addr_bind_style addr_binding;
@@ -202,7 +210,7 @@ struct NetVCOptions {
     IpEndpoint ip;
 
     // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
-    if (name && len && ats_ip_pton(ts::string_view(name, len), &ip) != 0) {
+    if (name && len && ats_ip_pton(std::string_view(name, len), &ip) != 0) {
       sni_servername = ats_strndup(name, len);
     } else {
       sni_servername = nullptr;
@@ -236,9 +244,9 @@ struct NetVCOptions {
     return *this;
   }
 
-  ts::string_view get_family_string() const;
+  std::string_view get_family_string() const;
 
-  ts::string_view get_proto_string() const;
+  std::string_view get_proto_string() const;
 
   /// @name Debugging
   //@{
@@ -631,14 +639,27 @@ public:
     is_transparent = state;
   }
 
+  /// Get the proxy protocol enabled flag
+  bool
+  get_is_proxy_protocol() const
+  {
+    return is_proxy_protocol;
+  }
+  /// Set the proxy protocol enabled flag on the port
+  void
+  set_is_proxy_protocol(bool state = true)
+  {
+    is_proxy_protocol = state;
+  }
+
   virtual int
-  populate_protocol(ts::string_view *results, int n) const
+  populate_protocol(std::string_view *results, int n) const
   {
     return 0;
   }
 
   virtual const char *
-  protocol_contains(ts::string_view prefix) const
+  protocol_contains(std::string_view prefix) const
   {
     return nullptr;
   }
@@ -764,6 +785,8 @@ protected:
   bool is_internal_request;
   /// Set if this connection is transparent.
   bool is_transparent;
+  /// Set if proxy protocol is enabled
+  bool is_proxy_protocol;
   /// Set if the next write IO that empties the write buffer should generate an event.
   int write_buffer_empty_event;
   /// NetVConnection Context.
@@ -778,6 +801,7 @@ inline NetVConnection::NetVConnection()
     got_remote_addr(false),
     is_internal_request(false),
     is_transparent(false),
+    is_proxy_protocol(false),
     write_buffer_empty_event(0),
     netvc_context(NET_VCONNECTION_UNSET)
 {

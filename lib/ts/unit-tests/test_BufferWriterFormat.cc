@@ -25,9 +25,12 @@
 #include <chrono>
 #include <iostream>
 #include <ts/BufferWriter.h>
+#include <ts/bwf_std_format.h>
 #include <ts/MemSpan.h>
 #include <ts/INK_MD5.h>
 #include <ts/CryptoHash.h>
+
+using namespace std::literals;
 
 TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
 {
@@ -45,7 +48,7 @@ TEST_CASE("Buffer Writer << operator", "[bufferwriter][stream]")
 TEST_CASE("bwprint basics", "[bwprint]")
 {
   ts::LocalBufferWriter<256> bw;
-  ts::string_view fmt1{"Some text"_sv};
+  std::string_view fmt1{"Some text"sv};
 
   bw.print(fmt1);
   REQUIRE(bw.view() == fmt1);
@@ -68,19 +71,19 @@ TEST_CASE("bwprint basics", "[bwprint]")
   bw.print("right |{:.>10}|", "text");
   REQUIRE(bw.view() == "right |......text|");
   bw.reduce(0);
-  bw.print("center |{:.=10}|", "text");
+  bw.print("center |{:.^10}|", "text");
   REQUIRE(bw.view() == "center |...text...|");
   bw.reduce(0);
-  bw.print("center |{:.=11}|", "text");
+  bw.print("center |{:.^11}|", "text");
   REQUIRE(bw.view() == "center |...text....|");
   bw.reduce(0);
-  bw.print("center |{:==10}|", "text");
-  REQUIRE(bw.view() == "center |===text===|");
+  bw.print("center |{:^^10}|", "text");
+  REQUIRE(bw.view() == "center |^^^text^^^|");
   bw.reduce(0);
-  bw.print("center |{:%3A=10}|", "text");
+  bw.print("center |{:%3A^10}|", "text");
   REQUIRE(bw.view() == "center |:::text:::|");
   bw.reduce(0);
-  bw.print("left >{0:<9}< right >{0:>9}< center >{0:=9}<", 956);
+  bw.print("left >{0:<9}< right >{0:>9}< center >{0:^9}<", 956);
   REQUIRE(bw.view() == "left >956      < right >      956< center >   956   <");
 
   bw.reduce(0);
@@ -121,15 +124,23 @@ TEST_CASE("bwprint basics", "[bwprint]")
   bw.print("Arg {0} Arg {{{{}}}} {}", 9, 10);
   REQUIRE(bw.view() == "Arg 9 Arg {{}} 10");
   bw.reduce(0);
-  bw.print("Time is {now}");
-  //  REQUIRE(bw.view() == "Time is");
+
+  bw.reset().print("{leif}");
+  REQUIRE(bw.view() == "{~leif~}"); // expected to be missing.
+
+  bw.reset().print("Thread: {thread-name} [{thread-id:#x}] - Tick: {tick} - Epoch: {now} - timestamp: {timestamp} {0}\n", 31267);
+  // std::cout << bw;
+  /*
+  std::cout << ts::LocalBufferWriter<256>().print(
+    "Thread: {thread-name} [{thread-id:#x}] - Tick: {tick} - Epoch: {now} - timestamp: {timestamp} {0}{}", 31267, '\n');
+  */
 }
 
-TEST_CASE("BWFormat", "[bwprint][bwformat]")
+TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
 {
   ts::LocalBufferWriter<256> bw;
-  ts::BWFormat fmt("left >{0:<9}< right >{0:>9}< center >{0:=9}<");
-  ts::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
+  ts::BWFormat fmt("left >{0:<9}< right >{0:>9}< center >{0:^9}<");
+  std::string_view text{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"};
 
   bw.reduce(0);
   static const ts::BWFormat bad_arg_fmt{"{{BAD_ARG_INDEX:{} of {}}}"};
@@ -178,7 +189,7 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.print("{:#:d}", ts::MemSpan(const_cast<char *>(char_ptr), 4));
   REQUIRE(bw.view() == "0x676f6f64");
 
-  ts::string_view sv{"abc123"};
+  std::string_view sv{"abc123"};
   bw.reduce(0);
   bw.print("{}", sv);
   REQUIRE(bw.view() == sv);
@@ -195,13 +206,15 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.print("|{:>16x}|", sv);
   REQUIRE(bw.view() == "|    616263313233|");
   bw.reduce(0);
-  bw.print("|{:=16x}|", sv);
+  bw.print("|{:^16x}|", sv);
   REQUIRE(bw.view() == "|  616263313233  |");
   bw.reduce(0);
   bw.print("|{:>16.2x}|", sv);
   REQUIRE(bw.view() == "|        63313233|");
   bw.reduce(0);
   bw.print("|{:<0.2,5x}|", sv);
+  REQUIRE(bw.view() == "|63313|");
+  bw.reset().print("|{:<.2,5x}|", sv);
   REQUIRE(bw.view() == "|63313|");
 
   bw.reduce(0);
@@ -220,15 +233,15 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.print("|{:>9s}|", false);
   REQUIRE(bw.view() == "|    false|");
   bw.reduce(0);
-  bw.print("|{:=10s}|", true);
+  bw.print("|{:^10s}|", true);
   REQUIRE(bw.view() == "|   true   |");
 
   // Test clipping a bit.
   ts::LocalBufferWriter<20> bw20;
-  bw20.print("0123456789abc|{:=10s}|", true);
+  bw20.print("0123456789abc|{:^10s}|", true);
   REQUIRE(bw20.view() == "0123456789abc|   tru");
   bw20.reduce(0);
-  bw20.print("012345|{:=10s}|6789abc", true);
+  bw20.print("012345|{:^10s}|6789abc", true);
   REQUIRE(bw20.view() == "012345|   true   |67");
 
   INK_MD5 md5;
@@ -239,14 +252,18 @@ TEST_CASE("BWFormat", "[bwprint][bwformat]")
   bw.reduce(0);
   bw.print("{}", md5);
   REQUIRE(bw.view() == "e99a18c428cb38d5f260853678922e03");
+
+  bw.reset().print("Char '{}'", 'a');
+  REQUIRE(bw.view() == "Char 'a'");
+  bw.reset().print("Byte '{}'", uint8_t{'a'});
+  REQUIRE(bw.view() == "Byte '97'");
 }
 
 TEST_CASE("bwstring", "[bwprint][bwstring]")
 {
   std::string s;
-  size_t n;
   ts::TextView fmt("{} -- {}");
-  ts::string_view text{"e99a18c428cb38d5f260853678922e03"};
+  std::string_view text{"e99a18c428cb38d5f260853678922e03"};
 
   ts::bwprint(s, fmt, "string", 956);
   REQUIRE(s.size() == 13);
@@ -257,6 +274,13 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
 
   ts::bwprint(s, "{} .. |{:,20}|", 32767, text);
   REQUIRE(s == "32767 .. |e99a18c428cb38d5f260|");
+
+  ts::LocalBufferWriter<128> bw;
+  char buff[128];
+  snprintf(buff, sizeof(buff), "|%s|", bw.print("Deep Silent Complete by {}\0", "Nightwish"sv).data());
+  REQUIRE(std::string_view(buff) == "|Deep Silent Complete by Nightwish|");
+  snprintf(buff, sizeof(buff), "|%s|", bw.reset().print("Deep Silent Complete by {}\0elided junk", "Nightwish"sv).data());
+  REQUIRE(std::string_view(buff) == "|Deep Silent Complete by Nightwish|");
 }
 
 TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
@@ -316,6 +340,13 @@ TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "1        2    2");
   bwformat(bw, center, three_n);
   REQUIRE(bw.view() == "1        2    2 -3  ");
+
+  std::atomic<int> ax{0};
+  bw.reset().print("ax == {}", ax);
+  REQUIRE(bw.view() == "ax == 0");
+  ++ax;
+  bw.reset().print("ax == {}", ax);
+  REQUIRE(bw.view() == "ax == 1");
 }
 
 TEST_CASE("BWFormat floating", "[bwprint][bwformat]")
@@ -462,7 +493,7 @@ TEST_CASE("bwperf", "[bwprint][performance]")
 
   static constexpr const char * FMT = "Format |{:#010x}| '{}'";
   static constexpr ts::TextView fmt{FMT, strlen(FMT)};
-  static constexpr ts::string_view text{"e99a18c428cb38d5f260853678922e03"_sv};
+  static constexpr std::string_view text{"e99a18c428cb38d5f260853678922e03"sv};
   ts::LocalBufferWriter<256> bw;
 
   ts::BWFSpec spec;

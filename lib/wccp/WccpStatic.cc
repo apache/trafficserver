@@ -169,16 +169,15 @@ vlogf_errno(ts::Errata::Code code, char const *format, va_list &rest)
 {
   int e = errno; // Preserve value before making system calls.
   ts::Errata err;
-  int n;
   static int const E_SIZE = 1024;
   char e_buffer[E_SIZE];
   static int const T_SIZE = 8192;
   char t_buffer[T_SIZE];
 
-  n = vsnprintf(t_buffer, T_SIZE, format, rest);
+  int n = vsnprintf(t_buffer, T_SIZE, format, rest);
   if (0 <= n && n < T_SIZE) { // still have room.
     ATS_UNUSED_RETURN(strerror_r(e, e_buffer, E_SIZE));
-    n += snprintf(t_buffer + n, T_SIZE - n, "[%d] %s", e, e_buffer);
+    snprintf(t_buffer + n, T_SIZE - n, "[%d] %s", e, e_buffer);
   }
   err.push(ts::Errata::Id(0), code, t_buffer);
   return err;

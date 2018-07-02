@@ -28,6 +28,7 @@
 #include <ts/apidefs.h>
 #include <ts/apidefs.h>
 #include <ts/ink_assert.h>
+#include "ts/IpMap.h"
 #include <algorithm>
 #include <vector>
 
@@ -35,6 +36,11 @@
 void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
                    IpAddr &ip4,      ///< [out] IPv4 address.
                    IpAddr &ip6       ///< [out] Ipv6 address.
+);
+
+/// Load up an IpMap with IP addresses from the configuration file.
+void RecHttpLoadIpMap(const char *name, ///< Name of value in configuration file.
+                      IpMap &ipmap      ///< [out] IpMap.
 );
 
 /** A set of session protocols.

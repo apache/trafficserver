@@ -796,13 +796,17 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
         snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
         return -4;
       }
-      pi->fp_tsremap_init         = (remap_plugin_info::_tsremap_init *)dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
-      pi->fp_tsremap_done         = (remap_plugin_info::_tsremap_done *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE);
-      pi->fp_tsremap_new_instance = (remap_plugin_info::_tsremap_new_instance *)dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE);
+      pi->fp_tsremap_init = reinterpret_cast<remap_plugin_info::_tsremap_init *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT));
+      pi->fp_tsremap_config_reload =
+        reinterpret_cast<remap_plugin_info::_tsremap_config_reload *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_CONFIG_RELOAD));
+      pi->fp_tsremap_done = reinterpret_cast<remap_plugin_info::_tsremap_done *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE));
+      pi->fp_tsremap_new_instance =
+        reinterpret_cast<remap_plugin_info::_tsremap_new_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE));
       pi->fp_tsremap_delete_instance =
-        (remap_plugin_info::_tsremap_delete_instance *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE);
-      pi->fp_tsremap_do_remap    = (remap_plugin_info::_tsremap_do_remap *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP);
-      pi->fp_tsremap_os_response = (remap_plugin_info::_tsremap_os_response *)dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
+        reinterpret_cast<remap_plugin_info::_tsremap_delete_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE));
+      pi->fp_tsremap_do_remap = reinterpret_cast<remap_plugin_info::_tsremap_do_remap *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP));
+      pi->fp_tsremap_os_response =
+        reinterpret_cast<remap_plugin_info::_tsremap_os_response *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE));
 
       if (!pi->fp_tsremap_init) {
         snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_INIT, c);
@@ -1418,6 +1422,11 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
 {
   BUILD_TABLE_INFO bti;
 
+  // If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
+  // can signal all these plugins that a reload has begun.
+  if (remap_pi_list) {
+    remap_pi_list->indicate_reload();
+  }
   bti.rewrite = rewrite;
   return remap_parse_config_bti(path, &bti);
 }

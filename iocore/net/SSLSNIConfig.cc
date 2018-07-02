@@ -36,10 +36,6 @@
 #include "ts/ink_memory.h"
 #include <ts/TextView.h>
 
-#define SNI_NAME_TAG "dest_host"
-#define SNI_ACTION_TAG "action"
-#define SNI_PARAM_TAG "param"
-
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
 Map<int, SSLNextProtocolSet *> snpsMap;
@@ -60,7 +56,7 @@ SNIConfigParams::getPropertyConfig(cchar *servername) const
 void
 SNIConfigParams::loadSNIConfig()
 {
-  for (auto item : L_sni.items) {
+  for (auto item : Y_sni.items) {
     actionVector *aiVec = new actionVector();
     Debug("ssl", "name: %s", item.fqdn.data());
     cchar *servername = item.fqdn.data();
@@ -118,8 +114,8 @@ SNIConfigParams::get(cchar *servername) const
     Vec<cchar *> keys;
     wild_sni_action_map.get_keys(keys);
     for (int i = 0; i < static_cast<int>(keys.length()); i++) {
-      ts::string_view sv{servername, strlen(servername)};
-      ts::string_view key_sv{keys.get(i)};
+      std::string_view sv{servername, strlen(servername)};
+      std::string_view key_sv{keys.get(i)};
       if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
         return wild_sni_action_map.get(key_sv.data());
       }
@@ -143,28 +139,25 @@ int
 SNIConfigParams::Initialize()
 {
   sni_filename = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.servername.filename"));
+
+  Note("loading %s", sni_filename);
+
   struct stat sbuf;
   if (stat(sni_filename, &sbuf) == -1 && errno == ENOENT) {
+    Note("failed to reload ssl_server_name.config");
     Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename);
     return 1;
   }
 
-  lua_State *L = lua_open(); /* opens Lua */
-  luaL_openlibs(L);
-  if (luaL_loadfile(L, sni_filename)) {
-    Error("Loading SNI configuration - luaL_loadfile: %s", lua_tostring(L, -1));
-    lua_pop(L, 1);
+  ts::Errata zret = Y_sni.loader(sni_filename);
+  if (!zret.isOK()) {
+    Note("failed to reload ssl_server_name.config");
     return 1;
   }
 
-  if (lua_pcall(L, 0, 0, 0)) {
-    Error("Loading SNI configuration - luap_pcall: %s failed: %s", sni_filename, lua_tostring(L, -1));
-    lua_pop(L, 1);
-    return 1;
-  }
-
-  L_sni.loader(L);
   loadSNIConfig();
+  Note("ssl_server_name.config done reloading!");
+
   return 0;
 }
 

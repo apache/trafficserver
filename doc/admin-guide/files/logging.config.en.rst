@@ -68,20 +68,20 @@ variable. The function takes a table with two attributes: a mandatory string
 optional number ``Interval`` defining the aggregation interval for summary
 logs.
 
-.. code:: lua
+.. code:: yaml
 
-   -- A one-line-per-event format that just prints event timestamps.
-   myformat = format {
-     Format = '%<cqtq>'
-   }
+   # A one-line-per-event format that just prints event timestamps.
+   formats:
+   - name: myformat
+     format: '%<cqtq>'
 
-   -- An aggregation/summary format that prints the last event timestamp from
-   -- the interval along with the total count of events in the same interval.
-   -- (Doing so every 30 seconds.)
-   mysummaryformat = format {
-     Format = '%<LAST(cqtq)> %<COUNT(*)>',
-     Interval = 30
-   }
+   # An aggregation/summary format that prints the last event timestamp from
+   # the interval along with the total count of events in the same interval.
+   # (Doing so every 30 seconds.)
+   formats:
+   - name: mysummaryformat
+     format: '%<LAST(cqtq)> %<COUNT(*)>'
+     interval: 30
 
 You may define as many and as varied a collection of format objects as you
 desire.
@@ -294,30 +294,29 @@ required.
 =================== =========== ===============================================
 Name                Type        Description
 =================== =========== ===============================================
-Filename            string      The name of the logfile relative to the default
+filename            string      The name of the logfile relative to the default
                                 logging directory (set with
                                 :ts:cv:`proxy.config.log.logfile_dir`).
-Format              string or   Either a format object created earlier, or a
-                    format obj  string with a valid format specification.
-Header              string      If present, emitted as the first line of each
+format              string      a string with a valid named format specification.
+header              string      If present, emitted as the first line of each
                                 new log file.
-RollingEnabled      *see below* Determines the type of log rolling to use (or
+rolling_enabled     *see below* Determines the type of log rolling to use (or
                                 whether to disable rolling). Overrides
                                 :ts:cv:`proxy.config.log.rolling_enabled`.
-RollingIntervalSec  number      Interval in seconds between log file rolling.
+rolling_interval_sec number     Interval in seconds between log file rolling.
                                 Overrides
                                 :ts:cv:`proxy.config.log.rolling_interval_sec`.
-RollingOffsetHr     number      Specifies an hour (from 0 to 23) at which log
+rolling_offset_hr   number      Specifies an hour (from 0 to 23) at which log
                                 rolling is guaranteed to align. Only has an
                                 effect if RollingIntervalSec is set to greater
                                 than one hour. Overrides
                                 :ts:cv:`proxy.config.log.rolling_offset_hr`.
-RollingSizeMb       number      Size, in megabytes, at which log files are
+rolling_size_mb     number      Size, in megabytes, at which log files are
                                 rolled.
-Filters             array of    The optional list of filter objects which
+filters             array of    The optional list of filter objects which
                     filters     restrict the individual events logged. The array
                                 may only contain one accept filter.
-CollationHosts      array of    If present, one or more strings specifying the
+collation_hosts     array of    If present, one or more strings specifying the
                     strings     log collation hosts to which logs should be
                                 delivered, each in the form of "<ip>:<port>".
                                 :ref:`admin-logging-collation` for more
@@ -325,7 +324,7 @@ CollationHosts      array of    If present, one or more strings specifying the
 =================== =========== ===============================================
 
 Enabling log rolling may be done globally in :file:`records.config`, or on a
-per-log basis by passing appropriate values for the ``RollingEnabled`` key. The
+per-log basis by passing appropriate values for the ``rolling_enabled`` key. The
 latter method may also be used to effect different rolling settings for
 individual logs. The numeric values that may be passed are the same as used by
 :ts:cv:`proxy.config.log.rolling_enabled`. For convenience and readability,
@@ -355,64 +354,60 @@ Examples
 The following is an example of a format that collects information using three
 common fields:
 
-.. code:: lua
+.. code:: yaml
 
-   minimalfmt = format {
-     Format = '%<chi> : %<cqu> : %<pssc>'
-   }
+   formats:
+   - name: minimalfmt
+     format: '%<chi> : %<cqu> : %<pssc>'
 
 The following is an example of a format that uses aggregate operators to
 produce a summary log:
 
-.. code:: lua
+.. code:: yaml
 
-   summaryfmt = format {
-     Format = '%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>',
-     Interval = 10
-   }
+   formats:
+   - name: summaryfmt
+     format: '%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>'
+     interval: 10
 
 The following is an example of a filter that will cause only REFRESH_HIT events
 to be logged:
 
-.. code:: lua
+.. code:: yaml
 
-   refreshhitfilter = filter.accept('pssc MATCH REFRESH_HIT')
+   filters:
+   - name: refreshhitfilter
+     accept: pssc MATCH REFRESH_HIT
 
 The following is an example of a filter that will cause the value of the first
 query parameter named ``passwd`` to be wiped.
 
-.. code:: lua
+.. code:: yaml
 
-   passwdfilter = filter.wipe('passwd')
+   filters:
+   - name: passwdfilter
+     wipe: passwd
 
 The following is an example of a log specification that creates a local log
 file for the minimal format defined earlier. The log filename will be
 ``minimal.log`` because we select the ASCII logging format.
 
-.. code:: lua
+.. code:: yaml
 
-   log.ascii {
-     Filename = 'minimal',
-     Format = minimalfmt
-   }
+   logs:
+   - mode: ascii
+     filename: minimal
+     format: minimalfmt
 
 The following is an example of a log specification that creates a local log
 file using the summary format from earlier, and only includes events that
 matched the REFRESH_HIT filter we created.
 
-.. code:: lua
+.. code:: yaml
 
-   log.ascii {
-     Filename = 'refreshhit_summary',
-     Format = summaryfmt,
-     Filters = { refreshhitfilter }
-   }
-
-Further Reading
-===============
-
-As the :file:`logging.config` configuration file is just a Lua script (with a
-handful of predefined functions and variables), general Lua references may be
-handy for those not already familiar with the language.
-
-* `Lua Documentation <https://www.lua.org/docs.html>`_
+   logs:
+   - mode: ascii
+     filename: refreshhit_summary
+     format: summaryfmt
+     filters:
+     - refreshhitfilter

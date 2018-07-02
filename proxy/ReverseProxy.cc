@@ -44,14 +44,13 @@
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
-UrlRewrite *rewrite_table = nullptr;
-remap_plugin_info *remap_pi_list; // We never reload the remap plugins, just append to 'em.
+UrlRewrite *rewrite_table        = nullptr;
+remap_plugin_info *remap_pi_list = nullptr; // We never reload the remap plugins, just append to 'em.
 
 // Tokens for the Callback function
 #define FILE_CHANGED 0
 #define REVERSE_CHANGED 1
 #define TSNAME_CHANGED 2
-#define SYNTH_PORT_CHANGED 3
 #define TRANS_CHANGED 4
 #define URL_REMAP_MODE_CHANGED 8
 #define HTTP_DEFAULT_REDIRECT_CHANGED 9
@@ -59,7 +58,6 @@ remap_plugin_info *remap_pi_list; // We never reload the remap plugins, just app
 //
 // Begin API Functions
 //
-
 int
 init_reverse_proxy()
 {
@@ -74,7 +72,6 @@ init_reverse_proxy()
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.admin.synthetic_port", url_rewrite_CB, (void *)SYNTH_PORT_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
 
   // Hold at least one lease, until we reload the configuration
@@ -168,10 +165,6 @@ url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
   case FILE_CHANGED:
   case HTTP_DEFAULT_REDIRECT_CHANGED:
     eventProcessor.schedule_imm(new UR_UpdateContinuation(reconfig_mutex), ET_TASK);
-    break;
-
-  case SYNTH_PORT_CHANGED:
-    // The AutoConf port does not current change on manager except at restart
     break;
 
   case URL_REMAP_MODE_CHANGED:

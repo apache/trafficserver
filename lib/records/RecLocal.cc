@@ -128,11 +128,6 @@ config_update_thr(void * /* data */)
       RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
       RecSetRecordInt("proxy.node.config.restart_required.manager", 1, REC_SOURCE_DEFAULT);
       break;
-    case RECU_RESTART_TC:
-      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
-      RecSetRecordInt("proxy.node.config.restart_required.manager", 1, REC_SOURCE_DEFAULT);
-      RecSetRecordInt("proxy.node.config.restart_required.cop", 1, REC_SOURCE_DEFAULT);
-      break;
     case RECU_NULL:
     case RECU_DYNAMIC:
       break;

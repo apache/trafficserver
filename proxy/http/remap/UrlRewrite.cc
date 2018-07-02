@@ -56,7 +56,6 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 UrlRewrite::UrlRewrite()
   : nohost_rules(0),
     reverse_proxy(0),
-    mgmt_synthetic_port(0),
     ts_name(nullptr),
     http_default_redirect_url(nullptr),
     num_rules_forward(0),
@@ -95,7 +94,6 @@ UrlRewrite::UrlRewrite()
   }
 
   REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
-  REC_ReadConfigInteger(mgmt_synthetic_port, "proxy.config.admin.synthetic_port");
 
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;

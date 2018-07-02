@@ -68,6 +68,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   new_session->outbound_port             = outbound_port;
   new_session->host_res_style            = ats_host_res_from(client_ip->sa_family, host_res_preference);
   new_session->acl_record                = acl_record;
+  // new_session->http1clientsession_f_proxy_protocol          = httpsessionaccept_f_proxy_protocol;
 
   new_session->new_connection(netvc, iobuf, reader, backdoor);
 

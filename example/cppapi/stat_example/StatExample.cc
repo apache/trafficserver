@@ -44,7 +44,7 @@ GlobalPlugin *plugin;
 
 /*
  * This is a simple plugin that will increment a counter
- * everytime a request comes in.
+ * every time a request comes in.
  */
 class GlobalHookPlugin : public GlobalPlugin
 {

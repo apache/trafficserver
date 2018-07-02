@@ -25,7 +25,7 @@ Proxy Protocol
 The `PROXY protocol <https://www.haproxy.com/blog/haproxy/proxy-protocol/>`_
 provides a means of passing connection information between layers of the proxy
 infrastructure.  Without the PROXY protocol, |TS| would only have connection
-information from the load balancer conecting to |TS| and not the actual
+information from the load balancer connecting to |TS| and not the actual
 originating client connection information.  This can be done over either HTTP or
 TLS connections.
 

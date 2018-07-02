@@ -646,7 +646,7 @@ iniparser_load(const char *ininame)
       break;
 
     case LINE_VALUE:
-      sprintf(tmp, "%s:%s", section, key);
+      snprintf(tmp, sizeof(tmp), "%s:%s", section, key);
       errs = dictionary_set(dict, tmp, val);
       break;
 

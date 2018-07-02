@@ -24,11 +24,21 @@ import codecs
 import json
 from dnslib import *
 
+sys.path.append(
+    os.path.normpath(
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..'
+        )
+    )
+)
+
+import lib.IPConstants as IPConstants
+
 TTL = 60 * 5  # completely arbitrary TTL value
 round_robin = False
 default_records = list()
 records = dict()
-
 
 class DomainName(str):
     def __getattr__(self, item):
@@ -88,11 +98,12 @@ def build_domain_mappings(path):
             # this loop only runs once, kind of a hack to access the only key in the dict
             domain_name = DomainName(d)
             print("Domain name:", domain_name)
-            records[domain_name] = [A(x) for x in domain[domain_name]]
+            # we can test using python's built-in ipaddress module, but this should suffice
+            records[domain_name] = [A(x) if ":" not in x else AAAA(x) for x in domain[domain_name]] 
             print(records[domain_name])
 
     if 'otherwise' in zone_file:
-        default_records.extend([A(d) for d in zone_file['otherwise']])
+        default_records.extend([A(d) if ":" not in d else AAAA(d) for d in zone_file['otherwise']])
 
 
 def add_authoritative_records(reply, domain):
@@ -152,23 +163,31 @@ def dns_response(data):
 if __name__ == '__main__':
     # handle cmd line args
     parser = argparse.ArgumentParser()
-    parser.add_argument("ip_addr", type=str, help="Interface", default="127.0.0.1")
+    parser.add_argument("ip", type=str, help="Interface")
     parser.add_argument("port", type=int, help="port uDNS should listen on")
     parser.add_argument("zone_file", help="path to zone file")
     parser.add_argument("--rr", action='store_true',
                         help='round robin load balances if multiple IP addresses are present for 1 domain')
     args = parser.parse_args()
 
+    if IPConstants.isIPv6(args.ip):
+        #  *UDPServer derives from TCPServer, so setting one will affect the other
+        socketserver.TCPServer.address_family = socket.AF_INET6
+
+    # exit(1)
+
     if args.rr:
         round_robin = True
     build_domain_mappings(args.zone_file)
 
+    ipaddr = IPConstants.getIP(args.ip)
+
     servers = [
-        socketserver.ThreadingUDPServer((args.ip_addr, args.port), UDPRequestHandler),
-        socketserver.ThreadingTCPServer((args.ip_addr, args.port), TCPRequestHandler),
+        socketserver.ThreadingUDPServer((ipaddr, args.port), UDPRequestHandler),
+        socketserver.ThreadingTCPServer((ipaddr, args.port), TCPRequestHandler),
     ]
 
-    print("Starting DNS...")
+    print("Starting DNS on address {0} port {1}...".format(ipaddr, args.port))
     for s in servers:
         thread = threading.Thread(target=s.serve_forever)  # that thread will start one more thread for each request
         thread.daemon = True  # exit the server thread when the main thread terminates
@@ -181,7 +200,8 @@ if __name__ == '__main__':
             sys.stdout.flush()
 
     except KeyboardInterrupt:
-        pass
+        print("Got SigINT")
+        # pass
     finally:
         for s in servers:
             s.shutdown()

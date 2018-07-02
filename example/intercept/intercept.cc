@@ -517,7 +517,7 @@ InterceptTxnHook(TSCont contp, TSEvent event, void *edata)
     if (InterceptShouldInterceptRequest(arg.txn)) {
       TSCont c = InterceptContCreate(InterceptInterceptionHook, TSMutexCreate(), arg.txn);
 
-      VDEBUG("intercepting orgin server request for txn=%p, cont=%p", arg.txn, c);
+      VDEBUG("intercepting origin server request for txn=%p, cont=%p", arg.txn, c);
       TSHttpTxnServerIntercept(c, arg.txn);
     }
 

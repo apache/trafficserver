@@ -48,11 +48,12 @@ logging destinations.
 A very simple exampe, which contains only the timestamp of when the event began
 and the canonical URL of the request, would look like:
 
-.. code:: lua
+.. code:: yaml
 
-   myformat = format {
-     Format = "%<cqtq> %<cauc>"
-   }
+   formats:
+   - name: myformat
+     format: '%<cqtq> %<cauc>'
+
 
 You may include as many custom field codes as you wish. The full list of codes
 available can be found in :ref:`admin-logging-fields`. You may also include
@@ -61,11 +62,11 @@ the timestamp and canonical URL in our customer format above with a slash
 instead of a space, or even a slash surrounded by spaces, we could do so by
 just adding the desired characters to the format string:
 
-.. code:: lua
+.. code:: yaml
 
-   myformat = format {
-     Format = "%<cqtq> / %<cauc>"
-   }
+   formats:
+   - name: myformat
+     format: '%<cqtq> / %<cauc>'
 
 You may define as many custom formats as you wish. To apply changes to custom
 formats, you will need to run the command :option:`traffic_ctl config reload`
@@ -585,6 +586,7 @@ Status Codes
 .. _pfsc:
 .. _pssc:
 .. _sssc:
+.. _prrp:
 
 These log fields provide a variety of status codes, some numeric and some as
 strings, relating to client, proxy, and origin transactions.
@@ -601,6 +603,8 @@ pfsc  Proxy Request         Finish status code specifying whether the proxy
                             request from |TS| to the origin server was
                             successfully completed (``FIN``), interrupted
                             (``INTR``), or timed out (``TIMEOUT``).
+prrp  Proxy Response        HTTP response reason phrase sent by |TS| proxy to the
+                            client.
 pssc  Proxy Response        HTTP response status code sent by |TS| proxy to the
                             client.
 sssc  Origin Response       HTTP response status code sent by the origin server

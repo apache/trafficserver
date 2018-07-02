@@ -28,9 +28,7 @@ Configuration Files
    cache.config.en
    hosting.config.en
    ip_allow.config.en
-   log_hosts.config.en
    logging.config.en
-   metrics.config.en
    parent.config.en
    plugin.config.en
    records.config.en
@@ -39,7 +37,6 @@ Configuration Files
    ssl_multicert.config.en
    ssl_server_name.config.en
    storage.config.en
-   vaddrs.config.en
    volume.config.en
 
 :doc:`cache.config.en`
@@ -54,14 +51,8 @@ Configuration Files
    Controls access to the |TS| cache based on source IP addresses and networks
    including limiting individual HTTP methods.
 
-:doc:`log_hosts.config.en`
-   Defines origin servers for which separate logs should be maintained.
-
 :doc:`logging.config.en`
    Defines custom log file formats, filters, and processing options.
-
-:doc:`metrics.config.en`
-   Defines custom dynamic metrics using Lua scripting.
 
 :doc:`parent.config.en`
    Configures parent proxies in hierarchical caching layouts.
@@ -71,8 +62,7 @@ Configuration Files
    configurations.
 
 :doc:`records.config.en`
-   Contains many configuration variables affecting |TS| operation, both the
-   local node as well as a cluster in which the node may be a member.
+   Contains many configuration variables affecting |TS| operation.
 
 :doc:`remap.config.en`
    Defines mapping rules used by |TS| to properly route all incoming requests.
@@ -89,9 +79,6 @@ Configuration Files
 
 :doc:`storage.config.en`
    Configures all storage devices and paths to be used for the |TS| cache.
-
-:doc:`vaddrs.config.en`
-   Deprecated file formerly used for cluster configuration.
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.

@@ -77,7 +77,12 @@ Http1ClientSession::Http1ClientSession()
     bound_ss(nullptr),
     released_transactions(0),
     f_outbound_transparent(false),
-    f_transparent_passthrough(false)
+    f_transparent_passthrough(false),
+<<<<<<< HEAD
+	  http1clientsession_f_proxy_protocol(false)
+=======
+	f_proxy_protocol(false)
+>>>>>>> 8eafb049e6beb81418a1600517268a85f12b902e
 {
 }
 

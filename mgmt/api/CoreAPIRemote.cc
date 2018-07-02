@@ -1033,13 +1033,15 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 }
 
 TSMgmtError
-HostStatusSetDown(const char *host_name)
+HostStatusSetDown(const char *host_name, int down_time)
 {
+  fprintf(stderr, "%s:%s:%d - host_name: %s, down_time: %d\n", __FILE__, __func__, __LINE__, host_name, down_time);
   TSMgmtError ret         = TS_ERR_PARAMS;
   OpType op               = OpType::HOST_STATUS_DOWN;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(host_name);
+  MgmtMarshallInt dtime   = down_time;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name);
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &op, &name, &dtime);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
 }
 

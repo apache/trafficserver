@@ -40,6 +40,12 @@ enum HostStatus_t {
   HOST_STATUS_UP,
 };
 
+struct HostStatRec_t {
+  HostStatus_t status;
+  time_t marked_down;     // the time that this host was marked down.
+  unsigned int down_time; // number of seconds that the host should be down, 0 is indefinately
+};
+
 const std::string stat_prefix = "host_status.";
 
 /**
@@ -54,7 +60,7 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const char *name, const HostStatus_t status);
+  void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time);
   HostStatus_t getHostStatus(const char *name);
   void createHostStat(const char *name);
 

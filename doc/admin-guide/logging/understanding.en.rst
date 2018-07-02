@@ -71,10 +71,9 @@ System Logs
 
 System log files record system information, including messages about the state
 of |TS| and any errors or warnings it produces.  This kind of information might
-include a note that event log files were rolled, a warning that cluster
-communication timed out, or an error indicating that |TS| was restarted. If
-|TS| is failing to start properly on your system(s), this is the first place
-you'll want to look for possible hints as to the cause.
+include a note that event log files were rolled or an error indicating that |TS|
+was restarted. If |TS| is failing to start properly on your system(s), this is
+the first place you'll want to look for possible hints as to the cause.
 
 All system information messages are logged with the system-wide logging
 facility :manpage:`syslog` under the daemon facility. The
@@ -84,8 +83,7 @@ specifies where these messages are logged. A typical location is
 
 The :manpage:`syslog(8)` process works on a system-wide basis, so it serves as
 the single repository for messages from all |TS| processes (including
-:program:`traffic_server`, :program:`traffic_manager`, and
-:program:`traffic_cop`).
+:program:`traffic_server` and  :program:`traffic_manager`).
 
 System information logs observe a static format. Each log entry in the log
 contains information about the date and time the error was logged, the hostname
@@ -149,12 +147,12 @@ Summary logs are defined in :file:`logging.config` just like regular event
 logs, with the only two differences being the exclusive use of the
 aforementioned aggregate functions and the specification of an interval, as so:
 
-.. code:: lua
+.. code:: yaml
 
-    mysummary = format {
-      Format = "%<operator(field)> : %<operator(field)>",
-      Interval = "n"
-    }
+   formats:
+   - name: mysummary
+     format: '%<operator(field)> : %<operator(field)>'
+     interval: n
 
 The interval itself is given with *n* as the number of seconds for each period
 of aggregation. There is no default value.

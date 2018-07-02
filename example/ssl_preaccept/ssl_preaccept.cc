@@ -51,14 +51,14 @@ IpRangeQueue ClientBlindTunnelIp;
 Configuration Config; // global configuration
 
 void
-Parse_Addr_String(ts::string_view const &text, IpRange &range)
+Parse_Addr_String(std::string_view const &text, IpRange &range)
 {
   IpAddr newAddr;
   // Is there a hyphen?
   size_t hyphen_pos = text.find('-');
-  if (hyphen_pos != ts::string_view::npos) {
-    ts::string_view addr1 = text.substr(0, hyphen_pos);
-    ts::string_view addr2 = text.substr(hyphen_pos + 1);
+  if (hyphen_pos != std::string_view::npos) {
+    std::string_view addr1 = text.substr(0, hyphen_pos);
+    std::string_view addr2 = text.substr(hyphen_pos + 1);
     range.first.load(addr1);
     range.second.load(addr2);
   } else { // Assume it is a single address
@@ -77,13 +77,13 @@ Load_Config_Value(Value const &parent, const char *name, IpRangeQueue &addrs)
   IpRange ipRange;
   if (v.isLiteral()) {
     auto txt = v.getText();
-    Parse_Addr_String(ts::string_view(txt._ptr, txt._size), ipRange);
+    Parse_Addr_String(std::string_view(txt._ptr, txt._size), ipRange);
     addrs.push_back(ipRange);
   } else if (v.isContainer()) {
     size_t i;
     for (i = 0; i < v.childCount(); i++) {
       auto txt = v[i].getText();
-      Parse_Addr_String(ts::string_view(txt._ptr, txt._size), ipRange);
+      Parse_Addr_String(std::string_view(txt._ptr, txt._size), ipRange);
       addrs.push_back(ipRange);
     }
   }
