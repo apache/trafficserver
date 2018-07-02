@@ -21,13 +21,12 @@
 
 #pragma once
 
+#include "ts/ink_config.h"
+
+#if TS_USE_TLS_OCSP
 #include <openssl/ssl.h>
+#include <openssl/ocsp.h>
 
-#ifdef OCSP_sendreq_new
-#define HAVE_OPENSSL_OCSP_STAPLING 1
-#endif
-
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
 void ssl_stapling_ex_init();
 bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname);
 void ocsp_update();
