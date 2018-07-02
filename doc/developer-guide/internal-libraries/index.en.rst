@@ -33,6 +33,7 @@ development team.
    scalar.en
    buffer-writer.en
    intrusive-list.en
+   intrusive-hash-map.en
    MemArena.en
    AcidPtr.en
    Extendible.en

@@ -1083,6 +1083,7 @@ add_library(libtsutil SHARED
         lib/ts/InkErrno.cc
         lib/ts/InkErrno.h
         lib/ts/IntrusiveDList.h
+	lib/ts/IntrusiveHashMap.h
         lib/ts/IntrusivePtrTest.cc
         lib/ts/IpMap.cc
         lib/ts/IpMap.h
@@ -1157,6 +1158,7 @@ add_executable(test_tslib
         lib/ts/unit-tests/test_History.cc
 	lib/ts/unit-tests/test_ink_inet.cc
 	lib/ts/unit-tests/test_IntrusiveDList.cc
+	lib/ts/unit-tests/test_IntrusiveHashMap.cc
 	lib/ts/unit-tests/test_IntrusivePtr.cc
 	lib/ts/unit-tests/test_IpMap.cc
 	lib/ts/unit-tests/test_layout.cc
