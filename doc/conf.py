@@ -168,6 +168,7 @@ pygments_style = 'sphinx'
 
 nitpicky = True
 nitpick_ignore = [
+                    ('cpp:identifier', 'F') # required for templated method using 'F'
                  ]
 
 # Autolink issue references.
