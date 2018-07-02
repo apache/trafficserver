@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef HTML_PARSER_H
-#define HTML_PARSER_H
+
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -143,5 +143,3 @@ namespace inliner
 
 } // namespace inliner
 } // namespace ats
-
-#endif // HTML_PARSER_H

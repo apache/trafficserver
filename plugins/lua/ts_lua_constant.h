@@ -16,9 +16,6 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_CONSTANT_H
-#define _TS_LUA_CONSTANT_H
+#pragma once
 
 void ts_lua_inject_constant_api(lua_State *L);
-
-#endif

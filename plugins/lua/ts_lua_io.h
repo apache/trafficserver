@@ -16,12 +16,9 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_IO_H
-#define _TS_LUA_IO_H
+#pragma once
 
 #include <ts/ts.h>
 #include <string.h>
 
 int64_t IOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length);
-
-#endif

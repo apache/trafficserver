@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef UTIL_H
-#define UTIL_H
+
+#pragma once
 
 #include <vector>
 
@@ -38,5 +38,3 @@ namespace util
 {
 typedef std::vector<char> Buffer;
 } // namespace util
-
-#endif // UTIL_H

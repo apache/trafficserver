@@ -31,8 +31,7 @@
  *
  */
 
-#ifndef _MGMT_DEFS_H
-#define _MGMT_DEFS_H
+#pragma once
 
 /*
  * Type definitions.
@@ -62,5 +61,3 @@ typedef enum {
 typedef void *(*MgmtCallback)(void *opaque_cb_data, char *data_raw, int data_len);
 
 #define LM_CONNECTION_SERVER "processerver.sock"
-
-#endif /* _MGMT_DEFS_H */

@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_UTIL_H
-#define _TS_LUA_UTIL_H
+#pragma once
 
 #include "ts_lua_common.h"
 
@@ -67,5 +66,3 @@ ts_lua_http_intercept_ctx *ts_lua_get_http_intercept_ctx(lua_State *L);
 void ts_lua_destroy_http_intercept_ctx(ts_lua_http_intercept_ctx *ictx);
 
 int ts_lua_http_cont_handler(TSCont contp, TSEvent event, void *edata);
-
-#endif

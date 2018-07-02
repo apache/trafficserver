@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_FETCH_H
-#define _TS_LUA_FETCH_H
+#pragma once
 
 #include "ts_lua_common.h"
 
@@ -44,5 +43,3 @@ typedef struct fetch_multi_info {
 } ts_lua_fetch_multi_info;
 
 void ts_lua_inject_fetch_api(lua_State *L);
-
-#endif

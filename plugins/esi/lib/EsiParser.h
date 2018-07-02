@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_PARSER_H
-#define _ESI_PARSER_H
+#pragma once
 
 #include <string>
 
@@ -146,5 +145,3 @@ private:
   inline void _adjustPointers(EsiLib::DocNodeList::iterator node_iter, EsiLib::DocNodeList::iterator end, const char *ext_data_ptr,
                               const char *int_data_start) const;
 };
-
-#endif // _ESI_PARSER_H

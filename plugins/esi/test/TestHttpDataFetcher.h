@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _TEST_HTTP_DATA_FETCHER_H
-#define _TEST_HTTP_DATA_FETCHER_H
+#pragma once
 
 #include <string>
 
@@ -89,5 +88,3 @@ private:
   std::string _data;
   bool _return_data;
 };
-
-#endif

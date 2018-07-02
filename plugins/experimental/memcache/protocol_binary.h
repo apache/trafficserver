@@ -32,8 +32,7 @@
  * Author: Trond Norbye <trond.norbye@sun.com>
  */
 
-#ifndef PROTOCOL_BINARY_H
-#define PROTOCOL_BINARY_H
+#pragma once
 
 /**
  * This file contains definitions of the constants and packet formats
@@ -412,4 +411,3 @@ typedef protocol_binary_request_rangeop protocol_binary_request_rdecrq;
 #ifdef __cplusplus
 }
 #endif
-#endif /* PROTOCOL_BINARY_H */

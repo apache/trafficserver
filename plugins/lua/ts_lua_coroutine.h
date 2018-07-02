@@ -16,10 +16,10 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_COROUTINE_H
-#define _TS_LUA_COROUTINE_H
+#pragma once
 
 #include <stdio.h>
+
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -64,5 +64,3 @@ typedef struct async_item {
 
 ts_lua_async_item *ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_info *ci);
 void ts_lua_release_cont_info(ts_lua_cont_info *ci);
-
-#endif

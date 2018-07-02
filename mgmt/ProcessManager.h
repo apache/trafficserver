@@ -33,8 +33,7 @@
  *
  */
 
-#ifndef _PROCESS_MANAGER_H
-#define _PROCESS_MANAGER_H
+#pragma once
 
 #include "MgmtUtils.h"
 #include "BaseManager.h"
@@ -106,5 +105,3 @@ private:
 };
 
 inkcoreapi extern ProcessManager *pmgmt;
-
-#endif /* _PROCESS_MANAGER_H */
