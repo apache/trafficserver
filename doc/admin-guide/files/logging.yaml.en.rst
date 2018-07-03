@@ -291,37 +291,37 @@ The following subsections cover the contents of the table which should be
 passed when creating your logging object. Only ``Filename`` and ``Format`` are
 required.
 
-=================== =========== ===============================================
-Name                Type        Description
-=================== =========== ===============================================
-filename            string      The name of the logfile relative to the default
-                                logging directory (set with
-                                :ts:cv:`proxy.config.log.logfile_dir`).
-format              string      a string with a valid named format specification.
-header              string      If present, emitted as the first line of each
-                                new log file.
-rolling_enabled     *see below* Determines the type of log rolling to use (or
-                                whether to disable rolling). Overrides
-                                :ts:cv:`proxy.config.log.rolling_enabled`.
-rolling_interval_sec number     Interval in seconds between log file rolling.
-                                Overrides
-                                :ts:cv:`proxy.config.log.rolling_interval_sec`.
-rolling_offset_hr   number      Specifies an hour (from 0 to 23) at which log
-                                rolling is guaranteed to align. Only has an
-                                effect if RollingIntervalSec is set to greater
-                                than one hour. Overrides
-                                :ts:cv:`proxy.config.log.rolling_offset_hr`.
-rolling_size_mb     number      Size, in megabytes, at which log files are
-                                rolled.
-filters             array of    The optional list of filter objects which
-                    filters     restrict the individual events logged. The array
-                                may only contain one accept filter.
-collation_hosts     array of    If present, one or more strings specifying the
-                    strings     log collation hosts to which logs should be
-                                delivered, each in the form of "<ip>:<port>".
-                                :ref:`admin-logging-collation` for more
-                                information.
-=================== =========== ===============================================
+====================== =========== =================================================
+Name                   Type        Description
+====================== =========== =================================================
+filename               string      The name of the logfile relative to the default
+                                   logging directory (set with
+                                   :ts:cv:`proxy.config.log.logfile_dir`).
+format                 string      a string with a valid named format specification.
+header                 string      If present, emitted as the first line of each
+                                   new log file.
+rolling_enabled        *see below* Determines the type of log rolling to use (or
+                                   whether to disable rolling). Overrides
+                                   :ts:cv:`proxy.config.log.rolling_enabled`.
+rolling_interval_sec   number      Interval in seconds between log file rolling.
+                                   Overrides
+                                   :ts:cv:`proxy.config.log.rolling_interval_sec`.
+rolling_offset_hr      number      Specifies an hour (from 0 to 23) at which log
+                                   rolling is guaranteed to align. Only has an
+                                   effect if RollingIntervalSec is set to greater
+                                   than one hour. Overrides
+                                   :ts:cv:`proxy.config.log.rolling_offset_hr`.
+rolling_size_mb        number      Size, in megabytes, at which log files are
+                                   rolled.
+filters                array of    The optional list of filter objects which
+                       filters     restrict the individual events logged. The array
+                                   may only contain one accept filter.
+collation_hosts        array of    If present, one or more strings specifying the
+                       strings     log collation hosts to which logs should be
+                                   delivered, each in the form of "<ip>:<port>".
+                                   :ref:`admin-logging-collation` for more
+                                   information.
+====================== =========== =================================================
 
 Enabling log rolling may be done globally in :file:`records.config`, or on a
 per-log basis by passing appropriate values for the ``rolling_enabled`` key. The
