@@ -25,12 +25,14 @@
 
 #include <atomic>
 #include <string_view>
+#include <ts/TextView.h>
+#include <ts/BufferWriterForward.h>
 
 namespace std
 {
 template <typename T>
 ts::BufferWriter &
-bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, std::atomic<T> const &v)
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, atomic<T> const &v)
 {
   return ts::bwformat(w, spec, v.load());
 }
@@ -40,17 +42,30 @@ namespace ts
 {
 namespace bwf
 {
+  using namespace std::literals; // enable ""sv
+
+  /** Format wrapper for @c errno.
+   * This stores a copy of the argument or @c errno if an argument isn't provided. The output
+   * is then formatted with the short, long, and numeric value of @c errno. If the format specifier
+   * is type 'd' then just the numeric value is printed.
+   */
   struct Errno {
     int _e;
-    explicit Errno(int e) : _e(e) {}
+    explicit Errno(int e = errno) : _e(e) {}
   };
 
+  /** Format wrapper for time stamps.
+   * If the time isn't provided, the current epoch time is used. If the format string isn't
+   * provided a format like "2017 Jun 29 14:11:29" is used.
+   */
   struct Date {
+    static constexpr std::string_view DEFAULT_FORMAT{"%Y %b %d %H:%M:%S"_sv};
     time_t _epoch;
     std::string_view _fmt;
-    Date(time_t t, std::string_view fmt = "%Y %b %d %H:%M:%S"sv) : _epoch(t), _fmt(fmt) {}
-    Date(std::string_view fmt = "%Y %b %d %H:%M:%S"sv);
+    Date(time_t t, std::string_view fmt = DEFAULT_FORMAT) : _epoch(t), _fmt(fmt) {}
+    Date(std::string_view fmt = DEFAULT_FORMAT);
   };
+
 } // namespace bwf
 
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e);
