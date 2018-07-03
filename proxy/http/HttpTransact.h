@@ -45,13 +45,9 @@
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 
-#define ACQUIRE_PRINT_LOCK() // ink_mutex_acquire(&print_lock);
-#define RELEASE_PRINT_LOCK() // ink_mutex_release(&print_lock);
-
 #define DUMP_HEADER(T, H, I, S)                                 \
   {                                                             \
     if (diags->on(T)) {                                         \
-      ACQUIRE_PRINT_LOCK()                                      \
       fprintf(stderr, "+++++++++ %s +++++++++\n", S);           \
       fprintf(stderr, "-- State Machine Id: %" PRId64 "\n", I); \
       char b[4096];                                             \
@@ -68,7 +64,6 @@
           fprintf(stderr, "%s", b);                             \
         } while (!done);                                        \
       }                                                         \
-      RELEASE_PRINT_LOCK()                                      \
     }                                                           \
   }
 
