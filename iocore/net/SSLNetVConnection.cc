@@ -1016,7 +1016,15 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         SSLErrorVC(this, "failed to create SSL client session");
         return EVENT_ERROR;
       }
-      SSL_set_verify(this->ssl, clientVerify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, verify_callback);
+      int verify_op;
+      if (clientVerify) {
+        verify_op = SSL_VERIFY_PEER;
+        SSL_set_verify(this->ssl, verify_op, verify_callback);
+      } else {
+        // Don't bother to set the verify callback if no verification is required
+        verify_op = SSL_VERIFY_NONE;
+        SSL_set_verify(this->ssl, verify_op, nullptr);
+      }
 
       if (this->options.sni_servername) {
         if (SSL_set_tlsext_host_name(this->ssl, this->options.sni_servername)) {
