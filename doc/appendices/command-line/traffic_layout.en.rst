@@ -16,6 +16,7 @@
    under the License.
 
 .. include:: ../../common.defs
+.. program:: traffic_layout
 
 traffic_layout
 **************
@@ -56,28 +57,27 @@ Subcommands
 ===========
 
 ``init``
-   Use the current working directory or the specific path to create runroot. 
+   Use the current working directory or the specific path to create runroot.
    The path can be relative or set up in :envvar:`TS_RUNROOT`.
 
 ``remove``
-   Find the sandbox to remove in following order: 
+   Find the sandbox to remove in following order:
       #. specified in --path as absolute or relative.
       #. ENV variable: :envvar:`TS_RUNROOT`
       #. current working directory
       #. installed directory.
-   
+
 ``verify``
    Verify the permission of the sandbox.
 
 =======
 Options
 =======
-.. program:: traffic_layout
 
 .. option:: --run-root=[<path>]
 
     Use the run root file at :arg:`path`.
-   
+
 .. option:: -V, --version
 
     Print version information and exit.
@@ -94,7 +94,7 @@ Options
 .. option:: --absolute
 
     Put directories in the yaml file in the form of absolute path when creating.
-    
+
 .. option:: --fix
 
     Fix the permission issues verify found. ``--fix`` requires root privilege (sudo).
@@ -116,7 +116,7 @@ Remove the runroot. ::
     traffic_layout remove (--path /path/to/sandbox/) (--force)
 
 Verify the runroot. ::
-    
+
     traffic_layout verify (--path /path/to/sandbox/) (--fix)
 
 
