@@ -66,9 +66,34 @@ namespace bwf
     Date(std::string_view fmt = DEFAULT_FORMAT);
   };
 
+  /** For optional printing strings along with suffixes and prefixes.
+   *  If the wrapped string is null or empty, nothing is printed. Otherwise the prefix, string,
+   *  and suffix are printed. The default are a single space for suffix and nothing for the prefix.
+   */
+  struct OptionalAffix {
+    std::string_view _text;
+    std::string_view _suffix;
+    std::string_view _prefix;
+
+    OptionalAffix(const char *text, std::string_view suffix = " "sv, std::string_view prefix = ""sv)
+      : OptionalAffix(std::string_view(text ? text : ""), suffix, prefix)
+    {
+    }
+
+    OptionalAffix(std::string_view text, std::string_view suffix = " "sv, std::string_view prefix = ""sv)
+    {
+      // If text is null or empty, leave the members empty too.
+      if (!text.empty()) {
+        _text   = text;
+        _prefix = prefix;
+        _suffix = suffix;
+      }
+    }
+  };
 } // namespace bwf
 
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::OptionalAffix const &opts);
 
 } // namespace ts
