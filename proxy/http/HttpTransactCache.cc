@@ -257,7 +257,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
   Debug("http_seq", "[SelectFromAlternates] Chosen alternate # %d", best_index);
   if (is_debug_tag_set("http_alts")) {
     ACQUIRE_PRINT_LOCK()
-    fprintf(stderr, "[alts] and the winner is alternate number %d\n", best_index + 1);
+    fprintf(stderr, "[alts] and the winner is alternate number %d\n", best_index);
     RELEASE_PRINT_LOCK()
   }
 
