@@ -162,8 +162,6 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   cinf->is_expire   = true;
   cinf->expire_time = 0;
 
-  SSL_CTX_set_ex_data(ctx, ssl_stapling_index, cinf);
-
   issuer = stapling_get_issuer(ctx, cert);
   if (issuer == nullptr) {
     Note("cannot get issuer certificate from %s", certname);
@@ -176,13 +174,17 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   X509_digest(cert, EVP_sha1(), cinf->idx, nullptr);
 
   aia = X509_get1_ocsp(cert);
-  if (aia)
+  if (aia) {
     cinf->uri = sk_OPENSSL_STRING_pop(aia);
+    X509_email_free(aia);
+  }
+
   if (!cinf->uri) {
     Note("no responder URI for %s", certname);
+    return false;
   }
-  if (aia)
-    X509_email_free(aia);
+
+  SSL_CTX_set_ex_data(ctx, ssl_stapling_index, cinf);
 
   Note("successfully initialized certinfo for %s into SSL_CTX: %p", certname, ctx);
   return true;
@@ -437,7 +439,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
   // originally was, cinf = stapling_get_cert_info(ssl->ctx);
   cinf = stapling_get_cert_info(SSL_get_SSL_CTX(ssl));
   if (cinf == nullptr) {
-    Error("ssl_callback_ocsp_stapling: failed to get certificate information");
+    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate information");
     return SSL_TLSEXT_ERR_NOACK;
   }
 
