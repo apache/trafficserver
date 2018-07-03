@@ -374,8 +374,7 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
   }
   if (state->plugin_) {
     utils::internal::dispatchInterceptEvent(state->plugin_, event, edata);
-  } else if (state->timeout_action_) { // we had scheduled a timeout on ourselves; let's wait for it
-  } else {                             // plugin was destroyed before intercept was completed; cleaning up here
+  } else { // plugin was destroyed before intercept was completed; cleaning up here
     LOG_DEBUG("Cleaning up as intercept plugin is already destroyed");
     destroyCont(state);
     TSContDataSet(cont, nullptr);
@@ -392,7 +391,12 @@ destroyCont(InterceptPlugin::State *state)
     TSVConnClose(state->net_vc_);
     state->net_vc_ = nullptr;
   }
-  if (!state->timeout_action_) {
+
+  if (state->cont_) {
+    if (state->timeout_action_) {
+      TSActionCancel(state->timeout_action_);
+      state->timeout_action_ = nullptr;
+    }
     TSContDestroy(state->cont_);
     state->cont_ = nullptr;
   }
