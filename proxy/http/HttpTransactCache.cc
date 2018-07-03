@@ -183,9 +183,6 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
     fprintf(stderr, "[alts] There are %d alternates for this request header.\n", alt_count);
   }
 
-  if (!client_request->valid()) {
-    return 0;
-  }
   // so that plugins can make cache reads for http
   // docs to check if the doc exists in the cache
   if (!client_request->valid()) {
