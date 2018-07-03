@@ -167,14 +167,16 @@ HttpVCTable::find_entry(VIO *vio)
   return nullptr;
 }
 
-// bool HttpVCTable::remove_entry(HttpVCEntry* e)
+// bool HttpVCTable::remove_entry(HttpVCEntry* e, Continuation *cont)
 //
 //    Deallocates all buffers from the associated
 //      entry and re-initializes it's other fields
 //      for reuse
+//   If the vio's continuation matches the cont parameter, clear the
+//      vio's continuation.
 //
 void
-HttpVCTable::remove_entry(HttpVCTableEntry *e)
+HttpVCTable::remove_entry(HttpVCTableEntry *e, Continuation *cont)
 {
   ink_assert(e->vc == nullptr || e->in_tunnel);
   e->vc  = nullptr;
@@ -187,20 +189,29 @@ HttpVCTable::remove_entry(HttpVCTableEntry *e)
     free_MIOBuffer(e->write_buffer);
     e->write_buffer = nullptr;
   }
-  e->read_vio   = nullptr;
+  // Make sure we don't leave any dangling references to ourselves in vio's
+  if (e->read_vio && e->read_vio->cont == cont) {
+    e->read_vio->cont = nullptr;
+  }
+  e->read_vio = nullptr;
+  if (e->write_vio && e->write_vio->cont == cont) {
+    e->write_vio->cont = nullptr;
+  }
   e->write_vio  = nullptr;
   e->vc_handler = nullptr;
   e->vc_type    = HTTP_UNKNOWN;
   e->in_tunnel  = false;
 }
 
-// bool HttpVCTable::cleanup_entry(HttpVCEntry* e)
+// bool HttpVCTable::cleanup_entry(HttpVCEntry* e, Continuation *cont)
 //
 //    Closes the associate vc for the entry,
 //     and the call remove_entry
+//   If the vio's continuation matches the cont parameter, clear the
+//      vio's continuation.
 //
 void
-HttpVCTable::cleanup_entry(HttpVCTableEntry *e)
+HttpVCTable::cleanup_entry(HttpVCTableEntry *e, Continuation *cont)
 {
   ink_assert(e->vc);
   if (e->in_tunnel == false) {
@@ -219,15 +230,15 @@ HttpVCTable::cleanup_entry(HttpVCTableEntry *e)
     e->vc->do_io_close();
     e->vc = nullptr;
   }
-  remove_entry(e);
+  remove_entry(e, cont);
 }
 
 void
-HttpVCTable::cleanup_all()
+HttpVCTable::cleanup_all(Continuation *cont)
 {
   for (int i = 0; i < vc_table_max_entries; i++) {
     if (vc_table[i].vc != nullptr) {
-      cleanup_entry(vc_table + i);
+      cleanup_entry(vc_table + i, cont);
     }
   }
 }
@@ -606,7 +617,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
     // The user agent is hosed.  Close it &
     //   bail on the state machine
-    vc_table.cleanup_entry(ua_entry);
+    vc_table.cleanup_entry(ua_entry, this);
     ua_entry = nullptr;
     set_ua_abort(HttpTransact::ABORTED, event);
     terminate_sm = true;
@@ -841,7 +852,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
     } else {
       ua_txn->do_io_close();
       ua_buffer_reader = nullptr;
-      vc_table.cleanup_entry(ua_entry);
+      vc_table.cleanup_entry(ua_entry, this);
       ua_entry = nullptr;
       tunnel.kill_tunnel();
       terminate_sm = true; // Just die already, the requester is gone
@@ -1230,7 +1241,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
       c = tunnel.get_consumer(t_info->vc);
       ink_assert(c != nullptr);
     }
-    vc_table.cleanup_entry(t_info->entry);
+    vc_table.cleanup_entry(t_info->entry, this);
     t_info->entry = nullptr;
     // In Case 1: error due to transform write,
     // we need to keep the original t_info->vc for transform_cleanup()
@@ -2588,7 +2599,7 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
   if (post_transform_info.vc != nullptr) {
     ink_assert(post_transform_info.entry->in_tunnel == true);
     ink_assert(post_transform_info.vc == post_transform_info.entry->vc);
-    vc_table.cleanup_entry(post_transform_info.entry);
+    vc_table.cleanup_entry(post_transform_info.entry, this);
     post_transform_info.entry = nullptr;
   }
 
@@ -3030,7 +3041,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 
   // The server session has been released. Clean all pointer
   server_entry->in_tunnel = true; // to avid cleaning in clenup_entry
-  vc_table.cleanup_entry(server_entry);
+  vc_table.cleanup_entry(server_entry, this);
   server_session = nullptr; // Because p->vc == server_session
   server_entry   = nullptr;
 
@@ -5251,7 +5262,7 @@ HttpSM::release_server_session(bool serve_from_cache)
 
   ink_assert(server_entry->vc == server_session);
   server_entry->in_tunnel = true;
-  vc_table.cleanup_entry(server_entry);
+  vc_table.cleanup_entry(server_entry, this);
   server_entry   = nullptr;
   server_session = nullptr;
 }
@@ -5423,7 +5434,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     if (post_transform_info.vc) {
       HttpTunnelConsumer *c = tunnel.get_consumer(post_transform_info.vc);
       if (c && c->handler_state == HTTP_SM_TRANSFORM_OPEN) {
-        vc_table.cleanup_entry(post_transform_info.entry);
+        vc_table.cleanup_entry(post_transform_info.entry, this);
         post_transform_info.entry = nullptr;
         tunnel.deallocate_buffers();
         tunnel.reset();
@@ -5464,7 +5475,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     // don't get handled.  The connection isn't there.
     if (server_entry) {
       ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
-      vc_table.cleanup_entry(server_entry);
+      vc_table.cleanup_entry(server_entry, this);
       server_entry   = nullptr;
       server_session = nullptr;
     }
@@ -6175,7 +6186,7 @@ HttpSM::setup_error_transfer()
     do_api_callout();
   } else {
     SMDebug("http", "[setup_error_transfer] Now closing connection ...");
-    vc_table.cleanup_entry(ua_entry);
+    vc_table.cleanup_entry(ua_entry, this);
     ua_entry = nullptr;
     // ua_txn     = NULL;
     terminate_sm   = true;
@@ -6765,7 +6776,7 @@ HttpSM::kill_this()
 
     cache_sm.end_both();
     transform_cache_sm.end_both();
-    vc_table.cleanup_all();
+    vc_table.cleanup_all(this);
 
     // tunnel.deallocate_buffers();
     // Why don't we just kill the tunnel?  Might still be
@@ -7257,7 +7268,7 @@ HttpSM::set_next_state()
     // Because it could be a server side retry by DNS rr
     if (server_entry) {
       ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
-      vc_table.cleanup_entry(server_entry);
+      vc_table.cleanup_entry(server_entry, this);
       server_entry   = nullptr;
       server_session = nullptr;
     } else {
@@ -7302,7 +7313,7 @@ HttpSM::set_next_state()
     // We need to close the previous attempt
     if (server_entry) {
       ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
-      vc_table.cleanup_entry(server_entry);
+      vc_table.cleanup_entry(server_entry, this);
       server_entry   = nullptr;
       server_session = nullptr;
     } else {

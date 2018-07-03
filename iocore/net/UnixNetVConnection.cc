@@ -80,7 +80,16 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
   if (vc->read.vio.cont) {
-    vc->read.vio.cont->handleEvent(event, &vc->read.vio);
+    EThread *ethread = this_ethread();
+    MUTEX_TRY_LOCK_FOR(lock, vc->read.vio.cont->mutex, ethread, vc->read.vio.cont);
+    if (lock.is_locked()) {
+      vc->read.vio.cont->handleEvent(event, &vc->read.vio);
+    } else {
+      // Should always be able to get this lock.
+      Error("Signalling without continuation lock cont mutex=0x%p vc mutex=0x%p", vc->read.vio.cont->mutex.get(), vc->mutex.get());
+      ink_release_assert(0);
+      // vc->read.vio.cont->handleEvent(event, &vc->read.vio);
+    }
   } else {
     switch (event) {
     case VC_EVENT_EOS:
