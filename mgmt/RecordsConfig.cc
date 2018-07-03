@@ -661,8 +661,9 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   //# 1 - enable customizable user response pages in only the "default" directory
   //# 2 - enable language-targeted user response pages
+  //# 3 - enable host-targeted user response pages
   {RECT_CONFIG, "proxy.config.body_factory.enable_customizations", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT,
-    "[1-2]", RECA_NULL}
+    "[1-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.body_factory.enable_logging", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
