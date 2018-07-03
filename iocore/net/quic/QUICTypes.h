@@ -90,8 +90,9 @@ enum class QUICFrameType : uint8_t {
   ACK,
   PATH_CHALLENGE,
   PATH_RESPONSE,
-  STREAM  = 0x10, // 0x10 - 0x17
-  UNKNOWN = 0x18,
+  STREAM = 0x10, // 0x10 - 0x17
+  CRYPTO = 0x18,
+  UNKNOWN,
 };
 
 enum class QUICVersionNegotiationStatus {

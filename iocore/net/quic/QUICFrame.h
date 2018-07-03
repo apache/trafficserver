@@ -32,9 +32,13 @@
 #include "QUICPacket.h"
 
 class QUICFrame;
+class QUICStreamFrame;
+class QUICCryptoFrame;
 
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
 using QUICFrameUPtr        = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
+using QUICStreamFrameUPtr  = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
+using QUICCryptoFrameUPtr  = std::unique_ptr<QUICCryptoFrame, QUICFrameDeleterFunc>;
 
 class QUICFrame
 {
@@ -103,6 +107,43 @@ private:
   size_t _get_data_field_offset() const;
 
   size_t _get_stream_id_field_len() const;
+  size_t _get_offset_field_len() const;
+  size_t _get_length_field_len() const;
+};
+
+//
+// CRYPTO Frame
+//
+
+class QUICCryptoFrame : public QUICFrame
+{
+public:
+  QUICCryptoFrame() : QUICFrame() {}
+  QUICCryptoFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
+  QUICCryptoFrame(ats_unique_buf buf, size_t len, QUICOffset offset, bool protection = true);
+
+  QUICFrame *split(size_t size) override;
+  QUICFrameUPtr clone() const override;
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
+
+  QUICOffset offset() const;
+  uint64_t data_length() const;
+  const uint8_t *data() const;
+
+  LINK(QUICCryptoFrame, link);
+
+private:
+  QUICOffset _offset   = 0;
+  uint64_t _data_len   = 0;
+  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+
+  size_t _get_offset_field_offset() const;
+  size_t _get_length_field_offset() const;
+  size_t _get_data_field_offset() const;
+
   size_t _get_offset_field_len() const;
   size_t _get_length_field_len() const;
 };
@@ -602,8 +643,6 @@ private:
   ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
 };
 
-using QUICStreamFrameUPtr = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
-
 //
 // Retransmission Frame
 //
@@ -628,6 +667,7 @@ private:
 };
 
 extern ClassAllocator<QUICStreamFrame> quicStreamFrameAllocator;
+extern ClassAllocator<QUICCryptoFrame> quicCryptoFrameAllocator;
 extern ClassAllocator<QUICAckFrame> quicAckFrameAllocator;
 extern ClassAllocator<QUICPaddingFrame> quicPaddingFrameAllocator;
 extern ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator;
@@ -661,6 +701,13 @@ public:
   {
     frame->~QUICFrame();
     quicStreamFrameAllocator.free(static_cast<QUICStreamFrame *>(frame));
+  }
+
+  static void
+  delete_crypto_frame(QUICFrame *frame)
+  {
+    frame->~QUICFrame();
+    quicCryptoFrameAllocator.free(static_cast<QUICCryptoFrame *>(frame));
   }
 
   static void
@@ -819,6 +866,13 @@ public:
    */
   static QUICStreamFrameUPtr create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset,
                                                  bool last = false, bool protection = true);
+
+  /*
+   * Creates a CRYPTO frame.
+   * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
+   */
+  static QUICCryptoFrameUPtr create_crypto_frame(const uint8_t *data, uint64_t data_len, QUICOffset offset, bool protection = true);
+
   /*
    * Creates a ACK frame.
    * You shouldn't call this directly but through QUICAckFrameCreator because QUICAckFrameCreator manages packet numbers that we
@@ -849,7 +903,7 @@ public:
   static std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc> create_max_data_frame(uint64_t maximum_data);
 
   /*
-   * Creates a MAX_STREAM_DATA frame.
+ /  * Creates a MAX_STREAM_DATA frame.
    */
   static std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc> create_max_stream_data_frame(QUICStreamId stream_id,
                                                                                                     uint64_t maximum_stream_data);

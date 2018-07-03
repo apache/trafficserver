@@ -48,8 +48,9 @@ TEST_CASE("QUICFrame Type", "[quic]")
   // Range of STREAM
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x10")) == QUICFrameType::STREAM);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x17")) == QUICFrameType::STREAM);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::CRYPTO);
   // Undefined ragne
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::UNKNOWN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x21")) == QUICFrameType::UNKNOWN);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
 }
 
@@ -350,6 +351,49 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     CHECK(memcmp(stream_frame2->data(), "\x11\x22\x33\x44\x55", stream_frame2->data_length()) == 0);
     CHECK(stream_frame2->offset() == 0x100000000 + 5);
     CHECK(stream_frame2->stream_id() == 0x01);
+  }
+}
+
+TEST_CASE("CRYPTO Frame", "[quic]")
+{
+  SECTION("Loading")
+  {
+    uint8_t buf[] = {
+      0x18,                         // Type
+      0x80, 0x01, 0x00, 0x00,       // Offset
+      0x05,                         // Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::CRYPTO);
+    CHECK(frame->size() == sizeof(buf));
+
+    std::shared_ptr<const QUICCryptoFrame> crypto_frame = std::dynamic_pointer_cast<const QUICCryptoFrame>(frame);
+    CHECK(crypto_frame->offset() == 0x010000);
+    CHECK(crypto_frame->data_length() == 5);
+    CHECK(memcmp(crypto_frame->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+  }
+
+  SECTION("Storing")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+    uint8_t expected[] = {
+      0x18,                         // Typr
+      0x80, 0x01, 0x00, 0x00,       // Offset
+      0x05,                         // Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
+    };
+    uint8_t raw_data[]     = "\x01\x02\x03\x04\x05";
+    ats_unique_buf payload = ats_unique_malloc(5);
+    memcpy(payload.get(), raw_data, 5);
+
+    QUICCryptoFrame crypto_frame(std::move(payload), 5, 0x010000);
+    CHECK(crypto_frame.size() == sizeof(expected));
+
+    crypto_frame.store(buf, &len, 32);
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(buf, expected, sizeof(expected)) == 0);
   }
 }
 
@@ -1223,6 +1267,26 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
       0x01,                         // Stream ID
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
+    };
+
+    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
+    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    frame->store(buf, &len, 32);
+
+    CHECK(len == 8);
+    CHECK(memcmp(buf, frame_buf, len) == 0);
+  }
+
+  SECTION("CRYPTO frame")
+  {
+    uint8_t frame_buf[] = {
+      0x18,                         // Type
+      0x01,                         // Offset
+      0x05,                         // Length
+      0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
     };
 
     QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
