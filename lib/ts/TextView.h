@@ -1018,3 +1018,13 @@ namespace std
 {
 ostream &operator<<(ostream &os, const ts::TextView &b);
 }
+
+// @c constexpr literal constructor for @c std::string_view
+// For unknown reasons, this enables creating @c constexpr constructs using @c std::string_view while the standard
+// one (""sv) does not.
+// I couldn't think of any better place to put this, so it's here. At least @c TextView is strongly related
+// to @c std::string_view.
+constexpr std::string_view operator"" _sv(const char *s, size_t n)
+{
+  return {s, n};
+}
