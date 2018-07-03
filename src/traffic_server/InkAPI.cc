@@ -1064,7 +1064,7 @@ INKContInternal::handle_event(int event, void *edata)
     if (m_deletable) {
       free();
     } else {
-      Warning("INKCont Deletable but not deleted %d", m_event_count);
+      Debug("plugin", "INKCont Deletable but not deleted %d", m_event_count);
     }
   } else {
     int retval = m_event_func((TSCont)this, (TSEvent)event, edata);
