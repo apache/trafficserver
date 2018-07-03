@@ -199,7 +199,7 @@ No. Field    Description
              hex.
 8   caun     The username of the authenticated client. A hyphen (``-``)
              means that no authentication was required.
-9   phr/shn The proxy hierarchy route. The route |TS| used to retrieve the
+9   phr/shn  The proxy hierarchy route. The route |TS| used to retrieve the
              object.
 10  psct     The proxy response content type. The object content type taken
              from the |TS| response header.
@@ -325,4 +325,3 @@ the request to clients during that hour.
      filters:
      - originfilter
      filename: origin_access_summary
-
