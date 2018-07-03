@@ -180,9 +180,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
   Debug("http_match", "[SelectFromAlternates] # alternates = %d", alt_count);
   Debug("http_seq", "[SelectFromAlternates] %d alternates for this cached doc", alt_count);
   if (is_debug_tag_set("http_alts")) {
-    ACQUIRE_PRINT_LOCK()
     fprintf(stderr, "[alts] There are %d alternates for this request header.\n", alt_count);
-    RELEASE_PRINT_LOCK()
   }
 
   if (!client_request->valid()) {
@@ -256,9 +254,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
   }
   Debug("http_seq", "[SelectFromAlternates] Chosen alternate # %d", best_index);
   if (is_debug_tag_set("http_alts")) {
-    ACQUIRE_PRINT_LOCK()
     fprintf(stderr, "[alts] and the winner is alternate number %d\n", best_index);
-    RELEASE_PRINT_LOCK()
   }
 
   if ((best_index != -1) && (best_Q > unacceptable_Q)) {
