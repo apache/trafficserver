@@ -80,7 +80,14 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
   if (vc->read.vio.cont) {
-    vc->read.vio.cont->handleEvent(event, &vc->read.vio);
+    // Most of the time the continuation will have the same mutex as the vc, but not always
+    EThread *ethread = (EThread *)this_thread();
+    MUTEX_TRY_LOCK_FOR(lock, vc->read.vio.cont->mutex, ethread, vc->read.vio.cont);
+    if (!lock.is_locked()) {
+      ethread->schedule_in(vc->read.vio.cont, HRTIME_MSECONDS(1), event);
+    } else {
+      vc->read.vio.cont->handleEvent(event, &vc->read.vio);
+    }
   } else {
     switch (event) {
     case VC_EVENT_EOS:
