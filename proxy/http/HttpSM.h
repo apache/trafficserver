@@ -116,9 +116,9 @@ struct HttpVCTable {
   HttpVCTableEntry *new_entry();
   HttpVCTableEntry *find_entry(VConnection *);
   HttpVCTableEntry *find_entry(VIO *);
-  void remove_entry(HttpVCTableEntry *);
-  void cleanup_entry(HttpVCTableEntry *);
-  void cleanup_all();
+  void remove_entry(HttpVCTableEntry *, Continuation *);
+  void cleanup_entry(HttpVCTableEntry *, Continuation *);
+  void cleanup_all(Continuation *);
   bool is_table_clear() const;
 
 private:
@@ -645,7 +645,7 @@ HttpSM::allocate()
 inline void
 HttpSM::remove_ua_entry()
 {
-  vc_table.remove_entry(ua_entry);
+  vc_table.remove_entry(ua_entry, this);
   ua_entry = nullptr;
 }
 
@@ -653,7 +653,7 @@ inline void
 HttpSM::remove_server_entry()
 {
   if (server_entry) {
-    vc_table.remove_entry(server_entry);
+    vc_table.remove_entry(server_entry, this);
     server_entry = nullptr;
   }
 }
