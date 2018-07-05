@@ -84,7 +84,7 @@ struct InterceptPlugin::State {
   TSAction timeout_action_ = nullptr;
   bool plugin_io_done_     = false;
 
-  State(TSCont cont, InterceptPlugin *plugin) : cont_(cont)
+  State(TSCont cont, InterceptPlugin *plugin) : cont_(cont), plugin_(plugin)
   {
     plugin_mutex_ = plugin->getMutex();
     http_parser_  = TSHttpParserCreate();
