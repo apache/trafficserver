@@ -26,6 +26,93 @@
 #include "cachekey.h"
 #include "common.h"
 
+/* Configuration only used by the global plugin instance. */
+Configs *globalConfig = nullptr;
+
+/**
+ * @brief Set the cache key called by both global and remap instances.
+ *
+ * @param txn transaction handle
+ * @param config cachekey configuration
+ */
+static void
+setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
+{
+  /* Initial cache key facility from the requested URL. */
+  CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), rri);
+
+  /* Append custom prefix or the host:port */
+  if (!config->prefixToBeRemoved()) {
+    cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri);
+  }
+  /* Classify User-Agent and append the class name to the cache key if matched. */
+  cachekey.appendUaClass(config->_classifier);
+
+  /* Capture from User-Agent header. */
+  cachekey.appendUaCaptures(config->_uaCapture);
+
+  /* Append headers to the cache key. */
+  cachekey.appendHeaders(config->_headers);
+
+  /* Append cookies to the cache key. */
+  cachekey.appendCookies(config->_cookies);
+
+  /* Append the path to the cache key. */
+  if (!config->pathToBeRemoved()) {
+    cachekey.appendPath(config->_pathCapture, config->_pathCaptureUri);
+  }
+  /* Append query parameters to the cache key. */
+  cachekey.appendQuery(config->_query);
+
+  /* Set the cache key */
+  cachekey.finalize();
+}
+
+static int
+contSetCachekey(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
+
+  setCacheKey(txn, globalConfig);
+
+  TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+/**
+ * @brief Global plugin instance initialization.
+ *
+ * Processes the configuration and initializes a global plugin instance.
+ * @param argc plugin arguments number
+ * @param argv plugin arguments
+ */
+void
+TSPluginInit(int argc, const char *argv[])
+{
+  TSPluginRegistrationInfo info;
+
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
+
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
+    CacheKeyError("global plugin registration failed");
+  }
+
+  globalConfig = new Configs();
+  if (nullptr != globalConfig && globalConfig->init(argc, argv, /* perRemapConfig */ false)) {
+    TSCont cont = TSContCreate(contSetCachekey, nullptr);
+    TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, cont);
+
+    CacheKeyDebug("global plugin initialized");
+  } else {
+    globalConfig = nullptr;
+    delete globalConfig;
+
+    CacheKeyError("failed to initialize global plugin");
+  }
+}
+
 /**
  * @brief Plugin initialization.
  * @param apiInfo remap interface info pointer
@@ -54,14 +141,16 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int errBufSize)
 {
   Configs *config = new Configs();
-  if (nullptr != config && config->init(argc, argv)) {
+  if (nullptr != config && config->init(argc, const_cast<const char **>(argv), /* perRemapConfig */ true)) {
     *instance = config;
   } else {
-    CacheKeyError("failed to initialize the " PLUGIN_NAME " plugin");
+    CacheKeyError("failed to initialize the remap plugin");
     *instance = nullptr;
     delete config;
     return TS_ERROR;
   }
+
+  CacheKeyDebug("remap plugin initialized");
   return TS_SUCCESS;
 }
 
@@ -91,65 +180,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
   Configs *config = (Configs *)instance;
 
   if (nullptr != config) {
-    TSMBuffer bufp;
-    TSMLoc urlLoc;
-    TSMLoc hdrLoc;
-
-    /* Get the URI and header to base the cachekey on.
-     * @TODO it might make sense to add more supported URI types */
-    if (PRISTINE == config->getUriType()) {
-      if (TS_SUCCESS != TSHttpTxnPristineUrlGet(txn, &bufp, &urlLoc)) {
-        /* Failing here is unlikely. No action seems the only reasonable thing to do from within this plug-in */
-        CacheKeyError("failed to get pristine URI handle");
-        return TSREMAP_NO_REMAP;
-      }
-    } else {
-      bufp   = rri->requestBufp;
-      urlLoc = rri->requestUrl;
-    }
-    hdrLoc = rri->requestHdrp;
-
-    /* Initial cache key facility from the requested URL. */
-    CacheKey cachekey(txn, bufp, urlLoc, hdrLoc, config->getSeparator());
-
-    /* Append custom prefix or the host:port */
-    if (!config->prefixToBeRemoved()) {
-      cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri);
-    }
-    /* Classify User-Agent and append the class name to the cache key if matched. */
-    cachekey.appendUaClass(config->_classifier);
-
-    /* Capture from User-Agent header. */
-    cachekey.appendUaCaptures(config->_uaCapture);
-
-    /* Append headers to the cache key. */
-    cachekey.appendHeaders(config->_headers);
-
-    /* Append cookies to the cache key. */
-    cachekey.appendCookies(config->_cookies);
-
-    /* Append the path to the cache key. */
-    if (!config->pathToBeRemoved()) {
-      cachekey.appendPath(config->_pathCapture, config->_pathCaptureUri);
-    }
-    /* Append query parameters to the cache key. */
-    cachekey.appendQuery(config->_query);
-
-    /* Set the cache key */
-    if (!cachekey.finalize()) {
-      char *url;
-      int len;
-
-      url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
-      CacheKeyError("failed to set cache key for url %.*s", len, url);
-      TSfree(url);
-    }
-
-    if (PRISTINE == config->getUriType()) {
-      if (TS_SUCCESS != TSHandleMLocRelease(bufp, TS_NULL_MLOC, urlLoc)) {
-        CacheKeyError("failed to release pristine URI handle");
-      }
-    }
+    setCacheKey(txn, config, rri);
   }
 
   return TSREMAP_NO_REMAP;

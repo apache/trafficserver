@@ -177,6 +177,46 @@ Cache key elements separator
 * ``--separator=<string>`` - the cache key is constructed by extracting elements from HTTP URI and headers or by using the UA classifiers and they are appended during the key construction and separated by ``/`` (by default). This options allows to override the default separator to any string (including an empty string).
 
 
+How to run the plugin
+=====================
+
+The plugin can run as a global plugin (a single global instance configured using `plugin.config`) or as per-remap plugin (a separate instance configured per remap rule in `remap.config`).
+
+Global instance
+^^^^^^^^^^^^^^^
+
+::
+
+  $ cat plugin.config
+  cachekey.so \
+      --include-params=a,b,c \
+      --sort-params=true
+
+
+Per-remap instance
+^^^^^^^^^^^^^^^^^^
+
+::
+
+  $cat remap.config
+  map http://www.example.com http://www.origin.com \
+      @plugin=cachekey.so \
+          @pparam=--include-params=a,b,c \
+          @pparam=--sort-params=true
+
+
+If both global and per-remap instance are used the per-remap configuration would take precedence (per-remap configuration would be applied and the global configuration ignored).
+
+Because of the ATS core (remap) and the CacheKey plugin implementation there is a slight difference between the global and the per-remap functionality when ``--uri-type=remap`` is used.
+
+* The global instance always uses the URI **after** remap (at ``TS_HTTP_POST_REMAP_HOOK``).
+
+* The per-remap instance uses the URI **during** remap (after ``TS_HTTP_PRE_REMAP_HOOK`` and  before ``TS_HTTP_POST_REMAP_HOOK``) which leads to a different URI to be used depending on plugin order in the remap rule.
+
+    * If CacheKey plugin is the first plugin in the remap rule the URI used will be practically the same as the pristine URI.
+    * If the CacheKey plugin is the last plugin in the remap rule (which is right before ``TS_HTTP_POST_REMAP_HOOK``) the behavior will be simillar to the global instnance.
+
+
 Detailed examples and troubleshooting
 =====================================
 
