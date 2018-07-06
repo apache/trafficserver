@@ -582,15 +582,11 @@ ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi)
 static int
 ts_lua_fetch_multi_cleanup(ts_lua_async_item *ai)
 {
-  ts_lua_fetch_multi_info *fmi;
-
   if (ai->deleted) {
     return 0;
   }
 
   if (ai->data) {
-    fmi = (ts_lua_fetch_multi_info *)ai->data;
-
     ai->data = NULL;
     TSContDestroy(ai->contp);
     ai->contp = NULL;
