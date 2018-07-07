@@ -110,14 +110,16 @@ Cache key structure and related plugin parameters
 
 ::
 
-  Optional components      | ┌───────────────────┐
-                           | │ --include-headers │
-                           | ├───────────────────┤
-  Default values if no     | │ (empty)           |
-  optional components      | └───────────────────┘
+  Optional components      | ┌───────────────────┬────────────────────┐
+                           | │ --include-headers │  --capture-headers │
+                           | ├────────────────────────────────────────┤
+  Default values if no     | │ (empty)           |  (empty)           |
+  optional components      | └───────────────────┴────────────────────┘
   configured               |
 
-* ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the cache key. The list of headers defined by ``--include-headers`` are always sorted before adding them to the cache  key.
+* ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the cache key. The list of headers defined by ``--include-headers`` are always sorted before adding them to the cache key.
+
+* ``--capture-header=<headername>:<capture_definition>`` (default: empty) - captures elements from header <headername> using <capture_definition> and adds them to the cache key.
 
 "Cookies" section
 ^^^^^^^^^^^^^^^^^
@@ -399,6 +401,21 @@ Include certain headers in the cache key
 The following headers ``HeaderA`` and ``HeaderB`` will be used when constructing the cache key and the rest will be ignored. ::
 
   @plugin=cachekey.so @pparam=--include-headers=HeaderA,HeaderB
+
+The following would capture from the ``Authorization`` header and will add the captured element to the cache key ::
+
+  @plugin=cachekey.so \
+      @pparam=--capture-header=Authorization:/AWS\s(?<clientID>[^:]+).*/clientID:$1/"
+
+If the request looks like the following::
+
+  http://example-cdn.com/path/file
+  Authorization: AWS MKIARYMOG51PT0DLD:DLiWQ2lyS49H4Zyx34kW0URtg6s=
+
+Cache key would be set to::
+
+  /example-cdn.com/80/clientID:MKIARYMOG51PTCKQ0DLD/path/file
+
 
 HTTP Cookies
 ^^^^^^^^^^^^

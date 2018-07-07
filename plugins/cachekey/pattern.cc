@@ -458,6 +458,18 @@ MultiPattern::name() const
   return _name;
 }
 
+bool
+MultiPattern::process(const String &subject, StringVector &result) const
+{
+  bool res = false;
+  for (auto p : this->_list) {
+    if (nullptr != p && p->process(subject, result)) {
+      res = true;
+    }
+  }
+  return res;
+}
+
 /**
  * @brief Destructor, deletes all multi-patterns.
  */
