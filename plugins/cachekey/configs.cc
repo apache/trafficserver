@@ -70,6 +70,47 @@ setPattern(MultiPattern &multiPattern, const char *arg)
   }
 }
 
+bool
+ConfigElements::setCapture(const String &name, const String &pattern)
+{
+  auto it = _captures.find(name);
+  if (_captures.end() == it) {
+    auto mp = new MultiPattern(name);
+    if (nullptr != mp) {
+      _captures[name] = mp;
+    } else {
+      return false;
+    }
+  }
+  setPattern(*_captures[name], pattern.c_str());
+  CacheKeyDebug("added capture pattern '%s' for element '%s'", pattern.c_str(), name.c_str());
+  return true;
+}
+
+void
+ConfigElements::addCapture(const char *arg)
+{
+  StringView args(arg);
+  StringView::size_type pos = args.find_first_of(':');
+  if (StringView::npos != pos) {
+    String name(args.substr(0, pos));
+    if (!name.empty()) {
+      String pattern(args.substr(pos + 1));
+      if (!pattern.empty()) {
+        if (!setCapture(name, pattern)) {
+          CacheKeyError("failed to add capture: '%s'", arg);
+        }
+      } else {
+        CacheKeyError("missing pattern in capture: '%s'", arg);
+      }
+    } else {
+      CacheKeyError("missing element name in capture: %s", arg);
+    }
+  } else {
+    CacheKeyError("invalid capture: %s, should be 'name:<capture_definition>", arg);
+  }
+}
+
 void
 ConfigElements::setExcludePatterns(const char *arg)
 {
@@ -138,6 +179,13 @@ inline bool
 ConfigElements::noIncludeExcludeRules() const
 {
   return _exclude.empty() && _excludePatterns.empty() && _include.empty() && _includePatterns.empty();
+}
+
+ConfigElements::~ConfigElements()
+{
+  for (auto it = _captures.begin(); it != _captures.end(); it++) {
+    delete it->second;
+  }
 }
 
 /**
@@ -348,6 +396,7 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     {const_cast<char *>("remove-path"), optional_argument, nullptr, 'r'},
     {const_cast<char *>("separator"), optional_argument, nullptr, 's'},
     {const_cast<char *>("uri-type"), optional_argument, nullptr, 't'},
+    {const_cast<char *>("capture-header"), optional_argument, nullptr, 'u'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -451,6 +500,9 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
       break;
     case 't': /* uri-type */
       setUriType(optarg);
+      break;
+    case 'u': /* capture-header */
+      _headers.addCapture(optarg);
       break;
     }
   }
