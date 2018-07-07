@@ -639,11 +639,6 @@ main(int argc, const char **argv)
   // stat the 'sync_thr' until 'configFiles' has been initialized.
   RecLocalStart(configFiles);
 
-  /* Update cmd line overrides/environmental overrides/etc */
-  if (tsArgs) { /* Passed command line args for proxy */
-    lmgmt->proxy_options = ats_strdup(tsArgs);
-  }
-
   // TS needs to be started up with the same outputlog bindings each time,
   // so we append the outputlog location to the persistent proxy options
   //
@@ -658,6 +653,9 @@ main(int argc, const char **argv)
   if (*bind_stderr) {
     const char *space = args.empty() ? "" : " ";
     args.format("%s%s %s", space, "--" TM_OPT_BIND_STDERR, bind_stderr);
+  }
+  if (tsArgs) {
+    args.format("%s", tsArgs);
   }
 
   lmgmt->proxy_options = args.release();
