@@ -2399,7 +2399,7 @@ ts.http.is_internal_request
 
 **context:** do_remap/do_os_response or do_global_* or later
 
-**description:** This function can be used to tell is a request is internal or not
+**description:** This function can be used to tell if a request is internal or not
 
 Here is an example:
 
@@ -2408,6 +2408,26 @@ Here is an example:
     function do_global_read_request()
         local internal = ts.http.is_internal_request()
         ts.debug(internal)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.is_aborted/
+------------------
+**syntax:** *ts.http.is_aborted()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to tell if a request is aborted or not
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        local aborted = ts.http.is_aborted()
+        ts.debug(aborted)
         return 0
     end
 
