@@ -89,6 +89,7 @@ static int ts_lua_http_get_plugin_tag(lua_State *L);
 static int ts_lua_http_get_id(lua_State *L);
 static int ts_lua_http_get_ssn_id(lua_State *L);
 static int ts_lua_http_is_internal_request(lua_State *L);
+static int ts_lua_http_is_aborted(lua_State *L);
 static int ts_lua_http_skip_remapping_set(lua_State *L);
 static int ts_lua_http_transaction_count(lua_State *L);
 static int ts_lua_http_redirect_url_set(lua_State *L);
@@ -220,6 +221,9 @@ ts_lua_inject_http_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_is_internal_request);
   lua_setfield(L, -2, "is_internal_request");
+
+  lua_pushcfunction(L, ts_lua_http_is_aborted);
+  lua_setfield(L, -2, "is_aborted");
 
   lua_pushcfunction(L, ts_lua_http_skip_remapping_set);
   lua_setfield(L, -2, "skip_remapping_set");
@@ -689,6 +693,22 @@ ts_lua_http_is_internal_request(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   if (TSHttpTxnIsInternal(http_ctx->txnp)) {
+    lua_pushnumber(L, 1);
+  } else {
+    lua_pushnumber(L, 0);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_http_is_aborted(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  if (TSHttpTxnAborted(http_ctx->txnp)) {
     lua_pushnumber(L, 1);
   } else {
     lua_pushnumber(L, 0);
