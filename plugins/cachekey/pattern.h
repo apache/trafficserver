@@ -85,6 +85,8 @@ public:
   virtual bool match(const String &subject) const;
   const String &name() const;
 
+  bool process(const String &subject, StringVector &result) const;
+
 protected:
   std::vector<Pattern *> _list; /**< @brief vector which dictates the order of the pattern evaluation. */
   String _name;                 /**< @brief multi-pattern name */

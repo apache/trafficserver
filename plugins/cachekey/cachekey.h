@@ -73,6 +73,10 @@ public:
 private:
   CacheKey(); // disallow
 
+  template <class T>
+  void processHeader(const String &name_s, const ConfigHeaders &config, T &dst,
+                     void (*fun)(const ConfigHeaders &config, const String &name_s, const String &value_s, T &captures));
+
   /* Information from the request */
   TSHttpTxn _txn;      /**< @brief transaction handle */
   TSMBuffer _buf;      /**< @brief marshal buffer */
