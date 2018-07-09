@@ -54,7 +54,12 @@ EventProcessor::assign_thread(EventType etype)
 
   ink_assert(etype < MAX_EVENT_TYPES);
   if (tg->_count > 1) {
-    next = tg->_next_round_robin++ % tg->_count;
+    // When "_next_round_robin" grows big enough, it becomes a negative number,
+    // meaning "next" is also negative. And since "next" is used as an index
+    // into array "_thread", the result is returning NULL when assigning threads.
+    // So we need to cast "_next_round_robin" to unsigned int so the result stays
+    // positive.
+    next = static_cast<unsigned int>(++tg->_next_round_robin) % tg->_count;
   } else {
     next = 0;
   }
