@@ -67,9 +67,6 @@ std::string RecConfigReadPluginDir();
 // value, nullptr is returned.
 std::string RecConfigReadConfigPath(const char *file_variable, const char *default_value = nullptr);
 
-// This is the same as RecConfigReadConfigPath, except it makes the paths relative to $PREFIX.
-std::string RecConfigReadPrefixPath(const char *file_variable, const char *default_value = nullptr);
-
 // Return a copy of the persistent stats file. This is $RUNTIMEDIR/records.snap.
 std::string RecConfigReadPersistentStatsPath();
 
