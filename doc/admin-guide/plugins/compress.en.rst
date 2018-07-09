@@ -82,7 +82,7 @@ configuration provided with the plugin's source)::
    compress.so <path-to-plugin>/sample.compress.config
 
 This can be used as remap plugin by pointing to config file in remap rule
-:file:`remap.config`:: (relative to the ts:cv:`proxy.config.config_dir`)
+:file:`remap.config`::
 
    @plugin=compress.so @pparam=sample.compress.config
 

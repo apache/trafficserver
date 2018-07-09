@@ -1120,23 +1120,14 @@ REC_readString(const char *name, bool *found, bool lock)
   return _tmp;
 }
 
-// RecConfigReadConfigDir. Note that we handle environmental configuration
-// overrides specially here. Normally we would override the configuration
-// variable when we read records.config but to avoid the bootstrapping
-// problem, we make an explicit check here.
+//-------------------------------------------------------------------------
+// RecConfigReadConfigDir
+//-------------------------------------------------------------------------
 std::string
 RecConfigReadConfigDir()
 {
-  char buf[PATH_NAME_MAX] = {0};
-
   if (const char *env = getenv("PROXY_CONFIG_CONFIG_DIR")) {
-    ink_strlcpy(buf, env, sizeof(buf));
-  } else {
-    RecGetRecordString("proxy.config.config_dir", buf, sizeof(buf));
-  }
-
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative(buf);
+    return Layout::get()->relative(env);
   } else {
     return Layout::get()->sysconfdir;
   }
