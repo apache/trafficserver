@@ -1190,7 +1190,15 @@ RecConfigReadBinDir()
 std::string
 RecConfigReadPluginDir()
 {
-  return RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
+  char buf[PATH_NAME_MAX];
+
+  buf[0] = '\0';
+  RecGetRecordString("proxy.config.plugin.plugin_dir", buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative(buf);
+  } else {
+    return Layout::get()->libexecdir;
+  }
 }
 
 //-------------------------------------------------------------------------
@@ -1215,31 +1223,6 @@ RecConfigReadConfigPath(const char *file_variable, const char *default_value)
   // Otherwise take the default ...
   if (default_value) {
     return Layout::get()->relative_to(sysconfdir, default_value);
-  }
-
-  return {};
-}
-
-//-------------------------------------------------------------------------
-// RecConfigReadPrefixPath
-//-------------------------------------------------------------------------
-std::string
-RecConfigReadPrefixPath(const char *file_variable, const char *default_value)
-{
-  char buf[PATH_NAME_MAX];
-
-  // If the file name is in a configuration variable, look it up first ...
-  if (file_variable) {
-    buf[0] = '\0';
-    RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
-    if (strlen(buf) > 0) {
-      return Layout::get()->relative_to(Layout::get()->prefix, buf);
-    }
-  }
-
-  // Otherwise take the default ...
-  if (default_value) {
-    return Layout::get()->relative_to(Layout::get()->prefix, default_value);
   }
 
   return {};
