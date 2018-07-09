@@ -265,6 +265,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 }
 
 static int
+configHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
+{
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] calling configuration handler", __FUNCTION__);
+  ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
+  ts_lua_reload_module(conf, ts_lua_g_main_ctx_array, conf->states);
+  return 0;
+}
+
+static int
 globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
@@ -597,4 +606,13 @@ TSPluginInit(int argc, const char *argv[])
   lua_pop(l, 1);
 
   ts_lua_destroy_http_ctx(http_ctx);
+
+  TSCont config_contp = TSContCreate(configHandler, NULL);
+  if (!config_contp) {
+    TSError("[ts_lua][%s] could not create configuration continuation", __FUNCTION__);
+    return;
+  }
+  TSContDataSet(config_contp, conf);
+
+  TSMgmtUpdateRegister(config_contp, "ts_lua");
 }
