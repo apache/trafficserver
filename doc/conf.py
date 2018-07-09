@@ -43,9 +43,6 @@ from manpages import man_pages
 
 # -- General configuration -----------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
-
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
@@ -170,14 +167,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 nitpicky = True
-nitpick_ignore = [ ('cpp:typeOrConcept', 'std')
-                 , ('cpp:typeOrConcept', 'std::shared_ptr')
-                 , ('cpp:typeOrConcept', 'std::ostream')
-                 , ('cpp:typeOrConcept', 'std::string')
-                 , ('cpp:typeOrConcept', 'std::string_view')
-                 , ('cpp:typeOrConcept', 'std::tuple')
-                 , ('cpp:typeOrConcept', 'V') # template arguments which should be matched but aren't.
-                 , ('cpp:typeOrConcept', 'Args')
+nitpick_ignore = [
                  ]
 
 # Autolink issue references.
