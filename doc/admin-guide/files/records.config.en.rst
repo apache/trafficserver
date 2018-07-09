@@ -22,12 +22,17 @@
 records.config
 **************
 
-The :file:`records.config` file (by default (:ts:cv:`proxy.config.config_dir`), located in
+The :file:`records.config` file (by default, located in
 ``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
 the |TS| software. Many of the variables in :file:`records.config` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
 modify :file:`records.config`, run the command :option:`traffic_ctl config reload`
 to apply the changes.
+
+Note: The configuration directory, containing the ``SYSCONFDIR`` value specified at build time
+relative to the installation prefix, contains Traffic Server configuration files.
+The ``$TS_ROOT`` environment variable can be used alter the installation prefix at run time.
+The directory must allow read/write access for configuration reloads.
 
 Format
 ======
@@ -204,15 +209,6 @@ System Variables
 
    The script executed before the :program:`traffic_manager` process spawns
    the :program:`traffic_server` process.
-
-.. ts:cv:: CONFIG proxy.config.config_dir STRING etc/trafficserver
-
-   The directory that contains Traffic Server configuration files.
-   This is a read-only configuration option that contains the
-   ``SYSCONFDIR`` value specified at build time relative to the
-   installation prefix. The ``$TS_ROOT`` environment variable can
-   be used alter the installation prefix at run time. The directory must
-   allow read/write access for configuration reloads.
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
@@ -3132,8 +3128,8 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
 
-   The filename of the :file:`ssl_server_name.yaml` configuration file. If relative, it is relative to the
-   configuration directory (ts:cv:`proxy.config.config_dir`).
+   The filename of the :file:`ssl_server_name.yaml` configuration file.
+   If relative, it is relative to the configuration directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
 

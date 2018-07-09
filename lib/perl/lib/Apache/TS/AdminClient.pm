@@ -358,7 +358,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.storage_filename
  proxy.config.cache.threads_per_disk
  proxy.config.cache.mutex_retry_delay
- proxy.config.config_dir
  proxy.config.cop.core_signal
  proxy.config.cop.linux_min_memfree_kb
  proxy.config.cop.linux_min_swapfree_kb
