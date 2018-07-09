@@ -2413,7 +2413,7 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
-ts.http.is_aborted/
+ts.http.is_aborted
 ------------------
 **syntax:** *ts.http.is_aborted()*
 
@@ -3742,4 +3742,3 @@ More docs
 * https://github.com/portl4t/ts-lua
 
 `TOP <#ts-lua-plugin>`_
-
