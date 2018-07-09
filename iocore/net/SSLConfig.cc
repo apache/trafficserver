@@ -143,7 +143,7 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 {
   if (final_path) {
     if (path && path[0] != '/') {
-      *final_path = ats_stringdup(RecConfigReadPrefixPath(nullptr, path));
+      *final_path = ats_stringdup(Layout::get()->relative_to(Layout::get()->prefix, path));
     } else if (!path || path[0] == '\0') {
       *final_path = ats_stringdup(RecConfigReadConfigDir());
     } else {
