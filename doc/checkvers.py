@@ -26,10 +26,12 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    # Check whether we have a recent version of sphinx. EPEL and CentOS are completely crazy and I don't understand their
-    # packaging at all. The test below works on Ubuntu and places where sphinx is installed sanely AFAICT.
+    # Check whether we have the required version of sphinx.
     if options.checkvers:
-        print('checking for sphinx version >= 1.5.1... '),
+        min_sphinx_version_info = (1,7,5)
+        min_sphinx_version = '.'.join([str(x) for x in min_sphinx_version_info])
+
+        print('checking for sphinx version >= {0}... '.format(min_sphinx_version))
         # Need at least 1.5.1 to use svg
         # version >= 1.2 guarantees sphinx.version_info is available.
         try:
@@ -42,8 +44,8 @@ if __name__ == '__main__':
                 print('Found Sphinx version (old) {0}'.format(sphinx.__version__))
                 sphinx.version_info = version.split('.')
 
-            if sphinx.version_info < (1, 5, 1):
-                print('sphinx version is older than 1.5.1')
+            if sphinx.version_info < min_sphinx_version_info:
+                print('sphinx version is older than {0}'.format(min_sphinx_version))
                 sys.exit(1)
 
         except Exception as e:
