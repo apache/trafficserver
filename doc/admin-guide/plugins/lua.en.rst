@@ -68,13 +68,13 @@ Synopsis
 Installation
 ============
 
-This plugin is only built if LuaJIT (>2.0.4) is installed and the configure option
+This plugin is only built if LuaJIT (>2.0.4) is installed. The configure option
 
 ::
 
-    --enable-luajit
+    --with-luajit=<path to luajit prefix>
 
-is given at build time.
+can be used to specify a LuaJIT install. Otherwise, configure will use pkg-config to find a viable installation.
 
 Configuration
 =============
