@@ -96,6 +96,8 @@ typedef struct {
 
   int remap;
   int states;
+
+  int init_func;
 } ts_lua_instance_conf;
 
 /* lua state for http request */

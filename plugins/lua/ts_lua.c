@@ -133,8 +133,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
 
     memset(conf, 0, sizeof(ts_lua_instance_conf));
-    conf->states = states;
-    conf->remap  = 1;
+    conf->states    = states;
+    conf->remap     = 1;
+    conf->init_func = 0;
 
     if (fn) {
       snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[optind]);
@@ -150,7 +151,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       return TS_ERROR;
     }
 
-    if (fn) {
+    // register the script only if it is from a file and has no __init__ function
+    if (fn && !conf->init_func) {
       // we only need to register the script for the first lua VM
       ts_lua_script_register(ts_lua_main_ctx_array[0].lua, conf->script, conf);
     }
