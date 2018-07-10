@@ -62,33 +62,38 @@ public:
    * All packet numbers ATS received need to be passed to this method.
    * Returns 0 if updated successfully.
    */
-  int update(QUICPacketNumber packet_number, bool protection, bool should_send);
+  int update(QUICEncryptionLevel level, QUICPacketNumber packet_number, bool should_send);
 
   /*
    * Returns true only if should send ack.
    */
-  bool will_generate_frame() override;
+  bool will_generate_frame(QUICEncryptionLevel level) override;
 
   /*
    * Calls create directly.
    */
-  QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) override;
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
   /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.
    * Caller must send the ACK frame to the peer if it was returned.
    */
-  QUICFrameUPtr _create_frame();
+  QUICFrameUPtr _create_frame(QUICEncryptionLevel level);
+  QUICFrameUPtr _create_ack_frame(QUICEncryptionLevel level);
+  uint64_t _calculate_delay(QUICEncryptionLevel level);
+  std::vector<QUICEncryptionLevel>
+  _encryption_level_filter() override
+  {
+    return {
+      QUICEncryptionLevel::INITIAL,
+      QUICEncryptionLevel::HANDSHAKE,
+      QUICEncryptionLevel::ONE_RTT,
+    };
+  }
 
-  bool _can_send    = false;
-  bool _should_send = false;
+  bool _can_send[4]    = {false};
+  bool _should_send[4] = {false};
 
-  QUICAckPacketNumbers _packet_numbers;
-  uint16_t _packet_count = 0;
-  std::set<QUICPacketNumber> _unprotected_packets;
-
-  void _sort_packet_numbers();
-  QUICFrameUPtr _create_ack_frame();
-  uint64_t _calculate_delay();
+  QUICAckPacketNumbers _packet_numbers[4];
 };

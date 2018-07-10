@@ -29,31 +29,32 @@
 TEST_CASE("QUICAckFrameCreator", "[quic]")
 {
   QUICAckFrameCreator creator;
+  QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
 
   // Initial state
-  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
   // One packet
-  creator.update(1, false, true);
-  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  creator.update(level, 1, true);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 1);
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
 
-  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
   // Not sequential
-  creator.update(2, false, true);
-  creator.update(5, false, true);
-  creator.update(3, false, true);
-  creator.update(4, false, true);
-  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  creator.update(level, 2, true);
+  creator.update(level, 5, true);
+  creator.update(level, 3, true);
+  creator.update(level, 4, true);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -61,10 +62,10 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 3);
 
   // Loss
-  creator.update(6, false, true);
-  creator.update(7, false, true);
-  creator.update(10, false, true);
-  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  creator.update(level, 6, true);
+  creator.update(level, 7, true);
+  creator.update(level, 10, true);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
@@ -76,19 +77,20 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
 TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
 {
   QUICAckFrameCreator creator;
+  QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
 
   // Initial state
-  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
-  creator.update(2, false, true);
-  creator.update(5, false, true);
-  creator.update(6, false, true);
-  creator.update(8, false, true);
-  creator.update(9, false, true);
+  creator.update(level, 2, true);
+  creator.update(level, 5, true);
+  creator.update(level, 6, true);
+  creator.update(level, 8, true);
+  creator.update(level, 9, true);
 
-  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
@@ -96,13 +98,13 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
-  creator.update(7, false, true);
-  creator.update(4, false, true);
-  ack_frame = creator.generate_frame(UINT16_MAX, UINT16_MAX);
+  creator.update(level, 7, true);
+  creator.update(level, 4, true);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
