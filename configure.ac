@@ -358,18 +358,6 @@ AC_ARG_WITH([profiler],
 )
 AC_MSG_RESULT([$with_profiler])
 
-# System luajit
-AC_MSG_CHECKING([whether to enable luajit])
-AC_ARG_ENABLE([luajit],
-  [AS_HELP_STRING([--enable-luajit],[enable support for system-installed luajit])],
-  [enable_luajit=yes],
-  [enable_luajit=no]
-)
-AC_MSG_RESULT([$enable_luajit])
-TS_ARG_ENABLE_VAR([has],[luajit])
-AM_CONDITIONAL([HAS_LUAJIT], [test 0 -ne $has_luajit])
-
-
 # Disable all static library builds
 AC_DISABLE_STATIC
 
@@ -1234,35 +1222,6 @@ TS_CHECK_ZLIB
 TS_CHECK_LZMA
 
 #
-# System LuaJIT
-#
-
-if test "x$enable_luajit" == "xyes"; then
-    saveLIBS=$LIBS
-    LIBS=""
-    AC_CHECK_HEADER(lua.h, [],
-                    [LUAJIT_PKGCONFIG=1])
-    AC_CHECK_LIB(luajit-5.1, luaL_newstate, [],
-                 [LUAJIT_PKGCONFIG=1])
-    if test "x$LUAJIT_PKGCONFIG" != "x"; then
-        PKG_CHECK_MODULES([LUAJIT], [luajit < 2.1.0, luajit >= 2.0.0], [
-            AC_SUBST([LIBLUAJIT], [$LUAJIT_LIBS])
-            TS_ADDTO(AM_CPPFLAGS, [$LUAJIT_CFLAGS])
-            # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
-            # http://luajit.org/install.html.
-            case $host_os_def in
-            darwin)
-                LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
-                ;;
-            esac
-        ], [AC_MSG_ERROR([*** luajit requested but either libluajit-5.1 or lua.h cannot be found ***])])
-    else
-        AC_SUBST([LIBLUAJIT], [$LIBS])
-    fi
-    LIBS=$saveLIBS
-fi
-
-#
 # Tcl macros provided by build/tcl.m4
 #
 # this will error out if tclConfig.sh is not found
@@ -1317,6 +1276,9 @@ fi
 
 # Check for optional brotli library
 TS_CHECK_BROTLI
+
+# Check for optional luajit library
+TS_CHECK_LUAJIT
 
 #
 # Enable experimental/uri_singing plugin
