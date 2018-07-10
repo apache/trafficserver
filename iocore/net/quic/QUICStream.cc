@@ -575,3 +575,103 @@ QUICStream::largest_offset_sent()
 {
   return this->_remote_flow_controller.current_offset();
 }
+
+//
+// QUICCryptoStream
+//
+QUICCryptoStream::QUICCryptoStream() : _received_stream_frame_buffer()
+{
+  this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+  this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+
+  this->_read_buffer_reader  = this->_read_buffer->alloc_reader();
+  this->_write_buffer_reader = this->_write_buffer->alloc_reader();
+}
+
+QUICCryptoStream::~QUICCryptoStream()
+{
+  // All readers will be deallocated
+  free_MIOBuffer(this->_read_buffer);
+  free_MIOBuffer(this->_write_buffer);
+}
+
+/**
+ * Reset send/recv offset of stream
+ */
+void
+QUICCryptoStream::reset_send_offset()
+{
+  this->_send_offset = 0;
+}
+
+void
+QUICCryptoStream::reset_recv_offset()
+{
+  this->_received_stream_frame_buffer.clear();
+}
+
+QUICErrorUPtr
+QUICCryptoStream::recv(const std::shared_ptr<const QUICCryptoFrame> frame)
+{
+  QUICErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
+  if (error->cls != QUICErrorClass::NONE) {
+    this->_received_stream_frame_buffer.clear();
+    return error;
+  }
+
+  auto new_frame = this->_received_stream_frame_buffer.pop();
+  while (new_frame != nullptr) {
+    QUICCryptoFrameSPtr crypto_frame = std::static_pointer_cast<const QUICCryptoFrame>(new_frame);
+
+    this->_read_buffer->write(crypto_frame->data(), crypto_frame->data_length());
+    new_frame = this->_received_stream_frame_buffer.pop();
+  }
+
+  return QUICErrorUPtr(new QUICNoError());
+}
+
+int64_t
+QUICCryptoStream::read_avail()
+{
+  return this->_read_buffer_reader->read_avail();
+}
+
+int64_t
+QUICCryptoStream::read(uint8_t *buf, int64_t len)
+{
+  return this->_read_buffer_reader->read(buf, len);
+}
+
+int64_t
+QUICCryptoStream::write(const uint8_t *buf, int64_t len)
+{
+  return this->_write_buffer->write(buf, len);
+}
+
+bool
+QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level)
+{
+  return this->_write_buffer_reader->is_read_avail_more_than(0);
+}
+
+QUICFrameUPtr
+QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+{
+  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
+
+  if (this->_reset_reason) {
+    return QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
+  }
+
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  // TODO: check len
+  uint64_t bytes_avail = this->_write_buffer_reader->read_avail();
+  uint64_t frame_size  = std::min(bytes_avail, (uint64_t)maximum_frame_size);
+  frame = QUICFrameFactory::create_crypto_frame(reinterpret_cast<const uint8_t *>(this->_write_buffer_reader->start()), frame_size,
+                                                this->_send_offset, true);
+  this->_send_offset += frame_size;
+  this->_write_buffer_reader->consume(frame_size);
+
+  return frame;
+}

@@ -125,3 +125,55 @@ protected:
   // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
   QUICBidirectionalStreamState _state;
 };
+
+/**
+ * @brief QUIC Crypto stream
+ * Differences from QUICStream are below
+ * - this doesn't have VConnection interface
+ * - no stream id
+ * - no flow control
+ * - no state (never closed)
+ */
+class QUICCryptoStream : public QUICFrameGenerator
+{
+public:
+  QUICCryptoStream();
+  ~QUICCryptoStream();
+
+  int state_stream_open(int event, void *data);
+
+  const QUICConnectionInfoProvider *info() const;
+  QUICOffset final_offset() const;
+  void reset_send_offset();
+  void reset_recv_offset();
+
+  QUICErrorUPtr recv(const std::shared_ptr<const QUICCryptoFrame> frame);
+  int64_t read_avail();
+  int64_t read(uint8_t *buf, int64_t len);
+  int64_t write(const uint8_t *buf, int64_t len);
+
+  void reset(QUICStreamErrorUPtr error);
+
+  QUICOffset largest_offset_received();
+  QUICOffset largest_offset_sent();
+
+  LINK(QUICStream, link);
+
+  // QUICFrameGenerator
+  bool will_generate_frame(QUICEncryptionLevel level) override;
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
+
+private:
+  QUICStreamErrorUPtr _reset_reason = nullptr;
+  QUICOffset _send_offset           = 0;
+
+  // Fragments of received STREAM frame (offset is unmatched)
+  // TODO: Consider to replace with ts/RbTree.h or other data structure
+  QUICIncomingCryptoFrameBuffer _received_stream_frame_buffer;
+
+  MIOBuffer *_read_buffer  = nullptr;
+  MIOBuffer *_write_buffer = nullptr;
+
+  IOBufferReader *_read_buffer_reader  = nullptr;
+  IOBufferReader *_write_buffer_reader = nullptr;
+};
