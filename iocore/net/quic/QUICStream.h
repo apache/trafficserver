@@ -91,8 +91,8 @@ public:
   LINK(QUICStream, link);
 
   // QUICFrameGenerator
-  QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) override;
-  bool will_generate_frame() override;
+  bool will_generate_frame(QUICEncryptionLevel level) override;
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 protected:
   virtual int64_t _process_read_vio();

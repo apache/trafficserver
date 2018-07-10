@@ -42,7 +42,7 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 }
 
 QUICErrorUPtr
-QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size, bool &should_send_ack)
+QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &should_send_ack)
 {
   std::shared_ptr<const QUICFrame> frame(nullptr);
   uint16_t cursor     = 0;
@@ -69,7 +69,7 @@ QUICFrameDispatcher::receive_frames(const uint8_t *payload, uint16_t size, bool 
 
     std::vector<QUICFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
-      error = h->handle_frame(frame);
+      error = h->handle_frame(level, frame);
       // TODO: is there any case to continue this loop even if error?
       if (error->cls != QUICErrorClass::NONE) {
         return error;

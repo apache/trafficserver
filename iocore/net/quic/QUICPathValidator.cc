@@ -85,7 +85,7 @@ QUICPathValidator::interests()
 }
 
 QUICErrorUPtr
-QUICPathValidator::handle_frame(std::shared_ptr<const QUICFrame> frame)
+QUICPathValidator::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
@@ -107,15 +107,23 @@ QUICPathValidator::handle_frame(std::shared_ptr<const QUICFrame> frame)
 // QUICFrameGenerator
 //
 bool
-QUICPathValidator::will_generate_frame()
+QUICPathValidator::will_generate_frame(QUICEncryptionLevel level)
 {
+  if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
   return (this->_has_outgoing_challenge || this->_has_outgoing_response);
 }
 
 QUICFrameUPtr
-QUICPathValidator::generate_frame(uint64_t connection_credit, uint16_t maximum_quic_packet_size)
+QUICPathValidator::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_quic_packet_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  if (!this->_is_level_matched(level)) {
+    return frame;
+  }
 
   if (this->_has_outgoing_response) {
     frame                        = QUICFrameFactory::create_path_response_frame(this->_incoming_challenge);

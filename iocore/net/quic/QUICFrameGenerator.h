@@ -29,6 +29,25 @@ class QUICFrameGenerator
 {
 public:
   virtual ~QUICFrameGenerator(){};
-  virtual bool will_generate_frame()                                                            = 0;
-  virtual QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) = 0;
+  virtual bool will_generate_frame(QUICEncryptionLevel level)                                                              = 0;
+  virtual QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) = 0;
+
+protected:
+  virtual std::vector<QUICEncryptionLevel>
+  _encryption_level_filter()
+  {
+    return {QUICEncryptionLevel::ONE_RTT};
+  }
+
+  virtual bool
+  _is_level_matched(QUICEncryptionLevel level)
+  {
+    for (auto l : this->_encryption_level_filter()) {
+      if (l == level) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 };

@@ -100,7 +100,7 @@ QUICLossDetector::interests()
 }
 
 QUICErrorUPtr
-QUICLossDetector::handle_frame(std::shared_ptr<const QUICFrame> frame)
+QUICLossDetector::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 

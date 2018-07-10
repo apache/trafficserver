@@ -37,11 +37,11 @@ public:
 
   // QUICFrameHandler
   std::vector<QUICFrameType> interests() override;
-  QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame> frame) override;
+  QUICErrorUPtr handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame) override;
 
   // QUICFrameGeneratro
-  bool will_generate_frame() override;
-  QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) override;
+  bool will_generate_frame(QUICEncryptionLevel level) override;
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
   enum class ValidationState : int {

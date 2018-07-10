@@ -142,7 +142,7 @@ QUICStreamManager::reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr erro
 }
 
 QUICErrorUPtr
-QUICStreamManager::handle_frame(std::shared_ptr<const QUICFrame> frame)
+QUICStreamManager::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
@@ -364,10 +364,14 @@ QUICStreamManager::reset_recv_offset()
 }
 
 bool
-QUICStreamManager::will_generate_frame()
+QUICStreamManager::will_generate_frame(QUICEncryptionLevel level)
 {
+  if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
   for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
-    if (s->will_generate_frame()) {
+    if (s->will_generate_frame(level)) {
       return true;
     }
   }
@@ -376,15 +380,19 @@ QUICStreamManager::will_generate_frame()
 }
 
 QUICFrameUPtr
-QUICStreamManager::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICStreamManager::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   // FIXME We should pick a stream based on priority
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
 
+  if (!this->_is_level_matched(level)) {
+    return frame;
+  }
+
   // Stream 0 must be prioritized over other streams
   QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
   if (stream) {
-    frame = stream->generate_frame(connection_credit, maximum_frame_size);
+    frame = stream->generate_frame(level, connection_credit, maximum_frame_size);
   }
 
   if (frame == nullptr) {
@@ -392,7 +400,7 @@ QUICStreamManager::generate_frame(uint64_t connection_credit, uint16_t maximum_f
       if (s->id() == STREAM_ID_FOR_HANDSHAKE) {
         continue;
       }
-      frame = s->generate_frame(connection_credit, maximum_frame_size);
+      frame = s->generate_frame(level, connection_credit, maximum_frame_size);
       if (frame) {
         break;
       }

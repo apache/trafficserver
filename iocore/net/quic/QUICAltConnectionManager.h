@@ -39,8 +39,8 @@ public:
   void invalidate_alt_connections();
 
   // QUICFrameGenerator
-  bool will_generate_frame();
-  QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size);
+  bool will_generate_frame(QUICEncryptionLevel level);
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size);
 
 private:
   class AltConnectionInfo

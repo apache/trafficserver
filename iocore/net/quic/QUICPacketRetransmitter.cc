@@ -62,13 +62,13 @@ QUICPacketRetransmitter::reset()
 }
 
 bool
-QUICPacketRetransmitter::will_generate_frame()
+QUICPacketRetransmitter::will_generate_frame(QUICEncryptionLevel level)
 {
   return !this->_retransmission_frames.empty();
 }
 
 QUICFrameUPtr
-QUICPacketRetransmitter::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICPacketRetransmitter::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
   if (!this->_retransmission_frames.empty()) {

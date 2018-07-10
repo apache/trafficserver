@@ -377,13 +377,13 @@ QUICStream::recv(const QUICStopSendingFrame &frame)
 }
 
 bool
-QUICStream::will_generate_frame()
+QUICStream::will_generate_frame(QUICEncryptionLevel level)
 {
   return this->_write_vio.get_reader()->read_avail() > 0;
 }
 
 QUICFrameUPtr
-QUICStream::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 

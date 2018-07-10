@@ -96,16 +96,24 @@ QUICAltConnectionManager::invalidate_alt_connections()
 }
 
 bool
-QUICAltConnectionManager::will_generate_frame()
+QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level)
 {
+  if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
   return this->_need_advertise;
 }
 
 QUICFrameUPtr
-QUICAltConnectionManager::generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-  int count           = this->_nids;
+  if (!this->_is_level_matched(level)) {
+    return frame;
+  }
+
+  int count = this->_nids;
   for (int i = 0; i < count; ++i) {
     if (!this->_alt_quic_connection_ids[i].advertised) {
       this->_alt_quic_connection_ids[i].advertised = true;
