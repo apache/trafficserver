@@ -33,8 +33,7 @@
 #include "QUICGlobals.h"
 #include "QUICVersionNegotiator.h"
 #include "QUICConfig.h"
-
-static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
+#include "QUICStream.h"
 
 #define QUICHSDebug(fmt, ...) Debug("quic_handshake", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
@@ -42,6 +41,7 @@ static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";
 
 #define I_WANNA_DUMP_THIS_BUF(buf, len)                                                                                            \
   {                                                                                                                                \
+    static constexpr char dump_tag[] = "v_quic_handshake_dump_pkt";                                                                \
     int i;                                                                                                                         \
     Debug(dump_tag, "len=%" PRId64 "\n", len);                                                                                     \
     for (i = 0; i < len / 8; i++) {                                                                                                \
@@ -90,7 +90,7 @@ static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandshake(qc, ssl_ctx, {}, false) {}
 
 QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token, bool stateless_retry)
-  : QUICApplication(qc),
+  : _qc(qc),
     _ssl(SSL_new(ssl_ctx)),
     _hs_protocol(new QUICTLS(this->_ssl, qc->direction(), stateless_retry)),
     _version_negotiator(new QUICVersionNegotiator()),
@@ -102,10 +102,8 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
   this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id());
 
   if (this->_qc->direction() == NET_VCONNECTION_OUT) {
-    this->_initial = true;
+    this->_client_initial = true;
   }
-
-  SET_HANDLER(&QUICHandshake::state_handshake);
 }
 
 QUICHandshake::~QUICHandshake()
@@ -123,6 +121,8 @@ QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled
 
   this->_load_local_client_transport_parameters(initital_version);
   packet_factory->set_version(initital_version);
+
+  this->do_handshake();
 
   return QUICErrorUPtr(new QUICNoError());
 }
@@ -190,7 +190,8 @@ QUICHandshake::is_version_negotiated() const
 bool
 QUICHandshake::is_completed() const
 {
-  return this->handler == &QUICHandshake::state_complete;
+  // TODO: check state with other way
+  return SSL_is_init_finished(this->_ssl);
 }
 
 bool
@@ -307,79 +308,73 @@ QUICHandshake::remote_transport_parameters()
   return this->_remote_transport_parameters;
 }
 
-int
-QUICHandshake::state_handshake(int event, Event *data)
-{
-  QUICVHSDebug("%s (%d)", get_vc_event_name(event), event);
-
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
-  switch (event) {
-  case QUIC_EVENT_HANDSHAKE_PACKET_WRITE_COMPLETE: {
-    if (this->_hs_protocol->is_handshake_finished()) {
-      int res = this->_complete_handshake();
-      if (!res) {
-        this->_abort_handshake(QUICTransErrorCode::TLS_HANDSHAKE_FAILED);
-      }
-    }
-    break;
-  }
-  case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE:
-  case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE: {
-    error = this->_process_handshake_msg();
-    break;
-  }
-  default:
-    break;
-  }
-
-  if (error->cls != QUICErrorClass::NONE) {
-    QUICTransErrorCode code;
-    if (dynamic_cast<QUICConnectionError *>(error.get()) != nullptr) {
-      code = error->trans_error_code;
-    } else {
-      code = QUICTransErrorCode::PROTOCOL_VIOLATION;
-    }
-    this->_abort_handshake(code);
-  }
-
-  return EVENT_DONE;
-}
-
-int
-QUICHandshake::state_complete(int event, void *data)
-{
-  QUICVHSDebug("%s (%d)", get_vc_event_name(event), event);
-  QUICVHSDebug("Got an event on complete state. Ignoring it for now.");
-
-  return EVENT_DONE;
-}
-
-int
-QUICHandshake::state_closed(int event, void *data)
-{
-  return EVENT_DONE;
-}
-
-QUICHandshakeMsgType
-QUICHandshake::msg_type() const
-{
-  if (this->_hs_protocol) {
-    return this->_hs_protocol->msg_type();
-  } else {
-    return QUICHandshakeMsgType::NONE;
-  }
-}
-
 /**
  * reset states for starting over
  */
 void
 QUICHandshake::reset()
 {
-  this->_initial = true;
+  this->_client_initial = true;
   SSL_clear(this->_ssl);
+
+  for (auto level : QUIC_ENCRYPTION_LEVELS) {
+    int index                = static_cast<int>(level);
+    QUICCryptoStream *stream = &this->_crypto_streams[index];
+    stream->reset_send_offset();
+    stream->reset_recv_offset();
+  }
+}
+
+std::vector<QUICFrameType>
+QUICHandshake::interests()
+{
+  return {
+    QUICFrameType::CRYPTO,
+  };
+}
+
+QUICErrorUPtr
+QUICHandshake::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame)
+{
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+
+  switch (frame->type()) {
+  case QUICFrameType::CRYPTO:
+    error = this->_crypto_streams[static_cast<int>(level)].recv(std::static_pointer_cast<const QUICCryptoFrame>(frame));
+    break;
+  default:
+    QUICHSDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
+    ink_assert(false);
+    break;
+  }
+
+  this->do_handshake();
+
+  return error;
+}
+
+bool
+QUICHandshake::will_generate_frame(QUICEncryptionLevel level)
+{
+  if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
+  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level);
+}
+
+QUICFrameUPtr
+QUICHandshake::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+{
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  if (!this->_is_level_matched(level)) {
+    return frame;
+  }
+
+  frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(level, connection_credit, maximum_frame_size);
+
+  return frame;
 }
 
 void
@@ -423,34 +418,44 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
 }
 
 int
-QUICHandshake::_do_handshake(size_t &out_len)
+QUICHandshake::do_handshake()
 {
-  // TODO: pass stream_io
-  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
+  QUICHandshakeMsgs in;
+  uint8_t in_buf[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
+  in.buf                                   = in_buf;
+  in.max_buf_len                           = UDP_MAXIMUM_PAYLOAD_SIZE;
 
-  uint8_t in[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
-  int64_t in_len                       = 0;
-
-  if (this->_initial) {
-    this->_initial = false;
+  if (this->_client_initial) {
+    this->_client_initial = false;
   } else {
-    // Complete message should fit in a packet and be able to read
-    in_len = stream_io->read_avail();
-    stream_io->read(in, in_len);
-
-    if (in_len <= 0) {
-      QUICVHSDebug("No message");
-      return SSL_ERROR_NONE;
+    for (auto level : QUIC_ENCRYPTION_LEVELS) {
+      int index                = static_cast<int>(level);
+      QUICCryptoStream *stream = &this->_crypto_streams[index];
+      int64_t bytes_avail      = stream->read_avail();
+      // TODO: check size
+      if (bytes_avail > 0) {
+        stream->read(in.buf + in.offsets[index], bytes_avail);
+        in.offsets[index] = bytes_avail;
+        in.offsets[4] += bytes_avail;
+      }
     }
-    I_WANNA_DUMP_THIS_BUF(in, in_len);
   }
 
-  uint8_t out[MAX_HANDSHAKE_MSG_LEN] = {0};
-  int result                         = this->_hs_protocol->handshake(out, out_len, MAX_HANDSHAKE_MSG_LEN, in, in_len);
+  QUICHandshakeMsgs out;
+  uint8_t out_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
+  out.buf                                = out_buf;
+  out.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
-  if (out_len > 0) {
-    I_WANNA_DUMP_THIS_BUF(out, static_cast<int64_t>(out_len));
-    stream_io->write(out, out_len);
+  int result = this->_hs_protocol->handshake(&out, &in);
+
+  for (auto level : QUIC_ENCRYPTION_LEVELS) {
+    int index                = static_cast<int>(level);
+    QUICCryptoStream *stream = &this->_crypto_streams[index];
+    size_t len               = out.offsets[index + 1] - out.offsets[index];
+    // TODO: check size
+    if (len > 0) {
+      stream->write(out.buf + out.offsets[index], len);
+    }
   }
 
   if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0) && this->_hs_protocol->is_ready_to_derive()) {
@@ -465,64 +470,10 @@ QUICHandshake::_do_handshake(size_t &out_len)
   return result;
 }
 
-QUICErrorUPtr
-QUICHandshake::_process_handshake_msg()
-{
-  QUICStreamIO *stream_io = this->_find_stream_io(STREAM_ID_FOR_HANDSHAKE);
-  size_t out_len          = 0;
-  int result              = this->_do_handshake(out_len);
-  QUICErrorUPtr error     = QUICErrorUPtr(new QUICNoError());
-
-  switch (result) {
-  case SSL_ERROR_NONE:
-    if (this->_hs_protocol->is_handshake_finished()) {
-      int res = this->_complete_handshake();
-      if (!res) {
-        error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
-      }
-    }
-  // Fall-through
-  case SSL_ERROR_WANT_READ: {
-    if (out_len > 0) {
-      stream_io->write_reenable();
-    }
-    stream_io->read_reenable();
-
-    break;
-  }
-  default:
-    QUICHSDebug("Handshake failed: %d", result);
-    error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_HANDSHAKE_FAILED));
-  }
-
-  return error;
-}
-
-int
-QUICHandshake::_complete_handshake()
-{
-  QUICHSDebug("Enter state_complete");
-  SET_HANDLER(&QUICHandshake::state_complete);
-  QUICHSDebug("%s", this->negotiated_cipher_suite());
-
-  int res = 1;
-  if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0)) {
-    res = this->_hs_protocol->update_key_materials();
-    if (res) {
-      QUICHSDebug("Keying Materials are exported");
-    } else {
-      QUICHSDebug("Failed to export Keying Materials");
-    }
-  }
-
-  return res;
-}
-
 void
 QUICHandshake::_abort_handshake(QUICTransErrorCode code)
 {
-  this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
+  QUICHSDebug("Abort Handshake");
 
-  QUICHSDebug("Enter state_closed");
-  SET_HANDLER(&QUICHandshake::state_closed);
+  this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
 }
