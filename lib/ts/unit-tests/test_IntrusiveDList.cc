@@ -24,6 +24,7 @@
 #include <iostream>
 #include <string_view>
 #include <string>
+#include <algorithm>
 
 #include <ts/IntrusiveDList.h>
 #include <ts/BufferWriter.h>
@@ -36,7 +37,7 @@
 
 class Message
 {
-  using self_type = Message;
+  using self_type = Message; ///< Self reference type.
 
 public:
   // Message severity level.
@@ -90,6 +91,8 @@ public:
 
   size_t count() const;
   self_type &clear();
+  Message::Severity max_severity() const;
+  void print() const;
 
 protected:
   MessageList _msgs;
@@ -103,8 +106,9 @@ Container::~Container()
 auto
 Container::clear() -> self_type &
 {
-  for (auto &&msg : _msgs) {
-    delete &msg;
+  Message *msg;
+  while (nullptr != (msg = _msgs.take_head())) {
+    delete msg;
   }
   _msgs.clear();
   return *this;
@@ -127,6 +131,22 @@ Container::debug(std::string_view fmt, Args &&... args) -> self_type &
   return *this;
 }
 
+Message::Severity
+Container::max_severity() const
+{
+  auto spot = std::max_element(_msgs.begin(), _msgs.end(),
+                               [](Message const &lhs, Message const &rhs) { return lhs._severity < rhs._severity; });
+  return spot == _msgs.end() ? Message::Severity::LVL_DEBUG : spot->_severity;
+}
+
+void
+Container::print() const
+{
+  for (auto &&elt : _msgs) {
+    std::cout << static_cast<unsigned int>(elt._severity) << ": " << elt._text << std::endl;
+  }
+}
+
 TEST_CASE("IntrusiveDList Example", "[libts][IntrusiveDList]")
 {
   Container container;
@@ -136,6 +156,7 @@ TEST_CASE("IntrusiveDList Example", "[libts][IntrusiveDList]")
   // Destructor is checked for non-crashing as container goes out of scope.
 }
 
+// End of documentation example code.
 // --------------------
 
 struct Thing {
