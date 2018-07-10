@@ -184,8 +184,11 @@ def MakeOriginServer(obj, name, port=False, ip='INADDR_LOOPBACK', delay=False, s
     if (delay == False):
         delay = 0
 
-    command = "python3 {0} --data-dir {1} --port {2} --ip_address {3} --delay {4} -m test --ssl {5} --lookupkey '{6}' -m {7}".format(
-        server_path, data_dir, port, ipaddr, delay, ssl, lookup_key, mode)
+    command = "python3 {0} --data-dir {1} --port {2} --ip_address {3} --delay {4} -m test --lookupkey '{5}' -m {6}".format(
+        server_path, data_dir, port, ipaddr, delay, lookup_key, mode)
+
+    if ssl:
+        command += " --ssl True"
 
     for flag, value in options.items():
         command += " {} {}".format(flag, value)
