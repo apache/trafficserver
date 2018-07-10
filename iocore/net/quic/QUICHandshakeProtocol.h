@@ -60,6 +60,12 @@ private:
   QUICHandshakeProtocol *_hs_protocol = nullptr;
 };
 
+struct QUICHandshakeMsgs {
+  uint8_t *buf       = nullptr; //< pointer to the buffer
+  size_t max_buf_len = 0;       //< size of buffer
+  size_t offsets[5]  = {0};     //< offset to the each encryption level - {initial, zero_rtt, handshake, one_rtt, total length}
+};
+
 class QUICHandshakeProtocol
 {
 public:
@@ -67,6 +73,7 @@ public:
   virtual ~QUICHandshakeProtocol(){};
 
   virtual int handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) = 0;
+  virtual int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)                                 = 0;
   virtual bool is_handshake_finished() const                                                                 = 0;
   virtual bool is_ready_to_derive() const                                                                    = 0;
   virtual bool is_key_derived(QUICKeyPhase key_phase) const                                                  = 0;

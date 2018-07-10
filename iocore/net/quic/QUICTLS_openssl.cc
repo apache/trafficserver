@@ -30,6 +30,108 @@
 
 static constexpr char tag[] = "quic_tls";
 
+static void
+msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
+{
+  if (!write_p || !arg || version != TLS1_3_VERSION || (content_type != SSL3_RT_HANDSHAKE && content_type != SSL3_RT_ALERT)) {
+    return;
+  }
+
+  const uint8_t *tmp        = reinterpret_cast<const uint8_t *>(buf);
+  int msg_type              = tmp[0];
+  QUICEncryptionLevel level = QUICTLS::get_encryption_level(msg_type);
+  int index                 = static_cast<int>(level);
+  int next_index            = index + 1;
+
+  QUICHandshakeMsgs *msg = reinterpret_cast<QUICHandshakeMsgs *>(arg);
+  if (msg == nullptr) {
+    return;
+  }
+
+  size_t offset            = msg->offsets[next_index];
+  size_t next_level_offset = offset + len;
+
+  memcpy(msg->buf + offset, buf, len);
+
+  for (int i = next_index; i < 5; ++i) {
+    msg->offsets[i] = next_level_offset;
+  }
+
+  return;
+}
+
+QUICEncryptionLevel
+QUICTLS::get_encryption_level(int msg_type)
+{
+  switch (msg_type) {
+  case SSL3_MT_CLIENT_HELLO:
+  case SSL3_MT_SERVER_HELLO:
+    return QUICEncryptionLevel::INITIAL;
+  case SSL3_MT_END_OF_EARLY_DATA:
+    return QUICEncryptionLevel::ZERO_RTT;
+  case SSL3_MT_ENCRYPTED_EXTENSIONS:
+  case SSL3_MT_CERTIFICATE_REQUEST:
+  case SSL3_MT_CERTIFICATE:
+  case SSL3_MT_CERTIFICATE_VERIFY:
+  case SSL3_MT_FINISHED:
+    return QUICEncryptionLevel::HANDSHAKE;
+  case SSL3_MT_KEY_UPDATE:
+  case SSL3_MT_NEWSESSION_TICKET:
+    return QUICEncryptionLevel::ONE_RTT;
+  default:
+    return QUICEncryptionLevel::NONE;
+  }
+}
+
+int
+QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+{
+  ink_assert(this->_ssl != nullptr);
+  if (SSL_is_init_finished(this->_ssl)) {
+    return 0;
+  }
+
+  int err = SSL_ERROR_NONE;
+  ERR_clear_error();
+  int ret = 0;
+
+  SSL_set_msg_callback(this->_ssl, msg_cb);
+  SSL_set_msg_callback_arg(this->_ssl, out);
+
+  // TODO: set BIO_METHOD which read from QUICHandshakeMsgs directly
+  BIO *rbio = BIO_new(BIO_s_mem());
+  // TODO: set dummy BIO_METHOD which do nothing
+  BIO *wbio = BIO_new(BIO_s_mem());
+  if (in != nullptr && in->offsets[4] != 0) {
+    BIO_write(rbio, in->buf, in->offsets[4]);
+  }
+  SSL_set_bio(this->_ssl, rbio, wbio);
+
+  if (this->_netvc_context == NET_VCONNECTION_IN) {
+    // TODO: early data
+    ret = SSL_accept(this->_ssl);
+  } else {
+    ret = SSL_connect(this->_ssl);
+  }
+
+  if (ret < 0) {
+    err = SSL_get_error(this->_ssl, ret);
+
+    switch (err) {
+    case SSL_ERROR_WANT_READ:
+    case SSL_ERROR_WANT_WRITE:
+      break;
+    default:
+      char err_buf[256] = {0};
+      ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+      Debug(tag, "Handshake: %s", err_buf);
+      return ret;
+    }
+  }
+
+  return 1;
+}
+
 const EVP_CIPHER *
 QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {
