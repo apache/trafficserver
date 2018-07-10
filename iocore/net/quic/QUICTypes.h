@@ -53,11 +53,29 @@ constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 
 constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
 
+// [[deprecated]]
 enum class QUICHandshakeMsgType {
   NONE = 0,
   INITIAL,
   RETRY,
   HANDSHAKE,
+};
+
+enum class QUICEncryptionLevel {
+  NONE      = -1,
+  INITIAL   = 0,
+  ZERO_RTT  = 1,
+  HANDSHAKE = 2,
+  ONE_RTT   = 3,
+};
+
+// For range-based for loop. This starts from INITIAL to ONE_RTT. It doesn't include NONE nor ZERO_RTT.
+// Defining begin, end, operator*, operator++ doen't work for duplicate symbol issue with libmgmt_p.a :(
+// TODO: support ZERO_RTT
+constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
+  QUICEncryptionLevel::INITIAL,
+  QUICEncryptionLevel::HANDSHAKE,
+  QUICEncryptionLevel::ONE_RTT,
 };
 
 // Devide to QUICPacketType and QUICPacketLongHeaderType ?
@@ -313,7 +331,9 @@ class QUICTypeUtil
 {
 public:
   static bool is_supported_version(QUICVersion version);
-  static QUICStreamType detect_stream_type(QUICStreamId id);
+  [[deprecated]] static QUICStreamType detect_stream_type(QUICStreamId id);
+  static QUICEncryptionLevel encryption_level(QUICPacketType type);
+  static QUICPacketType packet_type(QUICEncryptionLevel level);
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
   static int read_QUICPacketNumberLen(const uint8_t *buf);

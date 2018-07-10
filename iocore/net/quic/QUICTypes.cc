@@ -68,6 +68,42 @@ QUICTypeUtil::detect_stream_type(QUICStreamId id)
   }
 }
 
+QUICEncryptionLevel
+QUICTypeUtil::encryption_level(QUICPacketType type)
+{
+  switch (type) {
+  case QUICPacketType::INITIAL:
+    return QUICEncryptionLevel::INITIAL;
+  case QUICPacketType::ZERO_RTT_PROTECTED:
+    return QUICEncryptionLevel::ZERO_RTT;
+  case QUICPacketType::HANDSHAKE:
+    return QUICEncryptionLevel::HANDSHAKE;
+  case QUICPacketType::PROTECTED:
+    return QUICEncryptionLevel::ONE_RTT;
+  default:
+    ink_assert(false);
+    return QUICEncryptionLevel::NONE;
+  }
+}
+
+QUICPacketType
+QUICTypeUtil::packet_type(QUICEncryptionLevel level)
+{
+  switch (level) {
+  case QUICEncryptionLevel::INITIAL:
+    return QUICPacketType::INITIAL;
+  case QUICEncryptionLevel::ZERO_RTT:
+    return QUICPacketType::ZERO_RTT_PROTECTED;
+  case QUICEncryptionLevel::HANDSHAKE:
+    return QUICPacketType::HANDSHAKE;
+  case QUICEncryptionLevel::ONE_RTT:
+    return QUICPacketType::PROTECTED;
+  default:
+    ink_assert(false);
+    return QUICPacketType::UNINITIALIZED;
+  }
+}
+
 QUICConnectionId
 QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
 {

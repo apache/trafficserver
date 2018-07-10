@@ -253,3 +253,20 @@ QUICDebugNames::key_phase(QUICKeyPhase phase)
     return "UNKNOWN";
   }
 }
+
+const char *
+QUICDebugNames::encryption_level(QUICEncryptionLevel level)
+{
+  switch (level) {
+  case QUICEncryptionLevel::INITIAL:
+    return "INITIAL";
+  case QUICEncryptionLevel::ZERO_RTT:
+    return "ZERO_RTT";
+  case QUICEncryptionLevel::HANDSHAKE:
+    return "HANDSHAKE";
+  case QUICEncryptionLevel::ONE_RTT:
+    return "ONE_RTT";
+  default:
+    return "UNKNOWN";
+  }
+}

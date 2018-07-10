@@ -39,4 +39,5 @@ public:
   static const char *stream_state(const QUICStreamState &state);
   static const char *quic_event(int event);
   static const char *key_phase(QUICKeyPhase phase);
+  static const char *encryption_level(QUICEncryptionLevel level);
 };
