@@ -191,7 +191,7 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
   std::string full_src_path = src_path;
   if (full_src_path == src_root) {
     if (!create_directory(dst_root)) {
-      ink_fatal("create directory failed during copy");
+      ink_fatal("create directory '%s' failed during copy", dst_root.c_str());
     }
     return 0;
   }

@@ -103,6 +103,10 @@ Options
 
     Specify the way of copying executables when creating runroot
 
+.. option:: --layout=[<YAML file>]
+
+    Use specific layout (providing YAML file) to create runroot
+
 ========
 Examples
 ========
