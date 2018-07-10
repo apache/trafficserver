@@ -120,7 +120,7 @@ protected:
 
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
-  QUICIncomingFrameBuffer _received_stream_frame_buffer;
+  QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
 
   // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
   QUICBidirectionalStreamState _state;

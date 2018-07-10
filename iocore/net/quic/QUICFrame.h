@@ -40,6 +40,10 @@ using QUICFrameUPtr        = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
 using QUICStreamFrameUPtr  = std::unique_ptr<QUICStreamFrame, QUICFrameDeleterFunc>;
 using QUICCryptoFrameUPtr  = std::unique_ptr<QUICCryptoFrame, QUICFrameDeleterFunc>;
 
+using QUICFrameSPtr       = std::shared_ptr<const QUICFrame>;
+using QUICStreamFrameSPtr = std::shared_ptr<const QUICStreamFrame>;
+using QUICCryptoFrameSPtr = std::shared_ptr<const QUICCryptoFrame>;
+
 class QUICFrame
 {
 public:

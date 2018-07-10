@@ -30,22 +30,35 @@
 #include "QUICFrame.h"
 #include "QUICTransferProgressProvider.h"
 
-class QUICIncomingFrameBuffer : public QUICTransferProgressProvider
+class QUICIncomingFrameBuffer
 {
 public:
-  QUICIncomingFrameBuffer(const QUICStream *stream) : _stream(stream) {}
-  ~QUICIncomingFrameBuffer();
-
-  std::shared_ptr<const QUICStreamFrame> pop();
-
+  virtual QUICFrameSPtr pop() = 0;
   /*
    * Becasue frames passed by FrameDispatcher is temporal, this clones a passed frame to ensure that we can use it later.
    */
-  QUICErrorUPtr insert(const QUICStreamFrame &frame);
+  virtual QUICErrorUPtr insert(const QUICFrame &frame) = 0;
+  virtual void clear();
+  virtual bool empty();
 
-  void clear();
+protected:
+  QUICOffset _recv_offset = 0;
 
-  bool empty();
+  std::queue<QUICFrameSPtr> _recv_buffer;
+  std::map<QUICOffset, QUICFrameSPtr> _out_of_order_queue;
+};
+
+class QUICIncomingStreamFrameBuffer : public QUICIncomingFrameBuffer, public QUICTransferProgressProvider
+{
+public:
+  using super = QUICIncomingFrameBuffer; ///< Parent type.
+
+  QUICIncomingStreamFrameBuffer(const QUICStream *stream) : _stream(stream) {}
+  ~QUICIncomingStreamFrameBuffer();
+
+  QUICFrameSPtr pop() override;
+  QUICErrorUPtr insert(const QUICFrame &frame) override;
+  void clear() override;
 
   // QUICTransferProgressProvider
   bool is_transfer_goal_set() const override;
@@ -54,14 +67,23 @@ public:
   uint64_t transfer_goal() const override;
 
 private:
-  QUICOffset _recv_offset = 0;
-  QUICOffset _max_offset  = 0;
-  QUICOffset _fin_offset  = UINT64_MAX;
-
   QUICErrorUPtr _check_and_set_fin_flag(QUICOffset offset, size_t len = 0, bool fin_flag = false);
 
-  std::queue<std::shared_ptr<const QUICStreamFrame>> _recv_buffer;
-  std::map<QUICOffset, std::shared_ptr<const QUICStreamFrame>> _out_of_order_queue;
-
   const QUICStream *_stream = nullptr;
+  QUICOffset _max_offset    = 0;
+  QUICOffset _fin_offset    = UINT64_MAX;
+};
+
+class QUICIncomingCryptoFrameBuffer : public QUICIncomingFrameBuffer
+{
+public:
+  using super = QUICIncomingFrameBuffer; ///< Parent type.
+
+  QUICIncomingCryptoFrameBuffer() {}
+  ~QUICIncomingCryptoFrameBuffer();
+
+  QUICFrameSPtr pop() override;
+  QUICErrorUPtr insert(const QUICFrame &frame) override;
+
+private:
 };

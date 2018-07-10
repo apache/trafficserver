@@ -326,11 +326,16 @@ QUICStream::recv(const QUICStreamFrame &frame)
 
   auto new_frame = this->_received_stream_frame_buffer.pop();
   while (new_frame != nullptr) {
-    this->_write_to_read_vio(new_frame->offset(), new_frame->data(), new_frame->data_length(), new_frame->has_fin_flag());
-    this->_local_flow_controller.forward_limit(new_frame->offset() + new_frame->data_length() + this->_flow_control_buffer_size);
+    QUICStreamFrameSPtr stream_frame = std::static_pointer_cast<const QUICStreamFrame>(new_frame);
+
+    this->_write_to_read_vio(stream_frame->offset(), stream_frame->data(), stream_frame->data_length(),
+                             stream_frame->has_fin_flag());
+    this->_local_flow_controller.forward_limit(stream_frame->offset() + stream_frame->data_length() +
+                                               this->_flow_control_buffer_size);
     QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                       this->_local_flow_controller.current_limit());
     this->_state.update_with_receiving_frame(*new_frame);
+
     new_frame = this->_received_stream_frame_buffer.pop();
   }
 

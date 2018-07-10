@@ -27,10 +27,10 @@
 #include "quic/QUICStream.h"
 #include <memory>
 
-TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
+TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 {
   QUICStream *stream = new QUICStream();
-  QUICIncomingFrameBuffer buffer(stream);
+  QUICIncomingStreamFrameBuffer buffer(stream);
   QUICErrorUPtr err = nullptr;
 
   uint8_t data[1024] = {0};
@@ -57,7 +57,7 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
     err = buffer.insert(*stream1_frame_3_r);
     CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
 
-    QUICIncomingFrameBuffer buffer2(stream);
+    QUICIncomingStreamFrameBuffer buffer2(stream);
 
     buffer2.insert(*stream1_frame_3_r);
     buffer2.insert(*stream1_frame_0_r);
@@ -65,7 +65,7 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
     err = buffer2.insert(*stream1_frame_2_r);
     CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
 
-    QUICIncomingFrameBuffer buffer3(stream);
+    QUICIncomingStreamFrameBuffer buffer3(stream);
 
     buffer3.insert(*stream1_frame_4_r);
     err = buffer3.insert(*stream1_frame_3_r);
@@ -91,10 +91,10 @@ TEST_CASE("QUICIncomingFrameBuffer_fin_offset", "[quic]")
   delete stream;
 }
 
-TEST_CASE("QUICIncomingFrameBuffer_pop", "[quic]")
+TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 {
   QUICStream *stream = new QUICStream();
-  QUICIncomingFrameBuffer buffer(stream);
+  QUICIncomingStreamFrameBuffer buffer(stream);
   QUICErrorUPtr err = nullptr;
 
   uint8_t data[1024] = {0};
@@ -114,15 +114,15 @@ TEST_CASE("QUICIncomingFrameBuffer_pop", "[quic]")
   buffer.insert(*stream1_frame_4_r);
   CHECK(!buffer.empty());
 
-  auto frame = buffer.pop();
+  auto frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 3072);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 4096);
   CHECK(buffer.empty());
 
@@ -135,25 +135,25 @@ TEST_CASE("QUICIncomingFrameBuffer_pop", "[quic]")
   buffer.insert(*stream1_frame_0_r);
   CHECK(!buffer.empty());
 
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 3072);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 4096);
   CHECK(buffer.empty());
 
   delete stream;
 }
 
-TEST_CASE("QUICIncomingFrameBuffer_dup_frame", "[quic]")
+TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
 {
   QUICStream *stream = new QUICStream();
-  QUICIncomingFrameBuffer buffer(stream);
+  QUICIncomingStreamFrameBuffer buffer(stream);
   QUICErrorUPtr err = nullptr;
 
   uint8_t data[1024] = {0};
@@ -169,13 +169,13 @@ TEST_CASE("QUICIncomingFrameBuffer_dup_frame", "[quic]")
   err = buffer.insert(*stream1_frame_3_r);
   CHECK(err->cls == QUICErrorClass::NONE);
 
-  auto frame = buffer.pop();
+  auto frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame == nullptr);
   CHECK(buffer.empty());
 
@@ -192,13 +192,13 @@ TEST_CASE("QUICIncomingFrameBuffer_dup_frame", "[quic]")
   err = buffer.insert(*stream2_frame_3_r);
   CHECK(err->cls == QUICErrorClass::NONE);
 
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = buffer.pop();
+  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame == nullptr);
   CHECK(buffer.empty());
 
