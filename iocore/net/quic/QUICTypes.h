@@ -51,8 +51,6 @@ constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 
-constexpr QUICStreamId STREAM_ID_FOR_HANDSHAKE = 0;
-
 // [[deprecated]]
 enum class QUICHandshakeMsgType {
   NONE = 0,

@@ -325,6 +325,7 @@ QUICStream::recv(const QUICStreamFrame &frame)
   }
 
   auto new_frame = this->_received_stream_frame_buffer.pop();
+
   while (new_frame != nullptr) {
     QUICStreamFrameSPtr stream_frame = std::static_pointer_cast<const QUICStreamFrame>(new_frame);
 
@@ -418,9 +419,8 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   }
 
   if (len > 0) {
-    bool protection = this->_id != STREAM_ID_FOR_HANDSHAKE;
-    frame           = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id,
-                                                  this->_send_offset, fin, protection);
+    frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id,
+                                                  this->_send_offset, fin, true);
     if (!this->_state.is_allowed_to_send(*frame)) {
       QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
       return frame;
@@ -445,25 +445,6 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     frame = this->_remote_flow_controller.generate_frame();
   }
   return frame;
-}
-
-/**
- * Reset send/recv offset of stream. This is only for stream 0.
- */
-void
-QUICStream::reset_send_offset()
-{
-  if (this->_id == STREAM_ID_FOR_HANDSHAKE) {
-    this->_send_offset = 0;
-  }
-}
-
-void
-QUICStream::reset_recv_offset()
-{
-  if (this->_id == STREAM_ID_FOR_HANDSHAKE) {
-    this->_received_stream_frame_buffer.clear();
-  }
 }
 
 /**

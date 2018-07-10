@@ -207,7 +207,6 @@ QUICNetVConnection::start()
   }
 
   this->_application_map = new QUICApplicationMap();
-  this->_application_map->set(STREAM_ID_FOR_HANDSHAKE, this->_handshake_handler);
 
   this->_hs_protocol      = this->_handshake_handler->protocol();
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
@@ -313,21 +312,12 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
     // FIXME: startIO only return 0 now! what should we do if it failed ?
   }
 
-  // create stream for handshake
-  QUICErrorUPtr error = this->_stream_manager->create_stream(STREAM_ID_FOR_HANDSHAKE);
-  if (error->cls != QUICErrorClass::NONE) {
-    QUICConDebug("Couldn't create stream for handshake");
-
-    return CONNECT_FAILURE;
-  }
-
   nh->startCop(this);
 
   // FIXME: complete do_io_xxxx instead
   this->read.enabled = 1;
 
   // start QUIC handshake
-  this->_handshake_handler->handleEvent(VC_EVENT_WRITE_READY, nullptr);
   this->_schedule_packet_write_ready();
 
   return CONNECT_SUCCESS;

@@ -63,7 +63,7 @@ TEST_CASE("1-RTT handshake ", "[quic]")
   // setup stream 0
   MockQUICRTTProvider rtt;
   MockQUICConnectionInfoProvider info;
-  QUICStream *stream          = new MockQUICStream(&rtt, &info, STREAM_ID_FOR_HANDSHAKE, UINT64_MAX, UINT64_MAX);
+  QUICStream *stream          = new MockQUICStream(&rtt, &info, 0, UINT64_MAX, UINT64_MAX);
   MockQUICStreamIO *stream_io = new MockQUICStreamIO(nullptr, stream);
 
   client->set_stream(stream, stream_io);

@@ -67,8 +67,6 @@ public:
   QUICStreamId id() const;
   const QUICConnectionInfoProvider *info() const;
   QUICOffset final_offset() const;
-  void reset_send_offset();
-  void reset_recv_offset();
   QUICStreamFrameUPtr generete_frame(uint16_t flow_control_credit, uint16_t maximum_frame_size);
 
   // Implement VConnection Interface.

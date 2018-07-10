@@ -61,12 +61,6 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
   this->_local_tp  = local_tp;
   this->_remote_tp = remote_tp;
 
-  // Setup a stream for Handshake
-  QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
-  if (stream) {
-    stream->init_flow_control_params(UINT64_MAX, UINT64_MAX);
-  }
-
   if (this->_local_tp) {
     this->_local_maximum_stream_id_bidi = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS);
     this->_local_maximum_stream_id_uni  = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS);
@@ -283,10 +277,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
     uint64_t local_max_stream_data  = 0;
     uint64_t remote_max_stream_data = 0;
-    if (stream_id == STREAM_ID_FOR_HANDSHAKE) {
-      local_max_stream_data  = UINT64_MAX;
-      remote_max_stream_data = UINT64_MAX;
-    } else if (this->_local_tp) {
+    if (this->_local_tp) {
       local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA),
       remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
     } else {
@@ -347,22 +338,6 @@ QUICStreamManager::set_default_application(QUICApplication *app)
   this->_app_map->set_default(app);
 }
 
-void
-QUICStreamManager::reset_send_offset()
-{
-  QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
-
-  stream->reset_send_offset();
-}
-
-void
-QUICStreamManager::reset_recv_offset()
-{
-  QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
-
-  stream->reset_recv_offset();
-}
-
 bool
 QUICStreamManager::will_generate_frame(QUICEncryptionLevel level)
 {
@@ -389,21 +364,10 @@ QUICStreamManager::generate_frame(QUICEncryptionLevel level, uint64_t connection
     return frame;
   }
 
-  // Stream 0 must be prioritized over other streams
-  QUICStream *stream = this->_find_stream(STREAM_ID_FOR_HANDSHAKE);
-  if (stream) {
-    frame = stream->generate_frame(level, connection_credit, maximum_frame_size);
-  }
-
-  if (frame == nullptr) {
-    for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
-      if (s->id() == STREAM_ID_FOR_HANDSHAKE) {
-        continue;
-      }
-      frame = s->generate_frame(level, connection_credit, maximum_frame_size);
-      if (frame) {
-        break;
-      }
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+    frame = s->generate_frame(level, connection_credit, maximum_frame_size);
+    if (frame) {
+      break;
     }
   }
 
