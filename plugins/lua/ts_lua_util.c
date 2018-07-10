@@ -227,6 +227,9 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
     lua_getglobal(L, "__init__");
 
     if (lua_type(L, -1) == LUA_TFUNCTION) {
+      // specifying that the file has an __init__ function
+      conf->init_func = 1;
+
       lua_newtable(L);
 
       for (t = 0; t < argc; t++) {
