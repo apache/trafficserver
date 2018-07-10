@@ -67,6 +67,7 @@ public:
   virtual void on_packets_lost(const std::map<QUICPacketNumber, const PacketInfo *> &packets);
   void on_retransmission_timeout_verified();
   bool check_credit() const;
+  uint32_t open_window() const;
   void reset();
 
   // Debug

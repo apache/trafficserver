@@ -215,11 +215,11 @@ public:
 
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
-  QUICErrorUPtr handle_frame(std::shared_ptr<const QUICFrame> frame) override;
+  QUICErrorUPtr handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame) override;
 
   // QUICConnection (QUICFrameGenerator)
-  bool will_generate_frame();
-  QUICFrameUPtr generate_frame(uint16_t connection_credit, uint16_t maximum_frame_size);
+  // bool will_generate_frame(QUICEncryptionLevel level);
+  // QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint16_t connection_credit, uint16_t maximum_frame_size);
 
   int in_closed_queue = 0;
 
@@ -294,14 +294,15 @@ private:
   void _close_path_validation_timeout(Event *data);
   Event *_path_validation_timeout = nullptr;
 
-  uint32_t _maximum_stream_frame_data_size();
+  uint64_t _maximum_stream_frame_data_size();
   uint32_t _transmit_packet(QUICPacketUPtr packet);
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                     QUICFrameUPtr frame);
-  void _packetize_frames();
+  QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size);
   void _packetize_closing_frame();
   QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
+  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable);
 
   QUICErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
 

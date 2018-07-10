@@ -117,6 +117,16 @@ QUICCongestionController::check_credit() const
 }
 
 uint32_t
+QUICCongestionController::open_window() const
+{
+  if (this->check_credit()) {
+    return this->_congestion_window - this->_bytes_in_flight;
+  } else {
+    return 0;
+  }
+}
+
+uint32_t
 QUICCongestionController::bytes_in_flight() const
 {
   return this->_bytes_in_flight;

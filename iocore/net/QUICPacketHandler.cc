@@ -100,6 +100,16 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
   udp_con->send(c, udp_packet);
 }
 
+void
+QUICPacketHandler::_send_packet(Continuation *c, QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload)
+{
+  UDPConnection *udp_con = vc->get_udp_con();
+  IpEndpoint addr        = vc->con.addr;
+  UDPPacket *udp_packet  = new_UDPPacket(addr, 0, udp_payload);
+
+  udp_con->send(c, udp_packet);
+}
+
 //
 // QUICPacketHandlerIn
 //
@@ -307,6 +317,12 @@ QUICPacketHandlerIn::send_packet(const QUICPacket &packet, QUICNetVConnection *v
   this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
 }
 
+void
+QUICPacketHandlerIn::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload)
+{
+  this->_send_packet(this, vc, udp_payload);
+}
+
 //
 // QUICPacketHandlerOut
 //
@@ -350,6 +366,12 @@ void
 QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketNumberProtector &pn_protector)
 {
   this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
+}
+
+void
+QUICPacketHandlerOut::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload)
+{
+  this->_send_packet(this, vc, udp_payload);
 }
 
 void
