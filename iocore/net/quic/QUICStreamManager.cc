@@ -201,7 +201,7 @@ QUICStreamManager::_handle_frame(const std::shared_ptr<const QUICStreamFrame> &f
 
   QUICApplication *application = this->_app_map->get(frame->stream_id());
 
-  if (!application->is_stream_set(stream)) {
+  if (application && !application->is_stream_set(stream)) {
     application->set_stream(stream);
   }
   QUICErrorUPtr error = stream->recv(*frame);
