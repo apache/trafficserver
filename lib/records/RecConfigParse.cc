@@ -28,6 +28,7 @@
 #include "ts/Tokenizer.h"
 #include "ts/ink_defs.h"
 #include "ts/ink_string.h"
+#include "ts/runroot.h"
 
 #include "P_RecFile.h"
 #include "P_RecUtils.h"
@@ -83,6 +84,20 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 }
 
 //-------------------------------------------------------------------------
+// RecConfigOverrideFromRunroot
+//-------------------------------------------------------------------------
+bool
+RecConfigOverrideFromRunroot(const char *name)
+{
+  if (use_runroot()) {
+    if (!strcmp(name, "proxy.config.bin_path") || !strcmp(name, "proxy.config.local_state_dir") ||
+        !strcmp(name, "proxy.config.log.logfile_dir") || !strcmp(name, "proxy.config.plugin.plugin_dir"))
+      return true;
+  }
+  return false;
+}
+
+//-------------------------------------------------------------------------
 // RecConfigOverrideFromEnvironment
 //-------------------------------------------------------------------------
 const char *
@@ -106,6 +121,8 @@ RecConfigOverrideFromEnvironment(const char *name, const char *value)
   envval = getenv((const char *)envname);
   if (envval) {
     return envval;
+  } else if (RecConfigOverrideFromRunroot(name)) {
+    return nullptr;
   }
 
   return value;
