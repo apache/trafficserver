@@ -457,8 +457,10 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   int states                           = TS_LUA_MAX_STATE_COUNT;
+  int reload                           = 0;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
+    {"enable-reload", no_argument, 0, 'r'},
     {0, 0, 0, 0},
   };
 
@@ -470,6 +472,10 @@ TSPluginInit(int argc, const char *argv[])
     case 's':
       states = atoi(optarg);
       // set state
+      break;
+    case 'r':
+      reload = 1;
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] enable global plugin reload [%d]", __FUNCTION__, reload);
       break;
     }
 
@@ -607,12 +613,15 @@ TSPluginInit(int argc, const char *argv[])
 
   ts_lua_destroy_http_ctx(http_ctx);
 
-  TSCont config_contp = TSContCreate(configHandler, NULL);
-  if (!config_contp) {
-    TSError("[ts_lua][%s] could not create configuration continuation", __FUNCTION__);
-    return;
-  }
-  TSContDataSet(config_contp, conf);
+  // support for reload as global plugin
+  if (reload) {
+    TSCont config_contp = TSContCreate(configHandler, NULL);
+    if (!config_contp) {
+      TSError("[ts_lua][%s] could not create configuration continuation", __FUNCTION__);
+      return;
+    }
+    TSContDataSet(config_contp, conf);
 
-  TSMgmtUpdateRegister(config_contp, "ts_lua");
+    TSMgmtUpdateRegister(config_contp, "ts_lua");
+  }
 }
