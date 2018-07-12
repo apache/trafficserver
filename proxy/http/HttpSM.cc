@@ -1101,6 +1101,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     server_entry->vc = netvc = (NetVConnection *)data;
     server_entry->vc_type    = HTTP_RAW_SERVER_VC;
     t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
+    ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
     netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
     netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
@@ -1732,6 +1733,7 @@ HttpSM::state_http_server_open(int event, void *data)
   }
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
   HttpServerSession *session;
+  NetVConnection *netvc = nullptr;
 
   switch (event) {
   case NET_EVENT_OPEN: {
@@ -1740,6 +1742,19 @@ HttpSM::state_http_server_open(int event, void *data)
                 httpServerSessionAllocator.alloc();
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
+
+    netvc = static_cast<NetVConnection *>(data);
+    session->attach_hostname(t_state.current.server->name);
+    UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(data);
+    ink_release_assert(pending_action == nullptr || pending_action == vc->get_action());
+    pending_action = nullptr;
+
+    session->new_connection(vc);
+
+    session->state = HSS_ACTIVE;
+
+    ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
+
     // If origin_max_connections or origin_min_keep_alive_connections is
     // set then we are metering the max and or min number
     // of connections per host.  Set enable_origin_connection_limiting
@@ -1749,18 +1764,6 @@ HttpSM::state_http_server_open(int event, void *data)
       SMDebug("http_ss", "[%" PRId64 "] max number of connections: %" PRIu64, sm_id, t_state.txn_conf->origin_max_connections);
       session->enable_origin_connection_limiting = true;
     }
-    /*UnixNetVConnection * vc = (UnixNetVConnection*)(ua_txn->client_vc);
-       UnixNetVConnection *server_vc = (UnixNetVConnection*)data;
-       printf("client fd is :%d , server fd is %d\n",vc->con.fd,
-       server_vc->con.fd); */
-    session->attach_hostname(t_state.current.server->name);
-    UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(data);
-    ink_release_assert(pending_action == nullptr || pending_action == vc->get_action());
-    pending_action = nullptr;
-
-    session->new_connection(vc);
-
-    session->state = HSS_ACTIVE;
 
     attach_server_session(session);
     if (t_state.current.request_to == HttpTransact::PARENT_PROXY) {
