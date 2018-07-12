@@ -18,6 +18,6 @@ pkglib_LTLIBRARIES += compress/compress.la
 compress_compress_la_SOURCES = compress/compress.cc compress/configuration.cc compress/misc.cc
 
 compress_compress_la_LDFLAGS = \
-  $(AM_LDFLAGS) $(LIB_BROTLIENC)
+  $(AM_LDFLAGS) $(BROTLIENC_LIB)
 
-compress_compress_la_CXXFLAGS = $(AM_CXXFLAGS) $(CFLAGS_BROTLIENC)
+compress_compress_la_CXXFLAGS = $(AM_CXXFLAGS) $(BROTLIENC_CFLAGS)
