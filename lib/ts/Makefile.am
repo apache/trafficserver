@@ -20,7 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 
 library_includedir=$(includedir)/ts
 
-library_include_HEADERS = apidefs.h TextView.h
+library_include_HEADERS = apidefs.h TextView.h PostScript.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
@@ -75,6 +75,7 @@ libtsutil_la_SOURCES = \
 	EventNotify.h \
 	fastlz.c \
 	fastlz.h \
+	PostScript.h \
 	Hash.cc \
 	HashFNV.cc \
 	HashFNV.h \
@@ -268,6 +269,7 @@ test_tslib_SOURCES = \
 	unit-tests/unit_test_main.cc \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
+	unit-tests/test_PostScript.cc \
 	unit-tests/test_ink_inet.cc \
 	unit-tests/test_IntrusiveDList.cc \
 	unit-tests/test_IntrusivePtr.cc \
