@@ -248,7 +248,10 @@ QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *
   QUICPacketLongHeader::scil(scil, packet, packet_len);
 
   size_t length_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
-  length               = QUICIntUtil::read_QUICVariableInt(packet + length_offset);
+  if (length_offset >= packet_len) {
+    return false;
+  }
+  length = QUICIntUtil::read_QUICVariableInt(packet + length_offset);
   if (field_len) {
     *field_len = QUICVariableInt::size(packet + length_offset);
   }
@@ -846,14 +849,20 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
       phase = QUICKeyPhase::CLEARTEXT;
       break;
     }
-    QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
+    if (!QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len)) {
+      Debug("quic", "Failed to calculate packet number offset");
+      return false;
+    }
 
     Debug("quic", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
           QUICDebugNames::key_phase(phase));
 
   } else {
     QUICPacketShortHeader::key_phase(phase, packet, packet_len);
-    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConfigParams::scid_len());
+    if (!QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConfigParams::scid_len())) {
+      Debug("quic", "Failed to calculate packet number offset");
+      return false;
+    }
   }
   sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
 
