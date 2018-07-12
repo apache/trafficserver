@@ -40,6 +40,7 @@
 #include "P_SSLCertLookup.h"
 #include "SSLSessionCache.h"
 #include <records/I_RecHttp.h>
+#include <HttpConfig.h>
 
 int SSLConfig::configid                                     = 0;
 int SSLCertificateConfig::configid                          = 0;
@@ -57,6 +58,7 @@ size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
 bool SSLConfigParams::sni_map_enable                        = false;
+IpMap *SSLConfigParams::proxy_protocol_ipmap                = nullptr;
 
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled       = 0;
@@ -86,6 +88,12 @@ SSLConfigParams::~SSLConfigParams()
 {
   cleanup();
   ink_mutex_destroy(&ctxMapLock);
+}
+
+void
+SSLConfigInit(IpMap *global)
+{
+  SSLConfigParams::proxy_protocol_ipmap = global;
 }
 
 void

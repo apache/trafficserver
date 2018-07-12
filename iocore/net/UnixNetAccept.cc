@@ -116,6 +116,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->mutex       = new_ProxyMutex();
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->opt.f_inbound_transparent);
+    vc->set_is_proxy_protocol(na->opt.f_proxy_protocol);
     vc->set_context(NET_VCONNECTION_IN);
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
@@ -327,6 +328,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->mutex       = new_ProxyMutex();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
+    vc->set_is_proxy_protocol(opt.f_proxy_protocol);
     vc->options.packet_mark = opt.packet_mark;
     vc->options.packet_tos  = opt.packet_tos;
     vc->options.ip_family   = opt.ip_family;
@@ -481,6 +483,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->mutex       = new_ProxyMutex();
     // no need to set vc->action_
     vc->set_is_transparent(opt.f_inbound_transparent);
+    vc->set_is_proxy_protocol(opt.f_proxy_protocol);
     vc->options.packet_mark = opt.packet_mark;
     vc->options.packet_tos  = opt.packet_tos;
     vc->options.ip_family   = opt.ip_family;

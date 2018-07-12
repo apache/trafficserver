@@ -35,6 +35,7 @@
 #include "ts/ink_inet.h"
 #include <openssl/rand.h>
 #include "P_SSLCertLookup.h"
+#include <ts/IpMap.h>
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
@@ -108,6 +109,8 @@ struct SSLConfigParams : public ConfigInfo {
   static int ssl_wire_trace_percentage;
   static char *ssl_wire_trace_server_name;
 
+  static IpMap *proxy_protocol_ipmap;
+
   static init_ssl_ctx_func init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
 
@@ -130,6 +133,7 @@ struct SSLConfigParams : public ConfigInfo {
   void initialize();
   void cleanup();
   void reset();
+  void SSLConfigInit(IpMap *global);
 };
 
 /////////////////////////////////////////////////////////////
