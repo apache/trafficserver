@@ -23,24 +23,28 @@
 
 #include "I_NetVConnection.h"
 
-TS_INLINE sockaddr const *
+inline sockaddr const *
 NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
-    set_remote_addr();
+    if (pp_info.proxy_protocol_version != ProxyProtocolVersion::UNDEFINED) {
+      set_remote_addr(get_proxy_protocol_src_addr());
+    } else {
+      set_remote_addr();
+    }
     got_remote_addr = true;
   }
   return &remote_addr.sa;
 }
 
-TS_INLINE IpEndpoint const &
+inline IpEndpoint const &
 NetVConnection::get_remote_endpoint()
 {
   get_remote_addr(); // Make sure the vallue is filled in
   return remote_addr;
 }
 
-TS_INLINE in_addr_t
+inline in_addr_t
 NetVConnection::get_remote_ip()
 {
   sockaddr const *addr = this->get_remote_addr();
@@ -48,13 +52,13 @@ NetVConnection::get_remote_ip()
 }
 
 /// @return The remote port in host order.
-TS_INLINE uint16_t
+inline uint16_t
 NetVConnection::get_remote_port()
 {
   return ats_ip_port_host_order(this->get_remote_addr());
 }
 
-TS_INLINE sockaddr const *
+inline sockaddr const *
 NetVConnection::get_local_addr()
 {
   if (!got_local_addr) {
@@ -68,7 +72,7 @@ NetVConnection::get_local_addr()
   return &local_addr.sa;
 }
 
-TS_INLINE in_addr_t
+inline in_addr_t
 NetVConnection::get_local_ip()
 {
   sockaddr const *addr = this->get_local_addr();
@@ -76,8 +80,27 @@ NetVConnection::get_local_ip()
 }
 
 /// @return The local port in host order.
-TS_INLINE uint16_t
+inline uint16_t
 NetVConnection::get_local_port()
 {
   return ats_ip_port_host_order(this->get_local_addr());
+}
+
+inline sockaddr const *
+NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst)
+{
+  if (src_or_dst == ProxyProtocolData::SRC) {
+    if ((pp_info.src_addr.isValid() && pp_info.src_addr.port() != 0) ||
+        (ats_is_ip4(&pp_info.src_addr) && INADDR_ANY != ats_ip4_addr_cast(&pp_info.src_addr)) // IPv4
+        || (ats_is_ip6(&pp_info.src_addr) && !IN6_IS_ADDR_UNSPECIFIED(&pp_info.src_addr.sin6.sin6_addr))) {
+      return &pp_info.src_addr.sa;
+    }
+  } else {
+    if ((pp_info.dst_addr.isValid() && pp_info.dst_addr.port() != 0) ||
+        (ats_is_ip4(&pp_info.dst_addr) && INADDR_ANY != ats_ip4_addr_cast(&pp_info.dst_addr)) // IPv4
+        || (ats_is_ip6(&pp_info.dst_addr) && !IN6_IS_ADDR_UNSPECIFIED(&pp_info.dst_addr.sin6.sin6_addr))) {
+      return &pp_info.dst_addr.sa;
+    }
+  }
+  return nullptr;
 }

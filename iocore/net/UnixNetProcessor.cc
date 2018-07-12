@@ -51,6 +51,7 @@ NetProcessor::AcceptOptions::reset()
   packet_tos            = 0;
   tfo_queue_length      = 0;
   f_inbound_transparent = false;
+  f_proxy_protocol      = false;
   return *this;
 }
 
@@ -120,6 +121,10 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 
   if (opt.f_inbound_transparent) {
     Debug("http_tproxy", "Marked accept server %p on port %d as inbound transparent", na, opt.local_port);
+  }
+
+  if (opt.f_proxy_protocol) {
+    Debug("http_tproxy", "Marked accept server %p on port %d for proxy protocol", na, opt.local_port);
   }
 
   int should_filter_int         = 0;

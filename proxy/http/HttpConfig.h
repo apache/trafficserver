@@ -836,6 +836,8 @@ public:
 public:
   IpAddr inbound_ip4, inbound_ip6;
   IpAddr outbound_ip4, outbound_ip6;
+  IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
+  IpMap config_proxy_protocol_ipmap;
 
   MgmtInt server_max_connections            = 0;
   MgmtInt origin_min_keep_alive_connections = 0; // TODO: This one really ought to be overridable, but difficult right now.

@@ -41,6 +41,7 @@
 #include "P_SSLCertLookup.h"
 #include "SSLSessionCache.h"
 #include <records/I_RecHttp.h>
+#include <HttpConfig.h>
 
 int SSLConfig::configid                                     = 0;
 int SSLCertificateConfig::configid                          = 0;
@@ -57,6 +58,7 @@ bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
+IpMap *SSLConfigParams::proxy_protocol_ipmap                = nullptr;
 
 int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
@@ -82,6 +84,12 @@ SSLConfigParams::~SSLConfigParams()
 {
   cleanup();
   ink_mutex_destroy(&ctxMapLock);
+}
+
+void
+SSLConfigInit(IpMap *global)
+{
+  SSLConfigParams::proxy_protocol_ipmap = global;
 }
 
 void

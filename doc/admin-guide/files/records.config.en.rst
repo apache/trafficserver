@@ -610,6 +610,7 @@ HTTP Engine
    ip-out      Value           Local outbound IP address.
    ip-resolve  Value           IP address resolution style.
    proto       Value           List of supported session protocols.
+   pp                          Enable Proxy Protocol.
    ssl                         SSL terminated.
    tr-full                     Fully transparent (inbound and outbound)
    tr-in                       Inbound transparent.
@@ -645,6 +646,12 @@ proto
    separated by semi-colons. For TLS proxy ports the default value is
    all available protocols. For non-TLS proxy ports the default is HTTP
    only.
+
+pp
+   Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
+   port, all incoming requests must be prefaced with the PROXY header.  See
+   :ref:`Proxy Protocol <proxy-protocol>` for more details on how to configure
+   this option properly.
 
 tr-full
    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
@@ -1730,6 +1737,30 @@ Proxy User Variables
    is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
    incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
 
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_whitelist STRING ```<ip list>```
+
+   This defines a whitelist of server IPs that are trusted to provide
+   connections with Proxy Protocol information.  This is a comma delimited list
+   of IP addresses.  Addressed may be listed individually, in a range separated
+   by a dash or by using CIDR notation.
+
+   ======================= ===========================================================
+   Example  Effect
+   ======================= ===========================================================
+   ``10.0.2.123``          A single IP Address.
+   ``10.0.3.1-10.0.3.254`` A range of IP address.
+   ``10.0.4.0/24``         A range of IP address specified by CIDR notation.
+   ======================= ============================================================
+
+   .. important::
+
+       If Proxy Protocol is enabled on the port, but this directive is not
+       defined any server may initiate a connection with Proxy Protocol
+       information.
+       See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
+
+   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header.
+
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
    :overridable:
@@ -2631,7 +2662,7 @@ HostDB
    Set the file path for an external host file.
 
    If this is set (non-empty) then the file is presumed to be a hosts file in
-   the standard `host file format <http://tools.ietf.org/html/rfc1123#page-13>`_.
+   the standard .
    It is read and the entries there added to the HostDB. The file is
    periodically checked for a more recent modification date in which case it is
    reloaded. The interval is set with :ts:cv:`proxy.config.hostdb.host_file.interval`.
