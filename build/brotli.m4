@@ -31,8 +31,8 @@ AC_ARG_WITH(brotli, [AC_HELP_STRING([--with-brotli=DIR],[use a specific brotli l
       has_brotli=1
       case "$withval" in
       *":"*)
-        brotli_include="`echo $withval |sed -e 's/:.*$//'`"
-        brotli_ldflags="`echo $withval |sed -e 's/^.*://'`"
+        brotli_include="`echo $withval | sed -e 's/:.*$//'`"
+        brotli_ldflags="`echo $withval | sed -e 's/^.*://'`"
         AC_MSG_CHECKING(checking for brotli includes in $brotli_include libs in $brotli_ldflags )
         ;;
       *)
@@ -66,8 +66,8 @@ if test "$has_brotli" != "0"; then
     AC_CHECK_HEADERS(brotli/encode.h, [brotli_have_headers=1])
   fi
   if test "$brotli_have_headers" != "0"; then
-    AC_SUBST([LIB_BROTLIENC], [-lbrotlienc])
-    AC_SUBST([CFLAGS_BROTLIENC], [-I${brotli_include}])
+    AC_SUBST([BROTLIENC_LIB], [-lbrotlienc])
+    AC_SUBST([BROTLIENC_CFLAGS], [-I${brotli_include}])
   else
     has_brotli=0
     CPPFLAGS=$saved_cppflags
@@ -80,15 +80,15 @@ AC_CHECK_HEADER([brotli/encode.h], [], [has_brotli=0])
 AC_CHECK_LIB([brotlienc], BrotliEncoderCreateInstance, [], [has_brotli=0])
 
 if test "x$has_brotli" == "x0"; then
-    PKG_CHECK_EXISTS([libbrotlienc],
+    PKG_CHECK_EXISTS([LIBBROTLIENC],
     [
-      PKG_CHECK_MODULES([libbrotlienc], [libbrotlienc >= 0.6.0], [
-        AC_SUBST([LIB_BROTLIENC], [$libbrotlienc_LIBS])
-        AC_SUBST([CFLAGS_BROTLIENC], [$libbrotlienc_CFLAGS])
+      PKG_CHECK_MODULES([LIBBROTLIENC], [libbrotlienc >= 0.6.0], [
+        AC_SUBST([BROTLIENC_LIB], [$LIBBROTLIENC_LIBS])
+        AC_SUBST([BROTLIENC_CFLAGS], [$LIBBROTLIENC_CFLAGS])
       ], [])
     ], [])
 else
-    AC_SUBST([LIB_BROTLIENC], [-lbrotlienc])
+    AC_SUBST([BROTLIENC_LIB], [-lbrotlienc])
 fi
 ])
 
