@@ -131,6 +131,8 @@ libinknet_a_SOURCES = \
 	P_UnixNetVConnection.h \
 	P_UnixPollDescriptor.h \
 	P_UnixUDPConnection.h \
+	ProxyProtocol.h \
+	ProxyProtocol.cc \
 	Socks.cc \
 	SNIActionPerformer.cc \
 	SSLCertLookup.cc \
