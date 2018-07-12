@@ -3608,9 +3608,10 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   // record the failue                   //
   //////////////////////////////////////////
   if (0 == s->current.attempts) {
-    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s'", s->current.attempts,
+    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s' connect_result=%d src_port=%d", s->current.attempts,
                HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>");
+               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
+               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()));
   }
 
   if (url_string) {

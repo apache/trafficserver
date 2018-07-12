@@ -1087,6 +1087,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     server_entry->vc = netvc = (NetVConnection *)data;
     server_entry->vc_type    = HTTP_RAW_SERVER_VC;
     t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
+    ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
     netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
     netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
@@ -1716,6 +1717,7 @@ HttpSM::state_http_server_open(int event, void *data)
   pending_action                              = nullptr;
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
   HttpServerSession *session;
+  NetVConnection *netvc = nullptr;
 
   switch (event) {
   case NET_EVENT_OPEN:
@@ -1725,9 +1727,11 @@ HttpSM::state_http_server_open(int event, void *data)
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
 
+    netvc = static_cast<NetVConnection *>(data);
     session->attach_hostname(t_state.current.server->name);
-    session->new_connection(static_cast<NetVConnection *>(data));
+    session->new_connection(netvc);
     session->state = HSS_ACTIVE;
+    ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
     // If origin_max_connections or origin_min_keep_alive_connections is set then we are metering
     // the max and or min number of connections per host. Transfer responsibility for this to the
