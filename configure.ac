@@ -1954,20 +1954,6 @@ iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/utils \
 -I\$(abs_top_srcdir)/iocore/dns"
 
-# Flags for buildit LuaJIT itself. We take the latest version
-# of the generic flags, plus any Lua-specific flags so that we
-# can strip the coverage flags from Lua while keeping them by
-# default everywhere else.
-TS_ADDTO(LUAJIT_CFLAGS, [$CFLAGS $luajit_cflags])
-AC_SUBST([LUAJIT_CFLAGS])
-
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fsanitize=address")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fsanitize=thread")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fsanitize=memory")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fprofile-instr-generate")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fcoverage-mapping")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "--coverage")
-
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
