@@ -34,6 +34,8 @@
 #include "P_SSLClientUtils.h"
 #include "P_SSLSNI.h"
 #include "HttpTunnel.h"
+#include "ProxyProtocol.h"
+#include <HttpConfig.h>
 
 #include <climits>
 #include <string>
@@ -365,6 +367,49 @@ SSLNetVConnection::read_raw_data()
     }
   }
   NET_SUM_DYN_STAT(net_read_bytes_stat, r);
+
+  IpMap *pp_ipmap;
+  pp_ipmap = SSLConfigParams::proxy_protocol_ipmap;
+
+  if (this->get_is_proxy_protocol()) {
+    Debug("proxyprotocol", "[SSLNetVConnection::read_raw_data] proxy protocol is enabled on this port");
+    if (pp_ipmap->count() > 0) {
+      Debug("proxyprotocol",
+            "[SSLNetVConnection::read_raw_data] proxy protocol has a configured whitelist of trusted IPs - checking");
+
+      // At this point, using get_remote_addr() will return the ip of the
+      // proxy source IP, not the Proxy Protocol client ip. Since we are
+      // checking the ip of the actual source of this connection, this is
+      // what we want now.
+      void *payload = nullptr;
+      if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
+        Debug("proxyprotocol",
+              "[SSLNetVConnection::read_raw_data] proxy protocol src IP is NOT in the configured whitelist of trusted IPs - "
+              "closing connection");
+        r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
+        goto proxy_protocol_bypass;
+      } else {
+        char new_host[INET6_ADDRSTRLEN];
+        Debug("proxyprotocol", "[SSLNetVConnection::read_raw_data] Source IP [%s] is in the trusted whitelist for proxy protocol",
+              ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
+      }
+    } else {
+      Debug("proxyprotocol",
+            "[SSLNetVConnection::read_raw_data] proxy protocol DOES NOT have a configured whitelist of trusted IPs but "
+            "proxy protocol is ernabled on this port - processing all connections");
+    }
+
+    if (ssl_has_proxy_v1(this, buffer, &r)) {
+      Debug("proxyprotocol", "[SSLNetVConnection::read_raw_data] ssl has proxy_v1 header");
+      set_remote_addr(get_proxy_protocol_src_addr());
+    } else {
+      Debug("proxyprotocol",
+            "[SSLNetVConnection::read_raw_data] proxy protocol was enabled, but required header was not present in the "
+            "transaction - closing connection");
+    }
+  } // end of Proxy Protocol processing
+
+proxy_protocol_bypass:
 
   if (r > 0) {
     this->handShakeBuffer->fill(r);

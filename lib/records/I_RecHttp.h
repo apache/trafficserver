@@ -28,6 +28,7 @@
 #include "ts/apidefs.h"
 #include "ts/apidefs.h"
 #include "tscore/ink_assert.h"
+#include "tscore/IpMap.h"
 #include <algorithm>
 #include <vector>
 
@@ -35,6 +36,11 @@
 void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
                    IpAddr &ip4,      ///< [out] IPv4 address.
                    IpAddr &ip6       ///< [out] Ipv6 address.
+);
+
+/// Load up an IpMap with IP addresses from the configuration file.
+void RecHttpLoadIpMap(const char *name, ///< Name of value in configuration file.
+                      IpMap &ipmap      ///< [out] IpMap.
 );
 
 /** A set of session protocols.
@@ -239,6 +245,8 @@ public:
   TransportType m_type; ///< Type of connection.
   in_port_t m_port;     ///< Port on which to listen.
   uint8_t m_family;     ///< IP address family.
+  /// True if proxy protocol is required on incoming requests.
+  bool m_proxy_protocol;
   /// True if inbound connects (from client) are transparent.
   bool m_inbound_transparent_p;
   /// True if outbound connections (to origin servers) are transparent.
@@ -392,6 +400,7 @@ public:
   static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
   static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
   static const char *const OPT_SSL;                     ///< SSL (experimental)
+  static const char *const OPT_PROXY_PROTO;             ///< Proxy Protocol
   static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
   static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
   static const char *const OPT_COMPRESSED;              ///< Compressed.

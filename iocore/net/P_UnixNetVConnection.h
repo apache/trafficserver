@@ -41,7 +41,7 @@ class UnixNetVConnection;
 class NetHandler;
 struct PollDescriptor;
 
-TS_INLINE void
+inline void
 NetVCOptions::reset()
 {
   ip_proto  = USE_TCP;
@@ -73,7 +73,7 @@ NetVCOptions::reset()
   ssl_client_ca_cert_name     = nullptr;
 }
 
-TS_INLINE void
+inline void
 NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark,
                              unsigned long _packet_tos)
 {
@@ -293,6 +293,7 @@ public:
 
   void set_local_addr() override;
   void set_remote_addr() override;
+  void set_remote_addr(const sockaddr *) override;
   int set_tcp_init_cwnd(int init_cwnd) override;
   int set_tcp_congestion_control(int side) override;
   void apply_options() override;
@@ -322,14 +323,21 @@ extern ClassAllocator<UnixNetVConnection> netVCAllocator;
 
 typedef int (UnixNetVConnection::*NetVConnHandler)(int, void *);
 
-TS_INLINE void
+inline void
 UnixNetVConnection::set_remote_addr()
 {
   ats_ip_copy(&remote_addr, &con.addr);
   this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
 }
 
-TS_INLINE void
+inline void
+UnixNetVConnection::set_remote_addr(const sockaddr *new_sa)
+{
+  ats_ip_copy(&remote_addr, new_sa);
+  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
+}
+
+inline void
 UnixNetVConnection::set_local_addr()
 {
   int local_sa_size = sizeof(local_addr);
@@ -339,19 +347,19 @@ UnixNetVConnection::set_local_addr()
   ATS_UNUSED_RETURN(safe_getsockname(con.fd, &local_addr.sa, &local_sa_size));
 }
 
-TS_INLINE ink_hrtime
+inline ink_hrtime
 UnixNetVConnection::get_active_timeout()
 {
   return active_timeout_in;
 }
 
-TS_INLINE ink_hrtime
+inline ink_hrtime
 UnixNetVConnection::get_inactivity_timeout()
 {
   return inactivity_timeout_in;
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
@@ -359,7 +367,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
   next_activity_timeout_at = Thread::get_hrtime() + timeout_in;
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   Debug("socket", "Cancel inactive timeout for NetVC=%p", this);
@@ -367,7 +375,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
   set_inactivity_timeout(0);
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::cancel_active_timeout()
 {
   Debug("socket", "Cancel active timeout for NetVC=%p", this);
@@ -375,7 +383,7 @@ UnixNetVConnection::cancel_active_timeout()
   next_activity_timeout_at = 0;
 }
 
-TS_INLINE int
+inline int
 UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 {
 #ifdef TCP_INIT_CWND
@@ -390,7 +398,7 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 #endif
 }
 
-TS_INLINE int
+inline int
 UnixNetVConnection::set_tcp_congestion_control(int side)
 {
 #ifdef TCP_CONGESTION
@@ -425,21 +433,21 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
 #endif
 }
 
-TS_INLINE UnixNetVConnection::~UnixNetVConnection() {}
+inline UnixNetVConnection::~UnixNetVConnection() {}
 
-TS_INLINE SOCKET
+inline SOCKET
 UnixNetVConnection::get_socket()
 {
   return con.fd;
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::set_action(Continuation *c)
 {
   action_ = c;
 }
 
-TS_INLINE const Action *
+inline const Action *
 UnixNetVConnection::get_action() const
 {
   return &action_;

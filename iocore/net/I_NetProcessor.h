@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "tscore/IpMap.h"
 #include "I_EventSystem.h"
 #include "I_Socks.h"
 struct socks_conf_struct;
@@ -95,6 +96,9 @@ public:
         transparent.
     */
     bool f_inbound_transparent;
+
+    /// Proxy Protocol enabled
+    bool f_proxy_protocol;
 
     /// Default constructor.
     /// Instance is constructed with default values.

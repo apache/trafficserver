@@ -957,6 +957,12 @@ PluginVC::set_remote_addr()
   }
 }
 
+void
+PluginVC::set_remote_addr(const sockaddr * /* new_sa ATS_UNUSED */)
+{
+  return;
+}
+
 int
 PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
 {

@@ -34,6 +34,8 @@
 #include "ts/apidefs.h"
 #include <string_view>
 #include "YamlSNIConfig.h"
+#include "tscpp/util/TextView.h"
+#include "tscore/IpMap.h"
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0
@@ -130,10 +132,12 @@ struct NetVCOptions {
       @see ip_family
   */
   IpAddr local_ip;
+
   /** Local port for connection.
       Set to 0 for "don't care" (default).
-   */
+  */
   uint16_t local_port;
+
   /// How to bind the local address.
   /// @note Default is @c ANY_ADDR.
   addr_bind_style addr_binding;
@@ -642,6 +646,9 @@ public:
   /** Set remote sock addr struct. */
   virtual void set_remote_addr() = 0;
 
+  /** Set remote sock addr struct. */
+  virtual void set_remote_addr(const sockaddr *) = 0;
+
   // for InkAPI
   bool
   get_is_internal_request() const
@@ -668,6 +675,19 @@ public:
     is_transparent = state;
   }
 
+  /// Get the proxy protocol enabled flag
+  bool
+  get_is_proxy_protocol() const
+  {
+    return is_proxy_protocol;
+  }
+  /// Set the proxy protocol enabled flag on the port
+  void
+  set_is_proxy_protocol(bool state = true)
+  {
+    is_proxy_protocol = state;
+  }
+
   virtual int
   populate_protocol(std::string_view *results, int n) const
   {
@@ -684,6 +704,113 @@ public:
   NetVConnection(const NetVConnection &) = delete;
   NetVConnection &operator=(const NetVConnection &) = delete;
 
+  enum class ProxyProtocolVersion {
+    UNDEFINED,
+    V1,
+    V2,
+  };
+
+  enum class ProxyProtocolData {
+    UNDEFINED,
+    SRC,
+    DST,
+  };
+
+  int
+  set_proxy_protocol_addr(const ProxyProtocolData src_or_dst, ts::TextView &ip_addr_str)
+  {
+    int ret = -1;
+
+    if (src_or_dst == ProxyProtocolData::SRC) {
+      ret = ats_ip_pton(ip_addr_str, &pp_info.src_addr);
+    } else {
+      ret = ats_ip_pton(ip_addr_str, &pp_info.dst_addr);
+    }
+    return ret;
+  }
+
+  int
+  set_proxy_protocol_src_addr(ts::TextView src)
+  {
+    return set_proxy_protocol_addr(ProxyProtocolData::SRC, src);
+  }
+
+  int
+  set_proxy_protocol_dst_addr(ts::TextView src)
+  {
+    return set_proxy_protocol_addr(ProxyProtocolData::DST, src);
+  }
+
+  int
+  set_proxy_protocol_port(const ProxyProtocolData src_or_dst, in_port_t port)
+  {
+    if (src_or_dst == ProxyProtocolData::SRC) {
+      pp_info.src_addr.port() = htons(port);
+    } else {
+      pp_info.dst_addr.port() = htons(port);
+    }
+    return port;
+  }
+
+  int
+  set_proxy_protocol_src_port(in_port_t port)
+  {
+    return set_proxy_protocol_port(ProxyProtocolData::SRC, port);
+  }
+
+  int
+  set_proxy_protocol_dst_port(in_port_t port)
+  {
+    return set_proxy_protocol_port(ProxyProtocolData::DST, port);
+  }
+
+  void
+  set_proxy_protocol_version(const ProxyProtocolVersion ver)
+  {
+    pp_info.proxy_protocol_version = ver;
+  }
+
+  ProxyProtocolVersion
+  get_proxy_protocol_version()
+  {
+    return pp_info.proxy_protocol_version;
+  }
+
+  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData);
+
+  sockaddr const *
+  get_proxy_protocol_src_addr()
+  {
+    return get_proxy_protocol_addr(ProxyProtocolData::SRC);
+  }
+
+  uint16_t
+  get_proxy_protocol_src_port()
+  {
+    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::SRC));
+  }
+
+  sockaddr const *
+  get_proxy_protocol_dst_addr()
+  {
+    return get_proxy_protocol_addr(ProxyProtocolData::DST);
+  }
+
+  uint16_t
+  get_proxy_protocol_dst_port()
+  {
+    return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
+  };
+
+  struct ProxyProtocol {
+    ProxyProtocolVersion proxy_protocol_version = ProxyProtocolVersion::UNDEFINED;
+    uint16_t ip_family;
+    IpEndpoint src_addr;
+    IpEndpoint dst_addr;
+  };
+
+  ProxyProtocol pp_info;
+
 protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
@@ -694,6 +821,8 @@ protected:
   bool is_internal_request;
   /// Set if this connection is transparent.
   bool is_transparent;
+  /// Set if proxy protocol is enabled
+  bool is_proxy_protocol;
   /// Set if the next write IO that empties the write buffer should generate an event.
   int write_buffer_empty_event;
   /// NetVConnection Context.
@@ -708,6 +837,7 @@ inline NetVConnection::NetVConnection()
     got_remote_addr(false),
     is_internal_request(false),
     is_transparent(false),
+    is_proxy_protocol(false),
     write_buffer_empty_event(0),
     netvc_context(NET_VCONNECTION_UNSET)
 {

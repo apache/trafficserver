@@ -36,6 +36,7 @@
 #include <openssl/rand.h>
 #include "P_SSLCertLookup.h"
 #include "YamlSNIConfig.h"
+#include <tscore/IpMap.h>
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
@@ -109,6 +110,8 @@ struct SSLConfigParams : public ConfigInfo {
   static size_t session_cache_max_bucket_size;
   static bool session_cache_skip_on_lock_contention;
 
+  static IpMap *proxy_protocol_ipmap;
+
   static init_ssl_ctx_func init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
 
@@ -130,6 +133,7 @@ struct SSLConfigParams : public ConfigInfo {
   void initialize();
   void cleanup();
   void reset();
+  void SSLConfigInit(IpMap *global);
 };
 
 /////////////////////////////////////////////////////////////

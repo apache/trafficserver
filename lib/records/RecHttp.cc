@@ -30,6 +30,7 @@
 #include "tscore/ink_inet.h"
 #include <string_view>
 #include <unordered_set>
+#include <tscore/IpMapConf.h>
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
@@ -123,6 +124,30 @@ RecHttpLoadIp(const char *value_name, IpAddr &ip4, IpAddr &ip6)
   }
 }
 
+void
+RecHttpLoadIpMap(const char *value_name, IpMap &ipmap)
+{
+  char value[1024];
+  IpAddr laddr;
+  IpAddr raddr;
+  void *payload = nullptr;
+
+  if (REC_ERR_OKAY == RecGetRecordString(value_name, value, sizeof(value))) {
+    Debug("config", "RecHttpLoadIpMap: parsing the name [%s] and value [%s] to an IpMap", value_name, value);
+    Tokenizer tokens(", ");
+    int n_addrs = tokens.Initialize(value);
+    for (int i = 0; i < n_addrs; ++i) {
+      const char *val = tokens[i];
+
+      Debug("config", "RecHttpLoadIpMap: marking the value [%s] to an IpMap entry", val);
+      if (0 == ats_ip_range_parse(val, laddr, raddr)) {
+        ipmap.fill(laddr, raddr, payload);
+      }
+    }
+  }
+  Debug("config", "RecHttpLoadIpMap: parsed %zu IpMap entries", ipmap.count());
+}
+
 const char *const HttpProxyPort::DEFAULT_VALUE = "8080";
 
 const char *const HttpProxyPort::PORTS_CONFIG_NAME = "proxy.config.http.server_ports";
@@ -144,6 +169,7 @@ const char *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
 const char *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
 const char *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
 const char *const HttpProxyPort::OPT_SSL                     = "ssl";
+const char *const HttpProxyPort::OPT_PROXY_PROTO             = "pp";
 const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
 const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
 const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
@@ -176,6 +202,7 @@ HttpProxyPort::HttpProxyPort()
     m_type(TRANSPORT_DEFAULT),
     m_port(0),
     m_family(AF_INET),
+    m_proxy_protocol(false),
     m_inbound_transparent_p(false),
     m_outbound_transparent_p(false),
     m_transparent_passthrough(false),
@@ -358,6 +385,8 @@ HttpProxyPort::processOptions(const char *opts)
       m_type = TRANSPORT_SSL;
     } else if (0 == strcasecmp(OPT_PLUGIN, item)) {
       m_type = TRANSPORT_PLUGIN;
+    } else if (0 == strcasecmp(OPT_PROXY_PROTO, item)) {
+      m_proxy_protocol = true;
     } else if (0 == strcasecmp(OPT_TRANSPARENT_INBOUND, item)) {
 #if TS_USE_TPROXY
       m_inbound_transparent_p = true;
@@ -556,6 +585,10 @@ HttpProxyPort::print(char *out, size_t n)
   }
   if (zret >= n) {
     return n;
+  }
+
+  if (m_proxy_protocol) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_PROXY_PROTO);
   }
 
   if (m_outbound_transparent_p && m_inbound_transparent_p) {
