@@ -24,6 +24,7 @@
 #include <ts/TextView.h>
 #include <string>
 #include <sstream>
+#include <iostream>
 #include <iomanip>
 #include <catch.hpp>
 
@@ -153,7 +154,47 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   s = t.take_suffix_at('Q');
   REQUIRE(s == addr3);
   REQUIRE(t.empty());
-}
+
+  auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
+  ts::TextView token;
+  t = ";; , ;;one;two,th:ree  four,, ; ,,f-ive="sv;
+  // Do an unrolled loop.
+  REQUIRE(!t.ltrim_if(is_sep).empty());
+  REQUIRE(t.take_prefix_if(is_sep) == "one");
+  REQUIRE(!t.ltrim_if(is_sep).empty());
+  REQUIRE(t.take_prefix_if(is_sep) == "two");
+  REQUIRE(!t.ltrim_if(is_sep).empty());
+  REQUIRE(t.take_prefix_if(is_sep) == "th:ree");
+  REQUIRE(!t.ltrim_if(is_sep).empty());
+  REQUIRE(t.take_prefix_if(is_sep) == "four");
+  REQUIRE(!t.ltrim_if(is_sep).empty());
+  REQUIRE(t.take_prefix_if(is_sep) == "f-ive=");
+  REQUIRE(t.empty());
+
+  // Simulate pulling off FQDN pieces in reverse order from a string_view.
+  // Simulates operations in HostLookup.cc, where the use of string_view necessitates this workaround of failures
+  // in the string_view API. With a TextView, it would just be repeated @c take_suffix_at('.')
+  std::string_view fqdn{"bob.ne1.corp.ngeo.com"};
+  ts::TextView elt{ts::TextView{fqdn}.suffix('.')};
+  REQUIRE(elt == "com");
+
+  // Unroll loop for testing.
+  fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
+  elt = ts::TextView{fqdn}.suffix('.');
+  REQUIRE(elt == "ngeo");
+  fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
+  elt = ts::TextView{fqdn}.suffix('.');
+  REQUIRE(elt == "corp");
+  fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
+  elt = ts::TextView{fqdn}.suffix('.');
+  REQUIRE(elt == "ne1");
+  fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
+  elt = ts::TextView{fqdn}.suffix('.');
+  REQUIRE(elt == "bob");
+  fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
+  elt = ts::TextView{fqdn}.suffix('.');
+  REQUIRE(elt.empty());
+};
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")
 {

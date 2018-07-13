@@ -289,6 +289,9 @@ public:
   */
   template <typename F> self_type prefix_if(F const &pred) const;
 
+  /// Overload to provide better return type.
+  self_type &remove_prefix(size_t n);
+
   /** Split a prefix from the view on the character at offset @a n.
 
       The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
@@ -379,6 +382,9 @@ public:
   self_type suffix(const char *delimiters) const;
   /// Get the prefix delimited by the first character for which @a pred is @c true.
   template <typename F> self_type suffix_if(F const &pred) const;
+
+  /// Overload to provide better return type.
+  self_type &remove_suffix(size_t n);
 
   /** Split the view to get a suffix of size @a n.
 
@@ -642,6 +648,17 @@ TextView::prefix_if(F const &pred) const
   return this->prefix(this->find(pred));
 }
 
+inline auto
+TextView::remove_prefix(size_t n) -> self_type &
+{
+  if (n > this->size()) {
+    this->clear();
+  } else {
+    this->super_type::remove_prefix(n);
+  }
+  return *this;
+}
+
 inline TextView
 TextView::split_prefix_at(size_t n)
 {
@@ -736,6 +753,17 @@ inline TextView
 TextView::suffix_if(F const &pred) const
 {
   return this->suffix((this->size() - std::min(this->size(), this->rfind_if(pred))) - 1);
+}
+
+inline auto
+TextView::remove_suffix(size_t n) -> self_type &
+{
+  if (n > this->size()) {
+    this->clear();
+  } else {
+    this->super_type::remove_suffix(n);
+  }
+  return *this;
 }
 
 inline TextView
