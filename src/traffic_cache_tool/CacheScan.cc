@@ -34,7 +34,7 @@ const int HTTP_ALT_MARSHAL_SIZE = ROUND(sizeof(HTTPCacheAlt), HDR_PTR_SIZE);
 namespace ct
 {
 Errata
-CacheScan::Scan()
+CacheScan::Scan(bool search)
 {
   int64_t guessed_size = 1048576; // 1M
   Errata zret;
@@ -63,7 +63,7 @@ CacheScan::Scan()
             std::cout << "Failed to read content from the Stripe.  " << strerror(errno) << std::endl;
           } else {
             Doc *doc = reinterpret_cast<Doc *>(stripe_buff2);
-            get_alternates(doc->hdr(), doc->hlen);
+            get_alternates(doc->hdr(), doc->hlen, search);
           }
           dir_bitset[dir_to_offset(e, seg)] = true;
           e                                 = next_dir(e, seg);
@@ -125,12 +125,12 @@ CacheScan::unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset)
 {
   Errata zret;
   HDR_UNMARSHAL_PTR(mf->m_next, MIMEFieldBlockImpl, offset);
-
+  ts::MemSpan mf_mem((char *)mf, mf->m_length);
   for (uint32_t index = 0; index < mf->m_freetop; index++) {
     MIMEField *field = &(mf->m_field_slots[index]);
 
     // check if out of bounds
-    if (((char *)field - (char *)mf) > mf->m_length) {
+    if (!mf_mem.contains((char *)field)) {
       zret.push(0, 0, "Out of bounds memory in the deserialized MIMEFieldBlockImpl");
       return zret;
     }
@@ -358,7 +358,7 @@ CacheScan::check_url(ts::MemSpan &mem, URLImpl *url)
 }
 
 Errata
-CacheScan::get_alternates(const char *buf, int length)
+CacheScan::get_alternates(const char *buf, int length, bool search)
 {
   Errata zret;
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
@@ -378,7 +378,7 @@ CacheScan::get_alternates(const char *buf, int length)
       } else if (!a->m_request_hdr.m_http) {
         std::cerr << "no http object found in the request header object" << std::endl;
         return zret;
-      } else if (((char *)a->m_request_hdr.m_http - buf) > length) {
+      } else if (!doc_mem.contains((char *)a->m_request_hdr.m_http)) {
         std::cerr << "out of bounds request header in the alternate" << std::endl;
         return zret;
       }
@@ -386,12 +386,23 @@ CacheScan::get_alternates(const char *buf, int length)
       auto *url = a->m_request_hdr.m_http->u.req.m_url_impl;
       if (check_url(doc_mem, url)) {
         std::string str;
-        ts::bwprint(str, "stripe: {} : {}://{}:{}/{};{}?{}", std::string_view(this->stripe->hashText),
-                    std::string_view(url->m_ptr_scheme, url->m_len_scheme), std::string_view(url->m_ptr_host, url->m_len_host),
-                    std::string_view(url->m_ptr_port, url->m_len_port), std::string_view(url->m_ptr_path, url->m_len_path),
-                    std::string_view(url->m_ptr_params, url->m_len_params), std::string_view(url->m_ptr_query, url->m_len_query));
 
-        std::cout << str << std::endl;
+        if (search) {
+          ts::bwprint(str, "{}://{}:{}/{};{}?{}", std::string_view(url->m_ptr_scheme, url->m_len_scheme),
+                      std::string_view(url->m_ptr_host, url->m_len_host), std::string_view(url->m_ptr_port, url->m_len_port),
+                      std::string_view(url->m_ptr_path, url->m_len_path), std::string_view(url->m_ptr_params, url->m_len_params),
+                      std::string_view(url->m_ptr_query, url->m_len_query));
+          if (u_matcher->match(str.data())) {
+            str = this->stripe->hashText + " " + str;
+            std::cout << "match found " << str << std::endl;
+          }
+        } else {
+          ts::bwprint(str, "stripe: {} : {}://{}:{}/{};{}?{}", std::string_view(this->stripe->hashText),
+                      std::string_view(url->m_ptr_scheme, url->m_len_scheme), std::string_view(url->m_ptr_host, url->m_len_host),
+                      std::string_view(url->m_ptr_port, url->m_len_port), std::string_view(url->m_ptr_path, url->m_len_path),
+                      std::string_view(url->m_ptr_params, url->m_len_params), std::string_view(url->m_ptr_query, url->m_len_query));
+          std::cout << str << std::endl;
+        }
       } else {
         std::cerr << "The retrieved url object is invalid" << std::endl;
       }

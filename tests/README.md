@@ -85,7 +85,7 @@ A number of file object are define to help with adding values to a given configu
  * congestion.config
  * hosting.config
  * ip_allow.config
- * logging.config
+ * logging.yaml
  * parent.config
  * plugin.config
  * remap.config

@@ -40,8 +40,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef FETCHER_H
-#define FETCHER_H
+
+#pragma once
 
 #include <arpa/inet.h>
 #include <cstring>
@@ -329,5 +329,3 @@ get(io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
   return get("127.0.0.1", i, l, t, ti);
 }
 } // namespace ats
-
-#endif // FETCHER_H

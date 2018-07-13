@@ -62,8 +62,8 @@ static const std::vector<DerivativeSum> sum_metrics = {
   // Total requests which are cache hits
   {"proxy.process.cache_total_hits",
    RECD_COUNTER,
-   {"proxy.process.http.cache_hit_fresh", "proxy.process.http.cache_hit_mem_fresh", "proxy.process.http.cache_hit_revalidated",
-    "proxy.process.http.cache_hit_ims", "proxy.process.http.cache_hit_stale_served"}},
+   {"proxy.process.http.cache_hit_fresh", "proxy.process.http.cache_hit_revalidated", "proxy.process.http.cache_hit_ims",
+    "proxy.process.http.cache_hit_stale_served"}},
   // Total requests which are cache misses
   {"proxy.process.cache_total_misses",
    RECD_COUNTER,

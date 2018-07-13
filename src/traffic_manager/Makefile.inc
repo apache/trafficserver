@@ -31,9 +31,9 @@ traffic_manager_traffic_manager_CPPFLAGS = \
 	$(TS_INCLUDES)
 
 traffic_manager_traffic_manager_LDFLAGS = \
-    $(AM_LDFLAGS) \
+	$(AM_LDFLAGS) \
 	@OPENSSL_LDFLAGS@ \
-	@LIB_YAMLCPP@
+	@YAMLCPP_LDFLAGS@
 
 traffic_manager_traffic_manager_SOURCES = \
 	traffic_manager/AddConfigFilesHere.cc \
@@ -49,6 +49,7 @@ traffic_manager_traffic_manager_LDADD = \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
    	$(LIBUNWIND_LIBS) \
 	@LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
+	@YAMLCPP_LIBS@
 	-lm
 
 # Must do it this way or the dependencies aren't detected.

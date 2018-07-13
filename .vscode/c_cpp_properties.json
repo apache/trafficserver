@@ -23,6 +23,7 @@
                 "${workspaceFolder}/lib/cppapi/include",
                 "${workspaceFolder}/lib/records",
                 "${workspaceFolder}/lib/ts",
+                "${workspaceFolder}/lib/yamlcpp/include",
                 "${workspaceFolder}/mgmt",
                 "${workspaceFolder}/mgmt/api",
                 "${workspaceFolder}/mgmt/api/include",

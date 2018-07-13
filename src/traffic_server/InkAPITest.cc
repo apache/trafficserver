@@ -8572,126 +8572,126 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
 ////////////////////////////////////////////////
 
 // The order of these should be the same as TSOverridableConfigKey
-const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {"proxy.config.url_remap.pristine_host_hdr",
-                                                             "proxy.config.http.chunking_enabled",
-                                                             "proxy.config.http.negative_caching_enabled",
-                                                             "proxy.config.http.negative_caching_lifetime",
-                                                             "proxy.config.http.cache.when_to_revalidate",
-                                                             "proxy.config.http.keep_alive_enabled_in",
-                                                             "proxy.config.http.keep_alive_enabled_out",
-                                                             "proxy.config.http.keep_alive_post_out",
-                                                             "proxy.config.http.server_session_sharing.match",
-                                                             "proxy.config.net.sock_recv_buffer_size_out",
-                                                             "proxy.config.net.sock_send_buffer_size_out",
-                                                             "proxy.config.net.sock_option_flag_out",
-                                                             "proxy.config.http.forward.proxy_auth_to_parent",
-                                                             "proxy.config.http.anonymize_remove_from",
-                                                             "proxy.config.http.anonymize_remove_referer",
-                                                             "proxy.config.http.anonymize_remove_user_agent",
-                                                             "proxy.config.http.anonymize_remove_cookie",
-                                                             "proxy.config.http.anonymize_remove_client_ip",
-                                                             "proxy.config.http.insert_client_ip",
-                                                             "proxy.config.http.response_server_enabled",
-                                                             "proxy.config.http.insert_squid_x_forwarded_for",
-                                                             "proxy.config.http.server_tcp_init_cwnd",
-                                                             "proxy.config.http.send_http11_requests",
-                                                             "proxy.config.http.cache.http",
-                                                             "proxy.config.http.cache.ignore_client_no_cache",
-                                                             "proxy.config.http.cache.ignore_client_cc_max_age",
-                                                             "proxy.config.http.cache.ims_on_client_no_cache",
-                                                             "proxy.config.http.cache.ignore_server_no_cache",
-                                                             "proxy.config.http.cache.cache_responses_to_cookies",
-                                                             "proxy.config.http.cache.ignore_authentication",
-                                                             "proxy.config.http.cache.cache_urls_that_look_dynamic",
-                                                             "proxy.config.http.cache.required_headers",
-                                                             "proxy.config.http.insert_request_via_str",
-                                                             "proxy.config.http.insert_response_via_str",
-                                                             "proxy.config.http.cache.heuristic_min_lifetime",
-                                                             "proxy.config.http.cache.heuristic_max_lifetime",
-                                                             "proxy.config.http.cache.guaranteed_min_lifetime",
-                                                             "proxy.config.http.cache.guaranteed_max_lifetime",
-                                                             "proxy.config.http.cache.max_stale_age",
-                                                             "proxy.config.http.keep_alive_no_activity_timeout_in",
-                                                             "proxy.config.http.keep_alive_no_activity_timeout_out",
-                                                             "proxy.config.http.transaction_no_activity_timeout_in",
-                                                             "proxy.config.http.transaction_no_activity_timeout_out",
-                                                             "proxy.config.http.transaction_active_timeout_out",
-                                                             "proxy.config.http.origin_max_connections",
-                                                             "proxy.config.http.connect_attempts_max_retries",
-                                                             "proxy.config.http.connect_attempts_max_retries_dead_server",
-                                                             "proxy.config.http.connect_attempts_rr_retries",
-                                                             "proxy.config.http.connect_attempts_timeout",
-                                                             "proxy.config.http.post_connect_attempts_timeout",
-                                                             "proxy.config.http.down_server.cache_time",
-                                                             "proxy.config.http.down_server.abort_threshold",
-                                                             "proxy.config.http.doc_in_cache_skip_dns",
-                                                             "proxy.config.http.background_fill_active_timeout",
-                                                             "proxy.config.http.response_server_str",
-                                                             "proxy.config.http.cache.heuristic_lm_factor",
-                                                             "proxy.config.http.background_fill_completed_threshold",
-                                                             "proxy.config.net.sock_packet_mark_out",
-                                                             "proxy.config.net.sock_packet_tos_out",
-                                                             "proxy.config.http.insert_age_in_response",
-                                                             "proxy.config.http.chunking.size",
-                                                             "proxy.config.http.flow_control.enabled",
-                                                             "proxy.config.http.flow_control.low_water",
-                                                             "proxy.config.http.flow_control.high_water",
-                                                             "proxy.config.http.cache.range.lookup",
-                                                             "proxy.config.http.default_buffer_size",
-                                                             "proxy.config.http.default_buffer_water_mark",
-                                                             "proxy.config.http.request_header_max_size",
-                                                             "proxy.config.http.response_header_max_size",
-                                                             "proxy.config.http.negative_revalidating_enabled",
-                                                             "proxy.config.http.negative_revalidating_lifetime",
-                                                             "proxy.config.ssl.hsts_max_age",
-                                                             "proxy.config.ssl.hsts_include_subdomains",
-                                                             "proxy.config.http.cache.open_read_retry_time",
-                                                             "proxy.config.http.cache.max_open_read_retries",
-                                                             "proxy.config.http.cache.range.write",
-                                                             "proxy.config.http.post.check.content_length.enabled",
-                                                             "proxy.config.http.global_user_agent_header",
-                                                             "proxy.config.http.auth_server_session_private",
-                                                             "proxy.config.http.slow.log.threshold",
-                                                             "proxy.config.http.cache.generation",
-                                                             "proxy.config.body_factory.template_base",
-                                                             "proxy.config.http.cache.open_write_fail_action",
-                                                             "proxy.config.http.number_of_redirections",
-                                                             "proxy.config.http.cache.max_open_write_retries",
-                                                             "proxy.config.http.redirect_use_orig_cache_key",
-                                                             "proxy.config.http.attach_server_session_to_client",
-                                                             "proxy.config.http.origin_max_connections_queue",
-                                                             "proxy.config.websocket.no_activity_timeout",
-                                                             "proxy.config.websocket.active_timeout",
-                                                             "proxy.config.http.uncacheable_requests_bypass_parent",
-                                                             "proxy.config.http.parent_proxy.total_connect_attempts",
-                                                             "proxy.config.http.transaction_active_timeout_in",
-                                                             "proxy.config.srv_enabled",
-                                                             "proxy.config.http.forward_connect_method",
-                                                             "proxy.config.ssl.client.cert.filename",
-                                                             "proxy.config.ssl.client.cert.path",
-                                                             "proxy.config.http.parent_proxy.mark_down_hostdb",
-                                                             "proxy.config.ssl.client.verify.server",
-                                                             "proxy.config.http.cache.enable_default_vary_headers",
-                                                             "proxy.config.http.cache.vary_default_text",
-                                                             "proxy.config.http.cache.vary_default_images",
-                                                             "proxy.config.http.cache.vary_default_other",
-                                                             "proxy.config.http.cache.ignore_accept_mismatch",
-                                                             "proxy.config.http.cache.ignore_accept_language_mismatch",
-                                                             "proxy.config.http.cache.ignore_accept_encoding_mismatch",
-                                                             "proxy.config.http.cache.ignore_accept_charset_mismatch",
-                                                             "proxy.config.http.parent_proxy.fail_threshold",
-                                                             "proxy.config.http.parent_proxy.retry_time",
-                                                             "proxy.config.http.parent_proxy.per_parent_connect_attempts",
-                                                             "proxy.config.http.parent_proxy.connect_attempts_timeout",
-                                                             "proxy.config.http.normalize_ae",
-                                                             "proxy.config.http.insert_forwarded",
-                                                             "proxy.config.http.allow_multi_range",
-                                                             "proxy.config.http.request_buffer_enabled",
-                                                             "proxy.config.http.allow_half_open"};
+std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
+  {"proxy.config.url_remap.pristine_host_hdr",
+   "proxy.config.http.chunking_enabled",
+   "proxy.config.http.negative_caching_enabled",
+   "proxy.config.http.negative_caching_lifetime",
+   "proxy.config.http.cache.when_to_revalidate",
+   "proxy.config.http.keep_alive_enabled_in",
+   "proxy.config.http.keep_alive_enabled_out",
+   "proxy.config.http.keep_alive_post_out",
+   "proxy.config.http.server_session_sharing.match",
+   "proxy.config.net.sock_recv_buffer_size_out",
+   "proxy.config.net.sock_send_buffer_size_out",
+   "proxy.config.net.sock_option_flag_out",
+   "proxy.config.http.forward.proxy_auth_to_parent",
+   "proxy.config.http.anonymize_remove_from",
+   "proxy.config.http.anonymize_remove_referer",
+   "proxy.config.http.anonymize_remove_user_agent",
+   "proxy.config.http.anonymize_remove_cookie",
+   "proxy.config.http.anonymize_remove_client_ip",
+   "proxy.config.http.insert_client_ip",
+   "proxy.config.http.response_server_enabled",
+   "proxy.config.http.insert_squid_x_forwarded_for",
+   "proxy.config.http.server_tcp_init_cwnd",
+   "proxy.config.http.send_http11_requests",
+   "proxy.config.http.cache.http",
+   "proxy.config.http.cache.ignore_client_no_cache",
+   "proxy.config.http.cache.ignore_client_cc_max_age",
+   "proxy.config.http.cache.ims_on_client_no_cache",
+   "proxy.config.http.cache.ignore_server_no_cache",
+   "proxy.config.http.cache.cache_responses_to_cookies",
+   "proxy.config.http.cache.ignore_authentication",
+   "proxy.config.http.cache.cache_urls_that_look_dynamic",
+   "proxy.config.http.cache.required_headers",
+   "proxy.config.http.insert_request_via_str",
+   "proxy.config.http.insert_response_via_str",
+   "proxy.config.http.cache.heuristic_min_lifetime",
+   "proxy.config.http.cache.heuristic_max_lifetime",
+   "proxy.config.http.cache.guaranteed_min_lifetime",
+   "proxy.config.http.cache.guaranteed_max_lifetime",
+   "proxy.config.http.cache.max_stale_age",
+   "proxy.config.http.keep_alive_no_activity_timeout_in",
+   "proxy.config.http.keep_alive_no_activity_timeout_out",
+   "proxy.config.http.transaction_no_activity_timeout_in",
+   "proxy.config.http.transaction_no_activity_timeout_out",
+   "proxy.config.http.transaction_active_timeout_out",
+   "proxy.config.http.connect_attempts_max_retries",
+   "proxy.config.http.connect_attempts_max_retries_dead_server",
+   "proxy.config.http.connect_attempts_rr_retries",
+   "proxy.config.http.connect_attempts_timeout",
+   "proxy.config.http.post_connect_attempts_timeout",
+   "proxy.config.http.down_server.cache_time",
+   "proxy.config.http.down_server.abort_threshold",
+   "proxy.config.http.doc_in_cache_skip_dns",
+   "proxy.config.http.background_fill_active_timeout",
+   "proxy.config.http.response_server_str",
+   "proxy.config.http.cache.heuristic_lm_factor",
+   "proxy.config.http.background_fill_completed_threshold",
+   "proxy.config.net.sock_packet_mark_out",
+   "proxy.config.net.sock_packet_tos_out",
+   "proxy.config.http.insert_age_in_response",
+   "proxy.config.http.chunking.size",
+   "proxy.config.http.flow_control.enabled",
+   "proxy.config.http.flow_control.low_water",
+   "proxy.config.http.flow_control.high_water",
+   "proxy.config.http.cache.range.lookup",
+   "proxy.config.http.default_buffer_size",
+   "proxy.config.http.default_buffer_water_mark",
+   "proxy.config.http.request_header_max_size",
+   "proxy.config.http.response_header_max_size",
+   "proxy.config.http.negative_revalidating_enabled",
+   "proxy.config.http.negative_revalidating_lifetime",
+   "proxy.config.ssl.hsts_max_age",
+   "proxy.config.ssl.hsts_include_subdomains",
+   "proxy.config.http.cache.open_read_retry_time",
+   "proxy.config.http.cache.max_open_read_retries",
+   "proxy.config.http.cache.range.write",
+   "proxy.config.http.post.check.content_length.enabled",
+   "proxy.config.http.global_user_agent_header",
+   "proxy.config.http.auth_server_session_private",
+   "proxy.config.http.slow.log.threshold",
+   "proxy.config.http.cache.generation",
+   "proxy.config.body_factory.template_base",
+   "proxy.config.http.cache.open_write_fail_action",
+   "proxy.config.http.number_of_redirections",
+   "proxy.config.http.cache.max_open_write_retries",
+   "proxy.config.http.redirect_use_orig_cache_key",
+   "proxy.config.http.attach_server_session_to_client",
+   "proxy.config.websocket.no_activity_timeout",
+   "proxy.config.websocket.active_timeout",
+   "proxy.config.http.uncacheable_requests_bypass_parent",
+   "proxy.config.http.parent_proxy.total_connect_attempts",
+   "proxy.config.http.transaction_active_timeout_in",
+   "proxy.config.srv_enabled",
+   "proxy.config.http.forward_connect_method",
+   "proxy.config.ssl.client.cert.filename",
+   "proxy.config.ssl.client.cert.path",
+   "proxy.config.http.parent_proxy.mark_down_hostdb",
+   "proxy.config.ssl.client.verify.server",
+   "proxy.config.http.cache.enable_default_vary_headers",
+   "proxy.config.http.cache.vary_default_text",
+   "proxy.config.http.cache.vary_default_images",
+   "proxy.config.http.cache.vary_default_other",
+   "proxy.config.http.cache.ignore_accept_mismatch",
+   "proxy.config.http.cache.ignore_accept_language_mismatch",
+   "proxy.config.http.cache.ignore_accept_encoding_mismatch",
+   "proxy.config.http.cache.ignore_accept_charset_mismatch",
+   "proxy.config.http.parent_proxy.fail_threshold",
+   "proxy.config.http.parent_proxy.retry_time",
+   "proxy.config.http.parent_proxy.per_parent_connect_attempts",
+   "proxy.config.http.parent_proxy.connect_attempts_timeout",
+   "proxy.config.http.normalize_ae",
+   "proxy.config.http.insert_forwarded",
+   "proxy.config.http.allow_multi_range",
+   "proxy.config.http.request_buffer_enabled",
+   "proxy.config.http.allow_half_open",
+   OutboundConnTrack::CONFIG_VAR_MAX,
+   OutboundConnTrack::CONFIG_VAR_MATCH}};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  const char *conf;
   TSOverridableConfigKey key;
   TSRecordDataType type;
   HttpSM *s      = HttpSM::allocate();
@@ -8707,17 +8707,29 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
   s->init();
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
-  for (int i = TS_CONFIG_NULL + 1; i < TS_CONFIG_LAST_ENTRY; ++i) {
-    conf = SDK_Overridable_Configs[i];
+  for (int i = 0; i < static_cast<int>(SDK_Overridable_Configs.size()); ++i) {
+    std::string_view conf{SDK_Overridable_Configs[i]};
 
-    if (TS_SUCCESS == TSHttpTxnConfigFind(conf, -1, &key, &type)) {
+    if (TS_SUCCESS == TSHttpTxnConfigFind(conf.data(), -1, &key, &type)) {
       if (key != i) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf, i, key);
+        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(), i, key);
         success = false;
         continue;
       }
     } else {
-      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR for %s", conf);
+      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR for %s", conf.data());
+      success = false;
+      continue;
+    }
+
+    if (TS_SUCCESS == TSHttpTxnConfigFind(conf.data(), conf.size(), &key, &type)) {
+      if (key != i) {
+        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(), i, key);
+        success = false;
+        continue;
+      }
+    } else {
+      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR for %s", conf.data());
       success = false;
       continue;
     }
@@ -8729,7 +8741,8 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
       TSHttpTxnConfigIntSet(txnp, key, ival_rand);
       TSHttpTxnConfigIntGet(txnp, key, &ival_read);
       if (ival_rand != ival_read) {
-        SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_FAIL, "Failed on %s, %d != %d", conf, ival_read, ival_rand);
+        SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_FAIL, "Failed on %s, %d != %d", conf.data(), ival_read,
+                   ival_rand);
         success = false;
         continue;
       }
@@ -8740,7 +8753,8 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
       TSHttpTxnConfigFloatSet(txnp, key, fval_rand);
       TSHttpTxnConfigFloatGet(txnp, key, &fval_read);
       if (fval_rand != fval_read) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_FAIL, "Failed on %s, %f != %f", conf, fval_read, fval_rand);
+        SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_FAIL, "Failed on %s, %f != %f", conf.data(), fval_read,
+                   fval_rand);
         success = false;
         continue;
       }
@@ -8750,7 +8764,8 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
       TSHttpTxnConfigStringSet(txnp, key, test_string, -1);
       TSHttpTxnConfigStringGet(txnp, key, &sval_read, &len);
       if (test_string != sval_read) {
-        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, %s != %s", conf, sval_read, test_string);
+        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, %s != %s", conf.data(), sval_read,
+                   test_string);
         success = false;
         continue;
       }

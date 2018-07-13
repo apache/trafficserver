@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef JPEG_H
-#define JPEG_H
+
+#pragma once
 
 #include <algorithm>
 
@@ -43,5 +43,3 @@ namespace inliner
   };
 } // namespace inliner
 } // namespace ats
-
-#endif // JPEG_H

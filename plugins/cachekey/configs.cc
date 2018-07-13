@@ -321,9 +321,11 @@ Configs::loadClassifiers(const String &args, bool blacklist)
  * @brief initializes plugin configuration.
  * @param argc number of plugin parameters
  * @param argv plugin parameters
+ * @param perRemapConfig boolean showing if this is per-remap config (vs global config).
+ *
  */
 bool
-Configs::init(int argc, char *argv[])
+Configs::init(int argc, const char *argv[], bool perRemapConfig)
 {
   static const struct option longopt[] = {
     {const_cast<char *>("exclude-params"), optional_argument, nullptr, 'a'},
@@ -351,9 +353,12 @@ Configs::init(int argc, char *argv[])
 
   bool status = true;
 
-  /* argv contains the "to" and "from" URLs. Skip the first so that the second one poses as the program name. */
-  argc--;
-  argv++;
+  /* For remap.config: argv contains the "to" and "from" URLs. Skip the first so that the second one poses as the program name.
+   * For plugin.config: argv contains the plugin shared object name. Don't skip any */
+  if (perRemapConfig) {
+    argc--;
+    argv++;
+  }
 
   for (;;) {
     int opt;

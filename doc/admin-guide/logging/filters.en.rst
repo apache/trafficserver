@@ -22,7 +22,7 @@
 Log Filters
 ***********
 
-Filters, configured in :file:`logging.config` allow you to create rules which
+Filters, configured in :file:`logging.yaml` allow you to create rules which
 may be applied to log definitions, limiting the entries included in the log
 output. This may be useful if your |TS| nodes receive many events which you
 have no need to log or analyze, or you wish to establish separate logs with
@@ -30,5 +30,5 @@ their own rotation policies to more rapidly perform log analysis for a subset
 of events.
 
 Configuration options are covered in detail in the
-:ref:`admin-custom-logs-filters` section of :file:`logging.config`, so this
+:ref:`admin-custom-logs-filters` section of :file:`logging.yaml`, so this
 page is currently left as a reference to the feature's existence.

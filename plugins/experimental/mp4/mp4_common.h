@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _MP4_COMMON_H
-#define _MP4_COMMON_H
+#pragma once
 
 #include <cstring>
 #include <cstdlib>
@@ -121,5 +120,3 @@ public:
 
   bool transform_added;
 };
-
-#endif

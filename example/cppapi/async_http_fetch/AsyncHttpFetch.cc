@@ -218,6 +218,8 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
-  RegisterGlobalPlugin("CPP_Example_AsyncHttpFetch", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_AsyncHttpFetch", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   plugin = new GlobalHookPlugin();
 }

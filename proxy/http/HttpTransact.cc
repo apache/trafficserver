@@ -3080,6 +3080,8 @@ HttpTransact::OriginServerRawOpen(State *s)
   /* fall through */
   case CONNECTION_CLOSED:
     /* fall through */
+  case OUTBOUND_CONGESTION:
+    /* fall through */
     handle_server_died(s);
 
     ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
@@ -3457,6 +3459,12 @@ HttpTransact::handle_response_from_server(State *s)
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_SUCCESS);
     s->current.server->clear_connect_fail();
     handle_forward_server_connection_open(s);
+    break;
+  case OUTBOUND_CONGESTION:
+    TxnDebug("http_trans", "[handle_response_from_server] Error. congestion control -- congested.");
+    SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
+    s->current.server->set_connect_fail(EUSERS); // too many users
+    handle_server_connection_not_open(s);
     break;
   case OPEN_RAW_ERROR:
   /* fall through */
@@ -6308,7 +6316,8 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
   if (s->current.state != CONNECTION_ALIVE) {
     ink_assert((s->current.state == CONNECTION_ERROR) || (s->current.state == OPEN_RAW_ERROR) ||
                (s->current.state == PARSE_ERROR) || (s->current.state == CONNECTION_CLOSED) ||
-               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT));
+               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT) ||
+               s->current.state == OUTBOUND_CONGESTION);
 
     s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
     return false;
@@ -7408,6 +7417,12 @@ HttpTransact::handle_server_died(State *s)
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = "Invalid HTTP Response";
     body_type = "response#bad_response";
+    break;
+  case OUTBOUND_CONGESTION:
+    status                     = HTTP_STATUS_SERVICE_UNAVAILABLE;
+    reason                     = "Origin server congested";
+    body_type                  = "congestion#retryAfter";
+    s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
     break;
   case STATE_UNDEFINED:
   case TRANSACTION_COMPLETE:

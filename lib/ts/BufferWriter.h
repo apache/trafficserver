@@ -35,8 +35,6 @@
 #include <ts/MemSpan.h>
 #include <ts/BufferWriterForward.h>
 
-using namespace std::literals;
-
 namespace ts
 {
 /** Base (abstract) class for concrete buffer writers.
@@ -611,6 +609,7 @@ template <typename... Args>
 BufferWriter &
 BufferWriter::printv(TextView fmt, std::tuple<Args...> const &args)
 {
+  using namespace std::literals;
   static constexpr int N = sizeof...(Args); // used as loop limit
   static const auto fa   = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
   int arg_idx            = 0; // the next argument index to be processed.
@@ -671,6 +670,7 @@ template <typename... Args>
 BufferWriter &
 BufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args)
 {
+  using namespace std::literals;
   static constexpr int N = sizeof...(Args);
   static const auto fa   = bw_fmt::Get_Arg_Formatter_Array<decltype(args)>(std::index_sequence_for<Args...>{});
 
@@ -795,6 +795,7 @@ bwformat(BufferWriter &w, BWFSpec const &, char c)
 inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, bool f)
 {
+  using namespace std::literals;
   if ('s' == spec._type) {
     w.write(f ? "true"sv : "false"sv);
   } else if ('S' == spec._type) {

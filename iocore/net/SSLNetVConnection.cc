@@ -335,12 +335,9 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   return event;
 }
 
-/**
- * Read from socket directly for handshake data.  Store the data in
- * a MIOBuffer.  Place the data in the read BIO so the openssl library
- * has access to it.
- * If for some ready we much abort out of the handshake, we can replay
- * the stored data (e.g. back out to blind tunneling)
+/** Read from socket directly for handshake data.  Store the data in an MIOBuffer.  Place the data in
+ * the read BIO so the openssl library has access to it. If for some reason we must abort out of the
+ * handshake, the stored data can be replayed (e.g. back out to blind tunneling)
  */
 int64_t
 SSLNetVConnection::read_raw_data()
@@ -1019,7 +1016,15 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         SSLErrorVC(this, "failed to create SSL client session");
         return EVENT_ERROR;
       }
-      SSL_set_verify(this->ssl, clientVerify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, verify_callback);
+      int verify_op;
+      if (clientVerify) {
+        verify_op = SSL_VERIFY_PEER;
+        SSL_set_verify(this->ssl, verify_op, verify_callback);
+      } else {
+        // Don't bother to set the verify callback if no verification is required
+        verify_op = SSL_VERIFY_NONE;
+        SSL_set_verify(this->ssl, verify_op, nullptr);
+      }
 
       if (this->options.sni_servername) {
         if (SSL_set_tlsext_host_name(this->ssl, this->options.sni_servername)) {

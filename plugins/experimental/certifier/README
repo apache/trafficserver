@@ -1,0 +1,32 @@
+Certifier
+This plugin performs two basic tasks -
+
+Load SSL certificates from file storage on demand. The total number of loaded certificates can be configured.
+Generates SSL certificates on demand.
+Generated certificates can be written to file storage for later retrieval.
+
+Description
+Certifier manages SSL certificates for Traffic Server. There are two sources for certificates, certificate files in the file system and dynamically generated certificates. Dynamic certificates can be stored to the file system to avoid generating them again.
+
+Configuration
+Certifier is a global plugin and is configured by arguments in plugin.config.
+
+|Name|
+
+--sign-cert <path>
+Specify the signing certificate for dynamically generated certificates. path should be the path and file name of the certificate. If it is relative it is relative to the Traffic Server configuration directory. If this is not specified then dynamic certificate generation is disabled.
+
+--sign-key <path>
+Specify the signing key for dynamically generated certificates.
+
+--sign-serial <path>
+Specify the signing serial number from a file. Serial file should be a number with a trailing newline.
+
+--max <N>
+The maximum number of certificates to keep in memory. If more certificates are loaded the least recently used certificates are deleted from memory. This is intended to control the amount of memory used by the in memory certificate store.
+
+--store <path>
+The directory to use as the root of file system certificate store.
+
+Note:
+Use OpenSSL 1.0.2 and above.

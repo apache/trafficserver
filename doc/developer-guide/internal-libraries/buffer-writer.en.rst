@@ -638,7 +638,9 @@ uses the :code:`std::string` overload for :func:`bwprint` would look like ::
    }
 
 This gathers the argument (generally references to the arguments) in to a single tuple which is then
-passed by reference, to avoid restacking the arguments for every nested function call.
+passed by reference, to avoid restacking the arguments for every nested function call. In essence the
+arguments are put on the stack (inside the tuple) once and a reference to that stack is passed to
+nested functions.
 
 Specialized Types
 -----------------
@@ -715,45 +717,107 @@ but can be overloaded to produce different (wrapper class based) output. The cla
 such as the descriptive string for the value. To do this the format wrapper class :code:`ts::bwf::Errno`
 is provided. Using it is simple::
 
-    w.print("File not open - {}", ts::bwf::Errno(errno));
+   w.print("File not open - {}", ts::bwf::Errno(errno));
 
 which will produce output that looks like
 
-    "File not open - EACCES: Permission denied [13]"
+   "File not open - EACCES: Permission denied [13]"
 
 For :code:`errno` this is handy in another way as :code:`ts::bwf::Errno` will preserve the value of
 :code:`errno` across other calls that might change it. E.g.::
 
-    ts::bwf::Errno last_err(errno);
-    // some other code generating diagnostics that might tweak errno.
-    w.print("File not open - {}", last_err);
+   ts::bwf::Errno last_err(errno);
+   // some other code generating diagnostics that might tweak errno.
+   w.print("File not open - {}", last_err);
+
+This can also be useful for user defined data types. For instance, in the HostDB the type of the entry
+is printed in multiple places and each time this code is repeated ::
+
+      "%s%s %s", r->round_robin ? "Round-Robin" : "",
+         r->reverse_dns ? "Reverse DNS" : "", r->is_srv ? "SRV" : "DNS"
+
+This could be wrapped in a class, :code:`HostDBType` such as ::
+
+   struct HostDBType {
+      HostDBInfo* _r { nullptr };
+      HostDBType(r) : _r(r) {}
+   };
+
+Then define a formatter for the wrapper ::
+
+   BufferWriter& bwformat(BufferWriter& w, BWFSpec const& spec, HostDBType const& wrap) {
+     return w.print("{}{} {}", wrap._r->round_robin ? "Round-Robin" : "",
+        r->reverse_dns ? "Reverse DNS" : "",
+        r->is_srv ? "SRV" : "DNS");
+   }
+
+Now this can be output elsewhere with just
+
+   w.print("{}", HostDBType(r));
+
+If this is used multiple places, this is cleaner and more robust as it can be updated everywhere with a
+change in a single code location.
 
 These are the existing format classes in header file ``bfw_std_format.h``. All are in the :code:`ts::bwf` namespace.
 
 .. class:: Errno
 
-    Formating for :code:`errno`.
+   Formating for :code:`errno`.
 
-    .. function:: Errno(int errno)
+   .. function:: Errno(int errno)
 
 .. class:: Date
 
-    Date formatting in the :code:`strftime` style.
+   Date formatting in the :code:`strftime` style.
 
-    .. function:: Date(time_t epoch, std::string_view fmt = "%Y %b %d %H:%M:%S")
+   .. function:: Date(time_t epoch, std::string_view fmt = "%Y %b %d %H:%M:%S")
 
-        :arg:`epoch` is the time to print. :arg:`fmt` is the format for printing which is identical to that of `strftime <https://linux.die.net/man/3/strftime>`__. The default format looks like "2018 Jun 08 13:55:37".
+      :arg:`epoch` is the time to print. :arg:`fmt` is the format for printing which is identical to
+      that of `strftime <https://linux.die.net/man/3/strftime>`__. The default format looks like
+      "2018 Jun 08 13:55:37".
 
-    .. function:: Date(std::string_view fmt = "%Y %b %d %H:%M:%S")
+   .. function:: Date(std::string_view fmt = "%Y %b %d %H:%M:%S")
 
-         As previous except the epoch is the current epoch at the time the constructor is invoked. Therefore if the current time is to be printed the default constructor can be used.
+      As previous except the epoch is the current epoch at the time the constructor is invoked.
+      Therefore if the current time is to be printed the default constructor can be used.
 
-   When used the format specification can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
+   When used the format specification can take an extention of "local" which formats the time as
+   local time. Otherwise it is GMT.
    ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will
    When used the format specification can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
    ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will
    print the hour and minute in the local time zone. ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is
    desired.
+
+.. class:: OptionalAffix
+
+   Affix support for printing optional strings. This enables printing a string such the affixes are printed only if the string is not
+   empty. An empty string (or :code:`nullptr`) yields no output. A common situation in which is this is useful is code like ::
+
+      printf("%s%s", data ? data : "", data ? " " : "");
+
+   or something like ::
+
+      if (data) {
+         printf("%s ", data);
+      }
+
+   Instead :class:`OptionalAffix` can be used in line, which is easier if there are multiple items. E.g.
+
+      w.print("{}", ts::bwf::OptionalAffix(data)); // because default is single trailing space suffix.
+
+   .. function:: OptionalAffix(const char* text, std::string_view suffix = " ", std::string_view prefix = "")
+
+      Create a format wrapper with :arg:`suffix` and :arg:`prefix`. If :arg:`text` is
+      :code:`nullptr` or is empty generate no output. Otherwise print the :arg:`prefix`,
+      :arg:`text`, :arg:`suffix`.
+
+   .. function:: OptionalAffix(std::string_view text, std::string_view suffix = " ", std::string_view prefix = "")
+
+      Create a format wrapper with :arg:`suffix` and :arg:`prefix`. If :arg:`text` is
+      :code:`nullptr` or is empty generate no output. Otherwise print the :arg:`prefix`,
+      :arg:`text`, :arg:`suffix`. Note that passing :code:`std::string` as the first argument will
+      work for this overload.
 
 Global Names
 ++++++++++++

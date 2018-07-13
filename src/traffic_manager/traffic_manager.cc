@@ -56,6 +56,7 @@
 #endif
 #include <grp.h>
 #include <atomic>
+#include <ts/bwf_std_format.h>
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 #define DIAGS_LOG_FILENAME "manager.log"
@@ -63,6 +64,8 @@
 #if ATOMIC_INT_LOCK_FREE != 2
 #error "Need lock free std::atomic<int>"
 #endif
+
+using namespace std::literals;
 
 // These globals are still referenced directly by management API.
 LocalManager *lmgmt = nullptr;
@@ -639,28 +642,13 @@ main(int argc, const char **argv)
   // stat the 'sync_thr' until 'configFiles' has been initialized.
   RecLocalStart(configFiles);
 
-  /* Update cmd line overrides/environmental overrides/etc */
-  if (tsArgs) { /* Passed command line args for proxy */
-    lmgmt->proxy_options = ats_strdup(tsArgs);
-  }
-
   // TS needs to be started up with the same outputlog bindings each time,
   // so we append the outputlog location to the persistent proxy options
   //
   // TS needs them to be able to create BaseLogFiles for each value
-  TextBuffer args(1024);
-
-  if (*bind_stdout) {
-    const char *space = args.empty() ? "" : " ";
-    args.format("%s%s %s", space, "--" TM_OPT_BIND_STDOUT, bind_stdout);
-  }
-
-  if (*bind_stderr) {
-    const char *space = args.empty() ? "" : " ";
-    args.format("%s%s %s", space, "--" TM_OPT_BIND_STDERR, bind_stderr);
-  }
-
-  lmgmt->proxy_options = args.release();
+  ts::bwprint(lmgmt->proxy_options, "{}{}{}", ts::bwf::OptionalAffix(tsArgs),
+              ts::bwf::OptionalAffix(bind_stdout, " "sv, "--bind_stdout "sv),
+              ts::bwf::OptionalAffix(bind_stderr, " "sv, "--bind_stderr "sv));
 
   if (proxy_port) {
     HttpProxyPort::loadValue(lmgmt->m_proxy_ports, proxy_port);
@@ -987,7 +975,7 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "hosting.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.hosting_filename");
 
-  } else if (strcmp(fname, "logging.config") == 0) {
+  } else if (strcmp(fname, "logging.yaml") == 0) {
     lmgmt->signalFileChange("proxy.config.log.config.filename");
 
   } else if (strcmp(fname, "splitdns.config") == 0) {

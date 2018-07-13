@@ -445,12 +445,14 @@ main()
     esi_vars.populate(HttpHeader("hdr1", -1, "hval1", -1));
     esi_vars.populate(HttpHeader("Hdr2", -1, "hval2", -1));
     esi_vars.populate(HttpHeader("@Intenal-hdr1", -1, "internal-hval1", -1));
+    esi_vars.populate(HttpHeader("cookie", -1, "x=y", -1));
 
     assert(esi_vars.getValue("HTTP_HEADER{hdr1}") == "hval1");
     assert(esi_vars.getValue("HTTP_HEADER{hdr2}") == "");
     assert(esi_vars.getValue("HTTP_HEADER{Hdr2}") == "hval2");
     assert(esi_vars.getValue("HTTP_HEADER{non-existent}") == "");
     assert(esi_vars.getValue("HTTP_HEADER{@Intenal-hdr1}") == "internal-hval1");
+    assert(esi_vars.getValue("HTTP_HEADER{cookie}") == "");
   }
 
   {

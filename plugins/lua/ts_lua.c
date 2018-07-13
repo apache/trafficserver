@@ -133,8 +133,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
 
     memset(conf, 0, sizeof(ts_lua_instance_conf));
-    conf->states = states;
-    conf->remap  = 1;
+    conf->states    = states;
+    conf->remap     = 1;
+    conf->init_func = 0;
 
     if (fn) {
       snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[optind]);
@@ -150,7 +151,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       return TS_ERROR;
     }
 
-    if (fn) {
+    // register the script only if it is from a file and has no __init__ function
+    if (fn && !conf->init_func) {
       // we only need to register the script for the first lua VM
       ts_lua_script_register(ts_lua_main_ctx_array[0].lua, conf->script, conf);
     }
@@ -260,6 +262,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   TSDebug(TS_LUA_DEBUG_TAG, "[%s] remap function", __FUNCTION__);
   return ts_lua_remap_plugin_init(ih, rh, rri);
+}
+
+static int
+configHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
+{
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] calling configuration handler", __FUNCTION__);
+  ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
+  ts_lua_reload_module(conf, ts_lua_g_main_ctx_array, conf->states);
+  return 0;
 }
 
 static int
@@ -446,8 +457,10 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   int states                           = TS_LUA_MAX_STATE_COUNT;
+  int reload                           = 0;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
+    {"enable-reload", no_argument, 0, 'r'},
     {0, 0, 0, 0},
   };
 
@@ -459,6 +472,10 @@ TSPluginInit(int argc, const char *argv[])
     case 's':
       states = atoi(optarg);
       // set state
+      break;
+    case 'r':
+      reload = 1;
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] enable global plugin reload [%d]", __FUNCTION__, reload);
       break;
     }
 
@@ -595,4 +612,16 @@ TSPluginInit(int argc, const char *argv[])
   lua_pop(l, 1);
 
   ts_lua_destroy_http_ctx(http_ctx);
+
+  // support for reload as global plugin
+  if (reload) {
+    TSCont config_contp = TSContCreate(configHandler, NULL);
+    if (!config_contp) {
+      TSError("[ts_lua][%s] could not create configuration continuation", __FUNCTION__);
+      return;
+    }
+    TSContDataSet(config_contp, conf);
+
+    TSMgmtUpdateRegister(config_contp, "ts_lua");
+  }
 }

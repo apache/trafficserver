@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef PROTOCOL_H
-#define PROTOCOL_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,5 +46,3 @@
   {                         \
     _d = _s;                \
   }
-
-#endif /* PROTOCOL_H */

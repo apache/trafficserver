@@ -36,7 +36,7 @@ ts.Disk.remap_config.AddLine(
     'map / http://www.linkedin.com/ @action=deny'
 )
 
-ts.Disk.logging_config.AddLines(
+ts.Disk.logging_yaml.AddLines(
     '''
 formats:
   - name: custom

@@ -308,6 +308,16 @@ AC_ARG_ENABLE([docs],
         enable_doc_build=no
         AC_ERROR([Doc building disabled, java required but not found])
       ])
+    AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
+    AC_PATH_PROG([SPHINXBUILD], [sphinx-build], [])
+    AS_IF(["$srcdir/doc/checkvers.sh" "$SPHINXBUILD" "$srcdir/doc/checkvers.py"],
+      [
+        sphinx_version_check=yes
+      ],[
+        sphinx_version_check=no
+        enable_doc_build=no
+        AC_ERROR([Doc building disabled, check sphinx installation])
+      ])
   ],
   [enable_doc_build=no]
 )
@@ -716,21 +726,13 @@ AM_PATH_PYTHON([2.4], [
   TS_MAN3_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
   TS_MAN5_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
   TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-
-  # If we have python, check if the Sphinx version looks OK.
-  AS_IF(["$PYTHON" "$srcdir/doc/checkvers.py" --check-version], [
-    sphinx_version_check=yes
-  ])
-
 ], [
   dnl action-if-not-found
   :
 ])
 
 AC_ARG_VAR(RPATH, [path to be added to rpath])
-AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
 AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
-AC_CHECK_PROG([SPHINXBUILD], [sphinx-build], [sphinx-build], [false])
 
 AC_ARG_VAR([CLANG_TIDY], [clang-tidy command])
 
@@ -1199,6 +1201,9 @@ AS_IF([test "x$enable_tls13" = "xyes"], [
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
 AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
+
+# Check for OCSP
+TS_CHECK_CRYPTO_OCSP
 
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
@@ -2053,6 +2058,11 @@ AS_IF([test "x$RPATH" != "x"], [
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
+  configs/Makefile
+  configs/body_factory/Makefile
+  configs/body_factory/default/Makefile
+  configs/records.config.default
+  configs/storage.config.default
   doc/Makefile
   doc/ext/local-config.py
   doc/uml/Makefile
@@ -2084,11 +2094,6 @@ AC_CONFIG_FILES([
   plugins/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
-  proxy/config/Makefile
-  proxy/config/body_factory/Makefile
-  proxy/config/body_factory/default/Makefile
-  proxy/config/records.config.default
-  proxy/config/storage.config.default
   proxy/hdrs/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
@@ -2127,4 +2132,6 @@ AC_MSG_NOTICE([Build option summary:
     TS_INCLUDES:        $TS_INCLUDES
     OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
+    YAMLCPP_LDFLAGS:    $YAMLCPP_LDFLAGS
+    YAMLCPP_INCLUDES:   $YAMLCPP_INCLUDES
 ])

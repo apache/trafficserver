@@ -148,6 +148,8 @@ Enumeration Members
    .. c:macro:: TS_CONFIG_HTTP_INSERT_FORWARDED
    .. c:macro:: TS_CONFIG_HTTP_ALLOW_MULTI_RANGE
    .. c:macro:: TS_CONFIG_HTTP_ALLOW_HALF_OPEN
-   
+   .. c:macro:: TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX
+   .. c:macro:: TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH
+
 Description
 ===========

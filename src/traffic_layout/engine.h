@@ -23,11 +23,15 @@
 
 #pragma once
 
+#include "file_system.h"
+
 #include <vector>
 #include <string>
 #include <unordered_map>
 
-#define RUNROOT_WORD_LENGTH 10
+static const std::string_view RUNROOT_WORD{"--run-root"};
+static const std::string_view COPYSTYLE_WORD{"--copy-style"};
+static const std::string_view LAYOUT_WORD{"--layout"};
 
 typedef std::unordered_map<std::string, std::string> RunrootMapType;
 
@@ -71,13 +75,18 @@ struct RunrootEngine {
   // for parsing
   int command_num = 0;
 
+  std::string layout_file;
+
+  CopyStyle copy_style = HARD;
+
   // the path for create & remove
   std::string path;
 
   // vector containing all directory names
-  std::vector<std::string> dir_vector = {"prefix",     "exec_prefix", "bindir",  "sbindir",    "sysconfdir",
-                                         "datadir",    "includedir",  "libdir",  "libexecdir", "localstatedir",
-                                         "runtimedir", "logdir",      "cachedir"};
+  std::vector<std::string> const dir_vector = {LAYOUT_PREFIX,     LAYOUT_EXEC_PREFIX,   LAYOUT_BINDIR,     LAYOUT_SBINDIR,
+                                               LAYOUT_SYSCONFDIR, LAYOUT_DATADIR,       LAYOUT_INCLUDEDIR, LAYOUT_LIBDIR,
+                                               LAYOUT_LIBEXECDIR, LAYOUT_LOCALSTATEDIR, LAYOUT_RUNTIMEDIR, LAYOUT_LOGDIR,
+                                               LAYOUT_CACHEDIR};
 
   // map for yaml file emit
   RunrootMapType path_map;

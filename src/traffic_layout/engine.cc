@@ -36,13 +36,15 @@
 #include "file_system.h"
 #include "ts/runroot.h"
 
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <ftw.h>
 #include <pwd.h>
+#include <yaml-cpp/yaml.h>
 
 // for nftw check_directory
-std::string directory_check = "";
+std::string directory_check;
 
 // check if we can create the runroot using path
 // return true if the path is good to use
@@ -146,6 +148,8 @@ RunrootEngine::runroot_help_message(const bool runflag, const bool cleanflag, co
                  "--force   Force to create ts_runroot even directory already exists\n"
                  "--absolute    Produce absolute path in the yaml file\n"
                  "--run-root(=/path)  Using specified TS_RUNROOT as sandbox\n"
+                 "--copy-style=[STYLE] Specify style (FULL, HARD, SOFT) when copying executable\n"
+                 "--layout=[/path] Use specific layout (providing yaml file) to create runroot\n"
               << std::endl;
   }
   if (cleanflag) {
@@ -189,7 +193,7 @@ RunrootEngine::runroot_parse()
       abs_flag = true;
       continue;
     }
-    if (argument.substr(0, RUNROOT_WORD_LENGTH) == "--run-root") {
+    if (argument.substr(0, RUNROOT_WORD.size()) == RUNROOT_WORD) {
       continue;
     }
     // set init flag
@@ -213,6 +217,26 @@ RunrootEngine::runroot_parse()
     // set fix flag
     if (argument == "--fix") {
       fix_flag = true;
+      continue;
+    }
+    if (argument.substr(0, COPYSTYLE_WORD.size()) == COPYSTYLE_WORD) {
+      std::string style = argument.substr(COPYSTYLE_WORD.size() + 1);
+      transform(style.begin(), style.end(), style.begin(), ::tolower);
+      if (style == "full") {
+        copy_style = FULL;
+      } else if (style == "soft") {
+        copy_style = SOFT;
+      } else {
+        copy_style = HARD;
+      }
+      continue;
+    }
+    if (argument.substr(0, LAYOUT_WORD.size()) == LAYOUT_WORD) {
+      if (argument.size() <= LAYOUT_WORD.size() + 1) {
+        layout_file = "";
+      } else {
+        layout_file = argument.substr(LAYOUT_WORD.size() + 1);
+      }
       continue;
     }
     if (argument == "--path") {
@@ -259,7 +283,7 @@ RunrootEngine::sanity_check()
 
   if (path.empty()) {
     if (!verify_flag) {
-      ink_fatal("Path not valild (runroot_path.yml not found)");
+      ink_fatal("Path not valid (runroot_path.yml not found)");
     } else {
       verify_default = true;
     }
@@ -317,8 +341,8 @@ RunrootEngine::clean_runroot()
   } else {
     // handle the map and deleting of each directories specified in the yml file
     RunrootMapType map = runroot_map(clean_root);
-    map.erase("prefix");
-    map.erase("exec_prefix");
+    map.erase(LAYOUT_PREFIX);
+    map.erase(LAYOUT_EXEC_PREFIX);
     for (auto it : map) {
       std::string dir = it.second;
       append_slash(dir);
@@ -402,15 +426,18 @@ RunrootEngine::create_runroot()
   // create new root & copy from original to new runroot. then fill in the map
   copy_runroot(original_root, ts_runroot);
 
-  // create and emit to yaml file the key value pairs of path
-  std::ofstream yamlfile;
-  std::string yaml_path = Layout::relative_to(ts_runroot, "runroot_path.yml");
-  yamlfile.open(yaml_path);
-
+  YAML::Emitter yamlfile;
+  // emit key value pairs to the yaml file
+  yamlfile << YAML::BeginMap;
   for (uint i = 0; i < dir_vector.size(); i++) {
-    // out put key value pairs of path
-    yamlfile << dir_vector[i] << ": " << path_map[dir_vector[i]] << std::endl;
+    yamlfile << YAML::Key << dir_vector[i];
+    yamlfile << YAML::Value << path_map[dir_vector[i]];
   }
+  yamlfile << YAML::EndMap;
+
+  // create the file
+  std::ofstream f(Layout::relative_to(ts_runroot, "runroot_path.yml"));
+  f << yamlfile.c_str();
 }
 
 // copy the stuff from original_root to ts_runroot
@@ -421,20 +448,43 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
   // map the original build time directory
   RunrootMapType original_map;
 
-  original_map["exec_prefix"]   = TS_BUILD_EXEC_PREFIX;
-  original_map["bindir"]        = TS_BUILD_BINDIR;
-  original_map["sbindir"]       = TS_BUILD_SBINDIR;
-  original_map["sysconfdir"]    = TS_BUILD_SYSCONFDIR;
-  original_map["datadir"]       = TS_BUILD_DATADIR;
-  original_map["includedir"]    = TS_BUILD_INCLUDEDIR;
-  original_map["libdir"]        = TS_BUILD_LIBDIR;
-  original_map["libexecdir"]    = TS_BUILD_LIBEXECDIR;
-  original_map["localstatedir"] = TS_BUILD_LOCALSTATEDIR;
-  original_map["runtimedir"]    = TS_BUILD_RUNTIMEDIR;
-  original_map["logdir"]        = TS_BUILD_LOGDIR;
-  original_map["mandir"]        = TS_BUILD_MANDIR;
-  original_map["infodir"]       = TS_BUILD_INFODIR;
-  original_map["cachedir"]      = TS_BUILD_CACHEDIR;
+  original_map[LAYOUT_EXEC_PREFIX]   = TS_BUILD_EXEC_PREFIX;
+  original_map[LAYOUT_BINDIR]        = TS_BUILD_BINDIR;
+  original_map[LAYOUT_SBINDIR]       = TS_BUILD_SBINDIR;
+  original_map[LAYOUT_SYSCONFDIR]    = TS_BUILD_SYSCONFDIR;
+  original_map[LAYOUT_DATADIR]       = TS_BUILD_DATADIR;
+  original_map[LAYOUT_INCLUDEDIR]    = TS_BUILD_INCLUDEDIR;
+  original_map[LAYOUT_LIBDIR]        = TS_BUILD_LIBDIR;
+  original_map[LAYOUT_LIBEXECDIR]    = TS_BUILD_LIBEXECDIR;
+  original_map[LAYOUT_LOCALSTATEDIR] = TS_BUILD_LOCALSTATEDIR;
+  original_map[LAYOUT_RUNTIMEDIR]    = TS_BUILD_RUNTIMEDIR;
+  original_map[LAYOUT_LOGDIR]        = TS_BUILD_LOGDIR;
+  original_map[LAYOUT_MANDIR]        = TS_BUILD_MANDIR;
+  original_map[LAYOUT_INFODIR]       = TS_BUILD_INFODIR;
+  original_map[LAYOUT_CACHEDIR]      = TS_BUILD_CACHEDIR;
+
+  RunrootMapType new_map = original_map;
+  // use the user provided layout: layout_file
+  if (layout_file.size() != 0) {
+    try {
+      YAML::Node yamlfile = YAML::LoadFile(layout_file);
+      for (auto it : yamlfile) {
+        std::string key   = it.first.as<std::string>();
+        std::string value = it.second.as<std::string>();
+        auto iter         = new_map.find(key);
+        if (iter != new_map.end()) {
+          iter->second = value;
+        } else {
+          if (key != "prefix") {
+            ink_warning("Unknown item from %s: '%s'", layout_file.c_str(), key.c_str());
+          }
+        }
+      }
+    } catch (YAML::Exception &e) {
+      ink_warning("Unable to read provided YAML file '%s': %s", layout_file.c_str(), e.what());
+      ink_notice("Continuing with default value");
+    }
+  }
 
   // copy each directory to the runroot path
   // symlink the executables
@@ -447,18 +497,19 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
     } else {
       join_path = it.second;
     }
+    std::string new_join_path = new_map[it.first];
 
     std::string old_path = Layout::relative_to(original_root, join_path);
-    std::string new_path = Layout::relative_to(ts_runroot, join_path);
+    std::string new_path = Layout::relative_to(ts_runroot, new_join_path);
     if (abs_flag) {
-      path_map[it.first] = Layout::relative_to(ts_runroot, join_path);
+      path_map[it.first] = Layout::relative_to(ts_runroot, new_join_path);
     } else {
-      path_map[it.first] = Layout::relative_to(".", join_path);
+      path_map[it.first] = Layout::relative_to(".", new_join_path);
     }
-
     // don't copy the prefix, mandir, localstatedir and infodir
-    if (it.first != "exec_prefix" && it.first != "localstatedir" && it.first != "mandir" && it.first != "infodir") {
-      if (!copy_directory(old_path, new_path, it.first)) {
+    if (it.first != LAYOUT_EXEC_PREFIX && it.first != LAYOUT_LOCALSTATEDIR && it.first != LAYOUT_MANDIR &&
+        it.first != LAYOUT_INFODIR) {
+      if (!copy_directory(old_path, new_path, it.first, copy_style)) {
         ink_warning("Unable to copy '%s' - %s", it.first.c_str(), strerror(errno));
         ink_notice("Creating '%s': %s", it.first.c_str(), new_path.c_str());
         // if copy failed for certain directory, we create it in runroot
@@ -472,9 +523,9 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
   std::cout << "Copying from " + original_root + " ..." << std::endl;
 
   if (abs_flag) {
-    path_map["prefix"] = ts_runroot;
+    path_map[LAYOUT_PREFIX] = ts_runroot;
   } else {
-    path_map["prefix"] = ".";
+    path_map[LAYOUT_PREFIX] = ".";
   }
 }
 
@@ -575,7 +626,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
       }
       std::cout << "Read permission fixed for '" + name + "': " + path << std::endl;
     }
-    if (name == "logdir" || name == "runtimedir" || name == "cachedir") {
+    if (name == LAYOUT_LOGDIR || name == LAYOUT_RUNTIMEDIR || name == LAYOUT_CACHEDIR) {
       // write
       if (permission[1] != '1') {
         if (chmod(path.c_str(), stat_buffer.st_mode | read_permission | write_permission) < 0) {
@@ -584,7 +635,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
         std::cout << "Write permission fixed for '" + name + "': " + path << std::endl;
       }
     }
-    if (name == "bindir" || name == "sbindir" || name == "libdir" || name == "libexecdir") {
+    if (name == LAYOUT_BINDIR || name == LAYOUT_SBINDIR || name == LAYOUT_LIBDIR || name == LAYOUT_LIBEXECDIR) {
       // execute
       if (permission[2] != '1') {
         if (chmod(path.c_str(), stat_buffer.st_mode | read_permission | execute_permission) < 0) {
@@ -598,7 +649,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
 
 // set permission to the map in verify runroot
 static void
-set_permission(std::vector<std::string> &dir_vector, RunrootMapType &path_map, RunrootMapType &permission_map,
+set_permission(std::vector<std::string> const &dir_vector, RunrootMapType &path_map, RunrootMapType &permission_map,
                RunrootMapType &usergroup_map)
 {
   // active group and user of the path
@@ -614,7 +665,7 @@ set_permission(std::vector<std::string> &dir_vector, RunrootMapType &path_map, R
     std::string name  = dir_vector[i];
     std::string value = path_map[name];
 
-    if (name == "prefix" || name == "exec_prefix") {
+    if (name == LAYOUT_PREFIX || name == LAYOUT_EXEC_PREFIX) {
       continue;
     }
 
@@ -698,16 +749,16 @@ RunrootEngine::verify_runroot()
     std::cout << name << ": \x1b[1m" + path_map[name] + "\x1b[0m" << std::endl;
 
     // output read permission
-    if (name == "localstatedir" || name == "includedir" || name == "sysconfdir" || name == "datadir") {
+    if (name == LAYOUT_LOCALSTATEDIR || name == LAYOUT_INCLUDEDIR || name == LAYOUT_SYSCONFDIR || name == LAYOUT_DATADIR) {
       output_read_permission(permission);
     }
     // output write permission
-    if (name == "logdir" || name == "runtimedir" || name == "cachedir") {
+    if (name == LAYOUT_LOGDIR || name == LAYOUT_RUNTIMEDIR || name == LAYOUT_CACHEDIR) {
       output_read_permission(permission);
       output_write_permission(permission);
     }
     // output execute permission
-    if (name == "bindir" || name == "sbindir" || name == "libdir" || name == "libexecdir") {
+    if (name == LAYOUT_BINDIR || name == LAYOUT_SBINDIR || name == LAYOUT_LIBDIR || name == LAYOUT_LIBEXECDIR) {
       output_read_permission(permission);
       output_execute_permission(permission);
     }

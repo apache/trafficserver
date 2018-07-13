@@ -1085,23 +1085,6 @@ LogAccessHttp::marshal_proxy_req_squid_len(char *buf)
   return INK_MIN_ALIGN;
 }
 
-int
-LogAccessHttp::marshal_proxy_req_server_name(char *buf)
-{
-  char *str = nullptr;
-  int len   = INK_MIN_ALIGN;
-
-  if (m_http_sm->t_state.current.server) {
-    str = m_http_sm->t_state.current.server->name;
-    len = LogAccess::strlen(str);
-  }
-
-  if (buf) {
-    marshal_str(buf, str, len);
-  }
-  return len;
-}
-
 // TODO: Change marshalling code to support both IPv4 and IPv6 addresses.
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)

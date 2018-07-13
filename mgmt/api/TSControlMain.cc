@@ -808,12 +808,14 @@ static TSMgmtError
 handle_host_status_up(int fd, void *req, size_t reqlen)
 {
   OpType optype;
-  MgmtMarshallString name = nullptr;
+  MgmtMarshallString name   = nullptr;
+  MgmtMarshallString reason = nullptr;
   MgmtMarshallInt err;
+  MgmtMarshallInt down_time;
 
-  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_UP, &optype, &name);
+  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_UP, &optype, &name, &reason, &down_time);
   if (err == TS_ERR_OKAY) {
-    err = HostStatusSetUp(name);
+    lmgmt->signalEvent(MGMT_EVENT_HOST_STATUS_UP, static_cast<char *>(req), reqlen);
   }
 
   ats_free(name);
@@ -830,11 +832,12 @@ static TSMgmtError
 handle_host_status_down(int fd, void *req, size_t reqlen)
 {
   OpType optype;
-  MgmtMarshallString name = nullptr;
+  MgmtMarshallString name   = nullptr;
+  MgmtMarshallString reason = nullptr;
   MgmtMarshallInt err;
   MgmtMarshallInt down_time;
 
-  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_DOWN, &optype, &name, &down_time);
+  err = recv_mgmt_request(req, reqlen, OpType::HOST_STATUS_DOWN, &optype, &name, &reason, &down_time);
   if (err == TS_ERR_OKAY) {
     lmgmt->signalEvent(MGMT_EVENT_HOST_STATUS_DOWN, static_cast<char *>(req), reqlen);
   }

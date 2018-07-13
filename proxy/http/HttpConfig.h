@@ -49,6 +49,7 @@
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
 #include "P_RecProcess.h"
+#include "HttpConnectionCount.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -478,8 +479,6 @@ struct OverridableHttpConfigParams {
       transaction_active_timeout_in(900),
       websocket_active_timeout(3600),
       websocket_inactive_timeout(600),
-      origin_max_connections(0),
-      origin_max_connections_queue(0),
       connect_attempts_max_retries(0),
       connect_attempts_max_retries_dead_server(3),
       connect_attempts_rr_retries(3),
@@ -694,8 +693,6 @@ struct OverridableHttpConfigParams {
   MgmtInt transaction_active_timeout_in;
   MgmtInt websocket_active_timeout;
   MgmtInt websocket_inactive_timeout;
-  MgmtInt origin_max_connections;
-  MgmtInt origin_max_connections_queue;
 
   ////////////////////////////////////
   // origin server connect attempts //
@@ -735,6 +732,8 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
   MgmtInt slow_log_threshold;
+
+  OutboundConnTrack::TxnConfig outbound_conntrack;
 
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
@@ -856,6 +855,8 @@ public:
   MgmtByte keepalive_internal_vc      = 0;
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
+
+  OutboundConnTrack::GlobalConfig outbound_conntrack;
 
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").

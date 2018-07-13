@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_ATTRIBUTE_H
-#define _ESI_ATTRIBUTE_H
+#pragma once
 
 #include <list>
 
@@ -39,5 +38,3 @@ struct Attribute {
 
 typedef std::list<Attribute> AttributeList;
 }; // namespace EsiLib
-
-#endif // _ESI_ATTRIBUTE_H

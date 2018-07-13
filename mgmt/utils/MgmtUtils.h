@@ -31,15 +31,14 @@
  *
  */
 
-#ifndef _MGMT_UTILS_H
-#define _MGMT_UTILS_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Diags.h"
 
 #include "P_RecCore.h"
 
-constexpr const char SSL_SERVER_NAME_CONFIG[] = "ssl_server_name.config";
+constexpr const char SSL_SERVER_NAME_CONFIG[] = "ssl_server_name.yaml";
 
 int mgmt_readline(int fd, char *buf, int maxlen);
 int mgmt_writeline(int fd, const char *data, int nbytes);
@@ -61,5 +60,3 @@ void mgmt_fatal(const int lerrno, const char *message_format, ...) TS_NORETURN;
 
 void mgmt_sleep_sec(int);
 void mgmt_sleep_msec(int);
-
-#endif /* _MGMT_UTILS_H */

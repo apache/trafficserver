@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef CACHE_HANDLER_H
-#define CACHE_HANDLER_H
+
+#pragma once
 
 #include <algorithm>
 #include <iostream>
@@ -338,5 +338,3 @@ namespace inliner
 } // namespace ats
 
 #undef ONE_PIXEL
-
-#endif // CACHE_HANDLER_H

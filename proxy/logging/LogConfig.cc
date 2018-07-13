@@ -497,7 +497,7 @@ LogConfig::setup_log_objects()
 
   filter_list.clear();
 
-  // Evaluate logging.config to construct the custom log objects.
+  // Evaluate logging.yaml to construct the custom log objects.
   evaluate_config();
 
   // Open local pipes so readers can see them.
@@ -924,21 +924,21 @@ LogConfig::update_space_used()
 bool
 LogConfig::evaluate_config()
 {
-  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", "logging.config"));
+  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", "logging.yaml"));
   struct stat sbuf;
   if (stat(path.get(), &sbuf) == -1 && errno == ENOENT) {
     Warning("logging configuration '%s' doesn't exist", path.get());
     return false;
   }
 
-  Note("loading logging.config");
+  Note("loading logging.yaml");
   YamlLogConfig y(this);
 
   bool zret = y.parse(path.get());
   if (zret) {
-    Note("logging.config done reloading!");
+    Note("logging.yaml done reloading!");
   } else {
-    Note("failed to reload logging.config");
+    Note("failed to reload logging.yaml");
   }
 
   return zret;

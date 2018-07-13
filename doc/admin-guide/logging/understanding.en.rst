@@ -108,7 +108,7 @@ each transaction |TS| processes and form the true bulk of logging output in
 |TS| installations. Most of the remaining documentation in this chapter applies
 to creating, formatting, rotating, and filtering event logs.
 
-Individual event log outputs are configured in :file:`logging.config` and as
+Individual event log outputs are configured in :file:`logging.yaml` and as
 such, the documentation provided in that configuration file's section should be
 consulted in concert with the sections of this chapter.
 
@@ -143,7 +143,7 @@ Function    Description
             May only be used on numeric fields.
 =========== ===================================================================
 
-Summary logs are defined in :file:`logging.config` just like regular event
+Summary logs are defined in :file:`logging.yaml` just like regular event
 logs, with the only two differences being the exclusive use of the
 aforementioned aggregate functions and the specification of an interval, as so:
 

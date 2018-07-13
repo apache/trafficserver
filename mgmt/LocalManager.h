@@ -31,8 +31,9 @@
  *
  */
 
-#ifndef _LOCAL_MANAGER_H
-#define _LOCAL_MANAGER_H
+#pragma once
+
+#include <string>
 
 #include "Alarms.h"
 #include "BaseManager.h"
@@ -95,7 +96,7 @@ public:
   void rollLogFiles();
   void clearStats(const char *name = nullptr);
   void hostStatusSetDown(const char *marshalled_req, int len);
-  void hostStatusSetUp(const char *marshalled_req);
+  void hostStatusSetUp(const char *marshalled_req, int len);
 
   bool processRunning();
 
@@ -120,7 +121,7 @@ public:
   char *absolute_proxy_binary;
   char *proxy_name;
   char *proxy_binary;
-  char *proxy_options = nullptr; // These options should persist across proxy reboots
+  std::string proxy_options; // These options should persist across proxy reboots
   char *env_prep;
 
   int process_server_sockfd = ts::NO_FD;
@@ -144,5 +145,3 @@ private:
 }; /* End class LocalManager */
 
 extern LocalManager *lmgmt;
-
-#endif /* _LOCAL_MANAGER_H */

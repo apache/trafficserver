@@ -448,12 +448,16 @@ extern SNIActionPerformer sni_action_performer;
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
+  int ret                  = SSL_TLSEXT_ERR_OK;
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   Debug("ssl", "Requested servername is %s", servername);
   if (servername != nullptr) {
-    sni_action_performer.PerformAction(netvc, servername);
+    ret = sni_action_performer.PerformAction(netvc, servername);
   }
+  if (ret != SSL_TLSEXT_ERR_OK)
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
   return SSL_TLSEXT_ERR_OK;
 }
@@ -946,9 +950,9 @@ SSLInitializeLibrary()
   }
 #endif
 
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
+#ifdef TS_USE_TLS_OCSP
   ssl_stapling_ex_init();
-#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+#endif /* TS_USE_TLS_OCSP */
 
   // Reserve an application data index so that we can attach
   // the SSLNetVConnection to the SSL session.
@@ -1336,7 +1340,13 @@ SSLDefaultServerContext()
 static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scoped_str &completeServerCertPath, const char *keyPath)
 {
-  if (!keyPath) {
+  ENGINE *e = ENGINE_get_default_RSA();
+  if (e != nullptr) {
+    const char *argkey = (keyPath == nullptr || keyPath[0] == '\0') ? completeServerCertPath : keyPath;
+    if (!SSL_CTX_use_PrivateKey(ctx, ENGINE_load_private_key(e, argkey, nullptr, nullptr))) {
+      SSLError("failed to load server private key from engine");
+    }
+  } else if (!keyPath) {
     // assume private key is contained in cert obtained from multicert file.
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", (const char *)completeServerCertPath);
@@ -1356,7 +1366,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
     return false;
   }
 
-  if (!SSL_CTX_check_private_key(ctx)) {
+  if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
     SSLError("server private key does not match the certificate public key");
     return false;
   }
@@ -1850,18 +1860,18 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, nullptr);
 #endif /* TS_USE_TLS_ALPN */
 
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
+#ifdef TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl", "ssl ocsp stapling is enabled");
+    Debug("ssl", "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
   } else {
-    Debug("ssl", "ssl ocsp stapling is disabled");
+    Debug("ssl", "SSL OCSP Stapling is disabled");
   }
 #else
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("fail to enable ssl ocsp stapling, this openssl version does not support it");
+    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
   }
-#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+#endif /* TS_USE_TLS_OCSP */
 
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
@@ -1956,23 +1966,23 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   }
 #endif
 
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
+#ifdef TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl", "ssl ocsp stapling is enabled");
+    Debug("ssl", "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
     for (auto cert : cert_list) {
       if (!ssl_stapling_init_cert(ctx, cert, certname)) {
-        Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+        Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
       }
     }
   } else {
-    Debug("ssl", "ssl ocsp stapling is disabled");
+    Debug("ssl", "SSL OCSP Stapling is disabled");
   }
 #else
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("fail to enable ssl ocsp stapling, this openssl version does not support it");
+    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
   }
-#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+#endif /* TS_USE_TLS_OCSP */
 
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of

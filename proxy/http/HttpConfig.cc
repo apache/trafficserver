@@ -929,9 +929,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
   HttpEstablishStaticConfigLongLong(c.oride.server_tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
-  HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections, "proxy.config.http.origin_max_connections");
-  HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections_queue, "proxy.config.http.origin_max_connections_queue");
-  HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
+  HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.per_server.min_keep_alive");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
@@ -1171,6 +1169,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
+  OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
+
   http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
   return;
@@ -1208,23 +1208,25 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting        = INT_TO_BOOL(m_master.disable_ssl_parenting);
   params->oride.forward_connect_method = INT_TO_BOOL(m_master.oride.forward_connect_method);
 
-  params->server_max_connections             = m_master.server_max_connections;
-  params->max_websocket_connections          = m_master.max_websocket_connections;
-  params->oride.server_tcp_init_cwnd         = m_master.oride.server_tcp_init_cwnd;
-  params->oride.origin_max_connections       = m_master.oride.origin_max_connections;
-  params->oride.origin_max_connections_queue = m_master.oride.origin_max_connections_queue;
-  // if origin_max_connections_queue is set without max_connections, it is meaningless, so we'll warn
-  if (params->oride.origin_max_connections_queue > 0 &&
-      !(params->oride.origin_max_connections || params->origin_min_keep_alive_connections)) {
-    Warning("origin_max_connections_queue is set, but neither origin_max_connections nor origin_min_keep_alive_connections are "
-            "set, please correct your records.config");
+  params->server_max_connections     = m_master.server_max_connections;
+  params->max_websocket_connections  = m_master.max_websocket_connections;
+  params->oride.server_tcp_init_cwnd = m_master.oride.server_tcp_init_cwnd;
+  params->oride.outbound_conntrack   = m_master.oride.outbound_conntrack;
+  // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
+  if (params->outbound_conntrack.queue_size > 0 &&
+      !(params->oride.outbound_conntrack.max > 0 || params->origin_min_keep_alive_connections)) {
+    Warning("'%s' is set, but neither '%s' nor 'per_server.min_keep_alive_connections' are "
+            "set, please correct your records.config",
+            OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data());
   }
   params->origin_min_keep_alive_connections     = m_master.origin_min_keep_alive_connections;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
 
-  if (params->oride.origin_max_connections && params->oride.origin_max_connections < params->origin_min_keep_alive_connections) {
-    Warning("origin_max_connections < origin_min_keep_alive_connections, setting min=max , please correct your records.config");
-    params->origin_min_keep_alive_connections = params->oride.origin_max_connections;
+  if (params->oride.outbound_conntrack.max > 0 &&
+      params->oride.outbound_conntrack.max < params->origin_min_keep_alive_connections) {
+    Warning("'%s' < origin_min_keep_alive_connections, setting min=max , please correct your records.config",
+            OutboundConnTrack::CONFIG_VAR_MAX.data());
+    params->origin_min_keep_alive_connections = params->oride.outbound_conntrack.max;
   }
 
   params->oride.insert_request_via_string   = m_master.oride.insert_request_via_string;

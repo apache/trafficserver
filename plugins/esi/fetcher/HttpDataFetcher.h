@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _HTTP_DATA_FETCHER_H
-#define _HTTP_DATA_FETCHER_H
+#pragma once
 
 #include <string>
 
@@ -83,5 +82,3 @@ public:
 
   virtual ~HttpDataFetcher(){};
 };
-
-#endif

@@ -235,6 +235,12 @@ Variables::getValue(const string &name) const
     return EMPTY_STRING;
   }
 
+  // Disallow Cookie retrieval though HTTP_HEADER
+  if (dict_index == HTTP_HEADER && ((attr_len == 6) && (strncasecmp(attr, "Cookie", 6) == 0))) {
+    _errorLog("[%s] Cannot use HTTP_HEADER to retrieve Cookie", __FUNCTION__);
+    return EMPTY_STRING;
+  }
+
   // change variable name to use only the attribute field
   search_key.assign(attr, attr_len);
 

@@ -433,7 +433,9 @@ BoomGlobalPlugin::handleReadResponseHeaders(Transaction &transaction)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  RegisterGlobalPlugin("CPP_Example_Boom", "apache", "dev@trafficserver.apache.org");
+  if (!RegisterGlobalPlugin("CPP_Example_Boom", "apache", "dev@trafficserver.apache.org")) {
+    return;
+  }
   boom_counter.init(BOOM_COUNTER);
   BoomResponseRegistry *pregistry = new BoomResponseRegistry();
 

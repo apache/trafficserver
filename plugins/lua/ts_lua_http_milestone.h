@@ -16,11 +16,8 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_HTTP_MILESTONE_H
-#define _TS_LUA_HTTP_MILESTONE_H
+#pragma once
 
 #include "ts_lua_common.h"
 
 void ts_lua_inject_http_milestone_api(lua_State *L);
-
-#endif

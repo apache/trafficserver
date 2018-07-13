@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#ifndef _ESI_GUNZIP_H
-#define _ESI_GUNZIP_H
+#pragma once
 
 #include "ComponentBase.h"
+
 #include <zlib.h>
 #include <string>
 
@@ -53,5 +53,3 @@ private:
   bool _init;
   bool _success;
 };
-
-#endif // _ESI_GUNZIP_H

@@ -82,6 +82,6 @@ TSMgmtError EventIsActive(const char *event_name, bool *is_current);
 TSMgmtError EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data);
 TSMgmtError EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func);
 
-TSMgmtError HostStatusSetDown(const char *host_name, int down_time);
-TSMgmtError HostStatusSetUp(const char *host_name);
+TSMgmtError HostStatusSetDown(const char *host_name, int down_time, const char *reason);
+TSMgmtError HostStatusSetUp(const char *host_name, int down_time, const char *reason);
 TSMgmtError StatsReset(const char *name = nullptr);

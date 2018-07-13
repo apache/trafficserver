@@ -58,7 +58,7 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-ts.Disk.logging_config.AddLines(
+ts.Disk.logging_yaml.AddLines(
     '''
 formats:
   - name: custom

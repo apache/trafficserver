@@ -22,12 +22,17 @@
 records.config
 **************
 
-The :file:`records.config` file (by default (:ts:cv:`proxy.config.config_dir`), located in
+The :file:`records.config` file (by default, located in
 ``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
 the |TS| software. Many of the variables in :file:`records.config` are set
 automatically when you set configuration options with :option:`traffic_ctl config set`. After you
 modify :file:`records.config`, run the command :option:`traffic_ctl config reload`
 to apply the changes.
+
+Note: The configuration directory, containing the ``SYSCONFDIR`` value specified at build time
+relative to the installation prefix, contains Traffic Server configuration files.
+The ``$TS_ROOT`` environment variable can be used alter the installation prefix at run time.
+The directory must allow read/write access for configuration reloads.
 
 Format
 ======
@@ -204,15 +209,6 @@ System Variables
 
    The script executed before the :program:`traffic_manager` process spawns
    the :program:`traffic_server` process.
-
-.. ts:cv:: CONFIG proxy.config.config_dir STRING etc/trafficserver
-
-   The directory that contains Traffic Server configuration files.
-   This is a read-only configuration option that contains the
-   ``SYSCONFDIR`` value specified at build time relative to the
-   installation prefix. The ``$TS_ROOT`` environment variable can
-   be used alter the installation prefix at run time. The directory must
-   allow read/write access for configuration reloads.
 
 .. ts:cv:: CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 
@@ -1354,28 +1350,84 @@ Origin Server Connect Attempts
    way up to ts:cv:`proxy.config.net.connections_throttle` connections, which
    in turn can starve incoming requests from available connections.
 
-.. ts:cv:: CONFIG proxy.config.http.origin_max_connections INT 0
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.max INT 0
    :reloadable:
    :overridable:
 
-   Limits the number of socket connections per origin server to the value specified. To enable, set to one (``1``).
+   Set a limit for the number of concurrent connections to an upstream server group. A value of
+   ``0`` disables checking. If a transaction attempts to connect to a group which already has the
+   maximum number of concurrent connections the transaction either rechecks after a delay or a 503
+   (``HTTP_STATUS_SERVICE_UNAVAILABLE``) error response is sent to the user agent. To configure
 
-.. ts:cv:: CONFIG proxy.config.http.origin_max_connections_queue INT -1
+   Number of transactions that can be delayed concurrently
+      See :ts:cv:`proxy.config.http.per_server.connection.queue_size`.
+
+   How long to delay before rechecking
+      See :ts:cv:`proxy.config.http.per_server.connection.queue_delay`.
+
+   Upstream server group definition
+      See :ts:cv:`proxy.config.http.per_server.connection.match`.
+
+   Frequency of alerts
+      See :ts:cv:`proxy.config.http.per_server.connection.alert_delay`.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.match STRING ip
    :reloadable:
    :overridable:
 
-   Limits the number of requests to be queued when the :ts:cv:`proxy.config.http.origin_max_connections` is reached.
-   When disabled (``-1``) requests are will wait indefinitely for an available connection. When set to ``0`` all
-   requests past the :ts:cv:`proxy.config.http.origin_max_connections` will immediately fail. When set to ``>0``
-   ATS will queue that many requests to go to the origin, any additional requests past the limit will immediately fail.
+   Control the definition of an upstream server group for
+   :ts:cv:`proxy.config.http.per_server.connection.max`. This must be one of the following keywords.
 
-.. ts:cv:: CONFIG proxy.config.http.origin_min_keep_alive_connections INT 0
+   ip
+      Group by IP address. Each IP address is a group.
+
+   port
+      Group by IP address and port. Each distinct IP address and port pair is a group.
+
+   host
+      Group by host name. The host name is the post remap FQDN used to resolve the upstream
+      address.
+
+   both
+      Group by IP address, port, and host name. Each distinct combination is a group.
+
+   To disable upstream server grouping, set :ts:cv:`proxy.config.http.per_server.connection.max` to ``0``.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_size INT 0
    :reloadable:
 
-   As connection to an origin server are opened, keep at least 'n' number of connections open to that origin, even if
-   the connection isn't used for a long time period. Useful when the origin supports keep-alive, removing the time
-   needed to set up a new connection from
-   the next request at the expense of added (inactive) connections. To enable, set to one (``1``).
+   Controls the number of transactions that can be waiting on an upstream server group.
+
+   ``-1``
+      Unlimited.
+
+   ``0``
+      Never wait. If the connection maximum has been reached immediately respond with an error.
+
+   A positive number
+      If there are less than this many waiting transactions, delay this transaction and try again. Otherwise respond immediately with an error.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_delay INT 100
+   :reloadable:
+   :units: milliseconds
+
+   If a transaction is delayed due to too many connections in an upstream server group, delay this amount of time before checking again.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.alert_delay INT 60
+   :reloadable:
+   :units: seconds
+
+   Throttle alerts per upstream server group to be no more often than this many seconds. Summary
+   data is provided per alert to allow log scrubbing to generate accurate data.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.min_keep_alive_connections INT 0
+   :reloadable:
+
+   Set a target for the minimum number of active connections to an upstream server group. When an
+   outbound connection is in keep alive state and the inactivity timer expires, if there are fewer
+   than this many connections in the group a new connection the timer is reset instead of closing
+   the connection. Useful when the origin supports keep-alive, removing the time needed to set up a
+   new connection from the next request at the expense of added (inactive) connections.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
    :reloadable:
@@ -2539,16 +2591,16 @@ HostDB
    ``ipv4``   Resolve to an IPv4 address.
    ``ipv6``   Resolve to an IPv6 address.
    ``client`` Resolve to the same family as the client IP address.
-   ``none``   Stop resolving.
+   ``only``   Stop resolving.
    ========== ====================================================
 
    The order of the keywords is critical. When a host name needs to be resolved
    it is resolved in same order as the keywords. If a resolution fails, the
-   next option in the list is tried. The keyword ``none`` means to give up
+   next option in the list is tried. The keyword ``only`` means to give up
    resolution entirely. The keyword list has a maximum length of three
    keywords, more are never needed. By default there is an implicit
    ``ipv4;ipv6`` attached to the end of the string unless the keyword
-   ``none`` appears.
+   ``only`` appears.
 
 .. topic:: Example
 
@@ -2564,13 +2616,13 @@ HostDB
 
    Resolve only to IPv4. ::
 
-      ipv4;none
+      ipv4;only
 
 .. topic:: Example
 
    Resolve only to the same family as the client (do not permit cross family transactions). ::
 
-      client;none
+      client;only
 
    This value is a global default that can be overridden by :ts:cv:`proxy.config.http.server_ports`.
 
@@ -2723,7 +2775,7 @@ Logging Configuration
 
    For information on sending custom formats to the collation server,
    refer to :ref:`admin-logging-collating-custom-formats` and
-   :file:`logging.config`.
+   :file:`logging.yaml`.
 
 .. note::
 
@@ -2845,11 +2897,11 @@ Logging Configuration
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
 
-.. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.config
+.. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
 
    This configuration value specifies the path to the
-   :file:`logging.config` configuration file. If this is a relative
+   :file:`logging.yaml` configuration file. If this is a relative
    path, |TS| loads it relative to the ``SYSCONFDIR`` directory.
 
 Diagnostic Logging Configuration
@@ -3130,10 +3182,10 @@ SSL Termination
    ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
 
-.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.config
+.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
 
-   The filename of the :file:`ssl_server_name.config` configuration file. If relative, it is relative to the
-   configuration directory (ts:cv:`proxy.config.config_dir`).
+   The filename of the :file:`ssl_server_name.yaml` configuration file.
+   If relative, it is relative to the configuration directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
 

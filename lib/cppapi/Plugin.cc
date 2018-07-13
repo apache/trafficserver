@@ -28,14 +28,17 @@ const std::string atscppapi::HOOK_TYPE_STRINGS[] = {
   std::string("HOOK_READ_REQUEST_HEADERS"),           std::string("HOOK_READ_CACHE_HEADERS"),
   std::string("HOOK_CACHE_LOOKUP_COMPLETE"),          std::string("HOOK_SELECT_ALT")};
 
-void
+bool
 atscppapi::RegisterGlobalPlugin(const char *name, const char *vendor, const char *email)
 {
   TSPluginRegistrationInfo info;
   info.plugin_name   = name;
   info.vendor_name   = vendor;
   info.support_email = email;
-  if (TSPluginRegister(&info) != TS_SUCCESS) {
+
+  bool success = (TSPluginRegister(&info) == TS_SUCCESS);
+  if (!success) {
     TSError("[Plugin.cc] Plugin registration failed");
   }
+  return success;
 }

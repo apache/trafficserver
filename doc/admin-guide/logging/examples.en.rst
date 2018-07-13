@@ -27,7 +27,7 @@ exhaustive of all possibilities (|TS| logging is quite flexible), these entries
 should hopefully get most administrators headed onto the right path.
 
 Unless otherwise noted, the example configurations here are to be applied in
-:file:`logging.config`.
+:file:`logging.yaml`.
 
 Online Event Log Builder
 ========================
@@ -65,7 +65,7 @@ No. Field  Description
 7   pscl   The length of the |TS| response to the client in bytes.
 === ====== ====================================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml
@@ -112,7 +112,7 @@ No. Field Description
           of the response back to the client.
 === ===== =====================================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml
@@ -151,7 +151,7 @@ No.  Field Description
            listed in :ref:`admin-logging-crc`.
 === ====== ===============================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml
@@ -199,20 +199,20 @@ No. Field    Description
              hex.
 8   caun     The username of the authenticated client. A hyphen (``-``)
              means that no authentication was required.
-9   phr/pqsn The proxy hierarchy route. The route |TS| used to retrieve the
+9   phr/shn  The proxy hierarchy route. The route |TS| used to retrieve the
              object.
 10  psct     The proxy response content type. The object content type taken
              from the |TS| response header.
 === ======== ==================================================================
 
-To recreate this as a log format in :file:`logging.config` you would define the
+To recreate this as a log format in :file:`logging.yaml` you would define the
 following format object:
 
 .. code:: yaml
 
    formats:
    - name: squid
-     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
 
 Hourly Rotated Squid Proxy Logs
 ===============================
@@ -225,7 +225,7 @@ policy.
 
    formats:
    - name: squid
-     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
+     format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
 
    logs:
    - mode: ascii
@@ -325,4 +325,3 @@ the request to clients during that hour.
      filters:
      - originfilter
      filename: origin_access_summary
-

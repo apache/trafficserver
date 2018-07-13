@@ -45,6 +45,7 @@ datadir, libexecdir, libdir, runtimedir, cachedir.
 #include <fstream>
 #include <set>
 #include <unistd.h>
+#include <yaml-cpp/yaml.h>
 
 static std::string using_runroot = {};
 
@@ -188,20 +189,20 @@ runroot_map_default()
 {
   std::unordered_map<std::string, std::string> map;
 
-  map["prefix"]        = Layout::get()->prefix;
-  map["exec_prefix"]   = Layout::get()->exec_prefix;
-  map["bindir"]        = Layout::get()->bindir;
-  map["sbindir"]       = Layout::get()->sbindir;
-  map["sysconfdir"]    = Layout::get()->sysconfdir;
-  map["datadir"]       = Layout::get()->datadir;
-  map["includedir"]    = Layout::get()->includedir;
-  map["libdir"]        = Layout::get()->libdir;
-  map["libexecdir"]    = Layout::get()->libexecdir;
-  map["localstatedir"] = Layout::get()->localstatedir;
-  map["runtimedir"]    = Layout::get()->runtimedir;
-  map["logdir"]        = Layout::get()->logdir;
+  map[LAYOUT_PREFIX]        = Layout::get()->prefix;
+  map[LAYOUT_EXEC_PREFIX]   = Layout::get()->exec_prefix;
+  map[LAYOUT_BINDIR]        = Layout::get()->bindir;
+  map[LAYOUT_SBINDIR]       = Layout::get()->sbindir;
+  map[LAYOUT_SYSCONFDIR]    = Layout::get()->sysconfdir;
+  map[LAYOUT_DATADIR]       = Layout::get()->datadir;
+  map[LAYOUT_INCLUDEDIR]    = Layout::get()->includedir;
+  map[LAYOUT_LIBDIR]        = Layout::get()->libdir;
+  map[LAYOUT_LIBEXECDIR]    = Layout::get()->libexecdir;
+  map[LAYOUT_LOCALSTATEDIR] = Layout::get()->localstatedir;
+  map[LAYOUT_RUNTIMEDIR]    = Layout::get()->runtimedir;
+  map[LAYOUT_LOGDIR]        = Layout::get()->logdir;
   // mandir is not needed for runroot
-  map["cachedir"] = Layout::get()->cachedir;
+  map[LAYOUT_CACHEDIR] = Layout::get()->cachedir;
 
   return map;
 }
@@ -210,27 +211,21 @@ runroot_map_default()
 RunrootMapType
 runroot_map(const std::string &prefix)
 {
-  std::string yaml_path = Layout::relative_to(prefix, "runroot_path.yml");
-  std::ifstream file;
-  file.open(yaml_path);
-  if (!file.good()) {
-    ink_warning("Bad path '%s', continue with default value", prefix.c_str());
-    return RunrootMapType{};
-  }
-
-  std::ifstream yamlfile(yaml_path);
   RunrootMapType map;
-  std::string str;
-  while (std::getline(yamlfile, str)) {
-    int pos                 = str.find(':');
-    map[str.substr(0, pos)] = str.substr(pos + 2);
-  }
-
-  // change it to absolute path in the map
-  for (auto it : map) {
-    if (it.second[0] != '/') {
-      map[it.first] = Layout::relative_to(prefix, it.second);
+  try {
+    YAML::Node yamlfile = YAML::LoadFile(Layout::relative_to(prefix, "runroot_path.yml"));
+    for (auto it : yamlfile) {
+      // key value pairs of dirs
+      std::string value = it.second.as<std::string>();
+      if (value[0] != '/') {
+        value = Layout::relative_to(prefix, value);
+      }
+      map[it.first.as<std::string>()] = value;
     }
+  } catch (YAML::Exception &e) {
+    ink_warning("Unable to read runroot_path.yml from '%s': %s", prefix.c_str(), e.what());
+    ink_notice("Continuing with default value");
+    return RunrootMapType{};
   }
   return map;
 }
@@ -250,4 +245,10 @@ check_runroot()
     ink_fatal("runroot path is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
   }
   return runroot_map(using_runroot);
+}
+
+bool
+use_runroot()
+{
+  return !using_runroot.empty();
 }

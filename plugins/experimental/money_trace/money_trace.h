@@ -17,8 +17,7 @@
  * under the License.
  */
 
-#ifndef __MONEY_TRACE_H
-#define __MONEY_TRACE_H
+#pragma once
 
 #include <random>
 #include <ctime>
@@ -65,5 +64,3 @@ static void mt_check_request_header(TSHttpTxn txnp);
 static void mt_send_client_response(TSHttpTxn txnp, struct txndata *txn_data);
 static void mt_send_server_request(TSHttpTxn txnp, struct txndata *txn_data);
 static int transaction_handler(TSCont contp, TSEvent event, void *edata);
-
-#endif
