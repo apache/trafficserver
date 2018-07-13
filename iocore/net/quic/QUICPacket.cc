@@ -30,6 +30,7 @@
 #include "QUICDebugNames.h"
 #include "QUICConfig.h"
 
+using namespace std::literals;
 static constexpr std::string_view tag  = "quic_packet"sv;
 static constexpr uint64_t aead_tag_len = 16;
 

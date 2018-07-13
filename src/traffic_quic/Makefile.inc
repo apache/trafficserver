@@ -52,5 +52,5 @@ traffic_quic_traffic_quic_LDADD = \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
   @LIBTCL@ \
   @HWLOC_LIBS@ \
-	@LIB_YAMLCPP@ \
+	@YAMLCPP_LIBS@ \
   @OPENSSL_LIBS@
