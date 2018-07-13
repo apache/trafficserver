@@ -157,7 +157,7 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
 
   // log it.
   if (status == HostStatus_t::HOST_STATUS_DOWN) {
-    Note("Host %s has been marked down, down_time: %d - %s.", name, down_time, down_time == 0 ? "indefinatley." : "seconds.");
+    Note("Host %s has been marked down, down_time: %d - %s.", name, down_time, down_time == 0 ? "indefinitely." : "seconds.");
   } else {
     Note("Host %s has been marked up.", name);
   }
