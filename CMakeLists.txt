@@ -1137,7 +1137,6 @@ add_library(libtsutil SHARED
         lib/ts/test_Map.cc
         lib/ts/test_PriorityQueue.cc
         lib/ts/test_Ptr.cc
-        lib/ts/test_Regex.cc
         lib/ts/test_Vec.cc
         lib/ts/test_X509HostnameValidator.cc
         lib/ts/TestBox.h
@@ -1168,6 +1167,7 @@ add_executable(test_tslib
 	lib/ts/unit-tests/test_MemArena.cc
 	lib/ts/unit-tests/test_MemSpan.cc
 	lib/ts/unit-tests/test_MT_hashtable.cc
+        lib/ts/unit-tests/test_Regex.cc
 	lib/ts/unit-tests/test_Scalar.cc
 	lib/ts/unit-tests/test_scoped_resource.cc
 	lib/ts/unit-tests/test_TextView.cc
