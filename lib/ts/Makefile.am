@@ -253,7 +253,6 @@ test_X509HostnameValidator_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS
 
 test_tsutil_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
 test_tsutil_SOURCES = \
-	test_History.cc \
 	test_PriorityQueue.cc \
 	test_Ptr.cc \
 	tests.cc
@@ -269,6 +268,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
 	unit-tests/test_PostScript.cc \
+	unit-tests/test_History.cc \
 	unit-tests/test_ink_inet.cc \
 	unit-tests/test_IntrusiveDList.cc \
 	unit-tests/test_IntrusivePtr.cc \

@@ -1132,7 +1132,6 @@ add_library(libtsutil SHARED
         lib/ts/test_atomic.cc
         lib/ts/test_freelist.cc
         lib/ts/test_geometry.cc
-        lib/ts/test_History.cc
         lib/ts/test_List.cc
         lib/ts/test_Map.cc
         lib/ts/test_PriorityQueue.cc
@@ -1159,6 +1158,7 @@ add_executable(test_tslib
 	lib/ts/unit-tests/unit_test_main.cc
 	lib/ts/unit-tests/test_BufferWriter.cc
 	lib/ts/unit-tests/test_BufferWriterFormat.cc
+        lib/ts/unit-tests/test_History.cc
 	lib/ts/unit-tests/test_ink_inet.cc
 	lib/ts/unit-tests/test_IntrusiveDList.cc
 	lib/ts/unit-tests/test_IntrusivePtr.cc
