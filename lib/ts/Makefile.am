@@ -256,7 +256,6 @@ test_tsutil_SOURCES = \
 	test_History.cc \
 	test_PriorityQueue.cc \
 	test_Ptr.cc \
-	test_Regex.cc \
 	tests.cc
 
 test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
@@ -278,6 +277,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_MemSpan.cc \
 	unit-tests/test_MemArena.cc \
 	unit-tests/test_MT_hashtable.cc \
+	unit-tests/test_Regex.cc \
 	unit-tests/test_Scalar.cc \
 	unit-tests/test_scoped_resource.cc \
 	unit-tests/test_TextView.cc 

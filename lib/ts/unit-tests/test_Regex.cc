@@ -1,4 +1,5 @@
-/*
+/**
+  @file Test for Regex.cc
 
   @section license License
 
@@ -19,39 +20,35 @@
   limitations under the License.
 */
 
+#include <array>
+#include <string_view>
+
 #include "ts/ink_assert.h"
 #include "ts/ink_defs.h"
 #include "ts/Regex.h"
-#include "ts/TestBox.h"
+#include "catch.hpp"
 
 typedef struct {
-  char subject[100];
+  std::string_view subject;
   bool match;
 } subject_match_t;
 
 typedef struct {
-  char regex[100];
-  subject_match_t tests[4];
+  std::string_view regex;
+  std::array<subject_match_t, 4> tests;
 } test_t;
 
-static const test_t test_data[] = {
-  {"^foo", {{"foo", true}, {"bar", false}, {"foobar", true}, {"foobarbaz", true}}},
-  {"foo$", {{"foo", true}, {"bar", false}, {"foobar", false}, {"foobarbaz", false}}},
-};
+std::array<test_t, 2> test_data{{{{"^foo"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, true}, {{"foobarbaz"}, true}}}},
+                                 {{"foo$"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, false}, {{"foobarbaz"}, false}}}}}};
 
-REGRESSION_TEST(Regex_basic)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Regex", "[libts][Regex]")
 {
-  TestBox box(t, pstatus, REGRESSION_TEST_PASSED);
-
-  for (unsigned int i = 0; i < countof(test_data); i++) {
+  for (auto &item : test_data) {
     Regex r;
+    r.compile(item.regex.data());
 
-    rprintf(t, "Regex: %s\n", test_data[i].regex);
-    r.compile(test_data[i].regex);
-
-    for (unsigned int j = 0; j < countof(test_data[i].tests); j++) {
-      box.check(r.exec(test_data[i].tests[j].subject) == test_data[i].tests[j].match, "Subject: %s Result: %s\n",
-                test_data[i].tests[j].subject, test_data[i].tests[j].match ? "true" : "false");
+    for (auto &test : item.tests) {
+      REQUIRE(r.exec(test.subject.data()) == test.match);
     }
   }
 }
