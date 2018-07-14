@@ -24,6 +24,7 @@
 #include <string_view>
 
 #include "ts/History.h"
+#include "BufferWriter.h"
 #include "catch.hpp"
 
 using std::string_view;
@@ -58,21 +59,22 @@ TEST_CASE("History", "[libts][History]")
   REQUIRE(history[2].reentrancy == static_cast<short>(NO_REENTRANT));
 
   history[0].location.str(buf, sizeof(buf));
-  REQUIRE(string_view{buf} == "test_History.cc:47 (____C_A_T_C_H____T_E_S_T____0)");
-
-  history[1].location.str(buf, sizeof(buf));
   REQUIRE(string_view{buf} == "test_History.cc:48 (____C_A_T_C_H____T_E_S_T____0)");
 
+  history[1].location.str(buf, sizeof(buf));
+  REQUIRE(string_view{buf} == "test_History.cc:49 (____C_A_T_C_H____T_E_S_T____0)");
+
+  ts::LocalBufferWriter<128> w;
   SM<HISTORY_DEFAULT_SIZE> *sm = new SM<HISTORY_DEFAULT_SIZE>;
   SM_REMEMBER(sm, 1, 1);
   SM_REMEMBER(sm, 2, 2);
   SM_REMEMBER(sm, 3, NO_REENTRANT);
 
-  sm->history[0].location.str(buf, sizeof(buf));
-  REQUIRE(string_view{buf} == "test_History.cc:67 (____C_A_T_C_H____T_E_S_T____0)");
+  w.print("{}", sm->history[0].location);
+  REQUIRE(w.view() == "test_History.cc:69 (____C_A_T_C_H____T_E_S_T____0)");
 
-  sm->history[1].location.str(buf, sizeof(buf));
-  REQUIRE(string_view{buf} == "test_History.cc:68 (____C_A_T_C_H____T_E_S_T____0)");
+  w.reset().print("{}", sm->history[1].location);
+  REQUIRE(w.view() == "test_History.cc:70 (____C_A_T_C_H____T_E_S_T____0)");
 
   REQUIRE(sm->history[0].event == 1);
   REQUIRE(sm->history[0].reentrancy == 1);
@@ -103,11 +105,11 @@ TEST_CASE("History", "[libts][History]")
   REQUIRE(sm2->history.size() == 2);
   REQUIRE(sm2->history.overflowed() == true);
 
-  sm2->history[0].location.str(buf, sizeof(buf));
-  REQUIRE(string_view{buf} == "test_History.cc:101 (____C_A_T_C_H____T_E_S_T____0)");
+  w.reset().print("{}", sm2->history[0].location);
+  REQUIRE(w.view() == "test_History.cc:103 (____C_A_T_C_H____T_E_S_T____0)");
 
-  sm2->history[1].location.str(buf, sizeof(buf));
-  REQUIRE(string_view{buf} == "test_History.cc:96 (____C_A_T_C_H____T_E_S_T____0)");
+  w.reset().print("{}", sm2->history[1].location);
+  REQUIRE(w.view() == "test_History.cc:98 (____C_A_T_C_H____T_E_S_T____0)");
 
   sm2->history.clear();
   REQUIRE(sm2->history.size() == 0);
