@@ -873,6 +873,10 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
     return false;
   }
   unprotected_pn_len = QUICTypeUtil::read_QUICPacketNumberLen(unprotected_pn);
+  if (pn_offset + unprotected_pn_len > packet_len) {
+    Debug(tag.data(), "Malformed header: pn_offset=%zu, pn_len=%d", pn_offset, unprotected_pn_len);
+    return false;
+  }
   memcpy(packet + pn_offset, unprotected_pn, unprotected_pn_len);
   return true;
 }
