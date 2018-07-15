@@ -216,7 +216,7 @@ QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const
     plain_len += len;
     return true;
   } else {
-    Debug(tag, "Failed to decrypt");
+    Debug(tag, "Failed to decrypt -- the first 4 bytes decrypted are %0x %0x %0x %0x", plain[0], plain[1], plain[2], plain[3]);
     return false;
   }
 }
