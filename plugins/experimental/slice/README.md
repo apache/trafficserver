@@ -23,26 +23,9 @@ cache_range_requests.so
 **Note**: cache_range_requests **MUST** follow slice.so Put these plugins at the end of the plugin list
 **Note**: blockbytes is defined in bytes. 1048576 (1MB) is the default.
 
-__To build the plugin__, just set your path to include the tsxs binary in your path and run make.
-
-```
-  $ make
-  tsxs -v -i -o slice.so ContentRange.cc HttpHeader.cc intercept.cc range.cc slice.cc
-  compiling ContentRange.cc -> ContentRange.lo
-  compiling HttpHeader.cc -> HttpHeader.lo
-  compiling intercept.cc -> intercept.lo
-  compiling range.cc -> range.lo
-  compiling slice.cc -> slice.lo
-  linking -> slice.so
-  installing slice.so -> .....
-```  
+For testing purposes an unchecked value of "blockbytestest" is also available.
 
 Debug output can be enable by setting the debug tag: **slice**
-
-Example output of a range request:
-
-```
-```
 
 Debug messages related to object instance construction/deconstruction, see slice.h.  
 
