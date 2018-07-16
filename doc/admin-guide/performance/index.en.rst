@@ -497,10 +497,12 @@ client request to result in an origin request.
 
 This behavior is controlled by both enabling the feature via
 :ts:cv:`proxy.config.http.negative_caching_enabled` and setting the cache time
-(in seconds) with :ts:cv:`proxy.config.http.negative_caching_lifetime`. ::
+(in seconds) with :ts:cv:`proxy.config.http.negative_caching_lifetime`. Configured
+status code for negative caching can be set with :ts:cv:`proxy.config.http.negative_caching_list`. ::
 
     CONFIG proxy.config.http.negative_caching_enabled INT 1
     CONFIG proxy.config.http.negative_caching_lifetime INT 10
+    CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 405 414 500 501 502 503 504
 
 SSL-Specific Options
 ~~~~~~~~~~~~~~~~~~~~

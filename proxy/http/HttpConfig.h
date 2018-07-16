@@ -50,6 +50,9 @@
 #include "ProxyConfig.h"
 #include "P_RecProcess.h"
 
+static const unsigned HTTP_STATUS_NUMBER = 600;
+using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
+
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
@@ -856,6 +859,9 @@ public:
   MgmtByte keepalive_internal_vc      = 0;
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
+
+  // bitset to hold the status codes that will BE cached with negative caching enabled
+  HttpStatusBitset negative_caching_list;
 
   // All the overridable configurations goes into this class member, but they
   // are not copied over until needed ("lazy").
