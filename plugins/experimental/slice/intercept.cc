@@ -176,7 +176,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
 int64_t
 transfer_content_bytes(Data *const data)
 {
-  DEBUG_LOG("transfer_content_bytes");
+//  DEBUG_LOG("transfer_content_bytes");
   int64_t consumed   = 0;
   int64_t read_avail = TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader);
 
@@ -311,7 +311,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
   }
 
   if (TS_EVENT_VCONN_READ_READY == event || TS_EVENT_VCONN_READ_COMPLETE == event) {
-    DEBUG_LOG("server has data ready to read");
+//    DEBUG_LOG("server has data ready to read");
     // has block reponse header been parsed??
     if (!data->m_server_block_header_parsed) {
       // the server response header didn't fit into the input buffer??
@@ -330,9 +330,12 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 
       // only process a 206, everything else gets a pass through
       if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status()) {
+
+DEBUG_LOG("Non 206 response from parent: %d", header.status());
+        data->m_bail = true;
+
         // is this is the first server response
         if (!data->m_client_header_sent) {
-          data->m_bail = true;
 
           // same as ! data->m_client_header_sent
           data->m_dnstream.setupVioWrite(contp);
@@ -342,7 +345,9 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
           TSVIOReenable(data->m_dnstream.m_write.m_vio);
 
           transfer_all_bytes(data);
-        }
+        } else {
+          TSVIOReenable(data->m_dnstream.m_write.m_vio);
+				}
 
         return TS_EVENT_CONTINUE;
       }
@@ -530,7 +535,7 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
   }
 
   if (TS_EVENT_VCONN_WRITE_READY == event || TS_EVENT_VCONN_WRITE_COMPLETE == event) {
-    DEBUG_LOG("client wants more data");
+//    DEBUG_LOG("client wants more data");
     if (0 == transfer_content_bytes(data)) {
       int64_t const bytessent(TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
       if (data->m_bytestosend <= bytessent) {
