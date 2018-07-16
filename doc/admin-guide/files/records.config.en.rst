@@ -1520,7 +1520,7 @@ Negative Response Caching
    When disabled (``0``), |TS| will only cache the response if the response has
    ``Cache-Control`` headers.
 
-   The following negative responses are cached by Traffic Server:
+   The following negative responses are cached by Traffic Server by default:
 
    ====================== =====================================================
    HTTP Response Code     Description
@@ -1530,6 +1530,7 @@ Negative Response Caching
    ``400``                Bad Request
    ``403``                Forbidden
    ``404``                Not Found
+   ``414``                URI Too Long
    ``405``                Method Not Allowed
    ``500``                Internal Server Error
    ``501``                Not Implemented
@@ -1547,6 +1548,12 @@ Negative Response Caching
 
    How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative
    responses that do NOT have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
+
+.. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 405 414 500 501 502 503 504
+   :reloadable:
+
+   The HTTP status code for negative caching. Default values are mentioned above. The unwanted status codes can be
+   taken out from the list. Other status codes can be added. The variable is a list but parsed as STRING.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_enabled INT 0
    :reloadable:
