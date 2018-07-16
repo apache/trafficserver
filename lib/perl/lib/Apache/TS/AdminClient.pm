@@ -474,6 +474,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.keep_alive_no_activity_timeout_out
  proxy.config.http.keep_alive_post_out
  proxy.config.http.negative_caching_enabled
+ proxy.config.http.negative_caching_list
  proxy.config.http.negative_caching_lifetime
  proxy.config.http.negative_revalidating_enabled
  proxy.config.http.negative_revalidating_lifetime
