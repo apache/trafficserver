@@ -21,9 +21,10 @@
 #include <cinttypes>
 #include <cstdio>
 
-static char const* const format = "bytes %" PRId64 "-%" PRId64 "/%" PRId64;
+static char const *const format = "bytes %" PRId64 "-%" PRId64 "/%" PRId64;
 
-bool ContentRange ::fromStringClosed(char const* const valstr)
+bool
+ContentRange ::fromStringClosed(char const *const valstr)
 {
   // TSAssert(nullptr != valstr);
   int const fields = sscanf(valstr, format, &m_beg, &m_end, &m_length);
@@ -31,16 +32,15 @@ bool ContentRange ::fromStringClosed(char const* const valstr)
   if (3 == fields && m_beg <= m_end) {
     m_end += 1;
     return true;
-  }
-  else {
+  } else {
     m_beg = m_end = m_length = -1;
   }
 
   return false;
 }
 
-bool ContentRange ::toStringClosed(char* const rangestr,
-                                   int* const rangelen) const
+bool
+ContentRange ::toStringClosed(char *const rangestr, int *const rangelen) const
 {
   // TSAssert(nullptr != rangestr);
   // TSAssert(nullptr != rangelen);
@@ -51,8 +51,7 @@ bool ContentRange ::toStringClosed(char* const rangestr,
   }
 
   int const lenin = *rangelen;
-  *rangelen =
-      snprintf(rangestr, lenin, format, m_beg, (m_end - 1), m_length);
+  *rangelen       = snprintf(rangestr, lenin, format, m_beg, (m_end - 1), m_length);
 
   return (0 < *rangelen && *rangelen < lenin);
 }

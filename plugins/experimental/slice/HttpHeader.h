@@ -46,12 +46,10 @@ struct HttpHeader {
   TSMBuffer const m_buffer;
   TSMLoc const m_lochdr;
 
-  explicit HttpHeader(TSMBuffer buffer, TSMLoc lochdr)
-      : m_buffer(buffer), m_lochdr(lochdr)
-  {
-  }
+  explicit HttpHeader(TSMBuffer buffer, TSMLoc lochdr) : m_buffer(buffer), m_lochdr(lochdr) {}
 
-  bool isValid() const
+  bool
+  isValid() const
   {
     return nullptr != m_buffer && nullptr != m_lochdr;
   }
@@ -59,31 +57,31 @@ struct HttpHeader {
   // TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST, TS_HTTP_TYPE_RESPONSE
   TSHttpType type() const;
 
-  // response status code
   TSHttpStatus status() const;
 
-  // response status code
   bool setStatus(TSHttpStatus const newstatus);
 
-  // set url
   bool setUrl(TSMBuffer const bufurl, TSMLoc const locurl);
 
   typedef char const *(*CharPtrGetFunc)(TSMBuffer, TSMLoc, int *);
 
   // request method TS_HTTP_METHOD_*
-  char const *method(int *const len = nullptr) const
+  char const *
+  method(int *const len = nullptr) const
   {
     return getCharPtr(TSHttpHdrMethodGet, len);
   }
 
   // host
-  char const *hostname(int *const len) const
+  char const *
+  hostname(int *const len) const
   {
     return getCharPtr(TSHttpHdrHostGet, len);
   }
 
   // response reason
-  char const *reason(int *const len) const
+  char const *
+  reason(int *const len) const
   {
     return getCharPtr(TSHttpHdrReasonGet, len);
   }
@@ -95,39 +93,25 @@ struct HttpHeader {
   // returns false if header invalid or something went wrong with removal.
   bool removeKey(char const *const key, int const keylen);
 
-  bool valueForKey(char const *const keystr, int const keylen,
-                   char *const valstr  // <-- return string value
+  bool valueForKey(char const *const keystr, int const keylen, char *const valstr // <-- return string value
                    ,
-                   int *const vallen  // <-- pass in capacity, returns len
-                                      // of string
+                   int *const vallen // <-- pass in capacity, returns len of string
                    ,
-                   int const index = -1  // sets all values
+                   int const index = -1 // sets all values
                    ) const;
-
-  /*
-    bool
-    valueForKeyLast
-      ( char const * const keystr
-      , int const keylen
-      , char * const valstr // <-- return string value
-      , int * const vallen // <-- pass in capacity, returns len of string
-      , int const index = -1 // sets all values
-      ) const;
-  */
 
   /**
     Sets or adds a key/value
   */
-  bool setKeyVal(char const *const key, int const keylen,
-                 char const *const val, int const vallen,
-                 int const index = -1  // sets all values
+  bool setKeyVal(char const *const key, int const keylen, char const *const val, int const vallen,
+                 int const index = -1 // sets all values
   );
 
   /** dump header into provided char buffer
    */
   std::string toString() const;
 
- private:
+private:
   /**
     To be used with
     TSHttpHdrMethodGet
@@ -163,12 +147,17 @@ struct TxnHdrMgr {
     TSHttpTxnCachedRespGet
   */
 
-  bool populateFrom(TSHttpTxn const &txnp, HeaderGetFunc const &func)
+  bool
+  populateFrom(TSHttpTxn const &txnp, HeaderGetFunc const &func)
   {
     return TS_SUCCESS == func(txnp, &m_buffer, &m_lochdr);
   }
 
-  bool isValid() const { return nullptr != m_lochdr; }
+  bool
+  isValid() const
+  {
+    return nullptr != m_lochdr;
+  }
 };
 
 struct HdrMgr {
@@ -191,7 +180,8 @@ struct HdrMgr {
     }
   }
 
-  void resetHeader()
+  void
+  resetHeader()
   {
     if (nullptr != m_lochdr) {
       TSHttpHdrDestroy(m_buffer, m_lochdr);
@@ -200,8 +190,7 @@ struct HdrMgr {
     }
   }
 
-  typedef TSParseResult (*HeaderParseFunc)(TSHttpParser, TSMBuffer, TSMLoc,
-                                           char const **, char const *);
+  typedef TSParseResult (*HeaderParseFunc)(TSHttpParser, TSMBuffer, TSMLoc, char const **, char const *);
 
   /** Clear/create the parser before calling this and don't
    use the parser on another header until done with this one.
@@ -210,18 +199,11 @@ struct HdrMgr {
      TSHttpHdrParseResp
     Call this multiple times if necessary.
   */
-  TSParseResult populateFrom(TSHttpParser const http_parser,
-                             TSIOBufferReader const reader,
-                             HeaderParseFunc const parsefunc);
+  TSParseResult populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc);
 
-  /*
-    //! returns false if buffers already allocated or clone fails
-    bool
-    cloneFrom
-      ( TSMBuffer buffersrc
-      , TSMLoc locsrc
-      );
-  */
-
-  bool isValid() const { return nullptr != m_lochdr; }
+  bool
+  isValid() const
+  {
+    return nullptr != m_lochdr;
+  }
 };

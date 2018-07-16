@@ -20,7 +20,8 @@
 
 #include <string>
 
-std::string simClientRequestHeader()
+std::string
+simClientRequestHeader()
 {
   std::string get_request;
   get_request.append(TS_HTTP_METHOD_GET);
@@ -35,25 +36,26 @@ std::string simClientRequestHeader()
   return get_request;
 }
 
-std::string simClientResponseHeader()
+std::string
+simClientResponseHeader()
 {
-  std::string const response(
-      "HTTP/1.1 200 Partial Content\r\n"
-      "Date: Wed, 13 Jun 2018 22:50:48 GMT\r\n"
-      "Server: biteme/6.6.6\r\n"
-      "Last-Modified: Mon, 07 May 2018 16:07:31 GMT\r\n"
-      "ETag: \"12500000-56b9fddf5ac99\"\r\n"
-      "Accept-Ranges: bytes\r\n"
-      "Content-Length: 10485760000\r\n"
-      "Cache-Control: public, max-age=900, s-maxage=900\r\n"
-      "Content-Type: application/octet-stream\r\n"
-      "Age: 0\r\n"
-      "Connection: keep-alive\r\n"
-      "\r\n");
+  std::string const response("HTTP/1.1 200 Partial Content\r\n"
+                             "Date: Wed, 13 Jun 2018 22:50:48 GMT\r\n"
+                             "Server: biteme/6.6.6\r\n"
+                             "Last-Modified: Mon, 07 May 2018 16:07:31 GMT\r\n"
+                             "ETag: \"12500000-56b9fddf5ac99\"\r\n"
+                             "Accept-Ranges: bytes\r\n"
+                             "Content-Length: 10485760000\r\n"
+                             "Cache-Control: public, max-age=900, s-maxage=900\r\n"
+                             "Content-Type: application/octet-stream\r\n"
+                             "Age: 0\r\n"
+                             "Connection: keep-alive\r\n"
+                             "\r\n");
   return response;
 }
 
-std::string rangeRequestStringFor(std::string const& bytesstr)
+std::string
+rangeRequestStringFor(std::string const &bytesstr)
 {
   std::string get_request;
   get_request.append(TS_HTTP_METHOD_GET);

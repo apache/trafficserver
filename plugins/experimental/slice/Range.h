@@ -20,25 +20,26 @@
 
 #include "ts/ts.h"
 
+#include <limits>
+
 /**
   represents a value parsed from a Range request header field.
   Range is converted from a closed range into a half open.
  */
 
 struct Range {
+public:
+  static int64_t constexpr maxval = (std::numeric_limits<int64_t>::max() >> 2);
 
- public:
   int64_t m_beg;
-  int64_t m_end;  // half open
+  int64_t m_end; // half open
 
   Range() : m_beg(-1), m_end(-1) {}
 
-  explicit Range(int64_t const begin, int64_t const end)
-      : m_beg(begin), m_end(end)
-  {
-  }
+  explicit Range(int64_t const begin, int64_t const end) : m_beg(begin), m_end(end) {}
 
-  Range& operator=(Range const& other)
+  Range &
+  operator=(Range const &other)
   {
     if (&other != this) {
       m_beg = other.m_beg;
@@ -52,12 +53,14 @@ struct Range {
   int64_t size() const;
 
   /** parse a from a closed request range into a half open range
+   * This will only correctly handle the *first* range that is
+   * parsed via TSMimeHdrFieldValueStringGet with index '0'.
    */
-  bool fromStringClosed(char const* const rangestr);
+  bool fromStringClosed(char const *const rangestr);
 
   /** parse a from a closed request range into a half open range
    */
-  bool toStringClosed(char* const rangestr, int* const rangelen) const;
+  bool toStringClosed(char *const rangestr, int *const rangelen) const;
 
   /** block number of first range block
    */
@@ -65,28 +68,28 @@ struct Range {
 
   /** block intersection
    */
-  Range intersectedWith(Range const& other) const;
+  Range intersectedWith(Range const &other) const;
 
   /** is the given block inside held range?
    */
-  bool blockIsInside(int64_t const blocksize,
-                     int64_t const blocknum) const;
+  bool blockIsInside(int64_t const blocksize, int64_t const blocknum) const;
 
   /** number of skip bytes for the given block
    */
-  int64_t skipBytesForBlock(int64_t const blocksize,
-                            int64_t const blocknum) const;
+  int64_t skipBytesForBlock(int64_t const blocksize, int64_t const blocknum) const;
 
   /** is this coded to indicate last N bytes?
    */
   bool isEndBytes() const;
 
-  bool operator=(Range const& other) const
+  bool
+  operator=(Range const &other) const
   {
     return other.m_beg == m_beg && other.m_end == m_end;
   }
 
-  bool operator!=(Range const& other) const
+  bool
+  operator!=(Range const &other) const
   {
     return !this->operator=(other);
   }

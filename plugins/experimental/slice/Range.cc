@@ -24,14 +24,23 @@
 #include <cstring>
 #include <iostream>
 
-bool Range ::isValid() const { return m_beg < m_end; }
-
-int64_t Range ::size() const { return m_end - m_beg; }
-
-bool Range ::fromStringClosed(char const* const rangestr)
+bool
+Range ::isValid() const
 {
-  static char const* const BYTESTR = "bytes=";
-  static size_t const BYTESTRLEN = strlen(BYTESTR);
+  return m_beg < m_end;
+}
+
+int64_t
+Range ::size() const
+{
+  return m_end - m_beg;
+}
+
+bool
+Range ::fromStringClosed(char const *const rangestr)
+{
+  static char const *const BYTESTR = "bytes=";
+  static size_t const BYTESTRLEN   = strlen(BYTESTR);
 
   // make sure this is in byte units
   if (0 != strncmp(BYTESTR, rangestr, BYTESTRLEN)) {
@@ -39,15 +48,16 @@ bool Range ::fromStringClosed(char const* const rangestr)
   }
 
   // advance past any white space
-  char const* pstr = rangestr + BYTESTRLEN;
+  char const *pstr = rangestr + BYTESTRLEN;
   while ('\0' != *pstr && isblank(*pstr)) {
     ++pstr;
   }
 
   // rip out any whitespace
-  char rangebuf[1024];
-  char* pbuf = rangebuf;
-  while ('\0' != *pstr) {
+  static int const RLEN = 1024;
+  char rangebuf[RLEN];
+  char *pbuf = rangebuf;
+  while ('\0' != *pstr && (pbuf - rangebuf) < RLEN) {
     if (!isblank(*pstr)) {
       *pbuf++ = *pstr;
     }
@@ -55,48 +65,59 @@ bool Range ::fromStringClosed(char const* const rangestr)
   }
   *pbuf = '\0';
 
-  char const* const fmtclosed = "%" PRId64 "-%" PRId64;
-  int64_t front = 0;
-  int64_t back = 0;
+  int const rlen = (pbuf - rangebuf);
+
+  int consumed = 0;
+
+  // last 'n' bytes - result in range with negative begin and 0 end
+  int64_t endbytes         = 0;
+  char const *const fmtend = "-%" PRId64 "%n";
+  int const fieldsend      = sscanf(rangebuf, fmtend, &endbytes, &consumed);
+  if (1 == fieldsend) {
+    if (rlen == consumed) {
+      m_beg = -endbytes;
+      m_end = 0;
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   // normal range <front>-<back>
-  int const fieldsclosed = sscanf(rangebuf, fmtclosed, &front, &back);
+  char const *const fmtclosed = "%" PRId64 "-%" PRId64 "%n";
+  int64_t front               = 0;
+  int64_t back                = 0;
+
+  int const fieldsclosed = sscanf(rangebuf, fmtclosed, &front, &back, &consumed);
   if (2 == fieldsclosed) {
-    if (0 <= front && front <= back) {
+    if (0 <= front && front <= back && rlen == consumed) {
       m_beg = front;
       m_end = back + 1;
+      return true;
+    } else {
+      return false;
     }
-    else {  // ill formed
-      m_beg = 0;
-      m_end = std::numeric_limits<int64_t>::max();
-    }
-    return true;
   }
 
-  // last 'n' bytes use range with negative begin and 0 end
-  int64_t endbytes = 0;
-  char const* const fmtend = "-%" PRId64;
-  int const fieldsend = sscanf(rangebuf, fmtend, &endbytes);
-  if (1 == fieldsend) {
-    m_beg = -endbytes;
-    m_end = 0;
-    return true;
-  }
-
-  front = 0;
-  char const* const fmtbeg = "%" PRId64 "-";
-  int const fieldsbeg = sscanf(rangebuf, fmtbeg, &front);
+  front                    = 0;
+  char const *const fmtbeg = "%" PRId64 "-%n";
+  int const fieldsbeg      = sscanf(rangebuf, fmtbeg, &front, &consumed);
   if (1 == fieldsbeg) {
-    m_beg = front;
-    m_end = std::numeric_limits<int64_t>::max();
+    if (rlen == consumed) {
+      m_beg = front;
+      m_end = Range::maxval;
+      return true;
+    } else {
+      return false;
+    }
   }
 
-  return true;
-}  // parseRange
+  return false;
+} // parseRange
 
-bool Range ::toStringClosed(char* const bufstr,
-                            int* const buflen  // returns actual bytes used
-                            ) const
+bool
+Range ::toStringClosed(char *const bufstr, int *const buflen // returns actual bytes used
+                       ) const
 {
   if (!isValid()) {
     return false;
@@ -104,36 +125,33 @@ bool Range ::toStringClosed(char* const bufstr,
 
   int const lenin = *buflen;
 
-  static int64_t const threshold(std::numeric_limits<int64_t>::max() / 2);
-
-  if (m_end < threshold) {
-    *buflen = snprintf(bufstr, lenin, "bytes=%" PRId64 "-%" PRId64, m_beg,
-                       m_end - 1);
-  }
-  else {
+  if (m_end <= Range::maxval) {
+    *buflen = snprintf(bufstr, lenin, "bytes=%" PRId64 "-%" PRId64, m_beg, m_end - 1);
+  } else {
     *buflen = snprintf(bufstr, lenin, "bytes=%" PRId64 "-", m_beg);
   }
 
   return (0 < *buflen && *buflen < lenin);
 }
 
-int64_t Range ::firstBlockFor(int64_t const blocksize) const
+int64_t
+Range ::firstBlockFor(int64_t const blocksize) const
 {
   if (0 < blocksize && isValid()) {
-    return m_beg / blocksize;
-  }
-  else {
+    return std::max((int64_t)0, m_beg / blocksize);
+  } else {
     return -1;
   }
 }
 
-Range Range ::intersectedWith(Range const& other) const
+Range
+Range ::intersectedWith(Range const &other) const
 {
   return Range(std::max(m_beg, other.m_beg), std::min(m_end, other.m_end));
 }
 
-bool Range ::blockIsInside(int64_t const blocksize,
-                           int64_t const blocknum) const
+bool
+Range ::blockIsInside(int64_t const blocksize, int64_t const blocknum) const
 {
   Range const blockrange(blocksize * blocknum, blocksize * (blocknum + 1));
 
@@ -142,17 +160,20 @@ bool Range ::blockIsInside(int64_t const blocksize,
   return isec.isValid();
 }
 
-int64_t Range ::skipBytesForBlock(int64_t const blocksize,
-                                  int64_t const blocknum) const
+int64_t
+Range ::skipBytesForBlock(int64_t const blocksize, int64_t const blocknum) const
 {
   int64_t const blockstart(blocksize * blocknum);
 
   if (m_beg < blockstart) {
     return 0;
-  }
-  else {
+  } else {
     return m_beg - blockstart;
   }
 }
 
-bool Range ::isEndBytes() const { return m_beg < 0 && 0 == m_end; }
+bool
+Range ::isEndBytes() const
+{
+  return m_beg < 0 && 0 == m_end;
+}

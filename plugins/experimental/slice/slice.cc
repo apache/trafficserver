@@ -19,8 +19,8 @@
 #include "slice.h"
 
 //#include "TransformData.h"
-#include "Data.h"
 #include "HttpHeader.h"
+#include "Data.h"
 #include "intercept.h"
 
 #include "ts/remap.h"
@@ -31,49 +31,63 @@
 #include <iostream>
 #include <netinet/in.h>
 
-namespace {
-
+namespace
+{
 int64_t const BLOCKBYTESMIN = 1024 * 32;
 int64_t const BLOCKBYTESMAX = 1024 * 1024 * 32;
 int64_t const BLOCKBYTESDEF = 1024 * 1024;
-char const *const BLOCKBYTESSTR = "blockbytes";
-size_t const BLOCKBYTESLEN = strlen(BLOCKBYTESSTR);
+
+char const *const BLOCKBYTESSTR     = "blockbytes";
+size_t const BLOCKBYTESLEN          = strlen(BLOCKBYTESSTR);
+char const *const BLOCKBYTESTESTSTR = "blockbytestest";
+size_t const BLOCKBYTESTESTLEN      = strlen(BLOCKBYTESTESTSTR);
 
 struct Config {
   int64_t m_blockbytes{BLOCKBYTESDEF};
 
-  bool fromString(char const *const bytesstr)
+  bool
+  fromString(char const *const bytesstr)
   {
-    if (0 != strncasecmp(bytesstr, BLOCKBYTESSTR, BLOCKBYTESLEN)) {
+    bool istest      = false;
+    char const *begp = nullptr;
+
+    if (0 == strncasecmp(bytesstr, BLOCKBYTESTESTSTR, BLOCKBYTESTESTLEN)) {
+      begp   = bytesstr + BLOCKBYTESTESTLEN;
+      istest = true;
+    } else if (0 == strncasecmp(bytesstr, BLOCKBYTESSTR, BLOCKBYTESLEN)) {
+      begp = bytesstr + BLOCKBYTESLEN;
+    } else {
       DEBUG_LOG("Unhandled flag in %s", bytesstr);
       return false;
     }
 
-    char const *begp = bytesstr + BLOCKBYTESLEN;
     if (':' != *begp) {
       DEBUG_LOG("Invalid separator in %s", bytesstr);
       return false;
     }
     ++begp;
 
-    char *endp = nullptr;
+    char *endp              = nullptr;
     int64_t const bytesread = strtoll(begp, &endp, 10);
-    if (bytesstr != endp && BLOCKBYTESMIN <= bytesread &&
-        bytesread <= BLOCKBYTESMAX) {
-      DEBUG_LOG("Override blockbytes: %" PRId64, bytesread);
-      m_blockbytes = bytesread;
-      return true;
+    if (bytesstr != endp) {
+      if (!istest && (bytesread < BLOCKBYTESMIN || BLOCKBYTESMAX < bytesread)) {
+        DEBUG_LOG("Ignoring out of range blockbytes: %" PRId64, bytesread);
+      } else {
+        DEBUG_LOG("Override blockbytes: %" PRId64, bytesread);
+        m_blockbytes = bytesread;
+        return true;
+      }
     }
-    else {
-      ERROR_LOG("Invalid incoming blockbytes %s", bytesstr);
-      return false;
-    }
+
+    ERROR_LOG("Invalid incoming blockbytes %s", bytesstr);
+    return false;
   }
 };
 
 Config globalConfig;
 
-bool read_request(TSHttpTxn txnp, Config const *const config)
+bool
+read_request(TSHttpTxn txnp, Config const *const config)
 {
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
@@ -101,19 +115,16 @@ bool read_request(TSHttpTxn txnp, Config const *const config)
       // set up feedback connect
       if (AF_INET == ip->sa_family) {
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in));
-      }
-      else if (AF_INET6 == ip->sa_family) {
+      } else if (AF_INET6 == ip->sa_family) {
         memcpy(&data->m_client_ip, ip, sizeof(sockaddr_in6));
-      }
-      else {
+      } else {
         delete data;
         return false;
       }
 
       // need to reset the HOST field for global plugin
       data->m_hostlen = sizeof(data->m_hostname) - 1;
-      if (!header.valueForKey(TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST,
-                              data->m_hostname, &data->m_hostlen)) {
+      if (!header.valueForKey(TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, data->m_hostname, &data->m_hostlen)) {
         DEBUG_LOG("Unable to get hostname from header");
         delete data;
         return false;
@@ -126,7 +137,7 @@ bool read_request(TSHttpTxn txnp, Config const *const config)
 
       if (TS_SUCCESS == rcode) {
         data->m_urlbuffer = TSMBufferCreate();
-        rcode = TSUrlCreate(data->m_urlbuffer, &data->m_urlloc);
+        rcode             = TSUrlCreate(data->m_urlbuffer, &data->m_urlloc);
         if (TS_SUCCESS == rcode) {
           TSUrlCopy(data->m_urlbuffer, data->m_urlloc, urlbuf, urlloc);
         }
@@ -139,8 +150,7 @@ bool read_request(TSHttpTxn txnp, Config const *const config)
       //      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, icontp);
       TSHttpTxnIntercept(icontp, txnp);
       return true;
-    }
-    else {
+    } else {
       DEBUG_LOG("slice passing GET request downstream");
     }
   }
@@ -148,11 +158,12 @@ bool read_request(TSHttpTxn txnp, Config const *const config)
   return false;
 }
 
-int global_read_request_hook(TSCont  // contp
-                             ,
-                             TSEvent  // event
-                             ,
-                             void *edata)
+int
+global_read_request_hook(TSCont // contp
+                         ,
+                         TSEvent // event
+                         ,
+                         void *edata)
 {
   TSHttpTxn const txnp = static_cast<TSHttpTxn>(edata);
   read_request(txnp, &globalConfig);
@@ -160,41 +171,41 @@ int global_read_request_hook(TSCont  // contp
   return 0;
 }
 
-}  // namespace
+} // namespace
 
 ///// remap plugin engine
 
 SLICE_EXPORT
-TSRemapStatus TSRemapDoRemap(void *ih, TSHttpTxn txnp,
-                             TSRemapRequestInfo *  // rri
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * // rri
 )
 {
   Config *const config = static_cast<Config *>(ih);
 
   if (read_request(txnp, config)) {
     return TSREMAP_DID_REMAP_STOP;
-  }
-  else {
+  } else {
     return TSREMAP_NO_REMAP;
   }
 }
 
 ///// remap plugin setup and teardown
 SLICE_EXPORT
-void TSRemapOSResponse(void *  // ih
-                       ,
-                       TSHttpTxn  // rh
-                       ,
-                       int  // os_response_type
+void
+TSRemapOSResponse(void * // ih
+                  ,
+                  TSHttpTxn // rh
+                  ,
+                  int // os_response_type
 )
 {
 }
 
 SLICE_EXPORT
-TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih,
-                                char *  // errbuf
-                                ,
-                                int  // errbuf_size
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * // errbuf
+                   ,
+                   int // errbuf_size
 )
 {
   Config *const config = new Config;
@@ -203,23 +214,27 @@ TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih,
   }
   *ih = static_cast<void *>(config);
 
-//  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
+  //  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
   return TS_SUCCESS;
 }
 
 SLICE_EXPORT
-void TSRemapDeleteInstance(void *ih)
+void
+TSRemapDeleteInstance(void *ih)
 {
-  Config *const config = static_cast<Config *>(ih);
-  delete config;
+  if (nullptr != ih) {
+    Config *const config = static_cast<Config *>(ih);
+    delete config;
+  }
 }
 
 SLICE_EXPORT
-TSReturnCode TSRemapInit(TSRemapInterface *  // api_info
-                         ,
-                         char *  // errbug
-                         ,
-                         int  // errbuf_size
+TSReturnCode
+TSRemapInit(TSRemapInterface * // api_info
+            ,
+            char * // errbug
+            ,
+            int // errbuf_size
 )
 {
   return TS_SUCCESS;
@@ -227,12 +242,13 @@ TSReturnCode TSRemapInit(TSRemapInterface *  // api_info
 
 ///// global plugin
 SLICE_EXPORT
-void TSPluginInit(int argc, char const *argv[])
+void
+TSPluginInit(int argc, char const *argv[])
 {
   TSPluginRegistrationInfo info;
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Comcast";
-  info.support_email = (char *)"support@comcast.com";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     ERROR_LOG("Plugin registration failed.\n");

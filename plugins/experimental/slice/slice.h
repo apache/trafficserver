@@ -28,24 +28,22 @@
 
 #define PLUGIN_NAME "slice"
 
-#define __FILENAME__ \
-  (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #if !defined(UNITTEST)
 
-#define DEBUG_LOG(fmt, ...)                                              \
-  TSDebug(PLUGIN_NAME, "[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__,   \
-          __func__, ##__VA_ARGS__) /*                                    \
-                                           ; fprintf(stderr, "[%s:%04d]: \
-                                      " fmt "\n" , __FILENAME__ ,                                                                       \
-                                      __LINE__ , ##__VA_ARGS__)                                                        \
-                                   */
+#define DEBUG_LOG(fmt, ...)                                                      \
+  TSDebug(PLUGIN_NAME, "[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, __func__, \
+          ##__VA_ARGS__) /*                                                      \
+                                 ; fprintf(stderr, "[%s:%04d]: " fmt "\n"        \
+                                         , __FILENAME__                          \
+                                         , __LINE__                              \
+                                         , ##__VA_ARGS__)                        \
+                         */
 
-#define ERROR_LOG(fmt, ...)                                            \
-  TSError("[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, __func__,    \
-          ##__VA_ARGS__);                                              \
-  TSDebug(PLUGIN_NAME, "[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, \
-          __func__, ##__VA_ARGS__)
+#define ERROR_LOG(fmt, ...)                                                         \
+  TSError("[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__); \
+  TSDebug(PLUGIN_NAME, "[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__)
 
 #else
 #define DEBUG_LOG(fmt, ...)
