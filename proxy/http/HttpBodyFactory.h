@@ -162,15 +162,21 @@ public:
   getFormat(int64_t max_buffer_length, int64_t *resulting_buffer_length, const char *format, ...)
   {
     char *msg = nullptr;
-    va_list ap;
     if (format) {
+      va_list ap;
+
+      va_start(ap, format);
+
       // The length from ink_bvsprintf includes the trailing NUL, so adjust the final
-      // length accordingly.
+      // length accordingly. Note that ink_bvsprintf() copies the va_list, so we only
+      // have to set it up once.
       int l = ink_bvsprintf(nullptr, format, ap);
+
       if (l <= max_buffer_length) {
         msg                      = (char *)ats_malloc(l);
         *resulting_buffer_length = ink_bvsprintf(msg, format, ap) - 1;
       }
+      va_end(ap);
     }
     return msg;
   }
