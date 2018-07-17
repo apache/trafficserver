@@ -68,14 +68,10 @@ struct Data {
 
   explicit Data(int64_t const blockbytes)
     : m_blockbytes(blockbytes),
-      m_client_ip()
-#if defined(RESET_URL_AND_HOST)
-      ,
+      m_client_ip(),
       m_urlbuffer(nullptr),
       m_urlloc(nullptr),
-      m_hostlen(0)
-#endif // RESET_URL_AND_HOST
-      ,
+      m_hostlen(0),
       m_statustype(TS_HTTP_STATUS_NONE),
       m_bail(false),
       m_req_range(-1, -1),
@@ -89,21 +85,17 @@ struct Data {
       m_client_header_sent(false),
       m_http_parser(nullptr)
   {
-#if defined(RESET_URL_AND_HOST)
     m_hostname[0] = '\0';
-#endif // RESET_URL_AND_HOST
   }
 
   ~Data()
   {
-#if defined(RESET_URL_AND_HOST)
     if (nullptr != m_urlloc && nullptr != m_urlbuffer) {
       TSHandleMLocRelease(m_urlbuffer, TS_NULL_MLOC, m_urlloc);
     }
     if (nullptr != m_urlbuffer) {
       TSMBufferDestroy(m_urlbuffer);
     }
-#endif // RESET_URL_AND_HOST
     if (nullptr != m_http_parser) {
       TSHttpParserDestroy(m_http_parser);
     }
