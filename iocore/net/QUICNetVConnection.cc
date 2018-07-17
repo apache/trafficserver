@@ -225,6 +225,7 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
   this->_frame_dispatcher->add_handler(this->_path_validator);
+  this->_frame_dispatcher->add_handler(this->_handshake_handler);
 
   if (this->direction() == NET_VCONNECTION_IN) {
     this->_validate_new_path();
@@ -889,8 +890,12 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
   //   return QUICErrorUPtr(new QUICNoError());
   // }
 
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+
   // Start handshake
-  QUICErrorUPtr error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
+  if (this->netvc_context == NET_VCONNECTION_IN) {
+    error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
+  }
 
   // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
   if (this->_handshake_handler->is_version_negotiated()) {
@@ -1219,6 +1224,22 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retrans
   return;
 }
 
+void
+QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr frame)
+{
+  size_t l = 0;
+  frame->store(buf.get() + offset, &l, max_frame_size);
+
+  offset += l;
+  max_frame_size -= l;
+
+  if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
+    char msg[1024];
+    frame->debug_msg(msg, sizeof(msg));
+    QUICConDebug("[TX] %s", msg);
+  }
+}
+
 QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size)
 {
@@ -1247,8 +1268,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
     while (frame) {
       ++frame_count;
-      frame->store(buf.get(), &len, max_frame_size);
-      max_frame_size -= len;
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
 
       frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
     }
@@ -1259,8 +1279,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
     if (frame != nullptr) {
       ++frame_count;
-      frame->store(buf.get(), &len, max_frame_size);
-      max_frame_size -= len;
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
     }
   }
 
@@ -1269,8 +1288,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     frame = this->_path_validator->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
     if (frame) {
       ++frame_count;
-      frame->store(buf.get(), &len, max_frame_size);
-      max_frame_size -= len;
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
     }
   }
 
@@ -1279,8 +1297,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     frame = this->_alt_con_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
     while (frame) {
       ++frame_count;
-      frame->store(buf.get(), &len, max_frame_size);
-      max_frame_size -= len;
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
+
       frame = this->_alt_con_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
     }
   }
@@ -1290,8 +1308,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     frame = this->_packet_retransmitter.generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
     while (frame) {
       ++frame_count;
-      frame->store(buf.get(), &len, max_frame_size);
-      max_frame_size -= len;
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
+
       frame = this->_packet_retransmitter.generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
     }
   }
@@ -1307,8 +1325,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
                     this->_remote_flow_controller->current_limit());
         ink_assert(ret == 0);
       }
-      frame->store(buf.get(), &len, max_frame_size);
-      max_frame_size -= len;
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
 
       frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
     }

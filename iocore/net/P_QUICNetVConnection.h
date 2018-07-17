@@ -298,6 +298,7 @@ private:
   uint32_t _transmit_packet(QUICPacketUPtr packet);
   void _store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
                     QUICFrameUPtr frame);
+  void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr frame);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size);
   void _packetize_closing_frame();
   QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
