@@ -34,6 +34,8 @@
 #include "P_RecMessage.h"
 #include "P_RecCore.h"
 
+#include <fstream>
+
 RecModeT g_mode_type = RECM_NULL;
 
 //-------------------------------------------------------------------------
@@ -491,6 +493,27 @@ RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source,
   return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, nullptr, source, lock, inc_version);
 }
 
+// check the version of the snap file to remove records.snap or not
+static void
+CheckSnapFileVersion(const char *path)
+{
+  std::ifstream f(path, std::ios::binary);
+  if (f.good()) {
+    // get version, compare and remove
+    char data[VERSION_HDR_SIZE];
+    if (!f.read(data, VERSION_HDR_SIZE)) {
+      return;
+    }
+    if (data[0] != 'V' || data[1] != PACKAGE_VERSION[0] || data[2] != PACKAGE_VERSION[2] || data[3] != PACKAGE_VERSION[4] ||
+        data[4] != '\0') {
+      // not the right version found
+      if (remove(path) != 0) {
+        ink_warning("unable to remove incompatible snap file '%s'", path);
+      }
+    }
+  }
+}
+
 //-------------------------------------------------------------------------
 // RecReadStatsFile
 //-------------------------------------------------------------------------
@@ -505,6 +528,8 @@ RecReadStatsFile()
 
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
+
+  CheckSnapFileVersion(snap_fpath);
 
   if ((m = RecMessageReadFromDisk(snap_fpath)) != nullptr) {
     if (RecMessageUnmarshalFirst(m, &itr, &r) != REC_ERR_FAIL) {
