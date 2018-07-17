@@ -1813,11 +1813,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
     // More data to parse
-
-    // If there is still a post body underway, defer processing until post body is done
-    if (ua_entry->in_tunnel && !server_entry->eos) {
-      return 0;
-    }
     break;
 
   case VC_EVENT_ERROR:
@@ -2693,10 +2688,6 @@ HttpSM::tunnel_handler_post(int event, void *data)
     handle_post_failure();
     break;
   case HTTP_SM_POST_UA_FAIL:
-    // Cancel out the server read if present. Left over attempt to read server response.
-    if (server_entry && server_entry->read_vio && server_session && server_entry->read_vio->cont) {
-      server_entry->read_vio = server_session->do_io_read(nullptr, 0, nullptr);
-    }
     break;
   case HTTP_SM_POST_SUCCESS:
     // It's time to start reading the response
@@ -2708,11 +2699,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::HandleRequestBufferDone);
       break;
     }
-    // Read response already setup
-    // Signal if data is waiting
-    if (server_entry->read_vio && server_entry->read_vio->ndone > 0) {
-      handleEvent(VC_EVENT_READ_READY, server_entry->read_vio);
-    }
+    // Read reasponse already setup
     break;
   default:
     ink_release_assert(0);
