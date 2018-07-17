@@ -398,7 +398,7 @@ public:
 private:
   QUICVersion _version                = QUIC_SUPPORTED_VERSIONS[0];
   QUICHandshakeProtocol *_hs_protocol = nullptr;
-  QUICPacketNumberGenerator _packet_number_generator;
+  QUICPacketNumberGenerator _packet_number_generator[4];
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
   QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable);
