@@ -959,8 +959,6 @@ Http2ConnectionState::state_closed(int /* event */, void *edata)
 {
   if (edata == fini_event) {
     fini_event = nullptr;
-  } else if (edata == shutdown_cont_event) {
-    shutdown_cont_event = nullptr;
   }
   return 0;
 }
