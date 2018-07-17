@@ -86,6 +86,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "PATH_RESPONSE";
   case QUICFrameType::STREAM:
     return "STREAM";
+  case QUICFrameType::CRYPTO:
+    return "CRYPTO";
   case QUICFrameType::UNKNOWN:
   default:
     return "UNKNOWN";
