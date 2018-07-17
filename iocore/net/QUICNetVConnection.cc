@@ -203,6 +203,7 @@ QUICNetVConnection::start()
   } else {
     this->_handshake_handler = new QUICHandshake(this, params->client_ssl_ctx());
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
+    this->_handshake_handler->do_handshake();
   }
 
   this->_application_map = new QUICApplicationMap();
@@ -871,6 +872,7 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
 
     // start handshake over
     this->_handshake_handler->reset();
+    this->_handshake_handler->do_handshake();
     this->_schedule_packet_write_ready();
   }
 

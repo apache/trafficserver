@@ -122,8 +122,6 @@ QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled
   this->_load_local_client_transport_parameters(initital_version);
   packet_factory->set_version(initital_version);
 
-  this->do_handshake();
-
   return QUICErrorUPtr(new QUICNoError());
 }
 
