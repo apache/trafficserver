@@ -1,16 +1,24 @@
 ### Apache Traffic Server - Slicer Plugin
 
 The purpose of this plugin is to slice full file or range based requests
-into deterministic chunks.
+into deterministic chunks.  This allows a large file to be spread across
+multiple cache stripes and allows range requests to be satisfied by
+stitching these chunks together.
 
 Deterministic chunks are requested from a parent cache or origin server
-using a preconfigured block size.
+using a preconfigured block byte size.
+
+The plugin is an example of an intercept handler which takes a single
+incoming request (range or whole asset), breaks it into a sequence
+of block requests and assembles those blocks into a client response.
+The plugin uses TSHttpConnect to delegate each block request to
+cache_range_requests.so which handles all cache and parent interaction.
 
 To enable the plugin, specify the plugin library via @plugin at the end
-of a remap line as follows:
+of a remap line as follows (2MB slice in this example):
 
 ```
-map http://ats-server/somepath/ http://originserver/somepath @plugin=slice.so @pparam=blockbytes:2097152 @plugin=cache_range_requests.so
+map http://ats-cache-server/ http://parent/ @plugin=slice.so @pparam=blockbytes:2097152 @plugin=cache_range_requests.so
 ```
 
 for global plugins.
@@ -37,5 +45,5 @@ Range: bytes=<begin>-
 Range: bytes=-<last N bytes>
 ```
 are supported as multi part range responses are non trivial to implement.
-This matches with the cache_range_requests.so plugin that has custom_url
+This matches with the cache_range_requests.so plugin.
 capability.
