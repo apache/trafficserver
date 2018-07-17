@@ -1225,7 +1225,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
   int frame_count       = 0;
   size_t len            = 0;
-  ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
+  ats_unique_buf buf    = ats_unique_malloc(max_packet_size);
   QUICFrameUPtr frame(nullptr, nullptr);
   bool retransmittable = false;
 
@@ -1318,7 +1318,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   if (len != 0) {
     if (level == QUICEncryptionLevel::INITIAL) {
       // Pad with PADDING frames
-      uint32_t min_size = this->minimum_quic_packet_size();
+      uint64_t min_size = this->minimum_quic_packet_size();
+      min_size          = std::min(min_size, max_packet_size);
       if (min_size > len) {
         // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
         memset(buf.get() + len, 0, min_size - len);
@@ -1404,7 +1405,6 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 
   switch (type) {
   case QUICPacketType::INITIAL:
-    ink_assert(this->get_context() == NET_VCONNECTION_OUT);
     packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->_quic_connection_id,
                                                          this->largest_acked_packet_number(), std::move(buf), len);
     break;
