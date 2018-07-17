@@ -649,6 +649,10 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   // TODO: check len
   uint64_t bytes_avail = this->_write_buffer_reader->read_avail();
   uint64_t frame_size  = std::min(bytes_avail, (uint64_t)maximum_frame_size);
+  if (frame_size == 0) {
+    return frame;
+  }
+
   frame = QUICFrameFactory::create_crypto_frame(reinterpret_cast<const uint8_t *>(this->_write_buffer_reader->start()), frame_size,
                                                 this->_send_offset, true);
   this->_send_offset += frame_size;
