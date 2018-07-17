@@ -45,7 +45,6 @@ public:
 
   static QUICEncryptionLevel get_encryption_level(int msg_type);
 
-  int handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) override;
   int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override;
   bool is_handshake_finished() const override;
   bool is_ready_to_derive() const override;

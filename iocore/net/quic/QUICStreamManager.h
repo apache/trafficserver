@@ -54,8 +54,6 @@ public:
   void reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error);
 
   void set_default_application(QUICApplication *app);
-  void reset_send_offset();
-  void reset_recv_offset();
 
   DLL<QUICStream> stream_list;
 

@@ -109,6 +109,19 @@ QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     // TODO: early data
+    // if (!this->_early_data_processed) {
+    //   if (this->_read_early_data()) {
+    //     this->_early_data_processed = true;
+    //   }
+    //   if (SSL_early_data_accepted(this->_ssl)) {
+    //     Debug(tag, "Early data processed");
+
+    //     if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
+    //       this->_generate_0rtt_key();
+    //     }
+    //   }
+    // }
+
     ret = SSL_accept(this->_ssl);
   } else {
     ret = SSL_connect(this->_ssl);

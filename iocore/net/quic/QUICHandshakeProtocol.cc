@@ -102,12 +102,3 @@ QUICPacketNumberProtector::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
 {
   this->_hs_protocol = hs_protocol;
 }
-
-//
-// QUICHandshakeProtocol
-//
-QUICHandshakeMsgType
-QUICHandshakeProtocol::msg_type() const
-{
-  return this->_msg_type;
-}

@@ -79,9 +79,6 @@ public:
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp);
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInNewSessionTicket> tp);
 
-  // A workaround API to indicate handshake msg type to QUICNetVConnection
-  [[deprecated]] QUICHandshakeMsgType msg_type() const;
-
 private:
   QUICConnection *_qc                                                   = nullptr;
   SSL *_ssl                                                             = nullptr;

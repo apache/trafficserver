@@ -31,6 +31,13 @@
 
 static constexpr char tag[] = "quic_tls";
 
+int
+QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+{
+  ink_assert(false);
+  return 0;
+}
+
 const EVP_AEAD *
 QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {
