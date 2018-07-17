@@ -2427,7 +2427,7 @@ HttpSM::state_cache_open_write(int event, void *data)
 
       return 0;
     }
-  // Fallthrough
+    break;
   default:
     ink_release_assert(0);
   }
