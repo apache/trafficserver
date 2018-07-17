@@ -41,27 +41,18 @@ main(int argc, char *argv[])
   printf("Starting...\n");
 
   int listenfd = socket(AF_INET, SOCK_STREAM, 0);
-
-  int optval = 1;
-  setsockopt(listenfd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
-
   struct sockaddr_in serv_addr, peer_addr;
   socklen_t peer_len;
+
   serv_addr.sin_family      = AF_INET;
   serv_addr.sin_addr.s_addr = INADDR_ANY;
   int port                  = atoi(argv[1]);
   serv_addr.sin_port        = htons(port);
-  if (bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-    perror("bind failed");
-    exit(1);
-  }
-  if (listen(listenfd, 10) < 0) {
-    perror("listen failed");
-    exit(1);
-  }
+  bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+  listen(listenfd, 10);
 
   for (;;) {
-    socklen_t client_len = sizeof(struct sockaddr_in);
+    socklen_t client_len;
     struct sockaddr_in client;
     int client_sock = accept(listenfd, reinterpret_cast<struct sockaddr *>(&client), &client_len);
     if (client_sock < 0) {
