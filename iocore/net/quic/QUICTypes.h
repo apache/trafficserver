@@ -47,7 +47,7 @@ using QUICOffset       = uint64_t;
 // Note: You also need to update tests for VersionNegotiationPacket creation, if you change the number of versions
 // Prefix for drafts (0xff000000) + draft number
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff00000c,
+  0xff00000d,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 
