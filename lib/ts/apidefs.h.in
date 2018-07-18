@@ -846,8 +846,11 @@ typedef enum {
 
 typedef struct tsapi_file *TSFile;
 
-typedef struct tsapi_mloc *TSMLoc;
 typedef struct tsapi_mbuffer *TSMBuffer;
+typedef struct tsapi_url_hdr_loc *TSUrlHdrLoc;
+typedef struct tsapi_http_hdr_loc *TSHttpHdrLoc;
+typedef struct tsapi_mime_hdr_loc *TSMimeHdrLoc;
+typedef struct tsapi_mime_hdr_comp_loc *TSMimeHdrFldLoc;
 typedef struct tsapi_httpssn *TSHttpSsn;
 typedef struct tsapi_httptxn *TSHttpTxn;
 typedef struct tsapi_ssl_obj *TSSslConnection;
@@ -1219,16 +1222,6 @@ extern tsapi const char *const TS_PROTO_TAG_TCP;
 extern tsapi const char *const TS_PROTO_TAG_UDP;
 extern tsapi const char *const TS_PROTO_TAG_IPV4;
 extern tsapi const char *const TS_PROTO_TAG_IPV6;
-
-/* --------------------------------------------------------------------------
-   MLoc Constants */
-/**
-    Use TS_NULL_MLOC as the parent in calls that require a parent
-    when an TSMLoc does not have a parent TSMLoc. For example if
-    the TSMLoc is obtained by a call to TSHttpTxnClientReqGet(),
-
- */
-extern tsapi const TSMLoc TS_NULL_MLOC;
 
 /* --------------------------------------------------------------------------
    Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
