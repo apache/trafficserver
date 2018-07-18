@@ -40,6 +40,9 @@
   Debug("quic_flow_ctrl", "[%s] [%" PRIx64 "] [%s] " fmt, this->_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
+static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
+static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
+
 QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid,
                        uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
   : VConnection(nullptr),
@@ -400,6 +403,10 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     return frame;
   }
 
+  if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
+    return frame;
+  }
+
   IOBufferReader *reader = this->_write_vio.get_reader();
   int64_t bytes_avail    = reader->read_avail();
   if (bytes_avail == 0) {
@@ -411,7 +418,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   bool fin         = false;
 
   len = std::min(data_len, static_cast<int64_t>(
-                             std::min(static_cast<uint64_t>(maximum_frame_size),
+                             std::min(static_cast<uint64_t>(maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD),
                                       std::min(this->_remote_flow_controller.credit(), static_cast<uint64_t>(connection_credit)))));
 
   if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
@@ -646,17 +653,21 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
 
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
 
-  // TODO: check len
-  uint64_t bytes_avail = this->_write_buffer_reader->read_avail();
-  uint64_t frame_size  = std::min(bytes_avail, (uint64_t)maximum_frame_size);
-  if (frame_size == 0) {
+  if (maximum_frame_size <= MAX_CRYPTO_FRAME_OVERHEAD) {
     return frame;
   }
 
-  frame = QUICFrameFactory::create_crypto_frame(reinterpret_cast<const uint8_t *>(this->_write_buffer_reader->start()), frame_size,
-                                                this->_send_offset, true);
-  this->_send_offset += frame_size;
-  this->_write_buffer_reader->consume(frame_size);
+  uint64_t frame_payload_size = maximum_frame_size - MAX_CRYPTO_FRAME_OVERHEAD;
+  uint64_t bytes_avail        = this->_write_buffer_reader->read_avail();
+  frame_payload_size          = std::min(bytes_avail, frame_payload_size);
+  if (frame_payload_size == 0) {
+    return frame;
+  }
+
+  frame = QUICFrameFactory::create_crypto_frame(reinterpret_cast<const uint8_t *>(this->_write_buffer_reader->start()),
+                                                frame_payload_size, this->_send_offset, true);
+  this->_send_offset += frame_payload_size;
+  this->_write_buffer_reader->consume(frame_payload_size);
 
   return frame;
 }

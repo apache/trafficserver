@@ -55,11 +55,12 @@ static constexpr std::string_view QUIC_DEBUG_TAG = "quic_net"sv;
   Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__); \
   Error("quic_net [%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
-static constexpr uint32_t IPV4_HEADER_SIZE            = 20;
-static constexpr uint32_t IPV6_HEADER_SIZE            = 40;
-static constexpr uint32_t UDP_HEADER_SIZE             = 8;
-static constexpr uint32_t MAX_PACKET_OVERHEAD         = 54; // Max long header len
-static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD   = 24;
+static constexpr uint32_t IPV4_HEADER_SIZE          = 20;
+static constexpr uint32_t IPV6_HEADER_SIZE          = 40;
+static constexpr uint32_t UDP_HEADER_SIZE           = 8;
+static constexpr uint32_t MAX_PACKET_OVERHEAD       = 54; // Max long header len
+static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
+// static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD   = 16;
 static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
 static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(20);
 
@@ -1230,6 +1231,9 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &
   size_t l = 0;
   frame->store(buf.get() + offset, &l, max_frame_size);
 
+  // frame should be stored because it's created with max_frame_size
+  ink_assert(l != 0);
+
   offset += l;
   max_frame_size -= l;
 
@@ -1244,14 +1248,18 @@ QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size)
 {
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
-  int frame_count       = 0;
-  size_t len            = 0;
-  ats_unique_buf buf    = ats_unique_malloc(max_packet_size);
-  QUICFrameUPtr frame(nullptr, nullptr);
-  bool retransmittable = false;
+  if (max_packet_size <= MAX_PACKET_OVERHEAD) {
+    return packet;
+  }
 
   uint64_t max_frame_size = max_packet_size - MAX_PACKET_OVERHEAD;
   max_frame_size          = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
+
+  int frame_count    = 0;
+  size_t len         = 0;
+  ats_unique_buf buf = ats_unique_malloc(max_packet_size);
+  QUICFrameUPtr frame(nullptr, nullptr);
+  bool retransmittable = false;
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
@@ -1269,7 +1277,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     while (frame) {
       ++frame_count;
       this->_store_frame(buf, len, max_frame_size, std::move(frame));
-
       frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
     }
   }
