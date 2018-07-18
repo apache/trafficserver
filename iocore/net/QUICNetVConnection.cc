@@ -896,10 +896,13 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
   // Start handshake
   if (this->netvc_context == NET_VCONNECTION_IN) {
     error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
-  }
 
-  // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
-  if (this->_handshake_handler->is_version_negotiated()) {
+    // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
+    if (this->_handshake_handler->is_version_negotiated()) {
+      error = this->_recv_and_ack(std::move(packet));
+    }
+  } else {
+    // on client side, _handshake_handler is already started. Just process packet like _state_handshake_process_handshake_packet()
     error = this->_recv_and_ack(std::move(packet));
   }
 
