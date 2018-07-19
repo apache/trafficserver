@@ -266,7 +266,7 @@ RecMessageReadFromDisk(const char *fpath)
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
     goto Lerror;
   }
-  if (RecSnapFileRead(h_file, (char *)(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
+  if (RecFileRead(h_file, (char *)(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
     goto Lerror;
   }
   msg = (RecMessage *)ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
