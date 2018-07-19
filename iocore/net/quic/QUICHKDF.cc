@@ -21,8 +21,15 @@
  *  limitations under the License.
  */
 #include "QUICHKDF.h"
+
 #include <cstdio>
 #include <cstring>
+
+#include <string_view>
+
+using namespace std::literals;
+
+constexpr static std::string_view QUIC_HKDF_EXPAND_LABEL_PREFIX("quic "sv);
 
 int
 QUICHKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t secret_len, const char *label, size_t label_len,
@@ -35,9 +42,9 @@ QUICHKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *secret, size_t se
   hkdf_label[0] = (length >> 8) & 0xFF;
   hkdf_label[1] = length & 0xFF;
   hkdf_label_len += 2;
-  // "QUIC " + Label
-  hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%cQUIC %.*s", static_cast<int>(5 + label_len),
-                            static_cast<int>(label_len), label);
+  // prefix + Label
+  hkdf_label_len += sprintf(reinterpret_cast<char *>(hkdf_label + hkdf_label_len), "%c%s%.*s", static_cast<int>(5 + label_len),
+                            QUIC_HKDF_EXPAND_LABEL_PREFIX.data(), static_cast<int>(label_len), label);
 
   HKDF::expand(dst, dst_len, secret, secret_len, hkdf_label, hkdf_label_len, length);
   return 1;

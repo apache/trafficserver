@@ -456,14 +456,14 @@ QUICHandshake::do_handshake()
     }
   }
 
-  if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0) && this->_hs_protocol->is_ready_to_derive()) {
-    int res = this->_hs_protocol->update_key_materials();
-    if (res) {
-      QUICHSDebug("Keying Materials are exported");
-    } else {
-      QUICHSDebug("Failed to export Keying Materials");
-    }
-  }
+  // if (!this->_hs_protocol->is_key_derived(QUICKeyPhase::PHASE_0) && this->_hs_protocol->is_ready_to_derive()) {
+  //   int res = this->_hs_protocol->update_key_materials();
+  //   if (res) {
+  //     QUICHSDebug("Keying Materials are exported");
+  //   } else {
+  //     QUICHSDebug("Failed to export Keying Materials");
+  //   }
+  // }
 
   return result;
 }

@@ -31,6 +31,17 @@
 
 static constexpr char tag[] = "quic_tls";
 
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICTLS(ssl, nvc_ctx, false) {}
+
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless)
+  : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx), _stateless(stateless)
+{
+  ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
+
+  this->_client_pp = new QUICPacketProtection();
+  this->_server_pp = new QUICPacketProtection();
+}
+
 int
 QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 {

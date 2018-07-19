@@ -124,9 +124,9 @@ public:
    *
    * This creates a QUICPacketLongHeader.
    */
-  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                    QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
-                                    ats_unique_buf payload, size_t len);
+  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
+                                    QUICConnectionId source_cid, QUICPacketNumber packet_number,
+                                    QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len);
 
   /*
    * Build a QUICPacketHeader
@@ -174,7 +174,7 @@ public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketLongHeader(){};
   QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
-  QUICPacketLongHeader(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf,
                        size_t len);
   QUICPacketType type() const;

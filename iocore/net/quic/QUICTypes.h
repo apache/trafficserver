@@ -123,6 +123,7 @@ enum class QUICKeyPhase : int {
   PHASE_1,
   CLEARTEXT,
   ZERORTT,
+  HANDSHAKE,
 };
 
 enum class QUICPacketCreationResult {

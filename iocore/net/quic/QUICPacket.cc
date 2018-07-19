@@ -89,13 +89,13 @@ QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QU
 }
 
 QUICPacketHeaderUPtr
-QUICPacketHeader::build(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+QUICPacketHeader::build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                         QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
                         ats_unique_buf payload, size_t len)
 {
   QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
-  new (long_header)
-    QUICPacketLongHeader(type, destination_cid, source_cid, packet_number, base_packet_number, version, std::move(payload), len);
+  new (long_header) QUICPacketLongHeader(type, key_phase, destination_cid, source_cid, packet_number, base_packet_number, version,
+                                         std::move(payload), len);
   return QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
 }
 
@@ -156,9 +156,9 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
   this->_payload_length = len - this->_payload_offset;
 }
 
-QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                           QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
-                                           ats_unique_buf buf, size_t len)
+QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
+                                           QUICConnectionId source_cid, QUICPacketNumber packet_number,
+                                           QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf, size_t len)
 {
   this->_type               = type;
   this->_destination_cid    = destination_cid;
@@ -169,6 +169,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICConnectionId
   this->_version            = version;
   this->_payload            = std::move(buf);
   this->_payload_length     = len;
+  this->_key_phase          = key_phase;
 
   if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
     this->_buf_len =
@@ -1025,8 +1026,8 @@ QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUIC
   }
 
   // VN packet dosen't have packet number field and version field is always 0x00000000
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, dcid, scid, 0x00, 0x00, 0x00, std::move(versions), len);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, QUICKeyPhase::CLEARTEXT, dcid, scid,
+                                                        0x00, 0x00, 0x00, std::move(versions), len);
 
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }
@@ -1035,9 +1036,10 @@ QUICPacketUPtr
 QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
-  QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(QUICEncryptionLevel::INITIAL)].next();
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::INITIAL, destination_cid, source_cid, pn,
-                                                        base_packet_number, this->_version, std::move(payload), len);
+  QUICPacketNumber pn = this->_packet_number_generator[static_cast<int>(QUICEncryptionLevel::INITIAL)].next();
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::build(QUICPacketType::INITIAL, QUICKeyPhase::CLEARTEXT, destination_cid, source_cid, pn, base_packet_number,
+                            this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), true);
 }
 
@@ -1045,8 +1047,8 @@ QUICPacketUPtr
 QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, ats_unique_buf payload,
                                        size_t len, bool retransmittable)
 {
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::RETRY, destination_cid, source_cid, 0, 0, this->_version, std::move(payload), len);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::CLEARTEXT, destination_cid, source_cid,
+                                                        0, 0, this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 
@@ -1055,9 +1057,10 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
                                            QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                            bool retransmittable)
 {
-  QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(QUICEncryptionLevel::HANDSHAKE)].next();
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::HANDSHAKE, destination_cid, source_cid, pn,
-                                                        base_packet_number, this->_version, std::move(payload), len);
+  QUICPacketNumber pn = this->_packet_number_generator[static_cast<int>(QUICEncryptionLevel::HANDSHAKE)].next();
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::build(QUICPacketType::HANDSHAKE, QUICKeyPhase::HANDSHAKE, destination_cid, source_cid, pn, base_packet_number,
+                            this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 

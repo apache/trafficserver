@@ -31,6 +31,18 @@
 static constexpr char tag[] = "quic_tls";
 
 static void
+to_hex(uint8_t *out, uint8_t *in, int in_len)
+{
+  for (int i = 0; i < in_len; ++i) {
+    int u4         = in[i] / 16;
+    int l4         = in[i] % 16;
+    out[i * 2]     = (u4 < 10) ? ('0' + u4) : ('A' + u4 - 10);
+    out[i * 2 + 1] = (l4 < 10) ? ('0' + l4) : ('A' + l4 - 10);
+  }
+  out[in_len * 2] = 0;
+}
+
+static void
 msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
 {
   if (!write_p || !arg || version != TLS1_3_VERSION || (content_type != SSL3_RT_HANDSHAKE && content_type != SSL3_RT_ALERT)) {
@@ -58,6 +70,99 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
   }
 
   return;
+}
+
+static void
+key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const unsigned char *key, size_t key_len,
+       const unsigned char *iv, size_t iv_len, void *arg)
+{
+  QUICTLS *qtls = reinterpret_cast<QUICTLS *>(arg);
+  if (qtls == nullptr) {
+    return;
+  }
+
+  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
+  memcpy(km->key, key, key_len);
+  km->key_len = key_len;
+  memcpy(km->iv, iv, iv_len);
+  km->iv_len = iv_len;
+
+  const EVP_MD *md = QUICKeyGenerator::get_handshake_digest(ssl);
+  QUICHKDF hkdf(md);
+  QUICKeyGenerator::generate_pn(km->pn, &km->pn_len, hkdf, secret, secret_len, key_len);
+
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    switch (name) {
+    case SSL_KEY_CLIENT_EARLY_TRAFFIC:
+      Debug("vv_quic_crypto", "client_early_traffic");
+      break;
+    case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
+      Debug("vv_quic_crypto", "client_handshake_traffic");
+      break;
+    case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
+      Debug("vv_quic_crypto", "client_application_traffic");
+      break;
+    case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
+      Debug("vv_quic_crypto", "server_handshake_traffic");
+      break;
+    case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
+      Debug("vv_quic_crypto", "server_application_traffic");
+      break;
+    default:
+      break;
+    }
+
+    uint8_t print_buf[512];
+    to_hex(print_buf, km->key, km->key_len);
+    Debug("vv_quic_crypto", "key 0x%s", print_buf);
+    to_hex(print_buf, km->iv, km->iv_len);
+    Debug("vv_quic_crypto", "iv 0x%s", print_buf);
+    to_hex(print_buf, km->pn, km->pn_len);
+    Debug("vv_quic_crypto", "pn 0x%s", print_buf);
+  }
+
+  qtls->update_key_materials_on_key_cb(std::move(km), name);
+
+  return;
+}
+
+void
+QUICTLS::update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int name)
+{
+  switch (name) {
+  case SSL_KEY_CLIENT_EARLY_TRAFFIC:
+    this->_client_pp->set_key(std::move(km), QUICKeyPhase::ZERORTT);
+    break;
+  case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
+    this->_client_pp->set_key(std::move(km), QUICKeyPhase::HANDSHAKE);
+    break;
+  case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
+    this->_client_pp->set_key(std::move(km), QUICKeyPhase::PHASE_0);
+    break;
+  case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
+    this->_server_pp->set_key(std::move(km), QUICKeyPhase::HANDSHAKE);
+    break;
+  case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
+    this->_server_pp->set_key(std::move(km), QUICKeyPhase::PHASE_0);
+    break;
+  default:
+    break;
+  }
+
+  return;
+}
+
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICTLS(ssl, nvc_ctx, false) {}
+
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless)
+  : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx), _stateless(stateless)
+{
+  ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
+
+  this->_client_pp = new QUICPacketProtection();
+  this->_server_pp = new QUICPacketProtection();
+
+  SSL_set_key_callback(this->_ssl, key_cb, this);
 }
 
 QUICEncryptionLevel

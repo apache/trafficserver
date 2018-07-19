@@ -50,6 +50,9 @@ QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phas
   case QUICKeyPhase::ZERORTT:
     this->_zerortt_key = std::move(km);
     break;
+  case QUICKeyPhase::HANDSHAKE:
+    this->_handshake_key = std::move(km);
+    break;
   }
 }
 
@@ -65,6 +68,8 @@ QUICPacketProtection::get_key(QUICKeyPhase phase) const
     return this->_cleartext_key.get();
   case QUICKeyPhase::ZERORTT:
     return this->_zerortt_key.get();
+  case QUICKeyPhase::HANDSHAKE:
+    return this->_handshake_key.get();
   }
 
   ink_release_assert(!"Bad phase");

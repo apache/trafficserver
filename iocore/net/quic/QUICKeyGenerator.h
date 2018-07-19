@@ -44,12 +44,18 @@ struct KeyMaterial {
   size_t pn_len    = 512;
 };
 
+// TODO: rename "cleartext" to "initial"
+// TODO: cleanup pp/0rtt stuff which is removed in draft-13
 class QUICKeyGenerator
 {
 public:
   enum class Context { SERVER, CLIENT };
 
   QUICKeyGenerator(Context ctx) : _ctx(ctx) {}
+
+  static int generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t pn_length);
+  static const EVP_MD *get_handshake_digest(const SSL *ssl);
+
   /*
    * Gnerate a key and an IV for Cleartext
    */
