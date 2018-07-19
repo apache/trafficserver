@@ -2322,16 +2322,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   }
 
-  if (!s->force_dns) { // If DNS is not performed before
-    if (need_to_revalidate(s)) {
-      TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE,
-                      CallOSDNSLookup); // content needs to be revalidated and we did not perform a dns ....calling DNS lookup
-    } else {                            // document can be served can cache
-      TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
-    }
-  } else { // we have done dns . Its up to HandleCacheOpenReadHit to decide to go OS or serve from cache
-    TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
-  }
+  TRANSACT_RETURN(SM_ACTION_API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadHit);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
