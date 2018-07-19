@@ -131,8 +131,9 @@ public:
    * @brief initializes plugin configuration.
    * @param argc number of plugin parameters
    * @param argv plugin parameters
+   * @param perRemapConfig boolean showing if this is per-remap config (vs global config).
    */
-  bool init(int argc, char *argv[]);
+  bool init(int argc, const char *argv[], bool perRemapConfig);
 
   /**
    * @brief provides means for post-processing of the plugin parameters to finalize the configuration or to "cache" some of the

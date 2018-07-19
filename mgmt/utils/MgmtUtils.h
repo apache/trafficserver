@@ -31,8 +31,7 @@
  *
  */
 
-#ifndef _MGMT_UTILS_H
-#define _MGMT_UTILS_H
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "ts/Diags.h"
@@ -61,5 +60,3 @@ void mgmt_fatal(const int lerrno, const char *message_format, ...) TS_NORETURN;
 
 void mgmt_sleep_sec(int);
 void mgmt_sleep_msec(int);
-
-#endif /* _MGMT_UTILS_H */

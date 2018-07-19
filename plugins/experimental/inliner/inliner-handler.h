@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef INLINER_HANDLER_H
-#define INLINER_HANDLER_H
+
+#pragma once
 
 #include <string>
 #include <memory>
@@ -69,5 +69,3 @@ namespace inliner
 
 } // namespace inliner
 } // namespace ats
-
-#endif // INLINER_HANDLER_H

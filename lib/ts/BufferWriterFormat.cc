@@ -951,6 +951,12 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date)
   return w;
 }
 
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::OptionalAffix const &opts)
+{
+  return w.write(opts._prefix).write(opts._text).write(opts._suffix);
+}
+
 } // namespace ts
 
 namespace

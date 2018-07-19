@@ -123,7 +123,7 @@ public:
   SNIAction(Continuation *cont) override
   {
     // i.e, ip filtering is not required
-    if (ip_map.getCount() == 0) {
+    if (ip_map.count() == 0) {
       return SSL_TLSEXT_ERR_OK;
     }
 

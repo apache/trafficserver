@@ -172,17 +172,98 @@ classifyUserAgent(const Classifier &c, TSMBuffer buf, TSMLoc hdrs, String &class
   return matched;
 }
 
+static String
+getUri(TSMBuffer buf, TSMLoc url)
+{
+  String uri;
+  int uriLen;
+  const char *uriPtr = TSUrlStringGet(buf, url, &uriLen);
+  if (nullptr != uriPtr && 0 != uriLen) {
+    uri.assign(uriPtr, uriLen);
+    TSfree((void *)uriPtr);
+  } else {
+    CacheKeyError("failed to get URI");
+  }
+  return uri;
+}
+
 /**
  * @brief Constructor setting up the cache key prefix, initializing request info.
  * @param txn transaction handle.
- * @param buf marshal buffer
- * @param url URI handle
- * @param hdrs headers handle
+ * @param separator cache key elements separator
+ * @param uriType type of the URI used to create the cachekey ("remap" or "pristine")
+ * @param rri remap request info
  */
-CacheKey::CacheKey(TSHttpTxn txn, TSMBuffer buf, TSMLoc url, TSMLoc hdrs, String separator)
-  : _txn(txn), _buf(buf), _url(url), _hdrs(hdrs), _separator(separator)
+CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, TSRemapRequestInfo *rri)
+  : _txn(txn), _separator(separator), _uriType(uriType)
 {
   _key.reserve(512);
+
+  _remap = (nullptr != rri);
+
+  /* Get the URI and header to base the cachekey on.
+   * @TODO it might make sense to add more supported URI types */
+
+  if (_remap) {
+    CacheKeyDebug("setting cache key from a remap plugin");
+    if (PRISTINE == _uriType) {
+      if (TS_SUCCESS != TSHttpTxnPristineUrlGet(_txn, &_buf, &_url)) {
+        /* Failing here is unlikely. No action seems the only reasonable thing to do from within this plug-in */
+        CacheKeyError("failed to get pristine URI handle");
+        return;
+      }
+      CacheKeyDebug("using pristine uri '%s'", getUri(_buf, _url).c_str());
+    } else {
+      _buf = rri->requestBufp;
+      _url = rri->requestUrl;
+      CacheKeyDebug("using remap uri '%s'", getUri(_buf, _url).c_str());
+    }
+    _hdrs = rri->requestHdrp;
+  } else {
+    CacheKeyDebug("setting cache key from a global plugin");
+    if (TS_SUCCESS != TSHttpTxnClientReqGet(_txn, &_buf, &_hdrs)) {
+      /* Failing here is unlikely. No action seems the only reasonable thing to do from within this plug-in */
+      CacheKeyError("failed to get client request handle");
+      return;
+    }
+
+    if (PRISTINE == _uriType) {
+      if (TS_SUCCESS != TSHttpTxnPristineUrlGet(_txn, &_buf, &_url)) {
+        TSHandleMLocRelease(_buf, TS_NULL_MLOC, _hdrs);
+        CacheKeyError("failed to get pristine URI handle");
+        return;
+      }
+      CacheKeyDebug("using pristine uri '%s'", getUri(_buf, _url).c_str());
+    } else {
+      if (TS_SUCCESS != TSHttpHdrUrlGet(_buf, _hdrs, &_url)) {
+        TSHandleMLocRelease(_buf, TS_NULL_MLOC, _hdrs);
+        CacheKeyError("failed to get URI handle");
+        return;
+      }
+      CacheKeyDebug("using post-remap uri '%s','", getUri(_buf, _url).c_str());
+    }
+  }
+  _valid = true; /* success, we got all necessary elements - URI, headers, etc. */
+}
+
+CacheKey::~CacheKey()
+{
+  if (_valid) {
+    /* free resources only if valid, if not valid it is assumed nothing was allocated or was freed */
+    if (_remap) {
+      /* _buf and _hdrs are assigned from remap info - no need to release here. */
+      if (PRISTINE == _uriType) {
+        if (TS_SUCCESS != TSHandleMLocRelease(_buf, TS_NULL_MLOC, _url)) {
+          CacheKeyError("failed to release pristine URI handle");
+        }
+      }
+    } else {
+      if (TS_SUCCESS != TSHandleMLocRelease(_buf, TS_NULL_MLOC, _hdrs) &&
+          TS_SUCCESS != TSHandleMLocRelease(_buf, TS_NULL_MLOC, _url)) {
+        CacheKeyError("failed to release URI and headers handle");
+      }
+    }
+  }
 }
 
 /**
@@ -230,23 +311,9 @@ CacheKey::append(const char *s, unsigned n)
   ::appendEncoded(_key, s, n);
 }
 
-static String
-getUri(TSMBuffer buf, TSMLoc url)
-{
-  String uri;
-  int uriLen;
-  const char *uriPtr = TSUrlStringGet(buf, url, &uriLen);
-  if (nullptr != uriPtr && 0 != uriLen) {
-    uri.assign(uriPtr, uriLen);
-    TSfree((void *)uriPtr);
-  } else {
-    CacheKeyError("failed to get URI");
-  }
-  return uri;
-}
-
 /**
- * @brief Append to the cache key a custom prefix, capture from hots:port, capture from URI or default to host:port part of the URI.
+ * @brief Append to the cache key a custom prefix, capture from hots:port, capture from URI or default to host:port part of the
+ * URI.
  * @note This is the only cache key component from the key which is always available.
  * @param prefix if not empty string will append the static prefix to the cache key.
  * @param prefixCapture if not empty will append regex capture/replacement from the host:port.
@@ -592,6 +659,24 @@ CacheKey::appendUaClass(Classifier &classifier)
 bool
 CacheKey::finalize() const
 {
-  CacheKeyDebug("finalizing cache key '%s'", _key.c_str());
-  return TSCacheUrlSet(_txn, &(_key[0]), _key.size()) == TS_SUCCESS;
+  bool res = true;
+  CacheKeyDebug("finalizing cache key '%s' from a %s plugin", _key.c_str(), (_remap ? "remap" : "global"));
+  if (TS_SUCCESS != TSCacheUrlSet(_txn, &(_key[0]), _key.size())) {
+    int len;
+    char *url = TSHttpTxnEffectiveUrlStringGet(_txn, &len);
+    if (nullptr != url) {
+      if (_remap) {
+        /* Remap instance. Always runs first by design (before TS_HTTP_POST_REMAP_HOOK) */
+        CacheKeyError("failed to set cache key for url %.*s", len, url);
+      } else {
+        /* Global instance. We would fail and get here if a per-remap instance has already set the cache key
+         * (currently TSCacheUrlSet() can be called only once successfully). Don't error, just debug.
+         * @todo avoid the consecutive attempts and error only on unexpected failures. */
+        CacheKeyDebug("failed to set cache key for url %.*s", len, url);
+      }
+      TSfree(url);
+    }
+    res = false;
+  }
+  return res;
 }

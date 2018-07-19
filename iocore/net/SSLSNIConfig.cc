@@ -153,7 +153,9 @@ SNIConfigParams::Initialize()
 
   ts::Errata zret = Y_sni.loader(sni_filename);
   if (!zret.isOK()) {
-    Note("failed to reload ssl_server_name.yaml");
+    std::stringstream errMsg;
+    errMsg << zret;
+    Error("failed to load ssl_server_name.yaml: %s", errMsg.str().c_str());
     return 1;
   }
 

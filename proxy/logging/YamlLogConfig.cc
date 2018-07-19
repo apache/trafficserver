@@ -139,10 +139,10 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   // file format
   LogFileFormat file_type = LOG_FILE_ASCII; // default value
   if (node["mode"]) {
-    const char *mode_str = node["mode"].as<std::string>().c_str();
-    file_type            = (strncasecmp(mode_str, "bin", 3) == 0 || (mode_str[0] == 'b' && mode_str[1] == 0) ?
+    std::string mode = node["mode"].as<std::string>();
+    file_type        = (0 == strncasecmp(mode.c_str(), "bin", 3) || (1 == mode.size() && mode[0] == 'b') ?
                    LOG_FILE_BINARY :
-                   (strcasecmp(mode_str, "ascii_pipe") == 0 ? LOG_FILE_PIPE : LOG_FILE_ASCII));
+                   (0 == strcasecmp(mode.c_str(), "ascii_pipe") ? LOG_FILE_PIPE : LOG_FILE_ASCII));
   }
 
   int obj_rolling_enabled      = 0;

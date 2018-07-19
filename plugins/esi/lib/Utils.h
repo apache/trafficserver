@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_UTILS_H
-
-#define _ESI_UTILS_H
+#pragma once
 
 #include "DocNode.h"
 #include "ComponentBase.h"
@@ -126,5 +124,3 @@ namespace Utils
   }
 }; // namespace Utils
 }; // namespace EsiLib
-
-#endif

@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _STRING_HASH_H
-
-#define _STRING_HASH_H
+#pragma once
 
 #include <string>
 #include <ext/hash_map>
@@ -44,5 +42,3 @@ template <typename T> class StringKeyHash : public __gnu_cxx::hash_map<std::stri
 {
 };
 }; // namespace EsiLib
-
-#endif // _STRING_HASH_H

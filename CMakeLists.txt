@@ -1132,12 +1132,10 @@ add_library(libtsutil SHARED
         lib/ts/test_atomic.cc
         lib/ts/test_freelist.cc
         lib/ts/test_geometry.cc
-        lib/ts/test_History.cc
         lib/ts/test_List.cc
         lib/ts/test_Map.cc
         lib/ts/test_PriorityQueue.cc
         lib/ts/test_Ptr.cc
-        lib/ts/test_Regex.cc
         lib/ts/test_Vec.cc
         lib/ts/test_X509HostnameValidator.cc
         lib/ts/TestBox.h
@@ -1160,13 +1158,16 @@ add_executable(test_tslib
 	lib/ts/unit-tests/unit_test_main.cc
 	lib/ts/unit-tests/test_BufferWriter.cc
 	lib/ts/unit-tests/test_BufferWriterFormat.cc
+        lib/ts/unit-tests/test_History.cc
 	lib/ts/unit-tests/test_ink_inet.cc
+	lib/ts/unit-tests/test_IntrusiveDList.cc
 	lib/ts/unit-tests/test_IntrusivePtr.cc
 	lib/ts/unit-tests/test_IpMap.cc
 	lib/ts/unit-tests/test_layout.cc
 	lib/ts/unit-tests/test_MemArena.cc
 	lib/ts/unit-tests/test_MemSpan.cc
 	lib/ts/unit-tests/test_MT_hashtable.cc
+        lib/ts/unit-tests/test_Regex.cc
 	lib/ts/unit-tests/test_Scalar.cc
 	lib/ts/unit-tests/test_scoped_resource.cc
 	lib/ts/unit-tests/test_TextView.cc

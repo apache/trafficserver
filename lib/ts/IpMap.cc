@@ -199,15 +199,15 @@ namespace detail
         Caller is responsible for ensuring that @a spot is in this container
         and the proper location for @a n.
     */
-    void insertAfter(N *spot, ///< Node in list.
-                     N *n     ///< Node to insert.
+    void insert_after(N *spot, ///< Node in list.
+                      N *n     ///< Node to insert.
     );
     /** Insert @a n before @a spot.
         Caller is responsible for ensuring that @a spot is in this container
         and the proper location for @a n.
     */
-    void insertBefore(N *spot, ///< Node in list.
-                      N *n     ///< Node to insert.
+    void insert_before(N *spot, ///< Node in list.
+                       N *n     ///< Node to insert.
     );
     /// Add node @a n as the first node.
     void prepend(N *n);
@@ -223,7 +223,7 @@ namespace detail
     void validate();
 
     /// @return The number of distinct ranges.
-    size_t getCount() const;
+    size_t count() const;
 
     /// Print all spans.
     /// @return This map.
@@ -256,21 +256,34 @@ namespace detail
       return static_cast<N *>(n->_right);
     }
     N *
-    getHead()
+    head()
     {
-      return static_cast<N *>(_list.getHead());
+      return static_cast<N *>(_list.head());
     }
     N *
-    getTail()
+    tail()
     {
-      return static_cast<N *>(_list.getTail());
+      return static_cast<N *>(_list.tail());
     }
 
     N *_root; ///< Root node.
     /// In order list of nodes.
     /// For ugly compiler reasons, this is a list of base class pointers
     /// even though we really store @a N instances on it.
-    typedef IntrusiveDList<RBNode, &RBNode::_next, &RBNode::_prev> NodeList;
+    struct NodeLinkage {
+      static RBNode *&
+      next_ptr(RBNode *n)
+      {
+        return n->_next;
+      }
+      static RBNode *&
+      prev_ptr(RBNode *n)
+      {
+        return n->_prev;
+      }
+    };
+    using NodeList = IntrusiveDList<NodeLinkage>;
+    //    typedef IntrusiveDList<RBNode, &RBNode::_next, &RBNode::_prev> NodeList;
     /// This keeps track of all allocated nodes in order.
     /// Iteration depends on this list being maintained.
     NodeList _list;
@@ -302,7 +315,7 @@ namespace detail
   IpMapBase<N>::clear()
   {
     // Delete everything.
-    N *n = static_cast<N *>(_list.getHead());
+    N *n = static_cast<N *>(_list.head());
     while (n) {
       N *x = n;
       n    = next(n);
@@ -344,7 +357,7 @@ namespace detail
         }
       }
     } else {
-      n = this->getHead();
+      n = this->head();
     }
 
     // Work through the rest of the nodes of interest.
@@ -386,7 +399,7 @@ namespace detail
             n->setMin(min);
             return *this;
           } else { // no overlap, space to complete range.
-            this->insertBefore(n, new N(min, max, payload));
+            this->insert_before(n, new N(min, max, payload));
             return *this;
           }
         }
@@ -407,13 +420,13 @@ namespace detail
           }
         } else {               // no carry node.
           if (max < n->_min) { // entirely before next span.
-            this->insertBefore(n, new N(min, max, payload));
+            this->insert_before(n, new N(min, max, payload));
             return *this;
           } else {
             if (min < n->_min) { // leading section, need node.
               N *y = new N(min, n->_min, payload);
               y->decrementMax();
-              this->insertBefore(n, y);
+              this->insert_before(n, y);
             }
             if (max <= n->_max) { // nothing past node
               return *this;
@@ -485,7 +498,7 @@ namespace detail
           // request span is covered by existing span.
           x = new N(min, max, payload); //
           n->setMin(max_plus);          // clip existing.
-          this->insertBefore(n, x);
+          this->insert_before(n, x);
           return *this;
         }
       } else if (n->_data == payload && n->_max >= min_1) {
@@ -517,20 +530,20 @@ namespace detail
         x = new N(min, max, payload);
         r = new N(max_plus, n->_max, n->_data);
         n->setMax(min_1);
-        this->insertAfter(n, x);
-        this->insertAfter(x, r);
+        this->insert_after(n, x);
+        this->insert_after(x, r);
         return *this; // done.
       }
       n = next(n); // lower bound span handled, move on.
       if (!x) {
         x = new N(min, max, payload);
         if (n) {
-          this->insertBefore(n, x);
+          this->insert_before(n, x);
         } else {
           this->append(x); // note that since n == 0 we'll just return.
         }
       }
-    } else if (nullptr != (n = this->getHead()) &&     // at least one node in tree.
+    } else if (nullptr != (n = this->head()) &&        // at least one node in tree.
                n->_data == payload &&                  // payload matches
                (n->_max <= max || n->_min <= max_plus) // overlap or adj.
     ) {
@@ -584,7 +597,7 @@ namespace detail
           x = new N(max, N::argue(n->_max), n->_data);
           x->incrementMin();
           n->setMaxMinusOne(N::deref(min));
-          this->insertAfter(n, x);
+          this->insert_after(n, x);
           return *this; // done.
         } else {
           n->setMaxMinusOne(N::deref(min)); // just clip overlap.
@@ -610,7 +623,7 @@ namespace detail
 
   template <typename N>
   void
-  IpMapBase<N>::insertAfter(N *spot, N *n)
+  IpMapBase<N>::insert_after(N *spot, N *n)
   {
     N *c = right(spot);
     if (!c) {
@@ -619,13 +632,13 @@ namespace detail
       spot->_next->setChild(n, N::LEFT);
     }
 
-    _list.insertAfter(spot, n);
+    _list.insert_after(spot, n);
     _root = static_cast<N *>(n->rebalanceAfterInsert());
   }
 
   template <typename N>
   void
-  IpMapBase<N>::insertBefore(N *spot, N *n)
+  IpMapBase<N>::insert_before(N *spot, N *n)
   {
     N *c = left(spot);
     if (!c) {
@@ -634,7 +647,7 @@ namespace detail
       spot->_prev->setChild(n, N::RIGHT);
     }
 
-    _list.insertBefore(spot, n);
+    _list.insert_before(spot, n);
     _root = static_cast<N *>(n->rebalanceAfterInsert());
   }
 
@@ -645,7 +658,7 @@ namespace detail
     if (!_root) {
       _root = n;
     } else {
-      _root = static_cast<N *>(_list.getHead()->setChild(n, N::LEFT)->rebalanceAfterInsert());
+      _root = static_cast<N *>(_list.head()->setChild(n, N::LEFT)->rebalanceAfterInsert());
     }
     _list.prepend(n);
   }
@@ -657,7 +670,7 @@ namespace detail
     if (!_root) {
       _root = n;
     } else {
-      _root = static_cast<N *>(_list.getTail()->setChild(n, N::RIGHT)->rebalanceAfterInsert());
+      _root = static_cast<N *>(_list.tail()->setChild(n, N::RIGHT)->rebalanceAfterInsert());
     }
     _list.append(n);
   }
@@ -667,7 +680,7 @@ namespace detail
   IpMapBase<N>::remove(N *n)
   {
     _root = static_cast<N *>(n->remove());
-    _list.take(n);
+    _list.erase(n);
     delete n;
   }
 
@@ -695,9 +708,9 @@ namespace detail
 
   template <typename N>
   size_t
-  IpMapBase<N>::getCount() const
+  IpMapBase<N>::count() const
   {
-    return _list.getCount();
+    return _list.count();
   }
   //----------------------------------------------------------------------------
   template <typename N>
@@ -706,7 +719,7 @@ namespace detail
   {
 #if 0
   if (_root) _root->validate();
-  for ( Node* n = _list.getHead() ; n ; n = n->_next ) {
+  for ( Node* n = _list.head() ; n ; n = n->_next ) {
     Node* x;
     if (0 != (x = n->_next)) {
       if (x->_prev != n)
@@ -725,7 +738,7 @@ namespace detail
   IpMapBase<N>::print()
   {
 #if 0
-  for ( Node* n = _list.getHead() ; n ; n = n->_next ) {
+  for ( Node* n = _list.head() ; n ; n = n->_next ) {
     std::cout
       << n << ": " << n->_min << '-' << n->_max << " [" << n->_data << "] "
       << (n->_color == Node::BLACK ? "Black " : "Red   ") << "P=" << n->_parent << " L=" << n->_left << " R=" << n->_right
@@ -1174,14 +1187,14 @@ IpMap::fill(in_addr_t min, in_addr_t max, void *data)
 }
 
 size_t
-IpMap::getCount() const
+IpMap::count() const
 {
   size_t zret = 0;
   if (_m4) {
-    zret += _m4->getCount();
+    zret += _m4->count();
   }
   if (_m6) {
-    zret += _m6->getCount();
+    zret += _m6->count();
   }
   return zret;
 }
@@ -1203,10 +1216,10 @@ IpMap::begin() const
 {
   Node *x = nullptr;
   if (_m4) {
-    x = _m4->getHead();
+    x = _m4->head();
   }
   if (!x && _m6) {
-    x = _m6->getHead();
+    x = _m6->head();
   }
   return iterator(this, x);
 }
@@ -1218,8 +1231,8 @@ IpMap::iterator::operator++()
     // If we go past the end of the list see if it was the v4 list
     // and if so, move to the v6 list (if it's there).
     Node *x = static_cast<Node *>(_node->_next);
-    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m4->getTail()) {
-      x = _tree->_m6->getHead();
+    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m4->tail()) {
+      x = _tree->_m6->head();
     }
     _node = x;
   }
@@ -1233,17 +1246,17 @@ IpMap::iterator::operator--()
     // At a node, try to back up. Handle the case where we back over the
     // start of the v6 addresses and switch to the v4, if there are any.
     Node *x = static_cast<Node *>(_node->_prev);
-    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m6->getHead()) {
-      x = _tree->_m4->getTail();
+    if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m6->head()) {
+      x = _tree->_m4->tail();
     }
     _node = x;
   } else if (_tree) {
     // We were at the end. Back up to v6 if possible, v4 if not.
     if (_tree->_m6) {
-      _node = _tree->_m6->getTail();
+      _node = _tree->_m6->tail();
     }
     if (!_node && _tree->_m4) {
-      _node = _tree->_m4->getTail();
+      _node = _tree->_m4->tail();
     }
   }
   return *this;

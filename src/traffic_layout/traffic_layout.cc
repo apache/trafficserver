@@ -46,7 +46,6 @@ struct subcommand {
 
 // Command line arguments (parsing)
 struct CommandLineArgs {
-  int layout;
   int features;
   int json;
 };
@@ -54,7 +53,6 @@ struct CommandLineArgs {
 static CommandLineArgs cl;
 
 const ArgumentDescription argument_descriptions[] = {
-  {"layout", 'l', "Show the layout (this is the default with no options given)", "T", &cl.layout, nullptr, nullptr},
   {"features", 'f', "Show the compiled features", "T", &cl.features, nullptr, nullptr},
   {"json", 'j', "Produce output in JSON format (when supported)", "T", &cl.json, nullptr, nullptr},
   VERSION_ARGUMENT_DESCRIPTION(),

@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_HTTP_HEADER_H
-
-#define _ESI_HTTP_HEADER_H
+#pragma once
 
 #include <list>
 
@@ -40,5 +38,3 @@ struct HttpHeader {
 
 typedef std::list<HttpHeader> HttpHeaderList;
 }; // namespace EsiLib
-
-#endif // _ESI_HTTP_HEADER_H

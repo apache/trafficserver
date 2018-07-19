@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _HANDLER_MANAGER_H
-
-#define _HANDLER_MANAGER_H
+#pragma once
 
 #include <string>
 #include <map>
@@ -66,5 +64,3 @@ private:
   static const char *const FACTORY_FUNCTION_NAME;
 };
 }; // namespace EsiLib
-
-#endif

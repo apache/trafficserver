@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_PROCESSOR_H
-#define _ESI_PROCESSOR_H
+#pragma once
 
 #include <string>
 #include <map>
@@ -185,5 +184,3 @@ private:
     _curr_state = ERRORED;
   }
 };
-
-#endif // _ESI_PROCESSOR_H

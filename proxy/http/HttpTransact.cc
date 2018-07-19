@@ -239,24 +239,15 @@ is_negative_caching_appropriate(HttpTransact::State *s)
     return false;
   }
 
-  switch (s->hdr_info.server_response.status_get()) {
-  case HTTP_STATUS_NO_CONTENT:
-  case HTTP_STATUS_USE_PROXY:
-  case HTTP_STATUS_FORBIDDEN:
-  case HTTP_STATUS_NOT_FOUND:
-  case HTTP_STATUS_METHOD_NOT_ALLOWED:
-  case HTTP_STATUS_REQUEST_URI_TOO_LONG:
-  case HTTP_STATUS_INTERNAL_SERVER_ERROR:
-  case HTTP_STATUS_NOT_IMPLEMENTED:
-  case HTTP_STATUS_BAD_GATEWAY:
-  case HTTP_STATUS_SERVICE_UNAVAILABLE:
-  case HTTP_STATUS_GATEWAY_TIMEOUT:
+  int status  = s->hdr_info.server_response.status_get();
+  auto params = s->http_config_param;
+  if (params->negative_caching_list[status]) {
+    TxnDebug("http_trans", "%d is eligible for negative caching", status);
     return true;
-  default:
-    break;
+  } else {
+    TxnDebug("http_trans", "%d is NOT eligible for negative caching", status);
+    return false;
   }
-
-  return false;
 }
 
 inline static HttpTransact::LookingUp_t
@@ -3080,6 +3071,8 @@ HttpTransact::OriginServerRawOpen(State *s)
   /* fall through */
   case CONNECTION_CLOSED:
     /* fall through */
+  case OUTBOUND_CONGESTION:
+    /* fall through */
     handle_server_died(s);
 
     ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
@@ -3458,6 +3451,12 @@ HttpTransact::handle_response_from_server(State *s)
     s->current.server->clear_connect_fail();
     handle_forward_server_connection_open(s);
     break;
+  case OUTBOUND_CONGESTION:
+    TxnDebug("http_trans", "[handle_response_from_server] Error. congestion control -- congested.");
+    SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
+    s->current.server->set_connect_fail(EUSERS); // too many users
+    handle_server_connection_not_open(s);
+    break;
   case OPEN_RAW_ERROR:
   /* fall through */
   case CONNECTION_ERROR:
@@ -3600,9 +3599,10 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   // record the failue                   //
   //////////////////////////////////////////
   if (0 == s->current.attempts) {
-    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s'", s->current.attempts,
+    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s' connect_result=%d src_port=%d", s->current.attempts,
                HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>");
+               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
+               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()));
   }
 
   if (url_string) {
@@ -6308,7 +6308,8 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
   if (s->current.state != CONNECTION_ALIVE) {
     ink_assert((s->current.state == CONNECTION_ERROR) || (s->current.state == OPEN_RAW_ERROR) ||
                (s->current.state == PARSE_ERROR) || (s->current.state == CONNECTION_CLOSED) ||
-               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT));
+               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT) ||
+               s->current.state == OUTBOUND_CONGESTION);
 
     s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
     return false;
@@ -7408,6 +7409,12 @@ HttpTransact::handle_server_died(State *s)
     status    = HTTP_STATUS_BAD_GATEWAY;
     reason    = "Invalid HTTP Response";
     body_type = "response#bad_response";
+    break;
+  case OUTBOUND_CONGESTION:
+    status                     = HTTP_STATUS_SERVICE_UNAVAILABLE;
+    reason                     = "Origin server congested";
+    body_type                  = "congestion#retryAfter";
+    s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
     break;
   case STATE_UNDEFINED:
   case TRANSACTION_COMPLETE:

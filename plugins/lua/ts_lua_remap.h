@@ -16,11 +16,8 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_REMAP_H
-#define _TS_LUA_REMAP_H
+#pragma once
 
 #include "ts_lua_common.h"
 
 void ts_lua_inject_remap_api(lua_State *L);
-
-#endif

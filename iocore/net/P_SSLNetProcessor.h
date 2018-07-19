@@ -35,8 +35,8 @@
   I think I will stop here for now.
 
  ****************************************************************************/
-#ifndef __P_SSLNETPROCESSOR_H
-#define __P_SSLNETPROCESSOR_H
+
+#pragma once
 
 #include "ts/ink_platform.h"
 #include "P_Net.h"
@@ -74,5 +74,3 @@ public:
 };
 
 extern SSLNetProcessor ssl_NetProcessor;
-
-#endif

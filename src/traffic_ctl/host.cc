@@ -20,9 +20,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
 #include "traffic_ctl.h"
+#include "HostStatus.h"
 #include <P_RecUtils.h>
-const std::string stat_prefix = "host_status.";
+
 static int
 status_get(unsigned argc, const char **argv)
 {
@@ -53,40 +55,75 @@ static int
 status_down(unsigned argc, const char **argv)
 {
   int down_time     = 0;
+  char *reason      = nullptr;
   const char *usage = "host down HOST [OPTIONS]";
 
   const ArgumentDescription opts[] = {
-    {"time", 'I', "number of seconds that a host is marked down", "I", &down_time, nullptr, nullptr}};
+    {"time", 'I', "number of seconds that a host is marked down", "I", &down_time, nullptr, nullptr},
+    // memory is allocated for 'reason', if this option is used
+    {"reason", '-', "reason for marking the host down, one of 'manual|active|local'", "S*", &reason, nullptr, nullptr},
+  };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
     return CtrlCommandUsage(usage, opts, countof(opts));
   }
 
+  // if reason is not set, set it to manual (default)
+  if (reason == nullptr) {
+    reason = ats_strdup(Reasons::MANUAL);
+  }
+
+  if (!Reasons::validReason(reason)) {
+    fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason);
+    return CtrlCommandUsage(usage, opts, countof(opts));
+  }
+
   TSMgmtError error = TS_ERR_OKAY;
   for (unsigned i = 0; i < n_file_arguments; ++i) {
-    error = TSHostStatusSetDown(file_arguments[i], down_time);
+    error = TSHostStatusSetDown(file_arguments[i], down_time, reason);
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to set %s", file_arguments[i]);
       return CTRL_EX_ERROR;
     }
   }
+  ats_free(reason);
 
   return CTRL_EX_OK;
 }
 static int
 status_up(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments < 1) {
-    return CtrlCommandUsage("host up METRIC value", nullptr, 0);
+  char *reason      = nullptr;
+  const char *usage = "host down HOST [OPTIONS]";
+
+  const ArgumentDescription opts[] = {
+    // memory is allocated for 'reason', if this option is used
+    {"reason", '-', "reason for marking the host down, one of 'manual|active|local'", "S*", &reason, nullptr, nullptr},
+  };
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
+    return CtrlCommandUsage(usage, nullptr, 0);
   }
+
+  // if reason is not set, set it to manual (default)
+  if (reason == nullptr) {
+    reason = ats_strdup(Reasons::MANUAL);
+  }
+
+  if (!Reasons::validReason(reason)) {
+    fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason);
+    return CtrlCommandUsage(usage, opts, countof(opts));
+  }
+
   TSMgmtError error;
   for (unsigned i = 0; i < n_file_arguments; ++i) {
-    error = TSHostStatusSetUp(file_arguments[i]);
+    error = TSHostStatusSetUp(file_arguments[i], 0, reason);
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to set %s", file_arguments[i]);
       return CTRL_EX_ERROR;
     }
   }
+  ats_free(reason);
 
   return CTRL_EX_OK;
 }

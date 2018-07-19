@@ -358,7 +358,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.storage_filename
  proxy.config.cache.threads_per_disk
  proxy.config.cache.mutex_retry_delay
- proxy.config.config_dir
  proxy.config.cop.core_signal
  proxy.config.cop.linux_min_memfree_kb
  proxy.config.cop.linux_min_swapfree_kb
@@ -475,6 +474,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.keep_alive_no_activity_timeout_out
  proxy.config.http.keep_alive_post_out
  proxy.config.http.negative_caching_enabled
+ proxy.config.http.negative_caching_list
  proxy.config.http.negative_caching_lifetime
  proxy.config.http.negative_revalidating_enabled
  proxy.config.http.negative_revalidating_lifetime

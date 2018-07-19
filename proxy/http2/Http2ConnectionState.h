@@ -130,11 +130,7 @@ public:
   {
     local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
-
-    continued_buffer.iov_base = nullptr;
-    continued_buffer.iov_len  = 0;
-
-    dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
+    dependency_tree     = new DependencyTree(Http2::max_concurrent_streams_in);
   }
 
   void
@@ -148,9 +144,6 @@ public:
     mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
     delete local_hpack_handle;
     delete remote_hpack_handle;
-
-    ats_free(continued_buffer.iov_base);
-
     delete dependency_tree;
     this->ua_session = nullptr;
 
@@ -326,7 +319,6 @@ private:
   //     "If the END_HEADERS bit is not set, this frame MUST be followed by
   //     another CONTINUATION frame."
   Http2StreamId continued_stream_id = 0;
-  IOVec continued_buffer;
   bool _scheduled                   = false;
   bool fini_received                = false;
   int recursion                     = 0;

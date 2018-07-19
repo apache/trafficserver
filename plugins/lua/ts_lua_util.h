@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_UTIL_H
-#define _TS_LUA_UTIL_H
+#pragma once
 
 #include "ts_lua_common.h"
 
@@ -29,8 +28,8 @@ void ts_lua_script_register(lua_State *L, char *script, ts_lua_instance_conf *co
 
 int ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int argc, char *argv[], char *errbuf,
                       int errbuf_len);
-
 int ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n);
+int ts_lua_reload_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n);
 
 int ts_lua_init_instance(ts_lua_instance_conf *conf);
 int ts_lua_del_instance(ts_lua_instance_conf *conf);
@@ -67,5 +66,3 @@ ts_lua_http_intercept_ctx *ts_lua_get_http_intercept_ctx(lua_State *L);
 void ts_lua_destroy_http_intercept_ctx(ts_lua_http_intercept_ctx *ictx);
 
 int ts_lua_http_cont_handler(TSCont contp, TSEvent event, void *edata);
-
-#endif

@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _GZIP_H
-
-#define _GZIP_H
+#pragma once
 
 #include <string>
 #include <list>
@@ -65,5 +63,3 @@ typedef std::list<std::string> BufferList;
 
 bool gunzip(const char *data, int data_len, BufferList &buf_list);
 } // namespace EsiLib
-
-#endif // _GZIP_H

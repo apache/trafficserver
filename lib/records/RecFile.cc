@@ -27,6 +27,8 @@
 #include "P_RecDefs.h"
 #include "P_RecUtils.h"
 
+#include <array>
+
 //-------------------------------------------------------------------------
 // RecFileOpenR
 //-------------------------------------------------------------------------
@@ -75,6 +77,20 @@ RecFileClose(RecHandle h_file)
 }
 
 //-------------------------------------------------------------------------
+// RecSnapFileRead
+//-------------------------------------------------------------------------
+
+int
+RecSnapFileRead(RecHandle h_file, char *buf, int size, int *bytes_read)
+{
+  if ((*bytes_read = ::pread(h_file, buf, size, VERSION_HDR_SIZE)) <= 0) {
+    *bytes_read = 0;
+    return REC_ERR_FAIL;
+  }
+  return REC_ERR_OKAY;
+}
+
+//-------------------------------------------------------------------------
 // RecFileRead
 //-------------------------------------------------------------------------
 
@@ -83,6 +99,26 @@ RecFileRead(RecHandle h_file, char *buf, int size, int *bytes_read)
 {
   if ((*bytes_read = ::read(h_file, buf, size)) <= 0) {
     *bytes_read = 0;
+    return REC_ERR_FAIL;
+  }
+  return REC_ERR_OKAY;
+}
+
+//-------------------------------------------------------------------------
+// RecSnapFileWrite
+//-------------------------------------------------------------------------
+
+int
+RecSnapFileWrite(RecHandle h_file, char *buf, int size, int *bytes_written)
+{
+  // First write the version byes for snap file
+  std::array<char, VERSION_HDR_SIZE> VERSION_HDR{{'V', PACKAGE_VERSION[0], PACKAGE_VERSION[2], PACKAGE_VERSION[4], '\0'}};
+  if (::write(h_file, VERSION_HDR.data(), VERSION_HDR_SIZE) < 0) {
+    return REC_ERR_FAIL;
+  }
+
+  if ((*bytes_written = ::pwrite(h_file, buf, size, VERSION_HDR_SIZE)) < 0) {
+    *bytes_written = 0;
     return REC_ERR_FAIL;
   }
   return REC_ERR_OKAY;

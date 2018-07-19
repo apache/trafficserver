@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _HTTP_DATA_FETCHER_IMPL_H
-#define _HTTP_DATA_FETCHER_IMPL_H
+#pragma once
 
 #include <string>
 #include <list>
@@ -162,5 +161,3 @@ HttpDataFetcherImpl::ResponseData::set(const char *c, int clen, TSMBuffer b, TSM
   hdr_loc     = loc;
   status      = s;
 }
-
-#endif

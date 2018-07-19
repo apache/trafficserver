@@ -60,8 +60,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.env_prep", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.config_dir", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
-  ,
   // Jira TS-21
   {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
@@ -383,11 +381,17 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.server_tcp_init_cwnd", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-16]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.origin_max_connections", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.max", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.origin_max_connections_queue", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.match", RECD_STRING, "ip", RECU_DYNAMIC, RR_NULL, RECC_STR, "^(?:ip|host|both|none)$", RECA_NULL}
+        ,
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.alert_delay", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+        ,
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.queue_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
     ,
-  {RECT_CONFIG, "proxy.config.http.origin_min_keep_alive_connections", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.queue_delay", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+        ,
+  {RECT_CONFIG, "proxy.config.http.per_server.min_keep_alive", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.attach_server_session_to_client", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
@@ -497,6 +501,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.negative_caching_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.negative_caching_lifetime", RECD_INT, "1800", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.negative_caching_list", RECD_STRING, "204 305 403 404 405 414 500 501 502 503 504", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   //        #########################
@@ -661,8 +667,9 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   //# 1 - enable customizable user response pages in only the "default" directory
   //# 2 - enable language-targeted user response pages
+  //# 3 - enable host-targeted user response pages
   {RECT_CONFIG, "proxy.config.body_factory.enable_customizations", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT,
-    "[1-2]", RECA_NULL}
+    "[1-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.body_factory.enable_logging", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,

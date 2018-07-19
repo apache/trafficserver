@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _TS_LUA_COMMON_H
-#define _TS_LUA_COMMON_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,6 +96,8 @@ typedef struct {
 
   int remap;
   int states;
+
+  int init_func;
 } ts_lua_instance_conf;
 
 /* lua state for http request */
@@ -175,5 +176,3 @@ typedef struct {
       ih->buffer = NULL;                \
     }                                   \
   } while (0)
-
-#endif

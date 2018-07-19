@@ -21,9 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_EXPRESSION_H
-
-#define _ESI_EXPRESSION_H
+#pragma once
 
 #include <string>
 #include <cstdlib>
@@ -119,5 +117,3 @@ private:
   inline bool _evalSimpleExpr(const char *expr, int expr_len);
 };
 }; // namespace EsiLib
-
-#endif // _ESI_EXPRESSION_H

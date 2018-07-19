@@ -266,12 +266,12 @@ RecMessageReadFromDisk(const char *fpath)
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
     goto Lerror;
   }
-  if (RecFileRead(h_file, (char *)(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
+  if (RecSnapFileRead(h_file, (char *)(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
     goto Lerror;
   }
   msg = (RecMessage *)ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
   memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
-  if (RecFileRead(h_file, (char *)(msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start, &bytes_read) == REC_ERR_FAIL) {
+  if (RecSnapFileRead(h_file, (char *)(msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start, &bytes_read) == REC_ERR_FAIL) {
     goto Lerror;
   }
 
@@ -307,7 +307,7 @@ RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
 
   msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
   if ((h_file = RecFileOpenW(fpath)) != REC_HANDLE_INVALID) {
-    if (RecFileWrite(h_file, (char *)msg, msg_size, &bytes_written) == REC_ERR_FAIL) {
+    if (RecSnapFileWrite(h_file, (char *)msg, msg_size, &bytes_written) == REC_ERR_FAIL) {
       RecFileClose(h_file);
       return REC_ERR_FAIL;
     }

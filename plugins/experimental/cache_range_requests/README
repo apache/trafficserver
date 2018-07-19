@@ -34,3 +34,23 @@ Configuration:
     Or for a global plugin where all range requests are processed,
     Add cache_range_requests.so to the plugin.config
 
+Parent Selection Mode (consisent-hash only):
+  
+    default: Parent selection is based solely on the hash of a URL Path
+             In this mode, all partial content of a URL is requested from the same 
+             upstream parent cache listed in parent.config
+             
+    cache_key_url: Parent selection is based on the full cache_key_url which 
+                   includes information about the partial content range.
+                   In this mode, all requests (include partial content) will use
+                   consistent hashing method for parent selection. 
+
+    To enable cache_key_url parent select mode, the following param must be set:
+
+    Global Plugin (plugin.config):
+  
+      cache_range_requests.so ps_mode:cache_key_url
+
+    Remap Plugin (remap.config):
+      
+      <from-url> <to-url> @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url
