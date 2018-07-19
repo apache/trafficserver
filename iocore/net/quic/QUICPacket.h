@@ -176,7 +176,8 @@ public:
   QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
   QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf,
-                       size_t len);
+                       size_t len, ats_unique_buf token = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }),
+                       size_t token_len = 0);
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
   QUICConnectionId source_cid() const;
@@ -185,6 +186,8 @@ public:
   bool is_valid() const;
   QUICVersion version() const;
   const uint8_t *payload() const;
+  const uint8_t *token() const;
+  size_t token_len() const;
   QUICKeyPhase key_phase() const;
   bool has_key_phase() const;
   uint16_t size() const;
@@ -200,6 +203,7 @@ public:
    * Unlike QUICInvariants::scil(), this returns actual connection id length
    */
   static bool scil(uint8_t &scil, const uint8_t *packet, size_t packet_len);
+  static bool token_length(size_t &token_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
   static bool length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
   static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len);
 
@@ -207,6 +211,9 @@ private:
   QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
   QUICConnectionId _source_cid      = QUICConnectionId::ZERO();
+  size_t _token_len                 = 0;                                                     //< only INITIAL packet
+  size_t _token_offset              = 0;                                                     //< only INITIAL packet
+  ats_unique_buf _token             = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }); //< only INITIAL packet
   size_t _payload_offset            = 0;
 };
 

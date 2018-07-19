@@ -42,13 +42,18 @@ long_hdr_pkt_len(uint8_t *buf, size_t len)
   QUICPacketLongHeader::dcil(dcil, buf, len);
   QUICPacketLongHeader::scil(scil, buf, len);
 
-  size_t length_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
+  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
+
+  // token_length and token_length_field_len should be 0 except INITIAL packet
+  size_t token_length;
+  uint8_t token_length_field_len;
+  QUICPacketLongHeader::token_length(token_length, &token_length_field_len, buf, len);
 
   size_t length;
   uint8_t length_field_len;
   QUICPacketLongHeader::length(length, &length_field_len, buf, len);
 
-  return length_offset + length_field_len + length;
+  return offset + token_length + token_length_field_len + length_field_len + length;
 }
 
 QUICPacketReceiveQueue::QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketNumberProtector &pn_protector)
