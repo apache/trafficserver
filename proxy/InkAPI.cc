@@ -42,6 +42,7 @@
 #include "P_UDPNet.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"
+#include "P_SSLConfig.h"
 #include "I_RecCore.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
@@ -8936,4 +8937,20 @@ TSVConnReenable(TSVConn vconn)
       ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
     }
   }
+}
+
+void
+TSRegisterOCSPRefresher(TSOCSPRefreshFunc funcp)
+{
+  SSLConfigParams *ssl_config_param = SSLConfig::acquire();
+  if (ssl_config_param == NULL) {
+    return;
+  }
+
+  if (ssl_config_param->ocsp_refresh_cb) {
+    Warning("The OCSP stabling refresh function has already been set and will be updated.");
+  }
+
+  ssl_config_param->ocsp_refresh_cb = funcp;
+  SSLConfig::release(ssl_config_param);
 }
