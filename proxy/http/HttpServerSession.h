@@ -66,10 +66,13 @@ enum {
 
 class HttpServerSession : public VConnection
 {
+  using self_type  = HttpServerSession;
   using super_type = VConnection;
 
 public:
   HttpServerSession() : super_type(nullptr) {}
+  HttpServerSession(self_type const &) = delete;
+  self_type &operator=(self_type const &) = delete;
 
   void destroy();
   void new_connection(NetVConnection *new_vc);
@@ -152,12 +155,36 @@ public:
   bool private_session = false;
 
   // Copy of the owning SM's server session sharing settings
-  TSServerSessionSharingMatchType sharing_match{TS_SERVER_SESSION_SHARING_MATCH_BOTH};
-  TSServerSessionSharingPoolType sharing_pool{TS_SERVER_SESSION_SHARING_POOL_GLOBAL};
+  TSServerSessionSharingMatchType sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
+  TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
   //  int share_session;
 
-  LINK(HttpServerSession, ip_hash_link);
-  LINK(HttpServerSession, host_hash_link);
+  /// Hash map descriptor class for IP map.
+  struct IPLinkage {
+    self_type *_next = nullptr;
+    self_type *_prev = nullptr;
+
+    static self_type *&next_ptr(self_type *);
+    static self_type *&prev_ptr(self_type *);
+    static uint32_t hash_of(sockaddr const *key);
+    static sockaddr const *key_of(self_type const *ssn);
+    static bool equal(sockaddr const *lhs, sockaddr const *rhs);
+    // Add a couple overloads for internal convenience.
+    static bool equal(sockaddr const *lhs, HttpServerSession const *rhs);
+    static bool equal(HttpServerSession const *lhs, sockaddr const *rhs);
+  } _ip_link;
+
+  /// Hash map descriptor class for FQDN map.
+  struct FQDNLinkage {
+    self_type *_next = nullptr;
+    self_type *_prev = nullptr;
+
+    static self_type *&next_ptr(self_type *);
+    static self_type *&prev_ptr(self_type *);
+    static uint64_t hash_of(CryptoHash const &key);
+    static CryptoHash const &key_of(self_type *ssn);
+    static bool equal(CryptoHash const &lhs, CryptoHash const &rhs);
+  } _fqdn_link;
 
   // Keep track of connection limiting and a pointer to the
   // singleton that keeps track of the connection counts.
@@ -187,8 +214,6 @@ public:
   }
 
 private:
-  HttpServerSession(HttpServerSession &);
-
   NetVConnection *server_vc = nullptr;
   int magic                 = HTTP_SS_MAGIC_DEAD;
 
@@ -197,10 +222,84 @@ private:
 
 extern ClassAllocator<HttpServerSession> httpServerSessionAllocator;
 
+// --- Implementation ---
+
 inline void
 HttpServerSession::attach_hostname(const char *hostname)
 {
   if (CRYPTO_HASH_ZERO == hostname_hash) {
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
+}
+
+inline HttpServerSession *&
+HttpServerSession::IPLinkage::next_ptr(self_type *ssn)
+{
+  return ssn->_ip_link._next;
+}
+
+inline HttpServerSession *&
+HttpServerSession::IPLinkage::prev_ptr(self_type *ssn)
+{
+  return ssn->_ip_link._prev;
+}
+
+inline uint32_t
+HttpServerSession::IPLinkage::hash_of(sockaddr const *key)
+{
+  return ats_ip_hash(key);
+}
+
+inline sockaddr const *
+HttpServerSession::IPLinkage::key_of(self_type const *ssn)
+{
+  return &ssn->get_server_ip().sa;
+}
+
+inline bool
+HttpServerSession::IPLinkage::equal(sockaddr const *lhs, sockaddr const *rhs)
+{
+  return ats_ip_addr_port_eq(lhs, rhs);
+}
+
+inline bool
+HttpServerSession::IPLinkage::equal(sockaddr const *lhs, HttpServerSession const *rhs)
+{
+  return ats_ip_addr_port_eq(lhs, key_of(rhs));
+}
+
+inline bool
+HttpServerSession::IPLinkage::equal(HttpServerSession const *lhs, sockaddr const *rhs)
+{
+  return ats_ip_addr_port_eq(key_of(lhs), rhs);
+}
+
+inline HttpServerSession *&
+HttpServerSession::FQDNLinkage::next_ptr(self_type *ssn)
+{
+  return ssn->_fqdn_link._next;
+}
+
+inline HttpServerSession *&
+HttpServerSession::FQDNLinkage::prev_ptr(self_type *ssn)
+{
+  return ssn->_fqdn_link._prev;
+}
+
+inline uint64_t
+HttpServerSession::FQDNLinkage::hash_of(CryptoHash const &key)
+{
+  return key.fold();
+}
+
+inline CryptoHash const &
+HttpServerSession::FQDNLinkage::key_of(self_type *ssn)
+{
+  return ssn->hostname_hash;
+}
+
+inline bool
+HttpServerSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs)
+{
+  return lhs == rhs;
 }

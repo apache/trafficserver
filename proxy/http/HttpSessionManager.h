@@ -34,7 +34,7 @@
 
 #include "P_EventSystem.h"
 #include "HttpServerSession.h"
-#include <ts/Map.h>
+#include <ts/IntrusiveHashMap.h>
 
 class ProxyClientTransaction;
 class HttpSM;
@@ -67,56 +67,8 @@ public:
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
 
 protected:
-  /// Interface class for IP map.
-  struct IPHashing {
-    typedef uint32_t ID;
-    typedef sockaddr const *Key;
-    typedef HttpServerSession Value;
-    typedef DList(HttpServerSession, ip_hash_link) ListHead;
-
-    static ID
-    hash(Key key)
-    {
-      return ats_ip_hash(key);
-    }
-    static Key
-    key(Value const *value)
-    {
-      return &value->get_server_ip().sa;
-    }
-    static bool
-    equal(Key lhs, Key rhs)
-    {
-      return ats_ip_addr_port_eq(lhs, rhs);
-    }
-  };
-
-  /// Interface class for FQDN map.
-  struct HostHashing {
-    typedef uint64_t ID;
-    typedef CryptoHash const &Key;
-    typedef HttpServerSession Value;
-    typedef DList(HttpServerSession, host_hash_link) ListHead;
-
-    static ID
-    hash(Key key)
-    {
-      return key.fold();
-    }
-    static Key
-    key(Value const *value)
-    {
-      return value->hostname_hash;
-    }
-    static bool
-    equal(Key lhs, Key rhs)
-    {
-      return lhs == rhs;
-    }
-  };
-
-  typedef TSHashTable<IPHashing> IPHashTable;     ///< Sessions by IP address.
-  typedef TSHashTable<HostHashing> HostHashTable; ///< Sessions by host name.
+  using IPTable   = IntrusiveHashMap<HttpServerSession::IPLinkage>;
+  using FQDNTable = IntrusiveHashMap<HttpServerSession::FQDNLinkage>;
 
 public:
   /** Check if a session matches address and host name.
@@ -142,8 +94,8 @@ public:
 
   // Pools of server sessions.
   // Note that each server session is stored in both pools.
-  IPHashTable m_ip_pool;
-  HostHashTable m_host_pool;
+  IPTable m_ip_pool;
+  FQDNTable m_fqdn_pool;
 };
 
 class HttpSessionManager

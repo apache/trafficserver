@@ -45,11 +45,11 @@ initialize_thread_for_http_sessions(EThread *thread)
 
 HttpSessionManager httpSessionManager;
 
-ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_pool(1023), m_host_pool(1023)
+ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_pool(1023), m_fqdn_pool(1023)
 {
   SET_HANDLER(&ServerSessionPool::eventHandler);
-  m_ip_pool.setExpansionPolicy(IPHashTable::MANUAL);
-  m_host_pool.setExpansionPolicy(HostHashTable::MANUAL);
+  m_ip_pool.set_expansion_policy(IPTable::MANUAL);
+  m_fqdn_pool.set_expansion_policy(FQDNTable::MANUAL);
 }
 
 void
@@ -57,10 +57,9 @@ ServerSessionPool::purge()
 {
   // @c do_io_close can free the instance which clears the intrusive links and breaks the iterator.
   // Therefore @c do_io_close is called on a post-incremented iterator.
-  for (IPHashTable::iterator last = m_ip_pool.end(), spot = m_ip_pool.begin(); spot != last; spot++->do_io_close()) {
-  }
+  m_ip_pool.apply([](HttpServerSession *ssn) -> void { ssn->do_io_close(); });
   m_ip_pool.clear();
-  m_host_pool.clear();
+  m_fqdn_pool.clear();
 }
 
 bool
@@ -97,38 +96,48 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
                                   TSServerSessionSharingMatchType match_style, HttpSM *sm, HttpServerSession *&to_return)
 {
   HSMresult_t zret = HSM_NOT_FOUND;
+  to_return        = nullptr;
+
   if (TS_SERVER_SESSION_SHARING_MATCH_HOST == match_style) {
-    // This is broken out because only in this case do we check the host hash first.
-    HostHashTable::Location loc = m_host_pool.find(hostname_hash);
-    in_port_t port              = ats_ip_port_cast(addr);
-    while (loc) { // scan for matching port.
-      if (port == ats_ip_port_cast(loc->get_server_ip()) && validate_sni(sm, loc->get_netvc())) {
+    // This is broken out because only in this case do we check the host hash first. The range must be checked
+    // to verify an upstream that matches port and SNI name is selected. Walk backwards to select oldest.
+    in_port_t port = ats_ip_port_cast(addr);
+    FQDNTable::iterator first, last;
+    // FreeBSD/clang++ bug workaround: explicit cast to super type to make overload work. Not needed on Fedora27 nor gcc.
+    // Not fixed on FreeBSD as of llvm 6.0.1.
+    std::tie(first, last) = static_cast<const decltype(m_fqdn_pool)::range::super_type &>(m_fqdn_pool.equal_range(hostname_hash));
+    while (last != first) {
+      --last;
+      if (port == ats_ip_port_cast(last->get_server_ip()) && validate_sni(sm, last->get_netvc())) {
+        zret = HSM_DONE;
         break;
       }
-      ++loc;
     }
-    if (loc) {
-      to_return = loc;
-      m_host_pool.remove(loc);
-      m_ip_pool.remove(m_ip_pool.find(loc));
+    if (zret == HSM_DONE) {
+      to_return = last;
+      m_fqdn_pool.erase(last);
+      m_ip_pool.erase(to_return);
     }
   } else if (TS_SERVER_SESSION_SHARING_MATCH_NONE != match_style) { // matching is not disabled.
-    IPHashTable::Location loc = m_ip_pool.find(addr);
-    // If we're matching on the IP address we're done, this one is good enough.
-    // Otherwise we need to scan further matches to match the host name as well.
-    // Note we don't have to check the port because it's checked as part of the IP address key.
+    IPTable::iterator first, last;
+    // FreeBSD/clang++ bug workaround: explicit cast to super type to make overload work. Not needed on Fedora27 nor gcc.
+    // Not fixed on FreeBSD as of llvm 6.0.1.
+    std::tie(first, last) = static_cast<const decltype(m_ip_pool)::range::super_type &>(m_ip_pool.equal_range(addr));
+    // The range is all that is needed in the match IP case, otherwise need to scan for matching fqdn.
+    // Note the port is matched as part of the address key so it doesn't need to be checked again.
     if (TS_SERVER_SESSION_SHARING_MATCH_IP != match_style) {
-      while (loc) {
-        if (loc->hostname_hash == hostname_hash && validate_sni(sm, loc->get_netvc())) {
+      while (last != first) {
+        --last;
+        if (last->hostname_hash == hostname_hash && validate_sni(sm, last->get_netvc())) {
+          zret = HSM_DONE;
           break;
         }
-        ++loc;
       }
     }
-    if (loc) {
-      to_return = loc;
-      m_ip_pool.remove(loc);
-      m_host_pool.remove(m_host_pool.find(loc));
+    if (zret == HSM_DONE) {
+      to_return = last;
+      m_ip_pool.erase(last);
+      m_fqdn_pool.erase(to_return);
     }
   }
   return zret;
@@ -152,7 +161,7 @@ ServerSessionPool::releaseSession(HttpServerSession *ss)
   ss->get_netvc()->set_active_timeout(ss->get_netvc()->get_active_timeout());
   // put it in the pools.
   m_ip_pool.insert(ss);
-  m_host_pool.insert(ss);
+  m_fqdn_pool.insert(ss);
 
   Debug("http_ss",
         "[%" PRId64 "] [release session] "
@@ -189,9 +198,10 @@ ServerSessionPool::eventHandler(int event, void *data)
   sockaddr const *addr                 = net_vc->get_remote_addr();
   HttpConfigParams *http_config_params = HttpConfig::acquire();
   bool found                           = false;
+  auto spot                            = m_ip_pool.find(addr);
 
-  for (ServerSessionPool::IPHashTable::Location lh = m_ip_pool.find(addr); lh; ++lh) {
-    if ((s = lh)->get_netvc() == net_vc) {
+  while (spot != m_ip_pool.end() && spot->_ip_link.equal(addr, spot)) {
+    if ((s = spot)->get_netvc() == net_vc) {
       // if there was a timeout of some kind on a keep alive connection, and
       // keeping the connection alive will not keep us above the # of max connections
       // to the origin and we are below the min number of keep alive connections to this
@@ -218,8 +228,8 @@ ServerSessionPool::eventHandler(int event, void *data)
             HttpDebugNames::get_event_name(event));
       ink_assert(s->state == HSS_KA_SHARED);
       // Out of the pool! Now!
-      m_ip_pool.remove(lh);
-      m_host_pool.remove(m_host_pool.find(s));
+      m_ip_pool.erase(spot);
+      m_fqdn_pool.erase(s);
       // Drop connection on this end.
       s->do_io_close();
       found = true;
