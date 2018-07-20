@@ -21,10 +21,15 @@
  *  limitations under the License.
  */
 
-#include <openssl/ssl.h>
 #include "QUICKeyGenerator.h"
+
+#include <openssl/ssl.h>
+
 #include "ts/ink_assert.h"
+#include "ts/Diags.h"
+
 #include "QUICHKDF.h"
+#include "QUICDebugNames.h"
 
 using namespace std::literals;
 
@@ -55,10 +60,22 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
   case Context::CLIENT:
     this->_generate_cleartext_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_CLIENT_CLEARTEXT_SECRET.data(),
                                      LABEL_FOR_CLIENT_CLEARTEXT_SECRET.length(), EVP_MD_size(md));
+    if (is_debug_tag_set("vv_quic_crypto")) {
+      uint8_t print_buf[512];
+      QUICDebug::to_hex(print_buf, secret, secret_len);
+      Debug("vv_quic_crypto", "client in secret 0x%s", print_buf);
+    }
+
     break;
   case Context::SERVER:
     this->_generate_cleartext_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_SERVER_CLEARTEXT_SECRET.data(),
                                      LABEL_FOR_SERVER_CLEARTEXT_SECRET.length(), EVP_MD_size(md));
+    if (is_debug_tag_set("vv_quic_crypto")) {
+      uint8_t print_buf[512];
+      QUICDebug::to_hex(print_buf, secret, secret_len);
+      Debug("vv_quic_crypto", "server in secret 0x%s", print_buf);
+    }
+
     break;
   }
 
@@ -135,10 +152,17 @@ QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, QUIC
   uint8_t cleartext_secret[512];
   size_t cleartext_secret_len = sizeof(cleartext_secret);
 
+  // TODO: do not extract initial secret twice
   QUICTypeUtil::write_QUICConnectionId(cid, client_connection_id, &cid_len);
   if (hkdf.extract(cleartext_secret, &cleartext_secret_len, QUIC_VERSION_1_SALT, sizeof(QUIC_VERSION_1_SALT), client_connection_id,
                    cid.length()) != 1) {
     return -1;
+  }
+
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    uint8_t print_buf[512];
+    QUICDebug::to_hex(print_buf, cleartext_secret, cleartext_secret_len);
+    Debug("vv_quic_crypto", "initial secret 0x%s", print_buf);
   }
 
   hkdf.expand(out, out_len, cleartext_secret, cleartext_secret_len, reinterpret_cast<const char *>(label), label_len, length);

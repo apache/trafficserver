@@ -28,19 +28,9 @@
 #include <openssl/kdf.h>
 #include <openssl/evp.h>
 
-static constexpr char tag[] = "quic_tls";
+#include "QUICDebugNames.h"
 
-static void
-to_hex(uint8_t *out, uint8_t *in, int in_len)
-{
-  for (int i = 0; i < in_len; ++i) {
-    int u4         = in[i] / 16;
-    int l4         = in[i] % 16;
-    out[i * 2]     = (u4 < 10) ? ('0' + u4) : ('A' + u4 - 10);
-    out[i * 2 + 1] = (l4 < 10) ? ('0' + l4) : ('A' + l4 - 10);
-  }
-  out[in_len * 2] = 0;
-}
+static constexpr char tag[] = "quic_tls";
 
 static void
 msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
@@ -113,11 +103,11 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const
     }
 
     uint8_t print_buf[512];
-    to_hex(print_buf, km->key, km->key_len);
+    QUICDebug::to_hex(print_buf, km->key, km->key_len);
     Debug("vv_quic_crypto", "key 0x%s", print_buf);
-    to_hex(print_buf, km->iv, km->iv_len);
+    QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
     Debug("vv_quic_crypto", "iv 0x%s", print_buf);
-    to_hex(print_buf, km->pn, km->pn_len);
+    QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
     Debug("vv_quic_crypto", "pn 0x%s", print_buf);
   }
 

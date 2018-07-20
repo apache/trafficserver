@@ -41,3 +41,19 @@ public:
   static const char *key_phase(QUICKeyPhase phase);
   static const char *encryption_level(QUICEncryptionLevel level);
 };
+
+class QUICDebug
+{
+public:
+  static void
+  to_hex(uint8_t *out, uint8_t *in, int in_len)
+  {
+    for (int i = 0; i < in_len; ++i) {
+      int u4         = in[i] / 16;
+      int l4         = in[i] % 16;
+      out[i * 2]     = (u4 < 10) ? ('0' + u4) : ('A' + u4 - 10);
+      out[i * 2 + 1] = (l4 < 10) ? ('0' + l4) : ('A' + l4 - 10);
+    }
+    out[in_len * 2] = 0;
+  }
+};
