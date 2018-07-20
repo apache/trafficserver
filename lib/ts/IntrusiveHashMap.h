@@ -617,17 +617,42 @@ IntrusiveHashMap<H>::erase(range const &r) -> iterator
   return this->erase(r.first, r.second);
 }
 
+namespace detail
+{
+// Make @c apply more convenient by allowing the function to take a reference type or pointer type to the container
+// elements. The pointer type is the base, plus a shim to convert from a reference type functor to a pointer pointer
+// type. The complex return type definition forces only one, but not both, to be valid for a particular functor. This
+// also must be done via free functions and not method overloads because the compiler forces a match up of method
+// definitions and declarations before any template instantiation.
+
+template <typename H, typename F>
+auto
+IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
+  -> decltype(f(*static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
+{
+  return map.apply([&f](typename IntrusiveHashMap<H>::value_type *v) { return f(*v); });
+}
+
+template <typename H, typename F>
+auto
+IntrusiveHashMapApply(IntrusiveHashMap<H> &map, F &&f)
+  -> decltype(f(static_cast<typename IntrusiveHashMap<H>::value_type *>(nullptr)), map)
+{
+  auto spot{map.begin()};
+  auto limit{map.end()};
+  while (spot != limit) {
+    f(spot++); // post increment means @a spot is updated before @a f is applied.
+  }
+  return map;
+}
+} // namespace detail
+
 template <typename H>
 template <typename F>
 auto
 IntrusiveHashMap<H>::apply(F &&f) -> self_type &
 {
-  iterator spot{this->begin()};
-  iterator limit{this->end()};
-  while (spot != limit) {
-    f(*spot++); // post increment means @a spot is updated before @a f is applied.
-  }
-  return *this;
+  return detail::IntrusiveHashMapApply(*this, f);
 };
 
 template <typename H>

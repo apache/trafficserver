@@ -144,5 +144,5 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
     REQUIRE(elt._payload == "dup"sv);
   }
   // clean up the last bits.
-  map.apply([](Thing &thing) { delete &thing; });
+  map.apply([](Thing *thing) { delete thing; });
 };
