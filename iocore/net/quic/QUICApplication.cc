@@ -66,12 +66,24 @@ QUICStreamIO::read(uint8_t *buf, int64_t len)
                       this->_read_vio->ndone, this->_read_buffer_reader->read_avail(), len);
   }
 
-  int64_t nread = this->_read_buffer_reader->read(const_cast<uint8_t *>(buf), len);
+  int64_t nread = this->_read_buffer_reader->read(buf, len);
   if (nread > 0) {
     this->_read_vio->ndone += nread;
   }
 
   return nread;
+}
+
+int64_t
+QUICStreamIO::peek(uint8_t *buf, int64_t len)
+{
+  return this->_read_buffer_reader->memcpy(buf, len) - reinterpret_cast<char *>(buf);
+}
+
+void
+QUICStreamIO::consume(int64_t len)
+{
+  this->_read_buffer_reader->consume(len);
 }
 
 bool

@@ -43,6 +43,8 @@ public:
   uint32_t stream_id() const;
 
   int64_t read(uint8_t *buf, int64_t len);
+  int64_t peek(uint8_t *buf, int64_t len);
+  void consume(int64_t len);
   bool is_read_done();
   virtual void read_reenable();
 
