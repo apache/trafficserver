@@ -155,6 +155,22 @@ QUICTLS::update_key_materials()
   return 1;
 }
 
+QUICEncryptionLevel
+QUICTLS::current_encryption_level() const
+{
+  return this->_current_level;
+}
+
+void
+QUICTLS::_update_encryption_level(QUICEncryptionLevel level)
+{
+  if (this->_current_level < level) {
+    this->_current_level = level;
+  }
+
+  return;
+}
+
 int
 QUICTLS::_read_early_data()
 {

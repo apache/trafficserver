@@ -60,6 +60,7 @@ public:
                   const uint8_t *sample, QUICKeyPhase phase) const override;
   bool decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
                   const uint8_t *sample, QUICKeyPhase phase) const override;
+  QUICEncryptionLevel current_encryption_level() const override;
 
   // FIXME SSL handle should not be exported
   SSL *ssl_handle();
@@ -82,6 +83,10 @@ private:
                    const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
   bool _decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
                    const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
+  int _read_early_data();
+  void _generate_0rtt_key();
+  void _update_encryption_level(QUICEncryptionLevel level);
+
   SSL *_ssl                              = nullptr;
   QUICPacketProtection *_client_pp       = nullptr;
   QUICPacketProtection *_server_pp       = nullptr;
@@ -89,6 +94,5 @@ private:
   bool _stateless                        = false;
   bool _early_data_processed             = false;
   bool _early_data                       = true;
-  int _read_early_data();
-  void _generate_0rtt_key();
+  QUICEncryptionLevel _current_level     = QUICEncryptionLevel::INITIAL;
 };

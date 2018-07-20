@@ -121,18 +121,23 @@ QUICTLS::update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int nam
 {
   switch (name) {
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
+    // this->_update_encryption_level(QUICEncryptionLevel::ZERO_RTT);
     this->_client_pp->set_key(std::move(km), QUICKeyPhase::ZERORTT);
     break;
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
+    this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
     this->_client_pp->set_key(std::move(km), QUICKeyPhase::HANDSHAKE);
     break;
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
+    this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
     this->_client_pp->set_key(std::move(km), QUICKeyPhase::PHASE_0);
     break;
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
+    this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
     this->_server_pp->set_key(std::move(km), QUICKeyPhase::HANDSHAKE);
     break;
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
+    this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
     this->_server_pp->set_key(std::move(km), QUICKeyPhase::PHASE_0);
     break;
   default:

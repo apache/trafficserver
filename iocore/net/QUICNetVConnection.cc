@@ -1383,7 +1383,9 @@ QUICNetVConnection::_packetize_closing_frame()
   QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
   this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
 
-  this->_the_final_packet = this->_build_packet(std::move(buf), len, false);
+  QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
+  ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
+  this->_the_final_packet = this->_build_packet(level, std::move(buf), len, false);
 }
 
 QUICErrorUPtr
