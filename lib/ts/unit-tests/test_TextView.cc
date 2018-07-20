@@ -194,6 +194,26 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
   elt = ts::TextView{fqdn}.suffix('.');
   REQUIRE(elt.empty());
+
+  // Check some edge cases.
+  fqdn  = "."sv;
+  token = ts::TextView{fqdn}.take_suffix_at('.');
+  REQUIRE(token.size() == 0);
+  REQUIRE(token.empty());
+
+  s = "."sv;
+  REQUIRE(s.size() == 1);
+  REQUIRE(s.rtrim('.').empty());
+  token = s.take_suffix_at('.');
+  REQUIRE(token.size() == 0);
+  REQUIRE(token.empty());
+
+  s = "."sv;
+  REQUIRE(s.size() == 1);
+  REQUIRE(s.ltrim('.').empty());
+  token = s.take_prefix_at('.');
+  REQUIRE(token.size() == 0);
+  REQUIRE(token.empty());
 };
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")
