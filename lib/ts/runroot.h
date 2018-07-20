@@ -48,10 +48,6 @@ const std::string LAYOUT_CACHEDIR      = "cachedir";
 
 typedef std::unordered_map<std::string, std::string> RunrootMapType;
 
-std::string check_path(const std::string &path);
-
-std::string check_parent_path(const std::string &path);
-
 void runroot_handler(const char **argv, bool json = false);
 
 // get a map from default layout

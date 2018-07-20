@@ -46,6 +46,41 @@
 // for nftw check_directory
 std::string directory_check;
 
+// the function for the checking of the yaml file in the passed in path
+// if found return the path, if not return empty string
+std::string
+check_path(const std::string &path)
+{
+  std::ifstream check_file;
+  check_file.open(Layout::relative_to(path, "runroot_path.yml"));
+  if (check_file.good()) {
+    return path;
+  }
+  return {};
+}
+
+// the function for the checking of the yaml file in passed in directory or parent directory
+// if found return the parent path containing the yaml file
+std::string
+check_parent_path(const std::string &path)
+{
+  std::string yaml_path = path;
+  if (yaml_path.back() == '/') {
+    yaml_path.pop_back();
+  }
+  // go up to 4 level of parent directories
+  for (int i = 0; i < 4; i++) {
+    if (yaml_path.empty()) {
+      return {};
+    }
+    if (!check_path(yaml_path).empty()) {
+      return yaml_path;
+    }
+    yaml_path = yaml_path.substr(0, yaml_path.find_last_of("/"));
+  }
+  return {};
+}
+
 // check if we can create the runroot using path
 // return true if the path is good to use
 static bool
@@ -340,7 +375,7 @@ RunrootEngine::clean_runroot()
     }
   } else {
     // handle the map and deleting of each directories specified in the yml file
-    RunrootMapType map = runroot_map(clean_root);
+    RunrootMapType map = runroot_map(Layout::relative_to(clean_root, "runroot_path.yml"));
     map.erase(LAYOUT_PREFIX);
     map.erase(LAYOUT_EXEC_PREFIX);
     for (auto it : map) {
@@ -728,7 +763,7 @@ RunrootEngine::verify_runroot()
     path_map = runroot_map_default();
     std::cout << "Verifying default build ..." << std::endl;
   } else {
-    path_map = runroot_map(path);
+    path_map = runroot_map(Layout::relative_to(path, "runroot_path.yml"));
   }
 
   RunrootMapType permission_map; // contains rwx bits
