@@ -36,6 +36,8 @@
 #include "ts/ink_inet.h"
 
 struct SSLCertLookup;
+struct certinfo;
+typedef struct ocsp_response_st OCSP_RESPONSE;
 
 /////////////////////////////////////////////////////////////
 //
@@ -47,6 +49,7 @@ struct SSLCertLookup;
 
 typedef void (*init_ssl_ctx_func)(void *, bool);
 typedef void (*load_ssl_file_func)(const char *, unsigned int);
+typedef bool (*ocsp_refresh_func)(certinfo *, OCSP_RESPONSE **);
 
 struct SSLConfigParams : public ConfigInfo {
   enum SSL_SESSION_CACHE_MODE {
@@ -108,6 +111,8 @@ struct SSLConfigParams : public ConfigInfo {
 
   static init_ssl_ctx_func init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
+
+  static ocsp_refresh_func ocsp_refresh_cb;
 
   void initialize();
   void cleanup();

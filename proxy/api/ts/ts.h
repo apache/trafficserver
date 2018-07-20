@@ -2385,6 +2385,19 @@ tsapi const char *TSHttpHookNameLookup(TSHttpHookID hook);
 */
 tsapi const char *TSHttpEventNameLookup(TSEvent event);
 
+/**
+ * Declaration of OCSP stapling refresher register function.
+ * The function will accept a function pointer and store it into SSLConfigParams.
+ * During OCSP Stapling, if the function pointer is registered, Traffic Server will call it alternatively.
+ * struct cert is defined in iocore/net/OCSPStapling.cc
+ *
+ * @param funcp, the refresher function, use to send OCSP request and refreh local cache
+ */
+struct certinfo;
+typedef struct ocsp_response_st OCSP_RESPONSE;
+typedef bool (*TSOCSPRefreshFunc)(struct certinfo *, OCSP_RESPONSE **);
+tsapi void TSRegisterOCSPRefresher(TSOCSPRefreshFunc funcp);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
