@@ -142,6 +142,11 @@ public:
     /// @return A pointer to the referent.
     value_type *operator->() const;
 
+    /// Convenience conversion to pointer type
+    /// Because of how this list is normally used, being able to pass an iterator as a pointer is quite convienent.
+    /// If the iterator isn't valid, it converts to @c nullptr.
+    operator value_type *() const;
+
     /// Equality
     bool operator==(self_type const &that) const;
 
@@ -205,6 +210,11 @@ public:
     /// Dereference.
     /// @return A pointer to the referent.
     value_type *operator->() const;
+
+    /// Convenience conversion to pointer type
+    /// Because of how this list is normally used, being able to pass an iterator as a pointer is quite convienent.
+    /// If the iterator isn't valid, it converts to @c nullptr.
+    operator value_type *() const;
 
   protected:
     /// Internal constructor for containers.
@@ -395,6 +405,11 @@ template <typename L> auto IntrusiveDList<L>::iterator::operator-> () const -> v
   return super_type::_v;
 }
 
+template <typename L> IntrusiveDList<L>::const_iterator::operator value_type *() const
+{
+  return _v;
+}
+
 template <typename L> auto IntrusiveDList<L>::const_iterator::operator*() const -> value_type &
 {
   return *_v;
@@ -403,6 +418,11 @@ template <typename L> auto IntrusiveDList<L>::const_iterator::operator*() const 
 template <typename L> auto IntrusiveDList<L>::iterator::operator*() const -> value_type &
 {
   return *super_type::_v;
+}
+
+template <typename L> IntrusiveDList<L>::iterator::operator value_type *() const
+{
+  return super_type::_v;
 }
 
 template <typename L>
