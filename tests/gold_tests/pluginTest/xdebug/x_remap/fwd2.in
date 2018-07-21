@@ -1,0 +1,4 @@
+GET /argh HTTP/1.1
+Host: two
+X-Debug: X-Remap, fwd=0
+

@@ -35,7 +35,7 @@ namespace ts
 //
 // Helpful in avoiding errors due to exception throws or error function return points (like the one that caused Heartbleed).
 //
-template <typename Callable, typename... Args> class PostScript
+template <typename Callable> class PostScript
 {
 public:
   PostScript(Callable f) : _f(f) {}
