@@ -104,6 +104,25 @@ QUICTypeUtil::packet_type(QUICEncryptionLevel level)
   }
 }
 
+// TODO: clarify QUICKeyPhase and QUICEncryptionlevel mapping
+QUICKeyPhase
+QUICTypeUtil::key_phase(QUICPacketType type)
+{
+  switch (type) {
+  case QUICPacketType::INITIAL:
+    return QUICKeyPhase::CLEARTEXT;
+  case QUICPacketType::ZERO_RTT_PROTECTED:
+    return QUICKeyPhase::ZERORTT;
+  case QUICPacketType::HANDSHAKE:
+    return QUICKeyPhase::HANDSHAKE;
+  case QUICPacketType::PROTECTED:
+    // XXX assuming Long Header Packet
+    return QUICKeyPhase::PHASE_0;
+  default:
+    return QUICKeyPhase::CLEARTEXT;
+  }
+}
+
 QUICConnectionId
 QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
 {

@@ -48,7 +48,7 @@ public:
   int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override;
   bool is_handshake_finished() const override;
   bool is_ready_to_derive() const override;
-  bool is_key_derived(QUICKeyPhase key_phase) const override;
+  bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const override;
   int initialize_key_materials(QUICConnectionId cid) override;
   int update_key_materials() override;
   void update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int name);

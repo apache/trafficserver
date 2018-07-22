@@ -54,12 +54,12 @@ QUICTLS::is_ready_to_derive() const
 }
 
 bool
-QUICTLS::is_key_derived(QUICKeyPhase key_phase) const
+QUICTLS::is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const
 {
   if (key_phase == QUICKeyPhase::ZERORTT) {
     return this->_client_pp->get_key(QUICKeyPhase::ZERORTT);
   } else {
-    return this->_client_pp->get_key(key_phase) && this->_server_pp->get_key(key_phase);
+    return this->_get_km(key_phase, for_encryption);
   }
 }
 

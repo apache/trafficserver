@@ -76,7 +76,7 @@ public:
   virtual int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)                           = 0;
   virtual bool is_handshake_finished() const                                                           = 0;
   virtual bool is_ready_to_derive() const                                                              = 0;
-  virtual bool is_key_derived(QUICKeyPhase key_phase) const                                            = 0;
+  virtual bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const                       = 0;
   virtual int initialize_key_materials(QUICConnectionId cid)                                           = 0;
   virtual int update_key_materials()                                                                   = 0;
   virtual bool encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,

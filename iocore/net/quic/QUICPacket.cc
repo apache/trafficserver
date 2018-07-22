@@ -131,6 +131,7 @@ QUICPacketHeader::clone() const
 QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
   : QUICPacketHeader(from, std::move(buf), len, base)
 {
+  this->_key_phase = QUICTypeUtil::key_phase(this->type());
   uint8_t *raw_buf = this->_buf.get();
 
   uint8_t dcil = 0;
@@ -156,6 +157,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
 
     // Length Field
     offset += QUICVariableInt::size(raw_buf + offset);
+
     // PN Field
     int pn_len = QUICTypeUtil::read_QUICPacketNumberLen(raw_buf + offset);
     QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(raw_buf + offset), pn_len,
@@ -429,12 +431,7 @@ QUICPacketLongHeader::has_key_phase() const
 QUICKeyPhase
 QUICPacketLongHeader::key_phase() const
 {
-  switch (this->type()) {
-  case QUICPacketType::ZERO_RTT_PROTECTED:
-    return QUICKeyPhase::ZERORTT;
-  default:
-    return QUICKeyPhase::CLEARTEXT;
-  }
+  return this->_key_phase;
 }
 
 uint16_t
@@ -891,14 +888,7 @@ QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, const QUIC
   if (QUICInvariants::is_long_header(packet)) {
     QUICPacketType type;
     QUICPacketLongHeader::type(type, packet, packet_len);
-    switch (type) {
-    case QUICPacketType::ZERO_RTT_PROTECTED:
-      phase = QUICKeyPhase::ZERORTT;
-      break;
-    default:
-      phase = QUICKeyPhase::CLEARTEXT;
-      break;
-    }
+    phase = QUICTypeUtil::key_phase(type);
     QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
   } else {
     QUICPacketShortHeader::key_phase(phase, packet, packet_len);
@@ -934,14 +924,8 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
 
     QUICPacketType type;
     QUICPacketLongHeader::type(type, packet, packet_len);
-    switch (type) {
-    case QUICPacketType::ZERO_RTT_PROTECTED:
-      phase = QUICKeyPhase::ZERORTT;
-      break;
-    default:
-      phase = QUICKeyPhase::CLEARTEXT;
-      break;
-    }
+    phase = QUICTypeUtil::key_phase(type);
+
     if (!QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len)) {
       Debug(tag.data(), "Failed to calculate packet number offset");
       return false;
@@ -1020,7 +1004,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       result        = QUICPacketCreationResult::SUCCESS;
       break;
     case QUICPacketType::PROTECTED:
-      if (this->_hs_protocol->is_key_derived(header->key_phase())) {
+      if (this->_hs_protocol->is_key_derived(header->key_phase(), false)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
                                         header->key_phase())) {
@@ -1033,7 +1017,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::INITIAL:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT)) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT, false)) {
         if (QUICTypeUtil::is_supported_version(header->version())) {
           if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                           header->payload_size(), header->packet_number(), header->buf(), header->size(),
@@ -1050,7 +1034,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::RETRY:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT)) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT, false)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
                                         QUICKeyPhase::CLEARTEXT)) {
@@ -1065,10 +1049,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::HANDSHAKE:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT)) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::HANDSHAKE, false)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                        QUICKeyPhase::CLEARTEXT)) {
+                                        QUICKeyPhase::HANDSHAKE)) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
@@ -1078,7 +1062,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::ZERO_RTT_PROTECTED:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::ZERORTT)) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::ZERORTT, false)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
                                         QUICKeyPhase::ZERORTT)) {

@@ -251,6 +251,8 @@ QUICDebugNames::key_phase(QUICKeyPhase phase)
     return "CLEARTEXT";
   case QUICKeyPhase::ZERORTT:
     return "ZERORTT";
+  case QUICKeyPhase::HANDSHAKE:
+    return "HANDSHAKE";
   default:
     return "UNKNOWN";
   }

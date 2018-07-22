@@ -333,6 +333,7 @@ public:
   [[deprecated]] static QUICStreamType detect_stream_type(QUICStreamId id);
   static QUICEncryptionLevel encryption_level(QUICPacketType type);
   static QUICPacketType packet_type(QUICEncryptionLevel level);
+  static QUICKeyPhase key_phase(QUICPacketType type);
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
   static int read_QUICPacketNumberLen(const uint8_t *buf);
