@@ -265,9 +265,18 @@ public:
   /// @return This list.
   self_type &insert_before(iterator const &target, value_type *v);
 
-  /// Take @a elt out of this list.
-  /// @return This list.
-  self_type &erase(value_type *v);
+  /// Take @a v out of this list.
+  /// @return The element after @a v.
+  value_type *erase(value_type *v);
+
+  /// Take the element at @a loc out of this list.
+  /// @return Iterator for the next element.
+  iterator erase(const iterator &loc);
+
+  /// Take elements out of the list.
+  /// Remove elements start with @a start up to but not including @a limit.
+  /// @return @a limit
+  iterator erase(const iterator &start, const iterator &limit);
 
   /// Remove all elements.
   /// @note @b No memory management is done!
@@ -577,12 +586,15 @@ IntrusiveDList<L>::insert_before(iterator const &target, value_type *v) -> self_
 
 template <typename L>
 auto
-IntrusiveDList<L>::erase(value_type *v) -> self_type &
+IntrusiveDList<L>::erase(value_type *v) -> value_type *
 {
+  value_type *zret{nullptr};
+
   if (L::prev_ptr(v)) {
     L::next_ptr(L::prev_ptr(v)) = L::next_ptr(v);
   }
   if (L::next_ptr(v)) {
+    zret                        = L::next_ptr(v);
     L::prev_ptr(L::next_ptr(v)) = L::prev_ptr(v);
   }
   if (v == _head) {
@@ -594,8 +606,43 @@ IntrusiveDList<L>::erase(value_type *v) -> self_type &
   L::prev_ptr(v) = L::next_ptr(v) = nullptr;
   --_count;
 
-  return *this;
+  return zret;
 }
+
+template <typename L>
+auto
+IntrusiveDList<L>::erase(const iterator &loc) -> iterator
+{
+  return this->iterator_for(this->erase(loc._v));
+};
+
+template <typename L>
+auto
+IntrusiveDList<L>::erase(const iterator &first, const iterator &limit) -> iterator
+{
+  value_type *spot = first;
+  value_type *prev{L::prev_ptr(spot)};
+  if (prev) {
+    L::next_ptr(prev) = limit;
+  }
+  if (spot == _head) {
+    _head = limit;
+  }
+  // tail is only updated if @a limit is @a end (e.g., @c nullptr).
+  if (nullptr == limit) {
+    _tail = prev;
+  } else {
+    L::prev_ptr(limit) = prev;
+  }
+  // Clear links in removed elements.
+  while (spot != limit) {
+    value_type *target{spot};
+    spot                = L::next_ptr(spot);
+    L::prev_ptr(target) = L::next_ptr(target) = nullptr;
+  };
+
+  return {limit._v, this};
+};
 
 template <typename L>
 size_t
