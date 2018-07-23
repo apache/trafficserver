@@ -163,7 +163,7 @@ protected:
 class QUICTransportParametersHandler
 {
 public:
-  static constexpr int TRANSPORT_PARAMETER_ID = 26;
+  static constexpr int TRANSPORT_PARAMETER_ID = 0xffa5;
 
   static int add(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char **out, size_t *outlen, X509 *x,
                  size_t chainidx, int *al, void *add_arg);

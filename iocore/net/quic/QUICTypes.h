@@ -44,8 +44,8 @@ using QUICStreamId     = uint64_t;
 using QUICOffset       = uint64_t;
 
 // TODO: Update version number
-// Note: You also need to update tests for VersionNegotiationPacket creation, if you change the number of versions
-// Prefix for drafts (0xff000000) + draft number
+// Note: Prefix for drafts (0xff000000) + draft number
+// Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff00000d,
 };
