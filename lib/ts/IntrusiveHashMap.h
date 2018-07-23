@@ -225,23 +225,30 @@ public:
 
   /** Get an @c iterator for the value @a v.
 
-      This is a bit obscure but needed in certain cases. It should only be used on a @a value that
-      is already known to be in the table.
+      This is a bit obscure but needed in certain cases. Because the interface assumes iterators are always valid
+      this avoid containment checks, which is useful if @a v is already known to be in the container.
    */
   iterator iterator_for(value_type *v);
+  const_iterator iterator_for(const value_type *v) const;
 
   /** Remove the value at @a loc from the table.
 
       @note This does @b not clean up the removed elements. Use carefully to avoid leaks.
 
-      @return @c true if the value was removed, @c false otherwise.
+      @return An iterator the next value past @a loc. [STL compatibility]
   */
-  bool erase(iterator const &loc);
+  iterator erase(iterator const &loc);
 
   /// Remove all elements in the @c range @a r.
-  bool erase(range const &r);
-  /// Remove all elements in the range (first, last]
-  bool erase(iterator const &first, iterator const &last);
+  iterator erase(range const &r);
+
+  /// Remove all elements in the range (start, limit]
+  iterator erase(iterator const &start, iterator const &limit);
+
+  /// Remove a @a value from the container.
+  /// @a value is checked for being a member of the container.
+  /// @return @c true if @a value was in the container and removed, @c false if it was not in the container.
+  bool erase(value_type *value);
 
   /** Apply @a F(value_type&) to every element in the hash map.
    *
@@ -479,6 +486,13 @@ IntrusiveHashMap<H>::equal_range(key_type key) const -> const_range
 
 template <typename H>
 auto
+IntrusiveHashMap<H>::iterator_for(const value_type *v) const -> const_iterator
+{
+  return _list.iterator_for(v);
+}
+
+template <typename H>
+auto
 IntrusiveHashMap<H>::iterator_for(value_type *v) -> iterator
 {
   return _list.iterator_for(v);
@@ -541,31 +555,66 @@ IntrusiveHashMap<H>::insert(value_type *v)
 }
 
 template <typename H>
-bool
-IntrusiveHashMap<H>::erase(iterator const &loc)
+auto
+IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator
 {
-  bool zret = false;
-
-  if (loc != this->end()) {
-    value_type *v = &*loc;
-    Bucket *b     = this->bucket_for(H::key_of(v));
-    if (b->contains(v)) {
-      value_type *nv    = H::next_ptr(v);
-      value_type *limit = b->limit();
-      if (b->_v == v) {    // removed first element in bucket, update bucket
-        if (limit == nv) { // that was also the only element, deactivate bucket
-          _active_buckets.erase(b);
-          b->clear();
-        } else {
-          b->_v = nv;
-          --b->_count;
-        }
-      }
-      zret = true;
-      _list.erase(v);
+  value_type *v     = loc;
+  iterator zret     = ++(this->iterator_for(v)); // get around no const_iterator -> iterator.
+  Bucket *b         = this->bucket_for(H::key_of(v));
+  value_type *nv    = H::next_ptr(v);
+  value_type *limit = b->limit();
+  if (b->_v == v) {    // removed first element in bucket, update bucket
+    if (limit == nv) { // that was also the only element, deactivate bucket
+      _active_buckets.erase(b);
+      b->clear();
+    } else {
+      b->_v = nv;
+      --b->_count;
     }
   }
+  _list.erase(loc);
   return zret;
+}
+
+template <typename H>
+bool
+IntrusiveHashMap<H>::erase(value_type *value)
+{
+  auto loc = this->find(value);
+  if (loc != this->end()) {
+    this->erase(loc);
+    return true;
+  }
+  return false;
+}
+
+template <typename H>
+auto
+IntrusiveHashMap<H>::erase(iterator const &start, iterator const &limit) -> iterator
+{
+  auto spot{start};
+  Bucket *bucket{this->bucket_for(spot)};
+  while (spot != limit) {
+    auto target         = bucket;
+    bucket              = bucket->_link._next; // bump now to avoid forward iteration problems in case of bucket removal.
+    value_type *v_limit = bucket ? bucket->_v : nullptr;
+    while (spot != v_limit && spot != limit) {
+      --(target->_count);
+      ++spot;
+    }
+    if (target->_count == 0) {
+      _active_buckets.erase(target);
+    }
+  }
+  _list.erase(start, limit);
+  return _list.iterator_for(limit); // convert from const_iterator back to iterator
+};
+
+template <typename H>
+auto
+IntrusiveHashMap<H>::erase(range const &r) -> iterator
+{
+  return this->erase(r.first, r.second);
 }
 
 template <typename H>
