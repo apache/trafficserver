@@ -1437,24 +1437,30 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
   switch (type) {
-  case QUICPacketType::INITIAL:
-    packet = this->_packet_factory.create_initial_packet(this->_original_quic_connection_id, this->_quic_connection_id,
-                                                         this->largest_acked_packet_number(), std::move(buf), len);
+  case QUICPacketType::INITIAL: {
+    QUICConnectionId dcid =
+      (this->netvc_context == NET_VCONNECTION_OUT) ? this->_original_quic_connection_id : this->_peer_quic_connection_id;
+    packet = this->_packet_factory.create_initial_packet(dcid, this->_quic_connection_id, this->largest_acked_packet_number(),
+                                                         std::move(buf), len);
     break;
-  case QUICPacketType::RETRY:
+  }
+  case QUICPacketType::RETRY: {
     // Echo "_largest_received_packet_number" as packet number. Probably this is the packet number from triggering client packet.
     packet = this->_packet_factory.create_retry_packet(this->_peer_quic_connection_id, this->_quic_connection_id, std::move(buf),
                                                        len, retransmittable);
     break;
-  case QUICPacketType::HANDSHAKE:
+  }
+  case QUICPacketType::HANDSHAKE: {
     packet =
       this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
                                                     this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
     break;
-  case QUICPacketType::PROTECTED:
+  }
+  case QUICPacketType::PROTECTED: {
     packet = this->_packet_factory.create_server_protected_packet(
       this->_peer_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
     break;
+  }
   default:
     // should not be here except zero_rtt
     ink_assert(false);
