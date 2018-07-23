@@ -35,8 +35,8 @@ is_vn(QUICVersion v)
   return v == 0x0;
 }
 
-static size_t
-long_hdr_pkt_len(uint8_t *buf, size_t len)
+static bool
+long_hdr_pkt_len(size_t &pkt_len, uint8_t *buf, size_t len)
 {
   uint8_t dcil, scil;
   QUICPacketLongHeader::dcil(dcil, buf, len);
@@ -45,15 +45,21 @@ long_hdr_pkt_len(uint8_t *buf, size_t len)
   size_t offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
 
   // token_length and token_length_field_len should be 0 except INITIAL packet
-  size_t token_length;
-  uint8_t token_length_field_len;
-  QUICPacketLongHeader::token_length(token_length, &token_length_field_len, buf, len);
+  size_t token_length            = 0;
+  uint8_t token_length_field_len = 0;
+  if (!QUICPacketLongHeader::token_length(token_length, &token_length_field_len, buf, len)) {
+    return false;
+  }
 
-  size_t length;
-  uint8_t length_field_len;
-  QUICPacketLongHeader::length(length, &length_field_len, buf, len);
+  size_t length            = 0;
+  uint8_t length_field_len = 0;
+  if (!QUICPacketLongHeader::length(length, &length_field_len, buf, len)) {
+    return false;
+  }
 
-  return offset + token_length + token_length_field_len + length_field_len + length;
+  pkt_len = offset + token_length + token_length_field_len + length_field_len + length;
+
+  return true;
 }
 
 QUICPacketReceiveQueue::QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketNumberProtector &pn_protector)
@@ -113,7 +119,16 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
         result  = QUICPacketCreationResult::UNSUPPORTED;
         pkt_len = remaining_len;
       } else {
-        pkt_len = long_hdr_pkt_len(this->_payload.get() + this->_offset, remaining_len);
+        if (!long_hdr_pkt_len(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
+          this->_payload.release();
+          this->_payload     = nullptr;
+          this->_payload_len = 0;
+          this->_offset      = 0;
+
+          result = QUICPacketCreationResult::IGNORED;
+
+          return quic_packet;
+        }
       }
     } else {
       pkt_len = remaining_len;

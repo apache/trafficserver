@@ -280,6 +280,10 @@ QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, con
     return false;
   }
 
+  if (offset > packet_len) {
+    return false;
+  }
+
   token_length = QUICIntUtil::read_QUICVariableInt(packet + offset);
   if (field_len) {
     *field_len = QUICVariableInt::size(packet + offset);
@@ -308,7 +312,6 @@ QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *
     return false;
   }
   length = QUICIntUtil::read_QUICVariableInt(packet + length_offset);
-
   if (field_len) {
     *field_len = QUICVariableInt::size(packet + length_offset);
   }
