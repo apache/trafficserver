@@ -110,6 +110,8 @@ public:
   int marshal_proxy_hierarchy_route(char *) override; // INT
   int marshal_proxy_host_port(char *) override;       // INT
   int marshal_proxy_req_is_ssl(char *) override;      // INT
+  int marshal_next_hop_ip(char *) override;           // STR
+  int marshal_next_hop_port(char *) override;         // INT
 
   //
   // server -> proxy fields
