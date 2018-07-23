@@ -32,15 +32,79 @@
 
 static constexpr char tag[] = "quic_tls";
 
+static const char *
+content_type_str(int type)
+{
+  switch (type) {
+  case SSL3_RT_CHANGE_CIPHER_SPEC:
+    return "SSL3_RT_CHANGE_CIPHER_SPEC";
+  case SSL3_RT_ALERT:
+    return "SSL3_RT_ALERT 21";
+  case SSL3_RT_HANDSHAKE:
+    return "SSL3_RT_HANDSHAKE";
+  case SSL3_RT_APPLICATION_DATA:
+    return "SSL3_RT_APPLICATION_DATA";
+  case SSL3_RT_HEADER:
+    // The buf contains the record header bytes only
+    return "SSL3_RT_HEADER";
+  case SSL3_RT_INNER_CONTENT_TYPE:
+    // Used when an encrypted TLSv1.3 record is sent or received. In encrypted TLSv1.3 records the content type in the record header
+    // is always SSL3_RT_APPLICATION_DATA. The real content type for the record is contained in an "inner" content type. buf
+    // contains the encoded "inner" content type byte.
+    return "SSL3_RT_INNER_CONTENT_TYPE";
+  default:
+    return "UNKNOWN";
+  }
+}
+
+static const char *
+hs_type_str(int type)
+{
+  switch (type) {
+  case SSL3_MT_CLIENT_HELLO:
+    return "SSL3_MT_CLIENT_HELLO";
+  case SSL3_MT_SERVER_HELLO:
+    return "SSL3_MT_SERVER_HELLO";
+  case SSL3_MT_NEWSESSION_TICKET:
+    return "SSL3_MT_NEWSESSION_TICKET";
+  case SSL3_MT_END_OF_EARLY_DATA:
+    return "SSL3_MT_END_OF_EARLY_DATA";
+  case SSL3_MT_ENCRYPTED_EXTENSIONS:
+    return "SSL3_MT_ENCRYPTED_EXTENSIONS";
+  case SSL3_MT_CERTIFICATE:
+    return "SSL3_MT_CERTIFICATE";
+  case SSL3_MT_CERTIFICATE_VERIFY:
+    return "SSL3_MT_CERTIFICATE_VERIFY";
+  case SSL3_MT_FINISHED:
+    return "SSL3_MT_FINISHED";
+  case SSL3_MT_KEY_UPDATE:
+    return "SSL3_MT_KEY_UPDATE";
+  case SSL3_MT_MESSAGE_HASH:
+    return "SSL3_MT_MESSAGE_HASH";
+  default:
+    return "UNKNOWN";
+  }
+}
+
 static void
 msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
 {
+  // Debug for reading
+  if (write_p == 0 && (content_type == SSL3_RT_HANDSHAKE || content_type == SSL3_RT_ALERT)) {
+    const uint8_t *tmp = reinterpret_cast<const uint8_t *>(buf);
+    int msg_type       = tmp[0];
+
+    Debug("v_quic_crypto", "%s (%d), %s (%d)", content_type_str(content_type), content_type, hs_type_str(msg_type), msg_type);
+    return;
+  }
+
   if (!write_p || !arg || version != TLS1_3_VERSION || (content_type != SSL3_RT_HANDSHAKE && content_type != SSL3_RT_ALERT)) {
     return;
   }
 
-  const uint8_t *tmp        = reinterpret_cast<const uint8_t *>(buf);
-  int msg_type              = tmp[0];
+  const uint8_t *tmp = reinterpret_cast<const uint8_t *>(buf);
+  int msg_type       = tmp[0];
+
   QUICEncryptionLevel level = QUICTLS::get_encryption_level(msg_type);
   int index                 = static_cast<int>(level);
   int next_index            = index + 1;
@@ -104,11 +168,11 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const
 
     uint8_t print_buf[512];
     QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "key 0x%s", print_buf);
+    Debug("vv_quic_crypto", "key=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "iv 0x%s", print_buf);
+    Debug("vv_quic_crypto", "iv=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "pn 0x%s", print_buf);
+    Debug("vv_quic_crypto", "pn=%s", print_buf);
   }
 
   qtls->update_key_materials_on_key_cb(std::move(km), name);

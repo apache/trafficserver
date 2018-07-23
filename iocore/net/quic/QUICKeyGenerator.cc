@@ -63,7 +63,7 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
     if (is_debug_tag_set("vv_quic_crypto")) {
       uint8_t print_buf[512];
       QUICDebug::to_hex(print_buf, secret, secret_len);
-      Debug("vv_quic_crypto", "client in secret 0x%s", print_buf);
+      Debug("vv_quic_crypto", "client_in_secret=%s", print_buf);
     }
 
     break;
@@ -73,7 +73,7 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
     if (is_debug_tag_set("vv_quic_crypto")) {
       uint8_t print_buf[512];
       QUICDebug::to_hex(print_buf, secret, secret_len);
-      Debug("vv_quic_crypto", "server in secret 0x%s", print_buf);
+      Debug("vv_quic_crypto", "server_in_secret=%s", print_buf);
     }
 
     break;
@@ -162,7 +162,7 @@ QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, QUIC
   if (is_debug_tag_set("vv_quic_crypto")) {
     uint8_t print_buf[512];
     QUICDebug::to_hex(print_buf, cleartext_secret, cleartext_secret_len);
-    Debug("vv_quic_crypto", "initial secret 0x%s", print_buf);
+    Debug("vv_quic_crypto", "initial_secret=%s", print_buf);
   }
 
   hkdf.expand(out, out_len, cleartext_secret, cleartext_secret_len, reinterpret_cast<const char *>(label), label_len, length);

@@ -75,11 +75,11 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   if (is_debug_tag_set("vv_quic_crypto")) {
     uint8_t print_buf[512];
     QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "client key 0x%s", print_buf);
+    Debug("vv_quic_crypto", "key=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
+    Debug("vv_quic_crypto", "iv=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "client pn 0x%s", print_buf);
+    Debug("vv_quic_crypto", "pn=%s", print_buf);
   }
   this->_client_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 
@@ -88,11 +88,11 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   if (is_debug_tag_set("vv_quic_crypto")) {
     uint8_t print_buf[512];
     QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "server key 0x%s", print_buf);
+    Debug("vv_quic_crypto", "key=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
+    Debug("vv_quic_crypto", "iv=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "server pn 0x%s", print_buf);
+    Debug("vv_quic_crypto", "pn=%s", print_buf);
   }
   this->_server_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
 

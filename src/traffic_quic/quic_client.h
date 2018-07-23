@@ -36,7 +36,7 @@ struct QUICClientConfig {
   char output[1024]     = {0};
   char port[16]         = "4433";
   char path[1018]       = "/";
-  char debug_tags[1024] = "quic";
+  char debug_tags[1024] = "quic|vv_quic_crypto";
   int close             = false;
 };
 
