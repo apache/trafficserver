@@ -43,7 +43,11 @@ libhdrs_a_SOURCES = \
 	MIME.cc \
 	MIME.h \
 	URL.cc \
-	URL.h
+	URL.h \
+	HuffmanCodec.cc \
+	HuffmanCodec.h \
+	XPACK.cc \
+	XPACK.h
 
 if BUILD_TESTS
 libhdrs_a_SOURCES += \
@@ -61,9 +65,13 @@ load_http_hdr_LDADD = -L. -lhdrs \
 	$(top_builddir)/lib/ts/libtsutil.la \
 	@LIBTCL@
 
-check_PROGRAMS = test_mime
+check_PROGRAMS = \
+	test_mime \
+	test_Huffmancode
 
-TESTS = test_mime
+TESTS = \
+	test_mime \
+	test_Huffmancode
 
 test_mime_LDADD = -L. -lhdrs \
 	$(top_builddir)/lib/ts/libtsutil.la \
@@ -75,6 +83,15 @@ test_mime_LDADD = -L. -lhdrs \
 	@LIBTCL@ @LIBCAP@
 
 test_mime_SOURCES = test_mime.cc
+
+test_Huffmancode_LDADD = \
+	$(top_builddir)/lib/ts/libtsutil.la
+
+test_Huffmancode_SOURCES = \
+	test_Huffmancode.cc \
+	HuffmanCodec.cc \
+	HuffmanCodec.h
+
 
 #test_UNUSED_SOURCES = \
 #  test_urlhash.cc

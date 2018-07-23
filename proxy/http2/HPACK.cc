@@ -409,92 +409,6 @@ HpackDynamicTable::length() const
   return _headers.size();
 }
 
-//
-// [RFC 7541] 5.1. Integer representation
-//
-int64_t
-encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n)
-{
-  if (buf_start >= buf_end) {
-    return -1;
-  }
-
-  uint8_t *p = buf_start;
-
-  if (value < (static_cast<uint32_t>(1 << n) - 1)) {
-    *(p++) = value;
-  } else {
-    *(p++) = (1 << n) - 1;
-    value -= (1 << n) - 1;
-    while (value >= 128) {
-      if (p >= buf_end) {
-        return -1;
-      }
-      *(p++) = (value & 0x7F) | 0x80;
-      value  = value >> 7;
-    }
-    if (p + 1 >= buf_end) {
-      return -1;
-    }
-    *(p++) = value;
-  }
-  return p - buf_start;
-}
-
-int64_t
-encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len)
-{
-  uint8_t *p       = buf_start;
-  bool use_huffman = true;
-  char *data       = nullptr;
-  int64_t data_len = 0;
-
-  // TODO Choose whether to use Huffman encoding wisely
-
-  if (use_huffman && value_len) {
-    data = static_cast<char *>(ats_malloc(value_len * 4));
-    if (data == nullptr) {
-      return -1;
-    }
-    data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
-  }
-
-  // Length
-  const int64_t len = encode_integer(p, buf_end, data_len, 7);
-  if (len == -1) {
-    if (use_huffman) {
-      ats_free(data);
-    }
-
-    return -1;
-  }
-
-  if (use_huffman) {
-    *p |= 0x80;
-  }
-  p += len;
-
-  if (buf_end < p || buf_end - p < data_len) {
-    if (use_huffman) {
-      ats_free(data);
-    }
-
-    return -1;
-  }
-
-  // Value
-  if (data_len) {
-    memcpy(p, data, data_len);
-    p += data_len;
-  }
-
-  if (use_huffman) {
-    ats_free(data);
-  }
-
-  return p - buf_start;
-}
-
 int64_t
 encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index)
 {
@@ -505,7 +419,7 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
   uint8_t *p = buf_start;
 
   // Index
-  const int64_t len = encode_integer(p, buf_end, index, 7);
+  const int64_t len = xpack_encode_integer(p, buf_end, index, 7);
   if (len == -1) {
     return -1;
   }
@@ -551,7 +465,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   }
 
   // Index
-  len = encode_integer(p, buf_end, index, prefix);
+  len = xpack_encode_integer(p, buf_end, index, prefix);
   if (len == -1) {
     return -1;
   }
@@ -566,7 +480,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   // Value String
   int value_len;
   const char *value = header.value_get(&value_len);
-  len               = encode_string(p, buf_end, value, value_len);
+  len               = xpack_encode_string(p, buf_end, value, value_len);
   if (len == -1) {
     return -1;
   }
@@ -616,7 +530,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   }
 
   // Name String
-  len = encode_string(p, buf_end, lower_name, name_len);
+  len = xpack_encode_string(p, buf_end, lower_name, name_len);
   if (len == -1) {
     return -1;
   }
@@ -625,7 +539,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   // Value String
   int value_len;
   const char *value = header.value_get(&value_len);
-  len               = encode_string(p, buf_end, value, value_len);
+  len               = xpack_encode_string(p, buf_end, value, value_len);
   if (len == -1) {
     return -1;
   }
@@ -639,7 +553,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 int64_t
 encode_dynamic_table_size_update(uint8_t *buf_start, const uint8_t *buf_end, uint32_t size)
 {
-  const int64_t len = encode_integer(buf_start, buf_end, size, 5);
+  const int64_t len = xpack_encode_integer(buf_start, buf_end, size, 5);
   if (len == -1) {
     return -1;
   }
@@ -649,97 +563,17 @@ encode_dynamic_table_size_update(uint8_t *buf_start, const uint8_t *buf_end, uin
 }
 
 //
-// [RFC 7541] 5.1. Integer representation
-//
-int64_t
-decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n)
-{
-  if (buf_start >= buf_end) {
-    return HPACK_ERROR_COMPRESSION_ERROR;
-  }
-
-  const uint8_t *p = buf_start;
-
-  dst = (*p & ((1 << n) - 1));
-  if (dst == static_cast<uint32_t>(1 << n) - 1) {
-    int m = 0;
-    do {
-      if (++p >= buf_end) {
-        return HPACK_ERROR_COMPRESSION_ERROR;
-      }
-
-      uint32_t added_value = *p & 0x7f;
-      if ((UINT32_MAX >> m) < added_value) {
-        // Excessively large integer encodings - in value or octet
-        // length - MUST be treated as a decoding error.
-        return HPACK_ERROR_COMPRESSION_ERROR;
-      }
-      dst += added_value << m;
-      m += 7;
-    } while (*p & 0x80);
-  }
-
-  return p - buf_start + 1;
-}
-
-//
-// [RFC 7541] 5.2. String Literal Representation
-// return content from String Data (Length octets) with huffman decoding if it is encoded
-//
-int64_t
-decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end)
-{
-  if (buf_start >= buf_end) {
-    return HPACK_ERROR_COMPRESSION_ERROR;
-  }
-
-  const uint8_t *p            = buf_start;
-  bool isHuffman              = *p & 0x80;
-  uint32_t encoded_string_len = 0;
-  int64_t len                 = 0;
-
-  len = decode_integer(encoded_string_len, p, buf_end, 7);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
-    return HPACK_ERROR_COMPRESSION_ERROR;
-  }
-  p += len;
-
-  if ((p + encoded_string_len) > buf_end) {
-    return HPACK_ERROR_COMPRESSION_ERROR;
-  }
-
-  if (isHuffman) {
-    // Allocate temporary area twice the size of before decoded data
-    *str = arena.str_alloc(encoded_string_len * 2);
-
-    len = huffman_decode(*str, p, encoded_string_len);
-    if (len < 0) {
-      return HPACK_ERROR_COMPRESSION_ERROR;
-    }
-    str_length = len;
-  } else {
-    *str = arena.str_alloc(encoded_string_len);
-
-    memcpy(*str, reinterpret_cast<const char *>(p), encoded_string_len);
-
-    str_length = encoded_string_len;
-  }
-
-  return p + encoded_string_len - buf_start;
-}
-
-//
 // [RFC 7541] 6.1. Indexed Header Field Representation
 //
 int64_t
 decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                             HpackIndexingTable &indexing_table)
 {
-  uint32_t index = 0;
+  uint64_t index = 0;
   int64_t len    = 0;
 
-  len = decode_integer(index, buf_start, buf_end, 7);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
+  len = xpack_decode_integer(index, buf_start, buf_end, 7);
+  if (len == XPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
@@ -771,22 +605,22 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 {
   const uint8_t *p         = buf_start;
   bool isIncremental       = false;
-  uint32_t index           = 0;
+  uint64_t index           = 0;
   int64_t len              = 0;
   HpackField ftype         = hpack_parse_field_type(*p);
   bool has_http2_violation = false;
 
   if (ftype == HpackField::INDEXED_LITERAL) {
-    len           = decode_integer(index, p, buf_end, 6);
+    len           = xpack_decode_integer(index, p, buf_end, 6);
     isIncremental = true;
   } else if (ftype == HpackField::NEVERINDEX_LITERAL) {
-    len = decode_integer(index, p, buf_end, 4);
+    len = xpack_decode_integer(index, p, buf_end, 4);
   } else {
     ink_assert(ftype == HpackField::NOINDEX_LITERAL);
-    len = decode_integer(index, p, buf_end, 4);
+    len = xpack_decode_integer(index, p, buf_end, 4);
   }
 
-  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
+  if (len == XPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
@@ -799,10 +633,10 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     indexing_table.get_header_field(index, header);
   } else {
     char *name_str        = nullptr;
-    uint32_t name_str_len = 0;
+    uint64_t name_str_len = 0;
 
-    len = decode_string(arena, &name_str, name_str_len, p, buf_end);
-    if (len == HPACK_ERROR_COMPRESSION_ERROR) {
+    len = xpack_decode_string(arena, &name_str, name_str_len, p, buf_end);
+    if (len == XPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
 
@@ -821,10 +655,10 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
   // Decode header field value
   char *value_str        = nullptr;
-  uint32_t value_str_len = 0;
+  uint64_t value_str_len = 0;
 
-  len = decode_string(arena, &value_str, value_str_len, p, buf_end);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
+  len = xpack_decode_string(arena, &value_str, value_str_len, p, buf_end);
+  if (len == XPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
@@ -867,9 +701,9 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
   }
 
   // Update header table size if its required.
-  uint32_t size = 0;
-  int64_t len   = decode_integer(size, buf_start, buf_end, 5);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
+  uint64_t size = 0;
+  int64_t len   = xpack_decode_integer(size, buf_start, buf_end, 5);
+  if (len == XPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
