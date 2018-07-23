@@ -74,6 +74,7 @@ public:
   bool is_version_negotiated() const;
   bool is_completed() const;
   bool is_stateless_retry_enabled() const;
+  bool has_remote_tp() const;
 
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInClientHello> tp);
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp);

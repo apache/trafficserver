@@ -900,6 +900,10 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
     // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
     if (this->_handshake_handler->is_version_negotiated()) {
       error = this->_recv_and_ack(std::move(packet));
+
+      if (!this->_handshake_handler->has_remote_tp()) {
+        error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR));
+      }
     }
   } else {
     // on client side, _handshake_handler is already started. Just process packet like _state_handshake_process_handshake_packet()
@@ -1645,6 +1649,10 @@ QUICNetVConnection::_complete_handshake_if_possible()
   }
 
   if (!(this->_handshake_handler && this->_handshake_handler->is_completed())) {
+    return -1;
+  }
+
+  if (this->netvc_context == NET_VCONNECTION_OUT && !this->_handshake_handler->has_remote_tp()) {
     return -1;
   }
 

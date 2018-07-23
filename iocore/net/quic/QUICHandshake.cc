@@ -198,6 +198,12 @@ QUICHandshake::is_stateless_retry_enabled() const
   return this->_stateless_retry;
 }
 
+bool
+QUICHandshake::has_remote_tp() const
+{
+  return this->_remote_transport_parameters != nullptr;
+}
+
 QUICHandshakeProtocol *
 QUICHandshake::protocol()
 {
