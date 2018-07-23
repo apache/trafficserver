@@ -31,11 +31,14 @@
 #include "QUICConfig.h"
 
 using namespace std::literals;
-static constexpr std::string_view tag  = "quic_packet"sv;
-static constexpr uint64_t aead_tag_len = 16;
+static constexpr std::string_view tag   = "quic_packet"sv;
+static constexpr std::string_view tag_v = "v_quic_crypto"sv;
+static constexpr uint64_t aead_tag_len  = 16;
 
 #define QUICDebug(dcid, scid, fmt, ...) \
   Debug(tag.data(), "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__);
+#define QUICVDebug(dcid, scid, fmt, ...) \
+  Debug(tag_v.data(), "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__);
 
 ClassAllocator<QUICPacket> quicPacketAllocator("quicPacketAllocator");
 ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator("quicPacketLongHeaderAllocator");
@@ -983,8 +986,8 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
 
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();
-  QUICDebug(scid, dcid, "Decrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
-            header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
+  QUICVDebug(scid, dcid, "Decrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
+             header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
 
   if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
     if (header->type() == QUICPacketType::VERSION_NEGOTIATION) {
@@ -1201,8 +1204,8 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool re
 
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();
-  QUICDebug(dcid, scid, "Encrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
-            header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
+  QUICVDebug(dcid, scid, "Encrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
+             header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
 
   QUICPacket *packet = nullptr;
   if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),

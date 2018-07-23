@@ -1096,7 +1096,11 @@ QUICNetVConnection::_state_common_send_packet()
         udp_payload->fill(len);
         written += len;
 
+        // TODO: Avoid static function. We don't need to parse buffer again. Get packet number offset from packet.
         QUICPacket::protect_packet_number(buf, len, &this->_pn_protector, this->_peer_quic_connection_id.length());
+
+        QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+                     len);
 
         this->_loss_detector->on_packet_sent(std::move(packet));
         packet_count++;
@@ -1551,9 +1555,9 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     break;
   case QUICPacketCreationResult::SUCCESS:
     if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
-      QUICConDebug("Dequeue %s size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
+      QUICConDebug("[RX] %s packet size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
     } else {
-      QUICConDebug("Dequeue %s packet #%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+      QUICConDebug("[RX] %s packet #%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                    packet->size());
     }
     break;
