@@ -223,6 +223,8 @@ public:
   inkcoreapi virtual int marshal_proxy_req_server_ip(char *);   // INT
   inkcoreapi virtual int marshal_proxy_req_server_port(char *); // INT
   inkcoreapi virtual int marshal_proxy_hierarchy_route(char *); // INT
+  inkcoreapi virtual int marshal_next_hop_ip(char *);           // STR
+  inkcoreapi virtual int marshal_next_hop_port(char *);         // INT
   inkcoreapi virtual int marshal_proxy_host_name(char *);       // STR
   inkcoreapi virtual int marshal_proxy_host_ip(char *);         // STR
   inkcoreapi virtual int marshal_proxy_req_is_ssl(char *);      // INT
