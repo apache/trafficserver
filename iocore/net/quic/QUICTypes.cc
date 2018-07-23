@@ -60,12 +60,8 @@ QUICTypeUtil::is_supported_version(QUICVersion version)
 QUICStreamType
 QUICTypeUtil::detect_stream_type(QUICStreamId id)
 {
-  if (id == 0) {
-    return QUICStreamType::HANDSHAKE;
-  } else {
-    uint8_t type = (id & 0x03);
-    return static_cast<QUICStreamType>(type);
-  }
+  uint8_t type = (id & 0x03);
+  return static_cast<QUICStreamType>(type);
 }
 
 QUICEncryptionLevel

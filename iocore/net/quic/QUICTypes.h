@@ -305,7 +305,6 @@ enum class QUICStreamType : uint8_t {
   SERVER_BIDI,
   CLIENT_UNI,
   SERVER_UNI,
-  HANDSHAKE,
 };
 
 class QUICFiveTuple
@@ -330,7 +329,7 @@ class QUICTypeUtil
 {
 public:
   static bool is_supported_version(QUICVersion version);
-  [[deprecated]] static QUICStreamType detect_stream_type(QUICStreamId id);
+  static QUICStreamType detect_stream_type(QUICStreamId id);
   static QUICEncryptionLevel encryption_level(QUICPacketType type);
   static QUICPacketType packet_type(QUICEncryptionLevel level);
   static QUICKeyPhase key_phase(QUICPacketType type);
