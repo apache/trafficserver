@@ -126,13 +126,13 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
   return;
 }
 
-static void
+static int
 key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const unsigned char *key, size_t key_len,
        const unsigned char *iv, size_t iv_len, void *arg)
 {
   QUICTLS *qtls = reinterpret_cast<QUICTLS *>(arg);
   if (qtls == nullptr) {
-    return;
+    return 0;
   }
 
   std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
@@ -177,7 +177,7 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const
 
   qtls->update_key_materials_on_key_cb(std::move(km), name);
 
-  return;
+  return 1;
 }
 
 void
