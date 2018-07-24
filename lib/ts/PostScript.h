@@ -25,6 +25,7 @@
 #pragma once
 
 #include <tuple>
+#include <utility>
 
 namespace ts
 {
@@ -37,10 +38,16 @@ namespace ts
 // Helpful in avoiding errors due to exception throws or error function return points, like the one that caused
 // Heartbleed.
 //
+// Note that there is a bug when an actual parameter to the constructor is a pointer lvalue.  It only works properly
+// with pointer rvalues.  So instead of a variable name, say p, the actual parameter must be p+0, &*p, or some such
+// conversion to an rvalue.  See the unit tests (test_PostScript.cc) for an example.
+// See also:
+// https://stackoverflow.com/questions/51483598/in-c17-why-is-pointer-type-deduction-apparently-inconsistent-for-class-templa
+//
 template <typename Callable, typename... Args> class PostScript
 {
 public:
-  PostScript(Callable f, Args &&... args) : _f(f), _argsTuple(args...) {}
+  PostScript(Callable f, Args &&... args) : _f(f), _argsTuple(std::forward<Args>(args)...) {}
 
   ~PostScript()
   {

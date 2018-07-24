@@ -21,6 +21,8 @@
     limitations under the License.
  */
 
+#include <functional>
+
 #include "catch.hpp"
 #include <ts/PostScript.h>
 
@@ -30,14 +32,17 @@ int f1Called;
 int f2Called;
 int f3Called;
 
+int dummy;
+
 void
-f1(int a, double b, int c)
+f1(int a, double b, int *c, int &d)
 {
   ++f1Called;
 
   REQUIRE(a == 1);
   REQUIRE(b == 2.0);
-  REQUIRE(c == 3);
+  REQUIRE(c == &dummy);
+  REQUIRE(&d == &dummy);
 }
 
 void
@@ -62,7 +67,8 @@ TEST_CASE("PostScript", "[PSC]")
   int lambdaCalled = 0;
 
   {
-    ts::PostScript g1(f1, 1, 2.0, 3);
+    int *p = &dummy;
+    ts::PostScript g1(f1, 1, 2.0, p + 0, std::ref(dummy));
     ts::PostScript g2(f2, 4);
     ts::PostScript g3(f3, 5, 6.0);
     ts::PostScript g4([&]() -> void { ++lambdaCalled; });
