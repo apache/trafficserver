@@ -45,6 +45,7 @@ libhq_a_SOURCES = \
   HQDataFramer.cc \
   HQHeaderVIOAdaptor.cc \
   HQStreamDataVIOAdaptor.cc \
+  QPACK.cc \
   QUICSimpleApp.cc
 
 #
