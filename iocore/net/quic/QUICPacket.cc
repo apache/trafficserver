@@ -1023,11 +1023,11 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::INITIAL:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT, false)) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::INITIAL, false)) {
         if (QUICTypeUtil::is_supported_version(header->version())) {
           if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                           header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                          QUICKeyPhase::CLEARTEXT)) {
+                                          QUICKeyPhase::INITIAL)) {
             result = QUICPacketCreationResult::SUCCESS;
           } else {
             result = QUICPacketCreationResult::FAILED;
@@ -1040,10 +1040,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::RETRY:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::CLEARTEXT, false)) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::INITIAL, false)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                        QUICKeyPhase::CLEARTEXT)) {
+                                        QUICKeyPhase::INITIAL)) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           // ignore failure - probably clear text key is already updated
@@ -1068,10 +1068,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::ZERO_RTT_PROTECTED:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::ZERORTT, false)) {
+      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::ZERO_RTT, false)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                        QUICKeyPhase::ZERORTT)) {
+                                        QUICKeyPhase::ZERO_RTT)) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::IGNORED;
@@ -1109,7 +1109,7 @@ QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUIC
   }
 
   // VN packet dosen't have packet number field and version field is always 0x00000000
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, QUICKeyPhase::CLEARTEXT, dcid, scid,
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, QUICKeyPhase::INITIAL, dcid, scid,
                                                         0x00, 0x00, 0x00, std::move(versions), len);
 
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
@@ -1119,11 +1119,10 @@ QUICPacketUPtr
 QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
-  int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::INITIAL);
-  QUICPacketNumber pn = this->_packet_number_generator[index].next();
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::INITIAL, QUICKeyPhase::CLEARTEXT, destination_cid, source_cid, pn, base_packet_number,
-                            this->_version, std::move(payload), len);
+  int index                   = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumber pn         = this->_packet_number_generator[index].next();
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, destination_cid, source_cid,
+                                                        pn, base_packet_number, this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), true);
 }
 
@@ -1131,7 +1130,7 @@ QUICPacketUPtr
 QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, ats_unique_buf payload,
                                        size_t len, bool retransmittable)
 {
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::CLEARTEXT, destination_cid, source_cid,
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, destination_cid, source_cid,
                                                         0, 0, this->_version, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
@@ -1179,7 +1178,7 @@ QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id,
   memcpy(naked_payload + payload_len - 16, stateless_reset_token.buf(), 16);
 
   // KeyPhase won't be used
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::CLEARTEXT, connection_id,
+  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::INITIAL, connection_id,
                                                         random_packet_number, 0, std::move(payload), payload_len);
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }

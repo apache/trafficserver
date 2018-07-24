@@ -36,8 +36,8 @@ using namespace std::literals;
 constexpr static uint8_t QUIC_VERSION_1_SALT[] = {
   0x9c, 0x10, 0x8f, 0x98, 0x52, 0x0a, 0x5c, 0x5c, 0x32, 0x96, 0x8e, 0x95, 0x0e, 0x8a, 0x2c, 0x5f, 0xe0, 0x6d, 0x6c, 0x38,
 };
-constexpr static std::string_view LABEL_FOR_CLIENT_CLEARTEXT_SECRET("client in"sv);
-constexpr static std::string_view LABEL_FOR_SERVER_CLEARTEXT_SECRET("server in"sv);
+constexpr static std::string_view LABEL_FOR_CLIENT_INITIAL_SECRET("client in"sv);
+constexpr static std::string_view LABEL_FOR_SERVER_INITIAL_SECRET("server in"sv);
 constexpr static std::string_view LABEL_FOR_KEY("key"sv);
 constexpr static std::string_view LABEL_FOR_IV("iv"sv);
 constexpr static std::string_view LABEL_FOR_PN("pn"sv);
@@ -47,7 +47,7 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
 {
   std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
 
-  const QUIC_EVP_CIPHER *cipher = this->_get_cipher_for_cleartext();
+  const QUIC_EVP_CIPHER *cipher = this->_get_cipher_for_initial();
   const EVP_MD *md              = EVP_sha256();
   uint8_t secret[512];
   size_t secret_len = sizeof(secret);
@@ -55,8 +55,8 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
 
   switch (this->_ctx) {
   case Context::CLIENT:
-    this->_generate_cleartext_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_CLIENT_CLEARTEXT_SECRET.data(),
-                                     LABEL_FOR_CLIENT_CLEARTEXT_SECRET.length(), EVP_MD_size(md));
+    this->_generate_initial_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_CLIENT_INITIAL_SECRET.data(),
+                                   LABEL_FOR_CLIENT_INITIAL_SECRET.length(), EVP_MD_size(md));
     if (is_debug_tag_set("vv_quic_crypto")) {
       uint8_t print_buf[512];
       QUICDebug::to_hex(print_buf, secret, secret_len);
@@ -65,8 +65,8 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
 
     break;
   case Context::SERVER:
-    this->_generate_cleartext_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_SERVER_CLEARTEXT_SECRET.data(),
-                                     LABEL_FOR_SERVER_CLEARTEXT_SECRET.length(), EVP_MD_size(md));
+    this->_generate_initial_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_SERVER_INITIAL_SECRET.data(),
+                                   LABEL_FOR_SERVER_INITIAL_SECRET.length(), EVP_MD_size(md));
     if (is_debug_tag_set("vv_quic_crypto")) {
       uint8_t print_buf[512];
       QUICDebug::to_hex(print_buf, secret, secret_len);
@@ -97,28 +97,28 @@ QUICKeyGenerator::_generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secr
 }
 
 int
-QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
-                                             size_t label_len, size_t length)
+QUICKeyGenerator::_generate_initial_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
+                                           size_t label_len, size_t length)
 {
   uint8_t client_connection_id[QUICConnectionId::MAX_LENGTH];
   size_t cid_len = 0;
-  uint8_t cleartext_secret[512];
-  size_t cleartext_secret_len = sizeof(cleartext_secret);
+  uint8_t initial_secret[512];
+  size_t initial_secret_len = sizeof(initial_secret);
 
   // TODO: do not extract initial secret twice
   QUICTypeUtil::write_QUICConnectionId(cid, client_connection_id, &cid_len);
-  if (hkdf.extract(cleartext_secret, &cleartext_secret_len, QUIC_VERSION_1_SALT, sizeof(QUIC_VERSION_1_SALT), client_connection_id,
+  if (hkdf.extract(initial_secret, &initial_secret_len, QUIC_VERSION_1_SALT, sizeof(QUIC_VERSION_1_SALT), client_connection_id,
                    cid.length()) != 1) {
     return -1;
   }
 
   if (is_debug_tag_set("vv_quic_crypto")) {
     uint8_t print_buf[512];
-    QUICDebug::to_hex(print_buf, cleartext_secret, cleartext_secret_len);
+    QUICDebug::to_hex(print_buf, initial_secret, initial_secret_len);
     Debug("vv_quic_crypto", "initial_secret=%s", print_buf);
   }
 
-  hkdf.expand(out, out_len, cleartext_secret, cleartext_secret_len, reinterpret_cast<const char *>(label), label_len, length);
+  hkdf.expand(out, out_len, initial_secret, initial_secret_len, reinterpret_cast<const char *>(label), label_len, length);
   return 0;
 }
 

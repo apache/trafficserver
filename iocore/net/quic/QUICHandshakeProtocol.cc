@@ -44,10 +44,10 @@ QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phas
   case QUICKeyPhase::PHASE_1:
     this->_phase_1_key = std::move(km);
     break;
-  case QUICKeyPhase::CLEARTEXT:
-    this->_cleartext_key = std::move(km);
+  case QUICKeyPhase::INITIAL:
+    this->_initial_key = std::move(km);
     break;
-  case QUICKeyPhase::ZERORTT:
+  case QUICKeyPhase::ZERO_RTT:
     this->_zerortt_key = std::move(km);
     break;
   case QUICKeyPhase::HANDSHAKE:
@@ -64,9 +64,9 @@ QUICPacketProtection::get_key(QUICKeyPhase phase) const
     return this->_phase_0_key.get();
   case QUICKeyPhase::PHASE_1:
     return this->_phase_1_key.get();
-  case QUICKeyPhase::CLEARTEXT:
-    return this->_cleartext_key.get();
-  case QUICKeyPhase::ZERORTT:
+  case QUICKeyPhase::INITIAL:
+    return this->_initial_key.get();
+  case QUICKeyPhase::ZERO_RTT:
     return this->_zerortt_key.get();
   case QUICKeyPhase::HANDSHAKE:
     return this->_handshake_key.get();

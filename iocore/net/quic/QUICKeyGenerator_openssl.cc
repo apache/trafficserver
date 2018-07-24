@@ -38,7 +38,7 @@ QUICKeyGenerator::_get_iv_len(const QUIC_EVP_CIPHER *cipher) const
 }
 
 const QUIC_EVP_CIPHER *
-QUICKeyGenerator::_get_cipher_for_cleartext() const
+QUICKeyGenerator::_get_cipher_for_initial() const
 {
   return EVP_aes_128_gcm();
 }

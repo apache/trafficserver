@@ -134,14 +134,14 @@ static const uint8_t ad[]     = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 //   uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
 //   size_t cipher_len   = 0;
 //   CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
-//                         QUICKeyPhase::CLEARTEXT));
+//                         QUICKeyPhase::INITIAL));
 
 //   std::cout << "### Encrypted Text" << std::endl;
 //   print_hex(cipher, cipher_len);
 
 //   uint8_t plain[128] = {0};
 //   size_t plain_len   = 0;
-//   CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::CLEARTEXT));
+//   CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::INITIAL));
 
 //   std::cout << "### Decrypted Text" << std::endl;
 //   print_hex(plain, plain_len);
@@ -396,13 +396,13 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
 //   CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 //
 //   // ## Client -> Server
-//   client->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
-//   server->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+//   client->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
+//   server->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::INITIAL);
 //   CHECK(unprotected_pn_len == sizeof(expected));
 //   CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
 //   // ## Server -> Client
-//   server->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::CLEARTEXT);
-//   client->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::CLEARTEXT);
+//   server->encrypt_pn(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
+//   client->decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::INITIAL);
 //   CHECK(unprotected_pn_len == sizeof(expected));
 //   CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
 //

@@ -186,7 +186,7 @@ QUICTLS::update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int nam
   switch (name) {
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
     // this->_update_encryption_level(QUICEncryptionLevel::ZERO_RTT);
-    this->_client_pp->set_key(std::move(km), QUICKeyPhase::ZERORTT);
+    this->_client_pp->set_key(std::move(km), QUICKeyPhase::ZERO_RTT);
     break;
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
@@ -319,7 +319,7 @@ QUICTLS::_read_early_data()
 const EVP_CIPHER *
 QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {
-  if (phase == QUICKeyPhase::CLEARTEXT) {
+  if (phase == QUICKeyPhase::INITIAL) {
     return EVP_aes_128_gcm();
   } else {
     const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
@@ -348,7 +348,7 @@ QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 const EVP_CIPHER *
 QUICTLS::_get_evp_aead_for_pne(QUICKeyPhase phase) const
 {
-  if (phase == QUICKeyPhase::CLEARTEXT) {
+  if (phase == QUICKeyPhase::INITIAL) {
     return EVP_aes_128_ctr();
   } else {
     const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
@@ -377,7 +377,7 @@ QUICTLS::_get_evp_aead_for_pne(QUICKeyPhase phase) const
 size_t
 QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
 {
-  if (phase == QUICKeyPhase::CLEARTEXT) {
+  if (phase == QUICKeyPhase::INITIAL) {
     return EVP_GCM_TLS_TAG_LEN;
   } else {
     const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);

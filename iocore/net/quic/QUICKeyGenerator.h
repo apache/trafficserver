@@ -44,8 +44,6 @@ struct KeyMaterial {
   size_t pn_len    = 512;
 };
 
-// TODO: rename "cleartext" to "initial"
-// TODO: cleanup pp/0rtt stuff which is removed in draft-13
 class QUICKeyGenerator
 {
 public:
@@ -69,13 +67,13 @@ private:
   size_t _last_secret_len = 0;
 
   int _generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher);
-  int _generate_cleartext_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
-                                 size_t label_len, size_t length);
+  int _generate_initial_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
+                               size_t label_len, size_t length);
   int _generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                     size_t key_length) const;
   int _generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t iv_length) const;
   size_t _get_key_len(const QUIC_EVP_CIPHER *cipher) const;
   size_t _get_iv_len(const QUIC_EVP_CIPHER *cipher) const;
-  const QUIC_EVP_CIPHER *_get_cipher_for_cleartext() const;
+  const QUIC_EVP_CIPHER *_get_cipher_for_initial() const;
   const QUIC_EVP_CIPHER *_get_cipher_for_protected_packet(const SSL *ssl) const;
 };

@@ -65,7 +65,7 @@ QUICTLS::_read_early_data()
 const EVP_AEAD *
 QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {
-  if (phase == QUICKeyPhase::CLEARTEXT) {
+  if (phase == QUICKeyPhase::INITIAL) {
     return EVP_aead_aes_128_gcm();
   } else {
     const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
@@ -91,7 +91,7 @@ QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 size_t
 QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
 {
-  if (phase == QUICKeyPhase::CLEARTEXT) {
+  if (phase == QUICKeyPhase::INITIAL) {
     return EVP_GCM_TLS_TAG_LEN;
   } else {
     const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);

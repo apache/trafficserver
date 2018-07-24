@@ -56,8 +56,8 @@ QUICTLS::is_ready_to_derive() const
 bool
 QUICTLS::is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const
 {
-  if (key_phase == QUICKeyPhase::ZERORTT) {
-    return this->_client_pp->get_key(QUICKeyPhase::ZERORTT);
+  if (key_phase == QUICKeyPhase::ZERO_RTT) {
+    return this->_client_pp->get_key(QUICKeyPhase::ZERO_RTT);
   } else {
     return this->_get_km(key_phase, for_encryption);
   }
@@ -67,7 +67,7 @@ int
 QUICTLS::initialize_key_materials(QUICConnectionId cid)
 {
   // Generate keys
-  Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(QUICKeyPhase::CLEARTEXT));
+  Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(QUICKeyPhase::INITIAL));
   std::unique_ptr<KeyMaterial> km;
 
   km = this->_keygen_for_client.generate(cid);
@@ -81,7 +81,7 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
     QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
     Debug("vv_quic_crypto", "pn=%s", print_buf);
   }
-  this->_client_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
+  this->_client_pp->set_key(std::move(km), QUICKeyPhase::INITIAL);
 
   km = this->_keygen_for_server.generate(cid);
 
@@ -94,7 +94,7 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
     QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
     Debug("vv_quic_crypto", "pn=%s", print_buf);
   }
-  this->_server_pp->set_key(std::move(km), QUICKeyPhase::CLEARTEXT);
+  this->_server_pp->set_key(std::move(km), QUICKeyPhase::INITIAL);
 
   return 1;
 }

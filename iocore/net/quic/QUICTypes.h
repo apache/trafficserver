@@ -114,8 +114,8 @@ enum class QUICVersionNegotiationStatus {
 enum class QUICKeyPhase : int {
   PHASE_0 = 0,
   PHASE_1,
-  CLEARTEXT,
-  ZERORTT,
+  INITIAL,
+  ZERO_RTT,
   HANDSHAKE,
 };
 

@@ -106,16 +106,16 @@ QUICTypeUtil::key_phase(QUICPacketType type)
 {
   switch (type) {
   case QUICPacketType::INITIAL:
-    return QUICKeyPhase::CLEARTEXT;
+    return QUICKeyPhase::INITIAL;
   case QUICPacketType::ZERO_RTT_PROTECTED:
-    return QUICKeyPhase::ZERORTT;
+    return QUICKeyPhase::ZERO_RTT;
   case QUICPacketType::HANDSHAKE:
     return QUICKeyPhase::HANDSHAKE;
   case QUICPacketType::PROTECTED:
     // XXX assuming Long Header Packet
     return QUICKeyPhase::PHASE_0;
   default:
-    return QUICKeyPhase::CLEARTEXT;
+    return QUICKeyPhase::INITIAL;
   }
 }
 

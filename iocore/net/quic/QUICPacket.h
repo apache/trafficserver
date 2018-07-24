@@ -158,7 +158,7 @@ protected:
   uint8_t _serialized[64];
   ats_unique_buf _payload              = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   QUICPacketType _type                 = QUICPacketType::UNINITIALIZED;
-  QUICKeyPhase _key_phase              = QUICKeyPhase::CLEARTEXT;
+  QUICKeyPhase _key_phase              = QUICKeyPhase::INITIAL;
   QUICConnectionId _connection_id      = QUICConnectionId::ZERO();
   QUICPacketNumber _packet_number      = 0;
   QUICPacketNumber _base_packet_number = 0;
