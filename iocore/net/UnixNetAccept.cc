@@ -309,7 +309,7 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
-    if (shutdown_event_system == true) {
+    if (unlikely(shutdown_event_system == true)) {
       return -1;
     }
 

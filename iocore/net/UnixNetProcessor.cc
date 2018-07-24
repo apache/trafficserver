@@ -212,6 +212,9 @@ NetProcessor::stop_accept()
 Action *
 UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {
+  if (unlikely(shutdown_event_system == true)) {
+    return ACTION_RESULT_NONE;
+  }
   EThread *t             = cont->mutex->thread_holding;
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
