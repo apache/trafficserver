@@ -46,8 +46,9 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     case QUICFrameType::PATH_CHALLENGE:
       break;
     default:
-      frame = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);
-      this->_retransmission_frames.push(std::move(frame));
+      frame     = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);
+      int index = static_cast<int>(QUICTypeUtil::encryption_level(packet.type()));
+      this->_retransmission_frames[index].push(std::move(frame));
       break;
     }
   }
@@ -56,24 +57,28 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
 void
 QUICPacketRetransmitter::reset()
 {
-  while (!this->_retransmission_frames.empty()) {
-    this->_retransmission_frames.pop();
+  for (auto level : QUIC_ENCRYPTION_LEVELS) {
+    int index = static_cast<int>(level);
+    while (!this->_retransmission_frames[index].empty()) {
+      this->_retransmission_frames[index].pop();
+    }
   }
 }
 
 bool
 QUICPacketRetransmitter::will_generate_frame(QUICEncryptionLevel level)
 {
-  return !this->_retransmission_frames.empty();
+  return !this->_retransmission_frames[static_cast<int>(level)].empty();
 }
 
 QUICFrameUPtr
 QUICPacketRetransmitter::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-  if (!this->_retransmission_frames.empty()) {
-    frame = std::move(this->_retransmission_frames.front());
-    this->_retransmission_frames.pop();
+  int index           = static_cast<int>(level);
+  if (!this->_retransmission_frames[index].empty()) {
+    frame = std::move(this->_retransmission_frames[index].front());
+    this->_retransmission_frames[index].pop();
 
     // maximum_frame_size is actually for payload size. So we should compare it
     // with data_length(). Howeever, because data_length() is STREAM frame
@@ -90,10 +95,10 @@ QUICPacketRetransmitter::generate_frame(QUICEncryptionLevel level, uint64_t conn
     if (split) {
       auto new_frame = QUICFrameFactory::split_frame(frame.get(), maximum_frame_size);
       if (new_frame) {
-        this->_retransmission_frames.push(std::move(new_frame));
+        this->_retransmission_frames[index].push(std::move(new_frame));
       } else {
         // failed to split frame return nullptr
-        this->_retransmission_frames.push(std::move(frame));
+        this->_retransmission_frames[index].push(std::move(frame));
         frame = QUICFrameFactory::create_null_frame();
       }
     }

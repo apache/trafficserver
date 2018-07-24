@@ -39,5 +39,5 @@ public:
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
-  std::queue<QUICFrameUPtr> _retransmission_frames;
+  std::queue<QUICFrameUPtr> _retransmission_frames[4];
 };
