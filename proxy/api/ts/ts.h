@@ -1508,6 +1508,7 @@ tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
 tsapi void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
 tsapi void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
 tsapi void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
+tsapi bool TSVConnVerifyCallbackSet(TSVConn connp, void *callback, void *args);
 tsapi void TSVConnArgSet(TSVConn connp, int arg_idx, void *arg);
 tsapi void *TSVConnArgGet(TSVConn connp, int arg_idx);
 
@@ -2449,6 +2450,8 @@ tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
  * Get a TSIOBufferReader to read the buffered body. The return value needs to be freed.
  */
 tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
+
+tsapi TSVConn TSHttpTxnServerVConnGet(TSHttpTxn txnp);
 
 #ifdef __cplusplus
 }

@@ -5410,16 +5410,7 @@ TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
 sockaddr const *
 TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
 {
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-
-  HttpServerSession *ssn = sm->get_server_session();
-  if (ssn == nullptr) {
-    return nullptr;
-  }
-
-  NetVConnection *vc = ssn->get_netvc();
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(TSHttpTxnServerVConnGet(txnp));
   if (vc == nullptr) {
     return nullptr;
   }
@@ -9656,4 +9647,33 @@ TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
   return (TSIOBufferReader)sm->get_postbuf_clone_reader();
+}
+
+bool
+TSVConnVerifyCallbackSet(TSVConn connp, void *callback, void *args)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+
+  NetVConnection *net_vc    = reinterpret_cast<NetVConnection *>(connp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(net_vc);
+  if (ssl_vc != nullptr) {
+    ssl_vc->setSSLVerifyCallback(callback, args);
+    return true;
+  }
+  return false;
+}
+
+TSVConn
+TSHttpTxnServerVConnGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  HttpServerSession *ssn = sm->get_server_session();
+  if (ssn == nullptr) {
+    return nullptr;
+  }
+
+  return reinterpret_cast<TSVConn>(ssn->get_netvc());
 }

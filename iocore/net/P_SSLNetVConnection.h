@@ -303,6 +303,13 @@ public:
    */
   int populate(Connection &con, Continuation *c, void *arg) override;
 
+  void
+  setSSLVerifyCallback(void *callback, void *args)
+  {
+    sslVerifyCallback     = callback;
+    sslVerifyCallbackArgs = args;
+  }
+
   SSL *ssl                         = nullptr;
   ink_hrtime sslHandshakeBeginTime = 0;
   ink_hrtime sslHandshakeEndTime   = 0;
@@ -352,9 +359,13 @@ private:
   bool sslTrace                    = false;
   bool SNIMapping                  = false;
   int64_t redoWriteSize            = 0;
+  void *sslVerifyCallback          = nullptr;
+  void *sslVerifyCallbackArgs      = nullptr;
 #ifdef SSL_MODE_ASYNC
   EventIO signalep;
 #endif
+
+  static int sslVerifyCallbackProxy(int preverify_ok, X509_STORE_CTX *x509_ctx);
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

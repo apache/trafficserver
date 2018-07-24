@@ -1036,6 +1036,10 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       }
     }
 
+    if (this->sslVerifyCallback != nullptr) {
+      SSL_set_verify(this->ssl, SSL_VERIFY_PEER, sslVerifyCallbackProxy);
+    }
+
     return sslClientHandShakeEvent(err);
 
   default:
@@ -1708,6 +1712,19 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   this->sslHandShakeComplete = true;
   SSLNetVCAttach(this->ssl, this);
   return EVENT_DONE;
+}
+
+int
+SSLNetVConnection::sslVerifyCallbackProxy(int preverify_ok, X509_STORE_CTX *x509_ctx)
+{
+  SSL *ssl                 = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(x509_ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  if (netvc == nullptr) {
+    return preverify_ok;
+  } else {
+    return reinterpret_cast<int (*)(void *, int, X509_STORE_CTX *x509_ctx)>(netvc->sslVerifyCallback)(netvc->sslVerifyCallbackArgs,
+                                                                                                      preverify_ok, x509_ctx);
+  }
 }
 
 std::string_view
