@@ -38,12 +38,9 @@ public:
   QUICKeyPhase key_phase() const;
 
 private:
-  std::unique_ptr<KeyMaterial> _initial_key   = nullptr;
-  std::unique_ptr<KeyMaterial> _zerortt_key   = nullptr;
-  std::unique_ptr<KeyMaterial> _handshake_key = nullptr;
-  std::unique_ptr<KeyMaterial> _phase_0_key   = nullptr;
-  std::unique_ptr<KeyMaterial> _phase_1_key   = nullptr;
-  QUICKeyPhase _key_phase                     = QUICKeyPhase::INITIAL;
+  // TODO: discard keys
+  std::unique_ptr<KeyMaterial> _key_chain[5] = {nullptr};
+  QUICKeyPhase _key_phase                    = QUICKeyPhase::INITIAL;
 };
 
 class QUICPacketNumberProtector

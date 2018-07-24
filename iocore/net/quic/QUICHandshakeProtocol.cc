@@ -36,44 +36,13 @@ QUICPacketProtection::~QUICPacketProtection() {}
 void
 QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase)
 {
-  this->_key_phase = phase;
-  switch (phase) {
-  case QUICKeyPhase::PHASE_0:
-    this->_phase_0_key = std::move(km);
-    break;
-  case QUICKeyPhase::PHASE_1:
-    this->_phase_1_key = std::move(km);
-    break;
-  case QUICKeyPhase::INITIAL:
-    this->_initial_key = std::move(km);
-    break;
-  case QUICKeyPhase::ZERO_RTT:
-    this->_zerortt_key = std::move(km);
-    break;
-  case QUICKeyPhase::HANDSHAKE:
-    this->_handshake_key = std::move(km);
-    break;
-  }
+  this->_key_chain[static_cast<int>(phase)] = std::move(km);
 }
 
 const KeyMaterial *
 QUICPacketProtection::get_key(QUICKeyPhase phase) const
 {
-  switch (phase) {
-  case QUICKeyPhase::PHASE_0:
-    return this->_phase_0_key.get();
-  case QUICKeyPhase::PHASE_1:
-    return this->_phase_1_key.get();
-  case QUICKeyPhase::INITIAL:
-    return this->_initial_key.get();
-  case QUICKeyPhase::ZERO_RTT:
-    return this->_zerortt_key.get();
-  case QUICKeyPhase::HANDSHAKE:
-    return this->_handshake_key.get();
-  }
-
-  ink_release_assert(!"Bad phase");
-  return nullptr;
+  return this->_key_chain[static_cast<int>(phase)].get();
 }
 
 QUICKeyPhase
