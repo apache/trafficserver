@@ -60,7 +60,7 @@ QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 
 // SSL_HANDSHAKE_MAC_SHA256, SSL_HANDSHAKE_MAC_SHA384 are defind in `ssl/internal.h` of BoringSSL
 const EVP_MD *
-QUICKeyGenerator::_get_handshake_digest(const SSL *ssl) const
+QUICKeyGenerator::get_handshake_digest(const SSL *ssl)
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
   case TLS1_CK_AES_128_GCM_SHA256:

@@ -102,10 +102,6 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
 int
 QUICTLS::update_key_materials()
 {
-  if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
-    this->_generate_0rtt_key();
-  }
-
   // Switch key phase
   QUICKeyPhase next_key_phase;
   switch (this->_client_pp->key_phase()) {
@@ -115,42 +111,11 @@ QUICTLS::update_key_materials()
   case QUICKeyPhase::PHASE_1:
     next_key_phase = QUICKeyPhase::PHASE_0;
     break;
-  case QUICKeyPhase::CLEARTEXT:
-    next_key_phase = QUICKeyPhase::PHASE_0;
-    break;
-  case QUICKeyPhase::ZERORTT:
-    next_key_phase = QUICKeyPhase::PHASE_0;
-    break;
   default:
     Error("QUICKeyPhase value is undefined");
     ink_assert(false);
     next_key_phase = QUICKeyPhase::PHASE_0;
   }
-
-  // Generate keys
-  Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(next_key_phase));
-  uint8_t print_buf[512];
-  std::unique_ptr<KeyMaterial> km;
-  km = this->_keygen_for_client.generate(this->_ssl);
-  if (is_debug_tag_set("vv_quic_crypto")) {
-    QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "client key 0x%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "client iv 0x%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "client pn 0x%s", print_buf);
-  }
-  this->_client_pp->set_key(std::move(km), next_key_phase);
-  km = this->_keygen_for_server.generate(this->_ssl);
-  if (is_debug_tag_set("vv_quic_crypto")) {
-    QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "server key 0x%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "server iv 0x%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "server pn 0x%s", print_buf);
-  }
-  this->_server_pp->set_key(std::move(km), next_key_phase);
 
   return 1;
 }
@@ -169,47 +134,6 @@ QUICTLS::_update_encryption_level(QUICEncryptionLevel level)
   }
 
   return;
-}
-
-int
-QUICTLS::_read_early_data()
-{
-  uint8_t early_data[8];
-  size_t early_data_len = 0;
-#ifndef OPENSSL_IS_BORINGSSL
-  int ret = 0;
-
-  do {
-    ERR_clear_error();
-    ret = SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
-  } while (ret == SSL_READ_EARLY_DATA_SUCCESS);
-
-  return ret == SSL_READ_EARLY_DATA_FINISH ? 1 : 0;
-#else
-  do {
-    ERR_clear_error();
-    early_data_len = SSL_read(this->_ssl, early_data, sizeof(early_data));
-  } while (SSL_in_early_data(this->_ssl));
-
-  return 1;
-#endif
-}
-
-void
-QUICTLS::_generate_0rtt_key()
-{
-  // Generate key material for 0-RTT
-  Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(QUICKeyPhase::ZERORTT));
-  std::unique_ptr<KeyMaterial> km;
-  km = this->_keygen_for_client.generate_0rtt(this->_ssl);
-  if (is_debug_tag_set("vv_quic_crypto")) {
-    uint8_t print_buf[512];
-    QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "0rtt key 0x%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "0rtt iv 0x%s", print_buf);
-  }
-  this->_client_pp->set_key(std::move(km), QUICKeyPhase::ZERORTT);
 }
 
 SSL *

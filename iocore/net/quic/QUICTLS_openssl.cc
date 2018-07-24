@@ -301,6 +301,21 @@ QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
   return 1;
 }
 
+int
+QUICTLS::_read_early_data()
+{
+  uint8_t early_data[8];
+  size_t early_data_len = 0;
+  int ret               = 0;
+
+  do {
+    ERR_clear_error();
+    ret = SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
+  } while (ret == SSL_READ_EARLY_DATA_SUCCESS);
+
+  return ret == SSL_READ_EARLY_DATA_FINISH ? 1 : 0;
+}
+
 const EVP_CIPHER *
 QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {

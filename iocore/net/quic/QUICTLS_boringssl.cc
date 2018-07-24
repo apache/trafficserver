@@ -49,6 +49,19 @@ QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
   return 0;
 }
 
+int
+QUICTLS::_read_early_data()
+{
+  uint8_t early_data[8];
+  size_t early_data_len = 0;
+  do {
+    ERR_clear_error();
+    early_data_len = SSL_read(this->_ssl, early_data, sizeof(early_data));
+  } while (SSL_in_early_data(this->_ssl));
+
+  return 1;
+}
+
 const EVP_AEAD *
 QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {

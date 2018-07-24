@@ -38,9 +38,6 @@ constexpr static uint8_t QUIC_VERSION_1_SALT[] = {
 };
 constexpr static std::string_view LABEL_FOR_CLIENT_CLEARTEXT_SECRET("client in"sv);
 constexpr static std::string_view LABEL_FOR_SERVER_CLEARTEXT_SECRET("server in"sv);
-constexpr static std::string_view LABEL_FOR_CLIENT_0RTT_SECRET("EXPORTER-QUIC 0rtt"sv);
-constexpr static std::string_view LABEL_FOR_CLIENT_PP_SECRET("EXPORTER-QUIC client 1rtt"sv);
-constexpr static std::string_view LABEL_FOR_SERVER_PP_SECRET("EXPORTER-QUIC server 1rtt"sv);
 constexpr static std::string_view LABEL_FOR_KEY("key"sv);
 constexpr static std::string_view LABEL_FOR_IV("iv"sv);
 constexpr static std::string_view LABEL_FOR_PN("pn"sv);
@@ -84,61 +81,17 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
   return km;
 }
 
-std::unique_ptr<KeyMaterial>
-QUICKeyGenerator::generate_0rtt(SSL *ssl)
-{
-  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
-
-  const QUIC_EVP_CIPHER *cipher = this->_get_cipher_for_protected_packet(ssl);
-  const EVP_MD *md              = _get_handshake_digest(ssl);
-  uint8_t secret[512];
-  size_t secret_len = sizeof(secret);
-  QUICHKDF hkdf(md);
-
-  this->_generate_0rtt_secret(secret, &secret_len, hkdf, ssl, EVP_MD_size(md));
-  this->_generate(*km, hkdf, secret, secret_len, cipher);
-
-  return km;
-}
-
-std::unique_ptr<KeyMaterial>
-QUICKeyGenerator::generate(SSL *ssl)
-{
-  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
-
-  const QUIC_EVP_CIPHER *cipher = this->_get_cipher_for_protected_packet(ssl);
-  const EVP_MD *md              = _get_handshake_digest(ssl);
-  uint8_t secret[512];
-  size_t secret_len = sizeof(secret);
-  QUICHKDF hkdf(md);
-
-  switch (this->_ctx) {
-  case Context::CLIENT:
-    this->_generate_pp_secret(secret, &secret_len, hkdf, ssl, LABEL_FOR_CLIENT_PP_SECRET.data(),
-                              LABEL_FOR_CLIENT_PP_SECRET.length(), EVP_MD_size(md));
-    break;
-  case Context::SERVER:
-    this->_generate_pp_secret(secret, &secret_len, hkdf, ssl, LABEL_FOR_SERVER_PP_SECRET.data(),
-                              LABEL_FOR_SERVER_PP_SECRET.length(), EVP_MD_size(md));
-    break;
-  }
-
-  this->_generate(*km, hkdf, secret, secret_len, cipher);
-
-  return km;
-}
-
 int
 QUICKeyGenerator::_generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                             const QUIC_EVP_CIPHER *cipher)
 {
-  // Generate a key and a IV
-  //   key = QHKDF-Expand(S, "key", "", key_length)
-  //   iv  = QHKDF-Expand(S, "iv", "", iv_length)
-  //   pn_key = QHKDF-Expand(S, "pn", pn_key_length)
+  // Generate key, iv, and pn_key
+  //   key    = HKDF-Expand-Label(S, "key", "", key_length)
+  //   iv     = HKDF-Expand-Label(S, "iv", "", iv_length)
+  //   pn_key = HKDF-Expand-Label(S, "pn", "", pn_key_length)
   this->_generate_key(km.key, &km.key_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
   this->_generate_iv(km.iv, &km.iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
-  this->_generate_pn(km.pn, &km.pn_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
+  QUICKeyGenerator::generate_pn(km.pn, &km.pn_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
 
   return 0;
 }
@@ -170,38 +123,6 @@ QUICKeyGenerator::_generate_cleartext_secret(uint8_t *out, size_t *out_len, QUIC
 }
 
 int
-QUICKeyGenerator::_generate_pp_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, const char *label, size_t label_len,
-                                      size_t length)
-{
-  *out_len = length;
-  if (this->_last_secret_len == 0) {
-    SSL_export_keying_material(ssl, out, *out_len, label, label_len, reinterpret_cast<const uint8_t *>(""), 0, 1);
-  } else {
-    ink_assert(!"not implemented");
-  }
-
-  memcpy(this->_last_secret, out, *out_len);
-  this->_last_secret_len = *out_len;
-
-  return 0;
-}
-
-int
-QUICKeyGenerator::_generate_0rtt_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, SSL *ssl, size_t length)
-{
-  *out_len = length;
-#ifndef OPENSSL_IS_BORINGSSL
-  SSL_export_keying_material_early(ssl, out, *out_len, LABEL_FOR_CLIENT_0RTT_SECRET.data(), LABEL_FOR_CLIENT_0RTT_SECRET.length(),
-                                   reinterpret_cast<const uint8_t *>(""), 0);
-#else
-  SSL_export_early_keying_material(ssl, out, *out_len, LABEL_FOR_CLIENT_0RTT_SECRET.data(), LABEL_FOR_CLIENT_0RTT_SECRET.length(),
-                                   reinterpret_cast<const uint8_t *>(""), 0);
-#endif
-
-  return 0;
-}
-
-int
 QUICKeyGenerator::_generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                                 size_t key_length) const
 {
@@ -213,13 +134,6 @@ QUICKeyGenerator::_generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, co
                                size_t iv_length) const
 {
   return hkdf.expand(out, out_len, secret, secret_len, LABEL_FOR_IV.data(), LABEL_FOR_IV.length(), iv_length);
-}
-
-int
-QUICKeyGenerator::_generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
-                               size_t pn_length) const
-{
-  return hkdf.expand(out, out_len, secret, secret_len, LABEL_FOR_PN.data(), LABEL_FOR_PN.length(), pn_length);
 }
 
 int

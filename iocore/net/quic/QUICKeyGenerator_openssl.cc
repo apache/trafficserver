@@ -63,23 +63,6 @@ QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 }
 
 const EVP_MD *
-QUICKeyGenerator::_get_handshake_digest(const SSL *ssl) const
-{
-  switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
-  case TLS1_3_CK_AES_128_GCM_SHA256:
-  case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
-  case TLS1_3_CK_AES_128_CCM_SHA256:
-  case TLS1_3_CK_AES_128_CCM_8_SHA256:
-    return EVP_sha256();
-  case TLS1_3_CK_AES_256_GCM_SHA384:
-    return EVP_sha384();
-  default:
-    ink_assert(false);
-    return nullptr;
-  }
-}
-
-const EVP_MD *
 QUICKeyGenerator::get_handshake_digest(const SSL *ssl)
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
