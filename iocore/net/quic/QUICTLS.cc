@@ -261,7 +261,7 @@ QUICTLS::encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint
 {
   const KeyMaterial *km = this->_get_km(phase, true);
   if (!km) {
-    Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
+    Debug(tag, "Failed to encrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
 
@@ -279,7 +279,7 @@ QUICTLS::decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const 
 {
   const KeyMaterial *km = this->_get_km(phase, false);
   if (!km) {
-    Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
+    Debug(tag, "Failed to decrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
 

@@ -80,7 +80,7 @@ QUICFrame::is_protected() const
 int
 QUICFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "type=%s size=%zu", QUICDebugNames::frame_type(this->type()), this->size());
+  return snprintf(msg, msg_len, "| %s size=%zu", QUICDebugNames::frame_type(this->type()), this->size());
 }
 
 QUICFrame *
@@ -170,7 +170,7 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICStreamFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "type=STREAM size=%zu id=%" PRIu64 " offset=%" PRIu64 " data_len=%" PRIu64 " fin=%d", this->size(),
+  return snprintf(msg, msg_len, "| STREAM size=%zu id=%" PRIu64 " offset=%" PRIu64 " data_len=%" PRIu64 " fin=%d", this->size(),
                   this->stream_id(), this->offset(), this->data_length(), this->has_fin_flag());
 }
 
@@ -444,7 +444,7 @@ QUICCryptoFrame::size() const
 int
 QUICCryptoFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "type=CRYPTO size=%zu offset=%" PRIu64 " data_len=%" PRIu64, this->size(), this->offset(),
+  return snprintf(msg, msg_len, "| CRYPTO size=%zu offset=%" PRIu64 " data_len=%" PRIu64, this->size(), this->offset(),
                   this->data_length());
 }
 
@@ -639,8 +639,8 @@ QUICAckFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICAckFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  int len = snprintf(msg, msg_len, "type=ACK size=%zu largest_acked=%" PRIu64 " delay=%" PRIu64 " block_count=%" PRIu64,
-                     this->size(), this->largest_acknowledged(), this->ack_delay(), this->ack_block_count());
+  int len = snprintf(msg, msg_len, "| ACK size=%zu largest_acked=%" PRIu64 " delay=%" PRIu64 " block_count=%" PRIu64, this->size(),
+                     this->largest_acknowledged(), this->ack_delay(), this->ack_block_count());
   msg_len -= len;
 
   if (this->ack_block_section()) {
@@ -2248,7 +2248,7 @@ QUICRetransmissionFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICRetransmissionFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "type=%s size=%zu (retransmission)", QUICDebugNames::frame_type(this->type()), this->size());
+  return snprintf(msg, msg_len, "| %s size=%zu (retransmission)", QUICDebugNames::frame_type(this->type()), this->size());
 }
 
 QUICPacketType
