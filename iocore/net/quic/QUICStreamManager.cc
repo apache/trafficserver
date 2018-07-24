@@ -345,6 +345,11 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level)
     return false;
   }
 
+  // workaround fix until support 0-RTT on client
+  if (level == QUICEncryptionLevel::ZERO_RTT) {
+    return false;
+  }
+
   for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     if (s->will_generate_frame(level)) {
       return true;
@@ -361,6 +366,11 @@ QUICStreamManager::generate_frame(QUICEncryptionLevel level, uint64_t connection
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
 
   if (!this->_is_level_matched(level)) {
+    return frame;
+  }
+
+  // workaround fix until support 0-RTT on client
+  if (level == QUICEncryptionLevel::ZERO_RTT) {
     return frame;
   }
 

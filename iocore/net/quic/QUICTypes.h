@@ -59,11 +59,12 @@ enum class QUICEncryptionLevel {
   ONE_RTT   = 3,
 };
 
-// For range-based for loop. This starts from INITIAL to ONE_RTT. It doesn't include NONE nor ZERO_RTT.
+// For range-based for loop. This starts from INITIAL to ONE_RTT. It doesn't include NONE.
 // Defining begin, end, operator*, operator++ doen't work for duplicate symbol issue with libmgmt_p.a :(
 // TODO: support ZERO_RTT
 constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
   QUICEncryptionLevel::INITIAL,
+  QUICEncryptionLevel::ZERO_RTT,
   QUICEncryptionLevel::HANDSHAKE,
   QUICEncryptionLevel::ONE_RTT,
 };
@@ -325,6 +326,7 @@ public:
   static QUICEncryptionLevel encryption_level(QUICPacketType type);
   static QUICPacketType packet_type(QUICEncryptionLevel level);
   static QUICKeyPhase key_phase(QUICPacketType type);
+  static int pn_space_index(QUICEncryptionLevel level);
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
   static int read_QUICPacketNumberLen(const uint8_t *buf);

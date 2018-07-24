@@ -119,6 +119,17 @@ QUICTypeUtil::key_phase(QUICPacketType type)
   }
 }
 
+// 0-RTT and 1-RTT use same PN Space
+int
+QUICTypeUtil::pn_space_index(QUICEncryptionLevel level)
+{
+  if (level == QUICEncryptionLevel::ONE_RTT) {
+    level = QUICEncryptionLevel::ZERO_RTT;
+  }
+
+  return static_cast<int>(level);
+}
+
 QUICConnectionId
 QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
 {

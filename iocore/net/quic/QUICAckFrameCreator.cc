@@ -32,7 +32,7 @@ QUICAckFrameCreator::update(QUICEncryptionLevel level, QUICPacketNumber packet_n
     return 0;
   }
 
-  int index                            = static_cast<int>(level);
+  int index                            = QUICTypeUtil::pn_space_index(level);
   QUICAckPacketNumbers *packet_numbers = &this->_packet_numbers[index];
   packet_numbers->push_back(packet_number);
 
@@ -56,12 +56,11 @@ QUICAckFrameCreator::_create_frame(QUICEncryptionLevel level)
 {
   QUICFrameUPtr ack_frame = QUICFrameFactory::create_null_frame();
 
-  if (!this->_is_level_matched(level)) {
+  if (!this->_is_level_matched(level) || level == QUICEncryptionLevel::ZERO_RTT) {
     return ack_frame;
   }
 
-  int index = static_cast<int>(level);
-
+  int index = QUICTypeUtil::pn_space_index(level);
   if (this->_can_send[index]) {
     QUICAckPacketNumbers *packet_numbers = &this->_packet_numbers[index];
 
@@ -77,7 +76,7 @@ QUICAckFrameCreator::_create_frame(QUICEncryptionLevel level)
 QUICFrameUPtr
 QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
 {
-  int index                            = static_cast<int>(level);
+  int index                            = QUICTypeUtil::pn_space_index(level);
   QUICAckPacketNumbers *packet_numbers = &this->_packet_numbers[index];
   this->_should_send[index]            = false;
 
@@ -128,11 +127,13 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
 bool
 QUICAckFrameCreator::will_generate_frame(QUICEncryptionLevel level)
 {
-  if (!this->_is_level_matched(level)) {
+  // No ACK frame on ZERO_RTT level
+  if (!this->_is_level_matched(level) || level == QUICEncryptionLevel::ZERO_RTT) {
     return false;
   }
 
-  return this->_should_send[static_cast<int>(level)];
+  int index = QUICTypeUtil::pn_space_index(level);
+  return this->_should_send[index];
 }
 
 QUICFrameUPtr
@@ -147,7 +148,8 @@ QUICAckFrameCreator::_calculate_delay(QUICEncryptionLevel level)
 {
   // Ack delay is in microseconds and scaled
   ink_hrtime now = Thread::get_hrtime();
-  uint64_t delay = (now - this->_packet_numbers[static_cast<int>(level)].largest_ack_received_time()) / 1000;
+  int index      = QUICTypeUtil::pn_space_index(level);
+  uint64_t delay = (now - this->_packet_numbers[index].largest_ack_received_time()) / 1000;
   // FXIME ack delay exponent has to be read from transport parameters
   uint8_t ack_delay_exponent = 3;
   return delay >> ack_delay_exponent;

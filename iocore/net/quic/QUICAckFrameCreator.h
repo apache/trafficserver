@@ -87,6 +87,7 @@ private:
   {
     return {
       QUICEncryptionLevel::INITIAL,
+      QUICEncryptionLevel::ZERO_RTT,
       QUICEncryptionLevel::HANDSHAKE,
       QUICEncryptionLevel::ONE_RTT,
     };
@@ -95,5 +96,6 @@ private:
   bool _can_send[4]    = {false};
   bool _should_send[4] = {false};
 
-  QUICAckPacketNumbers _packet_numbers[4];
+  // Initial, 0/1-RTT, and Handshake
+  QUICAckPacketNumbers _packet_numbers[3];
 };

@@ -272,19 +272,11 @@ QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
   SSL_set_bio(this->_ssl, rbio, wbio);
 
   if (this->_netvc_context == NET_VCONNECTION_IN) {
-    // TODO: early data
-    // if (!this->_early_data_processed) {
-    //   if (this->_read_early_data()) {
-    //     this->_early_data_processed = true;
-    //   }
-    //   if (SSL_early_data_accepted(this->_ssl)) {
-    //     Debug(tag, "Early data processed");
-
-    //     if (!this->_client_pp->get_key(QUICKeyPhase::ZERORTT)) {
-    //       this->_generate_0rtt_key();
-    //     }
-    //   }
-    // }
+    if (!this->_early_data_processed) {
+      if (this->_read_early_data()) {
+        this->_early_data_processed = true;
+      }
+    }
 
     ret = SSL_accept(this->_ssl);
   } else {

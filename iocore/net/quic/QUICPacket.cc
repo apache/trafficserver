@@ -937,7 +937,7 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
       return false;
     }
 
-    Debug(tag.data(), "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
+    Debug("v_quic_crypto", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
           QUICDebugNames::key_phase(phase));
 
   } else {
@@ -1119,7 +1119,8 @@ QUICPacketUPtr
 QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
 {
-  QUICPacketNumber pn = this->_packet_number_generator[static_cast<int>(QUICEncryptionLevel::INITIAL)].next();
+  int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumber pn = this->_packet_number_generator[index].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::INITIAL, QUICKeyPhase::CLEARTEXT, destination_cid, source_cid, pn, base_packet_number,
                             this->_version, std::move(payload), len);
@@ -1140,7 +1141,8 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
                                            QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                            bool retransmittable)
 {
-  QUICPacketNumber pn = this->_packet_number_generator[static_cast<int>(QUICEncryptionLevel::HANDSHAKE)].next();
+  int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::HANDSHAKE);
+  QUICPacketNumber pn = this->_packet_number_generator[index].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::HANDSHAKE, QUICKeyPhase::HANDSHAKE, destination_cid, source_cid, pn, base_packet_number,
                             this->_version, std::move(payload), len);
@@ -1151,7 +1153,8 @@ QUICPacketUPtr
 QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                                   ats_unique_buf payload, size_t len, bool retransmittable)
 {
-  QUICPacketNumber pn = this->_packet_number_generator[static_cast<int>(QUICEncryptionLevel::ONE_RTT)].next();
+  int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::ONE_RTT);
+  QUICPacketNumber pn = this->_packet_number_generator[index].next();
   // TODO Key phase should be picked up from QUICHandshakeProtocol, probably
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, pn,
                                                         base_packet_number, std::move(payload), len);
