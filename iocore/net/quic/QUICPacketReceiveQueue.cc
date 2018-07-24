@@ -104,6 +104,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   ats_unique_buf pkt     = {nullptr, [](void *p) { ats_free(p); }};
   size_t pkt_len         = 0;
   bool has_packet_number = true;
+  QUICPacketType type    = QUICPacketType::UNINITIALIZED;
 
   if (QUICInvariants::is_long_header(this->_payload.get())) {
     uint8_t *buf         = this->_payload.get() + this->_offset;
@@ -115,10 +116,12 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
       if (is_vn(version)) {
         has_packet_number = false;
         pkt_len           = remaining_len;
+        type              = QUICPacketType::VERSION_NEGOTIATION;
       } else if (!QUICTypeUtil::is_supported_version(version)) {
         result  = QUICPacketCreationResult::UNSUPPORTED;
         pkt_len = remaining_len;
       } else {
+        QUICPacketLongHeader::type(type, this->_payload.get() + this->_offset, remaining_len);
         if (!long_hdr_pkt_len(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
           this->_payload.release();
           this->_payload     = nullptr;
@@ -158,13 +161,19 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     this->_payload     = nullptr;
     this->_payload_len = 0;
     this->_offset      = 0;
+    type               = QUICPacketType::PROTECTED;
   }
 
   // VN doesn't have Packet Number field
   if (!has_packet_number || QUICPacket::unprotect_packet_number(pkt.get(), pkt_len, &this->_pn_protector)) {
     quic_packet = this->_packet_factory.create(this->_from, std::move(pkt), pkt_len, this->_largest_received_packet_number, result);
   } else {
-    result = QUICPacketCreationResult::FAILED;
+    // ZERO_RTT might be rejected
+    if (type == QUICPacketType::ZERO_RTT_PROTECTED) {
+      result = QUICPacketCreationResult::IGNORED;
+    } else {
+      result = QUICPacketCreationResult::FAILED;
+    }
   }
 
   if (udp_packet) {
