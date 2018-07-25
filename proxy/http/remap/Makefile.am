@@ -28,7 +28,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libhttp_remap.a
 
@@ -37,6 +38,8 @@ libhttp_remap_a_SOURCES = \
 	AclFiltering.h \
 	RemapConfig.cc \
 	RemapConfig.h \
+	RemapParentConfig.h \
+	RemapParentConfig.cc \
 	RemapPluginInfo.cc \
 	RemapPluginInfo.h \
 	RemapPlugins.cc \
