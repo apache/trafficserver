@@ -1,0 +1,16 @@
+Changes with Apache Traffic Server 6.2.3
+  #2368 - Backport PR 2336 to 6.2.x - Add missing checks for request url
+  #2371 - Backport PR 2338 to 6.2.x - Add null pointer check to server response set status in Lua plugin
+  #2561 - Fix possibility of NULL assignment to std::string
+  #2630 - Fix mem leak related to do_os_response() function
+  #2898 - Fixes for new glibc
+  #2901 - Fixed to build on Fedora 26 with gcc7
+  #3971 - Fixes a build issue with latest XCode / clang
+  #3973 - Adds better sanity checks around the method idx
+  #3974 - Restrict access to request headers for ESI variables
+  #3975 - Convert an ink_release_assert into logic to reset the rbio to use the remaining data
+  #3976 - Return 400 if there is whitespace after the field name and before the colon
+  #3978 - Close the connection when returning a 400 error response
+  #3980 - Respond with 400 code when Content-Length headers mismatch, remove
+  #3981 - Drain the request body if there is a cache hit.  Only drain if the
+  #3984 - Adds a new configuration proxy.config.http.allow_multi_range
