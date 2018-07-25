@@ -188,7 +188,6 @@ QUICHandshake::is_version_negotiated() const
 bool
 QUICHandshake::is_completed() const
 {
-  // TODO: check state with other way
   return SSL_is_init_finished(this->_ssl);
 }
 
@@ -460,6 +459,10 @@ QUICHandshake::do_handshake()
     if (len > 0) {
       stream->write(out.buf + out.offsets[index], len);
     }
+  }
+
+  if (SSL_is_init_finished(this->_ssl)) {
+    QUICHSDebug("%s", this->negotiated_cipher_suite());
   }
 
   return result;
