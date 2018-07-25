@@ -116,6 +116,9 @@ PIDFILE_CHECK_RETRIES=${PIDFILE_CHECK_RETRIES:-30}
 STDOUTLOG=${STDOUTLOG:-$TS_BASE@exp_logdir@/traffic.out}
 # stderr file of executable
 STDERRLOG=${STDERRLOG:-$TS_BASE@exp_logdir@/traffic.out}
+# hooks
+RC_START_HOOK=${RC_START_HOOK:-$TS_BASE@exp_bindir@/rc_start_hook.sh}
+RC_RELOAD_HOOK=${RC_PRELOAD_HOOK:-$TS_BASE@exp_bindir@/rc_reload_hook.sh}
 
 if [ -d /etc/rc.d/init.d ]; then
     SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
@@ -264,9 +267,34 @@ do_stop()
     return "$RETVAL"
 }
 
+rc_reload_hook()
+{
+    if [ ! -x "$RC_RELOAD_HOOK" ]; then
+        return 0
+    fi
+    sh $RC_RELOAD_HOOK
+    return $?
+}
+
+rc_start_hook()
+{
+    if [ ! -x "$RC_START_HOOK" ]; then
+        return 0
+    fi
+    sh $RC_START_HOOK
+    return $?
+}
+
 # main
 case "$1" in
     start)
+        rc_start_hook
+        retval="$?"
+        if [ "$retval" != 0 ]; then
+            echo "precondition was not met: ${RC_START_HOOK}"
+            exit "$retval"
+        fi
+
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
             test "x$VERBOSE" != "xno" && log_daemon_msg "Starting ${TS_PACKAGE_NAME}" "$NAME"
             retval=0
@@ -343,6 +371,13 @@ case "$1" in
         fi
         ;;
     reload|force-reload)
+        rc_reload_hook
+        retval="$?"
+        if [ "$retval" != 0 ]; then
+            echo "precondition was not met: ${RC_RELOAD_HOOK}"
+            exit "$retval"
+        fi
+
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
             test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${TS_PACKAGE_NAME}" "$NAME"
             retval=0
