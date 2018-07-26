@@ -1351,7 +1351,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   // Schedule a packet
   if (len != 0) {
-    if (level == QUICEncryptionLevel::INITIAL) {
+    if (level == QUICEncryptionLevel::INITIAL && this->netvc_context == NET_VCONNECTION_OUT) {
       // Pad with PADDING frames
       uint64_t min_size = this->minimum_quic_packet_size();
       min_size          = std::min(min_size, max_packet_size);
