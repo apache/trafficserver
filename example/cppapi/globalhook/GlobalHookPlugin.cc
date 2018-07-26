@@ -17,9 +17,9 @@
  */
 
 #include <iostream>
+
 #include "tscpp/api/GlobalPlugin.h"
 #include "tscpp/api/PluginInit.h"
-//#include<../ts/Diags.h>
 
 using namespace atscppapi;
 using namespace std;

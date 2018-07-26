@@ -28,10 +28,8 @@
 /// Apache Traffic Server commons.
 
 #if TS_ENABLE_FIPS == 1
-// #include "tscore/SHA256.h"
 #define CRYPTO_HASH_SIZE (256 / 8)
 #else
-// #include "tscore/ink_code.h"
 #define CRYPTO_HASH_SIZE (128 / 8)
 #endif
 #define CRYPTO_HEX_SIZE ((CRYPTO_HASH_SIZE * 2) + 1)
