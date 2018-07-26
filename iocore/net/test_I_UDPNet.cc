@@ -300,7 +300,7 @@ Log::trace_out(sockaddr const *, unsigned short, char const *, ...)
 
 #include "InkAPIInternal.h"
 int
-APIHook::invoke(int, void *)
+APIHook::invoke(int, void *) const
 {
   ink_assert(false);
   return 0;
@@ -314,7 +314,14 @@ APIHook::next() const
 }
 
 APIHook *
-APIHooks::get() const
+APIHook::prev() const
+{
+  ink_assert(false);
+  return nullptr;
+}
+
+APIHook *
+APIHooks::head() const
 {
   ink_assert(false);
   return nullptr;

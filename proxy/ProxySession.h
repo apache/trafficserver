@@ -91,19 +91,13 @@ public:
   virtual const char *get_protocol_string() const = 0;
 
   virtual void
-  ssn_hook_append(TSHttpHookID id, INKContInternal *cont)
+  hook_add(TSHttpHookID id, INKContInternal *cont)
   {
     this->api_hooks.append(id, cont);
   }
 
-  virtual void
-  ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
-  {
-    this->api_hooks.prepend(id, cont);
-  }
-
   APIHook *
-  ssn_hook_get(TSHttpHookID id) const
+  hook_get(TSHttpHookID id) const
   {
     return this->api_hooks.get(id);
   }
@@ -153,6 +147,11 @@ public:
     return ts_is_draining;
   }
 
+  HttpAPIHooks const *
+  feature_hooks() const
+  {
+    return &api_hooks;
+  }
   // Initiate an API hook invocation.
   void do_api_callout(TSHttpHookID id);
 
@@ -222,7 +221,7 @@ public:
   TSHttpHookID
   get_hookid() const
   {
-    return api_hookid;
+    return hook_state.id();
   }
 
   virtual void
@@ -301,6 +300,9 @@ public:
   ProxySession &operator=(const ProxySession &) = delete;
 
 protected:
+  // Hook dispatching state
+  HttpHookState hook_state;
+
   // XXX Consider using a bitwise flags variable for the following flags, so
   // that we can make the best use of internal alignment padding.
 
@@ -315,9 +317,7 @@ private:
   void handle_api_return(int event);
   int state_api_callout(int event, void *edata);
 
-  APIHookScope api_scope  = API_HOOK_SCOPE_NONE;
-  TSHttpHookID api_hookid = TS_HTTP_READ_REQUEST_HDR_HOOK;
-  APIHook *api_current    = nullptr;
+  APIHook const *cur_hook = nullptr;
   HttpAPIHooks api_hooks;
   void *user_args[TS_HTTP_MAX_USER_ARG];
 

@@ -77,12 +77,6 @@ static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
   TS_EVENT_NONE,                       // TS_HTTP_LAST_HOOK
 };
 
-static bool
-is_valid_hook(TSHttpHookID hookid)
-{
-  return (hookid >= 0) && (hookid < TS_HTTP_LAST_HOOK);
-}
-
 void
 ProxySession::free()
 {
@@ -107,34 +101,35 @@ ProxySession::state_api_callout(int event, void *data)
   case EVENT_NONE:
   case EVENT_INTERVAL:
   case TS_EVENT_HTTP_CONTINUE:
-    if (likely(is_valid_hook(this->api_hookid))) {
-      if (this->api_current == nullptr && this->api_scope == API_HOOK_SCOPE_GLOBAL) {
-        this->api_current = http_global_hooks->get(this->api_hookid);
-        this->api_scope   = API_HOOK_SCOPE_LOCAL;
-      }
+    if (nullptr == cur_hook) {
+      /// Get the next hook to invoke from HttpHookState
+      cur_hook = hook_state.getNext();
+    }
+    if (nullptr != cur_hook) {
+      bool plugin_lock    = false;
+      APIHook const *hook = cur_hook;
 
-      if (this->api_current == nullptr && this->api_scope == API_HOOK_SCOPE_LOCAL) {
-        this->api_current = ssn_hook_get(this->api_hookid);
-        this->api_scope   = API_HOOK_SCOPE_NONE;
-      }
+      Ptr<ProxyMutex> plugin_mutex;
 
-      if (this->api_current) {
-        APIHook *hook = this->api_current;
-
+      if (hook->m_cont->mutex) {
+        plugin_mutex = hook->m_cont->mutex;
         MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
-        // Have a mutex but did't get the lock, reschedule
-        if (!lock.is_locked()) {
-          SET_HANDLER(&ProxySession::state_api_callout);
-          if (!schedule_event) { // Don't bother to schedule is there is already one out.
-            schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
-          }
+
+        if (!(plugin_lock = lock.is_locked())) {
+          SET_HANDLER(&ProxyClientSession::state_api_callout);
+          mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
           return 0;
         }
-
-        this->api_current = this->api_current->next();
-        hook->invoke(eventmap[this->api_hookid], this);
-        return 0;
       }
+
+      cur_hook = nullptr; // mark current callback at dispatched.
+      hook->invoke(eventmap[hook_state.id()], this);
+
+      if (plugin_lock) {
+        Mutex_unlock(plugin_mutex, this_ethread());
+      }
+
+      return 0;
     }
 
     handle_api_return(event);
@@ -156,13 +151,11 @@ void
 ProxySession::do_api_callout(TSHttpHookID id)
 {
   ink_assert(id == TS_HTTP_SSN_START_HOOK || id == TS_HTTP_SSN_CLOSE_HOOK);
-
-  this->api_hookid  = id;
-  this->api_scope   = API_HOOK_SCOPE_GLOBAL;
-  this->api_current = nullptr;
-
-  if (this->has_hooks()) {
-    SET_HANDLER(&ProxySession::state_api_callout);
+  hook_state.init(id, http_global_hooks, &api_hooks);
+  /// Verify if there is any hook to invoke
+  cur_hook = hook_state.getNext();
+  if (hooks_on && nullptr != cur_hook) {
+    SET_HANDLER(&ProxyClientSession::state_api_callout);
     this->state_api_callout(EVENT_NONE, nullptr);
   } else {
     this->handle_api_return(TS_EVENT_HTTP_CONTINUE);
@@ -172,13 +165,11 @@ ProxySession::do_api_callout(TSHttpHookID id)
 void
 ProxySession::handle_api_return(int event)
 {
-  TSHttpHookID hookid = this->api_hookid;
+  TSHttpHookID hookid = hook_state.id();
 
   SET_HANDLER(&ProxySession::state_api_callout);
 
-  this->api_hookid  = TS_HTTP_LAST_HOOK;
-  this->api_scope   = API_HOOK_SCOPE_NONE;
-  this->api_current = nullptr;
+  cur_hook = nullptr;
 
   switch (hookid) {
   case TS_HTTP_SSN_START_HOOK:

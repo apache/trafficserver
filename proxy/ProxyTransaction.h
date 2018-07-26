@@ -102,9 +102,15 @@ public:
   }
 
   APIHook *
-  ssn_hook_get(TSHttpHookID id) const
+  hook_get(TSHttpHookID id) const
   {
-    return parent ? parent->ssn_hook_get(id) : nullptr;
+    return parent ? parent->hook_get(id) : nullptr;
+  }
+
+  HttpAPIHooks const *
+  feature_hooks() const
+  {
+    return parent ? parent->feature_hooks() : nullptr;
   }
 
   bool

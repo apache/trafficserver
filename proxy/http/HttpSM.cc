@@ -1399,67 +1399,63 @@ plugins required to work with sni_routing.
     }
   // FALLTHROUGH
   case HTTP_API_CONTINUE:
-    if ((cur_hook_id >= 0) && (cur_hook_id < TS_HTTP_LAST_HOOK)) {
-      if (!cur_hook) {
-        if (cur_hooks == 0) {
-          cur_hook = http_global_hooks->get(cur_hook_id);
-          cur_hooks++;
-        }
+    if (nullptr == cur_hook) {
+      cur_hook = hook_state.getNext();
+    }
+    if (cur_hook) {
+      if (callout_state == HTTP_API_NO_CALLOUT) {
+        callout_state = HTTP_API_IN_CALLOUT;
       }
-      // even if ua_txn is NULL, cur_hooks must
-      // be incremented otherwise cur_hooks is not set to 2 and
-      // transaction hooks (stored in api_hooks object) are not called.
-      if (!cur_hook) {
-        if (cur_hooks == 1) {
-          if (ua_txn) {
-            cur_hook = ua_txn->ssn_hook_get(cur_hook_id);
-          }
-          cur_hooks++;
-        }
-      }
-      if (!cur_hook) {
-        if (cur_hooks == 2) {
-          cur_hook = api_hooks.get(cur_hook_id);
-          cur_hooks++;
-        }
-      }
-      if (cur_hook) {
-        if (callout_state == HTTP_API_NO_CALLOUT) {
-          callout_state = HTTP_API_IN_CALLOUT;
-        }
 
+      /* The MUTEX_TRY_LOCK macro was changed so
+         that it can't handle NULL mutex'es.  The plugins
+         can use null mutexes so we have to do this manually.
+         We need to take a smart pointer to the mutex since
+         the plugin could release it's mutex while we're on
+         the callout
+       */
+      bool plugin_lock;
+      Ptr<ProxyMutex> plugin_mutex;
+      if (cur_hook->m_cont->mutex) {
+        plugin_mutex = cur_hook->m_cont->mutex;
         MUTEX_TRY_LOCK(lock, cur_hook->m_cont->mutex, mutex->thread_holding);
-        // Have a mutex but didn't get the lock, reschedule
-        if (!lock.is_locked()) {
+
+        if (!(plugin_lock = lock.is_locked())) {
           api_timer = -Thread::get_hrtime_updated();
           HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
           ink_assert(pending_action == nullptr);
           pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
-          // Should @a callout_state be reset back to HTTP_API_NO_CALLOUT here? Because the default
-          // handler has been changed the value isn't important to the rest of the state machine
-          // but not resetting means there is no way to reliably detect re-entrance to this state with an
-          // outstanding callout.
           return 0;
         }
-        SMDebug("http", "[%" PRId64 "] calling plugin on hook %s at hook %p", sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id),
-                cur_hook);
-
-        APIHook *hook = cur_hook;
-        cur_hook      = cur_hook->next();
-
-        if (!api_timer) {
-          api_timer = Thread::get_hrtime_updated();
-        }
-        hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
-        if (api_timer > 0) { // true if the hook did not call TxnReenable()
-          milestone_update_api_time(milestones, api_timer);
-          api_timer = -Thread::get_hrtime_updated(); // set in order to track non-active callout duration
-          // which means that if we get back from the invoke with api_timer < 0 we're already
-          // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
-          // up in state_api_callback when the plugin re-enables this transaction.
-        }
-        return 0;
+      } else {
+        plugin_lock = false;
       }
+
+      SMDebug("http", "[%" PRId64 "] calling plugin on hook %s at hook %p", sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id),
+              cur_hook);
+
+      APIHook const *hook = cur_hook;
+      // Need to delay the next hook update until after this hook is called to handle dynamic
+      // callback manipulation. cur_hook isn't needed to track state (in hook_state).
+      cur_hook = nullptr;
+
+      if (!api_timer) {
+        api_timer = Thread::get_hrtime();
+      }
+      hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
+      if (api_timer > 0) { // true if the hook did not call TxnReenable()
+        milestone_update_api_time(milestones, api_timer);
+        api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
+        // which means that if we get back from the invoke with api_timer < 0 we're already
+        // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
+        // up in state_api_callback when the plugin re-enables this transaction.
+      }
+
+      if (plugin_lock) {
+        Mutex_unlock(plugin_mutex, mutex->thread_holding);
+      }
+
+      return 0;
     }
     // Map the callout state into api_next
     switch (callout_state) {
@@ -5136,6 +5132,7 @@ HttpSM::do_api_callout_internal()
     ink_assert(!"not reached");
   }
 
+  hook_state.init(cur_hook_id, http_global_hooks, ua_txn ? ua_txn->feature_hooks() : nullptr, &api_hooks);
   cur_hook  = nullptr;
   cur_hooks = 0;
   state_api_callout(0, nullptr);
@@ -5147,7 +5144,7 @@ HttpSM::do_post_transform_open()
   ink_assert(post_transform_info.vc == nullptr);
 
   if (is_action_tag_set("http_post_nullt")) {
-    txn_hook_prepend(TS_HTTP_REQUEST_TRANSFORM_HOOK, transformProcessor.null_transform(mutex.get()));
+    txn_hook_add(TS_HTTP_REQUEST_TRANSFORM_HOOK, transformProcessor.null_transform(mutex.get()));
   }
 
   post_transform_info.vc = transformProcessor.open(this, api_hooks.get(TS_HTTP_REQUEST_TRANSFORM_HOOK));
@@ -5168,7 +5165,7 @@ HttpSM::do_transform_open()
   APIHook *hooks;
 
   if (is_action_tag_set("http_nullt")) {
-    txn_hook_prepend(TS_HTTP_RESPONSE_TRANSFORM_HOOK, transformProcessor.null_transform(mutex.get()));
+    txn_hook_add(TS_HTTP_RESPONSE_TRANSFORM_HOOK, transformProcessor.null_transform(mutex.get()));
   }
 
   hooks = api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK);
