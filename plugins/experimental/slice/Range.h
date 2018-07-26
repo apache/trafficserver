@@ -35,9 +35,7 @@ public:
   int64_t m_end; // half open
 
   Range() : m_beg(-1), m_end(-1) {}
-
   explicit Range(int64_t const begin, int64_t const end) : m_beg(begin), m_end(end) {}
-
   Range &
   operator=(Range const &other)
   {

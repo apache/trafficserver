@@ -25,19 +25,19 @@
 #include <iostream>
 
 bool
-Range ::isValid() const
+Range::isValid() const
 {
   return m_beg < m_end;
 }
 
 int64_t
-Range ::size() const
+Range::size() const
 {
   return m_end - m_beg;
 }
 
 bool
-Range ::fromStringClosed(char const *const rangestr)
+Range::fromStringClosed(char const *const rangestr)
 {
   static char const *const BYTESTR = "bytes=";
   static size_t const BYTESTRLEN   = strlen(BYTESTR);
@@ -116,8 +116,9 @@ Range ::fromStringClosed(char const *const rangestr)
 } // parseRange
 
 bool
-Range ::toStringClosed(char *const bufstr, int *const buflen // returns actual bytes used
-                       ) const
+Range::toStringClosed(char *const bufstr,
+                      int *const buflen // returns actual bytes used
+                      ) const
 {
   if (!isValid()) {
     return false;
@@ -135,7 +136,7 @@ Range ::toStringClosed(char *const bufstr, int *const buflen // returns actual b
 }
 
 int64_t
-Range ::firstBlockFor(int64_t const blocksize) const
+Range::firstBlockFor(int64_t const blocksize) const
 {
   if (0 < blocksize && isValid()) {
     return std::max((int64_t)0, m_beg / blocksize);
@@ -145,13 +146,13 @@ Range ::firstBlockFor(int64_t const blocksize) const
 }
 
 Range
-Range ::intersectedWith(Range const &other) const
+Range::intersectedWith(Range const &other) const
 {
   return Range(std::max(m_beg, other.m_beg), std::min(m_end, other.m_end));
 }
 
 bool
-Range ::blockIsInside(int64_t const blocksize, int64_t const blocknum) const
+Range::blockIsInside(int64_t const blocksize, int64_t const blocknum) const
 {
   Range const blockrange(blocksize * blocknum, blocksize * (blocknum + 1));
 
@@ -161,7 +162,7 @@ Range ::blockIsInside(int64_t const blocksize, int64_t const blocknum) const
 }
 
 int64_t
-Range ::skipBytesForBlock(int64_t const blocksize, int64_t const blocknum) const
+Range::skipBytesForBlock(int64_t const blocksize, int64_t const blocknum) const
 {
   int64_t const blockstart(blocksize * blocknum);
 
@@ -173,7 +174,7 @@ Range ::skipBytesForBlock(int64_t const blocksize, int64_t const blocknum) const
 }
 
 bool
-Range ::isEndBytes() const
+Range::isEndBytes() const
 {
   return m_beg < 0 && 0 == m_end;
 }

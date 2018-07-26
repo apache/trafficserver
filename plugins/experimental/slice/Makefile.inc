@@ -17,12 +17,24 @@
 pkglib_LTLIBRARIES += experimental/slice/slice.la
 
 experimental_slice_slice_la_SOURCES = \
+  experimental/slice/client.cc \
+  experimental/slice/client.h \
   experimental/slice/ContentRange.cc \
   experimental/slice/ContentRange.h \
+  experimental/slice/Data.cc \
+  experimental/slice/Data.h \
   experimental/slice/HttpHeader.cc \
   experimental/slice/HttpHeader.h \
   experimental/slice/intercept.cc \
+  experimental/slice/intercept.h \
   experimental/slice/Range.cc \
   experimental/slice/Range.h \
+  experimental/slice/response.cc \
+  experimental/slice/response.h \
+  experimental/slice/server.cc \
+  experimental/slice/server.h \
   experimental/slice/slice.cc \
-  experimental/slice/slice.h
+  experimental/slice/slice.h \
+  experimental/slice/Stage.h \
+  experimental/slice/transfer.cc \
+  experimental/slice/transfer.h

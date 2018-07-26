@@ -18,36 +18,17 @@
 
 #pragma once
 
+#include "Data.h"
+
 #include "ts/ts.h"
 
-/**
-  represents value parsed from a blocked Content-Range reponse header field.
-  Range is converted from closed range into a half open range for.
+/** Functions to deal with the connection to the client.
+ * Body content transfers are handled by the client.
+ * New block requests are also initiated by the client.
  */
-struct ContentRange {
-  int64_t m_beg;
-  int64_t m_end;    // half open
-  int64_t m_length; // full content length
 
-  ContentRange() : m_beg(-1), m_end(-1), m_length(-1) {}
-  explicit ContentRange(int64_t const begin, int64_t const end, int64_t const len) : m_beg(begin), m_end(end), m_length(len) {}
-  bool
-  isValid() const
-  {
-    return 0 <= m_beg && m_beg < m_end && m_end <= m_length;
-  }
+/** returns true if the incoming vio can be turned off
+ */
+bool handle_client_req(TSCont contp, TSEvent event, Data *const data);
 
-  /** parsed from a Content-Range field
-   */
-  bool fromStringClosed(char const *const valstr);
-
-  /** usable for Content-Range field
-   */
-  bool toStringClosed(char *const rangestr, int *const rangelen) const;
-
-  int64_t
-  rangeSize() const
-  {
-    return m_end - m_beg;
-  }
-};
+void handle_client_resp(TSCont contp, TSEvent event, Data *const data);

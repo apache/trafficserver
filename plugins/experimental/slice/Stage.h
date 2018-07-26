@@ -45,12 +45,11 @@ struct Channel {
 
   bool
   setForRead(TSVConn vc, TSCont contp, int64_t const bytesin //=INT64_MAX
-  )
+             )
   {
     TSAssert(nullptr != vc);
     if (nullptr == m_iobuf) {
-      m_iobuf = TSIOBufferCreate();
-      //      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
+      m_iobuf  = TSIOBufferCreate();
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
     } else {
       drainReader();
@@ -61,12 +60,11 @@ struct Channel {
 
   bool
   setForWrite(TSVConn vc, TSCont contp, int64_t const bytesout //=INT64_MAX
-  )
+              )
   {
     TSAssert(nullptr != vc);
     if (nullptr == m_iobuf) {
-      m_iobuf = TSIOBufferCreate();
-      //      TSIOBufferWaterMarkSet(m_iobuf, 1024 * 128); // doesn't work
+      m_iobuf  = TSIOBufferCreate();
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
     } else {
       drainReader();
@@ -79,17 +77,13 @@ struct Channel {
   close()
   {
     if (nullptr != m_reader) {
-      TSIOBufferReaderFree(m_reader);
-      m_reader = nullptr;
+      drainReader();
     }
-    if (nullptr != m_iobuf) {
-      TSIOBufferDestroy(m_iobuf);
-      m_iobuf = nullptr;
-    }
+    m_vio = nullptr;
   }
 
   bool
-  isValid() const
+  isOpen() const
   {
     return nullptr != m_iobuf && nullptr != m_reader && nullptr != m_vio;
   }
@@ -100,18 +94,17 @@ struct Stage // upstream or downstream (server or client)
   Stage(Stage const &) = delete;
   Stage &operator=(Stage const &) = delete;
 
-  Stage() {}
+  TSVConn m_vc{nullptr};
+  Channel m_read;
+  Channel m_write;
 
+  Stage() {}
   ~Stage()
   {
     if (nullptr != m_vc) {
       TSVConnClose(m_vc);
     }
   }
-
-  TSVConn m_vc{nullptr};
-  Channel m_read;
-  Channel m_write;
 
   void
   setupConnection(TSVConn vc)
@@ -139,18 +132,18 @@ struct Stage // upstream or downstream (server or client)
   void
   close()
   {
+    m_read.close();
+    m_write.close();
+
     if (nullptr != m_vc) {
       TSVConnClose(m_vc);
       m_vc = nullptr;
     }
-
-    m_read.close();
-    m_write.close();
   }
 
   bool
-  isValid() const
+  isOpen() const
   {
-    return nullptr != m_vc && m_read.isValid() && m_write.isValid();
+    return nullptr != m_vc && m_read.isOpen() && m_write.isOpen();
   }
 };

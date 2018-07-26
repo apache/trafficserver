@@ -47,7 +47,6 @@ struct HttpHeader {
   TSMLoc const m_lochdr;
 
   explicit HttpHeader(TSMBuffer buffer, TSMLoc lochdr) : m_buffer(buffer), m_lochdr(lochdr) {}
-
   bool
   isValid() const
   {
@@ -93,7 +92,8 @@ struct HttpHeader {
   // returns false if header invalid or something went wrong with removal.
   bool removeKey(char const *const key, int const keylen);
 
-  bool valueForKey(char const *const keystr, int const keylen, char *const valstr // <-- return string value
+  bool valueForKey(char const *const keystr, int const keylen,
+                   char *const valstr // <-- return string value
                    ,
                    int *const vallen // <-- pass in capacity, returns len of string
                    ,
@@ -105,7 +105,7 @@ struct HttpHeader {
   */
   bool setKeyVal(char const *const key, int const keylen, char const *const val, int const vallen,
                  int const index = -1 // sets all values
-  );
+                 );
 
   /** dump header into provided char buffer
    */
@@ -129,7 +129,6 @@ struct TxnHdrMgr {
   TSMLoc m_lochdr{nullptr};
 
   TxnHdrMgr() : m_buffer(nullptr), m_lochdr(nullptr) {}
-
   ~TxnHdrMgr()
   {
     if (nullptr != m_lochdr) {
@@ -168,14 +167,13 @@ struct HdrMgr {
   TSMLoc m_lochdr{nullptr};
 
   HdrMgr() : m_buffer(nullptr), m_lochdr(nullptr) {}
-
   ~HdrMgr()
   {
-    if (nullptr != m_lochdr) {
-      TSHttpHdrDestroy(m_buffer, m_lochdr);
-      TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
-    }
     if (nullptr != m_buffer) {
+      if (nullptr != m_lochdr) {
+        TSHttpHdrDestroy(m_buffer, m_lochdr);
+        TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
+      }
       TSMBufferDestroy(m_buffer);
     }
   }
@@ -183,7 +181,7 @@ struct HdrMgr {
   void
   resetHeader()
   {
-    if (nullptr != m_lochdr) {
+    if (nullptr != m_buffer && nullptr != m_lochdr) {
       TSHttpHdrDestroy(m_buffer, m_lochdr);
       TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, m_lochdr);
       m_lochdr = nullptr;

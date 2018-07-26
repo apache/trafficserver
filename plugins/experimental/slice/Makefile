@@ -1,24 +1,36 @@
 all: slice
 
 slice_la_SOURCES = \
+	client.cc \
 	ContentRange.cc \
+	Data.cc \
 	HttpHeader.cc \
-	Range.cc \
 	intercept.cc \
+	Range.cc \
+	response.cc \
+	server.cc \
 	slice.cc \
+	slice_test.cc \
+	transfer.cc \
 
 slice_la_HEADERS = \
+	client.h \
 	ContentRange.h \
+	Data.h \
 	HttpHeader.h \
-	Range.h \
 	intercept.h \
+	Range.h \
+	response.h \
+	server.h \
 	slice.h \
+	Stage.h \
+	transfer.h \
 
 slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
-	tsxs -v -i -o slice.so $(slice_la_SOURCES)
+	tsxs -v -o slice.so $(slice_la_SOURCES)
 
-install: slice
-	tsxs -v -i slice.so
+install: $(slice_la_SOURCES) $(slice_la_HEADERS)
+	tsxs -v -i -o slice.so $(slice_la_SOURCES)
 
 CXX = c++ -std=c++11
 #CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16

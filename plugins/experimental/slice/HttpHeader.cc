@@ -21,13 +21,13 @@
 #include "slice.h"
 
 #include <cassert>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <limits>
 
 TSHttpType
-HttpHeader ::type() const
+HttpHeader::type() const
 {
   if (isValid()) {
     return TSHttpHdrTypeGet(m_buffer, m_lochdr);
@@ -37,7 +37,7 @@ HttpHeader ::type() const
 }
 
 TSHttpStatus
-HttpHeader ::status() const
+HttpHeader::status() const
 {
   TSHttpStatus res = TS_HTTP_STATUS_NONE;
   if (isValid()) {
@@ -47,7 +47,7 @@ HttpHeader ::status() const
 }
 
 bool
-HttpHeader ::setStatus(TSHttpStatus const newstatus)
+HttpHeader::setStatus(TSHttpStatus const newstatus)
 {
   if (!isValid()) {
     return false;
@@ -57,7 +57,7 @@ HttpHeader ::setStatus(TSHttpStatus const newstatus)
 }
 
 bool
-HttpHeader ::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
+HttpHeader::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
 {
   if (!isValid()) {
     return false;
@@ -83,7 +83,7 @@ HttpHeader ::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
 }
 
 bool
-HttpHeader ::setReason(char const *const valstr, int const vallen)
+HttpHeader::setReason(char const *const valstr, int const vallen)
 {
   if (isValid()) {
     return TS_SUCCESS == TSHttpHdrReasonSet(m_buffer, m_lochdr, valstr, vallen);
@@ -93,7 +93,7 @@ HttpHeader ::setReason(char const *const valstr, int const vallen)
 }
 
 char const *
-HttpHeader ::getCharPtr(CharPtrGetFunc func, int *const len) const
+HttpHeader::getCharPtr(CharPtrGetFunc func, int *const len) const
 {
   char const *res = nullptr;
   if (isValid()) {
@@ -109,7 +109,7 @@ HttpHeader ::getCharPtr(CharPtrGetFunc func, int *const len) const
 }
 
 bool
-HttpHeader ::hasKey(char const *const key, int const keylen) const
+HttpHeader::hasKey(char const *const key, int const keylen) const
 {
   if (!isValid()) {
     return false;
@@ -125,7 +125,7 @@ HttpHeader ::hasKey(char const *const key, int const keylen) const
 }
 
 bool
-HttpHeader ::removeKey(char const *const keystr, int const keylen)
+HttpHeader::removeKey(char const *const keystr, int const keylen)
 {
   if (!isValid()) {
     return false;
@@ -144,7 +144,7 @@ HttpHeader ::removeKey(char const *const keystr, int const keylen)
 }
 
 bool
-HttpHeader ::valueForKey(char const *const keystr, int const keylen, char *const valstr, int *const vallen, int const index) const
+HttpHeader::valueForKey(char const *const keystr, int const keylen, char *const valstr, int *const vallen, int const index) const
 {
   if (!isValid()) {
     return false;
@@ -169,9 +169,6 @@ HttpHeader ::valueForKey(char const *const keystr, int const keylen, char *const
         *endp = '\0';
       }
     }
-  }
-
-  if (nullptr != locfield) {
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 
@@ -179,7 +176,7 @@ HttpHeader ::valueForKey(char const *const keystr, int const keylen, char *const
 }
 
 bool
-HttpHeader ::setKeyVal(char const *const keystr, int const keylen, char const *const valstr, int const vallen, int const index)
+HttpHeader::setKeyVal(char const *const keystr, int const keylen, char const *const valstr, int const vallen, int const index)
 {
   if (!isValid()) {
     return false;
@@ -211,7 +208,7 @@ HttpHeader ::setKeyVal(char const *const keystr, int const keylen, char const *c
 }
 
 std::string
-HttpHeader ::toString() const
+HttpHeader::toString() const
 {
   std::string res;
 
@@ -296,7 +293,7 @@ HttpHeader ::toString() const
 /////// HdrMgr
 
 TSParseResult
-HdrMgr ::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc)
+HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc)
 {
   TSParseResult parse_res = TS_PARSE_CONT;
 

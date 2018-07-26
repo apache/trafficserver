@@ -19,8 +19,8 @@
 #include "slice.h"
 
 //#include "TransformData.h"
-#include "HttpHeader.h"
 #include "Data.h"
+#include "HttpHeader.h"
 #include "intercept.h"
 
 #include "ts/remap.h"
@@ -136,12 +136,20 @@ read_request(TSHttpTxn txnp, Config const *const config)
       TSReturnCode rcode = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
 
       if (TS_SUCCESS == rcode) {
-        data->m_urlbuffer = TSMBufferCreate();
-        rcode             = TSUrlCreate(data->m_urlbuffer, &data->m_urlloc);
-        if (TS_SUCCESS == rcode) {
-          TSUrlCopy(data->m_urlbuffer, data->m_urlloc, urlbuf, urlloc);
-        }
+        TSMBuffer const newbuf = TSMBufferCreate();
+        TSMLoc newloc          = nullptr;
+        rcode                  = TSUrlClone(newbuf, urlbuf, urlloc, &newloc);
         TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
+
+        if (TS_SUCCESS != rcode) {
+          ERROR_LOG("Error cloning pristine url");
+          delete data;
+          TSMBufferDestroy(newbuf);
+          return false;
+        }
+
+        data->m_urlbuffer = newbuf;
+        data->m_urlloc    = newloc;
       }
 
       // we'll intercept this GET and do it ourselfs
@@ -177,8 +185,9 @@ global_read_request_hook(TSCont // contp
 
 SLICE_EXPORT
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * // rri
-)
+TSRemapDoRemap(void *ih, TSHttpTxn txnp,
+               TSRemapRequestInfo * // rri
+               )
 {
   Config *const config = static_cast<Config *>(ih);
 
@@ -197,16 +206,17 @@ TSRemapOSResponse(void * // ih
                   TSHttpTxn // rh
                   ,
                   int // os_response_type
-)
+                  )
 {
 }
 
 SLICE_EXPORT
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char * // errbuf
+TSRemapNewInstance(int argc, char *argv[], void **ih,
+                   char * // errbuf
                    ,
                    int // errbuf_size
-)
+                   )
 {
   Config *const config = new Config;
   if (2 < argc) {
@@ -214,7 +224,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * // errbuf
   }
   *ih = static_cast<void *>(config);
 
-  //  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
+  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
   return TS_SUCCESS;
 }
 
@@ -235,7 +245,7 @@ TSRemapInit(TSRemapInterface * // api_info
             char * // errbug
             ,
             int // errbuf_size
-)
+            )
 {
   return TS_SUCCESS;
 }
