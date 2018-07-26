@@ -1226,7 +1226,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
-  http_config_cont->handleEvent(EVENT_NONE, nullptr);
+  http_config_cont->dispatchEvent(EVENT_NONE, nullptr);
 
   return;
 }
