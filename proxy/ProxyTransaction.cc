@@ -160,9 +160,15 @@ ProxyTransaction::debug() const
 }
 
 APIHook *
-ProxyTransaction::ssn_hook_get(TSHttpHookID id) const
+ProxyTransaction::hook_get(TSHttpHookID id) const
 {
-  return proxy_ssn ? proxy_ssn->ssn_hook_get(id) : nullptr;
+  return proxy_ssn ? proxy_ssn->hook_get(id) : nullptr;
+}
+
+HttpAPIHooks const *
+ProxyTransaction::feature_hooks() const
+{
+  return proxy_ssn ? proxy_ssn->feature_hooks() : nullptr;
 }
 
 bool

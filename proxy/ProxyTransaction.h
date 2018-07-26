@@ -89,7 +89,8 @@ public:
 
   bool debug() const;
 
-  APIHook *ssn_hook_get(TSHttpHookID id) const;
+  APIHook *hook_get(TSHttpHookID id) const;
+  HttpAPIHooks const *feature_hooks() const;
   bool has_hooks() const;
 
   HostResStyle get_host_res_style() const;

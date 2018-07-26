@@ -291,8 +291,7 @@ public:
   void dump_state_hdr(HTTPHdr *h, const char *s);
 
   // Functions for manipulating api hooks
-  void txn_hook_append(TSHttpHookID id, INKContInternal *cont);
-  void txn_hook_prepend(TSHttpHookID id, INKContInternal *cont);
+  void txn_hook_add(TSHttpHookID id, INKContInternal *cont);
   APIHook *txn_hook_get(TSHttpHookID id);
 
   bool is_private();
@@ -562,7 +561,8 @@ public:
 
 protected:
   TSHttpHookID cur_hook_id = TS_HTTP_LAST_HOOK;
-  APIHook *cur_hook        = nullptr;
+  APIHook const *cur_hook  = nullptr;
+  HttpHookState hook_state;
 
   //
   // Continuation time keeper
@@ -677,16 +677,9 @@ HttpSM::find_server_buffer_size()
 }
 
 inline void
-HttpSM::txn_hook_append(TSHttpHookID id, INKContInternal *cont)
+HttpSM::txn_hook_add(TSHttpHookID id, INKContInternal *cont)
 {
   api_hooks.append(id, cont);
-  hooks_set = true;
-}
-
-inline void
-HttpSM::txn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
-{
-  api_hooks.prepend(id, cont);
   hooks_set = true;
 }
 

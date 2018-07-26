@@ -31,6 +31,7 @@
 #include "ProxyConfig.h"
 #include "P_Cache.h"
 #include "I_Tasks.h"
+#include "Plugin.h"
 
 #include "ts/InkAPIPrivateIOCore.h"
 #include "ts/experimental.h"
@@ -114,8 +115,9 @@ class APIHook
 {
 public:
   INKContInternal *m_cont;
-  int invoke(int event, void *edata);
+  int invoke(int event, void *edata) const;
   APIHook *next() const;
+  APIHook *prev() const;
   LINK(APIHook, m_link);
 };
 
@@ -123,10 +125,12 @@ public:
 class APIHooks
 {
 public:
-  void prepend(INKContInternal *cont);
   void append(INKContInternal *cont);
-  APIHook *get() const;
+  /// Get the first hook.
+  APIHook *head() const;
+  /// Remove all hooks.
   void clear();
+  /// Check if there are no hooks.
   bool is_empty() const;
 
 private:
@@ -159,8 +163,6 @@ public:
 
   /// Remove all hooks.
   void clear();
-  /// Add the hook @a cont to the front of the hooks for @a id.
-  void prepend(ID id, INKContInternal *cont);
   /// Add the hook @a cont to the end of the hooks for @a id.
   void append(ID id, INKContInternal *cont);
   /// Get the list of hooks for @a id.
@@ -181,8 +183,11 @@ public:
   /// @return @c true if any hooks of type @a id are present.
   bool has_hooks_for(ID id) const;
 
+  /// Get a pointer to the set of hooks for a specific hook @id
+  APIHooks const *operator[](ID id) const;
+
 private:
-  bool hooks_p = false; ///< Flag for (not) empty container.
+  bool m_hooks_p = false; ///< Flag for (not) empty container.
   /// The array of hooks lists.
   APIHooks m_hooks[N];
 };
@@ -198,28 +203,18 @@ template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::clear()
 {
-  for (int i = 0; i < N; ++i) {
-    m_hooks[i].clear();
+  for (auto &h : m_hooks) {
+    h.clear();
   }
-  hooks_p = false;
-}
-
-template <typename ID, int N>
-void
-FeatureAPIHooks<ID, N>::prepend(ID id, INKContInternal *cont)
-{
-  if (likely(is_valid(id))) {
-    hooks_p = true;
-    m_hooks[id].prepend(cont);
-  }
+  m_hooks_p = false;
 }
 
 template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::append(ID id, INKContInternal *cont)
 {
-  if (likely(is_valid(id))) {
-    hooks_p = true;
+  if (is_valid(id)) {
+    m_hooks_p = true;
     m_hooks[id].append(cont);
   }
 }
@@ -228,7 +223,12 @@ template <typename ID, int N>
 APIHook *
 FeatureAPIHooks<ID, N>::get(ID id) const
 {
-  return likely(is_valid(id)) ? m_hooks[id].get() : nullptr;
+  return likely(is_valid(id)) ? m_hooks[id].head() : nullptr;
+}
+
+template <typename ID, int N> APIHooks const *FeatureAPIHooks<ID, N>::operator[](ID id) const
+{
+  return likely(is_valid(id)) ? &(m_hooks[id]) : nullptr;
 }
 
 template <typename ID, int N>
@@ -244,7 +244,7 @@ template <typename ID, int N>
 bool
 FeatureAPIHooks<ID, N>::has_hooks() const
 {
-  return hooks_p;
+  return m_hooks_p;
 }
 
 template <typename ID, int N>
@@ -329,6 +329,59 @@ public:
 private:
   std::unordered_map<std::string, INKContInternal *> cb_table;
 };
+
+class HttpHookState
+{
+public:
+  /// Scope tags for interacting with a live instance.
+  enum ScopeTag { GLOBAL, SSN, TXN };
+
+  /// Default Constructor
+  HttpHookState();
+
+  /// Initialize the hook state to track up to 3 sources of hooks.
+  /// The argument order to this method is used to break priority ties (callbacks from earlier args are invoked earlier)
+  /// The order in terms of @a ScopeTag is GLOBAL, SESSION, TRANSACTION.
+  void init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn = nullptr, HttpAPIHooks const *txn = nullptr);
+
+  /// Select a hook for invocation and advance the state to the next valid hook
+  /// @return nullptr if no current hook.
+  APIHook const *getNext();
+
+  /// Get the hook ID
+  TSHttpHookID id() const;
+
+  /// Temporary function to return true. Later will be used to decide if a plugin is enabled for the hooks
+  bool is_enabled();
+
+protected:
+  /// Track the state of one scope of hooks.
+  struct Scope {
+    APIHook const *_c; ///< Current hook (candidate for invocation).
+    APIHook const *_p; ///< Previous hook (already invoked).
+
+    /// Initialize the scope.
+    void init(HttpAPIHooks const *scope, TSHttpHookID id);
+    /// Clear the scope.
+    void clear();
+    /// Return the current candidate.
+    APIHook const *candidate();
+    /// Advance state to the next hook.
+    void operator++();
+  };
+
+private:
+  TSHttpHookID _id;
+  Scope _global; ///< Chain from global hooks.
+  Scope _ssn;    ///< Chain from session hooks.
+  Scope _txn;    ///< Chain from transaction hooks.
+};
+
+inline TSHttpHookID
+HttpHookState::id() const
+{
+  return _id;
+}
 
 void api_init();
 

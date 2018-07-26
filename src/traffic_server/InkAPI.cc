@@ -1310,12 +1310,23 @@ INKVConnInternal::set_data(int id, void *data)
 
 ////////////////////////////////////////////////////////////////////
 //
-// APIHook, APIHooks, HttpAPIHooks
+// APIHook, APIHooks, HttpAPIHooks, HttpHookState
 //
 ////////////////////////////////////////////////////////////////////
+APIHook *
+APIHook::next() const
+{
+  return m_link.next;
+}
+
+APIHook *
+APIHook::prev() const
+{
+  return m_link.prev;
+}
 
 int
-APIHook::invoke(int event, void *edata)
+APIHook::invoke(int event, void *edata) const
 {
   if ((event == EVENT_IMMEDIATE) || (event == EVENT_INTERVAL) || event == TS_EVENT_HTTP_TXN_CLOSE) {
     if (ink_atomic_increment((int *)&m_cont->m_event_count, 1) < 0) {
@@ -1331,20 +1342,9 @@ APIHook::invoke(int event, void *edata)
 }
 
 APIHook *
-APIHook::next() const
+APIHooks::head() const
 {
-  return m_link.next;
-}
-
-void
-APIHooks::prepend(INKContInternal *cont)
-{
-  APIHook *api_hook;
-
-  api_hook         = apiHookAllocator.alloc();
-  api_hook->m_cont = cont;
-
-  m_hooks.push(api_hook);
+  return m_hooks.head;
 }
 
 void
@@ -1358,12 +1358,6 @@ APIHooks::append(INKContInternal *cont)
   m_hooks.enqueue(api_hook);
 }
 
-APIHook *
-APIHooks::get() const
-{
-  return m_hooks.head;
-}
-
 void
 APIHooks::clear()
 {
@@ -1371,6 +1365,94 @@ APIHooks::clear()
   while (nullptr != (hook = m_hooks.pop())) {
     apiHookAllocator.free(hook);
   }
+}
+
+HttpHookState::HttpHookState() : _id(TS_HTTP_LAST_HOOK) {}
+
+void
+HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
+{
+  _id = id;
+
+  if (global) {
+    _global.init(global, id);
+  } else {
+    _global.clear();
+  }
+
+  if (ssn) {
+    _ssn.init(ssn, id);
+  } else {
+    _ssn.clear();
+  }
+
+  if (txn) {
+    _txn.init(txn, id);
+  } else {
+    _txn.clear();
+  }
+}
+
+APIHook const *
+HttpHookState::getNext()
+{
+  APIHook const *zret = nullptr;
+  do {
+    APIHook const *hg   = _global.candidate();
+    APIHook const *hssn = _ssn.candidate();
+    APIHook const *htxn = _txn.candidate();
+    zret                = nullptr;
+
+    Debug("plugin", "computing next callback for hook %d", _id);
+
+    if (hg) {
+      zret = hg;
+      ++_global;
+    } else if (hssn) {
+      zret = hssn;
+      ++_ssn;
+    } else if (htxn) {
+      zret = htxn;
+      ++_txn;
+    }
+  } while (zret != nullptr && !this->is_enabled());
+
+  return zret;
+}
+
+bool
+HttpHookState::is_enabled()
+{
+  return true;
+}
+
+void
+HttpHookState::Scope::init(HttpAPIHooks const *feature_hooks, TSHttpHookID id)
+{
+  APIHooks const *hooks = (*feature_hooks)[id];
+
+  _p = nullptr;
+  _c = hooks->head();
+}
+
+APIHook const *
+HttpHookState::Scope::candidate()
+{
+  /// Simply returns _c hook for now. Later will do priority checking here
+  return _c;
+}
+
+void
+HttpHookState::Scope::operator++()
+{
+  _p = _c;
+  _c = _c->next();
+}
+
+void
+HttpHookState::Scope::clear()
+{
+  _p = _c = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -4760,7 +4842,7 @@ TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
   sdk_assert(sdk_sanity_check_hook_id(id) == TS_SUCCESS);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
-  cs->ssn_hook_append(id, (INKContInternal *)contp);
+  cs->hook_add(id, (INKContInternal *)contp);
 }
 
 int
@@ -4848,7 +4930,7 @@ TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
     }
     hook = hook->m_link.next;
   }
-  sm->txn_hook_append(id, (INKContInternal *)contp);
+  sm->txn_hook_add(id, (INKContInternal *)contp);
 }
 
 // Private api function for gzip plugin.
