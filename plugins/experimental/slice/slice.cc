@@ -224,7 +224,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih,
   }
   *ih = static_cast<void *>(config);
 
-  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
+//  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
   return TS_SUCCESS;
 }
 
