@@ -1287,7 +1287,7 @@ APIHook::invoke(int event, void *edata)
       ink_assert(!"not reached");
     }
   }
-  return m_cont->handleEvent(event, edata);
+  return m_cont->dispatchEvent(event, edata);
 }
 
 APIHook *
@@ -4519,7 +4519,7 @@ int
 TSContCall(TSCont contp, TSEvent event, void *edata)
 {
   Continuation *c = (Continuation *)contp;
-  return c->handleEvent((int)event, edata);
+  return c->dispatchEvent((int)event, edata);
 }
 
 TSMutex

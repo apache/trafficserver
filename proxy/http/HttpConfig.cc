@@ -1223,7 +1223,7 @@ HttpConfig::startup()
 
   OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
 
-  http_config_cont->handleEvent(EVENT_NONE, nullptr);
+  http_config_cont->dispatchEvent(EVENT_NONE, nullptr);
 
   return;
 }

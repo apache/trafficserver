@@ -128,6 +128,7 @@ EThread::process_event(Event *e, int calling_code)
       return;
     }
     Continuation *c_temp = e->continuation;
+    // Make sure that the contination is locked before calling the handler
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);

@@ -59,6 +59,7 @@ libinkevent_a_SOURCES = \
 	P_UnixSocketManager.h \
 	P_VConnection.h \
 	P_VIO.h \
+        Continuation.cc \
 	Processor.cc \
 	ProtectedQueue.cc \
 	ProxyAllocator.cc \
