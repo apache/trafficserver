@@ -101,13 +101,13 @@ HttpServerSession::enable_outbound_connection_tracking(OutboundConnTrack::Group 
 VIO *
 HttpServerSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  return server_vc->do_io_read(c, nbytes, buf);
+  return server_vc ? server_vc->do_io_read(c, nbytes, buf) : nullptr;
 }
 
 VIO *
 HttpServerSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  return server_vc->do_io_write(c, nbytes, buf, owner);
+  return server_vc ? server_vc->do_io_write(c, nbytes, buf, owner) : nullptr;
 }
 
 void
