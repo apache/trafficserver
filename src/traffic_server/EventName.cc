@@ -26,7 +26,6 @@
 #include <cstring>
 
 #include "P_EventSystem.h"
-// #include "I_Disk.h" unused
 #include "I_Cache.h"
 #include "I_Net.h"
 #include "I_HostDB.h"
