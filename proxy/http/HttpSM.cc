@@ -122,9 +122,10 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
-HttpVCTable::HttpVCTable()
+HttpVCTable::HttpVCTable(HttpSM *mysm)
 {
   memset(&vc_table, 0, sizeof(vc_table));
+  sm = mysm;
 }
 
 HttpVCTableEntry *
@@ -132,6 +133,7 @@ HttpVCTable::new_entry()
 {
   for (int i = 0; i < vc_table_max_entries; i++) {
     if (vc_table[i].vc == nullptr) {
+      vc_table[i].sm = sm;
       return vc_table + i;
     }
   }
@@ -184,6 +186,26 @@ HttpVCTable::remove_entry(HttpVCTableEntry *e)
   if (e->write_buffer) {
     free_MIOBuffer(e->write_buffer);
     e->write_buffer = nullptr;
+  }
+  if (e->read_vio != nullptr && e->read_vio->_cont == sm) {
+    // Cleanup dangling i/o
+    if (e == sm->get_ua_entry() && sm->get_ua_txn() != nullptr) {
+      e->read_vio = sm->get_ua_txn()->do_io_read(nullptr, 0, nullptr);
+    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
+      e->read_vio = sm->get_server_session()->do_io_read(nullptr, 0, nullptr);
+    } else {
+      ink_release_assert(false);
+    }
+  }
+  if (e->write_vio != nullptr && e->write_vio->_cont == sm) {
+    // Cleanup dangling i/o
+    if (e == sm->get_ua_entry() && sm->get_ua_txn()) {
+      e->write_vio = sm->get_ua_txn()->do_io_write(nullptr, 0, nullptr);
+    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
+      e->write_vio = sm->get_server_session()->do_io_write(nullptr, 0, nullptr);
+    } else {
+      ink_release_assert(false);
+    }
   }
   e->read_vio   = nullptr;
   e->write_vio  = nullptr;
@@ -280,6 +302,7 @@ HttpSM::HttpSM()
     reentrancy_count(0),
     history_pos(0),
     tunnel(),
+    vc_table(this),
     ua_entry(nullptr),
     ua_session(nullptr),
     background_fill(BACKGROUND_FILL_NONE),
@@ -329,7 +352,6 @@ HttpSM::HttpSM()
     parse_range_done(false)
 {
   memset(&history, 0, sizeof(history));
-  memset(static_cast<void *>(&vc_table), 0, sizeof(vc_table));
   memset(&http_parser, 0, sizeof(http_parser));
 }
 
@@ -1756,6 +1778,7 @@ HttpSM::state_http_server_open(int event, void *data)
       do_http_server_open();
     }
     break;
+  case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case NET_EVENT_OPEN_FAILED:
@@ -2774,7 +2797,10 @@ HttpSM::tunnel_handler_post(int event, void *data)
     if (ua_entry->write_buffer) {
       free_MIOBuffer(ua_entry->write_buffer);
       ua_entry->write_buffer = nullptr;
-      ua_entry->vc->do_io_write(this, 0, nullptr);
+      ua_entry->vc->do_io_write(nullptr, 0, nullptr);
+    }
+    if (!p->handler_state) {
+      p->handler_state = HTTP_SM_POST_UA_FAIL;
     }
     break;
   case VC_EVENT_READ_READY:
@@ -3097,6 +3123,11 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   ink_assert(p->vc_type == HT_HTTP_SERVER);
   ink_assert(p->vc == server_session);
 
+  // The server session has been released. Clean all pointer
+  // Calling remove_entry instead of server_entry because we don't
+  // want to close the server VC at this point
+  vc_table.remove_entry(server_entry);
+
   if (close_connection) {
     p->vc->do_io_close();
     p->read_vio = nullptr;
@@ -3128,9 +3159,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     }
   }
 
-  // The server session has been released. Clean all pointer
-  server_entry->in_tunnel = true; // to avid cleaning in clenup_entry
-  vc_table.cleanup_entry(server_entry);
   server_session = nullptr; // Because p->vc == server_session
   server_entry   = nullptr;
 
@@ -3493,7 +3521,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       // if it is active timeout case, we need to give another chance to send 408 response;
       ua_session->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
-      p->vc->do_io_write(this, 0, nullptr);
+      p->vc->do_io_write(nullptr, 0, nullptr);
       p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
 
       return 0;
