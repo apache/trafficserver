@@ -534,7 +534,7 @@ HttpSM::setup_client_read_request_header()
   ua_entry->read_vio = ua_txn->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
   // The header may already be in the buffer if this
   //  a request from a keep-alive connection
-  handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
+  dispatchEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
 }
 
 void
@@ -866,7 +866,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
                 "[%" PRId64 "] [watch_for_client_abort] "
                 "forwarding event %s to tunnel",
                 sm_id, HttpDebugNames::get_event_name(event));
-        tunnel.handleEvent(event, c->write_vio);
+        tunnel.dispatchEvent(event, c->write_vio);
         return 0;
       } else {
         tunnel.kill_tunnel();
@@ -3954,7 +3954,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (!ret) {
     SMDebug("url_rewrite", "Could not find a valid remapping entry for this request [%" PRId64 "]", sm_id);
     if (!run_inline) {
-      handleEvent(EVENT_REMAP_COMPLETE, nullptr);
+      dispatchEvent(EVENT_REMAP_COMPLETE, nullptr);
     }
     return;
   }
@@ -5402,13 +5402,13 @@ HttpSM::handle_server_setup_error(int event, void *data)
 
         ua_producer->alive         = false;
         ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
-        tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
+        tunnel.dispatchEvent(VC_EVENT_ERROR, c->write_vio);
         return;
       }
     } else {
       // c could be null here as well
       if (c != nullptr) {
-        tunnel.handleEvent(event, c->write_vio);
+        tunnel.dispatchEvent(event, c->write_vio);
         return;
       }
     }

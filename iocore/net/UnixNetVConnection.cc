@@ -1125,7 +1125,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
     UnixNetVConnection::set_active_timeout(active_timeout_in);
   }
 
-  action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  action_.continuation->dispatchEvent(NET_EVENT_ACCEPT, this);
   return EVENT_DONE;
 }
 
