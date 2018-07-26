@@ -600,8 +600,8 @@ Diags::should_roll_diagslog()
         return false;
       }
 
-      int size = buf.st_size;
-      if (diagslog_rolling_size != -1 && size >= (diagslog_rolling_size * BYTES_IN_MB)) {
+      off_t size = buf.st_size;
+      if (diagslog_rolling_size != -1 && size >= (static_cast<off_t>(diagslog_rolling_size) * BYTES_IN_MB)) {
         fflush(diags_log->m_fp);
         if (diags_log->roll()) {
           char *oldname = ats_strdup(diags_log->get_name());
@@ -687,8 +687,8 @@ Diags::should_roll_outputlog()
         return false;
       }
 
-      int size = buf.st_size;
-      if (outputlog_rolling_size != -1 && size >= outputlog_rolling_size * BYTES_IN_MB) {
+      off_t size = buf.st_size;
+      if (outputlog_rolling_size != -1 && size >= static_cast<off_t>(outputlog_rolling_size) * BYTES_IN_MB) {
         // since usually stdout and stderr are the same file on disk, we should just
         // play it safe and just flush both BaseLogFiles
         if (stderr_log->is_init()) {
