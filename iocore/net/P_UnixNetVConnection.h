@@ -205,6 +205,12 @@ public:
     return (true);
   }
 
+  virtual bool
+  trackFirstHandshake()
+  {
+    return false;
+  }
+
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
   void readDisable(NetHandler *nh);
