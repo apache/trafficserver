@@ -24,6 +24,7 @@
 #pragma once
 
 #include <cstdint>
+#include "ts/Arena.h"
 
 const static int XPACK_ERROR_COMPRESSION_ERROR   = -1;
 const static int XPACK_ERROR_SIZE_EXCEEDED_ERROR = -2;

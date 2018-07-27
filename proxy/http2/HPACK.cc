@@ -465,6 +465,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   }
 
   // Index
+  *p  = 0;
   len = xpack_encode_integer(p, buf_end, index, prefix);
   if (len == -1) {
     return -1;
@@ -553,11 +554,11 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 int64_t
 encode_dynamic_table_size_update(uint8_t *buf_start, const uint8_t *buf_end, uint32_t size)
 {
+  buf_start[0]      = 0x20;
   const int64_t len = xpack_encode_integer(buf_start, buf_end, size, 5);
   if (len == -1) {
     return -1;
   }
-  buf_start[0] |= 0x20;
 
   return len;
 }

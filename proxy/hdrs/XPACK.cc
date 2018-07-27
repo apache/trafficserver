@@ -118,6 +118,9 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
 
   uint8_t *p = buf_start;
 
+  // Preserve the first n bits
+  uint8_t prefix = *buf_start & (0xFF << n);
+
   if (value < (static_cast<uint64_t>(1 << n) - 1)) {
     *(p++) = value;
   } else {
@@ -135,6 +138,10 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
     }
     *(p++) = value;
   }
+
+  // Restore the prefix
+  *buf_start |= prefix;
+
   return p - buf_start;
 }
 
@@ -168,6 +175,8 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
 
   if (use_huffman) {
     *p |= 0x01 << n;
+  } else {
+    *p &= ~(0x01 << n);
   }
   p += len;
 
