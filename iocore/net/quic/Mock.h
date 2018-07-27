@@ -175,6 +175,7 @@ public:
   std::string_view
   cids() const override
   {
+    using namespace std::literals;
     return std::string_view("00000000-00000000"sv);
   }
 
@@ -316,6 +317,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   std::string_view
   cids() const override
   {
+    using namespace std::literals;
     return std::string_view("00000000-00000000"sv);
   }
 
