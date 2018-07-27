@@ -40,6 +40,8 @@
 
 QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *info) : _info(info)
 {
+  this->_cc_mutex = new_ProxyMutex();
+
   QUICConfig::scoped_config params;
   this->_k_default_mss           = params->cc_default_mss();
   this->_k_initial_window        = params->cc_initial_window();
@@ -52,6 +54,7 @@ QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *i
 void
 QUICCongestionController::on_packet_sent(size_t bytes_sent)
 {
+  SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
   this->_bytes_in_flight += bytes_sent;
 }
 
@@ -65,6 +68,7 @@ void
 QUICCongestionController::on_packet_acked(const PacketInfo &acked_packet)
 {
   // Remove from bytes_in_flight.
+  SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
   this->_bytes_in_flight -= acked_packet.bytes;
   if (this->_in_recovery(acked_packet.packet_number)) {
     // Do not increase congestion window in recovery period.
@@ -87,6 +91,8 @@ QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, const
   if (lost_packets.empty()) {
     return;
   }
+
+  SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
   // Remove lost packets from bytes_in_flight.
   for (auto &lost_packet : lost_packets) {
     this->_bytes_in_flight -= lost_packet.second->bytes;
@@ -151,9 +157,10 @@ QUICCongestionController::current_ssthresh() const
 void
 QUICCongestionController::reset()
 {
+  SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
+
   this->_bytes_in_flight   = 0;
   this->_congestion_window = this->_k_initial_window;
-  ;
-  this->_end_of_recovery = 0;
-  this->_ssthresh        = UINT32_MAX;
+  this->_end_of_recovery   = 0;
+  this->_ssthresh          = UINT32_MAX;
 }

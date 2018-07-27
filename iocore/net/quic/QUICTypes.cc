@@ -119,7 +119,7 @@ QUICTypeUtil::key_phase(QUICPacketType type)
   }
 }
 
-// 0-RTT and 1-RTT use same PN Space
+// 0-RTT and 1-RTT use same Packet Number Space
 int
 QUICTypeUtil::pn_space_index(QUICEncryptionLevel level)
 {

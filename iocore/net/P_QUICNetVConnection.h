@@ -205,7 +205,7 @@ public:
   uint32_t pmtu() const override;
   NetVConnectionContext_t direction() const override;
   SSLNextProtocolSet *next_protocol_set() const override;
-  QUICPacketNumber largest_acked_packet_number() const override;
+  QUICPacketNumber largest_acked_packet_number(QUICEncryptionLevel level) const override;
   bool is_closed() const override;
 
   // QUICConnection (QUICPacketTransmitter)
@@ -247,6 +247,7 @@ private:
   QUICAckFrameCreator _ack_frame_creator;
   QUICPacketRetransmitter _packet_retransmitter;
   QUICPacketNumberProtector _pn_protector;
+  QUICRTTMeasure _rtt_measure;
   QUICApplicationMap *_application_map = nullptr;
 
   uint32_t _pmtu = 1280;
@@ -257,7 +258,7 @@ private:
   // or make them just member variables.
   QUICHandshake *_handshake_handler                 = nullptr;
   QUICHandshakeProtocol *_hs_protocol               = nullptr;
-  QUICLossDetector *_loss_detector                  = nullptr;
+  QUICLossDetector *_loss_detector[3]               = {nullptr};
   QUICFrameDispatcher *_frame_dispatcher            = nullptr;
   QUICStreamManager *_stream_manager                = nullptr;
   QUICCongestionController *_congestion_controller  = nullptr;

@@ -57,6 +57,16 @@ public:
   virtual ink_hrtime smoothed_rtt() const = 0;
 };
 
+class QUICRTTMeasure : public QUICRTTProvider
+{
+public:
+  ink_hrtime smoothed_rtt() const override;
+  void update_smoothed_rtt(ink_hrtime rtt);
+
+private:
+  std::atomic<ink_hrtime> _smoothed_rtt = 0;
+};
+
 class QUICCongestionController
 {
 public:
@@ -76,6 +86,8 @@ public:
   uint32_t current_ssthresh() const;
 
 private:
+  Ptr<ProxyMutex> _cc_mutex;
+
   // [draft-11 recovery] 4.7.1. Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
   uint32_t _k_default_mss        = 0;
@@ -94,10 +106,11 @@ private:
   bool _in_recovery(QUICPacketNumber packet_number);
 };
 
-class QUICLossDetector : public Continuation, public QUICFrameHandler, public QUICRTTProvider
+class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc);
+  QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc,
+                   QUICRTTMeasure *rtt_measure, int index);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
@@ -108,12 +121,9 @@ public:
   QUICPacketNumber largest_acked_packet_number();
   void reset();
   ink_hrtime current_rto_period();
-  ink_hrtime smoothed_rtt() const override;
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;
-
-  // TODO QUICCongestionController *cc = nullptr;
 
   // [draft-11 recovery] 3.5.1.  Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
@@ -179,4 +189,6 @@ private:
   QUICPacketTransmitter *_transmitter = nullptr;
   QUICConnectionInfoProvider *_info   = nullptr;
   QUICCongestionController *_cc       = nullptr;
+  QUICRTTMeasure *_rtt_measure        = nullptr;
+  int _pn_space_index                 = -1;
 };

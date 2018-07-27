@@ -57,11 +57,11 @@ public:
    */
   virtual uint32_t minimum_quic_packet_size() = 0;
 
-  virtual uint32_t pmtu() const                                = 0;
-  virtual NetVConnectionContext_t direction() const            = 0;
-  virtual SSLNextProtocolSet *next_protocol_set() const        = 0;
-  virtual bool is_closed() const                               = 0;
-  virtual QUICPacketNumber largest_acked_packet_number() const = 0;
+  virtual uint32_t pmtu() const                                                         = 0;
+  virtual NetVConnectionContext_t direction() const                                     = 0;
+  virtual SSLNextProtocolSet *next_protocol_set() const                                 = 0;
+  virtual bool is_closed() const                                                        = 0;
+  virtual QUICPacketNumber largest_acked_packet_number(QUICEncryptionLevel level) const = 0;
 };
 
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler, public QUICConnectionInfoProvider

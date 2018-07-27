@@ -215,16 +215,20 @@ QUICNetVConnection::start()
   this->_pn_protector.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
-  this->_congestion_controller  = new QUICCongestionController(this);
-  this->_loss_detector          = new QUICLossDetector(this, this, this->_congestion_controller);
+  this->_congestion_controller = new QUICCongestionController(this);
+  for (auto s : QUIC_PN_SPACES) {
+    int index            = static_cast<int>(s);
+    QUICLossDetector *ld = new QUICLossDetector(this, this, this->_congestion_controller, &this->_rtt_measure, index);
+    this->_frame_dispatcher->add_handler(ld);
+    this->_loss_detector[index] = ld;
+  }
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
-  this->_local_flow_controller  = new QUICLocalConnectionFlowController(this->_loss_detector, UINT64_MAX);
+  this->_local_flow_controller  = new QUICLocalConnectionFlowController(&this->_rtt_measure, UINT64_MAX);
   this->_path_validator         = new QUICPathValidator();
-  this->_stream_manager         = new QUICStreamManager(this, this->_loss_detector, this->_application_map);
+  this->_stream_manager         = new QUICStreamManager(this, &this->_rtt_measure, this->_application_map);
 
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
-  this->_frame_dispatcher->add_handler(this->_loss_detector);
   this->_frame_dispatcher->add_handler(this->_path_validator);
   this->_frame_dispatcher->add_handler(this->_handshake_handler);
 
@@ -730,7 +734,9 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
 
     // TODO: Drop record from Connection-ID - QUICNetVConnection table in QUICPacketHandler
     // Shutdown loss detector
-    this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
+    for (auto s : QUIC_PN_SPACES) {
+      this->_loss_detector[static_cast<int>(s)]->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
+    }
 
     if (this->nh) {
       this->nh->free_netvc(this);
@@ -816,9 +822,11 @@ QUICNetVConnection::next_protocol_set() const
 }
 
 QUICPacketNumber
-QUICNetVConnection::largest_acked_packet_number() const
+QUICNetVConnection::largest_acked_packet_number(QUICEncryptionLevel level) const
 {
-  return this->_loss_detector->largest_acked_packet_number();
+  int index = QUICTypeUtil::pn_space_index(level);
+
+  return this->_loss_detector[index]->largest_acked_packet_number();
 }
 
 QUICErrorUPtr
@@ -867,7 +875,9 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
     error = this->_handshake_handler->negotiate_version(packet.get(), &this->_packet_factory);
 
     // discard all transport state except packet number
-    this->_loss_detector->reset();
+    for (auto s : QUIC_PN_SPACES) {
+      this->_loss_detector[static_cast<int>(s)]->reset();
+    }
     this->_congestion_controller->reset();
     SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
     this->_packet_retransmitter.reset();
@@ -918,7 +928,9 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
 {
   // discard all transport state
   this->_handshake_handler->reset();
-  this->_loss_detector->reset();
+  for (auto s : QUIC_PN_SPACES) {
+    this->_loss_detector[static_cast<int>(s)]->reset();
+  }
   this->_congestion_controller->reset();
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   this->_packet_retransmitter.reset();
@@ -1102,7 +1114,8 @@ QUICNetVConnection::_state_common_send_packet()
         QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                      len);
 
-        this->_loss_detector->on_packet_sent(std::move(packet));
+        int index = QUICTypeUtil::pn_space_index(level);
+        this->_loss_detector[index]->on_packet_sent(std::move(packet));
         packet_count++;
       }
     }
@@ -1444,8 +1457,8 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   case QUICPacketType::INITIAL: {
     QUICConnectionId dcid =
       (this->netvc_context == NET_VCONNECTION_OUT) ? this->_original_quic_connection_id : this->_peer_quic_connection_id;
-    packet = this->_packet_factory.create_initial_packet(dcid, this->_quic_connection_id, this->largest_acked_packet_number(),
-                                                         std::move(buf), len);
+    packet = this->_packet_factory.create_initial_packet(
+      dcid, this->_quic_connection_id, this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len);
     break;
   }
   case QUICPacketType::RETRY: {
@@ -1455,14 +1468,15 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
     break;
   }
   case QUICPacketType::HANDSHAKE: {
-    packet =
-      this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
-                                                    this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
+    packet = this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
+                                                           this->largest_acked_packet_number(QUICEncryptionLevel::HANDSHAKE),
+                                                           std::move(buf), len, retransmittable);
     break;
   }
   case QUICPacketType::PROTECTED: {
-    packet = this->_packet_factory.create_server_protected_packet(
-      this->_peer_quic_connection_id, this->largest_acked_packet_number(), std::move(buf), len, retransmittable);
+    packet = this->_packet_factory.create_server_protected_packet(this->_peer_quic_connection_id,
+                                                                  this->largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
+                                                                  std::move(buf), len, retransmittable);
     break;
   }
   default:
@@ -1766,7 +1780,8 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  ink_hrtime rto = this->_loss_detector->current_rto_period();
+  int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
+  ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
 
   QUICConDebug("Enter state_connection_closing %" PRIu64 "ms", 3 * rto / HRTIME_MSECOND);
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
@@ -1792,7 +1807,8 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  ink_hrtime rto = this->_loss_detector->current_rto_period();
+  int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
+  ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
 
   QUICConDebug("Enter state_connection_draining %" PRIu64 "ms", 3 * rto / HRTIME_MSECOND);
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
@@ -1833,7 +1849,8 @@ QUICNetVConnection::_validate_new_path()
   this->_path_validator->validate();
   // Not sure how long we should wait. The spec says just "enough time".
   // Use the same time amount as the closing timeout.
-  ink_hrtime rto = this->_loss_detector->current_rto_period();
+  int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
+  ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
   this->_schedule_path_validation_timeout(3 * rto);
 }
 

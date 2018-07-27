@@ -69,6 +69,13 @@ constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
   QUICEncryptionLevel::ONE_RTT,
 };
 
+// 0-RTT and 1-RTT use same Packet Number Space
+constexpr QUICEncryptionLevel QUIC_PN_SPACES[] = {
+  QUICEncryptionLevel::INITIAL,
+  QUICEncryptionLevel::ZERO_RTT,
+  QUICEncryptionLevel::HANDSHAKE,
+};
+
 // Devide to QUICPacketType and QUICPacketLongHeaderType ?
 enum class QUICPacketType : uint8_t {
   VERSION_NEGOTIATION = 0,

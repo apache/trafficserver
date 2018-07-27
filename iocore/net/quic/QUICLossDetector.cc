@@ -28,12 +28,14 @@
 #include "QUICConfig.h"
 #include "QUICEvents.h"
 
-#define QUICLDDebug(fmt, ...) Debug("quic_loss_detector", "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
-#define QUICLDVDebug(fmt, ...) Debug("v_quic_loss_detector", "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
+#define QUICLDDebug(fmt, ...) \
+  Debug("quic_loss_detector", "[%s] [PNS-%d] " fmt, this->_info->cids().data(), this->_pn_space_index, ##__VA_ARGS__)
+#define QUICLDVDebug(fmt, ...) \
+  Debug("v_quic_loss_detector", "[%s] [PNS-%d] " fmt, this->_info->cids().data(), this->_pn_space_index, ##__VA_ARGS__)
 
 QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info,
-                                   QUICCongestionController *cc)
-  : _transmitter(transmitter), _info(info), _cc(cc)
+                                   QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index)
+  : _transmitter(transmitter), _info(info), _cc(cc), _rtt_measure(rtt_measure), _pn_space_index(index)
 {
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
@@ -73,6 +75,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
   case EVENT_INTERVAL: {
     if (this->_loss_detection_alarm_at <= Thread::get_hrtime()) {
       this->_loss_detection_alarm_at = 0;
+      this->_smoothed_rtt            = this->_rtt_measure->smoothed_rtt();
       this->_on_loss_detection_alarm();
     }
     break;
@@ -104,8 +107,13 @@ QUICLossDetector::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const 
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
+  if (this->_pn_space_index != QUICTypeUtil::pn_space_index(level)) {
+    return error;
+  }
+
   switch (frame->type()) {
   case QUICFrameType::ACK:
+    this->_smoothed_rtt = this->_rtt_measure->smoothed_rtt();
     this->_on_ack_received(std::dynamic_pointer_cast<const QUICAckFrame>(frame));
     break;
   default:
@@ -133,6 +141,7 @@ QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
     return;
   }
 
+  // Is CRYPTO[EOED] on 0-RTT handshake?
   if (type == QUICPacketType::INITIAL || type == QUICPacketType::HANDSHAKE) {
     is_handshake = true;
   }
@@ -140,6 +149,7 @@ QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
   QUICPacketNumber packet_number = packet->packet_number();
   bool is_ack_only               = !packet->is_retransmittable();
   size_t sent_bytes              = is_ack_only ? 0 : packet->size();
+  this->_smoothed_rtt            = this->_rtt_measure->smoothed_rtt();
   this->_on_packet_sent(packet_number, is_ack_only, is_handshake, sent_bytes, std::move(packet));
 }
 
@@ -262,6 +272,8 @@ QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICP
     this->_rttvar        = 3.0 / 4.0 * this->_rttvar + 1.0 / 4.0 * rttvar_sample;
     this->_smoothed_rtt  = 7.0 / 8.0 * this->_smoothed_rtt + 1.0 / 8.0 * latest_rtt;
   }
+
+  this->_rtt_measure->update_smoothed_rtt(this->_smoothed_rtt);
 }
 
 void
@@ -290,18 +302,21 @@ void
 QUICLossDetector::_set_loss_detection_alarm()
 {
   ink_hrtime alarm_duration;
-  // Don't arm the alarm if there are no packets with
-  // retransmittable data in flight.
-  if (this->_cc->bytes_in_flight() == 0 && this->_loss_detection_alarm) {
-    this->_loss_detection_alarm_at = 0;
-    this->_loss_detection_alarm->cancel();
-    this->_loss_detection_alarm = nullptr;
-    QUICLDDebug("Loss detection alarm has been unset");
+
+  // Don't arm the alarm if there are no packets with retransmittable data in flight.
+  // -- MODIFIED CODE --
+  // In psuedocode, `bytes_in_flight` is used, but we're tracking "retransmittable data in flight" by `_retransmittable_outstanding`
+  if (this->_retransmittable_outstanding == 0) {
+    if (this->_loss_detection_alarm) {
+      this->_loss_detection_alarm_at = 0;
+      this->_loss_detection_alarm->cancel();
+      this->_loss_detection_alarm = nullptr;
+      QUICLDDebug("Loss detection alarm has been unset");
+    }
 
     return;
-  } else {
-    QUICLDDebug("bytes_in_flight=%" PRIu32, this->_cc->bytes_in_flight());
   }
+  // -- END OF MODIFIED CODE --
 
   if (this->_handshake_outstanding) {
     // Handshake retransmission alarm.
@@ -594,8 +609,17 @@ QUICLossDetector::current_rto_period()
   return alarm_duration;
 }
 
+//
+// QUICRTTMeasure
+//
 ink_hrtime
-QUICLossDetector::smoothed_rtt() const
+QUICRTTMeasure::smoothed_rtt() const
 {
-  return this->_smoothed_rtt;
+  return this->_smoothed_rtt.load();
+}
+
+void
+QUICRTTMeasure::update_smoothed_rtt(ink_hrtime rtt)
+{
+  this->_smoothed_rtt.store(rtt);
 }
