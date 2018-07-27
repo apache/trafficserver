@@ -170,8 +170,6 @@ public:
       call back with success. If this behaviour is desired use
       synchronous connect connet_s method.
 
-    @see connect_s()
-
     @param cont Continuation to be called back with events.
     @param addr target address and port to connect to.
     @param options @see NetVCOptions.
@@ -179,27 +177,6 @@ public:
   */
 
   inkcoreapi Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = nullptr);
-
-  /**
-    Open a NetVConnection for connection oriented I/O. This call
-    is simliar to connect method except that the cont is called
-    back only after the connections has been established. In the
-    case of connect the cont could be called back with NET_EVENT_OPEN
-    event and OS could still be in the process of establishing the
-    connection. Re-entrant Callbacks: same as connect. If unix
-    asynchronous type connect is desired use connect_re().
-
-    @param cont Continuation to be called back with events.
-    @param addr Address to which to connect (includes port).
-    @param timeout for connect, the cont will get NET_EVENT_OPEN_FAILED
-      if connection could not be established for timeout msecs. The
-      default is 30 secs.
-    @param options @see NetVCOptions.
-
-    @see connect_re()
-
-  */
-  Action *connect_s(Continuation *cont, sockaddr const *addr, int timeout = NET_CONNECT_TIMEOUT, NetVCOptions *opts = nullptr);
 
   /**
     Initializes the net processor. This must be called before the event threads are started.
