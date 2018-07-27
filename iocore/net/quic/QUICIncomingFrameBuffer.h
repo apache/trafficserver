@@ -41,7 +41,7 @@ public:
   /*
    * Becasue frames passed by FrameDispatcher is temporal, this clones a passed frame to ensure that we can use it later.
    */
-  QUICErrorUPtr insert(const std::shared_ptr<const QUICStreamFrame>);
+  QUICErrorUPtr insert(const QUICStreamFrame &frame);
 
   void clear();
 

@@ -73,14 +73,14 @@ TEST_CASE("QUICStream", "[quic]")
       new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, 1024, 1024));
     stream->do_io_read(nullptr, 0, read_buffer);
 
-    stream->recv(frame_1);
-    stream->recv(frame_2);
-    stream->recv(frame_3);
-    stream->recv(frame_4);
-    stream->recv(frame_5);
-    stream->recv(frame_6);
-    stream->recv(frame_7);
-    stream->recv(frame_8);
+    stream->recv(*frame_1);
+    stream->recv(*frame_2);
+    stream->recv(*frame_3);
+    stream->recv(*frame_4);
+    stream->recv(*frame_5);
+    stream->recv(*frame_6);
+    stream->recv(*frame_7);
+    stream->recv(*frame_8);
 
     uint8_t buf[32];
     int64_t len = reader->read_avail();
@@ -99,14 +99,14 @@ TEST_CASE("QUICStream", "[quic]")
       new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, 0, read_buffer);
 
-    stream->recv(frame_8);
-    stream->recv(frame_7);
-    stream->recv(frame_6);
-    stream->recv(frame_5);
-    stream->recv(frame_4);
-    stream->recv(frame_3);
-    stream->recv(frame_2);
-    stream->recv(frame_1);
+    stream->recv(*frame_8);
+    stream->recv(*frame_7);
+    stream->recv(*frame_6);
+    stream->recv(*frame_5);
+    stream->recv(*frame_4);
+    stream->recv(*frame_3);
+    stream->recv(*frame_2);
+    stream->recv(*frame_1);
 
     uint8_t buf[32];
     int64_t len = reader->read_avail();
@@ -125,16 +125,16 @@ TEST_CASE("QUICStream", "[quic]")
       new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, 0, read_buffer);
 
-    stream->recv(frame_8);
-    stream->recv(frame_7);
-    stream->recv(frame_6);
-    stream->recv(frame_7); // duplicated frame
-    stream->recv(frame_5);
-    stream->recv(frame_3);
-    stream->recv(frame_1);
-    stream->recv(frame_2);
-    stream->recv(frame_4);
-    stream->recv(frame_5); // duplicated frame
+    stream->recv(*frame_8);
+    stream->recv(*frame_7);
+    stream->recv(*frame_6);
+    stream->recv(*frame_7); // duplicated frame
+    stream->recv(*frame_5);
+    stream->recv(*frame_3);
+    stream->recv(*frame_1);
+    stream->recv(*frame_2);
+    stream->recv(*frame_4);
+    stream->recv(*frame_5); // duplicated frame
 
     uint8_t buf[32];
     int64_t len = reader->read_avail();
@@ -156,24 +156,24 @@ TEST_CASE("QUICStream", "[quic]")
     stream->do_io_read(nullptr, 0, read_buffer);
 
     // Start with 1024 but not 0 so received frames won't be processed
-    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
     CHECK(error->cls == QUICErrorClass::NONE);
     // duplicate
-    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
     CHECK(error->cls == QUICErrorClass::NONE);
-    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 3072));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 3072));
     CHECK(error->cls == QUICErrorClass::NONE);
     // delay
-    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 2048));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 2048));
     CHECK(error->cls == QUICErrorClass::NONE);
     // all frames should be processed
-    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 0));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 0));
     CHECK(error->cls == QUICErrorClass::NONE);
     // start again without the first block
-    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 5120));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 5120));
     CHECK(error->cls == QUICErrorClass::NONE);
     // this should exceed the limit
-    error = stream->recv(std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 8192));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 8192));
     CHECK(error->cls == QUICErrorClass::TRANSPORT);
     CHECK(error->trans_error_code == QUICTransErrorCode::FLOW_CONTROL_ERROR);
   }
@@ -233,7 +233,7 @@ TEST_CASE("QUICStream", "[quic]")
     CHECK(stream->will_generate_frame() == true);
 
     // Update window
-    stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
+    stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
 
     // This should send a frame
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
@@ -243,7 +243,7 @@ TEST_CASE("QUICStream", "[quic]")
     CHECK(stream->will_generate_frame() == false);
 
     // Update window
-    stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5632));
+    stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5632));
 
     // This should send a frame
     write_buffer->write(data, 1024);
@@ -259,7 +259,7 @@ TEST_CASE("QUICStream", "[quic]")
     CHECK(frame->type() == QUICFrameType::STREAM_BLOCKED);
 
     // Update window
-    stream->recv(std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
+    stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
 
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame() == true);

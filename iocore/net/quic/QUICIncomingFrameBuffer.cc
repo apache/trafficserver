@@ -54,18 +54,18 @@ QUICIncomingFrameBuffer::pop()
 }
 
 QUICErrorUPtr
-QUICIncomingFrameBuffer::insert(const std::shared_ptr<const QUICStreamFrame> frame)
+QUICIncomingFrameBuffer::insert(const QUICStreamFrame &frame)
 {
-  QUICOffset offset = frame->offset();
-  size_t len        = frame->data_length();
+  QUICOffset offset = frame.offset();
+  size_t len        = frame.data_length();
 
-  QUICErrorUPtr err = this->_check_and_set_fin_flag(offset, len, frame->has_fin_flag());
+  QUICErrorUPtr err = this->_check_and_set_fin_flag(offset, len, frame.has_fin_flag());
   if (err->cls != QUICErrorClass::NONE) {
     return err;
   }
 
   // Ignore empty stream frame except pure fin stream frame
-  if (len == 0 && !frame->has_fin_flag()) {
+  if (len == 0 && !frame.has_fin_flag()) {
     return QUICErrorUPtr(new QUICNoError());
   }
 
@@ -74,10 +74,10 @@ QUICIncomingFrameBuffer::insert(const std::shared_ptr<const QUICStreamFrame> fra
     return QUICErrorUPtr(new QUICNoError());
   } else if (this->_recv_offset == offset) {
     this->_recv_offset                = offset + len;
-    std::shared_ptr<QUICFrame> cloned = frame->clone();
+    std::shared_ptr<QUICFrame> cloned = frame.clone();
     this->_recv_buffer.push(std::static_pointer_cast<QUICStreamFrame>(cloned));
   } else {
-    std::shared_ptr<QUICFrame> cloned = frame->clone();
+    std::shared_ptr<QUICFrame> cloned = frame.clone();
     this->_out_of_order_queue.insert(std::make_pair(offset, std::static_pointer_cast<QUICStreamFrame>(cloned)));
   }
 

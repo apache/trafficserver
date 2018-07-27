@@ -78,10 +78,10 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamFrame> frame);
-  QUICErrorUPtr recv(const std::shared_ptr<const QUICMaxStreamDataFrame> frame);
-  QUICErrorUPtr recv(const std::shared_ptr<const QUICStreamBlockedFrame> frame);
-  QUICErrorUPtr recv(const std::shared_ptr<const QUICStopSendingFrame> frame);
+  QUICErrorUPtr recv(const QUICStreamFrame &frame);
+  QUICErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
+  QUICErrorUPtr recv(const QUICStreamBlockedFrame &frame);
+  QUICErrorUPtr recv(const QUICStopSendingFrame &frame);
 
   void reset(QUICStreamErrorUPtr error);
 
@@ -94,14 +94,14 @@ public:
   QUICFrameUPtr generate_frame(uint64_t connection_credit, uint16_t maximum_frame_size) override;
   bool will_generate_frame() override;
 
-private:
+protected:
   virtual int64_t _process_read_vio();
   virtual int64_t _process_write_vio();
   void _signal_read_event();
   void _signal_write_event();
   Event *_send_tracked_event(Event *, int, VIO *);
 
-  void _write_to_read_vio(const std::shared_ptr<const QUICStreamFrame> &);
+  void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
 
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICConnectionInfoProvider *_info = nullptr;
