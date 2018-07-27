@@ -461,10 +461,6 @@ QUICHandshake::do_handshake()
     }
   }
 
-  if (SSL_is_init_finished(this->_ssl)) {
-    QUICHSDebug("%s", this->negotiated_cipher_suite());
-  }
-
   return result;
 }
 

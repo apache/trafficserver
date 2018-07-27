@@ -1752,6 +1752,8 @@ QUICNetVConnection::_switch_to_established_state()
 {
   if (this->_complete_handshake_if_possible() == 0) {
     QUICConDebug("Enter state_connection_established");
+    QUICConDebug("Negotiated cipher suite: %s", this->_handshake_handler->negotiated_cipher_suite());
+
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
     if (netvc_context == NET_VCONNECTION_IN) {
