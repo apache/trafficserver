@@ -48,4 +48,14 @@ htobe64(uint64_t x)
 {
   return OSSwapHostToBigInt64(x);
 }
+inline uint32_t
+be32toh(uint32_t x)
+{
+  return OSSwapBigToHostInt32(x);
+}
+inline uint32_t
+htobe32(uint32_t x)
+{
+  return OSSwapHostToBigInt32(x);
+}
 #endif
