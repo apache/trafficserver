@@ -66,6 +66,7 @@ void SSL_set0_rbio(SSL *ssl, BIO *rbio);
 #define SSL_HANDSHAKE_WANT_CONNECT 9
 #define SSL_WRITE_WOULD_BLOCK 10
 #define SSL_WAIT_FOR_HOOK 11
+#define SSL_WAIT_FOR_ASYNC 12
 
 ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
@@ -577,7 +578,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           nh->read_ready_list.in_or_enqueue(this);
         }
       }
-    } else if (ret == SSL_WAIT_FOR_HOOK) {
+    } else if (ret == SSL_WAIT_FOR_HOOK || ret == SSL_WAIT_FOR_ASYNC) {
       // avoid readReschedule - done when the plugin calls us back to reenable
     } else {
       readReschedule(nh);
@@ -1129,26 +1130,37 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #endif
   ssl_error_t ssl_error = SSLAccept(ssl);
 #if TS_USE_TLS_ASYNC
-  if (ssl_error == SSL_ERROR_WANT_ASYNC && this->signalep.type == 0) {
+  if (ssl_error == SSL_ERROR_WANT_ASYNC) {
     size_t numfds;
     OSSL_ASYNC_FD waitfd;
     // Set up the epoll entry for the signalling
     if (SSL_get_all_async_fds(ssl, &waitfd, &numfds) && numfds > 0) {
+      // Temporarily disable regular net
+      read_disable(nh, this);
+      this->ep.stop(); // Modify used in read_disable doesn't work for edge triggered epol
+      // Have to have the read NetState enabled because we are using it for the signal vc
+      read.enabled = true;
+      write_disable(nh, this);
       PollDescriptor *pd = get_PollDescriptor(this_ethread());
-      this->signalep.start(pd, waitfd, this, EVENTIO_READ);
-      this->signalep.type = EVENTIO_READWRITE_VC;
+      this->ep.start(pd, waitfd, this, EVENTIO_READ);
+      this->ep.type = EVENTIO_READWRITE_VC;
     }
-  } else
-#endif
-    if (ssl_error == SSL_ERROR_NONE || ssl_error == SSL_ERROR_SSL) {
-#if TS_USE_TLS_ASYNC
-    if (SSLConfigParams::async_handshake_enabled) {
-      // Clean up the epoll entry for signalling
-      SSL_clear_mode(ssl, SSL_MODE_ASYNC);
-      this->signalep.stop();
+  } else if (SSLConfigParams::async_handshake_enabled) {
+    // Clean up the epoll entry for signalling
+    SSL_clear_mode(ssl, SSL_MODE_ASYNC);
+    this->ep.stop();
+    // Rectivate the socket, ready to rock
+    PollDescriptor *pd = get_PollDescriptor(this_ethread());
+    this->ep.start(
+      pd, this,
+      EVENTIO_READ |
+        EVENTIO_WRITE); // Again we must muck with the eventloop directly because of limits with these methods and edge trigger
+    if (ssl_error == SSL_ERROR_WANT_READ) {
+      this->reenable(&read.vio);
+      this->read.triggered = 1;
     }
-#endif
   }
+#endif
   bool trace = getSSLTrace();
 
   if (ssl_error != SSL_ERROR_NONE) {
@@ -1271,7 +1283,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #if TS_USE_TLS_ASYNC
   case SSL_ERROR_WANT_ASYNC:
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL server handshake ERROR_WANT_ASYNC");
-    return EVENT_CONT;
+    return SSL_WAIT_FOR_ASYNC;
 #endif
 
   case SSL_ERROR_WANT_ACCEPT:
