@@ -52,7 +52,8 @@ libhq_a_SOURCES = \
 # Check Programs
 #
 check_PROGRAMS = \
-  test_libhq
+  test_libhq \
+  test_qpack
 
 TESTS = $(check_PROGRAMS)
 
@@ -72,6 +73,34 @@ test_libhq_LDADD = \
   libhq.a \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/lib/ts/libtsutil.la
+
+test_qpack_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -I$(abs_top_srcdir)/tests/include
+
+test_qpack_LDFLAGS = \
+  @AM_LDFLAGS@
+
+test_qpack_SOURCES = \
+  ./test/main_qpack.cc \
+  ./test/test_HQFrame.cc \
+  ./test/test_HQFrameDispatcher.cc \
+  ./test/test_QPACK.cc \
+  $(top_builddir)/proxy/http/HttpConfig.cc \
+  $(top_builddir)/proxy/http/HttpConnectionCount.cc \
+  $(top_builddir)/proxy/http/ForwardedConfig.cc \
+  ./test/stub.cc
+
+test_qpack_LDADD = \
+  libhq.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/proxy/libproxy.a \
+  $(top_builddir)/proxy/hdrs/libhdrs.a \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a
 
 #
 # clang-tidy
