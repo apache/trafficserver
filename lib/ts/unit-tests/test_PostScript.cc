@@ -30,14 +30,17 @@ int f1Called;
 int f2Called;
 int f3Called;
 
+int dummy;
+
 void
-f1(int a, double b, int c)
+f1(int a, double b, int *c, int &d)
 {
   ++f1Called;
 
   REQUIRE(a == 1);
   REQUIRE(b == 2.0);
-  REQUIRE(c == 3);
+  REQUIRE(c == &dummy);
+  REQUIRE(&d == &dummy);
 }
 
 void
@@ -55,17 +58,15 @@ f3(int a, double b)
   REQUIRE(b == 6.0);
 }
 
-} // namespace
+} // end anonymous namespace
 
 TEST_CASE("PostScript", "[PSC]")
 {
-  int lambdaCalled = 0;
-
   {
-    ts::PostScript g1(f1, 1, 2.0, 3);
-    ts::PostScript g2(f2, 4);
-    ts::PostScript g3(f3, 5, 6.0);
-    ts::PostScript g4([&]() -> void { ++lambdaCalled; });
+    int *p = &dummy;
+    ts::PostScript g1([&]() -> void { f1(1, 2.0, p, dummy); });
+    ts::PostScript g2([=]() -> void { f2(4); });
+    ts::PostScript g3([=]() -> void { f3(5, 6.0); });
 
     g2.release();
   }
@@ -73,5 +74,4 @@ TEST_CASE("PostScript", "[PSC]")
   REQUIRE(f1Called == 1);
   REQUIRE(f2Called == 0);
   REQUIRE(f3Called == 1);
-  REQUIRE(lambdaCalled == 1);
 }

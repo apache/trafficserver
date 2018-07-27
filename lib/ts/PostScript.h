@@ -24,28 +24,26 @@
 
 #pragma once
 
-#include <tuple>
-
 namespace ts
 {
-// The destructor of this class calls the function object passed to its constructor, with the given arguments.
-// For example:
-//   ts::PostScript g(TSHandleMLocRelease, bufp, parent, hdr);
+// The destructor of this class calls the function object passed to its constructor.  The function object must support a
+// function call operator with no parameters.  For example:
+//
+//   ts::PostScript g([=]() -> void { TSHandleMLocRelease(bufp, parent, hdr); });
 //
 // The release() member will prevent the call to the function upon destruction.
 //
-// Helpful in avoiding errors due to exception throws or error function return points, like the one that caused
-// Heartbleed.
+// Helpful in avoiding errors due to exception throws or error function return points (like the one that caused Heartbleed).
 //
 template <typename Callable, typename... Args> class PostScript
 {
 public:
-  PostScript(Callable f, Args &&... args) : _f(f), _argsTuple(args...) {}
+  PostScript(Callable f) : _f(f) {}
 
   ~PostScript()
   {
     if (_armed) {
-      std::apply(_f, _argsTuple);
+      _f();
     }
   }
 
@@ -62,7 +60,6 @@ public:
 private:
   bool _armed = true;
   Callable _f;
-  std::tuple<Args...> _argsTuple;
 };
 
 } // end namespace ts
