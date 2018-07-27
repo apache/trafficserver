@@ -552,6 +552,7 @@ SSLTicketParams::LoadTicket()
   SSLConfig::scoped_config params;
   time_t last_load_time    = 0;
   bool no_default_keyblock = true;
+
   SSLTicketKeyConfig::scoped_config ticket_params;
   if (ticket_params) {
     last_load_time      = ticket_params->load_time;
@@ -563,8 +564,9 @@ SSLTicketParams::LoadTicket()
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
     // See if the file changed since we last loaded
     struct stat sdata;
-    if (stat(ticket_key_filename, &sdata) >= 0) {
-      if (sdata.st_mtime <= last_load_time) {
+    if (last_load_time && (stat(ticket_key_filename, &sdata) >= 0)) {
+      if (sdata.st_mtime && sdata.st_mtime <= last_load_time) {
+        Debug("ssl", "ticket key %s has not changed", ticket_key_filename);
         // No updates since last load
         return false;
       }
@@ -585,7 +587,6 @@ SSLTicketParams::LoadTicket()
 
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
   return true;
-
 #endif
 }
 
