@@ -347,12 +347,16 @@ private:
   void _update_peer_cid(const QUICConnectionId &new_cid);
   void _update_local_cid(const QUICConnectionId &new_cid);
   void _rerandomize_original_cid();
+  bool _is_src_addr_verified();
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
 
   // This is for limiting number of packets that a server can send without path validation
   unsigned int _handshake_packets_sent = 0;
+
+  // TODO: Source addresses verification through an address validation token
+  bool _src_addr_verified = false;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);
