@@ -1076,7 +1076,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//  HttpSM::state_http_server_open()
+//  HttpSM::state_raw_http_server_open()
 //
 //////////////////////////////////////////////////////////////////////////////
 int
@@ -1766,6 +1766,29 @@ HttpSM::state_http_server_open(int event, void *data)
 
     } else {
       session->to_parent_proxy = false;
+    }
+    if (plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+      SMDebug("http", "[%" PRId64 "] setting handler for TCP handshake", sm_id);
+      // Just want to get a write-ready event so we know that the TCP handshake is complete.
+      server_entry->vc_handler = &HttpSM::state_http_server_open;
+      server_entry->write_vio  = server_session->do_io_write(this, 1, server_session->get_reader());
+    } else { // in the case of an intercept plugin don't to the connect timeout change
+      SMDebug("http", "[%" PRId64 "] not setting handler for TCP handshake", sm_id);
+      handle_http_server_open();
+    }
+    return 0;
+
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE:
+    // Update the time out to the regular connection timeout.
+    SMDebug("http_ss", "[%" PRId64 "] TCP Handshake complete", sm_id);
+    server_entry->vc_handler = &HttpSM::state_send_server_request_header;
+
+    // Reset the timeout to the non-connect timeout
+    if (t_state.api_txn_no_activity_timeout_value != -1) {
+      server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
+    } else {
+      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
     }
     handle_http_server_open();
     return 0;
@@ -4997,36 +5020,11 @@ HttpSM::do_http_server_open(bool raw)
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);
-  } else if (t_state.method != HTTP_WKSIDX_CONNECT && t_state.method != HTTP_WKSIDX_POST && t_state.method != HTTP_WKSIDX_PUT) {
+  } else {
     SMDebug("http", "calling netProcessor.connect_re");
     connect_action_handle = netProcessor.connect_re(this,                                 // state machine
                                                     &t_state.current.server->dst_addr.sa, // addr + port
                                                     &opt);
-  } else {
-    // The request transform would be applied to POST and/or PUT request.
-    // The server_vc should be established (writeable) before request transform start.
-    // The CheckConnect is created by connect_s,
-    //   It will callback NET_EVENT_OPEN to HttpSM if server_vc is WRITE_READY,
-    //   Otherwise NET_EVENT_OPEN_FAILED is callbacked.
-    MgmtInt connect_timeout;
-
-    ink_assert(t_state.method == HTTP_WKSIDX_CONNECT || t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT);
-
-    // Set the inactivity timeout to the connect timeout so that we
-    // we fail this server if it doesn't start sending the response
-    // header
-    if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-      connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-    } else if (t_state.current.server == &t_state.parent_info) {
-      connect_timeout = t_state.txn_conf->parent_connect_timeout;
-    } else {
-      connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-    }
-
-    SMDebug("http", "calling netProcessor.connect_s");
-    connect_action_handle = netProcessor.connect_s(this,                                 // state machine
-                                                   &t_state.current.server->dst_addr.sa, // addr + port
-                                                   connect_timeout, &opt);
   }
 
   if (connect_action_handle != ACTION_RESULT_DONE) {

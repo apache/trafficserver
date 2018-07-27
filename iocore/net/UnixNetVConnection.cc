@@ -375,6 +375,13 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // This function will always return true unless
   // vc is an SSLNetVConnection.
   if (!vc->getSSLHandShakeComplete()) {
+    if (vc->trackFirstHandshake()) {
+      // Send the write ready on up to the state machine
+      write_signal_and_update(VC_EVENT_WRITE_READY, vc);
+      vc->write.triggered = 0;
+      nh->write_ready_list.remove(vc);
+    }
+
     int err, ret;
 
     if (vc->get_context() == NET_VCONNECTION_OUT) {
