@@ -28,8 +28,6 @@
 #include <algorithm>
 #include <ts/IntrusiveDList.h>
 
-namespace ts
-{
 /** Intrusive Hash Table.
 
     Values stored in this container are not destroyed when the container is destroyed or removed from the container.
@@ -658,5 +656,3 @@ IntrusiveHashMap<H>::get_expansion_limit() const
   return _expansion_limit;
 }
 /* ---------------------------------------------------------------------------------------------- */
-
-} // namespace ts
