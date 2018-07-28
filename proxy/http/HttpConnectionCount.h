@@ -33,7 +33,7 @@
 #include <ts/ink_config.h>
 #include <ts/ink_mutex.h>
 #include <ts/ink_inet.h>
-#include <ts/Map.h>
+#include <ts/IntrusiveHashMap.h>
 #include <ts/Diags.h>
 #include <ts/CryptoHash.h>
 #include <ts/BufferWriterForward.h>
@@ -123,7 +123,9 @@ public:
     std::atomic<int> _in_queue{0};      ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
-    LINK(Group, _link); ///< Intrusive hash table support.
+    // Links for intrusive container.
+    Group *_next{nullptr};
+    Group *_prev{nullptr};
 
     /** Constructor.
      * Construct from @c Key because the use cases do a table lookup first so the @c Key is already constructed.
@@ -252,33 +254,24 @@ protected:
   static GlobalConfig *_global_config; ///< Global configuration data.
 
   /// Types and methods for the hash table.
-  struct HashDescriptor {
-    using ID       = uint64_t;
-    using Key      = Group::Key const &;
-    using Value    = Group;
-    using ListHead = DList(Value, _link);
+  struct Linkage {
+    using key_type   = Group::Key const &;
+    using value_type = Group;
 
-    static ID
-    hash(Key key)
-    {
-      return Group::hash(key);
-    }
-    static Key
-    key(Value *v)
-    {
-      return v->_key;
-    }
-    static bool
-    equal(Key lhs, Key rhs)
-    {
-      return Group::equal(lhs, rhs);
-    }
+    static value_type *&next_ptr(value_type *value);
+    static value_type *&prev_ptr(value_type *value);
+
+    static uint64_t hash_of(key_type key);
+
+    static key_type key_of(value_type *v);
+
+    static bool equal(key_type lhs, key_type rhs);
   };
 
   /// Internal implementation class instance.
   struct Imp {
-    TSHashTable<HashDescriptor> _table; ///< Hash table of upstream groups.
-    std::mutex _mutex;                  ///< Lock for insert & find.
+    IntrusiveHashMap<Linkage> _table; ///< Hash table of upstream groups.
+    std::mutex _mutex;                ///< Lock for insert & find.
   };
   static Imp _imp;
 
@@ -400,6 +393,38 @@ OutboundConnTrack::TxnState::rescheduled()
 {
   ++_g->_rescheduled;
 }
+
+/* === Linkage === */
+inline auto
+OutboundConnTrack::Linkage::next_ptr(value_type *value) -> value_type *&
+{
+  return value->_next;
+}
+
+inline auto
+OutboundConnTrack::Linkage::prev_ptr(value_type *value) -> value_type *&
+{
+  return value->_prev;
+}
+
+inline uint64_t
+OutboundConnTrack::Linkage::hash_of(key_type key)
+{
+  return Group::hash(key);
+}
+
+inline auto
+OutboundConnTrack::Linkage::key_of(value_type *value) -> key_type
+{
+  return value->_key;
+}
+
+inline bool
+OutboundConnTrack::Linkage::equal(key_type lhs, key_type rhs)
+{
+  return Group::equal(lhs, rhs);
+}
+/* === */
 
 Action *register_ShowConnectionCount(Continuation *, HTTPHdr *);
 

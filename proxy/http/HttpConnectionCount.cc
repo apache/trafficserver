@@ -181,7 +181,7 @@ OutboundConnTrack::obtain(TxnConfig const &txn_cnf, std::string_view fqdn, IpEnd
   Group::Key key{addr, hash, txn_cnf.match};
   std::lock_guard<std::mutex> lock(_imp._mutex); // Table lock
   auto loc = _imp._table.find(key);
-  if (loc.isValid()) {
+  if (loc != _imp._table.end()) {
     zret._g = loc;
   } else {
     zret._g = new Group(key, fqdn);
