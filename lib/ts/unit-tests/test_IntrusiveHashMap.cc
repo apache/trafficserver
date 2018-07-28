@@ -78,7 +78,7 @@ struct ThingMapDescriptor {
   }
 };
 
-using Map = ts::IntrusiveHashMap<ThingMapDescriptor>;
+using Map = IntrusiveHashMap<ThingMapDescriptor>;
 
 } // namespace
 
