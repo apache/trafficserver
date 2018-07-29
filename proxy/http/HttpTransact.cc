@@ -6569,7 +6569,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
     // No content length header.
     if (s->source == SOURCE_CACHE) {
       // If there is no content-length header, we can
-      //   insert one since the cache knows definately
+      //   insert one since the cache knows definitely
       //   how long the object is unless we're in a
       //   read-while-write mode and object hasn't been
       //   written into a cache completely.
@@ -7804,7 +7804,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     error_body_type = "default";
   }
 
-  // Make sure that if this error occured before we initailzied the state variables that we do now.
+  // Make sure that if this error occurred before we initailzied the state variables that we do now.
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
   //////////////////////////////////////////////////////

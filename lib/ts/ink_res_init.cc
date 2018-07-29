@@ -291,7 +291,7 @@ ink_res_randomid()
  *
  * Return 0 if completes successfully, -1 on error
  *
- * @internal This function has to be reachable by res_data.c but not publically.
+ * @internal This function has to be reachable by res_data.c but not publicly.
  */
 int
 ink_res_init(ink_res_state statp,         ///< State object to update.
