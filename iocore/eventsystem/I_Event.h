@@ -88,7 +88,6 @@
 
 // define misc events here
 #define ONE_WAY_TUNNEL_EVENT_PEER_CLOSE (SIMPLE_EVENT_EVENTS_START + 1)
-#define PREFETCH_EVENT_SEND_URL (SIMPLE_EVENT_EVENTS_START + 2)
 
 typedef int EventType;
 const int ET_CALL         = 0;
