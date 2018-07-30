@@ -3096,7 +3096,7 @@ SSL Termination
    algorithms provided by OpenSSL which |TS| will use for SSL connections. For
    the list of algorithms and instructions on constructing an appropriately
    formatting cipher_suite string, see
-   `OpenSSL Ciphers <https://www.openssl.org/docs/manmaster/apps/ciphers.html>`_.
+   `OpenSSL Ciphers <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
 
    The current default, included in the ``records.config.default`` example
    configuration is:
@@ -3106,6 +3106,25 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.client.cipher_suite STRING <See notes under proxy.config.ssl.server.cipher_suite.>
 
    Configures the cipher_suite which |TS| will use for SSL connections to origin or next hop.
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.TLSv1_3.cipher_suites STRING <See notes>
+
+   Configures the pair of the AEAD algorithm and hash algorithm to be
+   used with HKDF provided by OpenSSL which |TS| will use for TLSv1.3
+   connections. For the list of algorithms and instructions, see
+   The ``-ciphersuites`` section of `OpenSSL Ciphers <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html>`_.
+
+   The current default value with OpenSSL is:
+
+   TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256
+
+   This configuration works with OpenSSL v1.1.1 and above.
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.cipher_suites STRING <See notes under proxy.config.ssl.server.tls.cipher_suites>
+
+   Configures the cipher_suites which |TS| will use for TLSv1.3
+   connections to origin or next hop. This configuration works
+   with OpenSSL v1.1.1 and above.
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
 

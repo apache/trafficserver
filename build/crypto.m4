@@ -226,3 +226,18 @@ AC_DEFUN([TS_CHECK_CRYPTO_OCSP], [
   TS_ARG_ENABLE_VAR([use], [tls-ocsp])
   AC_SUBST(use_tls_ocsp)
 ])
+
+AC_DEFUN([TS_CHECK_CRYPTO_SET_CIPHERSUITES], [
+  _set_ciphersuites_saved_LIBS=$LIBS
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h)
+  AC_CHECK_FUNCS(SSL_CTX_set_ciphersuites, [enable_tls_set_ciphersuites=yes], [enable_tls_set_ciphersuites=no])
+
+  LIBS=$_set_ciphersuites_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable TLSv1.3 ciphersuites configuration is supported)
+  AC_MSG_RESULT([$enable_tls_set_ciphersuites])
+  TS_ARG_ENABLE_VAR([use], [tls-set-ciphersuites])
+  AC_SUBST(use_tls_set_ciphersuites)
+])

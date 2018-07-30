@@ -94,7 +94,9 @@ SSLConfigParams::reset()
   serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
     clientKeyPath = clientCACertFilename = clientCACertPath = cipherSuite = client_cipherSuite = dhparamsFile = serverKeyPathOnly =
       nullptr;
-  client_ctx      = nullptr;
+  server_tls13_cipher_suites = nullptr;
+  client_tls13_cipher_suites = nullptr;
+  client_ctx                 = nullptr;
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
   ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_client_ctx_options                                              = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
@@ -124,6 +126,9 @@ SSLConfigParams::cleanup()
   client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
   dhparamsFile            = (char *)ats_free_null(dhparamsFile);
   ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
+
+  server_tls13_cipher_suites = (char *)ats_free_null(server_tls13_cipher_suites);
+  client_tls13_cipher_suites = (char *)ats_free_null(client_tls13_cipher_suites);
 
   freeCTXmap();
   SSLReleaseContext(client_ctx);
@@ -178,6 +183,9 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
   REC_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
   REC_ReadConfigStringAlloc(client_cipherSuite, "proxy.config.ssl.client.cipher_suite");
+  REC_ReadConfigStringAlloc(server_tls13_cipher_suites, "proxy.config.ssl.server.TLSv1_3.cipher_suites");
+  REC_ReadConfigStringAlloc(client_tls13_cipher_suites, "proxy.config.ssl.client.TLSv1_3.cipher_suites");
+
   dhparamsFile = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.dhparams_file"));
 
   int options;

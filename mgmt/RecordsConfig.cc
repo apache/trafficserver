@@ -1194,6 +1194,18 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.ssl.ocsp.update_period", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
   ,
 
+  //##############################################################################
+  //#
+  //# Congifuration for TLSv1.3 and above
+  //#
+  //##############################################################################
+  // The default value (nullptr) means the default value of TLS stack will be used.
+  // - e.g. OpenSSL : "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+  {RECT_CONFIG, "proxy.config.ssl.server.TLSv1_3.cipher_suites", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.client.TLSv1_3.cipher_suites", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+
   //############################################################################
   //#
   //# WCCP

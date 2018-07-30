@@ -137,6 +137,15 @@ SSLInitClientContext(const SSLConfigParams *params)
     }
   }
 
+#if TS_USE_TLS_SET_CIPHERSUITES
+  if (params->client_tls13_cipher_suites != nullptr) {
+    if (!SSL_CTX_set_ciphersuites(client_ctx, params->client_tls13_cipher_suites)) {
+      SSLError("invalid tls client cipher suites in records.config");
+      goto fail;
+    }
+  }
+#endif
+
   // if no path is given for the client private key,
   // assume it is contained in the client certificate file.
   clientKeyPtr = params->clientKeyPath;
