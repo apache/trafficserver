@@ -79,7 +79,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       return false; // servername must be present
     }
     if (node[TS_disable_H2]) {
-      item.fqdn = node[TS_disable_H2].as<bool>();
+      item.disable_h2 = node[TS_disable_H2].as<bool>();
     }
 
     // enum
