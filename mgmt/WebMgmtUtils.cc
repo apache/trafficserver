@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Functions for interfacing to management records
 
   @section license License
 
@@ -21,23 +21,12 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
 #include "ts/ink_string.h"
 #include "ts/Tokenizer.h"
-#include "ts/ink_code.h"
 #include "ts/ink_file.h"
-#include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "ts/Regex.h"
-
-/****************************************************************************
- *
- *  WebMgmtUtils.cc - Functions for interfacing to management records
- *
- *
- *
- ****************************************************************************/
 
 // bool varSetFromStr(const char*, const char* )
 //

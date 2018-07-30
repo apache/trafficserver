@@ -21,10 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-
 #include "InkAPIInternal.h"
-#include "MgmtUtils.h"
 #include "ProcessManager.h"
 
 #include "ts/ink_apidefs.h"

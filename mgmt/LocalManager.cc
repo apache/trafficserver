@@ -25,6 +25,7 @@
 #include "ts/ink_sock.h"
 #include "ts/ink_file.h"
 #include "ts/ink_error.h"
+#include "Alarms.h"
 #include "MgmtUtils.h"
 #include "ts/I_Layout.h"
 #include "ts/runroot.h"
