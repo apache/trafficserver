@@ -22,8 +22,7 @@
   limitations under the License.
  */
 
-#ifndef _ink_config_h
-#define _ink_config_h
+#pragma once
 
 // Note: All "defines" should be prefixed with TS_ when appropriate, please
 // don't use ATS_ any more.
@@ -127,5 +126,3 @@
 /* clang-format on */
 
 static const int DEFAULT_STACKSIZE = @default_stack_size@;
-
-#endif /* _ink_config_h */

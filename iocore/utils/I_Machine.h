@@ -28,8 +28,7 @@
 
  */
 
-#ifndef _I_Machine_h
-#define _I_Machine_h
+#pragma once
 
 #include "ts/ink_inet.h"
 #include "ts/ink_uuid.h"
@@ -93,5 +92,3 @@ protected:
   InkHashTable *machine_id_strings;
   InkHashTable *machine_id_ipaddrs;
 };
-
-#endif
