@@ -21,22 +21,14 @@
   limitations under the License.
  */
 
+#include "FileManager.h"
 #include "ts/ink_platform.h"
 #include "ts/ink_file.h"
-#include "ts/I_Layout.h"
-#include "FileManager.h"
-#include "Main.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
-#include "MgmtUtils.h"
-#include "ExpandingArray.h"
-#include "MgmtSocket.h"
 
 #include <vector>
 #include <algorithm>
-
-#define DIR_MODE S_IRWXU
-#define FILE_MODE S_IRWXU
 
 FileManager::FileManager()
 {

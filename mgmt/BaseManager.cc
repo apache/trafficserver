@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Member function definitions for Base Manager class.
 
   @section license License
 
@@ -21,18 +21,6 @@
   limitations under the License.
  */
 
-/**************************************
- *
- * BaseManager.cc
- *   Member function definitions for Base Manager class.
- *
- * $Date: 2003-06-01 18:37:18 $
- *
- *
- */
-
-#include "ts/ink_platform.h"
-#include "ts/ink_hash_table.h"
 #include "ts/ink_memory.h"
 #include "BaseManager.h"
 

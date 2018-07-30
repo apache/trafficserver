@@ -22,23 +22,31 @@
  */
 
 #include "ts/ink_platform.h"
-#include "ts/ink_string.h"
 #include "ts/ink_memory.h"
 #include "ts/ink_time.h"
-#include "ts/ink_file.h"
+#include "Alarms.h"
 #include "LocalManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
-#include "MgmtUtils.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
-#include "ts/ink_cap.h"
 #include "ts/I_Layout.h"
 #include "FileManager.h"
 #include "ProxyConfig.h"
 
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2
+
+constexpr int ACTIVE_VERSION  = 0;
+constexpr int INVALID_VERSION = -1;
+
+#if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
+#define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
+#elif HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+#define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtim.tv_nsec)
+#else
+#define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000)
+#endif
 
 // Error Strings
 const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version was out of date", "System Call Error",

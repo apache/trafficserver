@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Functions for interfacing to management records
 
   @section license License
 
@@ -21,29 +21,15 @@
   limitations under the License.
  */
 
-#ifndef _WEB_MGMT_UTILS_
-#define _WEB_MGMT_UTILS_
+#pragma once
 
 #include "MgmtDefs.h"
-
-/****************************************************************************
- *
- *  WebMgmtUtils.h - Functions for interfacing to management records
- *
- *
- *
- ****************************************************************************/
-
 #include "ts/ink_hash_table.h"
-#include "ts/TextBuffer.h"
-#include "ExpandingArray.h"
-
 #include "P_RecCore.h"
 
 // class MgmtData - stores information from local manager
 //    variables in its native type
 //
-#include "P_RecCore.h"
 class MgmtData
 {
 public:
@@ -101,16 +87,8 @@ InkHashTable *processFormSubmission_noSubstitute(char *submission);
 int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
 
-// Some scaling constants
-#define BYTES_TO_MB_SCALE (1 / (1024 * 1024.0))
-#define MBIT_TO_KBIT_SCALE (1000.0)
-#define SECOND_TO_MILLISECOND_SCALE (1000.0)
-#define PCT_TO_INTPCT_SCALE (100.0)
-
 bool recordValidityCheck(const char *varName, const char *value);
 bool recordRegexCheck(const char *pattern, const char *value);
 bool recordRangeCheck(const char *pattern, const char *value);
 bool recordIPCheck(const char *pattern, const char *value);
 bool recordRestartCheck(const char *varName);
-
-#endif

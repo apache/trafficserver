@@ -1,6 +1,8 @@
 /** @file
 
-  A brief file description
+  Process Manager Class, derived from BaseManager. Class provides callback
+  registration for management events as well as the interface to the outside
+  world.
 
   @section license License
 
@@ -19,18 +21,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/*
- *
- * ProcessManager.h
- *   Process Manager Class, derived from BaseManager. Class provides callback
- * registration for management events as well as the interface to the outside
- * world.
- *
- * $Date: 2003-06-01 18:37:18 $
- *
- *
  */
 
 #pragma once
