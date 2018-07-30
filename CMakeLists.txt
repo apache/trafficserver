@@ -484,7 +484,6 @@ add_executable(ats
         mgmt/Alarms.h
         mgmt/BaseManager.cc
         mgmt/BaseManager.h
-        mgmt/Cop.h
         mgmt/FileManager.cc
         mgmt/FileManager.h
         mgmt/LocalManager.cc

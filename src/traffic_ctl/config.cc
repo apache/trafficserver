@@ -360,7 +360,6 @@ config_status(unsigned argc, const char **argv)
   CtrlMgmtRecord reconfig;
   CtrlMgmtRecord proxy;
   CtrlMgmtRecord manager;
-  CtrlMgmtRecord cop;
 
   CTRL_MGMT_CHECK(version.fetch("proxy.process.version.server.long"));
   CTRL_MGMT_CHECK(starttime.fetch("proxy.node.restarts.proxy.start_time"));
@@ -368,7 +367,6 @@ config_status(unsigned argc, const char **argv)
   CTRL_MGMT_CHECK(reconfig.fetch("proxy.node.config.reconfigure_required"));
   CTRL_MGMT_CHECK(proxy.fetch("proxy.node.config.restart_required.proxy"));
   CTRL_MGMT_CHECK(manager.fetch("proxy.node.config.restart_required.manager"));
-  CTRL_MGMT_CHECK(cop.fetch("proxy.node.config.restart_required.cop"));
 
   printf("%s\n", CtrlMgmtRecordValue(version).c_str());
   printf("Started at %s", timestr((time_t)starttime.as_int()).c_str());
@@ -380,9 +378,6 @@ config_status(unsigned argc, const char **argv)
   }
   if (manager.as_int()) {
     printf("traffic_manager requires restarting\n");
-  }
-  if (cop.as_int()) {
-    printf("traffic_cop requires restarting\n");
   }
 
   return CTRL_EX_OK;
