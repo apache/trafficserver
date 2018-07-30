@@ -156,10 +156,9 @@ static int show_statistics                 = 0;
 static inkcoreapi DiagsConfig *diagsConfig = nullptr;
 HttpBodyFactory *body_factory              = nullptr;
 
-static int accept_mss             = 0;
-static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
-static int poll_timeout           = -1; // No value set.
-static int cmd_disable_freelist   = 0;
+static int accept_mss           = 0;
+static int poll_timeout         = -1; // No value set.
+static int cmd_disable_freelist = 0;
 
 static bool signal_received[NSIG];
 
@@ -176,7 +175,6 @@ static ArgumentDescription argument_descriptions[] = {
   {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads, "PROXY_ACCEPT_THREAD", nullptr},
   {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done, "PROXY_ACCEPT_TILL_DONE", nullptr},
   {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", nullptr},
-  {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", nullptr},
   {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", nullptr},
   {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator", "T", &cmd_disable_pfreelist,
    "PROXY_DPRINTF_LEVEL", nullptr},
