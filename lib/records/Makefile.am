@@ -27,7 +27,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES)
 
-noinst_LIBRARIES = librecords_lm.a librecords_p.a librecords_cop.a
+noinst_LIBRARIES = librecords_lm.a librecords_p.a
 
 librecords_COMMON = \
 	I_RecAlarms.h \
@@ -65,11 +65,6 @@ librecords_p_a_SOURCES = \
 	I_RecProcess.h \
 	P_RecProcess.h \
 	RecProcess.cc
-
-librecords_cop_a_SOURCES = \
-	RecConfigParse.cc \
-	RecFile.cc \
-	RecDebug.cc
 
 clang-tidy-local: $(sort $(DIST_SOURCES))
 	$(CXX_Clang_Tidy)

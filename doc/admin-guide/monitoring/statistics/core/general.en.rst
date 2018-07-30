@@ -31,9 +31,6 @@ General
 
 .. ts:stat:: global proxy.node.config.reconfigure_time integer
 
-.. ts:stat:: global proxy.node.config.restart_required.cop integer
-   :type: flag
-
 .. ts:stat:: global proxy.node.config.restart_required.manager integer
    :type: flag
 

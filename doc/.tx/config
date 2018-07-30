@@ -537,11 +537,6 @@ file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/index.en.po
 source_file = _build/locale/pot/appendices/command-line/index.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.appendices--command-line--traffic_cop_en]
-file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_cop.en.po
-source_file = _build/locale/pot/appendices/command-line/traffic_cop.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.appendices--command-line--traffic_crashlog_en]
 file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_crashlog.en.po
 source_file = _build/locale/pot/appendices/command-line/traffic_crashlog.en.pot
