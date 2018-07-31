@@ -1852,6 +1852,15 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   }
 #endif
 
+#ifdef SSL_CTX_set1_groups_list
+  if (params->server_groups_list != nullptr) {
+    if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
+      SSLError("invalid groups list for server in records.config");
+      goto fail;
+    }
+  }
+#endif
+
   if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
     goto fail;
   }
