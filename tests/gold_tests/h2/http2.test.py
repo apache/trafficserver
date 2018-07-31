@@ -129,8 +129,9 @@ tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
 
 # Test Case 6: Post with chunked body
+# cannot explicitly specify Transfer-Encoding with a HTTP/2 requests because this is against the HTTP/2 spec.  ATS will error with malformed request
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format( post_body, ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -s -k -d "{0}" https://127.0.0.1:{1}/postchunked'.format( post_body, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
