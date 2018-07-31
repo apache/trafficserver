@@ -302,8 +302,8 @@ LogHost::orphan_write_and_try_delete(LogBuffer *&lb)
     m_orphan_file->preproc_and_try_delete(lb);
   } else {
     Debug("log-host", "logging space exhausted, failed to write orphan file, drop(%" PRIu32 ") bytes", lb->header()->byte_count);
-    LogBuffer::destroy(lb);
   }
+  LogBuffer::destroy(lb);
 }
 
 void
