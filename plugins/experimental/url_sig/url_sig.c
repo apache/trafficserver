@@ -330,14 +330,38 @@ getAppQueryString(const char *query_string, int query_length)
   }
 }
 
+/** fixedBufferWrite safely writes no more than *dest_len bytes to *dest_end
+ * from src. If copying src_len bytes to *dest_len would overflow, it returns
+ * zero. *dest_end is advanced and *dest_len is decremented to account for the
+ * written data. No null-terminators are written automatically (though they
+ * could be copied with data).
+ */
+static int
+fixedBufferWrite(char **dest_end, int *dest_len, const char *src, int src_len)
+{
+  if (src_len > *dest_len) {
+    return 0;
+  }
+  memcpy(*dest_end, src, src_len);
+  *dest_end += src_len;
+  *dest_len -= src_len;
+  return 1;
+}
+
 static char *
 urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char *signed_seg, unsigned int signed_seg_len)
 {
   char *segment[MAX_SEGMENTS];
   unsigned char decoded_string[2048] = {'\0'};
-  char new_url[8192]                 = {'\0'};
+  char new_url[8192]; /* new_url is not null_terminated */
   char *p = NULL, *sig_anchor = NULL, *saveptr = NULL;
-  int i = 0, numtoks = 0, cp_len = 0, l, decoded_len = 0, sig_anchor_seg = 0;
+  int i = 0, numtoks = 0, decoded_len = 0, sig_anchor_seg = 0;
+
+  char *new_url_end    = new_url;
+  int new_url_len_left = sizeof(new_url);
+
+  char *new_path_seg_end    = new_path_seg;
+  int new_path_seg_len_left = new_path_seg_len;
 
   char *skip = strchr(url, ':');
   if (!skip || skip[1] != '/' || skip[2] != '/') {
@@ -345,8 +369,11 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
   }
   skip += 3;
   // preserve the scheme in the new_url.
-  strncat(new_url, url, skip - url);
-  TSDebug(PLUGIN_NAME, "%s:%d - new_url: %s\n", __FILE__, __LINE__, new_url);
+  if (!fixedBufferWrite(&new_url_end, &new_url_len_left, url, skip - url)) {
+    TSError("insufficient space to copy schema into new_path_seg buffer.");
+    return NULL;
+  }
+  TSDebug(PLUGIN_NAME, "%s:%d - new_url: %*s\n", __FILE__, __LINE__, (int)(new_url_end - new_url), new_url);
 
   // parse the url.
   if ((p = strtok_r(skip, "/", &saveptr)) != NULL) {
@@ -387,19 +414,18 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
       // last path segment so skip them.
       continue;
     }
-    l = strlen(segment[i]);
-    if (l + 1 > new_path_seg_len) {
-      TSError("insuficient space to copy into new_path_seg buffer.");
+    if (!fixedBufferWrite(&new_path_seg_end, &new_path_seg_len_left, segment[i], strlen(segment[i]))) {
+      TSError("insufficient space to copy into new_path_seg buffer.");
       return NULL;
-    } else {
-      memcpy(new_path_seg, segment[i], l);
-      new_path_seg[l] = '\0';
-      if (i != numtoks - 1) {
-        strncat(new_path_seg, "/", 1);
+    }
+    if (i != numtoks - 1) {
+      if (!fixedBufferWrite(&new_path_seg_end, &new_path_seg_len_left, "/", 1)) {
+        TSError("insufficient space to copy into new_path_seg buffer.");
+        return NULL;
       }
-      cp_len += l + 1;
     }
   }
+  *new_path_seg_end = '\0';
   TSDebug(PLUGIN_NAME, "new_path_seg: %s", new_path_seg);
 
   // save the encoded signing parameter data
@@ -434,24 +460,53 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
   }
   TSDebug(PLUGIN_NAME, "decoded_string: %s", decoded_string);
 
-  for (i = 0; i < numtoks; i++) {
-    // cp the base64 decoded string.
-    if (i == sig_anchor_seg && sig_anchor != NULL) {
-      memcpy(new_url, segment[i], strlen(segment[i]));
-      memcpy(new_url, (char *)decoded_string, strlen((char *)decoded_string));
-      strncat(new_url, "/", 1);
-      continue;
-    } else if (i == numtoks - 2 && sig_anchor == NULL) {
-      memcpy(new_url, (char *)decoded_string, strlen((char *)decoded_string));
-      strncat(new_url, "/", 1);
-      continue;
+  {
+    int oob = 0; /* Out Of Buffer */
+
+    for (i = 0; i < numtoks; i++) {
+      // cp the base64 decoded string.
+      if (i == sig_anchor_seg && sig_anchor != NULL) {
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, segment[i], strlen(segment[i]))) {
+          oob = 1;
+          break;
+        }
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, (char *)decoded_string, strlen((char *)decoded_string))) {
+          oob = 1;
+          break;
+        }
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, "/", 1)) {
+          oob = 1;
+          break;
+        }
+
+        continue;
+      } else if (i == numtoks - 2 && sig_anchor == NULL) {
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, (char *)decoded_string, strlen((char *)decoded_string))) {
+          oob = 1;
+          break;
+        }
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, "/", 1)) {
+          oob = 1;
+          break;
+        }
+        continue;
+      }
+      if (!fixedBufferWrite(&new_url_end, &new_url_len_left, segment[i], strlen(segment[i]))) {
+        oob = 1;
+        break;
+      }
+      if (i < numtoks - 1) {
+        if (!fixedBufferWrite(&new_url_end, &new_url_len_left, "/", 1)) {
+          oob = 1;
+          break;
+        }
+      }
     }
-    memcpy(new_url, segment[i], strlen(segment[i]));
-    if (i < numtoks - 1) {
-      strncat(new_url, "/", 1);
+    if (oob) {
+      TSError("insufficient space to copy into new_url.");
     }
   }
-  return TSstrndup(new_url, strlen(new_url));
+  return TSstrndup(new_url, new_url_end - new_url);
 }
 
 TSRemapStatus
