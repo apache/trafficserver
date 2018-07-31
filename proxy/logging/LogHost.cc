@@ -404,14 +404,14 @@ int
 LogHostList::preproc_and_try_delete(LogBuffer *lb)
 {
   int success = false;
-  unsigned nr_host, nr;
+  unsigned nr;
   bool need_orphan        = true;
   LogHost *available_host = nullptr;
 
   ink_release_assert(lb->m_references == 0);
 
-  nr_host = nr = count();
-  ink_atomic_increment(&lb->m_references, nr_host);
+  nr = count();
+  ink_atomic_increment(&lb->m_references, 1);
 
   for (LogHost *host = first(); host && nr; host = next(host)) {
     LogHost *lh    = host;
