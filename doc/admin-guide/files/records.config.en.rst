@@ -706,7 +706,7 @@ ip-resolve
 
       9090:proto=http:ssl
 
-.. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443 563
+.. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443
 
    The range of origin server ports that can be used for tunneling via ``CONNECT``.
 
