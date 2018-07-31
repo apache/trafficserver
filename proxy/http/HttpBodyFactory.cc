@@ -37,9 +37,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "URL.h"
-#include <logging/Log.h>
-#include <logging/LogAccess.h>
-#include <logging/LogAccessHttp.h>
+#include "logging/Log.h"
+#include "logging/LogAccess.h"
 #include "HttpCompat.h"
 #include "ts/I_Layout.h"
 
@@ -1049,7 +1048,7 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State *context, int64_
 
   Debug("body_factory_instantiation", "    before instantiation: [%s]", template_buffer);
 
-  LogAccessHttp la(context->state_machine);
+  LogAccess la(context->state_machine);
 
   buffer = resolve_logfield_string(&la, template_buffer);
 

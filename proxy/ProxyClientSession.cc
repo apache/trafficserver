@@ -27,24 +27,6 @@
 
 static int64_t next_cs_id = 0;
 
-size_t
-ProxyError::str(char *buf, size_t buf_len)
-{
-  size_t len = 0;
-
-  if (this->cls == ProxyErrorClass::NONE) {
-    buf[0] = '-';
-    return 1;
-  }
-
-  buf[0] = (this->cls == ProxyErrorClass::SSN) ? 'S' : 'T';
-  ++len;
-
-  len += snprintf(buf + len, buf_len - len, "%" PRIx32, this->code);
-
-  return len;
-}
-
 ProxyClientSession::ProxyClientSession() : VConnection(nullptr)
 {
   ink_zero(this->user_args);
