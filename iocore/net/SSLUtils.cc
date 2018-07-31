@@ -587,9 +587,13 @@ ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
   return ctx;
 }
 
+// SSL_CTX_set_ecdh_auto() is removed by OpenSSL v1.1.0 and ECDH is enabled in default.
+// TODO: remove this function when we drop support of OpenSSL v1.0.2* and lower.
 static SSL_CTX *
 ssl_context_enable_ecdh(SSL_CTX *ctx)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+
 #if TS_USE_TLS_ECKEY
 
 #if defined(SSL_CTRL_SET_ECDH_AUTO)
@@ -601,6 +605,7 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
     SSL_CTX_set_tmp_ecdh(ctx, ecdh);
     EC_KEY_free(ecdh);
   }
+#endif
 #endif
 #endif
 
