@@ -2764,6 +2764,7 @@ Logging Configuration
 
 .. ts:cv:: LOCAL proxy.local.log.collation_mode INT 0
    :reloadable:
+   :deprecated:
 
    Set the log collation mode.
 
@@ -2786,34 +2787,42 @@ Logging Configuration
 
 .. note::
 
-   Although Traffic Server supports traditional custom logging, you should use
-   the more versatile XML-based custom formats.
+   Log collation is a *deprecated* feature as of ATS v8.0.0, and  will be
+   removed in ATS v9.0.0. Our recommendation is to use one of the many existing
+   log collection tools, such as Kafka, LogStash, FileBeat, Fluentd or even
+   syslog / syslog-ng.
 
 .. ts:cv:: CONFIG proxy.config.log.collation_host STRING NULL
+   :deprecated:
 
    The hostname of the log collation server.
 
 .. ts:cv:: CONFIG proxy.config.log.collation_port INT 8085
    :reloadable:
+   :deprecated:
 
    The port used for communication between the collation server and client.
 
 .. ts:cv:: CONFIG proxy.config.log.collation_secret STRING foobar
    :reloadable:
+   :deprecated:
 
    The password used to validate logging data and prevent the exchange of unauthorized information when a collation server is being used.
 
 .. ts:cv:: CONFIG proxy.config.log.collation_host_tagged INT 0
    :reloadable:
+   :deprecated:
 
    When enabled (``1``), configures Traffic Server to include the hostname of the collation client that generated the log entry in each entry.
 
 .. ts:cv:: CONFIG proxy.config.log.collation_retry_sec INT 5
    :reloadable:
+   :deprecated:
 
    The number of seconds between collation server connection retries.
 
 .. ts:cv:: CONFIG proxy.config.log.collation_host_timeout INT 86390
+   :deprecated:
 
    The number of seconds before inactivity time-out events for the host side.
    This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
@@ -2826,6 +2835,7 @@ Logging Configuration
    when it reaches its own time-out and then re-connect automatically.
 
 .. ts:cv:: CONFIG proxy.config.log.collation_client_timeout INT 86400
+   :deprecated:
 
    The number of seconds before inactivity time-out events for the client side.
    This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
