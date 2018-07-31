@@ -878,8 +878,6 @@ add_executable(ats
         proxy/logging/Log.h
         proxy/logging/LogAccess.cc
         proxy/logging/LogAccess.h
-        proxy/logging/LogAccessHttp.cc
-        proxy/logging/LogAccessHttp.h
         proxy/logging/LogAccessTest.cc
         proxy/logging/LogAccessTest.h
         proxy/logging/LogBuffer.cc
