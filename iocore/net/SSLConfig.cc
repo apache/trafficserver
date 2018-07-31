@@ -96,6 +96,8 @@ SSLConfigParams::reset()
       nullptr;
   server_tls13_cipher_suites = nullptr;
   client_tls13_cipher_suites = nullptr;
+  server_groups_list         = nullptr;
+  client_groups_list         = nullptr;
   client_ctx                 = nullptr;
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
   ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
@@ -129,6 +131,8 @@ SSLConfigParams::cleanup()
 
   server_tls13_cipher_suites = (char *)ats_free_null(server_tls13_cipher_suites);
   client_tls13_cipher_suites = (char *)ats_free_null(client_tls13_cipher_suites);
+  server_groups_list         = (char *)ats_free_null(server_groups_list);
+  client_groups_list         = (char *)ats_free_null(client_groups_list);
 
   freeCTXmap();
   SSLReleaseContext(client_ctx);
@@ -312,6 +316,8 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(async_handshake_enabled, "proxy.config.ssl.async.handshake.enabled");
   REC_ReadConfigStringAlloc(engine_conf_file, "proxy.config.ssl.engine.conf_file");
 
+  REC_ReadConfigStringAlloc(server_groups_list, "proxy.config.ssl.server.groups_list");
+
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
   REC_EstablishStaticConfigByte(clientVerify, "proxy.config.ssl.client.verify.server");
@@ -337,6 +343,8 @@ SSLConfigParams::initialize()
   set_paths_helper(clientCACertRelativePath, ssl_client_ca_cert_filename, &clientCACertPath, &clientCACertFilename);
   ats_free(clientCACertRelativePath);
   ats_free(ssl_client_ca_cert_filename);
+
+  REC_ReadConfigStringAlloc(client_groups_list, "proxy.config.ssl.client.groups_list");
 
   // Enable/disable sni mapping
   REC_ReadConfigInteger(sni_map_enable, "proxy.config.ssl.sni.map.enable");
