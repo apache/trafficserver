@@ -33,7 +33,7 @@
 #include "P_Net.h"
 #include "StatPages.h"
 #include "Log.h"
-#include "LogAccessHttp.h"
+#include "LogAccess.h"
 #include "PluginVC.h"
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
@@ -6865,7 +6865,7 @@ HttpSM::kill_this()
     //////////////
     SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
     if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-      LogAccessHttp accessor(this);
+      LogAccess accessor(this);
 
       int ret = Log::access(&accessor);
 
@@ -7604,7 +7604,7 @@ HttpSM::do_redirect()
   if (is_redirect_required()) {
     if (redirect_url != nullptr || t_state.hdr_info.client_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-        LogAccessHttp accessor(this);
+        LogAccess accessor(this);
         if (redirect_url == nullptr) {
           if (t_state.squid_codes.log_code == SQUID_LOG_TCP_HIT) {
             t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT_REDIRECT;

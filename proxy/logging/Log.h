@@ -43,8 +43,8 @@
   @section example Example usage of the API
 
   @code
-  LogAccessHttpSM entry (this);
-  int ret = Log::access (&entry);
+  LogAccess entry(this);
+  int ret = Log::access(&entry);
   @endcode
 
 */

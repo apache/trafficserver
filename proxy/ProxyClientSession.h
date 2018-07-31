@@ -47,7 +47,23 @@ enum class ProxyErrorClass {
 struct ProxyError {
   ProxyError() {}
   ProxyError(ProxyErrorClass cl, uint32_t co) : cls(cl), code(co) {}
-  size_t str(char *buf, size_t buf_len);
+  size_t
+  str(char *buf, size_t buf_len) const
+  {
+    size_t len = 0;
+
+    if (this->cls == ProxyErrorClass::NONE) {
+      buf[0] = '-';
+      return 1;
+    }
+
+    buf[0] = (this->cls == ProxyErrorClass::SSN) ? 'S' : 'T';
+    ++len;
+
+    len += snprintf(buf + len, buf_len - len, "%" PRIx32, this->code);
+
+    return len;
+  }
 
   ProxyErrorClass cls = ProxyErrorClass::NONE;
   uint32_t code       = 0;

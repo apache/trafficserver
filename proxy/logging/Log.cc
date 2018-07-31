@@ -863,13 +863,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ctid", field);
 
-  Ptr<LogFieldAliasTable> entry_type_map = make_ptr(new LogFieldAliasTable);
-  entry_type_map->init(N_LOG_ENTRY_TYPES, LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP");
-  field = new LogField("log_entry_type", "etype", LogField::sINT, &LogAccess::marshal_entry_type, &LogAccess::unmarshal_entry_type,
-                       make_alias_map(entry_type_map));
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "etype", field);
-
   init_status |= FIELDS_INITIALIZED;
 }
 
