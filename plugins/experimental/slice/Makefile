@@ -1,0 +1,47 @@
+all: slice
+
+slice_la_SOURCES = \
+	client.cc \
+	ContentRange.cc \
+	Data.cc \
+	HttpHeader.cc \
+	intercept.cc \
+	Range.cc \
+	response.cc \
+	server.cc \
+	slice.cc \
+	slice_test.cc \
+	transfer.cc \
+
+slice_la_HEADERS = \
+	client.h \
+	ContentRange.h \
+	Data.h \
+	HttpHeader.h \
+	intercept.h \
+	Range.h \
+	response.h \
+	server.h \
+	slice.h \
+	Stage.h \
+	transfer.h \
+
+slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
+	tsxs -v -o slice.so $(slice_la_SOURCES)
+
+install: $(slice_la_SOURCES) $(slice_la_HEADERS)
+	tsxs -v -i -o slice.so $(slice_la_SOURCES)
+
+CXX = c++ -std=c++11
+#CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
+CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
+TSINCLUDE = $(shell tsxs -q INCLUDEDIR)
+#PREFIX = $(shell tsxs -q PREFIX)
+#LIBS = -L$(PREFIX)/lib -latscppapi
+#LIBS = $(PREFIX)/lib/libtsutil.la
+
+slice_test: slice_test.cc ContentRange.cc Range.cc
+	$(CXX) -o $@ $^ $(CXXFLAGS) -I$(TSINCLUDE) -DUNITTEST
+
+clean: 
+	rm -fv *.lo *.so slice_test
