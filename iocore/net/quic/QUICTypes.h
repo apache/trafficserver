@@ -109,6 +109,7 @@ enum class QUICFrameType : uint8_t {
   PATH_RESPONSE,
   STREAM = 0x10, // 0x10 - 0x17
   CRYPTO = 0x18,
+  NEW_TOKEN,
   UNKNOWN,
 };
 

@@ -326,7 +326,9 @@ public:
 private:
 };
 
+//
 // PADDING
+//
 
 class QUICPaddingFrame : public QUICFrame
 {
@@ -648,7 +650,37 @@ private:
 };
 
 //
-// Retransmission Frame
+// NEW_TOKEN
+//
+
+class QUICNewTokenFrame : public QUICFrame
+{
+public:
+  QUICNewTokenFrame() : QUICFrame() {}
+  QUICNewTokenFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
+  QUICNewTokenFrame(ats_unique_buf token, size_t token_length, bool protection = true)
+    : QUICFrame(protection), _token_length(token_length), _token(std::move(token))
+  {
+  }
+  QUICFrameUPtr clone() const override;
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+
+  uint64_t token_length() const;
+  const uint8_t *token() const;
+
+private:
+  size_t _get_token_length_field_offset() const;
+  size_t _get_token_length_field_length() const;
+  size_t _get_token_field_offset() const;
+
+  uint64_t _token_length = 0;
+  ats_unique_buf _token  = {nullptr, [](void *p) { ats_free(p); }};
+};
+
+//
+// Retransmission Frame - Not on the spec
 //
 
 class QUICRetransmissionFrame : public QUICFrame
@@ -688,6 +720,7 @@ extern ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocato
 extern ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator;
 extern ClassAllocator<QUICPathChallengeFrame> quicPathChallengeFrameAllocator;
 extern ClassAllocator<QUICPathResponseFrame> quicPathResponseFrameAllocator;
+extern ClassAllocator<QUICNewTokenFrame> quicNewTokenFrameAllocator;
 extern ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator;
 
 class QUICFrameDeleter
@@ -824,6 +857,13 @@ public:
   {
     frame->~QUICFrame();
     quicPathResponseFrameAllocator.free(static_cast<QUICPathResponseFrame *>(frame));
+  }
+
+  static void
+  delete_new_token_frame(QUICFrame *frame)
+  {
+    frame->~QUICFrame();
+    quicNewTokenFrameAllocator.free(static_cast<QUICNewTokenFrame *>(frame));
   }
 
   static void
@@ -966,6 +1006,11 @@ public:
    */
   static std::unique_ptr<QUICNewConnectionIdFrame, QUICFrameDeleterFunc> create_new_connection_id_frame(
     uint32_t sequence, QUICConnectionId connectoin_id, QUICStatelessResetToken stateless_reset_token);
+
+  /*
+   * Creates a NEW_TOKEN frame
+   */
+  static std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc> create_new_token_frame(const uint8_t *token, uint64_t token_len);
 
   /*
    * Creates a retransmission frame, which is very special.

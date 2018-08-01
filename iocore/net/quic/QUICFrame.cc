@@ -44,6 +44,7 @@ ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator("quic
 ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator("quicStopSendingFrameAllocator");
 ClassAllocator<QUICPathChallengeFrame> quicPathChallengeFrameAllocator("quicPathChallengeFrameAllocator");
 ClassAllocator<QUICPathResponseFrame> quicPathResponseFrameAllocator("quicPathResponseFrameAllocator");
+ClassAllocator<QUICNewTokenFrame> quicNewTokenFrameAllocator("quicNewTokenFrameAllocator");
 ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator("quicRetransmissionFrameAllocator");
 
 QUICFrameType
@@ -2212,6 +2213,101 @@ QUICPathResponseFrame::_data_offset() const
 }
 
 //
+// QUICNewTokenFrame
+//
+QUICFrameUPtr
+QUICNewTokenFrame::clone() const
+{
+  return QUICFrameFactory::create_new_token_frame(this->token(), this->token_length());
+}
+
+QUICFrameType
+QUICNewTokenFrame::type() const
+{
+  return QUICFrameType::NEW_TOKEN;
+}
+
+size_t
+QUICNewTokenFrame::size() const
+{
+  return this->_get_token_field_offset() + this->token_length();
+}
+
+size_t
+QUICNewTokenFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+{
+  if (limit < this->size()) {
+    return 0;
+  }
+
+  if (this->_buf) {
+    *len = this->size();
+    memcpy(buf, this->_buf, *len);
+  } else {
+    uint8_t *p = buf;
+
+    // Type (i)
+    *p = static_cast<uint8_t>(QUICFrameType::NEW_TOKEN);
+    ++p;
+
+    // Token Length (i)
+    size_t n;
+    QUICIntUtil::write_QUICVariableInt(this->_token_length, p, &n);
+    p += n;
+
+    // Token (*)
+    memcpy(p, this->token(), this->token_length());
+    p += this->token_length();
+
+    *len = p - buf;
+  }
+
+  return *len;
+}
+
+uint64_t
+QUICNewTokenFrame::token_length() const
+{
+  if (this->_buf) {
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_token_length_field_offset());
+  } else {
+    return this->_token_length;
+  }
+}
+
+const uint8_t *
+QUICNewTokenFrame::token() const
+{
+  if (this->_buf) {
+    return this->_buf + this->_get_token_field_offset();
+  } else {
+    return this->_token.get();
+  }
+}
+
+size_t
+QUICNewTokenFrame::_get_token_length_field_offset() const
+{
+  return sizeof(QUICFrameType);
+}
+
+size_t
+QUICNewTokenFrame::_get_token_length_field_length() const
+{
+  if (this->_buf) {
+    return QUICVariableInt::size(this->_buf + sizeof(QUICFrameType));
+  } else {
+    return QUICVariableInt::size(this->_token_length);
+  }
+}
+
+size_t
+QUICNewTokenFrame::_get_token_field_offset() const
+{
+  return sizeof(QUICFrameType) + this->_get_token_length_field_length();
+}
+
+//
 // QUICRetransmissionFrame
 //
 QUICRetransmissionFrame::QUICRetransmissionFrame(QUICFrameUPtr original_frame, const QUICPacket &original_packet)
@@ -2361,6 +2457,10 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicPathResponseFrameAllocator.alloc();
     new (frame) QUICPathResponseFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_path_response_frame);
+  case QUICFrameType::NEW_TOKEN:
+    frame = quicNewTokenFrameAllocator.alloc();
+    new (frame) QUICNewTokenFrame(buf, len);
+    return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_new_token_frame);
   default:
     // Unknown frame
     Debug("quic_frame_factory", "Unknown frame type %x", buf[0]);
@@ -2579,6 +2679,14 @@ QUICFrameFactory::create_new_connection_id_frame(uint32_t sequence, QUICConnecti
   QUICNewConnectionIdFrame *frame = quicNewConnectionIdFrameAllocator.alloc();
   new (frame) QUICNewConnectionIdFrame(sequence, connectoin_id, stateless_reset_token);
   return std::unique_ptr<QUICNewConnectionIdFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_new_connection_id_frame);
+}
+
+std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_new_token_frame(const uint8_t *token, uint64_t token_len)
+{
+  QUICNewTokenFrame *frame = quicNewTokenFrameAllocator.alloc();
+  new (frame) QUICNewTokenFrame(token, token_len);
+  return std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_new_token_frame);
 }
 
 std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>

@@ -49,6 +49,7 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x10")) == QUICFrameType::STREAM);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x17")) == QUICFrameType::STREAM);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::CRYPTO);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x19")) == QUICFrameType::NEW_TOKEN);
   // Undefined ragne
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x21")) == QUICFrameType::UNKNOWN);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
@@ -1131,6 +1132,47 @@ TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
   frame.store(buf, &len, 16);
   CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
+}
+
+TEST_CASE("NEW_TOKEN Frame", "[quic]")
+{
+  uint8_t raw_new_token_frame[] = {
+    0x19,                                           // Type
+    0x08,                                           // Token Length (i)
+    0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, // Token (*)
+  };
+  size_t raw_new_token_frame_len = sizeof(raw_new_token_frame);
+
+  uint8_t raw_token[]  = {0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef};
+  size_t raw_token_len = sizeof(raw_token);
+
+  SECTION("load")
+  {
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(raw_new_token_frame, raw_new_token_frame_len);
+    CHECK(frame->type() == QUICFrameType::NEW_TOKEN);
+    CHECK(frame->size() == raw_new_token_frame_len);
+
+    std::shared_ptr<const QUICNewTokenFrame> new_token_frame = std::dynamic_pointer_cast<const QUICNewTokenFrame>(frame);
+    CHECK(new_token_frame != nullptr);
+    CHECK(new_token_frame->token_length() == raw_token_len);
+    CHECK(memcmp(new_token_frame->token(), raw_token, raw_token_len) == 0);
+  }
+
+  SECTION("store")
+  {
+    uint8_t buf[32];
+    size_t len;
+
+    ats_unique_buf token = ats_unique_malloc(raw_token_len);
+    memcpy(token.get(), raw_token, raw_token_len);
+
+    QUICNewTokenFrame frame(std::move(token), raw_token_len);
+    CHECK(frame.size() == raw_new_token_frame_len);
+
+    frame.store(buf, &len, 16);
+    CHECK(len == raw_new_token_frame_len);
+    CHECK(memcmp(buf, raw_new_token_frame, len) == 0);
+  }
 }
 
 TEST_CASE("QUICFrameFactory Create Unknown Frame", "[quic]")
