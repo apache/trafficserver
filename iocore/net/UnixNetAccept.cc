@@ -151,13 +151,28 @@ getNetAccept(int ID)
 // This should be done for low latency, high connection rate sockets.
 //
 void
-NetAccept::init_accept_loop(const char *thr_name)
+NetAccept::init_accept_loop()
 {
+  int i, n;
+  char thr_name[MAX_THREAD_NAME_LENGTH];
   size_t stacksize;
-
+  if (do_listen(BLOCKING))
+    return;
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
-  eventProcessor.spawn_thread(this, thr_name, stacksize);
+
+  n = opt.accept_threads;
+  // Fill in accept thread from configuration if necessary.
+  if (n < 0) {
+    REC_ReadConfigInteger(n, "proxy.config.accept_threads");
+  }
+
+  for (i = 0; i < n; i++) {
+    NetAccept *a = (i < n - 1) ? clone() : this;
+    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server.accept_addr));
+    eventProcessor.spawn_thread(a, thr_name, stacksize);
+    Debug("iocore_net_accept_start", "Created accept thread #%d for port %d", i + 1, ats_ip_port_host_order(&server.accept_addr));
+  }
 }
 
 //
@@ -185,7 +200,7 @@ NetAccept::init_accept(EThread *t)
 
   SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
   period = -HRTIME_MSECONDS(net_accept_period);
-  t->schedule_every(this, period, opt.etype);
+  t->schedule_every(this, period);
 }
 
 void
@@ -209,14 +224,7 @@ NetAccept::init_accept_per_thread()
   n      = eventProcessor.thread_group[opt.etype]._count;
 
   for (i = 0; i < n; i++) {
-    NetAccept *a;
-
-    if (i < n - 1) {
-      a = clone();
-    } else {
-      a = this;
-    }
-
+    NetAccept *a       = (i < n - 1) ? clone() : this;
     EThread *t         = eventProcessor.thread_group[opt.etype]._thread[i];
     PollDescriptor *pd = get_PollDescriptor(t);
 
@@ -225,7 +233,7 @@ NetAccept::init_accept_per_thread()
     }
 
     a->mutex = get_NetHandler(t)->mutex;
-    t->schedule_every(a, period, opt.etype);
+    t->schedule_every(a, period);
   }
 }
 

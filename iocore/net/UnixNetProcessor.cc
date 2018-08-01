@@ -90,7 +90,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   ProxyMutex *mutex  = this_ethread()->mutex.get();
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip;                    // local binding address.
-  char thr_name[MAX_THREAD_NAME_LENGTH];
 
   NetAccept *na = createNetAccept(opt);
   na->id        = ink_atomic_increment(&net_accept_number, 1);
@@ -144,32 +143,20 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 
   if (opt.frequent_accept) { // true
     if (accept_threads > 0) {
-      if (0 == na->do_listen(BLOCKING)) {
-        for (int i = 1; i < accept_threads; ++i) {
-          NetAccept *a = na->clone();
-          snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i - 1, ats_ip_port_host_order(&accept_ip));
-          a->init_accept_loop(thr_name);
-          Debug("iocore_net_accept_start", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
-        }
-
-        // Start the "template" accept thread last.
-        Debug("iocore_net_accept_start", "Created accept thread #%d for port %d", accept_threads,
-              ats_ip_port_host_order(&accept_ip));
-        snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", accept_threads - 1, ats_ip_port_host_order(&accept_ip));
-        na->init_accept_loop(thr_name);
-#if !TS_USE_POSIX_CAP
-      } else if (fd == ts::NO_FD && opt.local_port < 1024 && 0 != geteuid()) {
-        // TS-2054 - we can fail to bind a privileged port if we waited for cache and we tried
-        // to open the socket in do_listen and we're not using libcap (POSIX_CAP) and so have reduced
-        // privilege. Mention this to the admin.
-        Warning("Failed to open reserved port %d due to lack of process privilege. Use POSIX capabilities if possible or disable "
-                "wait_for_cache.",
-                opt.local_port);
-#endif // TS_USE_POSIX_CAP
-      }
+      na->init_accept_loop();
     } else {
       na->init_accept_per_thread();
     }
+#if !TS_USE_POSIX_CAP
+    if (fd == ts::NO_FD && opt.local_port < 1024 && 0 != geteuid()) {
+      // TS-2054 - we can fail to bind a privileged port if we waited for cache and we tried
+      // to open the socket in do_listen and we're not using libcap (POSIX_CAP) and so have reduced
+      // privilege. Mention this to the admin.
+      Warning("Failed to open reserved port %d due to lack of process privilege. Use POSIX capabilities if possible or disable "
+              "wait_for_cache.",
+              opt.local_port);
+    }
+#endif // TS_USE_POSIX_CAP
   } else {
     na->init_accept(nullptr);
   }
