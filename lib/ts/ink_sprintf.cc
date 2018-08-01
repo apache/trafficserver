@@ -69,6 +69,7 @@ ink_bvsprintf(char *buffer, const char *format, va_list ap)
   const char *s;
   char *d, *p, *s_val, d_buffer[32];
   va_list ap_local;
+
   va_copy(ap_local, ap);
 
   s = format;

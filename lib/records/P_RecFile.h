@@ -30,6 +30,7 @@
 #define REC_HANDLE_INVALID -1
 typedef int RecHandle;
 
+static constexpr unsigned VERSION_HDR_SIZE = 5;
 //-------------------------------------------------------------------------
 // RecFile
 //-------------------------------------------------------------------------
@@ -38,7 +39,9 @@ RecHandle RecFileOpenR(const char *file);
 RecHandle RecFileOpenW(const char *file);
 int RecFileClose(RecHandle h_file);
 int RecFileRead(RecHandle h_file, char *buf, int size, int *bytes_read);
+int RecSnapFileRead(RecHandle h_file, char *buf, int size, int *bytes_read);
 int RecFileWrite(RecHandle h_file, char *buf, int size, int *bytes_written);
+int RecSnapFileWrite(RecHandle h_file, char *buf, int size, int *bytes_written);
 int RecFileGetSize(RecHandle h_file);
 int RecFileExists(const char *file);
 int RecFileSync(RecHandle h_file);

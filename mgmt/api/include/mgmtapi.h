@@ -98,7 +98,7 @@ typedef TSHandle TSIntList;    /* contains int* 's          */
 /*--- basic control operations --------------------------------------------*/
 
 typedef enum {
-  TS_ACTION_SHUTDOWN,    /* change requires user to stop then start the Traffic Server and Manager (restart Traffic Cop) */
+  TS_ACTION_SHUTDOWN,    /* change requires user to stop then start the Traffic Server and Manager */
   TS_ACTION_RESTART,     /* change requires restart Traffic Server and Traffic Manager */
   TS_ACTION_DYNAMIC,     /* change is already made in function call */
   TS_ACTION_RECONFIGURE, /* change requires TS to reread configuration files */

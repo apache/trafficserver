@@ -63,7 +63,6 @@ endif
 traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
-	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
 	$(top_builddir)/proxy/http2/libhttp2.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/logging/liblogcollation.a \
@@ -77,12 +76,8 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/iocore/cache/libinkcache.a \
 	$(top_builddir)/iocore/aio/libinkaio.a \
 	$(top_builddir)/lib/ts/libtsutil.la \
-	$(top_builddir)/proxy/libproxy.a
-
-# ToDo: When we remove this, we hould merge the two _LDADD rules here
-traffic_server_traffic_server_LDADD += \
+	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/iocore/net/libinknet.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
@@ -96,6 +91,10 @@ traffic_server_traffic_server_LDADD += \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	-lm
+
+if IS_DARWIN
+traffic_server_traffic_server_LDADD += $(LUAJIT_DARWIN_LDFLAGS)
+endif
 
 if ENABLE_QUIC
 traffic_server_traffic_server_LDADD += \

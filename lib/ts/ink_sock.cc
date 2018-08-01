@@ -233,7 +233,6 @@ fd_read_line(int fd, char *s, int len)
 {
   char c;
   int numread = 0, r;
-  // char *buf = s;
   do {
     do {
       r = read(fd, &c, 1);

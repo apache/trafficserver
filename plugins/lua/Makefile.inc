@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 lua_tslua_la_CPPFLAGS = $(AM_CPPFLAGS) $(LUAJIT_CPPFLAGS)
-lua_tslua_la_LDFLAGS = $(AM_LDFLAGS) $(LIBLUAJIT)
+lua_tslua_la_LDFLAGS = $(AM_LDFLAGS) $(LUAJIT_LDFLAGS)
 
 pkglib_LTLIBRARIES += lua/tslua.la
 

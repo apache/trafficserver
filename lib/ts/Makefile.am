@@ -20,7 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 
 library_includedir=$(includedir)/ts
 
-library_include_HEADERS = apidefs.h TextView.h
+library_include_HEADERS = apidefs.h PostScript.h TextView.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_tsutil test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tslib
@@ -182,6 +182,7 @@ libtsutil_la_SOURCES = \
 	MT_hashtable.h \
 	ParseRules.cc \
 	ParseRules.h \
+	PostScript.h \
 	PriorityQueue.h \
 	Ptr.h \
 	RawHashTable.cc \
@@ -263,10 +264,7 @@ test_X509HostnameValidator_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS
 
 test_tsutil_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
 test_tsutil_SOURCES = \
-	test_History.cc \
 	test_PriorityQueue.cc \
-	test_Ptr.cc \
-	test_Regex.cc \
 	tests.cc
 
 test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
@@ -279,6 +277,7 @@ test_tslib_SOURCES = \
 	unit-tests/unit_test_main.cc \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
+	unit-tests/test_History.cc \
 	unit-tests/test_ink_inet.cc \
 	unit-tests/test_IntrusiveDList.cc \
 	unit-tests/test_IntrusivePtr.cc \
@@ -287,6 +286,9 @@ test_tslib_SOURCES = \
 	unit-tests/test_MemSpan.cc \
 	unit-tests/test_MemArena.cc \
 	unit-tests/test_MT_hashtable.cc \
+	unit-tests/test_PostScript.cc \
+	unit-tests/test_Ptr.cc \
+	unit-tests/test_Regex.cc \
 	unit-tests/test_Scalar.cc \
 	unit-tests/test_scoped_resource.cc \
 	unit-tests/test_TextView.cc

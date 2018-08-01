@@ -303,6 +303,19 @@ LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_server_port, DEFAULT_INT_FIELD)
 
 LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_hierarchy_route, DEFAULT_INT_FIELD)
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_next_hop_ip, DEFAULT_IP_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_next_hop_port, DEFAULT_INT_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 LOG_ACCESS_DEFAULT_FIELD(marshal_client_retry_after_time, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------

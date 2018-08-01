@@ -447,6 +447,8 @@ Network Addresses, Ports, and Interfaces
 .. _pqsp:
 .. _shi:
 .. _shn:
+.. _nhi:
+.. _nhp:
 
 The following log fields are used to log details of the network (IP) addresses,
 incoming/outgoing ports, and network interfaces used during transactions.
@@ -471,6 +473,8 @@ shi   Origin Server  IP address resolved via DNS by |TS| for the origin server.
                      |TS| for the connection will be reported. See note below
                      regarding misleading values from cached documents.
 shn   Origin Server  Host name of the origin server.
+nhi   Origin Server  Destination IP address of next hop
+nhp   Origin Server  Destination port of next hop
 ===== ============== ==========================================================
 
 .. note::

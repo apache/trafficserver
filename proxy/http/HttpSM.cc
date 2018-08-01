@@ -969,10 +969,6 @@ HttpSM::state_read_push_response_header(int event, void *data)
   int64_t data_size  = 0;
   int64_t bytes_used = 0;
 
-  // Not used here.
-  // bool parse_error = false;
-  // VIO* vio = (VIO*) data;
-
   switch (event) {
   case VC_EVENT_EOS:
     ua_entry->eos = true;
@@ -1087,6 +1083,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     server_entry->vc = netvc = (NetVConnection *)data;
     server_entry->vc_type    = HTTP_RAW_SERVER_VC;
     t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
+    ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
     netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
     netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
@@ -1716,6 +1713,7 @@ HttpSM::state_http_server_open(int event, void *data)
   pending_action                              = nullptr;
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
   HttpServerSession *session;
+  NetVConnection *netvc = nullptr;
 
   switch (event) {
   case NET_EVENT_OPEN:
@@ -1725,9 +1723,11 @@ HttpSM::state_http_server_open(int event, void *data)
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
 
+    netvc = static_cast<NetVConnection *>(data);
     session->attach_hostname(t_state.current.server->name);
-    session->new_connection(static_cast<NetVConnection *>(data));
+    session->new_connection(netvc);
     session->state = HSS_ACTIVE;
+    ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
     // If origin_max_connections or origin_min_keep_alive_connections is set then we are metering
     // the max and or min number of connections per host. Transfer responsibility for this to the
@@ -1813,11 +1813,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
     // More data to parse
-
-    // If there is still a post body underway, defer processing until post body is done
-    if (ua_entry->in_tunnel && !server_entry->eos) {
-      return 0;
-    }
     break;
 
   case VC_EVENT_ERROR:
@@ -1983,8 +1978,6 @@ HttpSM::state_send_server_request_header(int event, void *data)
         setup_transform_to_server_transfer();
       } else {
         do_setup_post_tunnel(HTTP_SERVER_VC);
-        // Start up read response in parallel in case of early error response
-        setup_server_read_response_header();
       }
     } else {
       // It's time to start reading the response
@@ -2693,10 +2686,6 @@ HttpSM::tunnel_handler_post(int event, void *data)
     handle_post_failure();
     break;
   case HTTP_SM_POST_UA_FAIL:
-    // Cancel out the server read if present. Left over attempt to read server response.
-    if (server_entry && server_entry->read_vio && server_session && server_entry->read_vio->cont) {
-      server_entry->read_vio = server_session->do_io_read(nullptr, 0, nullptr);
-    }
     break;
   case HTTP_SM_POST_SUCCESS:
     // It's time to start reading the response
@@ -2708,11 +2697,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::HandleRequestBufferDone);
       break;
     }
-    // Read response already setup
-    // Signal if data is waiting
-    if (server_entry->read_vio && server_entry->read_vio->ndone > 0) {
-      handleEvent(VC_EVENT_READ_READY, server_entry->read_vio);
-    }
+    setup_server_read_response_header();
     break;
   default:
     ink_release_assert(0);
@@ -5321,7 +5306,7 @@ HttpSM::handle_post_failure()
     tunnel.deallocate_buffers();
     tunnel.reset();
     // There's data from the server so try to read the header
-    // Read response is already set up
+    setup_server_read_response_header();
   } else {
     tunnel.deallocate_buffers();
     tunnel.reset();
@@ -5366,8 +5351,6 @@ HttpSM::handle_http_server_open()
       (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
       do_post_transform_open()) {
     do_setup_post_tunnel(HTTP_TRANSFORM_VC);
-    // Start up read response in parallel in case of early error response
-    setup_server_read_response_header();
   } else {
     setup_server_send_request_api();
   }

@@ -896,22 +896,18 @@ process_core(char *fname)
                 }
                 printf("\n");
 
-                // if (is_debug_tag_set("note")) {
                 printf("\n**** NT_PRSTATUS ****\n");
 
                 printf("Process id = %d\n", pstat.pr_pid);
                 printf("Parent Process id = %d\n", pstat.pr_ppid);
 
                 printf("Signal that caused this core dump is signal  = %d\n", pstat.pr_cursig);
-                // convert it using strsignal
-                // char *msg=strsignal(pstat.pr_cursig);
 
                 printf("stack pointer = %#x\n", (unsigned int)pstat.pr_reg[SP_REGNUM]); // UESP
                 framep = pstat.pr_reg[FP_REGNUM];
                 pc     = pstat.pr_reg[PC_REGNUM];
                 printf("frame pointer = %#x\n", (unsigned int)pstat.pr_reg[FP_REGNUM]); // EBP
                 printf("program counter if no save = %#x\n", (unsigned int)pstat.pr_reg[PC_REGNUM]);
-                //}
                 break;
 
               case NT_PRPSINFO:

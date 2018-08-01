@@ -900,6 +900,56 @@ register_stat_callbacks()
                      (int)http_sm_finish_time_stat, RecRawStatSyncSum);
 }
 
+static bool
+set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpConfigParams *c, bool update)
+{
+  bool ret = false;
+  HttpStatusBitset set;
+  // values from proxy.config.http.negative_caching_list
+  if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
+    // parse the list of status code
+    ts::TextView status_list(data.rec_string, strlen(data.rec_string));
+    auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
+    while (!status_list.ltrim_if(is_sep).empty()) {
+      ts::TextView span, token{status_list.take_prefix_if(is_sep)};
+      auto n = ts::svtoi(token, &span);
+      if (span.size() != token.size()) {
+        Error("Invalid status code '%.*s' for negative caching: not a number", static_cast<int>(token.size()), token.data());
+      } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
+        Error("Invalid status code '%.*s' for negative caching: out of range", static_cast<int>(token.size()), token.data());
+      } else {
+        set[n] = 1;
+      }
+    }
+  }
+  // set the return value
+  if (set != c->negative_caching_list) {
+    c->negative_caching_list = set;
+    ret                      = ret || update;
+  }
+  return ret;
+}
+
+// Method of getting the status code bitset
+static int
+negative_caching_list_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  // Signal an update if valid value arrived.
+  if (set_negative_caching_list(name, dtype, data, c, true)) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+  return REC_ERR_OKAY;
+}
+
+// Method of loading the negative caching config bitset
+void
+load_negative_caching_var(RecRecord const *r, void *cookie)
+{
+  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+  set_negative_caching_list(r->name, r->data_type, r->data, c, false);
+}
+
 ////////////////////////////////////////////////////////////////
 //
 //  HttpConfig::startup()
@@ -1144,6 +1194,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
   HttpEstablishStaticConfigByte(c.oride.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
+  RecRegisterConfigUpdateCb("proxy.config.http.negative_caching_list", &negative_caching_list_cb, &c);
+  RecLookupRecord("proxy.config.http.negative_caching_list", &load_negative_caching_var, &c, true);
 
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
@@ -1438,6 +1490,8 @@ HttpConfig::reconfigure()
   params->post_copy_size                    = m_master.post_copy_size;
   params->oride.client_cert_filename        = ats_strdup(m_master.oride.client_cert_filename);
   params->oride.client_cert_filepath        = ats_strdup(m_master.oride.client_cert_filepath);
+
+  params->negative_caching_list = m_master.negative_caching_list;
 
   m_id = configProcessor.set(m_id, params);
 

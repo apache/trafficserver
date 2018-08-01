@@ -47,7 +47,7 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
   RecRecord *r = nullptr;
 
   // Metrics are restored from persistence before they are registered. In this case, when the registration arrives, we
-  // might find that they yave changed. For example, a metric might change it's type due to a software upgrade. Records
+  // might find that they have changed. For example, a metric might change it's type due to a software upgrade. Records
   // must not flip between config and metrics, but changing within those classes is OK.
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
     if (REC_TYPE_IS_STAT(rec_type)) {

@@ -1,4 +1,5 @@
 '''
+Extract the protocol information from the FORWARDED headers and store it in a log file for later verification.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,9 +17,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-post_body = str(123456).zfill(1024)
-postfile = open("postbody", "w")
-for x in range(0, 3000):
-    postfile.write(post_body)
-postfile.close()
+log = open('x_remap.log', 'w')
 
+def observe(headers):
+    seen = False
+
+    for h in headers.items():
+        if h[0].lower() == "x-debug":
+            log.write(h[1] + "\n")
+            seen = True
+
+    if not seen:
+        log.write("X_DEBUG MISSING\n")
+    log.write("-\n")
+    log.flush()
+
+Hooks.register(Hooks.ReadRequestHook, observe)

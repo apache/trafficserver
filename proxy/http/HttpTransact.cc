@@ -239,24 +239,15 @@ is_negative_caching_appropriate(HttpTransact::State *s)
     return false;
   }
 
-  switch (s->hdr_info.server_response.status_get()) {
-  case HTTP_STATUS_NO_CONTENT:
-  case HTTP_STATUS_USE_PROXY:
-  case HTTP_STATUS_FORBIDDEN:
-  case HTTP_STATUS_NOT_FOUND:
-  case HTTP_STATUS_METHOD_NOT_ALLOWED:
-  case HTTP_STATUS_REQUEST_URI_TOO_LONG:
-  case HTTP_STATUS_INTERNAL_SERVER_ERROR:
-  case HTTP_STATUS_NOT_IMPLEMENTED:
-  case HTTP_STATUS_BAD_GATEWAY:
-  case HTTP_STATUS_SERVICE_UNAVAILABLE:
-  case HTTP_STATUS_GATEWAY_TIMEOUT:
+  int status  = s->hdr_info.server_response.status_get();
+  auto params = s->http_config_param;
+  if (params->negative_caching_list[status]) {
+    TxnDebug("http_trans", "%d is eligible for negative caching", status);
     return true;
-  default:
-    break;
+  } else {
+    TxnDebug("http_trans", "%d is NOT eligible for negative caching", status);
+    return false;
   }
-
-  return false;
 }
 
 inline static HttpTransact::LookingUp_t
@@ -3608,9 +3599,10 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   // record the failue                   //
   //////////////////////////////////////////
   if (0 == s->current.attempts) {
-    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s'", s->current.attempts,
+    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s' connect_result=%d src_port=%d", s->current.attempts,
                HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>");
+               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
+               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()));
   }
 
   if (url_string) {
@@ -6577,7 +6569,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
     // No content length header.
     if (s->source == SOURCE_CACHE) {
       // If there is no content-length header, we can
-      //   insert one since the cache knows definately
+      //   insert one since the cache knows definitely
       //   how long the object is unless we're in a
       //   read-while-write mode and object hasn't been
       //   written into a cache completely.
@@ -7812,7 +7804,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     error_body_type = "default";
   }
 
-  // Make sure that if this error occured before we initailzied the state variables that we do now.
+  // Make sure that if this error occurred before we initailzied the state variables that we do now.
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
   //////////////////////////////////////////////////////

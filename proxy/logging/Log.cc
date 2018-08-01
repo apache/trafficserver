@@ -484,12 +484,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "puuid", field);
 
-  // TS-4765: This alias is deprecated to be removed in 8.0.
-  field = new LogField("client_req_body_len", "cqbl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
-                       &LogAccess::unmarshal_int_to_str);
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "cqbl", field);
-
   field = new LogField("client_req_content_len", "cqcl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
@@ -656,12 +650,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqql", field);
 
-  // TS-4765: This alias is deprecated to be removed in 8.0.
-  field = new LogField("proxy_req_body_len", "pqbl", LogField::sINT, &LogAccess::marshal_proxy_req_content_len,
-                       &LogAccess::unmarshal_int_to_str);
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "pqbl", field);
-
   field = new LogField("proxy_req_content_len", "pqcl", LogField::sINT, &LogAccess::marshal_proxy_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
@@ -676,6 +664,14 @@ Log::init_fields()
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsp", field);
+
+  field = new LogField("next_hop_ip", "nhi", LogField::IP, &LogAccess::marshal_next_hop_ip, &LogAccess::unmarshal_ip_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "nhi", field);
+
+  field = new LogField("next_hop_port", "nhp", LogField::IP, &LogAccess::marshal_next_hop_port, &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "nhp", field);
 
   Ptr<LogFieldAliasTable> hierarchy_map = make_ptr(new LogFieldAliasTable);
   hierarchy_map->init(

@@ -27,8 +27,11 @@ the Traffic Server cache using the default ``X-Debug`` header. The plugin
 is triggered by the presence of the ``X-Debug`` or the configured header in
 the client request. The contents of this header should be the names of the
 debug headers that are desired in the response. The `XDebug` plugin
-will remove the ``X-Debug`` header from the client request and
-inject the desired headers into the client response.
+will inject the desired headers into the client response.  In addition, a value of the
+form ``fwd=n`` may appear in the ``X-Debug`` header, where ``n`` is a nonnegative
+number.  If ``n`` is zero, the ``X-Debug`` header will be deleted.  Otherwise, ``n`` is
+decremented by 1.  ``=n`` may be omitted, in which case the ``X-Debug`` header will
+not be modified or deleted.
 
 `XDebug` is a global plugin. It is installed by adding it to the
 :file:`plugin.config` file. It currently takes a single, optional

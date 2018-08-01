@@ -673,9 +673,8 @@ def main():
                         then the required format will be {%%Host}{PATH}")
 
     args = parser.parse_args()
-    options = args
     global time_delay
-    time_delay = options.delay
+    time_delay = args.delay
 
     # set up global dictionary of {uuid (string): response (Response object)}
     s = sv.SessionValidator(args.data_dir)
@@ -690,20 +689,30 @@ def main():
         lookup_key_ = args.lookupkey
         MyHandler.protocol_version = HTTP_VERSION
 
-        if IPConstants.isIPv6(options.ip_address):
+        if IPConstants.isIPv6(args.ip_address):
             print("Server running on IPv6")
             HTTPServer.address_family = socket.AF_INET6
 
-        if options.ssl == "True" or options.ssl == "true":
-            server = SSLServer((IPConstants.getIP(options.ip_address), options.port), MyHandler, options)
+        if args.ssl == "True" or args.ssl == "true":
+            server = SSLServer((IPConstants.getIP(args.ip_address), args.port), MyHandler, args)
         else:
-            server = ThreadingServer((IPConstants.getIP(options.ip_address), options.port), MyHandler, options)
+            server = ThreadingServer((IPConstants.getIP(args.ip_address), args.port), MyHandler, args)
 
         server.timeout = 5
-        print("Started server on port {0}".format(options.port))
-        server_thread = threading.Thread(target=server.serve_forever())
+        print("Started server on port {0}".format(args.port))
+        server_thread = threading.Thread(target=server.serve_forever)
         server_thread.daemon = True
         server_thread.start()
+
+        try:
+            while 1:
+                time.sleep(1)
+                sys.stderr.flush()
+                sys.stdout.flush()
+        except KeyboardInterrupt:
+            print("\n=== ^C received, shutting down microservers ===")
+            server.shutdown()
+            server_thread.join()
 
     except KeyboardInterrupt:
         print("\n=== ^C received, shutting down httpserver ===")

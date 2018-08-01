@@ -1,6 +1,6 @@
 /** @file
 
-    Main entry point for the traffic_cop application.
+    Unit tests for PostScript.h.
 
     @section license License
 
@@ -19,9 +19,59 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-*/
+ */
 
-static const int cop_sleep_time      = 10;     // 10 sec
-static const int cop_manager_timeout = 3 * 60; //  3 min
-static const int cop_server_timeout  = 3 * 60; //  3 min
-static const int cop_kill_timeout    = 1 * 60; //  1 min
+#include "catch.hpp"
+#include <ts/PostScript.h>
+
+namespace
+{
+int f1Called;
+int f2Called;
+int f3Called;
+
+int dummy;
+
+void
+f1(int a, double b, int *c, int &d)
+{
+  ++f1Called;
+
+  REQUIRE(a == 1);
+  REQUIRE(b == 2.0);
+  REQUIRE(c == &dummy);
+  REQUIRE(&d == &dummy);
+}
+
+void
+f2(double a)
+{
+  ++f2Called;
+}
+
+void
+f3(int a, double b)
+{
+  ++f3Called;
+
+  REQUIRE(a == 5);
+  REQUIRE(b == 6.0);
+}
+
+} // end anonymous namespace
+
+TEST_CASE("PostScript", "[PSC]")
+{
+  {
+    int *p = &dummy;
+    ts::PostScript g1([&]() -> void { f1(1, 2.0, p, dummy); });
+    ts::PostScript g2([=]() -> void { f2(4); });
+    ts::PostScript g3([=]() -> void { f3(5, 6.0); });
+
+    g2.release();
+  }
+
+  REQUIRE(f1Called == 1);
+  REQUIRE(f2Called == 0);
+  REQUIRE(f3Called == 1);
+}

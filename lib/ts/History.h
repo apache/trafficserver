@@ -24,6 +24,7 @@
 #pragma once
 
 #include "ts/SourceLocation.h"
+#include "ts/ink_memory.h"
 
 #define NO_REENTRANT 99999
 #define NO_EVENT NO_REENTRANT

@@ -260,7 +260,6 @@ config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UN
 
 void
 HttpBodyFactory::reconfigure()
-//#endif
 {
   RecInt e;
   bool all_found;

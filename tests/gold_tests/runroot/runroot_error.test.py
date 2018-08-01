@@ -62,9 +62,9 @@ f.Exists = False
 path_invalid = os.path.join(ts_root, "tmp")
 tr = Test.AddTestRun("remove invalid runroot")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout remove --path " + path_invalid
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("Unable to read runroot_path.yml", "remove incorrect usage")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("Unable to read", "remove incorrect usage")
 
 # verify invalid runroot
 tr = Test.AddTestRun("verify invalid runroot")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout verify --path " + path_invalid
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("Unable to read runroot_path.yml", "verify incorrect usage")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("Unable to read", "verify incorrect usage")

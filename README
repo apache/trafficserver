@@ -9,13 +9,15 @@ plugins to build large scale web applications.
   trafficserver/ ............ Top src dir
   |-- build/ ................ Custom macros for configure.ac
   |-- ci/ ................... Quality assurance and other CI tools and configs
+  |-- configs/ .............. Configurations
   |-- contrib/ .............. Various contributed auxiliary pieces
-  |-- doc/ ..................
-      |-- admin/ ............ Admin guide documentations
+  |-- doc/ .................. Documentations for Traffic Server
+      |-- admin-guide/ ...... Admin guide documentations
+      |-- appendices/ ....... Appendices of Traffic Server
+      |-- developer-guide/ .. Documentaions for developers
       |-- dot/ .............. Graphviz source files for docs pictures
-      |-- man/ .............. Unix style man-pages
-      |-- plugins/ .......... Documentation for our core plugins
-      |-- sdk/ .............. Plugin developer guide
+      |-- static/ ........... Static resources
+      |-- uml/ .............. Documentations in UML
   |-- example/ .............. Example plugins
   |-- iocore/ ...............
       |-- aio/ .............. Asynchronous I/O core
@@ -38,7 +40,6 @@ plugins to build large scale web applications.
       |-- experimental/ ..... Experimental core plugins
   |-- proxy/ ................ HTTP proxy logic
       |-- api/ .............. Plugin API includes
-      |-- config/ ........... Configurations
       |-- hdrs/ ............. Headers parsing and management
       |-- http/ ............. The actual HTTP protocol implementation
       |---http2/ ............ HTTP/2 implementation

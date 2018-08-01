@@ -55,8 +55,6 @@ Disable free list in ProxyAllocator which were left out by the -f
 option. Please note that this option is a temporary, testing
 option, and will be removed in the future.
 
-.. option:: -o LEVEL, --dprintf_level LEVEL
-
 .. option:: -R LEVEL, --regression LEVEL
 
 .. option:: -r TEST, --regression_test TEST

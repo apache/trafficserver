@@ -40,28 +40,27 @@ Definition
 
    .. type:: value_type
 
-      The class for elements in the container, deduced from the return types of the link accessor methods
-      in :class:`L`.
+      The type of elements in the container, deduced from the return types of the link accessor methods
+      in :arg:`L`.
 
-   .. class:: L
-
-      .. function:: static IntrusiveDList::value_type*& next_ptr(IntrusiveDList::value_type* elt)
+   :arg:`L`
+      .. function:: static value_type * & next_ptr(value_type * elt)
 
          Return a reference to the next element pointer embedded in the element :arg:`elt`.
 
-      .. function:: static IntrusiveDList::value_type*& prev_ptr(IntrusiveDList::value_type* elt)
+      .. function:: static value_type * & prev_ptr(value_type * elt)
 
          Return a reference to the previous element pointer embedded in the element :arg:`elt`.
 
-   .. function:: value_type* head()
+   .. function:: value_type * head()
 
       Return a pointer to the head element in the list. This may be :code:`nullptr` if the list is empty.
 
-   .. function:: value_type* tail()
+   .. function:: value_type * tail()
 
       Return a pointer to the tail element in the list. This may be :code:`nullptr` if the list is empty.
 
-   .. function:: IntrusiveDList& clear()
+   .. function:: IntrusiveDList & clear()
 
       Remove all elements from the list. This only removes, no deallocation nor destruction is performed.
 
@@ -69,13 +68,21 @@ Definition
 
       Return the number of elements in the list.
 
-   .. function:: IntrusiveDList& append(value_type * elt)
+   .. function:: IntrusiveDList & append(value_type * elt)
 
       Append :arg:`elt` to the list.
 
-   .. function:: IntrusiveDList& prepend(value_type * elt)
+   .. function:: IntrusiveDList & prepend(value_type * elt)
 
       Prepend :arg:`elt` to the list.
+
+   .. function:: value_type * take_head()
+
+      Remove the head element and return a pointer to it. May be :code:`nullptr` if the list is empty.
+
+   .. function:: value_type * take_tail()
+
+      Remove the tail element and return a pointer to it. May be :code:`nullptr` if the list is empty.
 
 Usage
 *****
@@ -95,40 +102,56 @@ In this example the goal is to have a list of :code:`Message` objects. First the
 along with the internal linkage support.
 
 .. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
-   :lines: 37-62
+   :lines: 38-63
 
-The struct :code:`Linkage` is used both to provide the descriptor to :class:`IntrusiveDList` but to
-contain the link pointers as well. This isn't necessary - the links could have been direct members
+The struct :code:`Linkage` is used both to provide the descriptor to :class:`IntrusiveDList` and to
+contain the link pointers. This isn't necessary - the links could have been direct members
 and the implementation of the link accessor methods adjusted. Because the links are intended to be
 used only by a specific container class (:code:`Container`) the struct is made protected.
 
 The implementation of the link accessor methods.
 
 .. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
-   :lines: 64-73
+   :lines: 65-74
 
-An example method to check if the message is in a list.
+A method to check if the message is in a list.
 
 .. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
-   :lines: 75-79
+   :lines: 76-80
 
 The container class for the messages could be implemented as
 
 .. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
-   :lines: 81-96
+   :lines: 82-99
 
 The :code:`debug` method takes a format string (:arg:`fmt`) and an arbitrary set of arguments, formats
 the arguments in to the string, and adds the new message to the list.
 
 .. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
-   :lines: 119-128
+   :lines: 122-131
+
+The :code:`print` method demonstrates the use of the range :code:`for` loop on a list.
+
+.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+   :lines: 142-148
+
+The maximum severity level can also be computed even more easily using :code:`std::max_element`.
+This find the element with the maximum severity and returns that severity, or :code:`LVL_DEBUG` if
+no element is found (which happens if the list is empty).
+
+.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+   :lines: 134-140
 
 Other methods for the various severity levels would be implemented in a similar fashion. Because the
 intrusive list does not do memory management, the container must clean that up itself, as in the
-:code:`clear` method. The STL iteration support makes this easy.
+:code:`clear` method. A bit of care must be exercised because the links are in the elements, and
+these links are used for iteration therefore using an iterator that references a deleted object is
+risky. One approach, illustrated here, is to use :func:`IntrusiveDList::take_head` to remove the
+element before destroying it. Another option is to allocation the elements in a :class:`MemArena` to
+avoid the need for any explicit cleanup.
 
 .. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
-   :lines: 103-111
+   :lines: 106-114
 
 Design Notes
 ************

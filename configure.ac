@@ -303,14 +303,26 @@ AC_ARG_ENABLE([docs],
   [AS_HELP_STRING([--enable-docs],[enable documentation building])],
   [
     enable_doc_build=yes
+    AM_PATH_PYTHON([2.4], [
+      dnl action-if-found
+      TS_MAN1_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+      TS_MAN3_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+      TS_MAN5_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+      TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+    ], [
+      dnl action-if-not-found
+      :
+    ])
+
     AS_IF([test -z "$JAVA"],
       [
         enable_doc_build=no
         AC_ERROR([Doc building disabled, java required but not found])
       ])
     AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
+    AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
     AC_PATH_PROG([SPHINXBUILD], [sphinx-build], [])
-    AS_IF(["$srcdir/doc/checkvers.sh" "$SPHINXBUILD" "$srcdir/doc/checkvers.py"],
+    AS_IF(["$PYTHON" "$srcdir/doc/checkvers.py" --check-version],
       [
         sphinx_version_check=yes
       ],[
@@ -318,11 +330,28 @@ AC_ARG_ENABLE([docs],
         enable_doc_build=no
         AC_ERROR([Doc building disabled, check sphinx installation])
       ])
+
+
+    AC_SUBST(TS_MAN1_MANPAGES)
+    AC_SUBST(TS_MAN3_MANPAGES)
+    AC_SUBST(TS_MAN5_MANPAGES)
+    AC_SUBST(TS_MAN8_MANPAGES)
+
+    AC_MSG_CHECKING([whether to build man pages])
+    AS_IF([test "x$sphinx_version_check" = "xyes" -a "x$SPHINXBUILD" != "xfalse"], [
+      build_manpages=true
+      AC_MSG_RESULT([yes])
+    ], [
+      build_manpages=false
+      AC_MSG_RESULT([no])
+    ])
+
   ],
   [enable_doc_build=no]
 )
 AC_MSG_RESULT([$enable_doc_build])
 AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
+AM_CONDITIONAL([BUILD_MANPAGES], [test "xtrue" = "x$build_manpages"])
 
 #
 # Remote Coverity Prevent commit
@@ -357,18 +386,6 @@ AC_ARG_WITH([profiler],
   [with_profiler=no]
 )
 AC_MSG_RESULT([$with_profiler])
-
-# System luajit
-AC_MSG_CHECKING([whether to enable luajit])
-AC_ARG_ENABLE([luajit],
-  [AS_HELP_STRING([--enable-luajit],[enable support for system-installed luajit])],
-  [enable_luajit=yes],
-  [enable_luajit=no]
-)
-AC_MSG_RESULT([$enable_luajit])
-TS_ARG_ENABLE_VAR([has],[luajit])
-AM_CONDITIONAL([HAS_LUAJIT], [test 0 -ne $has_luajit])
-
 
 # Disable all static library builds
 AC_DISABLE_STATIC
@@ -720,38 +737,12 @@ AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
 
-AM_PATH_PYTHON([2.4], [
-  dnl action-if-found
-  TS_MAN1_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN3_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN5_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-], [
-  dnl action-if-not-found
-  :
-])
-
 AC_ARG_VAR(RPATH, [path to be added to rpath])
-AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
 
 AC_ARG_VAR([CLANG_TIDY], [clang-tidy command])
 
 # Default CLANG_TIDY to "clang-tidy", or "false" if it is not present.
 AC_PATH_PROG([CLANG_TIDY], [clang-tidy],[false])
-
-AC_SUBST(TS_MAN1_MANPAGES)
-AC_SUBST(TS_MAN3_MANPAGES)
-AC_SUBST(TS_MAN5_MANPAGES)
-AC_SUBST(TS_MAN8_MANPAGES)
-
-AC_MSG_CHECKING([whether to build man pages])
-AS_IF([test "x$sphinx_version_check" = "xyes" -a "x$SPHINXBUILD" != "xfalse"], [
-  AM_CONDITIONAL([BUILD_MANPAGES], [true])
-  AC_MSG_RESULT([yes])
-], [
-  AM_CONDITIONAL([BUILD_MANPAGES], [false])
-  AC_MSG_RESULT([no])
-])
 
 # Do bison check by hand because we must do a version check.
 # Use YACC because it makes autotools shut up.
@@ -1262,35 +1253,6 @@ TS_CHECK_ZLIB
 TS_CHECK_LZMA
 
 #
-# System LuaJIT
-#
-
-if test "x$enable_luajit" == "xyes"; then
-    saveLIBS=$LIBS
-    LIBS=""
-    AC_CHECK_HEADER(lua.h, [],
-                    [LUAJIT_PKGCONFIG=1])
-    AC_CHECK_LIB(luajit-5.1, luaL_newstate, [],
-                 [LUAJIT_PKGCONFIG=1])
-    if test "x$LUAJIT_PKGCONFIG" != "x"; then
-        PKG_CHECK_MODULES([LUAJIT], [luajit < 2.1.0, luajit >= 2.0.0], [
-            AC_SUBST([LIBLUAJIT], [$LUAJIT_LIBS])
-            TS_ADDTO(AM_CPPFLAGS, [$LUAJIT_CFLAGS])
-            # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
-            # http://luajit.org/install.html.
-            case $host_os_def in
-            darwin)
-                LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
-                ;;
-            esac
-        ], [AC_MSG_ERROR([*** luajit requested but either libluajit-5.1 or lua.h cannot be found ***])])
-    else
-        AC_SUBST([LIBLUAJIT], [$LIBS])
-    fi
-    LIBS=$saveLIBS
-fi
-
-#
 # Tcl macros provided by build/tcl.m4
 #
 # this will error out if tclConfig.sh is not found
@@ -1345,6 +1307,9 @@ fi
 
 # Check for optional brotli library
 TS_CHECK_BROTLI
+
+# Check for optional luajit library
+TS_CHECK_LUAJIT
 
 #
 # Enable experimental/uri_singing plugin
@@ -2020,20 +1985,6 @@ iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/cache \
 -I\$(abs_top_srcdir)/iocore/utils \
 -I\$(abs_top_srcdir)/iocore/dns"
-
-# Flags for buildit LuaJIT itself. We take the latest version
-# of the generic flags, plus any Lua-specific flags so that we
-# can strip the coverage flags from Lua while keeping them by
-# default everywhere else.
-TS_ADDTO(LUAJIT_CFLAGS, [$CFLAGS $luajit_cflags])
-AC_SUBST([LUAJIT_CFLAGS])
-
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fsanitize=address")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fsanitize=thread")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fsanitize=memory")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fprofile-instr-generate")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "-fcoverage-mapping")
-TS_REMOVEFROM(LUAJIT_CFLAGS, "--coverage")
 
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])

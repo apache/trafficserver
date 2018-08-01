@@ -41,8 +41,6 @@
 #include "records/I_RecHttp.h"
 #include "ProxyClientSession.h"
 
-#define MAX_DNS_LOOKUPS 2
-
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 
 #define DUMP_HEADER(T, H, I, S)                                 \
@@ -454,11 +452,6 @@ public:
     VARIABILITY_ALL,
   };
 
-  struct StatRecord_t {
-    uint16_t index;
-    int64_t increment;
-  };
-
   enum CacheLookupResult_t {
     CACHE_LOOKUP_NONE,
     CACHE_LOOKUP_MISS,
@@ -682,8 +675,6 @@ public:
     _SquidLogInfo() {}
   } SquidLogInfo;
 
-#define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE (1024 * 2) /* max size of plugin exchange buffer */
-
   struct State {
     HttpTransactMagic_t m_magic = HTTP_TRANSACT_MAGIC_ALIVE;
 
@@ -704,7 +695,6 @@ public:
     ConnectionAttributes client_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
-    // ConnectionAttributes     router_info;
 
     Source_t source                = SOURCE_NONE;
     Source_t pre_transform_source  = SOURCE_NONE;
@@ -730,7 +720,6 @@ public:
     ParentResult parent_result;
     CacheControlResult cache_control;
     CacheLookupResult_t cache_lookup_result = CACHE_LOOKUP_NONE;
-    // FilterResult             content_control;
 
     StateMachineAction_t next_action                      = SM_ACTION_UNDEFINED; // out
     StateMachineAction_t api_next_action                  = SM_ACTION_UNDEFINED; // out
