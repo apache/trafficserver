@@ -61,6 +61,13 @@ quic_new_ssl_ctx()
                          SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
                          &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
                          &QUICTransportParametersHandler::parse, nullptr);
+
+#ifdef SSL_MODE_QUIC_HACK
+  // tatsuhiro-t's custom OpenSSL for QUIC draft-13
+  // https://github.com/tatsuhiro-t/openssl/tree/quic-draft-13
+  SSL_CTX_set_mode(ssl_ctx, SSL_MODE_QUIC_HACK);
+#endif
+
   return ssl_ctx;
 }
 
