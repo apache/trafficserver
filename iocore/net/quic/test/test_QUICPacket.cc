@@ -187,7 +187,9 @@ TEST_CASE("Encoded Packet Number Length", "[quic]")
 {
   QUICPacketNumber base = 0x6afa2f;
 
-  CHECK(QUICPacket::calc_packet_number_len(0x6b4264, base) == 2);
+  // To be clarify: Is "As a result..." sentence missing "twice" ?
+  //
+  // CHECK(QUICPacket::calc_packet_number_len(0x6b2d79, base) == 2);
   CHECK(QUICPacket::calc_packet_number_len(0x6bc107, base) == 4);
 }
 
@@ -203,12 +205,12 @@ TEST_CASE("Encoding Packet Number", "[quic]")
 TEST_CASE("Decoding Packet Number 1", "[quic]")
 {
   QUICPacketNumber dst  = 0;
-  QUICPacketNumber src  = 0x1f94;
+  QUICPacketNumber src  = 0x9b3;
   size_t len            = 2;
   QUICPacketNumber base = 0xaa82f30e;
 
   QUICPacket::decode_packet_number(dst, src, len, base);
-  CHECK(dst == 0xaa831f94);
+  CHECK(dst == 0xaa8309b3);
 }
 
 TEST_CASE("Decoding Packet Number 2", "[quic]")
@@ -219,7 +221,7 @@ TEST_CASE("Decoding Packet Number 2", "[quic]")
   QUICPacketNumber base = 0x18bf54f0;
 
   QUICPacket::decode_packet_number(dst, src, len, base);
-  CHECK(dst == 0x18bf54f1);
+  CHECK(dst == 0x18bf5571);
 }
 
 TEST_CASE("Decoding Packet Number 3", "[quic]")
@@ -228,6 +230,7 @@ TEST_CASE("Decoding Packet Number 3", "[quic]")
   QUICPacketNumber src  = 0x5694;
   size_t len            = 2;
   QUICPacketNumber base = 0x44D35695;
+
   QUICPacket::decode_packet_number(dst, src, len, base);
-  CHECK(dst == 0x44D35694);
+  CHECK(dst == 0x44d39694);
 }
