@@ -96,7 +96,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     memcpy(payload.get(), expected + 17, 5);
 
     QUICPacketHeaderUPtr header = QUICPacketHeader::build(
-      QUICPacketType::INITIAL, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
+      QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
       {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x01234567, 0, 0x11223344, std::move(payload), 5);
 
     CHECK(header->size() == 27);

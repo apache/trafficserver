@@ -31,6 +31,7 @@
 
 TEST_CASE("QUICStreamManager_NewStream", "[quic]")
 {
+  QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
@@ -47,36 +48,37 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   std::shared_ptr<QUICFrame> stream_frame_1 =
     QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 1, 0);
   CHECK(sm.stream_count() == 0);
-  sm.handle_frame(stream_frame_0);
+  sm.handle_frame(level, stream_frame_0);
   CHECK(sm.stream_count() == 1);
-  sm.handle_frame(stream_frame_1);
+  sm.handle_frame(level, stream_frame_1);
   CHECK(sm.stream_count() == 2);
 
   // RST_STREAM frames create new streams
   std::shared_ptr<QUICFrame> rst_stream_frame =
     QUICFrameFactory::create_rst_stream_frame(2, static_cast<QUICAppErrorCode>(0x01), 0);
-  sm.handle_frame(rst_stream_frame);
+  sm.handle_frame(level, rst_stream_frame);
   CHECK(sm.stream_count() == 3);
 
   // MAX_STREAM_DATA frames create new streams
   std::shared_ptr<QUICFrame> max_stream_data_frame = QUICFrameFactory::create_max_stream_data_frame(3, 0);
-  sm.handle_frame(max_stream_data_frame);
+  sm.handle_frame(level, max_stream_data_frame);
   CHECK(sm.stream_count() == 4);
 
   // STREAM_BLOCKED frames create new streams
   std::shared_ptr<QUICFrame> stream_blocked_frame = QUICFrameFactory::create_stream_blocked_frame(4, 0);
-  sm.handle_frame(stream_blocked_frame);
+  sm.handle_frame(level, stream_blocked_frame);
   CHECK(sm.stream_count() == 5);
 
   // Set local maximum stream id
   sm.set_max_stream_id(5);
   std::shared_ptr<QUICFrame> stream_blocked_frame_x = QUICFrameFactory::create_stream_blocked_frame(8, 0);
-  sm.handle_frame(stream_blocked_frame_x);
+  sm.handle_frame(level, stream_blocked_frame_x);
   CHECK(sm.stream_count() == 5);
 }
 
 TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
 {
+  QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
@@ -91,12 +93,13 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
   std::shared_ptr<QUICFrame> stream_frame_0 =
     QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 0, 7);
 
-  sm.handle_frame(stream_frame_0);
+  sm.handle_frame(level, stream_frame_0);
   CHECK("succeed");
 }
 
 TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
 {
+  QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
@@ -112,24 +115,25 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   // Create a stream with STREAM_BLOCKED (== noop)
   std::shared_ptr<QUICFrame> stream_blocked_frame_0 = QUICFrameFactory::create_stream_blocked_frame(0, 0);
   std::shared_ptr<QUICFrame> stream_blocked_frame_1 = QUICFrameFactory::create_stream_blocked_frame(1, 0);
-  sm.handle_frame(stream_blocked_frame_0);
-  sm.handle_frame(stream_blocked_frame_1);
+  sm.handle_frame(level, stream_blocked_frame_0);
+  sm.handle_frame(level, stream_blocked_frame_1);
   CHECK(sm.stream_count() == 2);
   CHECK(sm.total_offset_received() == 0);
 
   // Stream 0 shoud be out of flow control
   std::shared_ptr<QUICFrame> stream_frame_0 = QUICFrameFactory::create_stream_frame(data, 1024, 0, 0);
-  sm.handle_frame(stream_frame_0);
+  sm.handle_frame(level, stream_frame_0);
   CHECK(sm.total_offset_received() == 0);
 
   // total_offset should be a integer in unit of 1024 octets
   std::shared_ptr<QUICFrame> stream_frame_1 = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
-  sm.handle_frame(stream_frame_1);
+  sm.handle_frame(level, stream_frame_1);
   CHECK(sm.total_offset_received() == 1024);
 }
 
 TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
 {
+  QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
   MockQUICApplication mock_app;
   app_map.set_default(&mock_app);
@@ -147,8 +151,8 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
     QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 0, 0);
   std::shared_ptr<QUICFrame> stream_frame_1_r =
     QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 1, 0);
-  sm.handle_frame(stream_frame_0_r);
-  sm.handle_frame(stream_frame_1_r);
+  sm.handle_frame(level, stream_frame_0_r);
+  sm.handle_frame(level, stream_frame_1_r);
   CHECK(sm.stream_count() == 2);
   CHECK(sm.total_offset_sent() == 0);
 

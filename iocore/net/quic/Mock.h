@@ -37,7 +37,7 @@ public:
   MockQUICStreamManager() : QUICStreamManager() {}
   // Override
   virtual QUICErrorUPtr
-  handle_frame(std::shared_ptr<const QUICFrame> f) override
+  handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> f) override
   {
     ++_frameCount[static_cast<int>(f->type())];
     ++_totalFrameCount;
@@ -205,7 +205,7 @@ public:
   }
 
   QUICErrorUPtr
-  handle_frame(std::shared_ptr<const QUICFrame> f) override
+  handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> f) override
   {
     ++_frameCount[static_cast<int>(f->type())];
     ++_totalFrameCount;
@@ -232,7 +232,7 @@ public:
   }
 
   QUICPacketNumber
-  largest_acked_packet_number() const override
+  largest_acked_packet_number(QUICEncryptionLevel level) const override
   {
     return 0;
   }
@@ -340,7 +340,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   }
 
   QUICPacketNumber
-  largest_acked_packet_number() const override
+  largest_acked_packet_number(QUICEncryptionLevel level) const override
   {
     return 0;
   }
@@ -444,8 +444,9 @@ private:
 class MockQUICLossDetector : public QUICLossDetector
 {
 public:
-  MockQUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc)
-    : QUICLossDetector(transmitter, info, cc)
+  MockQUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc,
+                       QUICRTTMeasure *rtt_measure, int index)
+    : QUICLossDetector(transmitter, info, cc, rtt_measure, index)
   {
   }
   void
@@ -536,7 +537,7 @@ class MockQUICHandshakeProtocol : public QUICHandshakeProtocol
 public:
   MockQUICHandshakeProtocol() : QUICHandshakeProtocol() {}
   int
-  handshake(uint8_t *out, size_t &out_len, size_t max_out_len, const uint8_t *in, size_t in_len) override
+  handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override
   {
     return true;
   }
@@ -551,9 +552,14 @@ public:
   is_ready_to_derive() const override
   {
     return true;
-  };
+  }
 
-  bool is_key_derived(QUICKeyPhase /* key_phase */) const override { return true; }
+  bool
+  is_key_derived(QUICKeyPhase /* key_phase */, bool /* for_encryption */) const override
+  {
+    return true;
+  }
+
   int
   initialize_key_materials(QUICConnectionId cid) override
   {
@@ -594,6 +600,12 @@ public:
              const uint8_t *sample, QUICKeyPhase phase) const override
   {
     return true;
+  }
+
+  QUICEncryptionLevel
+  current_encryption_level() const override
+  {
+    return QUICEncryptionLevel::INITIAL;
   }
 };
 

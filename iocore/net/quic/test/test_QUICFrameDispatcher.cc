@@ -40,7 +40,7 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   auto tx            = new MockQUICPacketTransmitter();
   auto info          = new MockQUICConnectionInfoProvider();
   auto cc            = new MockQUICCongestionController(info);
-  auto lossDetector  = new MockQUICLossDetector(tx, info, cc);
+  auto lossDetector  = new MockQUICLossDetector(tx, info, cc, nullptr, 0);
 
   QUICFrameDispatcher quicFrameDispatcher(info);
   quicFrameDispatcher.add_handler(connection);
@@ -56,14 +56,14 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   size_t len        = 0;
   streamFrame.store(buf, &len, 4096);
   bool should_send_ack;
-  quicFrameDispatcher.receive_frames(buf, len, should_send_ack);
+  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack);
   CHECK(connection->getTotalFrameCount() == 0);
   CHECK(streamManager->getTotalFrameCount() == 1);
 
   // CONNECTION_CLOSE frame
   QUICConnectionCloseFrame connectionCloseFrame({});
   connectionCloseFrame.store(buf, &len, 4096);
-  quicFrameDispatcher.receive_frames(buf, len, should_send_ack);
+  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack);
   CHECK(connection->getTotalFrameCount() == 1);
   CHECK(streamManager->getTotalFrameCount() == 1);
 }
