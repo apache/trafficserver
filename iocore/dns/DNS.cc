@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_DNS.h" /* MAGIC_EDITING_TAG */
+#include "P_DNS.h"
 #include <ts/ink_inet.h>
 
 #ifdef SPLIT_DNS

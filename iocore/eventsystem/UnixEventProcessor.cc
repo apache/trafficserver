@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "P_EventSystem.h" /* MAGIC_EDITING_TAG */
+#include "P_EventSystem.h"
 #include <sched.h>
 #if TS_USE_HWLOC
 #if HAVE_ALLOCA_H
