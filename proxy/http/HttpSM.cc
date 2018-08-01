@@ -5150,10 +5150,11 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
 
   if (info->app.http_data.last_failure == 0) {
     char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
-    Log::error("CONNECT: could not connect to %s "
-               "for '%s' (setting last failure time) connect_result=%d",
-               ats_ip_ntop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_str ? url_str : "<none>",
-               t_state.current.server->connect_result);
+    Log::error("%s", lbw()
+                       .print("CONNECT: could not connect to {} for '{}' (setting last failure time) connect_result={}\0",
+                              t_state.current.server->dst_addr, url_str ? url_str : "<none>",
+                              ts::bwf::Errno(t_state.current.server->connect_result))
+                       .data());
 
     if (url_str) {
       t_state.arena.str_free(url_str);
