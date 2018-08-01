@@ -93,10 +93,8 @@ struct HttpHeader {
   bool removeKey(char const *const key, int const keylen);
 
   bool valueForKey(char const *const keystr, int const keylen,
-                   char *const valstr // <-- return string value
-                   ,
-                   int *const vallen // <-- pass in capacity, returns len of string
-                   ,
+                   char *const valstr,  // <-- return string value
+                   int *const vallen,   // <-- pass in capacity, returns len of string
                    int const index = -1 // sets all values
                    ) const;
 
@@ -105,7 +103,7 @@ struct HttpHeader {
   */
   bool setKeyVal(char const *const key, int const keylen, char const *const val, int const vallen,
                  int const index = -1 // sets all values
-                 );
+  );
 
   /** dump header into provided char buffer
    */

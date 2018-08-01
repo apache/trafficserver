@@ -18,7 +18,6 @@
 
 #include "slice.h"
 
-//#include "TransformData.h"
 #include "Data.h"
 #include "HttpHeader.h"
 #include "intercept.h"
@@ -26,9 +25,7 @@
 #include "ts/remap.h"
 #include "ts/ts.h"
 
-#include <cassert>
 #include <cinttypes>
-#include <iostream>
 #include <netinet/in.h>
 
 namespace
@@ -97,7 +94,6 @@ read_request(TSHttpTxn txnp, Config const *const config)
   if (TS_HTTP_METHOD_GET == header.method()) {
     static int const SLICER_MIME_LEN_INFO = strlen(SLICER_MIME_FIELD_INFO);
     if (!header.hasKey(SLICER_MIME_FIELD_INFO, SLICER_MIME_LEN_INFO)) {
-      // std::cerr << "incoming slicer request" << std::endl;
       // turn off any and all transaction caching (shouldn't matter)
       TSHttpTxnServerRespNoStoreSet(txnp, 1);
       TSHttpTxnRespCacheableSet(txnp, 0);
@@ -159,7 +155,7 @@ read_request(TSHttpTxn txnp, Config const *const config)
       TSHttpTxnIntercept(icontp, txnp);
       return true;
     } else {
-      DEBUG_LOG("slice passing GET request downstream");
+      DEBUG_LOG("slice passing GET request through to next plugin");
     }
   }
 
@@ -185,9 +181,7 @@ global_read_request_hook(TSCont // contp
 
 SLICE_EXPORT
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn txnp,
-               TSRemapRequestInfo * // rri
-               )
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   Config *const config = static_cast<Config *>(ih);
 
@@ -201,30 +195,19 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp,
 ///// remap plugin setup and teardown
 SLICE_EXPORT
 void
-TSRemapOSResponse(void * // ih
-                  ,
-                  TSHttpTxn // rh
-                  ,
-                  int // os_response_type
-                  )
+TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
 {
 }
 
 SLICE_EXPORT
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih,
-                   char * // errbuf
-                   ,
-                   int // errbuf_size
-                   )
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   Config *const config = new Config;
   if (2 < argc) {
     config->fromString(argv[2]);
   }
   *ih = static_cast<void *>(config);
-
-//  std::cerr << "TSRemapNewInstance: slicer" << std::endl;
   return TS_SUCCESS;
 }
 
@@ -240,13 +223,9 @@ TSRemapDeleteInstance(void *ih)
 
 SLICE_EXPORT
 TSReturnCode
-TSRemapInit(TSRemapInterface * // api_info
-            ,
-            char * // errbug
-            ,
-            int // errbuf_size
-            )
+TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
 {
+  DEBUG_LOG("slice remap is successfully initialized.");
   return TS_SUCCESS;
 }
 

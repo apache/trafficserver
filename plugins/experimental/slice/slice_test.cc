@@ -88,7 +88,9 @@ testParseRange()
   std::ostringstream oss;
 
   std::vector<std::string> const teststrings = {
-    "bytes=0-1023", "bytes=1-1024", "bytes=11-11",
+    "bytes=0-1023",
+    "bytes=1-1024",
+    "bytes=11-11",
     "bytes=1-" // 2nd byte to end
     ,
     "Range: bytes=-13" // final 13 bytes

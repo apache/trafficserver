@@ -20,38 +20,22 @@
 
 #include "transfer.h"
 
-#include <cassert>
-#include <iostream>
-
 namespace
 {
 void
 shutdown(TSCont const contp, Data *const data)
 {
-  // std::cerr << "client shutdown" << std::endl;
   DEBUG_LOG("shutting down transaction");
   delete data;
   TSContDestroy(contp);
 }
 
-bool
-tryShutdown(TSCont const contp, Data *const data)
-{
-  if (data->m_blockexpected <= data->m_blockconsumed) {
-    shutdown(contp, data);
-    return true;
-  }
-  return false;
-}
-
 // create and issue a block request
-void
+bool
 requestBlock(TSCont contp, Data *const data)
 {
   int64_t const blockbeg = (data->m_blockbytes_config * data->m_blocknum);
   Range blockbe(blockbeg, blockbeg + data->m_blockbytes_config);
-
-  // std::cerr << __func__ << " trying to build header " << blockbeg << std::endl;
 
   char rangestr[1024];
   int rangelen      = 1023;
@@ -59,14 +43,17 @@ requestBlock(TSCont contp, Data *const data)
   TSAssert(rpstat);
 
   DEBUG_LOG("requestBlock: %s", rangestr);
-  // std::cerr << "requestBlock" << rangestr << std::endl;
 
   // reuse the incoming client header, just change the range
   HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
   // add/set sub range key and add slicer tag
   bool const rangestat = header.setKeyVal(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, rangelen);
-  TSAssert(rangestat);
+
+  if (!rangestat) {
+    ERROR_LOG("Error trying to set range request header %s", rangestr);
+    return false;
+  }
 
   // create virtual connection back into ATS
   TSVConn const upvc = TSHttpConnect((sockaddr *)&data->m_client_ip);
@@ -75,11 +62,6 @@ requestBlock(TSCont contp, Data *const data)
   data->m_upstream.setupConnection(upvc);
   data->m_upstream.setupVioWrite(contp);
 
-  /*
-  std::cerr << std::endl;
-  std::cerr << __func__ << " sending header to server" << std::endl;
-  std::cerr << header.toString() << std::endl;
-  */
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_upstream.m_write.m_iobuf);
   TSVIOReenable(data->m_upstream.m_write.m_vio);
 
@@ -94,6 +76,8 @@ requestBlock(TSCont contp, Data *const data)
   data->m_blockconsumed              = 0;
   data->m_iseos                      = false;
   data->m_server_block_header_parsed = false;
+
+  return true;
 }
 
 } // namespace
@@ -116,11 +100,6 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     // make the header manipulator
     HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
-    /*
-    std::cerr << std::endl;
-    std::cerr << __func__ << " received header from client" << std::endl;
-    std::cerr << header.toString() << std::endl;
-    */
     // set the request url back to pristine in case of plugin stacking
     header.setUrl(data->m_urlbuffer, data->m_urlloc);
 
@@ -167,7 +146,10 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     header.removeKey(TS_MIME_FIELD_X_FORWARDED_FOR, TS_MIME_LEN_X_FORWARDED_FOR);
 
     // send the first block request to server
-    requestBlock(contp, data);
+    if (!requestBlock(contp, data)) {
+      shutdown(contp, data);
+      return false;
+    }
 
     // for subsequent blocks remove any conditionals which may fail
     // an optimization would be to wait until the first block succeeds
@@ -185,14 +167,8 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
 void
 handle_client_resp(TSCont contp, TSEvent event, Data *const data)
 {
-  // std::cerr << "handle_client_response " << (int)data->m_bail << " " << event << std::endl;
   if (TS_EVENT_VCONN_WRITE_READY == event || TS_EVENT_VCONN_WRITE_COMPLETE == event) {
-    // std::cerr << "handle_client_response ready consumed: " <<
-    transfer_content_bytes(data); // , "handle_client_response WRITE_READY");
-                                  // std::cerr << ' ' << data->m_blockconsumed << '/' << data->m_blockexpected
-    //	<< ' ' << data->m_bytessent << '/' << data->m_bytestosend
-    //	<< '/' << TSVIONDoneGet(data->m_dnstream.m_write.m_vio)
-    //	<< std::endl;
+    transfer_content_bytes(data);
 
     // done transferring from server to client buffer?
     if (data->m_bytestosend <= data->m_bytessent) {
@@ -201,15 +177,11 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
 
       // is the output buffer drained?
       if (data->m_bytestosend <= bytessent) {
-        // std::cerr << "client side request fulfilled" << std::endl;
         data->m_dnstream.close();
         if (!data->m_upstream.m_read.isOpen()) {
-          // std::cerr << "server closed shutting down" << std::endl;
           shutdown(contp, data);
           return;
         }
-        // std::cerr << "server not yet closed" << std::endl;
-        // std::cerr << "server buffer yet contains: " << TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader) << std::endl;
       }
 
       // continue allowing the downstream to drain
@@ -242,36 +214,14 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
   }
   // client closed connection
   else if (TS_EVENT_ERROR == event) {
-    DEBUG_LOG("got a TS_EVENT_ERROR from the client -- it probably bailed");
+    DEBUG_LOG("got a TS_EVENT_ERROR from the client");
 
-    /*
-    std::cerr << __func__ << ": " << "TS_EVENT_ERROR" << std::endl;
-    std::cerr << "bytes: tosend/sent/consumed"
-            << ' ' << data->m_bytestosend
-            << ' ' << data->m_bytessent
-            << ' ' << TSVIONDoneGet(data->m_dnstream.m_write.m_vio) << std::endl;
-    std::cerr << "bytes: consumed/expected"
-            << ' ' << data->m_blockconsumed
-            << ' ' << data->m_blockexpected
-            << std::endl;
-    std::cerr << "bytes: lastconsumedfunc"
-            << ' ' << data->m_lastconsumed
-            << ' ' << ((nullptr != data->m_fstr) ? data->m_fstr : "null")
-            << std::endl;
-    std::cerr << "range:"
-            << ' ' << data->m_req_range.m_beg
-            << " to " << data->m_req_range.m_end << std::endl;
-    */
-
-    // allow the server to drain
+    // allow the upstream server to drain
     data->m_dnstream.close();
     if (!data->m_upstream.m_read.isOpen()) {
       shutdown(contp, data);
     }
-  } else // close it all out???
-  {
+  } else {
     DEBUG_LOG("Unhandled event: %d", event);
-    // std::cerr << __func__ << ": unhandled event: " << event <<
-    // std::endl;
   }
 }

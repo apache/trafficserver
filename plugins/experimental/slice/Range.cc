@@ -21,8 +21,9 @@
 
 #include <algorithm>
 #include <cinttypes>
+#include <cctype>
+#include <cstdio>
 #include <cstring>
-#include <iostream>
 
 bool
 Range::isValid() const

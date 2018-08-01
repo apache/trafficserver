@@ -45,7 +45,7 @@ struct Channel {
 
   bool
   setForRead(TSVConn vc, TSCont contp, int64_t const bytesin //=INT64_MAX
-             )
+  )
   {
     TSAssert(nullptr != vc);
     if (nullptr == m_iobuf) {
@@ -60,7 +60,7 @@ struct Channel {
 
   bool
   setForWrite(TSVConn vc, TSCont contp, int64_t const bytesout //=INT64_MAX
-              )
+  )
   {
     TSAssert(nullptr != vc);
     if (nullptr == m_iobuf) {

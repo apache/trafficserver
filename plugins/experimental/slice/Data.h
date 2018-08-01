@@ -25,7 +25,6 @@
 #include "Stage.h"
 #include "slice.h"
 
-#include <iostream>
 #include <netinet/in.h>
 
 void incrData();
@@ -43,7 +42,7 @@ struct Data {
   TSMBuffer m_urlbuffer{nullptr};
   TSMLoc m_urlloc{nullptr};
 
-  char m_hostname[1024];
+  char m_hostname[8192];
   int m_hostlen;
 
   TSHttpStatus m_statustype; // 200 or 206
@@ -58,9 +57,6 @@ struct Data {
   int64_t m_blockskip;     // number of bytes to skip in this block
   int64_t m_blockconsumed; // body bytes consumed
   bool m_iseos;            // server in EOS state
-
-  //	int64_t m_lastconsumed; // debug for last transfer_conten_bytes call
-  //	char const * m_fstr;
 
   int64_t m_bytestosend; // header + content bytes to send
   int64_t m_bytessent;   // number of bytes written to the client
@@ -93,8 +89,6 @@ struct Data {
       m_blockskip(0),
       m_blockconsumed(0),
       m_iseos(false)
-      //		, m_lastconsumed(0)
-      //		, m_fstr(nullptr)
 
       ,
       m_bytestosend(0),
@@ -110,7 +104,6 @@ struct Data {
   ~Data()
   {
     //		decrData();
-    // std::cerr << "~Data" << std::endl;
     if (nullptr != m_urlbuffer) {
       if (nullptr != m_urlloc) {
         TSHandleMLocRelease(m_urlbuffer, TS_NULL_MLOC, m_urlloc);

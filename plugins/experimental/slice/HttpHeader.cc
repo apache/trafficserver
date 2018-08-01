@@ -20,11 +20,8 @@
 
 #include "slice.h"
 
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
-#include <limits>
 
 TSHttpType
 HttpHeader::type() const
@@ -242,9 +239,9 @@ HttpHeader::toString() const
   case TS_HTTP_TYPE_RESPONSE: {
     char bufstr[1024];
     /*
-          int const version = TSHttpHdrVersionGet(m_buffer, m_lochdr);
-          snprintf(bufstr, 1023, "%d ", version);
-          res.append(bufstr);
+    int const version = TSHttpHdrVersionGet(m_buffer, m_lochdr);
+    snprintf(bufstr, 1023, "%d ", version);
+    res.append(bufstr);
     */
     res.append("HTTP/unparsed");
 

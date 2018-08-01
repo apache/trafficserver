@@ -29,7 +29,7 @@ namespace
 std::mutex mutex;
 int64_t inplay = 0;
 std::unique_ptr<std::thread> thread;
-}
+} // namespace
 
 void
 monitor()

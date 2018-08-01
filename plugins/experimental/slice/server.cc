@@ -22,16 +22,13 @@
 #include "response.h"
 #include "transfer.h"
 
-#include <cassert>
 #include <cinttypes>
-#include <iostream>
 
 namespace
 {
 void
 shutdown(TSCont const contp, Data *const data)
 {
-  // std::cerr << "server shutdown" << std::endl;
   DEBUG_LOG("shutting down transaction");
   delete data;
   TSContDestroy(contp);
@@ -208,10 +205,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 void
 handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 {
-  // std::cerr << "handle_server_response " << (int)data->m_bail << " " << event << std::endl;
-
   if (TS_EVENT_VCONN_READ_READY == event || TS_EVENT_VCONN_READ_COMPLETE == event) {
-    //    DEBUG_LOG("server has data ready to read");
     // has block reponse header been parsed??
     if (!data->m_server_block_header_parsed) {
       // the server response header didn't fit into the input buffer??
@@ -219,14 +213,6 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
           data->m_resp_hdrmgr.populateFrom(data->m_http_parser, data->m_upstream.m_read.m_reader, TSHttpHdrParseResp)) {
         return;
       }
-
-      /*
-      HttpHeader const header
-        (data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
-      std::cerr << std::endl;
-      std::cerr << "got a response header from server" << std::endl;
-      std::cerr << header.toString() << std::endl;
-      */
 
       // very first server response header
       bool headerStat = false;
@@ -255,39 +241,32 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       data->m_blockskip = data->m_req_range.skipBytesForBlock(data->m_blockbytes_config, data->m_blocknum);
     }
 
-    // std::cerr << "handle_server_response ready consumed: " <<
-    transfer_content_bytes(data); // , "handle_server_resp READ_READY");
-                                  // std::cerr << ' ' << data->m_blockconsumed << '/' << data->m_blockexpected
-    //	<< ' ' << data->m_bytessent << '/' << data->m_bytestosend << '/' << TSVIONDoneGet(data->m_dnstream.m_write.m_vio)
-    //	<< std::endl;
+    transfer_content_bytes(data);
   } else if (TS_EVENT_VCONN_EOS == event) {
+    // from testing as far as I can tell, if the sub transaction returns
+    // a valid header TS_EVENT_VCONN_READ_READY event is always called first.
+    // this event being called means the input stream is null.
+    // An upstream transaction that aborts immediately (or a few bytes)
+    // after it sends a header may end up here with nothing in the upstream
+    // buffer.
+
     // this is called when the upstream connection is done.
-    // we still need to make sure to drain all the bytes out before
+    // make sure to drain all the bytes out before
     // issuing the next block request
     data->m_iseos = true;
 
-    // std::cerr << "eos hit" << std::endl;
-
     // corner condition, good source header + 0 length aborted content
     // results in no header being read, just an EOS.
-    // trying to delete the upstream will crash ATS.
+    // trying to delete the upstream will crash ATS (??)
     if (0 == data->m_blockexpected) {
-      //			data->m_dnstream.abort(); // <- crash if first block
-      //			data->m_upstream.abort();
-      //			TSContDestroy(contp);
       shutdown(contp, data); // this will crash if first block
       return;
     }
 
-    // std::cerr << "handle_server_response eos consumed: " <<
-    transfer_content_bytes(data); // , "handle_server_resp EOS");
-                                  // std::cerr << ' ' << data->m_blockconsumed << '/' << data->m_blockexpected
-    //	<< ' ' << data->m_bytessent << '/' << data->m_bytestosend << '/' << TSVIONDoneGet(data->m_dnstream.m_write.m_vio)
-    //	<< std::endl;
+    transfer_content_bytes(data);
 
     if (!data->m_dnstream.m_write.isOpen()) // server drain condition
     {
-      // std::cerr << "client already closed, shutting down" << std::endl;
       shutdown(contp, data);
       return;
     }
@@ -298,19 +277,15 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       TSVIOReenable(data->m_dnstream.m_write.m_vio);
     }
 
-    // std::cerr << "Getting ready for next block" << std::endl;
-    // data->m_upstream.close(); <-- can't do this!
-
     // prepare for the next request block
     ++data->m_blocknum;
 
     // when we get a "bytes=-<end>" last N bytes request the plugin
-    // (like nginx) issues a speculative request for the first block
+    // issues a speculative request for the first block
     // in that case fast forward to the real first in range block
     // Btw this isn't implemented yet, to be handled
     int64_t const firstblock(data->m_req_range.firstBlockFor(data->m_blockbytes_config));
     if (data->m_blocknum < firstblock) {
-      // std::cerr << "setting first block" << std::endl;
       data->m_blocknum = firstblock;
     }
 
@@ -319,6 +294,6 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       data->m_blocknum = -1; // signal value no more blocks
     }
   } else {
-    std::cerr << __func__ << ": unhandled event: " << event << std::endl;
+    DEBUG_LOG("Unhandled event: %d", event);
   }
 }

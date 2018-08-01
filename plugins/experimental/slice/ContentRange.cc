@@ -26,7 +26,6 @@ static char const *const format = "bytes %" PRId64 "-%" PRId64 "/%" PRId64;
 bool
 ContentRange::fromStringClosed(char const *const valstr)
 {
-  // TSAssert(nullptr != valstr);
   int const fields = sscanf(valstr, format, &m_beg, &m_end, &m_length);
 
   if (3 == fields && m_beg <= m_end) {
@@ -42,9 +41,6 @@ ContentRange::fromStringClosed(char const *const valstr)
 bool
 ContentRange::toStringClosed(char *const rangestr, int *const rangelen) const
 {
-  // TSAssert(nullptr != rangestr);
-  // TSAssert(nullptr != rangelen);
-
   if (!isValid()) {
     *rangelen = 0;
     return false;

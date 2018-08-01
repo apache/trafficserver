@@ -18,9 +18,6 @@
 
 #include "transfer.h"
 
-#include <cassert>
-#include <iostream>
-
 int64_t transfer_content_bytes(Data *const data) // , char const * const fstr)
 {
   int64_t consumed(0);
@@ -29,7 +26,6 @@ int64_t transfer_content_bytes(Data *const data) // , char const * const fstr)
   if (!data->m_dnstream.m_write.isOpen()) {
     // drain the upstream
     if (data->m_upstream.m_read.isOpen()) {
-      // std::cerr << "upstream drain" << std::endl;
       int64_t const avail = TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader);
       TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, avail);
       consumed += avail;
@@ -67,7 +63,6 @@ int64_t transfer_content_bytes(Data *const data) // , char const * const fstr)
 
         // if hit fulfillment start bulk consuming
         if (0 < avail && data->m_bytestosend <= data->m_bytessent) {
-          // std::cerr << "partial upstream drain: " << avail << std::endl;
           TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, avail);
           consumed += avail;
         }
@@ -78,9 +73,6 @@ int64_t transfer_content_bytes(Data *const data) // , char const * const fstr)
       }
     }
   }
-
-  //	data->m_lastconsumed = consumed;
-  //	data->m_fstr = fstr;
 
   if (0 < consumed) {
     data->m_blockconsumed += consumed;
