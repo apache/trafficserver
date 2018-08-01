@@ -145,7 +145,7 @@ public:
   void reset_send_offset();
   void reset_recv_offset();
 
-  QUICErrorUPtr recv(const std::shared_ptr<const QUICCryptoFrame> frame);
+  QUICErrorUPtr recv(const QUICCryptoFrame &frame);
   int64_t read_avail();
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);

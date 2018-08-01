@@ -342,9 +342,11 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUI
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   switch (frame->type()) {
-  case QUICFrameType::CRYPTO:
-    error = this->_crypto_streams[static_cast<int>(level)].recv(std::static_pointer_cast<const QUICCryptoFrame>(frame));
+  case QUICFrameType::CRYPTO: {
+    QUICCryptoFrameSPtr crypto_frame = std::static_pointer_cast<const QUICCryptoFrame>(frame);
+    error                            = this->_crypto_streams[static_cast<int>(level)].recv(*crypto_frame);
     break;
+  }
   default:
     QUICHSDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
     ink_assert(false);

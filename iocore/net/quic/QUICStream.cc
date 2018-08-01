@@ -599,7 +599,7 @@ QUICCryptoStream::reset_recv_offset()
 }
 
 QUICErrorUPtr
-QUICCryptoStream::recv(const std::shared_ptr<const QUICCryptoFrame> frame)
+QUICCryptoStream::recv(const QUICCryptoFrame &frame)
 {
   QUICErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
   if (error->cls != QUICErrorClass::NONE) {
