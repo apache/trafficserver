@@ -40,7 +40,8 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   auto tx            = new MockQUICPacketTransmitter();
   auto info          = new MockQUICConnectionInfoProvider();
   auto cc            = new MockQUICCongestionController(info);
-  auto lossDetector  = new MockQUICLossDetector(tx, info, cc, nullptr, 0);
+  QUICRTTMeasure rtt_measure;
+  auto lossDetector = new MockQUICLossDetector(tx, info, cc, &rtt_measure, 0);
 
   QUICFrameDispatcher quicFrameDispatcher(info);
   quicFrameDispatcher.add_handler(connection);

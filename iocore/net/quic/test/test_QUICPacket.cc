@@ -59,14 +59,15 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x00,                                           // Token Length (i), Token (*)
       0x02,                                           // Payload length
       0xC1, 0x23, 0x45, 0x67,                         // Packet number
       0xff, 0xff,                                     // Payload (dummy)
     };
 
     QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0);
-    CHECK(header->size() == 27);
-    CHECK(header->packet_size() == 29);
+    CHECK(header->size() == sizeof(input) - 2); // Packet Length - Payload Length
+    CHECK(header->packet_size() == sizeof(input));
     CHECK(header->type() == QUICPacketType::INITIAL);
     CHECK(
       (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
@@ -88,6 +89,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x00,                                           // Token Length (i), Token (*)
       0x19,                                           // Length (Not 0x09 because it will have 16 bytes of AEAD tag)
       0xC1, 0x23, 0x45, 0x67,                         // Packet number
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Payload (dummy)
@@ -99,9 +101,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
       {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x01234567, 0, 0x11223344, std::move(payload), 5);
 
-    CHECK(header->size() == 27);
+    CHECK(header->size() == sizeof(expected) - 5);
     CHECK(header->has_key_phase() == false);
-    CHECK(header->packet_size() == 32);
+    CHECK(header->packet_size() == sizeof(expected));
     CHECK(header->type() == QUICPacketType::INITIAL);
     CHECK(
       (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
@@ -111,7 +113,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(header->version() == 0x11223344);
 
     header->store(buf, &len);
-    CHECK(len == 27);
+    CHECK(len == header->size());
     CHECK(memcmp(buf, expected, len) == 0);
   }
 }

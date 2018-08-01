@@ -33,13 +33,14 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   MockQUICHandshakeProtocol hs_protocol;
   QUICPacketFactory pf;
   pf.set_hs_protocol(&hs_protocol);
+  QUICRTTMeasure rtt_measure;
 
   QUICAckFrameCreator *afc             = new QUICAckFrameCreator();
   QUICConnectionId connection_id       = {reinterpret_cast<const uint8_t *>("\x01"), 1};
   MockQUICPacketTransmitter *tx        = new MockQUICPacketTransmitter();
   MockQUICConnectionInfoProvider *info = new MockQUICConnectionInfoProvider();
   MockQUICCongestionController *cc     = new MockQUICCongestionController(info);
-  QUICLossDetector detector(tx, info, cc, nullptr, 0);
+  QUICLossDetector detector(tx, info, cc, &rtt_measure, 0);
   ats_unique_buf payload              = ats_unique_malloc(16);
   size_t payload_len                  = 16;
   QUICPacketUPtr packet               = QUICPacketFactory::create_null_packet();
@@ -165,7 +166,8 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   MockQUICPacketTransmitter *tx        = new MockQUICPacketTransmitter();
   MockQUICConnectionInfoProvider *info = new MockQUICConnectionInfoProvider();
   MockQUICCongestionController *cc     = new MockQUICCongestionController(info);
-  QUICLossDetector detector(tx, info, cc, nullptr, 0);
+  QUICRTTMeasure rtt_measure;
+  QUICLossDetector detector(tx, info, cc, &rtt_measure, 0);
 
   // Check initial state
   CHECK(tx->retransmitted.size() == 0);

@@ -45,6 +45,7 @@ using QUICOffset       = uint64_t;
 
 // TODO: Update version number
 // Note: Prefix for drafts (0xff000000) + draft number
+// Note: Fix "Supported Version" field in test case of QUICPacketFactory_Create_VersionNegotiationPacket
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff00000d,
