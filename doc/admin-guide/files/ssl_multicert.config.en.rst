@@ -119,17 +119,6 @@ ssl_key_dialog=builtin|"exec:/path/to/program [args]" (optional)
       program runs a security check to ensure that the system is not
       compromised by an attacker before providing the pass phrase.
 
-exit_on_load_error=1|0 (optional)
-  If a certificate configuration does not result in a working
-  configuration, traffic server is not allowed to start when this is
-  set. If a new configuration is broken, a working configuration will
-  not be replaced.
-
-  Exit on load error is enabled by default.
-
-  This option can not be applied to a running Traffic Server using
-  :option:`traffic_ctl config reload`.
-
 Certificate Selection
 =====================
 
