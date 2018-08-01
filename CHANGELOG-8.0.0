@@ -1,0 +1,1170 @@
+Changes with Apache Traffic Server 8.0.0
+  #712 - TS-4523 - Add pause functionality to the TransformationPlugin interface.
+  #871 - TS-4733: Skip modifying response length for HEAD response
+  #1091 - TS-4952: Improve abort messages for mutex failures.
+  #1209 - Remove unused and never to be used classes from Map.h.
+  #1248 - TS-5070 Add configuration variables to set file permissions for diags.log & traffic.out
+  #1264 - TS-3692: Remove code associated with proxy.config.url_remap.url_remap_mode.
+  #1267 - TS-5021: Separate parent_is_proxy from other parent configuration options.
+  #1299 - TS-2888: remove vararg and format parameters from build_error_resoponse
+  #1303 - TS-5107: Changes to autolinking in Docutils 1.3
+  #1314 - Fix Http2Stream *stream variable shadow reported by issue 1308.
+  #1328 - Replace gethostbyname_r() with getaddrinfo()
+  #1331 - MemView is a utility to create read only views of memory.
+  #1342 - Fix CID 1368305: Dereference before null check
+  #1370 - Issue #1369: proxy.config.http.server_max_connections over limit fail
+  #1377 - TS-5107: init_customizations() isn't new in Docutils 0.13
+  #1381 - Lib Scalar
+  #1387 - Add diags log message when cache wraps.
+  #1391 - Allow configurable body factory response max size
+  #1392 - TS-2095: TS_HAS_LIBZ and TS_HAS_LZMA are always false
+  #1393 - Trivial Autoconf cleanup
+  #1398 - Configure option to disable CURL
+  #1405 - TS-552: Trivial Autoconf cleanup
+  #1408 - Prune some unused library dependencies
+  #1411 - Replace EXTRA_CXX_LDFLAGS with AM_LDFLAGS
+  #1413 - Update default debug tags to not create a misleading understanding
+  #1414 - TS-2274: Drop vestigial Autoconf output variable
+  #1416 - TS-1878: Add --as-needed to the linker flags
+  #1420 - Improve error message for custom log field mismatch.
+  #1422 - YTS-614: Avoid crash due to error during POST request transform.
+  #1424 - Backport unused dependency check to Python 2.6
+  #1432 - npn string should be updated on unregistering a protocol as well
+  #1433 - Get the list of files from Autoconf vs. Git
+  #1435 - Prefer setting AM_CPPFLAGS vs. CPPFLAGS, etc.
+  #1449 - MemView: Fix coverity issues, constexpr correctness.
+  #1450 - Update to latest RAT version
+  #1453 - MemView: Fix methods return type definitions to be more consistent.
+  #1454 - Updates to the help output for tsxs
+  #1456 - Add TCP accept metric which tracks the total number of TCP connections accepted.
+  #1457 - fix TS-4195: crash when stop trafficserver
+  #1458 - Removed spaces at the end of the line on all files
+  #1460 - Removes some unnecessary dependencies on the public ts/ts.h
+  #1461 - Changes debug builds with Intel to just -g
+  #1465 - Add new testing system  to the test subdirectory
+  #1468 - Allow overriding proxy.config.config_dir.
+  #1469 - Introduce a Result error object.
+  #1471 - is_transparent_passthrough_allowed always returns false
+  #1479 - Add static type checking to configuration override API implementation.
+  #1482 - MemView: Change typed array access method in MemView.
+  #1487 - esi/combo_handler plugin doesn't register
+  #1491 - MemView: Fix strlen issue for OmniOS.
+  #1492 - Fix for ignored return value in Ubuntu builds.
+  #1495 - TS-4976: Fix casts and standardize add-header.
+  #1496 - Ubuntu build problem fix.
+  #1504 - Doc: Cleanup for build errors.
+  #1508 - Fix template directory path
+  #1510 - Crash at HttpSM::state_request_wait_for_transform_read
+  #1516 - Implement Cache-Control: immutable handling
+  #1526 - When SSL connect fails, we return 502 success
+  #1533 - TS-4976: Regularize example plugin append_transform.
+  #1534 - Use StringView for protocol stack to avoid calling strlen on strings with a known length.
+  #1537 - TS-4976: Regularize example plugin basic_auth.
+  #1540 - Metalink Plugin: Must not destroy the Transform Contp, only shutdown write on it while received WRITE_COMPLETE
+  #1546 - NetVC maybe lost from read_ready_list if Plugin call TSVConnReenable()
+  #1550 - rectify a minor error in healthchecks.c
+  #1551 - rectify a minor error in test_server_intercept.lua
+  #1552 - rectify a minor error in file test_intercept.lua
+  #1554 - TS-4976: Regularize example plugins - blacklist
+  #1556 - Force use of python3 for microserver
+  #1563 - MemView: Add literal and array constructors.
+  #1564 - TS-4976: Regularize plugins - null transform.
+  #1566 - Fix build by ordering the linked libraries.
+  #1568 - TS-4195: double free on exit
+  #1569 - TS-4976: Regularize plugins - cache_scan.
+  #1572 - Scalar: Fix inconsistencies in numeric comparisons.
+  #1574 - Explicit std:: name space, seems to make compiler happy
+  #1576 - Add option to choose interface
+  #1578 - Add missing include, which otherwise breaks on OSX
+  #1580 - change command to use python3
+  #1581 - TS-4976: Regularize plugins - file
+  #1592 - TS-4976: Regularize plugins - hello
+  #1594 - Early intervention APIs
+  #1595 - TS-4976: Regularize plugins - lifecycle
+  #1596 - TS-4976: Regularize plugins - output_header
+  #1601 - TS-4976: Regularize plugins - protocol
+  #1604 - TS-4976: Regularize plugins - protocol_stack
+  #1609 - Adding a stat page for HTTP connection count
+  #1611 - Convert HPACK enums to enum classes
+  #1614 - TS-4976: Regularize plugins - query_remap
+  #1615 - Doc: Update plugin stats documentation.
+  #1616 - Fix string compare for protocol tag logic in UnixNetVConnection.
+  #1620 - Adds a new condition, %{IP:<part>}
+  #1621 - Clean up globalregisterplugin
+  #1623 - Delete dead code
+  #1631 - Bump clang-format version to v4.0.2 / 2017-04-04
+  #1632 - Should be decrement I think
+  #1634 - Updates everything with the latest clang-format version
+  #1635 - Uses an enum class for the Mgmt OpType
+  #1638 - Test: Update micro-server to have hooks for observers.
+  #1642 - Ran clang-tidy over the code to use nullptr
+  #1643 - Ran clang-tidy with readability-braces-around-statements
+  #1644 - Ran clang-tidy to add C++11 override to methods
+  #1647 - Tests: Via protocol stack test.
+  #1648 - test fix
+  #1649 - Changes where we turn off the cacheability of the response
+  #1653 - TS Lua: ts.debug support debug flags may be better
+  #1655 - Big H2 file download test for issue 1646.
+  #1657 - Unfolds request headers that are using obs continuations
+  #1658 - free client cert file config
+  #1659 - Traffic replay client program
+  #1660 - TS-3746: make proxy.config.ssl.client.verify.server overridable
+  #1664 - Allow set-debug in remap plugins, and cleanup
+  #1665 - Overridable http config params
+  #1667 - Add port wait on micro server startup
+  #1684 - fix testing issue with traffic_cop
+  #1686 - TS-4976: Regularize plugins - redirect_1
+  #1688 - Ran clang-tidy with modernize-deprecated-headers
+  #1689 - Ran clang-tidy with modernize-loop-convert
+  #1691 - Ran clang-tidy with modernize-raw-string-literal
+  #1692 - Ran clang-tidy with modernize-redundant-void-arg
+  #1698 - TS-1257: replace InkHashtable with HashMap to store wilddomains
+  #1700 - Ran clang-tidy with performance-faster-string-find
+  #1701 - Ran clang-tidy with performance-unnecessary-value-param
+  #1706 - Better github PR support, and per-branch rules
+  #1708 - Ran clang-tidy with modernize-use-bool-literals
+  #1710 - HTTP2 drain
+  #1714 - Test: Add validation for VIA test to not run if curl doesn't HTTP/2
+  #1715 - Proper support for the %{URL:<qual>} conditions
+  #1717 - Add SINK_TRANSFORM option to CPPAPI
+  #1720 - Bump config delete timeout to 5min
+  #1722 - Ran unifdef to remove INACTIVITY_TIMEOUT code blocks
+  #1723 - TS-4976: Regularize plugins - remap
+  #1725 - Removed option for spdy
+  #1726 - Doc: Clarify negative revalidating.
+  #1728 - Bump master to v8.0.0
+  #1731 - Specify return object in case key not found
+  #1732 - Ran clang-tidy with modernize-use-using
+  #1744 - TS-4976: Regularize plugins - remap_header_add
+  #1745 - TS-4976: Regularize plugins - replace_header
+  #1746 - clang-analyzer - Called C++ object pointer is null in get_ka_info_from_config
+  #1747 - h2spec: The endpoint MUST ignore any flags that is undefined.
+  #1749 - TS-4976: Regularize plugins - replace-protoset changed to disable_http2
+  #1755 - convert int to boolean in MIME
+  #1758 - TS-4976: Regularize plugins - response_header_1
+  #1762 - Fix build errors for glibc 2.25
+  #1770 - Clean up BaseLogFile
+  #1772 - Clean up Diags
+  #1773 - h2 test with chunked download
+  #1776 - TS-4976: Regularize plugins - secure_link
+  #1778 - Fix missing header
+  #1779 - coverity 1343358: Uninitialized scalar field
+  #1780 - coverity 1021924: Missing break in switch
+  #1781 - Remove Clustering
+  #1782 - coverity 1021925: Missing break in switch
+  #1783 - Coverity 1021729: Uninitialized scalar field
+  #1784 - coverity 1268009: Uninitialized scalar field
+  #1785 - remove deprecated cache fuzz code
+  #1786 - Coverity issues for LogFilter.cc
+  #1788 - coverity 1021731 : remove unused variable
+  #1789 - coverity 1021731 : clean up typedef
+  #1790 - Fixed issue when cluster was removed in e846f312
+  #1791 - coverity 1230692 : fix constructor
+  #1792 - Remove more clustering bits
+  #1793 - coverity 1268008: Uninitialized scalar field
+  #1794 - remove icp code
+  #1796 - coverity 1199998 : return code not handled
+  #1797 - Coverity 1373289: Explicit null dereferenced
+  #1798 - CV-1241998: Fix unitialized member in NumericType
+  #1799 - coverity 1021730 : fix issue with return before varables are initalized
+  #1800 - coverity 1021768: Uninitialized pointer field
+  #1801 - Converity 1373288: Dereference after null check
+  #1802 - coverity 1021765: Uninitialized pointer field
+  #1803 - coverity 1021680 : fix constructor
+  #1804 - coverity 1021763: Uninitialized pointer field
+  #1805 - coverity 1021762: Uninitialized scalar field
+  #1806 - Remove even more clustering
+  #1807 - coverity 1021735 : address constructor issue
+  #1809 - Coverity 1021705: Uninitialized pointer field
+  #1811 - Coverity 1021689 - Uninitialized pointer field
+  #1812 - coverity 1021761: Uninitialized pointer field
+  #1813 - PR-1794 - Cache tweaks.
+  #1814 - Coverity 1224619: Uninitialized pointer field
+  #1816 - coverity 1021760: Uninitialized scalar field
+  #1817 - coverity 1021754: Uninitialized pointer field
+  #1818 - coverity 1021753: Uninitialized pointer field
+  #1820 - FIX client ip parse error in lua
+  #1821 - coverity 1021752: Uninitialized scalar field
+  #1822 - Add hook for server cert verification
+  #1823 - coverity 1021749: Uninitialized pointer field
+  #1824 - Coverity 1021706: Init members
+  #1826 - coverity 1021746: Uninitialized pointer field
+  #1827 - Coverity CID #1374942 Out-of-bounds access
+  #1828 - remove DNT as it is not required for cache compatibility
+  #1829 - Coverity CID #1374941 Logically dead code
+  #1831 - Coverity issues in HTTP
+  #1832 - coverity 1021745: Uninitialized pointer field
+  #1833 - Coverity 1356971: Unchecked return value
+  #1834 - coverity 1021747: Uninitialized pointer field
+  #1835 - Coverity fixes for WCCP - phase one.
+  #1836 - changed NULL to nullptr in jtest
+  #1837 - coverity 1022189 : remove dead code
+  #1838 - coverity 1021972: Dereference after null check
+  #1839 - coverity 1021678: Uninitialized pointer field
+  #1840 - Via: Change separator character to '-' instead of ' '.
+  #1841 - coverity 1021761: Uninitialized pointer field
+  #1844 - Coverity CID #1022159 Resource leak
+  #1845 - Coverity CID #1021732 Uninitialized scalar field
+  #1846 - Coverity 1022126 and 1022127: Dereference before null check
+  #1848 - Coverity CID #1271338 Side effect in assertion
+  #1850 - coverity 1356981: Uninitialized scalar field
+  #1851 - Coverity 1022122, 1022123, 1022125: Dereference before null check
+  #1852 - Coverity issues in HostDB.cc
+  #1854 - cleanup ICP code removal
+  #1855 - Coverity 1022124: Dereference before null check
+  #1856 - Add options to the tcpinfo plugin to allow better control over logfile rolling
+  #1857 - covertiy 1022010 : remove dead code
+  #1858 - coverity 1022003 : add check for null value
+  #1859 - coverity 1271330: Uninitialized pointer field
+  #1860 - Coverity cache dir cc
+  #1862 - coverity 1021720_1021721_1254795_1021722: ESI plugin
+  #1865 - Coverity 1216302,1022033,1022032,1022031: State While Revalidate
+  #1867 - Coverity 1200007 : missing break statement
+  #1868 - Coverity 1021694: Uninitialized pointer field
+  #1869 - coverity 1022121 : remove check
+  #1871 - coverity 1356981: Uninitialized scalar field
+  #1873 - remap test for secure communication with origin server
+  #1874 - coverity 1199995 : return code not checked
+  #1875 - coverity 1200036: Uninitialized pointer field
+  #1876 - coverity 1196483: Uninitialized pointer field
+  #1877 - coverity 1242338: Uninitialized pointer field
+  #1878 - coverity 1196481: Uninitialized scalar field
+  #1879 - Coverity 1375000,1374999: state while revalidate
+  #1880 - Coverity issue 1200029, 1200026, 1200038
+  #1881 - coverity 1021916 : fix missing break
+  #1882 - WCCP: CV-1268004, 1268018, 1268019, 1268020, 137295
+  #1883 - Coverity 1363659: Dereference before null check
+  #1884 - Coverity 1021692: Uninitialized pointer field, plus defined OS_Addr e…
+  #1885 - coverity 1200035 : fix constructor
+  #1887 - coverity 1200037: Uninitialized pointer field
+  #1888 - coverity 1373297 : fix cast to try to address issue
+  #1889 - Coverity fixes 2017051100
+  #1890 - coverity 1196479: Uninitialized pointer field
+  #1891 - coverity 1021714: Uninitialized pointer field
+  #1892 - Coverity 1373301: Untrusted loop bound
+  #1893 - coverity 1021707: Uninitialized scalar field
+  #1894 - coverity 1021704: Uninitialized pointer field
+  #1895 - coverity 1224618: Uninitialized pointer field
+  #1896 - Coverity CID #1241990 Resource leak
+  #1897 - Coverity CID #1375003 Structurally dead code
+  #1898 - Coverity CID #1021966 Dereference after null check
+  #1901 - Improve Jtest codes readability
+  #1902 - Coverity CID #1021755 Uninitialized pointer field
+  #1903 - Coverity 1022104 Dereference before null check
+  #1904 - Remove ending period from error messages.
+  #1905 - Jtest post feature
+  #1908 - Coverity 1375126, 1375120 Ignore drand48() warning in jtest.cc
+  #1909 - Coverity 1021693: Uninitialized pointer field
+  #1910 - Coverity 1375119 - unchecked return value in ts.fetch
+  #1914 - coverity 1224618: Uninitialized scalar field
+  #1915 - Updated clang-tidy default config to be the options that have been committed
+  #1919 - Coverity fixes for "Copy into fixed sized buffer" in uri_sig and jtest
+  #1920 - Coverity CID #1241990 Resource leak
+  #1927 - Coverity_1022180_1022181: ka_action can't be KA_UNKNOWN in the switch
+  #1928 - proxy.config.diags.debug.enabled is reloadable
+  #1929 - Various Coverity fixes for logstats
+  #1932 - Adds a coverity model file, and excludes a stat() check
+  #1934 - Coverity_1021917: closest_match can not be null at that point
+  #1935 - print url when document truncated warning occurs
+  #1937 - Improve graceful shutdown.
+  #1938 - Coverity CID #1022090 Copy into fixed size buffer
+  #1942 - Add a couple of CI build scripts, to source from Jenkins
+  #1946 - Issue #1605 AWS Signature Version 4
+  #1947 - TS-2790 Deprecated VConnection do_io
+  #1950 - More cleanup of the CI scripts
+  #1951 - Delete .indent.pro
+  #1954 - fix bg_fill abort when server completed
+  #1955 - Fix TSMilestonesType documentation.
+  #1957 - Use proper make wrapper, and parallelize
+  #1968 - Log the Lua error message when evaluating metrics fails.
+  #1969 - spawn_thread with atomic operation
+  #1972 - Removes the tsqa tests, to avoid confusion. Use autest.
+  #1973 - Fixed problem with url_len sometimes not being initialized
+  #1975 - Coverity 1022187: remove test_passed_mime_hdr_clone
+  #1977 - Changes the default for proxy.config.ssl.server.multicert.exit_on_loa…
+  #1983 - Require at least one ET_TASK thread
+  #1990 - Stop looping refreshing stale hostDB records
+  #1991 - coverity 1022186: remove test_passed_parser_create
+  #1992 - Coverity 1022104: Dereference before null check on _s
+  #1996 - Assertion with add_header plugin
+  #1997 - TS-4265: Restructure thread initialization
+  #1998 - Coverity 1200001: redirect_flag can't be 0 at this point
+  #2000 - Coverity 1021715: Initialize variable done to false
+  #2002 - Coverity 1373300: Use of untrusted scalar value
+  #2003 - coverity 1021718: Uninitialized pointer field
+  #2004 - Log H2 errors with stream id
+  #2005 - Add range check of Http2SettingsIdentifier
+  #2007 - Make the default thread stack size global and configurable.
+  #2008 - This should allow for per-version binaries
+  #2010 - Change locking for spawning dedicated threads to avoid race conditions.
+  #2013 - Permissive mode for server certificate verification (#433)
+  #2014 - Add RAII support for ink_mutex.
+  #2015 - Move where the HttpSM setup for redirect before going to origin
+  #2016 - Remove useless name from ink_mutex_init.
+  #2019 - Documented more detail about TS_HTTP_SEND_REQUEST_HDR_HOOK hook
+  #2022 - More NULL to nullptr conversion
+  #2024 - ProtocolStack - fix user agent side IPv6 detection.
+  #2025 - cid 1375841: Replace strncpy with memcpy
+  #2026 - Clang-Tidy cleanup: Bad brace placement in ifdef'd code.
+  #2029 - Rename "ink_mutex_lock" to "ink_scoped_mutex_lock" for better consistency.
+  #2030 - Removes the cp of clang-format, our ATS can handle the load
+  #2036 - Allow the tool to apply multiple PRs
+  #2037 - PR #2010 follow up.
+  #2039 - TS-4265: Change UnixEventProcessor to use declaration initialization.
+  #2046 - Prevent traffic_ctl from writing on a socket that is not connected.
+  #2047 - Disable cache volume size check for already configured volumes.
+  #2052 - Fix/autest conditions
+  #2053 - Fix for CID-1375917
+  #2054 - esi: remove unnecessary isCacheObjTransformable()
+  #2055 - Fix memory issue with intercept context in lua plugin
+  #2058 - Coverity 1196421, 1196464, 1196465, 1215252: buffer_upload plugin
+  #2060 - Coverity 1021734 Uninitialized pointer field
+  #2071 - Only use the start pipelines to start branch build
+  #2072 - Remove a redundant access specifier
+  #2073 - Add active_thread container support to Event Processor.
+  #2074 - Cleanup in EThread.
+  #2075 - Thread class cleanup.
+  #2078 - adds autest gitignore enhancements
+  #2079 - Fix readme formatting
+  #2081 - Noncopyable update for C++11
+  #2083 - coverity 1196454: resource leak in buffer_upload
+  #2087 - coverity 1021940, 1021941 fix: using invalid iterator in esi plugin
+  #2094 - Gracefully shut down traffic_server on SIGINT.
+  #2096 - fix logic inconsistency in is_state_closed()
+  #2101 - Do not try to push to the docs tree unless we have permissions
+  #2102 - LogAccessHttp init strlen to 0, not -1 (master)
+  #2106 - Support graceful shutdown on both HTTP/1.1 and HTTP/2
+  #2107 - Via: Last chance VIA updates related to #1534
+  #2108 - Fix library linkage for example plugins.
+  #2110 - Add records support to traffic_ctl and traffic_top.
+  #2111 - TS-4976: Regularize plugins - server_push
+  #2112 - Scalar: API and documentation update.
+  #2113 - Add override specifiers to Http2Stream class
+  #2118 - Clean up of error logging in regex_remap.cc
+  #2119 - Change textwidth option in .vimrc to 132
+  #2122 - Fix type cast in bnull_transform plugin
+  #2124 - Coverity 1371529: Removes unecessary check since we should assert
+  #2126 - Removes disabled test; case is covered elsewhere
+  #2127 - Clarify/expand gzip plugin usage
+  #2130 - Adds a README section about the tcp_client tool
+  #2136 - Adding plugin to test transaction/session order
+  #2137 - Test two continuations for HTTP_*_CLOSE
+  #2143 - Autest for ATS test support all configuration layout
+  #2146 - make hostdb.round_robin_max_count configurable
+  #2149 - SEGV in Diags when we try to use Fatal macro
+  #2150 - Fix UnixUDPNet
+  #2151 - TS-4265: Fix NUMA stack support.
+  #2154 - Missing Length if format was set in fabricate_with_old_api
+  #2159 - Methods never defined and value never used
+  #2161 - Move autest sandbox /var/tmp
+  #2163 - Method not implemented and constructor hiding not required
+  #2168 - handle 307 and 308 when building redirect response
+  #2170 - Don't do strlen on the static table
+  #2175 - Removing inert code: LogFile::do_filesystem_checks()
+  #2180 - Added break so Eclipse doesn't complain
+  #2181 - Changed to in-class member initializers and initializing all members
+  #2182 - add type <Random> to mix nonssl, ssl and h2 requests
+  #2187 - Add clang-format for the tests directory as well
+  #2188 -  Memleaking in transform test
+  #2190 - The content-type of TRACE response should be message/http.
+  #2194 - Better initialization in Thread.cc.
+  #2195 - Fix race condition in thread startup.
+  #2196 - Adding DNS over TCP support 
+  #2201 - Add experimental plugin to initiate H2 Server push for preload links.
+  #2202 - H2 test with traffic -replay
+  #2209 - Rework SSL Handshake Hooks and add tls_hooks tests.
+  #2214 - Plugin collapsed_connection - add TSMutexCreate() when calling TSCont…
+  #2216 - In adjust_sys_settings(), if we try to adjust the NOFILE limit due to
+  #2222 - Add new logic for copy of Plugin and Bin directory
+  #2229 - Alloc PollCont and UDPNetHandler before call initialize_thread_for_udp_net
+  #2240 - Architectural description of the Client classes.
+  #2241 - Propagate configure LIBS to tsxs
+  #2245 - replace NULL with nullptr
+  #2251 - header_rewrite: Add INBOUND condition.
+  #2253 - IpMap fix - in some cases a range node can be incorrectly re-used.
+  #2254 - IpMap Test update
+  #2257 - Add basic files to use Catch for unit testing
+  #2259 - Add basic_string_view
+  #2260 - Log IP address in case servername is not present
+  #2262 - const-ifying the getter functions of Map and HashMap
+  #2270 - consfity the get_keys function
+  #2272 - Leaving History independently
+  #2274 - Do not duplicate logging >= 400 response codes into error.log
+  #2277 - Add next-hop self detection (Issue #2269)
+  #2280 - Add documentation explaining the TLS hooks transitions.
+  #2281 - Docs: Better python 2/3 compatibility.
+  #2282 - Moved catch and got rid of centralizing unit tests
+  #2283 - Add pthread.h to pthread_np.h Autoconf check
+  #2284 - Update to simplify the case statement
+  #2286 - H2 Assertsion at Http2DependencyTree::deactivate
+  #2287 - Cleanup / correct buffer sizes for UUIDs
+  #2288 - coverity 1021919: Missing break in switch
+  #2289 - coverity 1196489: Read from pointer after free
+  #2290 - Rename tests/getting_started doc.
+  #2291 - Test: Fix TLS test plugin compile error for Fedora 26.
+  #2294 - remove redundant include
+  #2296 - replace strcpy with ink_strlcpy in select_best_srv
+  #2297 - TS-5088: Fix missing initial buffer from server, when combined with 101 response
+  #2304 - Converted Layout to use std::string and basic_string_view
+  #2312 - coverity 1376260: Uninitialized pointer field
+  #2318 - Add 'BufferWriter' class for constructing strings/sequences of characters.
+  #2319 - Fix the implementation of Http2DependencyTree
+  #2320 - Doc: Provide more context for HSTS example in header_rewrite.
+  #2321 - Doc: Adding proxy.config.ssl.server.multicert.exit_on_load_fail
+  #2325 - cachekey/cacheurl key string compatibility enhancements.
+  #2326 - Add state information
+  #2328 - TS-4976: Regularize plugins - server_transform.
+  #2330 - Avoid sending duplicate push promise on same client session #2205
+  #2332 - Doc: Fix LaTex paper size options to work and not generate a warning.
+  #2334 - Doc: Add documentation for MIME header plugin API functions.
+  #2336 - Add missing checks for request url to fix crash in TS_Lua plugin
+  #2337 - Doc: Session and transaction arg functions.
+  #2338 - Add null pointer check to server response set status in Lua plugin
+  #2340 - TS-4976: Regularize plugins - session_hooks (nee session-1).
+  #2341 - Update TSContSchedule.en.rst
+  #2347 - Add TS_RUNROOT option to control runtime layout config ( removed traffic_runroot program)
+  #2349 - Correct the debug message with rcv_headers_frame
+  #2355 - Add initializer list for constructor
+  #2357 - Make swap() in Vec.h a member function of Vec class
+  #2360 - Fixes, I think, coverity issues 1379288
+  #2362 - Coverity 1379271: Dereference null return
+  #2363 - coverity 1379269: dereference after null check
+  #2365 - Coverity 1379270 Out-of-bounds write
+  #2374 - Fix traffic_layout to not add messages to --json
+  #2381 - Redirect test for ATS
+  #2382 - Coverity 1375678 : add check to unverified environment input
+  #2384 - Adding missing HTTP2 activity timeout documentation
+  #2389 - Change from SHA1 to SHA512
+  #2394 - Removes DES-CBC3-SHA from the default cipher list
+  #2403 - TS-4976: Regularize plugins - ssl_preaccept.
+  #2408 - Avoid closing the last netvc if accept_till_done is set
+  #2409 - Optimize NetHandler & PollCont and reduce the redundant code
+  #2411 - Ran clan-tidy with modernize-use-nullptr
+  #2412 - Modernize literal 0 to nullptr
+  #2420 - Optimize acceptFastEvent(): Replace the dup code of UnixNetVConnection::acceptEvent by calling it directly
+  #2422 - Checking the retval of safe_getsockname() and safe_getpeername()
+  #2425 - Make sure the length of socket filename do not exceed the sizeof(sun_path)
+  #2426 - Fix map_with_referer to work and add tests for it.
+  #2427 - TS-4976: Regularize plugins - ssl_sni
+  #2428 - microDNS
+  #2429 - Replace proxy.config.http.normalize_ae_gzip with normalize_ae
+  #2432 - Format python code with autopep8
+  #2434 - Coverity 1379933:  Control flow issues  (DEADCODE)
+  #2435 - Resign server.pem for autests to 10 years
+  #2437 - null transform test 
+  #2439 - Coverity CID 1380022: FORWARD_NULL
+  #2440 - Optimize: Add startIO & stopIO for NetHandler
+  #2441 - Bug fix for event thread names
+  #2442 - Added tests for different thread configurations
+  #2446 - Add support for Forwarded HTTP header tag (RFC7239).
+  #2449 - Updated version of the jenkins autest build script
+  #2450 - Test: fix body factory gold files to ignore irrelevant headers.
+  #2451 - Build: Change --enable-example-plugins to control both build and install.
+  #2454 - Coverity: CID 1380037:  Resource leaks  (RESOURCE_LEAK)
+  #2455 - Corrects validation regex pattern for a config
+  #2464 - test with microDNS
+  #2467 - Optimize: If failed on migrateToCurrentThread, put the server session back to global server session pool.
+  #2469 - Coverity: CID 1380282:  Error handling issues  (CHECKED_RETURN)
+  #2470 - TS-4976: Regularize plugins - ssl_sni_whitelist.
+  #2471 - Change proxy/logging/LogAccessHttp.h from using 'virtual' to 'override'.
+  #2477 - Fix sizeofDoc silliness.
+  #2480 - Fix OS X build.
+  #2484 - Cleanup ats_tcp_somaxconn to use std::ifstream
+  #2485 - Uses backoff to launch ts if crash was recent
+  #2487 - TS-4976: Regularize plugins - statistic.
+  #2488 - Improve error message for ts_lua plugin
+  #2489 - TS-4976: Regularize plugins - thread_1
+  #2490 - Fix logging escapified multi-valued fields so the separator is escapified as well.
+  #2491 - Tests: Add logging field test base. Initially test essh for multi-values.
+  #2493 - TS-4976: Regularize plugins - thread_pool.
+  #2495 - Support set-redirect with READ_REQUEST_PRE_REMAP_HOOK
+  #2501 - Optimize: Add startCop & stopCop for InactivityCop
+  #2503 - Optimize: rename close_UnixNetVConnection to NetHandler::free_netvc.
+  #2504 - ink_memory.cc: musl support tiny fix
+  #2506 - config directory read-only notes
+  #2507 - Add option to disable libunwind
+  #2508 - Log fields for client Connection ID and HTTP/2 Stream ID.
+  #2512 - TS-4976: Regularize plugins - txn_data_sink.
+  #2513 - Docs: Fix warning for statistic.cc include.
+  #2516 - Fix lib/perl to do better on 'make clean' to handle changes in the build configuration.
+  #2517 - TS-4976: Regularize plugins - version
+  #2518 - Re-arrange ink_platform.h. (Issue #2444)
+  #2520 - 	Add support for TSIpAddrParse as a conveninent function to parse IP address
+  #2522 - Removes the snapshot API and features
+  #2523 - TS-4128: select alternate hook not working for ts_lua plugin
+  #2526 - @OPENSSL_LIBS@ added into automake file
+  #2528 - consolidates functionality into one tcp_client
+  #2529 - Added runroot feature to traffic_layout generating sandbox for programs to run
+  #2541 - Event loop changes
+  #2542 - Add forgotten inline keywords in BufferWriter.h .
+  #2545 - Fix #2533: ATS doesn't have an active timeout for http2 connection
+  #2547 - Add V=1 to the make check builds
+  #2549 - Add milestones for SSL Handshake timings
+  #2552 - Added event processor metrics
+  #2553 - Coverity CID #1224619 Uninitialized members
+  #2562 - Doc: Minor fixups for duplicated milestones and stat typo.
+  #2564 - Cleanup: remove ts::ConstBuffer from ink_inet.
+  #2567 - Add new TLS milestones to the Lua plugin
+  #2568 - Cleanup: Fix traffic_manager so its checks run if WCCP is enabled.
+  #2569 - Issue 1597: refactor ParentSelection to remove duplicate code
+  #2571 - Add string literal support to ts::string_view.
+  #2576 - Doc: Clean up comments in null_transform example plugin.
+  #2577 - Tests: Clean up file extensions in lib/ts unit tests.
+  #2578 - std::vector usage transition
+  #2579 - Test: Fix timing issues with txn and double tests.
+  #2581 - Ignoring unit tests, added to .gitignore
+  #2582 - Support dynamic registration to StatPages.
+  #2583 - Make sure all files in the sandbox are readable
+  #2584 - BufferWriter: Add data() method for access to the internal buffer
+  #2590 - Cleanup: fix rollback to use elevating file operations.
+  #2593 - move TRANSACT_RETURN to Transaction.cc
+  #2595 - ESI:combo_handler: Make maximum file count runtime configurable.
+  #2596 - Fix runtime undefined symbol error in multiplexer plugin.
+  #2597 - TextView: First pass on converting StringView to TextView
+  #2598 - UDPNet: Yet another timing fix for test_UDPnet.
+  #2599 - Added tests for chunked encoding
+  #2600 - Fix bad prototype of stub function for proxy/http/ForwardedConfig.cc …
+  #2603 - Remove usage of volatile keyword
+  #2617 - Added std::make_unique for C++11
+  #2621 - Fix mem leak related to do_os_response() function in ts_lua plugin
+  #2623 - Change the include from .cc to .h, as Odin intended
+  #2626 - Add MIOBufferWriter class which writes to an MIOBuffer instance.
+  #2627 - Update .gitignore
+  #2629 - Remove custom memory barriers from header_rewrite and replace with std::atomic
+  #2632 - Coverity: 1381603 1381604 fix to traffic_layout on engine and file_system
+  #2634 - Fixes build on macOS, using approprite PRIu64 for printf
+  #2635 - Fix prepare_plugin
+  #2638 - Turn off exception warning for gcc 7
+  #2639 - Fixed issue with clean/distclean
+  #2643 - fix the missing lock in TSVConnFdCreate api
+  #2644 - remove dup setting with NO_FD 
+  #2647 - Added arguments for port number and ip in microdns, microserver extension.
+  #2648 - This removes the FILE_WRITE mechanism from the core
+  #2649 - Move http 408 response logic into transaction
+  #2654 - Removes the Configuration Context Manager
+  #2660 - fix lua metrics bug
+  #2663 - TS API and hooks to manipulate the ATS session cache and ticket keys
+  #2666 - Added skip condition on http2 test for lack of curl http2
+  #2669 - Add http 0.9 in find_proto_string
+  #2675 - UDPBind with EventIO of UnixUDPConnection.
+  #2678 - Condition to test if plugin exists
+  #2681 - Added delay argument in microserver
+  #2682 - add string_view hash operator
+  #2683 - cachekey: ability to base the key on pristine URI.
+  #2684 - coverity 1021743: Uninitialized members
+  #2685 - Skip Link Local address to mitigate slow getnameinfo(3) problem on macOS
+  #2688 - Fixed some code for runroot of traffic_layout and lib/ts/layout
+  #2689 - Skipping tests if a plugin doesn't exist
+  #2690 - Fixed chunked_encoding gold file
+  #2691 - Kill unused .c file which contains code in a language invented by a Danish guy.
+  #2694 - Implement zero-copy within UDPNetProcessorInternal::udp_read_from_net
+  #2696 - Script load speedup for ts_lua remap plugin 
+  #2697 - List packages for building in Ubuntu
+  #2698 - CID 1226158: Uninitialized members
+  #2714 - Restructured traffic_layout and modified runroot command line
+  #2716 - Optimize: define UnixUDPConnection::inQueue by ASLL macro
+  #2718 - Optimize: define UDPQueue::atomicQueue by ASLL macro and rename to outQueue
+  #2719 - Rework the new udp connection
+  #2720 - coverity 1376260: Uninitialized scalar field
+  #2723 - More header_rewrite examples
+  #2727 - Within UDPConnection::Release(), it should calls the ep.stop() only if the UDPConnection will be closed
+  #2736 - More NULL to nullptr conversion
+  #2739 - Updated abbreviations in README
+  #2740 - API for retrieving TSVConn from TSHttpSsn
+  #2746 - Disable unit tests requiring exceptions (for MIOBufferWriter UT).
+  #2747 - Correct comment about TS_HTTP_SSN_CLOSE_HOOK.
+  #2751 - Doc: Minor fixes - some MimeHdr functions, traffic_layout, event loop metrics.
+  #2754 - SNI based Configuration for traffic server
+  #2756 - Modified uDNS AuTest extension
+  #2759 - iocore/dns: switch data-type to unsigned
+  #2775 - Move NetHandler initialization to be static and not per thread.
+  #2776 - Fix logic for loading config file for url_sig plugin.
+  #2777 - Fixed a bug where timeout argument not being used
+  #2778 - Single nameserver DNS failover
+  #2780 - Fix various autest failures and cleanup
+  #2785 - coverity 1021700: Uninitialized pointer field
+  #2788 - Correct the listen_backlog
+  #2789 - Optimize: Within udp_read_from_net, change the receive IOBufferBlock size to 2048 bytes
+  #2791 - Optimize: update ink_thread_create with thread-safe support
+  #2792 - Doc: Fix up TSOverridable config values. Copied directly from source.
+  #2798 - Add a --enable-fips flag which will eliminate MD5 and MMH and uses SHA256 instead.
+  #2800 - add autest for post redirection
+  #2803 - Cleanup of Continuation class initialization
+  #2805 - Cancel closing if Http2SendDataFrameResult is NO_WINDOW
+  #2807 - Doc: Updates to cache internals.
+  #2808 - corrects calls to TSContSchedule in documentation examples
+  #2809 - Remove multiprocessing.Queue.qsize() from traffic_replay
+  #2813 - Enable WCCP building on the Github builds
+  #2814 - Move ts/Vec to ts/Map #2 attempt
+  #2815 - Get rid of include unordered_map
+  #2816 - Fix traffic_wccp makefile for SNI / Lua based config.
+  #2818 - Fix include issue in example null transform plugin and test
+  #2820 - TsLuaConfig: Fix virtual destructor issue.
+  #2821 - expands TSHostLookup documentation
+  #2822 - header_rewrite: Allow set-debug in READ_RESPONSE_HDR_HOOK.
+  #2823 - System_stats plugin implementation
+  #2824 - Add configuration for per-client IP debugging
+  #2827 - Fix compile error on Ubuntu.
+  #2828 - Issue2826: fix osx build error
+  #2829 - Make it Python 3 compatible
+  #2830 - Do not try to open the resolv_conf file if it's nullptr.
+  #2833 - Fix a crash that a SSL callback gets netvc from a wrong place
+  #2837 - Increase write_vio.ndone only if sending DATA frame is succeeded
+  #2838 - add openssl flags to build plugs correct with TSXS
+  #2839 - Clean up tls test
+  #2840 - Created URI Signing Plugin.
+  #2841 - Fixed broken build on OSX where st_mtim is not defined
+  #2842 - Fixed build on Ubuntu, errors ignoring return value
+  #2845 - Doc: Fix build warnings - SSL Session, Overridable Config.
+  #2846 - Coverity: removing null pointer dereference
+  #2852 - Fixed another build issue on Ubuntu, errors ignoring return value
+  #2853 - Rename prepare_plugin to PreparePlugin to follow naming convention
+  #2854 - coverity 1382795: Pointer to local outside scope
+  #2855 - coverity 1382799, 1382796: Unchecked return value
+  #2856 - coverity 1382722: Unchecked return value
+  #2858 - Delete ssl_SNI.config from tests/min_cfg
+  #2860 - Fix a number of tests
+  #2864 - Doc: Add Layer 4 / SNI Routing documentation.
+  #2868 - Suppress udpnet-service debug log
+  #2872 - Fix potential crash from returning string_view.
+  #2873 - uDNS no longer returns localhost addresses in cases of NXDOMAIN
+  #2878 - overload ats_stringdup for string_view
+  #2880 - Fix wildcard entry for SNI config
+  #2881 - Avoid copying over data in the write_vio into response_buffer
+  #2882 - Add httpbin extension in AuTest
+  #2885 - removes unused public ip option from microserver code
+  #2886 - Add pparam to url_sig plugin to make it authenticate pristine URL, eliminate scheme check, other minor changes.
+  #2888 - coverity 1382722: Unchecked return value
+  #2890 - Removes DES-CBC3-SHA from the default cipher list (again...)
+  #2891 - Add an example of testing http2 with httpbin
+  #2893 - Update the autest.sh script that runs from Jenkins
+  #2894 - Add closedir for dangling dir pointer
+  #2897 - remove hack for traffic_top, update autest version
+  #2903 - Changing all *Debug* macros to *Debug
+  #2904 - fix post-redirect test
+  #2905 - Issue #2883: Split TXN and SSN user arg allocation.
+  #2909 - Rename HttpSM::ua_session HttpSM::ua_txn
+  #2910 - wildcard in ssl_server_name and rectify description of client certifi…
+  #2914 - Add path param url signing option and client ipv6 verification to url_sig plugin
+  #2915 - Build: Fix build problems on RHEL 6 for traffic_top.
+  #2916 - removes usages of deleted http.redirection_enabled
+  #2919 - coverity 1367517: Destroy held lock
+  #2920 - Fix a build issue due to recent variable name change
+  #2922 - Add information about version of ats being tested
+  #2923 - autest option for using the host field for response lookup
+  #2931 - fixes parse of redirect uris missing leading /
+  #2935 - Remove spurious max_connection warning
+  #2937 - Make some of build options configurable
+  #2938 - fix ts_lua core dump issue after config reload
+  #2939 - handle transport of empty body response
+  #2941 - Do not try to load empty client_cert path.
+  #2948 - Changes history buffer from linear buffer to circulating buffer
+  #2949 - Fix sdk_sanity_check_null_ptr to take a <const void *>
+  #2954 - Remove code to set hard resource limit
+  #2958 - Change normalize_ae handling to normalize request from client not req…
+  #2959 - Update the docs to be a bit more clear about config behavior
+  #2962 - Drain stop and drain improve
+  #2967 - Fix the problem related to MADV_DONTDUMP
+  #2968 - Fixed uri_signing plugin to use pristine request header.
+  #2969 - Allow for spaces in list of algorithms in configuration file for gzip plugin.
+  #2970 - Remove Congestion Control Feature
+  #2971 - Make sure that push requests use the custom port, if specified.
+  #2972 - Add fix to select ports better on the Mac based on PR 2832
+  #2974 - Remove use of netstat in tests
+  #2976 - coverity 1374999: Resource leak
+  #2982 - Cleans up the build, excludes ccache where it fails
+  #2990 - Fix compiler issue with ubuntu
+  #2992 - clang-format cleanup
+  #2999 - Traffic-replay updated
+  #3003 - appends missing dot to udns domain
+  #3005 - Reset water_mark in new_empty_MIOBuffer_internal
+  #3006 - Fix UDPNetProcessor::CreateUDPSocket()
+  #3010 - Coverity ID 1241990: Fixes memory leak
+  #3011 - Makes it actually create a Config object
+  #3016 - Multiplexer plugin: Fix bug with chunk decoding, add some comments.
+  #3023 - TextView: Add suffix methods, update comments.
+  #3024 - Make Continuation class constructor protected.
+  #3033 - Expanding the cases where the server_entry gets cleared on error.
+  #3034 - TextView: Fix svtoi for other bases, operator!, add verification tests.
+  #3038 - the global SELECT_ALT C++ hook badly needs fixing
+  #3047 - Add ssn and txn tests for HTTP2. Depends on Issue #3143. Depends on PR #3301
+  #3049 - Fair Queuing HTTP Pacing Plugin
+  #3050 - Add support to chunk post body's that come from H2 client without CL
+  #3051 -  We should call handle_parent_died if we failed to find next parent
+  #3054 - Changes to allow for possible stale ua_session pointer in HttpSM object.
+  #3062 - Make string_view available in plugin cppapi.
+  #3065 - Use NetVCOptions to create UDPConnection
+  #3066 - Bring back MT_hashtable.h under lib/ts/
+  #3069 - Heap use after free
+  #3072 - Race condition when starting accept threads
+  #3073 - Adding custom method support and bug fixes
+  #3078 - correct negative event's timeout_at value
+  #3079 - X-Debug: log-headers
+  #3081 - uses BufferWriter to compose format string
+  #3082 - Use CRYPTO_HEX_SIZE instead of hardcoded fixed sizes.
+  #3086 - Correct clear and assign of FIPS cache keys in HTTPInfo.
+  #3087 - Fixes the escalate plugin such that redirects are followed
+  #3088 - Make throttling feature more useful.
+  #3089 - Documentation: correct inku16 to unsigned int:16
+  #3090 - psutil can not find python.h without python3-dev in Ubuntu
+  #3091 - Send VC_EVENT_WRITE_READY/COMPLETE when write_vio is consumed
+  #3092 - Cleanup Http2Stream
+  #3095 - Add client read error to squid log codes
+  #3097 - More documentation for internal cache data structures
+  #3098 - Corrects off-by-one error, adds test
+  #3099 - More AUTest test cases for HTTP/2
+  #3104 - Don't read DNS responses until we get at least two bytes
+  #3105 - Adds a new header_rewrite condition %{CIDR}
+  #3111 - Mark TSHttpTxnFollowRedirect() as deprecated.
+  #3112 - Replaces TSHttpTxnFollowRedirect with TSHttpTxnConfigIntSet for Lua
+  #3119 - Add move operator and constructor to Result and TextBuffer
+  #3121 - Doc: Add java/plantuml dependency to building the documentation.
+  #3124 - Disables the support for multi-range request by default
+  #3125 - Fix documentation for transaction_active_timeout_in default value.
+  #3126 - Doc: Clean up build warnings.
+  #3129 - Ignores the ICC warning on expression constants to asserts
+  #3130 - Doc: Remove man page reference to congestion.config which no longer exists.
+  #3131 - Add TLS Bridge plugin to plugins/experimental.
+  #3132 - Added -f to rm to fix build
+  #3136 - Remove all references to TS_USE_TLS_SNI
+  #3137 - Doc: Add internal documenation for ts::string_view.
+  #3141 - Separate mutex of Http2ClientSession and Http2Stream
+  #3142 - BufferWriter: Documentation and some API cleanup.
+  #3144 - Doc: Fix more documentation build warnings.
+  #3145 - Add TSAPI functions TSRemapFrom/ToUrlGet().  Allow TSMBuffer pointer passed to TSUrlStringGet() to be null.
+  #3152 - Doc: Update documentation building documentation.
+  #3153 - Adds tcpi_total_retrans to tcpinfo
+  #3154 -  Added auth_directives to uri_signing.
+  #3161 - Optimize: define AIO_Reqs::aio_temp_list by ASLL macro
+  #3163 - Add support for X-Remap header to xdebug plugin.
+  #3170 - Eliminate incorrect -1 adjustment to buffer size for snprintf() calls.
+  #3171 - xdebug X-Remap documentation update neglected due to senior moment.
+  #3173 - corrects truncation of timestamp string
+  #3174 - MADV_DODUMP causing instability and performance overhead
+  #3175 - Add a HostStatus container used to mark  parents down or up.
+  #3180 - Create a new AIOCallback to call back aio_err_callbck if there is an error from Linux Native AIO
+  #3181 - Add fix for leaking url string in uri signing
+  #3183 - Doc: Update highlighting for Lua, HTTP for correct Pygments highlighting
+  #3188 - FIx string_view hash function
+  #3199 - Isolate client ctx options from server options
+  #3200 - HostDB - removing infinite ttl=0
+  #3204 - ATS does not add Client-ip header
+  #3207 - Fix instability caused by HTTP2_SESSION_EVENT_FINI
+  #3208 - verify client certificate callback with client verify hook
+  #3209 - Fix check-unused-dependencies
+  #3214 - Removes the delay when sending traffic_ctl msgs
+  #3215 - Remove unused SHARED_* build variables.
+  #3218 - Fix default include path ordering.
+  #3221 - Remove cppapi mutex support since it is redundant with C++11 Thread support lib.
+  #3223 - Add support for ASYNC_*_job and crypto engine loading
+  #3224 - Refine and clean up runroot
+  #3229 - Add declaration of ssl_verify_client_callback
+  #3236 - Disable fips when TS_ENABLE_FIPS == 0
+  #3238 - Select the current cert when looking for issuer
+  #3242 - Fix traffic_ctl so -h or --help show subcommand options
+  #3244 - Loop over read for readIntoBuffer
+  #3245 - ignore *.pm.in when installing the TS Perl module
+  #3246 - No dump allocator using jemalloc
+  #3248 - Support string_view hash for Darwin
+  #3249 - docs for client read error
+  #3250 - Print the volume that is clearing its directories
+  #3251 - Drain the request body if there is a cache hit
+  #3253 - Allow for specifying of brotli via --enable-brotli= or pkg-config
+  #3254 - Framework for CPPAPI regression test plugin run by a gold test
+  #3256 - Fixing docs of TSIOBufferReaderAvail
+  #3258 - Add comment for vol init
+  #3262 - Support TSRemapFromUrlGet/TSRemapToUrlGet in ts_lua plugin
+  #3264 - Doc: Update stripe assignment initialization documentation.
+  #3267 - Errata: add move semantics.
+  #3270 - Syntax check should ignore age
+  #3271 - Fix clang format errors.
+  #3275 - Remove leap-into-the-abyss casting from TSTransformCreate().
+  #3276 - corrects doc example for s3_auth map rule
+  #3278 - Removes the last remnants of tsqa tests
+  #3281 - Remove inefficient use of std::string in C++ transformation plugins.
+  #3282 - Fixing 404 on redirects
+  #3283 - Removes unnecessary use of snprintf
+  #3284 - Split MemView (now MemSpan) from TextView.
+  #3286 - Scalar: Updates and convert tests to Catch.
+  #3287 - Adds the new header, and some FreeBSD info
+  #3289 - Issue 2388: Added TSVConnArgs support
+  #3293 - Add and update autest of runroot
+  #3294 - bwprint: Type safe snprintf like output to BufferWriter instances.
+  #3295 - Print volume path and more comment in the code
+  #3296 - Moving the inline functions to Class Vol
+  #3297 - Makes the global remap data structure ref-counted
+  #3298 - prevent serving from INADDR_ANY hosts
+  #3300 - Documentation build improvements
+  #3301 - Handle rescheduled transaction close event via tunnel.
+  #3304 - Fix the compiler error with fips
+  #3309 - Ignore cache age in autest
+  #3311 - Add check on continuation before dereferencing, issue #3310
+  #3312 - BufferRewrite: Add support for MemSpan, string_view hex dump, and std::string
+  #3315 - Add RPC documentation
+  #3316 - Cache Tool: initial commit.
+  #3319 - CI: Fix clang-analyzer.sh typo.
+  #3322 - Add MemArena allocator
+  #3324 - Support floating points for bwformat
+  #3325 - Adding proxy.config.http.allow_half_open
+  #3326 - Add move constructor and assignment to ats_scoped_fd.
+  #3327 - CacheTool: Fix out of tree build.
+  #3329 - CacheTool: Fix and rewrite stripe initialization
+  #3330 - CacheTool: Fix clang build problem on CentOS.
+  #3332 - CacheTool: Fix Scalar / bwformat issues for MacOS.
+  #3333 - Add verify functionality for runroot of traffic_layout
+  #3334 - CacheTool: Fix Ubuntu build of CI
+  #3336 - A number of small changes that were never merged upstream
+  #3340 - bwformat: Add support for bool, and fix center align bug.
+  #3341 - Fix some potential problems with accept threads.
+  #3342 - Editor support with CMakeLists.txt.
+  #3345 - CacheTool:Set exit code in case of error
+  #3346 - Added support for C++17
+  #3347 - git ignore traffic_cache_tool
+  #3348 - Add wrapper class for TSCont to CPPAPI.
+  #3349 - Make TextView.h available to C++ plugins.
+  #3351 - Adds a 'minimum content length' setting for gzip plugin
+  #3352 - Allow gzip plugin to configure which status code to transform
+  #3356 - Update string_view to be compatible with gcc
+  #3359 - Doc: Fix warnings / errors in cache architecture.
+  #3363 - Add current count and limit to logging messages for per origin connection throttling
+  #3365 - Make a note whenever a stripe directory is cleared
+  #3366 - A better way of testing thread configs
+  #3367 - Adds 206 and 304 to the default status codes to be compressible
+  #3368 - Tests wait until microserver is ready
+  #3369 - Makes the default set of status codes removable via configs
+  #3371 - Adds a hint if layout found under /bin
+  #3377 - Uses the normal WKS tokenizer for ACL methods
+  #3378 - Removes the now obsolete ref-counting on configs / conts
+  #3383 - Write_pos should be initialized with offset of the content start
+  #3384 - Fix freelist loop check and cleanup code
+  #3390 - Patch for gcc 6 and incorrect template function overload resolution for string_view
+  #3391 - Add SO_MARK functionality to header_rewrite plugin.
+  #3392 - Fix post process to propagate early server response.
+  #3394 - README.md for micrserver
+  #3395 - Modify cache tool commands and update the doc
+  #3396 - Removes unused RecPipe code
+  #3402 - Refactor: Move stripe and span structure to CacheDefs
+  #3404 - Cleanup: Fix make check issues with running on -std=c++17
+  #3410 - Make CryptoHash::toHexStr const.
+  #3414 - Fixed error message about no-noexcept-type when compiling C
+  #3415 - Update traffic_layout runroot commands and switches
+  #3416 - Fixed warnings on unused variables for Clang 6
+  #3419 - BufferWriterFormat: add handling for 'p'/'P' pointer type override.
+  #3420 - Ran clang-tidy with modernize-loop-convert
+  #3421 - TSHttpTxnOutgoingAddrSet: Add documentation, implement for HTTP/2.
+  #3422 - TextView: Change 'set_view' to 'assign'.
+  #3429 - Updates for editors that use CMakeLists.txt
+  #3433 - Adds squid log sub-codes for detail
+  #3434 - Fixes a build issue with latest XCode / clang
+  #3435 - Ran clang-tidy with readability-braces-around-statements
+  #3436 - Replaces deprecated STL fun_ptr with lambda, thanks amc
+  #3437 - CacheTool: Replace errata message with stdout
+  #3439 - string_view: Remove C++14 operators to avoid ambiguity.
+  #3440 - Updates to clang-tidy target
+  #3444 - Use #pragma once
+  #3447 - Ran clang-tidy with modernize-use-nullptr
+  #3448 - Add ats_ip_range_parse to ink_net.h to improve/replace ExtractIpRange.
+  #3449 - Need to call signalActivity() to wake up epoll_wait()
+  #3450 - Added config option proxy.config.thread.max_heartbeat_mseconds
+  #3451 - Fix typo for debug tag in README
+  #3452 - Replace spaces for a tab to fix macOS issue
+  #3453 - Fixed unmatched brace issue from clang-tidy
+  #3454 - Fixed Debian 9/gcc6 string_view test
+  #3460 - Explicitly cast to void * when initializing a memory with a pointer for a class object
+  #3464 - Fix README typo of OSX
+  #3466 - Cache_tool: replace MD5CTX with CryptoContext
+  #3467 - Ran clang-tidy with modernize-loop-convert
+  #3471 - Define htobe64 for macOS
+  #3472 - Change ip_allow.config to support network masks.
+  #3473 - Selects version 1.4.2 of autest
+  #3474 - Ran clang-tidy with modernize-use-bool-literals
+  #3475 - Adds more flag settings to the configure output
+  #3477 - add support for TSHttpTxnOutgoingAddrSet in ts_lua
+  #3478 - TSEventFunc should return an integer
+  #3479 - TSThreadFunc should return a pointer
+  #3484 - Makes the CI work again with ClangAnalyzer v6.x
+  #3485 - Updates the STATUS file with all recent releases
+  #3490 - Corrects boolean argument validation/error message
+  #3492 - Fix post_error test by initializating the address length of accept
+  #3494 - Use epoll instead of negative events for DNS
+  #3500 - ts_lua -- Exposes the TS API function TSHttpTxnNextHopAddrGet()
+  #3501 - Removes remnants of streams cache
+  #3507 - Documentation: point to GitHub issues instead of Jira
+  #3508 - Corrects return value for success case in TSHttpTxnOutgoingAddrSet
+  #3509 - Clarifies when API function should be called
+  #3510 - Fix remap to use ats_ip_range_parse for better range parsing.
+  #3511 - Clear server_entry in case of ERROR as well as NO_ACTIVITY_TIMEOUT
+  #3514 - Parent Selection -- Make self-detection configurable.
+  #3516 - Remove unused TSEvent parameters from C++ API Continuation class.
+  #3517 - Multiplexer plugin causing unnecessary ASAN alert
+  #3518 - Clean up state machine id and make it 64 bit
+  #3519 - Add cache scan feature
+  #3520 - Downgrade 'previously indexed' cert warning to debug
+  #3522 - Preserve blank lines when reading/writing records.config
+  #3523 - Renames gzip plugin to compress
+  #3524 - Adds a basic .editconfig, should follow clang-format rules
+  #3526 - Ran clang-tidy with readability-braces-around-statements
+  #3527 - Cleans up some pylint issues in the python code
+  #3529 - Correct parameter for certificate verification
+  #3530 - Add time option to traffic_ctl host down.  
+  #3531 - Doc: Unify ":unit:" to ":units".
+  #3532 - Updated to new version of clang-format
+  #3533 - Doc: various fixes
+  #3534 - API for setting OCSP Callback
+  #3535 - Move inline functions into class
+  #3538 - doc/admin-guide: minor fixes
+  #3540 - Adds/tweaks editorconfig settings
+  #3542 - Fixes build on linunx/clang/libc++ combo
+  #3543 - Add fix option for traffic_layout verify subcommand
+  #3545 - Add log field for error code of GOAWAY/RST_STREAM frame
+  #3547 - Remove the default tab size in editorconfig, and create C/C++ section
+  #3548 - Ran clang-tidy with modernize-use-override
+  #3549 - Only check for final C++ standards in configure
+  #3553 - Ran clang-tidy with modernize-deprecated-headers
+  #3554 - Ignore temporary clang files
+  #3555 - Test: autest exercising cache-control directives
+  #3556 - Convert 'gzip' Au test case to 'compress'.
+  #3558 - Update initialization to activate openssl async_job properly
+  #3559 - This adds a new callback to remap APIs: TSRemapConfigReload
+  #3564 - Parent Selection -- Host Marking -- Handle pRec == nullptr and wrap-a…
+  #3567 - Removes a number of proxy.node metrics
+  #3568 - Test: autest for traffic_layout verify runroot and expected error
+  #3569 - traffic-replay: python request needs schema
+  #3570 - Removes the traffic_shell.pl script
+  #3571 - Cache-Tool: coverity Fixes
+  #3572 - CMakelist: Updates for gzip -> compress, libtsconfig.
+  #3577 - Doc: Fix table in logging format.
+  #3578 - Get rid of Content-MD5 checking
+  #3579 - Cache-Tool: initialize tmp in CacheScan
+  #3581 - Coverity 1390802: Fix resource leak in CacheDefs.cc
+  #3582 - Parent Selection -- Add option to mark down self specified as a parent.
+  #3583 - MemArena: overhaul internals and clean up API.
+  #3584 - Misc additions to ts_lua and update document to avoid using print
+  #3585 - Fixes spelling errors in default configuration files
+  #3586 - Removes the remnants of congestion.config and related code
+  #3587 - Move Cachekey plugin to stable plugins.
+  #3589 - Fix potential nullptr derefernece in ink_inet.cc
+  #3591 - Fix clang-analyzer identified memory leak in test code
+  #3592 - Fix clang-analyzer issue in HdrTest::test_mime.
+  #3593 - Return early to avoid divide by zero in degenerate case.
+  #3594 - Changes the check on toPath, which will be NULL when there is no path
+  #3595 - Fix out-of-bounds access in append_string function.
+  #3596 - Fix Dereference of null pointer in HashMap
+  #3597 - Fixes null pointer dereference in print_http_hdr
+  #3598 - Fix a nullptr dereference
+  #3600 - clang: Logic error
+  #3601 - Add TLSv1.3 cipher suites for OpenSSL-1.1.1
+  #3602 - Clang6: Fix nullptr use in AtomicList.
+  #3603 - Prevent memcpy overlapping buffers when assigning a CryptoHash to itself
+  #3605 - Testing: Update to Catch 2.2.2
+  #3606 - h2spec: Parse priority frames even if H2 stream priority is disabled
+  #3607 - Cleaned up the syntax test
+  #3608 - Suppress clang-analyzer's erroneous complaint about use-after-free.
+  #3609 - Remove traffic_cop
+  #3610 - Clang6: Fix garbage return value in CacheTool.cc.
+  #3613 - Remove unused code
+  #3615 - No need to walk the buckets for cache scan
+  #3619 - Fix Coverity ID 1022023
+  #3620 - Coverity 1021989
+  #3622 - Clang: fix CacheTool null parameter reference.
+  #3623 - Coverity 1021954
+  #3624 - coverity-1022121 Fix null check
+  #3625 - Coverity 1267857: Null return value check in check_request_validity.
+  #3626 - coverity: free on return - Stripe::updateHeaderFooter()
+  #3627 - Fixes coverity issues 1390794 and 1390798.
+  #3629 - Doc: document proxy.config.ssl.server.multicert.exit_on_load_fail
+  #3630 - Fixed past-the-end error in collapsed connection plugin.
+  #3631 - coverity 1022110 fix null check
+  #3632 - Coverity 1021693: Initialized m_remap to nullptr in HttpSM.h
+  #3633 - Clang: fix ats_scoped_fd in CacheTool.cc
+  #3634 - Fix memory leak in traffic_cache_tool.
+  #3635 - cachekey: Update CMakelists.txt for cachekey promotion.
+  #3636 - Removes the epic plugin
+  #3637 - Coverity 1390953
+  #3638 -  Upgrade API I/O functions to consistently use s/size_t.
+  #3639 - CID 1383617: Add null check
+  #3640 - coverity: bulkfile ignored sign
+  #3641 - Clang: fix ats_scoped_fd problem.
+  #3642 - CID 1383925: Fix null check
+  #3644 - Remove TSHttpSsnSSLConnectionGet which seems redundant.
+  #3647 - Removes a bogus check that tricks clang-analyzer to think it's null
+  #3648 - Fix jtest append_string() buffer overrun.
+  #3650 - Add a -F option to disable freelist in ProxyAllocator
+  #3651 - Clean up copy disabling in compress plugin.
+  #3652 - Fixes some markdown for the CIDR condition
+  #3653 - Fix typo "mutext" to "mutex" in comment
+  #3655 - Remove some more traffic_cop remenants
+  #3656 - API for ssn id: TSHttpSsnIdGet
+  #3658 - IPv6 for microserver and microDNS
+  #3659 - Changes to compile on Fedora 28 with gcc 8.1.1
+  #3660 - Get rid of small memory leak in compress plugin.
+  #3665 - Makes the output less debuggy, and other updates
+  #3666 - Updates a test to work on BSD systems
+  #3667 - Force using C++17 as the default standard
+  #3668 - BufferWriter: Formatting tweaks, updated documentation.
+  #3669 - Add the flipped equality/inequality operators with raw pointers to Ptr<>
+  #3670 - Fix issue with test_MemArena.cc which wasn't caught by the PR builds.
+  #3671 - Sets things up to find appropriate compilers for C++17
+  #3677 - Removed internal C++14 and C++17 features in ink_std_compat.h
+  #3678 - Replace ts::string_view with std::string_view
+  #3679 - Upgrades target autest version to 1.5.3
+  #3680 - CMakelists.txt: Remove traffic_cop remnants.
+  #3681 - More fixes to the CI builds for C++17
+  #3682 - Fixes an assert that breaks clang-analyzer
+  #3684 - Undoes some damage from clang-tidy on C sources
+  #3685 - Fixed memory leak in transform add test, found with clang-analyzer
+  #3686 - Enhance background_fetch plugin for better squid logging
+  #3687 - Removes all the metrics.config related stuff
+  #3689 - Doc: Minor tweaks to clear up doc build errors.
+  #3690 - Promote the Escalate plugin to stable
+  #3691 - Restores the expected non-tab indentations
+  #3692 - Promotes cache_promote plugin to stable
+  #3694 - Promote ts_lua plugin to stable
+  #3695 - CacheTool:Fix Unmarshal code and check for loops while scanning
+  #3696 - Fix linkage of traffic_manager with WCCP due to removal of metric library.
+  #3697 - Editor: Fix CMakeLists.txt to handle escalate plugin promotion.
+  #3698 - For TS remap API functions, elaborate on mutual exclusion in the documentation.
+  #3699 - Make sure we core dump when we need to
+  #3700 - WCCP: Fix issues with gcc8.
+  #3702 - Log the full ATS version to traffic.out on startup.
+  #3703 - Replaces the old metrics.config with a simple C++ class
+  #3704 - Support for clang-analyzer to use Fedora 29 packages
+  #3705 - Fixed clang-analyzer issue with null pointer in BufferWriter
+  #3706 - Adding missing string_view include, hopefully makes Coverity happy
+  #3707 - Fixed clang-analyzer issue with null pointer in URL
+  #3708 - Adds log field for "reason" returned with status error codes
+  #3709 - Doc: remove cluster references in traffic_ctl
+  #3710 - Remove prepended "_" from public member of VIO
+  #3711 - support TSHttpSsnIdGet() in lua plugin
+  #3713 - Add zombie-event option to debug leaked Http2ClientSessions.
+  #3714 - Two more places to check if attempting half_closed connection logic is feasible
+  #3717 - Adding delay to fix race conditions in continuation tests
+  #3718 - Fixes compiler flags used for compress plugin
+  #3719 - Removes unused raft library
+  #3721 - Fixed clang-analyzer issue with memory leak in LogObject
+  #3722 - Fixed clang-analyzer issue with memory leak in LogHostList
+  #3723 - Removes the remaining vestiges of log_hosts.config
+  #3726 - TS-2365: Fix crash in tls dynamic record size
+  #3728 - Fixed clang-analyzer issue with dead increment in wccp
+  #3729 - Fix dicarding active lock in CPPAPI Async Timer.
+  #3732 - Parent Selection - Consistent Hash - secondary_mode
+  #3733 - Make ATS buildable with BoringSSL again
+  #3735 - Fix traffic_crashlog zombie issue
+  #3736 - Conversion of logging.config and sni.config to YAML-based files
+  #3737 - Removes the documentation references to vaddrs.config
+  #3740 - Switch to a safer snprintf(), makes compilers more happy
+  #3743 - Changed some traffic_layout related codes to memory efficient string_view
+  #3745 - Removes an old version, and adds 8.0.x, to the Docs structure
+  #3746 - Restores clang-analyzer error states, and updates docs for 8.0.x
+  #3747 - Handle various kinds of errors during cache scan
+  #3750 - Only increment currently_open count if FD is really open
+  #3751 - In the non-transparent case handle EADDRNOTAVAIL as a normal connect fail
+  #3752 - Remove epic docs
+  #3753 - doc: Fixes some broken macro usages
+  #3754 - doc: fixes some example configurations in the plugins docs
+  #3755 - Update libexecdir of Layout GNU from config.layout
+  #3756 - Only increment currently_open if socket connects (take 2)
+  #3758 - header age not critical to HSTS header test result.
+  #3759 - Log the errno from the connect failure.
+  #3761 - Fix copying issue of traffic_layout init
+  #3763 - tsconfig/IntrusivePtr refresh - updated for eleventy and better conformance with std::shared_ptr.
+  #3764 - example: Cleans up spelling
+  #3765 - Documentation cleanup
+  #3767 - MemArena refresh for better memory handling.
+  #3770 - Correct the number of available disk shows in fatal message
+  #3771 - Clang-Analyzer: Fix false positive in IntrusivePtr.
+  #3775 - Moves traffic_log{cat, stats} to cmd/traffic_log{cat, stats}
+  #3782 - Fixes builds broken after moving stuff to cmd/
+  #3783 - Removes some old files that we no longer build
+  #3784 - Removes some old, unused tests
+  #3786 - Moves traffic_server to cmd/traffic_server
+  #3789 - Force linking with libstdc++ for test_marshall
+  #3790 - Cleans up various bits of old code
+  #3791 - Collapses the cmd/ build into one single build unit
+  #3793 - Clean up zombie_event that didn't expire.
+  #3794 - Remove details of the via string from the cache-control gold file.
+  #3795 - Fix multiple issues of traffic_layout and add a readme
+  #3796 - Remove unused macros in jtest
+  #3797 - Removes the exec bit that was added by c3c4ff2
+  #3798 - Deletes some more old, unused files
+  #3800 - BWF: Add errno support.
+  #3801 - Add infodir back to Layout and clean up some code
+  #3802 - HostDB code cleanup
+  #3804 - Removed defines that are not used
+  #3811 - Negative Caching should not happen on 400 Bad Request
+  #3815 - Added client read error case to TSHttpTxnAborted
+  #3816 - Renames the cmd/ tree to src/
+  #3817 - ink_inet: Add UNIX socket family support.
+  #3818 - BWF: Add support for date formatting.
+  #3821 - Generalize started thread counter
+  #3822 - Fix broken out of tree build
+  #3824 - This removes the second CacheSM, and related APIs
+  #3826 - BWF: Fix asserts for clang-analyzer.
+  #3828 - Set LDFLAGS when building with jemalloc
+  #3829 - Fixed coredump with origin throttling
+  #3831 - Update directory structure of README
+  #3834 - Set verify locations in the initializer function only
+  #3835 - Search cache for urls matching the regex input
+  #3838 - Handle inactivity timeout event in state_http_server_open
+  #3840 - Update runroot to use yaml-cpp library
+  #3842 - Removes the TSUrlDestroy API, which has been a no-op for a long time
+  #3843 - Removes the old TSRedirectUrlGet API, deprecated
+  #3846 - Make atscppapi::RegisterGlobalPlugin return a value.
+  #3847 - Update installation instruction for lua plugin
+  #3850 - Fix event loop metrics to gather only from ET_NET threads.
+  #3854 - Fix and Update build ordering of lib
+  #3861 - Remove %<pqsn> logging for ATS 8.x
+  #3862 -  Renames yaml-based configuration files to .yaml 
+  #3864 - Updates the .spec file to be as per master
+  #3866 - Fixed some errors in the default yaml logging config file
+  #3867 - Reworks yaml-cpp build flags
+  #3868 - Converts libyamlcpp to a 'convenience' library
+  #3874 - cache_range_request plugin fix argument order on TSMLocReleaseHandle calls
+  #3875 - Clone the url object into the new heap
+  #3876 - Add validation of fields in log file for traffic_logstats
+  #3879 - Runroot: Change some dir keywords to const
+  #3883 - Fixes the cache_total_hits to be correct
+  #3884 - Create lock file after changing to admin user for traffic_server
+  #3885 - Fix crash on shutdown
+  #3888 - Updates the default ssl_server_name.config to YAML
+  #3889 - Fix spelling and syntax errors in comment.
+  #3890 - Logs parse error if ssl_server_name.yaml fails to load
+  #3892 - SNI based IP_ALLOW
+  #3893 - Fix coredump issue when calling ts.fetch
+  #3894 - Sending stdout and stderr to traffic.out
+  #3899 - Add a --reason tag option to the host subcommand
+  #3902 - Recognize openssl engines for key loading.
+  #3909 - Fixes detection of OpenSSL's OCSP APIs
+  #3915 - Doc: Fix build errors in logging.
+  #3916 - Fixes OCSP warnings when cert has no OCSP URI attached to it
+  #3917 - Converts remaining header files to #pragma once
+  #3918 - Fix configuration problem for host-targeted user response pages
+  #3919 - Clarifies alternate # selected in log output
+  #3920 - CPPApi Intercept Plugin: Changed destroy logic
+  #3924 - Remove INKContInternal warning.
+  #3929 - Log lock cleanup
+  #3933 - Removed assignment of unused variable
+  #3934 - cachekey: running as global plugin
+  #3935 - Link with libluajit for the lua plugin
+  #3937 - Add function for TSHttpTxnAborted
+  #3940 - Add support for reloading the lua script in global plugin mode
+  #3946 - Fix bug on loading speed up for lua script
+  #3948 - Enhances detection of luajit
+  #3949 - Fixed http/2 issue with Http2Stream being updated after it was destroyed
+  #3952 - ASAN: stack-use-after-scope
+  #3959 - Cleans up brotli compiler and linker flags
+  #3960 - Cleans up LDADDs in traffic_server
+  #3962 - Revert POST handling changes and fixes 6 different cores
+  #3969 - Clearout shutdown_cont_event when the event has been processed
+  #3970 - Remove Http2ConnectionState::continued_buffer
+  #3977 - Revert POST handling changes and fixes 6 different cores
+  #3983 - Fixes some var-args missing va_start/end
+  #4000 - TS-4765: Removes previously deprecated cqbl and pqbl log tags
+  #4001 - Removes old commented-out code
+  #4002 - Fixes spelling
+  #4004 - Dockerfile for CentOS/Fedora, i.e. yum dependencies
+  #4011 - Modifies init script to add start/reload hooks
+  #4027 - Fixes ticket loading from filesystems without a mtime
+  #4035 - Fixing copy paste error in SNI yaml parsing
+  #4036 - Removes more references to traffic_cop and cop related functionality
+  #4043 - Change the defauilt connect_ports docs to reflect the code
