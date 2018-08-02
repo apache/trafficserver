@@ -27,6 +27,7 @@
 #include "ts/ink_error.h"
 #include "MgmtUtils.h"
 #include "ts/I_Layout.h"
+#include "ts/runroot.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
 #include "ts/ink_cap.h"
@@ -43,6 +44,7 @@
 
 using namespace std::literals;
 static const std::string_view MGMT_OPT{"-M"};
+static const std::string_view RUNROOT_OPT{"--run-root="};
 
 void
 LocalManager::mgmtCleanup()
@@ -896,6 +898,14 @@ LocalManager::startProxy(const char *onetime_options)
     // Make sure we're starting the proxy in mgmt mode
     if (w.view().find(MGMT_OPT) == std::string_view::npos) {
       w.write(MGMT_OPT);
+      w.write(' ');
+    }
+
+    // pass the runroot option to traffic_server
+    std::string_view runroot_arg = get_runroot();
+    if (!runroot_arg.empty()) {
+      w.write(RUNROOT_OPT);
+      w.write(runroot_arg);
       w.write(' ');
     }
 

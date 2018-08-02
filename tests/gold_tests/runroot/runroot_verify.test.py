@@ -25,11 +25,8 @@ Test for verify of runroot from traffic_layout.
 '''
 Test.ContinueOnFail = True
 
-p = Test.MakeATSProcess("ts")
-ts_root = p.Env['TS_ROOT']
-
 # create runroot
-path = os.path.join(ts_root, "runroot")
+path = os.path.join(Test.RunDirectory, "runroot")
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path
 f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
