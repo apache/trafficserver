@@ -81,12 +81,6 @@ public:
 
   void release(IOBufferReader *r) override;
 
-  bool
-  ignore_keep_alive() override
-  {
-    return false;
-  }
-
   bool allow_half_open() const override;
 
   void set_parent(ProxyClientSession *new_parent) override;
