@@ -159,13 +159,6 @@ public:
   void signal_write_event(bool call_update);
   void reenable(VIO *vio) override;
   void transaction_done() override;
-  bool
-  ignore_keep_alive() override
-  {
-    // If we return true here, Connection header will always be "close".
-    // It should be handled as the same as HTTP/1.1
-    return false;
-  }
 
   void restart_sending();
   void push_promise(URL &url, const MIMEField *accept_encoding);
