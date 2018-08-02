@@ -52,11 +52,13 @@ std::string
 check_path(const std::string &path)
 {
   std::ifstream check_file;
-  check_file.open(Layout::relative_to(path, "runroot_path.yml"));
-  if (check_file.good()) {
-    return path;
+  std::string yaml_file = Layout::relative_to(path, "runroot_path.yml");
+  check_file.open(yaml_file);
+  if (!check_file.good()) {
+    ink_warning("Unable to access runroot: '%s' - %s", yaml_file.c_str(), strerror(errno));
+    return {};
   }
-  return {};
+  return path;
 }
 
 // the function for the checking of the yaml file in passed in directory or parent directory
@@ -73,7 +75,9 @@ check_parent_path(const std::string &path)
     if (yaml_path.empty()) {
       return {};
     }
-    if (!check_path(yaml_path).empty()) {
+    std::ifstream check_file;
+    check_file.open(Layout::relative_to(yaml_path, "runroot_path.yml"));
+    if (check_file.good()) {
       return yaml_path;
     }
     yaml_path = yaml_path.substr(0, yaml_path.find_last_of("/"));
