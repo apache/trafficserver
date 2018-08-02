@@ -101,7 +101,6 @@ public:
   int get_transaction_id() const override;
   int get_transaction_priority_weight() const override;
   int get_transaction_priority_dependence() const override;
-  bool ignore_keep_alive() override;
 
   void clear_inactive_timer();
   void clear_active_timer();
@@ -295,14 +294,6 @@ Http2Stream::payload_length_is_valid() const
 {
   uint32_t content_length = _req_header.get_content_length();
   return content_length == 0 || content_length == data_length;
-}
-
-inline bool
-Http2Stream::ignore_keep_alive()
-{
-  // If we return true here, Connection header will always be "close".
-  // It should be handled as the same as HTTP/1.1
-  return false;
 }
 
 inline bool
