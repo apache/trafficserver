@@ -1564,6 +1564,12 @@ QUICMaxDataFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   return *len;
 }
 
+int
+QUICMaxDataFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "| MAX_DATA size=%zu maximum=%" PRIu64, this->size(), this->maximum_data());
+}
+
 uint64_t
 QUICMaxDataFrame::maximum_data() const
 {
@@ -1634,6 +1640,12 @@ QUICMaxStreamDataFrame::store(uint8_t *buf, size_t *len, size_t limit) const
     *len = p - buf;
   }
   return *len;
+}
+
+int
+QUICMaxStreamDataFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "| MAX_STREAM_DATA size=%zu maximum=%" PRIu64, this->size(), this->maximum_stream_data());
 }
 
 QUICStreamId

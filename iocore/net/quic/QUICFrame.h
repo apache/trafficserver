@@ -418,6 +418,8 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
+
   uint64_t maximum_data() const;
 
 private:
@@ -440,6 +442,8 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
+
   QUICStreamId stream_id() const;
   uint64_t maximum_stream_data() const;
 
