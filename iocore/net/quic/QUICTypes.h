@@ -197,8 +197,15 @@ class QUICConnectionError : public QUICError
 {
 public:
   QUICConnectionError() : QUICError() {}
-  QUICConnectionError(const QUICTransErrorCode error_code, const char *error_msg = nullptr) : QUICError(error_code, error_msg){};
+  QUICConnectionError(const QUICTransErrorCode error_code, const char *error_msg = nullptr,
+                      QUICFrameType frame_type = QUICFrameType::UNKNOWN)
+    : QUICError(error_code, error_msg), _frame_type(frame_type){};
   QUICConnectionError(const QUICAppErrorCode error_code, const char *error_msg = nullptr) : QUICError(error_code, error_msg){};
+
+  QUICFrameType frame_type() const;
+
+private:
+  QUICFrameType _frame_type = QUICFrameType::UNKNOWN;
 };
 
 class QUICStream;

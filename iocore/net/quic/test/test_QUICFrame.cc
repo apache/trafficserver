@@ -624,82 +624,89 @@ TEST_CASE("Store Padding Frame", "[quic]")
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
-TEST_CASE("Load ConnectionClose Frame", "[quic]")
+TEST_CASE("ConnectionClose Frame", "[quic]")
 {
-  SECTION("w/ reason phrase")
+  uint8_t reason_phrase[]  = {0x41, 0x42, 0x43, 0x44, 0x45};
+  size_t reason_phrase_len = sizeof(reason_phrase);
+
+  SECTION("loading w/ reason phrase")
   {
-    uint8_t buf1[] = {
+    uint8_t buf[] = {
       0x02,                        // Type
       0x00, 0x0A,                  // Error Code
+      0x00,                        // Frame Type
       0x05,                        // Reason Phrase Length
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
     };
-    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-    CHECK(frame1->type() == QUICFrameType::CONNECTION_CLOSE);
-    CHECK(frame1->size() == 9);
+
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::CONNECTION_CLOSE);
+    CHECK(frame->size() == sizeof(buf));
 
     std::shared_ptr<const QUICConnectionCloseFrame> conn_close_frame =
-      std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame1);
+      std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame);
     CHECK(conn_close_frame != nullptr);
     CHECK(conn_close_frame->error_code() == QUICTransErrorCode::PROTOCOL_VIOLATION);
-    CHECK(conn_close_frame->reason_phrase_length() == 5);
-    CHECK(memcmp(conn_close_frame->reason_phrase(), buf1 + 4, 5) == 0);
+    CHECK(conn_close_frame->frame_type() == QUICFrameType::UNKNOWN);
+    CHECK(conn_close_frame->reason_phrase_length() == reason_phrase_len);
+    CHECK(memcmp(conn_close_frame->reason_phrase(), reason_phrase, reason_phrase_len) == 0);
   }
 
-  SECTION("w/o reason phrase")
+  SECTION("loading w/o reason phrase")
   {
-    uint8_t buf2[] = {
+    uint8_t buf[] = {
       0x02,       // Type
       0x00, 0x0A, // Error Code
+      0x01,       // Frame Type
       0x00,       // Reason Phrase Length
     };
-    std::shared_ptr<const QUICFrame> frame2 = QUICFrameFactory::create(buf2, sizeof(buf2));
-    CHECK(frame2->type() == QUICFrameType::CONNECTION_CLOSE);
-    CHECK(frame2->size() == 4);
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::CONNECTION_CLOSE);
+    CHECK(frame->size() == sizeof(buf));
 
     std::shared_ptr<const QUICConnectionCloseFrame> conn_close_frame =
-      std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame2);
+      std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame);
     CHECK(conn_close_frame != nullptr);
     CHECK(conn_close_frame->error_code() == QUICTransErrorCode::PROTOCOL_VIOLATION);
+    CHECK(conn_close_frame->frame_type() == QUICFrameType::RST_STREAM);
     CHECK(conn_close_frame->reason_phrase_length() == 0);
   }
-}
 
-TEST_CASE("Store ConnectionClose Frame", "[quic]")
-{
-  SECTION("w/ reason phrase")
+  SECTION("storing w/ reason phrase")
   {
     uint8_t buf[32];
     size_t len;
 
-    uint8_t expected1[] = {
+    uint8_t expected[] = {
       0x02,                        // Type
       0x00, 0x0A,                  // Error Code
+      0x10,                        // Frame Type
       0x05,                        // Reason Phrase Length
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
     };
-    QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, 5, "ABCDE");
-    CHECK(connection_close_frame.size() == 9);
+    QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, QUICFrameType::STREAM, 5, "ABCDE");
+    CHECK(connection_close_frame.size() == sizeof(expected));
 
     connection_close_frame.store(buf, &len, 32);
-    CHECK(len == 9);
-    CHECK(memcmp(buf, expected1, len) == 0);
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(buf, expected, len) == 0);
   }
 
-  SECTION("w/o reason phrase")
+  SECTION("storing w/o reason phrase")
   {
     uint8_t buf[32];
     size_t len;
 
-    uint8_t expected2[] = {
+    uint8_t expected[] = {
       0x02,       // Type
       0x00, 0x0A, // Error Code
+      0x00,       // Frame Type
       0x00,       // Reason Phrase Length
     };
-    QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, 0, nullptr);
+    QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, QUICFrameType::UNKNOWN, 0, nullptr);
     connection_close_frame.store(buf, &len, 32);
-    CHECK(len == 4);
-    CHECK(memcmp(buf, expected2, len) == 0);
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(buf, expected, len) == 0);
   }
 }
 
@@ -1367,6 +1374,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     uint8_t frame_buf[] = {
       0x02,                        // Type
       0x00, 0x0A,                  // Error Code
+      0x00,                        // Frame Type
       0x05,                        // Reason Phrase Length
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
     };
@@ -1378,7 +1386,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     size_t len;
     frame->store(buf, &len, 32);
 
-    CHECK(len == 9);
+    CHECK(len == sizeof(frame_buf));
     CHECK(memcmp(buf, frame_buf, len) == 0);
   }
 

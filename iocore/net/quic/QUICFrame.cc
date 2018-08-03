@@ -22,6 +22,9 @@
  */
 
 #include "QUICFrame.h"
+
+#include <algorithm>
+
 #include "QUICStream.h"
 #include "QUICIntUtil.h"
 #include "QUICDebugNames.h"
@@ -1211,19 +1214,21 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 //
 // CONNECTION_CLOSE frame
 //
-QUICConnectionCloseFrame::QUICConnectionCloseFrame(QUICTransErrorCode error_code, uint64_t reason_phrase_length,
-                                                   const char *reason_phrase, bool protection)
-  : QUICFrame(protection)
+QUICConnectionCloseFrame::QUICConnectionCloseFrame(QUICTransErrorCode error_code, QUICFrameType frame_type,
+                                                   uint64_t reason_phrase_length, const char *reason_phrase, bool protection)
+  : QUICFrame(protection),
+    _error_code(error_code),
+    _frame_type(frame_type),
+    _reason_phrase_length(reason_phrase_length),
+    _reason_phrase(reason_phrase)
 {
-  this->_error_code           = error_code;
-  this->_reason_phrase_length = reason_phrase_length;
-  this->_reason_phrase        = reason_phrase;
 }
 
 QUICFrameUPtr
 QUICConnectionCloseFrame::clone() const
 {
-  return QUICFrameFactory::create_connection_close_frame(this->error_code(), this->reason_phrase_length(), this->reason_phrase());
+  return QUICFrameFactory::create_connection_close_frame(this->error_code(), this->frame_type(), this->reason_phrase_length(),
+                                                         this->reason_phrase());
 }
 
 QUICFrameType
@@ -1235,10 +1240,16 @@ QUICConnectionCloseFrame::type() const
 size_t
 QUICConnectionCloseFrame::size() const
 {
-  return sizeof(QUICFrameType) + sizeof(QUICTransErrorCode) + this->_get_reason_phrase_length_field_length() +
+  return this->_get_reason_phrase_length_field_offset() + this->_get_reason_phrase_length_field_length() +
          this->reason_phrase_length();
 }
 
+/**
+   Store CONNECTION_CLOSE frame in buffer.
+
+   PADDING frame in Frame Type field means frame type that triggered the error is unknown.
+   When `_frame_type` is QUICFrameType::UNKNOWN, it's converted to QUICFrameType::PADDING (0x0).
+ */
 size_t
 QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 {
@@ -1254,10 +1265,24 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
     uint8_t *p = buf;
     *p         = static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE);
     ++p;
+
+    // Error Code (16)
     QUICTypeUtil::write_QUICTransErrorCode(this->_error_code, p, &n);
     p += n;
+
+    // Frame Type (i)
+    QUICFrameType frame_type = this->_frame_type;
+    if (frame_type == QUICFrameType::UNKNOWN) {
+      frame_type = QUICFrameType::PADDING;
+    }
+    *p = static_cast<uint8_t>(frame_type);
+    ++p;
+
+    // Reason Phrase Length (i)
     QUICIntUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
     p += n;
+
+    // Reason Phrase (*)
     if (this->_reason_phrase_length > 0) {
       memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
       p += this->_reason_phrase_length;
@@ -1269,13 +1294,51 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   return *len;
 }
 
+int
+QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  int len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s frame=%s", this->size(),
+                     QUICDebugNames::error_code(this->error_code()), QUICDebugNames::frame_type(this->frame_type()));
+
+  if (this->reason_phrase_length() != 0) {
+    memcpy(msg + len, " reason=", 8);
+    len += 8;
+
+    int phrase_len = std::min(msg_len - len, static_cast<size_t>(this->reason_phrase_length()));
+    memcpy(msg + len, this->reason_phrase(), phrase_len);
+    len += phrase_len;
+  }
+
+  return len;
+}
+
 QUICTransErrorCode
 QUICConnectionCloseFrame::error_code() const
 {
   if (this->_buf) {
-    return QUICTypeUtil::read_QUICTransErrorCode(this->_buf + 1);
+    return QUICTypeUtil::read_QUICTransErrorCode(this->_buf + sizeof(QUICFrameType));
   } else {
     return this->_error_code;
+  }
+}
+
+/**
+   Frame Type Field Accessor
+
+   PADDING frame in Frame Type field means frame type that triggered the error is unknown.
+   Return QUICFrameType::UNKNOWN when Frame Type field is PADDING (0x0).
+ */
+QUICFrameType
+QUICConnectionCloseFrame::frame_type() const
+{
+  if (this->_buf) {
+    QUICFrameType frame = QUICFrame::type(this->_buf + this->_get_frame_type_field_offset());
+    if (frame == QUICFrameType::PADDING) {
+      frame = QUICFrameType::UNKNOWN;
+    }
+    return frame;
+  } else {
+    return this->_frame_type;
   }
 }
 
@@ -1293,16 +1356,27 @@ const char *
 QUICConnectionCloseFrame::reason_phrase() const
 {
   if (this->_buf) {
-    return reinterpret_cast<const char *>(this->_buf + this->_get_reason_phrase_field_offset());
+    size_t offset = this->_get_reason_phrase_field_offset();
+    if (offset > this->_len) {
+      return nullptr;
+    } else {
+      return reinterpret_cast<const char *>(this->_buf + offset);
+    }
   } else {
     return this->_reason_phrase;
   }
 }
 
 size_t
-QUICConnectionCloseFrame::_get_reason_phrase_length_field_offset() const
+QUICConnectionCloseFrame::_get_frame_type_field_offset() const
 {
   return sizeof(QUICFrameType) + sizeof(QUICTransErrorCode);
+}
+
+size_t
+QUICConnectionCloseFrame::_get_reason_phrase_length_field_offset() const
+{
+  return this->_get_frame_type_field_offset() + sizeof(QUICFrameType);
 }
 
 size_t
@@ -2533,11 +2607,11 @@ QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint64
 }
 
 std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_connection_close_frame(QUICTransErrorCode error_code, uint16_t reason_phrase_length,
-                                                const char *reason_phrase)
+QUICFrameFactory::create_connection_close_frame(QUICTransErrorCode error_code, QUICFrameType frame_type,
+                                                uint16_t reason_phrase_length, const char *reason_phrase)
 {
   QUICConnectionCloseFrame *frame = quicConnectionCloseFrameAllocator.alloc();
-  new (frame) QUICConnectionCloseFrame(error_code, reason_phrase_length, reason_phrase);
+  new (frame) QUICConnectionCloseFrame(error_code, frame_type, reason_phrase_length, reason_phrase);
   return std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_connection_close_frame);
 }
 
@@ -2546,9 +2620,10 @@ QUICFrameFactory::create_connection_close_frame(QUICConnectionErrorUPtr error)
 {
   ink_assert(error->cls == QUICErrorClass::TRANSPORT);
   if (error->msg) {
-    return QUICFrameFactory::create_connection_close_frame(error->trans_error_code, strlen(error->msg), error->msg);
+    return QUICFrameFactory::create_connection_close_frame(error->trans_error_code, error->frame_type(), strlen(error->msg),
+                                                           error->msg);
   } else {
-    return QUICFrameFactory::create_connection_close_frame(error->trans_error_code);
+    return QUICFrameFactory::create_connection_close_frame(error->trans_error_code, error->frame_type());
   }
 }
 

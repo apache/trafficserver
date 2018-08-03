@@ -280,6 +280,13 @@ QUICError::code()
   return static_cast<uint16_t>(this->trans_error_code);
 }
 
+QUICFrameType
+QUICConnectionError::frame_type() const
+{
+  ink_assert(this->cls != QUICErrorClass::APPLICATION);
+  return _frame_type;
+}
+
 //
 // QUICFiveTuple
 //
