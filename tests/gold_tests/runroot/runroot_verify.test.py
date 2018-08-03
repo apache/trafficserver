@@ -24,6 +24,8 @@ Test.Summary = '''
 Test for verify of runroot from traffic_layout.
 '''
 Test.ContinueOnFail = True
+Test.SkipUnless(Test.Variables.BINDIR.startswith(Test.Variables.PREFIX),
+                "need to guarantee bin path starts with prefix for runroot")
 
 # create runroot
 path = os.path.join(Test.RunDirectory, "runroot")
@@ -48,9 +50,11 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "Write Permission: ", "write permission output")
 
 # verify test #2
+bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(
+    Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1:]
 tr = Test.AddTestRun("verify runroot test2")
-tr.Processes.Default.Command = "cd " + path + \
-    ";" + "bin/traffic_layout verify --path " + path
+tr.Processes.Default.Command = "cd " + path + ";" + \
+    os.path.join(bin_path, "traffic_layout") + " verify --path " + path
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     os.path.join(path, "bin"), "example bindir output")
