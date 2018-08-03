@@ -207,8 +207,6 @@ public:
   LogField &operator=(const LogField &rhs) = delete;
 
 private:
-  // luis, check where this is used and what it does
-  //    void init (char *name, char *symbol, Type type);
   LogField();
 };
 

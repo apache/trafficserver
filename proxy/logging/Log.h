@@ -64,7 +64,6 @@ class LogAccess;
 class LogFieldList;
 class LogFilterList;
 class LogFormatList;
-// class LogBufferList; vl: we don't need it here
 struct LogBufferHeader;
 class LogFile;
 class LogBuffer;
@@ -136,14 +135,7 @@ public:
     LOGCAT               = 4,
   };
 
-  enum CollationMode {
-    NO_COLLATION = 0,
-    COLLATION_HOST,
-    SEND_STD_FMTS,
-    SEND_NON_XML_CUSTOM_FMTS,
-    SEND_STD_AND_NON_XML_CUSTOM_FMTS,
-    N_COLLATION_MODES
-  };
+  enum CollationMode { NO_COLLATION = 0, COLLATION_HOST, N_COLLATION_MODES };
 
   enum RollingEnabledValues {
     NO_ROLLING = 0,
@@ -190,8 +182,6 @@ public:
   inkcoreapi static LogObject *error_log;
   static LogConfig *config;
   static LogFieldList global_field_list;
-  //    static LogBufferList global_buffer_full_list; vl: not used
-  //    static LogBufferList global_buffer_delete_list; vl: not used
   static InkHashTable *field_symbol_hash;
   static LogFormat *global_scrap_format;
   static LogObject *global_scrap_object;
