@@ -52,6 +52,8 @@ libtsutil_la_LIBADD = \
 
 libtsutil_la_SOURCES = \
 	Allocator.h \
+	AcidPtr.cc \
+	AcidPtr.h \
 	Arena.cc \
 	Arena.h \
 	BaseLogFile.cc \
@@ -73,6 +75,7 @@ libtsutil_la_SOURCES = \
 	DynArray.h \
 	EventNotify.cc \
 	EventNotify.h \
+	Extendible.h \
 	fastlz.c \
 	fastlz.h \
 	Hash.cc \
@@ -259,13 +262,14 @@ test_tsutil_SOURCES = \
 test_tslib_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
-# add you catch based test file here for tslib
 test_tslib_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tslib_LDADD = libtsutil.la $(top_builddir)/iocore/eventsystem/libinkevent.a
 test_tslib_SOURCES = \
 	unit-tests/unit_test_main.cc \
+	unit-tests/test_AcidPtr.cc \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
+	unit-tests/test_Extendible.cc \
 	unit-tests/test_History.cc \
 	unit-tests/test_ink_inet.cc \
 	unit-tests/test_IntrusiveDList.cc \
