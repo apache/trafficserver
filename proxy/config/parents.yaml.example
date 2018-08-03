@@ -1,7 +1,7 @@
 
 ## remap.config
 map /foo http://bob parents=foo.yaml
-map /bar http://bob parents=foo.yaml
+map /bar http://bob parents=bar.yaml
 map /leif http://bob parents=ourhosts.yaml,bar.yaml # if we didn't have a include thing
 
 ##
@@ -23,30 +23,46 @@ hosts:
     healthcheck:
       url: tcp://192.168.1.2:80
     future_stuff: "..."
-  s1: #... ommitted for brevity
-  s2: #... ommitted for brevity
+  s1: &anchornamefors1
+    host: s1.bar.com
+    protocol:
+      - http: 80
+      - https: 443
+    healthcheck:
+      url: tcp://192.168.2.1:80
+  s2: &anchornamefors2
+    host: s2.bar.com
+    protocol:
+      - http: 80
+      - https: 443
+    healthcheck:
+      url: tcp://192.168.2.2:80
+groups:
+  - g1: &g1
+    - <<: *anchornameforp1
+      weight: 1.0
+    - <<: *anchornameforp2
+      weight: 2.0
+  - g2: &g2
+    - <<: *anchornamefors1
+      weight: 0.6
+    - <<: *anchornamefors2
+      weight: 0.4
 
 ##########
 ## bar.yaml
 
 #
-#include ourhosts.yaml
+# 
+#include foo.yaml
+# the 'include' line is replaced by the contents of ourhosts.yaml when this file, 'foo.yaml', is loaded
 #
 strategy:
   policy: # Selection strategy policy: Enum of 'consistent_hash' or 'first_live' or 'rr_strict' or 'rr_ip' or 'latched'
   hash_key: # optional key to use for Hashing. Enum of 'url' or 'uri' or 'hostname' or 'path' or 'path+query' or 'cache_key' or 'path+fragment'
-  primary_ring: # required: list of servers and their weights
-    hosts: # required list of servers
-      - <<: *anchornameforp1  # merges in alias the named "anchor" in line 10.
-          weight: 1.0 # optional: weights used for this server just in this strategy
-          # perhaps future stuff here
-      - <<: *anchornameforp2
-          weight: 2.0
-  secondary_ring: # optional list of servers and their weights as of now will be used only if the strategy is consistent_hash
-    hosts: # required
-      - <<: *anchornamefors1
-          weight: .1
-      - <<: *anchornamefors2
+  groups:
+    - *g1
+    - *g2
   protocol: https  # optional & enumerated. by default uses the remapped protocol
   failover: # optional: defines the conditions to failover to a different server. This was "retries" in <= ATS 7
     ring_mode: exhaust_ring # enumerated as exhaust_rings or alternate_rings
