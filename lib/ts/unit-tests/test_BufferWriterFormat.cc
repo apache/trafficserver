@@ -22,6 +22,7 @@
  */
 
 #include "catch.hpp"
+#include "../../../tests/include/catch.hpp"
 #include <chrono>
 #include <iostream>
 #include <ts/BufferWriter.h>
@@ -535,6 +536,36 @@ TEST_CASE("bwstring std formats", "[libts][bwprint]")
 
   // Verify these compile and run, not really much hope to check output.
   w.reset().print("|{}|   |{}|", ts::bwf::Date(), ts::bwf::Date("%a, %d %b %Y"));
+
+  w.reset().print("name = {}", ts::bwf::FirstOf("Persia"));
+  REQUIRE(w.view() == "name = Persia");
+  w.reset().print("name = {}", ts::bwf::FirstOf("Persia", "Evil Dave"));
+  REQUIRE(w.view() == "name = Persia");
+  w.reset().print("name = {}", ts::bwf::FirstOf("", "Evil Dave"));
+  REQUIRE(w.view() == "name = Evil Dave");
+  w.reset().print("name = {}", ts::bwf::FirstOf(nullptr, "Evil Dave"));
+  REQUIRE(w.view() == "name = Evil Dave");
+  w.reset().print("name = {}", ts::bwf::FirstOf("Persia", "Evil Dave", "Leif"));
+  REQUIRE(w.view() == "name = Persia");
+  w.reset().print("name = {}", ts::bwf::FirstOf("Persia", nullptr, "Leif"));
+  REQUIRE(w.view() == "name = Persia");
+  w.reset().print("name = {}", ts::bwf::FirstOf("", nullptr, "Leif"));
+  REQUIRE(w.view() == "name = Leif");
+
+  const char *empty{nullptr};
+  std::string s1{"Persia"};
+  std::string_view s2{"Evil Dave"};
+  ts::TextView s3{"Leif"};
+  w.reset().print("name = {}", ts::bwf::FirstOf(empty, s3));
+  REQUIRE(w.view() == "name = Leif");
+  w.reset().print("name = {}", ts::bwf::FirstOf(s2, s3));
+  REQUIRE(w.view() == "name = Evil Dave");
+  w.reset().print("name = {}", ts::bwf::FirstOf(s1, empty, s2));
+  REQUIRE(w.view() == "name = Persia");
+  w.reset().print("name = {}", ts::bwf::FirstOf(empty, s2, s1, s3));
+  REQUIRE(w.view() == "name = Evil Dave");
+  w.reset().print("name = {}", ts::bwf::FirstOf(empty, empty, s3, empty, s2, s1));
+  REQUIRE(w.view() == "name = Leif");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code
