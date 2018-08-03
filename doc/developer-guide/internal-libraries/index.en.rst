@@ -34,3 +34,5 @@ development team.
    buffer-writer.en
    intrusive-list.en
    MemArena.en
+   AcidPtr.en
+   Extendible.en
