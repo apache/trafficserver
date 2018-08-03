@@ -87,7 +87,6 @@ struct LogBufferHeader {
 
   // some helper functions to return the header strings
 
-  char *fmt_name(); // not used
   char *fmt_fieldlist();
   char *fmt_printf();
   char *src_hostname();
