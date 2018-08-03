@@ -1300,7 +1300,7 @@ QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
   int len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s frame=%s", this->size(),
                      QUICDebugNames::error_code(this->error_code()), QUICDebugNames::frame_type(this->frame_type()));
 
-  if (this->reason_phrase_length() != 0) {
+  if (this->reason_phrase_length() != 0 && this->reason_phrase() != nullptr) {
     memcpy(msg + len, " reason=", 8);
     len += 8;
 
@@ -1346,7 +1346,13 @@ uint64_t
 QUICConnectionCloseFrame::reason_phrase_length() const
 {
   if (this->_buf) {
-    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_reason_phrase_length_field_offset());
+    size_t offset              = this->_get_reason_phrase_length_field_offset();
+    uint64_t reason_phrase_len = QUICIntUtil::read_QUICVariableInt(this->_buf + offset);
+    if (reason_phrase_len > this->_len - offset) {
+      reason_phrase_len = this->_len - offset;
+    }
+
+    return reason_phrase_len;
   } else {
     return this->_reason_phrase_length;
   }
