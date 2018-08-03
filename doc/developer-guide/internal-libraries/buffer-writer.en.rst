@@ -762,9 +762,40 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
 
 .. class:: Errno
 
-   Formating for :code:`errno`.
+   Formatting for :code:`errno`. Generically the formatted output is the short name, the description,
+   and the numeric value. A format type of ``d`` will generate just the numeric value, while a format
+   type of ``s`` will generate just the short name and description.
 
    .. function:: Errno(int errno)
+
+      Initialize the instance with the error value :arg:`errno`.
+
+.. function:: template < typename ... Args > FirstOf(Args && ... args)
+
+   Print the first non-empty string in an argument list. All arguments must be convertible to
+   :code:`std::string_view`.
+
+   By far the most common case is the two argument case used to print a special string if the base
+   string is null or empty. For instance, something like this::
+
+      w.print("{}", name != nullptr ? name : "<void>")
+
+   This could also be done like::
+
+      w.print("{}", ts::bwf::FirstOf(name, "<void>"));
+
+   In addition, if the first argument is a local variable that exists only to do the empty check, that
+   variable can eliminated entirely. E.g.::
+
+      const char * name = thing.get_name();
+      w.print("{}", name != nullptr ? name : "<void>")
+
+   can be simplified to
+
+      w.print("{}", ts::bwf::FirstOf(thing.get_name(), "<void>"));
+
+   In general avoiding ternary operators in the print argument list makes the code cleaner and
+   easier to understand.
 
 .. class:: Date
 
@@ -782,17 +813,18 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
       Therefore if the current time is to be printed the default constructor can be used.
 
    When used the format specification can take an extention of "local" which formats the time as
-   local time. Otherwise it is GMT.
-   ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will
-   When used the format specification can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
-   ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will
-   print the hour and minute in the local time zone. ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is
-   desired.
+   local time. Otherwise it is GMT. ``w.print("{}", Date("%H:%M"));`` will print the hour and minute
+   as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will When used the format specification
+   can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
+   ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values.
+   ``w.print("{::local}", Date("%H:%M"));`` will print the hour and minute in the local time zone.
+   ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is desired.
 
 .. class:: OptionalAffix
 
-   Affix support for printing optional strings. This enables printing a string such the affixes are printed only if the string is not
-   empty. An empty string (or :code:`nullptr`) yields no output. A common situation in which is this is useful is code like ::
+   Affix support for printing optional strings. This enables printing a string such the affixes are
+   printed only if the string is not empty. An empty string (or :code:`nullptr`) yields no output. A
+   common situation in which is this is useful is code like ::
 
       printf("%s%s", data ? data : "", data ? " " : "");
 
