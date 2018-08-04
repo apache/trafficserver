@@ -1233,6 +1233,11 @@ QUICPacketFactory::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
   this->_hs_protocol = hs_protocol;
 }
 
+bool
+QUICPacketFactory::is_ready_to_create_protected_packet()
+{
+  return this->_hs_protocol->is_handshake_finished();
+}
 //
 // QUICPacketNumberGenerator
 //
