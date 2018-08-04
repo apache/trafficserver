@@ -394,6 +394,7 @@ public:
                                                 ats_unique_buf payload, size_t len, bool retransmittable);
   void set_version(QUICVersion negotiated_version);
   void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
+  bool is_ready_to_create_protected_packet();
 
 private:
   QUICVersion _version                = QUIC_SUPPORTED_VERSIONS[0];

@@ -133,6 +133,15 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
       this->_offset      = 0;
     }
   } else {
+    if (!this->_packet_factory.is_ready_to_create_protected_packet() && udp_packet) {
+      this->enqueue(udp_packet);
+      this->_payload.release();
+      this->_payload     = nullptr;
+      this->_payload_len = 0;
+      this->_offset      = 0;
+      result = QUICPacketCreationResult::NOT_READY;
+      return quic_packet;
+    }
     pkt                = std::move(this->_payload);
     pkt_len            = this->_payload_len;
     this->_payload     = nullptr;
