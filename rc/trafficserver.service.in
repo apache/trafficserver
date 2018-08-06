@@ -22,9 +22,16 @@ After=syslog.target network.target
 [Service]
 Type=simple
 EnvironmentFile=-/etc/sysconfig/trafficserver
-PIDFile=@exp_runtimedir@/manager.pid
-ExecStart=@exp_bindir@/traffic_manager --bind_stdout @exp_logdir@/traffic.out --bind_stderr @exp_logdir@/traffic.out $TM_DAEMON_ARGS
+ExecStart=@exp_bindir@/traffic_manager $TM_DAEMON_ARGS
+Restart=on-failure
+RestartSec=5s
+ExecStopPost=/bin/sh -c ' \
+        export TM_PIDFILE=$(@exp_bindir@/traffic_layout} 2>/dev/null | grep RUNTIMEDIR | cut -d: -f2)/manager.lock ; \
+        /bin/rm -f $TM_PIDFILE ; \
+        if [[ $? -ne 0 ]]; then echo "ERROR: Unable to delete PID"; exit 1; fi'
+TimeoutStopSec=5s
 ExecReload=@exp_bindir@/traffic_ctl config reload
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target

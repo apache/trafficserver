@@ -97,6 +97,12 @@ SLEEP_TIME=5
 TS_PREFIX="@prefix@"
 
 TS_ROOT=${TS_ROOT:-$TS_PREFIX}
+
+# ####################################
+# run root is not used by default
+# set this value if using a custom layout structure
+# TS_RUNROOT="" 
+
 # TS_BASE is offset inside the file system from where the layout starts
 # For standard installations TS_BASE will be empty
 eval TS_BASE="`echo $TS_ROOT | ${ESED} -e 's;@prefix@$;;'`"
@@ -108,6 +114,7 @@ TM_DAEMON_ARGS=""
 TS_DAEMON=${TS_DAEMON:-$TS_BASE@exp_bindir@/traffic_server}
 TS_DAEMON_ARGS=""
 TL_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_ctl}
+TY_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_layout}
 TM_PIDFILE=${TM_PIDFILE:-$TS_BASE@exp_runtimedir@/manager.lock}
 TS_PIDFILE=${TS_PIDFILE:-$TS_BASE@exp_runtimedir@/server.lock}
 # number of times to retry check on pid lock file
