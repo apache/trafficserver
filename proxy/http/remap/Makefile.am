@@ -28,13 +28,16 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libhttp_remap.a
 
 libhttp_remap_a_SOURCES = \
 	AclFiltering.cc \
 	AclFiltering.h \
+	NextHopConfig.h \
+	NextHopConfig.cc \
 	RemapConfig.cc \
 	RemapConfig.h \
 	RemapPluginInfo.cc \
@@ -49,6 +52,27 @@ libhttp_remap_a_SOURCES = \
 	UrlMappingPathIndex.h \
 	UrlRewrite.cc \
 	UrlRewrite.h
+
+check_PROGRAMS = \
+	test_NextHopConfig
+
+TESTS = $(check_PROGRAMS)
+
+test_NextHopConfig_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/lib/tsconfig \
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
+
+test_NextHopConfig_SOURCES = \
+	unit-tests/test_NextHopConfig.cc
+
+test_NextHopConfig_LDADD = \
+	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
+	$(top_builddir)/lib/tsconfig/libtsconfig.la \
+	$(top_builddir)/lib/tsconfig/libtsconfig.la \
+	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/lib/yamlcpp/libyamlcpp.la 
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)
