@@ -200,7 +200,7 @@ void
 Transaction::setStatusCode(HttpStatus code)
 {
   LOG_DEBUG("Transaction tshttptxn=%p setting status code: %d", state_->txn_, code);
-  TSHttpTxnSetHttpRetStatus(state_->txn_, static_cast<TSHttpStatus>(code));
+  TSHttpTxnStatusSet(state_->txn_, static_cast<TSHttpStatus>(code));
 }
 
 bool

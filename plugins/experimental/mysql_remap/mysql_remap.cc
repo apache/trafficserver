@@ -126,7 +126,7 @@ not_found:
   if (!ret_val) {
     // lets build up a nice 404 message for someone
     TSHttpHdrStatusSet(reqp, hdr_loc, TS_HTTP_STATUS_NOT_FOUND);
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_NOT_FOUND);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_NOT_FOUND);
   }
   if (res)
     mysql_free_result(res);

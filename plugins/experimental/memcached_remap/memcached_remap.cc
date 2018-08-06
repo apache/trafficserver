@@ -118,7 +118,7 @@ not_found:
   // lets build up a nice 404 message for someone
   if (!ret_val) {
     TSHttpHdrStatusSet(reqp, hdr_loc, TS_HTTP_STATUS_NOT_FOUND);
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_NOT_FOUND);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_NOT_FOUND);
   }
 free_stuff:
 #if (TS_VERSION_NUMBER < 2001005)
