@@ -1077,12 +1077,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
               re->status_option() != TS_HTTP_STATUS_TEMPORARY_REDIRECT &&
               re->status_option() != TS_HTTP_STATUS_PERMANENT_REDIRECT) {
             // Don't set the URL / Location for this.
-            TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
+            TSHttpTxnStatusSet(txnp, re->status_option());
             break;
           }
 
           TSDebug(PLUGIN_NAME, "Redirecting URL, status=%d", re->status_option());
-          TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
+          TSHttpTxnStatusSet(txnp, re->status_option());
           rri->redirect = 1;
         }
 
@@ -1092,7 +1092,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
           // Setup the new URL
           if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
-            TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+            TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
             TSError("[%s] can't parse substituted URL string", PLUGIN_NAME);
           }
         }
