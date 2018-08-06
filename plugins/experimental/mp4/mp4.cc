@@ -106,7 +106,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
     return TSREMAP_NO_REMAP;
 
   } else if (start < 0) {
-    TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
     TSHttpTxnErrorBodySet(rh, TSstrdup("Invalid request."), sizeof("Invalid request.") - 1, nullptr);
   }
 

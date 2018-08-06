@@ -6004,12 +6004,21 @@ TSVConnArgGet(TSVConn connp, int arg_idx)
 }
 
 void
-TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus)
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *sm                   = (HttpSM *)txnp;
-  sm->t_state.http_return_code = (HTTPStatus)http_retstatus;
+  HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
+  sm->t_state.http_return_code = static_cast<HTTPStatus>(status);
+}
+
+TSHttpStatus
+TSHttpTxnStatusGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  return static_cast<TSHttpStatus>(sm->t_state.http_return_code);
 }
 
 /* control channel for HTTP */

@@ -874,7 +874,7 @@ event_handler(TSCont cont, TSEvent event, void *edata)
       TSDebug(PLUGIN_NAME, "Succesfully signed the AWS S3 URL");
     } else {
       TSDebug(PLUGIN_NAME, "Failed to sign the AWS S3 URL, status = %d", status);
-      TSHttpTxnSetHttpRetStatus(txnp, status);
+      TSHttpTxnStatusSet(txnp, status);
       enable_event = TS_EVENT_HTTP_ERROR;
     }
     break;
@@ -1028,7 +1028,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   } else {
     TSDebug(PLUGIN_NAME, "Remap context is invalid");
     TSError("[%s] No remap context available, check code / config", PLUGIN_NAME);
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
   }
 
   // This plugin actually doesn't do anything with remapping. Ever.

@@ -1524,8 +1524,8 @@ tsapi TSReturnCode TSVConnArgIndexReserve(const char *name, const char *descript
 tsapi TSReturnCode TSVConnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
 tsapi TSReturnCode TSVConnArgIndexLookup(int arg_idx, const char **name, const char **description);
 
-/* ToDo: This is a leftover from olden days, can we eliminate? */
-tsapi void TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus);
+tsapi void TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status);
+tsapi TSHttpStatus TSHttpTxnStatusGet(TSHttpTxn txnp);
 
 tsapi void TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);
 tsapi void TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout);

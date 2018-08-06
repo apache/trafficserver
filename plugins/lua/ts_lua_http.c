@@ -283,7 +283,7 @@ ts_lua_http_set_retstatus(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   status = luaL_checkinteger(L, 1);
-  TSHttpTxnSetHttpRetStatus(http_ctx->txnp, status);
+  TSHttpTxnStatusSet(http_ctx->txnp, status);
   return 0;
 }
 
@@ -314,7 +314,7 @@ ts_lua_http_set_resp(lua_State *L)
   n = lua_gettop(L);
 
   status = luaL_checkinteger(L, 1);
-  TSHttpTxnSetHttpRetStatus(http_ctx->txnp, status);
+  TSHttpTxnStatusSet(http_ctx->txnp, status);
 
   if (n == 2) {
     body = luaL_checklstring(L, 2, &body_len);
