@@ -512,7 +512,7 @@ END:
  *-------------------------------------------------------------------------
  * Purpose: Retrieves list of record values specified in the rec_names list
  * Input: rec_names - list of record names to retrieve
- *        rec_vals  - queue of TSRecordEle* that correspons to rec_names
+ *        rec_vals  - queue of TSRecordEle* that corresponds to rec_names
  * Output: If at any point, while retrieving one of the records there's a
  *         a failure then the entire process is aborted, all the allocated
  *         TSRecordEle's are deallocated and TS_ERR_FAIL is returned.
@@ -658,7 +658,7 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
       }
 
       // keep track of most severe action; reset if needed
-      // the TSACtionNeedT should be listed such that most severe actions have
+      // the TSActionNeedT should be listed such that most severe actions have
       // a lower number (so most severe action == 0)
       if (*action_need < top_action_req) { // a more severe action
         top_action_req = *action_need;

@@ -334,7 +334,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   int fakeSocket;            // a temporary socket to pass to ioctl
   struct ifconf ifc;         // ifconf information
   char *ifbuf;               // ifconf buffer
-  struct ifreq *ifr, *ifend; // pointer to individual inferface info
+  struct ifreq *ifr, *ifend; // pointer to individual interface info
   int lastlen;
   int len;
 

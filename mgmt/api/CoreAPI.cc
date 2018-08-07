@@ -57,7 +57,7 @@ extern FileManager *configFiles; // global in traffic_manager
 /*-------------------------------------------------------------------------
  * Init
  *-------------------------------------------------------------------------
- * performs any necesary initializations for the local API client,
+ * performs any necessary initializations for the local API client,
  * eg. set up global structures; called by the TSMgmtAPI::TSInit()
  */
 TSMgmtError
@@ -79,7 +79,7 @@ Init(const char * /* socket_path ATS_UNUSED */, TSInitOptionT options)
 /*-------------------------------------------------------------------------
  * Terminate
  *-------------------------------------------------------------------------
- * performs any necesary cleanup of global structures, etc,
+ * performs any necessary cleanup of global structures, etc,
  * for the local API client,
  */
 TSMgmtError
@@ -112,7 +112,7 @@ ProxyShutdown()
 
   lmgmt->processShutdown(false /* only shut down the proxy*/);
 
-  // Wait for awhile for shtudown to happen
+  // Wait for awhile for shutdown to happen
   do {
     mgmt_sleep_sec(1);
     i++;
@@ -559,7 +559,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
     Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s", rec_ele->rec_name, rec_ele->valueT.string_val);
     break;
 
-  default: // UNKOWN TYPE
+  default: // UNKNOWN TYPE
     Debug("RecOp", "[MgmtRecordGet] Get Failed : %d is Unknown Var type %s", rec_type, rec_name);
     return TS_ERR_FAIL;
   }
@@ -917,7 +917,3 @@ StatsReset(const char *name)
   lmgmt->clearStats(name);
   return TS_ERR_OKAY;
 }
-
-/*-------------------------------------------------------------
- * rmserver.cfg
- *-------------------------------------------------------------*/

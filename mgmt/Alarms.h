@@ -32,7 +32,7 @@ class AppVersionInfo;
 
 /***********************************************************************
  *
- * MODULARIZATTION: if you are adding new alarms, please ensure to add
+ * MODULARIZATION: if you are adding new alarms, please be sure to add
  *                 the corresponding alarms in lib/records/I_RecAlarms.h
  *
  ***********************************************************************/

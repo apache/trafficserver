@@ -183,7 +183,7 @@ mgmt_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struc
 // Note: Linux select() has slight different semantics.  From the
 // man page: "On Linux, timeout is modified to reflect the amount of
 // time not slept; most other implementations do not do this."
-// Linux select() can also return ENOMEM, so we espeically need to
+// Linux select() can also return ENOMEM, so we especially need to
 // protect the call with the transient error retry loop.
 // Fortunately, because of the Linux timeout handling, our
 // mgmt_select call will still timeout correctly, rather than
