@@ -208,7 +208,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
   while (obj_data < hh->m_free_start) {
     HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
     if (!obj_is_aligned(obj)) {
-      std::cout << "Invalid alignmgnt of object of type HdrHeapObjImpl" << std::endl;
+      std::cout << "Invalid alignment of object of type HdrHeapObjImpl" << std::endl;
       return zret;
     }
 
@@ -259,7 +259,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   int orig_len      = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
-    // Already unmarshaled, must be a ram cache
+    // Already unmarshalled, must be a ram cache
     //  it
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);

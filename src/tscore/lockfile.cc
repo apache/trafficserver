@@ -24,7 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_lockfile.h"
 
-#define LOCKFILE_BUF_LEN 16 // 16 bytes should be enought for a pid
+#define LOCKFILE_BUF_LEN 16 // 16 bytes should be enough for a pid
 
 int
 Lockfile::Open(pid_t *holding_pid)
@@ -99,7 +99,7 @@ Lockfile::Open(pid_t *holding_pid)
     FAIL(0);
   }
   // If we did get the lock, then set the close on exec flag so that
-  // we don't accidently pass the file descriptor to a child process
+  // we don't accidentally pass the file descriptor to a child process
   // when we do a fork/exec.
   do {
     err = fcntl(fd, F_GETFD, 0);

@@ -874,7 +874,7 @@ Errata
 Stripe::loadMeta()
 {
   // Read from disk in chunks of this size. This needs to be a multiple of both the
-  // store block size and the directory entry size so neither goes acrss read boundaries.
+  // store block size and the directory entry size so neither goes across read boundaries.
   // Beyond that the value should be in the ~10MB range for what I guess is best performance
   // vs. blocking production disk I/O on a live system.
   constexpr static int64_t N = (1 << 8) * CacheStoreBlocks::SCALE * sizeof(CacheDirEntry);

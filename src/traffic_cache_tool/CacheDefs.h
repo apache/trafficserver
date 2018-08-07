@@ -467,7 +467,7 @@ struct Span {
   /// Local copy of serialized header data stored on in the span.
   std::unique_ptr<ts::SpanHeader> _header;
   /// Live information about stripes.
-  /// Seeded from @a _header and potentially agumented with direct probing.
+  /// Seeded from @a _header and potentially augmented with direct probing.
   std::list<Stripe *> _stripes;
 };
 /* --------------------------------------------------------------------------------------- */

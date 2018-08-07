@@ -239,7 +239,7 @@ namespace bw_fmt
       size_t delta = min - extent;
       char *base   = w.auxBuffer();        // should be first byte of @a lw e.g. lw.data() - avoid const_cast.
       char *limit  = base + lw.capacity(); // first invalid byte.
-      char *dst;                           // used to track memory operation targest;
+      char *dst;                           // used to track memory operation target;
       char *last;                          // track limit of memory operation.
       size_t d2;
       switch (spec._align) {
@@ -452,7 +452,7 @@ namespace bw_fmt
     width -= static_cast<int>(n);
     std::string_view digits{buff + sizeof(buff) - n, n};
 
-    if (spec._align == BWFSpec::Align::SIGN) { // custom for signed case because prefix and digits are seperated.
+    if (spec._align == BWFSpec::Align::SIGN) { // custom for signed case because prefix and digits are separated.
       if (neg) {
         w.write(neg);
       }
@@ -482,9 +482,9 @@ namespace bw_fmt
     return w;
   }
 
-  /// Format for floating point values. Seperates floating point into a whole number and a
+  /// Format for floating point values. Separates floating point into a whole number and a
   /// fraction. The fraction is converted into an unsigned integer based on the specified
-  /// precision, spec._prec. ie. 3.1415 with precision two is seperated into two unsigned
+  /// precision, spec._prec. ie. 3.1415 with precision two is separated into two unsigned
   /// integers 3 and 14. The different pieces are assembled and placed into the BufferWriter.
   /// The default is two decimal places. ie. X.XX. The value is always written in base 10.
   ///

@@ -33,7 +33,7 @@
 
 #include <cassert>
 #if defined(linux)
-// XXX: SHouldn't that be part of CPPFLAGS?
+// XXX: Shouldn't that be part of CPPFLAGS?
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
@@ -168,7 +168,7 @@ ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
 
   // align start back to page boundary
   caddr_t a = (caddr_t)(((uintptr_t)addr) & ~(pagesize - 1));
-  // align length to page boundry covering region
+  // align length to page boundary covering region
   size_t l = (len + (addr - a) + (pagesize - 1)) & ~(pagesize - 1);
   if ((a + l) > end) {
     l = end - a; // strict limit
@@ -271,7 +271,7 @@ _xstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
       *newstr = '\0';
     } else {
       strncpy(newstr, str, length); // we cannot do length + 1 because the string isn't
-      newstr[length] = '\0';        // guaranteeed to be null terminated!
+      newstr[length] = '\0';        // guaranteed to be null terminated!
     }
     return newstr;
   }

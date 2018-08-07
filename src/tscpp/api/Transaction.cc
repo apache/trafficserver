@@ -413,7 +413,7 @@ namespace
  * @param constructor takes a function pointer of type GetterFunction
  * @param txn a TSHttpTxn
  * @param hdr_buf the address where the hdr buf will be stored
- * @param hdr_loc the address where the mem loc will be storeds
+ * @param hdr_loc the address where the mem loc will be stored
  * @param name name of the entity - used for logging
  */
 class initializeHandles

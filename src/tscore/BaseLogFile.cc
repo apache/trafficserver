@@ -24,7 +24,7 @@
 #include "tscore/BaseLogFile.h"
 
 /*
- * This consturctor creates a BaseLogFile based on a given name.
+ * This constructor creates a BaseLogFile based on a given name.
  * This is the most common way BaseLogFiles are created.
  */
 BaseLogFile::BaseLogFile(const char *name) : m_name(ats_strdup(name))
@@ -33,7 +33,7 @@ BaseLogFile::BaseLogFile(const char *name) : m_name(ats_strdup(name))
 }
 
 /*
- * This consturctor creates a BaseLogFile based on a given name.
+ * This constructor creates a BaseLogFile based on a given name.
  * Similar to above constructor, but is overloaded with the object signature
  */
 BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_name(ats_strdup(name)), m_signature(sig), m_has_signature(true)
@@ -155,7 +155,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
     // produce overlapping filenames (the problem is that we have
     // no easy way of keeping track of the timestamp of the first
     // transaction
-    log_log_trace("in BaseLogFile::roll(..), didn't use metadata starttime, used earlist available starttime\n");
+    log_log_trace("in BaseLogFile::roll(..), didn't use metadata starttime, used earliest available starttime\n");
     if (interval_start == 0) {
       start = m_start_time;
     } else {
@@ -204,7 +204,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
 }
 
 /*
- * The more convienent rolling function. Intended use is for less
+ * The more convenient rolling function. Intended use is for less
  * critical logs such as diags.log or traffic.out, since _exact_
  * timestamps may be less important
  *
@@ -331,7 +331,7 @@ BaseLogFile::open_file(int perm)
     }
   }
 
-  // set m_bytes_written to force the rolling based on filesize.
+  // set m_bytes_written to force the rolling based on file size.
   m_bytes_written = fseek(m_fp, 0, SEEK_CUR);
 
   log_log_trace("BaseLogFile %s is now open (fd=%d)\n", m_name.get(), fileno(m_fp));
@@ -535,7 +535,7 @@ BaseMetaInfo::_write_to_file()
     // TODO modify this runtime check so that it is not an assertion
     ink_release_assert(n <= BUF_SIZE);
     if (write(fd, _buffer, n) == -1) {
-      log_log_error("Could not write object_signaure\n");
+      log_log_error("Could not write object_signature\n");
     }
     log_log_trace("BaseMetaInfo::_write_to_file\n"
                   "\tfilename = %s\n"

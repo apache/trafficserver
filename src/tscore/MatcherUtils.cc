@@ -44,7 +44,7 @@
 //   off the heap (via ats_malloc() )  Returns a pointer to the buffer
 //   is successful and nullptr otherwise.
 //
-//  CALLEE is responsibled for deallocating the buffer via ats_free()
+//  CALLEE is responsible for deallocating the buffer via ats_free()
 //
 char *
 readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr)
@@ -495,7 +495,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
     case PARSE_VAL:
       if (inQuote == true) {
         if (*s == '\\') {
-          // The next character is esacped
+          // The next character is escaped
           //
           // To remove the escaped character
           // we need to copy

@@ -1107,7 +1107,7 @@ update_codes(OriginStats *stat, int code, int size)
 inline void
 update_methods(OriginStats *stat, int method, int size)
 {
-  // We're so loppsided on GETs, so makes most sense to test 'out of order'.
+  // We're so lopsided on GETs, so makes most sense to test 'out of order'.
   switch (method) {
   case METHOD_GET:
     update_counter(stat->methods.get, size);
@@ -2167,7 +2167,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
   if (!json) {
     std::cout << std::endl << std::endl;
 
-    // Protocol familes
+    // Protocol families
     format_detail_header("Protocols");
   }
 

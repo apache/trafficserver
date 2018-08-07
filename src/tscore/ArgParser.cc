@@ -162,7 +162,7 @@ ArgParser::parse(const char **argv)
   parser_program_name      = _argv[0];
   Arguments ret; // the parsed arg object to return
   AP_StrVec args = _argv;
-  // call the recrusive parse method in Command
+  // call the recursive parse method in Command
   if (!_top_level_command.parse(ret, args)) {
     // deal with default command
     if (!default_command.empty()) {
@@ -310,9 +310,9 @@ void
 ArgParser::Command::output_command(std::ostream &out, std::string const &prefix) const
 {
   if (_name != parser_program_name) {
-    // a nicely formated way to output command usage
+    // a nicely formatted way to output command usage
     std::string msg = prefix + _name;
-    // nicely formated output
+    // nicely formatted output
     if (!_description.empty()) {
       if (INDENT_ONE - static_cast<int>(msg.size()) < 0) {
         // if the command msg is too long
@@ -433,7 +433,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
       // output help message
       if ((args[i] == "--help" || args[i] == "-h") && _option_list.find("--help") != _option_list.end()) {
         ArgParser::Command *command = this;
-        // find the correct level to output help messsage
+        // find the correct level to output help message
         for (unsigned i = 1; i < args.size(); i++) {
           auto it = command->_subcommand_list.find(args[i]);
           if (it == command->_subcommand_list.end()) {
@@ -627,7 +627,7 @@ std::string const &
 ArgumentData::at(unsigned index) const
 {
   if (index >= _values.size()) {
-    throw std::out_of_range("argument not fonud at index: " + std::to_string(index));
+    throw std::out_of_range("argument not found at index: " + std::to_string(index));
   }
   return _values.at(index);
 }

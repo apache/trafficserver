@@ -79,7 +79,7 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
     for (auto plugin : plugins) {
       std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(*plugin);
-      LOG_DEBUG("Locking TransacitonPlugin mutex to delete transaction plugin at %p", plugin);
+      LOG_DEBUG("Locking TransactionPlugin mutex to delete transaction plugin at %p", plugin);
       trans_mutex->lock();
       LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", plugin);
       delete plugin;

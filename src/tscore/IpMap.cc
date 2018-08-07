@@ -842,7 +842,7 @@ namespace detail
     {
       return this->setMin(min + 1);
     }
-    /** Decremement the maximum value in place.
+    /** decrement the maximum value in place.
         @return This object.
     */
     self_type &
@@ -921,7 +921,7 @@ namespace detail
     /** Construct from the argument type.
      *
      * @param min Minimum value in the range.
-     * @param max Maximum value in the range (inclusvie).
+     * @param max Maximum value in the range (inclusive).
      * @param data Data to attach to the range.
      */
 
@@ -936,7 +936,7 @@ namespace detail
     /** Construct from the underlying @c Metric type @a min to @a max
      *
      * @param min Minimum value in the range.
-     * @param max Maximum value in the range (inclusvie).
+     * @param max Maximum value in the range (inclusive).
      * @param data Data to attach to the range.
      */
     Ip6Node(Metric const &min, Metric const &max, void *data) : Node(data), Ip6Span(min, max) {}
@@ -1028,7 +1028,7 @@ namespace detail
       inc(_min);
       return *this;
     }
-    /** Decremement the maximum value in place.
+    /** Decrement the maximum value in place.
         @return This object.
     */
     self_type &
@@ -1037,7 +1037,7 @@ namespace detail
       dec(_max);
       return *this;
     }
-    /** Increment the mininimum value in place.
+    /** Increment the minimum value in place.
         @return This object.
     */
     self_type &

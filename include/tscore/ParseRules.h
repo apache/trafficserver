@@ -33,7 +33,7 @@ typedef unsigned int CTypeResult;
 
 // Set this to 0 to disable SI
 // decimal multipliers
-#define USE_SI_MULTILIERS 1
+#define USE_SI_MULTIPLIERS 1
 
 #define is_char_BIT (1 << 0)
 #define is_upalpha_BIT (1 << 1)

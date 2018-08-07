@@ -32,7 +32,7 @@
 // full copy, hardlink, softlink
 enum CopyStyle { FULL, HARD, SOFT };
 
-// append slash & remove slash of path for convinient use
+// append slash & remove slash of path for convenient use
 void append_slash(std::string &path);
 
 // for file system

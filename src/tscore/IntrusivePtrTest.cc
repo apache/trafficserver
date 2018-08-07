@@ -26,7 +26,7 @@
 #include "tscore/TestBox.h"
 
 namespace
-{ // Hide our local defintions
+{ // Hide our local definitions
 
 // Test class for pointers and lists.
 class A : public IntrusivePtrCounter

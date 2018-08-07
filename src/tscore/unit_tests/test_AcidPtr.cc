@@ -85,7 +85,7 @@ TEST_CASE("AcidPtr Isolation")
   {
     AcidCommitPtr<int> w = p;
     *w += 1;
-    CHECK(*p.getPtr() == 40); // new value not commited until end of scope
+    CHECK(*p.getPtr() == 40); // new value not committed until end of scope
   }
   CHECK(*p.getPtr() == 41);
   {

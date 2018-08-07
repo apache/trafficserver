@@ -222,7 +222,7 @@ AsyncHttpFetch::run()
     request_str += "\r\n";
     request_str += state_->request_body_;
 
-    LOG_DEBUG("Issing (non-streaming) TSFetchUrl with request\n[%s]", request_str.c_str());
+    LOG_DEBUG("Issuing (non-streaming) TSFetchUrl with request\n[%s]", request_str.c_str());
     TSFetchUrl(request_str.c_str(), request_str.size(), reinterpret_cast<struct sockaddr const *>(&addr), fetchCont, AFTER_BODY,
                event_ids);
   } else {

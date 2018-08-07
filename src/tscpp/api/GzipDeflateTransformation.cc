@@ -134,7 +134,7 @@ GzipDeflateTransformation::handleInputComplete()
   // We will flush out anything that's remaining in the gzip buffer
   int status            = Z_OK;
   int iteration         = 0;
-  const int buffer_size = 1024; // 1024 bytes is usually more than enough for the epilouge
+  const int buffer_size = 1024; // 1024 bytes is usually more than enough for the epilogue
   unsigned char buffer[buffer_size];
 
   /* Deflate remaining data */
@@ -154,7 +154,7 @@ GzipDeflateTransformation::handleInputComplete()
                 bytes_to_write, status);
       produce(std::string_view(reinterpret_cast<char *>(buffer), static_cast<size_t>(bytes_to_write)));
     } else if (status != Z_STREAM_END) {
-      LOG_ERROR("Iteration %d: Gzip deflinate finalize produced an error '%d'", iteration, status);
+      LOG_ERROR("Iteration %d: Gzip deflate finalize produced an error '%d'", iteration, status);
     }
   } while (status == Z_OK);
 

@@ -107,7 +107,7 @@ struct dtconv {
 /*
  * The man page for cftime lies. It claims that it is thread safe.
  * Instead, it silently trashes the heap (by freeing things more than
- * once) when used in a mulithreaded program. Gack!
+ * once) when used in a multithreaded program. Gack!
  */
 int
 cftime_replacement(char *s, int maxsize, const char *format, const time_t *clock)

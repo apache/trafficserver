@@ -438,7 +438,7 @@ generate_response(const char *request)
       break;
     }
   } else {
-    /* Didin't recognize a testcase request. send the default response */
+    /* Didn't recognize a testcase request. send the default response */
     snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_DEFAULT_FORMAT, test_case);
   }
 
@@ -1202,7 +1202,7 @@ SDK_RPRINT(RegressionTest *t, const char *api_name, const char *testcase_name, i
    REGRESSION_TEST_INPROGRESS
    REGRESSION_TEST_FAILED
    REGRESSION_TEST_NOT_RUN
-  Note: pstatus is polled and can be used for asynchroneous tests.
+  Note: pstatus is polled and can be used for asynchronous tests.
 
 */
 
@@ -1595,7 +1595,7 @@ REGRESSION_TEST(SDK_API_TSPortDescriptor)(RegressionTest *test, int /* atype ATS
 //    (OBJECT_SIZE/2, then OBJECT_SIZE-100 and finally OBJECT_SIZE)
 //  - read object from the cache
 //  - remove it from the cache
-//  - try to read it (should faild)
+//  - try to read it (should fail)
 
 #define OBJECT_SIZE 100000 // size of the object we'll write/read/remove in cache
 
@@ -2621,7 +2621,7 @@ REGRESSION_TEST(SDK_API_TSContMutexGet)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSContMutexGet", "TestCase1", TC_PASS, "ok");
     test_passed = true;
   } else {
-    SDK_RPRINT(test, "TSContMutexGet", "TestCase1", TC_FAIL, "Continutation's mutex corrupted");
+    SDK_RPRINT(test, "TSContMutexGet", "TestCase1", TC_FAIL, "Continuation's mutex corrupted");
   }
 
   // Status of the whole test
@@ -3005,7 +3005,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferBlockNext)(RegressionTest *test, int /* atype 
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(bufp);
   TSIOBufferBlock blockp   = TSIOBufferReaderStart(readerp);
 
-  // TODO: This is probaby not the best of regression tests right now ...
+  // TODO: This is probably not the best of regression tests right now ...
   // Note that this assumes block size is > sizeof(int) bytes.
   if (TSIOBufferBlockNext(blockp) == nullptr) {
     SDK_RPRINT(test, "TSIOBufferBlockNext", "TestCase1", TC_PASS, "ok");
@@ -6361,7 +6361,7 @@ log_test_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   *(data->pstatus) = REGRESSION_TEST_PASSED;
   SDK_RPRINT(data->test, "TSTextLogObject", "TestCase1", TC_PASS, "ok");
 
-  // figure out the matainfo file for cleanup.
+  // figure out the metainfo file for cleanup.
   // code from MetaInfo::_build_name(const char *filename)
   int i = -1, l = 0;
   char c;
@@ -8363,7 +8363,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atyp
 //////////////////////////////////////////////
 
 // Important: we create servers listening on different port than the default one
-// to make sure our synthetix servers are called
+// to make sure our synthetic servers are called
 
 #define TEST_CASE_CONNECT_ID1 9  // TSHttpTxnIntercept
 #define TEST_CASE_CONNECT_ID2 10 // TSHttpTxnServerIntercept
@@ -8527,7 +8527,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  TSDebug(UTDBG_TAG, "Starting test TSHttpConnectServerintercept");
+  TSDebug(UTDBG_TAG, "Starting test TSHttpConnectServerIntercept");
 
   TSCont cont_test      = TSContCreate(cont_test_handler, TSMutexCreate());
   ConnectTestData *data = (ConnectTestData *)TSmalloc(sizeof(ConnectTestData));
@@ -9073,7 +9073,7 @@ REGRESSION_TEST(SDK_API_UUID)(RegressionTest *test, int /* atype ATS_UNUSED */, 
 
   // Test TSUuidCreate
   if (!(uuid = TSUuidCreate())) {
-    SDK_RPRINT(test, "TSUuidCreate", "TestCase1", TC_FAIL, "Failed to crete a UUID object");
+    SDK_RPRINT(test, "TSUuidCreate", "TestCase1", TC_FAIL, "Failed to create a UUID object");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   } else {

@@ -101,7 +101,7 @@ ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, si
 }
 
 /*-------------------------------------------------------------------------
-  This is a reentrant, and malloc free implemetnation of ats_base64_decode.
+  This is a reentrant, and malloc free implementation of ats_base64_decode.
   -------------------------------------------------------------------------*/
 #ifdef DECODE
 #undef DECODE
