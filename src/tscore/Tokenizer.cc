@@ -192,7 +192,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
 
   quoteFound = false;
 
-  // Check to see if we stoped due to a maxToken limit
+  // Check to see if we stopped due to a maxToken limit
   if (max_limit_hit == true) {
     if (options & ALLOW_EMPTY_TOKS) {
       // Go till either we hit a delimiter or we've

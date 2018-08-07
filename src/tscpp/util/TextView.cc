@@ -65,7 +65,7 @@ strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
 }
 
 const int8_t ts::svtoi_convert[256] = {
-  /* [can't do this nicely because clang format won't allow exdented comments]
+  /* [can't do this nicely because clang format won't allow extended comments]
    0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
   */
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
@@ -153,7 +153,7 @@ ts::svtoi(TextView src, TextView *out, int base)
   return zret;
 }
 
-// Do the template instantions.
+// Do the template instantiations.
 template std::ostream &ts::TextView::stream_write(std::ostream &, const ts::TextView &) const;
 
 namespace std

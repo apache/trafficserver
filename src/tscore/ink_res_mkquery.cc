@@ -217,7 +217,7 @@ labellen(const u_char *lp)
       }
       return ((bitlen + 7) / 8 + 1);
     }
-    return (-1); /*%< unknwon ELT */
+    return (-1); /*%< unknown ELT */
   }
   return (l);
 }
@@ -278,7 +278,7 @@ decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
 
 /*%
  *	Thinking in noninternationalized USASCII (per the DNS spec),
- *	is this characted special ("in need of quoting") ?
+ *	is this character special ("in need of quoting") ?
  *
  * return:
  *\li	boolean.

@@ -69,7 +69,7 @@ CryptoContext::CryptoContext()
   @brief Converts a hash to a null-terminated string
 
   Externalizes an hash as a null-terminated string into the first argument.
-  Does so without intenal procedure calls.
+  Does so without internal procedure calls.
   Side Effects: none.
   Reentrancy:     n/a.
   Thread Safety:  safe.

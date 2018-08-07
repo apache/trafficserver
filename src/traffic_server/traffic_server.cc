@@ -640,7 +640,7 @@ initialize_process_manager()
                         RECP_NON_PERSISTENT);
 }
 
-#define CMD_ERROR -2      // serious error, exit maintaince mode
+#define CMD_ERROR -2      // serious error, exit maintenance mode
 #define CMD_FAILED -1     // error, but recoverable
 #define CMD_OK 0          // ok, or minor (user) error
 #define CMD_HELP 1        // ok, print help

@@ -50,7 +50,7 @@ check_valid_sockaddr(sockaddr *sa, char *file, int line)
   if (port > 20000) {
     cerr << "[byteordering] In " << file << ", line " << line << " the IP port ";
     cerr << "was found to be " << port << "(in host byte order).\n";
-    cerr << "[byteordering] This seems inplausible, so check for byte order problems\n";
+    cerr << "[byteordering] This seems implausible, so check for byte order problems\n";
   }
 }
 #else

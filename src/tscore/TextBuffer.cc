@@ -28,7 +28,7 @@
 
 /****************************************************************************
  *
- *  TextBuffer.cc - A self-expanding buffer, primarly meant for strings
+ *  TextBuffer.cc - A self-expanding buffer, primarily meant for strings
  *
  *
  *
@@ -40,7 +40,7 @@ TextBuffer::TextBuffer(int size)
   nextAdd     = nullptr;
   currentSize = spaceLeft = 0;
   if (size > 0) {
-    // Insitute a minimum size
+    // Institute a minimum size
     if (size < 1024) {
       size = 1024;
     }
@@ -162,8 +162,8 @@ TextBuffer::rawReadFromFile(int fd)
 {
   int readSize;
 
-  // Check to see if we have got a resonable amount of space left in our
-  //   buffer, if not try to get somemore
+  // Check to see if we have got a reasonable amount of space left in our
+  //   buffer, if not try to get some more
   if (spaceLeft < 4096) {
     if (enlargeBuffer(4096) == -1) {
       return -1;
@@ -198,15 +198,15 @@ TextBuffer::slurp(int fd)
 // int TextBuffer::readFromFD(int fd)
 //
 // Issues a single read command on the file
-// descritor passed in.  Attempts to read a minimum of
+// descriptor passed in.  Attempts to read a minimum of
 // 512 bytes from file descriptor passed.
 int
 TextBuffer::readFromFD(int fd)
 {
   int readSize;
 
-  // Check to see if we have got a resonable amount of space left in our
-  //   buffer, if not try to get somemore
+  // Check to see if we have got a reasonable amount of space left in our
+  //   buffer, if not try to get some more
   if (spaceLeft < 512) {
     if (enlargeBuffer(512) == -1) {
       return -1;

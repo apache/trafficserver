@@ -980,7 +980,7 @@ Cache::build_stripe_hash_table()
     ttable[i] = VOL_HASH_EMPTY;
   }
 
-  // generate random numbers proportaion to allocation
+  // generate random numbers proportional to allocation
   rtable_pair *rtable = (rtable_pair *)ats_malloc(sizeof(rtable_pair) * rtable_size);
   int rindex          = 0;
   for (int i = 0; i < num_stripes; i++) {

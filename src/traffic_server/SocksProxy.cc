@@ -22,7 +22,7 @@
  */
 
 /*
-  This implements SOCKS server. We intecept the http traffic and send it
+  This implements SOCKS server. We intercept the http traffic and send it
   through HTTP. Others are tunneled through directly to the socks server.
 
 
@@ -403,7 +403,7 @@ SocksProxy::sendResp(bool granted)
   // In SOCKS 4, IP addr and Dest Port fields are ignored.
   // In SOCKS 5, IP addr and Dest Port are the ones we use to connect to the
   // real host. In our case, it does not make sense, since we may not
-  // connect at all. Set these feilds to zeros. Any socks client which uses
+  // connect at all. Set these fields to zeros. Any socks client which uses
   // these breaks caching.
 
   buf->reset();
@@ -446,7 +446,7 @@ SocksProxy::setupHttpRequest(unsigned char *p)
     break;
 
   case SOCKS_ATYPE_FQHN:
-    // This is stored as a zero terminicated string
+    // This is stored as a zero terminated string
     a->addr.buf = (unsigned char *)ats_malloc(p[4] + 1);
     memcpy(a->addr.buf, &p[5], p[4]);
     a->addr.buf[p[4]] = 0;
