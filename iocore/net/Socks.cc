@@ -480,7 +480,7 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
 
   socks_conf_stuff->server_connect_timeout = REC_ConfigReadInteger("proxy.config.socks.server_connect_timeout");
   socks_conf_stuff->socks_timeout          = REC_ConfigReadInteger("proxy.config.socks.socks_timeout");
-  Debug("Socks", "server connect timeout: %d socks respnonse timeout %d", socks_conf_stuff->server_connect_timeout,
+  Debug("Socks", "server connect timeout: %d socks response timeout %d", socks_conf_stuff->server_connect_timeout,
         socks_conf_stuff->socks_timeout);
 
   socks_conf_stuff->per_server_connection_attempts = REC_ConfigReadInteger("proxy.config.socks.per_server_connection_attempts");
@@ -636,7 +636,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
         break;
 
       case 0xff:
-        Debug("Socks", "None of the Socks authentcations is acceptable "
+        Debug("Socks", "None of the Socks authentications is acceptable "
                        "to the server");
         *h_ptr = nullptr;
         ret    = -1;
@@ -655,7 +655,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     break;
 
   default:
-    // This should be inpossible
+    // This should be impossible
     ink_assert(!"bad case value");
     ret = -1;
     break;

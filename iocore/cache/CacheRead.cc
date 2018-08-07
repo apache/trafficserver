@@ -838,7 +838,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     // an object needs to be outside the aggregation window in order to be
     // be evacuated as it is read
     if (!dir_agg_valid(vol, &dir)) {
-      // a directory entry which is nolonger valid may have been overwritten
+      // a directory entry which is no longer valid may have been overwritten
       if (!dir_valid(vol, &dir)) {
         last_collision = nullptr;
       }
@@ -864,7 +864,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       last_collision = nullptr;
       goto Lread;
     }
-    if (!(doc->key == key)) { // collisiion
+    if (!(doc->key == key)) { // collision
       goto Lread;
     }
     // success
@@ -1041,7 +1041,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     // an object needs to be outside the aggregation window in order to be
     // be evacuated as it is read
     if (!dir_agg_valid(vol, &dir)) {
-      // a directory entry which is nolonger valid may have been overwritten
+      // a directory entry which is no longer valid may have been overwritten
       if (!dir_valid(vol, &dir)) {
         last_collision = nullptr;
       }
@@ -1085,7 +1085,7 @@ CacheVC::openReadStartHead(int event, Event *e)
         if (buf) {
           HTTPCacheAlt *alt  = reinterpret_cast<HTTPCacheAlt *>(doc->hdr());
           int32_t alt_length = 0;
-          // count should be reasonable, as vector is initialized and unlikly to be too corrupted
+          // count should be reasonable, as vector is initialized and unlikely to be too corrupted
           // by bad disk data - count should be the number of successfully unmarshalled alts.
           for (int32_t i = 0; i < vector.count(); ++i) {
             CacheHTTPInfo *info = vector.get(i);

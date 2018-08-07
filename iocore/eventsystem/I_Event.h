@@ -166,7 +166,7 @@ public:
      Instructs the event object to reschedule itself at the time
      specified in atimeout_at on the EventProcessor.
 
-     @param atimeout_at Time at which to callcallback. See the Remarks section.
+     @param atimeout_at Time at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
@@ -177,7 +177,7 @@ public:
      Instructs the event object to reschedule itself at the time
      specified in atimeout_at on the EventProcessor.
 
-     @param atimeout_in Time at which to callcallback. See the Remarks section.
+     @param atimeout_in Time at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
@@ -188,7 +188,7 @@ public:
      the event object to reschedule itself to callback every 'aperiod'
      from now.
 
-     @param aperiod Time period at which to callcallback. See the Remarks section.
+     @param aperiod Time period at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */

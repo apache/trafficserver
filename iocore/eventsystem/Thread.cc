@@ -73,7 +73,7 @@ Thread::~Thread()
 ///////////////////////////////////////////////
 
 struct thread_data_internal {
-  ThreadFunction f;                  ///< Function to excecute in the thread.
+  ThreadFunction f;                  ///< Function to execute in the thread.
   Thread *me;                        ///< The class instance.
   char name[MAX_THREAD_NAME_LENGTH]; ///< Name for the thread.
 };

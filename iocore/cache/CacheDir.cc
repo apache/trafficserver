@@ -558,7 +558,7 @@ Lagain:
         if (collision) {
           if (collision == e) {
             collision = nullptr;
-            // increment collison stat
+            // increment collision stat
             // Note: dir_probe could be called multiple times
             // for the same document and so the collision stat
             // may not accurately reflect the number of documents
@@ -973,7 +973,7 @@ sync_cache_dir_on_shutdown()
 
       int r = pwrite(d->fd, d->agg_buffer, d->agg_buf_pos, d->header->write_pos);
       if (r != d->agg_buf_pos) {
-        ink_assert(!"flusing agg buffer failed");
+        ink_assert(!"flushing agg buffer failed");
         continue;
       }
       d->header->last_write_pos = d->header->write_pos;

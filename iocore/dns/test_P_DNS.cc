@@ -55,7 +55,7 @@ struct NetTesterSM : public Continuation {
       fflush(stdout);
       break;
     case VC_EVENT_READ_COMPLETE:
-    /* FALLSTHROUGH */
+    /* FALLTHROUGH */
     case VC_EVENT_EOS:
       r   = reader->read_avail();
       str = new char[r + 10];

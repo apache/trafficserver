@@ -100,8 +100,8 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
   CacheHostRecord *data_ptr;
   bool r;
 
-  // Check to see if there is any work to do before makeing
-  //   the stirng copy
+  // Check to see if there is any work to do before making
+  //   the string copy
   if (num_el <= 0) {
     return;
   }
@@ -776,7 +776,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
   return;
 }
 
-/* Test the cache volumeing with different configurations */
+/* Test the cache volume with different configurations */
 #define MEGS_128 (128 * 1024 * 1024)
 #define ROUND_TO_VOL_SIZE(_x) (((_x) + (MEGS_128 - 1)) & ~(MEGS_128 - 1))
 extern CacheDisk **gdisks;
@@ -866,7 +866,7 @@ create_config(RegressionTest *t, int num)
       total_space += vol_blocks;
     }
 
-    // make sure we have atleast 1280 M bytes
+    // make sure we have at least 1280 M bytes
     if (total_space<(10 << 27)>> STORE_BLOCK_SHIFT) {
       rprintf(t, "Not enough space for 10 volume\n");
       return 0;

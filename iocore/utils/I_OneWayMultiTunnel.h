@@ -36,7 +36,7 @@
 #define ONE_WAY_MULTI_TUNNEL_LIMIT 4
 
 /**
-  A generic state machine that connects a source virtual conection to
+  A generic state machine that connects a source virtual connection to
   multiple target virtual connections. A OneWayMultiTunnel is similar to
   the OneWayTunnel module. However, instead of connection one source
   to one target, it connects multiple virtual connections - a source

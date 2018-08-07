@@ -292,7 +292,7 @@ RefCountCacheSerializer<C>::finalize_sync()
     return error;
   }
 
-  // Don't bother checking for errors on the close since theere's nothing we can do about it at
+  // Don't bother checking for errors on the close since there's nothing we can do about it at
   // this point anyway.
   socketManager.close(dirfd);
   socketManager.close(this->fd);

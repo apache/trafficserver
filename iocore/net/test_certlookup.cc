@@ -168,7 +168,7 @@ load_hostnames_csv(const char *fname, SSLCertLookup &lookup)
   SSLCertContext ctx_cc(ctx);
 
   // The input should have 2 comma-separated fields; this is the format that you get when
-  // you download the top 1M sites from alexa.
+  // you download the top 1M sites from Alexa.
   //
   // For example:
   //    1,google.com

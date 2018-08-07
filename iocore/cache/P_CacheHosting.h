@@ -98,7 +98,7 @@ private:
   HostLookup *host_lookup;     // Data structure to do the lookups
   CacheHostRecord *data_array; // array of all data items
   int array_len;               // the length of the arrays
-  int num_el;                  // the number of itmems in the tree
+  int num_el;                  // the number of items in the tree
   CacheType type;
 };
 

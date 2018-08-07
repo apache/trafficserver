@@ -78,7 +78,7 @@
   Allocation policy:
 
   Actions are allocated by the Processor performing the actions.
-  It is the processor's responsbility to handle deallocation once
+  It is the processor's responsibility to handle deallocation once
   the action is complete or cancelled. A state machine MUST NOT
   access an action once the operation that returned the Action has
   completed or it has cancelled the Action.
@@ -88,11 +88,11 @@ class Action
 {
 public:
   /**
-    Contination that initiated this action.
+    Continuation that initiated this action.
 
     The reference to the initiating continuation is only used to
     verify that the action is being cancelled by the correct
-    continuation.  This field should not be accesed or modified
+    continuation.  This field should not be accessed or modified
     directly by the state machine.
 
   */
@@ -103,7 +103,7 @@ public:
 
     Keeps a reference to the Continuation's lock to preserve the
     access to the cancelled field valid even when the state machine
-    has been deallocated. This field should not be accesed or
+    has been deallocated. This field should not be accessed or
     modified directly by the state machine.
 
   */
@@ -114,7 +114,7 @@ public:
     cancelled.
 
     This flag is set after a call to cancel or cancel_action and
-    it should not be accesed or modified directly by the state
+    it should not be accessed or modified directly by the state
     machine.
 
   */

@@ -31,7 +31,7 @@
 #include "SSLStats.h"
 #include "P_SSLConfig.h"
 
-// Remvoe this when drop OpenSSL 1.0.2 support
+// Remove this when drop OpenSSL 1.0.2 support
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
 #define evp_md_func EVP_sha1()

@@ -46,7 +46,7 @@ make_span_error(int error)
   switch (error) {
   case ENOENT:
     return SPAN_ERROR_NOT_FOUND;
-  case EPERM: /* fallthru */
+  case EPERM: /* fallthrough */
   case EACCES:
     return SPAN_ERROR_NO_ACCESS;
   default:
@@ -213,7 +213,7 @@ Span::errorstr(span_error_t serr)
     return "unsupported cache file type";
   case SPAN_ERROR_MEDIA_PROBE:
     return "failed to probe device geometry";
-  case SPAN_ERROR_UNKNOWN: /* fallthru */
+  case SPAN_ERROR_UNKNOWN: /* fallthrough */
   default:
     return "unknown error";
   }
@@ -652,7 +652,7 @@ void
 Store::spread_alloc(Store &s, unsigned int blocks, bool mmapable)
 {
   //
-  // Count the eligable disks..
+  // Count the eligible disks..
   //
   int mmapable_disks = 0;
   for (unsigned k = 0; k < n_disks; k++) {
@@ -738,7 +738,7 @@ Store::try_realloc(Store &s, Store &diff)
 }
 
 //
-// Stupid grab first availabled space allocator
+// Stupid grab first available space allocator
 //
 void
 Store::alloc(Store &s, unsigned int blocks, bool one_only, bool mmapable)

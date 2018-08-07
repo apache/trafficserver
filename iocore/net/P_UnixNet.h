@@ -343,7 +343,7 @@ public:
   /**
     Release a netvc and free it.
 
-    @param netvc UnixNetVConnection to be deattached.
+    @param netvc UnixNetVConnection to be detached.
    */
   void free_netvc(UnixNetVConnection *netvc);
 
@@ -353,7 +353,7 @@ private:
   void _close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
                  int &total_idle_count);
 
-  /// Static method used as the callbackf for runtime configuration updates.
+  /// Static method used as the callback for runtime configuration updates.
   static int update_nethandler_config(const char *name, RecDataT, RecData data, void *);
 };
 

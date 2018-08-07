@@ -1377,7 +1377,7 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   // Try to get the mutex lock for NetHandler of this NetVC
   MUTEX_TRY_LOCK(lock_src, this->nh->mutex, t);
   if (lock_src.is_locked()) {
-    // Deattach this NetVC from original NetHandler & InactivityCop.
+    // Detach this NetVC from original NetHandler & InactivityCop.
     this->nh->stopCop(this);
     this->nh->stopIO(this);
     // Put this NetVC into current NetHandler & InactivityCop.

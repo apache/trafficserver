@@ -382,7 +382,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   const char *servername   = nullptr;
   const unsigned char *p;
   size_t remaining, len;
-  // Parse the servrer name if the get extension call succeeds and there are more than 2 bytes to parse
+  // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
   if (SSL_client_hello_get0_ext(s, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
     /* Extract the length of the supplied list of names. */
@@ -979,7 +979,7 @@ SSLMultiCertConfigLoader::check_server_cert_now(X509 *cert, const char *certname
 
   timeCmpValue = X509_cmp_current_time(X509_get_notBefore(cert));
   if (timeCmpValue == 0) {
-    // an error occured parsing the time, which we'll call a bogosity
+    // an error occurred parsing the time, which we'll call a bogosity
     Error("invalid certificate %s: unable to parse notBefore time", certname);
     return -3;
   } else if (timeCmpValue > 0) {
@@ -990,7 +990,7 @@ SSLMultiCertConfigLoader::check_server_cert_now(X509 *cert, const char *certname
 
   timeCmpValue = X509_cmp_current_time(X509_get_notAfter(cert));
   if (timeCmpValue == 0) {
-    // an error occured parsing the time, which we'll call a bogosity
+    // an error occurred parsing the time, which we'll call a bogosity
     Error("invalid certificate %s: unable to parse notAfter time", certname);
     return -3;
   } else if (timeCmpValue < 0) {
@@ -1762,7 +1762,7 @@ SSLConnect(SSL *ssl)
 }
 
 /**
-   Load certificats to SSL_CTX
+   Load certificates to SSL_CTX
    @static
  */
 bool

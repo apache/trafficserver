@@ -142,7 +142,7 @@ public:
 
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
-  // active_timeout is for the total elasped time of        //
+  // active_timeout is for the total elapsed time of        //
   // the connection.                                        //
   // inactivity_timeout is the elapsed time from the time   //
   // a read or a write was scheduled during which the       //
