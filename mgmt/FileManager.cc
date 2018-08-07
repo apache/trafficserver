@@ -118,7 +118,7 @@ FileManager::addFileHelper(const char *fileName, const char *configName, bool ro
 //  Sets rbPtr to the rollback object associated
 //    with the passed in fileName.
 //
-//  If there is no binding, falseis returned
+//  If there is no binding, false is returned
 //
 bool
 FileManager::getRollbackObj(const char *fileName, Rollback **rbPtr)
@@ -134,7 +134,7 @@ FileManager::getRollbackObj(const char *fileName, Rollback **rbPtr)
 
 // bool FileManager::fileChanged(const char* fileName)
 //
-//  Called by the Rollback class whenever a a config has changed
+//  Called by the Rollback class whenever a config has changed
 //     Initiates callbacks
 //
 //
@@ -148,7 +148,7 @@ FileManager::fileChanged(const char *fileName, const char *configName, bool incV
 
   for (cb = cblist.head; cb != nullptr; cb = cb->link.next) {
     // Dup the string for each callback to be
-    //  defensive incase it modified when it is not supposed to be
+    //  defensive in case it's modified when it's not supposed to be
     confignameCopy = ats_strdup(configName);
     filenameCopy   = ats_strdup(fileName);
     (*cb->func)(filenameCopy, confignameCopy, incVersion);
@@ -160,7 +160,7 @@ FileManager::fileChanged(const char *fileName, const char *configName, bool incV
 
 // void FileManger::rereadConfig()
 //
-//   Interates through the list of managed files and
+//   Iterates through the list of managed files and
 //     calls Rollback::checkForUserUpdate on them
 //
 //   although it is tempting, DO NOT CALL FROM SIGNAL HANDLERS

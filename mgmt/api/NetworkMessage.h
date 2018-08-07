@@ -28,7 +28,7 @@
 #define REMOTE_DELIM ':'
 #define REMOTE_DELIM_STR ":"
 
-#define MAX_CONN_TRIES 10 // maximum number of attemps to reconnect to TM
+#define MAX_CONN_TRIES 10 // maximum number of attempts to reconnect to TM
 
 // the possible operations or msg types sent from remote client to TM
 enum class OpType : MgmtMarshallInt {
@@ -75,7 +75,7 @@ struct mgmt_message_sender {
 TSMgmtError send_mgmt_request(const mgmt_message_sender &snd, OpType optype, ...);
 TSMgmtError send_mgmt_request(int fd, OpType optype, ...);
 
-// Marshall and send an error respose for this operation type.
+// Marshall and send an error response for this operation type.
 TSMgmtError send_mgmt_error(int fd, OpType op, TSMgmtError error);
 
 // Parse a request message from a buffer.

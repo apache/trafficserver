@@ -212,7 +212,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   }
 
   /*
-   * Exec alarm bin for priority alarms everytime, regardless if they are
+   * Exec alarm bin for priority alarms every time, regardless if they are
    * potentially duplicates. However, only exec this for you own alarms,
    * don't want every node in the cluster reporting the same alarm.
    */
@@ -223,7 +223,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   ink_mutex_acquire(&mutex);
   if (!ip) {
     // if an OEM alarm, then must create the unique key alarm type;
-    // this key is used to hash the new OEM alarm descritption in the hash table
+    // this key is used to hash the new OEM alarm description in the hash table
     if (a == MGMT_ALARM_ADD_ALARM) {
       a = (alarmOEMcount - minOEMkey) % (maxOEMkey - minOEMkey) + minOEMkey;
       alarmOEMcount++;
@@ -289,7 +289,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     (*(func))(a, ip, desc);
   }
 
-  /* Priority 2 alarms get signalled if they are the first unsolved occurrence. */
+  /* Priority 2 alarms get signaled if they are the first unsolved occurrence. */
   if (priority == 2 && !ip) {
     execAlarmBin(desc);
   }
@@ -318,8 +318,8 @@ Alarms::resetSeenFlag(char *ip)
 
 /*
  * clearUnSeen(...)
- *   This function is a sweeper functionto clean up those alarms that have
- * been taken care of through otehr local managers or at the peer itself.
+ *   This function is a sweeper function to clean up those alarms that have
+ * been taken care of through other local managers or at the peer itself.
  */
 void
 Alarms::clearUnSeen(char *ip)
@@ -350,7 +350,7 @@ void
 Alarms::checkSystemNAlert()
 {
   return;
-} /* End Alarms::checkSystenNAlert */
+} /* End Alarms::checkSystemNAlert */
 
 void
 Alarms::execAlarmBin(const char *desc)

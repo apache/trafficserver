@@ -272,10 +272,10 @@ ProcessManager::signalManager(MgmtMessageHdr *mh)
 
 #if HAVE_EVENTFD
   // we don't care about the actual value of wakeup_fd, so just keep adding 1. just need to
-  // wakeup the fd. also, note that wakeup_fd was initalized to non-blocking so we can
+  // wakeup the fd. also, note that wakeup_fd was initialized to non-blocking so we can
   // directly write to it without any timeout checking.
   //
-  // don't tigger if MGMT_EVENT_LIBRECORD because they happen all the time
+  // don't trigger if MGMT_EVENT_LIBRECORD because they happen all the time
   // and don't require a quick response. for MGMT_EVENT_LIBRECORD, rely on timeouts so
   // traffic_server can spend more time doing other things/
   uint64_t one = 1;

@@ -94,7 +94,7 @@ struct versionInfo {
 //
 //  checkForUserUpdate() - compares the last known modification time
 //    of the active version of the file with that files current modification
-//    time.  Returns true if the file has been chaged manually or false
+//    time.  Returns true if the file has been changed manually or false
 //    if it hasn't
 //
 //  versionTimeStamp(version_t) - returns the modification time (mtime)
@@ -250,6 +250,6 @@ private:
   Queue<versionInfo> versionQ; // stores the backup version info
 };
 
-// qSort comptable function to sort versionInfo*
+// qSort compatible function to sort versionInfo*
 //   based on version number
 int versionCmp(const void *i1, const void *i2);

@@ -96,7 +96,7 @@ socket_test(int fd)
  *          requests & issues out responses and alerts
  * 1) create and set the client socket_fd; connect to TM
  * 2) create and set the client's event_socket_fd; connect to TM
- * output: TS_ERR_OKAY          - if both sockets sucessfully connect to TM
+ * output: TS_ERR_OKAY          - if both sockets successfully connect to TM
  *         TS_ERR_NET_ESTABLISH - at least one unsuccessful connection
  * notes: If connection breaks it is responsibility of client to reconnect
  *        otherwise traffic server will assume mgmt stopped request and
@@ -209,11 +209,11 @@ disconnect()
 /***************************************************************************
  * reconnect
  *
- * purpose: reconnects to TM (eg. when TM restarts); does all the necesarry
+ * purpose: reconnects to TM (eg. when TM restarts); does all the necessary
  *          set up for reconnection
  * input: None
  * output: TS_ERR_FAIL, TS_ERR_OKAY
- * notes: necessarry events for a new client-TM connection:
+ * notes: necessary events for a new client-TM connection:
  * 1) get new socket_fd using old socket_path by calling connect()
  * 2) relaunch event_poll_thread_main with new socket_fd
  * 3) re-notify TM of all the client's registered callbacks by send msg
@@ -239,7 +239,7 @@ reconnect()
   // relaunch a new event thread since socket_fd changed
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
     ink_thread_create(&ts_event_thread, event_poll_thread_main, &event_socket_fd, 0, 0, nullptr);
-    // reregister the callbacks on the TM side for this new client connection
+    // re-register the callbacks on the TM side for this new client connection
     if (remote_event_callbacks) {
       err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
       if (err != TS_ERR_OKAY) { // problem establishing connection

@@ -1189,7 +1189,7 @@ static const RecordElement RecordsConfig[] =
 
   //##############################################################################
   //#
-  //# Congifuration for TLSv1.3 and above
+  //# Configuration for TLSv1.3 and above
   //#
   //##############################################################################
   // The default value (nullptr) means the default value of TLS stack will be used.
@@ -1219,7 +1219,7 @@ static const RecordElement RecordsConfig[] =
   ,
 
   // Interim configuration setting for obeying keepalive requests on internal
-  // (PLuginVC) sessions. See TS-4960 and friends.
+  // (PluginVC) sessions. See TS-4960 and friends.
   {RECT_LOCAL, "proxy.config.http.keepalive_internal_vc", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL},
 
   //##############################################################################

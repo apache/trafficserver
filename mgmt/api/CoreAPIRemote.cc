@@ -263,7 +263,7 @@ Terminate()
 
   // cancel the listening socket thread
   // it's important to call this before setting paths to NULL because the
-  // socket_test_thread actually will try to reconnect() and this funntion
+  // socket_test_thread actually will try to reconnect() and this function
   // will seg fault if the socket paths are NULL while it is connecting;
   // the thread will be cancelled at a cancellation point in the
   // socket_test_thread, eg. sleep
@@ -484,7 +484,7 @@ StorageDeviceCmdOffline(const char *dev)
 }
 
 /*-------------------------------------------------------------------------
- * LIfecycle Alert
+ * Lifecycle Alert
  *-------------------------------------------------------------------------
  * Send alert to plugins
  */

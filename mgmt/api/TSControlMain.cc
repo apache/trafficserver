@@ -828,7 +828,7 @@ handle_host_status_down(int fd, void *req, size_t reqlen)
 /**************************************************************************
  * handle_api_ping
  *
- * purpose: handles the API_PING messaghat is sent by API clients to keep
+ * purpose: handles the API_PING message that is sent by API clients to keep
  *    the management socket alive
  * output: TS_ERR_xx. There is no response message.
  *************************************************************************/
