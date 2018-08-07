@@ -1017,6 +1017,12 @@ QUICNetVConnection::_state_common_receive_packet()
       // Pass packet to _recv_and_ack to send ack to the packet. Stream data will be discarded by offset mismatch.
       error = this->_recv_and_ack(std::move(p));
       break;
+    case QUICPacketType::ZERO_RTT_PROTECTED:
+      // Probably retransmitted unintentionally. Do nothing.
+      QUICConDebug("Ignore %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), static_cast<uint8_t>(p->type()));
+
+      error = QUICErrorUPtr(new QUICNoError());
+      break;
     default:
       QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), static_cast<uint8_t>(p->type()));
 
