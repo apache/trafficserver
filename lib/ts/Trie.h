@@ -27,6 +27,7 @@
 #include <cstring>
 
 #include "ts/List.h"
+#include "ts/Diags.h"
 
 // Note that you should provide the class to use here, but we'll store
 // pointers to such objects internally.

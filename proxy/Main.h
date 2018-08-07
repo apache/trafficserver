@@ -20,61 +20,26 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
 #pragma once
 
 #include "ts/ink_platform.h"
-#include "ts/ink_apidefs.h"
-#include <ts/ink_defs.h>
-#include "ts/Regression.h"
-#include "ts/I_Version.h"
 
 //
 // Constants
 //
 #define ET_CACHE ET_CALL
 
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY "var/log/trafficserver"
-#define DEFAULT_BIND_STDOUT ""
-#define DEFAULT_BIND_STDERR ""
-
 //
 // Global Data
 //
 // Global Configuration
+
 extern int accept_till_done;
-extern int http_accept_file_descriptor;
-extern int command_flag;
 extern int auto_clear_hostdb_flag;
-extern int auto_clear_cache_flag;
-extern int fds_limit;
-extern int debug_level;
-
-extern int remote_management_flag;
-
-inkcoreapi extern int qt_accept_file_descriptor;
-
-// Debugging Configuration
-extern char debug_host[MAXDNAME + 1];
-extern int debug_port;
-
-// Default socket buffer limits
-extern int default_sndbuf_size;
-extern int default_rcvbuf_size;
 
 //
 // Functions
 //
-inline bool
-maintainance_mode()
-{
-  return (command_flag ? true : false);
-}
-
-extern AppVersionInfo appVersionInfo;
-
 void crash_logger_init(const char *user);
 void crash_logger_invoke(int signo, siginfo_t *info, void *ctx);

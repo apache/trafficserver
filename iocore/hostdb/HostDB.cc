@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "Main.h"
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
 #include "ts/I_Layout.h"

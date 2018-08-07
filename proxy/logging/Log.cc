@@ -33,7 +33,6 @@
 
  ***************************************************************************/
 #include "ts/ink_platform.h"
-#include "Main.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "I_Machine.h"

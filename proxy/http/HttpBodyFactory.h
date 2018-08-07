@@ -61,7 +61,6 @@
 #include "HttpConfig.h"
 #include "HttpCompat.h"
 #include "HttpTransact.h"
-#include "Main.h"
 #include "ts/RawHashTable.h"
 #include "ts/ink_sprintf.h"
 

@@ -33,7 +33,6 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_file.h"
 
-#include "Main.h"
 #include "ts/List.h"
 
 #include "Log.h"

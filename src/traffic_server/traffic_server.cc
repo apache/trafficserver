@@ -147,8 +147,8 @@ extern int fds_limit;
 static char command_string[512] = "";
 static char conf_dir[512]       = "";
 int remote_management_flag      = DEFAULT_REMOTE_MANAGEMENT_FLAG;
-static char bind_stdout[512]    = DEFAULT_BIND_STDOUT;
-static char bind_stderr[512]    = DEFAULT_BIND_STDERR;
+static char bind_stdout[512]    = "";
+static char bind_stderr[512]    = "";
 
 static char error_tags[1024]               = "";
 static char action_tags[1024]              = "";
