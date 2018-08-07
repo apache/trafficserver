@@ -151,6 +151,10 @@ private:
   void process_close();
   void process_timeout(Event **e, int event_to_send);
 
+  // Clear the Event pointer pointed to by e
+  // Cancel the action first if it is a periodic event
+  void clear_event(Event **e);
+
   void setup_event_cb(ink_hrtime in, Event **e_ptr);
 
   void update_inactive_time();
