@@ -161,6 +161,9 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#ifdef SSL_MODE_QUIC_HACK
+  SSL_CTX_set_mode(client_ssl_ctx, SSL_MODE_QUIC_HACK);
+#endif
   QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
 
   // Server
@@ -168,6 +171,9 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#ifdef SSL_MODE_QUIC_HACK
+  SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_QUIC_HACK);
+#endif
   BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
   SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
@@ -207,8 +213,6 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   std::cout << "### Messages from client" << std::endl;
   print_hex(msg3.buf, msg3.offsets[4]);
 
-  CHECK(client->update_key_materials());
-
   // NS
   QUICHandshakeMsgs msg4;
   uint8_t msg4_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
@@ -218,8 +222,6 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   CHECK(server->handshake(&msg4, &msg3) == 1);
   std::cout << "### Messages from server" << std::endl;
   print_hex(msg4.buf, msg4.offsets[4]);
-
-  CHECK(server->update_key_materials());
 
   // encrypt - decrypt
   // client (encrypt) - server (decrypt)
