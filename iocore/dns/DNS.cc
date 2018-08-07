@@ -577,7 +577,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
 
 /**
   Initial state of the DSNHandler. Can reinitialize the running DNS
-  hander to a new nameserver.
+  handler to a new nameserver.
 */
 int
 DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
@@ -1192,7 +1192,7 @@ DNSEntry::mainEvent(int event, Event *e)
     } else {
       domains = nullptr;
     }
-    Debug("dns", "enqueing query %s", qname);
+    Debug("dns", "enqueuing query %s", qname);
     DNSEntry *dup = get_entry(dnsH, qname, qtype);
     if (dup) {
       Debug("dns", "collapsing NS request");

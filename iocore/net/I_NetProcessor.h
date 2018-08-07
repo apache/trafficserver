@@ -240,7 +240,7 @@ private:
   object.
 
   @code
-    netProcesors.accept(my_cont, ...);
+    netProcessor.accept(my_cont, ...);
     netProcessor.connect_re(my_cont, ...);
   @endcode
 

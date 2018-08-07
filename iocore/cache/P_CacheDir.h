@@ -299,7 +299,7 @@ void sync_cache_dir_on_shutdown();
 
 extern Dir empty_dir;
 
-// Inline Funtions
+// Inline Functions
 
 #define dir_in_seg(_s, _i) ((Dir *)(((char *)(_s)) + (SIZEOF_DIR * (_i))))
 

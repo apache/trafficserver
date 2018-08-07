@@ -514,7 +514,7 @@ SSLCertificateConfig::reconfigure()
   // twice the healthcheck period to simulate a loading a large certificate set.
   if (is_action_tag_set("test.multicert.delay")) {
     const int secs = 60;
-    Debug("ssl", "delaying certificate reload by %dsecs", secs);
+    Debug("ssl", "delaying certificate reload by %d secs", secs);
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 

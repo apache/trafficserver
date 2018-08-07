@@ -45,7 +45,7 @@
 typedef void (*Transform_fn)(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf);
 
 /**
-  A generic state machine that connects two virtual conections. A
+  A generic state machine that connects two virtual connections. A
   OneWayTunnel is a module that connects two virtual connections, a source
   vc and a target vc, and copies the data between source and target. Once
   the tunnel is started using the init() call, it handles all the events

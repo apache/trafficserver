@@ -538,7 +538,7 @@ Lagain:
       if (ret < 0) {
         Debug("aio", "io_submit failed: %s (%d)", strerror(-ret), -ret);
       } else {
-        Fatal("could not sumbit IOs, io_submit(%p, %d, %p) returned %d", ctx, num, cbs, ret);
+        Fatal("could not submit IOs, io_submit(%p, %d, %p) returned %d", ctx, num, cbs, ret);
       }
     }
   }

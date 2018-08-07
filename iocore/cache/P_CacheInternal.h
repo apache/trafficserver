@@ -433,7 +433,7 @@ struct CacheVC : public CacheVConnection {
   // Start Region C
   // These variables are memset to 0 when the structure is freed.
   // The size of this region is size_to_init which is initialized
-  // in the CacheVC constuctor. It assumes that vio is the start
+  // in the CacheVC constructor. It assumes that vio is the start
   // of this region.
   // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
@@ -578,7 +578,7 @@ free_CacheVC(CacheVC *cont)
   ink_assert(!cont->is_io_in_progress());
   ink_assert(!cont->od);
   /* calling cont->io.action = nullptr causes compile problem on 2.6 solaris
-     release build....wierd??? For now, null out continuation and mutex
+     release build....weird??? For now, null out continuation and mutex
      of the action separately */
   cont->io.action.continuation = nullptr;
   cont->io.action.mutex        = nullptr;

@@ -246,7 +246,7 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
     RecRawStatSyncSum(name, data_type, data, rsb, id);
     RecGetGlobalRawStatSum(rsb, (int)cache_bytes_total_stat, &total);
     percent_full = (float)used / (float)total * 100;
-    // The perent_full float below gets rounded down
+    // The percent_full float below gets rounded down
     RecSetGlobalRawStatSum(rsb, (int)cache_percent_full_stat, (int64_t)percent_full);
   }
 
@@ -851,7 +851,7 @@ CacheProcessor::cacheInitialized()
   int caches_ready  = 0;
   int cache_init_ok = 0;
   /* allocate ram size in proportion to the disk space the
-     volume accupies */
+     volume occupies */
   int64_t total_size             = 0; // count in HTTP & MIXT
   uint64_t total_cache_bytes     = 0; // bytes that can used in total_size
   uint64_t total_direntries      = 0; // all the direntries in the cache
@@ -1138,7 +1138,7 @@ vol_init_data_internal(Vol *d)
   off_t total_entries = (d->len - (d->start - d->skip)) / cache_config_min_average_object_size;
   // step2: calculate the number of buckets
   off_t total_buckets = total_entries / DIR_DEPTH;
-  // step3: calculate the number of segments, no semgent has more than 16384 buckets
+  // step3: calculate the number of segments, no segment has more than 16384 buckets
   d->segments = (total_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
   // step4: divide total_buckets into segments on average.
   d->buckets = (total_buckets + d->segments - 1) / d->segments;
@@ -1531,7 +1531,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
             s += round_to_approx_size(doc->len);
             continue;
           }
-          // case 3 - we have already recoverd some data and
+          // case 3 - we have already recovered some data and
           // (doc->sync_serial < last_sync_serial) ||
           // (doc->sync_serial > header->sync_serial + 1).
           // if we are too close to the end, wrap around
@@ -1855,7 +1855,7 @@ build_vol_hash_table(CacheHostRecord *cp)
   for (int i = 0; i < VOL_HASH_TABLE_SIZE; i++) {
     ttable[i] = VOL_HASH_EMPTY;
   }
-  // generate random numbers proportaion to allocation
+  // generate random numbers proportional to allocation
   rtable_pair *rtable = (rtable_pair *)ats_malloc(sizeof(rtable_pair) * rtable_size);
   int rindex          = 0;
   for (int i = 0; i < num_vols; i++) {
@@ -2154,7 +2154,7 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
     @internal I looked at doing this in place (rather than a copy & modify) but
     - The in place logic would be even worse than this mess
     - It wouldn't save you that much, since you end up doing inserts early in the buffer.
-      Without extreme care in the logic it could end up doing more copying thatn
+      Without extreme care in the logic it could end up doing more copying than
       the simpler copy & modify.
 
     @internal This logic presumes the existence of some slack at the end of the buffer, which
@@ -2221,7 +2221,7 @@ upgrade_doc_version(Ptr<IOBufferData> &buf)
       }
       Doc *n_doc = reinterpret_cast<Doc *>(buf->data()); // access as current version.
       // For now the base header size is the same. If that changes we'll need to handle the v22/23 case here
-      // as with the v21 and shift the content down to accomodate the bigger header.
+      // as with the v21 and shift the content down to accommodate the bigger header.
       ink_assert(sizeof(*n_doc) == sizeof(*doc));
 
       n_doc->doc_type = CACHE_FRAG_TYPE_HTTP; // We converted so adjust doc_type.
@@ -2795,7 +2795,7 @@ cplist_reconfigure()
       }
     }
 
-    /* change percentages in the config patitions to absolute value */
+    /* change percentages in the config partitions to absolute value */
     off_t tot_space_in_blks = 0;
     off_t blocks_per_vol    = VOL_BLOCK_SIZE / STORE_BLOCK_SIZE;
     /* sum up the total space available on all the disks.

@@ -29,7 +29,7 @@
 #include "P_SSLUtils.h"
 #include "SSLStats.h"
 
-// Maxiumum OCSP stapling response size.
+// Maximum OCSP stapling response size.
 // This should be the response for a single certificate and will typically include the responder certificate chain,
 // so 10K should be more than enough.
 #define MAX_STAPLING_DER 10240

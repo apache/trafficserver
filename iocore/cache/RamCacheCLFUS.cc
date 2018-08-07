@@ -35,7 +35,7 @@
 #endif
 
 #define REQUIRED_COMPRESSION 0.9 // must get to this size or declared incompressible
-#define REQUIRED_SHRINK 0.8      // must get to this size or keep orignal buffer (with padding)
+#define REQUIRED_SHRINK 0.8      // must get to this size or keep original buffer (with padding)
 #define HISTORY_HYSTERIA 10      // extra temporary history
 #define ENTRY_OVERHEAD 256       // per-entry overhead to consider when computing cache value/size
 #define LZMA_BASE_MEMLIMIT (64 * 1024 * 1024)
@@ -53,7 +53,7 @@ struct RamCacheCLFUSEntry {
   uint32_t auxkey1;
   uint32_t auxkey2;
   uint64_t hits;
-  uint32_t size; // memory used including paddding in buffer
+  uint32_t size; // memory used including padding in buffer
   uint32_t len;  // actual data length
   uint32_t compressed_len;
   union {

@@ -26,7 +26,7 @@
   P_NetVCTest.h
 
    Description:
-       Unit test for infastructure for VConnections implementing the
+       Unit test for infrastructure for VConnections implementing the
          NetVConnection interface
 
 

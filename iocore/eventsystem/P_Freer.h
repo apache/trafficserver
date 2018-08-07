@@ -27,7 +27,7 @@
 #include "I_Tasks.h"
 
 // Note that these should not be used for memory that wishes to retain
-// NUMA socket affinity. We'll potentially return these on an arbitarily
+// NUMA socket affinity. We'll potentially return these on an arbitrarily
 // selected processor/socket.
 
 template <class C> struct DeleterContinuation : public Continuation {

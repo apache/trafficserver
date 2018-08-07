@@ -29,7 +29,7 @@
 // For currently defined protocol strings, see
 // http://technotes.googlecode.com/git/nextprotoneg.html. The OpenSSL
 // documentation tells us to return a string in "wire format". The
-// draft NPN RFC helpfuly refuses to document the wire format. The
+// draft NPN RFC helpfully refuses to document the wire format. The
 // above link says we need to send length-prefixed strings, but does
 // not say how many bytes the length is. For the record, it's 1.
 
@@ -78,7 +78,7 @@ fail:
   return false;
 }
 
-// copies th eprotocols but not the endpoints
+// copies the protocols but not the endpoints
 
 SSLNextProtocolSet *
 SSLNextProtocolSet::clone() const

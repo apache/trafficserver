@@ -193,7 +193,7 @@ public:
       UDPPacketInternal *p;
       // pull in all the stuff from long-term slot
       lastPullLongTermQ = t;
-      // this is to handle wierdoness where someone is trying to queue a
+      // this is to handle weirdness where someone is trying to queue a
       // packet to be sent in SLOT_TIME_MSEC * N_SLOTS * (2+)---the packet
       // will get back to longTermQ and we'll have an infinite loop.
       while ((p = longTermQ.dequeue()) != nullptr)

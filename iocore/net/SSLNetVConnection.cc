@@ -371,7 +371,7 @@ SSLNetVConnection::read_raw_data()
   // If we have already moved some bytes successfully, adjust total_read to reflect reality
   // If any read succeeded, we should return success
   if (r != rattempted) {
-    // If the first read failds, we should return error
+    // If the first read fails, we should return error
     if (r <= 0 && total_read > rattempted) {
       r = total_read - rattempted;
     } else {
@@ -408,7 +408,7 @@ SSLNetVConnection::read_raw_data()
     } else {
       Debug("proxyprotocol",
             "[SSLNetVConnection::read_raw_data] proxy protocol DOES NOT have a configured whitelist of trusted IPs but "
-            "proxy protocol is ernabled on this port - processing all connections");
+            "proxy protocol is enabled on this port - processing all connections");
     }
 
     if (ssl_has_proxy_v1(this, buffer, &r)) {
@@ -1215,7 +1215,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // Clean up the epoll entry for signalling
     SSL_clear_mode(ssl, SSL_MODE_ASYNC);
     this->ep.stop();
-    // Rectivate the socket, ready to rock
+    // Reactivate the socket, ready to rock
     PollDescriptor *pd = get_PollDescriptor(this_ethread());
     this->ep.start(
       pd, this,
@@ -1550,7 +1550,7 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
 
   // Reenabling from the handshake callback
   //
-  // Originally, we would wait for the callback to go again to execute additinonal
+  // Originally, we would wait for the callback to go again to execute additional
   // hooks, but since the callbacks are associated with the context and the context
   // can be replaced by the plugin, it didn't seem reasonable to assume that the
   // callback would be executed again.  So we walk through the rest of the hooks

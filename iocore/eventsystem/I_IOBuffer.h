@@ -29,7 +29,7 @@
   might wish to ensure that an entire line will come in before consuming
   the data.  In such a case, the water_mark should be set to the largest
   possible size of the string. (appropriate error handling should take
-  care of exessively long strings).
+  care of excessively long strings).
 
   In all other cases, especially when all data will be consumed, the
   water_mark should be set to 0 (the default).
@@ -418,7 +418,7 @@ public:
     Create a copy of the IOBufferBlock. Creates and returns a copy of this
     IOBufferBlock that references the same data that this IOBufferBlock
     (it does not allocate an another buffer). The cloned block will not
-    have a writable space since the original IOBufferBlock mantains the
+    have a writable space since the original IOBufferBlock maintains the
     ownership for writing data to the block.
 
     @return copy of this IOBufferBlock.
@@ -715,7 +715,7 @@ public:
 
   /**
     Clears all fields in this IOBuffeReader, rendering it unusable. Drops
-    the reference to the IOBufferBlock list, the accesor, MIOBuffer and
+    the reference to the IOBufferBlock list, the accessor, MIOBuffer and
     resets this reader's state. You have to set those fields in order
     to use this object again.
 
@@ -820,7 +820,7 @@ public:
     @param offset number of the bytes to skip over before beginning
       the operation.
     @return -1 if c is not found, otherwise position of the first
-      ocurrence.
+      occurrence.
 
   */
   inkcoreapi int64_t memchr(char c, int64_t len = INT64_MAX, int64_t offset = 0);
@@ -1082,7 +1082,7 @@ public:
 
   /**
     Returns the amount of space of available for writing on the first
-    writable block on the block chain (the one that would be reutrned
+    writable block on the block chain (the one that would be returned
     by first_write_block()).
 
   */

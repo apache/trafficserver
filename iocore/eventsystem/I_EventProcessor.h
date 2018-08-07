@@ -73,8 +73,8 @@ class EThread;
   thread is independent of the thread groups and it exists as long as your continuation handle
   executes and there are events to process. In the latter, you call @c registerEventType to get an
   event type and then @c spawn_event_theads which creates the threads in the group of that
-  type. Such threads require events to be scheduled on a specicif thread in the group or for the
-  grouop in general using the event type. Note that between these two calls @c
+  type. Such threads require events to be scheduled on a specific thread in the group or for the
+  group in general using the event type. Note that between these two calls @c
   EThread::schedule_spawn can be used to set up per thread initialization.
 
   Callback event codes:
@@ -204,11 +204,11 @@ public:
   /**
     Schedules the continuation on a specific thread group to receive
     an event periodically. Requests the EventProcessor to schedule the
-    callback to the continuation 'c' everytime 'aperiod' elapses. The
+    callback to the continuation 'c' every time 'aperiod' elapses. The
     callback is handled by a thread in the specified thread group
     (event_type).
 
-    @param c Continuation to call back everytime 'aperiod' elapses.
+    @param c Continuation to call back every time 'aperiod' elapses.
     @param aperiod duration of the time period between callbacks.
     @param event_type thread group id (or event type) specifying the
       group of threads on which to schedule the callback.

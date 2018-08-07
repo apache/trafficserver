@@ -709,7 +709,7 @@ TS_INLINE char &IOBufferReader::operator[](int64_t i)
   }
 
   ink_release_assert(!"out of range");
-  // Never used, just to satisfy compilers not undersatnding the fatality of ink_release_assert().
+  // Never used, just to satisfy compilers not understanding the fatality of ink_release_assert().
   return default_ret;
 }
 

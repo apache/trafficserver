@@ -42,7 +42,7 @@
   The accept call is a blocking call while connect is non-blocking. They
   returns a new Connection instance which is an handle to the newly created
   connection. The connection `q instance can be used later for read/writes
-  using an intance of IOProcessor class.
+  using an instance of IOProcessor class.
 
 
   **************************************************************************/
@@ -143,7 +143,7 @@ struct Connection {
 
 private:
   // Don't want copy constructors to avoid having the deconstructor on
-  // temporarly copies close the file descriptor too soon. Use move instead
+  // temporarily copies close the file descriptor too soon. Use move instead
   Connection(Connection const &);
 
 protected:
