@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "Main.h"
 #include "hdrs/HTTP.h"
 #include "ts/IpMap.h"
 #include "ProxyConfig.h"

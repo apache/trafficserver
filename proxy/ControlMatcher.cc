@@ -33,7 +33,6 @@
 #include "ts/ink_config.h"
 #include "ts/MatcherUtils.h"
 #include "ts/Tokenizer.h"
-#include "Main.h"
 #include "ProxyConfig.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"

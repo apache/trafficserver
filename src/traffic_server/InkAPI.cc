@@ -27,6 +27,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_base64.h"
 #include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 
 #include "InkAPIInternal.h"
 #include "Log.h"
@@ -84,6 +85,8 @@
   _HDR.m_heap = ((HdrHeapSDKHandle *)_BUF_PTR)->m_heap; \
   _HDR.m_http = (HTTPHdrImpl *)_OBJ_PTR;                \
   _HDR.m_mime = _HDR.m_http->m_fields_impl;
+
+extern AppVersionInfo appVersionInfo;
 
 // Globals for new librecords stats
 static int api_rsb_index;

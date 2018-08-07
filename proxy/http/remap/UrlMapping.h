@@ -27,7 +27,6 @@
 
 #include "ts/ink_config.h"
 #include "AclFiltering.h"
-#include "Main.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
 #include "ts/Regex.h"

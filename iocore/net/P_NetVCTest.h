@@ -37,6 +37,7 @@
 #pragma once
 
 #include "ts/ink_platform.h"
+#include "ts/Regression.h"
 
 class VIO;
 class MIOBuffer;

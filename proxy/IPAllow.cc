@@ -29,7 +29,6 @@
  ****************************************************************************/
 
 #include "ts/ink_platform.h"
-#include "Main.h"
 #include "IPAllow.h"
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
