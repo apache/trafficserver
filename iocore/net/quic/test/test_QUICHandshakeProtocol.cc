@@ -189,7 +189,7 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   msg1.buf                                = msg1_buf;
   msg1.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
-  CHECK(client->handshake(&msg1, nullptr) == 1);
+  REQUIRE(client->handshake(&msg1, nullptr) == 1);
   std::cout << "### Messages from client" << std::endl;
   print_hex(msg1.buf, msg1.offsets[4]);
 
@@ -199,7 +199,7 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   msg2.buf                                = msg2_buf;
   msg2.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
-  CHECK(server->handshake(&msg2, &msg1) == 1);
+  REQUIRE(server->handshake(&msg2, &msg1) == 1);
   std::cout << "### Messages from server" << std::endl;
   print_hex(msg2.buf, msg2.offsets[4]);
 
@@ -209,7 +209,40 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   msg3.buf                                = msg3_buf;
   msg3.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
-  CHECK(client->handshake(&msg3, &msg2) == 1);
+#ifdef SSL_MODE_QUIC_HACK
+  // -- Hacks for OpenSSL with SSL_MODE_QUIC_HACK --
+  // SH
+  QUICHandshakeMsgs msg2_1;
+  uint8_t msg2_1_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
+  msg2_1.buf                                = msg2_1_buf;
+  msg2_1.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
+
+  memcpy(msg2_1.buf, msg2.buf, msg2.offsets[1]);
+  msg2_1.offsets[0] = 0;
+  msg2_1.offsets[1] = msg2.offsets[1];
+  msg2_1.offsets[2] = msg2.offsets[1];
+  msg2_1.offsets[3] = msg2.offsets[1];
+  msg2_1.offsets[4] = msg2.offsets[1];
+
+  // EE - FIN
+  QUICHandshakeMsgs msg2_2;
+  uint8_t msg2_2_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
+  msg2_2.buf                                = msg2_2_buf;
+  msg2_2.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
+
+  size_t len = msg2.offsets[3] - msg2.offsets[2];
+  memcpy(msg2_2.buf, msg2.buf + msg2.offsets[1], len);
+  msg2_2.offsets[0] = 0;
+  msg2_2.offsets[1] = 0;
+  msg2_2.offsets[2] = 0;
+  msg2_2.offsets[3] = len;
+  msg2_2.offsets[4] = len;
+
+  REQUIRE(client->handshake(&msg3, &msg2_1) == 1);
+  REQUIRE(client->handshake(&msg3, &msg2_2) == 1);
+#else
+  REQUIRE(client->handshake(&msg3, &msg2) == 1);
+#endif
   std::cout << "### Messages from client" << std::endl;
   print_hex(msg3.buf, msg3.offsets[4]);
 
@@ -219,7 +252,7 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   msg4.buf                                = msg4_buf;
   msg4.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
-  CHECK(server->handshake(&msg4, &msg3) == 1);
+  REQUIRE(server->handshake(&msg4, &msg3) == 1);
   std::cout << "### Messages from server" << std::endl;
   print_hex(msg4.buf, msg4.offsets[4]);
 
