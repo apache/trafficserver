@@ -1491,7 +1491,11 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       }
 
       MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
-      if (!lock.is_locked()) {
+      // We have seen cases were the action.mutex != action.continuation.mutex.
+      // Since reply_to_cont will call the hanlder on the action.continuation, it is important that we hold
+      // that mutex.
+      MUTEX_TRY_LOCK_FOR(lock2, action.continuation->mutex, thread, action.continuation);
+      if (!lock.is_locked() || !lock2.is_locked()) {
         remove_trigger_pending_dns();
         SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
         thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
