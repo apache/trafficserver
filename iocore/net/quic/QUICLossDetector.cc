@@ -427,36 +427,39 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
     delay_until_lost = 5.0 / 4.0 * std::max(this->_latest_rtt, this->_smoothed_rtt);
   }
 
-  for (auto &unacked : this->_sent_packets) {
-    if (unacked.first >= largest_acked_packet_number) {
+  for (auto it = this->_sent_packets.begin(); it != this->_sent_packets.end();) {
+    if (it->first >= largest_acked_packet_number) {
       break;
     }
-    ink_hrtime time_since_sent = Thread::get_hrtime() - unacked.second->time;
-    uint64_t delta             = largest_acked_packet_number - unacked.second->packet_number;
+    ink_hrtime time_since_sent = Thread::get_hrtime() - it->second->time;
+    uint64_t delta             = largest_acked_packet_number - it->second->packet_number;
     if (time_since_sent > delay_until_lost || delta > this->_reordering_threshold) {
       if (time_since_sent > delay_until_lost) {
         QUICLDDebug("Lost: time since sent is too long (PN=%" PRId64 " sent=%" PRId64 ", delay=%lf, fraction=%lf, lrtt=%" PRId64
                     ", srtt=%" PRId64 ")",
-                    unacked.first, time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt,
+                    it->first, time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt,
                     this->_smoothed_rtt);
       } else {
         QUICLDDebug("Lost: packet delta is too large (PN=%" PRId64 " largest=%" PRId64 " unacked=%" PRId64 " threshold=%" PRId32
                     ")",
-                    unacked.first, largest_acked_packet_number, unacked.second->packet_number, this->_reordering_threshold);
+                    it->first, largest_acked_packet_number, it->second->packet_number, this->_reordering_threshold);
       }
 
-      if (!unacked.second->ack_only) {
-        lost_packets.insert({unacked.first, unacked.second.get()});
+      if (!it->second->ack_only) {
+        lost_packets.insert({it->first, it->second.get()});
       } else {
         // -- ADDITIONAL CODE --
         // We remove only "ack-only" packets for life time management of packets.
         // Packets in lost_packets will be removed from sent_packet later.
-        this->_remove_from_sent_packet_list(unacked.first);
+        it = this->_remove_from_sent_packet_list(it);
+        continue;
         // -- END OF ADDITIONAL CODE --
       }
     } else if (this->_loss_time == 0 && delay_until_lost != INFINITY) {
       this->_loss_time = Thread::get_hrtime() + delay_until_lost - time_since_sent;
     }
+
+    ++it;
   }
 
   // Inform the congestion controller of lost packets and
@@ -582,21 +585,34 @@ QUICLossDetector::_remove_from_sent_packet_list(QUICPacketNumber packet_number)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
-  // Decrement counters
   auto ite = this->_sent_packets.find(packet_number);
-  if (ite != this->_sent_packets.end()) {
-    if (ite->second->handshake) {
+  this->_decrement_outstanding_counters(ite);
+  this->_sent_packets.erase(packet_number);
+}
+
+std::map<QUICPacketNumber, PacketInfoUPtr>::iterator
+QUICLossDetector::_remove_from_sent_packet_list(std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
+
+  this->_decrement_outstanding_counters(it);
+  return this->_sent_packets.erase(it);
+}
+
+void
+QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it)
+{
+  if (it != this->_sent_packets.end()) {
+    // Decrement counters
+    if (it->second->handshake) {
       ink_assert(this->_handshake_outstanding.load() > 0);
       --this->_handshake_outstanding;
     }
-    if (!ite->second->ack_only) {
+    if (!it->second->ack_only) {
       ink_assert(this->_retransmittable_outstanding.load() > 0);
       --this->_retransmittable_outstanding;
     }
   }
-
-  // Remove from the list
-  this->_sent_packets.erase(packet_number);
 }
 
 ink_hrtime

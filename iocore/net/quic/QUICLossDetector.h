@@ -163,6 +163,9 @@ private:
   std::atomic<uint32_t> _retransmittable_outstanding;
   void _add_to_sent_packet_list(QUICPacketNumber packet_number, std::unique_ptr<PacketInfo> packet_info);
   void _remove_from_sent_packet_list(QUICPacketNumber packet_number);
+  std::map<QUICPacketNumber, PacketInfoUPtr>::iterator _remove_from_sent_packet_list(
+    std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it);
+  void _decrement_outstanding_counters(std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it);
 
   /*
    * Because this alarm will be reset on every packet transmission, to reduce number of events,
