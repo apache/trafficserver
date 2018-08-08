@@ -18,3 +18,10 @@ pkglib_LTLIBRARIES += experimental/server_push_preload/server_push_preload.la
 
 experimental_server_push_preload_server_push_preload_la_SOURCES = \
   experimental/server_push_preload/server_push_preload.cc
+
+experimental_server_push_preload_server_push_preload_la_LDFLAGS = \
+  $(AM_LDFLAGS) \
+  -L$(top_builddir)/lib/cppapi
+
+experimental_server_push_preload_server_push_preload_la_LIBADD = \
+  -latscppapi
