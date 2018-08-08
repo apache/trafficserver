@@ -1099,6 +1099,7 @@ Changes with Apache Traffic Server 8.0.0
   #3821 - Generalize started thread counter
   #3822 - Fix broken out of tree build
   #3824 - This removes the second CacheSM, and related APIs
+  #3825 - Detects compiler support of C++17 at configure time
   #3826 - BWF: Fix asserts for clang-analyzer.
   #3828 - Set LDFLAGS when building with jemalloc
   #3829 - Fixed coredump with origin throttling
@@ -1141,7 +1142,6 @@ Changes with Apache Traffic Server 8.0.0
   #3918 - Fix configuration problem for host-targeted user response pages
   #3919 - Clarifies alternate # selected in log output
   #3920 - CPPApi Intercept Plugin: Changed destroy logic
-  #3924 - Remove INKContInternal warning.
   #3929 - Log lock cleanup
   #3933 - Removed assignment of unused variable
   #3934 - cachekey: running as global plugin
@@ -1164,7 +1164,17 @@ Changes with Apache Traffic Server 8.0.0
   #4002 - Fixes spelling
   #4004 - Dockerfile for CentOS/Fedora, i.e. yum dependencies
   #4011 - Modifies init script to add start/reload hooks
+  #4014 - fix outputlog, diagslog rolling size overflow
+  #4025 - Removes non-FS ciphers to make SSLLabs not warn on weak ciphers
   #4027 - Fixes ticket loading from filesystems without a mtime
   #4035 - Fixing copy paste error in SNI yaml parsing
   #4036 - Removes more references to traffic_cop and cop related functionality
   #4043 - Change the defauilt connect_ports docs to reflect the code
+  #4045 - Mark log collation as deprecated
+  #4048 - Cached object should not be removed when write is aborted
+  #4061 - Fix tunnel routing documentation
+  #4068 - Cleans up README and sample config for compress plugin
+  #4070 - Renames TSHttpTxnSetHttpRetStatus to TSHttpTxnStatusSet
+  #4076 - traffic_manager: fix --tsArgs to work.
+  #4081 - Fix typo in header_normalize plugin.
+  #4083 - Links server_push_preload plugin against libatscppapi
