@@ -511,14 +511,14 @@ LogObject::va_log(LogAccess *lad, const char *fmt, va_list ap)
 
   if (this->m_flags & LOG_OBJECT_FMT_TIMESTAMP) {
     len = LogUtils::timestamp_to_str(LogUtils::timestamp(), entry, MAX_ENTRY);
-    if (len <= 0) {
+    if (unlikely(len <= 0 || len >= MAX_ENTRY)) {
       return Log::FAIL;
     }
 
     // Add a space after the timestamp
     entry[len++] = ' ';
 
-    if (len >= MAX_ENTRY) {
+    if (unlikely(len >= MAX_ENTRY)) {
       return Log::FAIL;
     }
   }
