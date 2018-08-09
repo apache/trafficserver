@@ -148,7 +148,7 @@ SplitDNSConfig::reconfigure()
   if (nullptr != params->m_DNSSrvrTable->getHostMatcher() && nullptr == params->m_DNSSrvrTable->getReMatcher() &&
       nullptr == params->m_DNSSrvrTable->getIPMatcher() && 4 >= params->m_numEle) {
     HostLookup *pxHL          = params->m_DNSSrvrTable->getHostMatcher()->getHLookup();
-    params->m_pxLeafArray     = (void *)pxHL->getLArray();
+    params->m_pxLeafArray     = pxHL->get_leaf_array();
     params->m_bEnableFastPath = true;
   }
 
@@ -236,20 +236,20 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
         break;
       }
 
-      if (false == pxHL[i].isNot && pxHL[i].len > len) {
+      if (false == pxHL[i].isNot && static_cast<int>(pxHL[i].match.size()) > len) {
         continue;
       }
 
-      int idx      = len - pxHL[i].len;
-      char *pH     = &pHost[idx];
-      char *pMatch = (char *)pxHL[i].match;
-      char cNot    = *pMatch;
+      int idx            = len - pxHL[i].match.size();
+      char *pH           = &pHost[idx];
+      const char *pMatch = pxHL[i].match.data();
+      char cNot          = *pMatch;
 
       if ('!' == cNot) {
         pMatch++;
       }
 
-      int res = memcmp(pH, pMatch, pxHL[i].len);
+      int res = memcmp(pH, pMatch, pxHL[i].match.size());
 
       if ((0 != res && '!' == cNot) || (0 == res && '!' != cNot)) {
         data_ptr = (SplitDNSRecord *)pxHL[i].opaque_data;
