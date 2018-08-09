@@ -394,8 +394,8 @@ EventProcessor::initThreadState(EThread *t)
 {
   // Run all thread type initialization continuations that match the event types for this thread.
   for (int i = 0; i < MAX_EVENT_TYPES; ++i) {
-    thread_group[i]._started++;
     if (t->is_event_type(i)) { // that event type done here, roll thread start events of that type.
+      ++thread_group[i]._started;
       // To avoid race conditions on the event in the spawn queue, create a local one to actually send.
       // Use the spawn queue event as a read only model.
       Event *nev = eventAllocator.alloc();
