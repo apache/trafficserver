@@ -175,10 +175,18 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_QUIC_HACK);
 #endif
   BIO *crt_bio(BIO_new_mem_buf(server_crt, sizeof(server_crt)));
-  SSL_CTX_use_certificate(server_ssl_ctx, PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr));
+  X509 *x509 = PEM_read_bio_X509(crt_bio, nullptr, nullptr, nullptr);
+  SSL_CTX_use_certificate(server_ssl_ctx, x509);
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
-  SSL_CTX_use_PrivateKey(server_ssl_ctx, PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr));
+  EVP_PKEY *pkey = PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr);
+  SSL_CTX_use_PrivateKey(server_ssl_ctx, pkey);
   QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
+
+  BIO_free(crt_bio);
+  BIO_free(key_bio);
+
+  X509_free(x509);
+  EVP_PKEY_free(pkey);
 
   CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
   CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
@@ -282,6 +290,9 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   // Teardown
   delete client;
   delete server;
+
+  SSL_CTX_free(server_ssl_ctx);
+  SSL_CTX_free(client_ssl_ctx);
 }
 
 // // HRR - Incorrect DHE Share
