@@ -1104,6 +1104,7 @@ Changes with Apache Traffic Server 8.0.0
   #3828 - Set LDFLAGS when building with jemalloc
   #3829 - Fixed coredump with origin throttling
   #3831 - Update directory structure of README
+  #3833 - Clear server_entry in case of ERROR as well as NO_ACTIVITY_TIMEOUT
   #3834 - Set verify locations in the initializer function only
   #3835 - Search cache for urls matching the regex input
   #3838 - Handle inactivity timeout event in state_http_server_open
@@ -1157,7 +1158,6 @@ Changes with Apache Traffic Server 8.0.0
   #3962 - Revert POST handling changes and fixes 6 different cores
   #3969 - Clearout shutdown_cont_event when the event has been processed
   #3970 - Remove Http2ConnectionState::continued_buffer
-  #3977 - Revert POST handling changes and fixes 6 different cores
   #3983 - Fixes some var-args missing va_start/end
   #4000 - TS-4765: Removes previously deprecated cqbl and pqbl log tags
   #4001 - Removes old commented-out code
@@ -1172,9 +1172,13 @@ Changes with Apache Traffic Server 8.0.0
   #4043 - Change the defauilt connect_ports docs to reflect the code
   #4045 - Mark log collation as deprecated
   #4048 - Cached object should not be removed when write is aborted
+  #4052 - Removes reference to non-existent ssl_multicert option 'exit_on_load_error'
   #4061 - Fix tunnel routing documentation
   #4068 - Cleans up README and sample config for compress plugin
   #4070 - Renames TSHttpTxnSetHttpRetStatus to TSHttpTxnStatusSet
+  #4073 - Fix Http/2 priority crashes.
   #4076 - traffic_manager: fix --tsArgs to work.
+  #4078 - In conf_remap plugin, print name of non-existent or non-overriddable …
   #4081 - Fix typo in header_normalize plugin.
   #4083 - Links server_push_preload plugin against libatscppapi
+  #4091 - logstats conditionally disable format check
