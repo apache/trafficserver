@@ -63,8 +63,8 @@ struct NetAcceptAction : public Action, public RefCountObj {
   void
   cancel(Continuation *cont = nullptr) override
   {
-    Action::cancel(cont);
     server->close();
+    Action::cancel(cont);
   }
 
   Continuation *
@@ -84,7 +84,6 @@ struct NetAccept : public Continuation {
   ink_hrtime period = 0;
   Server server;
   AcceptFunctionPtr accept_fn = nullptr;
-  int ifd                     = NO_FD;
   int id                      = -1;
   Ptr<NetAcceptAction> action_;
   SSLNextProtocolAccept *snpa = nullptr;

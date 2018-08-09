@@ -64,6 +64,32 @@ drain_throttled_accepts(NetAccept *na)
   return n;
 }
 
+void
+initialize_thread_for_accept(EThread *thread)
+{
+  NetHandler *nh = get_NetHandler(thread);
+
+  new ((ink_dummy_for_new *)nh) NetHandler();
+  new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, nh);
+  nh->mutex  = new_ProxyMutex();
+  nh->thread = thread;
+
+  PollCont *pc       = get_PollCont(thread);
+  PollDescriptor *pd = pc->pollDescriptor;
+
+  memcpy(&nh->config, &NetHandler::global_config, sizeof(NetHandler::global_config));
+  nh->configure_per_thread_values();
+
+  thread->set_tail_handler(nh);
+  thread->ep       = (EventIO *)ats_malloc(sizeof(EventIO));
+  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
+#if HAVE_EVENTFD
+  thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
+#else
+  thread->ep->start(pd, thread->evpipe[0], nullptr, EVENTIO_READ);
+#endif
+}
+
 //
 // General case network connection accept code
 //
@@ -199,6 +225,10 @@ NetAccept::init_accept_loop()
 void
 NetAccept::init_accept(EThread *t)
 {
+  if (do_listen(NON_BLOCKING)) {
+    return;
+  }
+
   if (!t) {
     t = eventProcessor.assign_thread(opt.etype);
   }
@@ -206,10 +236,6 @@ NetAccept::init_accept(EThread *t)
   if (!action_->continuation->mutex) {
     action_->continuation->mutex = t->mutex;
     action_->mutex               = t->mutex;
-  }
-
-  if (do_listen(NON_BLOCKING)) {
-    return;
   }
 
   SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
@@ -220,7 +246,7 @@ NetAccept::init_accept(EThread *t)
 void
 NetAccept::init_accept_per_thread()
 {
-  int i, n;
+  int i, n, accept_threads;
 
   ink_assert(opt.etype >= 0);
 
@@ -235,11 +261,26 @@ NetAccept::init_accept_per_thread()
   }
 
   period = -HRTIME_MSECONDS(net_accept_period);
-  n      = eventProcessor.thread_group[opt.etype]._count;
+  REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+  if (accept_threads == 0) {
+    n = eventProcessor.thread_group[ET_ACCEPT]._count;
+  } else {
+    ink_assert(accept_threads < 0);
+    n = -accept_threads;
+  }
 
   for (i = 0; i < n; i++) {
-    NetAccept *a       = (i < n - 1) ? clone() : this;
-    EThread *t         = eventProcessor.thread_group[opt.etype]._thread[i];
+    NetAccept *a = (i < n - 1) ? clone() : this;
+#ifdef SO_REUSEPORT
+    if (a != this) {
+      a->server.fd = NO_FD;
+      if (a->do_listen(NON_BLOCKING)) {
+        delete a;
+        continue;
+      }
+    }
+#endif
+    EThread *t         = eventProcessor.assign_thread(ET_ACCEPT);
     PollDescriptor *pd = get_PollDescriptor(t);
 
     if (a->ep.start(pd, a, EVENTIO_READ) < 0) {
@@ -254,10 +295,10 @@ NetAccept::init_accept_per_thread()
 void
 NetAccept::stop_accept()
 {
+  ep.stop();
   if (!action_->cancelled) {
     action_->cancel();
   }
-  server.close();
 }
 
 int
@@ -415,9 +456,9 @@ NetAccept::acceptEvent(int event, void *ep)
 }
 
 int
-NetAccept::acceptFastEvent(int event, void *ep)
+NetAccept::acceptFastEvent(int event, void *data)
 {
-  Event *e = (Event *)ep;
+  Event *e = (Event *)data;
   (void)event;
   (void)e;
   int bufsz, res = 0;
@@ -429,7 +470,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
   do {
     if (!opt.backdoor && check_net_throttle(ACCEPT)) {
-      ifd = NO_FD;
       return EVENT_CONT;
     }
 
@@ -484,7 +524,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
       goto Lerror;
     }
 
-    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
+    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(nullptr);
     if (!vc) {
       goto Ldone;
     }
@@ -508,13 +548,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
 #endif
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
-    EThread *t    = e->ethread;
+    EThread *t    = eventProcessor.assign_thread(opt.etype);
     NetHandler *h = get_NetHandler(t);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
-    // We must be holding the lock already to do later do_io_read's
-    SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
-    vc->handleEvent(EVENT_NONE, nullptr);
+    t->schedule_imm_signal(vc);
     vc = nullptr;
   } while (loop);
 
@@ -522,6 +560,7 @@ Ldone:
   return EVENT_CONT;
 
 Lerror:
+  ep.stop();
   server.close();
   e->cancel();
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
@@ -560,8 +599,8 @@ NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nul
 void
 NetAccept::cancel()
 {
+  ep.stop();
   action_->cancel();
-  server.close();
 }
 
 NetAccept *

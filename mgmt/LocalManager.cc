@@ -1033,6 +1033,11 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
   if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int)) < 0) {
     mgmt_fatal(0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
   }
+#ifdef SO_REUSEPORT
+  if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEPORT, (char *)&one, sizeof(int)) < 0) {
+    mgmt_fatal(0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
+  }
+#endif
 
   if (port.m_inbound_transparent_p) {
 #if TS_USE_TPROXY

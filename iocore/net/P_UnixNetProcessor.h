@@ -43,6 +43,7 @@ public:
   NetVConnection *allocate_vc(EThread *t) override;
 
   void init() override;
+  int start_accept(int n_accept_threads, size_t stacksize) override;
 
   Event *accept_thread_event;
 
@@ -69,5 +70,6 @@ extern UnixNetProcessor unix_netProcessor;
 // accept such events by the EventProcesor.
 //
 extern void initialize_thread_for_net(EThread *thread);
+extern void initialize_thread_for_accept(EThread *thread);
 
 //#include "UnixNet.h"

@@ -211,6 +211,11 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
+#ifdef SO_REUSEPORT
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, SOCKOPT_ON, sizeof(int))) < 0) {
+    goto Lerror;
+  }
+#endif
 
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&
       (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {

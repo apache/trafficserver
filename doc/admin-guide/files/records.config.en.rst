@@ -294,8 +294,12 @@ Thread Variables
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
-   The number of accept threads. If disabled (``0``), then accepts will be done
-   in each of the worker threads.
+   The number of dedicated accept threads for a server port.
+   If equal or less than ``0``, a new thread group ET_ACCEPT will be created,
+   the number of ET_ACCEPT threads is the same as ET_NET.
+   If equal ``0``, then accepts will be done in each of the ET_ACCEPT threads.
+   If less than ``0``, then accepts will be done in only ``-accept_threads`` of
+   ET_ACCEPT threads.
 
 .. ts:cv:: CONFIG proxy.config.thread.default.stacksize INT 1048576
 

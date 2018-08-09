@@ -179,6 +179,7 @@ public:
 
   */
   virtual void init() = 0;
+  virtual int start_accept(int n_accept_threads, size_t stacksize = DEFAULT_STACKSIZE) = 0;
 
   inkcoreapi virtual NetVConnection *allocate_vc(EThread *) = 0;
 

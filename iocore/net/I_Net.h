@@ -88,6 +88,7 @@ extern int net_throttle_delay;
  */
 
 #define ET_NET ET_CALL
+extern EventType ET_ACCEPT;
 
 #include "I_NetVConnection.h"
 #include "I_NetProcessor.h"

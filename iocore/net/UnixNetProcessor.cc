@@ -29,6 +29,7 @@
 // For Stat Pages
 #include "StatPages.h"
 
+EventType ET_ACCEPT = ET_NET;
 int net_accept_number = 0;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
@@ -336,6 +337,17 @@ UnixNetProcessor::init()
   if (etype == ET_NET) {
     statPagesManager.register_http("net", register_ShowNet);
   }
+}
+
+int
+UnixNetProcessor::start_accept(int n_accept_threads, size_t stacksize)
+{
+  ET_ACCEPT = eventProcessor.register_event_type("ET_ACCEPT");
+  NetHandler::active_thread_types[ET_ACCEPT] = true;
+  eventProcessor.schedule_spawn(&initialize_thread_for_accept, ET_ACCEPT);
+  eventProcessor.spawn_event_threads(ET_ACCEPT, n_accept_threads, stacksize);
+
+  return 0;
 }
 
 // Virtual function allows creation of an

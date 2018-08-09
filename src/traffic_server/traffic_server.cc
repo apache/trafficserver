@@ -1845,6 +1845,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       }
     }
   } else {
+    int accept_threads;
+    REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+    if (accept_threads <= 0) {
+      // Create a new thread group (ET_ACCEPT) for NetAccept::acceptLoopEvent
+      netProcessor.start_accept(num_of_net_threads, stacksize);
+    }
     remapProcessor.start(num_remap_threads, stacksize);
     RecProcessStart();
     initCacheControl();

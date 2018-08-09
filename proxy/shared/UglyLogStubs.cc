@@ -104,6 +104,11 @@ UnixNetProcessor::init()
   ink_release_assert(false);
 }
 
+int UnixNetProcessor::start_accept(int n_accept_threads, size_t stacksize)
+{
+  ink_release_assert(false);
+}
+
 // TODO: The following was necessary only for Solaris, should examine more.
 NetVCOptions const Connection::DEFAULT_OPTIONS;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
