@@ -153,6 +153,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Metalink <metalink.en>
    Money Trace <money_trace.en>
    MP4 <mp4.en>
+   Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
    Signed URLs <url_sig.en>
    SSL Headers <sslheaders.en>
@@ -193,6 +194,12 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`MP4 <mp4.en>`
    MP4 streaming media.
+
+:doc:`Multiplexer <multiplexer.en>`
+   Multiplex inbound requests to multiple upstream destinations. This is useful for requests that
+   are beacons or other metric gathering requests, to report to multiple upstreams. Alternatively
+   this can be used to do A/B testing by sending a duplicated slice of inbound production traffic to
+   experimental upstreams.
 
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
