@@ -21,7 +21,6 @@ Test.Summary = 'Testing ATS TCP handshake timeout'
 Test.SkipUnless(
     Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
 )
-Test.SkipIf(Condition.true("Currently fixing a race condition in this test."))
 
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server", delay=15)
@@ -40,7 +39,6 @@ ts.Disk.records_config.update({
 })
 
 tr = Test.AddTestRun("tr")
-tr.StartupTimeout = 30
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
 tr.Processes.Default.StartBefore(dns)
