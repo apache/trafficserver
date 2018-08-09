@@ -389,7 +389,8 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         global G_replay_dict, test_mode_enabled
-        if test_mode_enabled:
+        # skip time delay for the autest ready check
+        if test_mode_enabled and self.requestline != "GET /ruok HTTP/1.1":
             time.sleep(time_delay)
 
         try:
