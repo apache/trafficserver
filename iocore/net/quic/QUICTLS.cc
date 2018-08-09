@@ -33,6 +33,8 @@ constexpr static char tag[] = "quic_tls";
 
 QUICTLS::~QUICTLS()
 {
+  SSL_free(this->_ssl);
+
   delete this->_client_pp;
   delete this->_server_pp;
 }
