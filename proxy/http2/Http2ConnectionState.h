@@ -216,6 +216,12 @@ public:
     return client_streams_in_count;
   }
 
+  void
+  set_post_stream_count(uint32_t count)
+  {
+    post_stream_count = count;
+  }
+
   // Connection level window size
   ssize_t client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
   ssize_t server_rwnd = Http2::initial_window_size;
@@ -237,6 +243,18 @@ public:
   is_state_closed() const
   {
     return ua_session == nullptr || fini_received;
+  }
+
+  void
+  set_seen_fini()
+  {
+    fini_received = true;
+  }
+
+  void
+  set_last_initiating_streamid(Http2StreamId last_streamid)
+  {
+    last_initiating_streamid = last_streamid;
   }
 
   bool
@@ -310,6 +328,7 @@ private:
 
   // Counter for current active streams and streams in the process of shutting down
   uint32_t total_client_streams_count = 0;
+  uint32_t post_stream_count          = 0;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
@@ -318,12 +337,13 @@ private:
   //   - [RFC 7540] 6.10 CONTINUATION
   //     "If the END_HEADERS bit is not set, this frame MUST be followed by
   //     another CONTINUATION frame."
-  Http2StreamId continued_stream_id = 0;
-  bool _scheduled                   = false;
-  bool fini_received                = false;
-  int recursion                     = 0;
-  Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
-  Event *shutdown_cont_event        = nullptr;
-  Event *fini_event                 = nullptr;
-  Event *zombie_event               = nullptr;
+  Http2StreamId continued_stream_id      = 0;
+  bool _scheduled                        = false;
+  bool fini_received                     = false;
+  int recursion                          = 0;
+  Http2ShutdownState shutdown_state      = HTTP2_SHUTDOWN_NONE;
+  Event *shutdown_cont_event             = nullptr;
+  Event *fini_event                      = nullptr;
+  Event *zombie_event                    = nullptr;
+  Http2StreamId last_initiating_streamid = 0;
 };
