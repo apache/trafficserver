@@ -1,6 +1,6 @@
 /** @file
 
-  Implements callin functions for TSAPI plugins.
+  Implements the Traffic Server C API functions.
 
   @section license License
 
@@ -7810,6 +7810,16 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
   HttpSM *sm                         = (HttpSM *)txnp;
   sm->t_state.api_skip_all_remapping = (flag != 0);
 }
+
+/* These are the default converter function sets for management data types. If those are used the
+ * proper converters can be determined here. For other types the converters must be explicitly
+ * specified.
+ *
+ * The purpose of these are to allow configuration elements to not be management types but more
+ * natural types (e.g., an enumeration can be the actual enumeration, not an @c MgmtInt that needs
+ * frequent casting). In effect the converter does the casting for the plugin API, isolating that
+ * to this API handling, with the rest of the code base using the natural types.
+ */
 
 template <typename T>
 inline void *
