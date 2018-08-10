@@ -279,7 +279,7 @@ handleInvalidToken(TSHttpTxn txnp, AccessControlTxnData *data, bool reject, cons
 {
   TSRemapStatus resultStatus = TSREMAP_NO_REMAP;
   if (reject) {
-    TSHttpTxnSetHttpRetStatus(txnp, httpStatus);
+    TSHttpTxnStatusSet(txnp, httpStatus);
     resultStatus = TSREMAP_DID_REMAP;
   } else {
     data->_vaState = status;
@@ -395,7 +395,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
             } else {
               AccessControlDebug("failed to construct a valid origin access token, did not set-cookie with it");
               /* Don't set any cookie, fail the request here returning appropriate status code and body.*/
-              TSHttpTxnSetHttpRetStatus(txnp, config->_invalidOriginResponse);
+              TSHttpTxnStatusSet(txnp, config->_invalidOriginResponse);
               static const char *body = "Unexpected Response From the Origin Server\n";
               char *buf               = (char *)TSmalloc(strlen(body) + 1);
               sprintf(buf, "%s", body);
@@ -597,18 +597,18 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           }
         }
       } else {
-        TSHttpTxnSetHttpRetStatus(txnp, config->_invalidRequest);
+        TSHttpTxnStatusSet(txnp, config->_invalidRequest);
         AccessControlError("https is the only allowed scheme (plugin should be used only with TLS)");
         remapStatus = TSREMAP_DID_REMAP;
       }
     } else {
-      TSHttpTxnSetHttpRetStatus(txnp, config->_internalError);
+      TSHttpTxnStatusSet(txnp, config->_internalError);
       AccessControlError("failed to get request uri-scheme");
       remapStatus = TSREMAP_DID_REMAP;
     }
   } else {
     /* Something is terribly wrong, we cannot get the configuration */
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
     AccessControlError("configuration unavailable");
     remapStatus = TSREMAP_DID_REMAP;
   }
