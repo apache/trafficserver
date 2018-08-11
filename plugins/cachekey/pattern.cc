@@ -303,6 +303,12 @@ Pattern::replace(const String &subject, String &result)
     int start     = ovector[2 * replIndex];
     int length    = ovector[2 * replIndex + 1] - ovector[2 * replIndex];
 
+    /* Handle the case when no match / a group capture result in an empty string */
+    if (start < 0) {
+      start  = 0;
+      length = 0;
+    }
+
     String src(_replacement, _tokenOffset[i], 2);
     String dst(subject, start, length);
 
