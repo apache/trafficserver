@@ -1490,19 +1490,31 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         return EVENT_CONT;
       }
 
-      MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
       // We have seen cases were the action.mutex != action.continuation.mutex.
       // Since reply_to_cont will call the hanlder on the action.continuation, it is important that we hold
       // that mutex.
-      MUTEX_TRY_LOCK_FOR(lock2, action.continuation->mutex, thread, action.continuation);
-      if (!lock.is_locked() || !lock2.is_locked()) {
+      bool need_to_reschedule = true;
+      MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
+      if (lock.is_locked()) {
+        need_to_reschedule = !action.cancelled;
+        if (!action.cancelled) {
+          if (action.continuation->mutex) {
+            MUTEX_TRY_LOCK_FOR(lock2, action.continuation->mutex, thread, action.continuation);
+            if (lock2.is_locked()) {
+              reply_to_cont(action.continuation, r, is_srv());
+              need_to_reschedule = false;
+            }
+          } else {
+            reply_to_cont(action.continuation, r, is_srv());
+            need_to_reschedule = false;
+          }
+        }
+      }
+      if (need_to_reschedule) {
         remove_trigger_pending_dns();
         SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
         thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
         return EVENT_CONT;
-      }
-      if (!action.cancelled) {
-        reply_to_cont(action.continuation, r, is_srv());
       }
     }
     // wake up everyone else who is waiting
