@@ -388,7 +388,7 @@ Transaction::getCacheStatus()
   case TS_CACHE_LOOKUP_HIT_FRESH:
     return CACHE_LOOKUP_HIT_FRESH;
   case TS_CACHE_LOOKUP_SKIPPED:
-    return CACHE_LOOKUP_SKIPED;
+    return CACHE_LOOKUP_SKIPPED;
   default:
     return CACHE_LOOKUP_NONE;
   }
