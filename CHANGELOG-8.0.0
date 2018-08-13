@@ -1134,9 +1134,14 @@ Changes with Apache Traffic Server 8.0.0
   #3892 - SNI based IP_ALLOW
   #3893 - Fix coredump issue when calling ts.fetch
   #3894 - Sending stdout and stderr to traffic.out
+  #3895 - Add optional feature to use cache-key-url for parent selection
+  #3898 - Runroot: Add an option to specify copy style and reformat the doc
   #3899 - Add a --reason tag option to the host subcommand
   #3902 - Recognize openssl engines for key loading.
+  #3903 - traffic_manager: Fix error, clean up argument handling.
+  #3908 - BWF: Add "OptionalAffix", clean up some minor BWF wrapper class issues.
   #3909 - Fixes detection of OpenSSL's OCSP APIs
+  #3912 - Avoid cert callback if no verification is requested.
   #3915 - Doc: Fix build errors in logging.
   #3916 - Fixes OCSP warnings when cert has no OCSP URI attached to it
   #3917 - Converts remaining header files to #pragma once
@@ -1144,6 +1149,7 @@ Changes with Apache Traffic Server 8.0.0
   #3919 - Clarifies alternate # selected in log output
   #3920 - CPPApi Intercept Plugin: Changed destroy logic
   #3929 - Log lock cleanup
+  #3932 - Runroot: add new option to specify layout during creating
   #3933 - Removed assignment of unused variable
   #3934 - cachekey: running as global plugin
   #3935 - Link with libluajit for the lua plugin
@@ -1152,6 +1158,7 @@ Changes with Apache Traffic Server 8.0.0
   #3946 - Fix bug on loading speed up for lua script
   #3948 - Enhances detection of luajit
   #3949 - Fixed http/2 issue with Http2Stream being updated after it was destroyed
+  #3950 - access_control plugin
   #3952 - ASAN: stack-use-after-scope
   #3959 - Cleans up brotli compiler and linker flags
   #3960 - Cleans up LDADDs in traffic_server
@@ -1159,12 +1166,15 @@ Changes with Apache Traffic Server 8.0.0
   #3969 - Clearout shutdown_cont_event when the event has been processed
   #3970 - Remove Http2ConnectionState::continued_buffer
   #3983 - Fixes some var-args missing va_start/end
+  #3994 - Runroot: Add feature to use runroot by providing yaml file
   #4000 - TS-4765: Removes previously deprecated cqbl and pqbl log tags
   #4001 - Removes old commented-out code
   #4002 - Fixes spelling
   #4004 - Dockerfile for CentOS/Fedora, i.e. yum dependencies
   #4011 - Modifies init script to add start/reload hooks
   #4014 - fix outputlog, diagslog rolling size overflow
+  #4021 - Runroot: pass runroot down from manager and error message update
+  #4024 - Fix logic to support ASYNC_pause_job
   #4025 - Removes non-FS ciphers to make SSLLabs not warn on weak ciphers
   #4027 - Fixes ticket loading from filesystems without a mtime
   #4035 - Fixing copy paste error in SNI yaml parsing
@@ -1177,8 +1187,12 @@ Changes with Apache Traffic Server 8.0.0
   #4068 - Cleans up README and sample config for compress plugin
   #4070 - Renames TSHttpTxnSetHttpRetStatus to TSHttpTxnStatusSet
   #4073 - Fix Http/2 priority crashes.
+  #4074 - Cancel inactive event before marking it as nullptr in PluginVC::process_timeout()
   #4076 - traffic_manager: fix --tsArgs to work.
   #4078 - In conf_remap plugin, print name of non-existent or non-overriddable …
   #4081 - Fix typo in header_normalize plugin.
   #4083 - Links server_push_preload plugin against libatscppapi
+  #4088 - Make sure len is smaller than MAX_ENTRY before we use it as the index
+  #4090 - fix the number of started threads of certain type.
   #4091 - logstats conditionally disable format check
+  #4093 - Fixes the renamed RenameTSHttpTxnSetHttpRetStatus() API
