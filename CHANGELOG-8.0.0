@@ -963,6 +963,7 @@ Changes with Apache Traffic Server 8.0.0
   #3609 - Remove traffic_cop
   #3610 - Clang6: Fix garbage return value in CacheTool.cc.
   #3613 - Remove unused code
+  #3613 - Remove unused code
   #3615 - No need to walk the buckets for cache scan
   #3619 - Fix Coverity ID 1022023
   #3620 - Coverity 1021989
