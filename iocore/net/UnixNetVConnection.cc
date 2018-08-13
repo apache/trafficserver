@@ -78,9 +78,10 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
 static inline int
 read_signal_and_update(int event, UnixNetVConnection *vc)
 {
+  int retval = EVENT_CONT;
   vc->recursion++;
   if (vc->read.vio.cont) {
-    vc->read.vio.cont->handleEvent(event, &vc->read.vio);
+    retval = vc->read.vio.cont->dispatchEvent(event, &vc->read.vio);
   } else {
     switch (event) {
     case VC_EVENT_EOS:
@@ -102,16 +103,17 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     vc->nh->free_netvc(vc);
     return EVENT_DONE;
   } else {
-    return EVENT_CONT;
+    return retval;
   }
 }
 
 static inline int
 write_signal_and_update(int event, UnixNetVConnection *vc)
 {
+  int retval = EVENT_CONT;
   vc->recursion++;
   if (vc->write.vio.cont) {
-    vc->write.vio.cont->handleEvent(event, &vc->write.vio);
+    retval = vc->write.vio.cont->dispatchEvent(event, &vc->write.vio);
   } else {
     switch (event) {
     case VC_EVENT_EOS:
@@ -133,7 +135,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     vc->nh->free_netvc(vc);
     return EVENT_DONE;
   } else {
-    return EVENT_CONT;
+    return retval;
   }
 }
 
