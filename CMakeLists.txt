@@ -314,7 +314,6 @@ add_executable(ats
         iocore/net/P_UnixNetVConnection.h
         iocore/net/P_UnixPollDescriptor.h
         iocore/net/P_UnixUDPConnection.h
-        iocore/net/SessionAccept.cc
         iocore/net/SNIActionPerformer.cc
         iocore/net/Socks.cc
         iocore/net/SSLCertLookup.cc

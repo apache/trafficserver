@@ -92,6 +92,7 @@ ProxyClientSession::free()
   }
   this->api_hooks.clear();
   this->mutex.clear();
+  this->acl.clear();
 }
 
 int

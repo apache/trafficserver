@@ -29,6 +29,7 @@
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/HttpServerSession.h"
+#include "IPAllow.h"
 
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
@@ -36,7 +37,6 @@
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
 class ProxyClientTransaction;
-struct AclRecord;
 
 enum class ProxyErrorClass {
   NONE,
@@ -284,8 +284,8 @@ public:
     return netvc ? netvc->get_local_addr() : nullptr;
   }
 
-  /// acl record - cache IpAllow::match() call
-  const AclRecord *acl_record = nullptr;
+  /// IpAllow based method ACL.
+  IpAllow::ACL acl;
 
   /// Local address for outbound connection.
   IpAddr outbound_ip4;

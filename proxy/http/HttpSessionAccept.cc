@@ -29,20 +29,17 @@
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip   = netvc->get_remote_addr();
-  const AclRecord *acl_record = nullptr;
+  sockaddr const *client_ip = netvc->get_remote_addr();
+  IpAllow::ACL acl;
   ip_port_text_buffer ipb;
 
   // The backdoor port is now only bound to "localhost", so no
   // reason to check for if it's incoming from "localhost" or not.
   if (backdoor) {
-    acl_record = IpAllow::AllMethodAcl();
+    acl = IpAllow::makeAllowAllACL();
   } else {
-    acl_record = testIpAllowPolicy(client_ip);
-    if (!acl_record) {
-      ////////////////////////////////////////////////////
-      // if client address forbidden, close immediately //
-      ////////////////////////////////////////////////////
+    acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+    if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
       Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
       return false;
     }
@@ -67,7 +64,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   new_session->outbound_ip6              = outbound_ip6;
   new_session->outbound_port             = outbound_port;
   new_session->host_res_style            = ats_host_res_from(client_ip->sa_family, host_res_preference);
-  new_session->acl_record                = acl_record;
+  new_session->acl                       = std::move(acl);
 
   new_session->new_connection(netvc, iobuf, reader, backdoor);
 
