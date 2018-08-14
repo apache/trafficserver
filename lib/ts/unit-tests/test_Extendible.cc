@@ -70,12 +70,12 @@ TEST_CASE("Extendible", "")
   {
     ptr = new Derived();
     REQUIRE(ptr != nullptr);
+    delete ptr;
   }
 
   INFO("~Extendible")
   {
     //
-    delete ptr;
   }
 
   INFO("Schema Reset")
@@ -225,6 +225,7 @@ TEST_CASE("Extendible", "")
     CHECK(reader.getPtr()->arr[0] == 99);
     free(mem);
   }
+
   INFO("ACIDPTR block-free reader")
   {
     auto tf_a = Derived::schema.find<ACIDPTR, testField>("tf_a");

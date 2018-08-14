@@ -69,6 +69,9 @@ libtsutil_la_SOURCES = \
 	ContFlags.h \
 	CryptoHash.cc \
 	CryptoHash.h \
+	DBHost.cc \
+	DBHost.h \
+	DBTable.h \
 	defalloc.h \
 	Diags.cc \
 	Diags.h \
@@ -269,6 +272,7 @@ test_tslib_SOURCES = \
 	unit-tests/test_AcidPtr.cc \
 	unit-tests/test_BufferWriter.cc \
 	unit-tests/test_BufferWriterFormat.cc \
+	unit-tests/test_DBHost.cc \
 	unit-tests/test_Extendible.cc \
 	unit-tests/test_History.cc \
 	unit-tests/test_ink_inet.cc \

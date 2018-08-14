@@ -1,5 +1,5 @@
 /** @file
-  Test file for Extendible
+  Test file for AcidPtr
   @section license License
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
