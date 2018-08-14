@@ -254,13 +254,23 @@ NetAccept::init_accept_per_thread()
   }
 }
 
+//
+// Stop NetAccept and its slave objects
+//
 void
 NetAccept::stop_accept()
 {
-  if (!action_->cancelled) {
-    action_->cancel();
+  forl_LL(NetAccept, na, slaves)
+  {
+    na->ep.stop();
   }
-  server.close();
+  ep.stop();
+
+  NetAccept *na;
+  while ((na = slaves.pop())) {
+    na->cancel();
+  }
+  cancel();
 }
 
 int
@@ -563,11 +573,12 @@ NetAccept::cancel()
 }
 
 NetAccept *
-NetAccept::clone() const
+NetAccept::clone()
 {
   NetAccept *na;
   na  = new NetAccept(opt);
   *na = *this;
+  slaves.push(na);
   return na;
 }
 

@@ -48,7 +48,7 @@
 //
 struct SSLNetAccept : public NetAccept {
   NetProcessor *getNetProcessor() const override;
-  NetAccept *clone() const override;
+  NetAccept *clone() override;
 
   SSLNetAccept(const NetProcessor::AcceptOptions &opt);
   ~SSLNetAccept() override;

@@ -33,10 +33,11 @@ SSLNetAccept::getNetProcessor() const
 }
 
 NetAccept *
-SSLNetAccept::clone() const
+SSLNetAccept::clone()
 {
   NetAccept *na;
   na  = new SSLNetAccept(opt);
   *na = *this;
+  slaves.push(na);
   return na;
 }

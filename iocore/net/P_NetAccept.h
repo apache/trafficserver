@@ -99,7 +99,7 @@ struct NetAccept : public Continuation {
   void init_accept_loop();
   void init_accept_per_thread();
   virtual void stop_accept();
-  virtual NetAccept *clone() const;
+  virtual NetAccept *clone();
 
   // 0 == success
   int do_listen(bool non_blocking);
@@ -113,6 +113,8 @@ struct NetAccept : public Continuation {
 
   explicit NetAccept(const NetProcessor::AcceptOptions &);
   ~NetAccept() override { action_ = nullptr; }
+
+  Que(NetAccept, link) slaves;
 };
 
 extern Ptr<ProxyMutex> naVecMutex;
