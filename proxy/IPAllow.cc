@@ -1,6 +1,9 @@
 /** @file
 
-  A brief file description
+  User agent control by static IP address.
+
+  This enables specifying the set of methods usable by a user agent based on the remove IP address
+  for a user agent connection.
 
   @section license License
 
@@ -21,31 +24,35 @@
   limitations under the License.
  */
 
-/*****************************************************************************
- *
- *  IPAllow.cc - Implementation to IP Access Control systtem
- *
- *
- ****************************************************************************/
-
-#include "ts/ink_platform.h"
-#include "IPAllow.h"
-#include "ProxyConfig.h"
-#include "P_EventSystem.h"
-#include "P_Cache.h"
-#include "hdrs/HdrToken.h"
-#include "ControlMatcher.h"
-
 #include <sstream>
+#include "IPAllow.h"
+#include "ts/BufferWriter.h"
+
+extern char *readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr);
+
+using ts::TextView;
+namespace
+{
+void
+SignalError(ts::BufferWriter &w, bool &flag)
+{
+  if (!flag) {
+    flag = true;
+    pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, w.data());
+  }
+  Error("%s", w.data());
+}
+} // namespace
 
 enum AclOp {
   ACL_OP_ALLOW, ///< Allow access.
   ACL_OP_DENY,  ///< Deny access.
 };
 
-const AclRecord IpAllow::ALL_METHOD_ACL(AclRecord::ALL_METHOD_MASK);
+const IpAllow::Record IpAllow::ALLOW_ALL_RECORD(ALL_METHOD_MASK);
+const IpAllow::ACL IpAllow::DENY_ALL_ACL;
 
-int IpAllow::configid        = 0;
+size_t IpAllow::configid     = 0;
 bool IpAllow::accept_check_p = true; // initializing global flag for fast deny
 
 static ConfigUpdateHandler<IpAllow> *ipAllowUpdate;
@@ -68,11 +75,11 @@ IpAllow::startup()
 void
 IpAllow::reconfigure()
 {
-  self *new_table;
+  self_type *new_table;
 
   Note("ip_allow.config updated, reloading");
 
-  new_table = new self("proxy.config.cache.ip_allow.filename", "IpAllow", "ip_allow");
+  new_table = new self_type("proxy.config.cache.ip_allow.filename");
   new_table->BuildTable();
 
   configid = configProcessor.set(configid, new_table);
@@ -81,30 +88,53 @@ IpAllow::reconfigure()
 IpAllow *
 IpAllow::acquire()
 {
-  return (IpAllow *)configProcessor.get(configid);
+  return static_cast<IpAllow *>(configProcessor.get(configid));
 }
 
 void
-IpAllow::release(IpAllow *lookup)
+IpAllow::release(IpAllow *config)
 {
-  configProcessor.release(configid, lookup);
+  configProcessor.release(configid, config);
+}
+
+void
+IpAllow::release()
+{
+  configProcessor.release(configid, this);
+}
+
+IpAllow::ACL
+IpAllow::match(sockaddr const *ip, match_key_t key)
+{
+  self_type *self = acquire();
+  void *raw       = nullptr;
+  if (SRC_ADDR == key) {
+    self->_src_map.contains(ip, &raw);
+    Record *r = static_cast<Record *>(raw);
+    // Special check - if checking in accept is enabled and the record is a deny all,
+    // then return a missing record instead to force an immediate deny. Otherwise it's delayed
+    // until after remap, to allow remap rules to tweak the result.
+    if (raw && r->_method_mask == 0 && r->_nonstandard_methods.empty() && accept_check_p) {
+      raw = nullptr;
+    }
+  } else {
+    self->_dst_map.contains(ip, &raw);
+  }
+  if (raw == nullptr) {
+    self->release();
+    self = nullptr;
+  }
+  return ACL{static_cast<Record *>(raw), self};
 }
 
 //
 //   End API functions
 //
 
-IpAllow::IpAllow(const char *config_var, const char *name, const char *action_val) : module_name(name), action(action_val)
+IpAllow::IpAllow(const char *config_var)
 {
-  ats_scoped_str config_path(RecConfigReadConfigPath(config_var));
-
-  config_file_path[0] = '\0';
-  ink_release_assert(config_path);
-
-  ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
+  config_file_path = RecConfigReadConfigPath(config_var);
 }
-
-IpAllow::~IpAllow() {}
 
 void
 IpAllow::PrintMap(IpMap *map)
@@ -113,15 +143,15 @@ IpAllow::PrintMap(IpMap *map)
   s << map->count() << " ACL entries.";
   for (auto &spot : *map) {
     char text[INET6_ADDRSTRLEN];
-    AclRecord const *ar = static_cast<AclRecord const *>(spot.data());
+    Record const *ar = static_cast<Record const *>(spot.data());
 
     s << std::endl << "  Line " << ar->_src_line << ": " << ats_ip_ntop(spot.min(), text, sizeof text);
     if (0 != ats_ip_addr_cmp(spot.min(), spot.max())) {
       s << " - " << ats_ip_ntop(spot.max(), text, sizeof text);
     }
     s << " method=";
-    uint32_t mask = AclRecord::ALL_METHOD_MASK & ar->_method_mask;
-    if (AclRecord::ALL_METHOD_MASK == mask) {
+    uint32_t mask = ALL_METHOD_MASK & ar->_method_mask;
+    if (ALL_METHOD_MASK == mask) {
       s << "ALL";
     } else if (0 == mask) {
       s << "NONE";
@@ -139,7 +169,7 @@ IpAllow::PrintMap(IpMap *map)
       }
     }
     if (!ar->_nonstandard_methods.empty()) {
-      s << " nonstandard method=";
+      s << " other methods=";
       bool leader = false; // need leading vbar?
       for (const auto &_nonstandard_method : ar->_nonstandard_methods) {
         if (leader) {
@@ -159,159 +189,162 @@ IpAllow::Print()
   Debug("ip-allow", "Printing src map");
   PrintMap(&_src_map);
   Debug("ip-allow", "Printing dest map");
-  PrintMap(&_dest_map);
+  PrintMap(&_dst_map);
 }
 
 int
 IpAllow::BuildTable()
 {
-  char *tok_state    = nullptr;
-  char *line         = nullptr;
-  const char *errPtr = nullptr;
-  char errBuf[1024];
-  char *file_buf = nullptr;
-  int line_num   = 0;
+  int file_size = 0;
+  int line_num  = 0;
   IpAddr addr1;
   IpAddr addr2;
-  matcher_line line_info;
   bool alarmAlready = false;
+  ts::LocalBufferWriter<1024> bw_err;
 
   // Table should be empty
-  ink_assert(_src_map.count() == 0 && _dest_map.count() == 0);
+  ink_assert(_src_map.count() == 0 && _dst_map.count() == 0);
 
-  file_buf = readIntoBuffer(config_file_path, module_name, nullptr);
+  file_buff = readIntoBuffer(config_file_path, "ip-allow", &file_size);
 
-  if (file_buf == nullptr) {
-    Warning("%s Failed to read %s. All IP Addresses will be blocked", module_name, config_file_path);
+  if (file_buff == nullptr) {
+    Warning("%s Failed to read %s. All IP Addresses will be blocked", MODULE_NAME, config_file_path.get());
     return 1;
   }
 
-  line = tokLine(file_buf, &tok_state);
-  while (line != nullptr) {
+  TextView src(file_buff, file_size);
+  TextView line;
+  auto err_prefix = [&]() -> ts::BufferWriter & {
+    return bw_err.reset().print("{} discarding '{}' entry at line {} : ", MODULE_NAME, config_file_path, line_num);
+  };
+
+  while (!(line = src.take_prefix_at('\n')).empty()) {
     ++line_num;
+    line.trim_if(&isspace);
 
-    // skip all blank spaces at beginning of line
-    while (*line && isspace(*line)) {
-      line++;
-    }
-
-    if (*line != '\0' && *line != '#') {
-      const matcher_tags &ip_allow_tags =
-        strstr(line, ip_allow_dest_tags.match_ip) != nullptr ? ip_allow_dest_tags : ip_allow_src_tags;
-      errPtr = parseConfigLine(line, &line_info, &ip_allow_tags);
-
-      if (errPtr != nullptr) {
-        snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s", module_name, config_file_path, line_num, errPtr);
-        SignalError(errBuf, alarmAlready);
+    if (!line.empty() && *line != '#') {
+      TextView token = line.take_prefix_if(&isspace);
+      TextView value = token.split_suffix_at('=');
+      match_key_t match;
+      if (value.empty()) {
+        err_prefix().print("No value found in token '{}'.\0", token);
+        SignalError(bw_err, alarmAlready);
+        continue;
+      } else if (strcasecmp(token, OPT_MATCH_SRC) == 0) {
+        match = SRC_ADDR;
+      } else if (strcasecmp(token, OPT_MATCH_DST) == 0) {
+        match = DST_ADDR;
       } else {
-        ink_assert(line_info.type == MATCH_IP);
+        err_prefix().print("'{}' is not a valid key.\0", token);
+        SignalError(bw_err, alarmAlready);
+        continue;
+      }
 
-        if (0 == ats_ip_range_parse(line_info.line[1][line_info.dest_entry], addr1, addr2)) {
-          // INKqa05845
-          // Search for "action=ip_allow method=PURGE method=GET ..." or "action=ip_deny method=PURGE method=GET ...".
-          char *label, *val;
-          uint32_t acl_method_mask = 0;
-          AclRecord::MethodSet nonstandard_methods;
-          bool deny_nonstandard_methods = false;
-          bool is_dest_ip               = (strcasecmp(line_info.line[0][line_info.dest_entry], "dest_ip") == 0);
-          AclOp op                      = ACL_OP_DENY; // "shut up", I explained to the compiler.
-          bool op_found = false, method_found = false;
-          for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
-            label = line_info.line[0][i];
-            val   = line_info.line[1][i];
-            if (label == nullptr) {
-              continue;
+      if (0 == ats_ip_range_parse(value, addr1, addr2)) {
+        uint32_t acl_method_mask      = 0;
+        bool op_found_p               = false;
+        bool method_found_p           = false;
+        bool all_found_p              = false;
+        bool deny_nonstandard_methods = false;
+        bool line_valid_p             = true;
+        AclOp op                      = ACL_OP_DENY; // "shut up", I explained to the compiler.
+        MethodNames nonstandard_methods;
+
+        while (line_valid_p && !line.ltrim_if(&isspace).empty()) {
+          token = line.take_prefix_if(&isspace);
+          value = token.split_suffix_at('=');
+
+          if (value.empty()) {
+            err_prefix().print("No value found in token '{}'\0", token);
+            SignalError(bw_err, alarmAlready);
+            line_valid_p = false;
+          } else if (strcasecmp(token, OPT_ACTION_TAG) == 0) {
+            if (strcasecmp(value, OPT_ACTION_ALLOW) == 0) {
+              op_found_p = true, op = ACL_OP_ALLOW;
+            } else if (strcasecmp(value, OPT_ACTION_DENY) == 0) {
+              op_found_p = true, op = ACL_OP_DENY;
+            } else {
+              err_prefix().print("'{}' is not a valid action\0", value);
+              SignalError(bw_err, alarmAlready);
+              line_valid_p = false;
             }
-            if (strcasecmp(label, "action") == 0) {
-              if (strcasecmp(val, "ip_allow") == 0) {
-                op_found = true, op = ACL_OP_ALLOW;
-              } else if (strcasecmp(val, "ip_deny") == 0) {
-                op_found = true, op = ACL_OP_DENY;
-              }
-            }
-          }
-          if (op_found) {
-            // Loop again for methods, (in case action= appears after method=)
-            for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
-              label = line_info.line[0][i];
-              val   = line_info.line[1][i];
-              if (label == nullptr) {
-                continue;
-              }
-              if (strcasecmp(label, "method") == 0) {
-                char *method_name, *sep_ptr = nullptr;
-                // Parse method="GET|HEAD"
-                for (method_name = strtok_r(val, "|", &sep_ptr); method_name != nullptr;
-                     method_name = strtok_r(nullptr, "|", &sep_ptr)) {
-                  if (strcasecmp(method_name, "ALL") == 0) {
-                    method_found = false; // in case someone does method=GET|ALL
-                    break;
-                  } else {
-                    int method_name_len = strlen(method_name);
-                    int method_idx      = hdrtoken_tokenize(method_name, method_name_len);
-                    if (method_idx < HTTP_WKSIDX_CONNECT || method_idx >= HTTP_WKSIDX_CONNECT + HTTP_WKSIDX_METHODS_CNT) {
-                      nonstandard_methods.insert(method_name);
-                      Debug("ip-allow", "Found nonstandard method [%s] on line %d", method_name, line_num);
-                    } else { // valid method.
-                      acl_method_mask |= AclRecord::MethodIdxToMask(method_idx);
-                    }
-                    method_found = true;
-                  }
+          } else if (strcasecmp(token, OPT_METHOD) == 0) {
+            // Parse method="GET|HEAD"
+            while (!value.empty()) {
+              TextView method_name = value.take_prefix_at('|');
+              if (strcasecmp(method_name, OPT_METHOD_ALL) == 0) {
+                all_found_p = true;
+                break;
+              } else {
+                int method_idx = hdrtoken_tokenize(method_name.data(), method_name.size());
+                if (method_idx < HTTP_WKSIDX_CONNECT || method_idx >= HTTP_WKSIDX_CONNECT + HTTP_WKSIDX_METHODS_CNT) {
+                  nonstandard_methods.push_back(method_name);
+                  Debug("ip-allow", "%s",
+                        bw_err.reset().print("Found nonstandard method '{}' on line {}\0", method_name, line_num).data());
+                } else { // valid method.
+                  acl_method_mask |= ACL::MethodIdxToMask(method_idx);
                 }
+                method_found_p = true;
               }
             }
-            // If method not specified, default to ALL
-            if (!method_found) {
-              method_found    = true;
-              acl_method_mask = AclRecord::ALL_METHOD_MASK;
-              nonstandard_methods.clear();
-            }
-            // When deny, use bitwise complement.  (Make the rule 'allow for all
-            // methods except those specified')
-            if (op == ACL_OP_DENY) {
-              acl_method_mask          = AclRecord::ALL_METHOD_MASK & ~acl_method_mask;
-              deny_nonstandard_methods = true;
-            }
-          }
-
-          if (method_found) {
-            std::vector<AclRecord> &acls = is_dest_ip ? _dest_acls : _src_acls;
-            IpMap &map                   = is_dest_ip ? _dest_map : _src_map;
-            acls.push_back(AclRecord(acl_method_mask, line_num, nonstandard_methods, deny_nonstandard_methods));
-            // Color with index in acls because at this point the address is volatile.
-            map.fill(addr1, addr2, reinterpret_cast<void *>(acls.size() - 1));
           } else {
-            snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s", module_name, config_file_path, line_num,
-                     "Invalid action/method specified"); // changed by YTS Team, yamsat bug id -59022
-            SignalError(errBuf, alarmAlready);
+            err_prefix().print("'{}' is not a valid token\0", token);
+            SignalError(bw_err, alarmAlready);
+            line_valid_p = false;
           }
-        } else {
-          snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s", module_name, config_file_path, line_num,
-                   "invalid IP range");
-          SignalError(errBuf, alarmAlready);
         }
+        if (!line_valid_p) {
+          continue; // error parsing the line, go on to the next.
+        }
+        if (!op_found_p) {
+          err_prefix().print("No action found.\0");
+          SignalError(bw_err, alarmAlready);
+          continue;
+        }
+        // If method not specified, default to ALL
+        if (all_found_p || !method_found_p) {
+          method_found_p  = true;
+          acl_method_mask = ALL_METHOD_MASK;
+          nonstandard_methods.clear();
+        }
+        // When deny, use bitwise complement.  (Make the rule 'allow for all
+        // methods except those specified')
+        if (op == ACL_OP_DENY) {
+          acl_method_mask          = ALL_METHOD_MASK & ~acl_method_mask;
+          deny_nonstandard_methods = true;
+        }
+
+        if (method_found_p) {
+          std::vector<Record> &acls = match == DST_ADDR ? _dst_acls : _src_acls;
+          IpMap &map                = match == DST_ADDR ? _dst_map : _src_map;
+          acls.emplace_back(acl_method_mask, line_num, std::move(nonstandard_methods), deny_nonstandard_methods);
+          // Color with index in acls because at this point the address is volatile.
+          map.fill(addr1, addr2, reinterpret_cast<void *>(acls.size() - 1));
+        } else {
+          err_prefix().print("No valid method found\0"); // changed by YTS Team, yamsat bug id -59022
+          SignalError(bw_err, alarmAlready);
+        }
+      } else {
+        err_prefix().print("'{}' is not a valid IP address range\0", value);
+        SignalError(bw_err, alarmAlready);
       }
     }
-
-    line = tokLine(nullptr, &tok_state);
   }
 
-  if (_src_map.count() == 0 && _dest_map.count() == 0) { // TODO: check
-    Warning("%s No entries in %s. All IP Addresses will be blocked", module_name, config_file_path);
+  if (_src_map.count() == 0 && _dst_map.count() == 0) {
+    Warning("%s No entries in %s. All IP Addresses will be blocked", MODULE_NAME, config_file_path.get());
   } else {
     // convert the coloring from indices to pointers.
     for (auto &item : _src_map) {
       item.setData(&_src_acls[reinterpret_cast<size_t>(item.data())]);
     }
-    for (auto &item : _dest_map) {
-      item.setData(&_dest_acls[reinterpret_cast<size_t>(item.data())]);
+    for (auto &item : _dst_map) {
+      item.setData(&_dst_acls[reinterpret_cast<size_t>(item.data())]);
     }
   }
 
   if (is_debug_tag_set("ip-allow")) {
     Print();
   }
-
-  ats_free(file_buf);
   return 0;
 }

@@ -4724,41 +4724,43 @@ HttpSM::do_http_server_open(bool raw)
   // Otherwise, if no remap rule is defined, apply the ip_allow filter.
   if (!t_state.url_remap_success || t_state.url_map.getMapping()->ip_allow_check_enabled_p) {
     // Method allowed on dest IP address check
-    sockaddr *server_ip = &t_state.current.server->dst_addr.sa;
-    IpAllow::scoped_config ip_allow;
+    sockaddr *server_ip    = &t_state.current.server->dst_addr.sa;
+    IpAllow::ACL acl       = IpAllow::match(server_ip, IpAllow::DST_ADDR);
+    bool deny_request      = false; // default is fail open.
+    int method             = t_state.hdr_info.server_request.method_get_wksidx();
+    int method_str_len     = 0;
+    const char *method_str = nullptr;
 
-    if (ip_allow) {
-      const AclRecord *acl_record = ip_allow->match(server_ip, IpAllow::DEST_ADDR);
-      bool deny_request           = false; // default is fail open.
-      int method                  = t_state.hdr_info.server_request.method_get_wksidx();
-
-      if (acl_record) {
-        // If empty, nothing is allowed, deny. Conversely if all methods are allowed it's OK, do not deny.
-        // Otherwise the method has to be checked specifically.
-        if (acl_record->isEmpty()) {
-          deny_request = true;
-        } else if (acl_record->_method_mask != AclRecord::ALL_METHOD_MASK) {
-          if (method != -1) {
-            deny_request = !acl_record->isMethodAllowed(method);
-          } else {
-            int method_str_len;
-            const char *method_str = t_state.hdr_info.server_request.method_get(&method_str_len);
-            deny_request           = !acl_record->isNonstandardMethodAllowed(std::string(method_str, method_str_len));
-          }
+    if (acl.isValid()) {
+      if (acl.isDenyAll()) {
+        deny_request = true;
+      } else if (!acl.isAllowAll()) {
+        if (method != -1) {
+          deny_request = !acl.isMethodAllowed(method);
+        } else {
+          method_str   = t_state.hdr_info.server_request.method_get(&method_str_len);
+          deny_request = !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
         }
       }
+    }
 
-      if (deny_request) {
-        if (is_debug_tag_set("ip-allow")) {
-          ip_text_buffer ipb;
-          Warning("server '%s' prohibited by ip-allow policy", ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
-          Debug("ip-allow", "Denial on %s:%s with mask %x", ats_ip_ntop(&t_state.current.server->dst_addr.sa, ipb, sizeof(ipb)),
-                hdrtoken_index_to_wks(method), acl_record ? acl_record->_method_mask : 0x0);
+    if (deny_request) {
+      if (is_debug_tag_set("ip-allow")) {
+        ip_text_buffer ipb;
+        if (method != -1) {
+          method_str     = hdrtoken_index_to_wks(method);
+          method_str_len = strlen(method_str);
+        } else if (!method_str) {
+          method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
         }
-        t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
-        call_transact_and_set_next_state(HttpTransact::Forbidden);
-        return;
+        Warning("server '%s' prohibited by ip-allow policy at line %d", ats_ip_ntop(server_ip, ipb, sizeof(ipb)),
+                acl.source_line());
+        Debug("ip-allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
+              ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
       }
+      t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
+      call_transact_and_set_next_state(HttpTransact::Forbidden);
+      return;
     }
   }
 
