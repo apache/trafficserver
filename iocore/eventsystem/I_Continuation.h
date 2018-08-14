@@ -45,6 +45,9 @@ class ContinuationQueue;
 class Processor;
 class ProxyMutex;
 class EThread;
+class Event;
+
+extern EThread *this_ethread();
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -154,7 +157,13 @@ public:
     @return State machine and processor specific return code.
 
   */
-  int handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr);
+  TS_INLINE int
+  handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr)
+  {
+    // If there is a lock, we must be holding it on entry
+    ink_release_assert(!mutex || mutex->thread_holding == this_ethread());
+    return (this->*handler)(event, data);
+  }
 
   /**
     Receives the event code and data for an Event.
@@ -164,11 +173,12 @@ public:
     dispatchEvent acts like handleEvent.
 
     @param event Event code to be passed at callback (Processor specific).
+    @param schedule_event If the continuation could not be locked, the scheduled event will be returned here
     @param data General purpose data related to the event code (Processor specific).
     @return State machine and processor specific return code.
 
   */
-  int dispatchEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr);
+  int dispatchEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr, Event **scheduled_event = nullptr);
 
 protected:
   /**
