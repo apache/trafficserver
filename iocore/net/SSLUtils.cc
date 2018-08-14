@@ -89,6 +89,7 @@
 #endif
 
 TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
+TunnelHashMap wildTunnelMap; // stores wildcard versions of the above
 /*
  * struct ssl_user_config: gather user provided settings from ssl_multicert.config in to this single struct
  * ssl_ticket_enabled - session ticket enabled

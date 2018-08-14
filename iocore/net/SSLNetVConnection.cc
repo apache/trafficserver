@@ -1548,6 +1548,7 @@ SSLNetVConnection::sslContextSet(void *ctx)
 }
 
 extern TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
+extern TunnelHashMap wildTunnelMap;
 
 bool
 SSLNetVConnection::callHooks(TSEvent eventId)
@@ -1632,11 +1633,23 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   this->serverName = const_cast<char *>(SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name));
   if (this->serverName) {
     auto *hs = TunnelMap.find(this->serverName);
+    if (!hs) {
+      Vec<cchar *> keys;
+      wildTunnelMap.TunnelhMap.get_keys(keys);
+      for (int i = 0; i < static_cast<int>(keys.length()); i++) {
+        std::string_view sv{this->serverName, strlen(this->serverName)};
+        std::string_view key_sv{keys.get(i)};
+        if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
+          hs = wildTunnelMap.find(key_sv.data());
+        }
+      }
+    }
+
     if (hs != nullptr) {
       this->SNIMapping = true;
       this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       return EVENT_DONE;
-    }
+    } 
   }
 
   if (SSL_HOOK_OP_TUNNEL == hookOpRequested && SNIMapping) {

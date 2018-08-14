@@ -263,7 +263,7 @@ public:
   {
     std::string_view addr, port;
     if (ats_ip_parse(std::string_view(hostname), &addr, &port) == 0) {
-      auto *hs = new HostStruct(ats_strdup(addr.data()), addr.length(), atoi(port.data()));
+      auto *hs = new HostStruct(ats_strdup(addr.data()), addr.length(), ts::svtoi(port));
       TunnelhMap.put(ats_strdup(key), hs);
     }
   }

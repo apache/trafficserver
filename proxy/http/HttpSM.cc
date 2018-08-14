@@ -70,6 +70,7 @@
 
 extern int cache_config_read_while_writer;
 extern TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
+extern TunnelHashMap wildTunnelMap;
 
 // We have a debugging list that can use to find stuck
 //  state machines
@@ -575,6 +576,18 @@ HttpSM::setup_blind_tunnel_port()
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
       auto *hs = TunnelMap.find(ssl_vc->serverName);
+      if (!hs) {
+        Vec<cchar *> keys;
+        wildTunnelMap.TunnelhMap.get_keys(keys);
+        for (int i = 0; i < static_cast<int>(keys.length()); i++) {
+          std::string_view sv{ssl_vc->serverName, strlen(ssl_vc->serverName)};
+          std::string_view key_sv{keys.get(i)};
+          if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
+            hs = wildTunnelMap.find(key_sv.data());
+          }
+        }
+      }
+
       if (hs != nullptr) {
         t_state.hdr_info.client_request.url_get()->host_set(hs->hostname, hs->len);
         if (hs->port > 0) {
@@ -1382,6 +1395,18 @@ plugins required to work with sni_routing.
 
       NetVConnection *netvc     = ua_txn->get_netvc();
       SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+      auto *hs                  = TunnelMap.find(ssl_vc->serverName);
+      if (!hs) {
+        Vec<cchar *> keys;
+        wildTunnelMap.TunnelhMap.get_keys(keys);
+        for (int i = 0; i < static_cast<int>(keys.length()); i++) {
+          std::string_view sv{ssl_vc->serverName, strlen(ssl_vc->serverName)};
+          std::string_view key_sv{keys.get(i)};
+          if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
+            hs = wildTunnelMap.find(key_sv.data());
+          }
+        }
+      }
 
       if (ssl_vc && ssl_vc->GetSNIMapping()) {
         auto *hs = TunnelMap.find(ssl_vc->serverName);
