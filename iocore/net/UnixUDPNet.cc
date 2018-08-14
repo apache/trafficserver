@@ -217,7 +217,7 @@ UDPNetProcessorInternal::udp_callback(UDPNetHandler *nh, UDPConnection *xuc, ETh
   UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
 
   if (uc->continuation && uc->mutex) {
-    MUTEX_TRY_LOCK_FOR(lock, uc->mutex, thread, uc->continuation);
+    MUTEX_TRY_LOCK(lock, uc->mutex, thread);
     if (!lock.is_locked()) {
       return 1;
     }

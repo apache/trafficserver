@@ -188,7 +188,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ProxyMutex *mutex = thread->mutex.get();
   int64_t r         = 0;
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio.cont);
+  MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
   if (!lock.is_locked()) {
     read_reschedule(nh, vc);
@@ -367,7 +367,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   NetState *s       = &vc->write;
   ProxyMutex *mutex = thread->mutex.get();
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio.cont);
+  MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
   if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
     write_reschedule(nh, vc);
