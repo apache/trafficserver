@@ -7868,6 +7868,27 @@ _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
   return ptr;
 }
 
+// Utility converters for special time cases.
+namespace
+{
+const MgmtConverter SecondsConverter{
+  [](void *data) -> MgmtInt { return ink_hrtime_to_sec(*static_cast<MgmtInt *>(data)); },
+  [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = HRTIME_SECONDS(i); },
+  nullptr,
+  nullptr, // float
+  nullptr,
+  nullptr // string
+};
+const MgmtConverter MilliSecondsConverter{
+  [](void *data) -> MgmtInt { return ink_hrtime_to_msec(*static_cast<MgmtInt *>(data)); },
+  [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = HRTIME_MSECONDS(i); },
+  nullptr,
+  nullptr, // float
+  nullptr,
+  nullptr // string
+};
+} // namespace
+
 // Little helper function to find the struct member
 static void *
 _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
@@ -8021,10 +8042,20 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_rr_retries, conv);
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
+    ret  = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
+    conv = &SecondsConverter;
+    break;
+  case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT_MS:
+    ret  = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
+    conv = &MilliSecondsConverter;
     break;
   case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
+    ret  = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
+    conv = &SecondsConverter;
+    break;
+  case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT_MS:
+    ret  = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
+    conv = &MilliSecondsConverter;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     ret = _memberp_to_generic(&overridableHttpConfig->down_server_timeout, conv);
@@ -8207,7 +8238,12 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = _memberp_to_generic(&overridableHttpConfig->per_parent_connect_attempts, conv);
     break;
   case TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_connect_timeout, conv);
+    ret  = _memberp_to_generic(&overridableHttpConfig->parent_connect_timeout, conv);
+    conv = &SecondsConverter;
+    break;
+  case TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT_MS:
+    ret  = _memberp_to_generic(&overridableHttpConfig->parent_connect_timeout, conv);
+    conv = &MilliSecondsConverter;
     break;
   case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
     ret = _memberp_to_generic(&overridableHttpConfig->allow_multi_range, conv);
@@ -8790,6 +8826,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES;
       } else if (!strncmp(name, "proxy.config.http.cache.max_open_read_retries", length)) {
         cnf = TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES;
+      } else if (!strncmp(name, "proxy.config.http.connect_attempts_timeout_ms", length)) {
+        cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT_MS;
       }
       break;
     case 'e':
@@ -8919,6 +8957,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   case 50:
     if (!strncmp(name, "proxy.config.http.cache.cache_responses_to_cookies", length)) {
       cnf = TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES;
+    } else if (!strncmp(name, "proxy.config.http.post_connect_attempts_timeout_ms", length)) {
+      cnf = TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT_MS;
     }
     break;
 
@@ -9006,6 +9046,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER;
     } else if (!strncmp(name, "proxy.config.http.parent_proxy.per_parent_connect_attempts", length)) {
       cnf = TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS;
+    } else if (!strncmp(name, "proxy.config.http.parent_proxy.connect_attempts_timeout_ms", length)) {
+      cnf = TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT_MS;
     }
     break;
   }

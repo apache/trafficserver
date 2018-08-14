@@ -5937,7 +5937,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   if (t_state.api_txn_connect_timeout_value != -1) {
     server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_connect_timeout_value));
   } else {
-    server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(connect_timeout));
+    server_session->get_netvc()->set_inactivity_timeout(connect_timeout);
   }
 
   if (t_state.api_txn_active_timeout_value != -1) {

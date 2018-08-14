@@ -435,6 +435,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.connect_attempts_timeout", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+    {RECT_CONFIG, "proxy.config.http.parent_proxy.connect_attempts_timeout_ms", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.mark_down_hostdb", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.self_detect", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -490,6 +492,10 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.connect_attempts_timeout", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.post_connect_attempts_timeout", RECD_INT, "1800", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.connect_attempts_timeout_ms", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.post_connect_attempts_timeout_ms", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.down_server.cache_time", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

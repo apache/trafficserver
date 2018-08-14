@@ -55,6 +55,13 @@ RecRawStatBlock *http_rsb;
     RecSetRawStatCount(http_rsb, x, 0); \
   } while (0);
 
+static bool
+http_config_var_is_default(char const *name)
+{
+  RecSourceT vs;
+  return REC_ERR_OKAY != RecGetRecordSource(name, &vs) || vs == REC_SOURCE_DEFAULT || vs == REC_SOURCE_NULL;
+}
+
 class HttpConfigCont : public Continuation
 {
 public:
@@ -203,6 +210,72 @@ http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *c
     http_config_cb(name, dtype, data, cookie);
   }
 
+  return REC_ERR_OKAY;
+}
+
+static int
+http_parent_proxy_connect_attempt_timeout_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  bool update_p = false;
+  auto *c       = static_cast<HttpConfigParams *>(cookie);
+  if (0 == strcasecmp(name, "proxy.config.http.parent_proxy.connect_attempts_timeout")) {
+    if (RECD_INT == dtype) {
+      c->oride.parent_connect_timeout = HRTIME_SECONDS(data.rec_int);
+      update_p                        = true;
+    }
+  } else if (0 == strcasecmp(name, "proxy.config.http.parent_proxy.connect_attempts_timeout_ms")) {
+    if (RECD_INT == dtype) {
+      c->oride.parent_connect_timeout = HRTIME_MSECONDS(data.rec_int);
+      update_p                        = true;
+    }
+  }
+  if (update_p) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+  return REC_ERR_OKAY;
+}
+
+static int
+http_connect_attempt_timeout_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  bool update_p = false;
+  auto *c       = static_cast<HttpConfigParams *>(cookie);
+  if (0 == strcasecmp(name, "proxy.config.http.connect_attempts_timeout")) {
+    if (RECD_INT == dtype) {
+      c->oride.connect_attempts_timeout = HRTIME_SECONDS(data.rec_int);
+      update_p                          = true;
+    }
+  } else if (0 == strcasecmp(name, "proxy.config.http.connect_attempts_timeout_ms")) {
+    if (RECD_INT == dtype) {
+      c->oride.connect_attempts_timeout = HRTIME_MSECONDS(data.rec_int);
+      update_p                          = true;
+    }
+  }
+  if (update_p) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+  return REC_ERR_OKAY;
+}
+
+static int
+http_post_connect_attempt_timeout_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  bool update_p = false;
+  auto *c       = static_cast<HttpConfigParams *>(cookie);
+  if (0 == strcasecmp(name, "proxy.config.http.post_connect_attempts_timeout")) {
+    if (RECD_INT == dtype) {
+      c->oride.post_connect_attempts_timeout = HRTIME_SECONDS(data.rec_int);
+      update_p                               = true;
+    }
+  } else if (0 == strcasecmp(name, "proxy.config.http.post_connect_attempts_timeout_ms")) {
+    if (RECD_INT == dtype) {
+      c->oride.post_connect_attempts_timeout = HRTIME_MSECONDS(data.rec_int);
+      update_p                               = true;
+    }
+  }
+  if (update_p) {
+    http_config_cb(name, dtype, data, cookie);
+  }
   return REC_ERR_OKAY;
 }
 
@@ -958,6 +1031,8 @@ load_negative_caching_var(RecRecord const *r, void *cookie)
 void
 HttpConfig::startup()
 {
+  RecInt n; // temporary for loading special cases.
+
   http_rsb = RecAllocateRawStatBlock((int)http_stat_count);
   register_stat_callbacks();
 
@@ -1065,14 +1140,54 @@ HttpConfig::startup()
                                     "proxy.config.http.connect_attempts_max_retries_dead_server");
 
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_rr_retries, "proxy.config.http.connect_attempts_rr_retries");
-  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
-  HttpEstablishStaticConfigLongLong(c.oride.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
+
+  RecRegisterConfigUpdateCb("proxy.config.http.connect_attempts_timeout", &http_connect_attempt_timeout_cb, &c);
+  RecRegisterConfigUpdateCb("proxy.config.http.connect_attempts_timeout_ms", &http_connect_attempt_timeout_cb, &c);
+  // Do initial load - use ms if set, otherwise use base if set, otherwise just leave it default.
+  if (!http_config_var_is_default("proxy.config.http.connect_attempts_timeout_ms")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.connect_attempts_timeout_ms", &n)) {
+      c.oride.connect_attempts_timeout = HRTIME_MSECONDS(n);
+    }
+  } else if (!http_config_var_is_default("proxy.config.http.connect_attempts_timeout")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.connect_attempts_timeout", &n)) {
+      c.oride.connect_attempts_timeout = HRTIME_SECONDS(n);
+    }
+  }
+
+  RecRegisterConfigUpdateCb("proxy.config.http.post_connect_attempts_timeout", &http_post_connect_attempt_timeout_cb, &c);
+  RecRegisterConfigUpdateCb("proxy.config.http.post_connect_attempts_timeout_ms", &http_post_connect_attempt_timeout_cb, &c);
+  // Do initial load - use ms if set, otherwise use base if set, otherwise just leave it default.
+  if (!http_config_var_is_default("proxy.config.http.post_connect_attempts_timeout_ms")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.post_connect_attempts_timeout_ms", &n)) {
+      c.oride.post_connect_attempts_timeout = HRTIME_MSECONDS(n);
+    }
+  } else if (!http_config_var_is_default("proxy.config.http.post_connect_attempts_timeout")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.post_connect_attempts_timeout", &n)) {
+      c.oride.post_connect_attempts_timeout = HRTIME_SECONDS(n);
+    }
+  }
+
   HttpEstablishStaticConfigLongLong(c.oride.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.oride.parent_retry_time, "proxy.config.http.parent_proxy.retry_time");
   HttpEstablishStaticConfigLongLong(c.oride.parent_fail_threshold, "proxy.config.http.parent_proxy.fail_threshold");
   HttpEstablishStaticConfigLongLong(c.oride.per_parent_connect_attempts,
                                     "proxy.config.http.parent_proxy.per_parent_connect_attempts");
-  HttpEstablishStaticConfigLongLong(c.oride.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
+
+  RecRegisterConfigUpdateCb("proxy.config.http.parent_proxy.connect_attempts_timeout",
+                            &http_parent_proxy_connect_attempt_timeout_cb, &c);
+  RecRegisterConfigUpdateCb("proxy.config.http.parent_proxy.connect_attempts_timeout_ms",
+                            &http_parent_proxy_connect_attempt_timeout_cb, &c);
+  // Do initial load - use ms if set, otherwise use base if set, otherwise just leave it default.
+  if (!http_config_var_is_default("proxy.config.http.parent_proxy.connect_attempts_timeout_ms")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.parent_proxy.connect_attempts_timeout_ms", &n)) {
+      c.oride.parent_connect_timeout = HRTIME_MSECONDS(n);
+    }
+  } else if (!http_config_var_is_default("proxy.config.http.parent_proxy.connect_attempts_timeout")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.parent_proxy.connect_attempts_timeout", &n)) {
+      c.oride.parent_connect_timeout = HRTIME_SECONDS(n);
+    }
+  }
+
   HttpEstablishStaticConfigByte(c.oride.parent_failures_update_hostdb, "proxy.config.http.parent_proxy.mark_down_hostdb");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");

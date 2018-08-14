@@ -1166,6 +1166,14 @@ Parent Proxy Configuration
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout_ms INT 0
+   :reloadable:
+   :overridable:
+
+   The timeout value (in milliseconds) for parent cache connection attempts. If set this will override the usage of proxy.config.http.parent_proxy.connect_attempts_timeout.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
    :reloadable:
    :overridable:
@@ -1458,12 +1466,30 @@ Origin Server Connect Attempts
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_timeout_ms INT 0
+   :reloadable:
+   :overridable:
+
+   The timeout value (in milliseconds) for time to first byte for an origin server
+   connection. If set this will override the usage of proxy.config.http.connect_attempts_timeout.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
    :reloadable:
    :overridable:
 
    The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
    request.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
+.. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout_ms INT 0
+   :reloadable:
+   :overridable:
+
+   The timeout value (in milliseconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
+   request. If set this will override the usage of proxy.config.http.post_connect_attempts_timeout.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
