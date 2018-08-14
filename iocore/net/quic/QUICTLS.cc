@@ -129,6 +129,14 @@ QUICTLS::current_encryption_level() const
 }
 
 void
+QUICTLS::abort_handshake()
+{
+  this->_state = HandshakeState::ABORTED;
+
+  return;
+}
+
+void
 QUICTLS::_update_encryption_level(QUICEncryptionLevel level)
 {
   if (this->_current_level < level) {

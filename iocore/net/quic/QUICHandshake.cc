@@ -471,5 +471,7 @@ QUICHandshake::_abort_handshake(QUICTransErrorCode code)
 {
   QUICHSDebug("Abort Handshake");
 
+  this->_hs_protocol->abort_handshake();
+
   this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
 }

@@ -183,6 +183,10 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const
 void
 QUICTLS::update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int name)
 {
+  if (this->_state == HandshakeState::ABORTED) {
+    return;
+  }
+
   switch (name) {
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
     // this->_update_encryption_level(QUICEncryptionLevel::ZERO_RTT);
@@ -251,7 +255,7 @@ int
 QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 {
   ink_assert(this->_ssl != nullptr);
-  if (SSL_is_init_finished(this->_ssl)) {
+  if (SSL_is_init_finished(this->_ssl) || this->_state == HandshakeState::ABORTED) {
     return 0;
   }
 

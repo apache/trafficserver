@@ -43,6 +43,12 @@ public:
   QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless);
   ~QUICTLS();
 
+  // TODO: integrate with _early_data_processed
+  enum class HandshakeState {
+    PROCESSING,
+    ABORTED,
+  };
+
   static QUICEncryptionLevel get_encryption_level(int msg_type);
 
   int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override;
@@ -61,6 +67,7 @@ public:
   bool decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
                   const uint8_t *sample, QUICKeyPhase phase) const override;
   QUICEncryptionLevel current_encryption_level() const override;
+  void abort_handshake() override;
 
   // FIXME SSL handle should not be exported
   SSL *ssl_handle();
@@ -95,4 +102,5 @@ private:
   bool _early_data_processed             = false;
   bool _early_data                       = true;
   QUICEncryptionLevel _current_level     = QUICEncryptionLevel::INITIAL;
+  HandshakeState _state                  = HandshakeState::PROCESSING;
 };

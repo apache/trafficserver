@@ -85,4 +85,5 @@ public:
   virtual bool decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn,
                           uint8_t protected_pn_len, const uint8_t *sample, QUICKeyPhase phase) const   = 0;
   virtual QUICEncryptionLevel current_encryption_level() const                                         = 0;
+  virtual void abort_handshake()                                                                       = 0;
 };
