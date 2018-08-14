@@ -70,42 +70,8 @@
 */
 #define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
 
-/**
-  Attempts to acquire the lock to the ProxyMutex.
-
-  This macro performs up to the specified number of attempts to
-  acquire the lock on the ProxyMutex object. It does so by running
-  a busy loop (busy wait) '_sc' times. You should use it with care
-  since it blocks the thread during that time and wastes CPU time.
-
-  @param _l Arbitrary name for the lock to use in this call (lock variable)
-  @param _m A pointer to (or address of) a ProxyMutex object
-  @param _t The current EThread executing your code.
-  @param _sc The number of attempts or spin count. It must be a positive value.
-
-*/
-#define MUTEX_TRY_LOCK_SPIN(_l, _m, _t, _sc) MutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t, _sc)
-
-/**
-  Attempts to acquire the lock to the ProxyMutex.
-
-  This macro attempts to acquire the lock to the specified ProxyMutex
-  object in a non-blocking manner. After using the macro you can
-  see if it was successful by comparing the lock variable with true
-  or false (the variable name passed in the _l parameter).
-
-  @param _l Arbitrary name for the lock to use in this call (lock variable)
-  @param _m A pointer to (or address of) a ProxyMutex object
-  @param _t The current EThread executing your code.
-  @param _c Continuation whose mutex will be attempted to lock.
-
-*/
-
-#define MUTEX_TRY_LOCK_FOR(_l, _m, _t, _c) MutexTryLock _l(MakeSourceLocation(), nullptr, _m, _t)
 #else // DEBUG
 #define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(_m, _t)
-#define MUTEX_TRY_LOCK_SPIN(_l, _m, _t, _sc) MutexTryLock _l(_m, _t, _sc)
-#define MUTEX_TRY_LOCK_FOR(_l, _m, _t, _c) MutexTryLock _l(_m, _t)
 #endif // DEBUG
 
 /**
@@ -126,12 +92,8 @@
 // DEPRECATED DEPRECATED DEPRECATED
 #ifdef DEBUG
 #define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#define MUTEX_TAKE_TRY_LOCK_FOR(_m, _t, _c) Mutex_trylock(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m, _t, _c, _sc) Mutex_trylock_spin(MakeSourceLocation(), nullptr, _m, _t, _sc)
 #else
 #define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(_m, _t)
-#define MUTEX_TAKE_TRY_LOCK_FOR(_m, _t, _c) Mutex_trylock(_m, _t)
-#define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m, _t, _c, _sc) Mutex_trylock_spin(_m, _t, _sc)
 #endif
 
 #ifdef DEBUG
