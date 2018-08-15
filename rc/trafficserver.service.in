@@ -25,6 +25,7 @@ EnvironmentFile=-/etc/sysconfig/trafficserver
 ExecStart=@exp_bindir@/traffic_manager $TM_DAEMON_ARGS
 Restart=on-failure
 RestartSec=5s
+LimitNOFILE=1000000
 ExecStopPost=/bin/sh -c ' \
         export TM_PIDFILE=$(@exp_bindir@/traffic_layout} 2>/dev/null | grep RUNTIMEDIR | cut -d: -f2)/manager.lock ; \
         /bin/rm -f $TM_PIDFILE ; \
