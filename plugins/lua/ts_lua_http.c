@@ -105,6 +105,8 @@ static void ts_lua_inject_server_state_variables(lua_State *L);
 
 static void ts_lua_inject_http_resp_transform_api(lua_State *L);
 static int ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L);
+static int ts_lua_http_resp_transform_get_upstream_watermark_bytes(lua_State *L);
+static int ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L);
 static int ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L);
 
 void
@@ -193,6 +195,12 @@ ts_lua_inject_http_resp_transform_api(lua_State *L)
 {
   lua_pushcfunction(L, ts_lua_http_resp_transform_get_upstream_bytes);
   lua_setfield(L, -2, "get_upstream_bytes");
+
+  lua_pushcfunction(L, ts_lua_http_resp_transform_get_upstream_watermark_bytes);
+  lua_setfield(L, -2, "get_upstream_watermark_bytes");
+
+  lua_pushcfunction(L, ts_lua_http_resp_transform_set_upstream_watermark_bytes);
+  lua_setfield(L, -2, "set_upstream_watermark_bytes");
 
   lua_pushcfunction(L, ts_lua_http_resp_transform_set_downstream_bytes);
   lua_setfield(L, -2, "set_downstream_bytes");
@@ -882,6 +890,41 @@ ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L)
   lua_pushnumber(L, transform_ctx->upstream_bytes);
 
   return 1;
+}
+
+static int
+ts_lua_http_resp_transform_get_upstream_watermark_bytes(lua_State *L)
+{
+  ts_lua_http_transform_ctx *transform_ctx;
+
+  transform_ctx = ts_lua_get_http_transform_ctx(L);
+  if (transform_ctx == NULL) {
+    TSError("[ts_lua] missing transform_ctx");
+    return 0;
+  }
+
+  lua_pushnumber(L, transform_ctx->upstream_watermark_bytes);
+
+  return 1;
+}
+
+static int
+ts_lua_http_resp_transform_set_upstream_watermark_bytes(lua_State *L)
+{
+  int64_t n;
+  ts_lua_http_transform_ctx *transform_ctx;
+
+  transform_ctx = ts_lua_get_http_transform_ctx(L);
+  if (transform_ctx == NULL) {
+    TSError("[ts_lua] missing transform_ctx");
+    return 0;
+  }
+
+  n = luaL_checkinteger(L, 1);
+
+  transform_ctx->upstream_watermark_bytes = n;
+
+  return 0;
 }
 
 static int

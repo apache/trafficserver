@@ -66,7 +66,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
   TSVIO input_vio;
   TSIOBufferReader input_reader;
   TSIOBufferBlock blk;
-  int64_t toread, towrite, blk_len, upstream_done, input_avail, l;
+  int64_t toread, towrite, blk_len, upstream_done, input_avail, input_wm_bytes, l;
   const char *start;
   const char *res;
   size_t res_len;
@@ -96,6 +96,13 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
     } else {
       TSDebug(TS_LUA_DEBUG_TAG, "[%s] no input VIO and output VIO", __FUNCTION__);
       empty_input = 1;
+    }
+  } else { // input VIO exists
+    input_wm_bytes = TSIOBufferWaterMarkGet(TSVIOBufferGet(input_vio));
+    if (transform_ctx->upstream_watermark_bytes >= 0 && transform_ctx->upstream_watermark_bytes != input_wm_bytes) {
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] Setting input_vio watermark to %" PRId64 " bytes", __FUNCTION__,
+              transform_ctx->upstream_watermark_bytes);
+      TSIOBufferWaterMarkSet(TSVIOBufferGet(input_vio), transform_ctx->upstream_watermark_bytes);
     }
   }
 
