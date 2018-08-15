@@ -228,7 +228,7 @@ BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 $(srcdir)/ParseRules.cc: ParseRulesCType
 
 ParseRulesCType: CompileParseRules
-	./CompileParseRules
+	LSAN_OPTIONS='detect_leaks=0' ./CompileParseRules
 
 mkdfa_SOURCES = mkdfa.c
 
