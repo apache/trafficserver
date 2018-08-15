@@ -14,5 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-plantuml='@JAVA@ -jar {}'.format(os.environ['PLANTUML_JAR'])
-plantuml_output_format='svg'
+import os
+import subprocess
+
+if "PLANTUML_JAR" in os.environ:
+    _plantuml_jar = os.environ["PLANTUML_JAR"]
+else:
+    _plantuml_jar = subprocess.check_output("./doc/plantuml_fetch.sh| tail -1",
+                                            shell=True, universal_newlines=True)
+
+plantuml = '@JAVA@ -jar {}'.format(_plantuml_jar.rstrip('\n'))
+plantuml_output_format = 'svg'
