@@ -2236,6 +2236,30 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.resp_transform.get_upstream_watermark_bytes
+---------------------------------------------------
+**syntax:** *ts.http.resp_transform.get_upstream_watermark_bytes()*
+
+**context:** transform handler
+
+**description**: This function can be used to retrive the current watermark bytes for the upstream transform buffer.
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.resp_transform.set_upstream_watermark_bytes
+---------------------------------------------------
+**syntax:** *ts.http.resp_transform.set_upstream_watermark_bytes(NUMBER)*
+
+**context:** transform handler
+
+**description**: This function can be used to set the watermark bytes of the upstream transform buffer. 
+
+Setting the watermark bytes above 32kb may improve the performance of the transform handler.
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.resp_transform.set_downstream_bytes
 -------------------------------------------
 **syntax:** *ts.http.resp_transform.set_downstream_bytes(NUMBER)*
