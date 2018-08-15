@@ -425,7 +425,7 @@ isFwdFieldValue(std::string_view value, intmax_t &fwdCnt)
 
   ts::TextView tvVal(value);
 
-  if (ts::strcasecmp(paramName, tvVal.prefix(paramName.size())) != 0) {
+  if (strcasecmp(paramName, tvVal.prefix(paramName.size())) != 0) {
     return false;
   }
 

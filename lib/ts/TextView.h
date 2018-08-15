@@ -36,7 +36,16 @@
 #include <string>
 #include <string_view>
 
-/// Apache Traffic Server commons.
+/// Compare the strings in two views.
+/// Return based on the first different character. If one argument is a prefix of the other, the prefix
+/// is considered the "smaller" value. The values are compared ignoring case.
+/// @note This works for @c ts::TextView because it is a subclass of @c std::string_view.
+/// @return
+/// - -1 if @a lhs char is less than @a rhs char.
+/// -  1 if @a lhs char is greater than @a rhs char.
+/// -  0 if the views contain identical strings.
+int strcasecmp(const std::string_view &lhs, const std::string_view &rhs);
+
 namespace ts
 {
 class TextView;
@@ -58,18 +67,6 @@ using ::memcmp; // Make this an overload, not an override.
 /// -  0 if the views contain identical strings.
 int strcmp(TextView const &lhs, TextView const &rhs);
 using ::strcmp; // Make this an overload, not an override.
-/// Compare the strings in two views.
-/// Return based on the first different character. If one argument is a prefix of the other, the prefix
-/// is considered the "smaller" value. The values are compared ignoring case.
-/// @return
-/// - -1 if @a lhs char is less than @a rhs char.
-/// -  1 if @a lhs char is greater than @a rhs char.
-/// -  0 if the views contain identical strings.
-///
-/// @internal Why not <const&>? Because the implementation would make copies anyway, might as well save
-/// the cost of passing the pointers.
-int strcasecmp(TextView lhs, TextView rhs);
-using ::strcasecmp; // Make this an overload, not an override.
 
 /** Convert the text in @c TextView @a src to a numeric value.
 

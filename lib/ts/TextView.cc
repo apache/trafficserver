@@ -50,19 +50,18 @@ ts::memcmp(TextView const &lhs, TextView const &rhs)
 }
 
 int
-ts::strcasecmp(TextView lhs, TextView rhs)
+strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
 {
-  while (lhs && rhs) {
-    char l = tolower(*lhs);
-    char r = tolower(*rhs);
-    if (l < r) {
-      return -1;
-    } else if (r < l) {
-      return 1;
+  size_t len = std::min(lhs.size(), rhs.size());
+  int zret   = strncasecmp(lhs.data(), rhs.data(), len);
+  if (0 == zret) {
+    if (lhs.size() < rhs.size()) {
+      zret = -1;
+    } else if (lhs.size() > rhs.size()) {
+      zret = 1;
     }
-    ++lhs, ++rhs;
   }
-  return lhs ? 1 : rhs ? -1 : 0;
+  return zret;
 }
 
 intmax_t
