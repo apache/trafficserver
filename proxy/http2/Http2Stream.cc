@@ -750,10 +750,10 @@ Http2Stream::destroy()
     ats_free(header_blocks);
   }
   chunked_handler.clear();
-  super::destroy();
   clear_timers();
   clear_io_events();
 
+  super::destroy();
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
 }
 
