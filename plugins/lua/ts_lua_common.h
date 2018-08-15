@@ -144,6 +144,7 @@ typedef struct {
 
   ts_lua_http_ctx *hctx;
   int64_t upstream_bytes;
+  int64_t upstream_watermark_bytes;
   int64_t downstream_bytes;
   int64_t total;
 
