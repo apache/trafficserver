@@ -377,22 +377,25 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       if ((data_type != RECD_NULL) && (r1->data_type != data_type)) {
         err = REC_ERR_FAIL;
       } else {
+        bool rec_updated_p = false;
         if (data_type == RECD_NULL) {
           // If the caller didn't know the data type, they gave us a string
           // and we should convert based on the record's data type.
           ink_release_assert(data->rec_string != nullptr);
-          RecDataSetFromString(r1->data_type, &(r1->data), data->rec_string);
+          rec_updated_p = RecDataSetFromString(r1->data_type, &(r1->data), data->rec_string);
         } else {
-          RecDataSet(data_type, &(r1->data), data);
+          rec_updated_p = RecDataSet(data_type, &(r1->data), data);
         }
 
-        r1->sync_required = REC_SYNC_REQUIRED;
-        if (inc_version) {
-          r1->sync_required |= REC_INC_CONFIG_VERSION;
-        }
+        if (rec_updated_p) {
+          r1->sync_required = REC_SYNC_REQUIRED;
+          if (inc_version) {
+            r1->sync_required |= REC_INC_CONFIG_VERSION;
+          }
 
-        if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
-          r1->config_meta.update_required = REC_UPDATE_REQUIRED;
+          if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
+            r1->config_meta.update_required = REC_UPDATE_REQUIRED;
+          }
         }
 
         if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != nullptr)) {
