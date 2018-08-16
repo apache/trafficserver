@@ -300,7 +300,7 @@ RecRawStatSyncSum(const char *name, RecDataT data_type, RecData *data, RecRawSta
   raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
-  RecDataSetFromInk64(data_type, data, total.sum);
+  RecDataSetFromInt64(data_type, data, total.sum);
 
   return REC_ERR_OKAY;
 }
@@ -314,7 +314,7 @@ RecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawS
   raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
-  RecDataSetFromInk64(data_type, data, total.count);
+  RecDataSetFromInt64(data_type, data, total.count);
 
   return REC_ERR_OKAY;
 }
@@ -602,7 +602,7 @@ RecRawStatUpdateSum(RecRawStatBlock *rsb, int id)
                                                  (reinterpret_cast<char *>(&reinterpret_cast<RecRecord *>(0)->stat_meta) -
                                                   reinterpret_cast<char *>(reinterpret_cast<RecRecord *>(0))));
 
-    RecDataSetFromInk64(r->data_type, &r->data, rsb->global[id]->sum);
+    RecDataSetFromInt64(r->data_type, &r->data, rsb->global[id]->sum);
     r->sync_required = REC_SYNC_REQUIRED;
     return REC_ERR_OKAY;
   }
