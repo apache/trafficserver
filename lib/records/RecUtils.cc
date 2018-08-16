@@ -321,10 +321,10 @@ RecDataDiv(RecDataT type, RecData left, RecData right)
 }
 
 //-------------------------------------------------------------------------
-// RecDataSetFromInk64
+// RecDataSetFromInt64
 //-------------------------------------------------------------------------
 bool
-RecDataSetFromInk64(RecDataT data_type, RecData *data_dst, int64_t data_int64)
+RecDataSetFromInt64(RecDataT data_type, RecData *data_dst, int64_t data_int64)
 {
   switch (data_type) {
 #if defined(STAT_PROCESSOR)
