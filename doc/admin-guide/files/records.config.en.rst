@@ -1308,6 +1308,7 @@ HTTP Redirection
    for a given client request.
 
 .. ts:cv:: CONFIG proxy.config.http.redirect_host_no_port INT 1
+   :reloadable:
 
    This setting enables Trafficserver to not include the port in the Host header in the redirect follow request for default/standard ports
    (e.g. 80 for HTTP and 443 for HTTPS). Note that the port is still included in the Host header if it's non-default.
@@ -1318,6 +1319,12 @@ HTTP Redirection
 
    This setting enables Trafficserver to allow using original request cache key (for example, set using a TS API) during a 3xx redirect follow.
    The default behavior (0) is to use the URL specified by Location header in the 3xx response as the cache key.
+
+.. ts:cv:: CONFIG proxy.config.http.post_copy_size INT 2048
+   :reloadable:
+
+   This setting determines the maximum size in bytes of uploaded content to be
+   buffered for HTTP methods such as POST and PUT.
 
 Origin Server Connect Attempts
 ==============================
