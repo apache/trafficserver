@@ -1210,10 +1210,7 @@ HttpConfig::startup()
   //#
   //# Redirection
   //#
-  //# 1. number_of_redirections: The maximum number of redirections YTS permits. 0 == disabled
-  //# 2. redirect_use_orig_cache_key: if set to 1, use original request cache key.
-  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
-  //# 4. redirection_host_no_port: do not include default port in host header during redirection
+  //# See RecordsConfig definition.
   //#
   //##############################################################################
   HttpEstablishStaticConfigByte(c.oride.redirect_use_orig_cache_key, "proxy.config.http.redirect_use_orig_cache_key");
