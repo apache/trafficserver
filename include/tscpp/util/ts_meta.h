@@ -36,7 +36,7 @@ namespace meta
    * the expression for validity. E.g.
    *
    * @code
-   * template <typename T> auto func(T && t, CaseArg_0 const&) -> decltype(t.item, int()) { }
+   * template <typename T> auto func(T && t, CaseTag<0>) -> decltype(t.item, int()) { }
    * @endcode
    *
    * The comma operator discards the type and value of the left operand therefore the return type of

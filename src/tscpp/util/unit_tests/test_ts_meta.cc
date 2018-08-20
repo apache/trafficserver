@@ -20,7 +20,8 @@
 
 #include <cstring>
 
-#include "tscore/ts_meta.h"
+#include "tscpp/util/ts_meta.h"
+#include "tscpp/util/TextView.h"
 
 #include "catch.hpp"
 

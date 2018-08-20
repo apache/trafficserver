@@ -38,7 +38,8 @@ test_tscpputil_LDADD = libtscpputil.la
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_PostScript.cc \
-	unit_tests/test_TextView.cc
+	unit_tests/test_TextView.cc \
+	unit_tests/test_ts_meta.cc
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper
