@@ -3784,6 +3784,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
       case HTTP_STATUS_SEE_OTHER:          // 303
       case HTTP_STATUS_USE_PROXY:          // 305
       case HTTP_STATUS_TEMPORARY_REDIRECT: // 307
+      case HTTP_STATUS_PERMANENT_REDIRECT: // 308
         break;
       default:
         TxnDebug("http_trans", "[hfsco] redirect in progress, non-3xx response, setting cache_do_write");
