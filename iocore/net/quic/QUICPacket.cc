@@ -1117,13 +1117,14 @@ QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUIC
 
 QUICPacketUPtr
 QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len)
+                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
+                                         bool retransmittable)
 {
   int index                   = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::INITIAL);
   QUICPacketNumber pn         = this->_packet_number_generator[index].next();
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, destination_cid, source_cid,
                                                         pn, base_packet_number, this->_version, std::move(payload), len);
-  return this->_create_encrypted_packet(std::move(header), true);
+  return this->_create_encrypted_packet(std::move(header), retransmittable);
 }
 
 QUICPacketUPtr

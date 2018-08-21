@@ -1293,16 +1293,15 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   size_t len         = 0;
   ats_unique_buf buf = ats_unique_malloc(max_packet_size);
   QUICFrameUPtr frame(nullptr, nullptr);
-  bool retransmittable = false;
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
-  bool will_be_ack_only = true;
+  bool ack_only = true;
   if (this->_connection_error || this->_packet_retransmitter.will_generate_frame(level) ||
       this->_handshake_handler->will_generate_frame(level) || this->_stream_manager->will_generate_frame(level) ||
       this->_path_validator->will_generate_frame(level)) {
-    will_be_ack_only = false;
+    ack_only = false;
   }
 
   // CRYPTO
@@ -1314,7 +1313,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   }
 
   // ACK
-  if (will_be_ack_only) {
+  if (ack_only) {
     if (this->_ack_frame_creator.will_generate_frame(level)) {
       frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
     }
@@ -1382,7 +1381,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       }
     }
 
-    packet = this->_build_packet(level, std::move(buf), len, retransmittable);
+    // Packet is retransmittable if it's not ack only packet
+    packet = this->_build_packet(level, std::move(buf), len, !ack_only);
   }
 
   return packet;
@@ -1440,6 +1440,7 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
   int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
   QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
               this->_local_flow_controller->current_limit());
+
   if (ret != 0) {
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
@@ -1464,8 +1465,9 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   case QUICPacketType::INITIAL: {
     QUICConnectionId dcid =
       (this->netvc_context == NET_VCONNECTION_OUT) ? this->_original_quic_connection_id : this->_peer_quic_connection_id;
-    packet = this->_packet_factory.create_initial_packet(
-      dcid, this->_quic_connection_id, this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len);
+    packet = this->_packet_factory.create_initial_packet(dcid, this->_quic_connection_id,
+                                                         this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL),
+                                                         std::move(buf), len, retransmittable);
     break;
   }
   case QUICPacketType::RETRY: {
