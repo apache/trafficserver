@@ -7952,6 +7952,7 @@ HttpSM::is_redirect_required()
     case HTTP_STATUS_SEE_OTHER:          // 303
     case HTTP_STATUS_USE_PROXY:          // 305
     case HTTP_STATUS_TEMPORARY_REDIRECT: // 307
+    case HTTP_STATUS_PERMANENT_REDIRECT: // 308
       redirect_required = true;
       break;
     default:
