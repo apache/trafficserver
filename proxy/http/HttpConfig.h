@@ -273,6 +273,7 @@ enum {
   http_response_status_304_count_stat,
   http_response_status_305_count_stat,
   http_response_status_307_count_stat,
+  http_response_status_308_count_stat,
   http_response_status_3xx_count_stat,
   http_response_status_400_count_stat,
   http_response_status_401_count_stat,

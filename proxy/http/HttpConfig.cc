@@ -700,6 +700,9 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.307_responses", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_response_status_307_count_stat, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.308_responses", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_response_status_308_count_stat, RecRawStatSyncCount);
+
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.3xx_responses", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_response_status_3xx_count_stat, RecRawStatSyncCount);
 

@@ -8327,6 +8327,9 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     case 307:
       HTTP_INCREMENT_DYN_STAT(http_response_status_307_count_stat);
       break;
+    case 308:
+      HTTP_INCREMENT_DYN_STAT(http_response_status_308_count_stat);
+      break;
     case 400:
       HTTP_INCREMENT_DYN_STAT(http_response_status_400_count_stat);
       break;
