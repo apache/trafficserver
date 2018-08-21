@@ -1671,8 +1671,11 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   ink_assert(!link.prev && !link.next);
   EThread *t = e ? e->ethread : this_ethread();
 
-  MUTEX_TRY_LOCK_FOR(lock, action.mutex, t, action.continuation);
-  if (!lock.is_locked()) {
+  MUTEX_TRY_LOCK(lock, action.mutex, t);
+  // Go ahead and grab the continuation mutex or just grab the action mutex again of there is no continuation mutex
+  MUTEX_TRY_LOCK(lock2, (action.continuation && action.continuation->mutex) ? action.continuation->mutex : action.mutex, t);
+  // Don't continue unless we have both mutexes
+  if (!lock.is_locked() || !lock2.is_locked()) {
     mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
   }
