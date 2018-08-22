@@ -76,9 +76,6 @@ size_t ink_strlcpy(char *dst, const char *str, size_t siz);
 size_t ink_strlcat(char *dst, const char *str, size_t siz);
 #endif
 
-inkcoreapi int ink_strcasecmp(const char *a, const char *b);
-inkcoreapi int ink_strncasecmp(const char *a, const char *b, unsigned int max);
-
 /* Convert from UTF-8 to latin-1/iso-8859-1.  This can be lossy. */
 void ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen);
 
