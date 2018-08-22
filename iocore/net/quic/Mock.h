@@ -607,6 +607,12 @@ public:
   {
     return QUICEncryptionLevel::INITIAL;
   }
+
+  void
+  abort_handshake() override
+  {
+    return;
+  }
 };
 
 class MockContinuation : public Continuation
