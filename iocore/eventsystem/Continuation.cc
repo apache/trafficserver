@@ -23,24 +23,22 @@
 
 #include "I_EventSystem.h"
 #include "I_Continuation.h"
-#include "I_EThread.h"
+#include "I_Lock.h"
 
 int
-Continuation::handleEvent(int event, void *data)
+Continuation::dispatchEvent(int event, void *data, Event **scheduled_event)
 {
-  // If there is a lock, we must be holding it on entry
-  ink_release_assert(!mutex || mutex->thread_holding == this_ethread());
-  return (this->*handler)(event, data);
-}
-
-int
-Continuation::dispatchEvent(int event, void *data)
-{
+  if (scheduled_event) {
+    *scheduled_event = nullptr;
+  }
   if (mutex) {
     EThread *t = this_ethread();
     MUTEX_TRY_LOCK(lock, this->mutex, t);
     if (!lock.is_locked()) {
-      t->schedule_imm(this, event, data);
+      Event *sched_event = t->schedule_imm(this, event, data);
+      if (scheduled_event) {
+        *scheduled_event = sched_event;
+      }
       return 0;
     } else {
       return (this->*handler)(event, data);

@@ -1290,7 +1290,11 @@ APIHook::invoke(int event, void *edata)
       ink_assert(!"not reached");
     }
   }
-  return m_cont->dispatchEvent(event, edata);
+  // The invoke logic in HttpSM gets the m_cont lock before invoking
+  // However the invoke logic in HttpTransactCache does not get the lock
+  // And as the code is currently structure it will not deall with rescheduling, so
+  // we call handleEvent and hope for the best.
+  return m_cont->handleEvent(event, edata);
 }
 
 APIHook *
