@@ -52,7 +52,7 @@ QUICAckFrameCreator::update(QUICEncryptionLevel level, QUICPacketNumber packet_n
 }
 
 QUICFrameUPtr
-QUICAckFrameCreator::_create_frame(QUICEncryptionLevel level)
+QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrameUPtr ack_frame = QUICFrameFactory::create_null_frame();
 
@@ -134,13 +134,6 @@ QUICAckFrameCreator::will_generate_frame(QUICEncryptionLevel level)
 
   int index = QUICTypeUtil::pn_space_index(level);
   return this->_should_send[index];
-}
-
-QUICFrameUPtr
-QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
-{
-  // FIXME fix size
-  return this->_create_frame(level);
 }
 
 uint64_t

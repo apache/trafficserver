@@ -79,7 +79,6 @@ private:
    * Returns QUICAckFrame only if ACK frame is able to be sent.
    * Caller must send the ACK frame to the peer if it was returned.
    */
-  QUICFrameUPtr _create_frame(QUICEncryptionLevel level);
   QUICFrameUPtr _create_ack_frame(QUICEncryptionLevel level);
   uint64_t _calculate_delay(QUICEncryptionLevel level);
   std::vector<QUICEncryptionLevel>
