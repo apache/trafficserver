@@ -81,7 +81,6 @@ public:
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
 
   virtual NetVConnection *get_netvc() const = 0;
-  virtual void release_netvc()              = 0;
 
   virtual int get_transact_count() const = 0;
 

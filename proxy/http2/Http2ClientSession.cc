@@ -79,7 +79,6 @@ Http2ClientSession::free()
   }
 
   if (client_vc) {
-    release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }
@@ -274,7 +273,6 @@ Http2ClientSession::do_io_close(int alerrno)
     // Copy aside the client address before releasing the vc
     cached_client_addr.assign(client_vc->get_remote_addr());
     cached_local_addr.assign(client_vc->get_local_addr());
-    this->release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }
