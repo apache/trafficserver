@@ -58,7 +58,7 @@ static constexpr std::string_view QUIC_DEBUG_TAG = "quic_net"sv;
 static constexpr uint32_t IPV4_HEADER_SIZE          = 20;
 static constexpr uint32_t IPV6_HEADER_SIZE          = 40;
 static constexpr uint32_t UDP_HEADER_SIZE           = 8;
-static constexpr uint32_t MAX_PACKET_OVERHEAD       = 54; // Max long header len
+static constexpr uint32_t MAX_PACKET_OVERHEAD       = 62; // Max long header len without length of token field of Initial packet
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 // static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD   = 16;
 static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
@@ -1286,6 +1286,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     return packet;
   }
 
+  // TODO: adjust MAX_PACKET_OVERHEAD for each encryption level
   uint64_t max_frame_size = max_packet_size - MAX_PACKET_OVERHEAD;
   max_frame_size          = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
 
