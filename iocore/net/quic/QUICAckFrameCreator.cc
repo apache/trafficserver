@@ -64,10 +64,15 @@ QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connecti
   if (this->_can_send[index]) {
     QUICAckPacketNumbers *packet_numbers = &this->_packet_numbers[index];
 
-    ack_frame                 = this->_create_ack_frame(level);
-    this->_can_send[index]    = false;
-    this->_should_send[index] = false;
-    packet_numbers->clear();
+    ack_frame = this->_create_ack_frame(level);
+    if (ack_frame && ack_frame->size() > maximum_frame_size) {
+      // Cancel generating frame
+      ack_frame = QUICFrameFactory::create_null_frame();
+    } else {
+      this->_can_send[index]    = false;
+      this->_should_send[index] = false;
+      packet_numbers->clear();
+    }
   }
 
   return ack_frame;

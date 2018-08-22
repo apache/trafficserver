@@ -126,13 +126,24 @@ QUICPathValidator::generate_frame(QUICEncryptionLevel level, uint64_t connection
   }
 
   if (this->_has_outgoing_response) {
-    frame                        = QUICFrameFactory::create_path_response_frame(this->_incoming_challenge);
-    this->_has_outgoing_response = false;
+    frame = QUICFrameFactory::create_path_response_frame(this->_incoming_challenge);
+    if (frame && frame->size() > maximum_quic_packet_size) {
+      // Cancel generating frame
+      frame = QUICFrameFactory::create_null_frame();
+    } else {
+      this->_has_outgoing_response = false;
+    }
   } else if (this->_has_outgoing_challenge) {
     frame = QUICFrameFactory::create_path_challenge_frame(this->_outgoing_challenge +
                                                           (QUICPathChallengeFrame::DATA_LEN * (this->_has_outgoing_challenge - 1)));
-    --this->_has_outgoing_challenge;
-    ink_assert(this->_has_outgoing_challenge >= 0);
+    if (frame && frame->size() > maximum_quic_packet_size) {
+      // Cancel generating frame
+      frame = QUICFrameFactory::create_null_frame();
+    } else {
+      --this->_has_outgoing_challenge;
+      ink_assert(this->_has_outgoing_challenge >= 0);
+    }
   }
+
   return frame;
 }

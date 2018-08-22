@@ -116,9 +116,15 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
   int count = this->_nids;
   for (int i = 0; i < count; ++i) {
     if (!this->_alt_quic_connection_ids[i].advertised) {
-      this->_alt_quic_connection_ids[i].advertised = true;
-      return QUICFrameFactory::create_new_connection_id_frame(
+      frame = QUICFrameFactory::create_new_connection_id_frame(
         this->_alt_quic_connection_ids[i].seq_num, this->_alt_quic_connection_ids[i].id, this->_alt_quic_connection_ids[i].token);
+
+      if (frame && frame->size() > maximum_frame_size) {
+        // Cancel generating frame
+        frame = QUICFrameFactory::create_null_frame();
+      } else {
+        this->_alt_quic_connection_ids[i].advertised = true;
+      }
     }
   }
   this->_need_advertise = false;
