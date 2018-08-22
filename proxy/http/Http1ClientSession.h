@@ -93,19 +93,6 @@ public:
     return client_vc;
   }
 
-  virtual void
-  release_netvc()
-  {
-    // Make sure the vio's are also released to avoid
-    // later surprises in inactivity timeout
-    if (client_vc) {
-      client_vc->do_io_read(NULL, 0, NULL);
-      client_vc->do_io_write(NULL, 0, NULL);
-      client_vc->set_action(NULL);
-      client_vc = NULL;
-    }
-  }
-
   int
   get_transact_count() const
   {

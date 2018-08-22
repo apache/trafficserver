@@ -91,7 +91,6 @@ Http2ClientSession::free()
   }
 
   if (client_vc) {
-    release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }
@@ -275,7 +274,6 @@ Http2ClientSession::do_io_close(int alerrno)
   // Don't send the SSN_CLOSE_HOOK until we got rid of all the streams
   // And handled all the TXN_CLOSE_HOOK's
   if (client_vc) {
-    this->release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }
