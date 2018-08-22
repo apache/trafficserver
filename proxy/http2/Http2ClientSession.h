@@ -186,17 +186,6 @@ public:
     return client_vc;
   }
 
-  void
-  release_netvc() override
-  {
-    // Make sure the vio's are also released to avoid later surprises in inactivity timeout
-    if (client_vc) {
-      client_vc->do_io_read(nullptr, 0, nullptr);
-      client_vc->do_io_write(nullptr, 0, nullptr);
-      client_vc->set_action(nullptr);
-    }
-  }
-
   sockaddr const *
   get_client_addr() override
   {
