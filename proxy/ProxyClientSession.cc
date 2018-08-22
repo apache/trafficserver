@@ -200,7 +200,6 @@ ProxyClientSession::handle_api_return(int event)
     NetVConnection *vc = this->get_netvc();
     if (vc) {
       vc->do_io_close();
-      this->release_netvc();
     }
     free(); // You can now clean things up
     break;
