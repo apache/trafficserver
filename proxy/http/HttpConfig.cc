@@ -1233,7 +1233,7 @@ HttpConfig::startup()
 void
 HttpConfig::reconfigure()
 {
-#define INT_TO_BOOL(i) ((i) ? 1 : 0);
+  auto INT_TO_BOOL = [](RecInt i) -> bool { return i != 0; };
 
   HttpConfigParams *params;
 
@@ -1491,8 +1491,6 @@ HttpConfig::reconfigure()
   params->negative_caching_list = m_master.negative_caching_list;
 
   m_id = configProcessor.set(m_id, params);
-
-#undef INT_TO_BOOL
 }
 
 ////////////////////////////////////////////////////////////////
