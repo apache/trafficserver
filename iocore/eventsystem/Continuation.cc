@@ -23,15 +23,6 @@
 
 #include "I_EventSystem.h"
 #include "I_Continuation.h"
-#include "I_EThread.h"
-
-int
-Continuation::handleEvent(int event, void *data)
-{
-  // If there is a lock, we must be holding it on entry
-  ink_release_assert(!mutex || mutex->thread_holding == this_ethread());
-  return (this->*handler)(event, data);
-}
 
 int
 Continuation::dispatchEvent(int event, void *data)
