@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <string_view>
 
+#include "tscore/ts_meta.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/BufferWriterForward.h"
@@ -60,6 +61,36 @@ extern const std::string_view IP_PROTO_TAG_HTTP_1_1;
 extern const std::string_view IP_PROTO_TAG_HTTP_2_0;
 
 struct IpAddr; // forward declare.
+
+namespace ts
+{
+namespace detail
+{
+  // Handle FreeBSD and similar systems that have a length field in sockaddrs.
+  template <typename T>
+  auto
+  ip_update_sockaddr_len(T *, ts::meta::CaseTag<0>) -> void
+  { // base case, no length, do nothing.
+  }
+  template <typename T>
+  auto
+  ip_update_sockaddr_len(T *sa, ts::meta::CaseTag<1>) -> decltype(T::sin_len, ts::meta::CaseVoidFunc())
+  {
+    sa->sin_len = sizeof(T); // set the length to the size of the sockaddr type.
+  }
+  // Declare these such that a specific sockaddr type is used at the call site to get the size correct.
+  inline void
+  ip_update_sockaddr_len(sockaddr_in *addr)
+  {
+    ip_update_sockaddr_len(addr, ts::meta::CaseArg);
+  }
+  inline void
+  ip_update_sockaddr_len(sockaddr_in6 *addr)
+  {
+    ip_update_sockaddr_len(addr, ts::meta::CaseArg);
+  }
+} // namespace detail
+} // namespace ts
 
 /** A union to hold the standard IP address structures.
     By standard we mean @c sockaddr compliant.
@@ -723,9 +754,6 @@ ats_ip_copy(sockaddr *dst,      ///< Destination object.
   if (n) {
     if (src != dst) {
       memcpy(dst, src, n);
-#if HAVE_STRUCT_SOCKADDR_SA_LEN
-      dst->sa_len = n;
-#endif
     }
   } else {
     ats_ip_invalidate(dst);
@@ -909,9 +937,7 @@ ats_ip4_set(sockaddr_in *dst,  ///< Destination storage.
 )
 {
   ink_zero(*dst);
-#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-  dst->sin_len = sizeof(sockaddr_in);
-#endif
+  ts::detail::ip_update_sockaddr_len(dst);
   dst->sin_family      = AF_INET;
   dst->sin_addr.s_addr = addr;
   dst->sin_port        = port;
@@ -953,9 +979,7 @@ ats_ip6_set(sockaddr_in6 *dst,    ///< Destination storage.
 )
 {
   ink_zero(*dst);
-#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-  dst->sin6_len = sizeof(sockaddr_in6);
-#endif
+  ts::detail::ip_update_sockaddr_len(dst);
   dst->sin6_family = AF_INET6;
   memcpy(&dst->sin6_addr, &addr, sizeof addr);
   dst->sin6_port = port;
@@ -1516,14 +1540,10 @@ IpEndpoint::setToAnyAddr(int family)
   sa.sa_family = family;
   if (AF_INET == family) {
     sin.sin_addr.s_addr = INADDR_ANY;
-#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-    sin.sin_len = sizeof(sockaddr_in);
-#endif
+    ts::detail::ip_update_sockaddr_len(&sin);
   } else if (AF_INET6 == family) {
     sin6.sin6_addr = in6addr_any;
-#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
-    sin6.sin6_len = sizeof(sockaddr_in6);
-#endif
+    ts::detail::ip_update_sockaddr_len(&sin6);
   }
   return *this;
 }
@@ -1535,15 +1555,11 @@ IpEndpoint::setToLoopback(int family)
   sa.sa_family = family;
   if (AF_INET == family) {
     sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-    sin.sin_len = sizeof(sockaddr_in);
-#endif
+    ts::detail::ip_update_sockaddr_len(&sin);
   } else if (AF_INET6 == family) {
     static const struct in6_addr init = IN6ADDR_LOOPBACK_INIT;
     sin6.sin6_addr                    = init;
-#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
-    sin6.sin6_len = sizeof(sockaddr_in6);
-#endif
+    ts::detail::ip_update_sockaddr_len(&sin6);
   }
   return *this;
 }
