@@ -30,15 +30,6 @@ class QUICPacketTransmitter
 {
 public:
   /*
-   * Enqueue a packet for transmission
-   *
-   * If packet parameter is not passed, it just sends an event without queuing a new packet.
-   * This sends QUIC_PACKET_WRITE_READY event.
-   * This return number of packets currently in queue
-   */
-  virtual uint32_t transmit_packet(QUICPacketUPtr packet = QUICPacketUPtr(nullptr, &QUICPacketDeleter::delete_packet)) = 0;
-
-  /*
    * Enqueue a packet for retransmission
    * All frames except ACK and PADDING frames in the original packet will be retransmitted on a new packet.
    * This sends QUIC_PACKET_WRITE_READY event.

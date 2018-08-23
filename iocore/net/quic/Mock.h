@@ -179,13 +179,6 @@ public:
     return std::string_view("00000000-00000000"sv);
   }
 
-  uint32_t
-  transmit_packet(QUICPacketUPtr packet) override
-  {
-    ++_transmit_count;
-    return 1;
-  }
-
   void
   retransmit_packet(const QUICPacket &packet) override
   {
@@ -368,15 +361,6 @@ class MockQUICPacketTransmitter : public QUICPacketTransmitter
 {
 public:
   MockQUICPacketTransmitter() : QUICPacketTransmitter() { this->_mutex = new_ProxyMutex(); };
-  uint32_t
-  transmit_packet(QUICPacketUPtr packet) override
-  {
-    if (packet) {
-      this->transmitted.insert(packet->packet_number());
-      return 1;
-    }
-    return 0;
-  }
 
   void
   retransmit_packet(const QUICPacket &packet) override

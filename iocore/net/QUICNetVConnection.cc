@@ -411,28 +411,6 @@ QUICNetVConnection::stream_manager()
   return this->_stream_manager;
 }
 
-uint32_t
-QUICNetVConnection::_transmit_packet(QUICPacketUPtr packet)
-{
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-
-  if (packet) {
-    QUICConDebug("Enqueue %s packet #%" PRIu64 " size=%hu %s", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
-                 packet->size(), (!packet->is_retransmittable()) ? "ack_only" : "");
-    // TODO Remove const_cast
-    this->_packet_send_queue.enqueue(const_cast<QUICPacket *>(packet.release()));
-  }
-  return this->_packet_send_queue.size;
-}
-
-uint32_t
-QUICNetVConnection::transmit_packet(QUICPacketUPtr packet)
-{
-  uint32_t npackets = this->_transmit_packet(std::move(packet));
-  this->_schedule_packet_write_ready();
-  return npackets;
-}
-
 void
 QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 {

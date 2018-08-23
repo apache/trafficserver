@@ -507,11 +507,10 @@ QUICLossDetector::_send_one_packet()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  if (this->_transmitter->transmit_packet() < 1) {
-    auto ite = this->_sent_packets.rbegin();
-    if (ite != this->_sent_packets.rend()) {
-      this->_transmitter->retransmit_packet(*ite->second->packet);
-    }
+
+  auto ite = this->_sent_packets.rbegin();
+  if (ite != this->_sent_packets.rend()) {
+    this->_transmitter->retransmit_packet(*ite->second->packet);
   }
 }
 
@@ -527,8 +526,6 @@ QUICLossDetector::_send_two_packets()
     if (ite != this->_sent_packets.rend()) {
       this->_transmitter->retransmit_packet(*ite->second->packet);
     }
-  } else {
-    this->_transmitter->transmit_packet();
   }
 }
 
