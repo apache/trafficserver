@@ -162,7 +162,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
       this->_payload     = nullptr;
       this->_payload_len = 0;
       this->_offset      = 0;
-      result = QUICPacketCreationResult::NOT_READY;
+      result             = QUICPacketCreationResult::NOT_READY;
       return quic_packet;
     }
     pkt                = std::move(this->_payload);

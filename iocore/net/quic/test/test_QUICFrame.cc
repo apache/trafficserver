@@ -325,7 +325,6 @@ TEST_CASE("Store STREAM Frame", "[quic]")
 
   SECTION("split stream frame")
   {
-    size_t len;
     uint8_t buf1[] = {
       0x16,                                           // 0b00010OLF (OLF=110)
       0x01,                                           // Stream ID
@@ -352,6 +351,8 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     CHECK(memcmp(stream_frame2->data(), "\x11\x22\x33\x44\x55", stream_frame2->data_length()) == 0);
     CHECK(stream_frame2->offset() == 0x100000000 + 5);
     CHECK(stream_frame2->stream_id() == 0x01);
+
+    QUICFrameDeleter::delete_stream_frame(stream_frame2);
   }
 }
 
@@ -1251,7 +1252,9 @@ TEST_CASE("QUICFrameFactory Create CONNECTION_CLOSE with a QUICConnectionError",
 
 TEST_CASE("QUICFrameFactory Create RST_STREAM with a QUICStreamError", "[quic]")
 {
-  QUICStream stream(new MockQUICRTTProvider(), new MockQUICConnection(), 0x1234, 0, 0);
+  MockQUICRTTProvider mock_rtt;
+  MockQUICConnection mock_connection;
+  QUICStream stream(&mock_rtt, &mock_connection, 0x1234, 0, 0);
   std::unique_ptr<QUICStreamError> error =
     std::unique_ptr<QUICStreamError>(new QUICStreamError(&stream, static_cast<QUICAppErrorCode>(0x01)));
   std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> rst_stream_frame1 =
@@ -1303,10 +1306,13 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
     auto frame           = QUICFrameFactory::create_retransmission_frame(std::move(frame1), *packet);
     auto frame2          = frame->split(16);
 
+    CHECK(frame2->type() == QUICFrameType::STREAM);
     CHECK(frame2->store(buffer, &len, 128));
     CHECK(memcmp(buffer, expected, sizeof(expected)) == 0);
     CHECK(frame->store(buffer, &len, 128));
     CHECK(memcmp(buffer, expected2, sizeof(expected2)) == 0);
+
+    QUICFrameDeleter::delete_stream_frame(frame2);
   }
 
   SECTION("STREAM frame")
