@@ -620,7 +620,7 @@ ats_is_ip_loopback(IpEndpoint const *ip)
 inline bool
 ats_is_ip_multicast(sockaddr const *ip)
 {
-  return ip && ((AF_INET == ip->sa_family && 0xe == *ats_ip_addr8_cast(ip)) ||
+  return ip && ((AF_INET == ip->sa_family && 0xe == (ats_ip_addr8_cast(ip)[0] >> 4)) ||
                 (AF_INET6 == ip->sa_family && IN6_IS_ADDR_MULTICAST(&ats_ip6_addr_cast(ip))));
 }
 /// Check for multicast.
