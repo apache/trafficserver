@@ -62,8 +62,6 @@ QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connecti
 
   int index = QUICTypeUtil::pn_space_index(level);
   if (this->_can_send[index]) {
-    QUICAckPacketNumbers *packet_numbers = &this->_packet_numbers[index];
-
     ack_frame = this->_create_ack_frame(level);
     if (ack_frame && ack_frame->size() > maximum_frame_size) {
       // Cancel generating frame
@@ -71,7 +69,7 @@ QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connecti
     } else {
       this->_can_send[index]    = false;
       this->_should_send[index] = false;
-      packet_numbers->clear();
+      this->_packet_numbers[index].clear();
     }
   }
 
@@ -83,7 +81,6 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
 {
   int index                            = QUICTypeUtil::pn_space_index(level);
   QUICAckPacketNumbers *packet_numbers = &this->_packet_numbers[index];
-  this->_should_send[index]            = false;
 
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
   packet_numbers->sort();
