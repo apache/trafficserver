@@ -97,7 +97,7 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
-  QUICFrameUPtr frame = fc.generate_frame();
+  QUICFrameUPtr frame = fc.generate_frame(QUICEncryptionLevel::ONE_RTT, 0, 1024);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::MAX_DATA);
 
@@ -148,7 +148,7 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret != 0);
-  QUICFrameUPtr frame = fc.generate_frame();
+  QUICFrameUPtr frame = fc.generate_frame(QUICEncryptionLevel::ONE_RTT, 0, 1024);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::BLOCKED);
 
@@ -211,7 +211,7 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
-  QUICFrameUPtr frame = fc.generate_frame();
+  QUICFrameUPtr frame = fc.generate_frame(QUICEncryptionLevel::ONE_RTT, 0, 1024);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::MAX_STREAM_DATA);
 

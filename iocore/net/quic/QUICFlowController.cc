@@ -100,14 +100,30 @@ QUICFlowController::set_limit(QUICOffset limit)
   this->_limit = limit;
 }
 
+bool
+QUICFlowController::will_generate_frame(QUICEncryptionLevel level)
+{
+  if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
+  return this->_frame != nullptr;
+}
+
 QUICFrameUPtr
-QUICFlowController::generate_frame()
+QUICFlowController::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-  if (this->_frame) {
+
+  if (!this->_is_level_matched(level)) {
+    return frame;
+  }
+
+  if (this->_frame && this->_frame->size() <= maximum_frame_size) {
     frame        = std::move(this->_frame);
     this->_frame = nullptr;
   }
+
   return frame;
 }
 

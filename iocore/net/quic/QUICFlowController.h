@@ -26,6 +26,7 @@
 #include "../../eventsystem/I_EventSystem.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"
+#include "QUICFrameGenerator.h"
 #include "QUICLossDetector.h"
 
 class QUICRateAnalyzer
@@ -39,7 +40,7 @@ private:
   ink_hrtime _start_time = Thread::get_hrtime();
 };
 
-class QUICFlowController
+class QUICFlowController : public QUICFrameGenerator
 {
 public:
   uint64_t credit();
@@ -60,7 +61,9 @@ public:
    */
   void set_limit(QUICOffset limit);
 
-  QUICFrameUPtr generate_frame();
+  // QUICFrameGenerator
+  bool will_generate_frame(QUICEncryptionLevel level) override;
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 protected:
   QUICFlowController(uint64_t initial_limit) : _limit(initial_limit) {}

@@ -398,7 +398,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   }
 
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-  frame               = this->_local_flow_controller.generate_frame();
+  frame               = this->_local_flow_controller.generate_frame(level, connection_credit, maximum_frame_size);
   if (frame) {
     return frame;
   }
@@ -449,7 +449,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     this->_state.update_with_sending_frame(*frame);
   } else if (ret != 0) {
     QUICStreamDebug("Flow Controller blocked sending a STREAM frame");
-    frame = this->_remote_flow_controller.generate_frame();
+    frame = this->_remote_flow_controller.generate_frame(level, connection_credit, maximum_frame_size);
   }
   return frame;
 }
