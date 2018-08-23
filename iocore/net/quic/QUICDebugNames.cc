@@ -274,3 +274,18 @@ QUICDebugNames::encryption_level(QUICEncryptionLevel level)
     return "UNKNOWN";
   }
 }
+
+const char *
+QUICDebugNames::pn_space(int index)
+{
+  switch (index) {
+  case 0:
+    return "INITIAL";
+  case 1:
+    return "PROTECTED";
+  case 2:
+    return "HANDSHAKE";
+  default:
+    return "UNKNOWN";
+  }
+}

@@ -27,11 +27,14 @@
 
 #include "QUICConfig.h"
 #include "QUICEvents.h"
+#include "QUICDebugNames.h"
 
-#define QUICLDDebug(fmt, ...) \
-  Debug("quic_loss_detector", "[%s] [PNS-%d] " fmt, this->_info->cids().data(), this->_pn_space_index, ##__VA_ARGS__)
-#define QUICLDVDebug(fmt, ...) \
-  Debug("v_quic_loss_detector", "[%s] [PNS-%d] " fmt, this->_info->cids().data(), this->_pn_space_index, ##__VA_ARGS__)
+#define QUICLDDebug(fmt, ...)                                                                                                \
+  Debug("quic_loss_detector", "[%s] [%s] " fmt, this->_info->cids().data(), QUICDebugNames::pn_space(this->_pn_space_index), \
+        ##__VA_ARGS__)
+#define QUICLDVDebug(fmt, ...)                                                                                                 \
+  Debug("v_quic_loss_detector", "[%s] [%s] " fmt, this->_info->cids().data(), QUICDebugNames::pn_space(this->_pn_space_index), \
+        ##__VA_ARGS__)
 
 QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info,
                                    QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index)
@@ -223,8 +226,8 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
     this->_update_rtt(this->_latest_rtt, delay, ack_frame->largest_acknowledged());
   }
 
-  QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
-              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
+  QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+               this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
   // Find all newly acked packets.
   for (auto &&range : this->_determine_newly_acked_packets(*ack_frame)) {
@@ -238,8 +241,8 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
     }
   }
 
-  QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
-              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
+  QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+               this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
   this->_detect_lost_packets(ack_frame->largest_acknowledged());
 
@@ -384,7 +387,7 @@ QUICLossDetector::_on_loss_detection_alarm()
     this->_detect_lost_packets(this->_largest_acked_packet);
   } else if (this->_tlp_count < this->_k_max_tlps) {
     // Tail Loss Probe.
-    QUICLDDebug("TLP");
+    QUICLDVDebug("TLP");
     // FIXME TLP causes inifinite loop somehow
     // this->_send_one_packet();
     this->_tlp_count++;
@@ -393,7 +396,7 @@ QUICLossDetector::_on_loss_detection_alarm()
     if (this->_rto_count == 0) {
       this->_largest_sent_before_rto = this->_largest_sent_packet;
     }
-    QUICLDDebug("RTO");
+    QUICLDVDebug("RTO");
     this->_send_two_packets();
     this->_rto_count++;
   }
@@ -435,14 +438,13 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
     uint64_t delta             = largest_acked_packet_number - it->second->packet_number;
     if (time_since_sent > delay_until_lost || delta > this->_reordering_threshold) {
       if (time_since_sent > delay_until_lost) {
-        QUICLDDebug("Lost: time since sent is too long (PN=%" PRId64 " sent=%" PRId64 ", delay=%lf, fraction=%lf, lrtt=%" PRId64
+        QUICLDDebug("Lost: time since sent is too long (#%" PRId64 " sent=%" PRId64 ", delay=%lf, fraction=%lf, lrtt=%" PRId64
                     ", srtt=%" PRId64 ")",
                     it->first, time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt,
                     this->_smoothed_rtt);
       } else {
-        QUICLDDebug("Lost: packet delta is too large (PN=%" PRId64 " largest=%" PRId64 " unacked=%" PRId64 " threshold=%" PRId32
-                    ")",
-                    it->first, largest_acked_packet_number, it->second->packet_number, this->_reordering_threshold);
+        QUICLDDebug("Lost: packet delta is too large (#%" PRId64 " largest=%" PRId64 " threshold=%" PRId32 ")", it->first,
+                    largest_acked_packet_number, this->_reordering_threshold);
       }
 
       if (!it->second->ack_only) {
