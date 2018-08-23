@@ -1194,71 +1194,6 @@ QUICNetVConnection::_state_closing_send_packet()
   return QUICErrorUPtr(new QUICNoError());
 }
 
-// Store frame data to buffer for packet. When remaining buffer is too small to store frame data or packet type is different from
-// previous one, build packet and transmit it. After that, allocate new buffer.
-void
-QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &len, bool &retransmittable, QUICPacketType &current_packet_type,
-                                 QUICFrameUPtr frame)
-{
-  uint32_t max_size = this->maximum_quic_packet_size();
-
-  QUICPacketType previous_packet_type = current_packet_type;
-  QUICRetransmissionFrame *rf         = dynamic_cast<QUICRetransmissionFrame *>(frame.get());
-  if (rf) {
-    current_packet_type = rf->packet_type();
-  } else if (frame->is_protected()) {
-    current_packet_type = QUICPacketType::PROTECTED;
-  } else {
-    current_packet_type = QUICPacketType::UNINITIALIZED;
-  }
-
-  if (len + frame->size() + MAX_PACKET_OVERHEAD > max_size || (previous_packet_type != current_packet_type && len > 0)) {
-    this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, previous_packet_type));
-    retransmittable = false;
-    len             = 0;
-    buf             = nullptr;
-  }
-
-  retransmittable = retransmittable || (frame->type() != QUICFrameType::ACK && frame->type() != QUICFrameType::PADDING);
-
-  if (buf == nullptr) {
-    buf = ats_unique_malloc(max_size);
-  }
-
-  ink_assert(max_size > len);
-
-  size_t l = 0;
-  size_t n = frame->store(buf.get() + len, &l, max_size - len);
-  if (n > 0) {
-    if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-      char msg[1024];
-      frame->debug_msg(msg, sizeof(msg));
-      QUICConDebug("[TX] %s", msg);
-    }
-
-    len += l;
-    return;
-  }
-
-  // split frame
-  auto new_frame = QUICFrameFactory::split_frame(frame.get(), max_size - len);
-
-  if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-    char msg[1024];
-    frame->debug_msg(msg, sizeof(msg));
-    QUICConDebug("[TX] %s", msg);
-  }
-
-  ink_assert(frame->store(buf.get() + len, &l, max_size - len) > 0);
-  ink_assert(new_frame != nullptr);
-
-  this->_transmit_packet(this->_build_packet(std::move(buf), len, retransmittable, current_packet_type));
-  len = 0;
-  buf = ats_unique_malloc(max_size);
-  this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(new_frame));
-  return;
-}
-
 void
 QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr frame)
 {
@@ -1406,11 +1341,12 @@ QUICNetVConnection::_packetize_closing_frame()
     frame = QUICFrameFactory::create_connection_close_frame(std::move(this->_connection_error));
   }
 
-  ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
-  size_t len                         = 0;
-  bool retransmittable               = false;
-  QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
-  this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
+  uint32_t max_size  = this->maximum_quic_packet_size();
+  ats_unique_buf buf = ats_unique_malloc(max_size);
+
+  size_t len              = 0;
+  uint64_t max_frame_size = static_cast<uint64_t>(max_size);
+  this->_store_frame(buf, len, max_frame_size, std::move(frame));
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
   ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
