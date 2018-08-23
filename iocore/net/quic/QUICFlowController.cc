@@ -100,6 +100,7 @@ QUICFlowController::set_limit(QUICOffset limit)
   this->_limit = limit;
 }
 
+// For RemoteFlowController, caller of this function should also check QUICStreamManager::will_generate_frame()
 bool
 QUICFlowController::will_generate_frame(QUICEncryptionLevel level)
 {
@@ -142,8 +143,9 @@ QUICRemoteFlowController::update(QUICOffset offset)
 {
   int ret = QUICFlowController::update(offset);
 
-  // Send BLOCKED(_STREAM) frame
-  if (!this->_blocked && offset > this->_limit) {
+  // Create BLOCKED(_STREAM) frame
+  // The frame will be sent if stream has something to send.
+  if (!this->_blocked && offset >= this->_limit) {
     this->_frame   = this->_create_frame();
     this->_blocked = true;
   }

@@ -403,6 +403,10 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     return frame;
   }
 
+  if (connection_credit == 0) {
+    return frame;
+  }
+
   if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
     return frame;
   }
@@ -413,13 +417,20 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     return frame;
   }
 
+  // STREAM_BLOCKED
+  uint64_t stream_credit = this->_remote_flow_controller.credit();
+  // The `bytes_avail` should be also checked before calling QUICRemoteFlowController::generate_frame(), but we don't need it.
+  // Because it's already checked in above.
+  if (stream_credit == 0) {
+    frame = this->_remote_flow_controller.generate_frame(level, connection_credit, maximum_frame_size);
+  }
+
   int64_t data_len = reader->block_read_avail();
   int64_t len      = 0;
   bool fin         = false;
 
-  len = std::min(data_len, static_cast<int64_t>(
-                             std::min(static_cast<uint64_t>(maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD),
-                                      std::min(this->_remote_flow_controller.credit(), static_cast<uint64_t>(connection_credit)))));
+  len = std::min(data_len, static_cast<int64_t>(std::min(static_cast<uint64_t>(maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD),
+                                                         std::min(stream_credit, static_cast<uint64_t>(connection_credit)))));
 
   if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
     fin = true;

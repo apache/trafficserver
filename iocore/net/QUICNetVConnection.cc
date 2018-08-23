@@ -1214,7 +1214,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   bool ack_only = true;
   if (this->_connection_error || this->_packet_retransmitter.will_generate_frame(level) ||
       this->_handshake_handler->will_generate_frame(level) || this->_stream_manager->will_generate_frame(level) ||
-      this->_path_validator->will_generate_frame(level)) {
+      this->_path_validator->will_generate_frame(level) || this->_local_flow_controller->will_generate_frame(level) ||
+      (this->_stream_manager->will_generate_frame(level) && this->_remote_flow_controller->will_generate_frame(level))) {
     ack_only = false;
   }
 
@@ -1241,7 +1242,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   }
 
   // PATH_CHALLENGE, PATH_RESPOSNE
-  frame = this->_path_validator->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+  frame = this->_path_validator->generate_frame(level, UINT16_MAX, max_frame_size);
   if (frame) {
     ++frame_count;
     this->_store_frame(buf, len, max_frame_size, std::move(frame));
@@ -1249,22 +1250,31 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   // NEW_CONNECTION_ID
   if (this->_alt_con_manager) {
-    frame = this->_alt_con_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+    frame = this->_alt_con_manager->generate_frame(level, UINT16_MAX, max_frame_size);
     while (frame) {
       ++frame_count;
       this->_store_frame(buf, len, max_frame_size, std::move(frame));
 
-      frame = this->_alt_con_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+      frame = this->_alt_con_manager->generate_frame(level, UINT16_MAX, max_frame_size);
     }
   }
 
   // Lost frames
-  frame = this->_packet_retransmitter.generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+  frame = this->_packet_retransmitter.generate_frame(level, UINT16_MAX, max_frame_size);
   while (frame) {
     ++frame_count;
     this->_store_frame(buf, len, max_frame_size, std::move(frame));
 
-    frame = this->_packet_retransmitter.generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+    frame = this->_packet_retransmitter.generate_frame(level, UINT16_MAX, max_frame_size);
+  }
+
+  // BLOCKED
+  if (this->_remote_flow_controller->credit() == 0 && this->_stream_manager->will_generate_frame(level)) {
+    frame = this->_remote_flow_controller->generate_frame(level, UINT16_MAX, max_frame_size);
+    if (frame) {
+      ++frame_count;
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
+    }
   }
 
   // STREAM, MAX_STREAM_DATA, STREAM_BLOCKED

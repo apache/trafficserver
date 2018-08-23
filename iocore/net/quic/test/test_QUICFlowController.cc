@@ -132,22 +132,54 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
 
-  ret = fc.update(1024);
-  CHECK(fc.current_offset() == 1024);
+  ret = fc.update(1000);
+  CHECK(fc.current_offset() == 1000);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
 
   // Delay
   ret = fc.update(512);
-  CHECK(fc.current_offset() == 1024);
+  CHECK(fc.current_offset() == 1000);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
 
   // Exceed limit
   ret = fc.update(1280);
-  CHECK(fc.current_offset() == 1024);
+  CHECK(fc.current_offset() == 1000);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret != 0);
+  QUICFrameUPtr frame = fc.generate_frame(QUICEncryptionLevel::ONE_RTT, 0, 1024);
+  CHECK(frame);
+  CHECK(frame->type() == QUICFrameType::BLOCKED);
+
+  // MAX_STREAM_DATA
+  fc.forward_limit(2048);
+  CHECK(fc.current_offset() == 1000);
+  CHECK(fc.current_limit() == 2048);
+
+  ret = fc.update(1280);
+  CHECK(fc.current_offset() == 1280);
+  CHECK(fc.current_limit() == 2048);
+  CHECK(ret == 0);
+}
+
+TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
+{
+  int ret = 0;
+  QUICRemoteConnectionFlowController fc(1024);
+
+  // Check initial state
+  CHECK(fc.current_offset() == 0);
+  CHECK(fc.current_limit() == 1024);
+
+  // Zero credit
+  ret = fc.update(1024);
+  CHECK(fc.current_offset() == 1024);
+  CHECK(fc.current_limit() == 1024);
+  CHECK(ret == 0);
+
+  CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT));
+  // if there're anything to send
   QUICFrameUPtr frame = fc.generate_frame(QUICEncryptionLevel::ONE_RTT, 0, 1024);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::BLOCKED);
@@ -250,6 +282,9 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
+
+  CHECK(fc.credit() == 0);
+  CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT));
 
   // Delay
   ret = fc.update(512);
