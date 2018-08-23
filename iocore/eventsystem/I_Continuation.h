@@ -45,6 +45,7 @@ class ContinuationQueue;
 class Processor;
 class ProxyMutex;
 class EThread;
+class Event;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -165,10 +166,12 @@ public:
 
     @param event Event code to be passed at callback (Processor specific).
     @param data General purpose data related to the event code (Processor specific).
+    @param schedule_event If the continuation could not be locked, the scheduled event will be returned here. 
+    If this parameter is null, displatchEvent will block on the getting the lock.
     @return State machine and processor specific return code.
 
   */
-  int dispatchEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr);
+  int dispatchEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr, Event **scheduled_event = nullptr);
 
 protected:
   /**

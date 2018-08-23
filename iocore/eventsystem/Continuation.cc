@@ -23,7 +23,7 @@
 
 #include "I_EventSystem.h"
 #include "I_Continuation.h"
-#include "I_EThread.h"
+#include "I_Lock.h"
 
 int
 Continuation::handleEvent(int event, void *data)
@@ -34,14 +34,24 @@ Continuation::handleEvent(int event, void *data)
 }
 
 int
-Continuation::dispatchEvent(int event, void *data)
+Continuation::dispatchEvent(int event, void *data, Event **scheduled_event)
 {
+  if (scheduled_event) {
+    *scheduled_event = nullptr;
+  }
   if (mutex) {
     EThread *t = this_ethread();
     MUTEX_TRY_LOCK(lock, this->mutex, t);
     if (!lock.is_locked()) {
-      t->schedule_imm(this, event, data);
-      return 0;
+      if (scheduled_event) {
+        *scheduled_event = t->schedule_imm(this, event, data);
+        return 0;
+      } else {
+        // So we don't lose the event and have it trigger later when
+        // the original continuation has gone away, block on getting the lock
+        SCOPED_MUTEX_LOCK(lock, this->mutex, t);
+        return (this->*handler)(event, data);
+      }
     } else {
       return (this->*handler)(event, data);
     }
