@@ -348,7 +348,8 @@ private:
   QUICStatelessResetToken _reset_token;
 
   // This is for limiting number of packets that a server can send without path validation
-  unsigned int _handshake_packets_sent = 0;
+  uint32_t _handshake_packets_sent = 0;
+  uint64_t _stream_frames_sent     = 0;
 
   // TODO: Source addresses verification through an address validation token
   bool _src_addr_verified = false;

@@ -64,6 +64,7 @@ static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
 static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(20);
 static constexpr uint32_t PACKET_PER_EVENT            = 32;
+static constexpr uint32_t MAX_CONSECUTIVE_STREAMS     = 8; //< Interrupt sending STREAM frames to send ACK frame
 
 static constexpr uint32_t MAX_PACKETS_WITHOUT_SRC_ADDR_VARIDATION = 3;
 
@@ -1211,34 +1212,12 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
-  bool ack_only = true;
-  if (this->_connection_error || this->_packet_retransmitter.will_generate_frame(level) ||
-      this->_handshake_handler->will_generate_frame(level) || this->_stream_manager->will_generate_frame(level) ||
-      this->_path_validator->will_generate_frame(level) || this->_local_flow_controller->will_generate_frame(level) ||
-      (this->_stream_manager->will_generate_frame(level) && this->_remote_flow_controller->will_generate_frame(level))) {
-    ack_only = false;
-  }
-
   // CRYPTO
   frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
   while (frame) {
     ++frame_count;
     this->_store_frame(buf, len, max_frame_size, std::move(frame));
     frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
-  }
-
-  // ACK
-  if (ack_only) {
-    if (this->_ack_frame_creator.will_generate_frame(level)) {
-      frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
-    }
-  } else {
-    frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
-  }
-
-  if (frame != nullptr) {
-    ++frame_count;
-    this->_store_frame(buf, len, max_frame_size, std::move(frame));
   }
 
   // PATH_CHALLENGE, PATH_RESPOSNE
@@ -1281,6 +1260,9 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
   while (frame) {
     ++frame_count;
+    if (++this->_stream_frames_sent % MAX_CONSECUTIVE_STREAMS == 0) {
+      break;
+    }
     if (frame->type() == QUICFrameType::STREAM) {
       int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
       QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
@@ -1290,6 +1272,24 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     this->_store_frame(buf, len, max_frame_size, std::move(frame));
 
     frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+  }
+
+  // ACK
+  if (frame_count == 0) {
+    if (this->_ack_frame_creator.will_generate_frame(level)) {
+      frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
+    }
+  } else {
+    frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
+  }
+
+  bool ack_only = false;
+  if (frame != nullptr) {
+    if (frame_count == 0) {
+      ack_only = true;
+    }
+    ++frame_count;
+    this->_store_frame(buf, len, max_frame_size, std::move(frame));
   }
 
   // Schedule a packet
