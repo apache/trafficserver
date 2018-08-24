@@ -400,7 +400,7 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_in());
   // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
 
-  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+  this->_local_transport_parameters = std::unique_ptr<QUICTransportParametersInEncryptedExtensions>(tp);
 }
 
 void
@@ -419,7 +419,7 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_out());
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_out());
 
-  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+  this->_local_transport_parameters = std::unique_ptr<QUICTransportParametersInClientHello>(tp);
 }
 
 int
