@@ -5955,6 +5955,8 @@ HttpSM::attach_server_session(HttpServerSession *s)
 void
 HttpSM::setup_server_send_request_api()
 {
+  // Make sure the VC is on the correct timeout
+  server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
   t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR;
   do_api_callout();
 }
