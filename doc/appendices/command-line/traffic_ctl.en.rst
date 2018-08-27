@@ -279,10 +279,10 @@ traffic_ctl host
 Examples
 ========
 
-Configure Traffic Server to log in Squid format::
+Configure Traffic Server to insert ``Via`` header in the response to
+the client::
 
-    $ traffic_ctl config set proxy.config.log.squid_log_enabled 1
-    $ traffic_ctl config set proxy.config.log.squid_log_is_ascii 1
+    $ traffic_ctl config set proxy.config.http.insert_response_via_str 1
     $ traffic_ctl config reload
 
 See also
