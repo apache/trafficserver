@@ -423,6 +423,9 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   // Because it's already checked in above.
   if (stream_credit == 0) {
     frame = this->_remote_flow_controller.generate_frame(level, connection_credit, maximum_frame_size);
+    if (frame) {
+      return frame;
+    }
   }
 
   int64_t data_len = reader->block_read_avail();
