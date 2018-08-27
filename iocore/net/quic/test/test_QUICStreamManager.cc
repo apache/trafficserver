@@ -120,11 +120,6 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   CHECK(sm.stream_count() == 2);
   CHECK(sm.total_offset_received() == 0);
 
-  // Stream 0 shoud be out of flow control
-  std::shared_ptr<QUICFrame> stream_frame_0 = QUICFrameFactory::create_stream_frame(data, 1024, 0, 0);
-  sm.handle_frame(level, stream_frame_0);
-  CHECK(sm.total_offset_received() == 0);
-
   // total_offset should be a integer in unit of 1024 octets
   std::shared_ptr<QUICFrame> stream_frame_1 = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0);
   sm.handle_frame(level, stream_frame_1);
