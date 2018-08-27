@@ -62,8 +62,13 @@ int64_t
 QUICStreamIO::read(uint8_t *buf, int64_t len)
 {
   if (is_debug_tag_set(tag_stream_io)) {
-    QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " read_avail=%" PRId64 " read_len=%" PRId64, this->_read_vio->nbytes,
-                      this->_read_vio->ndone, this->_read_buffer_reader->read_avail(), len);
+    if (this->_read_vio->nbytes == INT64_MAX) {
+      QUICStreamIODebug("nbytes=-" PRId64 " ndone=%" PRId64 " read_avail=%" PRId64 " read_len=%" PRId64, this->_read_vio->ndone,
+                        this->_read_buffer_reader->read_avail(), len);
+    } else {
+      QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " read_avail=%" PRId64 " read_len=%" PRId64, this->_read_vio->nbytes,
+                        this->_read_vio->ndone, this->_read_buffer_reader->read_avail(), len);
+    }
   }
 
   int64_t nread = this->_read_buffer_reader->read(buf, len);
@@ -114,8 +119,13 @@ QUICStreamIO::write(IOBufferReader *r, int64_t len)
 
   if (bytes_avail > 0) {
     if (is_debug_tag_set(tag_stream_io)) {
-      QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->nbytes,
-                        this->_write_vio->ndone, bytes_avail, len);
+      if (this->_write_vio->nbytes == INT64_MAX) {
+        QUICStreamIODebug("nbytes=- ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->ndone,
+                          bytes_avail, len);
+      } else {
+        QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64,
+                          this->_write_vio->nbytes, this->_write_vio->ndone, bytes_avail, len);
+      }
     }
 
     int64_t bytes_len = std::min(bytes_avail, len);
