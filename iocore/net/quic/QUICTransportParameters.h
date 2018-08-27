@@ -70,7 +70,7 @@ class QUICTransportParameters
 {
 public:
   QUICTransportParameters(const uint8_t *buf, size_t len);
-  ~QUICTransportParameters();
+  virtual ~QUICTransportParameters();
 
   bool is_valid() const;
 
