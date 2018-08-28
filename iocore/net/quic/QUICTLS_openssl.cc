@@ -215,10 +215,8 @@ QUICTLS::update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int nam
   return;
 }
 
-QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICTLS(ssl, nvc_ctx, false) {}
-
-QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless)
-  : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx), _stateless(stateless)
+QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx)
+  : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
 

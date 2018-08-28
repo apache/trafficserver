@@ -40,7 +40,6 @@ class QUICTLS : public QUICHandshakeProtocol
 {
 public:
   QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx);
-  QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless);
   ~QUICTLS();
 
   // TODO: integrate with _early_data_processed
@@ -97,7 +96,6 @@ private:
   QUICPacketProtection *_client_pp       = nullptr;
   QUICPacketProtection *_server_pp       = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
-  bool _stateless                        = false;
   bool _early_data_processed             = false;
   bool _early_data                       = true;
   QUICEncryptionLevel _current_level     = QUICEncryptionLevel::INITIAL;

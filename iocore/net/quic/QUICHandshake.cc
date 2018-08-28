@@ -92,7 +92,7 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandsha
 QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token, bool stateless_retry)
   : _qc(qc),
     _ssl(SSL_new(ssl_ctx)),
-    _hs_protocol(new QUICTLS(this->_ssl, qc->direction(), stateless_retry)),
+    _hs_protocol(new QUICTLS(this->_ssl, qc->direction())),
     _version_negotiator(new QUICVersionNegotiator()),
     _reset_token(token),
     _stateless_retry(stateless_retry)
