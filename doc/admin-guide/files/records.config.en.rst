@@ -609,6 +609,7 @@ HTTP Engine
    tr-in                       Inbound transparent.
    tr-out                      Outbound transparent.
    tr-pass                     Pass through enabled.
+   mptcp                       Multipath TCP.
    =========== =============== ========================================
 
 *number*
@@ -673,6 +674,11 @@ ip-resolve
    Set the :ts:cv:`host resolution style <proxy.config.hostdb.ip_resolve>` for transactions on this proxy port.
 
    Not compatible with: ``tr-out`` - this option requires a value of ``client;none`` which is forced and should not be explicitly specified.
+
+mptcp
+   Enable Multipath TCP on this proxy port.
+
+   Requires custom Linux kernel available at https://multipath-tcp.org.
 
 .. topic:: Example
 

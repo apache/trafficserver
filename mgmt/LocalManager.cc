@@ -47,6 +47,14 @@ using namespace std::literals;
 static const std::string_view MGMT_OPT{"-M"};
 static const std::string_view RUNROOT_OPT{"--run-root="};
 
+#ifndef MPTCP_ENABLED
+#if defined(linux)
+#define MPTCP_ENABLED 42
+#else
+#define MPTCP_ENABLED 0
+#endif
+#endif
+
 void
 LocalManager::mgmtCleanup()
 {
@@ -1023,6 +1031,21 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
       (void)setsockopt(port.m_fd, SOL_FILTER, FIL_ATTACH, "httpfilt", 9);
 #endif
     }
+  }
+
+  if (port.m_mptcp) {
+#if MPTCP_ENABLED
+    int err;
+
+    err = setsockopt(port.m_fd, IPPROTO_TCP, MPTCP_ENABLED, &one, sizeof(one));
+    if (err < 0) {
+      mgmt_log("[bindProxyPort] Unable to enable MPTCP: %s\n", strerror(errno));
+    } else {
+      mgmt_log("[bindProxyPort] Successfully enabled MPTCP on %d\n", port.m_port);
+    }
+#else
+    Debug("lm", "[bindProxyPort] Multipath TCP requested but not configured on this host");
+#endif
   }
 
   if (port.m_family == AF_INET6) {
