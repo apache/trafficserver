@@ -86,9 +86,9 @@ test_qpack_SOURCES = \
   ./test/test_HQFrame.cc \
   ./test/test_HQFrameDispatcher.cc \
   ./test/test_QPACK.cc \
-  $(top_builddir)/proxy/http/HttpConfig.cc \
-  $(top_builddir)/proxy/http/HttpConnectionCount.cc \
-  $(top_builddir)/proxy/http/ForwardedConfig.cc \
+  ../http/HttpConfig.cc \
+  ../http/HttpConnectionCount.cc \
+  ../http/ForwardedConfig.cc \
   ./test/stub.cc
 
 test_qpack_LDADD = \
