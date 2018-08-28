@@ -58,6 +58,8 @@ public:
   int initialize_key_materials(QUICConnectionId cid) override;
   int update_key_materials() override;
   void update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int name);
+  const char *negotiated_cipher_suite() const override;
+  void negotiated_application_name(const uint8_t **name, unsigned int *len) const override;
   bool encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
   bool decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
@@ -68,9 +70,6 @@ public:
                   const uint8_t *sample, QUICKeyPhase phase) const override;
   QUICEncryptionLevel current_encryption_level() const override;
   void abort_handshake() override;
-
-  // FIXME SSL handle should not be exported
-  SSL *ssl_handle();
 
 private:
   QUICKeyGenerator _keygen_for_client = QUICKeyGenerator(QUICKeyGenerator::Context::CLIENT);

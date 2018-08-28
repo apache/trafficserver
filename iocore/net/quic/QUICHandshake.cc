@@ -219,23 +219,13 @@ QUICHandshake::negotiated_version()
 const char *
 QUICHandshake::negotiated_cipher_suite()
 {
-  // FIXME Generalize and remove dynamic_cast
-  QUICTLS *hs_tls = dynamic_cast<QUICTLS *>(this->_hs_protocol);
-  if (hs_tls) {
-    return SSL_get_cipher_name(hs_tls->ssl_handle());
-  }
-
-  return nullptr;
+  return this->_hs_protocol->negotiated_cipher_suite();
 }
 
 void
 QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len)
 {
-  // FIXME Generalize and remove dynamic_cast
-  QUICTLS *hs_tls = dynamic_cast<QUICTLS *>(this->_hs_protocol);
-  if (hs_tls) {
-    SSL_get0_alpn_selected(hs_tls->ssl_handle(), name, len);
-  }
+  this->_hs_protocol->negotiated_application_name(name, len);
 }
 
 void

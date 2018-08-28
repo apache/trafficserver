@@ -556,6 +556,19 @@ public:
     return 0;
   }
 
+  const char *
+  negotiated_cipher_suite() const override
+  {
+    return nullptr;
+  }
+
+  void
+  negotiated_application_name(const uint8_t **name, unsigned int *len) const override
+  {
+    *name = reinterpret_cast<const uint8_t *>("hq");
+    *len  = 2;
+  }
+
   bool
   encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
           const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override

@@ -122,6 +122,18 @@ QUICTLS::update_key_materials()
   return 1;
 }
 
+const char *
+QUICTLS::negotiated_cipher_suite() const
+{
+  return SSL_get_cipher_name(this->_ssl);
+}
+
+void
+QUICTLS::negotiated_application_name(const uint8_t **name, unsigned int *len) const
+{
+  SSL_get0_alpn_selected(this->_ssl, name, len);
+}
+
 QUICEncryptionLevel
 QUICTLS::current_encryption_level() const
 {
@@ -144,12 +156,6 @@ QUICTLS::_update_encryption_level(QUICEncryptionLevel level)
   }
 
   return;
-}
-
-SSL *
-QUICTLS::ssl_handle()
-{
-  return this->_ssl;
 }
 
 bool
