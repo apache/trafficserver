@@ -34,6 +34,7 @@
 #include "ts/ink_file.h"
 
 #include "ts/List.h"
+#include "ts/TextView.h"
 
 #include "Log.h"
 #include "LogField.h"
@@ -227,6 +228,24 @@ LogConfig::read_configuration_variables()
   } else {
     Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.rolling_enabled");
     rolling_enabled = Log::NO_ROLLING;
+  }
+
+  char *limits = REC_ConfigReadString("proxy.config.log.auto_delete_files_space_limits_mb");
+  if (limits) {
+    ts::TextView limits_view(limits, strlen(limits));
+    while (limits_view) {
+      ts::TextView value(limits_view.take_prefix_at(','));
+      ts::TextView key(value.trim(' ').split_prefix_at('=').rtrim(' '));
+      if (key) {
+        value.ltrim(' ');
+        // Build new LogDeletingInfo based on the [type]=[limit] pair
+        deleting_info.insert(new LogDeletingInfo(key, static_cast<int64_t>(ts::svtoi(value)) * LOG_MEGABYTE));
+      } else {
+        Warning("invalid key-value pair '%s' for '%s', skipping this pair", value.data(),
+                "proxy.config.log.auto_delete_files_space_limits_mb");
+      }
+    }
+    ats_free(limits);
   }
 
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
@@ -558,6 +577,7 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.rolling_offset_hr",
     "proxy.config.log.rolling_size_mb",
     "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.auto_delete_files_space_limits_mb",
     "proxy.config.log.config.filename",
     "proxy.config.log.sampling_frequency",
     "proxy.config.log.file_stat_frequency",
@@ -712,9 +732,7 @@ LogConfig::update_space_used()
     return;
   }
 
-  static const int MAX_CANDIDATES = 128;
-  LogDeleteCandidate candidates[MAX_CANDIDATES];
-  int i, victim, candidate_count;
+  int total_candidate_count;
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
@@ -755,8 +773,8 @@ LogConfig::update_space_used()
     return;
   }
 
-  total_space_used = 0LL;
-  candidate_count  = 0;
+  total_space_used      = 0LL;
+  total_candidate_count = 0;
 
   while ((entry = readdir(ld))) {
     snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry->d_name);
@@ -765,14 +783,29 @@ LogConfig::update_space_used()
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
       total_space_used += (int64_t)sbuf.st_size;
 
-      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name) && candidate_count < MAX_CANDIDATES) {
+      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name) && total_candidate_count < MAX_CANDIDATES) {
         //
-        // then add this entry to the candidate list
+        // then check if the candidate belongs to any given log types with allowable space
         //
+        int len = strchr(strchr(entry->d_name, '.') + 1, '.') - entry->d_name;
+        std::string type_name(entry->d_name, len);
+        auto iter = deleting_info.find(type_name);
+        if (iter == deleting_info.end()) {
+          // We won't be deleting the log if its name doesn't match any known limits.
+          break;
+        }
+
+        // then add the candidate to the given log type's list
+        // and update related size/count
+        auto &candidates                  = iter->candidates;
+        auto &candidate_count             = iter->candidate_count;
         candidates[candidate_count].name  = ats_strdup(path);
         candidates[candidate_count].size  = (int64_t)sbuf.st_size;
         candidates[candidate_count].mtime = sbuf.st_mtime;
+
+        iter->total_size += candidates[candidate_count].size;
         candidate_count++;
+        total_candidate_count++;
       }
     }
   }
@@ -807,6 +840,12 @@ LogConfig::update_space_used()
   // we might consider deleting some files that are stored in the
   // candidate array.
   //
+  // The decision will be made based on ratio between max space allowed
+  // for each file type configured by
+  // "proxy.config.log.auto_delete_files_max_space_limits_mb" and
+  // total size of existing log files. Once the type of log files to
+  // remove is decided, we try to delete the oldest file.
+  //
   // To delete oldest files first, we'll sort our candidate array by
   // timestamps, making the oldest files first in the array (thus first
   // selected).
@@ -815,17 +854,34 @@ LogConfig::update_space_used()
   int64_t max_space = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
   int64_t headroom  = (int64_t)max_space_mb_headroom * LOG_MEGABYTE;
 
-  if (candidate_count > 0 && !space_to_write(headroom)) {
+  if (total_candidate_count > 0 && !space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");
-    Debug("logspace", "sorting %d delete candidates ...", candidate_count);
-    qsort(candidates, candidate_count, sizeof(LogDeleteCandidate), (int (*)(const void *, const void *))delete_candidate_compare);
+    Debug("logspace", "sorting %d delete candidates ...", total_candidate_count);
+    for (auto iter = deleting_info.begin(); iter != deleting_info.end(); iter++) {
+      qsort(iter->candidates, iter->candidate_count, sizeof(LogDeleteCandidate),
+            (int (*)(const void *, const void *))delete_candidate_compare);
+    }
 
-    for (victim = 0; victim < candidate_count; victim++) {
+    while (total_candidate_count > 0) {
       if (space_to_write(headroom + log_buffer_size)) {
         Debug("logspace", "low water mark reached; stop deleting");
         break;
       }
 
+      // Select the group with biggest ratio
+      auto target = std::max_element(deleting_info.begin(), deleting_info.end(), [](LogDeletingInfo A, LogDeletingInfo B) {
+        double diff = static_cast<double>(A.total_size) / A.space_limit_mb - static_cast<double>(B.total_size) / B.space_limit_mb;
+        return diff < 0.0;
+      });
+
+      auto &candidates = target->candidates;
+      auto &victim     = target->victim;
+
+      // Check if all candidates are already unlinked
+      if (victim >= target->candidate_count) {
+        // This shouldn't be triggered unless we didn't configure allowable space for all types
+        Debug("logspace", "No more victims for log type %s", target->name.c_str());
+      }
       Debug("logspace", "auto-deleting %s", candidates[victim].name);
 
       if (unlink(candidates[victim].name) < 0) {
@@ -837,19 +893,21 @@ LogConfig::update_space_used()
               "The rolled logfile, %s, was auto-deleted; "
               "%" PRId64 " bytes were reclaimed.",
               candidates[victim].name, candidates[victim].size);
+
+        // update space after successful unlink
         m_space_used -= candidates[victim].size;
         m_partition_space_left += candidates[victim].size;
+        target->total_size -= candidates[victim].size;
       }
+      // Update total candidates and victim
+      total_candidate_count--;
+      victim++;
     }
   }
-  //
-  // Clean up the candidate array
-  //
-  for (i = 0; i < candidate_count; i++) {
-    ats_free(candidates[i].name);
-  }
 
-  //
+  for (auto iter = deleting_info.begin(); iter != deleting_info.end(); iter++) {
+    iter->clear();
+  }
   // Now that we've updated the m_space_used value, see if we need to
   // issue any alarms or warnings about space
   //
