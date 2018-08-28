@@ -27,7 +27,9 @@
 #include "P_RecProcess.h"
 #include "ProxyConfig.h"
 #include "LogObject.h"
+#include "ts/IntrusiveHashMap.h"
 
+#define MAX_CANDIDATES 128
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
@@ -190,6 +192,9 @@ public:
   int rolling_size_mb;
   bool auto_delete_rolled_files;
 
+  //IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
+  std::unordered_map<std::string, LogDeletingInfo> deleting_info;
+
   int sampling_frequency;
   int file_stat_frequency;
   int space_used_frequency;
@@ -236,4 +241,44 @@ struct LogDeleteCandidate {
   time_t mtime;
   char *name;
   int64_t size;
+  ~LogDeleteCandidate() {
+    if (name)
+      ats_free(name);
+  }
 };
+
+struct LogDeletingInfo {
+  char const* type_name;
+  int rolling_size_mb = 0;
+  int candidate_count = 0;
+  int victim = 0;
+  int64_t total_size = 0LL;
+  LogDeleteCandidate candidates[MAX_CANDIDATES];
+
+  LogDeletingInfo *_next = nullptr;
+  LogDeletingInfo *_prev = nullptr;
+  LogDeletingInfo(char* type, int interval, int offset, int size): name(type), rolling_size_mb(size) {}
+  ~LogDeletingInfo() {
+    if (name)
+      ats_free(name);
+  }
+};
+
+struct LogDeletingInfoDescriptor {
+  using key_type = char const*;
+  using value_type = LogDeletingInfo;
+
+  static key_type key_of(value_type *value) { return value->name; }
+  static bool equal(key_type lhs, key_type rhs) { return strncmp(rhs, lhs, strlen(rhs)) == 0; }
+  static uint32_t hash_of(key_type key);
+  static value_type *& next_ptr(value_type *value) { return value->_next; }
+  static value_type *& prev_ptr(value_type *value) { return value->_prev; }
+};
+
+static uint32_t
+LogDeletingInfoDescriptor::hash_of(key_type key)
+{
+  CryptoHash hash;
+  CryptoContext().hash_immediate(hash, const_cast<unit8_t *>(key), strlen(key));
+  return hash.u32[0];
+}

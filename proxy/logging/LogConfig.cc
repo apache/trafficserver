@@ -224,9 +224,29 @@ LogConfig::read_configuration_variables()
   val = (int)REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
     rolling_enabled = (Log::RollingEnabledValues)val;
+    LogDeletingInfo* info = new LogDeletingInfo();
+    info->name = ats_strdup("custom_logs");
+    info->rolling_size_mb = rolling_size_mb;
+    deleting_info.insert(info);
   } else {
     Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.rolling_enabled");
     rolling_enabled = Log::NO_ROLLING;
+  }
+
+  val = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
+  if (LogRollingEnabledIsValid(val)) {
+    LogDeletingInfo* info = new LogDeletingInfo();
+    info->name = REC_ConfigReadString("proxy.config.diags.logfile");
+    info->rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
+    deleting_info.insert(info);
+  }
+
+  val = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled");
+  if (LogRollingEnabledIsValid(val)) {
+    LogDeletingInfo* info = new LogDeletingInfo();
+    info->name = REC_ConfigReadString("proxy.config.output.logfile");
+    info->rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
+    deleting_info.insert(info);
   }
 
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
@@ -712,8 +732,6 @@ LogConfig::update_space_used()
     return;
   }
 
-  static const int MAX_CANDIDATES = 128;
-  LogDeleteCandidate candidates[MAX_CANDIDATES];
   int i, victim, candidate_count;
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
@@ -756,8 +774,8 @@ LogConfig::update_space_used()
   }
 
   total_space_used = 0LL;
-  candidate_count  = 0;
-
+  total_candidate_count  = 0;
+  auto event_log_iter = deleting_info.find("custom_logs");
   while ((entry = readdir(ld))) {
     snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry->d_name);
 
@@ -769,10 +787,24 @@ LogConfig::update_space_used()
         //
         // then add this entry to the candidate list
         //
+        int len = strchr(strchr(entry->d_name, '.')+1, '.') - entry->d_name;
+        char* type_name = ats_strndup(entry->d_name, len);
+        auto iter = deleting_info.find(type_name);
+        if (iter == deleting_info.end()) {
+          iter = event_log_iter;
+        }
+
+        auto &candidates = iter->candidates;
+        auto &candidate_count = iter->candidate_count;
         candidates[candidate_count].name  = ats_strdup(path);
         candidates[candidate_count].size  = (int64_t)sbuf.st_size;
         candidates[candidate_count].mtime = sbuf.st_mtime;
+
+        iter->total_size += candidates[candidate_count].size;
         candidate_count++;
+        total_candidate_count++;
+
+        ats_free(type_name);
       }
     }
   }
@@ -815,19 +847,24 @@ LogConfig::update_space_used()
   int64_t max_space = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
   int64_t headroom  = (int64_t)max_space_mb_headroom * LOG_MEGABYTE;
 
-  if (candidate_count > 0 && !space_to_write(headroom)) {
+  if (total_candidate_count > 0 && !space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");
     Debug("logspace", "sorting %d delete candidates ...", candidate_count);
-    qsort(candidates, candidate_count, sizeof(LogDeleteCandidate), (int (*)(const void *, const void *))delete_candidate_compare);
+    for (auto iter = deleting_info.begin(); iter != deleting_info.end(); iter++) {
+      qsort(iter->candidates, iter->candidate_count, sizeof(LogDeleteCandidate), (int (*)(const void *, const void *))delete_candidate_compare);
+    }
 
-    for (victim = 0; victim < candidate_count; victim++) {
+    while (total_candidate_count > 0) {
       if (space_to_write(headroom + log_buffer_size)) {
         Debug("logspace", "low water mark reached; stop deleting");
         break;
       }
+      // Select the group with biggest ratio
+      auto target = std::max_element(deleting_info.begin(), deleting_info.end(), [](LogDeletingInfo A, LogDeletingInfo B){ return A.total_size/A.})
 
-      Debug("logspace", "auto-deleting %s", candidates[victim].name);
-
+      Debug("logspace", "auto-deleting")
+      auto &candidates = target->candidates;
+      auto &victim = target->victim;
       if (unlink(candidates[victim].name) < 0) {
         Note("Traffic Server was Unable to auto-delete rolled "
              "logfile %s: %s.",
