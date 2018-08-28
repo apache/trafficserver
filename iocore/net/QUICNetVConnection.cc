@@ -475,13 +475,16 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
       return error;
     }
 
-    // FIXME ConnectionCloseFrame is cast to ApplicationCloseFrame
-
     // 7.9.1. Closing and Draining Connection States
     // An endpoint MAY transition from the closing period to the draining period if it can confirm that its peer is also closing or
     // draining. Receiving a closing frame is sufficient confirmation, as is receiving a stateless reset.
-    this->_switch_to_draining_state(QUICConnectionErrorUPtr(
-      new QUICConnectionError(static_cast<const QUICApplicationCloseFrame&>(frame).error_code())));
+    if (frame.type() == QUICFrameType::APPLICATION_CLOSE) {
+      this->_switch_to_draining_state(
+        QUICConnectionErrorUPtr(new QUICConnectionError(static_cast<const QUICApplicationCloseFrame &>(frame).error_code())));
+    } else {
+      this->_switch_to_draining_state(
+        QUICConnectionErrorUPtr(new QUICConnectionError(static_cast<const QUICConnectionCloseFrame &>(frame).error_code())));
+    }
     break;
   default:
     QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame.type()));
