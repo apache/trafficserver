@@ -155,12 +155,16 @@ public:
   /// Assignment.
   self_type &operator                    =(super_type const &that);
   template <size_t N> self_type &operator=(const char (&s)[N]);
+  self_type &operator                    =(const std::string &s);
 
   /// Explicitly set the view.
   self_type &assign(char const *ptr, size_t n);
 
   /// Explicitly set the view to the range [ @a b , @a e )
   self_type &assign(char const *b, char const *e);
+
+  /// Explicitly set the view from a @c std::string
+  self_type &assign(std::string const &s);
 
   /// @return The first byte in the view.
   char operator*() const;
@@ -573,6 +577,20 @@ inline TextView &
 TextView::operator=(super_type const &that)
 {
   this->super_type::operator=(that);
+  return *this;
+}
+
+inline TextView &
+TextView::operator=(const std::string &s)
+{
+  this->super_type::operator=(s);
+  return *this;
+}
+
+inline TextView &
+TextView::assign(const std::string &s)
+{
+  *this = super_type(s);
   return *this;
 }
 
