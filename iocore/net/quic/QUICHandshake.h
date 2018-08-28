@@ -64,7 +64,6 @@ public:
   int do_handshake();
 
   // Getters
-  QUICHandshakeProtocol *protocol();
   QUICVersion negotiated_version();
   const char *negotiated_cipher_suite();
   void negotiated_application_name(const uint8_t **name, unsigned int *len);

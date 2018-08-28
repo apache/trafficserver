@@ -204,12 +204,6 @@ QUICHandshake::has_remote_tp() const
   return this->_remote_transport_parameters != nullptr;
 }
 
-QUICHandshakeProtocol *
-QUICHandshake::protocol()
-{
-  return this->_hs_protocol;
-}
-
 QUICVersion
 QUICHandshake::negotiated_version()
 {
