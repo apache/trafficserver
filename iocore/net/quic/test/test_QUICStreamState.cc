@@ -29,6 +29,7 @@
 #include "quic/QUICStreamState.h"
 #include "quic/Mock.h"
 
+// Unidirectional (sending)
 TEST_CASE("QUICSendStreamState", "[quic]")
 {
   auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
@@ -36,64 +37,86 @@ TEST_CASE("QUICSendStreamState", "[quic]")
   auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
   auto stream_blocked_frame  = QUICFrameFactory::create_stream_blocked_frame(0, 0);
 
-  SECTION("_Init")
+  SECTION("Ready -> Send -> Data Sent")
   {
     // Case1. Create Stream (Sending)
-    QUICSendStreamState ss1(nullptr, nullptr);
-    CHECK(ss1.get() == QUICStreamState::State::Ready);
+    QUICSendStreamState ss(nullptr, nullptr);
+    CHECK(ss.get() == QUICStreamState::State::Ready);
 
     // Case2. Send STREAM
-    QUICSendStreamState ss2(nullptr, nullptr);
-    ss2.update_with_sending_frame(*stream_frame);
-    CHECK(ss2.get() == QUICStreamState::State::Send);
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
+    ss.update_with_sending_frame(*stream_frame);
+    CHECK(ss.get() == QUICStreamState::State::Send);
 
-    // Case3. Send RST_STREAM
-    QUICSendStreamState ss3(nullptr, nullptr);
-    ss3.update_with_sending_frame(*rst_stream_frame);
-    CHECK(ss3.get() == QUICStreamState::State::ResetSent);
+    // Case3. Send STREAM_BLOCKED
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM_BLOCKED));
+    ss.update_with_sending_frame(*stream_blocked_frame);
+    CHECK(ss.get() == QUICStreamState::State::Send);
 
-    // Case4. Send FIN in a STREAM
-    QUICSendStreamState ss4(nullptr, nullptr);
-    ss4.update_with_sending_frame(*stream_frame_with_fin);
-    CHECK(ss4.get() == QUICStreamState::State::DataSent);
+    // Case3. Send FIN in a STREAM
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
+    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICStreamState::State::DataSent);
+
+    // Case4. STREAM is not allowed to send
+    CHECK(!ss.is_allowed_to_send(QUICFrameType::STREAM));
+  }
+
+  SECTION("Ready -> Reset Sent")
+  {
+    // Case1. Create Stream (Sending)
+    QUICSendStreamState ss(nullptr, nullptr);
+    CHECK(ss.get() == QUICStreamState::State::Ready);
+
+    // Case2. Send RST_STREAM
+    CHECK(ss.is_allowed_to_send(QUICFrameType::RST_STREAM));
+    ss.update_with_sending_frame(*rst_stream_frame);
+    CHECK(ss.get() == QUICStreamState::State::ResetSent);
   }
 }
 
+// Unidirectional (receiving)
 TEST_CASE("QUICReceiveStreamState", "[quic]")
 {
   auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
   auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("bar"), 4, 1, 0, true);
   auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
-  auto max_stream_data_frame = QUICFrameFactory::create_max_stream_data_frame(0, 0);
   auto stream_blocked_frame  = QUICFrameFactory::create_stream_blocked_frame(0, 0);
 
-  SECTION("_Init")
+  SECTION("Recv -> Size Known -> Data Recvd")
   {
     MockQUICTransferProgressProvider in_progress;
 
     // Case1. Recv STREAM
-    QUICReceiveStreamState ss1(&in_progress, nullptr);
-    ss1.update_with_receiving_frame(*stream_frame);
-    CHECK(ss1.get() == QUICStreamState::State::Recv);
+    QUICReceiveStreamState ss(&in_progress, nullptr);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.get() == QUICStreamState::State::Recv);
 
     // Case2. Recv STREAM_BLOCKED
-    QUICReceiveStreamState ss2(&in_progress, nullptr);
-    ss2.update_with_receiving_frame(*stream_blocked_frame);
-    CHECK(ss2.get() == QUICStreamState::State::Recv);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM_BLOCKED));
+    ss.update_with_receiving_frame(*stream_blocked_frame);
+    CHECK(ss.get() == QUICStreamState::State::Recv);
 
-    // Case3. Recv RST_STREAM
-    QUICReceiveStreamState ss3(&in_progress, nullptr);
-    ss3.update_with_receiving_frame(*rst_stream_frame);
-    CHECK(ss3.get() == QUICStreamState::State::ResetRecvd);
+    // Case3. Recv FIN in a STREAM
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICStreamState::State::SizeKnown);
+  }
 
-    // Case4. Recv MAX_STREAM_DATA
-    QUICReceiveStreamState ss4(&in_progress, nullptr);
-    ss4.update_with_receiving_frame(*max_stream_data_frame);
-    CHECK(ss4.get() == QUICStreamState::State::Recv);
+  SECTION("Recv -> Reset Recvd")
+  {
+    MockQUICTransferProgressProvider in_progress;
 
-    // Case5. Recv FIN in a STREAM
-    QUICReceiveStreamState ss5(&in_progress, nullptr);
-    ss5.update_with_receiving_frame(*stream_frame_with_fin);
-    CHECK(ss5.get() == QUICStreamState::State::SizeKnown);
+    // Case1. Recv STREAM
+    QUICReceiveStreamState ss(&in_progress, nullptr);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.get() == QUICStreamState::State::Recv);
+
+    // Case2. Recv RST_STREAM
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::RST_STREAM));
+    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.get() == QUICStreamState::State::ResetRecvd);
   }
 }

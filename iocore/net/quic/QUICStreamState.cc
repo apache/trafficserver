@@ -37,8 +37,12 @@ QUICStreamState::_set_state(State s)
 bool
 QUICReceiveStreamState::is_allowed_to_send(const QUICFrame &frame) const
 {
-  QUICFrameType type = frame.type();
+  return this->is_allowed_to_send(frame.type());
+}
 
+bool
+QUICReceiveStreamState::is_allowed_to_send(QUICFrameType type) const
+{
   // Return true or break out the switch to return false
   switch (this->get()) {
   case State::_Init:
@@ -96,8 +100,12 @@ QUICReceiveStreamState::is_allowed_to_send(const QUICFrame &frame) const
 bool
 QUICReceiveStreamState::is_allowed_to_receive(const QUICFrame &frame) const
 {
-  QUICFrameType type = frame.type();
+  return this->is_allowed_to_receive(frame.type());
+}
 
+bool
+QUICReceiveStreamState::is_allowed_to_receive(QUICFrameType type) const
+{
   // Return true or break out the switch to return false
   switch (this->get()) {
   case State::_Init:
@@ -216,8 +224,12 @@ QUICReceiveStreamState::update(const QUICStreamState &opposite_side)
 bool
 QUICSendStreamState::is_allowed_to_send(const QUICFrame &frame) const
 {
-  QUICFrameType type = frame.type();
+  return this->is_allowed_to_send(frame.type());
+}
 
+bool
+QUICSendStreamState::is_allowed_to_send(QUICFrameType type) const
+{
   switch (this->get()) {
   case State::_Init:
     break;
@@ -254,6 +266,12 @@ QUICSendStreamState::is_allowed_to_send(const QUICFrame &frame) const
 
 bool
 QUICSendStreamState::is_allowed_to_receive(const QUICFrame &frame) const
+{
+  return this->is_allowed_to_receive(frame.type());
+}
+
+bool
+QUICSendStreamState::is_allowed_to_receive(QUICFrameType type) const
 {
   return false;
 }
@@ -393,11 +411,23 @@ QUICBidirectionalStreamState::update_with_receiving_frame(const QUICFrame &frame
 bool
 QUICBidirectionalStreamState::is_allowed_to_send(const QUICFrame &frame) const
 {
-  return this->_send_stream_state.is_allowed_to_send(frame) || this->_recv_stream_state.is_allowed_to_send(frame);
+  return this->is_allowed_to_send(frame.type());
+}
+
+bool
+QUICBidirectionalStreamState::is_allowed_to_send(QUICFrameType type) const
+{
+  return this->_send_stream_state.is_allowed_to_send(type) || this->_recv_stream_state.is_allowed_to_send(type);
 }
 
 bool
 QUICBidirectionalStreamState::is_allowed_to_receive(const QUICFrame &frame) const
 {
-  return this->_send_stream_state.is_allowed_to_receive(frame) || this->_recv_stream_state.is_allowed_to_receive(frame);
+  return this->is_allowed_to_receive(frame.type());
+}
+
+bool
+QUICBidirectionalStreamState::is_allowed_to_receive(QUICFrameType type) const
+{
+  return this->_send_stream_state.is_allowed_to_receive(type) || this->_recv_stream_state.is_allowed_to_receive(type);
 }

@@ -65,7 +65,9 @@ public:
   virtual void update_with_sending_frame(const QUICFrame &frame)   = 0;
   virtual void update_with_receiving_frame(const QUICFrame &frame) = 0;
 
+  virtual bool is_allowed_to_send(QUICFrameType type) const        = 0;
   virtual bool is_allowed_to_send(const QUICFrame &frame) const    = 0;
+  virtual bool is_allowed_to_receive(QUICFrameType type) const     = 0;
   virtual bool is_allowed_to_receive(const QUICFrame &frame) const = 0;
 
 protected:
@@ -101,7 +103,9 @@ public:
   void update_with_receiving_frame(const QUICFrame &frame) override;
   void update(const QUICStreamState &opposite_side) override;
 
+  bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
+  bool is_allowed_to_receive(QUICFrameType type) const override;
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
 };
 
@@ -117,7 +121,9 @@ public:
   void update_with_receiving_frame(const QUICFrame &frame) override;
   void update(const QUICStreamState &opposite_side) override;
 
+  bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
+  bool is_allowed_to_receive(QUICFrameType type) const override;
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
 };
 
@@ -135,7 +141,9 @@ public:
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
 
+  bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
+  bool is_allowed_to_receive(QUICFrameType type) const override;
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
 
 private:
