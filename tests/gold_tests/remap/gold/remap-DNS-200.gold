@@ -8,7 +8,7 @@
 < Date: ``
 < Age: ``
 < Transfer-Encoding: chunked
-< Proxy-Connection: keep-alive
+< Proxy-Connection: ``
 < Server: ATS/``
 < 
 ``
