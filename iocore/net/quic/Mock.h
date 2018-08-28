@@ -526,6 +526,11 @@ public:
     return true;
   }
 
+  void
+  reset() override
+  {
+  }
+
   bool
   is_handshake_finished() const override
   {

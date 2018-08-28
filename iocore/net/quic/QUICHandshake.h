@@ -40,9 +40,9 @@ class QUICHandshake : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   // Constructor for client side
-  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx);
+  QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp);
   // Constructor for server side
-  QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token, bool stateless_retry);
+  QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token, bool stateless_retry);
   ~QUICHandshake();
 
   // QUICFrameHandler
@@ -82,7 +82,6 @@ public:
 
 private:
   QUICConnection *_qc                                                   = nullptr;
-  SSL *_ssl                                                             = nullptr;
   QUICHandshakeProtocol *_hs_protocol                                   = nullptr;
   std::shared_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
   std::shared_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;

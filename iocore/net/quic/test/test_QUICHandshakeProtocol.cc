@@ -164,7 +164,7 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
 #ifdef SSL_MODE_QUIC_HACK
   SSL_CTX_set_mode(client_ssl_ctx, SSL_MODE_QUIC_HACK);
 #endif
-  QUICHandshakeProtocol *client = new QUICTLS(SSL_new(client_ssl_ctx), NET_VCONNECTION_OUT);
+  QUICHandshakeProtocol *client = new QUICTLS(client_ssl_ctx, NET_VCONNECTION_OUT);
 
   // Server
   SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
@@ -180,7 +180,7 @@ TEST_CASE("QUICHandshakeProtocol Full Handshake", "[quic]")
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
   EVP_PKEY *pkey = PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr);
   SSL_CTX_use_PrivateKey(server_ssl_ctx, pkey);
-  QUICHandshakeProtocol *server = new QUICTLS(SSL_new(server_ssl_ctx), NET_VCONNECTION_IN);
+  QUICHandshakeProtocol *server = new QUICTLS(server_ssl_ctx, NET_VCONNECTION_IN);
 
   BIO_free(crt_bio);
   BIO_free(key_bio);

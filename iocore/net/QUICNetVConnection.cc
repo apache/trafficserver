@@ -32,6 +32,7 @@
 #include "Log.h"
 
 #include "P_SSLNextProtocolSet.h"
+#include "QUICTLS.h"
 
 #include "QUICStats.h"
 #include "QUICConfig.h"
@@ -204,9 +205,10 @@ QUICNetVConnection::start()
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
     this->_reset_token.generate(this->_quic_connection_id, params->server_id());
-    this->_handshake_handler = new QUICHandshake(this, params->server_ssl_ctx(), this->_reset_token, params->stateless_retry());
+    this->_handshake_handler = new QUICHandshake(this, new QUICTLS(params->server_ssl_ctx(), this->direction()), this->_reset_token,
+                                                 params->stateless_retry());
   } else {
-    this->_handshake_handler = new QUICHandshake(this, params->client_ssl_ctx());
+    this->_handshake_handler = new QUICHandshake(this, new QUICTLS(params->client_ssl_ctx(), this->direction()));
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
   }

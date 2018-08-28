@@ -71,6 +71,7 @@ public:
   virtual ~QUICHandshakeProtocol(){};
 
   virtual int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)                           = 0;
+  virtual void reset()                                                                                 = 0;
   virtual bool is_handshake_finished() const                                                           = 0;
   virtual bool is_ready_to_derive() const                                                              = 0;
   virtual bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const                       = 0;

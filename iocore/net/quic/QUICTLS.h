@@ -39,7 +39,7 @@
 class QUICTLS : public QUICHandshakeProtocol
 {
 public:
-  QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx);
+  QUICTLS(SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx);
   ~QUICTLS();
 
   // TODO: integrate with _early_data_processed
@@ -50,7 +50,11 @@ public:
 
   static QUICEncryptionLevel get_encryption_level(int msg_type);
 
+  // FIXME Should not exist
+  SSL *ssl_handle();
+
   int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override;
+  void reset() override;
   bool is_handshake_finished() const override;
   bool is_ready_to_derive() const override;
   bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const override;

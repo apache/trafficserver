@@ -25,9 +25,6 @@
 
 #include <utility>
 
-#include "P_SSLNextProtocolSet.h"
-#include "P_VConnection.h"
-
 #include "QUICTLS.h"
 #include "QUICEvents.h"
 #include "QUICGlobals.h"
@@ -87,18 +84,22 @@ static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx) : QUICHandshake(qc, ssl_ctx, {}, false) {}
+QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp) : QUICHandshake(qc, hsp, {}, false) {}
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStatelessResetToken token, bool stateless_retry)
+QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token, bool stateless_retry)
   : _qc(qc),
-    _ssl(SSL_new(ssl_ctx)),
-    _hs_protocol(new QUICTLS(this->_ssl, qc->direction())),
+    _hs_protocol(hsp),
     _version_negotiator(new QUICVersionNegotiator()),
     _reset_token(token),
     _stateless_retry(stateless_retry)
 {
-  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_qc_index, qc);
-  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_hs_index, this);
+  // FIXME These should be done in another way
+  if (dynamic_cast<QUICTLS *>(hsp)) {
+    SSL *ssl = static_cast<QUICTLS *>(hsp)->ssl_handle();
+    SSL_set_ex_data(ssl, QUIC::ssl_quic_qc_index, qc);
+    SSL_set_ex_data(ssl, QUIC::ssl_quic_hs_index, this);
+  }
+
   this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id());
 
   if (this->_qc->direction() == NET_VCONNECTION_OUT) {
@@ -108,7 +109,7 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, SSL_CTX *ssl_ctx, QUICStateless
 
 QUICHandshake::~QUICHandshake()
 {
-  SSL_free(this->_ssl);
+  delete this->_hs_protocol;
 }
 
 QUICErrorUPtr
@@ -188,7 +189,7 @@ QUICHandshake::is_version_negotiated() const
 bool
 QUICHandshake::is_completed() const
 {
-  return SSL_is_init_finished(this->_ssl);
+  return this->_hs_protocol->is_handshake_finished();
 }
 
 bool
@@ -308,7 +309,7 @@ void
 QUICHandshake::reset()
 {
   this->_client_initial = true;
-  SSL_clear(this->_ssl);
+  this->_hs_protocol->reset();
 
   for (auto level : QUIC_ENCRYPTION_LEVELS) {
     int index                = static_cast<int>(level);

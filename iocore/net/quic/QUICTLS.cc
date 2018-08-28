@@ -31,6 +31,12 @@
 
 constexpr static char tag[] = "quic_tls";
 
+SSL *
+QUICTLS::ssl_handle()
+{
+  return this->_ssl;
+}
+
 QUICTLS::~QUICTLS()
 {
   SSL_free(this->_ssl);
