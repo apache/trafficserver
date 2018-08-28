@@ -116,7 +116,7 @@ public:
   int event_handler(int event, Event *edata);
 
   std::vector<QUICFrameType> interests() override;
-  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame>) override;
+  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
   void on_packet_sent(QUICPacketUPtr packet);
   QUICPacketNumber largest_acked_packet_number();
   void reset();
@@ -175,7 +175,7 @@ private:
 
   void _on_packet_sent(QUICPacketNumber packet_number, bool is_ack_only, bool is_handshake, size_t sent_bytes,
                        QUICPacketUPtr packet);
-  void _on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame);
+  void _on_ack_received(const QUICAckFrame &ack_frame);
   void _on_packet_acked(const PacketInfo &acked_packet);
   void _update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICPacketNumber largest_acked);
   void _detect_lost_packets(QUICPacketNumber largest_acked);

@@ -214,7 +214,7 @@ public:
 
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
-  QUICErrorUPtr handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame) override;
+  QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICConnection (QUICFrameGenerator)
   // bool will_generate_frame(QUICEncryptionLevel level);

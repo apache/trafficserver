@@ -59,7 +59,7 @@ public:
 
   // QUICFrameHandler
   virtual std::vector<QUICFrameType> interests() override;
-  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame>) override;
+  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level) override;
@@ -68,12 +68,12 @@ public:
 private:
   QUICStream *_find_stream(QUICStreamId id);
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
-  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamFrame> &);
-  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICRstStreamFrame> &);
-  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStopSendingFrame> &);
-  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamDataFrame> &);
-  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICStreamBlockedFrame> &);
-  QUICErrorUPtr _handle_frame(const std::shared_ptr<const QUICMaxStreamIdFrame> &);
+  QUICErrorUPtr _handle_frame(const QUICStreamFrame &frame);
+  QUICErrorUPtr _handle_frame(const QUICRstStreamFrame &frame);
+  QUICErrorUPtr _handle_frame(const QUICStopSendingFrame &frame);
+  QUICErrorUPtr _handle_frame(const QUICMaxStreamDataFrame &frame);
+  QUICErrorUPtr _handle_frame(const QUICStreamBlockedFrame &frame);
+  QUICErrorUPtr _handle_frame(const QUICMaxStreamIdFrame &frame);
   std::vector<QUICEncryptionLevel>
   _encryption_level_filter() override
   {

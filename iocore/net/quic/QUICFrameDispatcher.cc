@@ -69,7 +69,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
 
     std::vector<QUICFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
-      error = h->handle_frame(level, frame);
+      error = h->handle_frame(level, *frame.get());
       // TODO: is there any case to continue this loop even if error?
       if (error->cls != QUICErrorClass::NONE) {
         return error;

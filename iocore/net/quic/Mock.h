@@ -37,9 +37,9 @@ public:
   MockQUICStreamManager() : QUICStreamManager() {}
   // Override
   virtual QUICErrorUPtr
-  handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> f) override
+  handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
-    ++_frameCount[static_cast<int>(f->type())];
+    ++_frameCount[static_cast<int>(f.type())];
     ++_totalFrameCount;
 
     return QUICErrorUPtr(new QUICNoError());
@@ -198,9 +198,9 @@ public:
   }
 
   QUICErrorUPtr
-  handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> f) override
+  handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
-    ++_frameCount[static_cast<int>(f->type())];
+    ++_frameCount[static_cast<int>(f.type())];
     ++_totalFrameCount;
 
     return QUICErrorUPtr(new QUICNoError());

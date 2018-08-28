@@ -450,13 +450,13 @@ QUICNetVConnection::interests()
 }
 
 QUICErrorUPtr
-QUICNetVConnection::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame)
+QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
-  switch (frame->type()) {
+  switch (frame.type()) {
   case QUICFrameType::MAX_DATA:
-    this->_remote_flow_controller->forward_limit(std::static_pointer_cast<const QUICMaxDataFrame>(frame)->maximum_data());
+    this->_remote_flow_controller->forward_limit(static_cast<const QUICMaxDataFrame &>(frame).maximum_data());
     QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
                 this->_remote_flow_controller->current_limit());
     this->_schedule_packet_write_ready();
@@ -475,14 +475,16 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, std::shared_ptr<cons
       return error;
     }
 
+    // FIXME ConnectionCloseFrame is cast to ApplicationCloseFrame
+
     // 7.9.1. Closing and Draining Connection States
     // An endpoint MAY transition from the closing period to the draining period if it can confirm that its peer is also closing or
     // draining. Receiving a closing frame is sufficient confirmation, as is receiving a stateless reset.
     this->_switch_to_draining_state(QUICConnectionErrorUPtr(
-      new QUICConnectionError(std::static_pointer_cast<const QUICApplicationCloseFrame>(frame)->error_code())));
+      new QUICConnectionError(static_cast<const QUICApplicationCloseFrame&>(frame).error_code())));
     break;
   default:
-    QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
+    QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame.type()));
     ink_assert(false);
     break;
   }

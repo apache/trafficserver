@@ -106,7 +106,7 @@ QUICLossDetector::interests()
 }
 
 QUICErrorUPtr
-QUICLossDetector::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame)
+QUICLossDetector::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
@@ -114,13 +114,13 @@ QUICLossDetector::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const 
     return error;
   }
 
-  switch (frame->type()) {
+  switch (frame.type()) {
   case QUICFrameType::ACK:
     this->_smoothed_rtt = this->_rtt_measure->smoothed_rtt();
-    this->_on_ack_received(std::dynamic_pointer_cast<const QUICAckFrame>(frame));
+    this->_on_ack_received(static_cast<const QUICAckFrame &>(frame));
     break;
   default:
-    QUICLDDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame->type()));
+    QUICLDDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame.type()));
     ink_assert(false);
     break;
   }
@@ -209,28 +209,28 @@ QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_ack_on
 }
 
 void
-QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ack_frame)
+QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
-  this->_largest_acked_packet = ack_frame->largest_acknowledged();
+  this->_largest_acked_packet = ack_frame.largest_acknowledged();
   // If the largest acked is newly acked, update the RTT.
-  auto pi = this->_sent_packets.find(ack_frame->largest_acknowledged());
+  auto pi = this->_sent_packets.find(ack_frame.largest_acknowledged());
   if (pi != this->_sent_packets.end()) {
     this->_latest_rtt = Thread::get_hrtime() - pi->second->time;
-    // _latest_rtt is nanosecond but ack_frame->ack_delay is microsecond and scaled
+    // _latest_rtt is nanosecond but ack_frame.ack_delay is microsecond and scaled
     // FIXME ack delay exponent has to be read from transport parameters
     uint8_t ack_delay_exponent = 3;
-    ink_hrtime delay           = HRTIME_USECONDS(ack_frame->ack_delay() << ack_delay_exponent);
-    this->_update_rtt(this->_latest_rtt, delay, ack_frame->largest_acknowledged());
+    ink_hrtime delay           = HRTIME_USECONDS(ack_frame.ack_delay() << ack_delay_exponent);
+    this->_update_rtt(this->_latest_rtt, delay, ack_frame.largest_acknowledged());
   }
 
   QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
                this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
   // Find all newly acked packets.
-  for (auto &&range : this->_determine_newly_acked_packets(*ack_frame)) {
+  for (auto &&range : this->_determine_newly_acked_packets(ack_frame)) {
     for (auto ite = this->_sent_packets.begin(); ite != this->_sent_packets.end(); /* no increment here*/) {
       auto tmp_ite = ite;
       tmp_ite++;
@@ -244,7 +244,7 @@ QUICLossDetector::_on_ack_received(const std::shared_ptr<const QUICAckFrame> &ac
   QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
                this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
 
-  this->_detect_lost_packets(ack_frame->largest_acknowledged());
+  this->_detect_lost_packets(ack_frame.largest_acknowledged());
 
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
               this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());

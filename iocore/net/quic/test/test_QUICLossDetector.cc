@@ -69,8 +69,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     CHECK(tx->retransmitted.size() > 0);
 
     // Receive ACK
-    std::shared_ptr<QUICAckFrame> frame = std::make_shared<QUICAckFrame>(0x01, 20, 0);
-    frame->ack_block_section()->add_ack_block({0, 1ULL});
+    QUICAckFrame frame(0x01, 20, 0);
+    frame.ack_block_section()->add_ack_block({0, 1ULL});
     detector.handle_frame(QUICEncryptionLevel::INITIAL, frame);
     ink_hrtime_sleep(HRTIME_MSECONDS(1500));
     int retransmit_count = tx->retransmitted.size();
@@ -144,7 +144,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     std::shared_ptr<QUICFrame> x = afc->generate_frame(QUICEncryptionLevel::INITIAL, 2048, 2048);
     frame                        = std::dynamic_pointer_cast<QUICAckFrame>(x);
-    detector.handle_frame(QUICEncryptionLevel::INITIAL, frame);
+    detector.handle_frame(QUICEncryptionLevel::INITIAL, *frame.get());
     ink_hrtime_sleep(HRTIME_MSECONDS(5000));
 
     CHECK(cc->lost_packets.size() == 3);
@@ -175,7 +175,7 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   auto t1                           = Thread::get_hrtime();
   std::shared_ptr<QUICAckFrame> ack = QUICFrameFactory::create_ack_frame(100000000, 100, 10000000);
   ack->ack_block_section()->add_ack_block({20000000, 30000000});
-  detector.handle_frame(QUICEncryptionLevel::INITIAL, ack);
+  detector.handle_frame(QUICEncryptionLevel::INITIAL, *ack.get());
   auto t2 = Thread::get_hrtime();
   CHECK(t2 - t1 < HRTIME_MSECONDS(100));
 }

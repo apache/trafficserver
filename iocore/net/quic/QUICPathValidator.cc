@@ -51,19 +51,19 @@ QUICPathValidator::_generate_challenge()
 }
 
 void
-QUICPathValidator::_generate_response(std::shared_ptr<const QUICPathChallengeFrame> frame)
+QUICPathValidator::_generate_response(const QUICPathChallengeFrame &frame)
 {
-  memcpy(this->_incoming_challenge, frame->data(), QUICPathChallengeFrame::DATA_LEN);
+  memcpy(this->_incoming_challenge, frame.data(), QUICPathChallengeFrame::DATA_LEN);
   this->_has_outgoing_response = true;
 }
 
 QUICErrorUPtr
-QUICPathValidator::_validate_response(std::shared_ptr<const QUICPathResponseFrame> frame)
+QUICPathValidator::_validate_response(const QUICPathResponseFrame &frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE));
 
   for (int i = 0; i < 3; ++i) {
-    if (memcmp(this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * i), frame->data(),
+    if (memcmp(this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * i), frame.data(),
                QUICPathChallengeFrame::DATA_LEN) == 0) {
       this->_state                  = ValidationState::VALIDATED;
       this->_has_outgoing_challenge = 0;
@@ -85,16 +85,16 @@ QUICPathValidator::interests()
 }
 
 QUICErrorUPtr
-QUICPathValidator::handle_frame(QUICEncryptionLevel level, std::shared_ptr<const QUICFrame> frame)
+QUICPathValidator::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
-  switch (frame->type()) {
+  switch (frame.type()) {
   case QUICFrameType::PATH_CHALLENGE:
-    this->_generate_response(std::static_pointer_cast<const QUICPathChallengeFrame>(frame));
+    this->_generate_response(static_cast<const QUICPathChallengeFrame &>(frame));
     break;
   case QUICFrameType::PATH_RESPONSE:
-    error = this->_validate_response(std::static_pointer_cast<const QUICPathResponseFrame>(frame));
+    error = this->_validate_response(static_cast<const QUICPathResponseFrame &>(frame));
     break;
   default:
     ink_assert(!"Can't happen");
