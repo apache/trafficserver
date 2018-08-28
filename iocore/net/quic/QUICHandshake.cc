@@ -268,22 +268,6 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersI
   return;
 }
 
-void
-QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersInNewSessionTicket> tp)
-{
-  // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR.
-  if (!tp->is_valid()) {
-    QUICHSDebug("Transport parameter is not valid");
-    this->_abort_handshake(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
-    return;
-  }
-
-  this->_remote_transport_parameters = tp;
-
-  // TODO Add client side implementation
-  ink_assert(false);
-}
-
 std::shared_ptr<const QUICTransportParameters>
 QUICHandshake::local_transport_parameters()
 {

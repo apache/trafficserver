@@ -77,7 +77,6 @@ public:
 
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInClientHello> tp);
   void set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp);
-  void set_transport_parameters(std::shared_ptr<QUICTransportParametersInNewSessionTicket> tp);
 
 private:
   QUICConnection *_qc                                                   = nullptr;

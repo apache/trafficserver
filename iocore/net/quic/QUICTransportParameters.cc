@@ -474,69 +474,6 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
 }
 
 //
-// QUICTransportParametersInNewSessionTicket
-//
-
-QUICTransportParametersInNewSessionTicket::QUICTransportParametersInNewSessionTicket(const uint8_t *buf, size_t len)
-{
-  this->_load(buf, len);
-  this->_print();
-}
-
-void
-QUICTransportParametersInNewSessionTicket::_store(uint8_t *buf, uint16_t *len) const
-{
-  // no additional fields defined
-  *len = 0;
-}
-
-std::ptrdiff_t
-QUICTransportParametersInNewSessionTicket::_parameters_offset(const uint8_t *buf) const
-{
-  return 0;
-}
-
-int
-QUICTransportParametersInNewSessionTicket::_validate_parameters() const
-{
-  int res = QUICTransportParameters::_validate_parameters();
-  if (res < 0) {
-    return res - 100;
-  }
-
-  decltype(this->_parameters)::const_iterator ite;
-
-  // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
-    if (ite->second->len() != QUICStatelessResetToken::LEN) {
-      return -1;
-    }
-  }
-
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -3;
-    }
-    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::CLIENT_BIDI) {
-      return -4;
-    }
-  }
-
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -5;
-    }
-    if (QUICTypeUtil::detect_stream_type(QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len())) !=
-        QUICStreamType::CLIENT_UNI) {
-      return -6;
-    }
-  }
-
-  return 0;
-}
-
-//
 // QUICTransportParametersHandler
 //
 
