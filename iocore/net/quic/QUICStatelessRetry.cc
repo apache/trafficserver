@@ -27,8 +27,6 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#include "P_QUICNetVConnection.h"
-
 #include "QUICGlobals.h"
 #include "QUICConnection.h"
 
