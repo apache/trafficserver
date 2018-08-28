@@ -128,6 +128,7 @@ proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
 proxy/hq/test_libhq
+proxy/hq/test_qpack
 proxy/logging/test_LogUtils
 
 plugins/header_rewrite/header_rewrite_test
