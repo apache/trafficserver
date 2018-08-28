@@ -25,6 +25,7 @@
 #include <records/I_RecHttp.h>
 #include "tscore/ink_defs.h"
 #include "tscore/ink_hash_table.h"
+#include "tscore/TextBuffer.h"
 #include "tscore/Tokenizer.h"
 #include <strings.h>
 #include "tscore/ink_inet.h"
@@ -70,6 +71,22 @@ SessionProtocolSet HTTP_PROTOCOL_SET;
 SessionProtocolSet HTTP2_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
+
+static bool
+mptcp_supported()
+{
+  ats_scoped_fd fd(::open("/proc/sys/net/mptcp/mptcp_enabled", O_RDONLY));
+  int value = 0;
+
+  if (fd) {
+    TextBuffer buffer(16);
+
+    buffer.slurp(fd.get());
+    value = atoi(buffer.bufPtr());
+  }
+
+  return value != 0;
+}
 
 void
 RecHttpLoadIp(const char *value_name, IpAddr &ip4, IpAddr &ip6)
@@ -156,6 +173,7 @@ const char *const HttpProxyPort::OPT_PROXY_PROTO             = "pp";
 const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
 const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
 const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
+const char *const HttpProxyPort::OPT_MPTCP                   = "mptcp";
 
 // File local constants.
 namespace
@@ -187,7 +205,8 @@ HttpProxyPort::HttpProxyPort()
     m_proxy_protocol(false),
     m_inbound_transparent_p(false),
     m_outbound_transparent_p(false),
-    m_transparent_passthrough(false)
+    m_transparent_passthrough(false),
+    m_mptcp(false)
 {
   memcpy(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference));
 }
@@ -393,6 +412,12 @@ HttpProxyPort::processOptions(const char *opts)
 #else
       Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 #endif
+    } else if (0 == strcasecmp(OPT_MPTCP, item)) {
+      if (mptcp_supported()) {
+        m_mptcp = true;
+      } else {
+        Warning("Multipath TCP requested [%s] in port descriptor '%s' but it is not supported by this host.", item, opts);
+      }
     } else if (nullptr != (value = this->checkPrefix(item, OPT_HOST_RES_PREFIX, OPT_HOST_RES_PREFIX_LEN))) {
       this->processFamilyPreference(value);
       host_res_set_p = true;
@@ -572,6 +597,10 @@ HttpProxyPort::print(char *out, size_t n)
     zret += snprintf(out + zret, n - zret, ":%s", OPT_TRANSPARENT_INBOUND);
   } else if (m_outbound_transparent_p) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_TRANSPARENT_OUTBOUND);
+  }
+
+  if (m_mptcp) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_MPTCP);
   }
 
   if (m_transparent_passthrough) {
