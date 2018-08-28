@@ -63,7 +63,7 @@ QUICStreamIO::read(uint8_t *buf, int64_t len)
 {
   if (is_debug_tag_set(tag_stream_io)) {
     if (this->_read_vio->nbytes == INT64_MAX) {
-      QUICStreamIODebug("nbytes=-" PRId64 " ndone=%" PRId64 " read_avail=%" PRId64 " read_len=%" PRId64, this->_read_vio->ndone,
+      QUICStreamIODebug("nbytes=- ndone=%" PRId64 " read_avail=%" PRId64 " read_len=%" PRId64, this->_read_vio->ndone,
                         this->_read_buffer_reader->read_avail(), len);
     } else {
       QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " read_avail=%" PRId64 " read_len=%" PRId64, this->_read_vio->nbytes,

@@ -391,80 +391,98 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
-  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
-
+  // RST_STREAM
   if (this->_reset_reason) {
     return QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
   }
 
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-  frame               = this->_local_flow_controller.generate_frame(level, connection_credit, maximum_frame_size);
+
+  // MAX_STREAM_DATA
+  frame = this->_local_flow_controller.generate_frame(level, UINT16_MAX, maximum_frame_size);
   if (frame) {
     return frame;
   }
 
-  if (connection_credit == 0) {
+  if (!this->_state.is_allowed_to_send(QUICFrameType::STREAM)) {
     return frame;
   }
 
+  uint64_t maximum_data_size = 0;
   if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
     return frame;
   }
+  maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
 
+  bool pure_fin = false;
+  bool fin      = false;
+  if ((this->_write_vio.nbytes != 0 || this->_write_vio.nbytes != INT64_MAX) &&
+      this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset)) {
+    // Pure FIN stream should be sent regardless status of remote flow controller, because the length is zero.
+    pure_fin = true;
+    fin      = true;
+  }
+
+  uint64_t len           = 0;
   IOBufferReader *reader = this->_write_vio.get_reader();
-  int64_t bytes_avail    = reader->read_avail();
-  if (bytes_avail == 0) {
+  if (!pure_fin) {
+    uint64_t data_len = reader->block_read_avail();
+    if (data_len == 0) {
+      return frame;
+    }
+
+    // Check Connection/Stream level credit only if the generating STREAM frame is not pure fin
+    uint64_t stream_credit = this->_remote_flow_controller.credit();
+    if (stream_credit == 0) {
+      // STREAM_BLOCKED
+      frame = this->_remote_flow_controller.generate_frame(level, UINT16_MAX, maximum_frame_size);
+      return frame;
+    }
+
+    if (connection_credit == 0) {
+      // BLOCKED - BLOCKED frame will be sent by connection level remote flow controller
+      return frame;
+    }
+
+    len = std::min(data_len, std::min(maximum_data_size, std::min(stream_credit, connection_credit)));
+
+    // data_len, maximum_data_size, stream_credit and connection_credit are already checked they're larger than 0
+    ink_assert(len != 0);
+
+    if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
+      fin = true;
+    }
+  }
+
+  // STREAM - Pure FIN or data length is lager than 0
+  frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id,
+                                                this->_send_offset, fin, true);
+  if (!this->_state.is_allowed_to_send(*frame)) {
+    QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
     return frame;
   }
 
-  // STREAM_BLOCKED
-  uint64_t stream_credit = this->_remote_flow_controller.credit();
-  // The `bytes_avail` should be also checked before calling QUICRemoteFlowController::generate_frame(), but we don't need it.
-  // Because it's already checked in above.
-  if (stream_credit == 0) {
-    frame = this->_remote_flow_controller.generate_frame(level, connection_credit, maximum_frame_size);
-    if (frame) {
-      return frame;
+  if (!pure_fin) {
+    int ret = this->_remote_flow_controller.update(this->_send_offset + len);
+    // We cannot cancel sending the frame after updating the flow controller
+
+    // Calling update always success, because len is always less than stream_credit
+    ink_assert(ret == 0);
+
+    QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
+                      this->_remote_flow_controller.current_limit());
+    if (this->_remote_flow_controller.current_offset() == this->_remote_flow_controller.current_limit()) {
+      QUICStreamDebug("Flow Controller will block sending a STREAM frame");
     }
-  }
 
-  int64_t data_len = reader->block_read_avail();
-  int64_t len      = 0;
-  bool fin         = false;
-
-  len = std::min(data_len, static_cast<int64_t>(std::min(static_cast<uint64_t>(maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD),
-                                                         std::min(stream_credit, static_cast<uint64_t>(connection_credit)))));
-
-  if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
-    fin = true;
-  }
-
-  if (len > 0) {
-    frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id,
-                                                  this->_send_offset, fin, true);
-    if (!this->_state.is_allowed_to_send(*frame)) {
-      QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
-      return frame;
-    }
-  } else {
-    len = bytes_avail;
-  }
-
-  int ret = this->_remote_flow_controller.update(this->_send_offset + len);
-  // We cannot cancel sending the frame after updating the flow controller
-
-  QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
-                    this->_remote_flow_controller.current_limit());
-  if (frame && ret == 0) {
-    this->_send_offset += len;
     reader->consume(len);
+    this->_send_offset += len;
     this->_write_vio.ndone += len;
-    this->_signal_write_event();
-    this->_state.update_with_sending_frame(*frame);
-  } else if (ret != 0) {
-    QUICStreamDebug("Flow Controller blocked sending a STREAM frame");
-    frame = this->_remote_flow_controller.generate_frame(level, connection_credit, maximum_frame_size);
   }
+
+  this->_signal_write_event();
+  this->_state.update_with_sending_frame(*frame);
+
   return frame;
 }
 

@@ -71,7 +71,7 @@ TEST_CASE("QUICStream", "[quic]")
 
     std::unique_ptr<QUICStream> stream(
       new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, 1024, 1024));
-    stream->do_io_read(nullptr, 0, read_buffer);
+    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(*frame_1);
     stream->recv(*frame_2);
@@ -97,7 +97,7 @@ TEST_CASE("QUICStream", "[quic]")
 
     std::unique_ptr<QUICStream> stream(
       new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, UINT64_MAX, UINT64_MAX));
-    stream->do_io_read(nullptr, 0, read_buffer);
+    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(*frame_8);
     stream->recv(*frame_7);
@@ -123,7 +123,7 @@ TEST_CASE("QUICStream", "[quic]")
 
     std::unique_ptr<QUICStream> stream(
       new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, UINT64_MAX, UINT64_MAX));
-    stream->do_io_read(nullptr, 0, read_buffer);
+    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(*frame_8);
     stream->recv(*frame_7);
@@ -153,7 +153,7 @@ TEST_CASE("QUICStream", "[quic]")
 
     std::unique_ptr<QUICStream> stream(new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id));
     stream->init_flow_control_params(4096, 4096);
-    stream->do_io_read(nullptr, 0, read_buffer);
+    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     // Start with 1024 but not 0 so received frames won't be processed
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
@@ -190,8 +190,8 @@ TEST_CASE("QUICStream", "[quic]")
     std::unique_ptr<QUICStream> stream(new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id));
     stream->init_flow_control_params(4096, 4096);
     MockContinuation mock_cont(stream->mutex);
-    stream->do_io_read(nullptr, 0, read_buffer);
-    stream->do_io_write(&mock_cont, 0, write_buffer_reader);
+    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
