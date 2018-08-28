@@ -232,19 +232,13 @@ QUICSendStreamState::is_allowed_to_send(const QUICFrame &frame) const
     }
     break;
   case State::DataSent:
-    if (type != QUICFrameType::STREAM || type != QUICFrameType::STREAM_BLOCKED || type != QUICFrameType::RST_STREAM) {
+    if (type == QUICFrameType::RST_STREAM) {
       return true;
     }
     break;
   case State::DataRecvd:
-    if (type != QUICFrameType::STREAM || type != QUICFrameType::STREAM_BLOCKED || type != QUICFrameType::RST_STREAM) {
-      return true;
-    }
     break;
   case State::ResetSent:
-    if (type != QUICFrameType::STREAM || type != QUICFrameType::STREAM_BLOCKED || type != QUICFrameType::RST_STREAM) {
-      return true;
-    }
     break;
   case State::ResetRecvd:
     break;
