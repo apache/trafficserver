@@ -192,6 +192,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   // char thr_name[MAX_THREAD_NAME_LENGTH];
 
   NetAccept *na = createNetAccept(opt);
+
   if (accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
   }
@@ -216,6 +217,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   na->action_->server = &na->server;
   na->init_accept();
 
+  SCOPED_MUTEX_LOCK(lock, na->mutex, this_ethread());
   udpNet.UDPBind((Continuation *)na, &na->server.accept_addr.sa, 1048576, 1048576);
 
   return na->action_.get();

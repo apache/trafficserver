@@ -720,7 +720,9 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     // TODO: Drop record from Connection-ID - QUICNetVConnection table in QUICPacketHandler
     // Shutdown loss detector
     for (auto s : QUIC_PN_SPACES) {
-      this->_loss_detector[static_cast<int>(s)]->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
+      QUICLossDetector *ld = this->_loss_detector[static_cast<int>(s)];
+      SCOPED_MUTEX_LOCK(lock, ld->mutex, this_ethread());
+      ld->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
     }
 
     if (this->nh) {
@@ -750,7 +752,9 @@ QUICNetVConnection::get_udp_con()
 void
 QUICNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   this->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
+
   return;
 }
 

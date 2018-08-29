@@ -75,6 +75,7 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
 
         txn->new_transaction();
       } else {
+        SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
         txn->handleEvent(event);
       }
     }
@@ -82,6 +83,7 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     if (txn != nullptr) {
+      SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
       txn->handleEvent(event);
     }
     break;

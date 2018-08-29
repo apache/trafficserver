@@ -69,14 +69,17 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 
   QUICPacketType ptype = static_cast<QUICPacketType>(buf[0] & 0x7f);
   if (ptype == QUICPacketType::INITIAL && !vc->read.triggered) {
+    SCOPED_MUTEX_LOCK(lock, vc->mutex, this_ethread());
     vc->read.triggered = 1;
     vc->handle_received_packet(p);
     vc->handleEvent(QUIC_EVENT_PACKET_READ_READY, nullptr);
     e->free();
+
     return;
   }
 
   if (vc) {
+    SCOPED_MUTEX_LOCK(lock, vc->mutex, this_ethread());
     vc->read.triggered = 1;
     vc->handle_received_packet(p);
   } else {
