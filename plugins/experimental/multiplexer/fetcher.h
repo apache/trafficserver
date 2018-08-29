@@ -215,11 +215,14 @@ template <class T> struct HttpTransaction {
         if (!self->parsingHeaders_) {
           if (self->chunkDecoder_ != NULL) {
             available = self->chunkDecoder_->decode(self->in_->reader);
-            do {
+            if (available == 0) {
+              self->t_.data(self->in_->reader, available);
+            }
+            while (available > 0) {
               self->t_.data(self->in_->reader, available);
               TSIOBufferReaderConsume(self->in_->reader, available);
               available = self->chunkDecoder_->decode(self->in_->reader);
-            } while (available > 0);
+            }
           } else {
             self->t_.data(self->in_->reader, available);
             TSIOBufferReaderConsume(self->in_->reader, available);
