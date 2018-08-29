@@ -25,7 +25,7 @@
 
 #include "P_Net.h"
 #include "I_Machine.h"
-#include "../IPAllow.h"
+#include "IPAllow.h"
 #include "QUICSimpleApp.h"
 
 HQSessionAccept::HQSessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
@@ -38,13 +38,14 @@ HQSessionAccept::~HQSessionAccept() {}
 bool
 HQSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip           = netvc->get_remote_addr();
-  const AclRecord *session_acl_record = testIpAllowPolicy(client_ip);
-  if (!session_acl_record) {
+  sockaddr const *client_ip = netvc->get_remote_addr();
+  IpAllow::ACL session_acl  = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+  if (!session_acl.isValid()) {
     ip_port_text_buffer ipb;
     Warning("QUIC client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
     return false;
   }
+
   netvc->attributes = this->options.transport_type;
 
   if (is_debug_tag_set("hq")) {
@@ -55,7 +56,7 @@ HQSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader 
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  new QUICSimpleApp(static_cast<QUICNetVConnection *>(netvc));
+  new QUICSimpleApp(static_cast<QUICNetVConnection *>(netvc), std::move(session_acl));
 
   return true;
 }

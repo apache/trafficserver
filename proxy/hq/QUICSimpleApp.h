@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "IPAllow.h"
+
 #include "QUICApplication.h"
 
 class QUICNetVConnection;
@@ -36,7 +38,7 @@ class HQClientSession;
 class QUICSimpleApp : public QUICApplication
 {
 public:
-  QUICSimpleApp(QUICNetVConnection *client_vc);
+  QUICSimpleApp(QUICNetVConnection *client_vc, IpAllow::ACL session_acl);
   ~QUICSimpleApp();
 
   int main_event_handler(int event, Event *data);

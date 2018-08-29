@@ -29,18 +29,14 @@
 
 #include "HQClientSession.h"
 #include "HQClientTransaction.h"
-#include "../IPAllow.h"
 
 static constexpr char tag[]   = "quic_simple_app";
 static constexpr char tag_v[] = "v_quic_simple_app";
 
-QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc) : QUICApplication(client_vc)
+QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
 {
-  sockaddr const *client_ip           = client_vc->get_remote_addr();
-  const AclRecord *session_acl_record = SessionAccept::testIpAllowPolicy(client_ip);
-
-  this->_client_session             = new HQClientSession(client_vc);
-  this->_client_session->acl_record = session_acl_record;
+  this->_client_session      = new HQClientSession(client_vc);
+  this->_client_session->acl = std::move(session_acl);
   this->_client_session->new_connection(client_vc, nullptr, nullptr, false);
 
   this->_qc->stream_manager()->set_default_application(this);
