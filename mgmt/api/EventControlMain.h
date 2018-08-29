@@ -33,6 +33,7 @@
 
 #include "mgmtapi.h"       //add the include path b/c included in web dir
 #include "CoreAPIShared.h" // for NUM_EVENTS
+#include "Alarms.h"
 
 // use events_registered[event_id] as index to check if alarm is registered
 typedef struct {

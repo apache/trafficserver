@@ -29,6 +29,7 @@
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/HttpServerSession.h"
+#include "IPAllow.h"
 
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
@@ -36,7 +37,6 @@
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
 class ProxyClientTransaction;
-struct AclRecord;
 
 enum class ProxyErrorClass {
   NONE,
@@ -47,7 +47,23 @@ enum class ProxyErrorClass {
 struct ProxyError {
   ProxyError() {}
   ProxyError(ProxyErrorClass cl, uint32_t co) : cls(cl), code(co) {}
-  size_t str(char *buf, size_t buf_len);
+  size_t
+  str(char *buf, size_t buf_len) const
+  {
+    size_t len = 0;
+
+    if (this->cls == ProxyErrorClass::NONE) {
+      buf[0] = '-';
+      return 1;
+    }
+
+    buf[0] = (this->cls == ProxyErrorClass::SSN) ? 'S' : 'T';
+    ++len;
+
+    len += snprintf(buf + len, buf_len - len, "%" PRIx32, this->code);
+
+    return len;
+  }
 
   ProxyErrorClass cls = ProxyErrorClass::NONE;
   uint32_t code       = 0;
@@ -65,7 +81,6 @@ public:
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
 
   virtual NetVConnection *get_netvc() const = 0;
-  virtual void release_netvc()              = 0;
 
   virtual int get_transact_count() const = 0;
 
@@ -269,8 +284,8 @@ public:
     return netvc ? netvc->get_local_addr() : nullptr;
   }
 
-  /// acl record - cache IpAllow::match() call
-  const AclRecord *acl_record = nullptr;
+  /// IpAllow based method ACL.
+  IpAllow::ACL acl;
 
   /// Local address for outbound connection.
   IpAddr outbound_ip4;

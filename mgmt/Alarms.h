@@ -1,6 +1,7 @@
 /** @file
 
-  A brief file description
+  Class definitions for alarms keeper, class keeps a queue of Alarm
+  objects. Can be polled on status of alarms.
 
   @section license License
 
@@ -21,21 +22,7 @@
   limitations under the License.
  */
 
-/*
- *
- * Alarms.h
- *   Class definitions for alarms keeper, class keeps a queue of Alarm
- * objects. Can be polled on status of alarms.
- *
- * $Date: 2007-10-05 16:56:44 $
- *
- *
- */
-
 #pragma once
-
-#include <cstdlib>
-#include <cstdio>
 
 #include "ts/ink_hash_table.h"
 #include "ts/ink_mutex.h"
@@ -45,8 +32,7 @@ class AppVersionInfo;
 /***********************************************************************
  *
  * MODULARIZATTION: if you are adding new alarms, please ensure to add
- *                 the corresponding alarms in librecords/I_RecAlarms.h
- *
+ *                 the corresponding alarms in lib/records/I_RecAlarms.h
  *
  ***********************************************************************/
 

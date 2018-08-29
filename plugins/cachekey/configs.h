@@ -26,6 +26,8 @@
 #include "pattern.h"
 #include "common.h"
 
+#include <map>
+
 enum CacheKeyUriType {
   REMAP,
   PRISTINE,
@@ -40,14 +42,19 @@ class ConfigElements
 {
 public:
   ConfigElements() : _sort(false), _remove(false), _skip(false) {}
-  virtual ~ConfigElements() {}
+  virtual ~ConfigElements();
   void setExclude(const char *arg);
   void setInclude(const char *arg);
   void setExcludePatterns(const char *arg);
   void setIncludePatterns(const char *arg);
   void setRemove(const char *arg);
   void setSort(const char *arg);
-
+  void addCapture(const char *arg);
+  const auto &
+  getCaptures() const
+  {
+    return _captures;
+  }
   /** @brief shows if the elements are to be sorted in the result */
   bool toBeSorted() const;
   /** @brief shows if the elements are to be removed from the result */
@@ -67,6 +74,7 @@ public:
 
 protected:
   bool noIncludeExcludeRules() const;
+  bool setCapture(const String &name, const String &pattern);
 
   StringSet _exclude;
   StringSet _include;
@@ -77,6 +85,8 @@ protected:
   bool _sort;
   bool _remove;
   bool _skip;
+
+  std::map<String, MultiPattern *> _captures;
 };
 
 /**

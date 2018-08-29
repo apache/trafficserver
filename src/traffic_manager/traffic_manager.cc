@@ -663,6 +663,9 @@ main(int argc, const char **argv)
   std::string apisock(Layout::relative_to(rundir, MGMTAPI_MGMT_SOCKET_NAME));
   std::string eventsock(Layout::relative_to(rundir, MGMTAPI_EVENT_SOCKET_NAME));
 
+  Debug("lm", "using main socket file '%s'", apisock.c_str());
+  Debug("lm", "using event socket file '%s'", eventsock.c_str());
+
   mode_t oldmask = umask(0);
   mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
 

@@ -33,7 +33,6 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_file.h"
 
-#include "Main.h"
 #include "ts/List.h"
 
 #include "Log.h"
@@ -332,6 +331,7 @@ LogConfig::setup_collation(LogConfig *prev_config)
       prev_config->m_log_collation_accept = nullptr;
     }
   } else {
+    Warning("Log collation is deprecated as of ATS v8.0.0!");
     if (!collation_port) {
       Note("Cannot activate log collation, %d is an invalid collation port", collation_port);
     } else if (collation_mode > Log::COLLATION_HOST && strcmp(collation_host, "none") == 0) {

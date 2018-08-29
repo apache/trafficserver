@@ -23,7 +23,6 @@
 
 #include "ts/ink_config.h"
 #include "RecordsConfig.h"
-#include "ts/ParseRules.h"
 
 //-------------------------------------------------------------------------
 // RecordsConfigOverrideFromEnvironment
@@ -150,12 +149,4 @@ void
 LibRecordsConfigInit()
 {
   RecordsConfigIterate(initialize_record, nullptr);
-}
-
-void
-test_librecords()
-{
-  RecRegisterStatInt(RECT_PROCESS, "proxy.process.librecords.testing.int", (RecInt)100, RECP_NON_PERSISTENT);
-  RecRegisterStatFloat(RECT_NODE, "proxy.node.librecords.testing.float", (RecFloat)100.1, RECP_NON_PERSISTENT);
-  RecRegisterStatCounter(RECT_LOCAL, "proxy.local.librecords.testing.counter", (RecCounter)99, RECP_NON_PERSISTENT);
 }

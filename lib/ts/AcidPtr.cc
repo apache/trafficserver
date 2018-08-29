@@ -1,6 +1,5 @@
-/** @file
-
-  SessionAccept
+/**
+  @file AcidPtr defines global LockPools for accessing and committing
 
   @section license License
 
@@ -19,22 +18,26 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
+*/
 
-#include "I_Net.h"
-#include "I_VConnection.h"
-#include "../../proxy/IPAllow.h"
+#include "AcidPtr.h"
 
-const AclRecord *
-SessionAccept::testIpAllowPolicy(sockaddr const *client_ip)
+const int READLOCKCOUNT = 61; // a prime larger than number of readers
+
+AcidPtrMutex &
+AcidPtrMutexGet(void const *ptr)
 {
-  IpAllow::scoped_config ipallow;
-  const AclRecord *acl_record = nullptr;
-  if (ipallow) {
-    acl_record = ipallow->match(client_ip, IpAllow::SRC_ADDR);
-    if (acl_record && acl_record->isEmpty() && ipallow->isAcceptCheckEnabled()) {
-      acl_record = nullptr;
-    }
-  }
-  return acl_record;
+  static LockPool<AcidPtrMutex> read_locks(READLOCKCOUNT);
+  static_assert(sizeof(void *) == sizeof(size_t));
+  return read_locks.getMutex(reinterpret_cast<size_t>(ptr));
+}
+
+const int WRITELOCKCOUNT = 31; // a prime larger than number of writers
+
+AcidCommitMutex &
+AcidCommitMutexGet(void const *ptr)
+{
+  static LockPool<AcidCommitMutex> write_locks(WRITELOCKCOUNT);
+  static_assert(sizeof(void *) == sizeof(size_t));
+  return write_locks.getMutex(reinterpret_cast<size_t>(ptr));
 }

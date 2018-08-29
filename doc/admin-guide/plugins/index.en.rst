@@ -141,6 +141,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 .. toctree::
    :hidden:
 
+   Access Control <access_control.en>
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
@@ -153,12 +154,17 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Metalink <metalink.en>
    Money Trace <money_trace.en>
    MP4 <mp4.en>
+   Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
    Signed URLs <url_sig.en>
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
    System Statistics <system_stats.en>
    WebP Transform <webp_transform.en>
+   Prefetch <prefetch.en>
+
+:doc:`Access Control <access_control.en>`
+   Access control plugin that handles various access control use-cases.
 
 :doc:`Balancer <balancer.en>`
    Balances requests across multiple origin servers.
@@ -193,6 +199,12 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`MP4 <mp4.en>`
    MP4 streaming media.
+
+:doc:`Multiplexer <multiplexer.en>`
+   Multiplex inbound requests to multiple upstream destinations. This is useful for requests that
+   are beacons or other metric gathering requests, to report to multiple upstreams. Alternatively
+   this can be used to do A/B testing by sending a duplicated slice of inbound production traffic to
+   experimental upstreams.
 
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.

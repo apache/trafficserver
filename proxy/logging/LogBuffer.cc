@@ -63,16 +63,6 @@ int32_t LogBuffer::M_ID;
   -------------------------------------------------------------------------*/
 
 char *
-LogBufferHeader::fmt_name()
-{
-  char *addr = nullptr;
-  if (fmt_name_offset) {
-    addr = (char *)this + fmt_name_offset;
-  }
-  return addr;
-}
-
-char *
 LogBufferHeader::fmt_fieldlist()
 {
   char *addr = nullptr;

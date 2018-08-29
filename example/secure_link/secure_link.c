@@ -126,7 +126,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     }
     if (sli->strict) {
       TSDebug(PLUGIN_NAME, "request is DENY");
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_FORBIDDEN);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_FORBIDDEN);
       i = TSREMAP_NO_REMAP;
     } else {
       TSDebug(PLUGIN_NAME, "request is PASS");

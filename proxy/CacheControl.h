@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "Main.h"
 #include "P_EventSystem.h"
 #include "ControlBase.h"
 #include "ts/Result.h"

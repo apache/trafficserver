@@ -25,7 +25,6 @@
 #include "ParentConsistentHash.h"
 #include "ParentRoundRobin.h"
 #include "ControlMatcher.h"
-#include "Main.h"
 #include "ProxyConfig.h"
 #include "HostStatus.h"
 #include "HTTP.h"

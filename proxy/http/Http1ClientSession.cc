@@ -218,7 +218,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 VIO *
 Http1ClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  return client_vc->do_io_read(c, nbytes, buf);
+  return (client_vc) ? client_vc->do_io_read(c, nbytes, buf) : nullptr;
 }
 
 VIO *

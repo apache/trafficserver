@@ -79,7 +79,6 @@ Http2ClientSession::free()
   }
 
   if (client_vc) {
-    release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }
@@ -233,13 +232,21 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
 VIO *
 Http2ClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  return this->client_vc->do_io_read(c, nbytes, buf);
+  if (client_vc) {
+    return this->client_vc->do_io_read(c, nbytes, buf);
+  } else {
+    return nullptr;
+  }
 }
 
 VIO *
 Http2ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  return this->client_vc->do_io_write(c, nbytes, buf, owner);
+  if (client_vc) {
+    return this->client_vc->do_io_write(c, nbytes, buf, owner);
+  } else {
+    return nullptr;
+  }
 }
 
 void
@@ -266,7 +273,6 @@ Http2ClientSession::do_io_close(int alerrno)
     // Copy aside the client address before releasing the vc
     cached_client_addr.assign(client_vc->get_remote_addr());
     cached_local_addr.assign(client_vc->get_local_addr());
-    this->release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }

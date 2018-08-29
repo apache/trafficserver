@@ -437,6 +437,61 @@ CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
   }
 }
 
+template <class T>
+void
+CacheKey::processHeader(const String &name, const ConfigHeaders &config, T &dst,
+                        void (*fun)(const ConfigHeaders &config, const String &name_s, const String &value_s, T &captures))
+{
+  TSMLoc field;
+
+  for (field = TSMimeHdrFieldFind(_buf, _hdrs, name.c_str(), name.size()); field != TS_NULL_MLOC;
+       field = ::nextDuplicate(_buf, _hdrs, field)) {
+    const char *value;
+    int vlen;
+    int count = TSMimeHdrFieldValuesCount(_buf, _hdrs, field);
+
+    for (int i = 0; i < count; ++i) {
+      value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, i, &vlen);
+      if (value == nullptr || vlen == 0) {
+        CacheKeyDebug("missing value %d for header %s", i, name.c_str());
+        continue;
+      }
+
+      String value_s(value, vlen);
+      fun(config, name, value_s, dst);
+    }
+  }
+}
+
+template <class T>
+void
+captureWholeHeaders(const ConfigHeaders &config, const String &name, const String &value, T &captures)
+{
+  CacheKeyDebug("processing header %s", name.c_str());
+  if (config.toBeAdded(name)) {
+    String header;
+    header.append(name).append(":").append(value);
+    captures.insert(header);
+    CacheKeyDebug("adding header '%s: %s'", name.c_str(), value.c_str());
+  } else {
+    CacheKeyDebug("failed to find header '%s'", name.c_str());
+  }
+}
+
+template <class T>
+void
+captureFromHeaders(const ConfigHeaders &config, const String &name, const String &value, T &captures)
+{
+  CacheKeyDebug("processing capture from header %s", name.c_str());
+  auto itMp = config.getCaptures().find(name);
+  if (config.getCaptures().end() != itMp) {
+    itMp->second->process(value, captures);
+    CacheKeyDebug("found capture pattern for header '%s'", name.c_str());
+  } else {
+    CacheKeyDebug("failed to find header '%s'", name.c_str());
+  }
+}
+
 /**
  * @brief Append headers by following the rules specified in the header configuration object.
  * @param config header-related configuration containing information about which headers need to be appended to the key.
@@ -445,49 +500,35 @@ CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
 void
 CacheKey::appendHeaders(const ConfigHeaders &config)
 {
-  if (config.toBeRemoved() || config.toBeSkipped()) {
-    // Don't add any headers to the cache key.
-    return;
-  }
+  if (!config.toBeRemoved() && !config.toBeSkipped()) {
+    /* Iterating header by header is not efficient according to comments inside traffic server API,
+     * Iterate over an 'include'-kind of list or the capture definitions to avoid header by header iteration.
+     * @todo: revisit this when (if?) adding regex matching for headers. */
 
-  TSMLoc field;
-  StringSet hset; /* Sort and uniquify the header list in the cache key. */
+    /* Adding whole headers, iterate over "--include-header" list */
+    StringSet hdrSet; /* Sort and uniquify the header list in the cache key. */
+    for (auto it = config.getInclude().begin(); it != config.getInclude().end(); ++it) {
+      processHeader(*it, config, hdrSet, captureWholeHeaders);
+    }
 
-  /* Iterating header by header is not efficient according to comments inside traffic server API,
-   * Iterate over an 'include'-kind of list to avoid header by header iteration.
-   * @todo: revisit this when (if?) adding regex matching for headers. */
-  for (StringSet::iterator it = config.getInclude().begin(); it != config.getInclude().end(); ++it) {
-    String name_s = *it;
-
-    for (field = TSMimeHdrFieldFind(_buf, _hdrs, name_s.c_str(), name_s.size()); field != TS_NULL_MLOC;
-         field = ::nextDuplicate(_buf, _hdrs, field)) {
-      const char *value;
-      int vlen;
-      int count = TSMimeHdrFieldValuesCount(_buf, _hdrs, field);
-
-      for (int i = 0; i < count; ++i) {
-        value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, i, &vlen);
-        if (value == nullptr || vlen == 0) {
-          CacheKeyDebug("missing value %d for header %s", i, name_s.c_str());
-          continue;
-        }
-
-        String value_s(value, vlen);
-
-        if (config.toBeAdded(name_s)) {
-          String header;
-          header.append(name_s).append(":").append(value_s);
-          hset.insert(header);
-          CacheKeyDebug("adding header => '%s: %s'", name_s.c_str(), value_s.c_str());
-        }
-      }
+    /* Append to the cache key. It doesn't make sense to have the headers unordered in the cache key. */
+    String headers_key = containerToString<StringSet, StringSet::const_iterator>(hdrSet, "", _separator);
+    if (!headers_key.empty()) {
+      append(headers_key);
     }
   }
 
-  /* It doesn't make sense to have the headers unordered in the cache key. */
-  String headers_key = containerToString<StringSet, StringSet::const_iterator>(hset, "", _separator);
-  if (!headers_key.empty()) {
-    append(headers_key);
+  if (!config.getCaptures().empty()) {
+    /* Adding captures from headers, iterate over "--capture-header" definitions */
+    StringVector hdrCaptures;
+    for (auto it = config.getCaptures().begin(); it != config.getCaptures().end(); ++it) {
+      processHeader(it->first, config, hdrCaptures, captureFromHeaders);
+    }
+
+    /* Append to the cache key. Add the captures in the order capture definitions are captured / specified */
+    for (auto &capture : hdrCaptures) {
+      append(capture);
+    }
   }
 }
 

@@ -200,7 +200,7 @@ void
 Transaction::setStatusCode(HttpStatus code)
 {
   LOG_DEBUG("Transaction tshttptxn=%p setting status code: %d", state_->txn_, code);
-  TSHttpTxnSetHttpRetStatus(state_->txn_, static_cast<TSHttpStatus>(code));
+  TSHttpTxnStatusSet(state_->txn_, static_cast<TSHttpStatus>(code));
 }
 
 bool
@@ -388,7 +388,7 @@ Transaction::getCacheStatus()
   case TS_CACHE_LOOKUP_HIT_FRESH:
     return CACHE_LOOKUP_HIT_FRESH;
   case TS_CACHE_LOOKUP_SKIPPED:
-    return CACHE_LOOKUP_SKIPED;
+    return CACHE_LOOKUP_SKIPPED;
   default:
     return CACHE_LOOKUP_NONE;
   }

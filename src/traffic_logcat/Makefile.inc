@@ -40,6 +40,7 @@ traffic_logcat_traffic_logcat_SOURCES = \
 
 traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/proxy/logging/liblogging.a \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \

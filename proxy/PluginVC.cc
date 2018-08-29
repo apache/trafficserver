@@ -208,9 +208,6 @@ PluginVC::main_handler(int event, void *data)
   } else if (call_event == inactive_event) {
     if (inactive_timeout_at && inactive_timeout_at < Thread::get_hrtime()) {
       process_timeout(&inactive_event, VC_EVENT_INACTIVITY_TIMEOUT);
-      if (nullptr == inactive_event) {
-        call_event->cancel();
-      }
     }
   } else {
     if (call_event == sm_lock_retry_event) {
@@ -748,7 +745,7 @@ PluginVC::process_timeout(Event **e, int event_to_send)
   if (closed) {
     // already closed, ignore the timeout event
     // to avoid handle_event asserting use-after-free
-    *e = nullptr;
+    clear_event(e);
     return;
   }
 
@@ -761,7 +758,7 @@ PluginVC::process_timeout(Event **e, int event_to_send)
       }
       return;
     }
-    *e = nullptr;
+    clear_event(e);
     read_state.vio.cont->handleEvent(event_to_send, &read_state.vio);
   } else if (write_state.vio.op == VIO::WRITE && !write_state.shutdown && write_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, write_state.vio.mutex, (*e)->ethread);
@@ -772,11 +769,23 @@ PluginVC::process_timeout(Event **e, int event_to_send)
       }
       return;
     }
-    *e = nullptr;
+    clear_event(e);
     write_state.vio.cont->handleEvent(event_to_send, &write_state.vio);
   } else {
-    *e = nullptr;
+    clear_event(e);
   }
+}
+
+void
+PluginVC::clear_event(Event **e)
+{
+  if (e == nullptr || *e == nullptr)
+    return;
+  if (*e == inactive_event) {
+    inactive_event->cancel();
+    inactive_timeout_at = 0;
+  }
+  *e = nullptr;
 }
 
 void

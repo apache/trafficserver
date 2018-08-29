@@ -23,7 +23,7 @@
 
 #include "ts/ink_platform.h"
 #include "HttpCompat.h"
-#include "HdrUtils.h" /* MAGIC_EDITING_TAG */
+#include "HdrUtils.h"
 
 //////////////////////////////////////////////////////////////////////////////
 //

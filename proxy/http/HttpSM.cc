@@ -33,7 +33,7 @@
 #include "P_Net.h"
 #include "StatPages.h"
 #include "Log.h"
-#include "LogAccessHttp.h"
+#include "LogAccess.h"
 #include "PluginVC.h"
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
@@ -128,9 +128,10 @@ std::atomic<int64_t> next_sm_id(0);
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
-HttpVCTable::HttpVCTable()
+HttpVCTable::HttpVCTable(HttpSM *mysm)
 {
   memset(&vc_table, 0, sizeof(vc_table));
+  sm = mysm;
 }
 
 HttpVCTableEntry *
@@ -138,6 +139,7 @@ HttpVCTable::new_entry()
 {
   for (int i = 0; i < vc_table_max_entries; i++) {
     if (vc_table[i].vc == nullptr) {
+      vc_table[i].sm = sm;
       return vc_table + i;
     }
   }
@@ -190,6 +192,26 @@ HttpVCTable::remove_entry(HttpVCTableEntry *e)
   if (e->write_buffer) {
     free_MIOBuffer(e->write_buffer);
     e->write_buffer = nullptr;
+  }
+  if (e->read_vio != nullptr && e->read_vio->cont == sm) {
+    // Cleanup dangling i/o
+    if (e == sm->get_ua_entry() && sm->get_ua_txn() != nullptr) {
+      e->read_vio = sm->get_ua_txn()->do_io_read(nullptr, 0, nullptr);
+    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
+      e->read_vio = sm->get_server_session()->do_io_read(nullptr, 0, nullptr);
+    } else {
+      ink_release_assert(false);
+    }
+  }
+  if (e->write_vio != nullptr && e->write_vio->cont == sm) {
+    // Cleanup dangling i/o
+    if (e == sm->get_ua_entry() && sm->get_ua_txn()) {
+      e->write_vio = sm->get_ua_txn()->do_io_write(nullptr, 0, nullptr);
+    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
+      e->write_vio = sm->get_server_session()->do_io_write(nullptr, 0, nullptr);
+    } else {
+      ink_release_assert(false);
+    }
   }
   e->read_vio   = nullptr;
   e->write_vio  = nullptr;
@@ -258,9 +280,8 @@ HttpVCTable::cleanup_all()
     default_handler = _h;                 \
   }
 
-HttpSM::HttpSM() : Continuation(nullptr)
+HttpSM::HttpSM() : Continuation(nullptr), vc_table(this)
 {
-  ink_zero(vc_table);
   ink_zero(http_parser);
 }
 
@@ -534,7 +555,7 @@ HttpSM::setup_client_read_request_header()
   ua_entry->read_vio = ua_txn->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
   // The header may already be in the buffer if this
   //  a request from a keep-alive connection
-  handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
+  dispatchEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
 }
 
 void
@@ -866,7 +887,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
                 "[%" PRId64 "] [watch_for_client_abort] "
                 "forwarding event %s to tunnel",
                 sm_id, HttpDebugNames::get_event_name(event));
-        tunnel.handleEvent(event, c->write_vio);
+        tunnel.dispatchEvent(event, c->write_vio);
         return 0;
       } else {
         tunnel.kill_tunnel();
@@ -1055,7 +1076,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//  HttpSM::state_http_server_open()
+//  HttpSM::state_raw_http_server_open()
 //
 //////////////////////////////////////////////////////////////////////////////
 int
@@ -1746,6 +1767,29 @@ HttpSM::state_http_server_open(int event, void *data)
     } else {
       session->to_parent_proxy = false;
     }
+    if (plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+      SMDebug("http", "[%" PRId64 "] setting handler for TCP handshake", sm_id);
+      // Just want to get a write-ready event so we know that the TCP handshake is complete.
+      server_entry->vc_handler = &HttpSM::state_http_server_open;
+      server_entry->write_vio  = server_session->do_io_write(this, 1, server_session->get_reader());
+    } else { // in the case of an intercept plugin don't to the connect timeout change
+      SMDebug("http", "[%" PRId64 "] not setting handler for TCP handshake", sm_id);
+      handle_http_server_open();
+    }
+    return 0;
+
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE:
+    // Update the time out to the regular connection timeout.
+    SMDebug("http_ss", "[%" PRId64 "] TCP Handshake complete", sm_id);
+    server_entry->vc_handler = &HttpSM::state_send_server_request_header;
+
+    // Reset the timeout to the non-connect timeout
+    if (t_state.api_txn_no_activity_timeout_value != -1) {
+      server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
+    } else {
+      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
+    }
     handle_http_server_open();
     return 0;
   case EVENT_INTERVAL: // Delayed call from another thread
@@ -1753,8 +1797,9 @@ HttpSM::state_http_server_open(int event, void *data)
       do_http_server_open();
     }
     break;
-  case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
@@ -2659,7 +2704,10 @@ HttpSM::tunnel_handler_post(int event, void *data)
     if (ua_entry->write_buffer) {
       free_MIOBuffer(ua_entry->write_buffer);
       ua_entry->write_buffer = nullptr;
-      ua_entry->vc->do_io_write(this, 0, nullptr);
+      ua_entry->vc->do_io_write(nullptr, 0, nullptr);
+    }
+    if (!p->handler_state) {
+      p->handler_state = HTTP_SM_POST_UA_FAIL;
     }
     break;
   case VC_EVENT_READ_READY:
@@ -2996,6 +3044,11 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   ink_assert(p->vc_type == HT_HTTP_SERVER);
   ink_assert(p->vc == server_session);
 
+  // The server session has been released. Clean all pointer
+  // Calling remove_entry instead of server_entry because we don't
+  // want to close the server VC at this point
+  vc_table.remove_entry(server_entry);
+
   if (close_connection) {
     p->vc->do_io_close();
     p->read_vio = nullptr;
@@ -3027,9 +3080,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     }
   }
 
-  // The server session has been released. Clean all pointer
-  server_entry->in_tunnel = true; // to avid cleaning in clenup_entry
-  vc_table.cleanup_entry(server_entry);
   server_session = nullptr; // Because p->vc == server_session
   server_entry   = nullptr;
 
@@ -3410,7 +3460,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       // if it is active timeout case, we need to give another chance to send 408 response;
       ua_txn->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
-      p->vc->do_io_write(this, 0, nullptr);
+      p->vc->do_io_write(nullptr, 0, nullptr);
       p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
 
       return 0;
@@ -3954,7 +4004,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (!ret) {
     SMDebug("url_rewrite", "Could not find a valid remapping entry for this request [%" PRId64 "]", sm_id);
     if (!run_inline) {
-      handleEvent(EVENT_REMAP_COMPLETE, nullptr);
+      dispatchEvent(EVENT_REMAP_COMPLETE, nullptr);
     }
     return;
   }
@@ -4674,41 +4724,43 @@ HttpSM::do_http_server_open(bool raw)
   // Otherwise, if no remap rule is defined, apply the ip_allow filter.
   if (!t_state.url_remap_success || t_state.url_map.getMapping()->ip_allow_check_enabled_p) {
     // Method allowed on dest IP address check
-    sockaddr *server_ip = &t_state.current.server->dst_addr.sa;
-    IpAllow::scoped_config ip_allow;
+    sockaddr *server_ip    = &t_state.current.server->dst_addr.sa;
+    IpAllow::ACL acl       = IpAllow::match(server_ip, IpAllow::DST_ADDR);
+    bool deny_request      = false; // default is fail open.
+    int method             = t_state.hdr_info.server_request.method_get_wksidx();
+    int method_str_len     = 0;
+    const char *method_str = nullptr;
 
-    if (ip_allow) {
-      const AclRecord *acl_record = ip_allow->match(server_ip, IpAllow::DEST_ADDR);
-      bool deny_request           = false; // default is fail open.
-      int method                  = t_state.hdr_info.server_request.method_get_wksidx();
-
-      if (acl_record) {
-        // If empty, nothing is allowed, deny. Conversely if all methods are allowed it's OK, do not deny.
-        // Otherwise the method has to be checked specifically.
-        if (acl_record->isEmpty()) {
-          deny_request = true;
-        } else if (acl_record->_method_mask != AclRecord::ALL_METHOD_MASK) {
-          if (method != -1) {
-            deny_request = !acl_record->isMethodAllowed(method);
-          } else {
-            int method_str_len;
-            const char *method_str = t_state.hdr_info.server_request.method_get(&method_str_len);
-            deny_request           = !acl_record->isNonstandardMethodAllowed(std::string(method_str, method_str_len));
-          }
+    if (acl.isValid()) {
+      if (acl.isDenyAll()) {
+        deny_request = true;
+      } else if (!acl.isAllowAll()) {
+        if (method != -1) {
+          deny_request = !acl.isMethodAllowed(method);
+        } else {
+          method_str   = t_state.hdr_info.server_request.method_get(&method_str_len);
+          deny_request = !acl.isNonstandardMethodAllowed(std::string_view(method_str, method_str_len));
         }
       }
+    }
 
-      if (deny_request) {
-        if (is_debug_tag_set("ip-allow")) {
-          ip_text_buffer ipb;
-          Warning("server '%s' prohibited by ip-allow policy", ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
-          Debug("ip-allow", "Denial on %s:%s with mask %x", ats_ip_ntop(&t_state.current.server->dst_addr.sa, ipb, sizeof(ipb)),
-                hdrtoken_index_to_wks(method), acl_record ? acl_record->_method_mask : 0x0);
+    if (deny_request) {
+      if (is_debug_tag_set("ip-allow")) {
+        ip_text_buffer ipb;
+        if (method != -1) {
+          method_str     = hdrtoken_index_to_wks(method);
+          method_str_len = strlen(method_str);
+        } else if (!method_str) {
+          method_str = t_state.hdr_info.client_request.method_get(&method_str_len);
         }
-        t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
-        call_transact_and_set_next_state(HttpTransact::Forbidden);
-        return;
+        Warning("server '%s' prohibited by ip-allow policy at line %d", ats_ip_ntop(server_ip, ipb, sizeof(ipb)),
+                acl.source_line());
+        Debug("ip-allow", "Line %d denial for '%.*s' from %s", acl.source_line(), method_str_len, method_str,
+              ats_ip_ntop(server_ip, ipb, sizeof(ipb)));
       }
+      t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
+      call_transact_and_set_next_state(HttpTransact::Forbidden);
+      return;
     }
   }
 
@@ -4970,36 +5022,11 @@ HttpSM::do_http_server_open(bool raw)
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);
-  } else if (t_state.method != HTTP_WKSIDX_CONNECT && t_state.method != HTTP_WKSIDX_POST && t_state.method != HTTP_WKSIDX_PUT) {
+  } else {
     SMDebug("http", "calling netProcessor.connect_re");
     connect_action_handle = netProcessor.connect_re(this,                                 // state machine
                                                     &t_state.current.server->dst_addr.sa, // addr + port
                                                     &opt);
-  } else {
-    // The request transform would be applied to POST and/or PUT request.
-    // The server_vc should be established (writeable) before request transform start.
-    // The CheckConnect is created by connect_s,
-    //   It will callback NET_EVENT_OPEN to HttpSM if server_vc is WRITE_READY,
-    //   Otherwise NET_EVENT_OPEN_FAILED is callbacked.
-    MgmtInt connect_timeout;
-
-    ink_assert(t_state.method == HTTP_WKSIDX_CONNECT || t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT);
-
-    // Set the inactivity timeout to the connect timeout so that we
-    // we fail this server if it doesn't start sending the response
-    // header
-    if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-      connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-    } else if (t_state.current.server == &t_state.parent_info) {
-      connect_timeout = t_state.txn_conf->parent_connect_timeout;
-    } else {
-      connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-    }
-
-    SMDebug("http", "calling netProcessor.connect_s");
-    connect_action_handle = netProcessor.connect_s(this,                                 // state machine
-                                                   &t_state.current.server->dst_addr.sa, // addr + port
-                                                   connect_timeout, &opt);
   }
 
   if (connect_action_handle != ACTION_RESULT_DONE) {
@@ -5123,10 +5150,11 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
 
   if (info->app.http_data.last_failure == 0) {
     char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
-    Log::error("CONNECT: could not connect to %s "
-               "for '%s' (setting last failure time) connect_result=%d",
-               ats_ip_ntop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_str ? url_str : "<none>",
-               t_state.current.server->connect_result);
+    Log::error("%s", lbw()
+                       .print("CONNECT: could not connect to {} for '{}' (setting last failure time) connect_result={}\0",
+                              t_state.current.server->dst_addr, url_str ? url_str : "<none>",
+                              ts::bwf::Errno(t_state.current.server->connect_result))
+                       .data());
 
     if (url_str) {
       t_state.arena.str_free(url_str);
@@ -5402,13 +5430,13 @@ HttpSM::handle_server_setup_error(int event, void *data)
 
         ua_producer->alive         = false;
         ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
-        tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
+        tunnel.dispatchEvent(VC_EVENT_ERROR, c->write_vio);
         return;
       }
     } else {
       // c could be null here as well
       if (c != nullptr) {
-        tunnel.handleEvent(event, c->write_vio);
+        tunnel.dispatchEvent(event, c->write_vio);
         return;
       }
     }
@@ -6839,7 +6867,7 @@ HttpSM::kill_this()
     //////////////
     SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
     if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-      LogAccessHttp accessor(this);
+      LogAccess accessor(this);
 
       int ret = Log::access(&accessor);
 
@@ -7578,7 +7606,7 @@ HttpSM::do_redirect()
   if (is_redirect_required()) {
     if (redirect_url != nullptr || t_state.hdr_info.client_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-        LogAccessHttp accessor(this);
+        LogAccess accessor(this);
         if (redirect_url == nullptr) {
           if (t_state.squid_codes.log_code == SQUID_LOG_TCP_HIT) {
             t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT_REDIRECT;

@@ -125,6 +125,7 @@ private:
   Node *_find(Node *node, uint32_t id, uint32_t depth = 1);
   Node *_top(Node *node);
   void _change_parent(Node *new_parent, Node *node, bool exclusive);
+  bool in_parent_chain(Node *maybe_parent, Node *target);
 
   Node *_root = new Node(this);
   uint32_t _max_depth;
@@ -302,13 +303,29 @@ Tree<T>::reprioritize(Node *node, uint32_t new_parent_id, bool exclusive)
   if (new_parent == nullptr) {
     return;
   }
-  _change_parent(new_parent, old_parent, false);
+  // If node is dependent on the new parent, must move the new parent first
+  if (new_parent_id != 0 && in_parent_chain(node, new_parent)) {
+    _change_parent(new_parent, old_parent, false);
+  }
   _change_parent(node, new_parent, exclusive);
 
   // delete the shadow node
   if (node->is_shadow() && node->children.empty() && node->queue->empty()) {
     remove(node);
   }
+}
+
+template <typename T>
+bool
+Tree<T>::in_parent_chain(Node *maybe_parent, Node *target)
+{
+  bool retval  = false;
+  Node *parent = target->parent;
+  while (parent != nullptr && !retval) {
+    retval = maybe_parent == parent;
+    parent = parent->parent;
+  }
+  return retval;
 }
 
 // Change node's parent to new_parent
@@ -339,11 +356,13 @@ Tree<T>::_change_parent(Node *node, Node *new_parent, bool exclusive)
       }
 
       node->children.push(child);
+      ink_release_assert(child != node);
       child->parent = node;
     }
   }
 
   new_parent->children.push(node);
+  ink_release_assert(node != new_parent);
   node->parent = new_parent;
 
   if (node->active || !node->queue->empty()) {
@@ -401,9 +420,11 @@ Tree<T>::deactivate(Node *node, uint32_t sent)
 {
   node->active = false;
 
-  while (node->queue->empty() && node->parent != nullptr) {
-    node->parent->queue->erase(node->entry);
-    node->queued = false;
+  while (!node->active && node->queue->empty() && node->parent != nullptr) {
+    if (node->queued) {
+      node->parent->queue->erase(node->entry);
+      node->queued = false;
+    }
 
     node = node->parent;
   }

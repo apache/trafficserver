@@ -663,6 +663,25 @@ CXXFLAGS="${_ts_saved_CXXFLAGS}"
 # All compilers we support have 'gnu99' as an available C standard
 TS_ADDTO(AM_CFLAGS, [-std=gnu99])
 
+ac_save_CXX="$CXX"
+CXX="$CXX -std=c++17"
+AC_LANG_PUSH(C++)
+AC_MSG_CHECKING([checking whether $CXX supports -std=c++17])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#if __cplusplus < 201703L
+#error "This is not C++17"
+#endif
+    ], []
+    )], [
+    AC_MSG_RESULT(yes)
+    ], [
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([*** A compiler with support for -std=c++17 is required.])
+])
+AC_LANG_POP
+CXX="$ac_save_CXX"
+
 TS_ADDTO(AM_CXXFLAGS, [-std=c++17])
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS

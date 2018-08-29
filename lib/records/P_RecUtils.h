@@ -53,7 +53,7 @@ void RecDataZero(RecDataT type, RecData *data);
 void RecDataSetMax(RecDataT type, RecData *data);
 void RecDataSetMin(RecDataT type, RecData *data);
 bool RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src);
-bool RecDataSetFromInk64(RecDataT data_type, RecData *data_dst, int64_t data_int64);
+bool RecDataSetFromInt64(RecDataT data_type, RecData *data_dst, int64_t data_int64);
 bool RecDataSetFromFloat(RecDataT data_type, RecData *data_dst, float data_float);
 bool RecDataSetFromString(RecDataT data_type, RecData *data_dst, const char *data_string);
 int RecDataCmp(RecDataT type, RecData left, RecData right);

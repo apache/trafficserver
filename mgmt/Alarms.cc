@@ -25,10 +25,8 @@
 #include "ts/ink_string.h"
 #include "ts/ink_file.h"
 #include "ts/ink_time.h"
-#include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "Alarms.h"
-#include "ts/Diags.h"
 
 #include "P_RecCore.h"
 

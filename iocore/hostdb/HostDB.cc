@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "Main.h"
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
 #include "ts/I_Layout.h"
@@ -1203,7 +1204,7 @@ HostDBContinuation::dnsPendingEvent(int event, Event *e)
   }
   if (event == EVENT_INTERVAL) {
     // we timed out, return a failure to the user
-    MUTEX_TRY_LOCK_FOR(lock, action.mutex, ((Event *)e)->ethread, action.continuation);
+    MUTEX_TRY_LOCK(lock, action.mutex, ((Event *)e)->ethread);
     if (!lock.is_locked()) {
       timeout = eventProcessor.schedule_in(this, HOST_DB_RETRY_PERIOD);
       return EVENT_CONT;
@@ -1258,7 +1259,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       hostdb_cont_free(this);
       return EVENT_DONE;
     }
-    MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
+    MUTEX_TRY_LOCK(lock, action.mutex, thread);
     if (!lock.is_locked()) {
       timeout = thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
       return EVENT_CONT;
@@ -1489,15 +1490,31 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         return EVENT_CONT;
       }
 
-      MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
-      if (!lock.is_locked()) {
+      // We have seen cases were the action.mutex != action.continuation.mutex.
+      // Since reply_to_cont will call the hanlder on the action.continuation, it is important that we hold
+      // that mutex.
+      bool need_to_reschedule = true;
+      MUTEX_TRY_LOCK(lock, action.mutex, thread);
+      if (lock.is_locked()) {
+        need_to_reschedule = !action.cancelled;
+        if (!action.cancelled) {
+          if (action.continuation->mutex) {
+            MUTEX_TRY_LOCK(lock2, action.continuation->mutex, thread);
+            if (lock2.is_locked()) {
+              reply_to_cont(action.continuation, r, is_srv());
+              need_to_reschedule = false;
+            }
+          } else {
+            reply_to_cont(action.continuation, r, is_srv());
+            need_to_reschedule = false;
+          }
+        }
+      }
+      if (need_to_reschedule) {
         remove_trigger_pending_dns();
         SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
         thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
         return EVENT_CONT;
-      }
-      if (!action.cancelled) {
-        reply_to_cont(action.continuation, r, is_srv());
       }
     }
     // wake up everyone else who is waiting
@@ -1517,7 +1534,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
   ink_assert(!link.prev && !link.next);
   EThread *t = e ? e->ethread : this_ethread();
 
-  MUTEX_TRY_LOCK_FOR(lock, action.mutex, t, action.continuation);
+  MUTEX_TRY_LOCK(lock, action.mutex, t);
   if (!lock.is_locked()) {
     Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting action mutex", event, e);
     mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
@@ -1533,7 +1550,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
   if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // TODO: configurable number at a time?
     ProxyMutex *bucket_mutex = hostDB.refcountcache->get_partition(current_iterate_pos).lock.get();
-    MUTEX_TRY_LOCK_FOR(lock_bucket, bucket_mutex, t, this);
+    MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, t);
     if (!lock_bucket.is_locked()) {
       // we couldn't get the bucket lock, let's just reschedule and try later.
       Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting bucket mutex", event, e);
@@ -1574,7 +1591,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   ink_assert(!link.prev && !link.next);
   EThread *t = e ? e->ethread : this_ethread();
 
-  MUTEX_TRY_LOCK_FOR(lock, action.mutex, t, action.continuation);
+  MUTEX_TRY_LOCK(lock, action.mutex, t);
   if (!lock.is_locked()) {
     mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;

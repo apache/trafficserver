@@ -776,7 +776,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
   //   back to say we are done
   if (!is_tunnel_alive()) {
     active = false;
-    sm->handleEvent(HTTP_TUNNEL_EVENT_DONE, this);
+    sm->dispatchEvent(HTTP_TUNNEL_EVENT_DONE, this);
   }
 }
 
@@ -1640,7 +1640,7 @@ HttpTunnel::main_handler(int event, void *data)
     if (reentrancy_count == 1) {
       reentrancy_count = 0;
       active           = false;
-      sm->handleEvent(HTTP_TUNNEL_EVENT_DONE, this);
+      sm->dispatchEvent(HTTP_TUNNEL_EVENT_DONE, this);
       return EVENT_DONE;
     } else {
       call_sm = true;

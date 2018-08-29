@@ -89,7 +89,7 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 bool
 RecConfigOverrideFromRunroot(const char *name)
 {
-  if (use_runroot()) {
+  if (!get_runroot().empty()) {
     if (!strcmp(name, "proxy.config.bin_path") || !strcmp(name, "proxy.config.local_state_dir") ||
         !strcmp(name, "proxy.config.log.logfile_dir") || !strcmp(name, "proxy.config.plugin.plugin_dir"))
       return true;

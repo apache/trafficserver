@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Definitions for the LocalManager class.
 
   @section license License
 
@@ -21,23 +21,14 @@
   limitations under the License.
  */
 
-/*
- *
- * LocalManager.h
- *   Definitions for the LocalManager class.
- *
- * $Date: 2007-10-05 16:56:44 $
- *
- *
- */
-
 #pragma once
 
 #include <string>
 
-#include "Alarms.h"
 #include "BaseManager.h"
-#include <records/I_RecHttp.h>
+#include "records/I_RecHttp.h"
+#include "ts/I_Version.h"
+
 #include <syslog.h>
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
@@ -46,6 +37,7 @@
 #include <sys/eventfd.h>
 #endif
 
+class Alarms;
 class FileManager;
 
 enum ManagementPendingOperation {

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Interface for class to manage configuration updates
 
   @section license License
 
@@ -23,19 +23,11 @@
 
 #pragma once
 
-/****************************************************************************
- *
- *  FileManager.h - Interface for class to manage configuration updates
- *
- *
- ****************************************************************************/
-
-#include <cstdio>
-
 #include "ts/ink_hash_table.h"
+#include "ts/ink_mutex.h"
 #include "ts/List.h"
-#include "Rollback.h"
 
+class ExpandingArray;
 class Rollback;
 
 typedef void (*FileCallbackFunc)(char *, bool);
@@ -50,7 +42,6 @@ enum lockAction_t {
   ACQUIRE_LOCK,
   RELEASE_LOCK,
 };
-class ExpandingArray;
 
 //  class FileManager
 //

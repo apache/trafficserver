@@ -329,6 +329,6 @@ init:
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(stats_origin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(stats_origin, TSMutexCreate()));
   TSDebug(PLUGIN_NAME, "stats module registered");
 }

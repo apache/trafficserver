@@ -118,7 +118,7 @@ void
 EThread::process_event(Event *e, int calling_code)
 {
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
-  MUTEX_TRY_LOCK_FOR(lock, e->mutex, this, e->continuation);
+  MUTEX_TRY_LOCK(lock, e->mutex, this);
   if (!lock.is_locked()) {
     e->timeout_at = cur_time + DELAY_FOR_RETRY;
     EventQueueExternal.enqueue_local(e);
@@ -128,6 +128,7 @@ EThread::process_event(Event *e, int calling_code)
       return;
     }
     Continuation *c_temp = e->continuation;
+    // Make sure that the contination is locked before calling the handler
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);

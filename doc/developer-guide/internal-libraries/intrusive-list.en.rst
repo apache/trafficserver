@@ -23,7 +23,9 @@ IntrusiveDList
 :class:`IntrusiveDList` is a class that provides a double linked list using pointers embeded in the
 object. :class:`IntrusiveDList` also acts as a queue. No memory management is done - objects can be
 added to and removed from the list but the allocation and deallocation of the objects must be
-handled outside the class. This class supports an STL compliant bidirectional iteration.
+handled outside the class. This class supports an STL compliant bidirectional iteration. The
+iterators automatically convert to pointer as in normal use of this class the contained elements
+will be referenced by pointers.
 
 Definition
 **********
@@ -51,6 +53,16 @@ Definition
       .. function:: static value_type * & prev_ptr(value_type * elt)
 
          Return a reference to the previous element pointer embedded in the element :arg:`elt`.
+
+   .. type:: iterator
+
+      An STL compliant bidirectional iterator on elements in the list. :type:`iterator` has a user
+      defined conversion to :code:`value_type *` for convenience in use.
+
+   .. type:: const_iterator
+
+      An STL compliant bidirectional constant iterator on elements in the list. :type:`const_iterator` has a user
+      defined conversion to :code:`const value_type *` for convenience in use.
 
    .. function:: value_type * head()
 
@@ -83,6 +95,27 @@ Definition
    .. function:: value_type * take_tail()
 
       Remove the tail element and return a pointer to it. May be :code:`nullptr` if the list is empty.
+
+   .. function:: iterator erase(const iterator & loc)
+
+      Remove the element at :arg:`loc`. Return the element after :arg:`loc`.
+
+   .. function:: iterator erase(const iterator & start, const iterator & limit)
+
+      Remove the elements in the half open range from and including :arg:`start`
+      to but not including :arg:`limit`.
+
+   .. function:: iterator iterator_for(value_type * value)
+
+      Return an :type:`iterator` that refers to :arg:`value`. :arg:`value` is checked for being in a
+      list but there is no guarantee it is in this list. If :arg:`value` is not in a list then the
+      end iterator is returned.
+
+   .. function:: const_iterator iterator_for(const value_type * value)
+
+      Return a :type:`const_iterator` that refers to :arg:`value`. :arg:`value` is checked for being
+      in a list but there is no guarantee it is in this list. If :arg:`value` is not in a list then
+      the end iterator is returned.
 
 Usage
 *****

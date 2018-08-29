@@ -65,9 +65,6 @@
 #include "HdrUtils.h"
 #include "Log.h"
 
-#define ART 1
-#define AGIF 2
-
 TransformProcessor transformProcessor;
 
 /*-------------------------------------------------------------------------
@@ -76,9 +73,6 @@ TransformProcessor transformProcessor;
 void
 TransformProcessor::start()
 {
-#ifdef PREFETCH
-  prefetchProcessor.start();
-#endif
 }
 
 /*-------------------------------------------------------------------------

@@ -32,7 +32,6 @@
 #include "ts/ink_sys_control.h"
 #include "ts/signals.h"
 #include "DiagsConfig.h"
-#include "Main.h"
 
 #include "P_EventSystem.h"
 #include "P_RecProcess.h"

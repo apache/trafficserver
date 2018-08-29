@@ -32,7 +32,6 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_time.h"
 
-#include "Main.h"
 #include "URL.h"
 #include "ts/Tokenizer.h"
 #include "ControlBase.h"

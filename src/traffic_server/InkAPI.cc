@@ -1,6 +1,6 @@
 /** @file
 
-  Implements callin functions for TSAPI plugins.
+  Implements the Traffic Server C API functions.
 
   @section license License
 
@@ -27,6 +27,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_base64.h"
 #include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 
 #include "InkAPIInternal.h"
 #include "Log.h"
@@ -84,6 +85,8 @@
   _HDR.m_heap = ((HdrHeapSDKHandle *)_BUF_PTR)->m_heap; \
   _HDR.m_http = (HTTPHdrImpl *)_OBJ_PTR;                \
   _HDR.m_mime = _HDR.m_http->m_fields_impl;
+
+extern AppVersionInfo appVersionInfo;
 
 // Globals for new librecords stats
 static int api_rsb_index;
@@ -1287,7 +1290,7 @@ APIHook::invoke(int event, void *edata)
       ink_assert(!"not reached");
     }
   }
-  return m_cont->handleEvent(event, edata);
+  return m_cont->dispatchEvent(event, edata);
 }
 
 APIHook *
@@ -4519,7 +4522,7 @@ int
 TSContCall(TSCont contp, TSEvent event, void *edata)
 {
   Continuation *c = (Continuation *)contp;
-  return c->handleEvent((int)event, edata);
+  return c->dispatchEvent((int)event, edata);
 }
 
 TSMutex
@@ -6004,12 +6007,21 @@ TSVConnArgGet(TSVConn connp, int arg_idx)
 }
 
 void
-TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus)
+TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *sm                   = (HttpSM *)txnp;
-  sm->t_state.http_return_code = (HTTPStatus)http_retstatus;
+  HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
+  sm->t_state.http_return_code = static_cast<HTTPStatus>(status);
+}
+
+TSHttpStatus
+TSHttpTxnStatusGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  return static_cast<TSHttpStatus>(sm->t_state.http_return_code);
 }
 
 /* control channel for HTTP */
@@ -7798,6 +7810,16 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
   HttpSM *sm                         = (HttpSM *)txnp;
   sm->t_state.api_skip_all_remapping = (flag != 0);
 }
+
+/* These are the default converter function sets for management data types. If those are used the
+ * proper converters can be determined here. For other types the converters must be explicitly
+ * specified.
+ *
+ * The purpose of these are to allow configuration elements to not be management types but more
+ * natural types (e.g., an enumeration can be the actual enumeration, not an @c MgmtInt that needs
+ * frequent casting). In effect the converter does the casting for the plugin API, isolating that
+ * to this API handling, with the rest of the code base using the natural types.
+ */
 
 template <typename T>
 inline void *

@@ -52,6 +52,7 @@ include test_cppapi/Makefile.inc
 
 if BUILD_EXPERIMENTAL_PLUGINS
 
+include experimental/access_control/Makefile.inc
 include experimental/acme/Makefile.inc
 include experimental/balancer/Makefile.inc
 include experimental/buffer_upload/Makefile.inc
@@ -82,6 +83,7 @@ include experimental/system_stats/Makefile.inc
 include experimental/traffic_dump/Makefile.inc
 include experimental/tls_bridge/Makefile.inc
 include experimental/url_sig/Makefile.inc
+include experimental/prefetch/Makefile.inc
 
 if BUILD_URI_SIGNING_PLUGIN
 include experimental/uri_signing/Makefile.inc

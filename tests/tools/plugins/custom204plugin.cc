@@ -92,7 +92,7 @@ local_handler(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     TSDebug(PLUGIN_NAME, "Returning 204 with custom response body.");
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_NO_CONTENT);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_NO_CONTENT);
     TSHttpTxnErrorBodySet(txnp, TSstrdup(msg), strlen(msg), TSstrdup("text/html"));
     break;
 

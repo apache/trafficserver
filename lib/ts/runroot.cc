@@ -53,22 +53,25 @@ static std::string runroot_file = {};
 // the function for the checking of the yaml file in the passed in path
 // if found return the path to the yaml file, if not return empty string.
 static std::string
-get_yaml_path(const std::string &path)
+get_yaml_path(const std::string &path, bool json)
 {
-  std::ifstream check_file;
+  std::string yaml_file;
   if (ink_file_is_directory(path.c_str())) {
-    std::string yaml_path = Layout::relative_to(path, "runroot_path.yml");
-    check_file.open(yaml_path);
-    if (check_file.good()) {
-      return yaml_path;
-    }
+    yaml_file = Layout::relative_to(path, "runroot_path.yml");
   } else {
-    check_file.open(path);
-    if (check_file.good() && path.substr(path.find_last_of("/") + 1) == "runroot_path.yml") {
-      return path;
+    if (path.substr(path.find_last_of("/") + 1) == "runroot_path.yml") {
+      yaml_file = path;
     }
   }
-  return {};
+  std::ifstream check_file;
+  check_file.open(yaml_file);
+  if (!check_file.good()) {
+    if (!json) {
+      ink_warning("Unable to access runroot: '%s' - %s", yaml_file.c_str(), strerror(errno));
+    }
+    return {};
+  }
+  return yaml_file;
 }
 
 // the function for the checking of the yaml file in passed in directory or parent directory
@@ -86,8 +89,10 @@ get_parent_yaml_path(const std::string &path)
     if (whole_path.empty()) {
       return {};
     }
-    std::string yaml_file = get_yaml_path(whole_path);
-    if (!yaml_file.empty()) {
+    std::ifstream check_file;
+    std::string yaml_file = Layout::relative_to(whole_path, "runroot_path.yml");
+    check_file.open(yaml_file);
+    if (check_file.good()) {
       return yaml_file;
     }
     whole_path = whole_path.substr(0, whole_path.find_last_of("/"));
@@ -120,34 +125,26 @@ runroot_handler(const char **argv, bool json)
   if (!arg.empty() && arg != prefix) {
     // 1. pass in path
     prefix += "=";
-    path = get_yaml_path(arg.substr(prefix.size(), arg.size() - 1));
+    path = get_yaml_path(arg.substr(prefix.size(), arg.size() - 1), json);
     if (!path.empty()) {
       if (!json) {
         ink_notice("using command line path as RUNROOT");
       }
       runroot_file = path;
       return;
-    } else {
-      if (!json) {
-        ink_warning("bad RUNROOT passed in");
-      }
     }
   }
 
   // 2. check Environment variable
   char *env_val = getenv("TS_RUNROOT");
   if (env_val) {
-    path = get_yaml_path(env_val);
+    path = get_yaml_path(env_val, json);
     if (!path.empty()) {
       runroot_file = path;
       if (!json) {
         ink_notice("using the environment variable TS_RUNROOT");
       }
       return;
-    } else {
-      if (!json) {
-        ink_warning("bad Environment var: $TS_RUNROOT");
-      }
     }
   }
 
@@ -248,8 +245,8 @@ check_runroot()
   return runroot_map(runroot_file);
 }
 
-bool
-use_runroot()
+std::string_view
+get_runroot()
 {
-  return !runroot_file.empty();
+  return runroot_file;
 }

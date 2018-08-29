@@ -28,23 +28,24 @@
 #include <iomanip>
 #include <catch.hpp>
 
-using TV = ts::TextView;
+using ts::TextView;
 using namespace std::literals;
 
 TEST_CASE("TextView Constructor", "[libts][TextView]")
 {
   static std::string base = "Evil Dave Rulez!";
-  ts::TextView tv(base);
-  ts::TextView a{"Evil Dave Rulez"};
-  ts::TextView b{base.data(), base.size()};
-  ts::TextView c{std::string_view(base)};
-  constexpr ts::TextView d{"Grigor!"sv};
+  TextView tv(base);
+  TextView a{"Evil Dave Rulez"};
+  TextView b{base.data(), base.size()};
+  TextView c{std::string_view(base)};
+  constexpr TextView d{"Grigor!"sv};
 }
 
 TEST_CASE("TextView Operations", "[libts][TextView]")
 {
-  TV tv{"Evil Dave Rulez"};
-  TV nothing;
+  TextView tv{"Evil Dave Rulez"};
+  TextView tv_lower{"evil dave rulez"};
+  TextView nothing;
   size_t off;
 
   REQUIRE(tv.find('l') == 3);
@@ -58,22 +59,30 @@ TEST_CASE("TextView Operations", "[libts][TextView]")
   }
   REQUIRE(!nothing == true);
   REQUIRE(nothing.empty() == true);
+
+  REQUIRE(memcmp(tv, tv) == 0);
+  REQUIRE(memcmp(tv, tv_lower) != 0);
+  REQUIRE(strcmp(tv, tv) == 0);
+  REQUIRE(strcmp(tv, tv_lower) != 0);
+  REQUIRE(strcasecmp(tv, tv) == 0);
+  REQUIRE(strcasecmp(tv, tv_lower) == 0);
+  REQUIRE(strcasecmp(nothing, tv) != 0);
 }
 
 TEST_CASE("TextView Trimming", "[libts][TextView]")
 {
-  ts::TextView tv("  Evil Dave Rulz   ...");
-  ts::TextView tv2{"More Text1234567890"};
-  REQUIRE("Evil Dave Rulz   ..." == ts::TextView(tv).ltrim_if(&isspace));
-  REQUIRE(tv2 == ts::TextView{tv2}.ltrim_if(&isspace));
-  REQUIRE("More Text" == ts::TextView{tv2}.rtrim_if(&isdigit));
-  REQUIRE("  Evil Dave Rulz   " == ts::TextView(tv).rtrim('.'));
-  REQUIRE("Evil Dave Rulz" == ts::TextView(tv).trim(" ."));
+  TextView tv("  Evil Dave Rulz   ...");
+  TextView tv2{"More Text1234567890"};
+  REQUIRE("Evil Dave Rulz   ..." == TextView(tv).ltrim_if(&isspace));
+  REQUIRE(tv2 == TextView{tv2}.ltrim_if(&isspace));
+  REQUIRE("More Text" == TextView{tv2}.rtrim_if(&isdigit));
+  REQUIRE("  Evil Dave Rulz   " == TextView(tv).rtrim('.'));
+  REQUIRE("Evil Dave Rulz" == TextView(tv).trim(" ."));
 }
 
 TEST_CASE("TextView Find", "[libts][TextView]")
 {
-  ts::TextView addr{"172.29.145.87:5050"};
+  TextView addr{"172.29.145.87:5050"};
   REQUIRE(addr.find(':') == 13);
   REQUIRE(addr.rfind(':') == 13);
   REQUIRE(addr.find('.') == 3);
@@ -82,38 +91,38 @@ TEST_CASE("TextView Find", "[libts][TextView]")
 
 TEST_CASE("TextView Affixes", "[libts][TextView]")
 {
-  ts::TextView s; // scratch.
-  ts::TextView tv1("0123456789;01234567890");
-  ts::TextView prefix{tv1.prefix(10)};
+  TextView s; // scratch.
+  TextView tv1("0123456789;01234567890");
+  TextView prefix{tv1.prefix(10)};
 
   REQUIRE("0123456789" == prefix);
   REQUIRE("67890" == tv1.suffix(5));
 
-  ts::TextView tv2 = tv1.prefix(';');
+  TextView tv2 = tv1.prefix(';');
   REQUIRE(tv2 == "0123456789");
 
-  ts::TextView right{tv1};
-  ts::TextView left{right.split_prefix_at(';')};
+  TextView right{tv1};
+  TextView left{right.split_prefix_at(';')};
   REQUIRE(right.size() == 11);
   REQUIRE(left.size() == 10);
 
-  ts::TextView tv3 = "abcdefg:gfedcba";
-  left             = tv3;
-  right            = left.split_suffix_at(";:,");
-  ts::TextView pre{tv3}, post{pre.split_suffix_at(7)};
+  TextView tv3 = "abcdefg:gfedcba";
+  left         = tv3;
+  right        = left.split_suffix_at(";:,");
+  TextView pre{tv3}, post{pre.split_suffix_at(7)};
   REQUIRE(right.size() == 7);
   REQUIRE(left.size() == 7);
   REQUIRE(left == "abcdefg");
   REQUIRE(right == "gfedcba");
 
-  ts::TextView addr1{"[fe80::fc54:ff:fe60:d886]"};
-  ts::TextView addr2{"[fe80::fc54:ff:fe60:d886]:956"};
-  ts::TextView addr3{"192.168.1.1:5050"};
+  TextView addr1{"[fe80::fc54:ff:fe60:d886]"};
+  TextView addr2{"[fe80::fc54:ff:fe60:d886]:956"};
+  TextView addr3{"192.168.1.1:5050"};
 
-  ts::TextView t = addr1;
+  TextView t = addr1;
   ++t;
   REQUIRE("fe80::fc54:ff:fe60:d886]" == t);
-  ts::TextView a = t.take_prefix_at(']');
+  TextView a = t.take_prefix_at(']');
   REQUIRE("fe80::fc54:ff:fe60:d886" == a);
   REQUIRE(t.empty());
 
@@ -126,7 +135,7 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   REQUIRE("956" == t);
 
   t = addr3;
-  ts::TextView sf{t.suffix(':')};
+  TextView sf{t.suffix(':')};
   REQUIRE("5050" == sf);
   REQUIRE(t == addr3);
 
@@ -156,7 +165,7 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   REQUIRE(t.empty());
 
   auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
-  ts::TextView token;
+  TextView token;
   t = ";; , ;;one;two,th:ree  four,, ; ,,f-ive="sv;
   // Do an unrolled loop.
   REQUIRE(!t.ltrim_if(is_sep).empty());
@@ -175,29 +184,29 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   // Simulates operations in HostLookup.cc, where the use of string_view necessitates this workaround of failures
   // in the string_view API. With a TextView, it would just be repeated @c take_suffix_at('.')
   std::string_view fqdn{"bob.ne1.corp.ngeo.com"};
-  ts::TextView elt{ts::TextView{fqdn}.suffix('.')};
+  TextView elt{TextView{fqdn}.suffix('.')};
   REQUIRE(elt == "com");
 
   // Unroll loop for testing.
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = ts::TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix('.');
   REQUIRE(elt == "ngeo");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = ts::TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix('.');
   REQUIRE(elt == "corp");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = ts::TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix('.');
   REQUIRE(elt == "ne1");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = ts::TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix('.');
   REQUIRE(elt == "bob");
   fqdn.remove_suffix(std::min(fqdn.size(), elt.size() + 1));
-  elt = ts::TextView{fqdn}.suffix('.');
+  elt = TextView{fqdn}.suffix('.');
   REQUIRE(elt.empty());
 
   // Check some edge cases.
   fqdn  = "."sv;
-  token = ts::TextView{fqdn}.take_suffix_at('.');
+  token = TextView{fqdn}.take_suffix_at('.');
   REQUIRE(token.size() == 0);
   REQUIRE(token.empty());
 
@@ -218,7 +227,7 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")
 {
-  ts::TextView a("01234567");
+  TextView a("01234567");
   {
     std::ostringstream buff;
     buff << '|' << a << '|';
@@ -258,13 +267,13 @@ TEST_CASE("TextView Formatting", "[libts][TextView]")
 
 TEST_CASE("TextView Conversions", "[libts][TextView]")
 {
-  TV n  = "   956783";
-  TV n2 = n;
-  TV n3 = "031";
-  TV n4 = "13f8q";
-  TV n5 = "0x13f8";
-  TV n6 = "0X13f8";
-  TV x;
+  TextView n  = "   956783";
+  TextView n2 = n;
+  TextView n3 = "031";
+  TextView n4 = "13f8q";
+  TextView n5 = "0x13f8";
+  TextView n6 = "0X13f8";
+  TextView x;
   n2.ltrim_if(&isspace);
 
   REQUIRE(956783 == svtoi(n));

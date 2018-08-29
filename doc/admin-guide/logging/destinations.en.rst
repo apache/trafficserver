@@ -202,6 +202,13 @@ such as Logstash, to accomplish this by having them handle the ingestion of
 Log Collation
 -------------
 
+.. note::
+
+   Log collation is a *deprecated* feature as of ATS v8.0.0, and  will be
+   removed in ATS v9.0.0. Our recommendation is to use one of the many existing
+   log collection tools, such as Kafka, LogStash, FileBeat, Fluentd or even
+   syslog / syslog-ng (see above).
+
 |TS| offers remote log shipping natively through the log collation feature,
 which allows one or more |TS| instances handling regular traffic to transmit
 their log data to one or more |TS| instances acting as collation servers.

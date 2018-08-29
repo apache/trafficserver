@@ -279,12 +279,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   // Make sure we have a matrix parameter, anything without is a bogus request.
   if (param_len <= 0) {
-    TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
     return TSREMAP_NO_REMAP;
   }
 
   if (param_len > MAX_PATH_SIZE) {
-    TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
     return TSREMAP_NO_REMAP;
   }
 
@@ -305,7 +305,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       len = 8 + h_conf->hipes_server.size() + (param_len - (slash - param) - 1);
     }
     if (len > MAX_PATH_SIZE) {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
       return TSREMAP_NO_REMAP;
     }
     if (h_conf->hipes_port != 80) {
@@ -317,14 +317,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     len = escapify_url(svc_url, len, svc_url_esc, MAX_PATH_SIZE);
     if (len < 0) {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
       return TSREMAP_NO_REMAP;
     }
     TSDebug(PLUGIN_NAME, "Escaped service URL is %s(%d)", svc_url_esc, len);
 
     // Prepare the new query arguments, make sure it fits
     if (((slash - param) + 2 + (int)h_conf->url_param.size() + len) > MAX_PATH_SIZE) {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
       return TSREMAP_NO_REMAP;
     }
 
@@ -400,25 +400,25 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
           if (hdr_flag == 2) {
             do_redirect = true;
           } else {
-            TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+            TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
             has_error = true;
           }
           break;
         default:
-          TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+          TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
           has_error = true;
           break;
         }
         TSHandleMLocRelease(bufp, hdr_loc, field_loc);
       } else {
         if (redirect_flag == 2) {
-          TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+          TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
           has_error = true;
         }
       }
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     } else {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
       has_error = true;
     }
     if (has_error) {
@@ -440,7 +440,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     if (len > MAX_REDIRECT_URL) {
       TSError("[hipes] Redirect in HIPES URL too long");
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
     } else {
       int port = -1;
 
@@ -493,7 +493,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       const char *end   = start + redirect_url_size;
       rri->redirect     = 1;
       TSUrlParse(rri->requestBufp, rri->requestUrl, &start, end);
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_MOVED_TEMPORARILY);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_MOVED_TEMPORARILY);
     }
   } else { // Not a redirect, so proceed normally
     // Set timeouts (if requested)

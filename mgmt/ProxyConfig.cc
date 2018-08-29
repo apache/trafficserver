@@ -21,10 +21,11 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
+#if TS_HAS_TESTS
 #include "ts/TestBox.h"
+#endif
 
 ConfigProcessor configProcessor;
 
@@ -171,7 +172,7 @@ ConfigProcessor::get(unsigned int id)
   ink_assert(id <= MAX_CONFIGS);
 
   if (id == 0 || id > MAX_CONFIGS) {
-    // return NULL, because we of an invalid index
+    // because of an invalid index
     return nullptr;
   }
 

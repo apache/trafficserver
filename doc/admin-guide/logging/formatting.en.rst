@@ -432,6 +432,11 @@ phn   Proxy  Hostname of the |TS| node which generated the collated log entry.
 phi   Proxy  IP of the |TS| node which generated the collated log entry.
 ===== ====== ==================================================================
 
+.. note::
+
+   Log collation is a *deprecated* feature as of ATS v8.0.0, and  will be
+   removed in ATS v9.0.0.
+
 .. _admin-logging-fields-network:
 
 Network Addresses, Ports, and Interfaces

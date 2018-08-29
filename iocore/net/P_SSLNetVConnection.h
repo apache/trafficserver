@@ -101,6 +101,16 @@ public:
   }
 
   bool
+  trackFirstHandshake() override
+  {
+    bool retval = sslHandshakeBeginTime == 0;
+    if (retval) {
+      sslHandshakeBeginTime = Thread::get_hrtime();
+    }
+    return retval;
+  }
+
+  bool
   getSSLHandShakeComplete() const override
   {
     return sslHandShakeComplete;
@@ -352,9 +362,6 @@ private:
   bool sslTrace                    = false;
   bool SNIMapping                  = false;
   int64_t redoWriteSize            = 0;
-#ifdef SSL_MODE_ASYNC
-  EventIO signalep;
-#endif
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

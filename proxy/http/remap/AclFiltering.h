@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "Main.h"
 #include "ts/ink_inet.h"
 
 #include <string>

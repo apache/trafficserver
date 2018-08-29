@@ -267,7 +267,7 @@ fail:
   }
 
   PluginDebug("Invalid JWT for %.*s", url_ct, url);
-  TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_FORBIDDEN);
+  TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN);
   PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
 
   if (url != NULL) {

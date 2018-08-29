@@ -172,7 +172,7 @@ TSRemapNewInstance(int /* argc */, char * /* argv[] */, void ** /* ih */, char *
 }
 
 void
-TSRemapDelteInstance(void * /* ih */)
+TSRemapDeleteInstance(void * /* ih */)
 {
 }
 

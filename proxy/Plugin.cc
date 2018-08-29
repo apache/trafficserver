@@ -28,7 +28,6 @@
 #include "I_RecCore.h"
 #include "ts/I_Layout.h"
 #include "InkAPIInternal.h"
-#include "Main.h"
 #include "Plugin.h"
 #include "ts/ink_cap.h"
 

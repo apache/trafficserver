@@ -614,6 +614,7 @@ struct CommandLineArgs {
   int as_object;       // Show the URL stats as a single JSON object (not array)
   int concise;         // Eliminate metrics that can be inferred by other values
   int report_per_user; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
+  int no_format_check; // A flag to skip the log format check if any of the fields is not a standard squid log format field.
 
   CommandLineArgs()
     : max_origins(0),
@@ -629,7 +630,8 @@ struct CommandLineArgs {
       show_urls(0),
       as_object(0),
       concise(0),
-      report_per_user(0)
+      report_per_user(0),
+      no_format_check(0)
   {
     log_file[0]    = '\0';
     origin_file[0] = '\0';
@@ -662,6 +664,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"line_len", 'l', "Output line length", "I", &cl.line_len, nullptr, nullptr},
   {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, nullptr, nullptr},
   {"report_per_user", 'r', "Report stats per user instead of host", "T", &cl.report_per_user, nullptr, nullptr},
+  {"no_format_check", 'n', "Don't validate the log format field names", "T", &cl.no_format_check, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
   RUNROOT_ARGUMENT_DESCRIPTION()};
@@ -1277,15 +1280,17 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
     LogFormat::parse_symbol_string(buf_header->fmt_fieldlist(), fieldlist, &agg);
   }
 
-  // Validate the fieldlist
-  field                                = fieldlist->first();
-  const std::string_view test_fields[] = {"cqtq", "ttms", "chi", "crc", "pssc", "psql", "cqhm", "cquc", "caun", "phr", "shn"};
-  for (auto i : test_fields) {
-    if (i != field->symbol()) {
-      cerr << "Error parsing log file - expected field: " << i << ", but read field: " << field->symbol() << endl;
-      return 1;
+  if (!cl.no_format_check) {
+    // Validate the fieldlist
+    field                                = fieldlist->first();
+    const std::string_view test_fields[] = {"cqtq", "ttms", "chi", "crc", "pssc", "psql", "cqhm", "cquc", "caun", "phr", "shn"};
+    for (auto i : test_fields) {
+      if (i != field->symbol()) {
+        cerr << "Error parsing log file - expected field: " << i << ", but read field: " << field->symbol() << endl;
+        return 1;
+      }
+      field = fieldlist->next(field);
     }
-    field = fieldlist->next(field);
   }
 
   // Loop over all entries

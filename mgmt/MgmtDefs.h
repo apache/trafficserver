@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Some mgmt definitions for relatively general use.
 
   @section license License
 
@@ -19,16 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/*
- *
- * MgmtDef.h
- *   Some mgmt definitions for relatively general use.
- *
- * $Date: 2006-03-08 19:40:20 $
- *
- *
  */
 
 #pragma once

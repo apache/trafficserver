@@ -25,24 +25,20 @@ Test for remove of runroot from traffic_layout.
 '''
 Test.ContinueOnFail = True
 
-p = Test.MakeATSProcess("ts")
-ts_root = p.Env['TS_ROOT']
-
-
 # create three runroot for removing testing
-path1 = os.path.join(ts_root, "runroot1")
+path1 = os.path.join(Test.RunDirectory, "runroot1")
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path1
 f = tr.Disk.File(os.path.join(path1, "runroot_path.yml"))
 f.Exists = True
 
-path2 = os.path.join(ts_root, "runroot2")
+path2 = os.path.join(Test.RunDirectory, "runroot2")
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path2
 f = tr.Disk.File(os.path.join(path2, "runroot_path.yml"))
 f.Exists = True
 
-path3 = os.path.join(ts_root, "runroot3")
+path3 = os.path.join(Test.RunDirectory, "runroot3")
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path3
 f = tr.Disk.File(os.path.join(path3, "runroot_path.yml"))
@@ -59,7 +55,7 @@ d.Exists = False
 
 # remove of relative path
 tr = Test.AddTestRun("Test traffic_layout remove #2")
-tr.Processes.Default.Command = "cd " + ts_root + ";$ATS_BIN/traffic_layout remove --path runroot2"
+tr.Processes.Default.Command = "cd " + Test.RunDirectory + ";$ATS_BIN/traffic_layout remove --path runroot2"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(os.path.join(path2, "runroot_path.yml"))
 f.Exists = False

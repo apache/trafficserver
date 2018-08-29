@@ -392,6 +392,12 @@ public:
   /// Output the buffer contents to the file for file descriptor @a fd.
   ssize_t operator>>(int fd) const override;
 
+  // Overrides for co-variance
+  template <typename... Rest> self_type &print(TextView fmt, Rest &&... rest);
+  template <typename... Args> self_type &printv(TextView fmt, std::tuple<Args...> const &args);
+  template <typename... Args> self_type &print(BWFormat const &fmt, Args &&... args);
+  template <typename... Args> self_type &printv(BWFormat const &fmt, std::tuple<Args...> const &args);
+
 protected:
   char *const _buf;      ///< Output buffer.
   size_t _capacity;      ///< Size of output buffer.
@@ -408,6 +414,9 @@ private:
 */
 template <size_t N> class LocalBufferWriter : public FixedBufferWriter
 {
+  using self_type  = LocalBufferWriter;
+  using super_type = FixedBufferWriter;
+
 public:
   /// Construct an empty writer.
   LocalBufferWriter() : FixedBufferWriter(_arr, N) {}
@@ -841,12 +850,40 @@ bwprint(std::string &s, ts::TextView fmt, Args &&... args)
 }
 
 // -- FixedBufferWriter --
+inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
+
 inline FixedBufferWriter::FixedBufferWriter(char *buffer, size_t capacity) : _buf(buffer), _capacity(capacity)
 {
   ink_assert(_capacity == 0 || buffer != nullptr);
 }
 
-inline FixedBufferWriter::FixedBufferWriter(std::nullptr_t) : _buf(nullptr), _capacity(0) {}
+template <typename... Args>
+inline auto
+FixedBufferWriter::print(TextView fmt, Args &&... args) -> self_type &
+{
+  return static_cast<self_type &>(this->super_type::printv(fmt, std::forward_as_tuple(args...)));
+}
+
+template <typename... Args>
+inline auto
+FixedBufferWriter::printv(TextView fmt, std::tuple<Args...> const &args) -> self_type &
+{
+  return static_cast<self_type &>(this->super_type::printv(fmt, args));
+}
+
+template <typename... Args>
+inline auto
+FixedBufferWriter::print(BWFormat const &fmt, Args &&... args) -> self_type &
+{
+  return static_cast<self_type &>(this->super_type::printv(fmt, std::forward_as_tuple(args...)));
+}
+
+template <typename... Args>
+inline auto
+FixedBufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args) -> self_type &
+{
+  return static_cast<self_type &>(this->super_type::printv(fmt, args));
+}
 
 } // end namespace ts
 

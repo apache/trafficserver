@@ -1210,10 +1210,7 @@ HttpConfig::startup()
   //#
   //# Redirection
   //#
-  //# 1. number_of_redirections: The maximum number of redirections YTS permits. 0 == disabled
-  //# 2. redirect_use_orig_cache_key: if set to 1, use original request cache key.
-  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
-  //# 4. redirection_host_no_port: do not include default port in host header during redirection
+  //# See RecordsConfig definition.
   //#
   //##############################################################################
   HttpEstablishStaticConfigByte(c.oride.redirect_use_orig_cache_key, "proxy.config.http.redirect_use_orig_cache_key");
@@ -1223,7 +1220,7 @@ HttpConfig::startup()
 
   OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
 
-  http_config_cont->handleEvent(EVENT_NONE, nullptr);
+  http_config_cont->dispatchEvent(EVENT_NONE, nullptr);
 
   return;
 }
@@ -1236,7 +1233,7 @@ HttpConfig::startup()
 void
 HttpConfig::reconfigure()
 {
-#define INT_TO_BOOL(i) ((i) ? 1 : 0);
+  auto INT_TO_BOOL = [](RecInt i) -> bool { return i != 0; };
 
   HttpConfigParams *params;
 
@@ -1494,8 +1491,6 @@ HttpConfig::reconfigure()
   params->negative_caching_list = m_master.negative_caching_list;
 
   m_id = configProcessor.set(m_id, params);
-
-#undef INT_TO_BOOL
 }
 
 ////////////////////////////////////////////////////////////////

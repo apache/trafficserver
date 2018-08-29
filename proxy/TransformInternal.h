@@ -24,9 +24,6 @@
 #pragma once
 
 #include "HttpSM.h"
-#include "MIME.h"
-#include "Transform.h"
-#include "P_EventSystem.h"
 
 class TransformVConnection;
 
@@ -116,7 +113,6 @@ public:
                  int content_type_len, int64_t content_length);
   ~RangeTransform();
 
-  // void parse_range_and_compare();
   int handle_event(int event, void *edata);
 
   void transform_to_range();
@@ -129,7 +125,6 @@ public:
   MIOBuffer *m_output_buf;
   IOBufferReader *m_output_reader;
 
-  // MIMEField *m_range_field;
   HTTPHdr *m_transform_resp;
   VIO *m_output_vio;
   int64_t m_range_content_length;
@@ -142,13 +137,3 @@ public:
   int64_t m_output_cl;
   int64_t m_done;
 };
-
-#ifdef PREFETCH
-class PrefetchProcessor
-{
-public:
-  void start();
-};
-
-extern PrefetchProcessor prefetchProcessor;
-#endif // PREFETCH

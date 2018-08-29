@@ -144,10 +144,10 @@ public:
     host_res_style = style;
   }
 
-  const AclRecord *
-  get_acl_record() const
+  const IpAllow::ACL &
+  get_acl() const
   {
-    return parent ? parent->acl_record : nullptr;
+    return parent ? parent->acl : IpAllow::DENY_ALL_ACL;
   }
 
   // Indicate we are done with this transaction

@@ -320,7 +320,9 @@ collation_hosts        array of    If present, one or more strings specifying th
                        strings     log collation hosts to which logs should be
                                    delivered, each in the form of "<ip>:<port>".
                                    :ref:`admin-logging-collation` for more
-                                   information.
+                                   information. NOTE: This is a deprecated feature,
+                                   which will be removed in ATS v9.0.0. See the
+                                   logging documentation (above) for more details.
 ====================== =========== =================================================
 
 Enabling log rolling may be done globally in :file:`records.config`, or on a

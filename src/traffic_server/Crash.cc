@@ -23,6 +23,7 @@
 
 #include "Main.h"
 #include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 #include "I_Net.h"
 #include "ts/signals.h"
 #include "ts/ink_cap.h"
@@ -32,6 +33,8 @@
 #if defined(__linux__)
 #include <ucontext.h>
 #endif
+
+extern AppVersionInfo appVersionInfo;
 
 static pid_t crash_logger_pid = -1;
 static int crash_logger_fd    = NO_FD;

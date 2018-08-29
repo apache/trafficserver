@@ -21,10 +21,12 @@
  *  limitations under the License.
  */
 
-#include "SourceLocation.h"
-#include "ink_defs.h"
 #include <cstdio>
 #include <cstring>
+#include "SourceLocation.h"
+#include "ink_defs.h"
+#include "ts/BufferWriter.h"
+#include "ts/bwf_std_format.h"
 
 // This method takes a SourceLocation source location data structure and
 // converts it to a human-readable representation, in the buffer <buf>
@@ -52,4 +54,14 @@ SourceLocation::str(char *buf, int buflen) const
   }
   buf[buflen - 1] = NUL;
   return (buf);
+}
+
+ts::BufferWriter &
+SourceLocation::print(ts::BufferWriter &w, ts::BWFSpec const &) const
+{
+  if (this->valid()) {
+    ts::TextView base{ts::TextView{file, strlen(file)}.take_suffix_at('/')};
+    w.print("{}:{}{}", base, line, ts::bwf::OptionalAffix(func, ")"_sv, " ("_sv));
+  };
+  return w;
 }

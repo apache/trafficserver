@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Base Manager Class, base class for all managers.
 
   @section license License
 
@@ -21,16 +21,6 @@
   limitations under the License.
  */
 
-/**************************************
- *
- * BaseManager.h
- *   Base Manager Class, base class for all managers.
- *
- * $Date: 2004-02-03 22:12:02 $
- *
- *
- */
-
 #pragma once
 
 #include "ts/ink_thread.h"
@@ -41,17 +31,10 @@
 #include "MgmtDefs.h"
 #include "MgmtMarshall.h"
 
-/*******************************************
- * used by LocalManager and in Proxy Main. *
- */
-#define MAX_OPTION_SIZE 2048
-#define MAX_PROXY_SERVER_PORTS 2048
-#define MAX_ATTR_LEN 5
-/*******************************************/
-
 /*
  * MgmtEvent defines.
  */
+
 // Event flows: traffic manager -> traffic server
 #define MGMT_EVENT_SYNC_KEY 10000
 #define MGMT_EVENT_SHUTDOWN 10001

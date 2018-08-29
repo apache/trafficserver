@@ -113,6 +113,13 @@ The :file:`ssl_server_name.yaml` contents would be
       }
    }
 
+In addition to this, in the :file:`records.config` file, edit the following variables:
+
+   -  :ts:cv:`proxy.config.http.connect_ports`: ``443 4443`` to allow |TS| to connect
+      to the destination port
+   -  :ts:cv:`proxy.config.url_remap.remap_required`: 0 to permit |TS| to process requests
+      for hosts not explicitly configured in the remap rules
+
 The sequence of network activity for a Client connecting to ``service-2`` is
 
 .. image:: ../uml/images/l4-sni-routing-seq.svg

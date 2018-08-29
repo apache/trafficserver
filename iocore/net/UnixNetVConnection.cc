@@ -185,7 +185,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ProxyMutex *mutex = thread->mutex.get();
   int64_t r         = 0;
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio.cont);
+  MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
   if (!lock.is_locked()) {
     read_reschedule(nh, vc);
@@ -364,7 +364,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   NetState *s       = &vc->write;
   ProxyMutex *mutex = thread->mutex.get();
 
-  MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio.cont);
+  MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
   if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
     write_reschedule(nh, vc);
@@ -374,6 +374,13 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // This function will always return true unless
   // vc is an SSLNetVConnection.
   if (!vc->getSSLHandShakeComplete()) {
+    if (vc->trackFirstHandshake()) {
+      // Send the write ready on up to the state machine
+      write_signal_and_update(VC_EVENT_WRITE_READY, vc);
+      vc->write.triggered = 0;
+      nh->write_ready_list.remove(vc);
+    }
+
     int err, ret;
 
     if (vc->get_context() == NET_VCONNECTION_OUT) {
@@ -1089,17 +1096,6 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   EThread *t    = (e == nullptr) ? this_ethread() : e->ethread;
   NetHandler *h = get_NetHandler(t);
 
-  MUTEX_TRY_LOCK(lock, h->mutex, t);
-  if (!lock.is_locked()) {
-    if (event == EVENT_NONE) {
-      t->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
-      return EVENT_DONE;
-    } else {
-      e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
-      return EVENT_CONT;
-    }
-  }
-
   thread = t;
 
   // Send this NetVC to NetHandler and start to polling read & write event.
@@ -1107,6 +1103,10 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
     free(t);
     return EVENT_DONE;
   }
+
+  // Switch vc->mutex from NetHandler->mutex to new mutex
+  mutex = new_ProxyMutex();
+  SCOPED_MUTEX_LOCK(lock2, mutex, t);
 
   // Setup a timeout callback handler.
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::mainEvent);
@@ -1124,7 +1124,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
     UnixNetVConnection::set_active_timeout(active_timeout_in);
   }
 
-  action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  action_.continuation->dispatchEvent(NET_EVENT_ACCEPT, this);
   return EVENT_DONE;
 }
 

@@ -142,7 +142,7 @@ public:
   {
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
-      cache_read_vc->do_io_close(); // abort
+      cache_read_vc->do_io_close(0); // passing zero as aborting read is not an error
       cache_read_vc = nullptr;
     }
   }
@@ -151,7 +151,7 @@ public:
   {
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
-      cache_write_vc->do_io_close(); // abort
+      cache_write_vc->do_io_close(0); // passing zero as aborting write is not an error
       cache_write_vc = nullptr;
     }
   }

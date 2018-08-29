@@ -114,7 +114,7 @@ OperatorSetStatus::exec(const Resources &res) const
     }
     break;
   default:
-    TSHttpTxnSetHttpRetStatus(res.txnp, (TSHttpStatus)_status.get_int_value());
+    TSHttpTxnStatusSet(res.txnp, (TSHttpStatus)_status.get_int_value());
     break;
   }
 
@@ -415,7 +415,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       // Set new location.
       TSUrlParse(bufp, url_loc, &start, end);
       // Set the new status.
-      TSHttpTxnSetHttpRetStatus(res.txnp, (TSHttpStatus)_status.get_int_value());
+      TSHttpTxnStatusSet(res.txnp, (TSHttpStatus)_status.get_int_value());
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
@@ -423,7 +423,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       TSHttpStatus status = (TSHttpStatus)_status.get_int_value();
       switch (get_hook()) {
       case TS_HTTP_PRE_REMAP_HOOK: {
-        TSHttpTxnSetHttpRetStatus(res.txnp, status);
+        TSHttpTxnStatusSet(res.txnp, status);
         TSCont contp = TSContCreate(cont_add_location, nullptr);
         TSContDataSet(contp, const_cast<OperatorSetRedirect *>(this));
         TSHttpTxnHookAdd(res.txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
