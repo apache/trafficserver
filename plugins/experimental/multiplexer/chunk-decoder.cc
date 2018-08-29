@@ -107,7 +107,9 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
 
   {
     const int l = TSIOBufferReaderAvail(r);
-    if (l < size_) {
+    if (l == 0) {
+      return 0;
+    } else if (l < size_) {
       size_ -= l;
       return l;
     }
