@@ -96,13 +96,6 @@ HQClientSession::get_netvc() const
   return this->_client_vc;
 }
 
-void
-HQClientSession::release_netvc()
-{
-  ink_assert(false);
-  return;
-}
-
 int
 HQClientSession::get_transact_count() const
 {

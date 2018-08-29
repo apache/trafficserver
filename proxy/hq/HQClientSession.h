@@ -46,7 +46,6 @@ public:
   void destroy() override;
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) override;
   NetVConnection *get_netvc() const override;
-  void release_netvc() override;
   int get_transact_count() const override;
   const char *get_protocol_string() const override;
   void release(ProxyClientTransaction *trans) override;
