@@ -320,6 +320,47 @@ protected:
   size_t _count{0};           ///< # of elements in list.
 };
 
+namespace ts
+{
+/** Utility cast to change the underlying type of a pointer reference.
+ *
+ * This changes a reference to a pointer to @a P to a reference to a pointer to @a T. This is useful
+ * for intrusive links that are inherited. For instance
+ *
+ * @code
+ * class Thing { Thing* _next; ... }
+ * class BetterThing : public Thing { ... };
+ * @endcode
+ *
+ * To make @c BetterThing work with an intrusive container without making new link members,
+ *
+ * @code
+ * static BetterThing*& next_ptr(BetterThing* bt) { return ts::ptr_ref_cast<BetterThing>(_next); }
+ * @endcode
+ *
+ * This is both convenient and gets around aliasing warnings from the compiler that can arise from
+ * using @c reinterpret_cast.
+ *
+ * @tparam T The resulting pointer reference type.
+ * @tparam P The starting pointer reference type.
+ * @param p A reference to pointer to @a P.
+ * @return A reference to the same pointer memory of type @c T*&.
+ */
+template <typename T, typename P>
+T *&
+ptr_ref_cast(P *&p)
+{
+  union {
+    P **_p;
+    T **_t;
+  } u{&p};
+  return *(u._t);
+};
+
+} // namespace ts
+
+// --- Implementation ---
+
 template <typename L> IntrusiveDList<L>::const_iterator::const_iterator() {}
 
 template <typename L>

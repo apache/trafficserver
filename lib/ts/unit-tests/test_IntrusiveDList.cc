@@ -156,9 +156,6 @@ TEST_CASE("IntrusiveDList Example", "[libts][IntrusiveDList]")
   // Destructor is checked for non-crashing as container goes out of scope.
 }
 
-// End of documentation example code.
-// --------------------
-
 struct Thing {
   Thing *_next{nullptr};
   Thing *_prev{nullptr};
@@ -193,12 +190,12 @@ public:
     static self_type *&
     next_ptr(self_type *t)
     {
-      return *reinterpret_cast<self_type **>(&t->_next);
+      return ts::ptr_ref_cast<self_type>(t->_next);
     }
     static self_type *&
     prev_ptr(self_type *t)
     {
-      return *reinterpret_cast<self_type **>(&t->_prev);
+      return ts::ptr_ref_cast<self_type>(t->_prev);
     }
   };
 
@@ -208,6 +205,10 @@ public:
     return _payload;
   }
 };
+
+// End of documentation example code.
+// If any lines above here are changed, the documentation must be updated.
+// --------------------
 
 using ThingList        = IntrusiveDList<Thing::Linkage>;
 using PrivateThingList = IntrusiveDList<PrivateThing::Linkage>;
