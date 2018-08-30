@@ -135,6 +135,11 @@ Http1ClientSession::free()
   // Free the transaction resources
   this->trans.super_type::destroy();
 
+  if (client_vc) {
+    client_vc->do_io_close();
+    client_vc = nullptr;
+  }
+
   super::free();
   THREAD_FREE(this, http1ClientSessionAllocator, this_thread());
 }
