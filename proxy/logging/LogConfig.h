@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <string_view>
+#include <string>
 #include "ts/ink_platform.h"
 #include "P_RecProcess.h"
 #include "ProxyConfig.h"
@@ -248,37 +250,26 @@ struct LogDeleteCandidate {
 };
 
 struct LogDeletingInfo {
-  char const* type_name;
-  int rolling_size_mb = 0;
-  int candidate_count = 0;
-  int victim = 0;
-  int64_t total_size = 0LL;
+  std::string name;
+  int rolling_size_mb{0};
+  int candidate_count{0};
+  int victim{0};
+  int64_t total_size{0LL};
   LogDeleteCandidate candidates[MAX_CANDIDATES];
 
-  LogDeletingInfo *_next = nullptr;
-  LogDeletingInfo *_prev = nullptr;
-  LogDeletingInfo(char* type, int interval, int offset, int size): name(type), rolling_size_mb(size) {}
-  ~LogDeletingInfo() {
-    if (name)
-      ats_free(name);
-  }
+  LogDeletingInfo *_next{nullptr};
+  LogDeletingInfo *_prev{nullptr};
 };
 
 struct LogDeletingInfoDescriptor {
-  using key_type = char const*;
+  using key_type = std::string_view;
   using value_type = LogDeletingInfo;
 
   static key_type key_of(value_type *value) { return value->name; }
-  static bool equal(key_type lhs, key_type rhs) { return strncmp(rhs, lhs, strlen(rhs)) == 0; }
-  static uint32_t hash_of(key_type key);
+  static bool equal(key_type const &lhs, key_type const &rhs) { return lhs == rhs; }
   static value_type *& next_ptr(value_type *value) { return value->_next; }
   static value_type *& prev_ptr(value_type *value) { return value->_prev; }
+  static constexpr std::hash<std::string_view> hasher{};
+  static auto hash_of(key_type s) -> decltype(hasher(s)) { return hasher(s); }
 };
 
-static uint32_t
-LogDeletingInfoDescriptor::hash_of(key_type key)
-{
-  CryptoHash hash;
-  CryptoContext().hash_immediate(hash, const_cast<unit8_t *>(key), strlen(key));
-  return hash.u32[0];
-}

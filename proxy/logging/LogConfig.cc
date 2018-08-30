@@ -225,7 +225,7 @@ LogConfig::read_configuration_variables()
   if (LogRollingEnabledIsValid(val)) {
     rolling_enabled = (Log::RollingEnabledValues)val;
     LogDeletingInfo* info = new LogDeletingInfo();
-    info->name = ats_strdup("custom_logs");
+    info->name = "custom_logs";
     info->rolling_size_mb = rolling_size_mb;
     deleting_info.insert(info);
   } else {
@@ -236,17 +236,21 @@ LogConfig::read_configuration_variables()
   val = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
     LogDeletingInfo* info = new LogDeletingInfo();
-    info->name = REC_ConfigReadString("proxy.config.diags.logfile");
+    char *tmp = REC_ConfigReadString("proxy.config.diags.logfile");
+    info->name = tmp;
     info->rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
     deleting_info.insert(info);
+    ats_free(tmp);
   }
 
   val = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
     LogDeletingInfo* info = new LogDeletingInfo();
-    info->name = REC_ConfigReadString("proxy.config.output.logfile");
+    char *tmp = REC_ConfigReadString("proxy.config.output.logfile");
+    info->name = tmp;
     info->rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
     deleting_info.insert(info);
+    ats_free(tmp);
   }
 
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
@@ -788,7 +792,7 @@ LogConfig::update_space_used()
         // then add this entry to the candidate list
         //
         int len = strchr(strchr(entry->d_name, '.')+1, '.') - entry->d_name;
-        char* type_name = ats_strndup(entry->d_name, len);
+        std::string type_name(entry->d_name, len);
         auto iter = deleting_info.find(type_name);
         if (iter == deleting_info.end()) {
           iter = event_log_iter;
@@ -803,8 +807,6 @@ LogConfig::update_space_used()
         iter->total_size += candidates[candidate_count].size;
         candidate_count++;
         total_candidate_count++;
-
-        ats_free(type_name);
       }
     }
   }
@@ -860,7 +862,10 @@ LogConfig::update_space_used()
         break;
       }
       // Select the group with biggest ratio
-      auto target = std::max_element(deleting_info.begin(), deleting_info.end(), [](LogDeletingInfo A, LogDeletingInfo B){ return A.total_size/A.})
+      auto target = std::max_element(deleting_info.begin(), deleting_info.end(),
+        [](LogDeletingInfo A, LogDeletingInfo B){
+          return A.total_size/A.rolling_size_mb - B.total_size/B.rolling_size_mb;
+        } );
 
       Debug("logspace", "auto-deleting")
       auto &candidates = target->candidates;
