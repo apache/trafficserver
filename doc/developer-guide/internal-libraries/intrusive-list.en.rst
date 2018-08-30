@@ -134,7 +134,7 @@ Examples
 In this example the goal is to have a list of :code:`Message` objects. First the class is declared
 along with the internal linkage support.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 38-63
 
 The struct :code:`Linkage` is used both to provide the descriptor to :class:`IntrusiveDList` and to
@@ -144,35 +144,35 @@ used only by a specific container class (:code:`Container`) the struct is made p
 
 The implementation of the link accessor methods.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 65-74
 
 A method to check if the message is in a list.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 76-80
 
 The container class for the messages could be implemented as
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 82-99
 
 The :code:`debug` method takes a format string (:arg:`fmt`) and an arbitrary set of arguments, formats
 the arguments in to the string, and adds the new message to the list.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 122-131
 
 The :code:`print` method demonstrates the use of the range :code:`for` loop on a list.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 142-148
 
 The maximum severity level can also be computed even more easily using :code:`std::max_element`.
 This find the element with the maximum severity and returns that severity, or :code:`LVL_DEBUG` if
 no element is found (which happens if the list is empty).
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 134-140
 
 Other methods for the various severity levels would be implemented in a similar fashion. Because the
@@ -183,7 +183,7 @@ risky. One approach, illustrated here, is to use :func:`IntrusiveDList::take_hea
 element before destroying it. Another option is to allocation the elements in a :class:`MemArena` to
 avoid the need for any explicit cleanup.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 106-114
 
 In some cases the elements of the list are subclasses and the links are declared in a super class

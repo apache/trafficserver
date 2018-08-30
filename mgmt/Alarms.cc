@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_string.h"
-#include "ts/ink_file.h"
-#include "ts/ink_time.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_string.h"
+#include "tscore/ink_file.h"
+#include "tscore/ink_time.h"
 #include "MgmtUtils.h"
 #include "Alarms.h"
 
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 
 const char *alarmText[] = {
   "Unknown Alarm",

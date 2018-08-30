@@ -64,8 +64,8 @@
 
 #include <functional>
 
-#include "ts/ink_platform.h"
-#include "ts/ink_thread.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_thread.h"
 #include "I_ProxyAllocator.h"
 
 class ProxyMutex;

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "mgmtapi.h"
 
 /*****************************************************************************

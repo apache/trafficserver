@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #if TS_USE_TLS_OCSP
 #include <openssl/ssl.h>

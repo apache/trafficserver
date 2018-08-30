@@ -27,7 +27,7 @@
  This file implements the LogField object, which is the central
  representation of a logging field.
  ***************************************************************************/
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "LogUtils.h"
 #include "LogField.h"

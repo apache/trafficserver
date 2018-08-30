@@ -29,7 +29,7 @@
 *****************************************************************************/
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #if TS_USE_KQUEUE
 #include <sys/event.h>

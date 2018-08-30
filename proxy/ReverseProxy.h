@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 
-#include "ts/ink_hash_table.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/ink_defs.h"
 #include "HttpTransact.h"
 #include "RemapPluginInfo.h"
 #include "UrlRewrite.h"

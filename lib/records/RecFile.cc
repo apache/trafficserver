@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_string.h"
 #include "P_RecFile.h"
 #include "P_RecDefs.h"
 #include "P_RecUtils.h"

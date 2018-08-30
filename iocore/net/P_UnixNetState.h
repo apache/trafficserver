@@ -36,7 +36,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "ts/List.h"
+#include "tscore/List.h"
 #include "I_VIO.h"
 
 class Event;

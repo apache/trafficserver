@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "ts/List.h"
-#include "ts/Diags.h"
-#include "ts/PriorityQueue.h"
+#include "tscore/List.h"
+#include "tscore/Diags.h"
+#include "tscore/PriorityQueue.h"
 
 #include "HTTP2.h"
 

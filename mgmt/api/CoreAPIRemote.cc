@@ -36,13 +36,13 @@
  *
  ***************************************************************************/
 
-#include "ts/ink_config.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_config.h"
+#include "tscore/ink_defs.h"
 #include <strings.h>
-#include "ts/ink_string.h"
-#include "ts/I_Layout.h"
-#include "ts/ParseRules.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_string.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ParseRules.h"
+#include "tscore/ink_memory.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 #include "NetworkUtilsRemote.h"

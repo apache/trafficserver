@@ -25,13 +25,13 @@
 #include <I_EventSystem.h>
 #include <P_EventSystem.h> // TODO: less? just need ET_TASK
 
-#include <ts/Map.h>
-#include <ts/PriorityQueue.h>
+#include "tscore/Map.h"
+#include "tscore/PriorityQueue.h"
 
-#include <ts/List.h>
-#include <ts/ink_hrtime.h>
+#include "tscore/List.h"
+#include "tscore/ink_hrtime.h"
 
-#include <ts/I_Version.h>
+#include "tscore/I_Version.h"
 #include <unistd.h>
 
 #define REFCOUNT_CACHE_EVENT_SYNC REFCOUNT_CACHE_EVENT_EVENTS_START

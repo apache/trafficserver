@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <ts/ink_platform.h>
-#include <ts/ink_resolver.h>
+#include "tscore/ink_platform.h"
+#include "tscore/ink_resolver.h"
 #include <string_view>
 #include "P_Net.h"
 #include "InkAPIInternal.h"

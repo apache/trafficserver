@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_sock.h"
-#include "ts/ink_string.h"
-#include "ts/ink_memory.h"
-#include "ts/I_Layout.h"
+#include "tscore/ink_config.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_sock.h"
+#include "tscore/ink_string.h"
+#include "tscore/ink_memory.h"
+#include "tscore/I_Layout.h"
 #include "NetworkUtilsRemote.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"

@@ -24,7 +24,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/include \
 	$(TS_INCLUDES)
 
 noinst_LIBRARIES = librecords_lm.a librecords_p.a

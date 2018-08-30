@@ -86,16 +86,16 @@
 
 #pragma once
 
-#include "ts/DynArray.h"
-#include "ts/ink_hash_table.h"
-#include "ts/IpMap.h"
-#include "ts/Result.h"
-#include "ts/MatcherUtils.h"
+#include "tscore/DynArray.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/IpMap.h"
+#include "tscore/Result.h"
+#include "tscore/MatcherUtils.h"
 
-#include "ts/ink_apidefs.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_apidefs.h"
+#include "tscore/ink_defs.h"
 #include "HTTP.h"
-#include "ts/Regex.h"
+#include "tscore/Regex.h"
 #include "URL.h"
 
 #ifdef HAVE_CTYPE_H

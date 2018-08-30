@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include <ts/ink_inet.h>
-#include <ts/ink_resolver.h>
-#include <ts/apidefs.h>
-#include <ts/apidefs.h>
-#include <ts/ink_assert.h>
+#include "tscore/ink_inet.h"
+#include "tscore/ink_resolver.h"
+#include "ts/apidefs.h"
+#include "ts/apidefs.h"
+#include "tscore/ink_assert.h"
 #include <algorithm>
 #include <vector>
 

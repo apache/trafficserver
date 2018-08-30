@@ -21,17 +21,17 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #include "P_SSLCertLookup.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 #include "I_EventSystem.h"
-#include "ts/I_Layout.h"
-#include "ts/MatcherUtils.h"
-#include "ts/Regex.h"
-#include "ts/Trie.h"
-#include "ts/TestBox.h"
+#include "tscore/I_Layout.h"
+#include "tscore/MatcherUtils.h"
+#include "tscore/Regex.h"
+#include "tscore/Trie.h"
+#include "tscore/TestBox.h"
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb

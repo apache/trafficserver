@@ -34,7 +34,7 @@
 
 #include "P_EventSystem.h"
 #include "HttpServerSession.h"
-#include <ts/IntrusiveHashMap.h>
+#include "tscore/IntrusiveHashMap.h"
 
 class ProxyClientTransaction;
 class HttpSM;

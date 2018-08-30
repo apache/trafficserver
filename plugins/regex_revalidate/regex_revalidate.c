@@ -19,8 +19,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_defs.h"
-#include "ts/ink_platform.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_platform.h"
 
 #include <stdlib.h>
 #include <stdio.h>

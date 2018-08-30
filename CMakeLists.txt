@@ -40,7 +40,6 @@ include_directories(lib
         proxy/shared
         lib/records
         lib/wccp
-        lib/cppapi/include
         lib/yamlcpp/include
         iocore/eventsystem
         iocore/net
@@ -202,7 +201,7 @@ add_executable(ats
         iocore/dns/SRV.h
         iocore/dns/test_I_DNS.cc
         iocore/dns/test_P_DNS.cc
-        iocore/eventsystem/unit-tests/test_MIOBufferWriter.cc
+        iocore/eventsystem/unit_tests/test_MIOBufferWriter.cc
         iocore/eventsystem/EventSystem.cc
         iocore/eventsystem/I_Action.h
         iocore/eventsystem/I_Continuation.h
@@ -351,57 +350,6 @@ add_executable(ats
         iocore/utils/Machine.cc
         iocore/utils/OneWayMultiTunnel.cc
         iocore/utils/OneWayTunnel.cc
-        lib/cppapi/include/atscppapi/Async.h
-        lib/cppapi/include/atscppapi/AsyncHttpFetch.h
-        lib/cppapi/include/atscppapi/AsyncTimer.h
-        lib/cppapi/include/atscppapi/CaseInsensitiveStringComparator.h
-        lib/cppapi/include/atscppapi/ClientRequest.h
-        lib/cppapi/include/atscppapi/GlobalPlugin.h
-        lib/cppapi/include/atscppapi/GzipDeflateTransformation.h
-        lib/cppapi/include/atscppapi/GzipInflateTransformation.h
-        lib/cppapi/include/atscppapi/Headers.h
-        lib/cppapi/include/atscppapi/HttpMethod.h
-        lib/cppapi/include/atscppapi/HttpStatus.h
-        lib/cppapi/include/atscppapi/HttpVersion.h
-        lib/cppapi/include/atscppapi/InterceptPlugin.h
-        lib/cppapi/include/atscppapi/Logger.h
-        lib/cppapi/include/atscppapi/noncopyable.h
-        lib/cppapi/include/atscppapi/Plugin.h
-        lib/cppapi/include/atscppapi/PluginInit.h
-        lib/cppapi/include/atscppapi/RemapPlugin.h
-        lib/cppapi/include/atscppapi/Request.h
-        lib/cppapi/include/atscppapi/Response.h
-        lib/cppapi/include/atscppapi/Stat.h
-        lib/cppapi/include/atscppapi/Transaction.h
-        lib/cppapi/include/atscppapi/TransactionPlugin.h
-        lib/cppapi/include/atscppapi/TransformationPlugin.h
-        lib/cppapi/include/atscppapi/Url.h
-        lib/cppapi/include/atscppapi/utils.h
-        lib/cppapi/include/logging_internal.h
-        lib/cppapi/include/utils_internal.h
-        lib/cppapi/AsyncHttpFetch.cc
-        lib/cppapi/AsyncTimer.cc
-        lib/cppapi/CaseInsensitiveStringComparator.cc
-        lib/cppapi/ClientRequest.cc
-        lib/cppapi/GlobalPlugin.cc
-        lib/cppapi/GzipDeflateTransformation.cc
-        lib/cppapi/GzipInflateTransformation.cc
-        lib/cppapi/Headers.cc
-        lib/cppapi/HttpMethod.cc
-        lib/cppapi/HttpVersion.cc
-        lib/cppapi/InterceptPlugin.cc
-        lib/cppapi/Logger.cc
-        lib/cppapi/Plugin.cc
-        lib/cppapi/RemapPlugin.cc
-        lib/cppapi/Request.cc
-        lib/cppapi/Response.cc
-        lib/cppapi/Stat.cc
-        lib/cppapi/Transaction.cc
-        lib/cppapi/TransactionPlugin.cc
-        lib/cppapi/TransformationPlugin.cc
-        lib/cppapi/Url.cc
-        lib/cppapi/utils.cc
-        lib/cppapi/utils_internal.cc
         lib/records/I_RecAlarms.h
         lib/records/I_RecCore.h
         lib/records/I_RecDefs.h
@@ -437,15 +385,15 @@ add_executable(ats
         lib/records/test_RecordsConfig.h
         lib/records/test_RecProcess.i
         lib/records/test_RecTree.cc
-        lib/wccp/wccp-test-router.cc
-        lib/wccp/Wccp.h
-        lib/wccp/WccpConfig.cc
-        lib/wccp/WccpEndPoint.cc
-        lib/wccp/WccpLocal.h
-        lib/wccp/WccpMeta.h
-        lib/wccp/WccpMsg.cc
-        lib/wccp/WccpStatic.cc
-        lib/wccp/WccpUtil.h
+        src/wccp/wccp-test-router.cc
+        include/wccp/Wccp.h
+        src/wccp/WccpConfig.cc
+        src/wccp/WccpEndPoint.cc
+        src/wccp/WccpLocal.h
+        src/wccp/WccpMeta.h
+        src/wccp/WccpMsg.cc
+        src/wccp/WccpStatic.cc
+        src/wccp/WccpUtil.h
         lib/ink_autoconf.h
         mgmt/api/include/mgmtapi.h
         mgmt/api/APITestCliRemote.cc
@@ -639,9 +587,6 @@ add_executable(ats
         plugins/experimental/remap_purge/remap_purge.c
         plugins/experimental/remap_stats/remap_stats.c
         plugins/experimental/server_push_preload/server_push_preload.cc
-        plugins/experimental/ssl_cert_loader/domain-tree.cc
-        plugins/experimental/ssl_cert_loader/domain-tree.h
-        plugins/experimental/ssl_cert_loader/ssl-cert-loader.cc
         plugins/experimental/sslheaders/expand.cc
         plugins/experimental/sslheaders/sslheaders.cc
         plugins/experimental/sslheaders/sslheaders.h
@@ -757,8 +702,8 @@ add_executable(ats
         plugins/lua/ts_lua_util.h
         plugins/regex_remap/regex_remap.cc
         plugins/regex_revalidate/regex_revalidate.c
-        plugins/s3_auth/unit-tests/test_aws_auth_v4.cc
-        plugins/s3_auth/unit-tests/test_aws_auth_v4.h
+        plugins/s3_auth/unit_tests/test_aws_auth_v4.cc
+        plugins/s3_auth/unit_tests/test_aws_auth_v4.h
         plugins/s3_auth/aws_auth_v4.cc
         plugins/s3_auth/aws_auth_v4.h
         plugins/s3_auth/aws_auth_v4_wrap.h
@@ -766,11 +711,11 @@ add_executable(ats
         plugins/stats_over_http/stats_over_http.c
         plugins/tcpinfo/tcpinfo.cc
         plugins/xdebug/xdebug.cc
-        proxy/api/ts/experimental.h
-        proxy/api/ts/InkAPIPrivateIOCore.h
-        proxy/api/ts/remap.h
-        proxy/api/ts/ts.h
-        proxy/api/ts/TsException.h
+        include/ts/experimental.h
+        include/ts/InkAPIPrivateIOCore.h
+        include/ts/remap.h
+        include/ts/ts.h
+        include/ts/TsException.h
         proxy/hdrs/HdrHeap.cc
         proxy/hdrs/HdrHeap.h
         proxy/hdrs/HdrTest.cc
@@ -807,8 +752,8 @@ add_executable(ats
         proxy/http/remap/UrlMappingPathIndex.h
         proxy/http/remap/UrlRewrite.cc
         proxy/http/remap/UrlRewrite.h
-        proxy/http/unit-tests/test_ForwardedConfig.cc
-        proxy/http/unit-tests/test_ForwardedConfig_mocks.cc
+        proxy/http/unit_tests/test_ForwardedConfig.cc
+        proxy/http/unit_tests/test_ForwardedConfig_mocks.cc
         proxy/http/ForwardedConfig.cc
         proxy/http/Http1ClientSession.cc
         proxy/http/Http1ClientSession.h
@@ -967,208 +912,206 @@ add_executable(ats
         tools/http_load/timers.h
         tools/jtest/jtest.cc)
 
-add_library(libtsutil SHARED
-        lib/ts/Allocator.h
-        lib/ts/apidefs.h
-        lib/ts/Arena.cc
-        lib/ts/Arena.h
-        lib/ts/BaseLogFile.cc
-        lib/ts/BaseLogFile.h
-        lib/ts/Bitops.cc
-        lib/ts/Bitops.h
-        lib/ts/bwf_std_format.h
-        lib/ts/BufferWriter.h
-        lib/ts/BufferWriterForward.h
-        lib/ts/BufferWriterFormat.cc
-        lib/ts/CompileParseRules.cc
-        lib/ts/ConsistentHash.cc
-        lib/ts/ConsistentHash.h
-        lib/ts/ContFlags.cc
-        lib/ts/ContFlags.h
-        lib/ts/CryptoHash.cc
-        lib/ts/CryptoHash.h
-        lib/ts/defalloc.h
-        lib/ts/Diags.cc
-        lib/ts/Diags.h
-        lib/ts/DynArray.h
-        lib/ts/EventNotify.cc
-        lib/ts/EventNotify.h
-        lib/ts/fastlz.c
-        lib/ts/fastlz.h
-        lib/ts/Hash.cc
-        lib/ts/Hash.h
-        lib/ts/HashFNV.cc
-        lib/ts/HashFNV.h
-        lib/ts/HashMD5.cc
-        lib/ts/HashMD5.h
-        lib/ts/HashSip.cc
-        lib/ts/HashSip.h
-        lib/ts/History.h
-        lib/ts/HostLookup.cc
-        lib/ts/HostLookup.h
-        lib/ts/hugepages.cc
-        lib/ts/hugepages.h
-        lib/ts/I_Layout.h
-        lib/ts/I_Version.h
-        lib/ts/ink_aiocb.h
-        lib/ts/ink_align.h
-        lib/ts/ink_apidefs.h
-        lib/ts/ink_args.cc
-        lib/ts/ink_args.h
-        lib/ts/ink_assert.cc
-        lib/ts/ink_assert.h
-        lib/ts/ink_atomic.h
-        lib/ts/ink_base64.cc
-        lib/ts/ink_base64.h
-        lib/ts/ink_cap.cc
-        lib/ts/ink_cap.h
-        lib/ts/ink_code.cc
-        lib/ts/ink_code.h
-        lib/ts/ink_config.h
-        lib/ts/ink_defs.cc
-        lib/ts/ink_defs.h
-        lib/ts/ink_error.cc
-        lib/ts/ink_error.h
-        lib/ts/ink_exception.h
-        lib/ts/ink_file.cc
-        lib/ts/ink_file.h
-        lib/ts/ink_hash_table.cc
-        lib/ts/ink_hash_table.h
-        lib/ts/ink_hrtime.cc
-        lib/ts/ink_hrtime.h
-        lib/ts/ink_inet.cc
-        lib/ts/ink_inet.h
-        lib/ts/ink_inout.h
-        lib/ts/ink_llqueue.h
-        lib/ts/ink_lockfile.h
-        lib/ts/INK_MD5.h
-        lib/ts/ink_memory.cc
-        lib/ts/ink_memory.h
-        lib/ts/ink_mutex.cc
-        lib/ts/ink_mutex.h
-        lib/ts/ink_platform.h
-        lib/ts/ink_queue.cc
-        lib/ts/ink_queue.h
-        lib/ts/ink_queue_utils.cc
-        lib/ts/ink_rand.cc
-        lib/ts/ink_rand.h
-        lib/ts/ink_res_init.cc
-        lib/ts/ink_res_mkquery.cc
-        lib/ts/ink_resolver.h
-        lib/ts/ink_resource.cc
-        lib/ts/ink_resource.h
-        lib/ts/ink_rwlock.cc
-        lib/ts/ink_rwlock.h
-        lib/ts/ink_sock.cc
-        lib/ts/ink_sock.h
-        lib/ts/ink_sprintf.cc
-        lib/ts/ink_sprintf.h
-        lib/ts/ink_stack_trace.cc
-        lib/ts/ink_stack_trace.h
-        lib/ts/ink_string++.cc
-        lib/ts/ink_string++.h
-        lib/ts/ink_string.cc
-        lib/ts/ink_string.h
-        lib/ts/ink_sys_control.cc
-        lib/ts/ink_sys_control.h
-        lib/ts/ink_syslog.cc
-        lib/ts/ink_syslog.h
-        lib/ts/ink_thread.cc
-        lib/ts/ink_thread.h
-        lib/ts/ink_time.cc
-        lib/ts/ink_time.h
-        lib/ts/ink_uuid.cc
-        lib/ts/ink_uuid.h
-        lib/ts/InkErrno.cc
-        lib/ts/InkErrno.h
-        lib/ts/IntrusiveDList.h
-	lib/ts/IntrusiveHashMap.h
-        lib/ts/IntrusivePtrTest.cc
-        lib/ts/IpMap.cc
-        lib/ts/IpMap.h
-        lib/ts/IpMapConf.cc
-        lib/ts/IpMapConf.h
-        lib/ts/Layout.cc
-        lib/ts/List.h
-        lib/ts/llqueue.cc
-        lib/ts/load_http_hdr.cc
-        lib/ts/lockfile.cc
-        lib/ts/Map.h
-        lib/ts/MatcherUtils.cc
-        lib/ts/MatcherUtils.h
-        lib/ts/MemArena.h
-        lib/ts/MemArena.cc
-        lib/ts/MemSpan.h
-        lib/ts/mkdfa.c
-        lib/ts/MMH.cc
-        lib/ts/MMH.h
-        lib/ts/MT_hashtable.h
-        lib/ts/ParseRules.cc
-        lib/ts/ParseRules.h
-        lib/ts/PriorityQueue.h
-        lib/ts/Ptr.h
-        lib/ts/RawHashTable.cc
-        lib/ts/RawHashTable.h
-        lib/ts/RbTree.cc
-        lib/ts/RbTree.h
-        lib/ts/Regex.cc
-        lib/ts/Regex.h
-        lib/ts/Regression.cc
-        lib/ts/Regression.h
-        lib/ts/Result.h
-        lib/ts/runroot.cc
-        lib/ts/runroot.h
-        lib/ts/Scalar.h
-        lib/ts/SHA256.h
-        lib/ts/signals.cc
-        lib/ts/signals.h
-        lib/ts/SimpleTokenizer.h
-        lib/ts/SourceLocation.cc
-        lib/ts/SourceLocation.h
-        lib/ts/test_arena.cc
-        lib/ts/test_atomic.cc
-        lib/ts/test_freelist.cc
-        lib/ts/test_geometry.cc
-        lib/ts/test_List.cc
-        lib/ts/test_Map.cc
-        lib/ts/test_PriorityQueue.cc
-        lib/ts/test_Vec.cc
-        lib/ts/test_X509HostnameValidator.cc
-        lib/ts/TestBox.h
-        lib/ts/TestHttpHeader.cc
-        lib/ts/tests.cc
-        lib/ts/TextBuffer.cc
-        lib/ts/TextBuffer.h
-        lib/ts/TextView.cc
-        lib/ts/TextView.h
-        lib/ts/Tokenizer.cc
-        lib/ts/Tokenizer.h
-        lib/ts/Trie.h
-        lib/ts/TsBuffer.h
-        lib/ts/Version.cc
-        lib/ts/X509HostnameValidator.cc
-        lib/ts/X509HostnameValidator.h
+add_library(libtscore SHARED
+        include/tscore/Allocator.h
+        include/tscore/apidefs.h
+        src/tscore/Arena.cc
+        include/tscore/Arena.h
+        src/tscore/BaseLogFile.cc
+        include/tscore/BaseLogFile.h
+        src/tscore/Bitops.cc
+        include/tscore/Bitops.h
+        include/tscore/bwf_std_format.h
+        include/tscore/BufferWriter.h
+        include/tscore/BufferWriterForward.h
+        src/tscore/BufferWriterFormat.cc
+        src/tscore/CompileParseRules.cc
+        src/tscore/ConsistentHash.cc
+        include/tscore/ConsistentHash.h
+        src/tscore/ContFlags.cc
+        include/tscore/ContFlags.h
+        src/tscore/CryptoHash.cc
+        include/tscore/CryptoHash.h
+        include/tscore/defalloc.h
+        src/tscore/Diags.cc
+        include/tscore/Diags.h
+        include/tscore/DynArray.h
+        src/tscore/EventNotify.cc
+        include/tscore/EventNotify.h
+        src/tscore/fastlz.c
+        include/tscore/fastlz.h
+        src/tscore/Hash.cc
+        include/tscore/Hash.h
+        src/tscore/HashFNV.cc
+        include/tscore/HashFNV.h
+        src/tscore/HashMD5.cc
+        include/tscore/HashMD5.h
+        src/tscore/HashSip.cc
+        include/tscore/HashSip.h
+        include/tscore/History.h
+        src/tscore/HostLookup.cc
+        include/tscore/HostLookup.h
+        src/tscore/hugepages.cc
+        include/tscore/hugepages.h
+        include/tscore/I_Layout.h
+        include/tscore/I_Version.h
+        include/tscore/ink_aiocb.h
+        include/tscore/ink_align.h
+        include/tscore/ink_apidefs.h
+        src/tscore/ink_args.cc
+        include/tscore/ink_args.h
+        src/tscore/ink_assert.cc
+        include/tscore/ink_assert.h
+        include/tscore/ink_atomic.h
+        src/tscore/ink_base64.cc
+        include/tscore/ink_base64.h
+        src/tscore/ink_cap.cc
+        include/tscore/ink_cap.h
+        src/tscore/ink_code.cc
+        include/tscore/ink_code.h
+        include/tscore/ink_config.h
+        src/tscore/ink_defs.cc
+        include/tscore/ink_defs.h
+        src/tscore/ink_error.cc
+        include/tscore/ink_error.h
+        include/tscore/ink_exception.h
+        src/tscore/ink_file.cc
+        include/tscore/ink_file.h
+        src/tscore/ink_hash_table.cc
+        include/tscore/ink_hash_table.h
+        src/tscore/ink_hrtime.cc
+        include/tscore/ink_hrtime.h
+        src/tscore/ink_inet.cc
+        include/tscore/ink_inet.h
+        include/tscore/ink_inout.h
+        include/tscore/ink_llqueue.h
+        include/tscore/ink_lockfile.h
+        include/tscore/INK_MD5.h
+        src/tscore/ink_memory.cc
+        include/tscore/ink_memory.h
+        src/tscore/ink_mutex.cc
+        include/tscore/ink_mutex.h
+        include/tscore/ink_platform.h
+        src/tscore/ink_queue.cc
+        include/tscore/ink_queue.h
+        src/tscore/ink_queue_utils.cc
+        src/tscore/ink_rand.cc
+        include/tscore/ink_rand.h
+        src/tscore/ink_res_init.cc
+        src/tscore/ink_res_mkquery.cc
+        include/tscore/ink_resolver.h
+        src/tscore/ink_resource.cc
+        include/tscore/ink_resource.h
+        src/tscore/ink_rwlock.cc
+        include/tscore/ink_rwlock.h
+        src/tscore/ink_sock.cc
+        include/tscore/ink_sock.h
+        src/tscore/ink_sprintf.cc
+        include/tscore/ink_sprintf.h
+        src/tscore/ink_stack_trace.cc
+        include/tscore/ink_stack_trace.h
+        src/tscore/ink_string++.cc
+        include/tscore/ink_string++.h
+        src/tscore/ink_string.cc
+        include/tscore/ink_string.h
+        src/tscore/ink_sys_control.cc
+        include/tscore/ink_sys_control.h
+        src/tscore/ink_syslog.cc
+        include/tscore/ink_syslog.h
+        src/tscore/ink_thread.cc
+        include/tscore/ink_thread.h
+        src/tscore/ink_time.cc
+        include/tscore/ink_time.h
+        src/tscore/ink_uuid.cc
+        include/tscore/ink_uuid.h
+        src/tscore/InkErrno.cc
+        include/tscore/InkErrno.h
+        include/tscore/IntrusiveDList.h
+	include/tscore/IntrusiveHashMap.h
+        src/tscore/IntrusivePtrTest.cc
+        src/tscore/IpMap.cc
+        include/tscore/IpMap.h
+        src/tscore/IpMapConf.cc
+        include/tscore/IpMapConf.h
+        src/tscore/Layout.cc
+        include/tscore/List.h
+        src/tscore/llqueue.cc
+        src/tscore/load_http_hdr.cc
+        src/tscore/lockfile.cc
+        include/tscore/Map.h
+        src/tscore/MatcherUtils.cc
+        include/tscore/MatcherUtils.h
+        include/tscore/MemArena.h
+        src/tscore/MemArena.cc
+        include/tscore/MemSpan.h
+        src/tscore/mkdfa.c
+        src/tscore/MMH.cc
+        include/tscore/MMH.h
+        include/tscore/MT_hashtable.h
+        src/tscore/ParseRules.cc
+        include/tscore/ParseRules.h
+        include/tscore/PriorityQueue.h
+        include/tscore/Ptr.h
+        src/tscore/RawHashTable.cc
+        include/tscore/RawHashTable.h
+        src/tscore/RbTree.cc
+        include/tscore/RbTree.h
+        src/tscore/Regex.cc
+        include/tscore/Regex.h
+        src/tscore/Regression.cc
+        include/tscore/Regression.h
+        include/tscore/Result.h
+        src/tscore/runroot.cc
+        include/tscore/runroot.h
+        include/tscore/Scalar.h
+        include/tscore/SHA256.h
+        src/tscore/signals.cc
+        include/tscore/signals.h
+        include/tscore/SimpleTokenizer.h
+        src/tscore/SourceLocation.cc
+        include/tscore/SourceLocation.h
+        src/tscore/test_arena.cc
+        src/tscore/test_atomic.cc
+        src/tscore/test_freelist.cc
+        src/tscore/test_geometry.cc
+        src/tscore/test_List.cc
+        src/tscore/test_Map.cc
+        src/tscore/test_PriorityQueue.cc
+        src/tscore/test_Vec.cc
+        src/tscore/test_X509HostnameValidator.cc
+        include/tscore/TestBox.h
+        src/tscore/TestHttpHeader.cc
+        src/tscore/tests.cc
+        src/tscore/TextBuffer.cc
+        include/tscore/TextBuffer.h
+        include/tscore/TextView.h
+        src/tscore/Tokenizer.cc
+        include/tscore/Tokenizer.h
+        include/tscore/Trie.h
+        include/tscore/TsBuffer.h
+        src/tscore/Version.cc
+        src/tscore/X509HostnameValidator.cc
+        include/tscore/X509HostnameValidator.h
 )
 
-add_executable(test_tslib
-	lib/ts/unit-tests/unit_test_main.cc
-	lib/ts/unit-tests/test_BufferWriter.cc
-	lib/ts/unit-tests/test_BufferWriterFormat.cc
-        lib/ts/unit-tests/test_History.cc
-	lib/ts/unit-tests/test_ink_inet.cc
-	lib/ts/unit-tests/test_IntrusiveDList.cc
-	lib/ts/unit-tests/test_IntrusiveHashMap.cc
-	lib/ts/unit-tests/test_IntrusivePtr.cc
-	lib/ts/unit-tests/test_IpMap.cc
-	lib/ts/unit-tests/test_layout.cc
-	lib/ts/unit-tests/test_MemArena.cc
-	lib/ts/unit-tests/test_MemSpan.cc
-	lib/ts/unit-tests/test_MT_hashtable.cc
-        lib/ts/unit-tests/test_Ptr.cc
-        lib/ts/unit-tests/test_Regex.cc
-	lib/ts/unit-tests/test_Scalar.cc
-	lib/ts/unit-tests/test_scoped_resource.cc
-	lib/ts/unit-tests/test_TextView.cc
+add_executable(test_tscore
+	src/tscore/unit_tests/unit_test_main.cc
+	src/tscore/unit_tests/test_BufferWriter.cc
+	src/tscore/unit_tests/test_BufferWriterFormat.cc
+        src/tscore/unit_tests/test_History.cc
+	src/tscore/unit_tests/test_ink_inet.cc
+	src/tscore/unit_tests/test_IntrusiveDList.cc
+	src/tscore/unit_tests/test_IntrusiveHashMap.cc
+	src/tscore/unit_tests/test_IntrusivePtr.cc
+	src/tscore/unit_tests/test_IpMap.cc
+	src/tscore/unit_tests/test_layout.cc
+	src/tscore/unit_tests/test_MemArena.cc
+	src/tscore/unit_tests/test_MemSpan.cc
+	src/tscore/unit_tests/test_MT_hashtable.cc
+        src/tscore/unit_tests/test_Ptr.cc
+        src/tscore/unit_tests/test_Regex.cc
+	src/tscore/unit_tests/test_Scalar.cc
+	src/tscore/unit_tests/test_scoped_resource.cc
 )
 
 # iocore/cache

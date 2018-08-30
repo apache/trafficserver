@@ -31,8 +31,8 @@
 ****************************************************************************/
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/ink_sock.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_sock.h"
 #include "I_SocketManager.h"
 
 //

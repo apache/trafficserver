@@ -22,8 +22,8 @@
  */
 
 #include "RemapPluginInfo.h"
-#include "ts/ink_string.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_string.h"
+#include "tscore/ink_memory.h"
 
 remap_plugin_info::remap_plugin_info(char *_path)
   : next(nullptr),

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_memory.h"
+#include "tscore/ink_memory.h"
 #include "BaseManager.h"
 
 BaseManager::BaseManager()

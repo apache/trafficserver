@@ -20,11 +20,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "ts/ink_platform.h"
-#include "ts/ink_sock.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_sock.h"
 #include "MgmtUtils.h"
 #include "MgmtSocket.h"
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 #include "LocalManager.h"
 

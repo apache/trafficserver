@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include <map>
 #include <list>
 #include <string>
@@ -53,9 +53,9 @@
 
 #include "stats.h"
 
-#include "ts/I_Layout.h"
-#include "ts/ink_args.h"
-#include "I_RecProcess.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ink_args.h"
+#include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
 
 using namespace std;

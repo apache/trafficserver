@@ -33,7 +33,7 @@
 # define YYFREE free
 
 # include "TsConfigParseEvents.h"
-# include "ts/ink_defs.h"
+# include "tscore/ink_defs.h"
 
 // Types we need for the lexer.
 typedef void* yyscan_t;

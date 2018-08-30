@@ -39,10 +39,10 @@
 #include <sstream>
 
 // Get some specific stuff from libts, yes, we can do that now that we build inside the core.
-#include "ts/ink_platform.h"
-#include "ts/ink_atomic.h"
-#include "ts/ink_time.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_atomic.h"
+#include "tscore/ink_time.h"
+#include "tscore/ink_inet.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>

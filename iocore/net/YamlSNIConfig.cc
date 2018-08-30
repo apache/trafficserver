@@ -27,8 +27,8 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "ts/Diags.h"
-#include "ts/EnumDescriptor.h"
+#include "tscore/Diags.h"
+#include "tscore/EnumDescriptor.h"
 #include "tsconfig/Errata.h"
 
 ts::Errata

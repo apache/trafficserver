@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
 #include "HttpCacheSM.h"
 #include "HttpTransact.h"
@@ -42,7 +42,7 @@
 #include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
 #include <string_view>
-#include <ts/History.h>
+#include "tscore/History.h"
 //#include "AuthHttpAdapter.h"
 
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they

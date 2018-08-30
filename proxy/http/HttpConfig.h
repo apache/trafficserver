@@ -41,14 +41,14 @@
 #include <cctype>
 #endif
 
-#include "ts/ink_platform.h"
-#include "ts/ink_inet.h"
-#include "ts/Regex.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_inet.h"
+#include "tscore/Regex.h"
 #include "string_view"
-#include "ts/BufferWriter.h"
+#include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 #include "HttpConnectionCount.h"
 
 static const unsigned HTTP_STATUS_NUMBER = 600;

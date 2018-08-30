@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_HostDB.h"
 #include "P_Net.h"
 #include "HttpConfig.h"
@@ -35,7 +35,7 @@
 #include "ProxyConfig.h"
 #include "Transform.h"
 #include "Milestones.h"
-#include "api/ts/remap.h"
+#include "ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
 #include "records/I_RecHttp.h"
@@ -70,7 +70,7 @@ typedef time_t ink_time_t;
 struct HttpConfigParams;
 class HttpSM;
 
-#include "ts/InkErrno.h"
+#include "tscore/InkErrno.h"
 #include "HttpConnectionCount.h"
 
 #define UNKNOWN_INTERNAL_ERROR (INK_START_ERRNO - 1)

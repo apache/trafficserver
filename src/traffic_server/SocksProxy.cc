@@ -27,7 +27,7 @@
 
 
 */
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Net.h"
 #include "I_OneWayTunnel.h"
 #include "HttpSessionAccept.h"

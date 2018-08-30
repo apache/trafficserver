@@ -27,14 +27,14 @@
 
  ***************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/ink_lockfile.h"
-#include "ts/ink_sys_control.h"
-#include "ts/signals.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_lockfile.h"
+#include "tscore/ink_sys_control.h"
+#include "tscore/signals.h"
 #include "DiagsConfig.h"
 
 #include "P_EventSystem.h"
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 
 #include "ProcessManager.h"
 #include "MgmtUtils.h"

@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/Diags.h"
-#include "ts/TextBuffer.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/Diags.h"
+#include "tscore/TextBuffer.h"
 #include "mgmtapi.h"
 
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only

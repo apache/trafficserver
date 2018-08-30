@@ -25,7 +25,7 @@
   UIOBuffer.cc
 
 **************************************************************************/
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "I_MIOBufferWriter.h"
 #include "P_EventSystem.h"
 

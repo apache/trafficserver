@@ -20,8 +20,8 @@ include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy \
@@ -68,7 +68,8 @@ TESTS = \
 	test_HPACK
 
 test_Huffmancode_LDADD = \
-	$(top_builddir)/lib/ts/libtsutil.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 test_Huffmancode_SOURCES = \
 	test_Huffmancode.cc \
@@ -76,7 +77,8 @@ test_Huffmancode_SOURCES = \
 	HuffmanCodec.h
 
 test_Http2DependencyTree_LDADD = \
-	$(top_builddir)/lib/ts/libtsutil.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 test_Http2DependencyTree_SOURCES = \
 	test_Http2DependencyTree.cc \
@@ -84,7 +86,8 @@ test_Http2DependencyTree_SOURCES = \
 
 test_HPACK_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \

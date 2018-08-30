@@ -27,7 +27,7 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "P_Net.h"
 

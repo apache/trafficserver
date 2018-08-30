@@ -26,7 +26,7 @@
 
 #include <sstream>
 #include "IPAllow.h"
-#include "ts/BufferWriter.h"
+#include "tscore/BufferWriter.h"
 
 extern char *readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr);
 

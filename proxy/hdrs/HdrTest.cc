@@ -32,14 +32,14 @@
 
  ****************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_time.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_time.h"
 
-#include "ts/Arena.h"
+#include "tscore/Arena.h"
 #include "HTTP.h"
 #include "MIME.h"
-#include "ts/Regex.h"
+#include "tscore/Regex.h"
 #include "URL.h"
 #include "HttpCompat.h"
 

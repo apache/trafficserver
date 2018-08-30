@@ -24,14 +24,14 @@
 
 #pragma once
 
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 #include "I_Action.h"
 #include "I_VConnection.h"
 #include "I_Event.h"
-#include "ts/List.h"
+#include "tscore/List.h"
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
-#include <ts/apidefs.h>
+#include "ts/apidefs.h"
 #include <string_view>
 
 #define CONNECT_SUCCESS 1

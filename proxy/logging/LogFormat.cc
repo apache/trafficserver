@@ -26,14 +26,14 @@
 
 
  ***************************************************************************/
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 
-#include "ts/SimpleTokenizer.h"
-#include "ts/CryptoHash.h"
+#include "tscore/SimpleTokenizer.h"
+#include "tscore/CryptoHash.h"
 
 #include "LogUtils.h"
 #include "LogFile.h"

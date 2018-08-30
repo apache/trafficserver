@@ -20,7 +20,7 @@ include $(top_srcdir)/build/tidy.mk
 AM_CXXFLAGS += -Wno-unused-variable
 AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
-libatscppapi = $(top_builddir)/lib/cppapi/libatscppapi.la
+libtscppapi = $(top_builddir)/src/tscpp/api/libtscppapi.la
 libtsconfig = $(top_builddir)/lib/tsconfig/libtsconfig.la
 
 if BUILD_EXAMPLE_PLUGINS

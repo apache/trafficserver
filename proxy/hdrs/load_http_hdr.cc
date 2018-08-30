@@ -45,8 +45,8 @@
 #include "HdrHeap.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "ts/Tokenizer.h"
-#include "ts/Diags.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/Diags.h"
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>

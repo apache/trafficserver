@@ -22,8 +22,8 @@
  */
 
 #include "FileManager.h"
-#include "ts/ink_platform.h"
-#include "ts/ink_file.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_file.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
 

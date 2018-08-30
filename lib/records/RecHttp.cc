@@ -23,11 +23,11 @@
 
 #include <records/I_RecCore.h>
 #include <records/I_RecHttp.h>
-#include <ts/ink_defs.h>
-#include <ts/ink_hash_table.h>
-#include <ts/Tokenizer.h>
+#include "tscore/ink_defs.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/Tokenizer.h"
 #include <strings.h>
-#include <ts/ink_inet.h>
+#include "tscore/ink_inet.h"
 #include <string_view>
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;

@@ -2011,6 +2011,10 @@ AC_CONFIG_FILES([
   doc/ext/local-config.py
   doc/uml/Makefile
   example/Makefile
+  include/Makefile 
+  include/ts/Makefile 
+  include/tscpp/api/Makefile 
+  include/tscpp/util/Makefile
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
@@ -2020,15 +2024,14 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/cppapi/Makefile
+  src/tscpp/api/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
-  lib/ts/Makefile
-  lib/ts/apidefs.h
-  lib/ts/ink_config.h
+  include/ts/apidefs.h
+  include/tscore/ink_config.h
   lib/tsconfig/Makefile
-  lib/wccp/Makefile
+  src/wccp/Makefile
   lib/yamlcpp/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
@@ -2036,7 +2039,6 @@ AC_CONFIG_FILES([
   mgmt/utils/Makefile
   plugins/Makefile
   proxy/Makefile
-  proxy/api/ts/Makefile
   proxy/hdrs/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
@@ -2048,6 +2050,8 @@ AC_CONFIG_FILES([
   rc/trafficserver.conf
   rc/trafficserver.service
   rc/trafficserver.xml
+  src/tscpp/util/Makefile 
+  src/tscore/Makefile
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs

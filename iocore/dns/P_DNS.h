@@ -29,7 +29,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_DNS.h"
 #include "P_EventSystem.h"
 #include "I_Cache.h"

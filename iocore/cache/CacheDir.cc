@@ -23,14 +23,14 @@
 
 #include "P_Cache.h"
 
-#include "ts/hugepages.h"
-#include "ts/Regression.h"
+#include "tscore/hugepages.h"
+#include "tscore/Regression.h"
 
 // #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
 #endif
-#include "ts/ink_stack_trace.h"
+#include "tscore/ink_stack_trace.h"
 
 #define CACHE_INC_DIR_USED(_m)                            \
   do {                                                    \

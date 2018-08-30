@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "I_RecMutex.h"
 
 void

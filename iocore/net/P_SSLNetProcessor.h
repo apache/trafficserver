@@ -38,11 +38,11 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include <openssl/ssl.h>
-#include "ts/Map.h"
+#include "tscore/Map.h"
 
 class UnixNetVConnection;
 struct NetAccept;

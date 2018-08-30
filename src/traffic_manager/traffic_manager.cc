@@ -21,22 +21,22 @@
   limitations under the License.
  */
 
-#include "ts/ink_sys_control.h"
-#include "ts/ink_cap.h"
-#include "ts/ink_lockfile.h"
-#include "ts/ink_sock.h"
-#include "ts/ink_args.h"
-#include "ts/ink_syslog.h"
-#include "ts/runroot.h"
+#include "tscore/ink_sys_control.h"
+#include "tscore/ink_cap.h"
+#include "tscore/ink_lockfile.h"
+#include "tscore/ink_sock.h"
+#include "tscore/ink_args.h"
+#include "tscore/ink_syslog.h"
+#include "tscore/runroot.h"
 
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
 #include "MgmtSocket.h"
 #include "NetworkUtilsRemote.h"
 #include "FileManager.h"
-#include "ts/I_Layout.h"
-#include "ts/I_Version.h"
-#include "ts/TextBuffer.h"
+#include "tscore/I_Layout.h"
+#include "tscore/I_Version.h"
+#include "tscore/TextBuffer.h"
 #include "DiagsConfig.h"
 #include "HTTP.h"
 #include "CoreAPI.h"
@@ -48,7 +48,7 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
-#include "P_RecLocal.h"
+#include "records/P_RecLocal.h"
 #include "DerivativeMetrics.h"
 
 #if TS_USE_POSIX_CAP
@@ -56,7 +56,7 @@
 #endif
 #include <grp.h>
 #include <atomic>
-#include <ts/bwf_std_format.h>
+#include "tscore/bwf_std_format.h"
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 #define DIAGS_LOG_FILENAME "manager.log"

@@ -75,14 +75,14 @@
  * reset_stats - resets all statistics to default values
  */
 
-#include "ts/ink_config.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_config.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_memory.h"
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <strings.h>
-#include "ts/ink_string.h"
+#include "tscore/ink_string.h"
 
 #include "mgmtapi.h"
 

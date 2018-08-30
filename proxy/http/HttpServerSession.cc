@@ -28,10 +28,10 @@
    Description:
 
  ****************************************************************************/
-#include "ts/ink_config.h"
-#include "ts/BufferWriter.h"
-#include "ts/bwf_std_format.h"
-#include "ts/Allocator.h"
+#include "tscore/ink_config.h"
+#include "tscore/BufferWriter.h"
+#include "tscore/bwf_std_format.h"
+#include "tscore/Allocator.h"
 #include "HttpServerSession.h"
 #include "HttpSessionManager.h"
 #include "HttpSM.h"

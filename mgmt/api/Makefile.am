@@ -23,11 +23,11 @@ SUBDIRS = include
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/mgmt/api/include \
-	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/include \
 	$(TS_INCLUDES) \
 	$(LIBUNWIND_CFLAGS)
 
@@ -65,12 +65,12 @@ libtsmgmt_la_SOURCES = \
 
 libmgmtapilocal_la_LIBADD = \
 	libmgmtapi.la \
-	$(top_builddir)/lib/ts/libtsutil.la
+	$(top_builddir)/src/tscore/libtscore.la
 
 libtsmgmt_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsmgmt_la_LIBADD = @LIBOBJS@ \
 	libmgmtapi.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/mgmt/utils/libutils_p.la
 
 if BUILD_TESTS
@@ -78,8 +78,11 @@ traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
 endif
 
 traffic_api_cli_remote_LDADD = \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	libtsmgmt.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@LIBTCL@ @OPENSSL_LIBS@
 
 clang-tidy-local: $(DIST_SOURCES)

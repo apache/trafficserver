@@ -21,10 +21,10 @@
 
 #include <openssl/crypto.h>
 
-#include "ts/ink_platform.h"
-#include "ts/ink_mutex.h"
-#include "ts/ink_assert.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Diags.h"
 
 struct CRYPTO_dynlock_value {
   CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { ink_mutex_init(&mutex); }

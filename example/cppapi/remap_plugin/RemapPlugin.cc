@@ -16,9 +16,9 @@
   limitations under the License.
  */
 
-#include <atscppapi/RemapPlugin.h>
-#include <atscppapi/PluginInit.h>
-#include <atscppapi/Logger.h>
+#include "tscpp/api/RemapPlugin.h"
+#include "tscpp/api/PluginInit.h"
+#include "tscpp/api/Logger.h"
 #include <vector>
 #include <map>
 #include <sstream>

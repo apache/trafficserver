@@ -34,7 +34,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Event.h"
 struct ProtectedQueue {
   void enqueue(Event *e, bool fast_signal = false);

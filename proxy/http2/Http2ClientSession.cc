@@ -23,7 +23,7 @@
 
 #include "Http2ClientSession.h"
 #include "HttpDebugNames.h"
-#include "ts/ink_base64.h"
+#include "tscore/ink_base64.h"
 
 #define STATE_ENTER(state_name, event)                                                       \
   do {                                                                                       \

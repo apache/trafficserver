@@ -26,7 +26,7 @@
 #include "ts/ts.h"
 
 #include "thread.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 struct timespec tp1;
 struct timespec tp2;

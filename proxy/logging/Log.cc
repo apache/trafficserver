@@ -32,7 +32,7 @@
  class.
 
  ***************************************************************************/
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "I_Machine.h"
@@ -50,9 +50,9 @@
 #include "LogUtils.h"
 #include "Log.h"
 #include "LogSock.h"
-#include "ts/SimpleTokenizer.h"
+#include "tscore/SimpleTokenizer.h"
 
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_apidefs.h"
 
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 

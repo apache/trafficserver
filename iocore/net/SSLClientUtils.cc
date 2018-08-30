@@ -19,10 +19,10 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "records/I_RecHttp.h"
-#include "ts/ink_platform.h"
-#include "ts/X509HostnameValidator.h"
+#include "tscore/ink_platform.h"
+#include "tscore/X509HostnameValidator.h"
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
 

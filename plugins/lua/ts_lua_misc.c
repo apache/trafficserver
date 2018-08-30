@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include <netinet/in.h>
 #include "ts_lua_util.h"
 

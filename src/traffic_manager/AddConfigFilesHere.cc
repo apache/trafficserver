@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "MgmtUtils.h"
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 #include "FileManager.h"
 
 extern FileManager *configFiles;

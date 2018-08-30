@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "ts/ink_sock.h"
+#include "tscore/ink_sock.h"
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"

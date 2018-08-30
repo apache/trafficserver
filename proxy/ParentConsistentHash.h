@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include "ts/HashSip.h"
+#include "tscore/HashSip.h"
 #include "ParentSelection.h"
 
 //

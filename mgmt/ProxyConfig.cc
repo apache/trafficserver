@@ -24,7 +24,7 @@
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
 #if TS_HAS_TESTS
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 #endif
 
 ConfigProcessor configProcessor;

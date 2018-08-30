@@ -29,8 +29,8 @@
 #endif
 #include <hwloc.h>
 #endif
-#include "ts/ink_defs.h"
-#include "ts/hugepages.h"
+#include "tscore/ink_defs.h"
+#include "tscore/hugepages.h"
 
 /// Global singleton.
 class EventProcessor eventProcessor;

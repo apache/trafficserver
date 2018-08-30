@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
 
 #if !defined(I_VIO_h)
