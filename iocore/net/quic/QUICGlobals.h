@@ -35,7 +35,7 @@ public:
                                       unsigned inlen, void *);
 
   static int ssl_quic_qc_index;
-  static int ssl_quic_hs_index;
+  static int ssl_quic_tls_index;
 
 private:
   static void _register_stats();

@@ -37,6 +37,30 @@ QUICTLS::ssl_handle()
   return this->_ssl;
 }
 
+std::shared_ptr<const QUICTransportParameters>
+QUICTLS::local_transport_parameters()
+{
+  return this->_local_transport_parameters;
+}
+
+std::shared_ptr<const QUICTransportParameters>
+QUICTLS::remote_transport_parameters()
+{
+  return this->_remote_transport_parameters;
+}
+
+void
+QUICTLS::set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp)
+{
+  this->_local_transport_parameters = tp;
+}
+
+void
+QUICTLS::set_remote_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp)
+{
+  this->_remote_transport_parameters = tp;
+}
+
 QUICTLS::~QUICTLS()
 {
   SSL_free(this->_ssl);

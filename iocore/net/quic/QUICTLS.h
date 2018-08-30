@@ -51,8 +51,15 @@ public:
   static QUICEncryptionLevel get_encryption_level(int msg_type);
   static uint16_t convert_to_quic_trans_error_code(uint8_t alert);
 
+  std::shared_ptr<const QUICTransportParameters> local_transport_parameters() override;
+  std::shared_ptr<const QUICTransportParameters> remote_transport_parameters() override;
+  void set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) override;
+  void set_remote_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) override;
+
   // FIXME Should not exist
   SSL *ssl_handle();
+
+  // QUICHandshakeProtocol
 
   int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override;
   void reset() override;
@@ -105,4 +112,7 @@ private:
   bool _early_data                       = true;
   QUICEncryptionLevel _current_level     = QUICEncryptionLevel::INITIAL;
   HandshakeState _state                  = HandshakeState::PROCESSING;
+
+  std::shared_ptr<const QUICTransportParameters> _local_transport_parameters  = nullptr;
+  std::shared_ptr<const QUICTransportParameters> _remote_transport_parameters = nullptr;
 };

@@ -20,6 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "QUICGlobals.h"
 #include "QUICTLS.h"
 
 #include <openssl/err.h>
@@ -228,6 +229,7 @@ QUICTLS::QUICTLS(SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx)
   this->_client_pp = new QUICPacketProtection();
   this->_server_pp = new QUICPacketProtection();
 
+  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_tls_index, this);
   SSL_set_key_callback(this->_ssl, key_cb, this);
 }
 

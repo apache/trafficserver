@@ -29,6 +29,7 @@
 #include "QUICConnection.h"
 #include "QUICHandshake.h"
 #include "QUICDebugNames.h"
+#include "QUICTLS.h"
 
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 static constexpr char tag[]                            = "quic_handshake";
@@ -481,9 +482,9 @@ int
 QUICTransportParametersHandler::add(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char **out, size_t *outlen,
                                     X509 *x, size_t chainidx, int *al, void *add_arg)
 {
-  QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
-  *out              = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
-  hs->local_transport_parameters()->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
+  QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(s, QUIC::ssl_quic_tls_index));
+  *out          = reinterpret_cast<const unsigned char *>(ats_malloc(TRANSPORT_PARAMETERS_MAXIMUM_SIZE));
+  qtls->local_transport_parameters()->store(const_cast<uint8_t *>(*out), reinterpret_cast<uint16_t *>(outlen));
 
   return 1;
 }
@@ -498,14 +499,14 @@ int
 QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *in, size_t inlen,
                                       X509 *x, size_t chainidx, int *al, void *parse_arg)
 {
-  QUICHandshake *hs = static_cast<QUICHandshake *>(SSL_get_ex_data(s, QUIC::ssl_quic_hs_index));
+  QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(s, QUIC::ssl_quic_tls_index));
 
   switch (context) {
   case SSL_EXT_CLIENT_HELLO:
-    hs->set_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
+    qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
     break;
   case SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS:
-    hs->set_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen));
+    qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen));
     break;
   default:
     // Do nothing

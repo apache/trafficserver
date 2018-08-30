@@ -31,15 +31,15 @@
 
 RecRawStatBlock *quic_rsb;
 
-int QUIC::ssl_quic_qc_index = -1;
-int QUIC::ssl_quic_hs_index = -1;
+int QUIC::ssl_quic_qc_index  = -1;
+int QUIC::ssl_quic_tls_index = -1;
 
 void
 QUIC::init()
 {
   QUIC::_register_stats();
-  ssl_quic_qc_index = SSL_get_ex_new_index(0, (void *)"QUICConnection index", nullptr, nullptr, nullptr);
-  ssl_quic_hs_index = SSL_get_ex_new_index(0, (void *)"QUICHandshake index", nullptr, nullptr, nullptr);
+  ssl_quic_qc_index  = SSL_get_ex_new_index(0, (void *)"QUICConnection index", nullptr, nullptr, nullptr);
+  ssl_quic_tls_index = SSL_get_ex_new_index(0, (void *)"QUICTLS index", nullptr, nullptr, nullptr);
 }
 
 int

@@ -97,7 +97,6 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp, QUI
   if (dynamic_cast<QUICTLS *>(hsp)) {
     SSL *ssl = static_cast<QUICTLS *>(hsp)->ssl_handle();
     SSL_set_ex_data(ssl, QUIC::ssl_quic_qc_index, qc);
-    SSL_set_ex_data(ssl, QUIC::ssl_quic_hs_index, this);
   }
 
   this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id());
@@ -223,14 +222,26 @@ QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *l
   this->_hs_protocol->negotiated_application_name(name, len);
 }
 
-void
-QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersInClientHello> tp)
+bool
+QUICHandshake::check_remote_transport_parameters()
+{
+  auto tp = this->_hs_protocol->remote_transport_parameters();
+  if (std::dynamic_pointer_cast<const QUICTransportParametersInClientHello>(tp)) {
+    return this->_check_remote_transport_parameters(std::static_pointer_cast<const QUICTransportParametersInClientHello>(tp));
+  } else {
+    return this->_check_remote_transport_parameters(
+      std::static_pointer_cast<const QUICTransportParametersInEncryptedExtensions>(tp));
+  }
+}
+
+bool
+QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInClientHello> tp)
 {
   // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR.
   if (!tp->is_valid()) {
     QUICHSDebug("Transport parameter is not valid");
     this->_abort_handshake(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
-    return;
+    return false;
   }
 
   this->_remote_transport_parameters = tp;
@@ -239,21 +250,21 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersI
   if (this->_version_negotiator->validate(tp.get()) != QUICVersionNegotiationStatus::VALIDATED) {
     QUICHSDebug("Version revalidation failed");
     this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
-    return;
+    return false;
   }
 
   QUICHSDebug("Version negotiation validated: %x", tp->initial_version());
-  return;
+  return true;
 }
 
-void
-QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp)
+bool
+QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInEncryptedExtensions> tp)
 {
   // An endpoint MUST treat receipt of duplicate transport parameters as a connection error of type TRANSPORT_PARAMETER_ERROR.
   if (!tp->is_valid()) {
     QUICHSDebug("Transport parameter is not valid");
     this->_abort_handshake(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
-    return;
+    return false;
   }
 
   this->_remote_transport_parameters = tp;
@@ -262,10 +273,10 @@ QUICHandshake::set_transport_parameters(std::shared_ptr<QUICTransportParametersI
   if (this->_version_negotiator->validate(tp.get()) != QUICVersionNegotiationStatus::VALIDATED) {
     QUICHSDebug("Version revalidation failed");
     this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
-    return;
+    return false;
   }
 
-  return;
+  return true;
 }
 
 std::shared_ptr<const QUICTransportParameters>
@@ -365,9 +376,9 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   // MAYs
   tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_in());
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_in());
-  // this->_local_transport_parameters.add(QUICTransportParameterId::MAX_PACKET_SIZE, {{0x00, 0x00}, 2});
+  this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
 
-  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+  this->_hs_protocol->set_local_transport_parameters(this->_local_transport_parameters);
 }
 
 void
@@ -386,7 +397,7 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_out());
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_out());
 
-  this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
+  this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));
 }
 
 QUICErrorUPtr
@@ -421,6 +432,11 @@ QUICHandshake::do_handshake()
   out.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
   int result = this->_hs_protocol->handshake(&out, &in);
+  if (this->_remote_transport_parameters == nullptr) {
+    if (!this->check_remote_transport_parameters()) {
+      result = 0;
+    }
+  }
 
   if (result == 1) {
     for (auto level : QUIC_ENCRYPTION_LEVELS) {

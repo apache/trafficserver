@@ -63,6 +63,8 @@ public:
 
   QUICErrorUPtr do_handshake();
 
+  bool check_remote_transport_parameters();
+
   // Getters
   QUICVersion negotiated_version();
   const char *negotiated_cipher_suite();
@@ -75,14 +77,9 @@ public:
   bool is_stateless_retry_enabled() const;
   bool has_remote_tp() const;
 
-  void set_transport_parameters(std::shared_ptr<QUICTransportParametersInClientHello> tp);
-  void set_transport_parameters(std::shared_ptr<QUICTransportParametersInEncryptedExtensions> tp);
-
 private:
-  QUICConnection *_qc                                                   = nullptr;
-  QUICHandshakeProtocol *_hs_protocol                                   = nullptr;
-  std::shared_ptr<QUICTransportParameters> _local_transport_parameters  = nullptr;
-  std::shared_ptr<QUICTransportParameters> _remote_transport_parameters = nullptr;
+  QUICConnection *_qc                 = nullptr;
+  QUICHandshakeProtocol *_hs_protocol = nullptr;
 
   QUICVersionNegotiator *_version_negotiator = nullptr;
   QUICStatelessResetToken _reset_token;
@@ -103,5 +100,10 @@ private:
   }
   void _load_local_server_transport_parameters(QUICVersion negotiated_version);
   void _load_local_client_transport_parameters(QUICVersion initial_version);
+  bool _check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInClientHello> tp);
+  bool _check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInEncryptedExtensions> tp);
+  std::shared_ptr<const QUICTransportParameters> _local_transport_parameters  = nullptr;
+  std::shared_ptr<const QUICTransportParameters> _remote_transport_parameters = nullptr;
+
   void _abort_handshake(QUICTransErrorCode code);
 };
