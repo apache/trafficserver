@@ -166,6 +166,13 @@ public:
   /// Explicitly set the view from a @c std::string
   self_type &assign(std::string const &s);
 
+  /** Dereference operator.
+
+      @note This allows the view to be used as if it were a character iterator to a null terminated
+      string which is handy for several other STL interfaces.
+
+      @return The first byte in the view, or a nul character if the view is empty.
+  */
   /// @return The first byte in the view.
   char operator*() const;
 
@@ -539,7 +546,7 @@ TextView::clear()
 
 inline char TextView::operator*() const
 {
-  return *(this->data());
+  return this->empty() ? 0 : *(this->data());
 }
 
 inline bool TextView::operator!() const
@@ -1060,7 +1067,21 @@ extern template std::ostream &TextView::stream_write(std::ostream &, const TextV
 namespace std
 {
 ostream &operator<<(ostream &os, const ts::TextView &b);
-}
+
+/* For interaction with specific STL interfaces, primarily std::filesystem. Along with the
+ * dereference operator, this enables a @c TextView to act as a character iterator to a C string
+ * even if the internal view is not nul terminated.
+ * @note Putting these directly in the class doesn't seem to work.
+ */
+template <> struct iterator_traits<ts::TextView> {
+  using value_type        = char;
+  using pointer_type      = const char *;
+  using reference_type    = const char &;
+  using difference_type   = ssize_t;
+  using iterator_category = forward_iterator_tag;
+};
+
+} // namespace std
 
 // @c constexpr literal constructor for @c std::string_view
 // For unknown reasons, this enables creating @c constexpr constructs using @c std::string_view while the standard
