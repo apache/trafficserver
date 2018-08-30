@@ -198,10 +198,6 @@ ProxyClientSession::handle_api_return(int event)
     }
     break;
   case TS_HTTP_SSN_CLOSE_HOOK: {
-    NetVConnection *vc = this->get_netvc();
-    if (vc) {
-      vc->do_io_close();
-    }
     free(); // You can now clean things up
     break;
   }
