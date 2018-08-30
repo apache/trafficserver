@@ -36,8 +36,7 @@ QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTPr
   : _info(info), _rtt_provider(rtt_provider), _app_map(app_map)
 {
   if (this->_info->direction() == NET_VCONNECTION_OUT) {
-    // stream 0 is for handshake, smallest client bidi stream id is 4
-    this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::CLIENT_BIDI) + 4;
+    this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::CLIENT_BIDI);
     this->_next_stream_id_uni  = static_cast<uint32_t>(QUICStreamType::CLIENT_UNI);
   } else {
     this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::SERVER_BIDI);
