@@ -28,14 +28,14 @@
  *
  ****************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/Tokenizer.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Tokenizer.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>
 #include "P_SplitDNS.h"
-#include "ts/MatcherUtils.h"
-#include "ts/HostLookup.h"
+#include "tscore/MatcherUtils.h"
+#include "tscore/HostLookup.h"
 
 /* --------------------------------------------------------------
    this file is built using "ParentSelection.cc as a template.

@@ -32,9 +32,9 @@
 
 #include <time.h>
 #include <string>
-#include "ts/ink_hash_table.h"
-#include "ts/ink_rwlock.h"
-#include "P_RecProcess.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/ink_rwlock.h"
+#include "records/P_RecProcess.h"
 
 enum HostStatus_t {
   HOST_STATUS_INIT,

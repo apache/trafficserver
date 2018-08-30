@@ -30,11 +30,11 @@
  ****************************************************************************/
 
 #include "P_SSLSNI.h"
-#include "ts/Diags.h"
-#include "ts/SimpleTokenizer.h"
+#include "tscore/Diags.h"
+#include "tscore/SimpleTokenizer.h"
 #include "P_SSLConfig.h"
-#include "ts/ink_memory.h"
-#include <ts/TextView.h>
+#include "tscore/ink_memory.h"
+#include "tscpp/util/TextView.h"
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;

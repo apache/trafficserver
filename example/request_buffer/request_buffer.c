@@ -26,8 +26,8 @@
 #include <string.h>
 
 #include "ts/ts.h"
-#include "ts/ink_assert.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "request_buffer"
 

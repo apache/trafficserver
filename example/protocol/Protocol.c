@@ -23,7 +23,7 @@
 
 #include "Protocol.h"
 #include "TxnSM.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include <math.h>
 
 /* global variable */

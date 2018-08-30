@@ -21,12 +21,12 @@
 
 #pragma once
 
-#include "ts/Map.h"
-#include "ts/List.h"
-#include "ts/ink_mutex.h"
+#include "tscore/Map.h"
+#include "tscore/List.h"
+#include "tscore/ink_mutex.h"
 #include "P_EventSystem.h"
-#include "I_RecProcess.h"
-#include "ts/ink_platform.h"
+#include "records/I_RecProcess.h"
+#include "tscore/ink_platform.h"
 #include "P_SSLUtils.h"
 #include "ts/apidefs.h"
 #include <openssl/ssl.h>

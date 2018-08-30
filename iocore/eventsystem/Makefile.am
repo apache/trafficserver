@@ -17,8 +17,8 @@
 #  limitations under the License.
 
 AM_CPPFLAGS += \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/include/records \
 	$(TS_INCLUDES)
 
 TESTS = $(check_PROGRAMS)
@@ -93,7 +93,7 @@ test_LD_ADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@LIBTCL@ @HWLOC_LIBS@
 
@@ -121,7 +121,7 @@ test_Buffer_LDADD = $(test_LD_ADD)
 test_Event_LDADD = $(test_LD_ADD)
 
 
-test_MIOBufferWriter_SOURCES = unit-tests/test_MIOBufferWriter.cc
+test_MIOBufferWriter_SOURCES = unit_tests/test_MIOBufferWriter.cc
 
 test_MIOBufferWriter_CPPFLAGS = $(test_CPP_FLAGS) -I$(abs_top_srcdir)/tests/include
 test_MIOBufferWriter_LDFLAGS = $(test_LD_FLAGS)

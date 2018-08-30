@@ -27,7 +27,7 @@
 #include <memory.h>
 #include <cinttypes>
 #include <ts/ts.h>
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include <tsconfig/TsValue.h>
 #include <openssl/ssl.h>
 #include <getopt.h>

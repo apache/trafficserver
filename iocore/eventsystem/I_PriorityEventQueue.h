@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Event.h"
 
 // <5ms, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120

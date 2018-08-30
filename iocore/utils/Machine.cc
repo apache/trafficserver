@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_inet.h"
-#include "ts/ink_assert.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Diags.h"
 #include "I_Machine.h"
 
 #if HAVE_IFADDRS_H

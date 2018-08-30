@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "ts/ink_string.h"
-#include "ts/Tokenizer.h"
-#include "ts/ink_file.h"
+#include "tscore/ink_string.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/ink_file.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
-#include "ts/Regex.h"
+#include "tscore/Regex.h"
 
 // bool varSetFromStr(const char*, const char* )
 //

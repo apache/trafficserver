@@ -24,10 +24,10 @@
 #include "Main.h"
 #include "P_HostDB.h"
 #include "P_RefCountCacheSerializer.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 #include "Show.h"
-#include "ts/Tokenizer.h"
-#include "ts/ink_apidefs.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/ink_apidefs.h"
 
 #include <utility>
 #include <vector>

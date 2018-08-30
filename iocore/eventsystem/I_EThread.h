@@ -24,9 +24,9 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/ink_rand.h"
-#include "ts/I_Version.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_rand.h"
+#include "tscore/I_Version.h"
 #include "I_Thread.h"
 #include "I_PriorityEventQueue.h"
 #include "I_ProtectedQueue.h"

@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_file.h"
-#include "ts/I_Layout.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_file.h"
+#include "tscore/I_Layout.h"
 #include "DiagsConfig.h"
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 
 //////////////////////////////////////////////////////////////////////////////
 //

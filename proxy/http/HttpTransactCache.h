@@ -30,7 +30,7 @@
  ****************************************************************************/
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "HttpConfig.h"
 
 // This is needed since txn_conf->cache_guaranteed_max_lifetime is currently not

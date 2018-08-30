@@ -18,8 +18,8 @@
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/include/records \
 	$(TS_INCLUDES)
 
 TESTS = test_AIO.sample
@@ -56,7 +56,8 @@ test_AIO_LDADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@LIBTCL@ @HWLOC_LIBS@
 

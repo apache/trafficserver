@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
 
 // Get rid of any previous definition first... /leif

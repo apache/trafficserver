@@ -24,8 +24,8 @@
 #include <algorithm>
 #include <records/P_RecDefs.h>
 #include "HttpConnectionCount.h"
-#include <ts/bwf_std_format.h>
-#include <ts/BufferWriter.h>
+#include "tscore/bwf_std_format.h"
+#include "tscore/BufferWriter.h"
 
 using namespace std::literals;
 

@@ -37,7 +37,7 @@
 
 #include "Plugin.h"
 #include "P_Net.h"
-#include "ts/ink_atomic.h"
+#include "tscore/ink_atomic.h"
 
 class PluginVCCore;
 

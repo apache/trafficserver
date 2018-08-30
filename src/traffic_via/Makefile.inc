@@ -22,7 +22,7 @@ bin_PROGRAMS += traffic_via/traffic_via
 traffic_via_traffic_via_CPPFLAGS = \
     $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	$(TS_INCLUDES)
 
@@ -34,7 +34,8 @@ traffic_via_traffic_via_SOURCES = \
 	traffic_via/traffic_via.cc
 
 traffic_via_traffic_via_LDADD = \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@LIBPCRE@
 
 TESTS += \

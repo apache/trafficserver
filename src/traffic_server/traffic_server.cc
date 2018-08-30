@@ -30,16 +30,16 @@
 
  ****************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/ink_sys_control.h"
-#include "ts/ink_args.h"
-#include "ts/ink_lockfile.h"
-#include "ts/ink_stack_trace.h"
-#include "ts/ink_syslog.h"
-#include "ts/hugepages.h"
-#include "ts/runroot.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_sys_control.h"
+#include "tscore/ink_args.h"
+#include "tscore/ink_lockfile.h"
+#include "tscore/ink_stack_trace.h"
+#include "tscore/ink_syslog.h"
+#include "tscore/hugepages.h"
+#include "tscore/runroot.h"
 
-#include "api/ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
+#include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
 #include <syslog.h>
 #include <algorithm>
@@ -59,7 +59,7 @@ extern "C" int plock(int);
 #endif
 
 #include "Main.h"
-#include "ts/signals.h"
+#include "tscore/signals.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "P_UDPNet.h"
@@ -67,10 +67,10 @@ extern "C" int plock(int);
 #include "P_SplitDNS.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 #include "I_Machine.h"
 #include "RecordsConfig.h"
-#include "I_RecProcess.h"
+#include "records/I_RecProcess.h"
 #include "Transform.h"
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
@@ -93,10 +93,10 @@ extern "C" int plock(int);
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "P_SSLSNI.h"
 
-#include <ts/ink_cap.h>
+#include "tscore/ink_cap.h"
 
 #if TS_HAS_PROFILER
 #include <gperftools/profiler.h>

@@ -25,7 +25,7 @@
  */
 
 #include <cstring>
-#include <ts/TsBuffer.h>
+#include "tscore/TsBuffer.h"
 #include <tsconfig/NumericType.h>
 #include <tsconfig/IntrusivePtr.h>
 #include <tsconfig/Errata.h>

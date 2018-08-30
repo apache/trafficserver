@@ -26,7 +26,7 @@
 #include <cstdarg>
 #include <cstdio>
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "LogBufferSink.h"
 
 class LogSock;

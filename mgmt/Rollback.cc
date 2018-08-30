@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_time.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_time.h"
 #include "Alarms.h"
 #include "LocalManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 #include "FileManager.h"
 #include "ProxyConfig.h"
 

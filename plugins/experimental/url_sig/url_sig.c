@@ -23,7 +23,7 @@
     _a < _b ? _a : _b;      \
   })
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "url_sig.h"
 
 #include <stdio.h>

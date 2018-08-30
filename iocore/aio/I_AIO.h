@@ -30,9 +30,9 @@
  ****************************************************************************/
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
-#include "I_RecProcess.h"
+#include "records/I_RecProcess.h"
 
 #define AIO_MODULE_MAJOR_VERSION 1
 #define AIO_MODULE_MINOR_VERSION 0

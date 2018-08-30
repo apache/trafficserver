@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/Regression.h"
+#include "tscore/Regression.h"
 #include "HttpTransact.h"
 #include "HttpSM.h"
 

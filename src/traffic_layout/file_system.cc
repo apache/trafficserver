@@ -25,9 +25,9 @@
 // including: make directory (with parents), copy directory (recursively), remove directory (recursively), remove all directories
 // inside
 
-#include "ts/ink_error.h"
-#include "ts/I_Layout.h"
-#include "ts/runroot.h"
+#include "tscore/ink_error.h"
+#include "tscore/I_Layout.h"
+#include "tscore/runroot.h"
 #include "file_system.h"
 
 #include <iostream>

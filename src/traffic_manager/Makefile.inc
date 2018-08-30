@@ -20,14 +20,14 @@ bin_PROGRAMS += traffic_manager/traffic_manager
 traffic_manager_traffic_manager_CPPFLAGS = \
     $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/api \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/include \
 	$(TS_INCLUDES)
 
 traffic_manager_traffic_manager_LDFLAGS = \
@@ -43,7 +43,8 @@ traffic_manager_traffic_manager_LDADD = \
 	$(top_builddir)/mgmt/api/libmgmtapilocal.la \
 	$(top_builddir)/mgmt/libmgmt_lm.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/records/librecords_lm.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
@@ -55,7 +56,7 @@ traffic_manager_traffic_manager_LDADD = \
 # Must do it this way or the dependencies aren't detected.
 if BUILD_WCCP
 traffic_manager_traffic_manager_LDADD += \
-	$(top_builddir)/lib/wccp/libwccp.a \
+	wccp/libwccp.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@OPENSSL_LIBS@
 endif

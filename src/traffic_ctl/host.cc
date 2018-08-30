@@ -23,7 +23,7 @@
 
 #include "traffic_ctl.h"
 #include "HostStatus.h"
-#include <P_RecUtils.h>
+#include "records/P_RecUtils.h"
 
 static int
 status_get(unsigned argc, const char **argv)

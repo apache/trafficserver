@@ -26,12 +26,11 @@ export CCACHE_BASEDIR
 # TODO: There's still some weirdness in the dependencies between proxy
 # and mgmt, hence we have to build proxy/hdrs first.
 
-# proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
-SUBDIRS = proxy/api/ts lib iocore proxy mgmt src plugins tools example rc configs
+SUBDIRS = src/tscpp/util lib src/tscore iocore proxy mgmt src plugins tools example rc configs include
 
 if BUILD_DOCS
-SUBDIRS += doc
+SUBDIRS += doc include
 endif
 
 DIST_BUILD_USER=`id -nu`

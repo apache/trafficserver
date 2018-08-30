@@ -23,8 +23,8 @@ SUBDIRS = remap
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/proxy \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	-I$(abs_top_srcdir)/proxy/hdrs \
@@ -90,12 +90,13 @@ test_ForwardedConfig_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_ForwardedConfig_SOURCES = \
-	unit-tests/test_ForwardedConfig.cc \
+	unit_tests/test_ForwardedConfig.cc \
 	ForwardedConfig.cc \
-	unit-tests/test_ForwardedConfig_mocks.cc
+	unit_tests/test_ForwardedConfig_mocks.cc
 
 test_ForwardedConfig_LDADD = \
-	$(top_builddir)/lib/ts/libtsutil.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 clang-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)

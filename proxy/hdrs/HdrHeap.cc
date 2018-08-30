@@ -30,7 +30,7 @@
 
  ****************************************************************************/
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "HdrHeap.h"
 #include "URL.h"
 #include "MIME.h"
@@ -1182,7 +1182,7 @@ struct StrTest {
 };
 
 #if TS_HAS_TESTS
-#include <ts/TestBox.h>
+#include "tscore/TestBox.h"
 REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_PASSED;

@@ -39,12 +39,12 @@
 #pragma once
 #define I_IOBuffer_h
 
-#include "ts/ink_platform.h"
-#include "ts/ink_apidefs.h"
-#include "ts/Allocator.h"
-#include "ts/Ptr.h"
-#include "ts/ink_assert.h"
-#include "ts/ink_resource.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_apidefs.h"
+#include "tscore/Allocator.h"
+#include "tscore/Ptr.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_resource.h"
 
 struct MIOBufferAccessor;
 

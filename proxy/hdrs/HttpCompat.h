@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "ts/ink_string++.h"
+#include "tscore/ink_string++.h"
 #include "MIME.h"
-#include "ts/RawHashTable.h"
-#include "ts/Diags.h"
+#include "tscore/RawHashTable.h"
+#include "tscore/Diags.h"
 
 struct HttpBodySetRawData {
   unsigned int magic;

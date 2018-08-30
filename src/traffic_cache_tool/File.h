@@ -26,8 +26,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "ts/ink_memory.h"
-#include "ts/TextView.h"
+#include "tscore/ink_memory.h"
+#include "tscpp/util/TextView.h"
 
 namespace ts
 {

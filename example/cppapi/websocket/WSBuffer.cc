@@ -24,7 +24,7 @@
 #include "WSBuffer.h"
 
 #include <ts/ts.h>
-#include <ts/ink_config.h>
+#include "tscore/ink_config.h"
 #include "openssl/evp.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>

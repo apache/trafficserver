@@ -31,9 +31,9 @@
 
 #pragma once
 
-#include "ts/I_Version.h"
+#include "tscore/I_Version.h"
 #include "I_EventSystem.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 
 /**
    UDP service

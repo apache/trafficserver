@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "P_Net.h"
 #include "HttpConfig.h"
 #include "HttpSessionAccept.h"
@@ -33,7 +33,7 @@
 #endif
 #include "HttpPages.h"
 #include "HttpTunnel.h"
-#include "ts/Tokenizer.h"
+#include "tscore/Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/Http2SessionAccept.h"

@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "FetchSM.h"
 #include <cstdio>
 #include "HTTP.h"
 #include "PluginVC.h"
-#include "api/ts/ts.h" // Ugly, but we need a bunch of the public APIs here ... :-/
+#include "ts/ts.h" // Ugly, but we need a bunch of the public APIs here ... :-/
 
 #define DEBUG_TAG "FetchSM"
 #define FETCH_LOCK_RETRY_TIME HRTIME_MSECONDS(10)

@@ -22,7 +22,7 @@
  */
 
 #include "P_DNS.h"
-#include <ts/ink_inet.h>
+#include "tscore/ink_inet.h"
 
 #ifdef SPLIT_DNS
 #include "I_SplitDNS.h"

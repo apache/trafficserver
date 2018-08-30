@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 
 #include <string>
 #include <set>

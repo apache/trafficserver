@@ -36,19 +36,19 @@
 #include <cstdio>
 #include <cstring>
 
-#include "ts/ink_config.h"
-#include "ts/ink_sprintf.h"
-#include "ts/ink_file.h"
-#include "ts/Regression.h"
-#include "api/ts/ts.h"
-#include "api/ts/experimental.h"
-#include "I_RecCore.h"
+#include "tscore/ink_config.h"
+#include "tscore/ink_sprintf.h"
+#include "tscore/ink_file.h"
+#include "tscore/Regression.h"
+#include "ts/ts.h"
+#include "ts/experimental.h"
+#include "records/I_RecCore.h"
 
 #include "P_Net.h"
 #include "records/I_RecHttp.h"
 
 #include "http/HttpSM.h"
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 // This used to be in InkAPITestTool.cc, which we'd just #include here... But that seemed silly.
 #define SDBG_TAG "SockServer"
@@ -9025,7 +9025,7 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
 //                    TSUuidVersionGet
 //                    TSUuidStringParse
 ////////////////////////////////////////////////
-#include "ts/ink_uuid.h"
+#include "tscore/ink_uuid.h"
 
 REGRESSION_TEST(SDK_API_UUID)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {

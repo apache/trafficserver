@@ -1,0 +1,80 @@
+/** @file
+
+    Intrusive pointer test.
+
+    @section license License
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
+#include "tscore/IntrusivePtr.h"
+#include "tscore/IntrusiveDList.h"
+#include "tscore/TestBox.h"
+
+namespace
+{ // Hide our local defintions
+
+// Test class for pointers and lists.
+class A : public IntrusivePtrCounter
+{
+public:
+  A() : _data(0) {}
+  static A *&
+  nextPtr(A *a)
+  {
+    return a->_next;
+  }
+  static A *&
+  prevPtr(A *a)
+  {
+    return a->_prev;
+  }
+  int _data;
+  A *_next;
+  A *_prev;
+};
+
+// Definitions to test compilation.
+typedef IntrusivePtrQueue<A, IntrusivePtrLinkFunction<A, &A::nextPtr, &A::prevPtr>> AList;
+} // namespace
+
+REGRESSION_TEST(IntrusivePtr_Test_Basic)(RegressionTest *t, int atype, int *pstatus)
+{
+  IntrusivePtr<A> ptr1;
+  IntrusivePtr<A> ptr2(new A);
+
+  TestBox tb(t, pstatus);
+
+  tb = REGRESSION_TEST_PASSED;
+
+  tb.check(!ptr1, "Default construct pointer is not empty.");
+  tb.check(ptr2, "Construction from pointer was empty.");
+
+  AList alist1;
+
+  tb.check(ptr2->useCount() == 1, "Bad use count: expected 1 got %d", ptr2->useCount());
+  alist1.append(ptr2);
+  tb.check(ptr2->useCount() == 2, "Bad use count: expected 2 got %d", ptr2->useCount());
+  alist1.remove(ptr2);
+  tb.check(ptr2->useCount() == 1, "Bad use count: expected 1 got %d", ptr2->useCount());
+  alist1.prepend(ptr2);
+  tb.check(ptr2->useCount() == 2, "Bad use count: expected 2 got %d", ptr2->useCount());
+  for (AList::iterator spot = alist1.begin(), limit = alist1.end(); spot != limit; ++spot) {
+    if (spot->_data)
+      break;
+  }
+}

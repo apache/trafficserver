@@ -27,13 +27,13 @@
 #include "I_EventSystem.h"
 #include "I_Net.h"
 #include "I_Cache.h"
-#include "I_Version.h"
+#include "tscore/I_Version.h"
 
 #include "ts/ts.h" // plugin header
 #include "protocol_binary.h"
-#include "ink_memory.h"
-#include "ink_hrtime.h"
-#include "CryptoHash.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_hrtime.h"
+#include "tscore/CryptoHash.h"
 
 #define TSMEMCACHE_VERSION "1.0.0"
 #define TSMEMCACHE_MAX_CMD_SIZE (128 * 1024 * 1024) // silly large

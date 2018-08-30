@@ -31,10 +31,10 @@
 */
 
 #include "P_Net.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_sock.h"
-#include "ts/InkErrno.h"
-#include <ts/IpMapConf.h>
+#include "tscore/I_Layout.h"
+#include "tscore/ink_sock.h"
+#include "tscore/InkErrno.h"
+#include "tscore/IpMapConf.h"
 
 socks_conf_struct *g_socks_conf_stuff = nullptr;
 

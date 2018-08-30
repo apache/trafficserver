@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "UrlMapping.h"
 #include "HttpTransact.h"
-#include "ts/Regex.h"
+#include "tscore/Regex.h"
 
 #define URL_REMAP_FILTER_NONE 0x00000000
 #define URL_REMAP_FILTER_REFERER 0x00000001      /* enable "referer" header validation */

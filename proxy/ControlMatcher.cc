@@ -30,14 +30,14 @@
 
 #include <sys/types.h>
 
-#include "ts/ink_config.h"
-#include "ts/MatcherUtils.h"
-#include "ts/Tokenizer.h"
+#include "tscore/ink_config.h"
+#include "tscore/MatcherUtils.h"
+#include "tscore/Tokenizer.h"
 #include "ProxyConfig.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"
 #include "ParentSelection.h"
-#include "ts/HostLookup.h"
+#include "tscore/HostLookup.h"
 #include "HTTP.h"
 #include "URL.h"
 #include "P_EventSystem.h"

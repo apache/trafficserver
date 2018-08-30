@@ -56,13 +56,13 @@
 
 #include <strings.h>
 #include <sys/types.h>
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "HttpCompat.h"
 #include "HttpTransact.h"
-#include "ts/RawHashTable.h"
-#include "ts/ink_sprintf.h"
+#include "tscore/RawHashTable.h"
+#include "tscore/ink_sprintf.h"
 
 #define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
 #define HTTP_BODY_SET_MAGIC 0xB0DFAC55

@@ -27,7 +27,7 @@
 
 #include "BaseManager.h"
 #include "records/I_RecHttp.h"
-#include "ts/I_Version.h"
+#include "tscore/I_Version.h"
 
 #include <syslog.h>
 #if TS_HAS_WCCP

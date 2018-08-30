@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <ts/TestBox.h>
+#include "tscore/TestBox.h"
 #include "LogUtils.cc"
 #include <string.h>
 

@@ -17,7 +17,7 @@
  */
 
 #include "sslheaders.h"
-#include <ts/TestBox.h>
+#include "tscore/TestBox.h"
 #include <cstdio>
 #include <cstdarg>
 #include <openssl/ssl.h>

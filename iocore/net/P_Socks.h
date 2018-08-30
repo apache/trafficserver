@@ -27,7 +27,7 @@
 
 #ifdef SOCKS_WITH_TS
 #include "ParentSelection.h"
-#include <ts/IpMap.h>
+#include "tscore/IpMap.h"
 #endif
 
 enum {

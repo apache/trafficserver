@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "ts/ink_defs.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_memory.h"
 #include "HPACK.h"
 #include "MIME.h"
-#include "P_RecDefs.h"
+#include "records/P_RecDefs.h"
 
 class HTTPHdr;
 

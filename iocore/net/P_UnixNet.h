@@ -25,7 +25,7 @@
 
 #include <bitset>
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #define USE_EDGE_TRIGGER_EPOLL 1
 #define USE_EDGE_TRIGGER_KQUEUE 1

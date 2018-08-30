@@ -22,11 +22,11 @@
  */
 
 #include "Main.h"
-#include "ts/I_Layout.h"
-#include "ts/I_Version.h"
+#include "tscore/I_Layout.h"
+#include "tscore/I_Version.h"
 #include "I_Net.h"
-#include "ts/signals.h"
-#include "ts/ink_cap.h"
+#include "tscore/signals.h"
+#include "tscore/ink_cap.h"
 
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
 // include it if we are planning to use it.

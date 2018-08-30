@@ -24,8 +24,8 @@
 
 #pragma once
 
-#include "ts/ink_hash_table.h"
-#include "ts/ink_mutex.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/ink_mutex.h"
 
 class AppVersionInfo;
 

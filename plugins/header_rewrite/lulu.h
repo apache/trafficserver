@@ -24,8 +24,8 @@
 
 #include <string>
 
-#include "ts/ink_defs.h"
-#include "ts/ink_platform.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_platform.h"
 
 #define TS_REMAP_PSEUDO_HOOK TS_HTTP_LAST_HOOK // Ugly, but use the "last hook" for remap instances.
 

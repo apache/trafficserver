@@ -32,7 +32,7 @@
 
 #include "ProxyConfig.h"
 #include "SSLSessionCache.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 #include <openssl/rand.h>
 #include "P_SSLCertLookup.h"
 

@@ -24,14 +24,14 @@
 #pragma once
 #include <netinet/in.h>
 #include <iostream>
-#include <ts/I_Version.h>
-#include <ts/Scalar.h>
-#include <ts/Regex.h>
+#include "tscore/I_Version.h"
+#include "tscore/Scalar.h"
+#include "tscore/Regex.h"
 #include <tsconfig/Errata.h>
-#include <ts/TextView.h>
-#include <ts/ink_file.h>
+#include "tscpp/util/TextView.h"
+#include "tscore/ink_file.h"
 #include <list>
-#include <ts/CryptoHash.h>
+#include "tscore/CryptoHash.h"
 
 #include "Command.h"
 #include "File.h"

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_align.h"
+#include "tscore/ink_align.h"
 #include "I_EventProcessor.h"
 
 const int LOAD_BALANCE_INTERVAL = 1;

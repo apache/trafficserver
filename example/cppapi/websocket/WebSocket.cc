@@ -23,7 +23,7 @@
 
 #include "WebSocket.h"
 
-#include <atscppapi/Logger.h>
+#include "tscpp/api/Logger.h"
 
 // DISCLAIMER: this is intended for demonstration purposes only and
 // does not pretend to implement a complete (or useful) server.

@@ -24,7 +24,7 @@ AM_CFLAGS += @FLEX_CFLAGS@
 AM_YFLAGS = --yacc -d -p tsconfig
 
 AM_CPPFLAGS += \
-	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/include \
 	$(TS_INCLUDES)
 
 BUILT_SOURCES = \
@@ -63,7 +63,7 @@ endif
 
 test_tsconfig_SOURCES = test-tsconfig.cc
 
-test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la
+test_tsconfig_LDADD = libtsconfig.la $(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la
 
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.

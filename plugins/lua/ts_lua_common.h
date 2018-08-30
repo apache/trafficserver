@@ -29,7 +29,7 @@
 #include <ts/ts.h>
 #include <ts/experimental.h>
 #include <ts/remap.h>
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "ts_lua_coroutine.h"
 
 #define TS_LUA_FUNCTION_REMAP "do_remap"

@@ -17,9 +17,9 @@
  */
 
 #include <iostream>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/PluginInit.h>
-#include <atscppapi/utils.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/PluginInit.h"
+#include "tscpp/api/utils.h"
 
 using namespace atscppapi;
 

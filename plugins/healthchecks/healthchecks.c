@@ -33,8 +33,8 @@ limitations under the License.
 #include <libgen.h>
 
 #include "ts/ts.h"
-#include "ts/ink_platform.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_defs.h"
 
 static const char PLUGIN_NAME[] = "healthchecks";
 static const char SEPARATORS[]  = " \t\n";

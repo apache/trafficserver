@@ -22,8 +22,8 @@
  */
 
 #include "P_Net.h"
-#include "ts/InkErrno.h"
-#include "ts/ink_sock.h"
+#include "tscore/InkErrno.h"
+#include "tscore/ink_sock.h"
 #include "P_SSLNextProtocolAccept.h"
 
 // For Stat Pages

@@ -24,10 +24,10 @@
 #include <cstdio>
 #include <atomic>
 
-#include "ts/ink_platform.h"
-#include "ts/ink_base64.h"
-#include "ts/I_Layout.h"
-#include "ts/I_Version.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_base64.h"
+#include "tscore/I_Layout.h"
+#include "tscore/I_Version.h"
 
 #include "InkAPIInternal.h"
 #include "Log.h"
@@ -44,14 +44,14 @@
 #include "P_UDPNet.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"
-#include "I_RecCore.h"
+#include "records/I_RecCore.h"
 #include "P_SSLConfig.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "PluginVC.h"
-#include "api/ts/experimental.h"
+#include "ts/experimental.h"
 #include "HttpSessionAccept.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
@@ -60,13 +60,13 @@
 #include "I_Tasks.h"
 
 #include "P_OCSPStapling.h"
-#include "I_RecDefs.h"
-#include "I_RecCore.h"
+#include "records/I_RecDefs.h"
+#include "records/I_RecCore.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include <string_view>
 
-#include "api/ts/ts.h"
+#include "ts/ts.h"
 
 /****************************************************************
  *  IMPORTANT - READ ME
@@ -6721,7 +6721,7 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
 
 // The API below require timer values as TSHRTime parameters
 // which are in nanoseconds. Use the TS_HRTIME macros defined
-// in api/ts/experimental.h until they are promoted to stable
+// in ts/experimental.h until they are promoted to stable
 // api.
 /* Net VConnections */
 void

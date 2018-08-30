@@ -28,19 +28,19 @@
  *
  *
  ****************************************************************************/
-#include "ts/ink_platform.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_time.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_time.h"
 
 #include "URL.h"
-#include "ts/Tokenizer.h"
+#include "tscore/Tokenizer.h"
 #include "ControlBase.h"
-#include "ts/MatcherUtils.h"
+#include "tscore/MatcherUtils.h"
 #include "HTTP.h"
 #include "ControlMatcher.h"
 #include "HdrUtils.h"
 
-#include <ts/TsBuffer.h>
+#include "tscore/TsBuffer.h"
 
 #include <vector>
 

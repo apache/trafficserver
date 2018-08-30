@@ -27,15 +27,15 @@
 
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include <dlfcn.h>
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "ProxyConfig.h"
 #include "ReverseProxy.h"
-#include "ts/MatcherUtils.h"
-#include "ts/Tokenizer.h"
-#include "api/ts/remap.h"
+#include "tscore/MatcherUtils.h"
+#include "tscore/Tokenizer.h"
+#include "ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "RemapProcessor.h"
 #include "UrlRewrite.h"
