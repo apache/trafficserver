@@ -963,7 +963,6 @@ Changes with Apache Traffic Server 8.0.0
   #3609 - Remove traffic_cop
   #3610 - Clang6: Fix garbage return value in CacheTool.cc.
   #3613 - Remove unused code
-  #3613 - Remove unused code
   #3615 - No need to walk the buckets for cache scan
   #3619 - Fix Coverity ID 1022023
   #3620 - Coverity 1021989
@@ -1092,6 +1091,7 @@ Changes with Apache Traffic Server 8.0.0
   #3801 - Add infodir back to Layout and clean up some code
   #3802 - HostDB code cleanup
   #3804 - Removed defines that are not used
+  #3810 - Handy tool to decode via header
   #3811 - Negative Caching should not happen on 400 Bad Request
   #3815 - Added client read error case to TSHttpTxnAborted
   #3816 - Renames the cmd/ tree to src/
@@ -1110,6 +1110,7 @@ Changes with Apache Traffic Server 8.0.0
   #3835 - Search cache for urls matching the regex input
   #3838 - Handle inactivity timeout event in state_http_server_open
   #3840 - Update runroot to use yaml-cpp library
+  #3841 - Plugin Traffic Dump
   #3842 - Removes the TSUrlDestroy API, which has been a no-op for a long time
   #3843 - Removes the old TSRedirectUrlGet API, deprecated
   #3846 - Make atscppapi::RegisterGlobalPlugin return a value.
@@ -1140,6 +1141,7 @@ Changes with Apache Traffic Server 8.0.0
   #3899 - Add a --reason tag option to the host subcommand
   #3902 - Recognize openssl engines for key loading.
   #3903 - traffic_manager: Fix error, clean up argument handling.
+  #3906 - Prefetch plugin
   #3908 - BWF: Add "OptionalAffix", clean up some minor BWF wrapper class issues.
   #3909 - Fixes detection of OpenSSL's OCSP APIs
   #3912 - Avoid cert callback if no verification is requested.
@@ -1168,18 +1170,24 @@ Changes with Apache Traffic Server 8.0.0
   #3970 - Remove Http2ConnectionState::continued_buffer
   #3983 - Fixes some var-args missing va_start/end
   #3994 - Runroot: Add feature to use runroot by providing yaml file
+  #3995 - cachekey: capture cache key elements from headers
   #4000 - TS-4765: Removes previously deprecated cqbl and pqbl log tags
   #4001 - Removes old commented-out code
   #4002 - Fixes spelling
   #4004 - Dockerfile for CentOS/Fedora, i.e. yum dependencies
   #4011 - Modifies init script to add start/reload hooks
   #4014 - fix outputlog, diagslog rolling size overflow
+  #4016 - Makefile to make Fedora and Centos docker images
   #4021 - Runroot: pass runroot down from manager and error message update
   #4024 - Fix logic to support ASYNC_pause_job
   #4025 - Removes non-FS ciphers to make SSLLabs not warn on weak ciphers
   #4027 - Fixes ticket loading from filesystems without a mtime
+  #4030 - Fixes Spelling
+  #4031 - Revert "Add TLSv1.3 cipher suites for OpenSSL-1.1.1"
   #4035 - Fixing copy paste error in SNI yaml parsing
   #4036 - Removes more references to traffic_cop and cop related functionality
+  #4037 - Add configs for TLSv1.3 ciphersuites
+  #4041 - Log collation mem leaks (x2).
   #4043 - Change the defauilt connect_ports docs to reflect the code
   #4045 - Mark log collation as deprecated
   #4048 - Cached object should not be removed when write is aborted
@@ -1197,3 +1205,15 @@ Changes with Apache Traffic Server 8.0.0
   #4090 - fix the number of started threads of certain type.
   #4091 - logstats conditionally disable format check
   #4093 - Fixes the renamed RenameTSHttpTxnSetHttpRetStatus() API
+  #4101 - cachekey: handle empty regex group captures
+  #4102 - fix for cpp api Transaction::redirectTo
+  #4108 - fixing spelled enumeration
+  #4114 - Clear up events and timers for a H2 stream before destroying its mutex
+  #4122 - Make sure "traffic_ctl config reload" only reloads configs that changed
+  #4124 - Removes references to STAT_PROCESSOR
+  #4131 - Completes code comment for redirect configs
+  #4138 - Follows 308 Permanent Redirect
+  #4165 - Update the header_rewrite doc for clarification on CLIENT-URL:HOST
+  #4169 - Multiplexer fixes
+  #4170 - Fix for when multiplexer gets a 0 byte read event
+  #4181 - Removed checking the return value for TSContCall() in the multiplexer plugin
