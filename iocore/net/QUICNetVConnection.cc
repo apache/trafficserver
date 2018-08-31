@@ -1369,10 +1369,11 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
   QUICEncryptionLevel level   = QUICTypeUtil::encryption_level(packet->type());
 
   bool should_send_ack;
+  bool is_flow_controlled;
 
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
-  error = this->_frame_dispatcher->receive_frames(level, payload, size, should_send_ack);
+  error = this->_frame_dispatcher->receive_frames(level, payload, size, should_send_ack, is_flow_controlled);
   if (error->cls != QUICErrorClass::NONE) {
     return error;
   }
@@ -1381,17 +1382,19 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
     should_send_ack = false;
   }
 
-  int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
-  QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
-              this->_local_flow_controller->current_limit());
+  if (is_flow_controlled) {
+    int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
+    QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+                this->_local_flow_controller->current_limit());
 
-  if (ret != 0) {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
+    if (ret != 0) {
+      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
+    }
+
+    this->_local_flow_controller->forward_limit(this->_stream_manager->total_reordered_bytes() + this->_flow_control_buffer_size);
+    QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+                this->_local_flow_controller->current_limit());
   }
-
-  this->_local_flow_controller->forward_limit(this->_stream_manager->total_reordered_bytes() + this->_flow_control_buffer_size);
-  QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
-              this->_local_flow_controller->current_limit());
 
   this->_ack_frame_creator.update(level, packet_num, should_send_ack);
 

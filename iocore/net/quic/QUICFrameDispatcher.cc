@@ -42,11 +42,13 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 }
 
 QUICErrorUPtr
-QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &should_send_ack)
+QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &should_send_ack,
+                                    bool &is_flow_controlled)
 {
   std::shared_ptr<const QUICFrame> frame(nullptr);
   uint16_t cursor     = 0;
   should_send_ack     = false;
+  is_flow_controlled  = false;
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
 
   while (cursor < size) {
@@ -58,6 +60,10 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
     cursor += frame->size();
 
     QUICFrameType type = frame->type();
+
+    if (type == QUICFrameType::STREAM) {
+      is_flow_controlled = true;
+    }
 
     if (is_debug_tag_set(tag) && type != QUICFrameType::PADDING) {
       char msg[1024];
