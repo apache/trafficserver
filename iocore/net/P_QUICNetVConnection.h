@@ -272,6 +272,7 @@ private:
   QUICConnectionErrorUPtr _connection_error  = nullptr;
   uint32_t _state_closing_recv_packet_count  = 0;
   uint32_t _state_closing_recv_packet_window = 1;
+  uint64_t _flow_control_buffer_size         = 1024;
 
   void _schedule_packet_write_ready(bool delay = false);
   void _unschedule_packet_write_ready();

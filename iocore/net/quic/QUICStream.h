@@ -83,6 +83,7 @@ public:
 
   void reset(QUICStreamErrorUPtr error);
 
+  QUICOffset reordered_bytes() const;
   QUICOffset largest_offset_received() const;
   QUICOffset largest_offset_sent() const;
 
@@ -105,6 +106,7 @@ protected:
   QUICConnectionInfoProvider *_info = nullptr;
   QUICStreamId _id                  = 0;
   QUICOffset _send_offset           = 0;
+  QUICOffset _reordered_bytes       = 0;
 
   QUICRemoteStreamFlowController _remote_flow_controller;
   QUICLocalStreamFlowController _local_flow_controller;

@@ -295,6 +295,18 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 }
 
 uint64_t
+QUICStreamManager::total_reordered_bytes() const
+{
+  uint64_t total_bytes = 0;
+
+  // FIXME Iterating all (open + closed) streams is expensive
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+    total_bytes += s->reordered_bytes();
+  }
+  return total_bytes;
+}
+
+uint64_t
 QUICStreamManager::total_offset_received() const
 {
   uint64_t total_offset_received = 0;

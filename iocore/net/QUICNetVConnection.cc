@@ -1258,6 +1258,13 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     frame = this->_packet_retransmitter.generate_frame(level, UINT16_MAX, max_frame_size);
   }
 
+  // MAX_DATA
+  frame = this->_local_flow_controller->generate_frame(level, UINT16_MAX, max_frame_size);
+  if (frame) {
+    ++frame_count;
+    this->_store_frame(buf, len, max_frame_size, std::move(frame));
+  }
+
   // BLOCKED
   if (this->_remote_flow_controller->credit() == 0 && this->_stream_manager->will_generate_frame(level)) {
     frame = this->_remote_flow_controller->generate_frame(level, UINT16_MAX, max_frame_size);
@@ -1382,6 +1389,10 @@ QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
     return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
 
+  this->_local_flow_controller->forward_limit(this->_stream_manager->total_reordered_bytes() + this->_flow_control_buffer_size);
+  QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+              this->_local_flow_controller->current_limit());
+
   this->_ack_frame_creator.update(level, packet_num, should_send_ack);
 
   return error;
@@ -1443,7 +1454,8 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
   uint32_t local_initial_max_data  = 0;
   uint32_t remote_initial_max_data = 0;
   if (local_tp) {
-    local_initial_max_data = local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);
+    local_initial_max_data          = local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);
+    this->_flow_control_buffer_size = local_initial_max_data;
   }
   if (remote_tp) {
     remote_initial_max_data = remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);

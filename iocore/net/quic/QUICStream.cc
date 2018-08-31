@@ -334,8 +334,9 @@ QUICStream::recv(const QUICStreamFrame &frame)
 
     this->_write_to_read_vio(stream_frame->offset(), stream_frame->data(), stream_frame->data_length(),
                              stream_frame->has_fin_flag());
-    this->_local_flow_controller.forward_limit(stream_frame->offset() + stream_frame->data_length() +
-                                               this->_flow_control_buffer_size);
+
+    this->_reordered_bytes = stream_frame->offset() + stream_frame->data_length();
+    this->_local_flow_controller.forward_limit(this->_reordered_bytes + this->_flow_control_buffer_size);
     QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                       this->_local_flow_controller.current_limit());
     this->_state.update_with_receiving_frame(*new_frame);
@@ -355,7 +356,6 @@ QUICStream::recv(const QUICMaxStreamDataFrame &frame)
   QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
                     this->_remote_flow_controller.current_limit());
 
-  QUICStreamDebug("restart sending");
   int64_t len = this->_process_write_vio();
   if (len > 0) {
     this->_signal_write_event();
@@ -582,6 +582,12 @@ void
 QUICStream::reset(QUICStreamErrorUPtr error)
 {
   this->_reset_reason = std::move(error);
+}
+
+QUICOffset
+QUICStream::reordered_bytes() const
+{
+  return this->_reordered_bytes;
 }
 
 QUICOffset
