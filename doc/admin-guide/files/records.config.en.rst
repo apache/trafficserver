@@ -1562,7 +1562,7 @@ Negative Response Caching
    The HTTP status code for negative caching. Default values are mentioned above. The unwanted status codes can be
    taken out from the list. Other status codes can be added. The variable is a list but parsed as STRING.
 
-.. ts:cv:: CONFIG proxy.config.http.negative_revalidating_enabled INT 0
+.. ts:cv:: CONFIG proxy.config.http.negative_revalidating_enabled INT 1
    :reloadable:
    :overridable:
 
