@@ -43,12 +43,10 @@ sub milestone_lookup
   my $milestone_title = shift;
   my $endpoint = "/repos/$owner/$repo/milestones";
 
-  my $params = "state=closed";
-
   my $resp_body;
 
   $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
-  $curl->setopt(CURLOPT_URL, $url . $endpoint . '?' . $params);
+  $curl->setopt(CURLOPT_URL, $url . $endpoint);
 
   my $retcode = $curl->perform();
   if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200)
