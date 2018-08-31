@@ -736,7 +736,7 @@ LogConfig::update_space_used()
     return;
   }
 
-  int i, victim, candidate_count;
+  int i, total_candidate_count;
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
@@ -787,7 +787,7 @@ LogConfig::update_space_used()
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
       total_space_used += (int64_t)sbuf.st_size;
 
-      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name) && candidate_count < MAX_CANDIDATES) {
+      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name) && total_candidate_count < MAX_CANDIDATES) {
         //
         // then add this entry to the candidate list
         //
@@ -851,7 +851,7 @@ LogConfig::update_space_used()
 
   if (total_candidate_count > 0 && !space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");
-    Debug("logspace", "sorting %d delete candidates ...", candidate_count);
+    Debug("logspace", "sorting %d delete candidates ...", total_candidate_count);
     for (auto iter = deleting_info.begin(); iter != deleting_info.end(); iter++) {
       qsort(iter->candidates, iter->candidate_count, sizeof(LogDeleteCandidate), (int (*)(const void *, const void *))delete_candidate_compare);
     }
@@ -867,9 +867,13 @@ LogConfig::update_space_used()
           return A.total_size/A.rolling_size_mb - B.total_size/B.rolling_size_mb;
         } );
 
-      Debug("logspace", "auto-deleting")
       auto &candidates = target->candidates;
       auto &victim = target->victim;
+      if (victim >= target->candidate_count) {
+        Debug("logspace", "No more victims for log type %s", target->name.c_str());
+      }
+      Debug("logspace", "auto-deleting %s", candidates[victim].name);
+
       if (unlink(candidates[victim].name) < 0) {
         Note("Traffic Server was Unable to auto-delete rolled "
              "logfile %s: %s.",
@@ -884,13 +888,6 @@ LogConfig::update_space_used()
       }
     }
   }
-  //
-  // Clean up the candidate array
-  //
-  for (i = 0; i < candidate_count; i++) {
-    ats_free(candidates[i].name);
-  }
-
   //
   // Now that we've updated the m_space_used value, see if we need to
   // issue any alarms or warnings about space
