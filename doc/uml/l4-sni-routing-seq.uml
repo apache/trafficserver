@@ -15,8 +15,6 @@ Inbound <-[#green]> TS : <font color="green">//TCP//</font> Handshake
 Inbound -[#blue]> TS : <font color="blue">//TLS//</font> Client HELLO\nSNI=service-2.example.com
 note over TS : Examine SNI value\nSelect Outbound
 TS <-[#green]> Outbound : <font color="green">//TCP//</font> Handshake
-TS -> Outbound : <font color="red">//HTTP//</font> ""CONNECT"" app-server-56:4443
-Outbound -> TS : ""200 OK""
 TS -[#blue]> Outbound : <font color="blue">//TLS//</font> Client HELLO\nSNI=service-2.example.com
 note left : Duplicate of Inbound HELLO
 note over TS : Forward bytes\nInbound <&arrow-thick-left> <&arrow-thick-right> Outbound
