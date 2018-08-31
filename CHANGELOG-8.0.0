@@ -365,7 +365,7 @@ Changes with Apache Traffic Server 8.0.0
   #2181 - Changed to in-class member initializers and initializing all members
   #2182 - add type <Random> to mix nonssl, ssl and h2 requests
   #2187 - Add clang-format for the tests directory as well
-  #2188 -  Memleaking in transform test
+  #2188 - Memleaking in transform test
   #2190 - The content-type of TRACE response should be message/http.
   #2194 - Better initialization in Thread.cc.
   #2195 - Fix race condition in thread startup.
@@ -690,7 +690,7 @@ Changes with Apache Traffic Server 8.0.0
   #3047 - Add ssn and txn tests for HTTP2. Depends on Issue #3143. Depends on PR #3301
   #3049 - Fair Queuing HTTP Pacing Plugin
   #3050 - Add support to chunk post body's that come from H2 client without CL
-  #3051 -  We should call handle_parent_died if we failed to find next parent
+  #3051 - We should call handle_parent_died if we failed to find next parent
   #3054 - Changes to allow for possible stale ua_session pointer in HttpSM object.
   #3062 - Make string_view available in plugin cppapi.
   #3065 - Use NetVCOptions to create UDPConnection
@@ -734,7 +734,7 @@ Changes with Apache Traffic Server 8.0.0
   #3145 - Add TSAPI functions TSRemapFrom/ToUrlGet().  Allow TSMBuffer pointer passed to TSUrlStringGet() to be null.
   #3152 - Doc: Update documentation building documentation.
   #3153 - Adds tcpi_total_retrans to tcpinfo
-  #3154 -  Added auth_directives to uri_signing.
+  #3154 - Added auth_directives to uri_signing.
   #3161 - Optimize: define AIO_Reqs::aio_temp_list by ASLL macro
   #3163 - Add support for X-Remap header to xdebug plugin.
   #3170 - Eliminate incorrect -1 adjustment to buffer size for snprintf() calls.
@@ -981,7 +981,7 @@ Changes with Apache Traffic Server 8.0.0
   #3635 - cachekey: Update CMakelists.txt for cachekey promotion.
   #3636 - Removes the epic plugin
   #3637 - Coverity 1390953
-  #3638 -  Upgrade API I/O functions to consistently use s/size_t.
+  #3638 - Upgrade API I/O functions to consistently use s/size_t.
   #3639 - CID 1383617: Add null check
   #3640 - coverity: bulkfile ignored sign
   #3641 - Clang: fix ats_scoped_fd problem.
@@ -1118,7 +1118,7 @@ Changes with Apache Traffic Server 8.0.0
   #3850 - Fix event loop metrics to gather only from ET_NET threads.
   #3854 - Fix and Update build ordering of lib
   #3861 - Remove %<pqsn> logging for ATS 8.x
-  #3862 -  Renames yaml-based configuration files to .yaml 
+  #3862 - Renames yaml-based configuration files to .yaml
   #3864 - Updates the .spec file to be as per master
   #3866 - Fixed some errors in the default yaml logging config file
   #3867 - Reworks yaml-cpp build flags
@@ -1163,6 +1163,8 @@ Changes with Apache Traffic Server 8.0.0
   #3949 - Fixed http/2 issue with Http2Stream being updated after it was destroyed
   #3950 - access_control plugin
   #3952 - ASAN: stack-use-after-scope
+  #3953 - Make negative caching configurable with error HTTP status codes
+  #3956 - PROXY Protocol transformed to Forwarded HTTP header
   #3959 - Cleans up brotli compiler and linker flags
   #3960 - Cleans up LDADDs in traffic_server
   #3962 - Revert POST handling changes and fixes 6 different cores
@@ -1210,6 +1212,7 @@ Changes with Apache Traffic Server 8.0.0
   #4108 - fixing spelled enumeration
   #4114 - Clear up events and timers for a H2 stream before destroying its mutex
   #4122 - Make sure "traffic_ctl config reload" only reloads configs that changed
+  #4123 - Enables proxy.config.http.negative_revalidating_enabled by default
   #4124 - Removes references to STAT_PROCESSOR
   #4131 - Completes code comment for redirect configs
   #4138 - Follows 308 Permanent Redirect
@@ -1217,3 +1220,4 @@ Changes with Apache Traffic Server 8.0.0
   #4169 - Multiplexer fixes
   #4170 - Fix for when multiplexer gets a 0 byte read event
   #4181 - Removed checking the return value for TSContCall() in the multiplexer plugin
+  #4183 - Default config change with proxy.config.http.negative_revalidating_enabled
