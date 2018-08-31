@@ -46,19 +46,19 @@ QUICRateAnalyzer::expect_recv_bytes(ink_hrtime time)
 // QUICFlowController
 //
 uint64_t
-QUICFlowController::credit()
+QUICFlowController::credit() const
 {
   return this->current_limit() - this->current_offset();
 }
 
 QUICOffset
-QUICFlowController::current_offset()
+QUICFlowController::current_offset() const
 {
   return this->_offset;
 }
 
 QUICOffset
-QUICFlowController::current_limit()
+QUICFlowController::current_limit() const
 {
   return this->_limit;
 }

@@ -43,9 +43,9 @@ private:
 class QUICFlowController : public QUICFrameGenerator
 {
 public:
-  uint64_t credit();
-  QUICOffset current_offset();
-  QUICOffset current_limit();
+  uint64_t credit() const;
+  QUICOffset current_offset() const;
+  QUICOffset current_limit() const;
 
   /*
    * Returns 0 if succeed

@@ -585,13 +585,13 @@ QUICStream::reset(QUICStreamErrorUPtr error)
 }
 
 QUICOffset
-QUICStream::largest_offset_received()
+QUICStream::largest_offset_received() const
 {
   return this->_local_flow_controller.current_offset();
 }
 
 QUICOffset
-QUICStream::largest_offset_sent()
+QUICStream::largest_offset_sent() const
 {
   return this->_remote_flow_controller.current_offset();
 }

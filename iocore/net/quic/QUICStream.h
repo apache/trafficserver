@@ -83,8 +83,8 @@ public:
 
   void reset(QUICStreamErrorUPtr error);
 
-  QUICOffset largest_offset_received();
-  QUICOffset largest_offset_sent();
+  QUICOffset largest_offset_received() const;
+  QUICOffset largest_offset_sent() const;
 
   LINK(QUICStream, link);
 
