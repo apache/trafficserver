@@ -2892,6 +2892,11 @@ Logging Configuration
 
    Enables (``1``) or disables (``0``) automatic deletion of rolled files.
 
+.. ts:cv:: CONFIG proxy.config.log.auto_delete_files_space_limits_mb STRING diags.log=500, traffic.out=500
+   :reloadable:
+
+   The string is comprised of log filename and its space limit pair separated by comma. For this example, diags.log and traffic.out are set with space limit of 500 MB.
+
 .. ts:cv:: CONFIG proxy.config.log.sampling_frequency INT 1
    :reloadable:
 

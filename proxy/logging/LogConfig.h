@@ -89,7 +89,7 @@ struct LogDeleteCandidate {
 
 struct LogDeletingInfo {
   std::string name;
-  int rolling_size_mb{0};
+  int64_t space_limit_mb{0};
   int candidate_count{0};
   int victim{0};
   int64_t total_size{0LL};
@@ -97,6 +97,8 @@ struct LogDeletingInfo {
 
   LogDeletingInfo *_next{nullptr};
   LogDeletingInfo *_prev{nullptr};
+
+  LogDeletingInfo(std::string_view type, int64_t limit) : name(type), space_limit_mb(limit) {}
 };
 
 struct LogDeletingInfoDescriptor {

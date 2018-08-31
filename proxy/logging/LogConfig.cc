@@ -34,6 +34,7 @@
 #include "ts/ink_file.h"
 
 #include "ts/List.h"
+#include "ts/TextView.h"
 
 #include "Log.h"
 #include "LogField.h"
@@ -224,34 +225,26 @@ LogConfig::read_configuration_variables()
   val = (int)REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
     rolling_enabled = (Log::RollingEnabledValues)val;
-    LogDeletingInfo* info = new LogDeletingInfo();
-    info->name = "custom_logs";
-    info->rolling_size_mb = rolling_size_mb;
-    deleting_info.insert(info);
   } else {
     Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.rolling_enabled");
     rolling_enabled = Log::NO_ROLLING;
   }
 
-  val = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
-  if (LogRollingEnabledIsValid(val)) {
-    LogDeletingInfo* info = new LogDeletingInfo();
-    char *tmp = REC_ConfigReadString("proxy.config.diags.logfile");
-    info->name = tmp;
-    info->rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
-    deleting_info.insert(info);
-    ats_free(tmp);
-  }
+  char *limits = REC_ConfigReadString("proxy.config.log.auto_delete_files_space_limits_mb");
 
-  val = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled");
-  if (LogRollingEnabledIsValid(val)) {
-    LogDeletingInfo* info = new LogDeletingInfo();
-    char *tmp = REC_ConfigReadString("proxy.config.output.logfile");
-    info->name = tmp;
-    info->rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
-    deleting_info.insert(info);
-    ats_free(tmp);
+  TextView limits_view(limits);
+  while (limits_view) {
+    TextView value(limits_view.take_prefix_at(','));
+    TextView key(value.trim(&isspace).split_prefix_at('=').rtrim(&isspace));
+    if (key) {
+      value.ltrim(&isspace);
+      // Build new LogDeletingInfo based on the [type]=[limit] pair
+      deleting_info.insert(new LogDeletingInfo(key, static_cast<int64_t>(ts::svtoi(value))));
+    } else {
+      Warning("invalid key-value pair '%s' for '%s', skipping this pair", value.data(), "proxy.config.log.auto_delete_files_space_limits_mb");
+    }
   }
+  ats_free(limits);
 
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
@@ -779,7 +772,7 @@ LogConfig::update_space_used()
 
   total_space_used = 0LL;
   total_candidate_count  = 0;
-  auto event_log_iter = deleting_info.find("custom_logs");
+
   while ((entry = readdir(ld))) {
     snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry->d_name);
 
@@ -795,7 +788,8 @@ LogConfig::update_space_used()
         std::string type_name(entry->d_name, len);
         auto iter = deleting_info.find(type_name);
         if (iter == deleting_info.end()) {
-          iter = event_log_iter;
+          // We won't be deleting the log if its name doesn't match any known limits.
+          break;
         }
 
         auto &candidates = iter->candidates;
@@ -864,7 +858,7 @@ LogConfig::update_space_used()
       // Select the group with biggest ratio
       auto target = std::max_element(deleting_info.begin(), deleting_info.end(),
         [](LogDeletingInfo A, LogDeletingInfo B){
-          return A.total_size/A.rolling_size_mb - B.total_size/B.rolling_size_mb;
+          return A.total_size/A.space_limit_mb - B.total_size/B.space_limit_mb;
         } );
 
       auto &candidates = target->candidates;
@@ -886,6 +880,7 @@ LogConfig::update_space_used()
         m_space_used -= candidates[victim].size;
         m_partition_space_left += candidates[victim].size;
       }
+      total_candidate_count--;
     }
   }
   //
