@@ -188,6 +188,8 @@ TEST_CASE("QUICStream", "[quic]")
     IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
 
     std::unique_ptr<QUICStream> stream(new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id));
+    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+
     stream->init_flow_control_params(4096, 4096);
     MockContinuation mock_cont(stream->mutex);
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
@@ -197,6 +199,7 @@ TEST_CASE("QUICStream", "[quic]")
 
     const char data[1024] = {0};
     QUICFrameUPtr frame   = QUICFrameFactory::create_null_frame();
+
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level) == true);
