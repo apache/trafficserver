@@ -398,7 +398,7 @@ void
 Transaction::redirectTo(std::string const &url)
 {
   // Must re-alloc the string locally because ownership is transferred to the transaction.
-  char * const buffer = static_cast<char *>(TSmalloc(url.size() + 1));
+  char *const buffer = static_cast<char *>(TSmalloc(url.size() + 1));
   memcpy(buffer, url.c_str(), url.size());
   buffer[url.size()] = '\0';
   TSHttpTxnRedirectUrlSet(state_->txn_, buffer, url.size());
