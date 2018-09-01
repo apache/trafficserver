@@ -17,7 +17,7 @@
 */
 
 #include <string>
-#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "ts/ts.h"
 #include "lulu.h"
