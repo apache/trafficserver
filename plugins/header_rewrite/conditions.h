@@ -25,13 +25,11 @@
 #include <cstring>
 
 #include "ts/ts.h"
-#include "ts/ink_string.h"
 
 #include "condition.h"
 #include "matcher.h"
 #include "value.h"
 #include "lulu.h"
-//#include <mdbm.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Condition declarations.

@@ -752,7 +752,7 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
   if (ssn) {
     char value[32]; // enough for UINT64_MAX
     int count  = TSHttpSsnTransactionCount(ssn);
-    int length = ink_fast_itoa(count, value, sizeof(value));
+    int length = snprintf(value, sizeof(value), "%d", count);
 
     if (length > 0) {
       TSDebug(PLUGIN_NAME, "Appending TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
