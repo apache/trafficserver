@@ -23,6 +23,8 @@
 */
 
 #include "configs.h"
+#include <cstdio>
+#include <memory.h>
 
 // Read a config file, populare the linked list (chain the BgFetchRule's)
 bool
