@@ -29,6 +29,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <cinttypes>
 
 #include "ts/ts.h"
 #include "ts/remap.h"

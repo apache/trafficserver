@@ -25,9 +25,9 @@
 #pragma once
 
 #include <cstdlib>
+#include <atomic>
 
 #include "rules.h"
-#include "tscore/ink_atomic.h"
 
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
@@ -38,18 +38,18 @@ const char PLUGIN_NAME[] = "background_fetch";
 class BgFetchConfig
 {
 public:
-  BgFetchConfig(TSCont cont) : _cont(cont), _rules(nullptr), _ref_count(0) { TSContDataSet(cont, static_cast<void *>(this)); }
+  BgFetchConfig(TSCont cont) : _cont(cont) { TSContDataSet(cont, static_cast<void *>(this)); }
   void
   acquire()
   {
-    ink_atomic_increment(&_ref_count, 1);
+    ++_ref_count;
   }
 
   void
   release()
   {
-    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count);
-    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
+    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count.load());
+    if (--_ref_count == 0) {
       TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
       delete this;
     }
@@ -82,6 +82,6 @@ private:
   }
 
   TSCont _cont;
-  BgFetchRule *_rules;
-  int _ref_count;
+  BgFetchRule *_rules{nullptr};
+  std::atomic<int> _ref_count{0};
 };
