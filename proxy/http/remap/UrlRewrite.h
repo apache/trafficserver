@@ -87,7 +87,7 @@ public:
     return _valid;
   };
 
-  static const int MAX_REGEX_SUBS = 10;
+  static constexpr int MAX_REGEX_SUBS = 10;
 
   struct RegexMapping {
     url_mapping *url_map;
