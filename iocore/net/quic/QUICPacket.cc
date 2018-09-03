@@ -1150,8 +1150,8 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_server_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                                  ats_unique_buf payload, size_t len, bool retransmittable)
+QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
+                                           ats_unique_buf payload, size_t len, bool retransmittable)
 {
   int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::ONE_RTT);
   QUICPacketNumber pn = this->_packet_number_generator[index].next();

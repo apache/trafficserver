@@ -1434,9 +1434,9 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
     break;
   }
   case QUICPacketType::PROTECTED: {
-    packet = this->_packet_factory.create_server_protected_packet(this->_peer_quic_connection_id,
-                                                                  this->largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
-                                                                  std::move(buf), len, retransmittable);
+    packet = this->_packet_factory.create_protected_packet(this->_peer_quic_connection_id,
+                                                           this->largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
+                                                           std::move(buf), len, retransmittable);
     break;
   }
   default:

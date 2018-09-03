@@ -1270,8 +1270,8 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
   QUICPacketFactory factory;
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
-  QUICPacketUPtr packet = factory.create_server_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0,
-                                                                 {nullptr, [](void *p) { ats_free(p); }}, 0, true);
+  QUICPacketUPtr packet = factory.create_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0,
+                                                          {nullptr, [](void *p) { ats_free(p); }}, 0, true);
   SECTION("STREAM frame split")
   {
     size_t len;
