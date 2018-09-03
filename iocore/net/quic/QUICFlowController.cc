@@ -88,12 +88,6 @@ QUICFlowController::forward_limit(QUICOffset limit)
 }
 
 void
-QUICFlowController::set_threshold(uint64_t threshold)
-{
-  this->_threshold = threshold;
-}
-
-void
 QUICFlowController::set_limit(QUICOffset limit)
 {
   ink_assert(this->_limit == UINT64_MAX || this->_limit == limit);
@@ -156,29 +150,45 @@ QUICRemoteFlowController::update(QUICOffset offset)
 //
 // QUICLocalFlowController
 //
+QUICOffset
+QUICLocalFlowController::current_limit() const
+{
+  return this->_advertized_limit;
+}
+
 void
 QUICLocalFlowController::forward_limit(QUICOffset offset)
 {
   QUICFlowController::forward_limit(offset);
 
-  // Send MAX_(STREAM_)DATA frame
+  // Create MAX_(STREAM_)DATA frame. The frame will be sent on next WRITE_READY event on QUICNetVC
   if (this->_need_to_gen_frame()) {
-    this->_frame = this->_create_frame();
+    this->_frame            = this->_create_frame();
+    this->_advertized_limit = this->_limit;
   }
 }
 
 int
 QUICLocalFlowController::update(QUICOffset offset)
 {
-  this->_analyzer.update(offset);
+  if (this->_offset <= offset) {
+    this->_analyzer.update(offset);
+  }
   return QUICFlowController::update(offset);
+}
+
+void
+QUICLocalFlowController::set_limit(QUICOffset limit)
+{
+  this->_advertized_limit = limit;
+  QUICFlowController::set_limit(limit);
 }
 
 bool
 QUICLocalFlowController::_need_to_gen_frame()
 {
-  this->_threshold = this->_analyzer.expect_recv_bytes(2 * this->_rtt_provider->smoothed_rtt());
-  if (this->_offset + this->_threshold > this->_limit) {
+  QUICOffset threshold = this->_analyzer.expect_recv_bytes(2 * this->_rtt_provider->smoothed_rtt());
+  if (this->_offset + threshold > this->_advertized_limit) {
     return true;
   }
 
