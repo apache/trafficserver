@@ -18,8 +18,11 @@
 
 cd "${WORKSPACE}/src"
 autoreconf -if && ./configure
+[ "0" != "$?" ] && exit -1
 
 ${ATS_MAKE} -j clang-format
+[ "0" != "$?" ] && exit -1
+
 git diff --exit-code
 [ "0" != "$?" ] && exit -1
 
