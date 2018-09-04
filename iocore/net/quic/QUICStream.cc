@@ -50,13 +50,17 @@ QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider
     _id(sid),
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
+    _flow_control_buffer_size(recv_max_stream_data),
     _received_stream_frame_buffer(this),
     _state(nullptr, nullptr, &_received_stream_frame_buffer, nullptr)
 {
   SET_HANDLER(&QUICStream::state_stream_open);
   mutex = new_ProxyMutex();
 
-  this->init_flow_control_params(recv_max_stream_data, send_max_stream_data);
+  QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
+                    this->_local_flow_controller.current_limit());
+  QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
+                    this->_remote_flow_controller.current_limit());
 }
 
 QUICStream::~QUICStream()
@@ -70,18 +74,6 @@ QUICStream::~QUICStream()
     this->_write_event->cancel();
     this->_write_event = nullptr;
   }
-}
-
-void
-QUICStream::init_flow_control_params(uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
-{
-  this->_flow_control_buffer_size = recv_max_stream_data;
-  this->_local_flow_controller.forward_limit(recv_max_stream_data);
-  this->_remote_flow_controller.forward_limit(send_max_stream_data);
-  QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
-                    this->_local_flow_controller.current_limit());
-  QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
-                    this->_remote_flow_controller.current_limit());
 }
 
 QUICStreamId

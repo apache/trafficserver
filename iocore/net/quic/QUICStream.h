@@ -55,14 +55,12 @@ public:
       _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
-  QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid, uint64_t recv_max_stream_data = 0,
-             uint64_t send_max_stream_data = 0);
+  QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid, uint64_t recv_max_stream_data,
+             uint64_t send_max_stream_data);
   ~QUICStream();
   // void start();
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);
-
-  void init_flow_control_params(uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
 
   QUICStreamId id() const;
   const QUICConnectionInfoProvider *info() const;
