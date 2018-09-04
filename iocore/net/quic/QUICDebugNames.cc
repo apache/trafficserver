@@ -125,24 +125,21 @@ QUICDebugNames::error_code(QUICTransErrorCode code)
     return "STREAM_STATE_ERROR";
   case QUICTransErrorCode::FINAL_OFFSET_ERROR:
     return "FINAL_OFFSET_ERROR";
-  case QUICTransErrorCode::FRAME_FORMAT_ERROR:
-    return "FRAME_FORMAT_ERROR";
+  case QUICTransErrorCode::FRAME_ENCODING_ERROR:
+    return "FRAME_ENCODING_ERROR";
   case QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR:
     return "TRANSPORT_PARAMETER_ERROR";
   case QUICTransErrorCode::VERSION_NEGOTIATION_ERROR:
     return "VERSION_NEGOTIATION_ERROR";
   case QUICTransErrorCode::PROTOCOL_VIOLATION:
     return "PROTOCOL_VIOLATION";
-  case QUICTransErrorCode::TLS_HANDSHAKE_FAILED:
-    return "TLS_HANDSHAKE_FAILED";
-  case QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED:
-    return "TLS_FATAL_ALERT_GENERATED";
-  case QUICTransErrorCode::TLS_FATAL_ALERT_RECEIVED:
-    return "TLS_FATAL_ALERT_RECEIVED";
+  case QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE:
+    return "UNSOLICITED_PATH_RESPONSE";
+  case QUICTransErrorCode::INVALID_MIGRATION:
+    return "INVALID_MIGRATION";
   default:
     if (0x0100 <= static_cast<uint16_t>(code) && static_cast<uint16_t>(code) <= 0x01FF) {
-      // TODO: Add frame types
-      return "FRAME_ERROR";
+      return "CRYPTO_ERROR";
     }
     return "UNKNOWN";
   }

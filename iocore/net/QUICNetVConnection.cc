@@ -549,7 +549,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
       if (result == QUICPacketCreationResult::NOT_READY) {
         error = QUICErrorUPtr(new QUICNoError());
       } else if (result == QUICPacketCreationResult::FAILED) {
-        error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
+        error = QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
       } else if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
         error = this->_state_handshake_process_packet(std::move(packet));
       }
@@ -974,7 +974,7 @@ QUICNetVConnection::_state_common_receive_packet()
   do {
     QUICPacketUPtr p = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::FAILED) {
-      return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TLS_FATAL_ALERT_GENERATED));
+      return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
     } else if (result == QUICPacketCreationResult::NO_PACKET) {
       return QUICErrorUPtr(new QUICNoError());
     } else if (result == QUICPacketCreationResult::NOT_READY) {
