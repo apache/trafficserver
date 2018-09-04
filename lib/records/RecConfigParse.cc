@@ -91,8 +91,10 @@ RecConfigOverrideFromRunroot(const char *name)
 {
   if (!get_runroot().empty()) {
     if (!strcmp(name, "proxy.config.bin_path") || !strcmp(name, "proxy.config.local_state_dir") ||
-        !strcmp(name, "proxy.config.log.logfile_dir") || !strcmp(name, "proxy.config.plugin.plugin_dir"))
+        !strcmp(name, "proxy.config.log.logfile_dir") || !strcmp(name, "proxy.config.plugin.plugin_dir") ||
+        !strcmp(name, "proxy.config.hostdb.storage_path")) {
       return true;
+    }
   }
   return false;
 }
