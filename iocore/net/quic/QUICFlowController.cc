@@ -126,9 +126,9 @@ QUICFlowController::generate_frame(QUICEncryptionLevel level, uint64_t connectio
 // QUICRemoteFlowController
 //
 void
-QUICRemoteFlowController::forward_limit(QUICOffset offset)
+QUICRemoteFlowController::forward_limit(QUICOffset new_limit)
 {
-  QUICFlowController::forward_limit(offset);
+  QUICFlowController::forward_limit(new_limit);
   this->_blocked = false;
 }
 
@@ -153,18 +153,16 @@ QUICRemoteFlowController::update(QUICOffset offset)
 QUICOffset
 QUICLocalFlowController::current_limit() const
 {
-  return this->_advertized_limit;
+  return this->_limit;
 }
 
 void
-QUICLocalFlowController::forward_limit(QUICOffset offset)
+QUICLocalFlowController::forward_limit(QUICOffset new_limit)
 {
-  QUICFlowController::forward_limit(offset);
-
   // Create MAX_(STREAM_)DATA frame. The frame will be sent on next WRITE_READY event on QUICNetVC
-  if (this->_need_to_gen_frame()) {
-    this->_frame            = this->_create_frame();
-    this->_advertized_limit = this->_limit;
+  if (this->_need_to_forward_limit()) {
+    QUICFlowController::forward_limit(new_limit);
+    this->_frame = this->_create_frame();
   }
 }
 
@@ -180,15 +178,14 @@ QUICLocalFlowController::update(QUICOffset offset)
 void
 QUICLocalFlowController::set_limit(QUICOffset limit)
 {
-  this->_advertized_limit = limit;
   QUICFlowController::set_limit(limit);
 }
 
 bool
-QUICLocalFlowController::_need_to_gen_frame()
+QUICLocalFlowController::_need_to_forward_limit()
 {
   QUICOffset threshold = this->_analyzer.expect_recv_bytes(2 * this->_rtt_provider->smoothed_rtt());
-  if (this->_offset + threshold > this->_advertized_limit) {
+  if (this->_offset + threshold >= this->_limit) {
     return true;
   }
 

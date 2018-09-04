@@ -77,7 +77,7 @@ class QUICRemoteFlowController : public QUICFlowController
 public:
   QUICRemoteFlowController(uint64_t initial_limit) : QUICFlowController(initial_limit) {}
   int update(QUICOffset offset) override;
-  void forward_limit(QUICOffset limit) override;
+  void forward_limit(QUICOffset new_limit) override;
 
 private:
   bool _blocked = false;
@@ -87,19 +87,22 @@ class QUICLocalFlowController : public QUICFlowController
 {
 public:
   QUICLocalFlowController(QUICRTTProvider *rtt_provider, uint64_t initial_limit)
-    : QUICFlowController(initial_limit), _advertized_limit(initial_limit), _rtt_provider(rtt_provider)
+    : QUICFlowController(initial_limit), _rtt_provider(rtt_provider)
   {
   }
   QUICOffset current_limit() const override;
-  void forward_limit(QUICOffset limit) override;
+
+  /**
+   * Unlike QUICRemoteFlowController::forward_limit(), this function forwards limit if needed.
+   */
+  void forward_limit(QUICOffset new_limit) override;
   int update(QUICOffset offset) override;
   void set_limit(QUICOffset limit) override;
 
 private:
-  bool _need_to_gen_frame();
+  bool _need_to_forward_limit();
 
   QUICRateAnalyzer _analyzer;
-  QUICOffset _advertized_limit   = 0; //< Advertized limit via MAX(_STREAM)_DATA frame to the remote endpoint
   QUICRTTProvider *_rtt_provider = nullptr;
 };
 
