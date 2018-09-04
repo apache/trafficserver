@@ -39,7 +39,7 @@ content_type_str(int type)
   case SSL3_RT_CHANGE_CIPHER_SPEC:
     return "SSL3_RT_CHANGE_CIPHER_SPEC";
   case SSL3_RT_ALERT:
-    return "SSL3_RT_ALERT 21";
+    return "SSL3_RT_ALERT";
   case SSL3_RT_HANDSHAKE:
     return "SSL3_RT_HANDSHAKE";
   case SSL3_RT_APPLICATION_DATA:
@@ -102,25 +102,30 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
     return;
   }
 
-  const uint8_t *tmp = reinterpret_cast<const uint8_t *>(buf);
-  int msg_type       = tmp[0];
-
-  QUICEncryptionLevel level = QUICTLS::get_encryption_level(msg_type);
-  int index                 = static_cast<int>(level);
-  int next_index            = index + 1;
-
   QUICHandshakeMsgs *msg = reinterpret_cast<QUICHandshakeMsgs *>(arg);
   if (msg == nullptr) {
     return;
   }
 
-  size_t offset            = msg->offsets[next_index];
-  size_t next_level_offset = offset + len;
+  const uint8_t *msg_buf = reinterpret_cast<const uint8_t *>(buf);
 
-  memcpy(msg->buf + offset, buf, len);
+  if (content_type == SSL3_RT_HANDSHAKE) {
+    int msg_type = msg_buf[0];
 
-  for (int i = next_index; i < 5; ++i) {
-    msg->offsets[i] = next_level_offset;
+    QUICEncryptionLevel level = QUICTLS::get_encryption_level(msg_type);
+    int index                 = static_cast<int>(level);
+    int next_index            = index + 1;
+
+    size_t offset            = msg->offsets[next_index];
+    size_t next_level_offset = offset + len;
+
+    memcpy(msg->buf + offset, buf, len);
+
+    for (int i = next_index; i < 5; ++i) {
+      msg->offsets[i] = next_level_offset;
+    }
+  } else if (content_type == SSL3_RT_ALERT && msg_buf[0] == SSL3_AL_FATAL && len == 2) {
+    msg->error_code = QUICTLS::convert_to_quic_trans_error_code(msg_buf[1]);
   }
 
   return;

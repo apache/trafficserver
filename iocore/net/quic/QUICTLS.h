@@ -49,6 +49,7 @@ public:
   };
 
   static QUICEncryptionLevel get_encryption_level(int msg_type);
+  static uint16_t convert_to_quic_trans_error_code(uint8_t alert);
 
   // FIXME Should not exist
   SSL *ssl_handle();

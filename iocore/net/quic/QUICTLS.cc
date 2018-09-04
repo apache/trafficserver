@@ -45,6 +45,12 @@ QUICTLS::~QUICTLS()
   delete this->_server_pp;
 }
 
+uint16_t
+QUICTLS::convert_to_quic_trans_error_code(uint8_t alert)
+{
+  return 0x100 | alert;
+}
+
 bool
 QUICTLS::is_handshake_finished() const
 {
