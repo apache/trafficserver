@@ -319,21 +319,25 @@ QUICStream::recv(const QUICStreamFrame &frame)
     return error;
   }
 
-  auto new_frame = this->_received_stream_frame_buffer.pop();
+  auto new_frame                   = this->_received_stream_frame_buffer.pop();
+  QUICStreamFrameSPtr stream_frame = nullptr;
 
   while (new_frame != nullptr) {
-    QUICStreamFrameSPtr stream_frame = std::static_pointer_cast<const QUICStreamFrame>(new_frame);
+    stream_frame = std::static_pointer_cast<const QUICStreamFrame>(new_frame);
 
     this->_write_to_read_vio(stream_frame->offset(), stream_frame->data(), stream_frame->data_length(),
                              stream_frame->has_fin_flag());
+    this->_state.update_with_receiving_frame(*new_frame);
 
+    new_frame = this->_received_stream_frame_buffer.pop();
+  }
+
+  // Forward limit of local flow controller with the largest reordered stream frame
+  if (stream_frame) {
     this->_reordered_bytes = stream_frame->offset() + stream_frame->data_length();
     this->_local_flow_controller.forward_limit(this->_reordered_bytes + this->_flow_control_buffer_size);
     QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                       this->_local_flow_controller.current_limit());
-    this->_state.update_with_receiving_frame(*new_frame);
-
-    new_frame = this->_received_stream_frame_buffer.pop();
   }
 
   this->_signal_read_event();
