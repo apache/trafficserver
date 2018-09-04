@@ -57,11 +57,11 @@ If SNI Routing is enabled the initial "`CLIENT HELLO
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" data of an inbound TLS connection is
 examined to extract the "`SNI <https://tools.ietf.org/html/rfc3546#section-3.1>`__" value. This is
 matched against the configuration data to select an action for the inbound connection. In this case
-the option of interest is ``tunnel_route``. If this is set then |TS| will TCP connect to the
-specified destination and forward the "`CLIENT HELLO
+the option of interest is ``tunnel_route``. If this is set then |TS| synthesizes an HTTP ``CONNECT``
+request to itself with the ``tunnel_route`` host and port as the upstream. That is, the inbound
+connection is treated as if the user agent had sent a
+``CONNECT`` to the upstream and forwards the "`CLIENT HELLO
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" to it.
-Internally |TS| does this by sending a HTTP ``CONNECT`` to itself with the host and port
-specified in the ``tunnel_route``.
 
 Example
 -------
