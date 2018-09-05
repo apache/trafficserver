@@ -61,7 +61,7 @@ test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_clang=1
 
 if [ "1" == "$enable_clang" ]; then
     if [ -x "/usr/local/bin/clang++50" ]; then
-        # For FreeBSD
+        # For FreeBSD 11.1 or earlier *NOT* recommended since libc++ is LLVM 4.0
         export CC="/usr/local/bin/clang50"
         export CXX="/usr/local/bin/clang++50"
     elif [ -x "/usr/bin/clang++-5.0" ]; then
