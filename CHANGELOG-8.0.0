@@ -1221,3 +1221,4 @@ Changes with Apache Traffic Server 8.0.0
   #4170 - Fix for when multiplexer gets a 0 byte read event
   #4181 - Removed checking the return value for TSContCall() in the multiplexer plugin
   #4183 - Default config change with proxy.config.http.negative_revalidating_enabled
+  #4196 - Back-port to 8.0.x - Log Collation Memory Leak
