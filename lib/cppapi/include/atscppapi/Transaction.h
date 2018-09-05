@@ -306,8 +306,8 @@ public:
     CACHE_LOOKUP_SKIPPED,   /**< Cache lookup was not performed */
     CACHE_LOOKUP_NONE
   };
-  
-  #define CACHE_LOOKUP_SKIPED CACHE_LOOKUP_SKIPPED
+
+#define CACHE_LOOKUP_SKIPED CACHE_LOOKUP_SKIPPED
 
   CacheStatus getCacheStatus();
 
