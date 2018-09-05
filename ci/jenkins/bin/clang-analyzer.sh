@@ -24,7 +24,7 @@ OUTPUT_BASE=${OUTPUT_BASE:-/home/jenkins/clang-analyzer}
 
 # Options
 options="--status-bugs --keep-empty"
-configure="--enable-experimental-plugins"
+configure="--enable-experimental-plugins --enable-luajit"
 
 # Additional checkers
 # Phil says these are all FP's: -enable-checker alpha.security.ArrayBoundV2

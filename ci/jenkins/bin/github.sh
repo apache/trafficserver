@@ -25,10 +25,12 @@ CCACHE=""
 WERROR=""
 DEBUG=""
 WCCP=""
+LUAJIT=""
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
 [ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
 [ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
+[ "1" == "$enable_luajit" ] && LUAJIT="--enable-luajit"
 
 mkdir -p ${INSTALL}
 cd src
@@ -37,6 +39,7 @@ echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
 echo "DEBUG: $DEBUG"
 echo "WCCP: $WCCP"
+echo "LUAJIT: $LUAJIT"
 
 # Restore verbose shell output
 set -x
@@ -50,6 +53,7 @@ autoreconf -if
     --enable-example-plugins \
     ${CCACHE} \
     ${WCCP} \
+    ${LUAJIT} \
     ${WERROR} \
     ${DEBUG}
 
