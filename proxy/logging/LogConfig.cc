@@ -231,20 +231,21 @@ LogConfig::read_configuration_variables()
   }
 
   char *limits = REC_ConfigReadString("proxy.config.log.auto_delete_files_space_limits_mb");
-
-  TextView limits_view(limits);
-  while (limits_view) {
-    TextView value(limits_view.take_prefix_at(','));
-    TextView key(value.trim(&isspace).split_prefix_at('=').rtrim(&isspace));
-    if (key) {
-      value.ltrim(&isspace);
-      // Build new LogDeletingInfo based on the [type]=[limit] pair
-      deleting_info.insert(new LogDeletingInfo(key, static_cast<int64_t>(ts::svtoi(value))));
-    } else {
-      Warning("invalid key-value pair '%s' for '%s', skipping this pair", value.data(), "proxy.config.log.auto_delete_files_space_limits_mb");
+  if (limits) {
+    TextView limits_view(limits);
+    while (limits_view) {
+      TextView value(limits_view.take_prefix_at(','));
+      TextView key(value.trim(&isspace).split_prefix_at('=').rtrim(&isspace));
+      if (key) {
+        value.ltrim(&isspace);
+        // Build new LogDeletingInfo based on the [type]=[limit] pair
+        deleting_info.insert(new LogDeletingInfo(key, static_cast<int64_t>(ts::svtoi(value))));
+      } else {
+        Warning("invalid key-value pair '%s' for '%s', skipping this pair", value.data(), "proxy.config.log.auto_delete_files_space_limits_mb");
+      }
     }
+    ats_free(limits);
   }
-  ats_free(limits);
 
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
@@ -858,7 +859,8 @@ LogConfig::update_space_used()
       // Select the group with biggest ratio
       auto target = std::max_element(deleting_info.begin(), deleting_info.end(),
         [](LogDeletingInfo A, LogDeletingInfo B){
-          return A.total_size/A.space_limit_mb - B.total_size/B.space_limit_mb;
+          double diff = static_cast<double>(A.total_size)/A.space_limit_mb - static_cast<double>(B.total_size)/B.space_limit_mb;
+          return diff > 0.0;
         } );
 
       auto &candidates = target->candidates;
@@ -879,11 +881,16 @@ LogConfig::update_space_used()
               candidates[victim].name, candidates[victim].size);
         m_space_used -= candidates[victim].size;
         m_partition_space_left += candidates[victim].size;
+        target->total_size -= candidates[victim].size;
       }
       total_candidate_count--;
+      victim++;
     }
   }
-  //
+
+  for (auto iter = deleting_info.begin(); iter != deleting_info.end(); iter++) {
+    iter->clear();
+  }
   // Now that we've updated the m_space_used value, see if we need to
   // issue any alarms or warnings about space
   //

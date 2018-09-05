@@ -81,10 +81,6 @@ struct LogDeleteCandidate {
   time_t mtime;
   char *name;
   int64_t size;
-  ~LogDeleteCandidate() {
-    if (name)
-      ats_free(name);
-  }
 };
 
 struct LogDeletingInfo {
@@ -99,6 +95,15 @@ struct LogDeletingInfo {
   LogDeletingInfo *_prev{nullptr};
 
   LogDeletingInfo(std::string_view type, int64_t limit) : name(type), space_limit_mb(limit) {}
+  LogDeletingInfo::clear() {
+    victim = 0;
+    total_size = 0LL;
+    for (int i = 0; i < candidate_count; i++) {
+      if (candidates[i].name)
+        ats_free(candidates[i].name);
+    }
+    candidate_count = 0;
+  }
 };
 
 struct LogDeletingInfoDescriptor {
