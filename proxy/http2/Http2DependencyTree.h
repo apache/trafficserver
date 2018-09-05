@@ -84,14 +84,20 @@ public:
     return point > n.point;
   }
 
+  /**
+   * Added an explicit shadow flag.  The original logic
+   * was using an null Http2Stream frame to mark a shadow node
+   * but that would pull in Priority holder nodes too
+   */
   bool
   is_shadow() const
   {
-    return t == nullptr;
+    return shadow == true;
   }
 
   bool active     = false;
   bool queued     = false;
+  bool shadow     = false;
   uint32_t id     = HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY;
   uint32_t weight = HTTP2_PRIORITY_DEFAULT_WEIGHT;
   uint32_t point  = 0;
@@ -105,12 +111,14 @@ public:
 template <typename T> class Tree
 {
 public:
-  Tree(uint32_t max_concurrent_streams) : _max_depth(MIN(max_concurrent_streams, HTTP2_DEPENDENCY_TREE_MAX_DEPTH)) {}
-
+  Tree(uint32_t max_concurrent_streams) : _max_depth(MIN(max_concurrent_streams, HTTP2_DEPENDENCY_TREE_MAX_DEPTH))
+  {
+    _ancestors.resize(_max_ancestors);
+  }
   ~Tree() { delete _root; }
-  Node *find(uint32_t id);
-  Node *find_shadow(uint32_t id);
-  Node *add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t);
+  Node *find(uint32_t id, bool *is_max_leaf = nullptr);
+  Node *find_shadow(uint32_t id, bool *is_max_leaf = nullptr);
+  Node *add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t, bool shadow = false);
   void remove(Node *node);
   void reprioritize(uint32_t new_parent_id, uint32_t id, bool exclusive);
   void reprioritize(Node *node, uint32_t id, bool exclusive);
@@ -120,9 +128,20 @@ public:
   void update(Node *node, uint32_t sent);
   bool in(Node *current, Node *node);
   uint32_t size() const;
+  /*
+   * Dump the priority tree relationships in JSON form for debugging
+   */
+  void
+  dump_tree(std::ostream &output) const
+  {
+    _dump(_root, output);
+  }
+  void add_ancestor(Node *node);
+  uint32_t was_ancestor(uint32_t id) const;
 
 private:
-  Node *_find(Node *node, uint32_t id, uint32_t depth = 1);
+  void _dump(Node *node, std::ostream &output) const;
+  Node *_find(Node *node, uint32_t id, uint32_t depth = 1, bool *is_max_leaf = nullptr);
   Node *_top(Node *node);
   void _change_parent(Node *new_parent, Node *node, bool exclusive);
   bool in_parent_chain(Node *maybe_parent, Node *target);
@@ -130,23 +149,63 @@ private:
   Node *_root = new Node(this);
   uint32_t _max_depth;
   uint32_t _node_count = 0;
+  /*
+   * _ancestors in a circular buffer tracking parent relationships for
+   * recently completed nodes.  Without this new streams may not find their
+   * parents and be inserted at the root, violating the client's desired
+   * dependency relationship.  This addresses the issue identified in section
+   * 5.3.4 of the HTTP/2 spec
+   *
+   * "It is possible for a stream to become closed while prioritization
+   * information that creates a dependency on that stream is in transit.
+   * If a stream identified in a dependency has no associated priority
+   * information, then the dependent stream is instead assigned a default
+   * priority (Section 5.3.5).  This potentially creates suboptimal
+   * prioritization, since the stream could be given a priority that is
+   * different from what is intended.
+   * To avoid these problems, an endpoint SHOULD retain stream
+   * prioritization state for a period after streams become closed.  The
+   * longer state is retained, the lower the chance that streams are
+   * assigned incorrect or default priority values."
+   */
+  static const uint32_t _max_ancestors = 64;
+  uint32_t _ancestor_index             = 0;
+  std::vector<std::pair<uint32_t, uint32_t>> _ancestors;
 };
 
 template <typename T>
+void
+Tree<T>::_dump(Node *node, std::ostream &output) const
+{
+  output << "{ \"id\":\"" << node->id << "/" << node->weight << "/" << node->point << "/" << ((node->t != nullptr) ? "1" : "0")
+         << "/" << ((node->active) ? "a" : "d") << "\",";
+  // Dump the children
+  output << " \"c\":[";
+  for (Node *n = node->children.head; n; n = n->link.next) {
+    _dump(n, output);
+    output << ",";
+  }
+  output << "] }";
+}
+
+template <typename T>
 Node *
-Tree<T>::_find(Node *node, uint32_t id, uint32_t depth)
+Tree<T>::_find(Node *node, uint32_t id, uint32_t depth, bool *is_max_leaf)
 {
   if (node->id == id) {
+    if (is_max_leaf) {
+      *is_max_leaf = depth == _max_depth;
+    }
     return node;
   }
 
-  if (node->children.empty() || depth >= _max_depth) {
+  if (node->children.empty() || depth > _max_depth) {
     return nullptr;
   }
 
   Node *result = nullptr;
   for (Node *n = node->children.head; n; n = n->link.next) {
-    result = _find(n, id, ++depth);
+    result = _find(n, id, ++depth, is_max_leaf);
     if (result != nullptr) {
       break;
     }
@@ -157,34 +216,89 @@ Tree<T>::_find(Node *node, uint32_t id, uint32_t depth)
 
 template <typename T>
 Node *
-Tree<T>::find_shadow(uint32_t id)
+Tree<T>::find_shadow(uint32_t id, bool *is_max_leaf)
 {
-  return _find(_root, id);
+  return _find(_root, id, 1, is_max_leaf);
 }
 
 template <typename T>
 Node *
-Tree<T>::find(uint32_t id)
+Tree<T>::find(uint32_t id, bool *is_max_leaf)
 {
-  Node *n = _find(_root, id);
+  Node *n = _find(_root, id, 1, is_max_leaf);
   return n == nullptr ? nullptr : (n->is_shadow() ? nullptr : n);
 }
 
 template <typename T>
-Node *
-Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t)
+void
+Tree<T>::add_ancestor(Node *node)
 {
-  Node *parent = find(parent_id);
-  if (parent == nullptr) {
-    parent = add(0, parent_id, HTTP2_PRIORITY_DEFAULT_WEIGHT, false, nullptr);
+  if (node->parent != _root) {
+    _ancestors[_ancestor_index].first  = node->id;
+    _ancestors[_ancestor_index].second = node->parent->id;
+    _ancestor_index++;
+    if (_ancestor_index >= _max_ancestors) {
+      _ancestor_index = 0;
+    }
   }
+}
 
+template <typename T>
+uint32_t
+Tree<T>::was_ancestor(uint32_t pid) const
+{
+  uint32_t i = (_ancestor_index == 0) ? _max_ancestors - 1 : _ancestor_index - 1;
+  while (i != _ancestor_index) {
+    if (_ancestors[i].first == pid) {
+      return _ancestors[i].second;
+    }
+    i = (i == 0) ? _max_ancestors - 1 : i - 1;
+  }
+  return 0;
+}
+
+template <typename T>
+Node *
+Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t, bool shadow)
+{
+  // Can we vivify a shadow node?
   Node *node = find_shadow(id);
   if (node != nullptr && node->is_shadow()) {
     node->t      = t;
     node->point  = id;
     node->weight = weight;
+    node->shadow = false;
+    // Move the shadow node into the proper position in the tree
+    reprioritize(node, parent_id, exclusive);
     return node;
+  }
+
+  bool is_max_leaf = false;
+  Node *parent     = find_shadow(parent_id, &is_max_leaf); // Look for real and shadow nodes
+
+  if (parent == nullptr) {
+    if (parent_id < id) { // See if we still have a history of the parent
+      uint32_t pid = parent_id;
+      do {
+        pid = was_ancestor(pid);
+        if (pid != 0) {
+          parent = find(pid);
+        }
+      } while (pid != 0 && parent == nullptr);
+      if (parent == nullptr) {
+        // Found no ancestor, just add to root at default weight
+        weight    = HTTP2_PRIORITY_DEFAULT_WEIGHT;
+        exclusive = false;
+        parent    = _root;
+      }
+    }
+    if (parent == nullptr || parent == _root) { // Create a shadow node
+      parent    = add(0, parent_id, HTTP2_PRIORITY_DEFAULT_WEIGHT, false, nullptr, true);
+      exclusive = false;
+    }
+  } else if (is_max_leaf) { // Chain too long, just add to root
+    parent    = _root;
+    exclusive = false;
   }
 
   // Use stream id as initial point
@@ -207,7 +321,7 @@ Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T
     parent->queue->push(node->entry);
     node->queued = true;
   }
-
+  node->shadow = shadow;
   ++_node_count;
   return node;
 }
@@ -240,6 +354,9 @@ Tree<T>::remove(Node *node)
   if (node == _root || node->active) {
     return;
   }
+
+  // Make a note of node's ancestory
+  add_ancestor(node);
 
   Node *parent = node->parent;
   parent->children.remove(node);
