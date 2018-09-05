@@ -778,21 +778,22 @@ REGRESSION_TEST(Http2DependencyTree_insert_with_empty_parent)(RegressionTest *t,
 
   string a("A"), b("B"), c("C");
   tree->add(0, 3, 20, false, &a);
-  Node *b_n = tree->add(5, 7, 30, true, &b);
 
-  box.check(b_n->parent->id == 5, "Node B's parent should be 5");
-  box.check(tree->find(5) == nullptr, "The shadow nodes should not be found");
-  box.check(tree->find_shadow(5)->is_shadow() == true, "nodes 5 should be the shadow node");
+  Node *b_n = tree->add(9, 7, 30, true, &b);
 
-  Node *c_n = tree->add(7, 9, 30, false, &c);
+  box.check(b_n->parent->id == 9, "Node B's parent should be 9");
+  box.check(tree->find(9) == nullptr, "The shadow nodes should not be found");
+  box.check(tree->find_shadow(9)->is_shadow() == true, "nodes 9 should be the shadow node");
+
+  Node *c_n = tree->add(7, 11, 30, false, &c);
   tree->remove(b_n);
 
-  box.check(c_n->parent->id == 5, "Node C's parent should be 5");
+  box.check(c_n->parent->id == 9, "Node C's parent should be 9");
   box.check(tree->find(7) == nullptr, "Nodes b should be removed");
-  box.check(tree->find_shadow(5)->is_shadow() == true, "Nodes 5 should be existed after removing");
+  box.check(tree->find_shadow(9)->is_shadow() == true, "Nodes 9 should be existed after removing");
 
   tree->remove(c_n);
-  box.check(tree->find_shadow(5) == nullptr, "Shadow nodes should be remove");
+  box.check(tree->find_shadow(9) == nullptr, "Shadow nodes should be remove");
 
   delete tree;
 }
@@ -814,18 +815,147 @@ REGRESSION_TEST(Http2DependencyTree_shadow_reprioritize)(RegressionTest *t, int 
 
   string a("A"), b("B");
   tree->add(0, 3, 20, false, &a);
-  tree->add(5, 7, 30, true, &b);
+  tree->add(9, 7, 30, true, &b);
 
-  Node *s_n = tree->find_shadow(5);
+  Node *s_n = tree->find_shadow(9);
   box.check(s_n != nullptr && s_n->is_shadow() == true, "Shadow nodes should not be nullptr");
 
   tree->reprioritize(s_n, 7, false);
-  box.check(tree->find_shadow(5) == nullptr, "Shadow nodes should be nullptr after reprioritizing");
+  box.check(tree->find_shadow(9) == nullptr, "Shadow nodes should be nullptr after reprioritizing");
 
   delete tree;
 }
 
-REGRESSION_TEST(Http2DependencyTree_shadow_change)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+/** Test for https://github.com/apache/trafficserver/pull/4212
+ *
+ * Add child to parent that has already completed.
+ *
+ * root        root        root        root       root
+ *  |           |           |           |          |
+ *  A   ====>   A   ====>   A   ====>   A  ====>   A
+ *  |                       |                      |
+ *  B                       C                      E
+ *                          |
+ *                          D
+ */
+REGRESSION_TEST(Http2DependencyTree_delete_parent_before_child_arrives)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C"), d("D"), e("E");
+
+  tree->add(0, 3, 20, false, &a);
+  Node *node_b = tree->add(3, 5, 30, true, &b);
+
+  tree->remove(node_b);
+
+  // Tree should remember B, so C will be added to B's ancestor
+  Node *node_c = tree->add(5, 7, 20, false, &c);
+  box.check(node_c->parent->id == 3, "Node C's parent should be 3");
+
+  // See if it remembers two missing ancestors
+  Node *node_d = tree->add(7, 9, 20, false, &d);
+
+  tree->remove(node_c);
+  tree->remove(node_d);
+
+  Node *node_e = tree->add(9, 11, 30, false, &e);
+  box.check(node_e->parent->id == 3, "Node E's parent should be 3");
+
+  delete tree;
+}
+
+/** Test for https://github.com/apache/trafficserver/pull/4212
+ *
+ * Make sure priority nodes stick around
+ *
+ *        root                 root
+ *       / | \                / | \
+ *      P1 P2 P3   ====>     P1 P2 P3
+ *      |  |  |                 |  |
+ *      A  B  C                 B  C
+ *         |                    |
+ *         D                    D
+ */
+REGRESSION_TEST(Http2DependencyTree_handle_priority_nodes)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C"), d("D"), e("E");
+
+  // P1 node
+  tree->add(0, 3, 20, false, nullptr);
+  // P2 node
+  tree->add(0, 5, 20, false, nullptr);
+  // P3 node
+  tree->add(0, 7, 20, false, nullptr);
+
+  Node *node_a = tree->add(3, 9, 30, true, &a);
+  Node *node_b = tree->add(5, 11, 30, true, &b);
+  Node *node_c = tree->add(7, 13, 30, true, &c);
+  Node *node_d = tree->add(11, 15, 30, true, &d);
+
+  box.check(node_a->parent->id == 3, "Node A's parent should be 3");
+  box.check(node_b->parent->id == 5, "Node B's parent should be 5");
+  box.check(node_c->parent->id == 7, "Node C's parent should be 7");
+  box.check(node_d->parent->id == 11, "Node D's parent should be 11");
+
+  // Deleting the children should not make the priority node go away
+  tree->remove(node_a);
+  Node *node_p1 = tree->find(3);
+  box.check(node_p1 != nullptr, "Priority node 1 should remain");
+
+  delete tree;
+}
+
+/**
+ * Shadow nodes should reprioritize when they vivify
+ *
+ *      root                root              root
+ *      /  \                 |                 |
+ *     A   Shadow  ====>     A          ====>  A
+ *          |                |                 |
+ *          B                C(was shadow)     C
+ *                           |
+ *                           B
+ */
+REGRESSION_TEST(Http2DependencyTree_reprioritize_shadow_node)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tree *tree = new Tree(100);
+  string a("A"), b("B"), c("C");
+
+  tree->add(0, 3, 20, false, &a);
+  // 7 should be created as a shadow node
+  tree->add(7, 5, 20, false, &b);
+
+  Node *b_n        = tree->find(5);
+  Node *c_n        = tree->find(7);
+  Node *c_shadow_n = tree->find_shadow(7);
+
+  box.check(b_n != nullptr && b_n->parent->id == 7, "B should be child of 7");
+  box.check(c_n == nullptr && c_shadow_n != nullptr && c_shadow_n->parent->id == 0, "Node 7 is a shadow and a child of the root");
+
+  // Now populate the shadow
+  tree->add(3, 7, 30, false, &c);
+  c_n = tree->find(7);
+  box.check(c_n != nullptr && c_n->parent->id == 3 && c_n->weight == 30, "C is a child of 3 and no longer a shadow");
+
+  // C should still exist when its child goes away
+  tree->remove(b_n);
+  c_n = tree->find(7);
+  box.check(c_n != nullptr, "C is still present with no children");
+
+  delete tree;
+}
+
+REGRESSION_TEST(Http2DependencyTree_missing_parent)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
@@ -836,9 +966,13 @@ REGRESSION_TEST(Http2DependencyTree_shadow_change)(RegressionTest *t, int /* aty
   tree->add(0, 3, 20, false, &a);
   tree->add(5, 7, 30, true, &b);
 
+  Node *c_n        = tree->find(5);
+  Node *c_shadow_n = tree->find_shadow(5);
+  box.check(c_n == nullptr && c_shadow_n != nullptr && c_shadow_n->is_shadow() == true, "Node 5 starts out as a shadow");
+
   tree->add(0, 5, 15, false, &c);
 
-  Node *c_n = tree->find(5);
+  c_n = tree->find(5);
   box.check(c_n != nullptr && c_n->is_shadow() == false, "Node 5 should not be shadow node");
   box.check(c_n->point == 5 && c_n->weight == 15, "The weight and point should be 15");
 
@@ -852,13 +986,13 @@ REGRESSION_TEST(Http2DependencyTree_max_depth)(RegressionTest *t, int /* atype A
 
   Tree *tree = new Tree(100);
   string a("A");
-
-  for (int i = 0; i < 200; ++i) {
+  for (int i = 0; i < 100; ++i) {
     tree->add(i, i + 1, 16, false, &a);
   }
-
-  Node *node = tree->find(101);
-  box.check(node->parent->parent->id == 0, "101st node should be child of root's child node");
+  Node *node = tree->find(100);
+  Node *leaf = tree->find(99);
+  box.check(node->parent->id == 0, "100st node should be child root");
+  box.check(leaf != nullptr && leaf->parent->id != 0, "99th node is not a child of the root");
 
   delete tree;
 }
