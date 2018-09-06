@@ -8670,7 +8670,6 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {"proxy.config.url_r
                                                              "proxy.config.ssl.client.cert.filename",
                                                              "proxy.config.ssl.client.cert.path",
                                                              "proxy.config.http.parent_proxy.mark_down_hostdb",
-                                                             "proxy.config.ssl.client.verify.server",
                                                              "proxy.config.http.cache.enable_default_vary_headers",
                                                              "proxy.config.http.cache.vary_default_text",
                                                              "proxy.config.http.cache.vary_default_images",

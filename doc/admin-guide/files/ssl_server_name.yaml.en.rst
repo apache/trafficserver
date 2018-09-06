@@ -42,6 +42,8 @@ Each table is a set of key / value pairs that create a configuration item. This 
 wildcard entries. To apply an SNI based setting on all the servernames with a common upper level domain name,
 the user needs to enter the fqdn in the configuration with a ``*.`` followed by the common domain name. (``*.yahoo.com`` for e.g.,).
 
+.. _override-verify-origin-server:
+
 ======================= ==============================================================================
 Key                     Meaning
 ======================= ==============================================================================
