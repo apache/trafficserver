@@ -95,8 +95,10 @@ struct LogDeletingInfo {
   LogDeletingInfo *_prev{nullptr};
 
   LogDeletingInfo(std::string_view type, int64_t limit) : name(type), space_limit_mb(limit) {}
-  LogDeletingInfo::clear() {
-    victim = 0;
+  void
+  clear()
+  {
+    victim     = 0;
     total_size = 0LL;
     for (int i = 0; i < candidate_count; i++) {
       if (candidates[i].name)
@@ -107,15 +109,35 @@ struct LogDeletingInfo {
 };
 
 struct LogDeletingInfoDescriptor {
-  using key_type = std::string_view;
+  using key_type   = std::string_view;
   using value_type = LogDeletingInfo;
 
-  static key_type key_of(value_type *value) { return value->name; }
-  static bool equal(key_type const &lhs, key_type const &rhs) { return lhs == rhs; }
-  static value_type *& next_ptr(value_type *value) { return value->_next; }
-  static value_type *& prev_ptr(value_type *value) { return value->_prev; }
+  static key_type
+  key_of(value_type *value)
+  {
+    return value->name;
+  }
+  static bool
+  equal(key_type const &lhs, key_type const &rhs)
+  {
+    return lhs == rhs;
+  }
+  static value_type *&
+  next_ptr(value_type *value)
+  {
+    return value->_next;
+  }
+  static value_type *&
+  prev_ptr(value_type *value)
+  {
+    return value->_prev;
+  }
   static constexpr std::hash<std::string_view> hasher{};
-  static auto hash_of(key_type s) -> decltype(hasher(s)) { return hasher(s); }
+  static auto
+  hash_of(key_type s) -> decltype(hasher(s))
+  {
+    return hasher(s);
+  }
 };
 
 /*-------------------------------------------------------------------------
@@ -277,6 +299,3 @@ private:
 /*-------------------------------------------------------------------------
   LogDeleteCandidate
   -------------------------------------------------------------------------*/
-
-
-
