@@ -5364,12 +5364,10 @@ HttpSM::handle_http_server_open()
     NetVConnection *vc = server_session->get_netvc();
     if (vc != nullptr && (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
                           vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
-                          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out ||
-                          vc->options.clientVerificationFlag != t_state.txn_conf->ssl_client_verify_server)) {
-      vc->options.sockopt_flags          = t_state.txn_conf->sock_option_flag_out;
-      vc->options.packet_mark            = t_state.txn_conf->sock_packet_mark_out;
-      vc->options.packet_tos             = t_state.txn_conf->sock_packet_tos_out;
-      vc->options.clientVerificationFlag = t_state.txn_conf->ssl_client_verify_server;
+                          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out)) {
+      vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
+      vc->options.packet_mark   = t_state.txn_conf->sock_packet_mark_out;
+      vc->options.packet_tos    = t_state.txn_conf->sock_packet_tos_out;
       vc->apply_options();
     }
   }
