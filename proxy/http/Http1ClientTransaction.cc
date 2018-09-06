@@ -67,3 +67,10 @@ Http1ClientTransaction::transaction_done()
     static_cast<Http1ClientSession *>(parent)->release_transaction();
   }
 }
+
+bool
+Http1ClientTransaction::allow_half_open() const
+{
+  // Check with the session to make sure the underlying transport allows the half open scenario
+  return static_cast<Http1ClientSession *>(parent)->allow_half_open();
+}

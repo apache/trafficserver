@@ -75,6 +75,13 @@ public:
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
   virtual void reenable(VIO *vio);
 
+  bool
+  allow_half_open()
+  {
+    // Only allow half open connections if the not over TLS
+    return (client_vc && dynamic_cast<SSLNetVConnection *>(client_vc) == nullptr);
+  }
+
   void
   set_half_close_flag(bool flag)
   {
