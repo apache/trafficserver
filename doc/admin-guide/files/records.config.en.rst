@@ -3112,7 +3112,7 @@ SSL Termination
    Configures the pair of the AEAD algorithm and hash algorithm to be
    used with HKDF provided by OpenSSL which |TS| will use for TLSv1.3
    connections. For the list of algorithms and instructions, see
-   The ``-ciphersuites`` section of `OpenSSL Ciphers <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html>`_.
+   The ``-ciphersuites`` section of `OpenSSL Ciphers <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
 
    The current default value with OpenSSL is:
 
