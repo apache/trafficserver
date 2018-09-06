@@ -8669,7 +8669,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.ssl.client.cert.filename",
    "proxy.config.ssl.client.cert.path",
    "proxy.config.http.parent_proxy.mark_down_hostdb",
-   "proxy.config.ssl.client.verify.server",
    "proxy.config.http.cache.enable_default_vary_headers",
    "proxy.config.http.cache.vary_default_text",
    "proxy.config.http.cache.vary_default_images",
