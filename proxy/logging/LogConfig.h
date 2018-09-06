@@ -23,11 +23,15 @@
 
 #pragma once
 
+#include <string_view>
+#include <string>
 #include "ts/ink_platform.h"
 #include "P_RecProcess.h"
 #include "ProxyConfig.h"
 #include "LogObject.h"
+#include "ts/IntrusiveHashMap.h"
 
+#define MAX_CANDIDATES 128
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
@@ -73,6 +77,68 @@ extern RecRawStatBlock *log_rsb;
 
 struct dirent;
 struct LogCollationAccept;
+struct LogDeleteCandidate {
+  time_t mtime;
+  char *name;
+  int64_t size;
+};
+
+struct LogDeletingInfo {
+  std::string name;
+  int64_t space_limit_mb{0};
+  int candidate_count{0};
+  int victim{0};
+  int64_t total_size{0LL};
+  LogDeleteCandidate candidates[MAX_CANDIDATES];
+
+  LogDeletingInfo *_next{nullptr};
+  LogDeletingInfo *_prev{nullptr};
+
+  LogDeletingInfo(std::string_view type, int64_t limit) : name(type), space_limit_mb(limit) {}
+  void
+  clear()
+  {
+    victim     = 0;
+    total_size = 0LL;
+    for (int i = 0; i < candidate_count; i++) {
+      if (candidates[i].name)
+        ats_free(candidates[i].name);
+    }
+    candidate_count = 0;
+  }
+};
+
+struct LogDeletingInfoDescriptor {
+  using key_type   = std::string_view;
+  using value_type = LogDeletingInfo;
+
+  static key_type
+  key_of(value_type *value)
+  {
+    return value->name;
+  }
+  static bool
+  equal(key_type const &lhs, key_type const &rhs)
+  {
+    return lhs == rhs;
+  }
+  static value_type *&
+  next_ptr(value_type *value)
+  {
+    return value->_next;
+  }
+  static value_type *&
+  prev_ptr(value_type *value)
+  {
+    return value->_prev;
+  }
+  static constexpr std::hash<std::string_view> hasher{};
+  static auto
+  hash_of(key_type s) -> decltype(hasher(s))
+  {
+    return hasher(s);
+  }
+};
 
 /*-------------------------------------------------------------------------
   this object keeps the state of the logging configuraion variables.  upon
@@ -190,6 +256,8 @@ public:
   int rolling_size_mb;
   bool auto_delete_rolled_files;
 
+  IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
+
   int sampling_frequency;
   int file_stat_frequency;
   int space_used_frequency;
@@ -231,9 +299,3 @@ private:
 /*-------------------------------------------------------------------------
   LogDeleteCandidate
   -------------------------------------------------------------------------*/
-
-struct LogDeleteCandidate {
-  time_t mtime;
-  char *name;
-  int64_t size;
-};
