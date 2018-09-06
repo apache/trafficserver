@@ -1214,8 +1214,8 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 //
 // CONNECTION_CLOSE frame
 //
-QUICConnectionCloseFrame::QUICConnectionCloseFrame(QUICTransErrorCode error_code, QUICFrameType frame_type,
-                                                   uint64_t reason_phrase_length, const char *reason_phrase, bool protection)
+QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length,
+                                                   const char *reason_phrase, bool protection)
   : QUICFrame(protection),
     _error_code(error_code),
     _frame_type(frame_type),
@@ -1312,7 +1312,7 @@ QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
   return len;
 }
 
-QUICTransErrorCode
+uint16_t
 QUICConnectionCloseFrame::error_code() const
 {
   if (this->_buf) {
@@ -2625,8 +2625,8 @@ QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint64
 }
 
 std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_connection_close_frame(QUICTransErrorCode error_code, QUICFrameType frame_type,
-                                                uint16_t reason_phrase_length, const char *reason_phrase)
+QUICFrameFactory::create_connection_close_frame(uint16_t error_code, QUICFrameType frame_type, uint16_t reason_phrase_length,
+                                                const char *reason_phrase)
 {
   QUICConnectionCloseFrame *frame = quicConnectionCloseFrameAllocator.alloc();
   new (frame) QUICConnectionCloseFrame(error_code, frame_type, reason_phrase_length, reason_phrase);
@@ -2638,10 +2638,9 @@ QUICFrameFactory::create_connection_close_frame(QUICConnectionErrorUPtr error)
 {
   ink_assert(error->cls == QUICErrorClass::TRANSPORT);
   if (error->msg) {
-    return QUICFrameFactory::create_connection_close_frame(error->trans_error_code, error->frame_type(), strlen(error->msg),
-                                                           error->msg);
+    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type(), strlen(error->msg), error->msg);
   } else {
-    return QUICFrameFactory::create_connection_close_frame(error->trans_error_code, error->frame_type());
+    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type());
   }
 }
 
@@ -2659,9 +2658,9 @@ QUICFrameFactory::create_application_close_frame(QUICConnectionErrorUPtr error)
 {
   ink_assert(error->cls == QUICErrorClass::APPLICATION);
   if (error->msg) {
-    return QUICFrameFactory::create_application_close_frame(error->app_error_code, strlen(error->msg), error->msg);
+    return QUICFrameFactory::create_application_close_frame(error->code, strlen(error->msg), error->msg);
   } else {
-    return QUICFrameFactory::create_application_close_frame(error->app_error_code);
+    return QUICFrameFactory::create_application_close_frame(error->code);
   }
 }
 
@@ -2754,7 +2753,7 @@ QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICAppErrorCo
 std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_rst_stream_frame(QUICStreamErrorUPtr error)
 {
-  return QUICFrameFactory::create_rst_stream_frame(error->stream->id(), error->app_error_code, error->stream->final_offset());
+  return QUICFrameFactory::create_rst_stream_frame(error->stream->id(), error->code, error->stream->final_offset());
 }
 
 std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>

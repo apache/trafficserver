@@ -169,21 +169,17 @@ class QUICError
 {
 public:
   virtual ~QUICError() {}
-  uint16_t code();
 
   QUICErrorClass cls = QUICErrorClass::NONE;
-  union {
-    QUICTransErrorCode trans_error_code = QUICTransErrorCode::NO_ERROR;
-    QUICAppErrorCode app_error_code;
-  };
-  const char *msg = nullptr;
+  uint16_t code      = 0;
+  const char *msg    = nullptr;
 
 protected:
   QUICError(){};
-  QUICError(const QUICTransErrorCode error_code, const char *error_msg = nullptr)
-    : cls(QUICErrorClass::TRANSPORT), trans_error_code(error_code), msg(error_msg){};
-  QUICError(const QUICAppErrorCode error_code, const char *error_msg = nullptr)
-    : cls(QUICErrorClass::APPLICATION), app_error_code(error_code), msg(error_msg){};
+  QUICError(QUICErrorClass error_class, uint16_t error_code, const char *error_msg = nullptr)
+    : cls(error_class), code(error_code), msg(error_msg)
+  {
+  }
 };
 
 class QUICNoError : public QUICError
@@ -196,10 +192,12 @@ class QUICConnectionError : public QUICError
 {
 public:
   QUICConnectionError() : QUICError() {}
-  QUICConnectionError(const QUICTransErrorCode error_code, const char *error_msg = nullptr,
+  QUICConnectionError(QUICTransErrorCode error_code, const char *error_msg = nullptr,
                       QUICFrameType frame_type = QUICFrameType::UNKNOWN)
-    : QUICError(error_code, error_msg), _frame_type(frame_type){};
-  QUICConnectionError(const QUICAppErrorCode error_code, const char *error_msg = nullptr) : QUICError(error_code, error_msg){};
+    : QUICError(QUICErrorClass::TRANSPORT, static_cast<uint16_t>(error_code), error_msg), _frame_type(frame_type){};
+  QUICConnectionError(QUICErrorClass error_class, uint16_t error_code, const char *error_msg = nullptr,
+                      QUICFrameType frame_type = QUICFrameType::UNKNOWN)
+    : QUICError(error_class, error_code, error_msg), _frame_type(frame_type){};
 
   QUICFrameType frame_type() const;
 
@@ -214,9 +212,9 @@ class QUICStreamError : public QUICError
 public:
   QUICStreamError() : QUICError() {}
   QUICStreamError(const QUICStream *s, const QUICTransErrorCode error_code, const char *error_msg = nullptr)
-    : QUICError(error_code, error_msg), stream(s){};
+    : QUICError(QUICErrorClass::TRANSPORT, static_cast<uint16_t>(error_code), error_msg), stream(s){};
   QUICStreamError(const QUICStream *s, const QUICAppErrorCode error_code, const char *error_msg = nullptr)
-    : QUICError(error_code, error_msg), stream(s){};
+    : QUICError(QUICErrorClass::APPLICATION, static_cast<uint16_t>(error_code), error_msg), stream(s){};
 
   const QUICStream *stream;
 };
@@ -349,7 +347,7 @@ public:
   static QUICVersion read_QUICVersion(const uint8_t *buf);
   static QUICStreamId read_QUICStreamId(const uint8_t *buf);
   static QUICOffset read_QUICOffset(const uint8_t *buf);
-  static QUICTransErrorCode read_QUICTransErrorCode(const uint8_t *buf);
+  static uint16_t read_QUICTransErrorCode(const uint8_t *buf);
   static QUICAppErrorCode read_QUICAppErrorCode(const uint8_t *buf);
   static uint64_t read_QUICMaxData(const uint8_t *buf);
 
@@ -358,7 +356,7 @@ public:
   static void write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len);
   static void write_QUICStreamId(QUICStreamId stream_id, uint8_t *buf, size_t *len);
   static void write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len);
-  static void write_QUICTransErrorCode(QUICTransErrorCode error_code, uint8_t *buf, size_t *len);
+  static void write_QUICTransErrorCode(uint16_t error_code, uint8_t *buf, size_t *len);
   static void write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len);
   static void write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len);
 

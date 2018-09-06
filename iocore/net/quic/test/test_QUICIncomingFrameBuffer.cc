@@ -40,7 +40,8 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0, true);
 
     err = buffer.insert(*stream1_frame_0_r);
-    CHECK(err->trans_error_code != QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    CHECK(err->cls == QUICErrorClass::NONE);
+    CHECK(err->code != static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
   }
 
   SECTION("multiple frames")
@@ -55,7 +56,8 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     buffer.insert(*stream1_frame_1_r);
     buffer.insert(*stream1_frame_2_r);
     err = buffer.insert(*stream1_frame_3_r);
-    CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    CHECK(err->cls == QUICErrorClass::TRANSPORT);
+    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
 
     QUICIncomingStreamFrameBuffer buffer2(stream);
 
@@ -63,13 +65,15 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     buffer2.insert(*stream1_frame_0_r);
     buffer2.insert(*stream1_frame_1_r);
     err = buffer2.insert(*stream1_frame_2_r);
-    CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    CHECK(err->cls == QUICErrorClass::TRANSPORT);
+    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
 
     QUICIncomingStreamFrameBuffer buffer3(stream);
 
     buffer3.insert(*stream1_frame_4_r);
     err = buffer3.insert(*stream1_frame_3_r);
-    CHECK(err->trans_error_code == QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    CHECK(err->cls == QUICErrorClass::TRANSPORT);
+    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
   }
 
   SECTION("Pure FIN")

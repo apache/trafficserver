@@ -136,11 +136,11 @@ QUICStream::state_stream_open(int event, void *data)
   if (error->cls != QUICErrorClass::NONE) {
     if (error->cls == QUICErrorClass::TRANSPORT) {
       QUICStreamDebug("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error->cls),
-                      static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->trans_error_code),
-                      static_cast<unsigned int>(error->trans_error_code));
+                      static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code),
+                      static_cast<unsigned int>(error->code));
     } else {
       QUICStreamDebug("QUICError: %s (%u), APPLICATION ERROR (0x%x)", QUICDebugNames::error_class(error->cls),
-                      static_cast<unsigned int>(error->cls), static_cast<unsigned int>(error->app_error_code));
+                      static_cast<unsigned int>(error->cls), static_cast<unsigned int>(error->code));
     }
     if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
       // Stream Error

@@ -647,7 +647,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
     std::shared_ptr<const QUICConnectionCloseFrame> conn_close_frame =
       std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame);
     CHECK(conn_close_frame != nullptr);
-    CHECK(conn_close_frame->error_code() == QUICTransErrorCode::PROTOCOL_VIOLATION);
+    CHECK(conn_close_frame->error_code() == static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION));
     CHECK(conn_close_frame->frame_type() == QUICFrameType::UNKNOWN);
     CHECK(conn_close_frame->reason_phrase_length() == reason_phrase_len);
     CHECK(memcmp(conn_close_frame->reason_phrase(), reason_phrase, reason_phrase_len) == 0);
@@ -668,7 +668,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
     std::shared_ptr<const QUICConnectionCloseFrame> conn_close_frame =
       std::dynamic_pointer_cast<const QUICConnectionCloseFrame>(frame);
     CHECK(conn_close_frame != nullptr);
-    CHECK(conn_close_frame->error_code() == QUICTransErrorCode::PROTOCOL_VIOLATION);
+    CHECK(conn_close_frame->error_code() == static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION));
     CHECK(conn_close_frame->frame_type() == QUICFrameType::RST_STREAM);
     CHECK(conn_close_frame->reason_phrase_length() == 0);
   }
@@ -685,7 +685,8 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
       0x05,                        // Reason Phrase Length
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
     };
-    QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, QUICFrameType::STREAM, 5, "ABCDE");
+    QUICConnectionCloseFrame connection_close_frame(static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION),
+                                                    QUICFrameType::STREAM, 5, "ABCDE");
     CHECK(connection_close_frame.size() == sizeof(expected));
 
     connection_close_frame.store(buf, &len, 32);
@@ -704,7 +705,8 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
       0x00,       // Frame Type
       0x00,       // Reason Phrase Length
     };
-    QUICConnectionCloseFrame connection_close_frame(QUICTransErrorCode::PROTOCOL_VIOLATION, QUICFrameType::UNKNOWN, 0, nullptr);
+    QUICConnectionCloseFrame connection_close_frame(static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION),
+                                                    QUICFrameType::UNKNOWN, 0, nullptr);
     connection_close_frame.store(buf, &len, 32);
     CHECK(len == sizeof(expected));
     CHECK(memcmp(buf, expected, len) == 0);
@@ -1238,14 +1240,14 @@ TEST_CASE("QUICFrameFactory Create CONNECTION_CLOSE with a QUICConnectionError",
     std::unique_ptr<QUICConnectionError>(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
   std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> connection_close_frame1 =
     QUICFrameFactory::create_connection_close_frame(std::move(error));
-  CHECK(connection_close_frame1->error_code() == QUICTransErrorCode::INTERNAL_ERROR);
+  CHECK(connection_close_frame1->error_code() == static_cast<uint16_t>(QUICTransErrorCode::INTERNAL_ERROR));
   CHECK(connection_close_frame1->reason_phrase_length() == 0);
   CHECK(connection_close_frame1->reason_phrase() == nullptr);
 
   error = std::unique_ptr<QUICConnectionError>(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR, "test"));
   std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> connection_close_frame2 =
     QUICFrameFactory::create_connection_close_frame(std::move(error));
-  CHECK(connection_close_frame2->error_code() == QUICTransErrorCode::INTERNAL_ERROR);
+  CHECK(connection_close_frame2->error_code() == static_cast<uint16_t>(QUICTransErrorCode::INTERNAL_ERROR));
   CHECK(connection_close_frame2->reason_phrase_length() == 4);
   CHECK(memcmp(connection_close_frame2->reason_phrase(), "test", 4) == 0);
 }

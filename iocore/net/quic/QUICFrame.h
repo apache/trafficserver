@@ -350,15 +350,15 @@ class QUICConnectionCloseFrame : public QUICFrame
 public:
   QUICConnectionCloseFrame() : QUICFrame() {}
   QUICConnectionCloseFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICConnectionCloseFrame(QUICTransErrorCode error_code, QUICFrameType frame_type, uint64_t reason_phrase_length,
-                           const char *reason_phrase, bool protection = true);
+  QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length, const char *reason_phrase,
+                           bool protection = true);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
-  QUICTransErrorCode error_code() const;
+  uint16_t error_code() const;
   QUICFrameType frame_type() const;
   uint64_t reason_phrase_length() const;
   const char *reason_phrase() const;
@@ -369,7 +369,7 @@ private:
   size_t _get_reason_phrase_length_field_length() const;
   size_t _get_reason_phrase_field_offset() const;
 
-  QUICTransErrorCode _error_code;
+  uint16_t _error_code;
   QUICFrameType _frame_type      = QUICFrameType::UNKNOWN;
   uint64_t _reason_phrase_length = 0;
   const char *_reason_phrase     = nullptr;
@@ -938,8 +938,7 @@ public:
    * Creates a CONNECTION_CLOSE frame.
    */
   static std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> create_connection_close_frame(
-    QUICTransErrorCode error_code, QUICFrameType frame_type, uint16_t reason_phrase_length = 0,
-    const char *reason_phrase = nullptr);
+    uint16_t error_code, QUICFrameType frame_type, uint16_t reason_phrase_length = 0, const char *reason_phrase = nullptr);
 
   static std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> create_connection_close_frame(
     QUICConnectionErrorUPtr error);

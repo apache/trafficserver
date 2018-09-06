@@ -110,37 +110,38 @@ QUICDebugNames::error_class(QUICErrorClass cls)
 }
 
 const char *
-QUICDebugNames::error_code(QUICTransErrorCode code)
+QUICDebugNames::error_code(uint16_t code)
 {
   switch (code) {
-  case QUICTransErrorCode::NO_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::NO_ERROR):
     return "NO_ERROR";
-  case QUICTransErrorCode::INTERNAL_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::INTERNAL_ERROR):
     return "INTERNAL_ERROR";
-  case QUICTransErrorCode::FLOW_CONTROL_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::FLOW_CONTROL_ERROR):
     return "FLOW_CONTROL_ERROR";
-  case QUICTransErrorCode::STREAM_ID_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::STREAM_ID_ERROR):
     return "STREAM_ID_ERROR";
-  case QUICTransErrorCode::STREAM_STATE_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::STREAM_STATE_ERROR):
     return "STREAM_STATE_ERROR";
-  case QUICTransErrorCode::FINAL_OFFSET_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR):
     return "FINAL_OFFSET_ERROR";
-  case QUICTransErrorCode::FRAME_ENCODING_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::FRAME_ENCODING_ERROR):
     return "FRAME_ENCODING_ERROR";
-  case QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR):
     return "TRANSPORT_PARAMETER_ERROR";
-  case QUICTransErrorCode::VERSION_NEGOTIATION_ERROR:
+  case static_cast<uint16_t>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR):
     return "VERSION_NEGOTIATION_ERROR";
-  case QUICTransErrorCode::PROTOCOL_VIOLATION:
+  case static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION):
     return "PROTOCOL_VIOLATION";
-  case QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE:
+  case static_cast<uint16_t>(QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE):
     return "UNSOLICITED_PATH_RESPONSE";
-  case QUICTransErrorCode::INVALID_MIGRATION:
+  case static_cast<uint16_t>(QUICTransErrorCode::INVALID_MIGRATION):
     return "INVALID_MIGRATION";
   default:
-    if (0x0100 <= static_cast<uint16_t>(code) && static_cast<uint16_t>(code) <= 0x01FF) {
+    if (0x0100 <= code && code <= 0x01FF) {
       return "CRYPTO_ERROR";
     }
+
     return "UNKNOWN";
   }
 }

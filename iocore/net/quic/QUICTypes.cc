@@ -182,10 +182,10 @@ QUICTypeUtil::read_QUICOffset(const uint8_t *buf)
   return static_cast<QUICOffset>(QUICIntUtil::read_QUICVariableInt(buf));
 }
 
-QUICTransErrorCode
+uint16_t
 QUICTypeUtil::read_QUICTransErrorCode(const uint8_t *buf)
 {
-  return static_cast<QUICTransErrorCode>(QUICIntUtil::read_nbytes_as_uint(buf, 2));
+  return QUICIntUtil::read_nbytes_as_uint(buf, 2);
 }
 
 QUICAppErrorCode
@@ -242,7 +242,7 @@ QUICTypeUtil::write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len)
 }
 
 void
-QUICTypeUtil::write_QUICTransErrorCode(QUICTransErrorCode error_code, uint8_t *buf, size_t *len)
+QUICTypeUtil::write_QUICTransErrorCode(uint16_t error_code, uint8_t *buf, size_t *len)
 {
   QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
 }
@@ -272,12 +272,6 @@ QUICStatelessResetToken::_gen_token(uint64_t data)
   size_t dummy;
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[0], 8, _token, &dummy);
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[1], 8, _token + 8, &dummy);
-}
-
-uint16_t
-QUICError::code()
-{
-  return static_cast<uint16_t>(this->trans_error_code);
 }
 
 QUICFrameType

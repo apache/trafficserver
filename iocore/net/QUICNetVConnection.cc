@@ -481,11 +481,11 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
     // An endpoint MAY transition from the closing period to the draining period if it can confirm that its peer is also closing or
     // draining. Receiving a closing frame is sufficient confirmation, as is receiving a stateless reset.
     if (frame.type() == QUICFrameType::APPLICATION_CLOSE) {
-      this->_switch_to_draining_state(
-        QUICConnectionErrorUPtr(new QUICConnectionError(static_cast<const QUICApplicationCloseFrame &>(frame).error_code())));
+      this->_switch_to_draining_state(QUICConnectionErrorUPtr(
+        new QUICConnectionError(QUICErrorClass::APPLICATION, static_cast<const QUICApplicationCloseFrame &>(frame).error_code())));
     } else {
-      this->_switch_to_draining_state(
-        QUICConnectionErrorUPtr(new QUICConnectionError(static_cast<const QUICConnectionCloseFrame &>(frame).error_code())));
+      this->_switch_to_draining_state(QUICConnectionErrorUPtr(
+        new QUICConnectionError(QUICErrorClass::TRANSPORT, static_cast<const QUICConnectionCloseFrame &>(frame).error_code())));
     }
     break;
   default:
@@ -629,7 +629,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   }
 
   if (error->cls != QUICErrorClass::NONE) {
-    QUICConDebug("QUICError: cls=%u, code=0x%" PRIu16, static_cast<unsigned int>(error->cls), error->code());
+    QUICConDebug("QUICError: cls=%u, code=0x%" PRIu16, static_cast<unsigned int>(error->cls), error->code);
     this->_handle_error(std::move(error));
   }
 
@@ -1477,10 +1477,10 @@ QUICNetVConnection::_handle_error(QUICErrorUPtr error)
 {
   if (error->cls == QUICErrorClass::APPLICATION) {
     QUICError("QUICError: %s (%u), APPLICATION ERROR (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
-              static_cast<unsigned int>(error->cls), error->code());
+              static_cast<unsigned int>(error->cls), error->code);
   } else {
     QUICError("QUICError: %s (%u), %s (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
-              static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->trans_error_code), error->code());
+              static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code), error->code);
   }
 
   if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
