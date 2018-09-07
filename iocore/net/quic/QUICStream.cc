@@ -452,7 +452,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 
   // STREAM - Pure FIN or data length is lager than 0
   frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id,
-                                                this->_send_offset, fin, true);
+                                                this->_send_offset, fin);
   if (!this->_state.is_allowed_to_send(*frame)) {
     QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
     return frame;
@@ -699,7 +699,7 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   }
 
   frame = QUICFrameFactory::create_crypto_frame(reinterpret_cast<const uint8_t *>(this->_write_buffer_reader->start()),
-                                                frame_payload_size, this->_send_offset, true);
+                                                frame_payload_size, this->_send_offset);
   this->_send_offset += frame_payload_size;
   this->_write_buffer_reader->consume(frame_payload_size);
 

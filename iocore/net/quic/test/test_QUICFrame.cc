@@ -591,7 +591,7 @@ TEST_CASE("Store Ping Frame", "[quic]")
     0x07, // Type
   };
 
-  QUICPingFrame frame(true);
+  QUICPingFrame frame;
   CHECK(frame.size() == 1);
 
   frame.store(buf, &len, 16);
@@ -1098,7 +1098,7 @@ TEST_CASE("Store PATH_CHALLENGE Frame", "[quic]")
   ats_unique_buf data = ats_unique_malloc(raw_len);
   memcpy(data.get(), raw, raw_len);
 
-  QUICPathChallengeFrame frame(std::move(data), QUICPathChallengeFrame::DATA_LEN);
+  QUICPathChallengeFrame frame(std::move(data));
   CHECK(frame.size() == 9);
 
   frame.store(buf, &len, 16);
@@ -1136,7 +1136,7 @@ TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
   ats_unique_buf data = ats_unique_malloc(raw_len);
   memcpy(data.get(), raw, raw_len);
 
-  QUICPathResponseFrame frame(std::move(data), QUICPathResponseFrame::DATA_LEN);
+  QUICPathResponseFrame frame(std::move(data));
   CHECK(frame.size() == 9);
 
   frame.store(buf, &len, 16);

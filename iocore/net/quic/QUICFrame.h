@@ -47,8 +47,7 @@ using QUICCryptoFrameSPtr = std::shared_ptr<const QUICCryptoFrame>;
 class QUICFrame
 {
 public:
-  QUICFrame(const uint8_t *buf, size_t len, bool protection) : _buf(buf), _len(len), _protection(protection) {}
-  QUICFrame(bool protection) : _protection(protection) {}
+  QUICFrame(const uint8_t *buf, size_t len) : _buf(buf), _len(len) {}
   virtual ~QUICFrame() {}
   static QUICFrameType type(const uint8_t *buf);
 
@@ -57,7 +56,6 @@ public:
   virtual size_t size() const                                         = 0;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
-  virtual bool is_protected() const;
   virtual QUICFrame *split(size_t size);
   virtual int debug_msg(char *msg, size_t msg_len) const;
   LINK(QUICFrame, link);
@@ -66,7 +64,6 @@ protected:
   QUICFrame() {}
   const uint8_t *_buf = nullptr;
   size_t _len         = 0;
-  bool _protection    = true;
 };
 
 //
@@ -77,9 +74,8 @@ class QUICStreamFrame : public QUICFrame
 {
 public:
   QUICStreamFrame() : QUICFrame() {}
-  QUICStreamFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICStreamFrame(ats_unique_buf buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false,
-                  bool protection = true);
+  QUICStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICStreamFrame(ats_unique_buf buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false);
 
   QUICFrame *split(size_t size) override;
   QUICFrameUPtr clone() const override;
@@ -123,8 +119,8 @@ class QUICCryptoFrame : public QUICFrame
 {
 public:
   QUICCryptoFrame() : QUICFrame() {}
-  QUICCryptoFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICCryptoFrame(ats_unique_buf buf, size_t len, QUICOffset offset, bool protection = true);
+  QUICCryptoFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICCryptoFrame(ats_unique_buf buf, size_t len, QUICOffset offset);
 
   QUICFrame *split(size_t size) override;
   QUICFrameUPtr clone() const override;
@@ -228,7 +224,7 @@ public:
     size_t size() const;
     size_t store(uint8_t *buf, size_t *len, size_t limit) const;
     uint64_t first_ack_block() const;
-    void add_ack_block(const AckBlock block, bool protection = true);
+    void add_ack_block(const AckBlock block);
     const_iterator begin() const;
     const_iterator end() const;
     bool has_protected() const;
@@ -240,12 +236,11 @@ public:
     uint64_t _first_ack_block = 0;
     uint8_t _ack_block_count  = 0;
     std::vector<QUICAckFrame::AckBlock> _ack_blocks;
-    bool _protection = false;
   };
 
   QUICAckFrame() : QUICFrame() {}
-  QUICAckFrame(const uint8_t *buf, size_t len, bool protection = true);
-  QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, bool protection = true);
+  QUICAckFrame(const uint8_t *buf, size_t len);
+  QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block);
 
   virtual ~QUICAckFrame();
   virtual void reset(const uint8_t *buf, size_t len) override;
@@ -254,7 +249,6 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  bool is_protected() const override;
 
   QUICPacketNumber largest_acknowledged() const;
   uint64_t ack_delay() const;
@@ -284,8 +278,8 @@ class QUICRstStreamFrame : public QUICFrame
 {
 public:
   QUICRstStreamFrame() : QUICFrame() {}
-  QUICRstStreamFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset, bool protection = true);
+  QUICRstStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset);
 
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
@@ -316,8 +310,7 @@ class QUICPingFrame : public QUICFrame
 {
 public:
   QUICPingFrame() : QUICFrame() {}
-  QUICPingFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICPingFrame(bool protection) : QUICFrame(protection) {}
+  QUICPingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -334,7 +327,7 @@ class QUICPaddingFrame : public QUICFrame
 {
 public:
   QUICPaddingFrame() : QUICFrame() {}
-  QUICPaddingFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
+  QUICPaddingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -349,9 +342,8 @@ class QUICConnectionCloseFrame : public QUICFrame
 {
 public:
   QUICConnectionCloseFrame() : QUICFrame() {}
-  QUICConnectionCloseFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length, const char *reason_phrase,
-                           bool protection = true);
+  QUICConnectionCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length, const char *reason_phrase);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -383,9 +375,8 @@ class QUICApplicationCloseFrame : public QUICFrame
 {
 public:
   QUICApplicationCloseFrame() : QUICFrame() {}
-  QUICApplicationCloseFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length, const char *reason_phrase,
-                            bool protection = true);
+  QUICApplicationCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length, const char *reason_phrase);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -412,8 +403,8 @@ class QUICMaxDataFrame : public QUICFrame
 {
 public:
   QUICMaxDataFrame() : QUICFrame() {}
-  QUICMaxDataFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICMaxDataFrame(uint64_t maximum_data, bool protection = true);
+  QUICMaxDataFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICMaxDataFrame(uint64_t maximum_data);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -436,8 +427,8 @@ class QUICMaxStreamDataFrame : public QUICFrame
 {
 public:
   QUICMaxStreamDataFrame() : QUICFrame() {}
-  QUICMaxStreamDataFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t maximum_stream_data, bool protection = true);
+  QUICMaxStreamDataFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t maximum_stream_data);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -465,8 +456,8 @@ class QUICMaxStreamIdFrame : public QUICFrame
 {
 public:
   QUICMaxStreamIdFrame() : QUICFrame() {}
-  QUICMaxStreamIdFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, bool protection = true);
+  QUICMaxStreamIdFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -486,8 +477,8 @@ class QUICBlockedFrame : public QUICFrame
 {
 public:
   QUICBlockedFrame() : QUICFrame() {}
-  QUICBlockedFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICBlockedFrame(QUICOffset offset, bool protection = true) : QUICFrame(protection), _offset(offset){};
+  QUICBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICBlockedFrame(QUICOffset offset) : _offset(offset){};
 
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
@@ -510,8 +501,8 @@ class QUICStreamBlockedFrame : public QUICFrame
 {
 public:
   QUICStreamBlockedFrame() : QUICFrame() {}
-  QUICStreamBlockedFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICStreamBlockedFrame(QUICStreamId s, QUICOffset o, bool protection = true) : QUICFrame(protection), _stream_id(s), _offset(o){};
+  QUICStreamBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICStreamBlockedFrame(QUICStreamId s, QUICOffset o) : _stream_id(s), _offset(o){};
 
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
@@ -537,8 +528,8 @@ class QUICStreamIdBlockedFrame : public QUICFrame
 {
 public:
   QUICStreamIdBlockedFrame() : QUICFrame() {}
-  QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICStreamIdBlockedFrame(QUICStreamId s, bool protection = true) : QUICFrame(protection), _stream_id(s) {}
+  QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICStreamIdBlockedFrame(QUICStreamId s) : _stream_id(s) {}
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -560,9 +551,9 @@ class QUICNewConnectionIdFrame : public QUICFrame
 {
 public:
   QUICNewConnectionIdFrame() : QUICFrame() {}
-  QUICNewConnectionIdFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICNewConnectionIdFrame(uint64_t seq, QUICConnectionId id, QUICStatelessResetToken token, bool protection = true)
-    : QUICFrame(protection), _sequence(seq), _connection_id(id), _stateless_reset_token(token){};
+  QUICNewConnectionIdFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICNewConnectionIdFrame(uint64_t seq, QUICConnectionId id, QUICStatelessResetToken token)
+    : _sequence(seq), _connection_id(id), _stateless_reset_token(token){};
 
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
@@ -591,8 +582,8 @@ class QUICStopSendingFrame : public QUICFrame
 {
 public:
   QUICStopSendingFrame() : QUICFrame() {}
-  QUICStopSendingFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, bool protection = true);
+  QUICStopSendingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorCode error_code);
 
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
@@ -619,8 +610,8 @@ class QUICPathChallengeFrame : public QUICFrame
 public:
   static constexpr uint8_t DATA_LEN = 8;
   QUICPathChallengeFrame() : QUICFrame() {}
-  QUICPathChallengeFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICPathChallengeFrame(ats_unique_buf data, bool protection = true) : QUICFrame(protection), _data(std::move(data)) {}
+  QUICPathChallengeFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICPathChallengeFrame(ats_unique_buf data) : _data(std::move(data)) {}
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -643,8 +634,8 @@ class QUICPathResponseFrame : public QUICFrame
 public:
   static constexpr uint8_t DATA_LEN = 8;
   QUICPathResponseFrame() : QUICFrame() {}
-  QUICPathResponseFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICPathResponseFrame(ats_unique_buf data, bool protection = true) : QUICFrame(protection), _data(std::move(data)) {}
+  QUICPathResponseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICPathResponseFrame(ats_unique_buf data) : _data(std::move(data)) {}
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -666,11 +657,8 @@ class QUICNewTokenFrame : public QUICFrame
 {
 public:
   QUICNewTokenFrame() : QUICFrame() {}
-  QUICNewTokenFrame(const uint8_t *buf, size_t len, bool protection = true) : QUICFrame(buf, len, protection) {}
-  QUICNewTokenFrame(ats_unique_buf token, size_t token_length, bool protection = true)
-    : QUICFrame(protection), _token_length(token_length), _token(std::move(token))
-  {
-  }
+  QUICNewTokenFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICNewTokenFrame(ats_unique_buf token, size_t token_length) : _token_length(token_length), _token(std::move(token)) {}
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -918,13 +906,13 @@ public:
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
   static QUICStreamFrameUPtr create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset,
-                                                 bool last = false, bool protection = true);
+                                                 bool last = false);
 
   /*
    * Creates a CRYPTO frame.
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
-  static QUICCryptoFrameUPtr create_crypto_frame(const uint8_t *data, uint64_t data_len, QUICOffset offset, bool protection = true);
+  static QUICCryptoFrameUPtr create_crypto_frame(const uint8_t *data, uint64_t data_len, QUICOffset offset);
 
   /*
    * Creates a ACK frame.
@@ -932,8 +920,7 @@ public:
    * need to ack.
    */
   static std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_ack_frame(QUICPacketNumber largest_acknowledged,
-                                                                              uint64_t ack_delay, uint64_t first_ack_block,
-                                                                              bool protection = true);
+                                                                              uint64_t ack_delay, uint64_t first_ack_block);
   /*
    * Creates a CONNECTION_CLOSE frame.
    */

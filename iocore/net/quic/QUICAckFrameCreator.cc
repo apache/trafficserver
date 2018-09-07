@@ -90,8 +90,6 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
   size_t i        = 0;
   uint8_t gap     = 0;
   uint64_t length = 0;
-  // TODO: remove protection
-  bool protection = false;
 
   while (i < packet_numbers->size()) {
     QUICPacketNumber pn = (*packet_numbers)[i];
@@ -105,10 +103,10 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
     ink_assert(length > 0);
 
     if (ack_frame) {
-      ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1}, protection);
+      ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
     } else {
       uint64_t delay = this->_calculate_delay(level);
-      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, protection);
+      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
     }
 
     gap             = last_ack_number - pn;
@@ -117,10 +115,10 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
   }
 
   if (ack_frame) {
-    ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1}, protection);
+    ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
   } else {
     uint64_t delay = this->_calculate_delay(level);
-    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, protection);
+    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
   }
 
   return ack_frame;
