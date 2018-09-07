@@ -34,6 +34,7 @@ development team.
    buffer-writer.en
    intrusive-list.en
    intrusive-hash-map.en
+   Lexicon.en
    MemArena.en
    AcidPtr.en
    Extendible.en

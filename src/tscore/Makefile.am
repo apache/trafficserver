@@ -169,6 +169,7 @@ libtscore_la_SOURCES = \
 	JeAllocator.h \
 	JeAllocator.cc \
 	Layout.cc \
+	Lexicon.h \
 	List.h \
 	llqueue.cc \
 	lockfile.cc \
@@ -273,6 +274,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
+	unit_tests/test_Lexicon.cc \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
