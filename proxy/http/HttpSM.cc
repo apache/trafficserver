@@ -5001,6 +5001,9 @@ HttpSM::do_http_server_open(bool raw)
     if (host && len > 0) {
       opt.set_sni_servername(host, len);
     }
+    if (t_state.server_info.name) {
+      opt.set_ssl_servername(t_state.server_info.name);
+    }
 
     SSLConfig::scoped_config params;
     // check if the overridden client cert filename is already attached to an existing ssl context
