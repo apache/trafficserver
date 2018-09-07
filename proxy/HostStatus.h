@@ -84,13 +84,13 @@ struct HostStatus {
   void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time, const char *reason);
   HostStatus_t getHostStatus(const char *name);
   void createHostStat(const char *name);
+  int getHostStatId(const char *name);
 
 private:
   int next_stat_id = 1;
   HostStatus();
   HostStatus(const HostStatus &obj) = delete;
   HostStatus &operator=(HostStatus const &) = delete;
-  int getHostStatId(const char *name);
 
   InkHashTable *hosts_statuses;  // next hop status, key is hostname or ip string, data is bool (available).
   InkHashTable *hosts_stats_ids; // next hop stat ids, key is hostname or ip string, data is int stat id.
