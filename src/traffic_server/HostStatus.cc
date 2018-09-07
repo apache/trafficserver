@@ -44,6 +44,7 @@ mgmt_host_status_up_callback(void *x, char *data, int len)
   MgmtMarshallString name;
   MgmtMarshallInt down_time;
   MgmtMarshallString reason;
+  std::string reason_stat;
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
   Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
 
@@ -55,6 +56,9 @@ mgmt_host_status_up_callback(void *x, char *data, int len)
   if (data != nullptr) {
     Debug("host_statuses", "marking up server %s", data);
     HostStatus &hs = HostStatus::instance();
+    if (hs.getHostStatId(reason_stat.c_str()) == -1) {
+      hs.createHostStat(name);
+    }
     hs.setHostStatus(name, HostStatus_t::HOST_STATUS_UP, down_time, reason);
   }
   return nullptr;
@@ -67,6 +71,7 @@ mgmt_host_status_down_callback(void *x, char *data, int len)
   MgmtMarshallString name;
   MgmtMarshallInt down_time;
   MgmtMarshallString reason;
+  std::string reason_stat;
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
   Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
 
@@ -79,6 +84,9 @@ mgmt_host_status_down_callback(void *x, char *data, int len)
   if (data != nullptr) {
     Debug("host_statuses", "marking down server %s", name);
     HostStatus &hs = HostStatus::instance();
+    if (hs.getHostStatId(reason_stat.c_str()) == -1) {
+      hs.createHostStat(name);
+    }
     hs.setHostStatus(name, HostStatus_t::HOST_STATUS_DOWN, down_time, reason);
   }
   return nullptr;
