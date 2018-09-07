@@ -177,6 +177,10 @@ struct NetVCOptions {
   /** Server name to use for SNI data on an outbound connection.
    */
   ats_scoped_str sni_servername;
+  /** FQDN used to connect to the origin.  May be different
+   * than sni_servername if pristine host headers are used
+   */
+  ats_scoped_str ssl_servername;
 
   /**
    * Client certificate to use in response to OS's certificate request
@@ -209,6 +213,16 @@ struct NetVCOptions {
     return *this;
   }
   self &
+  set_ssl_servername(const char *name)
+  {
+    if (name) {
+      ssl_servername = ats_strdup(name);
+    } else {
+      ssl_servername = nullptr;
+    }
+    return *this;
+  }
+  self &
   set_client_certname(const char *name)
   {
     clientCertificate = ats_strdup(name);
@@ -220,15 +234,30 @@ struct NetVCOptions {
   operator=(self const &that)
   {
     if (&that != this) {
+      /*
+       * It is odd but necessary to null the scoped string pointer here
+       * and then explicitly call release on them in the string assignements
+       * below.  
+       * We a memcpy from that to this.  This will put that's string pointers into
+       * this's memory.  Therefore we must first explicitly null out 
+       * this's original version of the string.  The release after the
+       * memcpy removes the extra reference to that's copy of the string
+       * Removing the release will eventualy cause a double free crash
+       */
       sni_servername    = nullptr; // release any current name.
+      ssl_servername    = nullptr;
       clientCertificate = nullptr;
       memcpy(static_cast<void *>(this), &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
         this->sni_servername = ats_strdup(that.sni_servername);
       }
+      if (that.ssl_servername) {
+        ssl_servername.release(); // otherwise we'll free the source string.
+        this->ssl_servername = ats_strdup(that.ssl_servername);
+      }
       if (that.clientCertificate) {
-        clientCertificate.release();
+        clientCertificate.release(); // otherwise we'll free the source string.
         this->clientCertificate = ats_strdup(that.clientCertificate);
       }
     }
