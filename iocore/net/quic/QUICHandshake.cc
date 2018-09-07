@@ -320,7 +320,7 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
     break;
   }
 
-  this->do_handshake();
+  error = this->do_handshake();
 
   return error;
 }
@@ -389,9 +389,11 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   this->_local_transport_parameters = std::unique_ptr<QUICTransportParameters>(tp);
 }
 
-int
+QUICErrorUPtr
 QUICHandshake::do_handshake()
 {
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+
   QUICHandshakeMsgs in;
   uint8_t in_buf[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
   in.buf                                   = in_buf;
@@ -420,17 +422,22 @@ QUICHandshake::do_handshake()
 
   int result = this->_hs_protocol->handshake(&out, &in);
 
-  for (auto level : QUIC_ENCRYPTION_LEVELS) {
-    int index                = static_cast<int>(level);
-    QUICCryptoStream *stream = &this->_crypto_streams[index];
-    size_t len               = out.offsets[index + 1] - out.offsets[index];
-    // TODO: check size
-    if (len > 0) {
-      stream->write(out.buf + out.offsets[index], len);
+  if (result == 1) {
+    for (auto level : QUIC_ENCRYPTION_LEVELS) {
+      int index                = static_cast<int>(level);
+      QUICCryptoStream *stream = &this->_crypto_streams[index];
+      size_t len               = out.offsets[index + 1] - out.offsets[index];
+      // TODO: check size
+      if (len > 0) {
+        stream->write(out.buf + out.offsets[index], len);
+      }
     }
+  } else if (out.error_code != 0) {
+    this->_hs_protocol->abort_handshake();
+    error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, out.error_code);
   }
 
-  return result;
+  return error;
 }
 
 void

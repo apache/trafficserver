@@ -61,7 +61,7 @@ public:
   // for server side
   QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
 
-  int do_handshake();
+  QUICErrorUPtr do_handshake();
 
   // Getters
   QUICVersion negotiated_version();

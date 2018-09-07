@@ -900,7 +900,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
     if (this->_handshake_handler->is_version_negotiated()) {
       error = this->_recv_and_ack(std::move(packet));
 
-      if (!this->_handshake_handler->has_remote_tp()) {
+      if (error->cls == QUICErrorClass::NONE && !this->_handshake_handler->has_remote_tp()) {
         error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR));
       }
     }
