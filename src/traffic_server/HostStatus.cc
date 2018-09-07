@@ -166,15 +166,14 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
 HostStatus_t
 HostStatus::getHostStatus(const char *name)
 {
-  HostStatRec_t *_status;
-  int lookup = 0;
-  time_t now = time(0);
+  HostStatRec_t *_status = 0;
+  int lookup             = 0;
+  time_t now             = time(0);
 
   // the hash table value pointer has the HostStatus_t value.
   ink_rwlock_rdlock(&host_status_rwlock);
   lookup = ink_hash_table_lookup(hosts_statuses, name, reinterpret_cast<void **>(&_status));
   ink_rwlock_unlock(&host_status_rwlock);
-  Debug("host_statuses", "name: %s, status: %d", name, static_cast<int>(_status->status));
 
   // if the host was marked down and it's down_time has elapsed, mark it up.
   if (lookup == 1 && _status->status == HostStatus_t::HOST_STATUS_DOWN && _status->down_time > 0) {
