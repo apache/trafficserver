@@ -161,6 +161,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
    System Statistics <system_stats.en>
+   Traffic Dump <traffic_dump.en>
    WebP Transform <webp_transform.en>
    Prefetch <prefetch.en>
 
@@ -230,6 +231,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`System Stats <system_stats.en>`
     Inserts system statistics in to the stats list
+
+:doc:`Traffic Dump <traffic_dump.en>`
+   Dumps traffic data into a JSON format file which can be used to replay traffic.
 
 :doc:`WebP Transform <webp_transform.en>`
    Converts jpeg and png images to webp format.
