@@ -125,8 +125,12 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
       } else {
         this->_alt_quic_connection_ids[i].advertised = true;
       }
+
+      return frame;
     }
   }
+
   this->_need_advertise = false;
+
   return frame;
 }
