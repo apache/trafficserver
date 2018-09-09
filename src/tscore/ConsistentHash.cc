@@ -33,21 +33,21 @@ operator<<(std::ostream &os, ATSConsistentHashNode &thing)
   return os << thing.name;
 }
 
-ATSConsistentHash::ATSConsistentHash(int r, ATSHash64 *h) : replicas(r), hash(h) {}
+ATSConsistentHash::ATSConsistentHash(int r, ts::Hash64Functor *h) : replicas(r), hash(h) {}
 
 void
-ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *h)
+ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ts::Hash64Functor *h)
 {
   int i;
   char numstr[256];
-  ATSHash64 *thash;
+  ts::Hash64Functor *thash;
   std::ostringstream string_stream;
   std::string std_string;
 
   if (h) {
     thash = h;
   } else if (hash) {
-    thash = hash;
+    thash = hash.get();
   } else {
     return;
   }
@@ -57,26 +57,24 @@ ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *
 
   for (i = 0; i < (int)roundf(replicas * weight); i++) {
     snprintf(numstr, 256, "%d-", i);
-    thash->update(numstr, strlen(numstr));
-    thash->update(std_string.c_str(), strlen(std_string.c_str()));
-    thash->final();
+    thash->update(numstr).update(std_string).final();
     NodeMap.insert(std::pair<uint64_t, ATSConsistentHashNode *>(thash->get(), node));
     thash->clear();
   }
 }
 
 ATSConsistentHashNode *
-ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, ts::Hash64Functor *h)
 {
   uint64_t url_hash;
   ATSConsistentHashIter NodeMapIterUp, *iter;
-  ATSHash64 *thash;
+  ts::Hash64Functor *thash;
   bool *wptr, wrapped = false;
 
   if (h) {
     thash = h;
   } else if (hash) {
-    thash = hash;
+    thash = hash.get();
   } else {
     return nullptr;
   }
@@ -94,7 +92,7 @@ ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, AT
   }
 
   if (url) {
-    thash->update(url, strlen(url));
+    thash->update(url);
     thash->final();
     url_hash = thash->get();
     thash->clear();
@@ -122,17 +120,17 @@ ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, AT
 }
 
 ATSConsistentHashNode *
-ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, bool *w, ts::Hash64Functor *h)
 {
   uint64_t url_hash;
   ATSConsistentHashIter NodeMapIterUp, *iter;
-  ATSHash64 *thash;
+  ts::Hash64Functor *thash;
   bool *wptr, wrapped = false;
 
   if (h) {
     thash = h;
   } else if (hash) {
-    thash = hash;
+    thash = hash.get();
   } else {
     return nullptr;
   }
@@ -150,7 +148,7 @@ ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, b
   }
 
   if (url) {
-    thash->update(url, strlen(url));
+    thash->update(url);
     thash->final();
     url_hash = thash->get();
     thash->clear();
@@ -205,9 +203,4 @@ ATSConsistentHash::lookup_by_hashval(uint64_t hashval, ATSConsistentHashIter *i,
   return (*iter)->second;
 }
 
-ATSConsistentHash::~ATSConsistentHash()
-{
-  if (hash) {
-    delete hash;
-  }
-}
+ATSConsistentHash::~ATSConsistentHash() {}

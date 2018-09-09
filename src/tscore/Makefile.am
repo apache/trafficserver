@@ -76,14 +76,8 @@ libtscore_la_SOURCES = \
 	Extendible.h \
 	fastlz.c \
 	fastlz.h \
-	Hash.cc \
-	HashFNV.cc \
-	HashFNV.h \
-	Hash.h \
 	HashMD5.cc \
 	HashMD5.h \
-	HashSip.cc \
-	HashSip.h \
 	History.h \
 	HostLookup.cc \
 	HostLookup.h \
@@ -229,7 +223,7 @@ ParseRulesCType: CompileParseRules
 mkdfa_SOURCES = mkdfa.c
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
+test_atomic_LDADD = libtscore.la @LIBTCL@ @LIBPCRE@
 
 test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@

@@ -22,15 +22,13 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "tscore/HashFNV.h"
+#include "tscpp/util/HashFNV.h"
 
 /// Hash functor for @c string_view
 inline size_t
 TsLuaConfigSVHash(std::string_view const &sv)
 {
-  ATSHash64FNV1a h;
-  h.update(sv.data(), sv.size());
-  return h.get();
+  return ts::Hash64FNV1a().hash_immediate(sv);
 }
 
 class TsEnumDescriptor

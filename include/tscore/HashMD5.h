@@ -21,21 +21,31 @@
 
 #pragma once
 
-#include "tscore/Hash.h"
+#include "tscpp/util/Hash.h"
 #include <openssl/evp.h>
 
-struct ATSHashMD5 : ATSHash {
-  ATSHashMD5(void);
-  void update(const void *data, size_t len) override;
-  void final(void) override;
-  const void *get(void) const override;
-  size_t size(void) const override;
-  void clear(void) override;
-  ~ATSHashMD5() override;
+namespace ts
+{
+struct HashMD5 : HashFunctor {
+  HashMD5();
+
+  HashMD5 &update(std::string_view const &data) override;
+
+  HashMD5 & final() override;
+
+  bool get(MemSpan dst) const override;
+
+  size_t size() const override;
+
+  HashMD5 &clear() override;
+
+  ~HashMD5() override;
 
 private:
-  EVP_MD_CTX *ctx;
+  EVP_MD_CTX *ctx{nullptr};
   unsigned char md_value[EVP_MAX_MD_SIZE];
-  unsigned int md_len;
-  bool finalized;
+  unsigned int md_len{0};
+  bool finalized{false};
 };
+
+} // namespace ts

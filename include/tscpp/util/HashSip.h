@@ -21,9 +21,11 @@
 
 #pragma once
 
-#include "tscore/Hash.h"
+#include "tscpp/util/Hash.h"
 #include <cstdint>
 
+namespace ts
+{
 /*
   Siphash is a Hash Message Authentication Code and can take a key.
 
@@ -31,25 +33,36 @@
   a zero key for you.
  */
 
-struct ATSHash64Sip24 : ATSHash64 {
-  ATSHash64Sip24(void);
-  ATSHash64Sip24(const unsigned char key[16]);
-  ATSHash64Sip24(std::uint64_t key0, std::uint64_t key1);
-  void update(const void *data, std::size_t len) override;
-  void final(void) override;
-  std::uint64_t get(void) const override;
-  void clear(void) override;
+struct Hash64Sip24 : public Hash64Functor {
+  static constexpr size_t KEY_SIZE = 16;
+
+  Hash64Sip24();
+
+  Hash64Sip24(const unsigned char key[KEY_SIZE]);
+
+  Hash64Sip24(std::uint64_t key0, std::uint64_t key1);
+
+  Hash64Sip24 &update(std::string_view const &data) override;
+
+  Hash64Sip24 & final() override;
+
+  value_type get() const override;
+
+  Hash64Sip24 &clear() override;
 
 private:
-  unsigned char block_buffer[8] = {0};
-  std::uint8_t block_buffer_len = 0;
-  std::uint64_t k0              = 0;
-  std::uint64_t k1              = 0;
-  std::uint64_t v0              = 0;
-  std::uint64_t v1              = 0;
-  std::uint64_t v2              = 0;
-  std::uint64_t v3              = 0;
-  std::uint64_t hfinal          = 0;
-  std::size_t total_len         = 0;
-  bool finalized                = false;
+  static constexpr size_t BLOCK_SIZE     = 8;
+  unsigned char block_buffer[BLOCK_SIZE] = {0};
+  std::uint8_t block_buffer_len          = 0;
+  std::uint64_t k0                       = 0;
+  std::uint64_t k1                       = 0;
+  std::uint64_t v0                       = 0;
+  std::uint64_t v1                       = 0;
+  std::uint64_t v2                       = 0;
+  std::uint64_t v3                       = 0;
+  std::uint64_t hfinal                   = 0;
+  std::size_t total_len                  = 0;
+  bool finalized                         = false;
 };
+
+} // namespace ts

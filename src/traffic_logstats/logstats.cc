@@ -26,7 +26,7 @@
 #include "tscore/ink_file.h"
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
-#include "tscore/HashFNV.h"
+#include "tscpp/util/HashFNV.h"
 #include "tscore/ink_args.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/runroot.h"
@@ -325,14 +325,13 @@ struct hash_fnv32 {
   inline uint32_t
   operator()(const char *s) const
   {
-    ATSHash32FNV1a fnv;
+    ts::Hash32FNV1a fnv;
 
     if (s) {
-      fnv.update(s, strlen(s));
+      fnv.update(s);
     }
 
-    fnv.final();
-    return fnv.get();
+    return fnv.final().get();
   }
 };
 

@@ -19,6 +19,9 @@
 library_includedir=$(includedir)/tscpp/util
 
 library_include_HEADERS = \
-	IntrusiveDList.h \
+        Hash.h \
+        HashFNV.h \
+        HashSip.h \
+        IntrusiveDList.h \
         PostScript.h \
         TextView.h

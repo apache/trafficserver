@@ -19,32 +19,30 @@
   limitations under the License.
  */
 
-#include "tscore/Hash.h"
-#include <cstring>
-
-ATSHashBase::~ATSHashBase() {}
+#include "tscpp/util/Hash.h"
 
 bool
-ATSHash::operator==(const ATSHash &other) const
+ts::Hash32Functor::get(MemSpan dst) const
 {
-  if (this->size() != other.size()) {
-    return false;
-  }
-  if (memcmp(this->get(), other.get(), this->size()) == 0) {
-    return true;
+  bool zret = true;
+  if (dst.size() >= this->size()) {
+    auto v{this->get()};
+    memcpy(dst.data(), &v, sizeof(v));
   } else {
-    return false;
+    zret = false;
   }
+  return zret;
 }
 
 bool
-ATSHash32::operator==(const ATSHash32 &other) const
+ts::Hash64Functor::get(MemSpan dst) const
 {
-  return this->get() == other.get();
-}
-
-bool
-ATSHash64::operator==(const ATSHash64 &other) const
-{
-  return this->get() == other.get();
+  bool zret = true;
+  if (dst.size() >= this->size()) {
+    auto v{this->get()};
+    memcpy(dst.data(), &v, sizeof(v));
+  } else {
+    zret = false;
+  }
+  return zret;
 }

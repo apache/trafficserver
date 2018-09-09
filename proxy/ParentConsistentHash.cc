@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "HostStatus.h"
 #include "ParentConsistentHash.h"
+#include "HostStatus.h"
 
 ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 {
@@ -37,7 +37,7 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   chash[PRIMARY] = new ATSConsistentHash();
 
   for (i = 0; i < parent_record->num_parents; i++) {
-    chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, (ATSHash64 *)&hash[PRIMARY]);
+    chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, (ts::Hash64Functor *)&hash[PRIMARY]);
   }
 
   if (parent_record->num_secondary_parents > 0) {
@@ -46,7 +46,7 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 
     for (i = 0; i < parent_record->num_secondary_parents; i++) {
       chash[SECONDARY]->insert(&(parent_record->secondary_parents[i]), parent_record->secondary_parents[i].weight,
-                               (ATSHash64 *)&hash[SECONDARY]);
+                               (ts::Hash64Functor *)&hash[SECONDARY]);
     }
   } else {
     chash[SECONDARY] = nullptr;
@@ -62,7 +62,7 @@ ParentConsistentHash::~ParentConsistentHash()
 }
 
 uint64_t
-ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
+ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ts::Hash64Functor *h)
 {
   const char *url_string_ref = nullptr;
   int len;
@@ -77,26 +77,24 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
       if (url_string_ref && len > 0) {
         // Print the over-ride URL
         Debug("parent_select", "Using Over-Ride String='%.*s'.", len, url_string_ref);
-        h->update(url_string_ref, len);
-        h->final();
-        return h->get();
+        return h->update(std::string_view(url_string_ref, len)).final().get();
       }
     }
   }
 
   // Always hash on '/' because paths returned by ATS are always stripped of it
-  h->update("/", 1);
+  h->update("/"_sv);
 
   url_string_ref = url->path_get(&len);
   if (url_string_ref) {
-    h->update(url_string_ref, len);
+    h->update(std::string_view(url_string_ref, len));
   }
 
   if (!ignore_query) {
     url_string_ref = url->query_get(&len);
     if (url_string_ref) {
-      h->update("?", 1);
-      h->update(url_string_ref, len);
+      h->update("?"_sv);
+      h->update(std::string_view(url_string_ref, len));
     }
   }
 
@@ -108,7 +106,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 // Helper function to abstract calling ATSConsistentHash lookup_by_hashval() vs lookup().
 static pRecord *
 chash_lookup(ATSConsistentHash *fhash, uint64_t path_hash, ATSConsistentHashIter *chashIter, bool *wrap_around,
-             ATSHash64Sip24 *hash, bool *chash_init)
+             ts::Hash64Sip24 *hash, bool *chash_init)
 {
   pRecord *prtmp;
 
@@ -125,7 +123,7 @@ void
 ParentConsistentHash::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
                                    unsigned int retry_time)
 {
-  ATSHash64Sip24 hash;
+  ts::Hash64Sip24 hash;
   ATSConsistentHash *fhash;
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
   bool firstCall                = first_call;
@@ -184,7 +182,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   }
 
   // Do the initial parent look-up.
-  path_hash = getPathHash(request_info, (ATSHash64 *)&hash);
+  path_hash = getPathHash(request_info, (ts::Hash64Functor *)&hash);
   fhash     = chash[last_lookup];
   do { // search until we've selected a different parent if !firstCall
     prtmp = (pRecord *)chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash,

@@ -8,16 +8,24 @@ https://github.com/floodyberry/siphash
 
  */
 
-#include "tscore/HashSip.h"
+#include "tscpp/util/HashSip.h"
 #include <cstring>
 
 using namespace std;
 
-#define SIP_BLOCK_SIZE 8
+namespace
+{
+inline uint64_t
+ROTL64(uint64_t a, uint64_t b)
+{
+  return ((a) << (b)) | ((a) >> (64 - b));
+}
 
-#define ROTL64(a, b) (((a) << (b)) | ((a) >> (64 - b)))
-
-#define U8TO64_LE(p) *(const uint64_t *)(p)
+inline uint64_t
+U8TO64_LE(unsigned char const *p)
+{
+  return *reinterpret_cast<const uint64_t *>(p);
+}
 
 #define SIPCOMPRESS(x0, x1, x2, x3) \
   x0 += x1;                         \
@@ -35,39 +43,43 @@ using namespace std;
   x3 ^= x0;                         \
   x2 = ROTL64(x2, 32);
 
-ATSHash64Sip24::ATSHash64Sip24()
+} // namespace
+
+namespace ts
+{
+Hash64Sip24::Hash64Sip24()
 {
   this->clear();
 }
 
-ATSHash64Sip24::ATSHash64Sip24(const unsigned char key[16]) : k0(U8TO64_LE(key)), k1(U8TO64_LE(key + sizeof(k0)))
+Hash64Sip24::Hash64Sip24(const unsigned char key[KEY_SIZE]) : k0(U8TO64_LE(key)), k1(U8TO64_LE(key + sizeof(k0)))
 {
   this->clear();
 }
 
-ATSHash64Sip24::ATSHash64Sip24(uint64_t key0, uint64_t key1) : k0(key0), k1(key1)
+Hash64Sip24::Hash64Sip24(uint64_t key0, uint64_t key1) : k0(key0), k1(key1)
 {
   this->clear();
 }
 
-void
-ATSHash64Sip24::update(const void *data, size_t len)
+Hash64Sip24 &
+Hash64Sip24::update(std::string_view const &data)
 {
   size_t i, blocks;
-  unsigned char *m;
   uint64_t mi;
   uint8_t block_off = 0;
 
   if (!finalized) {
-    m = (unsigned char *)data;
+    auto len = data.size();
+    auto m   = reinterpret_cast<unsigned const char *>(data.data());
     total_len += len;
 
-    if (len + block_buffer_len < SIP_BLOCK_SIZE) {
+    if (len + block_buffer_len < BLOCK_SIZE) {
       memcpy(block_buffer + block_buffer_len, m, len);
       block_buffer_len += len;
     } else {
       if (block_buffer_len > 0) {
-        block_off = SIP_BLOCK_SIZE - block_buffer_len;
+        block_off = BLOCK_SIZE - block_buffer_len;
         memcpy(block_buffer + block_buffer_len, m, block_off);
 
         mi = U8TO64_LE(block_buffer);
@@ -77,7 +89,7 @@ ATSHash64Sip24::update(const void *data, size_t len)
         v0 ^= mi;
       }
 
-      for (i = block_off, blocks = ((len - block_off) & ~(SIP_BLOCK_SIZE - 1)); i < blocks; i += SIP_BLOCK_SIZE) {
+      for (i = block_off, blocks = ((len - block_off) & ~(BLOCK_SIZE - 1)); i < blocks; i += BLOCK_SIZE) {
         mi = U8TO64_LE(m + i);
         v3 ^= mi;
         SIPCOMPRESS(v0, v1, v2, v3);
@@ -85,14 +97,15 @@ ATSHash64Sip24::update(const void *data, size_t len)
         v0 ^= mi;
       }
 
-      block_buffer_len = (len - block_off) & (SIP_BLOCK_SIZE - 1);
+      block_buffer_len = (len - block_off) & (BLOCK_SIZE - 1);
       memcpy(block_buffer, m + block_off + blocks, block_buffer_len);
     }
   }
+  return *this;
 }
 
-void
-ATSHash64Sip24::final()
+Hash64Sip24 &
+Hash64Sip24::final()
 {
   uint64_t last7;
   int i;
@@ -116,20 +129,17 @@ ATSHash64Sip24::final()
     hfinal    = v0 ^ v1 ^ v2 ^ v3;
     finalized = true;
   }
+  return *this;
 }
 
 uint64_t
-ATSHash64Sip24::get() const
+Hash64Sip24::get() const
 {
-  if (finalized) {
-    return hfinal;
-  } else {
-    return 0;
-  }
+  return finalized ? hfinal : 0;
 }
 
-void
-ATSHash64Sip24::clear()
+Hash64Sip24 &
+Hash64Sip24::clear()
 {
   v0               = k0 ^ 0x736f6d6570736575ull;
   v1               = k1 ^ 0x646f72616e646f6dull;
@@ -138,4 +148,7 @@ ATSHash64Sip24::clear()
   finalized        = false;
   total_len        = 0;
   block_buffer_len = 0;
+  return *this;
 }
+
+} // namespace ts

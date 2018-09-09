@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "tscore/HashFNV.h"
+#include "tscpp/util/HashFNV.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
 #include <cstdio>
@@ -282,12 +282,9 @@ hash_to_slot(uint32_t hash)
 }
 
 inline uint32_t
-hdrtoken_hash(const unsigned char *string, unsigned int length)
+hdrtoken_hash(const char *string, unsigned int length)
 {
-  ATSHash32FNV1a fnv;
-  fnv.update(string, length, ATSHash::nocase());
-  fnv.final();
-  return fnv.get();
+  return ts::Hash32FNV1a().hash_immediate(ts::transform_view_of(&toupper, std::string_view(string, length)));
 }
 
 /*-------------------------------------------------------------------------
@@ -375,9 +372,9 @@ hdrtoken_hash_init()
 
   for (i = 0; i < (int)SIZEOF(_hdrtoken_commonly_tokenized_strs); i++) {
     // convert the common string to the well-known token
-    unsigned const char *wks;
-    int wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i], (int)strlen(_hdrtoken_commonly_tokenized_strs[i]),
-                                        (const char **)&wks);
+    const char *wks;
+    int wks_idx =
+      hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i], int(strlen(_hdrtoken_commonly_tokenized_strs[i])), &wks);
     ink_release_assert(wks_idx >= 0);
 
     uint32_t hash = hdrtoken_hash(wks, hdrtoken_str_lengths[wks_idx]);
@@ -558,7 +555,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
     return wks_idx;
   }
 
-  uint32_t hash = hdrtoken_hash((const unsigned char *)string, (unsigned int)string_len);
+  uint32_t hash = hdrtoken_hash(string, string_len);
   uint32_t slot = hash_to_slot(hash);
 
   bucket = &(hdrtoken_hash_table[slot]);

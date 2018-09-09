@@ -857,6 +857,7 @@ case $host_os_def in
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
+      TS_ADDTO([AM_LDFLAGS], [-Wl,-lstdc++])
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [

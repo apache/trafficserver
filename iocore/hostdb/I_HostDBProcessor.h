@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include "tscore/HashFNV.h"
+#include <string_view>
+#include "tscpp/util/HashFNV.h"
 #include "tscore/ink_time.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/ink_align.h"
@@ -68,10 +69,7 @@ makeHostHash(const char *string)
   ink_assert(string && *string);
 
   if (string && *string) {
-    ATSHash32FNV1a fnv;
-    fnv.update(string, strlen(string), ATSHash::nocase());
-    fnv.final();
-    return fnv.get();
+    return ts::Hash32FNV1a().hash_immediate(ts::transform_view_of(&tolower, std::string_view{string}));
   }
 
   return 0;

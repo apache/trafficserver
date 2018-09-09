@@ -20,6 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
+#include "tscpp/util/HashSip.h"
 #include "P_EventSystem.h"
 #include "ParentSelection.h"
 #include "ParentConsistentHash.h"

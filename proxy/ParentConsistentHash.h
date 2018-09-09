@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include "tscore/HashSip.h"
+#include "tscpp/util/HashSip.h"
 #include "ParentSelection.h"
 
 //
@@ -40,7 +40,7 @@ class ParentConsistentHash : public ParentSelectionStrategy
 {
   // there are two hashes PRIMARY parents
   // and SECONDARY parents.
-  ATSHash64Sip24 hash[2];
+  ts::Hash64Sip24 hash[2];
   ATSConsistentHash *chash[2];
   pRecord *parents[2];
   bool foundParents[2][MAX_PARENTS];
@@ -57,7 +57,7 @@ public:
   {
     return parents[result->last_lookup];
   }
-  uint64_t getPathHash(HttpRequestData *hrdata, ATSHash64 *h);
+  uint64_t getPathHash(HttpRequestData *hrdata, ts::Hash64Functor *h);
   void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
                     unsigned int retry_time) override;
   void markParentDown(ParentResult *result, unsigned int fail_threshold, unsigned int retry_time);

@@ -23,66 +23,74 @@
 #include "tscore/ink_config.h"
 #include "tscore/HashMD5.h"
 
-ATSHashMD5::ATSHashMD5() : md_len(0), finalized(false)
+namespace ts
 {
-  ctx     = EVP_MD_CTX_new();
+HashMD5::HashMD5() : ctx(EVP_MD_CTX_new())
+{
   int ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);
 }
 
-void
-ATSHashMD5::update(const void *data, size_t len)
+HashMD5 &
+HashMD5::update(std::string_view const &data)
 {
   if (!finalized) {
-    int ret = EVP_DigestUpdate(ctx, data, len);
+    int ret = EVP_DigestUpdate(ctx, data.data(), data.size());
     ink_assert(ret == 1);
   }
+  return *this;
 }
 
-void
-ATSHashMD5::final()
+HashMD5 &
+HashMD5::final()
 {
   if (!finalized) {
     int ret = EVP_DigestFinal_ex(ctx, md_value, &md_len);
     ink_assert(ret == 1);
     finalized = true;
   }
+  return *this;
 }
 
-const void *
-ATSHashMD5::get() const
+bool
+HashMD5::get(MemSpan dst) const
 {
-  if (finalized) {
-    return (void *)md_value;
+  bool zret = true;
+  if (finalized && dst.size() > this->size()) {
+    memcpy(dst.data(), md_value, this->size());
   } else {
-    return nullptr;
+    zret = false;
   }
+  return zret;
 }
 
 size_t
-ATSHashMD5::size() const
+HashMD5::size() const
 {
   return EVP_MD_CTX_size(ctx);
 }
 
-void
-ATSHashMD5::clear()
+HashMD5 &
+HashMD5::clear()
 {
+  int ret = 1;
 #ifndef OPENSSL_IS_BORINGSSL
-  int ret = EVP_MD_CTX_reset(ctx);
+  ret = EVP_MD_CTX_reset(ctx);
+  ink_assert(ret == 1);
 #else
   // OpenSSL's EVP_MD_CTX_reset always returns 1
-  int ret = 1;
   EVP_MD_CTX_reset(ctx);
 #endif
-  ink_assert(ret == 1);
   ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);
   md_len    = 0;
   finalized = false;
+  return *this;
 }
 
-ATSHashMD5::~ATSHashMD5()
+HashMD5::~HashMD5()
 {
   EVP_MD_CTX_free(ctx);
 }
+
+} // namespace ts
