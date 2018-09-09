@@ -452,7 +452,7 @@ IntrusiveHashMap<H>::find(key_type key) -> iterator
   while (v != limit && !H::equal(key, H::key_of(v))) {
     v = H::next_ptr(v);
   }
-  return _list.iterator_for(v);
+  return v == limit ? _list.end() : _list.iterator_for(v);
 }
 
 template <typename H>
