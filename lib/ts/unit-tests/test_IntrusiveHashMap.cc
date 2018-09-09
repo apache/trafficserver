@@ -25,9 +25,9 @@
 #include <string_view>
 #include <string>
 #include <bitset>
+#include <random>
 #include <ts/IntrusiveHashMap.h>
 #include <ts/BufferWriter.h>
-#include <catch.hpp>
 #include "../../../tests/include/catch.hpp"
 
 // -------------
@@ -122,6 +122,7 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   auto r = map.equal_range("dup"sv);
   REQUIRE(r.first != r.second);
   REQUIRE(r.first->_payload == "dup"sv);
+  REQUIRE(r.first->_n == 79);
 
   Map::iterator idx;
 
@@ -134,10 +135,13 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   REQUIRE(r.first != r.second);
   idx = r.first;
   REQUIRE(idx->_payload == "dup"sv);
+  REQUIRE(idx->_n == 79);
   REQUIRE((++idx)->_payload == "dup"sv);
   REQUIRE(idx->_n != r.first->_n);
+  REQUIRE(idx->_n == 80);
   REQUIRE((++idx)->_payload == "dup"sv);
   REQUIRE(idx->_n != r.first->_n);
+  REQUIRE(idx->_n == 81);
   REQUIRE(++idx == map.end());
   // Verify only the "dup" items are left.
   for (auto &&elt : map) {
@@ -145,4 +149,71 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   }
   // clean up the last bits.
   map.apply([](Thing *thing) { delete thing; });
+};
+
+// Some more involved tests.
+TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
+{
+  std::vector<std::string_view> strings;
+
+  std::uniform_int_distribution<short> char_gen{'a', 'z'};
+  std::uniform_int_distribution<short> length_gen{20, 40};
+  std::minstd_rand randu;
+  constexpr int N = 1009;
+
+  Map ihm;
+
+  strings.reserve(N);
+  for (int i = 0; i < N; ++i) {
+    auto len = length_gen(randu);
+    char *s  = static_cast<char *>(malloc(len + 1));
+    for (decltype(len) j = 0; j < len; ++j) {
+      s[j] = char_gen(randu);
+    }
+    s[len] = 0;
+    strings.push_back({s, size_t(len)});
+  }
+
+  // Fill the IntrusiveHashMap
+  for (int i = 0; i < N; ++i) {
+    ihm.insert(new Thing{strings[i], i});
+  }
+
+  REQUIRE(ihm.count() == N);
+
+  // Do some lookups - just require the whole loop, don't artificially inflate the test count.
+  bool miss_p = false;
+  for (int j = 0, idx = 17; j < N; ++j, idx = (idx + 17) % N) {
+    if (auto spot = ihm.find(strings[idx]); spot == ihm.end() || spot->_n != idx) {
+      miss_p = true;
+    }
+  }
+  REQUIRE(miss_p == false);
+
+  // Let's try some duplicates when there's a lot of data in the map.
+  miss_p = false;
+  for (int idx = 23; idx < N; idx += 23) {
+    ihm.insert(new Thing(strings[idx], 2000 + idx));
+  }
+  for (int idx = 23; idx < N; idx += 23) {
+    auto spot = ihm.find(strings[idx]);
+    if (spot == ihm.end() || spot->_n != idx || ++spot == ihm.end() || spot->_n != 2000 + idx) {
+      miss_p = true;
+    }
+  }
+  REQUIRE(miss_p == false);
+
+  // Do a different stepping, special cases the intersection with the previous stepping.
+  miss_p = false;
+  for (int idx = 31; idx < N; idx += 31) {
+    ihm.insert(new Thing(strings[idx], 3000 + idx));
+  }
+  for (int idx = 31; idx < N; idx += 31) {
+    auto spot = ihm.find(strings[idx]);
+    if (spot == ihm.end() || spot->_n != idx || ++spot == ihm.end() || (idx != (23 * 31) && spot->_n != 3000 + idx) ||
+        (idx == (23 * 31) && spot->_n != 2000 + idx)) {
+      miss_p = true;
+    }
+  }
+  REQUIRE(miss_p == false);
 };
