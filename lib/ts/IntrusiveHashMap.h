@@ -520,6 +520,7 @@ IntrusiveHashMap<H>::insert(value_type *v)
   auto key         = H::key_of(v);
   Bucket *bucket   = this->bucket_for(key);
   value_type *spot = bucket->_v;
+  bool mixed_p     = false; // Found a different key in the bucket.
 
   if (nullptr == spot) { // currently empty bucket, set it and add to active list.
     _list.append(v);
@@ -528,22 +529,28 @@ IntrusiveHashMap<H>::insert(value_type *v)
   } else {
     value_type *limit = bucket->limit();
 
+    // First search the bucket to see if the key is already in it.
     while (spot != limit && !H::equal(key, H::key_of(spot))) {
       spot = H::next_ptr(spot);
     }
-
-    if (spot == limit) { // this key is not in the bucket, add it at the end and note this is now a mixed bucket.
-      _list.insert_before(bucket->_v, v);
-      bucket->_v       = v;
-      bucket->_mixed_p = true;
-    } else { // insert before the first matching key.
-      _list.insert_before(spot, v);
-      if (spot == bucket->_v) { // added before the bucket start, update the start.
-        bucket->_v = v;
-      } else { // if the matching key wasn't first, there is some other key in the bucket, mark it mixed.
-        bucket->_mixed_p = true;
+    if (spot != bucket->_v) {
+      mixed_p = true; // found some other key, it's going to be mixed.
+    }
+    if (spot != limit) {
+      // If an equal key was found, walk past those to insert at the upper end of the range.
+      do {
+        spot = H::next_ptr(spot);
+      } while (spot != limit && H::equal(key, H::key_of(spot)));
+      if (spot != limit) { // something not equal past last equivalent, it's going to be mixed.
+        mixed_p = true;
       }
     }
+
+    _list.insert_before(spot, v);
+    if (spot == bucket->_v) { // added before the bucket start, update the start.
+      bucket->_v = v;
+    }
+    bucket->_mixed_p = mixed_p;
   }
   ++bucket->_count;
 
