@@ -216,4 +216,20 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
     }
   }
   REQUIRE(miss_p == false);
+
+  // Check for misses.
+  miss_p = false;
+  for (int i = 0; i < 99; ++i) {
+    char s[41];
+    auto len = length_gen(randu);
+    for (decltype(len) j = 0; j < len; ++j) {
+      s[j] = char_gen(randu);
+    }
+    std::string_view name(s, len);
+    auto spot = ihm.find(name);
+    if (spot != ihm.end() && name != spot->_payload) {
+      miss_p = true;
+    }
+  }
+  REQUIRE(miss_p == false);
 };
