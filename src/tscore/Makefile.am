@@ -77,7 +77,6 @@ libtscore_la_SOURCES = \
 	fastlz.c \
 	fastlz.h \
 	Hash.cc \
-	HashFNV.cc \
 	HashFNV.h \
 	Hash.h \
 	HashMD5.cc \

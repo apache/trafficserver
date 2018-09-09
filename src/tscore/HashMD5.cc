@@ -23,23 +23,23 @@
 #include "tscore/ink_config.h"
 #include "tscore/HashMD5.h"
 
-ATSHashMD5::ATSHashMD5() : md_len(0), finalized(false)
+ATSHashMD5::ATSHashMD5() : ctx(EVP_MD_CTX_new())
 {
-  ctx     = EVP_MD_CTX_new();
   int ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);
 }
 
-void
+ATSHashMD5 &
 ATSHashMD5::update(const void *data, size_t len)
 {
   if (!finalized) {
     int ret = EVP_DigestUpdate(ctx, data, len);
     ink_assert(ret == 1);
   }
+  return *this;
 }
 
-void
+ATSHashMD5 &
 ATSHashMD5::final()
 {
   if (!finalized) {
@@ -47,16 +47,13 @@ ATSHashMD5::final()
     ink_assert(ret == 1);
     finalized = true;
   }
+  return *this;
 }
 
 const void *
 ATSHashMD5::get() const
 {
-  if (finalized) {
-    return (void *)md_value;
-  } else {
-    return nullptr;
-  }
+  return finalized ? md_value : nullptr;
 }
 
 size_t
@@ -65,21 +62,22 @@ ATSHashMD5::size() const
   return EVP_MD_CTX_size(ctx);
 }
 
-void
+ATSHashMD5 &
 ATSHashMD5::clear()
 {
+  int ret = 1;
 #ifndef OPENSSL_IS_BORINGSSL
-  int ret = EVP_MD_CTX_reset(ctx);
+  ret = EVP_MD_CTX_reset(ctx);
+  ink_assert(ret == 1);
 #else
   // OpenSSL's EVP_MD_CTX_reset always returns 1
-  int ret = 1;
   EVP_MD_CTX_reset(ctx);
 #endif
-  ink_assert(ret == 1);
   ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
   ink_assert(ret == 1);
   md_len    = 0;
   finalized = false;
+  return *this;
 }
 
 ATSHashMD5::~ATSHashMD5()

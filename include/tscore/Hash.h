@@ -26,9 +26,9 @@
 #include <cctype>
 
 struct ATSHashBase {
-  virtual void update(const void *, size_t) = 0;
-  virtual void final(void)                  = 0;
-  virtual void clear(void)                  = 0;
+  virtual ATSHashBase &update(const void *, size_t) = 0;
+  virtual ATSHashBase & final(void)                 = 0;
+  virtual ATSHashBase &clear(void)                  = 0;
   virtual ~ATSHashBase();
 };
 
@@ -55,11 +55,50 @@ struct ATSHash : ATSHashBase {
 };
 
 struct ATSHash32 : ATSHashBase {
-  virtual uint32_t get(void) const = 0;
+protected:
+  using self_type = ATSHash32;
+
+public:
+  using value_type = uint32_t;
+
+  // Co-vary the return type.
+  virtual self_type &update(const void *, size_t) override = 0;
+  virtual self_type & final(void) override                 = 0;
+  virtual self_type &clear(void) override                  = 0;
+
+  virtual value_type get(void) const = 0;
   virtual bool operator==(const ATSHash32 &) const;
+  value_type hash_immediate(void *data, size_t len);
 };
 
 struct ATSHash64 : ATSHashBase {
-  virtual uint64_t get(void) const = 0;
+protected:
+  using self_type = ATSHash64;
+
+public:
+  using value_type = uint64_t;
+
+  // Co-vary the return type.
+  virtual self_type &update(const void *, size_t) override = 0;
+  virtual self_type & final(void) override                 = 0;
+  virtual self_type &clear(void) override                  = 0;
+
+  virtual value_type get(void) const = 0;
   virtual bool operator==(const ATSHash64 &) const;
+  value_type hash_immediate(void *data, size_t len);
 };
+
+// ----
+// Implementation
+
+inline ATSHash32::value_type
+ATSHash32::hash_immediate(void *data, size_t len)
+{
+  return this->update(data, len).final().get();
+}
+
+inline ATSHash64::value_type
+ATSHash64::hash_immediate(void *data, size_t len)
+{
+  return this->update(data, len).final().get();
+}

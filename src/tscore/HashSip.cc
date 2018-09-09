@@ -50,7 +50,7 @@ ATSHash64Sip24::ATSHash64Sip24(uint64_t key0, uint64_t key1) : k0(key0), k1(key1
   this->clear();
 }
 
-void
+ATSHash64Sip24 &
 ATSHash64Sip24::update(const void *data, size_t len)
 {
   size_t i, blocks;
@@ -89,9 +89,10 @@ ATSHash64Sip24::update(const void *data, size_t len)
       memcpy(block_buffer, m + block_off + blocks, block_buffer_len);
     }
   }
+  return *this;
 }
 
-void
+ATSHash64Sip24 &
 ATSHash64Sip24::final()
 {
   uint64_t last7;
@@ -116,6 +117,7 @@ ATSHash64Sip24::final()
     hfinal    = v0 ^ v1 ^ v2 ^ v3;
     finalized = true;
   }
+  return *this;
 }
 
 uint64_t
@@ -128,7 +130,7 @@ ATSHash64Sip24::get() const
   }
 }
 
-void
+ATSHash64Sip24 &
 ATSHash64Sip24::clear()
 {
   v0               = k0 ^ 0x736f6d6570736575ull;
@@ -138,4 +140,5 @@ ATSHash64Sip24::clear()
   finalized        = false;
   total_len        = 0;
   block_buffer_len = 0;
+  return *this;
 }
