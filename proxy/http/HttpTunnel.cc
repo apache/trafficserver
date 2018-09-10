@@ -956,8 +956,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
     // (note that since we are not dechunking POST, this is the chunked size if chunked)
     if (p->buffer_start->read_avail() > HttpConfig::m_master.post_copy_size) {
-      Warning("http_redirect, [HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
-              p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
+      Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
+            p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
       if (p->vc_type == HT_BUFFER_READ) {
         producer_handler(VC_EVENT_ERROR, p);
@@ -1169,9 +1169,10 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     Debug("http_redirect", "[HttpTunnel::producer_handler] [%s %s]", p->name, HttpDebugNames::get_event_name(event));
 
     if ((sm->postbuf_buffer_avail() + sm->postbuf_reader_avail()) > HttpConfig::m_master.post_copy_size) {
-      Warning("http_redirect, [HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64
-              " reader_avail=%" PRId64 " limit=%" PRId64 "",
-              sm->postbuf_buffer_avail(), sm->postbuf_reader_avail(), HttpConfig::m_master.post_copy_size);
+      Debug("http_redirect",
+            "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " reader_avail=%" PRId64
+            " limit=%" PRId64 "",
+            sm->postbuf_buffer_avail(), sm->postbuf_reader_avail(), HttpConfig::m_master.post_copy_size);
       sm->disable_redirect();
       if (p->vc_type == HT_BUFFER_READ) {
         event = VC_EVENT_ERROR;
