@@ -369,10 +369,24 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
 
   // MAYs
-  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_in());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_in());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, params->initial_max_stream_data());
+  if (params->initial_max_data_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data_in());
+  }
+  if (params->initial_max_bidi_streams_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_in());
+  }
+  if (params->initial_max_uni_streams_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_in());
+  }
+  if (params->initial_max_stream_data_bidi_local_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data_bidi_local_in());
+  }
+  if (params->initial_max_stream_data_bidi_remote_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, params->initial_max_stream_data_bidi_remote_in());
+  }
+  if (params->initial_max_stream_data_uni_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_out());
+  }
 
   // MAYs (server)
   tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
@@ -394,10 +408,24 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_out()));
 
   // MAYs
-  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_out());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_out());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data());
+  if (params->initial_max_data_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data_out());
+  }
+  if (params->initial_max_bidi_streams_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_out());
+  }
+  if (params->initial_max_uni_streams_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_out());
+  }
+  if (params->initial_max_stream_data_bidi_local_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data_bidi_local_out());
+  }
+  if (params->initial_max_stream_data_bidi_remote_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, params->initial_max_stream_data_bidi_remote_out());
+  }
+  if (params->initial_max_stream_data_uni_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_out());
+  }
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));

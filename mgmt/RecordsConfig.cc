@@ -1314,14 +1314,6 @@ static const RecordElement RecordsConfig[] =
   //# QUIC global configuration.
   //#
   //############
-  {RECT_CONFIG, "proxy.config.quic.no_activity_timeout_in", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.no_activity_timeout_out", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.initial_max_data", RECD_INT, "131072", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data", RECD_INT, "2048", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.quic.server_id", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.connection_table.size", RECD_INT, "65521", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-536870909]", RECA_NULL}
@@ -1335,6 +1327,35 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.quic.server.supported_groups", RECD_STRING, "P-256:X25519:P-384:P-521" , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.client.supported_groups", RECD_STRING, "P-256:X25519:P-384:P-521" , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  // Transport Parameters
+  {RECT_CONFIG, "proxy.config.quic.no_activity_timeout_in", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.no_activity_timeout_out", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_data_in", RECD_INT, "65536", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_data_out", RECD_INT, "65536", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_bidi_local_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_bidi_local_out", RECD_INT, "4096", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_bidi_remote_in", RECD_INT, "4096", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_bidi_remote_out", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_uni_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_uni_out", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_bidi_streams_in", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_bidi_streams_out", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_uni_streams_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.initial_max_uni_streams_out", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
   // Constants of Loss Detection
   {RECT_CONFIG, "proxy.config.quic.loss_detection.max_tlps", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}

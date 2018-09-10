@@ -133,10 +133,6 @@ QUICConfigParams::~QUICConfigParams()
 void
 QUICConfigParams::initialize()
 {
-  REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
-  REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
-  REC_EstablishStaticConfigInt32U(this->_initial_max_data, "proxy.config.quic.initial_max_data");
-  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data, "proxy.config.quic.initial_max_stream_data");
   REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
   REC_EstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
   REC_EstablishStaticConfigInt32U(this->_max_alt_connection_ids, "proxy.config.quic.max_alt_connection_ids");
@@ -146,6 +142,27 @@ QUICConfigParams::initialize()
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
 
+  // Transport Parameters
+  REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
+  REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_data_in, "proxy.config.quic.initial_max_data_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_data_out, "proxy.config.quic.initial_max_data_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_local_in,
+                                  "proxy.config.quic.initial_max_stream_data_bidi_local_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_local_out,
+                                  "proxy.config.quic.initial_max_stream_data_bidi_local_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_remote_in,
+                                  "proxy.config.quic.initial_max_stream_data_bidi_remote_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_remote_out,
+                                  "proxy.config.quic.initial_max_stream_data_bidi_remote_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_uni_in, "proxy.config.quic.initial_max_stream_data_uni_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_uni_out, "proxy.config.quic.initial_max_stream_data_uni_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_bidi_streams_in, "proxy.config.quic.initial_max_bidi_streams_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_bidi_streams_out, "proxy.config.quic.initial_max_bidi_streams_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_uni_streams_in, "proxy.config.quic.initial_max_uni_streams_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_uni_streams_out, "proxy.config.quic.initial_max_uni_streams_out");
+
+  // Loss Detection
   REC_EstablishStaticConfigInt32U(this->_ld_max_tlps, "proxy.config.quic.loss_detection.max_tlps");
   REC_EstablishStaticConfigInt32U(this->_ld_reordering_threshold, "proxy.config.quic.loss_detection.reordering_threshold");
   REC_EstablishStaticConfigFloat(this->_ld_time_reordering_fraction, "proxy.config.quic.loss_detection.time_reordering_fraction");
@@ -164,6 +181,7 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.default_initial_rtt");
   this->_ld_default_initial_rtt = HRTIME_MSECONDS(timeout);
 
+  // Congestion Control
   REC_EstablishStaticConfigInt32U(this->_cc_default_mss, "proxy.config.quic.congestion_control.default_mss");
   REC_EstablishStaticConfigInt32U(this->_cc_initial_window_scale, "proxy.config.quic.congestion_control.initial_window_scale");
   REC_EstablishStaticConfigInt32U(this->_cc_minimum_window_scale, "proxy.config.quic.congestion_control.minimum_window_scale");
@@ -218,15 +236,51 @@ QUICConfigParams::vn_exercise_enabled() const
 }
 
 uint32_t
-QUICConfigParams::initial_max_data() const
+QUICConfigParams::initial_max_data_in() const
 {
-  return this->_initial_max_data;
+  return this->_initial_max_data_in;
 }
 
 uint32_t
-QUICConfigParams::initial_max_stream_data() const
+QUICConfigParams::initial_max_data_out() const
 {
-  return this->_initial_max_stream_data;
+  return this->_initial_max_data_out;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_data_bidi_local_in() const
+{
+  return this->_initial_max_stream_data_bidi_local_in;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_data_bidi_local_out() const
+{
+  return this->_initial_max_stream_data_bidi_local_out;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_data_bidi_remote_in() const
+{
+  return this->_initial_max_stream_data_bidi_remote_in;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_data_bidi_remote_out() const
+{
+  return this->_initial_max_stream_data_bidi_remote_out;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_data_uni_in() const
+{
+  return this->_initial_max_stream_data_uni_in;
+}
+
+uint32_t
+QUICConfigParams::initial_max_stream_data_uni_out() const
+{
+  return this->_initial_max_stream_data_uni_out;
 }
 
 uint16_t

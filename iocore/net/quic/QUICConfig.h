@@ -35,14 +35,6 @@ public:
 
   void initialize();
 
-  uint32_t no_activity_timeout_in() const;
-  uint32_t no_activity_timeout_out() const;
-  uint32_t initial_max_data() const;
-  uint32_t initial_max_stream_data() const;
-  uint16_t initial_max_bidi_streams_in() const;
-  uint16_t initial_max_bidi_streams_out() const;
-  uint16_t initial_max_uni_streams_in() const;
-  uint16_t initial_max_uni_streams_out() const;
   uint32_t server_id() const;
   uint32_t max_alt_connection_ids() const;
   uint32_t stateless_retry() const;
@@ -54,6 +46,23 @@ public:
   SSL_CTX *server_ssl_ctx() const;
   SSL_CTX *client_ssl_ctx() const;
 
+  // Transport Parameters
+  uint32_t no_activity_timeout_in() const;
+  uint32_t no_activity_timeout_out() const;
+  uint32_t initial_max_data_in() const;
+  uint32_t initial_max_data_out() const;
+  uint32_t initial_max_stream_data_bidi_local_in() const;
+  uint32_t initial_max_stream_data_bidi_local_out() const;
+  uint32_t initial_max_stream_data_bidi_remote_in() const;
+  uint32_t initial_max_stream_data_bidi_remote_out() const;
+  uint32_t initial_max_stream_data_uni_in() const;
+  uint32_t initial_max_stream_data_uni_out() const;
+  uint16_t initial_max_bidi_streams_in() const;
+  uint16_t initial_max_bidi_streams_out() const;
+  uint16_t initial_max_uni_streams_in() const;
+  uint16_t initial_max_uni_streams_out() const;
+
+  // Loss Detection
   uint32_t ld_max_tlps() const;
   uint32_t ld_reordering_threshold() const;
   float ld_time_reordering_fraction() const;
@@ -63,6 +72,7 @@ public:
   ink_hrtime ld_delayed_ack_timeout() const;
   ink_hrtime ld_default_initial_rtt() const;
 
+  // Congestion Control
   uint32_t cc_default_mss() const;
   uint32_t cc_initial_window() const;
   uint32_t cc_minimum_window() const;
@@ -76,20 +86,10 @@ private:
   // TODO: make configurable
   static const uint8_t _scid_len = 18; //< Length of Source Connection ID
 
-  // FIXME Fill appropriate default values in RecordsConfig.cc
-  uint32_t _no_activity_timeout_in  = 0;
-  uint32_t _no_activity_timeout_out = 0;
-  uint32_t _initial_max_data        = 0;
-  uint32_t _initial_max_stream_data = 0;
-  uint32_t _server_id               = 0;
-  uint32_t _max_alt_connection_ids  = 0;
-  uint32_t _stateless_retry         = 0;
-  uint32_t _vn_exercise_enabled     = 0;
-
-  uint32_t _initial_max_bidi_streams_in  = 100;
-  uint32_t _initial_max_bidi_streams_out = 100;
-  uint32_t _initial_max_uni_streams_in   = 100;
-  uint32_t _initial_max_uni_streams_out  = 100;
+  uint32_t _server_id              = 0;
+  uint32_t _max_alt_connection_ids = 0;
+  uint32_t _stateless_retry        = 0;
+  uint32_t _vn_exercise_enabled    = 0;
 
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;
@@ -97,6 +97,22 @@ private:
   // TODO: integrate with SSLCertLookup or SNIConfigParams
   SSL_CTX *_server_ssl_ctx = nullptr;
   SSL_CTX *_client_ssl_ctx = nullptr;
+
+  // Transport Parameters
+  uint32_t _no_activity_timeout_in                  = 0;
+  uint32_t _no_activity_timeout_out                 = 0;
+  uint32_t _initial_max_data_in                     = 0;
+  uint32_t _initial_max_data_out                    = 0;
+  uint32_t _initial_max_stream_data_bidi_local_in   = 0;
+  uint32_t _initial_max_stream_data_bidi_local_out  = 0;
+  uint32_t _initial_max_stream_data_bidi_remote_in  = 0;
+  uint32_t _initial_max_stream_data_bidi_remote_out = 0;
+  uint32_t _initial_max_stream_data_uni_in          = 0;
+  uint32_t _initial_max_stream_data_uni_out         = 0;
+  uint32_t _initial_max_bidi_streams_in             = 0;
+  uint32_t _initial_max_bidi_streams_out            = 0;
+  uint32_t _initial_max_uni_streams_in              = 0;
+  uint32_t _initial_max_uni_streams_out             = 0;
 
   // [draft-11 recovery] 3.5.1.  Constants of interest
   uint32_t _ld_max_tlps              = 2;
