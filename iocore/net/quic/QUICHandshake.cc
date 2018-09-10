@@ -366,15 +366,18 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(negotiated_version);
 
   // MUSTs
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
-  tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
-  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
   // MAYs
+  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
   tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_in());
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_in());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, params->initial_max_stream_data());
+
+  // MAYs (server)
+  tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
+
+  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(this->_local_transport_parameters);
@@ -388,13 +391,13 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello(initial_version);
 
   // MUSTs
-  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, params->initial_max_stream_data());
-  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_out()));
 
   // MAYs
+  tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data());
   tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_out());
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_out());
+  tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data());
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));

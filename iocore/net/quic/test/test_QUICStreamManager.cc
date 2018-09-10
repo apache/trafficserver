@@ -106,7 +106,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
-  local_tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, UINT32_C(4096));
+  local_tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, UINT32_C(4096));
   std::shared_ptr<QUICTransportParameters> remote_tp =
     std::make_shared<QUICTransportParametersInClientHello>(static_cast<QUICVersion>(0));
   sm.init_flow_control_params(local_tp, remote_tp);
@@ -135,7 +135,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
-  local_tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA, UINT32_C(4096));
+  local_tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, UINT32_C(4096));
   std::shared_ptr<QUICTransportParameters> remote_tp =
     std::make_shared<QUICTransportParametersInClientHello>(static_cast<QUICVersion>(0));
   sm.init_flow_control_params(local_tp, remote_tp);

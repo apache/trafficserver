@@ -173,8 +173,8 @@ const char *
 QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
 {
   switch (id) {
-  case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA:
-    return "INITIAL_MAX_STREAM_DATA";
+  case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL:
+    return "INITIAL_MAX_STREAM_DATA_BIDI_LOCAL";
   case QUICTransportParameterId::INITIAL_MAX_DATA:
     return "INITIAL_MAX_DATA";
   case QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS:
@@ -193,6 +193,10 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_UNI_STREAMS";
   case QUICTransportParameterId::DISABLE_MIGRATION:
     return "DISABLE_MIGRATION";
+  case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE:
+    return "INITIAL_MAX_STREAM_DATA_BIDI_REMOTE";
+  case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI:
+    return "INITIAL_MAX_STREAM_DATA_UNI";
   default:
     return "UNKNOWN";
   }

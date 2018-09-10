@@ -259,26 +259,68 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 {
   QUICStream *stream = this->_find_stream(stream_id);
   if (!stream) {
-    QUICStreamType type = QUICTypeUtil::detect_stream_type(stream_id);
-    if (type == QUICStreamType::CLIENT_BIDI && stream_id > this->_local_maximum_stream_id_bidi &&
-        this->_local_maximum_stream_id_bidi != 0) {
-      return nullptr;
-    } else if (type == QUICStreamType::CLIENT_UNI && stream_id > this->_local_maximum_stream_id_uni &&
-               this->_local_maximum_stream_id_uni != 0) {
-      return nullptr;
-    } else if (type == QUICStreamType::SERVER_BIDI && stream_id > this->_remote_maximum_stream_id_bidi &&
-               this->_remote_maximum_stream_id_bidi != 0) {
-      return nullptr;
-    } else if (type == QUICStreamType::SERVER_UNI && stream_id > this->_remote_maximum_stream_id_uni &&
-               this->_remote_maximum_stream_id_uni != 0) {
+    if (!this->_local_tp) {
       return nullptr;
     }
 
     ink_assert(this->_local_tp);
     ink_assert(this->_remote_tp);
 
-    uint64_t local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
-    uint64_t remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
+    uint64_t local_max_stream_data  = 0;
+    uint64_t remote_max_stream_data = 0;
+
+    switch (QUICTypeUtil::detect_stream_type(stream_id)) {
+    case QUICStreamType::CLIENT_BIDI:
+      if (stream_id > this->_local_maximum_stream_id_bidi && this->_local_maximum_stream_id_bidi != 0) {
+        return nullptr;
+      }
+
+      if (this->_info->direction() == NET_VCONNECTION_OUT) {
+        // client
+        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+      } else {
+        // server
+        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+      }
+
+      break;
+    case QUICStreamType::CLIENT_UNI:
+      if (stream_id > this->_local_maximum_stream_id_uni && this->_local_maximum_stream_id_uni != 0) {
+        return nullptr;
+      }
+
+      local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+      remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+
+      break;
+    case QUICStreamType::SERVER_BIDI:
+      if (stream_id > this->_remote_maximum_stream_id_bidi && this->_remote_maximum_stream_id_bidi != 0) {
+        return nullptr;
+      }
+
+      if (this->_info->direction() == NET_VCONNECTION_OUT) {
+        // client
+        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+      } else {
+        // server
+        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+      }
+
+      break;
+    case QUICStreamType::SERVER_UNI:
+      if (stream_id > this->_remote_maximum_stream_id_uni && this->_remote_maximum_stream_id_uni != 0) {
+        return nullptr;
+      }
+
+      local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+      remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+
+      break;
+    }
 
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC(quicStreamAllocator, this_ethread());

@@ -34,7 +34,7 @@ class QUICTransportParameterId
 {
 public:
   enum {
-    INITIAL_MAX_STREAM_DATA = 0,
+    INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 0,
     INITIAL_MAX_DATA,
     INITIAL_MAX_BIDI_STREAMS,
     IDLE_TIMEOUT,
@@ -44,6 +44,8 @@ public:
     ACK_DELAY_EXPONENT,
     INITIAL_MAX_UNI_STREAMS,
     DISABLE_MIGRATION,
+    INITIAL_MAX_STREAM_DATA_BIDI_REMOTE,
+    INITIAL_MAX_STREAM_DATA_UNI,
   };
 
   explicit operator bool() const { return true; }

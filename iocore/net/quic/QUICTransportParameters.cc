@@ -34,6 +34,11 @@
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 static constexpr char tag[]                            = "quic_handshake";
 
+static constexpr uint32_t TP_ERROR_LENGTH         = 0x010000;
+static constexpr uint32_t TP_ERROR_VALUE          = 0x020000;
+static constexpr uint32_t TP_ERROR_MUST_EXIST     = 0x030000;
+static constexpr uint32_t TP_ERROR_MUST_NOT_EXIST = 0x040000;
+
 QUICTransportParameters::Value::Value(const uint8_t *data, uint16_t len) : _len(len)
 {
   this->_data = static_cast<uint8_t *>(ats_malloc(len));
@@ -142,62 +147,70 @@ QUICTransportParameters::_validate_parameters() const
   decltype(this->_parameters)::const_iterator ite;
 
   // MUSTs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -1;
-    }
-  } else {
-    return -2;
-  }
-
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_DATA)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -3;
-    }
-  } else {
-    return -4;
-  }
-
   if ((ite = this->_parameters.find(QUICTransportParameterId::IDLE_TIMEOUT)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
-      return -5;
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::IDLE_TIMEOUT);
     }
     if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 600) {
-      return -6;
+      return -(TP_ERROR_VALUE | QUICTransportParameterId::IDLE_TIMEOUT);
     }
   } else {
-    return -7;
+    return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::IDLE_TIMEOUT);
   }
 
   // MAYs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_PACKET_SIZE)) != this->_parameters.end()) {
-    if (ite->second->len() != 2) {
-      return -9;
-    }
-    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
-      return -10;
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_DATA)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_DATA);
     }
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::ACK_DELAY_EXPONENT)) != this->_parameters.end()) {
-    if (ite->second->len() != 1) {
-      return -11;
-    }
-    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 20) {
-      return -12;
-    }
-  }
-
-  // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
-      return -3;
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS);
     }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
-      return -5;
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS);
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_PACKET_SIZE)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::MAX_PACKET_SIZE);
+    }
+    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::MAX_PACKET_SIZE);
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::ACK_DELAY_EXPONENT)) != this->_parameters.end()) {
+    if (ite->second->len() != 1) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::ACK_DELAY_EXPONENT);
+    }
+    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 20) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::ACK_DELAY_EXPONENT);
+    }
+  }
+
+  // MAYs (initial values for the flow control on each type of stream)
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI)) != this->_parameters.end()) {
+    if (ite->second->len() != 4) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
     }
   }
 
@@ -374,18 +387,18 @@ QUICTransportParametersInClientHello::_validate_parameters() const
 {
   int res = QUICTransportParameters::_validate_parameters();
   if (res < 0) {
-    return res - 100;
+    return res;
   }
 
   decltype(this->_parameters)::const_iterator ite;
 
   // MUST NOTs
   if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
-    return -1;
+    return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::STATELESS_RESET_TOKEN);
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::PREFERRED_ADDRESS)) != this->_parameters.end()) {
-    return -2;
+    return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::PREFERRED_ADDRESS);
   }
 
   return 0;
@@ -467,7 +480,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
 {
   int res = QUICTransportParameters::_validate_parameters();
   if (res < 0) {
-    return res - 100;
+    return res;
   }
 
   decltype(this->_parameters)::const_iterator ite;
@@ -475,13 +488,13 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
   // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
     if (ite->second->len() != QUICStatelessResetToken::LEN) {
-      return -1;
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::STATELESS_RESET_TOKEN);
     }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::PREFERRED_ADDRESS)) != this->_parameters.end()) {
     if (ite->second->len() < QUICPreferredAddress::MIN_LEN || QUICPreferredAddress::MAX_LEN < ite->second->len()) {
-      return -3;
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::PREFERRED_ADDRESS);
     }
   }
 
