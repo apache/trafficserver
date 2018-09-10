@@ -198,9 +198,8 @@ ServerSessionPool::eventHandler(int event, void *data)
   sockaddr const *addr                 = net_vc->get_remote_addr();
   HttpConfigParams *http_config_params = HttpConfig::acquire();
   bool found                           = false;
-  auto spot                            = m_ip_pool.find(addr);
 
-  while (spot != m_ip_pool.end() && spot->_ip_link.equal(addr, spot)) {
+  for (auto spot = m_ip_pool.find(addr); spot != m_ip_pool.end() && spot->_ip_link.equal(addr, spot); ++spot) {
     if ((s = spot)->get_netvc() == net_vc) {
       // if there was a timeout of some kind on a keep alive connection, and
       // keeping the connection alive will not keep us above the # of max connections
