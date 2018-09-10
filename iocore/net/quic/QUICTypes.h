@@ -49,7 +49,7 @@ using QUICOffset       = uint64_t;
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff00000d,
+  0xff00000e,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 

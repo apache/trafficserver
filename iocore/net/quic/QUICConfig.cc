@@ -37,7 +37,7 @@
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
 // Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
 using namespace std::literals;
-static constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-13"sv);
+static constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-14"sv);
 
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
