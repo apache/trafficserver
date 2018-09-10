@@ -229,6 +229,11 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
   }
 
+  // Ignoring HEADERS frame on a closed stream.  The HdrHeap has gone away and it will core.
+  if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+  }
+
   // keep track of how many bytes we get in the frame
   stream->request_header_length += payload_length;
   if (stream->request_header_length > Http2::max_request_header_size) {
