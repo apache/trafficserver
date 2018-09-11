@@ -23,8 +23,8 @@
 
 #include "traffic_ctl.h"
 #include <ctime>
-#include <I_RecDefs.h>
-#include <P_RecUtils.h>
+#include "records/I_RecDefs.h"
+#include "records/P_RecUtils.h"
 
 struct RecordDescriptionPolicy {
   using entry_type = TSConfigRecordDescription *;

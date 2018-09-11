@@ -25,8 +25,8 @@ limitations under the License.
 #include <sys/stat.h>
 
 #include "ts/ts.h"
-#include "ts/ink_platform.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_defs.h"
 
 static const char PLUGIN_NAME[]      = "acme";
 static const char ACME_WK_PATH[]     = ".well-known/acme-challenge/";

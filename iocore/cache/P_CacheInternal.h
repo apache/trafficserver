@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/InkErrno.h"
+#include "tscore/ink_platform.h"
+#include "tscore/InkErrno.h"
 
 #include "HTTP.h"
 #include "P_CacheHttp.h"

@@ -32,7 +32,7 @@
 
 #include "Main.h"
 #include "hdrs/HTTP.h"
-#include "ts/IpMap.h"
+#include "tscore/IpMap.h"
 #include "ProxyConfig.h"
 
 #include <string>

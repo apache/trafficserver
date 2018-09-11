@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-#include "ts/ink_defs.h"
-#include "ts/ink_thread.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_thread.h"
+#include "tscore/ink_inet.h"
 
-#include <ts/TestBox.h>
+#include "tscore/TestBox.h"
 #include <MgmtMarshall.h>
 #include <MgmtSocket.h>
 

@@ -22,8 +22,8 @@ bin_PROGRAMS += traffic_logcat/traffic_logcat
 traffic_logcat_traffic_logcat_CPPFLAGS = \
     $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/shared \
@@ -46,7 +46,8 @@ traffic_logcat_traffic_logcat_LDADD = \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/ts/libtsutil.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 traffic_logcat_traffic_logcat_LDADD += \
 	@LIBTCL@ @HWLOC_LIBS@ \

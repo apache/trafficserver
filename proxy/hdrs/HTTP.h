@@ -24,12 +24,12 @@
 #pragma once
 
 #include <cassert>
-#include "ts/Arena.h"
-#include "ts/CryptoHash.h"
+#include "tscore/Arena.h"
+#include "tscore/CryptoHash.h"
 #include "MIME.h"
 #include "URL.h"
 
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_apidefs.h"
 
 #define HTTP_VERSION(a, b) ((((a)&0xFFFF) << 16) | ((b)&0xFFFF))
 #define HTTP_MINOR(v) ((v)&0xFFFF)

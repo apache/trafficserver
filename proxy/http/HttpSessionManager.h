@@ -34,7 +34,7 @@
 
 #include "P_EventSystem.h"
 #include "HttpServerSession.h"
-#include <ts/Map.h>
+#include "tscore/Map.h"
 
 class ProxyClientTransaction;
 class HttpSM;

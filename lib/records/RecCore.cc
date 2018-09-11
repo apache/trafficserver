@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_string.h"
 
 #include "P_RecFile.h"
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 
 static bool g_initialized = false;
 

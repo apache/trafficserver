@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.7.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,8 +30,9 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#pragma once
-/* Enabling traces.  */
+#ifndef YY_TSCONFIG_TSCONFIGGRAMMAR_H_INCLUDED
+# define YY_TSCONFIG_TSCONFIGGRAMMAR_H_INCLUDED
+/* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
 #endif
@@ -39,8 +40,7 @@
 extern int tsconfigdebug;
 #endif
 /* "%code requires" blocks.  */
-/* Line 2058 of yacc.c  */
-#line 1 "TsConfigGrammar.y"
+#line 1 "TsConfigGrammar.y" /* yacc.c:1909  */
 
 /** @file
 
@@ -65,29 +65,26 @@ extern int tsconfigdebug;
     limitations under the License.
  */
 
+#line 69 "TsConfigGrammar.h" /* yacc.c:1909  */
 
-/* Line 2058 of yacc.c  */
-#line 72 "TsConfigGrammar.h"
-
-/* Tokens.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     STRING = 258,
-     IDENT = 259,
-     INTEGER = 260,
-     LIST_OPEN = 261,
-     LIST_CLOSE = 262,
-     GROUP_OPEN = 263,
-     GROUP_CLOSE = 264,
-     PATH_OPEN = 265,
-     PATH_CLOSE = 266,
-     PATH_SEPARATOR = 267,
-     SEPARATOR = 268,
-     ASSIGN = 269
-   };
+  enum yytokentype
+  {
+    STRING = 258,
+    IDENT = 259,
+    INTEGER = 260,
+    LIST_OPEN = 261,
+    LIST_CLOSE = 262,
+    GROUP_OPEN = 263,
+    GROUP_CLOSE = 264,
+    PATH_OPEN = 265,
+    PATH_CLOSE = 266,
+    PATH_SEPARATOR = 267,
+    SEPARATOR = 268,
+    ASSIGN = 269
+  };
 #endif
 /* Tokens.  */
 #define STRING 258
@@ -103,26 +100,15 @@ extern int tsconfigdebug;
 #define SEPARATOR 268
 #define ASSIGN 269
 
-
-
+/* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef int YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
 
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int tsconfigparse (void *YYPARSE_PARAM);
-#else
-int tsconfigparse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
+
 int tsconfigparse (yyscan_t lexer, struct TsConfigHandlers* handlers);
-#else
-int tsconfigparse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
+
+#endif /* !YY_TSCONFIG_TSCONFIGGRAMMAR_H_INCLUDED  */

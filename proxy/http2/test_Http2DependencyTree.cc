@@ -25,7 +25,7 @@
 #include <cstring>
 #include <sstream>
 
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 #include "Http2DependencyTree.h"
 

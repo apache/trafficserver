@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #define PROCESSOR_RECONFIGURE 0x01
 #define PROCESSOR_CHECK 0x02

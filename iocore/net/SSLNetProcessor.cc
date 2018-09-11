@@ -19,11 +19,11 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #include "P_Net.h"
-#include "ts/I_Layout.h"
-#include "I_RecHttp.h"
+#include "tscore/I_Layout.h"
+#include "records/I_RecHttp.h"
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"
 #include "P_SSLSNI.h"

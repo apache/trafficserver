@@ -38,7 +38,7 @@
 #include <sys/param.h>
 #include <ts/remap.h>
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 using std::strlen;
 

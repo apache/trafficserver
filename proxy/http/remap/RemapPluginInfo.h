@@ -22,10 +22,10 @@
  */
 
 #pragma once
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "ts/apidefs.h"
-#include "api/ts/remap.h"
+#include "ts/remap.h"
 
 #define TSREMAP_FUNCNAME_INIT "TSRemapInit"
 #define TSREMAP_FUNCNAME_CONFIG_RELOAD "TSRemapConfigReload"

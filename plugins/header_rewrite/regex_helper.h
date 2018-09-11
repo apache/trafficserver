@@ -17,7 +17,7 @@
 */
 #pragma once
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>

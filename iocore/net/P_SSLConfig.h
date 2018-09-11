@@ -32,10 +32,10 @@
 
 #include "ProxyConfig.h"
 #include "SSLSessionCache.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 #include <openssl/rand.h>
 #include "P_SSLCertLookup.h"
-#include <ts/IpMap.h>
+#include "tscore/IpMap.h"
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;

@@ -39,10 +39,10 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <ts/ink_config.h>
+#include "tscore/ink_config.h"
 
 // Special snowflake here, only availbale when building inside the ATS source tree.
-#include "ts/ink_atomic.h"
+#include "tscore/ink_atomic.h"
 #include "aws_auth_v4.h"
 
 ///////////////////////////////////////////////////////////////////////////////

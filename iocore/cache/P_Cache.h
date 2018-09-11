@@ -23,10 +23,10 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
 #include "P_AIO.h"
-#include "I_RecProcess.h"
+#include "records/I_RecProcess.h"
 
 #include "HTTP.h"
 #include "MIME.h"

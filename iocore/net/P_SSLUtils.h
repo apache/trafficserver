@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include "ts/ink_config.h"
-#include "ts/Diags.h"
+#include "tscore/ink_config.h"
+#include "tscore/Diags.h"
 #include "P_SSLClientUtils.h"
 
 #define OPENSSL_THREAD_DEFINES

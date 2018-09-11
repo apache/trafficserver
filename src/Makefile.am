@@ -20,6 +20,15 @@ include $(top_srcdir)/build/tidy.mk
 bin_PROGRAMS =
 check_PROGRAMS =
 TESTS =
+lib_LTLIBRARIES =
+noinst_PROGRAMS =
+
+SUBDIRS = tscpp/api
+
+if BUILD_WCCP 
+SUBDIRS += wccp 
+include traffic_wccp/Makefile.inc 
+endif
 
 include traffic_cache_tool/Makefile.inc
 include traffic_via/Makefile.inc
@@ -32,11 +41,6 @@ include traffic_ctl/Makefile.inc
 include traffic_layout/Makefile.inc
 include traffic_logcat/Makefile.inc
 
-if BUILD_WCCP
-include traffic_wccp/Makefile.inc
-endif
-
-TESTS += \
 	$(check_PROGRAMS)
 
 clang-tidy-local: $(DIST_SOURCES)

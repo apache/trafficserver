@@ -28,8 +28,8 @@
    Description:
 
  ****************************************************************************/
-#include "ts/ink_config.h"
-#include "ts/Allocator.h"
+#include "tscore/ink_config.h"
+#include "tscore/Allocator.h"
 #include "HttpServerSession.h"
 #include "HttpSessionManager.h"
 #include "HttpSM.h"

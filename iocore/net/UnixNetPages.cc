@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Net.h"
 #include "Show.h"
 #include "I_Tasks.h"

@@ -30,7 +30,7 @@
 #include <iterator>
 
 // Using ink_inet API is cheating, but I was too lazy to write new IPv6 address parsing routines ;)
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 
 // The policy type is the first comma-separated token.
 static BalancerInstance *

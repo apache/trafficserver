@@ -21,8 +21,8 @@
  *  limitations under the License.
  */
 
-#include "ts/ink_assert.h"
-#include "ts/TextView.h"
+#include "tscore/ink_assert.h"
+#include "tscpp/util/TextView.h"
 #include "ProxyProtocol.h"
 #include "I_NetVConnection.h"
 

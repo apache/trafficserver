@@ -23,13 +23,13 @@
 
 #include <cassert>
 #include <new>
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/TsBuffer.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/TsBuffer.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 const char *URL_SCHEME_FILE;
 const char *URL_SCHEME_FTP;
@@ -1805,7 +1805,7 @@ url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash)
  * Regression tests
   -------------------------------------------------------------------------*/
 #if TS_HAS_TESTS
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 const static struct {
   const char *const text;

@@ -26,8 +26,8 @@
 #include <cstring>
 #include <iosfwd>
 
-#include <ts/ink_assert.h>
-#include <ts/BufferWriter.h>
+#include "tscore/ink_assert.h"
+#include "tscore/BufferWriter.h"
 
 #if !defined(UNIT_TEST_BUFFER_WRITER)
 #include <I_IOBuffer.h>

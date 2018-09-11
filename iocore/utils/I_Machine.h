@@ -31,9 +31,9 @@
 #ifndef _I_Machine_h
 #define _I_Machine_h
 
-#include "ts/ink_inet.h"
-#include "ts/ink_uuid.h"
-#include "ts/ink_hash_table.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_uuid.h"
+#include "tscore/ink_hash_table.h"
 
 /**
   The Machine is a simple place holder for the hostname and the ip

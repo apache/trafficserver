@@ -25,7 +25,7 @@
 // include files
 //-------------------------------------------------------------------------
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include <cstdio>
 #include <cstdlib>

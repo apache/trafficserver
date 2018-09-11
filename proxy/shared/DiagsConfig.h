@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "ts/Diags.h"
-#include "ts/BaseLogFile.h"
+#include "tscore/Diags.h"
+#include "tscore/BaseLogFile.h"
 
 struct DiagsConfig {
   void reconfigure_diags();

@@ -20,7 +20,7 @@
 #include <atomic>
 #include <vector>
 #include <cinttypes>
-#include "ts/TextView.h"
+#include "tscpp/util/TextView.h"
 #include "regex.h"
 
 #define PLUGIN_NAME "TLS Bridge"

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Continuation.h"
 #include "I_Processor.h"
 #include "I_Event.h"

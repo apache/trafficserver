@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include <strings.h>
 #include <cmath>
@@ -32,7 +32,7 @@
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "HttpDebugNames.h"
 #include <ctime>
-#include "ts/ParseRules.h"
+#include "tscore/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"

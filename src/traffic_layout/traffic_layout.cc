@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_args.h"
-#include "ts/I_Version.h"
-#include "ts/I_Layout.h"
-#include "I_RecProcess.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_args.h"
+#include "tscore/I_Version.h"
+#include "tscore/I_Layout.h"
+#include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
-#include "ts/runroot.h"
+#include "tscore/runroot.h"
 #include "engine.h"
 #include "file_system.h"
 #include "info.h"

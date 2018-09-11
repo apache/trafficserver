@@ -27,9 +27,9 @@
  * file to ensure that it gets exported as a global symbol in TS
  */
 
-#include "ts/ink_platform.h"
-#include "api/ts/ts.h"
-#include "api/ts/InkAPIPrivateIOCore.h"
+#include "tscore/ink_platform.h"
+#include "ts/ts.h"
+#include "ts/InkAPIPrivateIOCore.h"
 #if defined(solaris) && !defined(__GNUC__)
 #include "P_EventSystem.h" // I_EventSystem.h
 #include "P_Net.h"         // I_Net.h

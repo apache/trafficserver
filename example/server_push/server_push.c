@@ -37,7 +37,7 @@
 
 #include "ts/ts.h"
 #include "ts/experimental.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 const char *PLUGIN_NAME = "server_push";
 

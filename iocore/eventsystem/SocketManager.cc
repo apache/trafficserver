@@ -25,11 +25,11 @@
 
   SocketManager.cc
  ****************************************************************************/
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
 
-#include "ts/TextBuffer.h"
-#include "ts/TestBox.h"
+#include "tscore/TextBuffer.h"
+#include "tscore/TestBox.h"
 
 SocketManager socketManager;
 

@@ -31,9 +31,9 @@
  *
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_hash_table.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/ink_memory.h"
 #include "BaseManager.h"
 
 BaseManager::BaseManager()

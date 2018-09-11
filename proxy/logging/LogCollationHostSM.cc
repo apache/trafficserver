@@ -25,7 +25,7 @@
 // include files
 //-------------------------------------------------------------------------
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #include <cstdio>
 #include <cstdlib>

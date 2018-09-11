@@ -16,10 +16,10 @@
   limitations under the License.
  */
 
-#include <atscppapi/Logger.h>
-#include <atscppapi/PluginInit.h>
-#include <atscppapi/AsyncTimer.h>
-#include <atscppapi/GlobalPlugin.h>
+#include "tscpp/api/Logger.h"
+#include "tscpp/api/PluginInit.h"
+#include "tscpp/api/AsyncTimer.h"
+#include "tscpp/api/GlobalPlugin.h"
 
 using namespace atscppapi;
 using std::string;

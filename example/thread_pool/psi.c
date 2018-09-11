@@ -39,7 +39,7 @@
 
 #include "ts/ts.h"
 #include "thread.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 /* This is the number of threads spawned by the plugin.
    Should be tuned based on performance requirements,

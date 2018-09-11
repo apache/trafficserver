@@ -21,7 +21,7 @@
   limitations under the License.
  */
 #include "traffic_ctl.h"
-#include <P_RecUtils.h>
+#include "records/P_RecUtils.h"
 const std::string stat_prefix = "host_status.";
 static int
 status_get(unsigned argc, const char **argv)

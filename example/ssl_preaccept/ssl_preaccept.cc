@@ -31,7 +31,7 @@
 #include <cinttypes>
 #include <ts/ts.h>
 #include <tsconfig/TsValue.h>
-#include <ts/ink_inet.h>
+#include "tscore/ink_inet.h"
 #include <algorithm>
 #include <getopt.h>
 

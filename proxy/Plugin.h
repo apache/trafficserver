@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/List.h"
+#include "tscore/List.h"
 
 struct PluginRegInfo {
   PluginRegInfo();

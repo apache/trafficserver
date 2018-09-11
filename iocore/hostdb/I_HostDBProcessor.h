@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include "ts/HashFNV.h"
-#include "ts/ink_time.h"
-#include "ts/CryptoHash.h"
-#include "ts/ink_align.h"
-#include "ts/ink_resolver.h"
+#include "tscore/HashFNV.h"
+#include "tscore/ink_time.h"
+#include "tscore/CryptoHash.h"
+#include "tscore/ink_align.h"
+#include "tscore/ink_resolver.h"
 #include "I_EventSystem.h"
 #include "SRV.h"
 #include "P_RefCountCache.h"

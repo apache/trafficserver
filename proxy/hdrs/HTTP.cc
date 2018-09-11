@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "ts/ink_defs.h"
-#include "ts/ink_platform.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_inet.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>
 #include "HTTP.h"
 #include "HdrToken.h"
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 /***********************************************************************
  *                                                                     *

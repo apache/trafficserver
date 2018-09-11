@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "ts/ink_align.h"
+#include "tscore/ink_align.h"
 #include "LogField.h"
 
 class HTTPHdr;

@@ -33,9 +33,9 @@
 #include <getopt.h>
 #include "domain-tree.h"
 
-#include "ts/ink_inet.h"
-#include "ts/ink_config.h"
-#include "ts/IpMap.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_config.h"
+#include "tscore/IpMap.h"
 
 using ts::config::Configuration;
 using ts::config::Value;

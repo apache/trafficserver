@@ -22,10 +22,10 @@
  */
 
 #include "P_Cache.h"
-#include "ts/I_Layout.h"
-#include "ts/HostLookup.h"
-#include "ts/Tokenizer.h"
-#include "ts/Regression.h"
+#include "tscore/I_Layout.h"
+#include "tscore/HostLookup.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/Regression.h"
 
 extern int gndisks;
 

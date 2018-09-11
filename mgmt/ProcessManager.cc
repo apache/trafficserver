@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "InkAPIInternal.h"
 #include "MgmtUtils.h"
 #include "ProcessManager.h"
 
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_apidefs.h"
 #include "MgmtSocket.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 
 /*
  * Global ProcessManager

@@ -24,8 +24,8 @@
 #pragma once
 
 #include "I_EventSystem.h"
-#include "ts/Regression.h"
-#include "ts/DynArray.h"
+#include "tscore/Regression.h"
+#include "tscore/DynArray.h"
 
 /*
   Regression Test Composition State Machine

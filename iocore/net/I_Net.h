@@ -40,7 +40,7 @@
  */
 #pragma once
 
-#include "ts/I_Version.h"
+#include "tscore/I_Version.h"
 #include "I_EventSystem.h"
 #include <netinet/in.h>
 

@@ -52,11 +52,11 @@
 #pragma once
 
 #include <cstdarg>
-#include "ts/ink_platform.h"
-#include "ts/EventNotify.h"
-#include "ts/ink_hash_table.h"
-#include "ts/Regression.h"
-#include "P_RecProcess.h"
+#include "tscore/ink_platform.h"
+#include "tscore/EventNotify.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/Regression.h"
+#include "records/P_RecProcess.h"
 #include "LogFile.h"
 #include "LogBuffer.h"
 

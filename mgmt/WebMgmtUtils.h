@@ -34,16 +34,16 @@
  *
  ****************************************************************************/
 
-#include "ts/ink_hash_table.h"
-#include "ts/TextBuffer.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/TextBuffer.h"
 #include "ExpandingArray.h"
 
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 
 // class MgmtData - stores information from local manager
 //    variables in its native type
 //
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 class MgmtData
 {
 public:

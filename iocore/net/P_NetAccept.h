@@ -39,7 +39,7 @@
 #pragma once
 
 #include <vector>
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Connection.h"
 
 struct NetAccept;

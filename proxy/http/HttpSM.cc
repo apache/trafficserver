@@ -41,7 +41,7 @@
 #include "P_SSLConfig.h"
 #include "HttpPages.h"
 #include "IPAllow.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>

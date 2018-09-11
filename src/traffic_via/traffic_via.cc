@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_args.h"
-#include "ts/I_Version.h"
-#include "ts/Tokenizer.h"
-#include "ts/TextBuffer.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_args.h"
+#include "tscore/I_Version.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/TextBuffer.h"
 #include "mgmtapi.h"
 #include <cstdio>
 #include <cstring>
-#include "ts/Regex.h"
+#include "tscore/Regex.h"
 
 /// XXX Use DFA or Regex wrappers?
 #ifdef HAVE_PCRE_PCRE_H

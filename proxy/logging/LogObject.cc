@@ -26,8 +26,8 @@
 
 
  ***************************************************************************/
-#include "ts/ink_platform.h"
-#include "ts/CryptoHash.h"
+#include "tscore/ink_platform.h"
+#include "tscore/CryptoHash.h"
 #include "P_EventSystem.h"
 #include "LogUtils.h"
 #include "LogField.h"
@@ -35,7 +35,7 @@
 #include "LogConfig.h"
 #include "LogAccess.h"
 #include "Log.h"
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 #include <algorithm>
 #include <vector>

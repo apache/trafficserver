@@ -26,7 +26,7 @@
 
 #include "operators.h"
 #include "expander.h"
-#include "../../lib/ts/apidefs.h"
+#include "ts/apidefs.h"
 
 // OperatorConfig
 void

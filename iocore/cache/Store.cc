@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Cache.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_file.h"
-#include "ts/Tokenizer.h"
-#include "ts/SimpleTokenizer.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ink_file.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/SimpleTokenizer.h"
 
 #if HAVE_LINUX_MAJOR_H
 #include <linux/major.h>

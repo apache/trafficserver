@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/IpMap.h"
-#include "ts/Ptr.h"
+#include "tscore/ink_platform.h"
+#include "tscore/IpMap.h"
+#include "tscore/Ptr.h"
 #include "LogAccess.h"
 #include "LogField.h"
 #include "LogFormat.h"

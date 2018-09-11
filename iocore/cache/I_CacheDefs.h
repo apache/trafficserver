@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/CryptoHash.h"
+#include "tscore/CryptoHash.h"
 
 #define CACHE_INIT_FAILED -1
 #define CACHE_INITIALIZING 0

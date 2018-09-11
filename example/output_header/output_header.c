@@ -36,7 +36,7 @@
 #include <unistd.h>
 
 #include "ts/ts.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "output_header"
 

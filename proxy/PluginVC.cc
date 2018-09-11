@@ -74,7 +74,7 @@
 #include "PluginVC.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
-#include "ts/Regression.h"
+#include "tscore/Regression.h"
 
 #define PVC_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 #define PVC_DEFAULT_MAX_BYTES 32768

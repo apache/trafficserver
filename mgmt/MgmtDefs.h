@@ -36,8 +36,8 @@
 /*
  * Type definitions.
  */
-#include "ts/ink_defs.h"
-//#include "ts/ink_hrtime.h"
+#include "tscore/ink_defs.h"
+//#include "tscore/ink_hrtime.h"
 
 typedef int64_t MgmtIntCounter;
 typedef int64_t MgmtInt;

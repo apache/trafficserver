@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_inet.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_string.h"
 #include "P_EventSystem.h"
 
 #include "LogSock.h"

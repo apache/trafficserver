@@ -26,7 +26,7 @@
 #include "ReverseProxy.h"
 #include "UrlMappingPathIndex.h"
 #include "RemapConfig.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 #include "HttpSM.h"
 
 #define modulePrefix "[ReverseProxy]"

@@ -18,9 +18,9 @@
 
 #include <iostream>
 #include <string>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransactionPlugin.h>
-#include <atscppapi/PluginInit.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/TransactionPlugin.h"
+#include "tscpp/api/PluginInit.h"
 
 using namespace atscppapi;
 
