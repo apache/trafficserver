@@ -345,6 +345,8 @@ private:
   void _rerandomize_original_cid();
   bool _is_src_addr_verified();
 
+  QUICHandshakeProtocol *_setup_handshake_protocol(SSL_CTX *ctx);
+
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
 

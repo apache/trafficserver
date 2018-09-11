@@ -35,7 +35,7 @@
 #include "QUICTLS.h"
 
 #include "QUICStats.h"
-#include "QUICConfig.h"
+#include "QUICGlobals.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 #include "QUICConfig.h"
@@ -205,10 +205,10 @@ QUICNetVConnection::start()
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
     this->_reset_token.generate(this->_quic_connection_id, params->server_id());
-    this->_hs_protocol       = new QUICTLS(params->server_ssl_ctx(), this->direction());
+    this->_hs_protocol       = this->_setup_handshake_protocol(params->server_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol, this->_reset_token, params->stateless_retry());
   } else {
-    this->_hs_protocol       = new QUICTLS(params->client_ssl_ctx(), this->direction());
+    this->_hs_protocol       = this->_setup_handshake_protocol(params->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
@@ -1878,4 +1878,14 @@ bool
 QUICNetVConnection::_is_src_addr_verified()
 {
   return this->_src_addr_verified;
+}
+
+QUICHandshakeProtocol *
+QUICNetVConnection::_setup_handshake_protocol(SSL_CTX *ctx)
+{
+  // Initialize handshake protocol specific stuff
+  // For QUICv1 TLS is the only option
+  QUICTLS *tls = new QUICTLS(ctx, this->direction());
+  SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
+  return tls;
 }

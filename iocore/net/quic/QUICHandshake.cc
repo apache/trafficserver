@@ -25,7 +25,6 @@
 
 #include <utility>
 
-#include "QUICTLS.h"
 #include "QUICEvents.h"
 #include "QUICGlobals.h"
 #include "QUICVersionNegotiator.h"
@@ -93,12 +92,6 @@ QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp, QUI
     _reset_token(token),
     _stateless_retry(stateless_retry)
 {
-  // FIXME These should be done in another way
-  if (dynamic_cast<QUICTLS *>(hsp)) {
-    SSL *ssl = static_cast<QUICTLS *>(hsp)->ssl_handle();
-    SSL_set_ex_data(ssl, QUIC::ssl_quic_qc_index, qc);
-  }
-
   this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id());
 
   if (this->_qc->direction() == NET_VCONNECTION_OUT) {
