@@ -219,6 +219,12 @@ bool
 QUICHandshake::check_remote_transport_parameters()
 {
   auto tp = this->_hs_protocol->remote_transport_parameters();
+
+  if (tp == nullptr) {
+    // nothing to check
+    return true;
+  }
+
   if (std::dynamic_pointer_cast<const QUICTransportParametersInClientHello>(tp)) {
     return this->_check_remote_transport_parameters(std::static_pointer_cast<const QUICTransportParametersInClientHello>(tp));
   } else {
@@ -369,8 +375,8 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   // MAYs
   tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_in());
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_in());
-  this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
 
+  this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(this->_local_transport_parameters);
 }
 
@@ -390,6 +396,7 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   tp->set(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS, params->initial_max_bidi_streams_out());
   tp->set(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS, params->initial_max_uni_streams_out());
 
+  this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));
 }
 
