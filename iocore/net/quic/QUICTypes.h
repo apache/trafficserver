@@ -156,9 +156,8 @@ enum class QUICTransErrorCode : uint16_t {
   TRANSPORT_PARAMETER_ERROR,
   VERSION_NEGOTIATION_ERROR,
   PROTOCOL_VIOLATION,
-  UNSOLICITED_PATH_RESPONSE = 0x0B,
-  INVALID_MIGRATION         = 0x0C,
-  CRYPTO_ERROR              = 0x0100, // 0x100 - 0x1FF
+  INVALID_MIGRATION = 0x0C,
+  CRYPTO_ERROR      = 0x0100, // 0x100 - 0x1FF
 };
 
 // Application Protocol Error Codes defined in application

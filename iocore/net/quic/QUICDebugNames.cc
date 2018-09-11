@@ -133,8 +133,6 @@ QUICDebugNames::error_code(uint16_t code)
     return "VERSION_NEGOTIATION_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION):
     return "PROTOCOL_VIOLATION";
-  case static_cast<uint16_t>(QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE):
-    return "UNSOLICITED_PATH_RESPONSE";
   case static_cast<uint16_t>(QUICTransErrorCode::INVALID_MIGRATION):
     return "INVALID_MIGRATION";
   default:

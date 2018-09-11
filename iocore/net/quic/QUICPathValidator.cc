@@ -60,7 +60,7 @@ QUICPathValidator::_generate_response(const QUICPathChallengeFrame &frame)
 QUICErrorUPtr
 QUICPathValidator::_validate_response(const QUICPathResponseFrame &frame)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::UNSOLICITED_PATH_RESPONSE));
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
 
   for (int i = 0; i < 3; ++i) {
     if (memcmp(this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * i), frame.data(),
