@@ -574,6 +574,24 @@ public:
     *len  = 2;
   }
 
+  const KeyMaterial *
+  key_material_for_encryption(QUICKeyPhase phase) const override
+  {
+    return nullptr;
+  }
+
+  const KeyMaterial *
+  key_material_for_decryption(QUICKeyPhase phase) const override
+  {
+    return nullptr;
+  }
+
+  const QUIC_EVP_CIPHER *
+  cipher_for_pne(QUICKeyPhase phase) const override
+  {
+    return nullptr;
+  }
+
   bool
   encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
           const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override
@@ -587,20 +605,6 @@ public:
           const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override
   {
     memcpy(plain, cipher, cipher_len);
-    return true;
-  }
-
-  bool
-  encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
-             const uint8_t *sample, QUICKeyPhase phase) const override
-  {
-    return true;
-  }
-
-  bool
-  decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
-             const uint8_t *sample, QUICKeyPhase phase) const override
-  {
     return true;
   }
 

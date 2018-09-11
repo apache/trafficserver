@@ -71,14 +71,14 @@ public:
   void update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int name);
   const char *negotiated_cipher_suite() const override;
   void negotiated_application_name(const uint8_t **name, unsigned int *len) const override;
+  const KeyMaterial *key_material_for_encryption(QUICKeyPhase phase) const override;
+  const KeyMaterial *key_material_for_decryption(QUICKeyPhase phase) const override;
+  const QUIC_EVP_CIPHER *cipher_for_pne(QUICKeyPhase phase) const override;
+
   bool encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
   bool decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
-  bool encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
-                  const uint8_t *sample, QUICKeyPhase phase) const override;
-  bool decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
-                  const uint8_t *sample, QUICKeyPhase phase) const override;
   QUICEncryptionLevel current_encryption_level() const override;
   void abort_handshake() override;
 
@@ -87,7 +87,6 @@ private:
   QUICKeyGenerator _keygen_for_server = QUICKeyGenerator(QUICKeyGenerator::Context::SERVER);
   void _gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const;
   const QUIC_EVP_CIPHER *_get_evp_aead(QUICKeyPhase phase) const;
-  const QUIC_EVP_CIPHER *_get_evp_aead_for_pne(QUICKeyPhase phase) const;
   size_t _get_aead_tag_len(QUICKeyPhase phase) const;
   const KeyMaterial *_get_km(QUICKeyPhase phase, bool for_encryption) const;
 
@@ -96,10 +95,6 @@ private:
                 size_t tag_len) const;
   bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
                 const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead, size_t tag_len) const;
-  bool _encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
-                   const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
-  bool _decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
-                   const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
   int _read_early_data();
   void _generate_0rtt_key();
   void _update_encryption_level(QUICEncryptionLevel level);

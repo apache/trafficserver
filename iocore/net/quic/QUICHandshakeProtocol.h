@@ -56,7 +56,12 @@ public:
   void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
 
 private:
-  QUICHandshakeProtocol *_hs_protocol = nullptr;
+  const QUICHandshakeProtocol *_hs_protocol = nullptr;
+
+  bool _encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
+                   const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
+  bool _decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
+                   const uint8_t *sample, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead) const;
 };
 
 struct QUICHandshakeMsgs {
@@ -72,28 +77,28 @@ public:
   QUICHandshakeProtocol(){};
   virtual ~QUICHandshakeProtocol(){};
 
-  virtual int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)                      = 0;
-  virtual void reset()                                                                            = 0;
-  virtual bool is_handshake_finished() const                                                      = 0;
-  virtual bool is_ready_to_derive() const                                                         = 0;
-  virtual bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const                  = 0;
-  virtual int initialize_key_materials(QUICConnectionId cid)                                      = 0;
-  virtual int update_key_materials()                                                              = 0;
-  virtual const char *negotiated_cipher_suite() const                                             = 0;
-  virtual void negotiated_application_name(const uint8_t **name, unsigned int *len) const         = 0;
+  virtual int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)              = 0;
+  virtual void reset()                                                                    = 0;
+  virtual bool is_handshake_finished() const                                              = 0;
+  virtual bool is_ready_to_derive() const                                                 = 0;
+  virtual bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const          = 0;
+  virtual int initialize_key_materials(QUICConnectionId cid)                              = 0;
+  virtual int update_key_materials()                                                      = 0;
+  virtual const char *negotiated_cipher_suite() const                                     = 0;
+  virtual void negotiated_application_name(const uint8_t **name, unsigned int *len) const = 0;
+  virtual const KeyMaterial *key_material_for_encryption(QUICKeyPhase phase) const        = 0;
+  virtual const KeyMaterial *key_material_for_decryption(QUICKeyPhase phase) const        = 0;
+  virtual const QUIC_EVP_CIPHER *cipher_for_pne(QUICKeyPhase phase) const                 = 0;
+
   virtual std::shared_ptr<const QUICTransportParameters> local_transport_parameters()             = 0;
   virtual std::shared_ptr<const QUICTransportParameters> remote_transport_parameters()            = 0;
   virtual void set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp)  = 0;
   virtual void set_remote_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) = 0;
 
   virtual bool encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                       uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const   = 0;
+                       uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const = 0;
   virtual bool decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                       uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const   = 0;
-  virtual bool encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn,
-                          uint8_t unprotected_pn_len, const uint8_t *sample, QUICKeyPhase phase) const = 0;
-  virtual bool decrypt_pn(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn,
-                          uint8_t protected_pn_len, const uint8_t *sample, QUICKeyPhase phase) const   = 0;
-  virtual QUICEncryptionLevel current_encryption_level() const                                         = 0;
-  virtual void abort_handshake()                                                                       = 0;
+                       uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const = 0;
+  virtual QUICEncryptionLevel current_encryption_level() const                                       = 0;
+  virtual void abort_handshake()                                                                     = 0;
 };
