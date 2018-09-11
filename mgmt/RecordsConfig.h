@@ -24,7 +24,7 @@
 #pragma once
 
 //#include "MgmtDefs.h"
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 
 enum RecordRequiredType {
   RR_NULL,    // config is _not_ required to be defined in records.config

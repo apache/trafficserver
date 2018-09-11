@@ -23,8 +23,8 @@ bin_PROGRAMS += traffic_top/traffic_top
 traffic_top_traffic_top_CPPFLAGS = \
     $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	$(TS_INCLUDES) \
@@ -45,7 +45,8 @@ traffic_top_traffic_top_LDADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/mgmt/api/libtsmgmt.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@CURL_LIBS@ \
 	@CURSES_LIBS@ \
 	@LIBTCL@ @HWLOC_LIBS@

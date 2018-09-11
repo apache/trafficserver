@@ -23,13 +23,13 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/Diags.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Diags.h"
+#include "tscore/ink_memory.h"
 #include "mgmtapi.h"
-#include "ts/ink_args.h"
-#include "ts/I_Version.h"
-#include "ts/BaseLogFile.h"
+#include "tscore/ink_args.h"
+#include "tscore/I_Version.h"
+#include "tscore/BaseLogFile.h"
 
 #include <vector>
 #include <string>

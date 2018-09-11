@@ -28,7 +28,7 @@
 #include "ProxyClientSession.h"
 #include "Http2ConnectionState.h"
 #include <string_view>
-#include <ts/ink_inet.h>
+#include "tscore/ink_inet.h"
 
 // Name                       Edata                 Description
 // HTTP2_SESSION_EVENT_INIT   Http2ClientSession *  HTTP/2 session is born

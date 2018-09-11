@@ -18,13 +18,13 @@
 
 #include <iostream>
 #include <string_view>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransactionPlugin.h>
-#include <atscppapi/TransformationPlugin.h>
-#include <atscppapi/GzipInflateTransformation.h>
-#include <atscppapi/GzipDeflateTransformation.h>
-#include <atscppapi/PluginInit.h>
-#include <atscppapi/Logger.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/TransactionPlugin.h"
+#include "tscpp/api/TransformationPlugin.h"
+#include "tscpp/api/GzipInflateTransformation.h"
+#include "tscpp/api/GzipDeflateTransformation.h"
+#include "tscpp/api/PluginInit.h"
+#include "tscpp/api/Logger.h"
 
 using namespace atscppapi;
 using namespace atscppapi::transformations;

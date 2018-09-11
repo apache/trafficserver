@@ -25,7 +25,7 @@
 #include <getopt.h>
 
 #include "ts/ts.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #define DEBUG_TAG_LOG_HEADERS "xdebug.headers"
 

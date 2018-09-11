@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include <cctype>
 #include <cstring>
 #include "HttpConfig.h"
@@ -29,7 +29,7 @@
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
 #include "P_Net.h"
-#include "P_RecUtils.h"
+#include "records/P_RecUtils.h"
 #include <records/I_RecHttp.h>
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \

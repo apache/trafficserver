@@ -25,7 +25,7 @@
 #include "LogConfig.h"
 #include "LogObject.h"
 
-#include "ts/EnumDescriptor.h"
+#include "tscore/EnumDescriptor.h"
 
 #include <yaml-cpp/yaml.h>
 #include <algorithm>

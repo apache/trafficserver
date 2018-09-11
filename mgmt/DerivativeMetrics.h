@@ -25,7 +25,7 @@
 
 #include <tuple>
 
-#include "I_RecLocal.h"
+#include "records/I_RecLocal.h"
 
 using DerivativeSum = std::tuple<const char *, RecDataT, std::vector<const char *>>;
 

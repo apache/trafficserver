@@ -23,14 +23,14 @@
 
 #pragma once
 
-#include "ts/Arena.h"
+#include "tscore/Arena.h"
 #include "HdrToken.h"
 #include "HdrHeap.h"
-#include "ts/CryptoHash.h"
+#include "tscore/CryptoHash.h"
 #include "MIME.h"
 #include <string_view>
 
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_apidefs.h"
 
 typedef int64_t cache_generation_t;
 

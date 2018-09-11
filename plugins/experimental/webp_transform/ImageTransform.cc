@@ -19,10 +19,10 @@
 #include <sstream>
 #include <iostream>
 #include <string_view>
-#include <atscppapi/PluginInit.h>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransformationPlugin.h>
-#include <atscppapi/Logger.h>
+#include "tscpp/api/PluginInit.h"
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/TransformationPlugin.h"
+#include "tscpp/api/Logger.h"
 
 #include <Magick++.h>
 

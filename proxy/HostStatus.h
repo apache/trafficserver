@@ -32,7 +32,7 @@
 
 #include "ControlBase.h"
 #include "ControlMatcher.h"
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 
 enum HostStatus_t {
   HOST_STATUS_INIT,

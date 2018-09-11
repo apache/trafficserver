@@ -25,10 +25,10 @@
 
 #include <sys/time.h>
 
-#include "ts/ink_assert.h"
-#include "ts/ink_apidefs.h"
-#include "ts/ink_string++.h"
-#include "ts/ParseRules.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_apidefs.h"
+#include "tscore/ink_string++.h"
+#include "tscore/ParseRules.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
 

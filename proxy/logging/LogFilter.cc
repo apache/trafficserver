@@ -26,7 +26,7 @@
 
 
  ***************************************************************************/
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "LogUtils.h"
 #include "LogFilter.h"
@@ -38,7 +38,7 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "Log.h"
-#include "ts/SimpleTokenizer.h"
+#include "tscore/SimpleTokenizer.h"
 
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
 const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
@@ -1078,7 +1078,7 @@ LogFilterList::display(FILE *fd)
 }
 
 #if TS_HAS_TESTS
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 REGRESSION_TEST(Log_FilterParse)(RegressionTest *t, int /* atype */, int *pstatus)
 {

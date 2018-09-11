@@ -31,9 +31,9 @@
 #pragma once
 
 #include "ProxyConfig.h"
-#include "ts/Map.h"
+#include "tscore/Map.h"
 #include "P_SNIActionPerformer.h"
-#include "ts/MatcherUtils.h"
+#include "tscore/MatcherUtils.h"
 #include "openssl/ossl_typ.h"
 #include <vector>
 #include <strings.h>

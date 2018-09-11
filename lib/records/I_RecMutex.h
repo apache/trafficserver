@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "ts/ink_mutex.h"
-#include "ts/ink_thread.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/ink_thread.h"
 
 /**
   A wrapper to ink_mutex class. It allows multiple acquire of mutex lock

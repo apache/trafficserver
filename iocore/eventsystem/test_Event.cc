@@ -22,7 +22,7 @@
  */
 
 #include "I_EventSystem.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 
 #include "diags.i"
 

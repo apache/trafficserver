@@ -18,10 +18,10 @@
 
 #include <iostream>
 #include <string_view>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransactionPlugin.h>
-#include <atscppapi/TransformationPlugin.h>
-#include <atscppapi/PluginInit.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/TransactionPlugin.h"
+#include "tscpp/api/TransformationPlugin.h"
+#include "tscpp/api/PluginInit.h"
 
 using namespace atscppapi;
 using std::cerr;

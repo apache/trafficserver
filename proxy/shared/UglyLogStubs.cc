@@ -24,7 +24,7 @@
 // This is total BS, because our libraries are riddled with cross dependencies.
 // TODO: Clean up the dependency mess, and get rid of this.
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "LogObject.h"
 
 #if defined(solaris)

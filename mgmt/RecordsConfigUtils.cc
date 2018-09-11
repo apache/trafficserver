@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "RecordsConfig.h"
-#include "ts/ParseRules.h"
+#include "tscore/ParseRules.h"
 
 //-------------------------------------------------------------------------
 // RecordsConfigOverrideFromEnvironment

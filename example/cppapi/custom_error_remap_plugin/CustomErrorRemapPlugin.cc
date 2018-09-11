@@ -16,8 +16,8 @@
   limitations under the License.
  */
 
-#include <atscppapi/RemapPlugin.h>
-#include <atscppapi/PluginInit.h>
+#include "tscpp/api/RemapPlugin.h"
+#include "tscpp/api/PluginInit.h"
 #include <string>
 
 using namespace std;

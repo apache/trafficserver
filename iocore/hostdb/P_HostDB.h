@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #ifdef SPLIT_DNS
 #include "P_SplitDNS.h"

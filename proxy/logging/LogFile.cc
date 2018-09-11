@@ -27,9 +27,9 @@
 
  ***************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/SimpleTokenizer.h"
-#include "ts/ink_file.h"
+#include "tscore/ink_platform.h"
+#include "tscore/SimpleTokenizer.h"
+#include "tscore/ink_file.h"
 
 #include <cerrno>
 #include <sys/types.h>
@@ -40,7 +40,7 @@
 #include "I_Machine.h"
 #include "LogSock.h"
 
-#include "ts/BaseLogFile.h"
+#include "tscore/BaseLogFile.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"

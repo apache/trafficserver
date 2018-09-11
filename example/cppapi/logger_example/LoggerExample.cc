@@ -22,10 +22,10 @@
  *   TS-1813 to correct log rolling in 3.2.x
  */
 
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransactionPlugin.h>
-#include <atscppapi/Logger.h>
-#include <atscppapi/PluginInit.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/TransactionPlugin.h"
+#include "tscpp/api/Logger.h"
+#include "tscpp/api/PluginInit.h"
 #include <cstring>
 
 using namespace atscppapi;

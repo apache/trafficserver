@@ -29,8 +29,8 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/I_Layout.h"
+#include "tscore/ink_platform.h"
+#include "tscore/I_Layout.h"
 
 #include <cstring>
 #include <cmath>

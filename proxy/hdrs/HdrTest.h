@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "ts/Regression.h"
+#include "tscore/Regression.h"
 
 class HdrTest
 {

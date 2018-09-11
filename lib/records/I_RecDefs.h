@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "ts/ink_mutex.h"
-#include "ts/ink_rwlock.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/ink_rwlock.h"
 #include "I_RecMutex.h"
 
 //-------------------------------------------------------------------------

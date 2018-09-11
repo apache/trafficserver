@@ -28,7 +28,7 @@
 #pragma once
 
 #include "I_HostDBProcessor.h"
-#include <ts/TsBuffer.h>
+#include "tscore/TsBuffer.h"
 
 //
 // Data

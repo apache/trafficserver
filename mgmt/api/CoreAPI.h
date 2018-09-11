@@ -25,11 +25,11 @@
 
 #include <cstdarg> // for va_list
 
-#include "ts/ink_llqueue.h"
+#include "tscore/ink_llqueue.h"
 #include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 
 #include "mgmtapi.h"
-#include "ts/Tokenizer.h"
+#include "tscore/Tokenizer.h"
 
 // for buffer used temporarily to parse incoming commands.
 #ifndef MAX_BUF_SIZE

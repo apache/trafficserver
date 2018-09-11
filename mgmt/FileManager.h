@@ -32,8 +32,8 @@
 
 #include <cstdio>
 
-#include "ts/ink_hash_table.h"
-#include "ts/List.h"
+#include "tscore/ink_hash_table.h"
+#include "tscore/List.h"
 #include "Rollback.h"
 
 class Rollback;

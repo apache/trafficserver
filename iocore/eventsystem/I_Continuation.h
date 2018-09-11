@@ -35,10 +35,10 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/List.h"
+#include "tscore/ink_platform.h"
+#include "tscore/List.h"
 #include "I_Lock.h"
-#include "ts/ContFlags.h"
+#include "tscore/ContFlags.h"
 
 class Continuation;
 class ContinuationQueue;

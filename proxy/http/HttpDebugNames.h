@@ -24,7 +24,7 @@
 #pragma once
 
 #include "HttpTransact.h"
-#include <ts/BufferWriter.h>
+#include "tscore/BufferWriter.h"
 
 class HttpDebugNames
 {

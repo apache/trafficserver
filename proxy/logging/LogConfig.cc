@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/I_Layout.h"
+#include "tscore/ink_platform.h"
+#include "tscore/I_Layout.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -30,11 +30,11 @@
 
 #include <memory>
 
-#include "ts/ink_platform.h"
-#include "ts/ink_file.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_file.h"
 
 #include "Main.h"
-#include "ts/List.h"
+#include "tscore/List.h"
 
 #include "Log.h"
 #include "LogField.h"
@@ -46,7 +46,7 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogUtils.h"
-#include "ts/SimpleTokenizer.h"
+#include "tscore/SimpleTokenizer.h"
 
 #include "LogCollationAccept.h"
 

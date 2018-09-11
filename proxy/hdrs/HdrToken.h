@@ -25,13 +25,13 @@
 
 #include <cassert>
 #include <sys/types.h>
-#include "ts/ink_assert.h"
-#include "ts/ink_atomic.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_string.h"
-#include "ts/Allocator.h"
-#include "ts/Regex.h"
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_atomic.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_string.h"
+#include "tscore/Allocator.h"
+#include "tscore/Regex.h"
+#include "tscore/ink_apidefs.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //

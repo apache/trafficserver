@@ -22,11 +22,11 @@
  */
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/ink_apidefs.h"
-#include <ts/ink_defs.h>
-#include "ts/Regression.h"
-#include "ts/I_Version.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_apidefs.h"
+#include "tscore/ink_defs.h"
+#include "tscore/Regression.h"
+#include "tscore/I_Version.h"
 
 //
 // Constants

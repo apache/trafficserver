@@ -34,7 +34,7 @@
 #include <inttypes.h>
 #include <getopt.h>
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "stats_over_http"
 

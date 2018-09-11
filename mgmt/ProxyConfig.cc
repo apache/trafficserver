@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 ConfigProcessor configProcessor;
 

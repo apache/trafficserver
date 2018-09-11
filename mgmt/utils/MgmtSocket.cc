@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_assert.h"
-#include "ts/ink_cap.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_cap.h"
 #include "MgmtSocket.h"
 
 #if HAVE_UCRED_H

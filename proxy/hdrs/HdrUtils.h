@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "ts/ParseRules.h"
+#include "tscore/ParseRules.h"
 #include "MIME.h"
 
 // csv = comma separated value

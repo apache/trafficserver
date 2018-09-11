@@ -29,8 +29,8 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "ts/ink_args.h"
-#include "ts/TestBox.h"
+#include "tscore/ink_args.h"
+#include "tscore/TestBox.h"
 
 const static int MAX_REQUEST_HEADER_SIZE = 131072;
 const static int MAX_TABLE_SIZE          = 4096;

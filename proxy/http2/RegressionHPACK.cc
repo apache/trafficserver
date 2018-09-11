@@ -23,7 +23,7 @@
 
 #include "HPACK.h"
 #include "HuffmanCodec.h"
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 // Constants for regression test
 const static int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;

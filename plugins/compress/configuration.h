@@ -27,8 +27,8 @@
 #include <string>
 #include <vector>
 #include "debug_macros.h"
-#include "ts/ink_atomic.h"
-#include <atscppapi/noncopyable.h>
+#include "tscore/ink_atomic.h"
+#include "tscpp/api/noncopyable.h"
 
 namespace Gzip
 {

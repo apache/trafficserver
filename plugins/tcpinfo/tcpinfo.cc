@@ -38,8 +38,8 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 
-#include "ts/ink_defs.h"
-#include "ts/ParseRules.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ParseRules.h"
 
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
 #define TCPI_PLUGIN_SUPPORTED 1

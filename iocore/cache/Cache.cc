@@ -27,7 +27,7 @@
 #include "P_CacheTest.h"
 #include "StatPages.h"
 
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 
 #include "HttpTransactCache.h"
 #include "HttpSM.h"
@@ -35,7 +35,7 @@
 #include "InkAPIInternal.h"
 #include "P_CacheBC.h"
 
-#include "ts/hugepages.h"
+#include "tscore/hugepages.h"
 
 const VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
 

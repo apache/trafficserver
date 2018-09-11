@@ -25,7 +25,7 @@
 ** SUCH DAMAGE.
 */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #include <sys/epoll.h>
 #include <unistd.h>

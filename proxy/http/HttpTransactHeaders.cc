@@ -26,8 +26,8 @@
 #include <array>
 #include <string_view>
 
-#include <ts/ink_platform.h>
-#include <ts/BufferWriter.h>
+#include "tscore/ink_platform.h"
+#include "tscore/BufferWriter.h"
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"

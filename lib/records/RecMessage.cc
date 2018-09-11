@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_align.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_align.h"
 
 #include "P_RecCore.h"
 #include "P_RecFile.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 
 static RecMessageRecvCb g_recv_cb = nullptr;
 static void *g_recv_cookie        = nullptr;

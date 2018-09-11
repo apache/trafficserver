@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "ts/ink_config.h"
-#include "ts/EventNotify.h"
+#include "tscore/ink_config.h"
+#include "tscore/EventNotify.h"
 #include "records/I_RecHttp.h"
 #include "P_Net.h"
 #include "P_SSLNextProtocolSet.h"

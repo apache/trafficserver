@@ -25,7 +25,7 @@
 #include <cstring>
 
 #include "ts/ts.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_string.h"
 
 #include "condition.h"
 #include "matcher.h"

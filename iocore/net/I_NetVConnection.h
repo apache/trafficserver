@@ -24,17 +24,17 @@
 
 #pragma once
 
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 #include "I_Action.h"
 #include "I_VConnection.h"
 #include "I_Event.h"
-#include "ts/List.h"
+#include "tscore/List.h"
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
-#include <ts/apidefs.h>
+#include "ts/apidefs.h"
 #include <string_view>
-#include "ts/TextView.h"
-#include "ts/IpMap.h"
+#include "tscpp/util/TextView.h"
+#include "tscore/IpMap.h"
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0

@@ -22,15 +22,15 @@
  */
 
 #include "traffic_crashlog.h"
-#include "ts/ink_args.h"
-#include "ts/ink_cap.h"
-#include "ts/I_Version.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_syslog.h"
-#include "I_RecProcess.h"
+#include "tscore/ink_args.h"
+#include "tscore/ink_cap.h"
+#include "tscore/I_Version.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ink_syslog.h"
+#include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
-#include "ts/BaseLogFile.h"
-#include "ts/runroot.h"
+#include "tscore/BaseLogFile.h"
+#include "tscore/runroot.h"
 
 static int syslog_mode    = false;
 static int debug_mode     = false;

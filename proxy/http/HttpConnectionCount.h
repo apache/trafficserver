@@ -22,13 +22,13 @@
  */
 
 //
-#include "ts/ink_platform.h"
-#include "ts/ink_inet.h"
-#include "ts/ink_mutex.h"
-#include "ts/Map.h"
-#include "ts/Diags.h"
-#include "ts/CryptoHash.h"
-#include "ts/ink_config.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/Map.h"
+#include "tscore/Diags.h"
+#include "tscore/CryptoHash.h"
+#include "tscore/ink_config.h"
 #include "HttpProxyAPIEnums.h"
 #include "Show.h"
 #include <sstream>

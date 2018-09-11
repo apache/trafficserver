@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_file.h"
-#include "ts/I_Layout.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_file.h"
+#include "tscore/I_Layout.h"
 #include "FileManager.h"
 #include "Main.h"
 #include "Rollback.h"

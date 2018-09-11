@@ -23,10 +23,10 @@
 
 #include "traffic_ctl.h"
 
-#include "I_RecProcess.h"
+#include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
-#include "ts/I_Layout.h"
-#include "ts/runroot.h"
+#include "tscore/I_Layout.h"
+#include "tscore/runroot.h"
 
 AppVersionInfo CtrlVersionInfo;
 

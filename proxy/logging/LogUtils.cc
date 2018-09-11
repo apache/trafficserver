@@ -21,8 +21,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "ts/ink_config.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_config.h"
+#include "tscore/ink_string.h"
 
 #include <cassert>
 #include <cstdio>
@@ -40,7 +40,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 // REC_SIGNAL_LOGGING_ERROR    is defined in I_RecSignals.h
 // REC_SIGNAL_LOGGING_WARNING  is defined in I_RecSignals.h
 

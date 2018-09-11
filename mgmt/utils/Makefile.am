@@ -22,10 +22,10 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/api \
 	-I$(abs_top_srcdir)/mgmt/api/include \
-	-I$(abs_top_srcdir)/lib/tsconfig \
+	-I$(abs_top_srcdir)/include/tsconfig \
 	-I$(abs_top_srcdir)/proxy \
-	-I$(abs_top_srcdir)/lib/records \
-	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/include/records \
+	-I$(abs_top_srcdir)/include \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@
 
@@ -62,7 +62,8 @@ test_marshall_LDFLAGS = \
 test_marshall_SOURCES = test_marshall.cc
 test_marshall_LDADD = \
 	libutils_p.la \
-	$(top_builddir)/lib/ts/libtsutil.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 include $(top_srcdir)/build/tidy.mk
 

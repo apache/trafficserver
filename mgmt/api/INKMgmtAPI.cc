@@ -29,18 +29,18 @@
  *
  *
  ***************************************************************************/
-#include "ts/ink_platform.h"
-#include "ts/ink_code.h"
-#include "ts/ink_memory.h"
-#include "ts/ParseRules.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_code.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ParseRules.h"
 #include <climits>
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 
 #include "mgmtapi.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 
-#include "ts/TextBuffer.h"
+#include "tscore/TextBuffer.h"
 
 /***************************************************************************
  * API Memory Management

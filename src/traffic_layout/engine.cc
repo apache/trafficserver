@@ -24,17 +24,17 @@
 // for engine of traffic runroot
 // function introduction in engine.h
 
-#include "ts/runroot.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_error.h"
-#include "ts/ink_args.h"
-#include "ts/I_Version.h"
+#include "tscore/runroot.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ink_error.h"
+#include "tscore/ink_args.h"
+#include "tscore/I_Version.h"
 #include "records/I_RecCore.h"
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #include "engine.h"
 #include "file_system.h"
-#include "ts/runroot.h"
+#include "tscore/runroot.h"
 
 #include <cctype>
 #include <fstream>

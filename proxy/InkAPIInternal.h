@@ -27,13 +27,13 @@
 #include "URL.h"
 #include "P_Net.h"
 #include "HTTP.h"
-#include "ts/List.h"
+#include "tscore/List.h"
 #include "ProxyConfig.h"
 #include "P_Cache.h"
 #include "I_Tasks.h"
 
-#include "api/ts/InkAPIPrivateIOCore.h"
-#include "api/ts/experimental.h"
+#include "ts/InkAPIPrivateIOCore.h"
+#include "ts/experimental.h"
 
 #include <typeinfo>
 
