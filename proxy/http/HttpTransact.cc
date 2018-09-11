@@ -1261,12 +1261,12 @@ HttpTransact::HandleRequest(State *s)
     if (s->txn_conf->cache_http) {
       TRANSACT_RETURN(SM_ACTION_CACHE_LOOKUP, nullptr);
     } else {
-      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // effectively s->force_dns
+      return CallOSDNSLookup(s);
     }
   }
 
   if (s->force_dns) {
-    TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // After handling the request, DNS is done.
+    return CallOSDNSLookup(s);
   } else {
     // After the requested is properly handled No need of requesting the DNS directly check the ACLs
     // if the request is authorized
@@ -1410,7 +1410,7 @@ HttpTransact::PPDNSLookup(State *s)
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         // We ran out of parents but parent configuration allows us to go to Origin Server directly
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+        return CallOSDNSLookup(s);
       } else {
         // We could be out of parents here if all the parents failed DNS lookup
         ink_assert(s->current.request_to == HOST_NONE);
@@ -1565,7 +1565,7 @@ HttpTransact::OSDNSLookup(State *s)
     case RETRY_EXPANDED_NAME:
       // expansion successful, do a dns lookup on expanded name
       HTTP_RELEASE_ASSERT(s->dns_info.attempts < max_dns_lookups);
-      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+      return CallOSDNSLookup(s);
       break;
     case EXPANSION_NOT_ALLOWED:
     case EXPANSION_FAILED:
@@ -2374,7 +2374,21 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
 void
 HttpTransact::CallOSDNSLookup(State *s)
 {
-  TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+  TxnDebug("http", "[HttpTransact::callos] %s ", s->server_info.name);
+  HostStatus &pstatus = HostStatus::instance();
+  if (pstatus.getHostStatus(s->server_info.name) == HostStatus_t::HOST_STATUS_DOWN) {
+    TxnDebug("http", "[HttpTransact::callos] %d ", s->cache_lookup_result);
+    s->current.state     = OUTBOUND_CONGESTION;
+    if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
+        s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH) {
+      s->cache_info.action = CACHE_DO_SERVE;
+    } else {
+      s->cache_info.action = CACHE_DO_NO_ACTION;
+    }
+    handle_server_connection_not_open(s);
+  } else {
+    TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2641,7 +2655,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
             TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
           } else if (s->current.request_to == ORIGIN_SERVER) {
-            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+            return CallOSDNSLookup(s);
           } else {
             handle_parent_died(s);
             return;
@@ -2809,8 +2823,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
           if (s->force_dns) {
             HandleCacheOpenReadMiss(s); // DNS is already completed no need of doing DNS
           } else {
-            TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP,
-                            OSDNSLookup); // DNS not done before need to be done now as we are connecting to OS
+             CallOSDNSLookup(s);
           }
           return;
         }
@@ -3048,8 +3061,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       ink_release_assert(s->parent_result.result == PARENT_DIRECT || s->current.request_to == PARENT_PROXY ||
                          s->http_config_param->no_dns_forward_to_parent != 0);
       if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
-        return;
+        return CallOSDNSLookup(s);
       }
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookup);
@@ -3428,7 +3440,7 @@ HttpTransact::handle_response_from_parent(State *s)
       break;
     case ORIGIN_SERVER:
       // Next lookup is Origin Server, try DNS for Origin Server
-      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+      return CallOSDNSLookup(s);
       break;
     case HOST_NONE:
       handle_parent_died(s);
@@ -3527,7 +3539,7 @@ HttpTransact::handle_response_from_server(State *s)
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
         s->state_machine->ua_txn->set_host_res_style(ats_host_res_match(&s->current.server->dst_addr.sa));
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
+        return CallOSDNSLookup(s);
       } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
                  (s->current.attempts % s->txn_conf->connect_attempts_rr_retries == 0)) {
@@ -3677,6 +3689,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
 
   switch (s->cache_info.action) {
   case CACHE_DO_UPDATE:
+  case CACHE_DO_SERVE:
     serve_from_cache = is_stale_cache_response_returnable(s);
     break;
 
@@ -3690,8 +3703,6 @@ HttpTransact::handle_server_connection_not_open(State *s)
     break;
 
   case CACHE_DO_LOOKUP:
-  /* fall through */
-  case CACHE_DO_SERVE:
     ink_assert(!("Why server response? Should have been a cache operation"));
     break;
 
@@ -3714,7 +3725,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
 
   if (serve_from_cache) {
     ink_assert(s->cache_info.object_read != nullptr);
-    ink_assert(s->cache_info.action == CACHE_DO_UPDATE);
+    ink_assert(s->cache_info.action == CACHE_DO_UPDATE || s->cache_info.action == CACHE_DO_SERVE);
     ink_assert(s->internal_msg_buffer == nullptr);
 
     TxnDebug("http_trans", "[hscno] serving stale doc to client");
