@@ -424,6 +424,7 @@ test_processing()
 
   return errors;
 }
+
 int
 main()
 {
