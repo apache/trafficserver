@@ -43,6 +43,7 @@ header_rewrite_header_rewrite_la_SOURCES = \
 	header_rewrite/ruleset.h \
 	header_rewrite/statement.cc \
 	header_rewrite/statement.h \
+	header_rewrite/value.cc \
 	header_rewrite/value.h
 
 header_rewrite_parser_la_SOURCES = \

@@ -30,6 +30,7 @@
 #include "ts/ts.h"
 
 #include "conditions.h"
+#include "expander.h"
 #include "lulu.h"
 
 // ConditionStatus
@@ -1372,4 +1373,49 @@ ConditionInbound::append_value(std::string &s, const Resources &res, NetworkSess
   if (zret) {
     s += zret;
   }
+}
+
+ConditionStringLiteral::ConditionStringLiteral(const std::string &v)
+{
+  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStringLiteral");
+  _literal = v;
+}
+
+void
+ConditionStringLiteral::append_value(std::string &s, const Resources &res)
+{
+  s += _literal;
+  TSDebug(PLUGIN_NAME, "Appending '%s' to evaluation value", _literal.c_str());
+}
+
+bool
+ConditionStringLiteral::eval(const Resources &res)
+{
+  TSDebug(PLUGIN_NAME, "Evaluating StringLiteral");
+
+  return static_cast<const MatcherType *>(_matcher)->test(_literal);
+}
+
+ConditionExpandableString::ConditionExpandableString(const std::string &v)
+{
+  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionExpandableString");
+  _value = v;
+}
+
+bool
+ConditionExpandableString::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+
+  return static_cast<const MatcherType *>(_matcher)->test(s);
+}
+
+void
+ConditionExpandableString::append_value(std::string &s, const Resources &res)
+{
+  VariableExpander ve(_value);
+  s += ve.expand(res);
+  TSDebug(PLUGIN_NAME, "Appending to evaluation value -> %s", s.c_str());
 }
