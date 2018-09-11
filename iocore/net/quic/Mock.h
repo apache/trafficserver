@@ -615,6 +615,28 @@ public:
   {
     return;
   }
+
+  std::shared_ptr<const QUICTransportParameters>
+  local_transport_parameters() override
+  {
+    return nullptr;
+  }
+
+  std::shared_ptr<const QUICTransportParameters>
+  remote_transport_parameters() override
+  {
+    return nullptr;
+  }
+
+  void
+  set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) override
+  {
+  }
+
+  void
+  set_remote_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) override
+  {
+  }
 };
 
 class MockContinuation : public Continuation
