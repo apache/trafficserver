@@ -62,7 +62,9 @@ private:
 class TestQUICStream : public QUICStream
 {
 public:
-  TestQUICStream(QUICStreamId sid) : QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), sid) {}
+  TestQUICStream(QUICStreamId sid) : QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), sid, 65536, 65536)
+  {
+  }
 
   void
   write(const uint8_t *buf, size_t buf_len, QUICOffset offset, bool last)
