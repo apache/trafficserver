@@ -274,15 +274,11 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
       return nullptr;
     }
 
-    uint64_t local_max_stream_data  = 0;
-    uint64_t remote_max_stream_data = 0;
-    if (this->_local_tp) {
-      local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA),
-      remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
-    } else {
-      QUICConfig::scoped_config params;
-      local_max_stream_data = params->initial_max_stream_data();
-    }
+    ink_assert(this->_local_tp);
+    ink_assert(this->_remote_tp);
+
+    uint64_t local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
+    uint64_t remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA);
 
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC(quicStreamAllocator, this_ethread());
