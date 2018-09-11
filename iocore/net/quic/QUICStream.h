@@ -36,10 +36,6 @@
 #include "QUICLossDetector.h"
 #include "QUICConnection.h"
 
-class QUICNetVConnection;
-class QUICStreamState;
-class QUICStreamManager;
-
 /**
  * @brief QUIC Stream
  * TODO: This is similar to Http2Stream. Need to think some integration.
