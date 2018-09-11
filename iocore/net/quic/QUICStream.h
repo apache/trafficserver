@@ -24,7 +24,6 @@
 #pragma once
 
 #include "ts/List.h"
-#include "ts/PriorityQueue.h"
 
 #include "I_VConnection.h"
 
@@ -33,7 +32,6 @@
 #include "QUICFlowController.h"
 #include "QUICIncomingFrameBuffer.h"
 #include "QUICFrameGenerator.h"
-#include "QUICLossDetector.h"
 #include "QUICConnection.h"
 
 /**
