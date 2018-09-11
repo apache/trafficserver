@@ -33,7 +33,7 @@
 class Parser
 {
 public:
-  explicit Parser(const std::string &line);
+  explicit Parser(const std::string &line, bool preserve_quotes = false);
 
   bool
   empty() const
@@ -72,6 +72,7 @@ public:
   }
 
   bool cond_is_hook(TSHttpHookID &hook) const;
+  const std::vector<std::string> &get_tokens() const;
 
 private:
   void preprocess(std::vector<std::string> tokens);
