@@ -191,6 +191,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "ACK_DELAY_EXPONENT";
   case QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS:
     return "INITIAL_MAX_UNI_STREAMS";
+  case QUICTransportParameterId::DISABLE_MIGRATION:
+    return "DISABLE_MIGRATION";
   default:
     return "UNKNOWN";
   }

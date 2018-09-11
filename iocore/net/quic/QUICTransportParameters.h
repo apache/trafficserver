@@ -42,7 +42,8 @@ public:
     MAX_PACKET_SIZE,
     STATELESS_RESET_TOKEN,
     ACK_DELAY_EXPONENT,
-    INITIAL_MAX_UNI_STREAMS
+    INITIAL_MAX_UNI_STREAMS,
+    DISABLE_MIGRATION,
   };
 
   explicit operator bool() const { return true; }
@@ -78,6 +79,7 @@ public:
   uint8_t getAsUInt8(QUICTransportParameterId id) const;
   uint16_t getAsUInt16(QUICTransportParameterId id) const;
   uint32_t getAsUInt32(QUICTransportParameterId id) const;
+  bool contains(QUICTransportParameterId id) const;
 
   void set(QUICTransportParameterId id, const uint8_t *value, uint16_t value_len);
   void set(QUICTransportParameterId id, uint16_t value);

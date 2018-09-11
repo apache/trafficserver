@@ -201,6 +201,12 @@ QUICTransportParameters::_validate_parameters() const
     }
   }
 
+  if ((ite = this->_parameters.find(QUICTransportParameterId::DISABLE_MIGRATION)) != this->_parameters.end()) {
+    if (ite->second->len() != 0) {
+      return -6;
+    }
+  }
+
   return 0;
 }
 
@@ -251,6 +257,14 @@ QUICTransportParameters::getAsUInt32(QUICTransportParameterId tpid) const
   } else {
     return 0;
   }
+}
+
+bool
+QUICTransportParameters::contains(QUICTransportParameterId id) const
+{
+  // Use std::map::contains when C++20 is supported
+  auto p = this->_parameters.find(id);
+  return (p != this->_parameters.end());
 }
 
 void
