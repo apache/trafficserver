@@ -1229,7 +1229,7 @@ QUICPacketFactory::set_version(QUICVersion negotiated_version)
 }
 
 void
-QUICPacketFactory::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
+QUICPacketFactory::set_hs_protocol(const QUICHandshakeProtocol *hs_protocol)
 {
   this->_hs_protocol = hs_protocol;
 }

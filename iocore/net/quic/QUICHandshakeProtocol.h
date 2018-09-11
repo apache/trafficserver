@@ -52,8 +52,9 @@ public:
   bool unprotect(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn, uint8_t protected_pn_len,
                  const uint8_t *sample, QUICKeyPhase phase) const;
 
-  // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICPacketProtection instead.
-  void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
+  // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICCryptoInfoProvider or somethign instead.
+  // For now it receives a CONST pointer so PacketNubmerProtector cannot bother handshake.
+  void set_hs_protocol(const QUICHandshakeProtocol *hs_protocol);
 
 private:
   const QUICHandshakeProtocol *_hs_protocol = nullptr;

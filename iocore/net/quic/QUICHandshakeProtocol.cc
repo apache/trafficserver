@@ -95,7 +95,7 @@ QUICPacketNumberProtector::unprotect(uint8_t *unprotected_pn, uint8_t &unprotect
 }
 
 void
-QUICPacketNumberProtector::set_hs_protocol(QUICHandshakeProtocol *hs_protocol)
+QUICPacketNumberProtector::set_hs_protocol(const QUICHandshakeProtocol *hs_protocol)
 {
   this->_hs_protocol = hs_protocol;
 }

@@ -401,12 +401,16 @@ public:
   QUICPacketUPtr create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                          ats_unique_buf payload, size_t len, bool retransmittable);
   void set_version(QUICVersion negotiated_version);
-  void set_hs_protocol(QUICHandshakeProtocol *hs_protocol);
+
+  // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICCryptoInfoProvider or somethign instead.
+  // For now it receives a CONST pointer so PacketFactory cannot bother handshake.
+  void set_hs_protocol(const QUICHandshakeProtocol *hs_protocol);
+
   bool is_ready_to_create_protected_packet();
 
 private:
-  QUICVersion _version                = QUIC_SUPPORTED_VERSIONS[0];
-  QUICHandshakeProtocol *_hs_protocol = nullptr;
+  QUICVersion _version                      = QUIC_SUPPORTED_VERSIONS[0];
+  const QUICHandshakeProtocol *_hs_protocol = nullptr;
   // Initial, 0/1-RTT, and Handshake
   QUICPacketNumberGenerator _packet_number_generator[3];
 
