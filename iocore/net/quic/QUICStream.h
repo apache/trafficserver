@@ -52,14 +52,13 @@ public:
   QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t recv_max_stream_data,
              uint64_t send_max_stream_data);
   ~QUICStream();
-  // void start();
+
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);
 
   QUICStreamId id() const;
   const QUICConnectionInfoProvider *connection_info() const;
   QUICOffset final_offset() const;
-  QUICStreamFrameUPtr generete_frame(uint16_t flow_control_credit, uint16_t maximum_frame_size);
 
   // Implement VConnection Interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
