@@ -49,7 +49,7 @@ public:
       _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
-  QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid, uint64_t recv_max_stream_data,
+  QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t recv_max_stream_data,
              uint64_t send_max_stream_data);
   ~QUICStream();
   // void start();
@@ -57,7 +57,7 @@ public:
   int state_stream_closed(int event, void *data);
 
   QUICStreamId id() const;
-  const QUICConnectionInfoProvider *info() const;
+  const QUICConnectionInfoProvider *connection_info() const;
   QUICOffset final_offset() const;
   QUICStreamFrameUPtr generete_frame(uint16_t flow_control_credit, uint16_t maximum_frame_size);
 
@@ -94,11 +94,11 @@ protected:
 
   void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
 
-  QUICStreamErrorUPtr _reset_reason = nullptr;
-  QUICConnectionInfoProvider *_info = nullptr;
-  QUICStreamId _id                  = 0;
-  QUICOffset _send_offset           = 0;
-  QUICOffset _reordered_bytes       = 0;
+  QUICStreamErrorUPtr _reset_reason            = nullptr;
+  QUICConnectionInfoProvider *_connection_info = nullptr;
+  QUICStreamId _id                             = 0;
+  QUICOffset _send_offset                      = 0;
+  QUICOffset _reordered_bytes                  = 0;
 
   QUICRemoteStreamFlowController _remote_flow_controller;
   QUICLocalStreamFlowController _local_flow_controller;

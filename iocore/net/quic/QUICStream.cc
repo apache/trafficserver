@@ -28,25 +28,25 @@
 #include "QUICStreamManager.h"
 #include "QUICDebugNames.h"
 
-#define QUICStreamDebug(fmt, ...)                                                             \
-  Debug("quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_info->cids().data(), this->_id, \
+#define QUICStreamDebug(fmt, ...)                                                                        \
+  Debug("quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
-#define QUICVStreamDebug(fmt, ...)                                                              \
-  Debug("v_quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_info->cids().data(), this->_id, \
+#define QUICVStreamDebug(fmt, ...)                                                                         \
+  Debug("v_quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
-#define QUICStreamFCDebug(fmt, ...)                                                              \
-  Debug("quic_flow_ctrl", "[%s] [%" PRIx64 "] [%s] " fmt, this->_info->cids().data(), this->_id, \
+#define QUICStreamFCDebug(fmt, ...)                                                                         \
+  Debug("quic_flow_ctrl", "[%s] [%" PRIx64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
 
-QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info, QUICStreamId sid,
+QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                        uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
   : VConnection(nullptr),
-    _info(info),
+    _connection_info(cinfo),
     _id(sid),
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
@@ -83,9 +83,9 @@ QUICStream::id() const
 }
 
 const QUICConnectionInfoProvider *
-QUICStream::info() const
+QUICStream::connection_info() const
 {
-  return this->_info;
+  return this->_connection_info;
 }
 
 QUICOffset

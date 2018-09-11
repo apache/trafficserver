@@ -27,8 +27,9 @@
 static constexpr char tag_stream_io[] = "quic_stream_io";
 static constexpr char tag_app[]       = "quic_app";
 
-#define QUICStreamIODebug(fmt, ...) \
-  Debug(tag_stream_io, "[%s] [%" PRIu64 "] " fmt, this->_stream->info()->cids().data(), this->_stream->id(), ##__VA_ARGS__)
+#define QUICStreamIODebug(fmt, ...)                                                                                     \
+  Debug(tag_stream_io, "[%s] [%" PRIu64 "] " fmt, this->_stream->connection_info()->cids().data(), this->_stream->id(), \
+        ##__VA_ARGS__)
 
 //
 // QUICStreamIO
