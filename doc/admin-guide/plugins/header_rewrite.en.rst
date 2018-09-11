@@ -804,11 +804,15 @@ L      Last rule, do not continue.
 QSA    Append the results of the rule to the query string.
 ====== ========================================================================
 
-Variable Expansion
-------------------
+Values and Variable Expansion
+-----------------------------
+You can concatenate values using strings, condition values and variable expansions via the ``+`` operator. Variables (eg %<tag>) in the concatenation must be enclosed in double quotes ``"``::
 
-Only limited variable expansion is supported in `add-header`_ and `set-header`_ . Supported
-substitutions are currently:
+    add-header CustomHeader "Hello from " + %{IP:SERVER} + ":" + "%<INBOUND:LOCAL-PORT>"
+
+Concatenation is not supported in condition testing.
+
+Supported substitutions are currently:
 
 ======================= ==================================================================================
 Variable                Description
@@ -832,12 +836,6 @@ Variable                Description
 %<INBOUND:IP-FAMILY>    The IP family of the inbound connection (either "ipv4" or "ipv6").
 %<INBOUND:STACK>        The full protocol stack of the inbound connection separated by ','.
 ======================= ==================================================================================
-
-Variables to be expanded must be enclosed in double quotes ``"``, as in this example using the arbitrary header
-``Custom-Client-IP``::
-
-    set-header Custom-Client-IP "%<chi>"
-
 
 Header Values
 -------------

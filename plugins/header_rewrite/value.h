@@ -22,14 +22,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "ts/ts.h"
 
 #include "resources.h"
 #include "statement.h"
 #include "condition.h"
-#include "factory.h"
-#include "parser.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Values (this is also the interface).
@@ -40,37 +39,20 @@
 class Value : Statement
 {
 public:
-  Value() : _need_expander(false), _value(""), _int_value(0), _float_value(0.0), _cond_val(nullptr)
+  Value() : _need_expander(false), _value(""), _int_value(0), _float_value(0.0)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value");
   }
 
-  void
-  set_value(const std::string &val)
-  {
-    _value = val;
-    if (_value.substr(0, 2) == "%{") {
-      Parser parser(_value);
-
-      _cond_val = condition_factory(parser.get_op());
-      if (_cond_val) {
-        _cond_val->initialize(parser);
-      }
-    } else if (_value.find("%<") != std::string::npos) { // It has a Variable to expand
-      _need_expander = true;                             // And this is clearly not an integer or float ...
-      // TODO: This is still not optimal, we should pre-parse the _value string here,
-      // and perhaps populate a per-Value VariableExpander that holds state.
-    } else {
-      _int_value   = strtol(_value.c_str(), nullptr, 10);
-      _float_value = strtod(_value.c_str(), nullptr);
-    }
-  }
+  void set_value(const std::string &val);
 
   void
   append_value(std::string &s, const Resources &res) const
   {
-    if (_cond_val) {
-      _cond_val->append_value(s, res);
+    if (!_cond_vals.empty()) {
+      for (auto it = _cond_vals.begin(); it != _cond_vals.end(); it++) {
+        (*it)->append_value(s, res);
+      }
     } else {
       s += _value;
     }
@@ -119,5 +101,5 @@ private:
   std::string _value;
   int _int_value;
   double _float_value;
-  Condition *_cond_val;
+  std::vector<Condition *> _cond_vals;
 };

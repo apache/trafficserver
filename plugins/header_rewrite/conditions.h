@@ -541,3 +541,37 @@ protected:
 private:
   NetworkSessionQualifiers _net_qual = NET_QUAL_STACK;
 };
+
+class ConditionStringLiteral : public Condition
+{
+  typedef Matchers<std::string> MatcherType;
+
+public:
+  ConditionStringLiteral(const std::string &v);
+
+  void append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
+
+protected:
+  bool eval(const Resources & /* res ATS_UNUSED */) override;
+
+private:
+  std::string _literal;
+  DISALLOW_COPY_AND_ASSIGN(ConditionStringLiteral);
+};
+
+class ConditionExpandableString : public Condition
+{
+  typedef Matchers<std::string> MatcherType;
+
+public:
+  ConditionExpandableString(const std::string &v);
+
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+
+private:
+  std::string _value;
+  DISALLOW_COPY_AND_ASSIGN(ConditionExpandableString);
+};
