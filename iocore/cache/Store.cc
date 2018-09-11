@@ -391,12 +391,7 @@ Store::read_config()
       }
     }
 
-    std::string pp;
-    if (get_runroot().empty()) {
-      pp = Layout::get()->relative(path);
-    } else {
-      pp = Layout::get()->cachedir;
-    }
+    std::string pp = Layout::get()->relative(path);
 
     ns = new Span;
     Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp.c_str(), size,
