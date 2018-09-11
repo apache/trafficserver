@@ -69,7 +69,7 @@ enum DiagsLevel { // do not renumber --- used as array index
   DL_Error,       // process does not die
   DL_Fatal,       // causes process termination
   DL_Alert,       // causes process termination
-  DL_Emergency,   // causes process termination
+  DL_Emergency,   // causes process termination, exits with UNRECOVERABLE_EXIT
   DL_Undefined    // must be last, used for size!
 };
 
