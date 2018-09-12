@@ -138,8 +138,8 @@ private:
 
     // FIXME It may be better to split this array into small arrays to reduce memory footprint
     struct DynamicTableEntry _entries[SETTINGS_HEADER_TABLE_SIZE] = {{}};
-    uint16_t _entries_head                                        = sizeof(_entries) - 1;
-    uint16_t _entries_tail                                        = sizeof(_entries) - 1;
+    uint16_t _entries_head                                        = countof(_entries) - 1;
+    uint16_t _entries_tail                                        = countof(_entries) - 1;
     DynamicTableStorage *_storage                                 = nullptr;
   };
 
