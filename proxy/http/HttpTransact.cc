@@ -8146,7 +8146,12 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   ///////////////////////////////////////////////////////
   // don't count errors we generated as hits or misses //
   ///////////////////////////////////////////////////////
-  if ((s->source == SOURCE_INTERNAL) && (s->hdr_info.client_response.status_get() >= 400)) {
+  int client_response_status = HTTP_STATUS_NONE;
+  if (s->hdr_info.client_response.valid()) {
+    client_response_status = s->hdr_info.client_response.status_get();
+  }
+
+  if ((s->source == SOURCE_INTERNAL) && client_response_status >= 400) {
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_OTHER;
   }
 
@@ -8241,9 +8246,8 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
   if ((s->source != SOURCE_NONE) && (s->client_info.abort == DIDNOT_ABORT)) {
-    int status_code = s->hdr_info.client_response.status_get();
 
-    switch (status_code) {
+    switch (client_response_status) {
     case 100:
       HTTP_INCREMENT_DYN_STAT(http_response_status_100_count_stat);
       break;
@@ -8364,7 +8368,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     default:
       break;
     }
-    switch (status_code / 100) {
+    switch (client_response_status / 100) {
     case 1:
       HTTP_INCREMENT_DYN_STAT(http_response_status_1xx_count_stat);
       break;
