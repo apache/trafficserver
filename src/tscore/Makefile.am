@@ -38,6 +38,7 @@ AM_CPPFLAGS += \
 
 libtscore_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@ @YAMLCPP_LDFLAGS@
 libtscore_la_LIBADD = \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@HWLOC_LIBS@ \
 	@LIBOBJS@ \
 	@LIBPCRE@ \
