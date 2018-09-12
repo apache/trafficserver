@@ -40,6 +40,8 @@ extern char appname[256];
 constexpr int ACK_MODE_IMMEDIATE = 1;
 constexpr int ACK_MODE_NONE      = 0;
 
+constexpr int MAX_SEQUENCE = 1024;
+
 class TestQUICConnection : public MockQUICConnection
 {
 };
@@ -279,8 +281,8 @@ test_encode(const char *qif_file, int dts, int mbs, int am)
   sprintf(output_filename, "%s.ats.%d.%d.%d", qif_file, dts, mbs, am);
   FILE *fd = fopen(output_filename, "w");
 
-  HTTPHdr *requests[256] = {nullptr};
-  int n_requests         = load_qif_file(qif_file, requests);
+  HTTPHdr *requests[MAX_SEQUENCE] = {nullptr};
+  int n_requests                  = load_qif_file(qif_file, requests);
 
   QUICApplicationDriver driver;
   QPACK *qpack                   = new QPACK(driver.get_connection(), dts);
@@ -328,7 +330,7 @@ test_decode(const char *qif_file, int dts, int mbs, int am, const char *app_name
   sprintf(output_filename, "%s.decoded", data_filename);
   FILE *fd_out = fopen(output_filename, "w");
 
-  HTTPHdr *requests[256];
+  HTTPHdr *requests[MAX_SEQUENCE];
   int n_requests = load_qif_file(qif_file, requests);
 
   TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
@@ -343,9 +345,9 @@ test_decode(const char *qif_file, int dts, int mbs, int am, const char *app_name
   uint32_t block_len;
   int read_len = 0;
 
-  uint64_t stream_id        = 1;
-  HTTPHdr *header_sets[256] = {nullptr};
-  int n_headers             = 0;
+  uint64_t stream_id                 = 1;
+  HTTPHdr *header_sets[MAX_SEQUENCE] = {nullptr};
+  int n_headers                      = 0;
   while ((read_len = read_block(fd_in, stream_id, &block, block_len)) >= 0) {
     if (stream_id == encoder_stream->id()) {
       encoder_stream->write(block, block_len, offset, false);
