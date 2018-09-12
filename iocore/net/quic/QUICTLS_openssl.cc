@@ -38,21 +38,21 @@ content_type_str(int type)
 {
   switch (type) {
   case SSL3_RT_CHANGE_CIPHER_SPEC:
-    return "SSL3_RT_CHANGE_CIPHER_SPEC";
+    return "CHANGE_CIPHER_SPEC";
   case SSL3_RT_ALERT:
-    return "SSL3_RT_ALERT";
+    return "ALERT";
   case SSL3_RT_HANDSHAKE:
-    return "SSL3_RT_HANDSHAKE";
+    return "HANDSHAKE";
   case SSL3_RT_APPLICATION_DATA:
-    return "SSL3_RT_APPLICATION_DATA";
+    return "APPLICATION_DATA";
   case SSL3_RT_HEADER:
     // The buf contains the record header bytes only
-    return "SSL3_RT_HEADER";
+    return "HEADER";
   case SSL3_RT_INNER_CONTENT_TYPE:
     // Used when an encrypted TLSv1.3 record is sent or received. In encrypted TLSv1.3 records the content type in the record header
     // is always SSL3_RT_APPLICATION_DATA. The real content type for the record is contained in an "inner" content type. buf
     // contains the encoded "inner" content type byte.
-    return "SSL3_RT_INNER_CONTENT_TYPE";
+    return "INNER_CONTENT_TYPE";
   default:
     return "UNKNOWN";
   }
@@ -63,25 +63,25 @@ hs_type_str(int type)
 {
   switch (type) {
   case SSL3_MT_CLIENT_HELLO:
-    return "SSL3_MT_CLIENT_HELLO";
+    return "CLIENT_HELLO";
   case SSL3_MT_SERVER_HELLO:
-    return "SSL3_MT_SERVER_HELLO";
+    return "SERVER_HELLO";
   case SSL3_MT_NEWSESSION_TICKET:
-    return "SSL3_MT_NEWSESSION_TICKET";
+    return "NEWSESSION_TICKET";
   case SSL3_MT_END_OF_EARLY_DATA:
-    return "SSL3_MT_END_OF_EARLY_DATA";
+    return "END_OF_EARLY_DATA";
   case SSL3_MT_ENCRYPTED_EXTENSIONS:
-    return "SSL3_MT_ENCRYPTED_EXTENSIONS";
+    return "ENCRYPTED_EXTENSIONS";
   case SSL3_MT_CERTIFICATE:
-    return "SSL3_MT_CERTIFICATE";
+    return "CERTIFICATE";
   case SSL3_MT_CERTIFICATE_VERIFY:
-    return "SSL3_MT_CERTIFICATE_VERIFY";
+    return "CERTIFICATE_VERIFY";
   case SSL3_MT_FINISHED:
-    return "SSL3_MT_FINISHED";
+    return "FINISHED";
   case SSL3_MT_KEY_UPDATE:
-    return "SSL3_MT_KEY_UPDATE";
+    return "KEY_UPDATE";
   case SSL3_MT_MESSAGE_HASH:
-    return "SSL3_MT_MESSAGE_HASH";
+    return "MESSAGE_HASH";
   default:
     return "UNKNOWN";
   }
@@ -95,7 +95,7 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
     const uint8_t *tmp = reinterpret_cast<const uint8_t *>(buf);
     int msg_type       = tmp[0];
 
-    Debug("v_quic_crypto", "%s (%d), %s (%d)", content_type_str(content_type), content_type, hs_type_str(msg_type), msg_type);
+    Debug(tag, "%s (%d), %s (%d)", content_type_str(content_type), content_type, hs_type_str(msg_type), msg_type);
     return;
   }
 
