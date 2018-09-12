@@ -32,7 +32,6 @@
 
 #include <openssl/ssl.h>
 
-// #include "Mock.h"
 #include "QUICKeyGenerator.h"
 
 TEST_CASE("QUICKeyGenerator", "[quic]")
@@ -59,6 +58,8 @@ TEST_CASE("QUICKeyGenerator", "[quic]")
     CHECK(memcmp(actual_km->key, expected_client_key, sizeof(expected_client_key)) == 0);
     CHECK(actual_km->iv_len == sizeof(expected_client_iv));
     CHECK(memcmp(actual_km->iv, expected_client_iv, sizeof(expected_client_iv)) == 0);
+    CHECK(actual_km->pn_len == sizeof(expected_client_pn));
+    CHECK(memcmp(actual_km->pn, expected_client_pn, sizeof(expected_client_pn)) == 0);
   }
 
   SECTION("SERVER Initial")
@@ -83,5 +84,63 @@ TEST_CASE("QUICKeyGenerator", "[quic]")
     CHECK(memcmp(actual_km->key, expected_server_key, sizeof(expected_server_key)) == 0);
     CHECK(actual_km->iv_len == sizeof(expected_server_iv));
     CHECK(memcmp(actual_km->iv, expected_server_iv, sizeof(expected_server_iv)) == 0);
+    CHECK(actual_km->pn_len == sizeof(expected_server_pn));
+    CHECK(memcmp(actual_km->pn, expected_server_pn, sizeof(expected_server_pn)) == 0);
+  }
+}
+
+// https://github.com/quicwg/base-drafts/wiki/Test-Vector-for-the-Clear-Text-AEAD-key-derivation#draft-14-test-vectors
+TEST_CASE("draft-14 Test Vectors", "[quic]")
+{
+  SECTION("CLIENT Initial")
+  {
+    QUICKeyGenerator keygen(QUICKeyGenerator::Context::CLIENT);
+
+    QUICConnectionId cid = {reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x08"), 8};
+
+    uint8_t expected_client_key[] = {
+      0xf2, 0x92, 0x8f, 0x26, 0x14, 0xad, 0x6c, 0x20, 0xb9, 0xbd, 0x00, 0x8e, 0x9c, 0x89, 0x63, 0x1c,
+    };
+    uint8_t expected_client_iv[] = {
+      0xab, 0x95, 0x0b, 0x01, 0x98, 0x63, 0x79, 0x78, 0xcf, 0x44, 0xaa, 0xb9,
+    };
+    uint8_t expected_client_pn[] = {
+      0x68, 0xc3, 0xf6, 0x4e, 0x2d, 0x66, 0x34, 0x41, 0x2b, 0x8e, 0x32, 0x94, 0x62, 0x8d, 0x76, 0xf1,
+    };
+
+    std::unique_ptr<KeyMaterial> actual_km = keygen.generate(cid);
+
+    CHECK(actual_km->key_len == sizeof(expected_client_key));
+    CHECK(memcmp(actual_km->key, expected_client_key, sizeof(expected_client_key)) == 0);
+    CHECK(actual_km->iv_len == sizeof(expected_client_iv));
+    CHECK(memcmp(actual_km->iv, expected_client_iv, sizeof(expected_client_iv)) == 0);
+    CHECK(actual_km->pn_len == sizeof(expected_client_pn));
+    CHECK(memcmp(actual_km->pn, expected_client_pn, sizeof(expected_client_pn)) == 0);
+  }
+
+  SECTION("SERVER Initial")
+  {
+    QUICKeyGenerator keygen(QUICKeyGenerator::Context::SERVER);
+
+    QUICConnectionId cid = {reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x08"), 8};
+
+    uint8_t expected_server_key[] = {
+      0xf5, 0x68, 0x17, 0xd0, 0xfc, 0x59, 0x5c, 0xfc, 0x0a, 0x2b, 0x0b, 0xcf, 0xb1, 0x87, 0x35, 0xec,
+    };
+    uint8_t expected_server_iv[] = {
+      0x32, 0x05, 0x03, 0x5a, 0x3c, 0x93, 0x7c, 0x90, 0x2e, 0xe4, 0xf4, 0xd6,
+    };
+    uint8_t expected_server_pn[] = {
+      0xa3, 0x13, 0xc8, 0x6d, 0x13, 0x73, 0xec, 0xbc, 0xcb, 0x32, 0x94, 0xb1, 0x49, 0x74, 0x22, 0x6c,
+    };
+
+    std::unique_ptr<KeyMaterial> actual_km = keygen.generate(cid);
+
+    CHECK(actual_km->key_len == sizeof(expected_server_key));
+    CHECK(memcmp(actual_km->key, expected_server_key, sizeof(expected_server_key)) == 0);
+    CHECK(actual_km->iv_len == sizeof(expected_server_iv));
+    CHECK(memcmp(actual_km->iv, expected_server_iv, sizeof(expected_server_iv)) == 0);
+    CHECK(actual_km->pn_len == sizeof(expected_server_pn));
+    CHECK(memcmp(actual_km->pn, expected_server_pn, sizeof(expected_server_pn)) == 0);
   }
 }
