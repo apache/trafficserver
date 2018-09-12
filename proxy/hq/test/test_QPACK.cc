@@ -132,7 +132,9 @@ load_qif_file(const char *filename, HTTPHdr **headers)
       auto tab   = line.find_first_of('\t');
       auto name  = line.substr(0, tab);
       auto value = line.substr(tab + 1);
-      hdr->value_set(name.c_str(), tab, value.c_str(), line.length() - tab - 1);
+      auto field = hdr->field_create(name.c_str(), tab);
+      hdr->field_attach(field);
+      hdr->field_value_set(field, value.c_str(), line.length() - tab - 1);
     }
   }
   if (hdr) {
