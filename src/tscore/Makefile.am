@@ -208,6 +208,7 @@ libtscore_la_SOURCES = \
 	Tokenizer.h \
 	Trie.h \
 	TsBuffer.h \
+	ts_file. h ts_file.cc \
 	Version.cc \
 	X509HostnameValidator.cc \
 	X509HostnameValidator.h
@@ -274,7 +275,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
-	unit_tests/test_scoped_resource.cc
+	unit_tests/test_scoped_resource.cc \
+	unit_tests/test_ts_file.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
