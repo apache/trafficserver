@@ -216,9 +216,14 @@ output_decoded_headers(FILE *fd, HTTPHdr **headers, uint64_t n)
          field            = header_set->iter_get_next(&field_iter)) {
       int name_len;
       int value_len;
-      const char *name  = field->name_get(&name_len);
+      Arena arena;
+      const char *name   = field->name_get(&name_len);
+      char *lowered_name = arena.str_store(name, name_len);
+      for (int i = 0; i < name_len; i++) {
+        lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
+      }
       const char *value = field->value_get(&value_len);
-      fprintf(fd, "%.*s\t%.*s\n", name_len, name, value_len, value);
+      fprintf(fd, "%.*s\t%.*s\n", name_len, lowered_name, value_len, value);
     }
     fprintf(fd, "\n");
   }
