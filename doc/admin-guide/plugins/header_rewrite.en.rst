@@ -175,17 +175,6 @@ header operated on by this condition will be a comma separated string of the
 values from every occurrence of the header. More details are provided in
 `Repeated Headers`_ below.
 
-CLIENT-IP
-~~~~~~~~~
-::
-
-    cond %{CLIENT-IP} <operand>
-
-Remote IP address, as a string, of the client connection for the current
-transaction.
-
-This condition is *deprecated* as of ATS v7.1.x, please use `%{INBOUND:REMOTE-ADDR}` instead.
-
 CLIENT-URL
 ~~~~~~~~~~
 ::
