@@ -953,7 +953,6 @@ Changes with Apache Traffic Server 8.0.0
   #3597 - Fixes null pointer dereference in print_http_hdr
   #3598 - Fix a nullptr dereference
   #3600 - clang: Logic error
-  #3601 - Add TLSv1.3 cipher suites for OpenSSL-1.1.1
   #3602 - Clang6: Fix nullptr use in AtomicList.
   #3603 - Prevent memcpy overlapping buffers when assigning a CryptoHash to itself
   #3605 - Testing: Update to Catch 2.2.2
@@ -1185,7 +1184,6 @@ Changes with Apache Traffic Server 8.0.0
   #4025 - Removes non-FS ciphers to make SSLLabs not warn on weak ciphers
   #4027 - Fixes ticket loading from filesystems without a mtime
   #4030 - Fixes Spelling
-  #4031 - Revert "Add TLSv1.3 cipher suites for OpenSSL-1.1.1"
   #4035 - Fixing copy paste error in SNI yaml parsing
   #4036 - Removes more references to traffic_cop and cop related functionality
   #4037 - Add configs for TLSv1.3 ciphersuites
@@ -1216,6 +1214,7 @@ Changes with Apache Traffic Server 8.0.0
   #4124 - Removes references to STAT_PROCESSOR
   #4131 - Completes code comment for redirect configs
   #4138 - Follows 308 Permanent Redirect
+  #4151 - Corrects IPv4 multicast ip address check
   #4165 - Update the header_rewrite doc for clarification on CLIENT-URL:HOST
   #4169 - Multiplexer fixes
   #4170 - Fix for when multiplexer gets a 0 byte read event
@@ -1223,3 +1222,7 @@ Changes with Apache Traffic Server 8.0.0
   #4183 - Default config change with proxy.config.http.negative_revalidating_enabled
   #4196 - Back-port to 8.0.x - Log Collation Memory Leak
   #4199 - Remove unneeded aio header file
+  #4208 - Fix inconsistent links in docs.
+  #4213 - Disable the HttpSM half open logic if the underlying transport is TLS
+  #4225 - Fixed error getting h2 HEADERS frame after stream is closed
+  #4232 - PR #3724: Backport to ATS 8.
