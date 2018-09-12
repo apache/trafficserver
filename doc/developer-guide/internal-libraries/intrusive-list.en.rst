@@ -190,13 +190,13 @@ In some cases the elements of the list are subclasses and the links are declared
 and are therefore of the super class type. For instance, in the unit test a class :code:`Thing` is
 defined for testing.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 159
 
 Later on, to validate use on a subclass, :code:`PrivateThing` is defined as a subclass of
 :code:`Thing`.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 181
 
 However, the link members :code:`_next` and :code:`_prev` are of type :code:`Thing*` but the
@@ -205,7 +205,7 @@ descriptor for a list of :code:`PrivateThing` must have link accessors that retu
 :code:`ts::ptr_ref_cast<X, T>` that converts a member of type :code:`T*` to a reference to a pointer
 to :code:`X`, e.g. :code:`X*&`. This is used in the setup for testing :code:`PrivateThing`.
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveDList.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveDList.cc
    :lines: 190-199
 
 While this can be done directly with :code:`reinterpret_cast<>`, use of :code:`ts::ptr_cast` avoids
