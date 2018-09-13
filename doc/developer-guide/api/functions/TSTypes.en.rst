@@ -196,7 +196,7 @@ more widely. Those are described on this page.
 
 .. cpp:class:: VersionNumber
 
-   A two part version number, defined in :ts:git:`lib/ts/I_Version.h`.
+   A two part version number, defined in :ts:git:`include/tscore/I_Version.h`.
 
    .. cpp:member:: short int ink_major
 

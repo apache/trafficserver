@@ -110,13 +110,13 @@ autopep8:
 #
 # If you make changes to directory structures, you must update this as well.
 #
-.PHONY:	clang-format-cmd clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
+.PHONY:	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
 	clang-format-plugins clang-format-proxy clang-format-tools
 
-clang-format: 	clang-format-cmd clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
+clang-format: 	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
 		clang-format-plugins clang-format-proxy clang-format-tools clang-format-tests
 
-clang-format-cmd:
+clang-format-src:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/src
 
 clang-format-example:
@@ -126,11 +126,9 @@ clang-format-iocore:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/iocore
 
 clang-format-lib:
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/include
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/cppapi
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/bindings
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/records
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/ts
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/wccp
 
 clang-format-mgmt:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/mgmt
