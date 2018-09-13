@@ -1734,9 +1734,8 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   }
   if (error->msg) {
     QUICConDebug("Reason: %.*s", static_cast<int>(strlen(error->msg)), error->msg);
-  } else {
-    QUICConDebug("Reason was not provided");
   }
+
   this->_connection_error = std::move(error);
   this->_schedule_packet_write_ready();
 
@@ -1763,8 +1762,6 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   }
   if (error->msg) {
     QUICConDebug("Reason: %.*s", static_cast<int>(strlen(error->msg)), error->msg);
-  } else {
-    QUICConDebug("Reason was not provided");
   }
 
   this->remove_from_active_queue();
