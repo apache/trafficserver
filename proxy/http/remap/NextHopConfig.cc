@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Nexhop parent selection strategy yaml parser
 
   @section license License
 
@@ -31,8 +31,6 @@
 
 #include "ts/Diags.h"
 
-#define BUFSIZE 8192
-
 ts::Errata
 NextHopConfig::loadConfig(const char *fileName)
 {
@@ -56,22 +54,18 @@ NextHopConfig::loadFile(const std::string fileName, std::stringstream &doc, std:
 {
   const char *sep = " \t";
   char *tok, *last;
-  char line[BUFSIZE];
+  std::string line;
 
   std::ifstream file(fileName);
   if (file.is_open()) {
-    while (file.getline(line, BUFSIZE - 1)) {
+    while (std::getline(file, line)) {
       if (line[0] == '#') {
-        tok = strtok_r(line, sep, &last);
+        tok = strtok_r(const_cast<char *>(line.c_str()), sep, &last);
         if (tok != nullptr && strcmp(tok, "#include") == 0) {
           std::string f = strtok_r(nullptr, sep, &last);
           if (include_once.find(f) == include_once.end()) {
             include_once.insert(f);
-            try {
-              loadFile(f, doc, include_once);
-            } catch (std::exception &ex) {
-              throw;
-            }
+            loadFile(f, doc, include_once);
           }
         }
       } else {
@@ -91,23 +85,23 @@ template <> struct convert<NextHopStrategyConfig> {
   static bool
   decode(const Node &node, NextHopStrategyConfig &cfg)
   {
-    YAML::Node strategy = node;
+    YAML::Node strategy;
     try {
       strategy = node[NH_strategy];
     } catch (std::exception &ex) {
       throw std::runtime_error("the required 'strategy' node does not exist in the yaml document.");
     }
-    if (strategy.Type() == YAML::NodeType::Map) {
+    if (strategy.IsMap()) {
       // verify keys
-      for (const_iterator it = strategy.begin(); it != strategy.end(); it++) {
+      for (auto const &item : strategy) {
         if (std::none_of(valid_strategy_keys.begin(), valid_strategy_keys.end(),
-                         [it](std::string s) { return s == it->first.as<std::string>(); })) {
-          throw std::invalid_argument("unsupported strategy key: " + it->first.as<std::string>());
+                         [item](std::string s) { return s == item.first.Scalar(); })) {
+          throw std::invalid_argument("unsupported strategy key: " + item.first.Scalar());
         }
       }
       std::string policy;
       try {
-        policy = strategy[NH_policy].as<std::string>();
+        policy = strategy[NH_policy].Scalar();
       } catch (std::exception &ex) {
         throw std::invalid_argument("required 'policy' field was not found");
       }
@@ -119,35 +113,33 @@ template <> struct convert<NextHopStrategyConfig> {
       // parse the groups list.
       YAML::Node groups;
       try {
-        groups = node[NH_groups];
+        groups = strategy[NH_groups];
       } catch (std::exception &ex) {
         throw std::invalid_argument("the required 'groups' node is not defined in the strategy.");
       }
-      if (!groups.IsNull()) {
-        if (groups.Type() != YAML::NodeType::Sequence) {
-          throw std::invalid_argument("the 'groups' node is not a sequence.");
-        } else {
-          cfg.groups.reserve(groups.size());
-          for (unsigned int i = 0; i < groups.size(); i++) {
-            YAML::Node hostList = groups[i];
-            if (hostList.Type() != YAML::NodeType::Sequence) {
-              throw std::invalid_argument("the 'hostsList' node in the group list is not a sequence.");
-            }
-            // process the hostList
-            std::vector<NextHopHost> v;
-            for (unsigned int j = 0; j < hostList.size(); j++) {
-              NextHopHost h = hostList[j].as<NextHopHost>();
-              v.push_back(h);
-            }
-            cfg.groups.push_back(v);
+      if (!groups.IsSequence()) {
+        throw std::invalid_argument("the 'groups' node is not a sequence.");
+      } else {
+        cfg.groups.reserve(groups.size());
+        for (unsigned int i = 0; i < groups.size(); i++) {
+          YAML::Node hostList = groups[i];
+          if (!hostList.IsSequence()) {
+            throw std::invalid_argument("the 'hostsList' node in the group list is not a sequence.");
           }
+          // process the hostList
+          std::vector<NextHopHost> v;
+          for (unsigned int j = 0; j < hostList.size(); j++) {
+            NextHopHost h = hostList[j].as<NextHopHost>();
+            v.push_back(h);
+          }
+          cfg.groups.push_back(v);
         }
       }
 
       // hash_key is optional.
       std::string hashKey;
       try {
-        hashKey = strategy[NH_hashKey].as<std::string>();
+        hashKey = strategy[NH_hashKey].Scalar();
       } catch (std::exception &ex) {
         ;
       }
@@ -161,7 +153,7 @@ template <> struct convert<NextHopStrategyConfig> {
       // protocol is optional.
       std::string protocol;
       try {
-        protocol = strategy[NH_protocol].as<std::string>();
+        protocol = strategy[NH_protocol].Scalar();
       } catch (std::exception &ex) {
         ;
       }
@@ -180,12 +172,12 @@ template <> struct convert<NextHopStrategyConfig> {
         ;
       }
       if (!failover.IsNull()) {
-        if (failover.Type() == YAML::NodeType::Map) {
+        if (failover.IsMap()) {
           // verify the keys
-          for (const_iterator it = failover.begin(); it != failover.end(); it++) {
+          for (auto const &item : failover) {
             if (std::none_of(valid_failover_keys.begin(), valid_failover_keys.end(),
-                             [it](std::string s) { return s == it->first.as<std::string>(); })) {
-              throw std::invalid_argument("unsupported failover key: " + it->first.as<std::string>());
+                             [item](std::string s) { return s == item.first.Scalar(); })) {
+              throw std::invalid_argument("unsupported failover key: " + item.first.Scalar());
             }
           }
           cfg.failover = failover.as<NextHopFailOver>();
@@ -209,7 +201,7 @@ template <> struct convert<NextHopFailOver> {
     // parse the ring mode
     std::string ringMode;
     try {
-      ringMode = node[NH_ringMode].as<std::string>();
+      ringMode = node[NH_ringMode].Scalar();
     } catch (std::exception &ex) {
       throw std::invalid_argument("the required 'ring_mode' setting is not present in the 'failover' map.");
     }
@@ -228,7 +220,7 @@ template <> struct convert<NextHopFailOver> {
       ;
     }
     if (!responseCodes.IsNull()) {
-      if (responseCodes.Type() == YAML::NodeType::Sequence) {
+      if (responseCodes.IsSequence()) {
         for (unsigned int i = 0; i < responseCodes.size(); i++) {
           int code;
           try {
@@ -251,9 +243,9 @@ template <> struct convert<NextHopFailOver> {
       throw std::invalid_argument("the required 'health_check' node is not defined in 'failover.");
     }
     if (!healthCheck.IsNull()) {
-      if (healthCheck.Type() == YAML::NodeType::Sequence) {
+      if (healthCheck.IsSequence()) {
         for (unsigned int i = 0; i < healthCheck.size(); i++) {
-          std::string value     = healthCheck[i].as<std::string>();
+          std::string value     = healthCheck[i].Scalar();
           NextHopHealthCheck hc = static_cast<NextHopHealthCheck>(HEALTH_CHECK_DESCRIPTOR.get(value));
           if (hc < 0) {
             throw std::invalid_argument("invalid health check  value '" + value + "'");
@@ -276,37 +268,37 @@ template <> struct convert<NextHopHost> {
     bool ext_found = false;
     YAML::Node nd;
 
-    if (node.Type() != YAML::NodeType::Map) {
+    if (!node.IsMap()) {
       throw std::invalid_argument("the 'host' node is not a map");
     } else {
+      // check for the use of an alias extension.
+      try {
+        nd        = node[NH_alias_extension];
+        ext_found = true;
+      } catch (std::exception &ex) {
+        nd = node;
+      }
+
       // verify the keys
-      for (const_iterator it = node.begin(); it != node.end(); it++) {
+      for (auto const &item : nd) {
         if (std::none_of(valid_host_keys.begin(), valid_host_keys.end(),
-                         [it](std::string s) { return s == it->first.as<std::string>(); })) {
-          throw std::invalid_argument("unsupported host key: " + it->first.as<std::string>());
+                         [item](std::string s) { return s == item.first.Scalar(); })) {
+          throw std::invalid_argument("unsupported host key: " + item.first.Scalar());
         }
       }
-    }
-    // check for the use of an alias extension.
-    try {
-      nd        = node[NH_alias_extension];
-      ext_found = true;
-    } catch (std::exception &ex) {
-      nd = node;
     }
 
     // parse the host field
     try {
-      std::string host = nd[NH_host].as<std::string>();
+      std::string host = nd[NH_host].Scalar();
       nh.host          = host;
     } catch (std::exception &ex) {
       throw std::invalid_argument("the required 'host' field is missing in the 'hosts' list.");
     }
-
     // parse the health check url field.
     std::string healthCheckUrl;
     try {
-      healthCheckUrl    = nd[NH_healthCheck][NH_url].as<std::string>();
+      healthCheckUrl    = nd[NH_healthCheck][NH_url].Scalar();
       nh.healthCheckUrl = healthCheckUrl;
     } catch (std::exception &ex) {
       throw std::invalid_argument("the required 'healthcheck' 'url' field is missing for a host in the 'hosts' list.");
@@ -319,7 +311,7 @@ template <> struct convert<NextHopHost> {
     } catch (std::exception &ex) {
       throw std::invalid_argument("the required 'protocol' sequence field is missing for a host in the 'hosts' list.");
     }
-    if (protocols.Type() == YAML::NodeType::Sequence) {
+    if (protocols.IsSequence()) {
       for (unsigned int i = 0; i < protocols.size(); i++) {
         NextHopHostProtocols np = protocols[i].as<NextHopHostProtocols>();
         nh.protocols.push_back(np);
