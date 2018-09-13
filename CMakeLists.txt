@@ -33,13 +33,14 @@ project(ats)
 set(CMAKE_CXX_STANDARD 11)
 
 include_directories(lib
+        include
         proxy
         proxy/hdrs
         proxy/http
         proxy/http/remap
         proxy/shared
         lib/records
-        lib/wccp
+        include/wccp
         lib/yamlcpp/include
         iocore/eventsystem
         iocore/net
@@ -914,7 +915,6 @@ add_executable(ats
 
 add_library(libtscore SHARED
         include/tscore/Allocator.h
-        include/tscore/apidefs.h
         src/tscore/Arena.cc
         include/tscore/Arena.h
         src/tscore/BaseLogFile.cc
@@ -957,7 +957,6 @@ add_library(libtscore SHARED
         include/tscore/I_Version.h
         include/tscore/ink_aiocb.h
         include/tscore/ink_align.h
-        include/tscore/ink_apidefs.h
         src/tscore/ink_args.cc
         include/tscore/ink_args.h
         src/tscore/ink_assert.cc
@@ -1084,7 +1083,7 @@ add_library(libtscore SHARED
         src/tscore/tests.cc
         src/tscore/TextBuffer.cc
         include/tscore/TextBuffer.h
-        include/tscore/TextView.h
+        include/tscpp/util/TextView.h
         src/tscore/Tokenizer.cc
         include/tscore/Tokenizer.h
         include/tscore/Trie.h

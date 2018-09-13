@@ -21,6 +21,7 @@ include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/proxy \
 	$(TS_INCLUDES)
 

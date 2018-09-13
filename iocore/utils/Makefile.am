@@ -18,7 +18,7 @@
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/records \
+	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	$(TS_INCLUDES)
 
