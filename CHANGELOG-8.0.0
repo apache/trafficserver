@@ -1214,6 +1214,7 @@ Changes with Apache Traffic Server 8.0.0
   #4124 - Removes references to STAT_PROCESSOR
   #4131 - Completes code comment for redirect configs
   #4138 - Follows 308 Permanent Redirect
+  #4145 - Adds configurable behavior on redirect to loopback
   #4151 - Corrects IPv4 multicast ip address check
   #4165 - Update the header_rewrite doc for clarification on CLIENT-URL:HOST
   #4169 - Multiplexer fixes
@@ -1225,4 +1226,7 @@ Changes with Apache Traffic Server 8.0.0
   #4208 - Fix inconsistent links in docs.
   #4213 - Disable the HttpSM half open logic if the underlying transport is TLS
   #4225 - Fixed error getting h2 HEADERS frame after stream is closed
+  #4229 - Clarifies code comment for DL_Emergency
+  #4230 - Heap use after free
   #4232 - PR #3724: Backport to ATS 8.
+  #4233 - Fix link error on macOS
