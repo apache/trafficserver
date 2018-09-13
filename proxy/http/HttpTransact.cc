@@ -1647,6 +1647,37 @@ HttpTransact::OSDNSLookup(State *s)
            "IP: %s",
            ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
+  if (s->redirect_info.redirect_in_process) {
+    // If dns lookup was not successful, the code below will handle the error.
+    RedirectEnabled::Action action = RedirectEnabled::Action::INVALID;
+    if (true == Machine::instance()->is_self(s->host_db_info.ip())) {
+      action = s->http_config_param->redirect_actions_self_action;
+    } else {
+      ink_release_assert(s->http_config_param->redirect_actions_map != nullptr);
+      ink_release_assert(
+        s->http_config_param->redirect_actions_map->contains(s->host_db_info.ip(), reinterpret_cast<void **>(&action)));
+    }
+    switch (action) {
+    case RedirectEnabled::Action::FOLLOW:
+      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Following");
+      break;
+    case RedirectEnabled::Action::REJECT:
+      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Rejecting.");
+      build_error_response(s, HTTP_STATUS_FORBIDDEN, nullptr, "request#syntax_error");
+      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+      break;
+    case RedirectEnabled::Action::RETURN:
+      TxnDebug("http_trans", "[OSDNSLookup] Configured to return on invalid redirect address.");
+      // fall-through
+    default:
+      // Return this 3xx to the client as-is.
+      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Returning.");
+      build_response_copy(s, &s->hdr_info.server_response, &s->hdr_info.client_response, s->client_info.http_version);
+      TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, nullptr);
+    }
+  }
+
   // so the dns lookup was a success, but the lookup succeeded on
   // a hostname which was expanded by the traffic server. we should
   // not automatically forward the request to this expanded hostname.

@@ -32,12 +32,12 @@ dns = Test.MakeDNServer("dns")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|dns|redirect',
-    'proxy.config.http.redirection_enabled': 1,
     'proxy.config.http.number_of_redirections': 1,
     'proxy.config.http.cache.http': 0,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
     'proxy.config.dns.resolv_conf': 'NULL',
-    'proxy.config.url_remap.remap_required': 0  # need this so the domain gets a chance to be evaluated through DNS
+    'proxy.config.url_remap.remap_required': 0,  # need this so the domain gets a chance to be evaluated through DNS
+    'proxy.config.http.redirect.actions': 'self:follow', # redirects to self are not followed by default
 })
 
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir,'tcp_client.py'))
