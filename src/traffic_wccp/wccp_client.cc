@@ -37,8 +37,8 @@
 #include <poll.h>
 
 #include "tscore/ink_memory.h"
-#include "Wccp.h"
-#include "wccp/WccpUtil.h"
+#include "wccp/Wccp.h"
+#include "../wccp/WccpUtil.h"
 #include "tsconfig/TsValue.h"
 #include "tscore/ink_lockfile.h"
 

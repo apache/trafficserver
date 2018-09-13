@@ -18,8 +18,6 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-library_includedir=$(includedir)/ts
-
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_libtscore test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tscore
 
@@ -33,6 +31,7 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/include/records \
+	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
 

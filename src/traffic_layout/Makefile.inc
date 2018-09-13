@@ -21,7 +21,7 @@ traffic_layout_traffic_layout_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     $(iocore_include_dirs) \
     -I$(abs_top_srcdir)/include \
-    -I$(abs_top_srcdir)/include/records \
+    -I$(abs_top_srcdir)/lib \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/utils \
     @YAMLCPP_INCLUDES@ \

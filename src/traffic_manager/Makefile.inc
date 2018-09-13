@@ -20,14 +20,14 @@ bin_PROGRAMS += traffic_manager/traffic_manager
 traffic_manager_traffic_manager_CPPFLAGS = \
     $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
-	-I$(abs_top_srcdir)/include/records \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/api \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	-I$(abs_top_srcdir)/include \
 	$(TS_INCLUDES)
 
 traffic_manager_traffic_manager_LDFLAGS = \
