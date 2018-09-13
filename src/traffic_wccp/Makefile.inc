@@ -23,8 +23,7 @@ traffic_wccp_traffic_wccp_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     $(iocore_include_dirs) \
     -I$(abs_top_srcdir)/include \
-    -I$(abs_top_srcdir)/include/records \
-    -I$(abs_top_srcdir)/include/wccp \
+    -I$(abs_top_srcdir)/lib \
     $(TS_INCLUDES) \
     @OPENSSL_INCLUDES@
 

@@ -25,6 +25,7 @@ AM_YFLAGS = --yacc -d -p tsconfig
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES)
 
 BUILT_SOURCES = \

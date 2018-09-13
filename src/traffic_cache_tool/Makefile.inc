@@ -22,6 +22,7 @@ bin_PROGRAMS += traffic_cache_tool/traffic_cache_tool
 traffic_cache_tool_traffic_cache_tool_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     -I $(abs_top_srcdir)/include \
+    -I $(abs_top_srcdir)/lib \
     -D__STDC_FORMAT_MACROS
 
 traffic_cache_tool_traffic_cache_tool_SOURCES = \

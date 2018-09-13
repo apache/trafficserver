@@ -24,7 +24,7 @@ traffic_top_traffic_top_CPPFLAGS = \
     $(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/records \
+	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	$(TS_INCLUDES) \

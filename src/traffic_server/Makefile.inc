@@ -23,7 +23,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/records \
+	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/http2 \

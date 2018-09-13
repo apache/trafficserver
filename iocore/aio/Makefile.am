@@ -19,7 +19,7 @@
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/records \
+	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES)
 
 TESTS = test_AIO.sample

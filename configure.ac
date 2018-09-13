@@ -51,7 +51,7 @@ AM_MAINTAINER_MODE([enable])
 # Enable a recursive "tidy" rule for clang-tidy.
 m4_ifdef([AM_EXTRA_RECURSIVE_TARGETS], [AM_EXTRA_RECURSIVE_TARGETS([clang-tidy])])
 
-AC_CONFIG_HEADERS([lib/ink_autoconf.h])
+AC_CONFIG_HEADERS([include/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
