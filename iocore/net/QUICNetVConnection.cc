@@ -997,8 +997,10 @@ QUICNetVConnection::_state_common_receive_packet()
           QUICConDebug("Connection migrated");
           this->_validate_new_path();
         } else {
-          QUICConDebug("Connection migration failed");
-          ink_assert(!"Connection migration failed");
+          char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+          p->destination_cid().hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+          QUICConDebug("Connection migration failed cid=%s", dcid_str);
+          break;
         }
       }
       error = this->_state_connection_established_process_packet(std::move(p));
