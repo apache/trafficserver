@@ -1028,7 +1028,14 @@ QUICNetVConnection::_state_closing_receive_packet()
     QUICPacketCreationResult result;
     QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::SUCCESS) {
-      this->_recv_and_ack(std::move(packet));
+      switch (packet->type()) {
+      case QUICPacketType::VERSION_NEGOTIATION:
+        // Ignore VN packets on closing state
+        break;
+      default:
+        this->_recv_and_ack(std::move(packet));
+        break;
+      }
     }
     ++this->_state_closing_recv_packet_count;
 
