@@ -47,7 +47,7 @@ class QUICDebug
 {
 public:
   static void
-  to_hex(uint8_t *out, uint8_t *in, int in_len)
+  to_hex(uint8_t *out, const uint8_t *in, int in_len)
   {
     for (int i = 0; i < in_len; ++i) {
       int u4         = in[i] / 16;

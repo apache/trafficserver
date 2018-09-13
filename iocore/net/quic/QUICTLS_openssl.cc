@@ -172,7 +172,9 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const
       break;
     }
 
-    uint8_t print_buf[512];
+    uint8_t print_buf[128];
+    QUICDebug::to_hex(print_buf, static_cast<const uint8_t *>(secret), secret_len);
+    Debug("vv_quic_crypto", "secret=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->key, km->key_len);
     Debug("vv_quic_crypto", "key=%s", print_buf);
     QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
