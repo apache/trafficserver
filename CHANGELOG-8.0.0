@@ -1230,3 +1230,7 @@ Changes with Apache Traffic Server 8.0.0
   #4230 - Heap use after free
   #4232 - PR #3724: Backport to ATS 8.
   #4233 - Fix link error on macOS
+  #4235 - header_rewrite: Removes deprecated %{CLIENT-IP} condition
+  #4239 - Corrects path in multiple documents
+  #4241 - Runroot: Fix a issue caused by restructured headers
+  #4243 - Follow up for #3724 - fix out of tree builds.
