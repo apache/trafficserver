@@ -288,6 +288,19 @@ Machine::is_self(const IpAddr *ipaddr)
   return ink_hash_table_lookup(machine_id_ipaddrs, string_value, &value) == 1 ? true : false;
 }
 
+bool
+Machine::is_self(struct sockaddr const *addr)
+{
+  void *value                             = nullptr;
+  char string_value[INET6_ADDRSTRLEN + 1] = {0};
+
+  if (addr == nullptr) {
+    return false;
+  }
+  ats_ip_ntop(addr, string_value, sizeof(string_value));
+  return ink_hash_table_lookup(machine_id_ipaddrs, string_value, &value) == 1 ? true : false;
+}
+
 void
 Machine::insert_id(char *id)
 {

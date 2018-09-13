@@ -1216,6 +1216,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.redirection_host_no_port, "proxy.config.http.redirect_host_no_port");
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
+  HttpEstablishStaticConfigStringAlloc(c.redirect_actions_string, "proxy.config.http.redirect.actions");
 
   OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
 
@@ -1485,6 +1486,8 @@ HttpConfig::reconfigure()
   params->post_copy_size                    = m_master.post_copy_size;
   params->oride.client_cert_filename        = ats_strdup(m_master.oride.client_cert_filename);
   params->oride.client_cert_filepath        = ats_strdup(m_master.oride.client_cert_filepath);
+  params->redirect_actions_string           = ats_strdup(m_master.redirect_actions_string);
+  params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
 
   params->negative_caching_list = m_master.negative_caching_list;
 
@@ -1600,4 +1603,138 @@ HttpConfig::parse_ports_list(char *ports_string)
     }
   }
   return (ports_list);
+}
+
+////////////////////////////////////////////////////////////////
+//
+//  HttpConfig::parse_redirect_actions()
+//
+////////////////////////////////////////////////////////////////
+IpMap *
+HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &self_action)
+{
+  using RedirectEnabled::Action;
+  using RedirectEnabled::AddressClass;
+  using RedirectEnabled::action_map;
+  using RedirectEnabled::address_class_map;
+
+  if (nullptr == input_string) {
+    Emergency("parse_redirect_actions: The configuration value is empty.");
+    return nullptr;
+  }
+  Tokenizer configTokens(", ");
+  int n_rules = configTokens.Initialize(input_string);
+  std::map<AddressClass, Action> configMapping;
+  for (int i = 0; i < n_rules; i++) {
+    const char *rule = configTokens[i];
+    Tokenizer ruleTokens(":");
+    int n_mapping = ruleTokens.Initialize(rule);
+    if (2 != n_mapping) {
+      Emergency("parse_redirect_actions: Individual rules must be an address class and an action separated by a colon (:)");
+      return nullptr;
+    }
+    std::string c_input(ruleTokens[0]), a_input(ruleTokens[1]);
+    AddressClass c =
+      address_class_map.find(ruleTokens[0]) != address_class_map.end() ? address_class_map[ruleTokens[0]] : AddressClass::INVALID;
+    Action a = action_map.find(ruleTokens[1]) != action_map.end() ? action_map[ruleTokens[1]] : Action::INVALID;
+
+    if (AddressClass::INVALID == c) {
+      Emergency("parse_redirect_actions: '%.*s' is not a valid address class", static_cast<int>(c_input.size()), c_input.data());
+      return nullptr;
+    } else if (Action::INVALID == a) {
+      Emergency("parse_redirect_actions: '%.*s' is not a valid action", static_cast<int>(a_input.size()), a_input.data());
+      return nullptr;
+    }
+    configMapping[c] = a;
+  }
+
+  // Ensure the default.
+  if (configMapping.end() == configMapping.find(AddressClass::DEFAULT)) {
+    configMapping[AddressClass::DEFAULT] = Action::RETURN;
+  }
+
+  IpMap *ret = new IpMap();
+  IpAddr min, max;
+  Action action = Action::INVALID;
+
+  // Order Matters. IpAddr::mark uses Painter's Algorithm. Last one wins.
+
+  // PRIVATE
+  action = configMapping.find(AddressClass::PRIVATE) != configMapping.end() ? configMapping[AddressClass::PRIVATE] :
+                                                                              configMapping[AddressClass::DEFAULT];
+  // 10.0.0.0/8
+  min.load("10.0.0.0");
+  max.load("10.255.255.255");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+  // 100.64.0.0/10
+  min.load("100.64.0.0");
+  max.load("100.127.255.255");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+  // 172.16.0.0/12
+  min.load("172.16.0.0");
+  max.load("172.31.255.255");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+  // 192.168.0.0/16
+  min.load("192.168.0.0");
+  max.load("192.168.255.255");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+  // fc00::/7
+  min.load("fc00::");
+  max.load("feff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+
+  // LOOPBACK
+  action = configMapping.find(AddressClass::LOOPBACK) != configMapping.end() ? configMapping[AddressClass::LOOPBACK] :
+                                                                               configMapping[AddressClass::DEFAULT];
+  min.load("127.0.0.0");
+  max.load("127.255.255.255");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+  min.load("::1");
+  max.load("::1");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+
+  // MULTICAST
+  action = configMapping.find(AddressClass::MULTICAST) != configMapping.end() ? configMapping[AddressClass::MULTICAST] :
+                                                                                configMapping[AddressClass::DEFAULT];
+  // 224.0.0.0/4
+  min.load("224.0.0.0");
+  max.load("239.255.255.255");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+  // ff00::/8
+  min.load("ff00::");
+  max.load("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+
+  // LINKLOCAL
+  action = configMapping.find(AddressClass::LINKLOCAL) != configMapping.end() ? configMapping[AddressClass::LINKLOCAL] :
+                                                                                configMapping[AddressClass::DEFAULT];
+  // 169.254.0.0/16
+  min.load("169.254.0.0");
+  max.load("169.254.255.255");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+  // fe80::/10
+  min.load("fe80::");
+  max.load("febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+  ret->mark(min, max, reinterpret_cast<void *>(action));
+
+  // SELF
+  // We must store the self address class separately instead of adding the addresses to our map.
+  // The addresses Trafficserver will use depend on configurations that are loaded here, so they are not available yet.
+  action = configMapping.find(AddressClass::SELF) != configMapping.end() ? configMapping[AddressClass::SELF] :
+                                                                           configMapping[AddressClass::DEFAULT];
+  self_action = action;
+
+  // IpMap::fill only marks things that are not already marked.
+
+  // ROUTABLE
+  action = configMapping.find(AddressClass::ROUTABLE) != configMapping.end() ? configMapping[AddressClass::ROUTABLE] :
+                                                                               configMapping[AddressClass::DEFAULT];
+  min.load("0.0.0.0");
+  max.load("255.255.255.255");
+  ret->fill(min, max, reinterpret_cast<void *>(action));
+  min.load("::");
+  max.load("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+  ret->fill(min, max, reinterpret_cast<void *>(action));
+
+  return ret;
 }
