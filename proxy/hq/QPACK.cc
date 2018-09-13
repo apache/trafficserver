@@ -330,7 +330,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     this->_encode_indexed_header_field(lookup_result_static.index, base_index, false, compressed_header);
     QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_static.index,
                base_index, false);
-    referred_index = lookup_result_static.index;
+    referred_index = 0;
   } else if (lookup_result_dynamic.match_type == LookupResult::MatchType::EXACT) {
     if (lookup_result_dynamic.index < this->_largest_known_received_index) {
       this->_encode_indexed_header_field(lookup_result_dynamic.index, base_index, true, compressed_header);
@@ -350,7 +350,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     QPACKDebug(
       "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
       lookup_result_static.index, base_index, false, value_len, value, never_index);
-    referred_index = lookup_result_static.index;
+    referred_index = 0;
   } else if (lookup_result_dynamic.match_type == LookupResult::MatchType::NAME) {
     if (lookup_result_dynamic.index <= this->_largest_known_received_index) {
       this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value, value_len, never_index,
@@ -595,7 +595,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
 
   // Never index field
   bool never_index = false;
-  if (buf[0] & 0x40) {
+  if (buf[0] & 0x20) {
     never_index = true;
   }
 
@@ -1051,13 +1051,14 @@ QPACK::StaticTable::lookup(const char *name, int name_len, const char *value, in
 {
   QPACK::LookupResult::MatchType match_type = QPACK::LookupResult::MatchType::NONE;
   uint16_t i                                = 0;
-  int candidate_index                       = 0;
+  uint16_t candidate_index                  = 0;
   int n                                     = countof(STATIC_HEADER_FIELDS);
 
   for (; i < n; ++i) {
     const Header &h = STATIC_HEADER_FIELDS[i];
     if (h.name_len == name_len) {
       if (memcmp(name, h.name, name_len) == 0) {
+        candidate_index = i;
         if (value_len == h.value_len && memcmp(value, h.value, value_len) == 0) {
           // Exact match
           match_type = QPACK::LookupResult::MatchType::EXACT;
@@ -1066,11 +1067,10 @@ QPACK::StaticTable::lookup(const char *name, int name_len, const char *value, in
           // Name match -- Keep it for no exact matchs
           match_type = QPACK::LookupResult::MatchType::NAME;
         }
-        candidate_index = i;
       }
     }
   }
-  return {i, match_type};
+  return {candidate_index, match_type};
 }
 
 uint16_t
