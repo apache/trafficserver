@@ -102,6 +102,11 @@ Below is an example of customized yaml file (custom.yml) to construct. ::
 
 If ``traffic_layout init --layout="custom.yml"`` is executed, a runroot following the format above will be created.
 
+.. Note::
+
+   :file:`storage.config` does not use the cachedir value, but makes its relatives paths relative to the base prefix.
+   So please update the directory for cache in ``storage.config`` according to the customized runroot.
+
 remove
 ------
 Find the sandbox to remove in following order:
@@ -137,6 +142,10 @@ Options
 .. option:: -h, --help
 
     Print usage information and exit.
+
+.. option:: --path
+
+    Specify the path of runroot for commands (init, remove, verify).
 
 init
 ----
