@@ -24,7 +24,7 @@
 #include <iostream>
 #include "NextHopConfig.h"
 #include "tsconfig/Errata.h"
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 #include "yaml-cpp/yaml.h"
 
 #define CATCH_CONFIG_MAIN

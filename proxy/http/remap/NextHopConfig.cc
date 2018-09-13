@@ -29,7 +29,7 @@
 #include <unordered_set>
 #include <string.h>
 
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 ts::Errata
 NextHopConfig::loadConfig(const char *fileName)

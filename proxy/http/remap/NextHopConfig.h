@@ -28,7 +28,7 @@
 #include <vector>
 #include <iostream>
 
-#include "ts/EnumDescriptor.h"
+#include "tscore/EnumDescriptor.h"
 #include "tsconfig/Errata.h"
 
 enum NextHopSelectionPolicy { POLICY_UNDEFINED = 0, CONSISTENT_HASH, FIRST_LIVE, RR_STRICT, RR_IP, LATCHED };

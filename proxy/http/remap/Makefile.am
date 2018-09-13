@@ -71,7 +71,7 @@ test_NextHopConfig_LDADD = \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/lib/yamlcpp/libyamlcpp.la 
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
