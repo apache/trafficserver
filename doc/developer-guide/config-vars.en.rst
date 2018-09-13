@@ -29,7 +29,7 @@
 
 .. |apidefs.h.in| replace:: ``apidefs.h.in``
 
-.. _apidefs.h.in: https://github.com/apache/trafficserver/blob/master/lib/ts/apidefs.h.in
+.. _apidefs.h.in: https://github.com/apache/trafficserver/blob/master/include/ts/apidefs.h.in
 
 .. |InkAPI.cc| replace:: ``InkAPI.cc``
 
