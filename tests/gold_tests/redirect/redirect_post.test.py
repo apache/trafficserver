@@ -39,8 +39,9 @@ dest_serv = Test.MakeOriginServer("dest_server")
 ts.Disk.records_config.update({
     'proxy.config.http.number_of_redirections': MAX_REDIRECT,
     'proxy.config.http.post_copy_size' : 919430601,
-    'proxy.config.http.cache.http': 0  # ,
-    # 'proxy.config.diags.debug.enabled': 1
+    'proxy.config.http.cache.http': 0,
+    'proxy.config.http.redirect.actions': 'self:follow', # redirects to self are not followed by default
+    # 'proxy.config.diags.debug.enabled': 1,
 })
 
 redirect_request_header = {"headers": "POST /redirect1 HTTP/1.1\r\nHost: *\r\nContent-Length: 52428800\r\n\r\n", "timestamp": "5678", "body": ""}
