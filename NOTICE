@@ -71,12 +71,12 @@ Copyright (C) 2012 GoDaddy Operating Company, LLC
 
 ~~~
 
-lib/ts/HashFNV.cc contains code derived from code at http://www.isthe.com/chongo/tech/comp/fnv/
+src/tscore/HashFNV.cc contains code derived from code at http://www.isthe.com/chongo/tech/comp/fnv/
 It is public domain and has no copyright.
 
 ~~
 
-lib/ts/HashSip.cc contains code derived from code at https://github.com/floodyberry/siphash
+src/tscore/HashSip.cc contains code derived from code at https://github.com/floodyberry/siphash
 The code is public domain.
 
 The algorithm info can be found at: https://131002.net/siphash/
