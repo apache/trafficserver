@@ -87,11 +87,9 @@ src/tscore/test_Map
 src/tscore/test_Vec
 src/tscore/test_geometry
 src/tscore/test_Regex
-src/tscore/test_PriorityQueue
 src/tscore/test_X509HostnameValidator
 src/tscore/test_tscore
 src/tscpp/util/test_tscpputil
-src/tscore/test_libtscore
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
