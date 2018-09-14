@@ -448,7 +448,8 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
 std::vector<QUICFrameType>
 QUICNetVConnection::interests()
 {
-  return {QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA, QUICFrameType::NEW_CONNECTION_ID};
+  return {QUICFrameType::APPLICATION_CLOSE, QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA,
+          QUICFrameType::NEW_CONNECTION_ID};
 }
 
 QUICErrorUPtr
