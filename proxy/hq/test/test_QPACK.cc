@@ -287,7 +287,7 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   int n_requests                  = load_qif_file(qif_file, requests);
 
   QUICApplicationDriver driver;
-  QPACK *qpack                   = new QPACK(driver.get_connection(), dts);
+  QPACK *qpack                   = new QPACK(driver.get_connection(), dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
   TestQUICStream *decoder_stream = new TestQUICStream(9999);
   qpack->set_stream(encoder_stream);
@@ -324,7 +324,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
 {
   int ret = 0;
 
-  FILE *fd_in = fopen(enc_file, "r");
+  FILE *fd_in  = fopen(enc_file, "r");
   FILE *fd_out = fopen(out_file, "w");
 
   // HTTPHdr *requests[MAX_SEQUENCE];
@@ -333,7 +333,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
 
   QUICApplicationDriver driver;
-  QPACK *qpack                   = new QPACK(driver.get_connection(), dts);
+  QPACK *qpack                   = new QPACK(driver.get_connection(), dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
   qpack->set_stream(encoder_stream);
 
@@ -442,7 +442,7 @@ TEST_CASE("Decoding", "[qpack-decode]")
       sprintf(enc_file, "%s/%s/%s", enc_file, appname, d->d_name);
       stat(enc_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, pattern)) {
-        out_file[strlen(encdir)] = '\0';
+        out_file[strlen(decdir)] = '\0';
         sprintf(out_file, "%s/%s/%s.decoded", out_file, appname, d->d_name);
         CHECK(test_decode(enc_file, out_file, tablesize, streams, ackmode, appname) == 0);
       }

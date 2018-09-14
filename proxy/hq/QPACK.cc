@@ -93,7 +93,11 @@ const QPACK::Header QPACK::StaticTable::STATIC_HEADER_FIELDS[] = {{"", ""}, // I
                                                                   {"via", ""},
                                                                   {"www-authenticate", ""}};
 
-QPACK::QPACK(QUICConnection *qc, size_t maximum_size) : QUICApplication(qc), _dynamic_table(SETTINGS_HEADER_TABLE_SIZE)
+QPACK::QPACK(QUICConnection *qc, uint16_t max_table_size, uint16_t max_blocking_streams)
+  : QUICApplication(qc),
+    _dynamic_table(max_table_size),
+    _max_table_size(max_table_size),
+    _max_blocking_streams(max_blocking_streams)
 {
   SET_HANDLER(&QPACK::event_handler);
 
@@ -1108,7 +1112,13 @@ QPACK::_attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *
 //
 // DynamicTable
 //
-QPACK::DynamicTable::DynamicTable(uint16_t size) : _available(size), _storage(new DynamicTableStorage(size)) {}
+QPACK::DynamicTable::DynamicTable(uint16_t size) : _available(size), _max_entries(size), _storage(new DynamicTableStorage(size))
+{
+  QPACKDTDebug("Dynamic table size: %u", size);
+  this->_entries      = static_cast<struct DynamicTableEntry *>(ats_malloc(sizeof(struct DynamicTableEntry) * size));
+  this->_entries_head = size - 1;
+  this->_entries_tail = size - 1;
+}
 
 QPACK::DynamicTable::~DynamicTable()
 {
@@ -1116,12 +1126,16 @@ QPACK::DynamicTable::~DynamicTable()
     delete this->_storage;
     this->_storage = nullptr;
   }
+  if (this->_entries) {
+    delete this->_entries;
+    this->_entries = nullptr;
+  }
 }
 
 const QPACK::LookupResult
 QPACK::DynamicTable::lookup(uint16_t index, const char **name, int *name_len, const char **value, int *value_len)
 {
-  uint16_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % countof(this->_entries);
+  uint16_t pos = (this->_entries_head + (index - this->_entries[this->_entries_head].index)) % this->_max_entries;
   *name_len    = this->_entries[pos].name_len;
   *value_len   = this->_entries[pos].value_len;
   this->_storage->read(this->_entries[pos].offset, name, *name_len, value, *value_len);
@@ -1136,7 +1150,7 @@ QPACK::DynamicTable::lookup(const char *name, int name_len, const char *value, i
   uint16_t candidate_index                  = 0;
   const char *tmp_name                      = nullptr;
   const char *tmp_value                     = nullptr;
-  int n                                     = countof(this->_entries);
+  int n                                     = this->_max_entries;
 
   // TODO Use a tree for better perfomance
   for (; i < n; ++i) {
@@ -1187,7 +1201,7 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
       break;
     }
     available += this->_entries[tail].name_len + this->_entries[tail].value_len;
-    tail = (tail + 1) % countof(this->_entries);
+    tail = (tail + 1) % this->_max_entries;
   }
   if (available < required_len) {
     // We can't insert a new entry because some stream(s) refer an entry that need to be evicted
@@ -1199,7 +1213,7 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
   this->_entries_tail = tail;
 
   // Insert
-  this->_entries_head                 = (this->_entries_head + 1) % countof(this->_entries);
+  this->_entries_head                 = (this->_entries_head + 1) % this->_max_entries;
   this->_entries[this->_entries_head] = {++this->_entries_inserted, this->_storage->write(name, name_len, value, value_len),
                                          name_len, value_len, 0};
   this->_available -= required_len;

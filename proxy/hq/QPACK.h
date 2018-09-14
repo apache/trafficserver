@@ -43,7 +43,7 @@ constexpr int SETTINGS_QPACK_BLOCKED_STREAMS = 100;
 class QPACK : public QUICApplication
 {
 public:
-  QPACK(QUICConnection *qc, size_t maximum_size);
+  QPACK(QUICConnection *qc, uint16_t max_table_size, uint16_t max_blocking_streams);
   virtual ~QPACK();
 
   int event_handler(int event, Event *data);
@@ -137,10 +137,11 @@ private:
     uint16_t _entries_inserted = 0;
 
     // FIXME It may be better to split this array into small arrays to reduce memory footprint
-    struct DynamicTableEntry _entries[SETTINGS_HEADER_TABLE_SIZE] = {{}};
-    uint16_t _entries_head                                        = countof(_entries) - 1;
-    uint16_t _entries_tail                                        = countof(_entries) - 1;
-    DynamicTableStorage *_storage                                 = nullptr;
+    struct DynamicTableEntry *_entries = nullptr;
+    uint16_t _max_entries              = 0;
+    uint16_t _entries_head             = 0;
+    uint16_t _entries_tail             = 0;
+    DynamicTableStorage *_storage      = nullptr;
   };
 
   class DecodeRequest
@@ -236,6 +237,8 @@ private:
 
   DynamicTable _dynamic_table;
   std::map<uint64_t, struct EntryReference> _references;
+  uint16_t _max_table_size       = 0;
+  uint16_t _max_blocking_streams = 0;
 
   Continuation *_event_handler = nullptr;
   void _resume_decode();
