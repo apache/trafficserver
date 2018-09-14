@@ -21,13 +21,10 @@
     limitations under the License.
 */
 
-#include <iostream>
-#include <utility>
-#include <cstring>
-
-#include "tscore/TestBox.h"
+#include <stdint.h>
 
 #include "tscore/PriorityQueue.h"
+#include "catch.hpp"
 
 using namespace std;
 
@@ -48,33 +45,18 @@ public:
 using Entry = PriorityQueueEntry<N *>;
 using PQ    = PriorityQueue<N *>;
 
-// For debug
-void
-dump(PQ *pq)
-{
-  std::vector<Entry *> v = pq->dump();
-
-  for (auto &i : v) {
-    cout << i->index << "," << i->node->weight << "," << i->node->content << endl;
-  }
-  cout << "--------" << endl;
-}
-
 // Push, top, and pop a entry
-REGRESSION_TEST(PriorityQueue_1)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue1", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq         = new PQ();
   N *a           = new N(6, "A");
   Entry *entry_a = new Entry(a);
 
   pq->push(entry_a);
-  box.check(pq->top() == entry_a, "top should be entry_a");
+  REQUIRE(pq->top() == entry_a);
 
   pq->pop();
-  box.check(pq->top() == nullptr, "top should be NULL");
+  REQUIRE(pq->top() == nullptr);
 
   delete pq;
   delete a;
@@ -82,11 +64,8 @@ REGRESSION_TEST(PriorityQueue_1)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 }
 
 // Increase weight
-REGRESSION_TEST(PriorityQueue_2)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue2", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq = new PQ();
 
   N *a = new N(10, "A");
@@ -101,17 +80,17 @@ REGRESSION_TEST(PriorityQueue_2)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->push(entry_b);
   pq->push(entry_c);
 
-  box.check(pq->top() == entry_a, "top should be entry_a");
+  REQUIRE(pq->top() == entry_a);
 
   a->weight = 40;
   pq->update(entry_a);
 
-  box.check(pq->top() == entry_b, "top should be entry_b");
+  REQUIRE(pq->top() == entry_b);
 
   b->weight = 50;
   pq->update(entry_b, true);
 
-  box.check(pq->top() == entry_c, "top should be entry_c");
+  REQUIRE(pq->top() == entry_c);
 
   delete pq;
 
@@ -125,11 +104,8 @@ REGRESSION_TEST(PriorityQueue_2)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 }
 
 // Decrease weight
-REGRESSION_TEST(PriorityQueue_3)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue3", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq = new PQ();
 
   N *a = new N(10, "A");
@@ -144,17 +120,17 @@ REGRESSION_TEST(PriorityQueue_3)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->push(entry_b);
   pq->push(entry_c);
 
-  box.check(pq->top() == entry_a, "top should be entry_a");
+  REQUIRE(pq->top() == entry_a);
 
   b->weight = 5;
   pq->update(entry_b);
 
-  box.check(pq->top() == entry_b, "top should be entry_b");
+  REQUIRE(pq->top() == entry_b);
 
   c->weight = 3;
   pq->update(entry_c, false);
 
-  box.check(pq->top() == entry_c, "top should be entry_c");
+  REQUIRE(pq->top() == entry_c);
 
   delete pq;
 
@@ -168,11 +144,8 @@ REGRESSION_TEST(PriorityQueue_3)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 }
 
 // Push, top, and pop 9 entries
-REGRESSION_TEST(PriorityQueue_4)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue4", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq = new PQ();
 
   N *a = new N(6, "A");
@@ -205,26 +178,26 @@ REGRESSION_TEST(PriorityQueue_4)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->push(entry_h);
   pq->push(entry_i);
 
-  box.check(pq->top() == entry_b, "top should be entry_b"); // 1
+  REQUIRE(pq->top() == entry_b); // 1
   pq->pop();
-  box.check(pq->top() == entry_g, "top should be entry_g"); // 2
+  REQUIRE(pq->top() == entry_g); // 2
   pq->pop();
-  box.check(pq->top() == entry_f, "top should be entry_f"); // 3
+  REQUIRE(pq->top() == entry_f); // 3
   pq->pop();
-  box.check(pq->top() == entry_e, "top should be entry_e"); // 4
+  REQUIRE(pq->top() == entry_e); // 4
   pq->pop();
-  box.check(pq->top() == entry_i, "top should be entry_i"); // 5
+  REQUIRE(pq->top() == entry_i); // 5
   pq->pop();
-  box.check(pq->top() == entry_a, "top should be entry_a"); // 6
+  REQUIRE(pq->top() == entry_a); // 6
   pq->pop();
-  box.check(pq->top() == entry_h, "top should be entry_h"); // 7
+  REQUIRE(pq->top() == entry_h); // 7
   pq->pop();
-  box.check(pq->top() == entry_d, "top should be entry_d"); // 8
+  REQUIRE(pq->top() == entry_d); // 8
   pq->pop();
-  box.check(pq->top() == entry_c, "top should be entry_c"); // 9
+  REQUIRE(pq->top() == entry_c); // 9
   pq->pop();
 
-  box.check(pq->top() == nullptr, "top should be NULL");
+  REQUIRE(pq->top() == nullptr);
 
   delete pq;
 
@@ -249,12 +222,9 @@ REGRESSION_TEST(PriorityQueue_4)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   delete entry_i;
 }
 
-// // Push, top, pop, and update 9 entries
-REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+// Push, top, pop, and update 9 entries
+TEST_CASE("PriorityQueue5", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq = new PQ();
 
   N *a = new N(6, "A");
@@ -288,7 +258,7 @@ REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->push(entry_i);
 
   // Pop head and push it back again
-  box.check(pq->top() == entry_b, "top should be entry_b"); // 1
+  REQUIRE(pq->top() == entry_b); // 1
   pq->pop();
   b->weight += 100;
   pq->push(entry_b);
@@ -303,26 +273,26 @@ REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq->update(entry_g);
 
   // Check
-  box.check(pq->top() == entry_f, "top should be entry_f"); // 3
+  REQUIRE(pq->top() == entry_f); // 3
   pq->pop();
-  box.check(pq->top() == entry_i, "top should be entry_i"); // 5
+  REQUIRE(pq->top() == entry_i); // 5
   pq->pop();
-  box.check(pq->top() == entry_h, "top should be entry_h"); // 7
+  REQUIRE(pq->top() == entry_h); // 7
   pq->pop();
-  box.check(pq->top() == entry_d, "top should be entry_d"); // 8
+  REQUIRE(pq->top() == entry_d); // 8
   pq->pop();
-  box.check(pq->top() == entry_b, "top should be entry_b"); // 101
+  REQUIRE(pq->top() == entry_b); // 101
   pq->pop();
-  box.check(pq->top() == entry_g, "top should be entry_g"); // 102
+  REQUIRE(pq->top() == entry_g); // 102
   pq->pop();
-  box.check(pq->top() == entry_e, "top should be entry_e"); // 104
+  REQUIRE(pq->top() == entry_e); // 104
   pq->pop();
-  box.check(pq->top() == entry_a, "top should be entry_a"); // 106
+  REQUIRE(pq->top() == entry_a); // 106
   pq->pop();
-  box.check(pq->top() == entry_c, "top should be entry_c"); // 109
+  REQUIRE(pq->top() == entry_c); // 109
   pq->pop();
 
-  box.check(pq->top() == nullptr, "top should be NULL");
+  REQUIRE(pq->top() == nullptr);
 
   delete pq;
 
@@ -348,11 +318,8 @@ REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 }
 
 // Test erase method
-REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue6", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq = new PQ();
 
   N *a = new N(10, "A");
@@ -369,26 +336,26 @@ REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   uint32_t index;
 
-  box.check(pq->top() == entry_a, "top should be entry_a");
+  REQUIRE(pq->top() == entry_a);
 
   index = entry_a->index;
   pq->erase(entry_a);
-  box.check(entry_a->index == index, "index should be the same");
+  REQUIRE(entry_a->index == index);
 
-  box.check(pq->top() == entry_b, "top should be entry_b");
+  REQUIRE(pq->top() == entry_b);
 
   index = entry_c->index;
   pq->erase(entry_c);
-  box.check(entry_c->index == index, "index should be the same");
+  REQUIRE(entry_c->index == index);
 
-  box.check(pq->top() == entry_b, "top should be entry_b");
+  REQUIRE(pq->top() == entry_b);
 
   index = entry_b->index;
   pq->erase(entry_b);
-  box.check(entry_b->index == index, "index should be the same");
+  REQUIRE(entry_b->index == index);
 
-  box.check(pq->top() == nullptr, "top should be NULL");
-  box.check(pq->empty(), "should be empty");
+  REQUIRE(pq->top() == nullptr);
+  REQUIRE(pq->empty());
 
   delete pq;
 
@@ -417,14 +384,14 @@ REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq2->push(entry_x);
   pq2->push(entry_w);
 
-  box.check(pq2->top() == entry_w, "top should be entry_w 1");
+  REQUIRE(pq2->top() == entry_w);
   pq2->erase(entry_x);
-  box.check(pq2->top() == entry_w, "top should be entry_w 2");
+  REQUIRE(pq2->top() == entry_w);
   // The following two cases should test that erase preserves the index
   pq2->erase(entry_y);
-  box.check(pq2->top() == entry_w, "top should be entry_w 3");
+  REQUIRE(pq2->top() == entry_w);
   pq2->erase(entry_z);
-  box.check(pq2->top() == entry_w, "top should be entry_w 4");
+  REQUIRE(pq2->top() == entry_w);
 
   delete pq2;
 
@@ -440,11 +407,8 @@ REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 }
 
 // Test erase and pop method to ensure the index entries are updated (TS-4915)
-REGRESSION_TEST(PriorityQueue_7)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue7", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq2 = new PQ();
 
   N *x = new N(20, "X");
@@ -459,11 +423,11 @@ REGRESSION_TEST(PriorityQueue_7)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   pq2->push(entry_y);
   pq2->push(entry_x);
 
-  box.check(pq2->top() == entry_x, "top should be entry_x");
+  REQUIRE(pq2->top() == entry_x);
   pq2->pop();
-  box.check(pq2->top() == entry_y, "top should be entry_y");
+  REQUIRE(pq2->top() == entry_y);
   pq2->erase(entry_y);
-  box.check(pq2->top() == entry_z, "top should be entry_z");
+  REQUIRE(pq2->top() == entry_z);
 
   delete pq2;
 
@@ -477,11 +441,8 @@ REGRESSION_TEST(PriorityQueue_7)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 }
 
 // Test erase and pop method to ensure the index entries are correctly
-REGRESSION_TEST(PriorityQueue_pop_and_erase)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue8", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq1 = new PQ();
   PQ *pq2 = new PQ();
 
@@ -503,15 +464,15 @@ REGRESSION_TEST(PriorityQueue_pop_and_erase)(RegressionTest *t, int /* atype ATS
 
   pq1->push(pq2->top());
   pq2->pop();
-  box.check(pq1->top()->index == 0, "Top index should be zero, but got %d", pq1->top()->index);
+  REQUIRE(pq1->top()->index == 0);
 
   pq1->push(pq2->top());
   pq2->pop();
-  box.check(pq1->top()->index == 0, "Top index should be zero, but got %d", pq1->top()->index);
+  REQUIRE(pq1->top()->index == 0);
 
   pq1->push(pq2->top());
   pq2->pop();
-  box.check(pq1->top()->index == 0, "Top index should be zero, but got %d", pq1->top()->index);
+  REQUIRE(pq1->top()->index == 0);
 
   delete pq1;
   delete pq2;
@@ -525,11 +486,8 @@ REGRESSION_TEST(PriorityQueue_pop_and_erase)(RegressionTest *t, int /* atype ATS
   delete entry_z;
 }
 
-REGRESSION_TEST(PriorityQueue_pop_and_erase_2)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("PriorityQueue9", "[libts][PriorityQueue]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   PQ *pq1 = new PQ();
 
   N *x = new N(20, "X");
@@ -538,13 +496,14 @@ REGRESSION_TEST(PriorityQueue_pop_and_erase_2)(RegressionTest *t, int /* atype A
   Entry *X = new Entry(x);
   Entry *Y = new Entry(y);
 
-  box.check(X->index == 0 && Y->index == 0, "X and Y index should be 0");
+  REQUIRE(X->index == 0);
+  REQUIRE(Y->index == 0);
 
   pq1->push(X);
 
   pq1->erase(Y);
 
-  box.check(pq1->top() == X, "X should be in queue");
+  REQUIRE(pq1->top() == X);
 
   delete x;
   delete y;
