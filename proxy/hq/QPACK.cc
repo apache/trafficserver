@@ -1162,9 +1162,17 @@ QPACK::DynamicTable::lookup(const char *name, int name_len, const char *value, i
 const QPACK::LookupResult
 QPACK::DynamicTable::insert_entry(bool is_static, uint16_t index, const char *value, uint16_t value_len)
 {
-  // TODO Implement it.
-  ink_assert(!"not implemented");
-  return {};
+  const char *name;
+  int name_len;
+  const char *dummy;
+  int dummy_len;
+
+  if (is_static) {
+    StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
+  } else {
+    this->lookup(index, &name, &name_len, &dummy, &dummy_len);
+  }
+  return this->insert_entry(name, name_len, value, value_len);
 }
 
 const QPACK::LookupResult
