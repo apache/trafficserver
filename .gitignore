@@ -66,9 +66,9 @@ src/traffic_top/traffic_top
 src/traffic_via/traffic_via
 src/traffic_wccp/traffic_wccp
 
-lib/stamp-h1
-lib/ink_autoconf.h
-lib/ink_autoconf.h.in
+include/stamp-h1
+include/ink_autoconf.h
+include/ink_autoconf.h.in
 src/tscore/stamp-h1
 src/tscore/ink_autoconf.h
 src/tscore/ink_autoconf.h.in
