@@ -448,7 +448,7 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
 std::vector<QUICFrameType>
 QUICNetVConnection::interests()
 {
-  return {QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA};
+  return {QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA, QUICFrameType::NEW_CONNECTION_ID};
 }
 
 QUICErrorUPtr
@@ -469,6 +469,9 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
     break;
   case QUICFrameType::BLOCKED:
     // BLOCKED frame is for debugging. Nothing to do here.
+    break;
+  case QUICFrameType::NEW_CONNECTION_ID:
+    error = this->_handle_frame(static_cast<const QUICNewConnectionIdFrame &>(frame));
     break;
   case QUICFrameType::APPLICATION_CLOSE:
   case QUICFrameType::CONNECTION_CLOSE:
@@ -492,6 +495,28 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
     QUICConDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame.type()));
     ink_assert(false);
     break;
+  }
+
+  return error;
+}
+
+QUICErrorUPtr
+QUICNetVConnection::_handle_frame(const QUICNewConnectionIdFrame &frame)
+{
+  QUICErrorUPtr error = std::make_unique<QUICNoError>();
+
+  if (frame.connection_id() == QUICConnectionId::ZERO()) {
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received zero-length cid",
+                                                 QUICFrameType::NEW_CONNECTION_ID);
+  }
+
+  if (this->netvc_context == NET_VCONNECTION_IN && this->_connection_migration_initiated) {
+    // For connection migration testing, server update peer cid every time when it's offered
+    // TODO: update peer cid only if client's local adress is changed
+    this->_connection_migration_initiated = false;
+    this->_update_peer_cid(frame.connection_id());
+  } else {
+    // TODO: on client side, store offered alt cids from server
   }
 
   return error;
@@ -995,6 +1020,7 @@ QUICNetVConnection::_state_common_receive_packet()
           con.setRemote(&p->from().sa);
           this->con.move(con);
           QUICConDebug("Connection migrated");
+          this->_connection_migration_initiated = true;
           this->_validate_new_path();
         } else {
           char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
