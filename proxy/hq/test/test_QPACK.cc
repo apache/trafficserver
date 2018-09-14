@@ -32,6 +32,8 @@
 
 // Declared in main_qpack.cc
 extern char qifdir[256];
+extern char encdir[256];
+extern char decdir[256];
 extern int tablesize;
 extern int streams;
 extern int ackmode;
@@ -275,13 +277,11 @@ acknowledge_header_block(TestQUICStream *stream, uint64_t stream_id)
 }
 
 static int
-test_encode(const char *qif_file, int dts, int mbs, int am)
+test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am)
 {
   int ret = 0;
 
-  char output_filename[256];
-  sprintf(output_filename, "%s.ats.%d.%d.%d", qif_file, dts, mbs, am);
-  FILE *fd = fopen(output_filename, "w");
+  FILE *fd = fopen(out_file, "w");
 
   HTTPHdr *requests[MAX_SEQUENCE] = {nullptr};
   int n_requests                  = load_qif_file(qif_file, requests);
@@ -320,20 +320,15 @@ test_encode(const char *qif_file, int dts, int mbs, int am)
 }
 
 static int
-test_decode(const char *qif_file, int dts, int mbs, int am, const char *app_name)
+test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am, const char *app_name)
 {
   int ret = 0;
 
-  char data_filename[256];
-  sprintf(data_filename, "%s.%s.%d.%d.%d", qif_file, app_name, dts, mbs, am);
-  FILE *fd_in = fopen(data_filename, "r");
+  FILE *fd_in = fopen(enc_file, "r");
+  FILE *fd_out = fopen(out_file, "w");
 
-  char output_filename[256];
-  sprintf(output_filename, "%s.decoded", data_filename);
-  FILE *fd_out = fopen(output_filename, "w");
-
-  HTTPHdr *requests[MAX_SEQUENCE];
-  int n_requests = load_qif_file(qif_file, requests);
+  // HTTPHdr *requests[MAX_SEQUENCE];
+  // int n_requests = load_qif_file(qif_file, requests);
 
   TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
 
@@ -369,7 +364,7 @@ test_decode(const char *qif_file, int dts, int mbs, int am, const char *app_name
     return -1;
   }
 
-  sleep(3);
+  sleep(5);
 
   CHECK(event_handler->last_event() == QPACK_EVENT_DECODE_COMPLETE);
 
@@ -385,7 +380,7 @@ test_decode(const char *qif_file, int dts, int mbs, int am, const char *app_name
   return ret;
 }
 
-TEST_CASE("Encoding", "[qpack]")
+TEST_CASE("Encoding", "[qpack-encode]")
 {
   struct dirent *d;
   DIR *dir = opendir(qifdir);
@@ -396,7 +391,9 @@ TEST_CASE("Encoding", "[qpack]")
 
   struct stat st;
   char qif_file[PATH_MAX + 1] = "";
+  char out_file[PATH_MAX + 1] = "";
   strcat(qif_file, qifdir);
+  strcat(out_file, encdir);
 
   while ((d = readdir(dir)) != nullptr) {
     char section_name[128];
@@ -408,36 +405,46 @@ TEST_CASE("Encoding", "[qpack]")
       ink_strlcat(qif_file, d->d_name, sizeof(qif_file));
       stat(qif_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, ".qif") == (d->d_name + (strlen(d->d_name) - 4))) {
-        CHECK(test_encode(qif_file, tablesize, streams, ackmode) == 0);
+        out_file[strlen(encdir)] = '\0';
+        sprintf(out_file, "%s/ats/%s.ats.%d.%d.%d", out_file, d->d_name, tablesize, streams, ackmode);
+        CHECK(test_encode(qif_file, out_file, tablesize, streams, ackmode) == 0);
       }
     }
   }
 }
 
-TEST_CASE("Decoding", "[qpack]")
+TEST_CASE("Decoding", "[qpack-decode]")
 {
+  char app_dir[PATH_MAX + 1] = "";
+  sprintf(app_dir, "%s/%s", encdir, appname);
   struct dirent *d;
-  DIR *dir = opendir(qifdir);
+  DIR *dir = opendir(app_dir);
 
   if (dir == nullptr) {
     return;
   }
 
   struct stat st;
-  char qif_file[PATH_MAX + 1] = "";
-  strcat(qif_file, qifdir);
+  char enc_file[PATH_MAX + 1] = "";
+  char out_file[PATH_MAX + 1] = "";
+  char pattern[PATH_MAX + 1]  = "";
+  strcat(enc_file, encdir);
+  strcat(out_file, decdir);
 
+  sprintf(pattern, ".%d.%d.%d", tablesize, streams, ackmode);
   while ((d = readdir(dir)) != nullptr) {
     char section_name[128];
     sprintf(section_name, "%s: DTS=%d, MBS=%d, AM=%d, APP=%s", d->d_name, tablesize, streams, ackmode, appname);
     SECTION(section_name)
     {
-      qif_file[strlen(qifdir)]     = '/';
-      qif_file[strlen(qifdir) + 1] = '\0';
-      ink_strlcat(qif_file, d->d_name, sizeof(qif_file));
-      stat(qif_file, &st);
-      if (S_ISREG(st.st_mode) && strstr(d->d_name, ".qif") == (d->d_name + (strlen(d->d_name) - 4))) {
-        CHECK(test_decode(qif_file, tablesize, streams, ackmode, appname) == 0);
+      enc_file[strlen(encdir)]     = '/';
+      enc_file[strlen(encdir) + 1] = '\0';
+      sprintf(enc_file, "%s/%s/%s", enc_file, appname, d->d_name);
+      stat(enc_file, &st);
+      if (S_ISREG(st.st_mode) && strstr(d->d_name, pattern)) {
+        out_file[strlen(encdir)] = '\0';
+        sprintf(out_file, "%s/%s/%s.decoded", out_file, appname, d->d_name);
+        CHECK(test_decode(enc_file, out_file, tablesize, streams, ackmode, appname) == 0);
       }
     }
   }

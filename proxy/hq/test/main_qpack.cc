@@ -40,7 +40,9 @@
 
 #define TEST_THREADS 1
 
-char qifdir[256]  = "test/qif/";
+char qifdir[256]  = "./qifs/qifs";
+char encdir[256]  = "./qifs/encoded";
+char decdir[256]  = "./qifs/decoded";
 int tablesize     = 4096;
 int streams       = 100;
 int ackmode       = 0;
@@ -83,10 +85,12 @@ main(int argc, char *argv[])
 {
   Catch::Session session;
   using namespace Catch::clara;
-  auto cli = session.cli() | Opt(qifdir, "dir")["--q-qif-dir"]("path for a directory that contains QIF files (default:test/qif/") |
-             Opt(tablesize, "size")["--q-dynamic-table-size"]("dynamic table size: 0-65535 (default:4096)") |
-             Opt(streams, "n")["--q-max-blocked-streams"]("max blocked streams: 0-65535 (default:100)") |
-             Opt(ackmode, "mode")["--q-ack-mode"]("acknowledgement mode: none(default:0) or immediate(1)") |
+  auto cli = session.cli() | Opt(qifdir, "qifdir")["--q-qif-dir"]("path for a directory that contains QIF files (default:qifs/qifs") |
+             Opt(encdir, "encdir")["--q-encoded-dir"]("path for a directory that encoded files will be stored (default:qifs/encoded)") |
+             Opt(encdir, "decdir")["--q-decoded-dir"]("path for a directory that decoded files will be stored (default:qifs/decoded)") |
+             Opt(tablesize, "size")["--q-dynamic-table-size"]("dynamic table size for encoding: 0-65535 (default:4096)") |
+             Opt(streams, "n")["--q-max-blocked-streams"]("max blocked streams for encoding: 0-65535 (default:100)") |
+             Opt(ackmode, "mode")["--q-ack-mode"]("acknowledgement modes for encoding: none(default:0) or immediate(1)") |
              Opt(appname, "app")["--q-app"]("app name: app name (default:ats)");
 
   session.cli(cli);
