@@ -521,10 +521,6 @@ add_executable(ats
         plugins/experimental/buffer_upload/buffer_upload.cc
         plugins/experimental/cache_key_genid/cache_key_genid.c
         plugins/experimental/cache_range_requests/cache_range_requests.cc
-        plugins/experimental/collapsed_connection/collapsed_connection.cc
-        plugins/experimental/collapsed_connection/MurmurHash3.cc
-        plugins/experimental/collapsed_connection/MurmurHash3.h
-        plugins/experimental/collapsed_connection/P_collapsed_connection.h
         plugins/experimental/collapsed_forwarding/collapsed_forwarding.cc
         plugins/experimental/custom_redirect/custom_redirect.cc
         plugins/experimental/geoip_acl/acl.cc
