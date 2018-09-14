@@ -25,8 +25,8 @@ experimental_webp_transform_WebpTransform_la_SOURCES = \
 
 experimental_webp_transform_WebpTransform_la_LDFLAGS = \
   $(AM_LDFLAGS) \
-  -L$(top_builddir)/lib/cppapi
+  -L$(top_builddir)/src/tscpp/api
 
 experimental_webp_transform_WebpTransform_la_LIBADD = \
-  -latscppapi \
+  -ltscppapi \
   $(LIBMAGICKCPP_LIBS)
