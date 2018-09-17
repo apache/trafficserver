@@ -1065,14 +1065,9 @@ add_library(libtscore SHARED
         include/tscore/SimpleTokenizer.h
         src/tscore/SourceLocation.cc
         include/tscore/SourceLocation.h
-        src/tscore/test_arena.cc
         src/tscore/test_atomic.cc
         src/tscore/test_freelist.cc
         src/tscore/test_geometry.cc
-        src/tscore/test_List.cc
-        src/tscore/test_Map.cc
-        src/tscore/test_Vec.cc
-        src/tscore/test_X509HostnameValidator.cc
         include/tscore/TestBox.h
         src/tscore/TestHttpHeader.cc
         src/tscore/tests.cc
@@ -1090,6 +1085,7 @@ add_library(libtscore SHARED
 
 add_executable(test_tscore
 	src/tscore/unit_tests/unit_test_main.cc
+	src/tscore/unit_tests/test_arena.cc
 	src/tscore/unit_tests/test_BufferWriter.cc
 	src/tscore/unit_tests/test_BufferWriterFormat.cc
 	src/tscore/unit_tests/test_History.cc
@@ -1099,6 +1095,8 @@ add_executable(test_tscore
 	src/tscore/unit_tests/test_IntrusivePtr.cc
 	src/tscore/unit_tests/test_IpMap.cc
 	src/tscore/unit_tests/test_layout.cc
+	src/tscore/unit_tests/test_List.cc
+	src/tscore/unit_tests/test_Map.cc
 	src/tscore/unit_tests/test_MemArena.cc
 	src/tscore/unit_tests/test_MemSpan.cc
 	src/tscore/unit_tests/test_MT_hashtable.cc
@@ -1107,6 +1105,8 @@ add_executable(test_tscore
 	src/tscore/unit_tests/test_Regex.cc
 	src/tscore/unit_tests/test_Scalar.cc
 	src/tscore/unit_tests/test_scoped_resource.cc
+	src/tscore/unit_tests/test_Vec.cc
+	src/tscore/unit_tests/test_X509HostnameValidator.cc
 )
 
 # iocore/cache
