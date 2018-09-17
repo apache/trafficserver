@@ -428,6 +428,7 @@ Changes with Apache Traffic Server 8.0.0
   #2357 - Make swap() in Vec.h a member function of Vec class
   #2360 - Fixes, I think, coverity issues 1379288
   #2362 - Coverity 1379271: Dereference null return
+  #2363 - coverity 1379269: dereference after null check
   #2365 - Coverity 1379270 Out-of-bounds write
   #2374 - Fix traffic_layout to not add messages to --json
   #2381 - Redirect test for ATS
@@ -1225,6 +1226,7 @@ Changes with Apache Traffic Server 8.0.0
   #4199 - Remove unneeded aio header file
   #4208 - Fix inconsistent links in docs.
   #4213 - Disable the HttpSM half open logic if the underlying transport is TLS
+  #4219 - Adding missing image file for Proxy Protocol documentation.
   #4225 - Fixed error getting h2 HEADERS frame after stream is closed
   #4229 - Clarifies code comment for DL_Emergency
   #4230 - Heap use after free
