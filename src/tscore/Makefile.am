@@ -19,7 +19,7 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_arena test_atomic test_freelist test_geometry test_List test_Map test_Vec test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -234,21 +234,12 @@ test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
-test_arena_SOURCES = test_arena.cc
-test_arena_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
-test_List_SOURCES = test_List.cc
-test_Map_SOURCES = test_Map.cc
-test_Map_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
-test_Vec_SOURCES = test_Vec.cc
-test_Vec_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
-test_X509HostnameValidator_SOURCES = test_X509HostnameValidator.cc
+test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
 test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS@
+test_X509HostnameValidator_SOURCES = unit_tests/test_X509HostnameValidator.cc
 
 test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
@@ -258,6 +249,7 @@ test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
+	unit_tests/test_arena.cc \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
 	unit_tests/test_Extendible.cc \
@@ -268,6 +260,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
+	unit_tests/test_List.cc \
+	unit_tests/test_Map.cc \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
@@ -275,7 +269,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
-	unit_tests/test_scoped_resource.cc
+	unit_tests/test_scoped_resource.cc \
+	unit_tests/test_Vec.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
