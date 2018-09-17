@@ -1281,6 +1281,8 @@ QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
     int phrase_len = std::min(msg_len - len, static_cast<size_t>(this->reason_phrase_length()));
     memcpy(msg + len, this->reason_phrase(), phrase_len);
     len += phrase_len;
+    msg[len] = '\0';
+    ++len;
   }
 
   return len;
@@ -1433,6 +1435,26 @@ QUICApplicationCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   }
 
   return *len;
+}
+
+int
+QUICApplicationCloseFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  int len =
+    snprintf(msg, msg_len, "| APPLICATION_CLOSE size=%zu code=%s", this->size(), QUICDebugNames::error_code(this->error_code()));
+
+  if (this->reason_phrase_length() != 0 && this->reason_phrase() != nullptr) {
+    memcpy(msg + len, " reason=", 8);
+    len += 8;
+
+    int phrase_len = std::min(msg_len - len, static_cast<size_t>(this->reason_phrase_length()));
+    memcpy(msg + len, this->reason_phrase(), phrase_len);
+    len += phrase_len;
+    msg[len] = '\0';
+    ++len;
+  }
+
+  return len;
 }
 
 QUICAppErrorCode

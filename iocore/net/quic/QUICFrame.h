@@ -378,9 +378,11 @@ public:
   QUICApplicationCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
   QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length, const char *reason_phrase);
   QUICFrameUPtr clone() const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+
   QUICAppErrorCode error_code() const;
   uint64_t reason_phrase_length() const;
   const char *reason_phrase() const;
