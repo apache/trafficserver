@@ -261,6 +261,21 @@ LogConfig::read_configuration_variables()
   }
 }
 
+static BindingInstance *binding = nullptr;
+
+static
+void
+setup_bindings()
+{
+   if (nullptr == binding) {
+    binding = new BindingInstance;
+    ink_assert(nullptr != binding);
+
+    bool const constructed = binding->construct();
+    ink_assert(constructed);
+  }
+}
+
 /*-------------------------------------------------------------------------
   LogConfig::LogConfig
 
@@ -288,6 +303,7 @@ LogConfig::LogConfig()
   // a LogConfig object is valid upon return from the constructor even
   // if no configuration file is read
   //
+  setup_bindings();
   setup_default_values();
 }
 
@@ -915,15 +931,14 @@ LogConfig::update_space_used()
 bool
 LogConfig::evaluate_config()
 {
-  BindingInstance binding;
   ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", "logging.config"));
 
-  if (!binding.construct()) {
+  if (nullptr == binding) {
     Fatal("failed to initialize Lua runtime");
   }
 
-  if (MakeLogBindings(binding, this)) {
-    return binding.require(path.get());
+  if (MakeLogBindings(*binding, this)) {
+    return binding->require(path.get());
   }
 
   return false;
