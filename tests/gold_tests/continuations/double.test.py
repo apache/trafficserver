@@ -20,6 +20,7 @@ import os
 Test.Summary = '''
 Test transactions and sessions, making sure two continuations catch the same number of hooks.
 '''
+Test.SkipIf(Condition.true('This test errors frequently, and so it is disabled.'))
 Test.SkipUnless(
     Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work")
 )

@@ -20,7 +20,7 @@
 IntrusiveHashMap
 ****************
 
-:class:`IntrusiveHashMap` provides a "hash" or "unordered" set, using intrusive links. It provides a
+:class:`IntrusiveHashMap` provides a "hashed" or "unordered" set, using intrusive links. It provides a
 container for elements, each of which has a :arg:`key`. A hash function is applied to a key to
 generate a :arg:`hash id` which is used to group the elements in to buckets for fast lookup. This
 container is a mix of :code:`std::unordered_set` and :code:`std::unordered_map`. There is no
@@ -29,7 +29,8 @@ separation between elements and keys, but each element can contain non-key data.
 Iteration over elements is provided and is constant time.
 
 In order to optimize lookup, the container can increase the number of buckets used. This is called
-the "expansion policy" of the container and it can be automatic or controlled externally.
+"expansion" and when it occurs is control by the "expansion policy" of the container. The policy can
+be to be automatic or only done explicitly.
 
 Usage
 *****
@@ -96,9 +97,18 @@ Details
 
       An STL compliant iterator over elements in the container.
 
+   .. type:: range
+
+      An STL compliant half open range of elements, represented by a pair of iterators.
+
    .. function:: IntrusiveHashMap & insert(value_type * v)
 
-      Insert the element :arg:`v` into the container.
+      Insert the element :arg:`v` into the container. If there are already elements with the same
+      key, :arg:`v` is inserted after these elements.
+
+      There is no :code:`emplace` because :arg:`v` is put in the container, not a copy of :arg:`v`.
+      For the same reason :arg:`v` must be constructed before calling this method, the container
+      will never create an element instance.
 
    .. function:: iterator begin()
 
@@ -112,6 +122,13 @@ Details
 
       Search for :arg:`v` in the container. If found, return an iterator refering to :arg:`v`. If not
       return the end iterator. This validates :arg:`v` is in the container.
+
+   .. function:: range equal_range(key_type key)
+
+      Find all elements with a key that is equal to :arg:`key`. The returned value is a half open
+      range starting with the first matching element to one past the last matching element. All
+      element in the range will have a key that is equal to :arg:`key`. If no element has a matching
+      key the range will be empty.
 
    .. function:: IntrusiveHashMap & erase(iterator spot)
 
@@ -149,10 +166,11 @@ Design Notes
 This is a refresh of an previously existing class, :code:`TSHahTable`. The switch to C++ 11 and then
 C++ 17 made it possible to do much better in terms of the internal implementation and API. The
 overall functionality is the roughly the same but with an easier API, compatiblity with
-:class:`IntrusiveDList`, and better internal implementation.
+:class:`IntrusiveDList`, improved compliance with STL container standards, and better internal
+implementation.
 
 The biggest change is that elements are stored in a single global list rather than per hash bucket.
-The buckets server only as entry points in to the global list and to count the number of elements
+The buckets serve only as entry points in to the global list and to count the number of elements
 per bucket. This simplifies the implementation of iteration, so that the old :code:`Location` nested
 class can be removed. Elements with equal keys can be handled in the same way as with STL
 containers, via iterator ranges, instead of a custom psuedo-iterator class.

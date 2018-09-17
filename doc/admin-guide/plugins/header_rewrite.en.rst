@@ -197,6 +197,11 @@ rule is evaluated, this condition will always operate on the original, unmapped
 URL supplied by the client. The ``<part>`` may be specified according to the
 options documented in `URL Parts`_.
 
+Note that the HOST ``<part>`` of the CLIENT-URL might not be set until the remap
+phase of the transaction.  This happens when there is no host in the incoming URL
+and only set as a host header.  During the remap phase the host header is copied
+to the CLIENT-URL.  Use CLIENT-HEADER:Host if you are going to match the host.
+
 COOKIE
 ~~~~~~
 ::

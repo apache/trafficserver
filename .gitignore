@@ -26,6 +26,7 @@ Makefile.in
 /build-aux
 /configure
 /tags
+/_build
 
 build/_aux/
 build/libtool.m4

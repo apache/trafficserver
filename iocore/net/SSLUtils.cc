@@ -1842,6 +1842,16 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
       goto fail;
     }
   }
+
+#if TS_USE_TLS_SET_CIPHERSUITES
+  if (params->server_tls13_cipher_suites != nullptr) {
+    if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
+      SSLError("invalid tls server cipher suites in records.config");
+      goto fail;
+    }
+  }
+#endif
+
   if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
     goto fail;
   }

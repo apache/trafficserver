@@ -25,7 +25,6 @@
 #include "ts/List.h"
 #include "ts/ink_mutex.h"
 #include "P_EventSystem.h"
-#include "P_AIO.h"
 #include "I_RecProcess.h"
 #include "ts/ink_platform.h"
 #include "P_SSLUtils.h"

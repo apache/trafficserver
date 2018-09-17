@@ -108,4 +108,43 @@ tr.StillRunningAfter = dns
 tr.Processes.Default.Streams.stdout = "gold/redirect.gold"
 tr.Processes.Default.ReturnCode = 0
 
+
+for status,phrase in sorted({
+        301:'Moved Permanently',
+        302:'Found',
+        303:'See Other',
+        305:'Use Proxy',
+        307:'Temporary Redirect',
+        308:'Permanent Redirect',
+        }.items()):
+
+    redirect_request_header = {
+            "headers": ("GET /redirect{0} HTTP/1.1\r\n"
+                        "Host: *\r\n\r\n").\
+                                format(status),
+            "timestamp": "5678",
+            "body": ""}
+    redirect_response_header = {
+            "headers": ("HTTP/1.1 {0} {1}\r\n"
+                        "Connection: close\r\n"
+                        "Location: /redirect\r\n\r\n").\
+                                format(status, phrase),
+            "timestamp": "5678",
+            "body": ""}
+    redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
+
+    tr = Test.AddTestRun("FollowsRedirect{0}".format(status))
+    with open(os.path.join(data_path, tr.Name), 'w') as f:
+        f.write(('GET /redirect{0} HTTP/1.1\r\n'
+                'Host: iwillredirect.test:{1}\r\n\r\n').\
+                        format(status, redirect_serv.Variables.Port))
+    tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".\
+            format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
+    tr.StillRunningAfter = ts
+    tr.StillRunningAfter = redirect_serv
+    tr.StillRunningAfter = dest_serv
+    tr.StillRunningAfter = dns
+    tr.Processes.Default.Streams.stdout = "gold/redirect.gold"
+    tr.Processes.Default.ReturnCode = 0
+
 Test.Setup.Copy(data_path)

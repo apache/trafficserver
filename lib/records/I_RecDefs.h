@@ -27,8 +27,6 @@
 #include "ts/ink_rwlock.h"
 #include "I_RecMutex.h"
 
-#define STAT_PROCESSOR
-
 //-------------------------------------------------------------------------
 // Error Values
 //-------------------------------------------------------------------------
@@ -67,10 +65,6 @@ enum RecDataT {
   RECD_STRING,
   RECD_COUNTER,
 
-#if defined(STAT_PROCESSOR)
-  RECD_CONST, // Added for the StatProcessor, store as RECD_FLOAT
-  RECD_FX,    // Added for the StatProcessor, store as RECD_INT
-#endif
   RECD_MAX
 };
 

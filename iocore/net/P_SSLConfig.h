@@ -87,6 +87,9 @@ struct SSLConfigParams : public ConfigInfo {
   long ssl_ctx_options;
   long ssl_client_ctx_options;
 
+  char *server_tls13_cipher_suites;
+  char *client_tls13_cipher_suites;
+
   static int ssl_maxrecord;
   static bool ssl_allow_client_renegotiation;
 

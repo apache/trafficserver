@@ -1215,6 +1215,9 @@ AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
 # Check for OCSP
 TS_CHECK_CRYPTO_OCSP
 
+# Check for SSL_CTX_set_ciphersuites call
+TS_CHECK_CRYPTO_SET_CIPHERSUITES
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 

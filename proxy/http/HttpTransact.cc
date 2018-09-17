@@ -3784,6 +3784,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
       case HTTP_STATUS_SEE_OTHER:          // 303
       case HTTP_STATUS_USE_PROXY:          // 305
       case HTTP_STATUS_TEMPORARY_REDIRECT: // 307
+      case HTTP_STATUS_PERMANENT_REDIRECT: // 308
         break;
       default:
         TxnDebug("http_trans", "[hfsco] redirect in progress, non-3xx response, setting cache_do_write");
@@ -5440,7 +5441,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   // If this is an internal request, never keep alive
-  if (!s->txn_conf->keep_alive_enabled_in || (s->state_machine->ua_txn && s->state_machine->ua_txn->ignore_keep_alive())) {
+  if (!s->txn_conf->keep_alive_enabled_in) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else if (vc && vc->get_is_internal_request()) {
     // Following the trail of JIRAs back from TS-4960, there can be issues with

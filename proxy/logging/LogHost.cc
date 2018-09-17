@@ -302,8 +302,8 @@ LogHost::orphan_write_and_try_delete(LogBuffer *&lb)
     m_orphan_file->preproc_and_try_delete(lb);
   } else {
     Debug("log-host", "logging space exhausted, failed to write orphan file, drop(%" PRIu32 ") bytes", lb->header()->byte_count);
-    LogBuffer::destroy(lb);
   }
+  LogBuffer::destroy(lb);
 }
 
 void
@@ -404,14 +404,14 @@ int
 LogHostList::preproc_and_try_delete(LogBuffer *lb)
 {
   int success = false;
-  unsigned nr_host, nr;
+  unsigned nr;
   bool need_orphan        = true;
   LogHost *available_host = nullptr;
 
   ink_release_assert(lb->m_references == 0);
 
-  nr_host = nr = count();
-  ink_atomic_increment(&lb->m_references, nr_host);
+  nr = count();
+  ink_atomic_increment(&lb->m_references, 1);
 
   for (LogHost *host = first(); host && nr; host = next(host)) {
     LogHost *lh    = host;
