@@ -1745,6 +1745,11 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
 {
   Http2StreamDebug(ua_session, id, "Send PING frame");
 
+  // If the connection is the process of shutting down, do not send ping response
+  if (is_state_closed()) {
+    return;
+  }
+
   Http2Frame ping(HTTP2_FRAME_TYPE_PING, id, flag);
 
   ping.alloc(buffer_size_index[HTTP2_FRAME_TYPE_PING]);
