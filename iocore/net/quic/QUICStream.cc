@@ -29,15 +29,15 @@
 #include "QUICDebugNames.h"
 
 #define QUICStreamDebug(fmt, ...)                                                                        \
-  Debug("quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+  Debug("quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
 #define QUICVStreamDebug(fmt, ...)                                                                         \
-  Debug("v_quic_stream", "[%s] [%" PRIx64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+  Debug("v_quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
 #define QUICStreamFCDebug(fmt, ...)                                                                         \
-  Debug("quic_flow_ctrl", "[%s] [%" PRIx64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+  Debug("quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state), ##__VA_ARGS__)
 
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
