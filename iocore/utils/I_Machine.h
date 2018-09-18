@@ -82,7 +82,6 @@ struct Machine {
   static self *instance();
   bool is_self(const char *name);
   bool is_self(const IpAddr *ipaddr);
-  bool is_self(struct sockaddr const *addr);
   void insert_id(char *id);
   void insert_id(IpAddr *ipaddr);
 
