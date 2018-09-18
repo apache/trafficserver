@@ -1215,7 +1215,6 @@ Changes with Apache Traffic Server 8.0.0
   #4131 - Completes code comment for redirect configs
   #4138 - Follows 308 Permanent Redirect
   #4139 - Adds 308 origin response stat metric
-  #4145 - Adds configurable behavior on redirect to loopback
   #4151 - Corrects IPv4 multicast ip address check
   #4165 - Update the header_rewrite doc for clarification on CLIENT-URL:HOST
   #4169 - Multiplexer fixes
