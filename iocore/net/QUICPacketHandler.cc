@@ -107,6 +107,28 @@ QUICPacketHandler::_send_packet(Continuation *c, QUICNetVConnection *vc, Ptr<IOB
   IpEndpoint addr        = vc->con.addr;
   UDPPacket *udp_packet  = new_UDPPacket(addr, 0, udp_payload);
 
+  if (is_debug_tag_set(tag)) {
+    ip_port_text_buffer ipb;
+    QUICConnectionId dcid = QUICConnectionId::ZERO();
+    QUICConnectionId scid = QUICConnectionId::ZERO();
+
+    const uint8_t *buf = reinterpret_cast<uint8_t *>(udp_payload->buf());
+    uint64_t buf_len   = udp_payload->size();
+
+    if (!QUICInvariants::dcid(dcid, buf, buf_len)) {
+      ink_assert(false);
+    }
+
+    if (QUICInvariants::is_long_header(buf)) {
+      if (!QUICInvariants::scid(scid, buf, buf_len)) {
+        ink_assert(false);
+      }
+    }
+
+    QUICDebugDS(dcid, scid, "send %s packet to %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
+                ats_ip_nptop(&addr, ipb, sizeof(ipb)), buf_len);
+  }
+
   udp_con->send(c, udp_packet);
 }
 
@@ -377,10 +399,14 @@ QUICPacketHandlerOut::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp
 void
 QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  ip_port_text_buffer ipb;
-  // TODO: print packet type
-  QUICDebugQC(this->_vc, "recv packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
-              udp_packet->getPktLength());
+  if (is_debug_tag_set(tag)) {
+    IOBufferBlock *block = udp_packet->getIOBlockChain();
+    const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
+
+    ip_port_text_buffer ipb;
+    QUICDebugQC(this->_vc, "recv %s packet from %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
+                ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+  }
 
   this->_vc->handle_received_packet(udp_packet);
   eventProcessor.schedule_imm(this->_vc, ET_CALL, QUIC_EVENT_PACKET_READ_READY, nullptr);
