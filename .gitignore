@@ -81,7 +81,6 @@ src/tscore/ParseRulesCTypeToUpper
 src/tscore/mkdfa
 src/tscore/test_atomic
 src/tscore/test_freelist
-src/tscore/test_Vec
 src/tscore/test_geometry
 src/tscore/test_Regex
 src/tscore/test_X509HostnameValidator

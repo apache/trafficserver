@@ -19,7 +19,7 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_atomic test_freelist test_geometry test_Vec test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -237,9 +237,6 @@ test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
-test_Vec_SOURCES = test_Vec.cc
-test_Vec_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
@@ -277,7 +274,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
-	unit_tests/test_ts_file.cc
+	unit_tests/test_ts_file.cc \
+	unit_tests/test_Vec.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
