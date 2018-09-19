@@ -465,14 +465,18 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 
-  buf[*len] = (this->_destination_cid.length() == 0 ? 0 : this->_destination_cid.length() - 3) << 4;
-  buf[*len] += this->_source_cid.length() == 0 ? 0 : this->_source_cid.length() - 3;
+  buf[*len] = this->_destination_cid == QUICConnectionId::ZERO() ? 0 : (this->_destination_cid.length() - 3) << 4;
+  buf[*len] += this->_source_cid == QUICConnectionId::ZERO() ? 0 : this->_source_cid.length() - 3;
   *len += 1;
 
-  QUICTypeUtil::write_QUICConnectionId(this->_destination_cid, buf + *len, &n);
-  *len += n;
-  QUICTypeUtil::write_QUICConnectionId(this->_source_cid, buf + *len, &n);
-  *len += n;
+  if (this->_destination_cid != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_destination_cid, buf + *len, &n);
+    *len += n;
+  }
+  if (this->_source_cid != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_source_cid, buf + *len, &n);
+    *len += n;
+  }
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->_type == QUICPacketType::INITIAL) {
@@ -662,7 +666,9 @@ uint16_t
 QUICPacketShortHeader::size() const
 {
   uint16_t len = 1;
-  len += this->_connection_id.length();
+  if (this->_connection_id != QUICConnectionId::ZERO()) {
+    len += this->_connection_id.length();
+  }
   len += this->_packet_number_len;
 
   return len;
@@ -679,8 +685,11 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
   }
   buf[0] += 0x30;
   *len += 1;
-  QUICTypeUtil::write_QUICConnectionId(this->_connection_id, buf + *len, &n);
-  *len += n;
+
+  if (this->_connection_id != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_connection_id, buf + *len, &n);
+    *len += n;
+  }
 
   QUICPacketNumber dst = 0;
   size_t dst_len       = this->_packet_number_len;
