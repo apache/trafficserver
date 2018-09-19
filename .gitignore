@@ -79,7 +79,6 @@ src/tscore/ParseRulesCType
 src/tscore/ParseRulesCTypeToLower
 src/tscore/ParseRulesCTypeToUpper
 src/tscore/mkdfa
-src/tscore/test_arena
 src/tscore/test_atomic
 src/tscore/test_freelist
 src/tscore/test_Vec
