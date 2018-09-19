@@ -263,11 +263,10 @@ LogConfig::read_configuration_variables()
 
 static BindingInstance *binding = nullptr;
 
-static
-void
+static void
 setup_bindings()
 {
-   if (nullptr == binding) {
+  if (nullptr == binding) {
     binding = new BindingInstance;
     ink_assert(nullptr != binding);
 
