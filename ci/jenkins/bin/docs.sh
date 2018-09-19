@@ -20,9 +20,8 @@
 test -z "${ATS_MAKE}" && ATS_MAKE="make"
 test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
-# This avoids redoing the configure on every doc build, which is somewhat annoying
-[ ! -f configure ] && autoreconf -fi
-[ ! -f config.nice ] && ./configure --enable-docs
+# Run configure on the docs builds each time in case there have been updates
+autoreconf -fi && ./configure --enable-docs || exit 1
 
 cd doc
 
