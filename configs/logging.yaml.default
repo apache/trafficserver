@@ -1,60 +1,14 @@
-# Custom log configuration.
+# Custom log configuration
+#
+# Documentation on logging:
+#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/logging/index.en.html
+#
+# Documentaion on logging.yaml file format:
+#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/files/logging.yaml.en.html
+#
+# Example log configurations:
+#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/logging/examples.en.html
 
-# The log.* functions accept a table that supports the following fields:
-#    Filename (string, required):
-#    Format (string or format object, required):
-#    Header (string, optional):
-#    RollingEnabled (boolean, optional):
-#    RollingIntervalSec (number, optional):
-#    RollingOffsetHr (number, optional):
-#    RollingSizeMb (number, optional):
-#    Filters (array of filter objects, optional):
-#    CollationHosts (array of strings, optional):
-#      This parameter may be either a single string or an array of entries.
-#      Entries may be strings or arrays of strings. A string specifies a
-#      single collation host, which is equivalent to providing an array
-#      containing a single string.
-#
-#      If multiple entries are given, multiple collation hosts are configured
-#      and each log entry will be forwarded to every host.
-#
-#      If an entry is an array of strings, this defines a collation host
-#      failover group. The first array entry is the primary collation host
-#      and the remaining entries are attached as ordered failover hosts
-#      that will be attempted if the primary host fails.
-#
-#      A single collation host with failover:
-#        { {'logs-1.example.com:4567', 'logs-2.example.com:4567'} }
-#
-#      Multiple collation hosts:
-#        {'logs-1.example.com:4567', 'logs-2.example.com:4567'}
-#
-#      Multiple collation hosts with some failover:
-#        {'logs-1.example.com:4567', { 'logs-2.example.com:4567', 'logs-2a.example.com:4567'} }
-
-# Predefined variables.
-#
-# log.roll.none (number)
-#  RollingEnabled value to disable all log rolling.
-#
-# log.roll.time (number)
-#  RollingEnabled value. Roll at a certain time frequency, specified
-#  by RollingIntervalSec, and RollingOffsetHr.
-#
-# log.roll.size (number)
-#  RollingEnabled value. Roll when the size exceeds RollingSizeMb.
-#
-# log.roll.both (number)
-#  RollingEnabled value. Roll when either the specified rolling
-#  time is reached or the specified file size is reached.
-#
-# log.roll.any (number)
-#  RollingEnabled value. Roll the log file when the specified
-#  rolling time is reached if the size of the file equals or exceeds
-#  the specified size.
-#
-# log.protocol.http (number)
-#  Server protocol constants for constructing %<etype> filters.
 
 formats:
     # WebTrends Enhanced Log Format.

@@ -145,7 +145,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
                    (0 == strcasecmp(mode.c_str(), "ascii_pipe") ? LOG_FILE_PIPE : LOG_FILE_ASCII));
   }
 
-  int obj_rolling_enabled      = 0;
+  int obj_rolling_enabled      = cfg->rolling_enabled;
   int obj_rolling_interval_sec = cfg->rolling_interval_sec;
   int obj_rolling_offset_hr    = cfg->rolling_offset_hr;
   int obj_rolling_size_mb      = cfg->rolling_size_mb;
