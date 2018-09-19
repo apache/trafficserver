@@ -19,7 +19,7 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_libtscore test_atomic test_freelist test_geometry test_Map test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_libtscore test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -229,9 +229,6 @@ test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
-test_Map_SOURCES = test_Map.cc
-test_Map_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
@@ -261,7 +258,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
-	unit_tests/test_List.cc \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
