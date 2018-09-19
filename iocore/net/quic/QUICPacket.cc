@@ -242,7 +242,9 @@ bool
 QUICPacketLongHeader::dcil(uint8_t &dcil, const uint8_t *packet, size_t packet_len)
 {
   if (QUICInvariants::dcil(dcil, packet, packet_len)) {
-    dcil += 3;
+    if (dcil != 0) {
+      dcil += 3;
+    }
     return true;
   } else {
     return false;
@@ -253,7 +255,9 @@ bool
 QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_len)
 {
   if (QUICInvariants::scil(scil, packet, packet_len)) {
-    scil += 3;
+    if (scil != 0) {
+      scil += 3;
+    }
     return true;
   } else {
     return false;
