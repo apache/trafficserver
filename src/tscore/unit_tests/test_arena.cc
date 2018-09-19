@@ -23,7 +23,7 @@
 
 /****************************************************************************
 
-   ArenaTest.cc
+   test_arena.cc
 
    Description:
 
@@ -32,6 +32,8 @@
 
 
  ****************************************************************************/
+
+#include "catch.hpp"
 
 #include "tscore/Arena.h"
 #include <cstdio>
@@ -47,29 +49,11 @@ fill_test_data(char *ptr, int size, int seed)
   }
 }
 
-int
-check_test_data(char *ptr, int size, int seed)
-{
-  int fail = 0;
-  char a   = 'a' + (seed % 52);
-
-  for (int i = 0; i < size; i++) {
-    if (ptr[i] != a) {
-      fail++;
-    }
-    a = (a + 1) % 52;
-  }
-
-  return fail;
-}
-
-int
-test_block_boundries()
+TEST_CASE("test arena", "[libts][arena]")
 {
   const int sizes_to_test   = 12;
   const int regions_to_test = 1024 * 2;
   char **test_regions       = new char *[regions_to_test];
-  int failures              = 0;
   Arena *a                  = new Arena();
 
   for (int i = 0; i < sizes_to_test; i++) {
@@ -89,14 +73,12 @@ test_block_boundries()
 
     // Now check to make sure the data is correct
     for (j = 0; j < regions_to_test; j++) {
-      int f = check_test_data(test_regions[j], test_size, j);
-
-      if (f != 0) {
-        fprintf(stderr, "block_boundries test failed.  size %d region %d\n", test_size, j);
-        failures++;
+      char a = 'a' + (j % 52);
+      for (int k = 0; k < test_size; k++) {
+        REQUIRE(test_regions[j][k] == a);
+        a = (a + 1) % 52;
       }
     }
-
     // Now free the regions
     for (j = 0; j < regions_to_test; j++) {
       a->free(test_regions[j], test_size);
@@ -107,19 +89,4 @@ test_block_boundries()
 
   delete[] test_regions;
   delete a;
-  return failures;
-}
-
-int
-main()
-{
-  int failures = 0;
-
-  failures += test_block_boundries();
-
-  if (failures) {
-    return 1;
-  } else {
-    return 0;
-  }
 }

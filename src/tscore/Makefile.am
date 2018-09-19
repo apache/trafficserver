@@ -19,7 +19,7 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_arena test_atomic test_freelist test_geometry test_Vec test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_atomic test_freelist test_geometry test_Vec test_X509HostnameValidator test_tscore
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -237,9 +237,6 @@ test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
-test_arena_SOURCES = test_arena.cc
-test_arena_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
 test_Vec_SOURCES = test_Vec.cc
 test_Vec_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
@@ -258,6 +255,7 @@ test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
+	unit_tests/test_arena.cc \
 	unit_tests/test_ArgParser.cc \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
