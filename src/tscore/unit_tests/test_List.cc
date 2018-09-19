@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "catch.hpp"
+
 #include "tscore/List.h"
 
 class Foo
@@ -39,8 +41,7 @@ public:
   Foo(int i = 0) : x(i) {}
 };
 
-int
-main()
+TEST_CASE("test list", "[libts][List]")
 {
   SList(Foo, slink) s;
   DList(Foo, dlink) d;
@@ -59,11 +60,5 @@ main()
     tot += foo->x;
     delete foo;
   }
-  if (tot != 4957) {
-    printf("test_List FAILED\n");
-    exit(1);
-  } else {
-    printf("test_List PASSED\n");
-    exit(0);
-  }
+  REQUIRE(tot == 4957);
 }
