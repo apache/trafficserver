@@ -247,8 +247,9 @@ test_Vec_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LI
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
-test_X509HostnameValidator_SOURCES = test_X509HostnameValidator.cc
+test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
 test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS@
+test_X509HostnameValidator_SOURCES = unit_tests/test_X509HostnameValidator.cc
 
 test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include

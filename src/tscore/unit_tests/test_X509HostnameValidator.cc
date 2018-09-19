@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#define CATCH_CONFIG_RUNNER
+#include "catch.hpp"
+
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <openssl/ssl.h>
@@ -31,7 +34,6 @@
 #include "tscore/ink_resource.h"
 #include "tscore/ink_queue.h"
 #include "tscore/X509HostnameValidator.h"
-#include "tscore/TestBox.h"
 
 // clang-format off
 
@@ -99,90 +101,71 @@ load_cert_from_string(const char *cert_string)
   return PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
 }
 
-REGRESSION_TEST(CN_match)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("CN_match", "[libts][X509HostnameValidator]")
 {
-  TestBox box(t, pstatus);
   char *matching;
-
-  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn);
-  box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true, "Hostname should match");
-  box.check(strcmp(test_certificate_cn_name, matching) == 0, "Return hostname doesn't match lookup");
-  box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name + 1, false, nullptr) == false,
-            "Hostname shouldn't match");
+  REQUIRE(x != nullptr);
+  REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true);
+  REQUIRE(strcmp(test_certificate_cn_name, matching) == 0);
+  REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name + 1, false, nullptr) == false);
   ats_free(matching);
 }
 
-REGRESSION_TEST(bad_wildcard_SANs)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("bad_wildcard_SANs", "[libts][X509HostnameValidator]")
 {
-  TestBox box(t, pstatus);
-
-  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_bad_sans);
-  box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, (unsigned char *)"something.or.other", false, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"a.b.c", false, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"0.0.0.0", true, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"......", true, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"a.b", true, nullptr) == false, "Hostname shouldn't match");
+  REQUIRE(x != nullptr);
+  REQUIRE(validate_hostname(x, (unsigned char *)"something.or.other", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, (unsigned char *)"a.b.c", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, (unsigned char *)"0.0.0.0", true, nullptr) == false);
+  REQUIRE(validate_hostname(x, (unsigned char *)"......", true, nullptr) == false);
+  REQUIRE(validate_hostname(x, (unsigned char *)"a.b", true, nullptr) == false);
 }
 
-REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("wildcard_SAN_and_CN", "[libts][X509HostnameValidator]")
 {
-  TestBox box(t, pstatus);
   char *matching;
-
-  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
-  box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true, "Hostname should match");
-  box.check(strcmp(test_certificate_cn_name, matching) == 0, "Return hostname doesn't match lookup");
+  REQUIRE(x != nullptr);
+  REQUIRE(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true);
+  REQUIRE(strcmp(test_certificate_cn_name, matching) == 0);
   ats_free(matching);
 
-  box.check(validate_hostname(x, (unsigned char *)"a.trafficserver.org", false, &matching) == true, "Hostname should match");
-  box.check(strcmp("*.trafficserver.org", matching) == 0, "Return hostname doesn't match lookup");
+  REQUIRE(validate_hostname(x, (unsigned char *)"a.trafficserver.org", false, &matching) == true);
+  REQUIRE(strcmp("*.trafficserver.org", matching) == 0);
 
-  box.check(validate_hostname(x, (unsigned char *)"a.*.trafficserver.org", false, nullptr) == false, "Hostname shouldn't match");
+  REQUIRE(validate_hostname(x, (unsigned char *)"a.*.trafficserver.org", false, nullptr) == false);
   ats_free(matching);
 }
 
-REGRESSION_TEST(IDNA_hostnames)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("IDNA_hostnames", "[libts][X509HostnameValidator]")
 {
-  TestBox box(t, pstatus);
   char *matching;
-  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
-  box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.org", false, &matching) == true,
-            "Hostname should match");
-  box.check(strcmp("*.trafficserver.org", matching) == 0, "Return hostname doesn't match lookup");
+  REQUIRE(x != nullptr);
+  REQUIRE(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.org", false, &matching) == true);
+  REQUIRE(strcmp("*.trafficserver.org", matching) == 0);
   ats_free(matching);
 
   // IDNA means wildcard must match full label
-  box.check(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.net", false, &matching) == false,
-            "Hostname shouldn't match");
+  REQUIRE(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.net", false, &matching) == false);
 }
 
-REGRESSION_TEST(middle_label_match)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("middle_label_match", "[libts][X509HostnameValidator]")
 {
-  TestBox box(t, pstatus);
   char *matching;
-  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
-  box.check(x != nullptr, "failed to load the test certificate");
-  box.check(validate_hostname(x, (unsigned char *)"foosomething.trafficserver.com", false, &matching) == true,
-            "Hostname should match");
-  box.check(strcmp("foo*.trafficserver.com", matching) == 0, "Return hostname doesn't match lookup");
+  REQUIRE(x != nullptr);
+  REQUIRE(validate_hostname(x, (unsigned char *)"foosomething.trafficserver.com", false, &matching) == true);
+  REQUIRE(strcmp("foo*.trafficserver.com", matching) == 0);
   ats_free(matching);
-  box.check(validate_hostname(x, (unsigned char *)"somethingbar.trafficserver.net", false, &matching) == true,
-            "Hostname should match");
-  box.check(strcmp("*bar.trafficserver.net", matching) == 0, "Return hostname doesn't match lookup");
+  REQUIRE(validate_hostname(x, (unsigned char *)"somethingbar.trafficserver.net", false, &matching) == true);
+  REQUIRE(strcmp("*bar.trafficserver.net", matching) == 0);
   ats_free(matching);
 
-  box.check(validate_hostname(x, (unsigned char *)"a.bar.trafficserver.net", false, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"foo.bar.trafficserver.net", false, nullptr) == false,
-            "Hostname shouldn't match");
+  REQUIRE(validate_hostname(x, (unsigned char *)"a.bar.trafficserver.net", false, nullptr) == false);
+  REQUIRE(validate_hostname(x, (unsigned char *)"foo.bar.trafficserver.net", false, nullptr) == false);
 }
 
 int
@@ -195,7 +178,7 @@ main(int argc, const char **argv)
   SSL_library_init();
   ink_freelists_snap_baseline();
 
-  int status = RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
+  int status = Catch::Session().run();
   ink_freelists_dump(stdout);
 
   return status;
