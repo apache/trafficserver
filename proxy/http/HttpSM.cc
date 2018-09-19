@@ -870,6 +870,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       ua_entry = nullptr;
       tunnel.kill_tunnel();
       terminate_sm = true; // Just die already, the requester is gone
+      set_ua_abort(HttpTransact::ABORTED, event);
     }
     break;
   }
