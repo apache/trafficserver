@@ -31,7 +31,6 @@
 #include "LogObject.h"
 #include "ts/IntrusiveHashMap.h"
 
-#define MAX_CANDIDATES 128
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
@@ -82,18 +81,18 @@ struct LogCollationAccept;
   LogDeleteCandidate, LogDeletingInfo&Descriptor
   -------------------------------------------------------------------------*/
 struct LogDeleteCandidate {
-  time_t mtime;
-  char *name;
+  std::string name;
   int64_t size;
+  time_t mtime;
+
+  LogDeleteCandidate(char *p_name, int64_t st_size, time_t st_time) : name(p_name), size(st_size), mtime(st_time) {}
 };
 
 struct LogDeletingInfo {
   std::string name;
   int64_t space_limit_mb{0};
-  int candidate_count{0};
-  int victim{0};
   int64_t total_size{0LL};
-  LogDeleteCandidate candidates[MAX_CANDIDATES];
+  std::vector<LogDeleteCandidate> candidates;
 
   LogDeletingInfo *_next{nullptr};
   LogDeletingInfo *_prev{nullptr};
@@ -102,13 +101,8 @@ struct LogDeletingInfo {
   void
   clear()
   {
-    victim     = 0;
     total_size = 0LL;
-    for (int i = 0; i < candidate_count; i++) {
-      if (candidates[i].name)
-        ats_free(candidates[i].name);
-    }
-    candidate_count = 0;
+    candidates.clear();
   }
 };
 
