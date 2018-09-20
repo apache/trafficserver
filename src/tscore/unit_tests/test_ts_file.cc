@@ -47,12 +47,12 @@ TEST_CASE("ts_file", "[libts][ts_file]")
 
 TEST_CASE("ts_file_io", "[libts][ts_file_io]")
 {
-  path file("unit_tests/test_ts_file.cc");
+  path file("/etc/hosts");
   std::error_code ec;
   std::string content = ts::file::load(file, ec);
   REQUIRE(ec.value() == 0);
   REQUIRE(content.size() > 0);
-  REQUIRE(content.find("ts::file::path") != content.npos);
+  REQUIRE(content.find("localhost") != content.npos);
 
   // Check some file properties.
   REQUIRE(ts::file::is_readable(file) == true);
