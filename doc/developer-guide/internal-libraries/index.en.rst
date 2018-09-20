@@ -33,3 +33,4 @@ development team.
    scalar.en
    buffer-writer.en
    MemArena.en
+   ArgParser.en
