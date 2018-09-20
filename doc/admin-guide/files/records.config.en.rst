@@ -2742,7 +2742,7 @@ Logging Configuration
    ``0``    Logging disabled.
    ``1``    Log errors only.
    ``2``    Log transactions only.
-   ``3``    Dull logging (errors and transactions).
+   ``3``    Dual logging (errors and transactions).
    ======== ===================================================================
 
    Refer to :ref:`admin-logging` for more information on event logging.
