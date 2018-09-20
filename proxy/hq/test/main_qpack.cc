@@ -47,6 +47,7 @@ int tablesize     = 4096;
 int streams       = 100;
 int ackmode       = 0;
 char appname[256] = "ats";
+char pattern[256] = "";
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -92,6 +93,7 @@ main(int argc, char *argv[])
     Opt(tablesize, "size")["--q-dynamic-table-size"]("dynamic table size for encoding: 0-65535 (default:4096)") |
     Opt(streams, "n")["--q-max-blocked-streams"]("max blocked streams for encoding: 0-65535 (default:100)") |
     Opt(ackmode, "mode")["--q-ack-mode"]("acknowledgement modes for encoding: none(default:0) or immediate(1)") |
+    Opt(pattern, "pattern")["--q-pattern"]("filename pattern: file name pattern for decoding (default:)") |
     Opt(appname, "app")["--q-app"]("app name: app name (default:ats)");
 
   session.cli(cli);

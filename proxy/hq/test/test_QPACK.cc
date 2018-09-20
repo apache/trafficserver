@@ -38,6 +38,7 @@ extern int tablesize;
 extern int streams;
 extern int ackmode;
 extern char appname[256];
+extern char pattern[256];
 
 constexpr int ACK_MODE_IMMEDIATE = 1;
 constexpr int ACK_MODE_NONE      = 0;
@@ -364,7 +365,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
     return -1;
   }
 
-  sleep(5);
+  sleep(1);
 
   CHECK(event_handler->last_event() == QPACK_EVENT_DECODE_COMPLETE);
 
@@ -427,11 +428,9 @@ TEST_CASE("Decoding", "[qpack-decode]")
   struct stat st;
   char enc_file[PATH_MAX + 1] = "";
   char out_file[PATH_MAX + 1] = "";
-  char pattern[PATH_MAX + 1]  = "";
   strcat(enc_file, encdir);
   strcat(out_file, decdir);
 
-  sprintf(pattern, ".%d.%d.%d", tablesize, streams, ackmode);
   while ((d = readdir(dir)) != nullptr) {
     char section_name[128];
     sprintf(section_name, "%s: DTS=%d, MBS=%d, AM=%d, APP=%s", d->d_name, tablesize, streams, ackmode, appname);
