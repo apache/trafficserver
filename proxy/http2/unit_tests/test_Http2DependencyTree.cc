@@ -20,12 +20,12 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+#define CATCH_CONFIG_MAIN
+#include "catch.hpp"
 
 #include <iostream>
 #include <cstring>
 #include <sstream>
-
-#include "tscore/TestBox.h"
 
 #include "Http2DependencyTree.h"
 
@@ -43,11 +43,8 @@ using Node = Http2DependencyTree::Node;
  *                   / \
  *                  B   C
  */
-REGRESSION_TEST(Http2DependencyTree_1)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_1", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D");
 
@@ -58,17 +55,17 @@ REGRESSION_TEST(Http2DependencyTree_1)(RegressionTest *t, int /* atype ATS_UNUSE
   Node *node_b = tree->find(1);
   Node *node_c = tree->find(3);
 
-  box.check(node_b->parent == node_a, "parent of B should be A");
-  box.check(node_c->parent == node_a, "parent of C should be A");
+  REQUIRE(node_b->parent == node_a);
+  REQUIRE(node_c->parent == node_a);
 
   // Add node with exclusive flag
   tree->add(0, 5, 0, true, &d);
 
   Node *node_d = tree->find(5);
 
-  box.check(node_d->parent == node_a, "parent of D should be A");
-  box.check(node_b->parent == node_d, "parent of B should be D");
-  box.check(node_c->parent == node_d, "parent of C should be D");
+  REQUIRE(node_d->parent == node_a);
+  REQUIRE(node_b->parent == node_d);
+  REQUIRE(node_c->parent == node_d);
 
   delete tree;
 }
@@ -86,11 +83,8 @@ REGRESSION_TEST(Http2DependencyTree_1)(RegressionTest *t, int /* atype ATS_UNUSE
  *    |                    |
  *    F                    E
  */
-REGRESSION_TEST(Http2DependencyTree_2)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_2", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
@@ -108,9 +102,9 @@ REGRESSION_TEST(Http2DependencyTree_2)(RegressionTest *t, int /* atype ATS_UNUSE
   Node *node_d = tree->find(7);
   Node *node_f = tree->find(11);
 
-  box.check(node_a->parent == node_d, "parent of A should be D");
-  box.check(node_d->parent == node_x, "parent of D should be X");
-  box.check(node_f->parent == node_d, "parent of F should be D");
+  REQUIRE(node_a->parent == node_d);
+  REQUIRE(node_d->parent == node_x);
+  REQUIRE(node_f->parent == node_d);
 
   delete tree;
 }
@@ -128,11 +122,8 @@ REGRESSION_TEST(Http2DependencyTree_2)(RegressionTest *t, int /* atype ATS_UNUSE
  *    |              |
  *    F              E
  */
-REGRESSION_TEST(Http2DependencyTree_3)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_3", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
@@ -150,9 +141,9 @@ REGRESSION_TEST(Http2DependencyTree_3)(RegressionTest *t, int /* atype ATS_UNUSE
   Node *node_d = tree->find(7);
   Node *node_f = tree->find(11);
 
-  box.check(node_a->parent == node_d, "parent of A should be D");
-  box.check(node_d->parent == node_x, "parent of D should be X");
-  box.check(node_f->parent == node_a, "parent of F should be A");
+  REQUIRE(node_a->parent == node_d);
+  REQUIRE(node_d->parent == node_x);
+  REQUIRE(node_f->parent == node_a);
 
   delete tree;
 }
@@ -163,24 +154,21 @@ REGRESSION_TEST(Http2DependencyTree_3)(RegressionTest *t, int /* atype ATS_UNUSE
  *      /
  *    A(1)
  */
-REGRESSION_TEST(Http2DependencyTree_4)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_4", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A");
   tree->add(0, 1, 0, false, &a);
 
   Node *node_a = tree->find(1);
 
-  box.check(tree->top() == nullptr, "top should be nullptr");
+  REQUIRE(tree->top() == nullptr);
 
   tree->activate(node_a);
-  box.check(tree->top() == node_a, "top should be A");
+  REQUIRE(tree->top() == node_a);
 
   tree->deactivate(node_a, 0);
-  box.check(tree->top() == nullptr, "top should be nullptr");
+  REQUIRE(tree->top() == nullptr);
 
   delete tree;
 }
@@ -194,11 +182,8 @@ REGRESSION_TEST(Http2DependencyTree_4)(RegressionTest *t, int /* atype ATS_UNUSE
  * B(5)
  *
  */
-REGRESSION_TEST(Http2DependencyTree_5)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_5", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
@@ -208,14 +193,14 @@ REGRESSION_TEST(Http2DependencyTree_5)(RegressionTest *t, int /* atype ATS_UNUSE
   Node *node_a = tree->find(3);
   Node *node_b = tree->find(5);
 
-  box.check(tree->top() == nullptr, "top should be nullptr");
+  REQUIRE(tree->top() == nullptr);
 
   tree->activate(node_a);
   tree->activate(node_b);
-  box.check(tree->top() == node_a, "top should be A");
+  REQUIRE(tree->top() == node_a);
 
   tree->deactivate(node_a, 0);
-  box.check(tree->top() == node_b, "top should be B");
+  REQUIRE(tree->top() == node_b);
 
   delete tree;
 }
@@ -229,11 +214,8 @@ REGRESSION_TEST(Http2DependencyTree_5)(RegressionTest *t, int /* atype ATS_UNUSE
  * B(5) C(7)
  *
  */
-REGRESSION_TEST(Http2DependencyTree_6)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_6", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
 
   string a("A"), b("B"), c("C"), d("D");
@@ -258,7 +240,7 @@ REGRESSION_TEST(Http2DependencyTree_6)(RegressionTest *t, int /* atype ATS_UNUSE
   }
 
   const string expect = "BDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBDCDBD";
-  box.check(oss.str() == expect, "\nExpect : %s\nActual : %s", expect.c_str(), oss.str().c_str());
+  REQUIRE(oss.str() == expect);
 
   delete tree;
 }
@@ -271,11 +253,8 @@ REGRESSION_TEST(Http2DependencyTree_6)(RegressionTest *t, int /* atype ATS_UNUSE
  *   A(3) B(5) ... I(19)
  *
  */
-REGRESSION_TEST(Http2DependencyTree_Chrome_50)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_Chrome_50", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
 
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F"), g("G"), h("H"), i("I");
@@ -313,7 +292,7 @@ REGRESSION_TEST(Http2DependencyTree_Chrome_50)(RegressionTest *t, int /* atype A
   const string expect =
     "ABCDEFGHIABCDEFGHIABCDEFABCGHIABCDEFABCGHIDEFABCGHIDEFABCABCDEFGHIABCDEFABCGHIABCDEFABCGHIDEFABCGHIDEFABCABC";
 
-  box.check(oss.str() == expect, "\nExpect : %s\nActual : %s", expect.c_str(), oss.str().c_str());
+  REQUIRE(oss.str() == expect);
 
   delete tree;
 }
@@ -332,11 +311,8 @@ REGRESSION_TEST(Http2DependencyTree_Chrome_50)(RegressionTest *t, int /* atype A
  *   I(19)
  *
  */
-REGRESSION_TEST(Http2DependencyTree_Chrome_51)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_Chrome_51", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
 
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F"), g("G"), h("H"), i("I");
@@ -388,7 +364,7 @@ REGRESSION_TEST(Http2DependencyTree_Chrome_51)(RegressionTest *t, int /* atype A
 
   const string expect = "ACEGIBDFH";
 
-  box.check(oss.str() == expect, "\nExpect : %s\nActual : %s", expect.c_str(), oss.str().c_str());
+  REQUIRE(oss.str() == expect);
 
   delete tree;
 }
@@ -403,11 +379,8 @@ REGRESSION_TEST(Http2DependencyTree_Chrome_51)(RegressionTest *t, int /* atype A
  * B(5) C(7)
  *
  */
-REGRESSION_TEST(Http2DependencyTree_remove_1)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_remove_1", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
 
   string a("A"), b("B"), c("C");
@@ -426,24 +399,24 @@ REGRESSION_TEST(Http2DependencyTree_remove_1)(RegressionTest *t, int /* atype AT
 
   // Deactivate A and try to remove
   top_node = tree->top();
-  box.check(top_node == node_a, "Top node should be node_a");
+  REQUIRE(top_node == node_a);
   tree->deactivate(node_a, 16);
   tree->remove(node_a);
-  box.check(tree->find(3) == nullptr, "Node A should be removed");
+  REQUIRE(tree->find(3) == nullptr);
 
   // Deactivate B and try to remove
   top_node = tree->top();
-  box.check(top_node == node_b, "Top node should be node_b");
+  REQUIRE(top_node == node_b);
   tree->deactivate(node_b, 16);
   tree->remove(node_b);
-  box.check(tree->find(5) == nullptr, "Node B should be removed");
+  REQUIRE(tree->find(5) == nullptr);
 
   // Deactivate C and try to remove
   top_node = tree->top();
-  box.check(top_node == node_c, "Top node should be node_c");
+  REQUIRE(top_node == node_c);
   tree->deactivate(node_c, 16);
   tree->remove(node_c);
-  box.check(tree->find(7) == nullptr, "Node C should be removed");
+  REQUIRE(tree->find(7) == nullptr);
 
   delete tree;
 }
@@ -459,11 +432,8 @@ REGRESSION_TEST(Http2DependencyTree_remove_1)(RegressionTest *t, int /* atype AT
  *     |
  *    C(7)
  */
-REGRESSION_TEST(Http2DependencyTree_remove_2)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_remove_2", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
 
   string a("A"), b("B"), c("C");
@@ -475,26 +445,26 @@ REGRESSION_TEST(Http2DependencyTree_remove_2)(RegressionTest *t, int /* atype AT
 
   // Activate, deactivate, and remove C
   tree->activate(node_c);
-  box.check(tree->top() == node_c, "Top node should be node_c");
+  REQUIRE(tree->top() == node_c);
   tree->deactivate(node_c, 16384);
   tree->remove(node_c);
 
   // Activate, deactivate, and remove A
   tree->activate(node_a);
-  box.check(tree->top() == node_a, "Top node should be node_a");
+  REQUIRE(tree->top() == node_a);
   tree->deactivate(node_a, 16384);
   tree->remove(node_a);
 
   // Activate, deactivate, and remove B
   tree->activate(node_b);
-  box.check(tree->top() == node_b, "Top node should be node_b");
+  REQUIRE(tree->top() == node_b);
   tree->deactivate(node_b, 16384);
   tree->remove(node_b);
 
-  box.check(tree->top() == nullptr, "Top node should be nullptr");
-  box.check(tree->find(3) == nullptr, "Tree should be empty");
-  box.check(tree->find(5) == nullptr, "Tree should be empty");
-  box.check(tree->find(7) == nullptr, "Tree should be empty");
+  REQUIRE(tree->top() == nullptr);
+  REQUIRE(tree->find(3) == nullptr);
+  REQUIRE(tree->find(5) == nullptr);
+  REQUIRE(tree->find(7) == nullptr);
 
   delete tree;
 }
@@ -508,11 +478,8 @@ REGRESSION_TEST(Http2DependencyTree_remove_2)(RegressionTest *t, int /* atype AT
  *                   / \
  *                  B   C
  */
-REGRESSION_TEST(Http2DependencyTree_exclusive_node)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_exclusive_node", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D");
 
@@ -526,7 +493,7 @@ REGRESSION_TEST(Http2DependencyTree_exclusive_node)(RegressionTest *t, int /* at
   tree->deactivate(B, 0);
   tree->remove(B);
 
-  box.check(tree->top() == nullptr, "Tree top should be nullptr");
+  REQUIRE(tree->top() == nullptr);
 
   delete tree;
 }
@@ -540,11 +507,8 @@ REGRESSION_TEST(Http2DependencyTree_exclusive_node)(RegressionTest *t, int /* at
  *            C          A
  *
  */
-REGRESSION_TEST(Http2DependencyTree_reprioritize)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_reprioritize", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
@@ -561,7 +525,7 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize)(RegressionTest *t, int /* atyp
   tree->deactivate(A, 0);
   tree->remove(A);
 
-  box.check(tree->top()->t != nullptr, "should not core dump");
+  REQUIRE(tree->top()->t != nullptr);
 
   delete tree;
 }
@@ -579,11 +543,8 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize)(RegressionTest *t, int /* atyp
  *    |              |
  *    F              E
  */
-REGRESSION_TEST(Http2DependencyTree_reprioritize_2)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_reprioritize_2", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
@@ -600,13 +561,13 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_2)(RegressionTest *t, int /* at
   Node *node_d = tree->find(7);
 
   tree->activate(node_b);
-  box.check(node_x->queue->in(node_a->entry), "A should be in x's queue");
+  REQUIRE(node_x->queue->in(node_a->entry));
 
   tree->reprioritize(1, 7, true);
 
-  box.check(!node_x->queue->in(node_a->entry), "A should not be in x's queue");
-  box.check(node_x->queue->in(node_d->entry), "D should be in x's queue");
-  box.check(node_d->queue->in(node_a->entry), "A should be in d's queue");
+  REQUIRE(!node_x->queue->in(node_a->entry));
+  REQUIRE(node_x->queue->in(node_d->entry));
+  REQUIRE(node_d->queue->in(node_a->entry));
 
   delete tree;
 }
@@ -624,11 +585,8 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_2)(RegressionTest *t, int /* at
  *    |              |
  *    F              E
  */
-REGRESSION_TEST(Http2DependencyTree_reprioritize_3)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_reprioritize_3", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
@@ -648,11 +606,11 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_3)(RegressionTest *t, int /* at
   tree->activate(node_f);
   tree->reprioritize(1, 7, true);
 
-  box.check(node_a->queue->in(node_f->entry), "F should be in A's queue");
-  box.check(node_d->queue->in(node_a->entry), "A should be in D's queue");
-  box.check(node_x->queue->in(node_d->entry), "D should be in x's queue");
-  box.check(!node_a->queue->in(node_c->entry), "C should not be in A's queue");
-  box.check(node_c->queue->empty(), "C's queue should be empty");
+  REQUIRE(node_a->queue->in(node_f->entry));
+  REQUIRE(node_d->queue->in(node_a->entry));
+  REQUIRE(node_x->queue->in(node_d->entry));
+  REQUIRE(!node_a->queue->in(node_c->entry));
+  REQUIRE(node_c->queue->empty());
 
   delete tree;
 }
@@ -671,11 +629,8 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_3)(RegressionTest *t, int /* at
  *    |
  *    F
  */
-REGRESSION_TEST(Http2DependencyTree_reprioritize_4)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_reprioritize_4", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
@@ -695,11 +650,11 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_4)(RegressionTest *t, int /* at
   tree->activate(node_f);
   tree->reprioritize(7, 0, false);
 
-  box.check(!node_a->queue->in(node_f->entry), "F should not be in A's queue");
-  box.check(node_d->queue->in(node_f->entry), "F should be in D's queue");
-  box.check(node_x->queue->in(node_d->entry), "D should be in x's queue");
-  box.check(!node_a->queue->in(node_c->entry), "C should not be in A's queue");
-  box.check(node_c->queue->empty(), "C's queue should be empty");
+  REQUIRE(!node_a->queue->in(node_f->entry));
+  REQUIRE(node_d->queue->in(node_f->entry));
+  REQUIRE(node_x->queue->in(node_d->entry));
+  REQUIRE(!node_a->queue->in(node_c->entry));
+  REQUIRE(node_c->queue->empty());
 
   delete tree;
 }
@@ -718,11 +673,8 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_4)(RegressionTest *t, int /* at
  *    |              |
  *    F              F
  */
-REGRESSION_TEST(Http2DependencyTree_reprioritize_5)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_reprioritize_5", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E"), f("F");
 
@@ -743,12 +695,12 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_5)(RegressionTest *t, int /* at
   tree->activate(node_f);
   tree->reprioritize(7, 3, false);
 
-  box.check(node_a->queue->in(node_b->entry), "B should be in A's queue");
-  box.check(node_b->queue->in(node_d->entry), "D should be in B's queue");
-  box.check(!node_c->queue->in(node_d->entry), "D should not be in C's queue");
-  box.check(node_x->queue->in(node_a->entry), "A should be in x's queue");
-  box.check(!node_a->queue->in(node_c->entry), "C should not be in A's queue");
-  box.check(node_c->queue->empty(), "C's queue should be empty");
+  REQUIRE(node_a->queue->in(node_b->entry));
+  REQUIRE(node_b->queue->in(node_d->entry));
+  REQUIRE(!node_c->queue->in(node_d->entry));
+  REQUIRE(node_x->queue->in(node_a->entry));
+  REQUIRE(!node_a->queue->in(node_c->entry));
+  REQUIRE(node_c->queue->empty());
 
   delete tree;
 }
@@ -769,11 +721,8 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_5)(RegressionTest *t, int /* at
  *                    \
  *                     C
  */
-REGRESSION_TEST(Http2DependencyTree_insert_with_empty_parent)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_insert_with_empty_parent", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
 
   string a("A"), b("B"), c("C");
@@ -781,19 +730,19 @@ REGRESSION_TEST(Http2DependencyTree_insert_with_empty_parent)(RegressionTest *t,
 
   Node *b_n = tree->add(9, 7, 30, true, &b);
 
-  box.check(b_n->parent->id == 9, "Node B's parent should be 9");
-  box.check(tree->find(9) == nullptr, "The shadow nodes should not be found");
-  box.check(tree->find_shadow(9)->is_shadow() == true, "nodes 9 should be the shadow node");
+  REQUIRE(b_n->parent->id == 9);
+  REQUIRE(tree->find(9) == nullptr);
+  REQUIRE(tree->find_shadow(9)->is_shadow() == true);
 
   Node *c_n = tree->add(7, 11, 30, false, &c);
   tree->remove(b_n);
 
-  box.check(c_n->parent->id == 9, "Node C's parent should be 9");
-  box.check(tree->find(7) == nullptr, "Nodes b should be removed");
-  box.check(tree->find_shadow(9)->is_shadow() == true, "Nodes 9 should be existed after removing");
+  REQUIRE(c_n->parent->id == 9);
+  REQUIRE(tree->find(7) == nullptr);
+  REQUIRE(tree->find_shadow(9)->is_shadow() == true);
 
   tree->remove(c_n);
-  box.check(tree->find_shadow(9) == nullptr, "Shadow nodes should be remove");
+  REQUIRE(tree->find_shadow(9) == nullptr);
 
   delete tree;
 }
@@ -806,11 +755,8 @@ REGRESSION_TEST(Http2DependencyTree_insert_with_empty_parent)(RegressionTest *t,
  *                          \                     \
  *                           B                     shadow
  */
-REGRESSION_TEST(Http2DependencyTree_shadow_reprioritize)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_shadow_reprioritize", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
 
   string a("A"), b("B");
@@ -818,10 +764,11 @@ REGRESSION_TEST(Http2DependencyTree_shadow_reprioritize)(RegressionTest *t, int 
   tree->add(9, 7, 30, true, &b);
 
   Node *s_n = tree->find_shadow(9);
-  box.check(s_n != nullptr && s_n->is_shadow() == true, "Shadow nodes should not be nullptr");
+  REQUIRE(s_n != nullptr);
+  REQUIRE(s_n->is_shadow() == true);
 
   tree->reprioritize(s_n, 7, false);
-  box.check(tree->find_shadow(9) == nullptr, "Shadow nodes should be nullptr after reprioritizing");
+  REQUIRE(tree->find_shadow(9) == nullptr);
 
   delete tree;
 }
@@ -838,11 +785,8 @@ REGRESSION_TEST(Http2DependencyTree_shadow_reprioritize)(RegressionTest *t, int 
  *                          |
  *                          D
  */
-REGRESSION_TEST(Http2DependencyTree_delete_parent_before_child_arrives)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_delete_parent_before_child_arrives", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E");
 
@@ -853,7 +797,7 @@ REGRESSION_TEST(Http2DependencyTree_delete_parent_before_child_arrives)(Regressi
 
   // Tree should remember B, so C will be added to B's ancestor
   Node *node_c = tree->add(5, 7, 20, false, &c);
-  box.check(node_c->parent->id == 3, "Node C's parent should be 3");
+  REQUIRE(node_c->parent->id == 3);
 
   // See if it remembers two missing ancestors
   Node *node_d = tree->add(7, 9, 20, false, &d);
@@ -862,7 +806,7 @@ REGRESSION_TEST(Http2DependencyTree_delete_parent_before_child_arrives)(Regressi
   tree->remove(node_d);
 
   Node *node_e = tree->add(9, 11, 30, false, &e);
-  box.check(node_e->parent->id == 3, "Node E's parent should be 3");
+  REQUIRE(node_e->parent->id == 3);
 
   delete tree;
 }
@@ -879,11 +823,8 @@ REGRESSION_TEST(Http2DependencyTree_delete_parent_before_child_arrives)(Regressi
  *         |                    |
  *         D                    D
  */
-REGRESSION_TEST(Http2DependencyTree_handle_priority_nodes)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_handle_priority_nodes", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C"), d("D"), e("E");
 
@@ -899,15 +840,15 @@ REGRESSION_TEST(Http2DependencyTree_handle_priority_nodes)(RegressionTest *t, in
   Node *node_c = tree->add(7, 13, 30, true, &c);
   Node *node_d = tree->add(11, 15, 30, true, &d);
 
-  box.check(node_a->parent->id == 3, "Node A's parent should be 3");
-  box.check(node_b->parent->id == 5, "Node B's parent should be 5");
-  box.check(node_c->parent->id == 7, "Node C's parent should be 7");
-  box.check(node_d->parent->id == 11, "Node D's parent should be 11");
+  REQUIRE(node_a->parent->id == 3);
+  REQUIRE(node_b->parent->id == 5);
+  REQUIRE(node_c->parent->id == 7);
+  REQUIRE(node_d->parent->id == 11);
 
   // Deleting the children should not make the priority node go away
   tree->remove(node_a);
   Node *node_p1 = tree->find(3);
-  box.check(node_p1 != nullptr, "Priority node 1 should remain");
+  REQUIRE(node_p1 != nullptr);
 
   delete tree;
 }
@@ -923,11 +864,8 @@ REGRESSION_TEST(Http2DependencyTree_handle_priority_nodes)(RegressionTest *t, in
  *                           |
  *                           B
  */
-REGRESSION_TEST(Http2DependencyTree_reprioritize_shadow_node)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_reprioritize_shadow_node", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
@@ -939,27 +877,29 @@ REGRESSION_TEST(Http2DependencyTree_reprioritize_shadow_node)(RegressionTest *t,
   Node *c_n        = tree->find(7);
   Node *c_shadow_n = tree->find_shadow(7);
 
-  box.check(b_n != nullptr && b_n->parent->id == 7, "B should be child of 7");
-  box.check(c_n == nullptr && c_shadow_n != nullptr && c_shadow_n->parent->id == 0, "Node 7 is a shadow and a child of the root");
+  REQUIRE(b_n != nullptr);
+  REQUIRE(b_n->parent->id == 7);
+  REQUIRE(c_n == nullptr);
+  REQUIRE(c_shadow_n != nullptr);
+  REQUIRE(c_shadow_n->parent->id == 0);
 
   // Now populate the shadow
   tree->add(3, 7, 30, false, &c);
   c_n = tree->find(7);
-  box.check(c_n != nullptr && c_n->parent->id == 3 && c_n->weight == 30, "C is a child of 3 and no longer a shadow");
+  REQUIRE(c_n != nullptr);
+  REQUIRE(c_n->parent->id);
+  REQUIRE(c_n->weight == 30);
 
   // C should still exist when its child goes away
   tree->remove(b_n);
   c_n = tree->find(7);
-  box.check(c_n != nullptr, "C is still present with no children");
+  REQUIRE(c_n != nullptr);
 
   delete tree;
 }
 
-REGRESSION_TEST(Http2DependencyTree_missing_parent)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_missing_parent", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A"), b("B"), c("C");
 
@@ -968,22 +908,23 @@ REGRESSION_TEST(Http2DependencyTree_missing_parent)(RegressionTest *t, int /* at
 
   Node *c_n        = tree->find(5);
   Node *c_shadow_n = tree->find_shadow(5);
-  box.check(c_n == nullptr && c_shadow_n != nullptr && c_shadow_n->is_shadow() == true, "Node 5 starts out as a shadow");
+  REQUIRE(c_n == nullptr);
+  REQUIRE(c_shadow_n != nullptr);
+  REQUIRE(c_shadow_n->is_shadow() == true);
 
   tree->add(0, 5, 15, false, &c);
 
   c_n = tree->find(5);
-  box.check(c_n != nullptr && c_n->is_shadow() == false, "Node 5 should not be shadow node");
-  box.check(c_n->point == 5 && c_n->weight == 15, "The weight and point should be 15");
+  REQUIRE(c_n != nullptr);
+  REQUIRE(c_n->is_shadow() == false);
+  REQUIRE(c_n->point == 5);
+  REQUIRE(c_n->weight == 15);
 
   delete tree;
 }
 
-REGRESSION_TEST(Http2DependencyTree_max_depth)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("Http2DependencyTree_max_depth", "[http2][Http2DependencyTree]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Tree *tree = new Tree(100);
   string a("A");
   for (int i = 0; i < 100; ++i) {
@@ -991,17 +932,9 @@ REGRESSION_TEST(Http2DependencyTree_max_depth)(RegressionTest *t, int /* atype A
   }
   Node *node = tree->find(100);
   Node *leaf = tree->find(99);
-  box.check(node->parent->id == 0, "100st node should be child root");
-  box.check(leaf != nullptr && leaf->parent->id != 0, "99th node is not a child of the root");
+  REQUIRE(node->parent->id == 0);
+  REQUIRE(leaf != nullptr);
+  REQUIRE(leaf->parent->id != 0);
 
   delete tree;
-}
-
-int
-main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
-{
-  const char *name = "Http2DependencyTree";
-  RegressionTest::run(name, REGRESSION_TEST_QUICK);
-
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
 }

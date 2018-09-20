@@ -80,8 +80,11 @@ test_Http2DependencyTree_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
+test_Http2DependencyTree_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include
+
 test_Http2DependencyTree_SOURCES = \
-	test_Http2DependencyTree.cc \
+	unit_tests/test_Http2DependencyTree.cc \
 	Http2DependencyTree.h
 
 test_HPACK_LDADD = \
