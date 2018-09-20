@@ -237,9 +237,9 @@ struct NetVCOptions {
       /*
        * It is odd but necessary to null the scoped string pointer here
        * and then explicitly call release on them in the string assignements
-       * below.  
+       * below.
        * We a memcpy from that to this.  This will put that's string pointers into
-       * this's memory.  Therefore we must first explicitly null out 
+       * this's memory.  Therefore we must first explicitly null out
        * this's original version of the string.  The release after the
        * memcpy removes the extra reference to that's copy of the string
        * Removing the release will eventualy cause a double free crash

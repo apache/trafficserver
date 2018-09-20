@@ -1729,7 +1729,8 @@ HttpSM::state_http_server_open(int event, void *data)
 {
   SMDebug("http_track", "entered inside state_http_server_open");
   STATE_ENTER(&HttpSM::state_http_server_open, event);
-  ink_release_assert(event == EVENT_INTERVAL || event == NET_EVENT_OPEN || event == NET_EVENT_OPEN_FAILED || pending_action == nullptr);
+  ink_release_assert(event == EVENT_INTERVAL || event == NET_EVENT_OPEN || event == NET_EVENT_OPEN_FAILED ||
+                     pending_action == nullptr);
   if (event != NET_EVENT_OPEN) {
     pending_action = nullptr;
   }
