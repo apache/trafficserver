@@ -55,6 +55,8 @@ libtscore_la_SOURCES = \
 	AcidPtr.h \
 	Arena.cc \
 	Arena.h \
+	ArgParser.cc \
+	ArgParser.h \
 	BaseLogFile.cc \
 	BaseLogFile.h \
 	Bitops.cc \
@@ -264,6 +266,7 @@ test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
+	unit_tests/test_ArgParser.cc \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
 	unit_tests/test_Extendible.cc \
