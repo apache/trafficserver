@@ -197,7 +197,7 @@ ArgParser::set_error(std::string e)
   _error_msg = e;
 }
 
-std::string 
+std::string
 ArgParser::get_error() const
 {
   return _error_msg;
