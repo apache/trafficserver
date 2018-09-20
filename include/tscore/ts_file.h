@@ -43,8 +43,8 @@ namespace file
     using self_type = path;
 
   public:
-    using value_type = char;
-    using string_type = std::string;
+    using value_type                          = char;
+    using string_type                         = std::string;
     static constexpr char preferred_separator = value_type{'/'};
 
     /// Default construct empty path.
