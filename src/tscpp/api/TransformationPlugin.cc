@@ -28,6 +28,7 @@
 #include "utils_internal.h"
 #include "logging_internal.h"
 #include "tscpp/api/noncopyable.h"
+#include "tscpp/api/Continuation.h"
 
 #ifndef INT64_MAX
 #define INT64_MAX (9223372036854775807LL)
@@ -36,10 +37,25 @@
 using namespace atscppapi;
 using atscppapi::TransformationPlugin;
 
+namespace
+{
+class ResumeAfterPauseCont : public Continuation
+{
+public:
+  ResumeAfterPauseCont() : Continuation() {}
+
+  ResumeAfterPauseCont(Continuation::Mutex m) : Continuation(m) {}
+
+protected:
+  int _run(TSEvent event, void *edata) override;
+};
+
+} // end anonymous namespace
+
 /**
  * @private
  */
-struct atscppapi::TransformationPluginState : noncopyable {
+struct atscppapi::TransformationPluginState : noncopyable, public ResumeAfterPauseCont {
   TSVConn vconn_;
   Transaction &transaction_;
   TransformationPlugin &transformation_plugin_;
@@ -50,7 +66,6 @@ struct atscppapi::TransformationPluginState : noncopyable {
   TSIOBufferReader output_buffer_reader_;
   int64_t bytes_written_;
   bool paused_;
-  TSCont resume_cont_;
 
   // We can only send a single WRITE_COMPLETE even though
   // we may receive an immediate event after we've sent a
@@ -72,7 +87,6 @@ struct atscppapi::TransformationPluginState : noncopyable {
       output_buffer_reader_(nullptr),
       bytes_written_(0),
       paused_(false),
-      resume_cont_(nullptr),
       input_complete_dispatched_(false)
   {
     output_buffer_        = TSIOBufferCreate();
@@ -89,11 +103,6 @@ struct atscppapi::TransformationPluginState : noncopyable {
     if (output_buffer_) {
       TSIOBufferDestroy(output_buffer_);
       output_buffer_ = nullptr;
-    }
-
-    // Cleanup pending cont
-    if (resume_cont_) {
-      TSContDataSet(resume_cont_, nullptr);
     }
   }
 };
@@ -273,31 +282,49 @@ TransformationPlugin::~TransformationPlugin()
   delete state_;
 }
 
-TSCont
+void
 TransformationPlugin::pause()
 {
-  if (state_->input_complete_dispatched_) {
+  if (state_->paused_) {
+    LOG_ERROR("Can not pause transformation, already paused  TransformationPlugin=%p (vconn)contp=%p tshttptxn=%p", this,
+              state_->vconn_, state_->txn_);
+  } else if (state_->input_complete_dispatched_) {
     LOG_ERROR("Can not pause transformation (transformation completed) TransformationPlugin=%p (vconn)contp=%p tshttptxn=%p", this,
               state_->vconn_, state_->txn_);
-    return nullptr;
   } else {
-    state_->paused_      = true;
-    state_->resume_cont_ = TSContCreate(&resumeCallback, TSContMutexGet(reinterpret_cast<TSCont>(state_->txn_)));
-    TSContDataSet(state_->resume_cont_, static_cast<void *>(state_));
-    return state_->resume_cont_;
+    state_->paused_ = true;
+    if (!static_cast<bool>(static_cast<ResumeAfterPauseCont *>(state_))) {
+      *static_cast<ResumeAfterPauseCont *>(state_) = ResumeAfterPauseCont(TSContMutexGet(reinterpret_cast<TSCont>(state_->txn_)));
+    }
   }
 }
 
-int
-TransformationPlugin::resumeCallback(TSCont cont, TSEvent event, void *edata)
+bool
+TransformationPlugin::isPaused() const
 {
-  auto state = static_cast<TransformationPluginState *>(TSContDataGet(cont));
-  if (state) {
-    state->paused_ = false;
-    handleTransformationPluginRead(state->vconn_, state);
-  }
+  return state_->paused_;
+}
 
-  TSContDestroy(cont);
+Continuation &
+TransformationPlugin::resumeCont()
+{
+  TSReleaseAssert(state_->paused_);
+
+  // The cast to a pointer to the intermediate base class ResumeAfterPauseCont is not strictly necessary.  It is
+  // possible that the transform plugin might want to defer work to other continuations in the future.  This would
+  // naturally result in TransactionPluginState having Continuation as an indirect base class multiple times, making
+  // disambiguation necessary when converting.
+  //
+  return *static_cast<ResumeAfterPauseCont *>(state_);
+}
+
+int
+ResumeAfterPauseCont::_run(TSEvent event, void *edata)
+{
+  auto state     = static_cast<TransformationPluginState *>(this);
+  state->paused_ = false;
+  handleTransformationPluginRead(state->vconn_, state);
+
   return TS_SUCCESS;
 }
 

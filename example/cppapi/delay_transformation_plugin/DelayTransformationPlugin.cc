@@ -23,6 +23,7 @@
 #include "tscpp/api/TransformationPlugin.h"
 #include "tscpp/api/PluginInit.h"
 #include "tscpp/api/Logger.h"
+#include "tscpp/api/Continuation.h"
 
 #include "ts/ts.h"
 
@@ -71,12 +72,10 @@ public:
     produce(data);
 
     TS_DEBUG(TAG, "Pausing...");
-    TSCont cont = pause();
+    pause();
 
-    if (cont) {
-      TS_DEBUG(TAG, "Resuming in 2ms...");
-      TSContSchedule(cont, 2, TS_THREAD_POOL_NET);
-    }
+    TS_DEBUG(TAG, "Resuming in 2ms...");
+    resumeCont().schedule(2, TS_THREAD_POOL_NET);
   }
 
   void
