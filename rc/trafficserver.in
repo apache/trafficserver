@@ -292,6 +292,10 @@ rc_start_hook()
     return $?
 }
 
+# Make sure the NOFILES limit is set high in case this process is not 
+# started from a logged in prompt
+ulimit -n 5000000
+
 # main
 case "$1" in
     start)
