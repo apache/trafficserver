@@ -71,14 +71,18 @@ TEST_CASE("test arena", "[libts][arena]")
       fill_test_data(test_regions[j], test_size, j);
     }
 
+    int failures = 0;
     // Now check to make sure the data is correct
     for (j = 0; j < regions_to_test; j++) {
       char a = 'a' + (j % 52);
       for (int k = 0; k < test_size; k++) {
-        REQUIRE(test_regions[j][k] == a);
+        if (test_regions[j][k] != a) {
+          failures++;
+        }
         a = (a + 1) % 52;
       }
     }
+    REQUIRE(failures == 0);
     // Now free the regions
     for (j = 0; j < regions_to_test; j++) {
       a->free(test_regions[j], test_size);
