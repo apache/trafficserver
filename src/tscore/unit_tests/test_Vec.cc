@@ -221,10 +221,14 @@ TEST_CASE("test append", "[Vec]")
   str.clear();
   REQUIRE(str.length() == 0);
 
+  int failures = 0;
   for (unsigned i = 0; i < 1000; ++i) {
     str.append(value, len);
-    REQUIRE(memcmp(&str[i * len], value, len) == 0);
+    if (memcmp(&str[i * len], value, len) != 0) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   REQUIRE(str.length() == 1000 * len);
 }
@@ -270,7 +274,6 @@ TEST_CASE("test basic", "[libts][Vec]")
     t += (int)(intptr_t)v.v[i];
   }
   REQUIRE(t == 999 * 500);
-  printf("%zu %zu\n", v.n, v.i);
 
   Intervals in;
   in.insert(1);
@@ -320,19 +323,26 @@ TEST_CASE("test sort", "[libts][Vec]")
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 149) % 1000) + 1)));
   }
   v.qsort(&compare);
+  int failures = 0;
   for (int i = 0; i < 1000; ++i) {
-    REQUIRE(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   v.clear();
   for (long i = 1; i <= 1000000; ++i) {
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 51511) % 1000000) + 1)));
   }
   v.qsort(&compare);
-
+  failures = 0;
   for (long i = 0; i < 1000000; ++i) {
-    REQUIRE(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   v.clear();
   for (long i = 1; i <= 1000000; ++i) {
@@ -340,10 +350,13 @@ TEST_CASE("test sort", "[libts][Vec]")
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 199999) % 500000) + 1)));
   }
   v.qsort(&compare);
-
+  failures = 0;
   for (long i = 0; i < 1000000; ++i) {
-    REQUIRE(reinterpret_cast<void *>(static_cast<intptr_t>((i / 2) + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>((i / 2) + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   // Very long array, already sorted. This is what broke before.
   v.clear();
@@ -351,9 +364,13 @@ TEST_CASE("test sort", "[libts][Vec]")
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(i)));
   }
   v.qsort(&compare);
+  failures = 0;
   for (long i = 0; i < 10000000; ++i) {
-    REQUIRE(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   // very long, reverse sorted.
   v.clear();
@@ -361,7 +378,11 @@ TEST_CASE("test sort", "[libts][Vec]")
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(i)));
   }
   v.qsort(&compare);
+  failures = 0;
   for (long i = 0; i < 10000000; ++i) {
-    REQUIRE(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 }
