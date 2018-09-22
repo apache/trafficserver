@@ -23,7 +23,9 @@
 #pragma once
 
 #include "tscpp/api/noncopyable.h"
+#include "tscpp/util/OpsFromCmp.h"
 #include <string>
+#include <string_view>
 
 namespace atscppapi
 {
@@ -56,53 +58,58 @@ public:
    * std::string conversion
    * @return a string which is this HeaderFieldName
    */
-  operator std::string();
+  operator std::string() const;
 
   /**
    * const char * conversion
    * @return a const char * which is this HeaderFieldName
    */
-  operator const char *();
+  operator const char *() const;
 
   /**
    * @return the length of this HeaderFieldName
    */
-  size_type length();
+  size_type length() const;
 
   /**
    * @return a string which is this HeaderFieldName
    */
-  std::string str();
+  std::string str() const;
 
   /**
    * @return a const char * which points to the name of this HeaderFIeldName
    */
-  const char *c_str();
+  const char *c_str() const;
 
-  /**
-   * Case insensitive comparison of this HeaderFieldName
-   * @return true if the two strings are equal.
-   */
-  bool operator==(const char *field_name);
-
-  /**
-   * Case insensitive comparison of this HeaderFieldName
-   * @return true if the two strings are equal.
-   */
-  bool operator==(const std::string &field_name);
-
-  /**
-   * Case insensitive comparison of this HeaderFieldName
-   * @return true if the two strings are not equal.
-   */
-  bool operator!=(const char *field_name);
-
-  /**
-   * Case insensitive comparison of this HeaderFieldName
-   * @return true if the two strings are not equal.
-   */
-  bool operator!=(const std::string &field_name);
+  std::string_view
+  sV() const
+  {
+    return name_;
+  }
+  operator std::string_view() const { return name_; }
 };
+
+// Case-insensitive compare function.
+//
+int cmp(const HeaderFieldName &n, std::string_view sV);
+
+TS_DEFINE_CMP_OPS_2T(HeaderFieldName, std::string_view)
+
+inline int
+cmp(const HeaderFieldName &n1, const char *n2)
+{
+  return cmp(n1, std::string_view(n2));
+}
+
+TS_DEFINE_CMP_OPS_2T(HeaderFieldName, const char *)
+
+inline int
+cmp(const HeaderFieldName &n1, const HeaderFieldName &n2)
+{
+  return cmp(n1, n2.sV());
+}
+
+TS_DEFINE_CMP_OPS(HeaderFieldName)
 
 class HeaderField;
 
