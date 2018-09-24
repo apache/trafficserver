@@ -57,6 +57,15 @@ server.addResponse("sessionlog.jason",
                      "body": post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 
+# Make a post body that will be split across at least two frames
+big_post_body = "0123456789" * 131070
+server.addResponse("sessionlog.jason",
+                   {"headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
+                    "timestamp": "1469733493.993",
+                     "body": big_post_body},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
+
+
 server.addResponse("sessionlog.json", request_header2, response_header2)
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -72,7 +81,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http2',
+    'proxy.config.diags.debug.tags': 'http',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
@@ -83,6 +92,11 @@ ts.Disk.records_config.update({
     'proxy.config.http2.active_timeout_in': 3,
     'proxy.config.http2.max_concurrent_streams_in': 65535,
 })
+
+big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
+big_post_body_file.write(big_post_body)
+big_post_body_file.close()
+
 ts.Setup.CopyAs('h2client.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2bigclient.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2chunked.py', Test.RunDirectory)
@@ -129,9 +143,19 @@ tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
 
 # Test Case 6: Post with chunked body
-# cannot explicitly specify Transfer-Encoding with a HTTP/2 requests because this is against the HTTP/2 spec.  ATS will error with malformed request
+# While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
+# on the post body
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -k -d "{0}" https://127.0.0.1:{1}/postchunked'.format( post_body, ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format( post_body, ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
+tr.StillRunningAfter = server
+
+# Test Case 7: Post with big chunked body
+# While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
+# on the post body
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format( ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
