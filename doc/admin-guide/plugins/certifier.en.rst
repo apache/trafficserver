@@ -1,7 +1,7 @@
 .. _admin-plugins-certifier:
 
 Certifier Plugin
-***************
+****************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -47,20 +47,27 @@ Setup
 Plugin Configuration
 ====================
 .. program:: certifier.so
+
 * Specify certificate generation related files. If any of the following parameters is missing, the dynamic generation will be disabled.
    .. option:: --sign-cert <path_to_certificate>
+
    (`optional`, default:empty/unused) - specifies the path to the root CA certficate. In most cases, this would be a self-signed certificate that is configured to be trusted by all potential clients. Path should be the path and file name of the cert. If it is relative, it is relative to the Traffic Server configuration directory.
 
    .. option:: --sign-key <path_to_key>
+
    (`optional`, default:empty/unused) - specifies the path to the root CA private key. In most cases, this would be generated alongside the self-signed root CA certificate.
 
    .. option:: --sign-serial <path_to_serial>
+
    (`optional`, default:empty/unused) - specifies the path to the serial number file. This will be used to assign serial numbers to certificates and keep all generated ones in sync. Serial file should be a number with a trailing newline.
+
 * Specify the certificates management related settings.
    .. option:: --store <path_to_certs_dir>
+
    (`required`, default:empty) - specifies the directory to use as the root of file system certificates storage.
 
    .. option:: --max <N>
+
    (`required`, default:empty) - specifies the upper limit on number of files kept in memory.
 
 
@@ -74,18 +81,18 @@ One use case would be routing incoming CONNECT request to another port on traffi
 
 .. uml::
    :align: center
-   actor "User"
-   participant "Traffic_Server"
-   participant "Origin_Server"
-   [User] -> [Traffic_Server]: CONNECT request
-   [Traffic_Server] -> [Traffic_Server]: Route CONNECT\nback to self
-   [User] -->> [Traffic_Server]: Client Hello
-   [Traffic_Server] -->> [User]: Server Hello with fake certs from certifier
-   [User] -->> [Traffic_Server]: ClientKeyExchange [ChangeCipherSpec]
-   [Traffic_Server] -->> [User]: ChangeCipherSpec
-   [User] <-> [Traffic_Server]: Tunnel established
-   [User] -> [Traffic_Server]: User request via tunnel
-   [Traffic_Server] -> [Origin_Server]: Request
-   [Origin_Server] --> [Traffic_Server]: Response
-   [Traffic_Server] --> [User]: TS response via tunnel
-@enduml
+
+   actor User
+   participant Traffic_Server
+   participant Origin_Server
+   User -> Traffic_Server: CONNECT request
+   Traffic_Server -> Traffic_Server: Route CONNECT\nback to self
+   User -> Traffic_Server: Client Hello
+   Traffic_Server -> User: Server Hello with fake certs from certifier
+   User -> Traffic_Server: ClientKeyExchange ChangeCipherSpec
+   Traffic_Server -> User: ChangeCipherSpec
+   User <-> Traffic_Server: Tunnel established
+   User -> Traffic_Server: User request via tunnel
+   Traffic_Server -> Origin_Server: Request
+   Origin_Server -> Traffic_Server: Response
+   Traffic_Server -> User: TS response via tunnel
