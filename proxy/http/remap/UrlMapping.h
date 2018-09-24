@@ -25,12 +25,12 @@
 
 #include <vector>
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "AclFiltering.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
-#include "ts/Regex.h"
-#include "ts/List.h"
+#include "tscore/Regex.h"
+#include "tscore/List.h"
 
 /**
  * Used to store http referer strings (and/or regexp)

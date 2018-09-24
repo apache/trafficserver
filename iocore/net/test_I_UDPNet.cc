@@ -25,8 +25,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "ts/I_Layout.h"
-#include "ts/TestBox.h"
+#include "tscore/I_Layout.h"
+#include "tscore/TestBox.h"
 
 #include "I_EventSystem.h"
 #include "I_Net.h"

@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "ts/Ptr.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_assert.h"
-#include "ts/Arena.h"
+#include "tscore/Ptr.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Arena.h"
 #include "HdrToken.h"
 
 // Objects in the heap must currently be aligned to 8 byte boundaries,

@@ -25,9 +25,9 @@
 // including: make directory (with parents), copy directory (recursively), remove directory (recursively), remove all directories
 // inside
 
-#include "ts/ink_error.h"
-#include "ts/I_Layout.h"
-#include "ts/runroot.h"
+#include "tscore/ink_error.h"
+#include "tscore/I_Layout.h"
+#include "tscore/runroot.h"
 #include "file_system.h"
 
 #include <iostream>
@@ -243,7 +243,8 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
     }
     if (copy_dir == LAYOUT_INCLUDEDIR) {
       // check if include file is contained in atscppapi/ and ts/. If not, end the copying.
-      if (dst_path.find("/atscppapi/") == std::string::npos && dst_path.find("/ts/") == std::string::npos) {
+      if (dst_path.find("/atscppapi/") == std::string::npos && dst_path.find("/ts/") == std::string::npos &&
+          dst_path.find("/tscpp/") == std::string::npos) {
         break;
       }
     }

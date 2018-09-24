@@ -52,9 +52,9 @@ RUN yum -y update; \
     # Devel packages that ATS needs
     yum -y install openssl-devel tcl-devel expat-devel pcre-devel libcap-devel hwloc-devel libunwind-devel \
     xz-devel libcurl-devel ncurses-devel jemalloc-devel GeoIP-devel kyotocabinet-devel luajit-devel \
-    perl-ExtUtils-MakeMaker; \
+    perl-ExtUtils-MakeMaker perl-Digest-SHA; \
     # This is for autest stuff
-    yum -y install python3 python3-virtualenv python-virtualenv httpd-tools procps-ng; \
+    yum -y install python3 python3-virtualenv python-virtualenv httpd-tools procps-ng nmap-ncat; \
     # Optional: This is for the OpenSSH server, and Jenkins account (comment out if not needed)
     yum -y install openssh-server && ssh-keygen -A; rm -f /run/nologin; \
     groupadd  -g 665 jenkins && \

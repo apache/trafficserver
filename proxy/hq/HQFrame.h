@@ -23,9 +23,9 @@
 
 #pragma once
 
-#include "ts/Allocator.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_assert.h"
+#include "tscore/Allocator.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_assert.h"
 #include "HQTypes.h"
 
 class HQFrame

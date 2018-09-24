@@ -36,19 +36,21 @@
 #include <cstdlib>
 #include <cstdio>
 #include <bitset>
+#include <map>
 
 #ifdef HAVE_CTYPE_H
 #include <cctype>
 #endif
 
-#include "ts/ink_platform.h"
-#include "ts/ink_inet.h"
-#include "ts/Regex.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_inet.h"
+#include "tscore/IpMap.h"
+#include "tscore/Regex.h"
 #include "string_view"
-#include "ts/BufferWriter.h"
+#include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 #include "HttpConnectionCount.h"
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
@@ -271,6 +273,7 @@ enum {
   http_response_status_304_count_stat,
   http_response_status_305_count_stat,
   http_response_status_307_count_stat,
+  http_response_status_308_count_stat,
   http_response_status_3xx_count_stat,
   http_response_status_400_count_stat,
   http_response_status_401_count_stat,
@@ -394,6 +397,39 @@ using OptionBitSet = std::bitset<NUM_OPTIONS>;
 OptionBitSet optStrToBitset(std::string_view optConfigStr, ts::FixedBufferWriter &error);
 
 } // namespace HttpForwarded
+
+namespace RedirectEnabled
+{
+enum class AddressClass {
+  INVALID = -1,
+  DEFAULT,
+  PRIVATE,
+  LOOPBACK,
+  MULTICAST,
+  LINKLOCAL,
+  ROUTABLE,
+  SELF,
+};
+
+enum class Action {
+  INVALID = -1,
+  RETURN,
+  REJECT,
+  FOLLOW,
+};
+
+static std::map<std::string, AddressClass> address_class_map = {
+  {"default", AddressClass::DEFAULT},     {"private", AddressClass::PRIVATE},     {"loopback", AddressClass::LOOPBACK},
+  {"multicast", AddressClass::MULTICAST}, {"linklocal", AddressClass::LINKLOCAL}, {"routable", AddressClass::ROUTABLE},
+  {"self", AddressClass::SELF},
+};
+
+static std::map<std::string, Action> action_map = {
+  {"return", Action::RETURN},
+  {"reject", Action::REJECT},
+  {"follow", Action::FOLLOW},
+};
+} // namespace RedirectEnabled
 
 /////////////////////////////////////////////////////////////
 // This is a little helper class, used by the HttpConfigParams
@@ -823,6 +859,10 @@ public:
   MgmtInt post_copy_size = 2048;
   MgmtInt max_post_size  = 0;
 
+  char *redirect_actions_string                        = nullptr;
+  IpMap *redirect_actions_map                          = nullptr;
+  RedirectEnabled::Action redirect_actions_self_action = RedirectEnabled::Action::INVALID;
+
   ///////////////////////////////////////////////////////////////////
   // Put all MgmtByte members down here, avoids additional padding //
   ///////////////////////////////////////////////////////////////////
@@ -896,6 +936,9 @@ public:
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);
 
+  // parse redirect configuration string
+  static IpMap *parse_redirect_actions(char *redirect_actions_string, RedirectEnabled::Action &self_action);
+
 public:
   static int m_id;
   static HttpConfigParams m_master;
@@ -926,8 +969,8 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.cache_vary_default_other);
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
+  ats_free(redirect_actions_string);
 
-  if (connect_ports) {
-    delete connect_ports;
-  }
+  delete connect_ports;
+  delete redirect_actions_map;
 }

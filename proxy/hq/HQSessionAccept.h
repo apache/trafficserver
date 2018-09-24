@@ -24,7 +24,7 @@
 #ifndef __HTTP_QUIC_SESSION_ACCEPT_H__
 #define __HTTP_QUIC_SESSION_ACCEPT_H__
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Net.h"
 
 // XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that

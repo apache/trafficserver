@@ -27,7 +27,7 @@
 #include <atomic>
 #include <cstddef>
 
-#include "ts/List.h"
+#include "tscore/List.h"
 #include "I_IOBuffer.h"
 
 #include "QUICTypes.h"

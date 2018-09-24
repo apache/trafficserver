@@ -22,7 +22,7 @@
  */
 
 #include "traffic_ctl.h"
-#include <P_RecUtils.h>
+#include "records/P_RecUtils.h"
 
 static int
 metric_get(unsigned argc, const char **argv)

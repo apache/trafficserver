@@ -29,7 +29,7 @@
 
 **************************************************************************/
 #include "P_EventSystem.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_string.h"
 
 ///////////////////////////////////////////////
 // Common Interface impl                     //

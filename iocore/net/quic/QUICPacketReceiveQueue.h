@@ -24,7 +24,7 @@
 #pragma once
 
 #include "I_UDPPacket.h"
-#include "ts/List.h"
+#include "tscore/List.h"
 
 #include "QUICPacket.h"
 

@@ -241,9 +241,9 @@ void * buf;
 	Is it part of the public interface ?
 
 
-+---------------------------+
-| lib/ts/ink_hrtime.h |
-+---------------------------+
++-----------------------------+
+| include/tscore/ink_hrtime.h |
++-----------------------------+
 
 conversion routines
 

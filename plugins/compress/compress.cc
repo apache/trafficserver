@@ -29,7 +29,7 @@
 #endif
 
 #include "ts/ts.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #include "debug_macros.h"
 #include "misc.h"

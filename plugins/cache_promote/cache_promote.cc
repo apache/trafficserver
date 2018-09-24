@@ -30,7 +30,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #define MINIMUM_BUCKET_SIZE 10
 

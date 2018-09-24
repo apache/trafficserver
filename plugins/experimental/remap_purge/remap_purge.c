@@ -34,7 +34,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 static const char *PLUGIN_NAME = "remap_purge";
 static const char *DEFAULT_DIR = "var/trafficserver"; /* Not perfect, but no better API) */

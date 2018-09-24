@@ -23,7 +23,7 @@
 
 #include "P_AIO.h"
 #include "InkAPIInternal.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 #include <iostream>
 #include <fstream>
 

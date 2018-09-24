@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_memory.h"
+#include "tscore/ink_memory.h"
 #include "ProcessManager.h"
 #include "I_Tasks.h"
 

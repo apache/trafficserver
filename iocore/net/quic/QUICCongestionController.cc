@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include <ts/Diags.h>
+#include <tscore/Diags.h>
 #include <QUICLossDetector.h>
 
 #include "QUICConfig.h"

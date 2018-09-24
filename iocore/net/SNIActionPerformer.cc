@@ -29,7 +29,7 @@
    SNI based Configuration in ATS
  ****************************************************************************/
 #include "P_SNIActionPerformer.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_memory.h"
 #include "P_SSLSNI.h"
 #include "P_Net.h"
 #include "P_SSLNextProtocolAccept.h"

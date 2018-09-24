@@ -49,10 +49,7 @@ SNI Routing
 ===========
 
 Currently the only directly supported layer 4 routing (as of version 8.0) is SNI based routing. This
-imposes some requirements on the traffic.
-
-*  The inbound connection must be TLS.
-*  The outbound destination must handle the HTTP ``CONNECT`` method.
+imposes the requirement on the traffic that the inbound connection must be TLS.
 
 SNI routing is configured by :file:`ssl_server_name.yaml`.
 
@@ -60,10 +57,11 @@ If SNI Routing is enabled the initial "`CLIENT HELLO
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" data of an inbound TLS connection is
 examined to extract the "`SNI <https://tools.ietf.org/html/rfc3546#section-3.1>`__" value. This is
 matched against the configuration data to select an action for the inbound connection. In this case
-the option of interest is ``tunnel_route``. If this is set then |TS| will connect to the specified
-destination and issue an HTTP ``CONNECT`` request using the SNI value as the URL for the request.
-Because the destination and the ``CONNECT`` are the same in general it will be necessary to use
-a plugin to change the URL in the ``CONNECT``.
+the option of interest is ``tunnel_route``. If this is set then |TS| synthesizes an HTTP ``CONNECT``
+request to itself with the ``tunnel_route`` host and port as the upstream. That is, the inbound
+connection is treated as if the user agent had sent a
+``CONNECT`` to the upstream and forwards the "`CLIENT HELLO
+<https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" to it.
 
 Example
 -------
@@ -100,24 +98,20 @@ service-2.example.com      app-server-56:4443
 
 The :file:`ssl_server_name.yaml` contents would be
 
-.. code-block:: lua
+.. code:: yaml
 
-   server_config = {
-      {
-         fqdn = 'service-1.example.com'
-         tunnel_route = 'app-server-29:443'
-      },
-      {
-         fqdn = 'service-2.example.com'
-         tunnel_route = 'app-server-56:4443'
-      }
-   }
+
+   - tunnel_route: app-server-29:443
+     fqdn: service-1.example.com
+
+   - tunnel_route: app-server-56:4443
+     fqdn: service-2.example.com
 
 In addition to this, in the :file:`records.config` file, edit the following variables:
 
    -  :ts:cv:`proxy.config.http.connect_ports`: ``443 4443`` to allow |TS| to connect
       to the destination port
-   -  :ts:cv:`proxy.config.url_remap.remap_required`: 0 to permit |TS| to process requests
+   -  :ts:cv:`proxy.config.url_remap.remap_required`: ``0`` to permit |TS| to process requests
       for hosts not explicitly configured in the remap rules
 
 The sequence of network activity for a Client connecting to ``service-2`` is

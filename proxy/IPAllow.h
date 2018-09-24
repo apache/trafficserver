@@ -38,8 +38,8 @@
 
 #include "hdrs/HTTP.h"
 #include "ProxyConfig.h"
-#include "ts/IpMap.h"
-#include "ts/TextView.h"
+#include "tscore/IpMap.h"
+#include "tscpp/util/TextView.h"
 
 // forward declare in name only so it can be a friend.
 struct IpAllowUpdate;

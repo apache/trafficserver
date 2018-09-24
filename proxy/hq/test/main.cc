@@ -26,7 +26,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor

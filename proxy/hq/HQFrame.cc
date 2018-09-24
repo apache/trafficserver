@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 #include "quic/QUICIntUtil.h"
 #include "HQFrame.h"
 

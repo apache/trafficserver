@@ -144,6 +144,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Access Control <access_control.en>
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
+   Certifier <certifier.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
@@ -160,6 +161,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
    System Statistics <system_stats.en>
+   Traffic Dump <traffic_dump.en>
    WebP Transform <webp_transform.en>
    Prefetch <prefetch.en>
 
@@ -171,6 +173,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Buffer Upload <buffer_upload.en>`
    Buffers POST data before connecting to the Origin server.
+
+:doc:`Certifier <certifier.en>`
+   Manages and/or generates certificates for incoming HTTPS requests.
 
 :doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
    Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
@@ -226,6 +231,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`System Stats <system_stats.en>`
     Inserts system statistics in to the stats list
+
+:doc:`Traffic Dump <traffic_dump.en>`
+   Dumps traffic data into a JSON format file which can be used to replay traffic.
 
 :doc:`WebP Transform <webp_transform.en>`
    Converts jpeg and png images to webp format.

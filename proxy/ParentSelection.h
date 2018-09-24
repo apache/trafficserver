@@ -33,10 +33,10 @@
 #include "ProxyConfig.h"
 #include "ControlBase.h"
 #include "ControlMatcher.h"
-#include "P_RecProcess.h"
-#include "ts/ConsistentHash.h"
-#include "ts/Tokenizer.h"
-#include "ts/ink_apidefs.h"
+#include "records/P_RecProcess.h"
+#include "tscore/ConsistentHash.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/ink_apidefs.h"
 #include "HostStatus.h"
 
 #include <algorithm>

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Tasks.h"
 
 // Note that these should not be used for memory that wishes to retain

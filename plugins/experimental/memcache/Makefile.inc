@@ -22,9 +22,8 @@ experimental_memcache_tsmemcache_la_CPPFLAGS = \
   -I$(abs_top_srcdir)/iocore/eventsystem \
   -I$(abs_top_srcdir)/iocore/net \
   -I$(abs_top_srcdir)/iocore/utils \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/lib/ts
+  -I$(abs_top_srcdir)/include \
+  -I$(abs_top_srcdir)/lib
 
 pkglib_LTLIBRARIES += experimental/memcache/tsmemcache.la
 

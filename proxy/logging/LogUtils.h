@@ -24,8 +24,8 @@
 
 #include <ctime>
 
-#include "ts/ink_platform.h"
-#include "ts/Arena.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Arena.h"
 
 namespace LogUtils
 {

@@ -72,7 +72,7 @@ test_libhq_SOURCES = \
 test_libhq_LDADD = \
   libhq.a \
   $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/lib/ts/libtsutil.la
+  $(top_builddir)/src/tscore/libtscore.la
 
 test_qpack_CPPFLAGS = \
   $(AM_CPPFLAGS) \
@@ -96,7 +96,7 @@ test_qpack_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/proxy/libproxy.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \

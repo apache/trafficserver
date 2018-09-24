@@ -21,10 +21,10 @@
  *  limitations under the License.
  */
 
-#include "ts/ink_string.h"
-#include "ts/ink_args.h"
-#include "ts/I_Layout.h"
-#include "ts/I_Version.h"
+#include "tscore/ink_string.h"
+#include "tscore/ink_args.h"
+#include "tscore/I_Layout.h"
+#include "tscore/I_Version.h"
 
 #include "RecordsConfig.h"
 

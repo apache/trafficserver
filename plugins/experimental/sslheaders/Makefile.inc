@@ -17,7 +17,7 @@
 sslheaders_CPP_FLAGS = \
 	$(AM_CPPFLAGS) \
 	@OPENSSL_INCLUDES@ \
-	-I$(abs_top_srcdir)/lib
+	-I$(abs_top_srcdir)/include
 
 noinst_LTLIBRARIES += experimental/sslheaders/libsslhdr.la
 pkglib_LTLIBRARIES += experimental/sslheaders/sslheaders.la
@@ -46,12 +46,13 @@ experimental_sslheaders_test_sslheaders_SOURCES = \
 experimental_sslheaders_test_sslheaders_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	@OPENSSL_INCLUDES@ \
-	-I$(abs_top_srcdir)/lib
+	-I$(abs_top_srcdir)/include
 experimental_sslheaders_test_sslheaders_LDFLAGS = @OPENSSL_LDFLAGS@
 experimental_sslheaders_test_sslheaders_LDADD = \
 	@AM_LDFLAGS@ \
 	experimental/sslheaders/libsslhdr.la \
-	$(abs_top_builddir)/lib/ts/libtsutil.la \
+	$(abs_top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@OPENSSL_LIBS@
 
 # vim: ft=make ts=8 sw=8 et:

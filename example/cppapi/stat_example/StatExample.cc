@@ -16,10 +16,10 @@
   limitations under the License.
  */
 
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/Logger.h>
-#include <atscppapi/Stat.h>
-#include <atscppapi/PluginInit.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/Logger.h"
+#include "tscpp/api/Stat.h"
+#include "tscpp/api/PluginInit.h"
 #include <cstring>
 
 using namespace atscppapi;

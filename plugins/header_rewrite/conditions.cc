@@ -584,38 +584,6 @@ ConditionInternalTxn::eval(const Resources &res)
 }
 
 void
-ConditionClientIp::initialize(Parser &p)
-{
-  Condition::initialize(p);
-
-  MatcherType *match = new MatcherType(_cond_op);
-
-  match->set(p.get_arg());
-  _matcher = match;
-}
-
-bool
-ConditionClientIp::eval(const Resources &res)
-{
-  std::string s;
-
-  append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating CLIENT-IP()");
-
-  return static_cast<MatcherType *>(_matcher)->test(s);
-}
-
-void
-ConditionClientIp::append_value(std::string &s, const Resources &res)
-{
-  char ip[INET6_ADDRSTRLEN];
-
-  if (getIP(TSHttpTxnClientAddrGet(res.txnp), ip)) {
-    s += ip;
-  }
-}
-
-void
 ConditionIp::initialize(Parser &p)
 {
   Condition::initialize(p);

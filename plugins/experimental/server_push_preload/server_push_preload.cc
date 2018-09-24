@@ -27,8 +27,8 @@
 #include <sstream>
 #include <ts/ts.h>
 #include <ts/experimental.h>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/utils.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/utils.h"
 
 #define PLUGIN_NAME "server_push_preload"
 #define PRELOAD_PARAM "rel=preload"

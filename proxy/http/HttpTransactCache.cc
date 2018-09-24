@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -29,7 +29,7 @@
 #include <ctime>
 #include "HTTP.h"
 #include "HttpCompat.h"
-#include "ts/InkErrno.h"
+#include "tscore/InkErrno.h"
 
 /**
   Find the pointer and length of an etag, after stripping off any leading

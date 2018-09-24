@@ -31,7 +31,7 @@
 #pragma once
 #define _P_EventSystem_h
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "I_EventSystem.h"
 

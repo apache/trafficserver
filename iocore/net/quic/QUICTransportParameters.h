@@ -24,7 +24,7 @@
 #pragma once
 
 #include <map>
-#include <ts/ink_memory.h>
+#include <tscore/ink_memory.h>
 
 #include <openssl/ssl.h>
 #include "QUICTypes.h"

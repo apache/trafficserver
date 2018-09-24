@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/HashFNV.h"
-#include "ts/Diags.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_platform.h"
+#include "tscore/HashFNV.h"
+#include "tscore/Diags.h"
+#include "tscore/ink_memory.h"
 #include <cstdio>
-#include "ts/Allocator.h"
+#include "tscore/Allocator.h"
 #include "HTTP.h"
 #include "HdrToken.h"
 #include "MIME.h"
-#include "ts/Regex.h"
+#include "tscore/Regex.h"
 #include "URL.h"
 
 /*

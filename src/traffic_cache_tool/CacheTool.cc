@@ -38,10 +38,10 @@
 #include <bitset>
 #include <cinttypes>
 
-#include <ts/ink_memory.h>
-#include <ts/ink_file.h>
-#include <ts/BufferWriter.h>
-#include <ts/CryptoHash.h>
+#include "tscore/ink_memory.h"
+#include "tscore/ink_file.h"
+#include "tscore/BufferWriter.h"
+#include "tscore/CryptoHash.h"
 #include <thread>
 
 #include "File.h"

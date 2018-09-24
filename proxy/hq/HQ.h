@@ -24,9 +24,9 @@
 #ifndef __HTTP_QUIC_H__
 #define __HTTP_QUIC_H__
 
-#include "ts/ink_defs.h"
-#include "I_RecDefs.h"
-#include "I_RecProcess.h"
+#include "tscore/ink_defs.h"
+#include "records/I_RecDefs.h"
+#include "records/I_RecProcess.h"
 
 extern RecRawStatBlock *hq_rsb; // Container for statistics.
 

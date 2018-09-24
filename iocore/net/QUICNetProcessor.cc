@@ -19,11 +19,11 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
-#include "ts/I_Layout.h"
+#include "tscore/ink_config.h"
+#include "tscore/I_Layout.h"
 
 #include "P_Net.h"
-#include "I_RecHttp.h"
+#include "records/I_RecHttp.h"
 
 #include "QUICGlobals.h"
 #include "QUICConfig.h"

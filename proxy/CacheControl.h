@@ -32,7 +32,7 @@
 
 #include "P_EventSystem.h"
 #include "ControlBase.h"
-#include "ts/Result.h"
+#include "tscore/Result.h"
 
 struct RequestData;
 

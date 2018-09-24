@@ -29,8 +29,8 @@
  *
  ***************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/ink_sock.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_sock.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
 #include "MgmtMarshall.h"

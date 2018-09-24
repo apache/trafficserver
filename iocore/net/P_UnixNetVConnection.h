@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "ts/ink_sock.h"
+#include "tscore/ink_sock.h"
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
@@ -67,6 +67,7 @@ NetVCOptions::reset()
   etype = ET_NET;
 
   sni_servername    = nullptr;
+  ssl_servername    = nullptr;
   clientCertificate = nullptr;
 }
 
@@ -154,6 +155,7 @@ public:
   virtual void cancel_active_timeout() override;
   virtual void cancel_inactivity_timeout() override;
   void set_action(Continuation *c) override;
+  const Action *get_action() const;
   virtual void add_to_keep_alive_queue() override;
   virtual void remove_from_keep_alive_queue() override;
   virtual bool add_to_active_queue() override;
@@ -433,6 +435,12 @@ TS_INLINE void
 UnixNetVConnection::set_action(Continuation *c)
 {
   action_ = c;
+}
+
+TS_INLINE const Action *
+UnixNetVConnection::get_action() const
+{
+  return &action_;
 }
 
 // declarations for local use (within the net module)

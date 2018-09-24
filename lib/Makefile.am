@@ -16,14 +16,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = . ts records tsconfig cppapi
+SUBDIRS = . records tsconfig
 
 if BUILD_PERL_LIB
 SUBDIRS += perl
-endif
-
-if BUILD_WCCP
-SUBDIRS += wccp
 endif
 
 # to prevent Clang Analyzer warning

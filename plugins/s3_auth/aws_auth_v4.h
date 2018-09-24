@@ -52,7 +52,7 @@ public:
 };
 
 #ifdef AWS_AUTH_V4_UNIT_TEST
-#include "unit-tests/test_aws_auth_v4.h"
+#include "unit_tests/test_aws_auth_v4.h"
 #else
 #include "aws_auth_v4_wrap.h"
 #endif

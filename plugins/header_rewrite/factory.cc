@@ -127,10 +127,6 @@ condition_factory(const std::string &cond)
     c = new ConditionInternalTxn();
   } else if (c_name == "IP") {
     c = new ConditionIp();
-  } else if (c_name == "CLIENT-IP") {
-    TSDebug(PLUGIN_NAME, "\tWARNING: configuration uses deprecated condition, CLIENT-IP()");
-    TSError("warning: CLIENT-IP() is deprecated, use %%{IP:CLIENT} instead");
-    c = new ConditionClientIp();
   } else if (c_name == "INCOMING-PORT") {
     c = new ConditionIncomingPort();
   } else if (c_name == "METHOD") {

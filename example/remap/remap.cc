@@ -38,7 +38,7 @@
 #include <cstdint>
 #include <atomic>
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 

@@ -22,7 +22,7 @@
  */
 
 #include "ts/ts.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #include "misc.h"
 #include <cstring>

@@ -22,9 +22,9 @@
 
 #include <ts/ts.h>
 
-#include <ts/TextView.h>
+#include "tscpp/util/TextView.h"
 
-#include <atscppapi/Continuation.h>
+#include "tscpp/api/Continuation.h"
 
 // TSReleaseAssert() doesn't seem to produce any logging output for a debug build, so do both kinds of assert.
 //

@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/Arena.h"
-#include "ts/ink_memory.h"
+#include "tscore/Arena.h"
+#include "tscore/ink_memory.h"
 #include "XPACK.h"
 #include "HuffmanCodec.h"
 

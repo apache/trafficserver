@@ -23,7 +23,7 @@
 
 #include "QUICLossDetector.h"
 
-#include "ts/ink_assert.h"
+#include "tscore/ink_assert.h"
 
 #include "QUICConfig.h"
 #include "QUICEvents.h"

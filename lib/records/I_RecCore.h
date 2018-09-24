@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 #include "I_RecDefs.h"
 #include "I_RecAlarms.h"

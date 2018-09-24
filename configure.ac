@@ -51,7 +51,7 @@ AM_MAINTAINER_MODE([enable])
 # Enable a recursive "tidy" rule for clang-tidy.
 m4_ifdef([AM_EXTRA_RECURSIVE_TARGETS], [AM_EXTRA_RECURSIVE_TARGETS([clang-tidy])])
 
-AC_CONFIG_HEADERS([lib/ink_autoconf.h])
+AC_CONFIG_HEADERS([include/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
@@ -2040,6 +2040,10 @@ AC_CONFIG_FILES([
   doc/ext/local-config.py
   doc/uml/Makefile
   example/Makefile
+  include/Makefile 
+  include/ts/Makefile 
+  include/tscpp/api/Makefile 
+  include/tscpp/util/Makefile
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
@@ -2050,15 +2054,14 @@ AC_CONFIG_FILES([
   iocore/net/quic/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/cppapi/Makefile
+  src/tscpp/api/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
-  lib/ts/Makefile
-  lib/ts/apidefs.h
-  lib/ts/ink_config.h
+  include/ts/apidefs.h
+  include/tscore/ink_config.h
   lib/tsconfig/Makefile
-  lib/wccp/Makefile
+  src/wccp/Makefile
   lib/yamlcpp/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
@@ -2066,7 +2069,6 @@ AC_CONFIG_FILES([
   mgmt/utils/Makefile
   plugins/Makefile
   proxy/Makefile
-  proxy/api/ts/Makefile
   proxy/hdrs/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
@@ -2079,6 +2081,8 @@ AC_CONFIG_FILES([
   rc/trafficserver.conf
   rc/trafficserver.service
   rc/trafficserver.xml
+  src/tscpp/util/Makefile 
+  src/tscore/Makefile
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs

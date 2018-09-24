@@ -22,8 +22,8 @@
  */
 
 #include "I_EventSystem.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_string.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ink_string.h"
 
 #include "diags.i"
 

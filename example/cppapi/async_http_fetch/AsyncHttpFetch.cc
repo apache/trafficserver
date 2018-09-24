@@ -16,13 +16,13 @@
   limitations under the License.
  */
 
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransactionPlugin.h>
-#include <atscppapi/Logger.h>
-#include <atscppapi/Async.h>
-#include <atscppapi/AsyncHttpFetch.h>
-#include <atscppapi/AsyncTimer.h>
-#include <atscppapi/PluginInit.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/TransactionPlugin.h"
+#include "tscpp/api/Logger.h"
+#include "tscpp/api/Async.h"
+#include "tscpp/api/AsyncHttpFetch.h"
+#include "tscpp/api/AsyncTimer.h"
+#include "tscpp/api/PluginInit.h"
 #include <cstring>
 #include <cassert>
 #include <utility>

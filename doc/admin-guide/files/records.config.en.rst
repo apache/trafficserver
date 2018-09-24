@@ -609,6 +609,7 @@ HTTP Engine
    tr-in                       Inbound transparent.
    tr-out                      Outbound transparent.
    tr-pass                     Pass through enabled.
+   mptcp                       Multipath TCP.
    =========== =============== ========================================
 
 *number*
@@ -673,6 +674,11 @@ ip-resolve
    Set the :ts:cv:`host resolution style <proxy.config.hostdb.ip_resolve>` for transactions on this proxy port.
 
    Not compatible with: ``tr-out`` - this option requires a value of ``client;none`` which is forced and should not be explicitly specified.
+
+mptcp
+   Enable Multipath TCP on this proxy port.
+
+   Requires custom Linux kernel available at https://multipath-tcp.org.
 
 .. topic:: Example
 
@@ -1325,6 +1331,61 @@ HTTP Redirection
 
    This setting determines the maximum size in bytes of uploaded content to be
    buffered for HTTP methods such as POST and PUT.
+
+.. ts:cv:: CONFIG proxy.config.http.redirect.actions STRING routable:follow
+   :reloadable:
+
+   This setting determines how redirects should be handled. The setting consists
+   of a comma-separated list of key-value pairs, where the keys are named IP
+   address ranges and the values are actions.
+
+   The following are valid keys:
+
+   ============= ===============================================================
+   Key           Description
+   ============= ===============================================================
+   ``self``      Addresses of the host's interfaces
+   ``loopback``  IPv4 ``127.0.0.0/8`` and IPv6 ``::1``
+   ``private``   IPv4 ``10.0.0.0/8`` ``100.64.0.0/10`` ``172.16.0.0/12`` ``192.168.0.0/16`` and IPv6 ``fc00::/7``
+   ``multicast`` IPv4 ``224.0.0.0/4`` and IPv6 ``ff00::/8``
+   ``linklocal`` IPv4 ``169.254.0.0/16`` and IPv6 ``fe80::/10``
+   ``routable``  All publicly routable addresses
+   ``default``   All address ranges not configured specifically
+   ============= ===============================================================
+
+   The following are valid values:
+
+   ========== ==================================================================
+   Value      Description
+   ========== ==================================================================
+   ``return`` Do not process the redirect, send it as the proxy response.
+   ``reject`` Do not process the redirect, send a 403 as the proxy response.
+   ``follow`` Internally follow the redirect up to :ts:cv:`proxy.config.http.number_of_redirections`. **Use this setting with caution!**
+   ========== ==================================================================
+
+   .. warning:: Following a redirect to other than ``routable`` addresses can be
+      dangerous, as it allows the controller of an origin to arrange a probe the
+      |TS| host. Enabling these redirects makes |TS| open to third party attacks
+      and probing and therefore should be considered only in known safe
+      environments.
+
+   For example, a setting of
+   ``loopback:reject,private:reject,routable:follow,default:return`` would send
+   ``403`` as the proxy response to loopback and private addresses, routable
+   addresses would be followed up to
+   :ts:cv:`proxy.config.http.number_of_redirections`, and redirects to all other
+   ranges will be sent as the proxy response.
+
+   The action for ``self`` has the highest priority when an address would match
+   multiple keys, and the action for ``default`` has the lowest priority. Other
+   keys represent disjoint sets of addresses that will not conflict. If
+   duplicate keys are present in the setting, the right-most key-value pair is
+   used.
+
+   The default value is ``routable:follow``, which means "follow routable
+   redirects, return all other redirects". Note that
+   :ts:cv:`proxy.config.http.number_of_redirections` must be positive also,
+   otherwise redirects will be returned rather than followed.
 
 Origin Server Connect Attempts
 ==============================
@@ -2681,7 +2742,7 @@ Logging Configuration
    ``0``    Logging disabled.
    ``1``    Log errors only.
    ``2``    Log transactions only.
-   ``3``    Dull logging (errors and transactions).
+   ``3``    Dual logging (errors and transactions).
    ======== ===================================================================
 
    Refer to :ref:`admin-logging` for more information on event logging.

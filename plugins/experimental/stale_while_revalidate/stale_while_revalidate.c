@@ -31,7 +31,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "ts/ts.h"
 #include "ts/experimental.h"
 

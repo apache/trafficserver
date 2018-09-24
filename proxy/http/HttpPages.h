@@ -33,9 +33,9 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
-#include "ts/DynArray.h"
+#include "tscore/DynArray.h"
 #include "HTTP.h"
 #include "StatPages.h"
 #include "HttpSM.h"

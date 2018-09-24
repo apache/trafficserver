@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_inet.h"
-#include "ts/ink_assert.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Diags.h"
 #include "I_Machine.h"
 
 #if HAVE_IFADDRS_H
@@ -285,6 +285,19 @@ Machine::is_self(const IpAddr *ipaddr)
     return false;
   }
   ipaddr->toString(string_value, sizeof(string_value));
+  return ink_hash_table_lookup(machine_id_ipaddrs, string_value, &value) == 1 ? true : false;
+}
+
+bool
+Machine::is_self(struct sockaddr const *addr)
+{
+  void *value                             = nullptr;
+  char string_value[INET6_ADDRSTRLEN + 1] = {0};
+
+  if (addr == nullptr) {
+    return false;
+  }
+  ats_ip_ntop(addr, string_value, sizeof(string_value));
   return ink_hash_table_lookup(machine_id_ipaddrs, string_value, &value) == 1 ? true : false;
 }
 

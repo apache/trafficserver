@@ -193,7 +193,7 @@ The post increment operator guarantees that :arg:`spot` has been updated before 
 However, it turns out to be handy in other map modifying operations. In the unit tests there is
 this code
 
-.. literalinclude:: ../../../lib/ts/unit-tests/test_IntrusiveHashMap.cc
+.. literalinclude:: ../../../src/tscore/unit_tests/test_IntrusiveHashMap.cc
    :lines: 129-132
 
 This removes all elements that do not have the payload "dup". As another design note,

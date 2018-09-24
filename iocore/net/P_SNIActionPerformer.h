@@ -31,11 +31,11 @@
 #pragma once
 
 #include "I_EventSystem.h"
-#include "ts/Map.h"
+#include "tscore/Map.h"
 //#include"P_UnixNetProcessor.h"
 #include <vector>
 #include "P_SSLNextProtocolAccept.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 
 extern Map<int, SSLNextProtocolSet *> snpsMap;
 // enum of all the actions

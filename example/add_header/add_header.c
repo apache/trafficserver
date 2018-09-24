@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include "ts/ts.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "add_header"
 

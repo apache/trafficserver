@@ -24,8 +24,8 @@
 #include "HTTP.h"
 #include "XPACK.h"
 #include "QPACK.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_memory.h"
 
 #define QPACKDebug(fmt, ...) Debug("qpack", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 #define QPACKDTDebug(fmt, ...) Debug("qpack", "" fmt, ##__VA_ARGS__)

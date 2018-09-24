@@ -24,7 +24,7 @@
 #include "QUICHandshakeProtocol.h"
 #include "QUICDebugNames.h"
 
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 #include "QUICTypes.h"
 #include "QUICHKDF.h"
 

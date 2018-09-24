@@ -19,13 +19,13 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/SimpleTokenizer.h"
+#include "tscore/ink_platform.h"
+#include "tscore/SimpleTokenizer.h"
 #include "records/I_RecHttp.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
 #include "P_Net.h"
-#include "ts/ink_cap.h"
-#include "ts/ink_mutex.h"
+#include "tscore/ink_cap.h"
+#include "tscore/ink_mutex.h"
 #include "P_OCSPStapling.h"
 #include "SSLSessionCache.h"
 #include "InkAPIInternal.h"

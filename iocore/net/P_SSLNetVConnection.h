@@ -31,8 +31,8 @@
  ****************************************************************************/
 #pragma once
 
-#include <ts/ink_platform.h>
-#include <ts/apidefs.h>
+#include "tscore/ink_platform.h"
+#include "ts/apidefs.h"
 #include <string_view>
 
 #include <openssl/ssl.h>

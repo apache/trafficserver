@@ -28,9 +28,9 @@
 #include <string_view>
 
 #include <ts/ts.h>
-#include <ts/ink_defs.h>
-#include <ts/PostScript.h>
-#include <ts/TextView.h>
+#include "tscore/ink_defs.h"
+#include "tscpp/util/PostScript.h"
+#include "tscpp/util/TextView.h"
 
 #define DEBUG_TAG_LOG_HEADERS "xdebug.headers"
 

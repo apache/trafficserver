@@ -26,7 +26,7 @@
 
 // ToDo: It's a little bizarre that we include this here, but it's the only way to get to RecSetRecord(). We should
 // move that elsewhere... But other places in our core does the same thing.
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This currently only supports one type of derivative metrics: Sums() of other, existing metrics. It's ok to add

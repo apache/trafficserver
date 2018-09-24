@@ -23,9 +23,9 @@
 #include <climits>
 #include <string>
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "records/I_RecHttp.h"
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 #include "P_Net.h"
 #include "InkAPIInternal.h" // Added to include the quic_hook definitions

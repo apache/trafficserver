@@ -26,8 +26,8 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "ts/I_Layout.h"
-#include "ts/Diags.h"
+#include "tscore/I_Layout.h"
+#include "tscore/Diags.h"
 
 #include "I_EventSystem.h"
 #include "RecordsConfig.h"

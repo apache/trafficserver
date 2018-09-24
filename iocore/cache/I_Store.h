@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/Result.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Result.h"
 
 #define STORE_BLOCK_SIZE 8192
 #define STORE_BLOCK_SHIFT 13

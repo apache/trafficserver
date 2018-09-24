@@ -23,11 +23,11 @@
 
 #pragma once
 
-#include <ts/ink_inet.h>
-#include <ts/ink_resolver.h>
-#include <ts/apidefs.h>
-#include <ts/apidefs.h>
-#include <ts/ink_assert.h>
+#include "tscore/ink_inet.h"
+#include "tscore/ink_resolver.h"
+#include "ts/apidefs.h"
+#include "ts/apidefs.h"
+#include "tscore/ink_assert.h"
 #include <algorithm>
 #include <vector>
 
@@ -247,6 +247,8 @@ public:
   bool m_outbound_transparent_p;
   // True if transparent pass-through is enabled on this port.
   bool m_transparent_passthrough;
+  /// True if MPTCP is enabled on this port.
+  bool m_mptcp;
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).
@@ -410,6 +412,7 @@ public:
   static const char *const OPT_COMPRESSED;              ///< Compressed.
   static const char *const OPT_HOST_RES_PREFIX;         ///< Set DNS family preference.
   static const char *const OPT_PROTO_PREFIX;            ///< Transport layer protocols.
+  static const char *const OPT_MPTCP;                   ///< MPTCP.
 
   static std::vector<self> &m_global; ///< Global ("default") data.
 

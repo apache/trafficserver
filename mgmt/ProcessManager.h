@@ -27,9 +27,9 @@
 
 #include "MgmtUtils.h"
 #include "BaseManager.h"
-#include "ts/ink_sock.h"
+#include "tscore/ink_sock.h"
 
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_apidefs.h"
 #include <functional>
 
 #if HAVE_EVENTFD

@@ -16,9 +16,9 @@
    limitations under the License.
 */
 
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/InterceptPlugin.h>
-#include <atscppapi/PluginInit.h>
+#include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/InterceptPlugin.h"
+#include "tscpp/api/PluginInit.h"
 
 #include <iostream>
 

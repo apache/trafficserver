@@ -25,8 +25,8 @@
 
 #include <openssl/ssl.h>
 
-#include "ts/ink_assert.h"
-#include "ts/Diags.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Diags.h"
 
 #include "QUICHKDF.h"
 #include "QUICDebugNames.h"

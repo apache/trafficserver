@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/EventNotify.h"
+#include "tscore/ink_platform.h"
+#include "tscore/EventNotify.h"
 
 #include "I_Tasks.h"
 

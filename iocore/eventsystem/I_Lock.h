@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Diags.h"
 #include "I_Thread.h"
 
 #define MAX_LOCK_TIME HRTIME_MSECONDS(200)

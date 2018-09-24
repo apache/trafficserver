@@ -20,8 +20,8 @@ include $(top_srcdir)/build/tidy.mk
 
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	-I$(abs_top_srcdir)/lib/records \
 	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libhdrs.a
@@ -62,7 +62,8 @@ load_http_hdr_SOURCES = \
 	load_http_hdr.cc
 
 load_http_hdr_LDADD = -L. -lhdrs \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@LIBTCL@
 
 check_PROGRAMS = \
@@ -74,7 +75,8 @@ TESTS = \
 	test_Huffmancode
 
 test_mime_LDADD = -L. -lhdrs \
-	$(top_builddir)/lib/ts/libtsutil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
@@ -85,7 +87,8 @@ test_mime_LDADD = -L. -lhdrs \
 test_mime_SOURCES = test_mime.cc
 
 test_Huffmancode_LDADD = \
-	$(top_builddir)/lib/ts/libtsutil.la
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 test_Huffmancode_SOURCES = \
 	test_Huffmancode.cc \

@@ -15,5 +15,5 @@
 #  limitations under the License.
 
 pkglib_LTLIBRARIES += test_cppapi/test_cppapi.la
-test_cppapi_test_cppapi_la_LIBADD = $(top_builddir)/lib/cppapi/libatscppapi.la
+test_cppapi_test_cppapi_la_LIBADD = $(top_builddir)/src/tscpp/api/libtscppapi.la
 test_cppapi_test_cppapi_la_SOURCES = test_cppapi/test_cppapi.cc

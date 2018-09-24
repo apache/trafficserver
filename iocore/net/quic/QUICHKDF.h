@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/HKDF.h"
+#include "tscore/HKDF.h"
 
 class QUICHKDF : public HKDF
 {

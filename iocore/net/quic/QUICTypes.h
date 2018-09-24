@@ -24,14 +24,14 @@
 #pragma once
 
 #include <cstring>
-#include "ts/ink_endian.h"
+#include "tscore/ink_endian.h"
 
 #include <memory>
 #include <random>
 #include <cstdint>
-#include "ts/INK_MD5.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_inet.h"
+#include "tscore/INK_MD5.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_inet.h"
 
 // These magical defines should be removed when we implement seriously
 #define MAGIC_NUMBER_0 0

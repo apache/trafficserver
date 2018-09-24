@@ -29,24 +29,24 @@
  *
  ***************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/ink_file.h"
-#include "ts/ParseRules.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_file.h"
+#include "tscore/ParseRules.h"
 #include "Alarms.h"
 #include "MgmtUtils.h"
 #include "LocalManager.h"
 #include "FileManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
-#include "ts/Diags.h"
-#include "ts/ink_hash_table.h"
+#include "tscore/Diags.h"
+#include "tscore/ink_hash_table.h"
 #include "ExpandingArray.h"
 
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 #include "EventCallback.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_cap.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ink_cap.h"
 
 #include <vector>
 

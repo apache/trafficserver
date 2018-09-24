@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_UDPNet.h"
 #include "P_UDPPacket.h"
 

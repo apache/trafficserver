@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/I_Layout.h"
-#include "I_RecProcess.h"
+#include "tscore/I_Layout.h"
+#include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
 #include "info.h"
 

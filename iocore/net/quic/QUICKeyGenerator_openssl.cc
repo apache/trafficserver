@@ -20,7 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "ts/ink_assert.h"
+#include "tscore/ink_assert.h"
 #include "QUICKeyGenerator.h"
 
 #include <openssl/ssl.h>

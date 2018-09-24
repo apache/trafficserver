@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include "ts/ink_inet.h"
-#include "ts/ink_uuid.h"
-#include "ts/ink_hash_table.h"
+#include "tscore/ink_inet.h"
+#include "tscore/ink_uuid.h"
+#include "tscore/ink_hash_table.h"
 
 /**
   The Machine is a simple place holder for the hostname and the ip
@@ -81,6 +81,7 @@ struct Machine {
   static self *instance();
   bool is_self(const char *name);
   bool is_self(const IpAddr *ipaddr);
+  bool is_self(struct sockaddr const *addr);
   void insert_id(char *id);
   void insert_id(IpAddr *ipaddr);
 

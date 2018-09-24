@@ -31,10 +31,10 @@
 #include <cstdarg>
 #include <cstring>
 
-#include "ts/ink_platform.h"
-#include "ts/Ptr.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Ptr.h"
 #include "LogUtils.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_string.h"
 
 /*****************************************************************************
 

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/ink_hrtime.h"
+#include "tscore/ink_hrtime.h"
 #include "QUICFrameGenerator.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"

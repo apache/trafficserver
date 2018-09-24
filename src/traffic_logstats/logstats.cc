@@ -22,14 +22,14 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_file.h"
-#include "ts/I_Layout.h"
-#include "ts/I_Version.h"
-#include "ts/HashFNV.h"
-#include "ts/ink_args.h"
-#include "ts/MatcherUtils.h"
-#include "ts/runroot.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_file.h"
+#include "tscore/I_Layout.h"
+#include "tscore/I_Version.h"
+#include "tscore/HashFNV.h"
+#include "tscore/ink_args.h"
+#include "tscore/MatcherUtils.h"
+#include "tscore/runroot.h"
 
 // Includes and namespaces etc.
 #include "LogStandalone.cc"

@@ -23,7 +23,7 @@
 
 #include "HQFrameDispatcher.h"
 #include "HQDebugNames.h"
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 static constexpr char tag[] = "hq_frame";
 

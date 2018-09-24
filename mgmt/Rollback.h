@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "ts/ink_mutex.h"
-#include "ts/List.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/List.h"
 
 class FileManager;
 class TextBuffer;

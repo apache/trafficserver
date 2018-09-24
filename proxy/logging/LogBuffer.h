@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Diags.h"
 #include "LogFormat.h"
 #include "LogLimits.h"
 #include "LogAccess.h"

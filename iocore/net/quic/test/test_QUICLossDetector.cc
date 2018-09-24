@@ -26,7 +26,7 @@
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
 #include "Mock.h"
-#include "ts/ink_hrtime.h"
+#include "tscore/ink_hrtime.h"
 
 TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {

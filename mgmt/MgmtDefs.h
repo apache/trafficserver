@@ -29,7 +29,7 @@
 #include <functional>
 #include <string_view>
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 typedef int64_t MgmtIntCounter;
 typedef int64_t MgmtInt;

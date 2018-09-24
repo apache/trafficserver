@@ -22,7 +22,7 @@
  */
 
 #include "QUICStreamState.h"
-#include "ts/ink_assert.h"
+#include "tscore/ink_assert.h"
 
 void
 QUICStreamState::_set_state(State s)

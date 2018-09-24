@@ -111,7 +111,7 @@ test_CPPFLAGS = \
 test_LDADD = \
   libquic.a \
   $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \

@@ -24,7 +24,7 @@
 // copy from iocore/utils/diags.i
 #pragma once
 
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 
 #define DIAGS_LOG_FILE "diags.log"
 

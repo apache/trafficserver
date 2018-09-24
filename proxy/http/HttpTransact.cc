@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include <strings.h>
 #include <cmath>
@@ -32,7 +32,7 @@
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "HttpDebugNames.h"
 #include <ctime>
-#include "ts/ParseRules.h"
+#include "tscore/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"
@@ -1646,6 +1646,37 @@ HttpTransact::OSDNSLookup(State *s)
            "[OSDNSLookup] DNS lookup for O.S. successful "
            "IP: %s",
            ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
+
+  if (s->redirect_info.redirect_in_process) {
+    // If dns lookup was not successful, the code below will handle the error.
+    RedirectEnabled::Action action = RedirectEnabled::Action::INVALID;
+    if (true == Machine::instance()->is_self(s->host_db_info.ip())) {
+      action = s->http_config_param->redirect_actions_self_action;
+    } else {
+      ink_release_assert(s->http_config_param->redirect_actions_map != nullptr);
+      ink_release_assert(
+        s->http_config_param->redirect_actions_map->contains(s->host_db_info.ip(), reinterpret_cast<void **>(&action)));
+    }
+    switch (action) {
+    case RedirectEnabled::Action::FOLLOW:
+      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Following");
+      break;
+    case RedirectEnabled::Action::REJECT:
+      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Rejecting.");
+      build_error_response(s, HTTP_STATUS_FORBIDDEN, nullptr, "request#syntax_error");
+      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+      break;
+    case RedirectEnabled::Action::RETURN:
+      TxnDebug("http_trans", "[OSDNSLookup] Configured to return on invalid redirect address.");
+      // fall-through
+    default:
+      // Return this 3xx to the client as-is.
+      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Returning.");
+      build_response_copy(s, &s->hdr_info.server_response, &s->hdr_info.client_response, s->client_info.http_version);
+      TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, nullptr);
+    }
+  }
 
   // so the dns lookup was a success, but the lookup succeeded on
   // a hostname which was expanded by the traffic server. we should
@@ -8146,7 +8177,12 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   ///////////////////////////////////////////////////////
   // don't count errors we generated as hits or misses //
   ///////////////////////////////////////////////////////
-  if ((s->source == SOURCE_INTERNAL) && (s->hdr_info.client_response.status_get() >= 400)) {
+  int client_response_status = HTTP_STATUS_NONE;
+  if (s->hdr_info.client_response.valid()) {
+    client_response_status = s->hdr_info.client_response.status_get();
+  }
+
+  if ((s->source == SOURCE_INTERNAL) && client_response_status >= 400) {
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_OTHER;
   }
 
@@ -8241,9 +8277,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
   if ((s->source != SOURCE_NONE) && (s->client_info.abort == DIDNOT_ABORT)) {
-    int status_code = s->hdr_info.client_response.status_get();
-
-    switch (status_code) {
+    switch (client_response_status) {
     case 100:
       HTTP_INCREMENT_DYN_STAT(http_response_status_100_count_stat);
       break;
@@ -8291,6 +8325,9 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
       break;
     case 307:
       HTTP_INCREMENT_DYN_STAT(http_response_status_307_count_stat);
+      break;
+    case 308:
+      HTTP_INCREMENT_DYN_STAT(http_response_status_308_count_stat);
       break;
     case 400:
       HTTP_INCREMENT_DYN_STAT(http_response_status_400_count_stat);
@@ -8364,7 +8401,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     default:
       break;
     }
-    switch (status_code / 100) {
+    switch (client_response_status / 100) {
     case 1:
       HTTP_INCREMENT_DYN_STAT(http_response_status_1xx_count_stat);
       break;

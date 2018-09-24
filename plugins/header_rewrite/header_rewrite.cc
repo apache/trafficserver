@@ -21,7 +21,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-#include "ts/ink_atomic.h"
+#include "tscore/ink_atomic.h"
 
 #include "parser.h"
 #include "ruleset.h"

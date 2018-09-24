@@ -23,9 +23,9 @@
 
 #include "HTTP2.h"
 #include "HPACK.h"
-#include "ts/ink_assert.h"
-#include "P_RecCore.h"
-#include "P_RecProcess.h"
+#include "tscore/ink_assert.h"
+#include "records/P_RecCore.h"
+#include "records/P_RecProcess.h"
 
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
@@ -804,7 +804,7 @@ forceLinkRegressionHPACKCaller()
   forceLinkRegressionHPACK();
 }
 
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 
 /***********************************************************************************
  *                                                                                 *

@@ -25,7 +25,7 @@
 
 #include "I_EventSystem.h"
 #include "I_Event.h"
-#include "ts/IntrusiveDList.h"
+#include "tscore/IntrusiveDList.h"
 #include "MIME.h"
 #include "QUICApplication.h"
 

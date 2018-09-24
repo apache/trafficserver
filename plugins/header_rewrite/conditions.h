@@ -25,7 +25,7 @@
 #include <cstring>
 
 #include "ts/ts.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_string.h"
 
 #include "condition.h"
 #include "matcher.h"
@@ -374,18 +374,6 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionIp);
   IpQualifiers _ip_qual;
-};
-
-class ConditionClientIp : public Condition
-{
-  typedef Matchers<std::string> MatcherType;
-
-public:
-  void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
-
-protected:
-  bool eval(const Resources &res) override;
 };
 
 class ConditionIncomingPort : public Condition

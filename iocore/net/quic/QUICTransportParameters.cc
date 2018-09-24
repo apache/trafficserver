@@ -22,7 +22,7 @@
  */
 
 #include <cstdlib>
-#include "ts/Diags.h"
+#include "tscore/Diags.h"
 #include "QUICGlobals.h"
 #include "QUICIntUtil.h"
 #include "QUICTransportParameters.h"

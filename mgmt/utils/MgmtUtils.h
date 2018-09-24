@@ -33,10 +33,10 @@
 
 #pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Diags.h"
 
-#include "P_RecCore.h"
+#include "records/P_RecCore.h"
 
 constexpr const char SSL_SERVER_NAME_CONFIG[] = "ssl_server_name.yaml";
 

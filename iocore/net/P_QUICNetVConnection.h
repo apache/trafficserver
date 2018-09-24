@@ -33,14 +33,14 @@
 
 #include <queue>
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Net.h"
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_UDPNet.h"
-#include "ts/apidefs.h"
-#include "ts/List.h"
+#include "tscore/ink_apidefs.h"
+#include "tscore/List.h"
 
 #include "quic/QUICConnection.h"
 #include "quic/QUICConnectionTable.h"
