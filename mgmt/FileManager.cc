@@ -275,9 +275,7 @@ FileManager::configFileChild(const char *parent, const char *child, unsigned fla
   int htfound = ink_hash_table_lookup(bindings, parent, &lookup);
   if (htfound) {
     parentRollback = (Rollback *)lookup;
-  }
-  if (htfound) {
-    addFileHelper(child, true, parentRollback, flags);
+    addFileHelper(child, parentRollback->rootAccessNeeded(), parentRollback, flags);
   }
   ink_mutex_release(&accessLock);
 }
