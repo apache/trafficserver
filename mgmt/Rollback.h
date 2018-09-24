@@ -233,6 +233,11 @@ public:
   {
     return numberBackups > 0;
   }
+  bool
+  rootAccessNeeded() const
+  {
+    return root_access_needed;
+  }
 
   FileManager *configFiles; // Manager to notify on an update.
 
