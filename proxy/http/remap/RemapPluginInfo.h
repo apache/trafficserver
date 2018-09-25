@@ -35,8 +35,6 @@
 #define TSREMAP_FUNCNAME_DO_REMAP "TSRemapDoRemap"
 #define TSREMAP_FUNCNAME_OS_RESPONSE "TSRemapOSResponse"
 
-class url_mapping;
-
 /**
  *
  **/
