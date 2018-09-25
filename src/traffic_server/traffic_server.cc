@@ -89,6 +89,7 @@ extern "C" int plock(int);
 #include "Plugin.h"
 #include "DiagsConfig.h"
 #include "CoreUtils.h"
+#include "RemapConfig.h"
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
@@ -119,6 +120,7 @@ static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
 static void *mgmt_lifecycle_msg_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
+static void load_remap_file_callback(const char *remap_file);
 
 // We need these two to be accessible somewhere else now
 int num_of_net_threads = ink_number_of_processors();
@@ -1707,11 +1709,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     ::exit(0);
   }
 
+  // setup callback for tracking remap included files
+  load_remap_file_cb = load_remap_file_callback;
+
   // We need to do this early so we can initialize the Machine
   // singleton, which depends on configuration values loaded in this.
   // We want to initialize Machine as early as possible because it
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
+
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
   */
@@ -2076,4 +2082,10 @@ static void
 load_ssl_file_callback(const char *ssl_file, unsigned int options)
 {
   pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, options);
+}
+
+static void
+load_remap_file_callback(const char *remap_file)
+{
+  pmgmt->signalConfigFileChild("remap.config", remap_file, CONFIG_FLAG_UNVERSIONED);
 }
