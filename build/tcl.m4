@@ -75,7 +75,8 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	    # on Darwin, check in Framework installation locations
 	    if test "`uname -s`" = "Darwin" -a x"${ac_cv_c_tclconfig}" = x ; then
 		for i in "`xcrun --show-sdk-path 2>/dev/null`/usr/lib" \
-                        `ls -d ~/Library/Frameworks 2>/dev/null` \
+			`xcrun --show-sdk-path 2>/dev/null`/System/Library/Frameworks \
+			`ls -d ~/Library/Frameworks 2>/dev/null` \
 			`ls -d /Library/Frameworks 2>/dev/null` \
 			`ls -d /Network/Library/Frameworks 2>/dev/null` \
 			`ls -d /System/Library/Frameworks 2>/dev/null` \
