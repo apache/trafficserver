@@ -1963,12 +1963,14 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/mysql_remap/Makefile
     plugins/experimental/regex_revalidate/Makefile
     plugins/experimental/remap_stats/Makefile
+    plugins/experimental/remove_query/Makefile
     plugins/experimental/s3_auth/Makefile
     plugins/experimental/ssl_cert_loader/Makefile
     plugins/experimental/sslheaders/Makefile
     plugins/experimental/stale_while_revalidate/Makefile
     plugins/experimental/ts_lua/Makefile
     plugins/experimental/url_sig/Makefile
+    plugins/experimental/cache_range_requests/Makefile
     plugins/experimental/xdebug/Makefile
 ])])
 

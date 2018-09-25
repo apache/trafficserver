@@ -16,7 +16,6 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-pkglib_LTLIBRARIES = balancer.la
-balancer_la_SOURCES = balancer.cc roundrobin.cc hash.cc balancer.h
-balancer_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
+pkglib_LTLIBRARIES = cache_range_requests.la
+cache_range_requests_la_SOURCES = cache_range_requests.cc
+cache_range_requests_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

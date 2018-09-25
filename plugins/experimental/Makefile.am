@@ -38,6 +38,7 @@ SUBDIRS = \
  sslheaders \
  stale_while_revalidate \
  url_sig \
+ cache_range_requests \
  xdebug
 
 if HAS_MYSQL
