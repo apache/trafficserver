@@ -47,10 +47,10 @@ traffic_quic_traffic_quic_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/lib/tsconfig/libtsconfig.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
   @LIBTCL@ \
   @HWLOC_LIBS@ \
-	@YAMLCPP_LIBS@ \
+  @YAMLCPP_LIBS@ \
   @OPENSSL_LIBS@
