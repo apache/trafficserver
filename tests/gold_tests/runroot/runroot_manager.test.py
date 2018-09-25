@@ -32,9 +32,9 @@ rr_file = os.path.join(Test.RunDirectory, "rr_tmp")
 tr = Test.AddTestRun("create runroot and deal with it")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path + " --absolute; " + \
     "mkdir " + rr_file + "; mv " + \
-    os.path.join(path, "runroot_path.yml") + " " + \
-    os.path.join(rr_file, "runroot_path.yml")
-f = tr.Disk.File(os.path.join(rr_file, "runroot_path.yml"))
+    os.path.join(path, "runroot.yaml") + " " + \
+    os.path.join(rr_file, "runroot.yaml")
+f = tr.Disk.File(os.path.join(rr_file, "runroot.yaml"))
 f.Exists = True
 
 

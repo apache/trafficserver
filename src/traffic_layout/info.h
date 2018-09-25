@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-// header file for traffic layout info
+// the original traffic_layout
 
 void produce_features(bool json);
 
