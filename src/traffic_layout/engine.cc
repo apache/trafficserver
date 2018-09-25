@@ -27,20 +27,13 @@
 #include "tscore/runroot.h"
 #include "tscore/I_Layout.h"
 #include "tscore/ink_error.h"
-#include "tscore/ink_args.h"
-#include "tscore/I_Version.h"
-#include "records/I_RecCore.h"
-#include "tscore/ink_config.h"
-
 #include "engine.h"
 #include "file_system.h"
-#include "tscore/runroot.h"
+#include "info.h"
 
-#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <ftw.h>
-#include <pwd.h>
 #include <yaml-cpp/yaml.h>
 
 // for nftw check_directory
@@ -51,10 +44,8 @@ std::string directory_check;
 std::string
 check_path(const std::string &path)
 {
-  std::ifstream check_file;
-  std::string yaml_file = Layout::relative_to(path, "runroot_path.yml");
-  check_file.open(yaml_file);
-  if (!check_file.good()) {
+  std::string yaml_file = Layout::relative_to(path, "runroot.yaml");
+  if (!exists(yaml_file)) {
     ink_warning("Unable to access runroot: '%s' - %s", yaml_file.c_str(), strerror(errno));
     return {};
   }
@@ -75,9 +66,7 @@ check_parent_path(const std::string &path)
     if (yaml_path.empty()) {
       return {};
     }
-    std::ifstream check_file;
-    check_file.open(Layout::relative_to(yaml_path, "runroot_path.yml"));
-    if (check_file.good()) {
+    if (exists(Layout::relative_to(yaml_path, "runroot.yaml"))) {
       return yaml_path;
     }
     yaml_path = yaml_path.substr(0, yaml_path.find_last_of("/"));
@@ -94,13 +83,13 @@ check_run_path(const std::string &arg, const bool forceflag)
     return false;
   }
   // the condition of force create
-  if (exists(arg) && is_directory(arg) && forceflag) {
+  if (is_directory(arg) && forceflag) {
     std::cout << "Forcing creating runroot ..." << std::endl;
     return true;
   }
 
   // if directory already exist
-  if (exists(arg) && is_directory(arg)) {
+  if (is_directory(arg)) {
     return true;
   } else {
     // try to create & remove
@@ -147,22 +136,13 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
     }
   }
 
-  // 2. check Environment variable
-  char *env_val = getenv("TS_RUNROOT");
-  if (env_val != nullptr) {
-    std::string envpath = check_path(env_val);
-    if (!envpath.empty()) {
-      return envpath;
-    }
-  }
-
-  // 3. find cwd or parent path of cwd to check
+  // 2. find cwd or parent path of cwd to check
   std::string cwdpath = check_parent_path(cwd);
   if (!cwdpath.empty()) {
     return cwdpath;
   }
 
-  // 4. installed executable
+  // 3. installed executable
   char RealBinPath[PATH_MAX] = {0};
   if (!command.empty() && realpath(command.c_str(), RealBinPath) != nullptr) {
     std::string bindir = RealBinPath;
@@ -176,247 +156,13 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
   return path;
 }
 
-// the help message for traffic_layout runroot
-void
-RunrootEngine::runroot_help_message(const bool runflag, const bool cleanflag, const bool verifyflag)
-{
-  if (runflag) {
-    std::cout << "\ninit Usage: traffic_layout init ([switch]) (--path /path/to/sandbox)\n" << std::endl;
-    std::cout << "Sub-switches:\n"
-                 "--path    Specify the path of the runroot to create (the path should be the next argument)\n"
-                 "--force   Force to create ts_runroot even directory already exists\n"
-                 "--absolute    Produce absolute path in the yaml file\n"
-                 "--run-root(=/path)  Using specified TS_RUNROOT as sandbox\n"
-                 "--copy-style=[STYLE] Specify style (FULL, HARD, SOFT) when copying executable\n"
-                 "--layout=[/path] Use specific layout (providing yaml file) to create runroot\n"
-              << std::endl;
-  }
-  if (cleanflag) {
-    std::cout << "\nremove Usage: traffic_layout remove ([switch]) (--path /path/to/sandbox)\n" << std::endl;
-    std::cout << "Sub-switches:\n"
-                 "--path   Specify the path of the runroot to remove (the path should be the next argument)\n"
-                 "--force  Force to remove ts_runroot even with other unknown files\n"
-              << std::endl;
-  }
-  if (verifyflag) {
-    std::cout << "\nverify Usage: traffic_layout verify (--fix) (--path /path/to/sandbox)\n" << std::endl;
-    std::cout << "Sub-switches:\n"
-                 "--path   Specify the path of the runroot to verify (the path should be the next argument)\n"
-                 "--fix    Fix the premission issues that verify found"
-              << std::endl;
-  }
-  return;
-}
-
-// the parsing function for traffic runroot program
-// set the flag & path appropriately
-bool
-RunrootEngine::runroot_parse()
-{
-  for (unsigned int i = 1; i < _argv.size(); ++i) {
-    std::string argument = _argv[i];
-    // set the help, version, force and absolute flags
-    if (argument == "-h" || argument == "--help") {
-      help_flag = true;
-      continue;
-    }
-    if (argument == "-V" || argument == "--version") {
-      version_flag = true;
-      continue;
-    }
-    if (argument == "--force") {
-      force_flag = true;
-      continue;
-    }
-    if (argument == "--absolute") {
-      abs_flag = true;
-      continue;
-    }
-    if (argument.substr(0, RUNROOT_WORD.size()) == RUNROOT_WORD) {
-      continue;
-    }
-    // set init flag
-    if (argument == "init") {
-      run_flag = true;
-      command_num++;
-      continue;
-    }
-    // set remove flag
-    if (argument == "remove") {
-      clean_flag = true;
-      command_num++;
-      continue;
-    }
-    // set verify flag
-    if (argument == "verify") {
-      verify_flag = true;
-      command_num++;
-      continue;
-    }
-    // set fix flag
-    if (argument == "--fix") {
-      fix_flag = true;
-      continue;
-    }
-    if (argument.substr(0, COPYSTYLE_WORD.size()) == COPYSTYLE_WORD) {
-      std::string style = argument.substr(COPYSTYLE_WORD.size() + 1);
-      transform(style.begin(), style.end(), style.begin(), ::tolower);
-      if (style == "full") {
-        copy_style = FULL;
-      } else if (style == "soft") {
-        copy_style = SOFT;
-      } else {
-        copy_style = HARD;
-      }
-      continue;
-    }
-    if (argument.substr(0, LAYOUT_WORD.size()) == LAYOUT_WORD) {
-      if (argument.size() <= LAYOUT_WORD.size() + 1) {
-        layout_file = "";
-      } else {
-        layout_file = argument.substr(LAYOUT_WORD.size() + 1);
-      }
-      continue;
-    }
-    if (argument == "--path") {
-      if (i + 1 >= _argv.size() || _argv[i + 1][0] == '-') {
-        // invalid path
-        return false;
-      }
-      path = _argv[i + 1];
-      ++i;
-      continue;
-    }
-    return false;
-  }
-  return true;
-}
-
-// check the logic and see if everthing is fine
-void
-RunrootEngine::sanity_check()
-{
-  // check output help or not
-  if (help_flag) {
-    runroot_help_message(run_flag, clean_flag, verify_flag);
-    exit(0);
-  }
-  if (version_flag) {
-    // get version info
-    AppVersionInfo appVersionInfo;
-    appVersionInfo.setup(PACKAGE_NAME, "traffic_layout", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
-    ink_fputln(stdout, appVersionInfo.FullVersionInfoStr);
-    exit(0);
-  }
-  if (command_num > 1) {
-    ink_fatal("Cannot run multiple command at the same time");
-  }
-  if (command_num < 1) {
-    ink_fatal("No command specified");
-  }
-  if ((force_flag && !run_flag) && (force_flag && !clean_flag)) {
-    ink_fatal("Nothing to force");
-  }
-
-  path = path_handler(path, run_flag, _argv[0]);
-
-  if (path.empty()) {
-    if (!verify_flag) {
-      ink_fatal("Path not valid (runroot_path.yml not found)");
-    } else {
-      verify_default = true;
-    }
-  }
-
-  if (run_flag) {
-    if (!check_run_path(path, force_flag)) {
-      ink_fatal("Failed to create runroot with path '%s'", path.c_str());
-    }
-  }
-}
-
-// check if user want to force remove the ts_runroot
-// return true if user replies Y
-static bool
-check_remove_force()
-{
-  // check for Y/N 3 times
-  for (int i = 0; i < 3; i++) {
-    std::cout << "Are you sure to force removing runroot? (irreversible) Y/N: ";
-    std::string input;
-    std::cin >> input;
-    if (input == "Y" || input == "y")
-      return true;
-    if (input == "N" || input == "n")
-      return false;
-  }
-  ink_error("Invalid input Y/N");
-  exit(70);
-}
-
-// the function for removing the runroot
-void
-RunrootEngine::clean_runroot()
-{
-  std::string clean_root = path;
-  append_slash(clean_root);
-
-  char cwd[PATH_MAX];
-  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
-  }
-  std::string cur_working_dir = cwd;
-
-  if (force_flag) {
-    // the force clean
-    if (!check_remove_force()) {
-      exit(0);
-    }
-    std::cout << "Forcing removing runroot ..." << std::endl;
-
-    if (!remove_directory(clean_root)) {
-      ink_warning("Failed force removing runroot '%s' - %s", clean_root.c_str(), strerror(errno));
-    }
-  } else {
-    // handle the map and deleting of each directories specified in the yml file
-    RunrootMapType map = runroot_map(Layout::relative_to(clean_root, "runroot_path.yml"));
-    map.erase(LAYOUT_PREFIX);
-    map.erase(LAYOUT_EXEC_PREFIX);
-    for (auto it : map) {
-      std::string dir = it.second;
-      append_slash(dir);
-      std::string later_dir = dir.substr(clean_root.size());
-      dir                   = Layout::relative_to(clean_root, later_dir.substr(0, later_dir.find_first_of("/")));
-      if (cur_working_dir != dir) {
-        remove_directory(dir);
-      } else {
-        // if we are at this directory, remove files inside
-        remove_inside_directory(dir);
-      }
-    }
-    // remove yaml file
-    std::string yaml_file = Layout::relative_to(clean_root, "runroot_path.yml");
-    if (remove(yaml_file.c_str()) != 0) {
-      ink_notice("unable to delete runroot_path.yml - %s", strerror(errno));
-    }
-
-    append_slash(cur_working_dir);
-    if (cur_working_dir.find(clean_root) != 0) {
-      // if cwd is not runroot and runroot is empty, remove it
-      if (remove(clean_root.c_str()) != 0) {
-        ink_notice("unable to delete %s - %s", clean_root.c_str(), strerror(errno));
-      }
-    }
-  }
-}
-
 // if directory is not empty, ask input from user Y/N
 static int
 check_directory(const char *path, const struct stat *s, int flag, struct FTW *f)
 {
   std::string checkpath = path;
   if (checkpath != directory_check) {
-    // check for Y/N 3 times
+    // check for valid Y/N
     for (int i = 0; i < 3; i++) {
       std::cout << "Are you sure to create runroot inside a non-empty directory Y/N: ";
       std::string input;
@@ -435,18 +181,48 @@ check_directory(const char *path, const struct stat *s, int flag, struct FTW *f)
   return 0;
 }
 
-// the function for creating the runroot
 void
-RunrootEngine::create_runroot()
+LayoutEngine::info()
 {
+  bool json = arguments.get("json");
+
+  if (arguments.get("features")) {
+    produce_features(json);
+  } else {
+    produce_layout(json);
+  }
+}
+
+void
+LayoutEngine::create_runroot()
+{
+  // set up options
+  std::string path = path_handler(arguments.get("path").value(), true, _argv[0]);
+  bool force_flag  = arguments.get("force");
+  bool abs_flag    = arguments.get("absolute");
+  // deal with the copy style
+  CopyStyle copy_style;
+  std::string style = arguments.get("copy-style").value();
+  if (!style.empty()) {
+    transform(style.begin(), style.end(), style.begin(), ::tolower);
+    if (style == "full") {
+      copy_style = FULL;
+    } else if (style == "soft") {
+      copy_style = SOFT;
+    } else {
+      copy_style = HARD;
+    }
+  } else {
+    copy_style = HARD;
+  }
+  // check validity of the path
+  if (!check_run_path(path, force_flag)) {
+    ink_fatal("Failed to create runroot with path '%s'", path.c_str());
+  }
   std::string original_root = Layout::get()->prefix;
   std::string ts_runroot    = path;
-
-  std::ifstream check_file(Layout::relative_to(ts_runroot, "runroot_path.yml"));
-  std::cout << "creating runroot - " + ts_runroot << std::endl;
-
   // check for existing runroot to use rather than create new one
-  if (!force_flag && check_file.good()) {
+  if (!force_flag && exists(Layout::relative_to(ts_runroot, "runroot.yaml"))) {
     std::cout << "Using existing runroot...\n"
                  "Please remove the old runroot if new runroot is needed"
               << std::endl;
@@ -456,36 +232,16 @@ RunrootEngine::create_runroot()
     ink_fatal("Cannot create runroot inside another runroot");
   }
 
+  std::cout << "creating runroot - " + ts_runroot << std::endl;
+
   // check if directory is empty when --force is not used
-  if (exists(ts_runroot) && is_directory(ts_runroot) && !force_flag) {
+  if (is_directory(ts_runroot) && !force_flag) {
     directory_check = ts_runroot;
     nftw(ts_runroot.c_str(), check_directory, OPEN_MAX_FILE, FTW_DEPTH);
   }
 
   // create new root & copy from original to new runroot. then fill in the map
-  copy_runroot(original_root, ts_runroot);
-
-  YAML::Emitter yamlfile;
-  // emit key value pairs to the yaml file
-  yamlfile << YAML::BeginMap;
-  for (uint i = 0; i < dir_vector.size(); i++) {
-    yamlfile << YAML::Key << dir_vector[i];
-    yamlfile << YAML::Value << path_map[dir_vector[i]];
-  }
-  yamlfile << YAML::EndMap;
-
-  // create the file
-  std::ofstream f(Layout::relative_to(ts_runroot, "runroot_path.yml"));
-  f << yamlfile.c_str();
-}
-
-// copy the stuff from original_root to ts_runroot
-// fill in the global map for yaml file emitting later
-void
-RunrootEngine::copy_runroot(const std::string &original_root, const std::string &ts_runroot)
-{
-  // map the original build time directory
-  RunrootMapType original_map;
+  RunrootMapType original_map; // map the original build time directory
 
   original_map[LAYOUT_EXEC_PREFIX]   = TS_BUILD_EXEC_PREFIX;
   original_map[LAYOUT_BINDIR]        = TS_BUILD_BINDIR;
@@ -504,13 +260,14 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
 
   RunrootMapType new_map = original_map;
   // use the user provided layout: layout_file
+  std::string layout_file = arguments.get("layout").value();
   if (layout_file.size() != 0) {
     try {
       YAML::Node yamlfile = YAML::LoadFile(layout_file);
-      for (auto it : yamlfile) {
+      for (auto &&it : yamlfile) {
         std::string key   = it.first.as<std::string>();
         std::string value = it.second.as<std::string>();
-        auto iter         = new_map.find(key);
+        auto &&iter       = new_map.find(key);
         if (iter != new_map.end()) {
           iter->second = value;
         } else {
@@ -528,7 +285,8 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
   // copy each directory to the runroot path
   // symlink the executables
   // set up path_map for yaml to emit key-value pairs
-  for (auto it : original_map) {
+  RunrootMapType path_map;
+  for (auto &&it : original_map) {
     // path handle
     std::string join_path;
     if (it.second[0] && it.second[0] == '/') {
@@ -565,6 +323,118 @@ RunrootEngine::copy_runroot(const std::string &original_root, const std::string 
     path_map[LAYOUT_PREFIX] = ts_runroot;
   } else {
     path_map[LAYOUT_PREFIX] = ".";
+  }
+
+  YAML::Emitter yamlfile;
+  // emit key value pairs to the yaml file
+  yamlfile << YAML::BeginMap;
+  for (auto &&it : dir_vector) {
+    yamlfile << YAML::Key << it;
+    yamlfile << YAML::Value << path_map[it];
+  }
+  yamlfile << YAML::EndMap;
+
+  // create the file
+  std::ofstream f(Layout::relative_to(ts_runroot, "runroot.yaml"));
+  if (f.bad()) {
+    ink_warning("Writing to YAML file failed\n");
+  } else {
+    f << yamlfile.c_str();
+  }
+}
+static bool
+check_remove_force_second()
+{
+  for (int i = 0; i < 3; i++) {
+    std::cout << "This is irreversible. Are you really sure to forcibly remove the runroot Y/N: ";
+    std::string input;
+    std::cin >> input;
+    if (input == "Y" || input == "y")
+      return true;
+    if (input == "N" || input == "n")
+      return false;
+  }
+  ink_error("Invalid input Y/N");
+  exit(70);
+}
+
+// check if user want to force remove the ts_runroot
+// return true if user replies Y
+static bool
+check_remove_force()
+{
+  // check for valid Y/N
+  for (int i = 0; i < 3; i++) {
+    std::cout << "Are you sure to force removing runroot? (irreversible) Y/N: ";
+    std::string input;
+    std::cin >> input;
+    if (input == "Y" || input == "y")
+      return check_remove_force_second();
+    if (input == "N" || input == "n")
+      return false;
+  }
+  ink_error("Invalid input Y/N");
+  exit(70);
+}
+
+// the function for removing the runroot
+void
+LayoutEngine::remove_runroot()
+{
+  std::string path = path_handler(arguments.get("path").value(), false, _argv[0]);
+  // check validity of the path
+  if (path.empty()) {
+    ink_fatal("Path not valid (runroot.yaml not found)");
+  }
+
+  std::string clean_root = path;
+  append_slash(clean_root);
+
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
+  }
+  std::string cur_working_dir = cwd;
+
+  if (arguments.get("force")) {
+    // the force clean
+    if (!check_remove_force()) {
+      exit(0);
+    }
+    std::cout << "Forcing removing runroot ..." << std::endl;
+    if (!remove_directory(clean_root)) {
+      ink_warning("Failed force removing runroot '%s' - %s", clean_root.c_str(), strerror(errno));
+    }
+  } else {
+    // handle the map and deleting of each directories specified in the yml file
+    RunrootMapType map = runroot_map(Layout::relative_to(clean_root, "runroot.yaml"));
+    map.erase(LAYOUT_PREFIX);
+    map.erase(LAYOUT_EXEC_PREFIX);
+    for (auto &&it : map) {
+      std::string dir = it.second;
+      append_slash(dir);
+      // get the directory to remove: prefix/etc/trafficserver -> prefix/etc
+      dir = dir.substr(0, dir.substr(clean_root.size()).find_first_of("/") + clean_root.size());
+      if (cur_working_dir != dir) {
+        remove_directory(dir);
+      } else {
+        // if we are at this directory, remove files inside
+        remove_inside_directory(dir);
+      }
+    }
+    // remove yaml file
+    std::string yaml_file = Layout::relative_to(clean_root, "runroot.yaml");
+    if (remove(yaml_file.c_str()) != 0) {
+      ink_notice("unable to delete runroot.yaml - %s", strerror(errno));
+    }
+
+    append_slash(cur_working_dir);
+    if (cur_working_dir.find(clean_root) != 0) {
+      // if cwd is not runroot and runroot is empty, remove it
+      if (remove(clean_root.c_str()) != 0) {
+        ink_notice("unable to delete %s - %s", clean_root.c_str(), strerror(errno));
+      }
+    }
   }
 }
 
@@ -629,7 +499,7 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
     ink_error("To fix permission issues, root privileges are required.\nPlease run with sudo.");
     exit(70);
   }
-  for (auto it : permission_map) {
+  for (auto &&it : permission_map) {
     std::string name       = it.first;
     std::string permission = it.second;
     std::string usergroup  = usergroup_map[name];
@@ -700,8 +570,8 @@ set_permission(std::vector<std::string> const &dir_vector, RunrootMapType &path_
   struct stat stat_buffer;
 
   // set up permission map for all permissions
-  for (uint i = 0; i < dir_vector.size(); i++) {
-    std::string name  = dir_vector[i];
+  for (auto &&it : dir_vector) {
+    std::string name  = it;
     std::string value = path_map[name];
 
     if (name == LAYOUT_PREFIX || name == LAYOUT_EXEC_PREFIX) {
@@ -757,17 +627,19 @@ set_permission(std::vector<std::string> const &dir_vector, RunrootMapType &path_
 }
 
 void
-RunrootEngine::verify_runroot()
+LayoutEngine::verify_runroot()
 {
+  std::string path = path_handler(arguments.get("path").value(), false, _argv[0]);
+
   std::cout << "trafficserver user: " << TS_PKGSYSUSER << std::endl << std::endl;
 
   // put paths from yaml file or default paths to path_map
   RunrootMapType path_map;
-  if (verify_default) {
+  if (path.empty()) {
     path_map = runroot_map_default();
     std::cout << "Verifying default build ..." << std::endl;
   } else {
-    path_map = runroot_map(Layout::relative_to(path, "runroot_path.yml"));
+    path_map = runroot_map(Layout::relative_to(path, "runroot.yaml"));
   }
 
   RunrootMapType permission_map; // contains rwx bits
@@ -776,7 +648,7 @@ RunrootEngine::verify_runroot()
   set_permission(dir_vector, path_map, permission_map, usergroup_map);
 
   // if --fix is used
-  if (fix_flag) {
+  if (arguments.get("fix")) {
     fix_runroot(path_map, permission_map, usergroup_map);
     set_permission(dir_vector, path_map, permission_map, usergroup_map);
   }

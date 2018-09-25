@@ -21,8 +21,9 @@
   limitations under the License.
 */
 
-// runroot handler for TS_RUNROOT
-// detailed information in runroot.cc
+/*
+  Please refer to traffic_layout document for the runroot usage
+*/
 
 #pragma once
 
@@ -47,6 +48,11 @@ const std::string LAYOUT_INFODIR       = "infodir";
 const std::string LAYOUT_CACHEDIR      = "cachedir";
 
 typedef std::unordered_map<std::string, std::string> RunrootMapType;
+
+// some checks for directory exist or is it a directory
+// this is a temporary approach and will be replaced
+bool exists(const std::string &dir);
+bool is_directory(const std::string &directory);
 
 void runroot_handler(const char **argv, bool json = false);
 

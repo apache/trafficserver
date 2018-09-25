@@ -21,158 +21,59 @@
   limitations under the License.
  */
 
-#include "tscore/ink_platform.h"
-#include "tscore/ink_args.h"
-#include "tscore/I_Version.h"
 #include "tscore/I_Layout.h"
-#include "records/I_RecProcess.h"
-#include "RecordsConfig.h"
 #include "tscore/runroot.h"
 #include "engine.h"
-#include "file_system.h"
-#include "info.h"
-
-#include <iostream>
-#include <fstream>
-#include <set>
 
 using namespace std::literals;
 
-struct subcommand {
-  int (*handler)(int, const char **);
-  const std::string name;
-  const std::string help;
-};
-
-// Command line arguments (parsing)
-struct CommandLineArgs {
-  int features;
-  int json;
-};
-
-static CommandLineArgs cl;
-
-const ArgumentDescription argument_descriptions[] = {
-  {"features", 'f', "Show the compiled features", "T", &cl.features, nullptr, nullptr},
-  {"json", 'j', "Produce output in JSON format (when supported)", "T", &cl.json, nullptr, nullptr},
-  VERSION_ARGUMENT_DESCRIPTION(),
-  RUNROOT_ARGUMENT_DESCRIPTION()};
-
-// the usage help message for subcommand
-static void
-help_usage()
-{
-  std::cout << "\nSubcommands:\n"
-               "info         Show the layout as default\n"
-               "init         Initialize the ts_runroot sandbox\n"
-               "remove       Remove the ts_runroot sandbox\n"
-               "verify       Verify the ts_runroot paths\n"
-            << std::endl;
-  std::cout << "Switches of runroot:\n"
-               "--path:      Specify the path of the runroot\n"
-               "--force:     Force to create or remove ts_runroot\n"
-               "--absolute:  Produce absolute path in the yaml file during init\n"
-               "--run-root(=/path):  Using specified TS_RUNROOT as sandbox\n"
-               "--fix:       fix the premission issues that verify found"
-            << std::endl;
-  printf("Detailed usage and description in traffic_layout.en.rst\n");
-  printf("\nGeneral Usage:\n");
-  usage(argument_descriptions, countof(argument_descriptions), nullptr);
-}
-
 int
-info(int argc, const char **argv)
+main(int argc, const char **argv)
 {
-  // take the "info" out from command line
-  if (argv[1] && argv[1] == "info"sv) {
-    for (int i = 1; i < argc; i++) {
-      argv[i] = argv[i + 1];
-    }
-  }
-  // detect help command
-  int i = 1;
-  while (argv[i]) {
-    if (argv[i] == "--help"sv || argv[i] == "-h"sv) {
-      help_usage();
-    }
-    ++i;
-  }
-
-  AppVersionInfo appVersionInfo;
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_layout", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
-  // Process command line arguments and dump into variables
-  if (!process_args_ex(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv) ||
-      file_arguments[0] != nullptr) {
-    help_usage();
-  }
-
-  runroot_handler(argv, 0 != cl.json);
-
-  if (cl.features) {
-    produce_features(0 != cl.json);
-  } else {
-    produce_layout(0 != cl.json);
-  }
-  return 0;
-}
-
-// handle everything with runroot using engine
-int
-traffic_runroot(int argc, const char **argv)
-{
-  // runroot engine for operations
-  RunrootEngine engine;
+  LayoutEngine engine;
 
   int i = 0;
   while (argv[i]) {
     engine._argv.push_back(argv[i]);
     ++i;
   }
-  // parse the command line & put into global variable
-  if (!engine.runroot_parse()) {
-    engine.runroot_help_message(true, true, true);
-    return 0;
-  }
-  // check sanity of the command about the runroot program
-  engine.sanity_check();
+  engine.parser.add_global_usage("traffic_layout CMD [OPTIONS]");
 
-  // create layout for runroot handling
-  runroot_handler(argv);
+  // global options
+  engine.parser.add_option("--features", "-f", "Show the compiled features");
+  engine.parser.add_option("--json", "-j", "Produce output in JSON format (when supported)");
+  engine.parser.add_option("--version", "-V", "Print version string");
+  engine.parser.add_option("--help", "-h", "Print usage information");
+  engine.parser.add_option("--run-root", "", "using TS_RUNROOT as sandbox", "", 1);
+
+  // info command
+  engine.parser.add_command("info", "Show the layout as default", [&]() { engine.info(); });
+  // init command
+  engine.parser.add_command("init", "Initialize(create) the runroot sandbox", [&]() { engine.create_runroot(); })
+    .add_option("--absolute", "", "Produce absolute path in the runroot.yaml")
+    .add_option("--force", "", "Create runroot even if the directory is not empty")
+    .add_option("--path", "", "Specify the path of the runroot", "", 1)
+    .add_option("--copy-style", "", "Specify the way of copying (FULL/HARD/SOFT)", "", 1)
+    .add_option("--layout", "", "Use specific layout (providing YAML file) to create runroot", "", 1);
+  // remove command
+  engine.parser.add_command("remove", "Remove the runroot sandbox", [&]() { engine.remove_runroot(); })
+    .add_option("--force", "", "Remove runroot even if runroot.yaml is not found")
+    .add_option("--path", "", "Specify the path of the runroot", "", 1);
+  // verify command
+  engine.parser.add_command("verify", "Verify the runroot permissions", [&]() { engine.verify_runroot(); })
+    .add_option("--fix", "", "Fix the permission issues of runroot")
+    .add_option("--path", "", "Specify the path of the runroot", "", 1);
+
+  engine.arguments = engine.parser.parse(argv);
+
+  runroot_handler(argv, engine.arguments.get("json"));
   Layout::create();
 
-  // check the command to execute
-  if (engine.run_flag) {
-    engine.create_runroot();
-  } else if (engine.clean_flag) {
-    engine.clean_runroot();
-  } else if (engine.verify_flag) {
-    engine.verify_runroot();
+  if (engine.arguments.has_action()) {
+    engine.arguments.invoke();
+  } else {
+    engine.info();
   }
 
   return 0;
-}
-
-int
-main(int argc, const char **argv)
-{
-  const subcommand commands[] = {
-    {info, "info", "Show the layout"},
-    {traffic_runroot, "init", "Initialize the ts_runroot sandbox"},
-    {traffic_runroot, "remove", "Remove the ts_runroot sandbox"},
-    {traffic_runroot, "verify", "verify the ts_runroot paths"},
-    {traffic_runroot, "fix", "fix permmision issue of the ts_runroot"},
-  };
-
-  // with command (info, init, remove)
-  for (unsigned i = 0; i < countof(commands); ++i) {
-    if (!argv[1]) {
-      break;
-    }
-    if (strcmp(argv[1], commands[i].name.c_str()) == 0) {
-      return commands[i].handler(argc, argv);
-    }
-  }
-
-  // without command (info, init, remove), default behavior
-  return info(argc, argv);
 }
