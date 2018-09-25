@@ -1313,6 +1313,8 @@ HTTP Redirection
    This setting determines the maximum number of times Trafficserver does a redirect follow location on receiving a 3XX Redirect response
    for a given client request.
 
+   .. note:: When :ts:cv:`proxy.config.http.number_of_redirections` is set to a positive value and |TS| has previously cached a 3XX Redirect response, the cached response will continue to be refreshed and returned until the response is no longer in the cache.
+
 .. ts:cv:: CONFIG proxy.config.http.redirect_host_no_port INT 1
    :reloadable:
 

@@ -1740,8 +1740,7 @@ HttpTransact::OSDNSLookup(State *s)
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, LookupSkipOpenServer);
         // DNS Lookup is done after LOOKUP Skipped  and after we get response
         // from the DNS we need to call LookupSkipOpenServer
-      } else if (s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
-                 s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) {
+      } else if (is_cache_hit(s->cache_lookup_result)) {
         // DNS lookup is done if the content is state need to call handle cache open read hit
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadHit);
       } else if (s->cache_lookup_result == CACHE_LOOKUP_MISS || s->cache_info.action == CACHE_DO_NO_ACTION) {
@@ -2434,8 +2433,7 @@ HttpTransact::need_to_revalidate(State *s)
     break;
   }
 
-  ink_assert(s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
-             s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE);
+  ink_assert(is_cache_hit(s->cache_lookup_result));
   if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE &&
       s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     needs_revalidate = true;
@@ -2531,8 +2529,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     break;
   }
 
-  ink_assert(s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
-             s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE);
+  ink_assert(is_cache_hit(s->cache_lookup_result));
 
   // We'll request a revalidation under one of these conditions:
   //
@@ -7519,6 +7516,12 @@ HttpTransact::is_request_likely_cacheable(State *s, HTTPHdr *request)
   return false;
 }
 
+bool
+HttpTransact::is_cache_hit(CacheLookupResult_t r)
+{
+  return (r == CACHE_LOOKUP_HIT_FRESH || r == CACHE_LOOKUP_HIT_WARNING || r == CACHE_LOOKUP_HIT_STALE);
+}
+
 void
 HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_request, HTTPVersion outgoing_version)
 {
@@ -8277,7 +8280,6 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
   if ((s->source != SOURCE_NONE) && (s->client_info.abort == DIDNOT_ABORT)) {
-
     switch (client_response_status) {
     case 100:
       HTTP_INCREMENT_DYN_STAT(http_response_status_100_count_stat);
