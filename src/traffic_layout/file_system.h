@@ -35,13 +35,6 @@ enum CopyStyle { FULL, HARD, SOFT };
 // append slash & remove slash of path for convinient use
 void append_slash(std::string &path);
 
-void remove_slash(std::string &path);
-
-// some checks for directory exist or is it a directory
-bool exists(const std::string &dir);
-
-bool is_directory(const std::string &directory);
-
 // for file system
 bool create_directory(const std::string &dir);
 

@@ -189,5 +189,5 @@ Advanced
 --------
 
 Because relative paths in :file:`storage.config` are relative to the base prefix, when using customized runroot
-it may be necessary to adjust such paths in :file:`storage.config` or adjust ``runroot_path.yml`` itself.
+it may be necessary to adjust such paths in :file:`storage.config` or adjust ``runroot.yaml`` itself.
 Despite the name, the cachedir value is not used for this file.

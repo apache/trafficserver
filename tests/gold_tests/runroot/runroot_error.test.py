@@ -29,21 +29,14 @@ Test.ContinueOnFail = True
 path = os.path.join(Test.RunDirectory, "runroot")
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path
-f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
+f = tr.Disk.File(os.path.join(path, "runroot.yaml"))
 f.Exists = True
-
-# bad command line args
-tr = Test.AddTestRun("wrong usage")
-tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path"
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("init Usage", "init incorrect usage")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("remove Usage", "init incorrect usage")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("verify Usage", "init incorrect usage")
 
 # use existing runroot
 tr = Test.AddTestRun("using existing runroot")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Using existing runroot", "init incorrect usage")
-f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
+f = tr.Disk.File(os.path.join(path, "runroot.yaml"))
 f.Exists = True
 
 # create runroot inside another
@@ -52,7 +45,7 @@ tr = Test.AddTestRun("create runroot inside runroot")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path_inside
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "Cannot create runroot inside another runroot", "init incorrect usage")
-f = tr.Disk.File(os.path.join(path_inside, "runroot_path.yml"))
+f = tr.Disk.File(os.path.join(path_inside, "runroot.yaml"))
 f.Exists = False
 
 # remove invalid runroot

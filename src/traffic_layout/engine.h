@@ -23,71 +23,30 @@
 
 #pragma once
 
-#include "file_system.h"
-
-#include <vector>
-#include <string>
+#include "tscore/ArgParser.h"
 #include <unordered_map>
-
-static const std::string_view RUNROOT_WORD{"--run-root"};
-static const std::string_view COPYSTYLE_WORD{"--copy-style"};
-static const std::string_view LAYOUT_WORD{"--layout"};
 
 typedef std::unordered_map<std::string, std::string> RunrootMapType;
 
 // structure for informaiton of the runroot passing around
-struct RunrootEngine {
-  // the parsing function for traffic runroot program
-  bool runroot_parse();
-
-  // check the logic and see if everthing is fine
-  void sanity_check();
-
-  // the function for removing the runroot
-  void clean_runroot();
-
+struct LayoutEngine {
+  // default output of all layouts
+  void info();
   // the function of creating runroot
   void create_runroot();
-
+  // the function for removing the runroot
+  void remove_runroot();
   // the function of verifying runroot (including fix)
   void verify_runroot();
-
-  // copy the stuff from original_root to ts_runroot
-  // fill in the global map for yaml file emitting later
-  void copy_runroot(const std::string &original_root, const std::string &ts_runroot);
-
-  // the help message for runroot
-  void runroot_help_message(const bool runflag, const bool cleanflag, const bool verifyflag);
-
-  // the pass in arguments
-  std::vector<std::string> _argv;
-  // flags for command line parsing
-  bool help_flag    = false;
-  bool version_flag = false;
-  bool run_flag     = false;
-  bool clean_flag   = false;
-  bool force_flag   = false;
-  bool abs_flag     = false;
-  bool verify_flag  = false;
-  bool fix_flag     = false;
-  // verify the default layout or not
-  bool verify_default = false;
-  // for parsing
-  int command_num = 0;
-
-  std::string layout_file;
-
-  CopyStyle copy_style = HARD;
-
-  // the path for create & remove
-  std::string path;
-
   // vector containing all directory names
   std::vector<std::string> const dir_vector = {LAYOUT_PREFIX,     LAYOUT_EXEC_PREFIX,   LAYOUT_BINDIR,     LAYOUT_SBINDIR,
                                                LAYOUT_SYSCONFDIR, LAYOUT_DATADIR,       LAYOUT_INCLUDEDIR, LAYOUT_LIBDIR,
                                                LAYOUT_LIBEXECDIR, LAYOUT_LOCALSTATEDIR, LAYOUT_RUNTIMEDIR, LAYOUT_LOGDIR,
                                                LAYOUT_CACHEDIR};
-
-  // map for yaml file emit
-  RunrootMapType path_map;
+  // parser
+  ts::ArgParser parser;
+  // parsed arguments
+  ts::Arguments arguments;
+  // mordern argv
+  std::vector<std::string> _argv;
 };

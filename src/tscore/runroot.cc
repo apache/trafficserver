@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file prefix
+  runroot.cc
 
   @section license License
 
@@ -22,56 +22,60 @@
 */
 
 /*
-This file contains the function of the runroot handler for TS_RUNROOT
-handle the --run-root for every command or program
-
-Goal: set up an ENV variable for Layout.cc to use as TS_RUNROOT sandbox
-easy & clean
-
-Example: ./traffic_server --run-root=/path/to/sandbox
-
-Need a yaml file in the sandbox with key value pairs of all directory locations for other programs to use
-
-Directories needed in the yaml file:
-prefix, exec_prefix, includedir, localstatedir, bindir, logdir, sbindir, sysconfdir,
-datadir, libexecdir, libdir, runtimedir, cachedir.
+  Please refer to traffic_layout document for the usage
 */
 
 #include "tscore/ink_error.h"
-#include "tscore/ink_file.h"
 #include "tscore/I_Layout.h"
 #include "tscore/runroot.h"
-
-#include <vector>
-#include <fstream>
-#include <set>
-#include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
 static std::string runroot_file = {};
 
+// this is a temporary approach and will be replaced when std::filesystem is in
+bool
+exists(const std::string &dir)
+{
+  struct stat buffer;
+  int result = stat(dir.c_str(), &buffer);
+  return (!result) ? true : false;
+}
+
+bool
+is_directory(const std::string &directory)
+{
+  struct stat buffer;
+  int result = stat(directory.c_str(), &buffer);
+  return (!result && (S_IFDIR & buffer.st_mode)) ? true : false;
+}
+
 // the function for the checking of the yaml file in the passed in path
 // if found return the path to the yaml file, if not return empty string.
 static std::string
-get_yaml_path(const std::string &path, bool json)
+get_yaml_path(const std::string &path)
 {
+  // yaml_file 2 and 3 are for temporary use in case the change may break for people using runroot already
+  // this can be removed in the future.
   std::string yaml_file;
-  if (ink_file_is_directory(path.c_str())) {
-    yaml_file = Layout::relative_to(path, "runroot_path.yml");
-  } else {
-    if (path.substr(path.find_last_of("/") + 1) == "runroot_path.yml") {
-      yaml_file = path;
+  std::string yaml_file2;
+  std::string yaml_file3;
+  if (is_directory(path.c_str())) {
+    std::string yaml_file(Layout::relative_to(path, "runroot.yaml"));
+    if (exists(yaml_file)) {
+      return yaml_file;
     }
-  }
-  std::ifstream check_file;
-  check_file.open(yaml_file);
-  if (!check_file.good()) {
-    if (!json) {
-      ink_warning("Unable to access runroot: '%s' - %s", yaml_file.c_str(), strerror(errno));
+    std::string yaml_file2(Layout::relative_to(path, "runroot.yml"));
+    if (exists(yaml_file2)) {
+      return yaml_file2;
     }
-    return {};
+    std::string yaml_file3(Layout::relative_to(path, "runroot_path.yml"));
+    if (exists(yaml_file3)) {
+      return yaml_file3;
+    }
+  } else if (exists(path)) {
+    return path;
   }
-  return yaml_file;
+  return {};
 }
 
 // the function for the checking of the yaml file in passed in directory or parent directory
@@ -83,16 +87,13 @@ get_parent_yaml_path(const std::string &path)
   if (whole_path.back() == '/') {
     whole_path.pop_back();
   }
-
   // go up to 4 level of parent directories
   for (int i = 0; i < 4; i++) {
     if (whole_path.empty()) {
       return {};
     }
-    std::ifstream check_file;
-    std::string yaml_file = Layout::relative_to(whole_path, "runroot_path.yml");
-    check_file.open(yaml_file);
-    if (check_file.good()) {
+    std::string yaml_file = get_yaml_path(whole_path);
+    if (!yaml_file.empty()) {
       return yaml_file;
     }
     whole_path = whole_path.substr(0, whole_path.find_last_of("/"));
@@ -121,30 +122,35 @@ runroot_handler(const char **argv, bool json)
     i++;
   }
 
-  // if --run-root is provided arg is not just --run-root
+  // if --run-root is provided
   if (!arg.empty() && arg != prefix) {
     // 1. pass in path
     prefix += "=";
-    path = get_yaml_path(arg.substr(prefix.size(), arg.size() - 1), json);
+    std::string value = arg.substr(prefix.size(), arg.size() - 1);
+    path              = get_yaml_path(value);
     if (!path.empty()) {
       if (!json) {
         ink_notice("using command line path as RUNROOT");
       }
       runroot_file = path;
       return;
+    } else if (!json) {
+      ink_warning("Unable to access runroot: '%s'", value.c_str());
     }
   }
 
   // 2. check Environment variable
   char *env_val = getenv("TS_RUNROOT");
   if (env_val) {
-    path = get_yaml_path(env_val, json);
+    path = get_yaml_path(env_val);
     if (!path.empty()) {
       runroot_file = path;
       if (!json) {
         ink_notice("using the environment variable TS_RUNROOT");
       }
       return;
+    } else if (!json) {
+      ink_warning("Unable to access runroot: '%s' from $TS_RUNROOT", env_val);
     }
   }
 
@@ -203,7 +209,7 @@ runroot_map_default()
   return map;
 }
 
-// return a map of all path in runroot_path.yml
+// return a map of all path in runroot.yaml
 RunrootMapType
 runroot_map(const std::string &file)
 {
