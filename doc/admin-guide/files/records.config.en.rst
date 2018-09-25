@@ -1749,18 +1749,6 @@ Proxy User Variables
 Security
 ========
 
-.. ts:cv:: CONFIG proxy.config.http.push_method_enabled INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the HTTP ``PUSH`` option, which allows you to deliver content directly to the cache without a user
-   request.
-
-   .. important::
-
-       If you enable this option, then you must also specify
-       a filtering rule in the ip_allow.config file to allow only certain
-       machines to push content into the cache.
-
 .. ts:cv:: CONFIG proxy.config.http.max_post_size INT 0
    :reloadable:
 

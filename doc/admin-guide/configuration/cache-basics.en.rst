@@ -289,21 +289,6 @@ Traffic Server supports the HTTP ``PUSH`` method of content delivery.
 Using HTTP ``PUSH``, you can deliver content directly into the cache
 without client requests.
 
-Configuring Traffic Server for PUSH Requests
---------------------------------------------
-
-Before you can deliver content into your cache using HTTP ``PUSH``, you
-must configure Traffic Server to accept ``PUSH`` requests.
-
-#. Edit :file:`ip_allow.config` to allow ``PUSH`` from the appropriate addresses.
-
-#. Update :ts:cv:`proxy.config.http.push_method_enabled` in
-   :file:`records.config`::
-
-        CONFIG proxy.config.http.push_method_enabled INT 1
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
-
 Understanding HTTP PUSH
 -----------------------
 

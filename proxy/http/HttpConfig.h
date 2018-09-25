@@ -877,8 +877,6 @@ public:
 
   MgmtByte cache_post_method = 0;
 
-  MgmtByte push_method_enabled = 0;
-
   MgmtByte referer_filter_enabled  = 0;
   MgmtByte referer_format_redirect = 0;
 
