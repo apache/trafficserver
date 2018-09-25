@@ -850,7 +850,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     exitStatus |= (1 << 0);
     fprintf(stderr, "ERROR: Failed to load remap.config, exitStatus %d\n\n", exitStatus);
   } else {
-    fprintf(stderr, "INFO:Successfully loaded remap.config\n\n");
+    fprintf(stderr, "INFO: Successfully loaded remap.config\n\n");
   }
 
   if (RecReadConfigFile(false) != REC_ERR_OKAY) {
@@ -1890,26 +1890,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       udpNet.start(num_of_udp_threads, stacksize);
     }
 
-    // acc.init();
-    // if (auto_clear_authdb_flag)
-    // acc.clear_cache();
-    // acc.start();
-    // pmgmt initialization moved up, needed by RecProcessInit
-    // pmgmt->start();
-
     // Initialize Response Body Factory
     body_factory = new HttpBodyFactory;
-
-    // Start IP to userName cache processor used
-    // by RADIUS and FW1 plug-ins.
-    // ipToUserNameCacheProcessor.start();
-
-    // Initialize the system for SIMPLE support
-    //  Simple::init();
-
-    // Initialize the system for RAFT support
-    // All this is handled by plugin support code
-    //   Raft::init();
 
     // Continuation Statistics Dump
     if (show_statistics) {
