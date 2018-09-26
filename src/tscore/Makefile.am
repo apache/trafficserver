@@ -54,8 +54,6 @@ libtscore_la_SOURCES = \
 	Arena.h \
 	BaseLogFile.cc \
 	BaseLogFile.h \
-	Bitops.cc \
-	Bitops.h \
 	BufferWriter.h \
 	BufferWriterForward.h \
 	BufferWriterFormat.cc \
