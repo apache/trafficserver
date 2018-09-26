@@ -58,8 +58,6 @@ libtscore_la_SOURCES = \
 	ArgParser.h \
 	BaseLogFile.cc \
 	BaseLogFile.h \
-	Bitops.cc \
-	Bitops.h \
 	BufferWriter.h \
 	BufferWriterForward.h \
 	BufferWriterFormat.cc \
