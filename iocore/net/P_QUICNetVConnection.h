@@ -125,19 +125,20 @@ class SSLNextProtocolSet;
  *  v
  * state_connection_established()
  *  | READ:
- *  |   _state_connection_established_process_packet()
+ *  |   _state_connection_established_receive_packet()
+ *  |   _state_connection_established_process_protected_packet()
  *  | WRITE:
  *  |   _state_common_send_packet()
  *  v
  * state_connection_closing() (If closing actively)
  *  | READ:
- *  |   _state_connection_established_process_packet()
+ *  |   _state_closing_receive_packet()
  *  | WRITE:
- *  |   _state_common_send_packet()
+ *  |   _state_closing_send_packet()
  *  v
  * state_connection_draining() (If closing passively)
  *  | READ:
- *  |   _state_connection_established_process_packet()
+ *  |   _state_draining_receive_packet()
  *  | WRITE:
  *  |   Do nothing
  *  v
@@ -311,8 +312,8 @@ private:
   QUICErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_handshake_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_connection_established_process_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_common_receive_packet();
+  QUICErrorUPtr _state_connection_established_receive_packet();
+  QUICErrorUPtr _state_connection_established_process_protected_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_closing_receive_packet();
   QUICErrorUPtr _state_draining_receive_packet();
   QUICErrorUPtr _state_common_send_packet();

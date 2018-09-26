@@ -629,7 +629,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   switch (event) {
   case QUIC_EVENT_PACKET_READ_READY: {
-    error = this->_state_common_receive_packet();
+    error = this->_state_connection_established_receive_packet();
     break;
   }
   case QUIC_EVENT_PACKET_WRITE_READY: {
@@ -984,13 +984,13 @@ QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacke
 }
 
 QUICErrorUPtr
-QUICNetVConnection::_state_connection_established_process_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_connection_established_process_protected_packet(QUICPacketUPtr packet)
 {
   return this->_recv_and_ack(std::move(packet));
 }
 
 QUICErrorUPtr
-QUICNetVConnection::_state_common_receive_packet()
+QUICNetVConnection::_state_connection_established_receive_packet()
 {
   QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
   QUICPacketCreationResult result;
@@ -1030,7 +1030,7 @@ QUICNetVConnection::_state_common_receive_packet()
           break;
         }
       }
-      error = this->_state_connection_established_process_packet(std::move(p));
+      error = this->_state_connection_established_process_protected_packet(std::move(p));
       break;
     case QUICPacketType::INITIAL:
     case QUICPacketType::HANDSHAKE:
