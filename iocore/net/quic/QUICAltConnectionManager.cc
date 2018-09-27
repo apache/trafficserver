@@ -25,9 +25,9 @@
 #include "QUICConnectionTable.h"
 #include "QUICConfig.h"
 
-static constexpr char DEBUG_TAG[] = "quic_alt_con";
+static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 
-#define QUICACMDebug(fmt, ...) Debug(DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable) : _qc(qc), _ctable(ctable)
 {
@@ -71,10 +71,10 @@ QUICAltConnectionManager::_update_alt_connection_ids(int8_t chosen)
     this->_alt_quic_connection_ids[index] = {this->_alt_quic_connection_id_seq_num + i, conn_id, token, false};
     this->_ctable.insert(conn_id, this->_qc);
 
-    if (is_debug_tag_set(DEBUG_TAG)) {
+    if (is_debug_tag_set(V_DEBUG_TAG)) {
       char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
       conn_id.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-      QUICACMDebug("alt-cid=%s", new_cid_str);
+      QUICACMVDebug("alt-cid=%s", new_cid_str);
     }
   }
   this->_alt_quic_connection_id_seq_num += count;

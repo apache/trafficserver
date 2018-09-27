@@ -2040,6 +2040,15 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   return *len;
 }
 
+int
+QUICNewConnectionIdFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  char cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+  this->connection_id().hex(cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+
+  return snprintf(msg, msg_len, "| NEW_CONNECTION_ID size=%zu cid=0x%s", this->size(), cid_str);
+}
+
 uint64_t
 QUICNewConnectionIdFrame::sequence() const
 {

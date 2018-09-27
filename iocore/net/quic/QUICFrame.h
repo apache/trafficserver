@@ -561,6 +561,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   uint64_t sequence() const;
   QUICConnectionId connection_id() const;
