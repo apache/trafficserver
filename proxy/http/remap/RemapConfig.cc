@@ -897,7 +897,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   void *ih         = nullptr;
   TSReturnCode res = TS_SUCCESS;
   if (pi->fp_tsremap_new_instance) {
-#if defined(freebsd) || defined(darwin)
+#if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
     optreset = 1;
 #endif
 #if defined(__GLIBC__)
