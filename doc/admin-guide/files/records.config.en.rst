@@ -3407,6 +3407,10 @@ SSL Termination
    ``1`` Disable the SSL session cache for a connection during lock contention.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.enable INT 1
+
+  Set to 1 to enable Traffic Server to process TLS tickets for TLS session resumption.
+
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
    :overridable:
 

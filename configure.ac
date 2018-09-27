@@ -1341,6 +1341,11 @@ AC_SUBST([LIBJANSSON])
 TS_CHECK_YAML_CPP
 AM_CONDITIONAL([BUILD_YAML_CPP], [test x"$has_yaml_cpp" = x"no"])
 
+# Check for optional hiredis library
+TS_CHECK_HIREDIS
+
+AM_CONDITIONAL([BUILD_SSL_SESSION_REUSE_PLUGIN], [test ! -z "${LIB_HIREDIS}" -a "x${has_hiredis}" = "x1" ])
+
 # Check for backtrace() support
 has_backtrace=0
 AC_CHECK_HEADERS([execinfo.h], [has_backtrace=1],[])

@@ -88,6 +88,10 @@ if BUILD_URI_SIGNING_PLUGIN
 include experimental/uri_signing/Makefile.inc
 endif
 
+if BUILD_SSL_SESSION_REUSE_PLUGIN
+include experimental/ssl_session_reuse/Makefile.inc
+endif
+
 if BUILD_MEMCACHED_REMAP_PLUGIN
 include experimental/memcached_remap/Makefile.inc
 endif
