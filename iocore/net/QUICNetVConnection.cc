@@ -1145,7 +1145,9 @@ QUICNetVConnection::_state_common_send_packet()
         written += len;
 
         // TODO: Avoid static function. We don't need to parse buffer again. Get packet number offset from packet.
-        QUICPacket::protect_packet_number(buf, len, &this->_pn_protector, (this->_peer_quic_connection_id == QUICConnectionId::ZERO()) ? 0 : this->_peer_quic_connection_id.length());
+        QUICPacket::protect_packet_number(
+          buf, len, &this->_pn_protector,
+          (this->_peer_quic_connection_id == QUICConnectionId::ZERO()) ? 0 : this->_peer_quic_connection_id.length());
 
         QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                      len);

@@ -279,7 +279,8 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
         lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
         if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
           this->_write_insert_with_name_ref(lookup_result_static.index, false, value, value_len);
-          QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d value=%.*s", lookup_result_static.index, false, value_len, value);
+          QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d value=%.*s", lookup_result_static.index, false,
+                     value_len, value);
         }
       }
     } else if (lookup_result_dynamic.match_type == LookupResult::MatchType::NAME) {
@@ -307,7 +308,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
         } else {
           // Insert both the name and the value
           uint16_t current_index = lookup_result_dynamic.index;
-          lookup_result_dynamic = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
+          lookup_result_dynamic  = this->_dynamic_table.insert_entry(lowered_name, name_len, value, value_len);
           if (lookup_result_dynamic.match_type != LookupResult::MatchType::NONE) {
             this->_write_insert_with_name_ref(current_index, true, value, value_len);
             QPACKDebug("Wrote Insert With Name Ref: index=%u, dynamic_table=%d, value=%.*s", current_index, true, value_len, value);
@@ -1210,7 +1211,6 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
     }
     available += this->_entries[tail].name_len + this->_entries[tail].value_len;
     tail = (tail + 1) % this->_max_entries;
-
   }
   if (available < required_len) {
     // We can't insert a new entry because some stream(s) refer an entry that need to be evicted
@@ -1219,7 +1219,8 @@ QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const cha
 
   // Evict
   if (this->_available != available) {
-    QPACKDTDebug("Evict entries: from %u to %u", this->_entries[(this->_entries_tail + 1) % this->_max_entries].index, this->_entries[tail - 1].index);
+    QPACKDTDebug("Evict entries: from %u to %u", this->_entries[(this->_entries_tail + 1) % this->_max_entries].index,
+                 this->_entries[tail - 1].index);
     this->_available    = available;
     this->_entries_tail = tail - 1;
     QPACKDTDebug("Available size: %u", this->_available);
@@ -1248,8 +1249,8 @@ QPACK::DynamicTable::duplicate_entry(uint16_t current_index)
 
   this->lookup(current_index, &name, &name_len, &value, &value_len);
   // We need to dup name and value to avoid memcpy-param-overlap
-  duped_name = ats_strndup(name, name_len);
-  duped_value = ats_strndup(value, value_len);
+  duped_name                = ats_strndup(name, name_len);
+  duped_value               = ats_strndup(value, value_len);
   const LookupResult result = this->insert_entry(duped_name, name_len, duped_value, value_len);
   ats_free(duped_name);
   ats_free(duped_value);
