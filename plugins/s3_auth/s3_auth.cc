@@ -994,8 +994,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   // Note that we don't acquire() the s3 config, it's implicit that we hold at least one ref
   *ih = static_cast<void *>(s3);
-  TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s, version=%d", s3->secret(), s3->keyid(),
-          s3->virt_host() ? "yes" : "no", s3->version());
+  TSDebug(PLUGIN_NAME, "New rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(), s3->virt_host() ? "yes" : "no",
+          s3->version());
 
   return TS_SUCCESS;
 }

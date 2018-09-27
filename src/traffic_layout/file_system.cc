@@ -21,21 +21,16 @@
   limitations under the License.
 */
 
-// funciton for file system management
-// including: make directory (with parents), copy directory (recursively), remove directory (recursively), remove all directories
-// inside
+// file for file system management for runroot including:
+// create directory (with parents), copy directory (recursively),
+// remove directory (recursively), remove everything inside certain directory (recursively)
 
 #include "tscore/ink_error.h"
-#include "tscore/I_Layout.h"
 #include "tscore/runroot.h"
 #include "file_system.h"
 
-#include <iostream>
 #include <fstream>
 #include <ftw.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <set>
 
 // global variables for copy function
@@ -58,7 +53,7 @@ append_slash(std::string &path)
   }
 }
 
-void
+static void
 remove_slash(std::string &path)
 {
   if (path.back() == '/') {
@@ -67,28 +62,12 @@ remove_slash(std::string &path)
 }
 
 bool
-exists(const std::string &dir)
-{
-  struct stat buffer;
-  int result = stat(dir.c_str(), &buffer);
-  return (!result) ? true : false;
-}
-
-bool
-is_directory(const std::string &directory)
-{
-  struct stat buffer;
-  int result = stat(directory.c_str(), &buffer);
-  return (!result && (S_IFDIR & buffer.st_mode)) ? true : false;
-}
-
-bool
 create_directory(const std::string &dir)
 {
   std::string s = dir;
   append_slash(s);
 
-  if (exists(dir) && is_directory(dir)) {
+  if (is_directory(dir)) {
     return true;
   }
 

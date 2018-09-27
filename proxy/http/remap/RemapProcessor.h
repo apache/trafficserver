@@ -30,14 +30,10 @@
 #include "RemapPlugins.h"
 #include "RemapPluginInfo.h"
 #include "ReverseProxy.h"
-#undef std // FIXME: remove dependency on the STL
-#include <map>
 
 #define EVENT_REMAP_START (REMAP_EVENT_EVENTS_START + 0)
 #define EVENT_REMAP_ERROR (REMAP_EVENT_EVENTS_START + 1)
 #define EVENT_REMAP_COMPLETE (REMAP_EVENT_EVENTS_START + 2)
-
-class url_mapping;
 
 class RemapProcessor : public Processor
 {

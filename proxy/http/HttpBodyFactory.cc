@@ -707,6 +707,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   ink_filepath_make(path, sizeof(path), tmpl_dir, ".body_factory_info");
   status = stat(path, &stat_buf);
   if ((status < 0) || !S_ISREG(stat_buf.st_mode)) {
+    Warning("Missing .body_factory_info in %s.  Not loading body_factory templates", tmpl_dir);
     closedir(dir);
     return nullptr;
   }

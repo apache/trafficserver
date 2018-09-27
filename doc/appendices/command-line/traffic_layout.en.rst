@@ -57,7 +57,7 @@ If the path is not specified, the current working directory will be used.
 To run traffic_manager, for example, using the runroot, there are several ways:
     #. ``/path/to/runroot/bin/traffic_manager``
     #. ``traffic_manager --run-root=/path/to/runroot``
-    #. ``traffic_manager --run-root=/path/to/runroot/runroot_path.yml``
+    #. ``traffic_manager --run-root=/path/to/runroot/runroot.yaml``
     #. Set :envvar:`TS_RUNROOT` to ``/path/to/runroot`` and run ``traffic_manager``
     #. Run ``traffic_manager`` with ``/path/to/runroot`` as current working directory
 
@@ -72,7 +72,7 @@ Subcommands
 init
 ----
 Use the current working directory or the specific path to create runroot. 
-The path can be absolute, relative or set up in :envvar:`TS_RUNROOT`.
+The path can be absolute or relative.
 
 workflow: 
     #. Create a sandbox directory for programs to run under.
@@ -111,7 +111,6 @@ remove
 ------
 Find the sandbox to remove in following order:
     #. specified in --path as absolute or relative.
-    #. ENV variable: :envvar:`TS_RUNROOT`.
     #. current working directory.
     #. installed directory.
 

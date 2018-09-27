@@ -31,13 +31,13 @@ Test.SkipUnless(Test.Variables.BINDIR.startswith(Test.Variables.PREFIX),
 path = os.path.join(Test.RunDirectory, "runroot")
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path
-f = tr.Disk.File(os.path.join(path, "runroot_path.yml"))
+f = tr.Disk.File(os.path.join(path, "runroot.yaml"))
 f.Exists = True
 
 path2 = os.path.join(Test.RunDirectory, "runroot2")
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path2
-f = tr.Disk.File(os.path.join(path2, "runroot_path.yml"))
+f = tr.Disk.File(os.path.join(path2, "runroot.yaml"))
 f.Exists = True
 
 # 1. --run-root use path cmd
