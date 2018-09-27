@@ -82,14 +82,7 @@ AC_SUBST(TS_VERSION_MICRO)
 
 dnl Hard-coded top of ink_autoconf.h:
 AH_TOP([
-#ifndef _ink_autoconf_h
-#define _ink_autoconf_h
-])
-
-dnl Hard-coded inclusion at the tail end of ink_autoconf.h:
-AH_BOTTOM([
-
-#endif /* _ink_autoconf_h */
+#pragma once
 ])
 
 #
@@ -2011,9 +2004,9 @@ AC_CONFIG_FILES([
   doc/ext/local-config.py
   doc/uml/Makefile
   example/Makefile
-  include/Makefile 
-  include/ts/Makefile 
-  include/tscpp/api/Makefile 
+  include/Makefile
+  include/ts/Makefile
+  include/tscpp/api/Makefile
   include/tscpp/util/Makefile
   iocore/Makefile
   iocore/aio/Makefile
@@ -2050,7 +2043,7 @@ AC_CONFIG_FILES([
   rc/trafficserver.conf
   rc/trafficserver.service
   rc/trafficserver.xml
-  src/tscpp/util/Makefile 
+  src/tscpp/util/Makefile
   src/tscore/Makefile
   tools/Makefile
   tools/trafficserver.pc
