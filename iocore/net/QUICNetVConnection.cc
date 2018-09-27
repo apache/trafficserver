@@ -511,14 +511,7 @@ QUICNetVConnection::_handle_frame(const QUICNewConnectionIdFrame &frame)
                                                  QUICFrameType::NEW_CONNECTION_ID);
   }
 
-  if (this->netvc_context == NET_VCONNECTION_IN && this->_connection_migration_initiated) {
-    // For connection migration testing, server update peer cid every time when it's offered
-    // TODO: update peer cid only if client's local adress is changed
-    this->_connection_migration_initiated = false;
-    this->_update_peer_cid(frame.connection_id());
-  } else {
-    // TODO: on client side, store offered alt cids from server
-  }
+  this->_remote_alt_cids.push(frame.connection_id());
 
   return error;
 }
@@ -1012,24 +1005,16 @@ QUICNetVConnection::_state_connection_established_receive_packet()
     // Process the packet
     switch (p->type()) {
     case QUICPacketType::PROTECTED:
-      // Check connection migration
-      if (this->_handshake_handler->is_completed() && p->destination_cid() != this->_quic_connection_id) {
-        if (this->_alt_con_manager->migrate_to(p->destination_cid(), this->_reset_token)) {
-          // Migrate connection
-          this->_update_local_cid(p->destination_cid());
-          Connection con;
-          con.setRemote(&p->from().sa);
-          this->con.move(con);
-          QUICConDebug("Connection migrated");
-          this->_connection_migration_initiated = true;
-          this->_validate_new_path();
-        } else {
-          char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-          p->destination_cid().hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-          QUICConDebug("Connection migration failed cid=%s", dcid_str);
-          break;
-        }
+      // Migrate connection if required
+      error = this->_state_connection_established_migrate_connection(*p);
+      if (error->cls != QUICErrorClass::NONE) {
+        break;
       }
+
+      if (this->netvc_context == NET_VCONNECTION_OUT) {
+        this->_state_connection_established_initiate_connection_migration();
+      }
+
       error = this->_state_connection_established_process_protected_packet(std::move(p));
       break;
     case QUICPacketType::INITIAL:
@@ -1755,7 +1740,11 @@ QUICNetVConnection::_switch_to_established_state()
 
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
-    if (netvc_context == NET_VCONNECTION_IN) {
+    std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
+    QUICConfig::scoped_config params;
+
+    if (netvc_context == NET_VCONNECTION_IN || (netvc_context == NET_VCONNECTION_OUT && params->cm_exercise_enabled() &&
+                                                !remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION))) {
       this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable);
     }
   } else {
@@ -1923,4 +1912,81 @@ QUICNetVConnection::_setup_handshake_protocol(SSL_CTX *ctx)
   QUICTLS *tls = new QUICTLS(ctx, this->direction());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
   return tls;
+}
+
+QUICErrorUPtr
+QUICNetVConnection::_state_connection_established_migrate_connection(const QUICPacket &p)
+{
+  ink_assert(this->_handshake_handler->is_completed());
+
+  QUICErrorUPtr error   = QUICErrorUPtr(new QUICNoError());
+  QUICConnectionId dcid = p.destination_cid();
+
+  if (dcid == this->_quic_connection_id) {
+    return error;
+  }
+
+  if (this->netvc_context == NET_VCONNECTION_IN) {
+    if (this->_remote_alt_cids.empty()) {
+      // TODO: Should endpoint send connection error when remote endpoint doesn't send NEW_CONNECTION_ID frames before initiating
+      // connection migration ?
+      QUICConDebug("Ignore connection migration - remote endpoint initiated CM before sending NEW_CONNECTION_ID frames");
+
+      return error;
+    } else {
+      QUICConDebug("Connection migration is initiated by remote");
+    }
+  }
+
+  if (this->_alt_con_manager->migrate_to(dcid, this->_reset_token)) {
+    // DCID of received packet is local cid
+    this->_update_local_cid(dcid);
+
+    // On client side (NET_VCONNECTION_OUT), nothing to do any more
+    if (this->netvc_context == NET_VCONNECTION_IN) {
+      Connection con;
+      con.setRemote(&(p.from().sa));
+      this->con.move(con);
+
+      this->_update_peer_cid(this->_remote_alt_cids.front());
+      this->_remote_alt_cids.pop();
+      this->_validate_new_path();
+    }
+  } else {
+    char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+    dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+    QUICConDebug("Connection migration failed cid=%s", dcid_str);
+  }
+
+  return error;
+}
+
+/**
+ * Connection Migration Excercise from client
+ */
+QUICErrorUPtr
+QUICNetVConnection::_state_connection_established_initiate_connection_migration()
+{
+  ink_assert(this->_handshake_handler->is_completed());
+  ink_assert(this->netvc_context == NET_VCONNECTION_OUT);
+
+  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+
+  std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
+  QUICConfig::scoped_config params;
+
+  if (!params->cm_exercise_enabled() || this->_connection_migration_initiated ||
+      remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) || this->_remote_alt_cids.empty()) {
+    return error;
+  }
+
+  QUICConDebug("Initiated connection migration");
+  this->_connection_migration_initiated = true;
+
+  this->_update_peer_cid(this->_remote_alt_cids.front());
+  this->_remote_alt_cids.pop();
+
+  this->_validate_new_path();
+
+  return error;
 }

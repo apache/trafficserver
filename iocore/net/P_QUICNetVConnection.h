@@ -237,6 +237,8 @@ private:
   QUICConnectionId _quic_connection_id;          // src cid in local
   QUICFiveTuple _five_tuple;
   bool _connection_migration_initiated = false;
+  // TODO: Revisit life cycle of cids when draft-15 is published
+  std::queue<QUICConnectionId> _remote_alt_cids;
 
   char _cids_data[MAX_CIDS_SIZE] = {0};
   std::string_view _cids;
@@ -314,6 +316,8 @@ private:
   QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
   QUICErrorUPtr _state_connection_established_receive_packet();
   QUICErrorUPtr _state_connection_established_process_protected_packet(QUICPacketUPtr packet);
+  QUICErrorUPtr _state_connection_established_migrate_connection(const QUICPacket &p);
+  QUICErrorUPtr _state_connection_established_initiate_connection_migration();
   QUICErrorUPtr _state_closing_receive_packet();
   QUICErrorUPtr _state_draining_receive_packet();
   QUICErrorUPtr _state_common_send_packet();

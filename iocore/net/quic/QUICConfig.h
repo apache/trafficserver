@@ -39,6 +39,7 @@ public:
   uint32_t max_alt_connection_ids() const;
   uint32_t stateless_retry() const;
   uint32_t vn_exercise_enabled() const;
+  uint32_t cm_exercise_enabled() const;
 
   const char *server_supported_groups() const;
   const char *client_supported_groups() const;
@@ -90,6 +91,7 @@ private:
   uint32_t _max_alt_connection_ids = 0;
   uint32_t _stateless_retry        = 0;
   uint32_t _vn_exercise_enabled    = 0;
+  uint32_t _cm_exercise_enabled    = 0;
 
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;

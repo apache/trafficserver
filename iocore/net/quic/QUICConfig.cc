@@ -138,6 +138,7 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_alt_connection_ids, "proxy.config.quic.max_alt_connection_ids");
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.stateless_retry");
   REC_EstablishStaticConfigInt32U(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
+  REC_EstablishStaticConfigInt32U(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
 
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
@@ -233,6 +234,12 @@ uint32_t
 QUICConfigParams::vn_exercise_enabled() const
 {
   return this->_vn_exercise_enabled;
+}
+
+uint32_t
+QUICConfigParams::cm_exercise_enabled() const
+{
+  return this->_cm_exercise_enabled;
 }
 
 uint32_t

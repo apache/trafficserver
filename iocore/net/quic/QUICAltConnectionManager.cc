@@ -69,7 +69,9 @@ QUICAltConnectionManager::_update_alt_connection_ids(int8_t chosen)
     conn_id.randomize();
     token.generate(conn_id, params->server_id());
     this->_alt_quic_connection_ids[index] = {this->_alt_quic_connection_id_seq_num + i, conn_id, token, false};
-    this->_ctable.insert(conn_id, this->_qc);
+    if (this->_qc->direction() == NET_VCONNECTION_IN) {
+      this->_ctable.insert(conn_id, this->_qc);
+    }
 
     if (is_debug_tag_set(V_DEBUG_TAG)) {
       char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
