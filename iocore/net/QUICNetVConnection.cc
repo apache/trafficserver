@@ -1298,22 +1298,24 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   }
 
   // STREAM, MAX_STREAM_DATA, STREAM_BLOCKED
-  frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
-  while (frame) {
-    ++frame_count;
-    if (frame->type() == QUICFrameType::STREAM) {
-      int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
-      QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
-                  this->_remote_flow_controller->current_limit());
-      ink_assert(ret == 0);
-    }
-    this->_store_frame(buf, len, max_frame_size, std::move(frame));
-
-    if (++this->_stream_frames_sent % MAX_CONSECUTIVE_STREAMS == 0) {
-      break;
-    }
-
+  if (!this->_path_validator->is_validating()) {
     frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+    while (frame) {
+      ++frame_count;
+      if (frame->type() == QUICFrameType::STREAM) {
+        int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
+        QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
+                    this->_remote_flow_controller->current_limit());
+        ink_assert(ret == 0);
+      }
+      this->_store_frame(buf, len, max_frame_size, std::move(frame));
+
+      if (++this->_stream_frames_sent % MAX_CONSECUTIVE_STREAMS == 0) {
+        break;
+      }
+
+      frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+    }
   }
 
   // ACK

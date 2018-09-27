@@ -32,6 +32,7 @@ class QUICPathValidator : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   QUICPathValidator() {}
+  bool is_validating();
   bool is_validated();
   void validate();
 

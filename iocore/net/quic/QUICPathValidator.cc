@@ -24,6 +24,12 @@
 #include "QUICPathValidator.h"
 
 bool
+QUICPathValidator::is_validating()
+{
+  return this->_state == ValidationState::VALIDATING;
+}
+
+bool
 QUICPathValidator::is_validated()
 {
   return this->_state == ValidationState::VALIDATED;
