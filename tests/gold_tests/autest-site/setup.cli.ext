@@ -49,7 +49,7 @@ if ENV['ATS_BIN'] is not None:
     host.WriteVerbose(['ats'], "Traffic server layout Data:\n", pprint.pformat(out))
     # if the above worked this should as well
     # this gets feature data
-    out = subprocess.check_output([traffic_layout, "-f", "--json"])
+    out = subprocess.check_output([traffic_layout, "--features", "--json"])
     out = json.loads(out.decode("utf-8"))
     Variables.update(out)
     host.WriteVerbose(['ats'], "Traffic server feature data:\n", pprint.pformat(out))

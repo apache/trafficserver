@@ -40,29 +40,30 @@ main(int argc, const char **argv)
   engine.parser.add_global_usage("traffic_layout CMD [OPTIONS]");
 
   // global options
-  engine.parser.add_option("--features", "-f", "Show the compiled features");
+  engine.parser.add_option("--features", "", "Show the compiled features");
   engine.parser.add_option("--json", "-j", "Produce output in JSON format (when supported)");
   engine.parser.add_option("--version", "-V", "Print version string");
   engine.parser.add_option("--help", "-h", "Print usage information");
   engine.parser.add_option("--run-root", "", "using TS_RUNROOT as sandbox", "", 1);
 
   // info command
-  engine.parser.add_command("info", "Show the layout as default", [&]() { engine.info(); });
+  engine.parser.add_command("info", "Show the layout information. <Default>", [&]() { engine.info(); });
   // init command
   engine.parser.add_command("init", "Initialize(create) the runroot sandbox", [&]() { engine.create_runroot(); })
-    .add_option("--absolute", "", "Produce absolute path in the runroot.yaml")
-    .add_option("--force", "", "Create runroot even if the directory is not empty")
-    .add_option("--path", "", "Specify the path of the runroot", "", 1)
-    .add_option("--copy-style", "", "Specify the way of copying (FULL/HARD/SOFT)", "", 1)
-    .add_option("--layout", "", "Use specific layout (providing YAML file) to create runroot", "", 1);
+    .add_option("--absolute", "-a", "Produce absolute path in the runroot.yaml")
+    .add_option("--force", "-f", "Create runroot even if the directory is not empty")
+    .add_option("--path", "-p", "Specify the path of the runroot", "", 1)
+    .add_option("--copy-style", "-c", "Specify the way of copying (full/hard/soft)", "", 1)
+    .add_option("--layout", "-l", "Use specific layout (providing YAML file) to create runroot", "", 1);
   // remove command
   engine.parser.add_command("remove", "Remove the runroot sandbox", [&]() { engine.remove_runroot(); })
-    .add_option("--force", "", "Remove runroot even if runroot.yaml is not found")
-    .add_option("--path", "", "Specify the path of the runroot", "", 1);
+    .add_option("--force", "-f", "Remove runroot even if runroot.yaml is not found")
+    .add_option("--path", "-p", "Specify the path of the runroot", "", 1);
   // verify command
   engine.parser.add_command("verify", "Verify the runroot permissions", [&]() { engine.verify_runroot(); })
-    .add_option("--fix", "", "Fix the permission issues of runroot")
-    .add_option("--path", "", "Specify the path of the runroot", "", 1);
+    .add_option("--fix", "-x", "Fix the permission issues of runroot")
+    .add_option("--path", "-p", "Specify the path of the runroot", "", 1)
+    .add_option("--with-user", "-w", "verify runroot with certain user", "", 1);
 
   engine.arguments = engine.parser.parse(argv);
 
