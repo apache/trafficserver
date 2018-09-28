@@ -163,6 +163,57 @@ remove_inside_directory(const std::string &dir)
   }
 }
 
+bool
+filter_ts_directories(const std::string &dir, const std::string &dst_path)
+{
+  // ----- filter traffic server related directories -----
+  if (dir == LAYOUT_BINDIR || dir == LAYOUT_SBINDIR) {
+    // no directory from bindir and sbindir should be copied.
+    return false;
+  }
+  if (dir == LAYOUT_LIBDIR) {
+    // valid directory of libdir are perl5 and pkgconfig. If not one of those, end the copying.
+    if (dst_path.find("/perl5") == std::string::npos && dst_path.find("/pkgconfig") == std::string::npos) {
+      return false;
+    }
+  }
+  if (dir == LAYOUT_INCLUDEDIR) {
+    // valid directory of includedir are atscppapi and ts. If not one of those, end the copying.
+    if (dst_path.find("/atscppapi") == std::string::npos && dst_path.find("/ts") == std::string::npos) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool
+filter_ts_files(const std::string &dir, const std::string &dst_path)
+{
+  // ----- filter traffic server related files -----
+  if (dir == LAYOUT_BINDIR || dir == LAYOUT_SBINDIR) {
+    // check if executable is in the list of traffic server executables. If not, end the copying.
+    if (executables.find(dst_path.substr(dst_path.find_last_of("/") + 1)) == executables.end()) {
+      return false;
+    }
+  }
+  if (dir == LAYOUT_LIBDIR) {
+    // check if library file starts with libats, libts or contained in perl5/ and pkgconfig/.
+    // If not, end the copying.
+    if (dst_path.find("/perl5/") == std::string::npos && dst_path.find("/pkgconfig/") == std::string::npos &&
+        dst_path.find("libats") == std::string::npos && dst_path.find("libts") == std::string::npos) {
+      return false;
+    }
+  }
+  if (dir == LAYOUT_INCLUDEDIR) {
+    // check if include file is contained in atscppapi/ and ts/. If not, end the copying.
+    if (dst_path.find("/atscppapi/") == std::string::npos && dst_path.find("/ts/") == std::string::npos &&
+        dst_path.find("/tscpp/") == std::string::npos) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static int
 ts_copy_function(const char *src_path, const struct stat *sb, int flag)
 {
@@ -180,24 +231,9 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
   switch (flag) {
   // copying a directory
   case FTW_D:
-    // ----- filter traffic server related files -----
-    if (copy_dir == LAYOUT_BINDIR || copy_dir == LAYOUT_SBINDIR) {
-      // no directory from bindir and sbindir should be copied.
+    if (!filter_ts_directories(copy_dir, dst_path)) {
       break;
     }
-    if (copy_dir == LAYOUT_LIBDIR) {
-      // valid directory of libdir are perl5 and pkgconfig. If not one of those, end the copying.
-      if (dst_path.find("/perl5") == std::string::npos && dst_path.find("/pkgconfig") == std::string::npos) {
-        break;
-      }
-    }
-    if (copy_dir == LAYOUT_INCLUDEDIR) {
-      // valid directory of includedir are atscppapi and ts. If not one of those, end the copying.
-      if (dst_path.find("/atscppapi") == std::string::npos && dst_path.find("/ts") == std::string::npos) {
-        break;
-      }
-    }
-
     // create directory for FTW_D type
     if (!create_directory(dst_path)) {
       ink_fatal("create directory failed during copy");
@@ -205,29 +241,9 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
     break;
   // copying a file
   case FTW_F:
-    // ----- filter traffic server related files -----
-    if (copy_dir == LAYOUT_BINDIR || copy_dir == LAYOUT_SBINDIR) {
-      // check if executable is in the list of traffic server executables. If not, end the copying.
-      if (executables.find(dst_path.substr(dst_path.find_last_of("/") + 1)) == executables.end()) {
-        break;
-      }
+    if (!filter_ts_files(copy_dir, dst_path)) {
+      break;
     }
-    if (copy_dir == LAYOUT_LIBDIR) {
-      // check if library file starts with libats, libts or contained in perl5/ and pkgconfig/.
-      // If not, end the copying.
-      if (dst_path.find("/perl5/") == std::string::npos && dst_path.find("/pkgconfig/") == std::string::npos &&
-          dst_path.find("libats") == std::string::npos && dst_path.find("libts") == std::string::npos) {
-        break;
-      }
-    }
-    if (copy_dir == LAYOUT_INCLUDEDIR) {
-      // check if include file is contained in atscppapi/ and ts/. If not, end the copying.
-      if (dst_path.find("/atscppapi/") == std::string::npos && dst_path.find("/ts/") == std::string::npos &&
-          dst_path.find("/tscpp/") == std::string::npos) {
-        break;
-      }
-    }
-
     // if the file already exist, overwrite it
     if (exists(dst_path)) {
       if (remove(dst_path.c_str())) {
