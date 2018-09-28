@@ -555,12 +555,6 @@ public:
     return 0;
   }
 
-  int
-  update_key_materials() override
-  {
-    return 0;
-  }
-
   const char *
   negotiated_cipher_suite() const override
   {

@@ -84,7 +84,6 @@ public:
   virtual bool is_ready_to_derive() const                                                 = 0;
   virtual bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const          = 0;
   virtual int initialize_key_materials(QUICConnectionId cid)                              = 0;
-  virtual int update_key_materials()                                                      = 0;
   virtual const char *negotiated_cipher_suite() const                                     = 0;
   virtual void negotiated_application_name(const uint8_t **name, unsigned int *len) const = 0;
   virtual const KeyMaterial *key_material_for_encryption(QUICKeyPhase phase) const        = 0;

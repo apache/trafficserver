@@ -137,27 +137,6 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   return 1;
 }
 
-int
-QUICTLS::update_key_materials()
-{
-  // Switch key phase
-  QUICKeyPhase next_key_phase;
-  switch (this->_client_pp->key_phase()) {
-  case QUICKeyPhase::PHASE_0:
-    next_key_phase = QUICKeyPhase::PHASE_1;
-    break;
-  case QUICKeyPhase::PHASE_1:
-    next_key_phase = QUICKeyPhase::PHASE_0;
-    break;
-  default:
-    Error("QUICKeyPhase value is undefined");
-    ink_assert(false);
-    next_key_phase = QUICKeyPhase::PHASE_0;
-  }
-
-  return 1;
-}
-
 const KeyMaterial *
 QUICTLS::key_material_for_encryption(QUICKeyPhase phase) const
 {
