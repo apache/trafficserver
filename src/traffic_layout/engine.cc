@@ -27,6 +27,9 @@
 #include "tscore/runroot.h"
 #include "tscore/I_Layout.h"
 #include "tscore/ink_error.h"
+#include "tscore/ink_defs.h"
+#include "records/I_RecProcess.h"
+#include "RecordsConfig.h"
 #include "engine.h"
 #include "file_system.h"
 #include "info.h"
@@ -35,9 +38,17 @@
 #include <iostream>
 #include <ftw.h>
 #include <yaml-cpp/yaml.h>
+#include <grp.h>
+
+static const long MAX_LOGIN        = ink_login_name_max();
+static constexpr int MAX_GROUP_NUM = 32;
 
 // for nftw check_directory
 std::string directory_check;
+
+// for 'verify --fix' nftw iteration
+int permission;
+std::string cur_fix_dir;
 
 // the function for the checking of the yaml file in the passed in path
 // if found return the path, if not return empty string
@@ -197,23 +208,30 @@ void
 LayoutEngine::create_runroot()
 {
   // set up options
-  std::string path = path_handler(arguments.get("path").value(), true, _argv[0]);
-  bool force_flag  = arguments.get("force");
-  bool abs_flag    = arguments.get("absolute");
+  std::string path        = path_handler(arguments.get("path").value(), true, _argv[0]);
+  bool force_flag         = arguments.get("force");
+  bool abs_flag           = arguments.get("absolute");
+  std::string layout_file = arguments.get("layout").value();
+  if (layout_file.find("runroot.yaml") != std::string::npos) {
+    ink_error(
+      "'runroot.yaml' is a potentially dangerous name for '--layout' option.\nPlease set other name to the file for '--layout'");
+    exit(70);
+  }
   // deal with the copy style
-  CopyStyle copy_style;
-  std::string style = arguments.get("copy-style").value();
+  CopyStyle copy_style = HARD;
+  std::string style    = arguments.get("copy-style").value();
   if (!style.empty()) {
     transform(style.begin(), style.end(), style.begin(), ::tolower);
     if (style == "full") {
       copy_style = FULL;
     } else if (style == "soft") {
       copy_style = SOFT;
-    } else {
+    } else if (style == "hard") {
       copy_style = HARD;
+    } else {
+      ink_error("Unknown copy style: '%s'", style.c_str());
+      exit(70);
     }
-  } else {
-    copy_style = HARD;
   }
   // check validity of the path
   if (!check_run_path(path, force_flag)) {
@@ -260,7 +278,6 @@ LayoutEngine::create_runroot()
 
   RunrootMapType new_map = original_map;
   // use the user provided layout: layout_file
-  std::string layout_file = arguments.get("layout").value();
   if (layout_file.size() != 0) {
     try {
       YAML::Node yamlfile = YAML::LoadFile(layout_file);
@@ -342,40 +359,6 @@ LayoutEngine::create_runroot()
     f << yamlfile.c_str();
   }
 }
-static bool
-check_remove_force_second()
-{
-  for (int i = 0; i < 3; i++) {
-    std::cout << "This is irreversible. Are you really sure to forcibly remove the runroot Y/N: ";
-    std::string input;
-    std::cin >> input;
-    if (input == "Y" || input == "y")
-      return true;
-    if (input == "N" || input == "n")
-      return false;
-  }
-  ink_error("Invalid input Y/N");
-  exit(70);
-}
-
-// check if user want to force remove the ts_runroot
-// return true if user replies Y
-static bool
-check_remove_force()
-{
-  // check for valid Y/N
-  for (int i = 0; i < 3; i++) {
-    std::cout << "Are you sure to force removing runroot? (irreversible) Y/N: ";
-    std::string input;
-    std::cin >> input;
-    if (input == "Y" || input == "y")
-      return check_remove_force_second();
-    if (input == "N" || input == "n")
-      return false;
-  }
-  ink_error("Invalid input Y/N");
-  exit(70);
-}
 
 // the function for removing the runroot
 void
@@ -397,10 +380,7 @@ LayoutEngine::remove_runroot()
   std::string cur_working_dir = cwd;
 
   if (arguments.get("force")) {
-    // the force clean
-    if (!check_remove_force()) {
-      exit(0);
-    }
+    // the force remove
     std::cout << "Forcing removing runroot ..." << std::endl;
     if (!remove_directory(clean_root)) {
       ink_warning("Failed force removing runroot '%s' - %s", clean_root.c_str(), strerror(errno));
@@ -439,22 +419,23 @@ LayoutEngine::remove_runroot()
 }
 
 // return an array containing gid and uid of provided user
-static std::pair<int, int>
-get_giduid(const char *user)
+static std::pair<gid_t, uid_t>
+get_giduid(std::string &user)
 {
   passwd *pwd;
-  if (*user == '#') {
+  if (user[0] == '#') {
     // Numeric user notation.
     uid_t uid = (uid_t)atoi(&user[1]);
     pwd       = getpwuid(uid);
   } else {
-    pwd = getpwnam(user);
+    pwd = getpwnam(user.c_str());
   }
   if (!pwd) {
     // null ptr
-    ink_fatal("missing password database entry for '%s'", user);
+    ink_fatal("missing password database entry for '%s'", user.c_str());
   }
-  std::pair<int, int> giduid = {int(pwd->pw_gid), int(pwd->pw_uid)};
+  user                           = pwd->pw_name;
+  std::pair<gid_t, uid_t> giduid = {pwd->pw_gid, pwd->pw_uid};
   return giduid;
 }
 
@@ -491,6 +472,25 @@ output_execute_permission(const std::string &permission)
   }
 }
 
+// chmod the file permission
+static int
+chmod_files_permission(const char *path, const struct stat *s, int flag, struct FTW *f)
+{
+  // ----- filter traffic server related files -----
+  if (!filter_ts_files(cur_fix_dir, path)) {
+    return 0;
+  }
+  struct stat stat_buffer;
+  if (stat(path, &stat_buffer) < 0) {
+    ink_warning("unable to stat() destination path %s: %s", path, strerror(errno));
+    return 0;
+  }
+  if (chmod(path, stat_buffer.st_mode | permission) < 0) {
+    ink_warning("Unable to change file mode on %s: %s", path, strerror(errno));
+  }
+  return 0;
+}
+
 // the fixing permission of runroot used by verify command
 static void
 fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMapType &usergroup_map)
@@ -500,21 +500,14 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
     exit(70);
   }
   for (auto &&it : permission_map) {
-    std::string name       = it.first;
-    std::string permission = it.second;
-    std::string usergroup  = usergroup_map[name];
-    std::string path       = path_map[name];
+    std::string name      = it.first;
+    std::string usergroup = usergroup_map[name];
+    std::string path      = path_map[name];
+    std::cout << "Fixing " + name + "..." << std::endl;
 
     int read_permission;
     int write_permission;
     int execute_permission;
-
-    struct stat stat_buffer;
-    if (stat(path.c_str(), &stat_buffer) < 0) {
-      ink_warning("unable to stat() destination path %s: %s", path.c_str(), strerror(errno));
-      continue;
-    }
-
     if (usergroup == "owner") {
       read_permission    = S_IRUSR;
       write_permission   = S_IWUSR;
@@ -528,44 +521,64 @@ fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMap
       write_permission   = S_IWOTH;
       execute_permission = S_IXOTH;
     }
-    // read
-    if (permission[0] != '1') {
-      if (chmod(path.c_str(), stat_buffer.st_mode | read_permission) < 0) {
-        ink_warning("Unable to change file mode on %s: %s", path.c_str(), strerror(errno));
-      }
-      std::cout << "Read permission fixed for '" + name + "': " + path << std::endl;
-    }
+    // fix read permission
+    permission  = read_permission;
+    cur_fix_dir = name;
+    nftw(path.c_str(), chmod_files_permission, OPEN_MAX_FILE, FTW_DEPTH);
+    // fix write permission
     if (name == LAYOUT_LOGDIR || name == LAYOUT_RUNTIMEDIR || name == LAYOUT_CACHEDIR) {
-      // write
-      if (permission[1] != '1') {
-        if (chmod(path.c_str(), stat_buffer.st_mode | read_permission | write_permission) < 0) {
-          ink_warning("Unable to change file mode on %s: %s", path.c_str(), strerror(errno));
-        }
-        std::cout << "Write permission fixed for '" + name + "': " + path << std::endl;
-      }
+      permission = write_permission;
+      nftw(path.c_str(), chmod_files_permission, OPEN_MAX_FILE, FTW_DEPTH);
     }
+    // fix execute permission
     if (name == LAYOUT_BINDIR || name == LAYOUT_SBINDIR || name == LAYOUT_LIBDIR || name == LAYOUT_LIBEXECDIR) {
-      // execute
-      if (permission[2] != '1') {
-        if (chmod(path.c_str(), stat_buffer.st_mode | read_permission | execute_permission) < 0) {
-          ink_warning("Unable to change file mode on %s: %s", path.c_str(), strerror(errno));
-        }
-        std::cout << "Execute permission fixed for '" + name + "': " + path << std::endl;
-      }
+      permission = execute_permission;
+      nftw(path.c_str(), chmod_files_permission, OPEN_MAX_FILE, FTW_DEPTH);
     }
   }
+}
+
+// helper function to check if user is from the same group of path_gid
+static bool
+from_group(std::string const &user, gid_t group_id, gid_t path_gid)
+{
+  int ngroups = MAX_GROUP_NUM;
+  // Retrieve group list
+#if defined(darwin)
+  // on Darwin, getgrouplist() takes int.
+  int groups[ngroups];
+  if (getgrouplist(user.c_str(), static_cast<int>(group_id), groups, &ngroups) == -1) {
+    ink_fatal("Failed to get group list as user '%s'\n", user.c_str());
+  }
+  for (int i = 0; i < ngroups; i++) {
+    if (static_cast<int>(path_gid) == groups[i]) {
+      return true;
+    }
+  }
+#else
+  gid_t groups[ngroups];
+  if (getgrouplist(user.c_str(), group_id, groups, &ngroups) == -1) {
+    ink_fatal("Failed to get group list as user '%s'\n", user.c_str());
+  }
+  for (int i = 0; i < ngroups; i++) {
+    if (path_gid == groups[i]) {
+      return true;
+    }
+  }
+#endif
+  return false;
 }
 
 // set permission to the map in verify runroot
 static void
 set_permission(std::vector<std::string> const &dir_vector, RunrootMapType &path_map, RunrootMapType &permission_map,
-               RunrootMapType &usergroup_map)
+               RunrootMapType &usergroup_map, std::string &user)
 {
   // active group and user of the path
-  std::pair<int, int> giduid = get_giduid(TS_PKGSYSUSER);
+  std::pair<gid_t, uid_t> giduid = get_giduid(user);
 
-  int ts_gid = giduid.first;
-  int ts_uid = giduid.second;
+  gid_t ts_gid = giduid.first;
+  uid_t ts_uid = giduid.second;
 
   struct stat stat_buffer;
 
@@ -582,8 +595,8 @@ set_permission(std::vector<std::string> const &dir_vector, RunrootMapType &path_
       ink_warning("unable to stat() destination path %s: %s", value.c_str(), strerror(errno));
       continue;
     }
-    int path_gid = int(stat_buffer.st_gid);
-    int path_uid = int(stat_buffer.st_uid);
+    gid_t path_gid = stat_buffer.st_gid;
+    uid_t path_uid = stat_buffer.st_uid;
 
     permission_map[name] = "000"; // default rwx all 0
     if (ts_uid == path_uid) {
@@ -598,7 +611,7 @@ set_permission(std::vector<std::string> const &dir_vector, RunrootMapType &path_
       if (stat_buffer.st_mode & S_IXUSR) {
         permission_map[name][2] = '1';
       }
-    } else if (ts_gid == path_gid) {
+    } else if (from_group(user, ts_gid, path_gid)) { // current user is in the path_gid group
       // check for group permission of st_mode
       usergroup_map[name] = "group";
       if (stat_buffer.st_mode & S_IRGRP) {
@@ -630,9 +643,19 @@ void
 LayoutEngine::verify_runroot()
 {
   std::string path = path_handler(arguments.get("path").value(), false, _argv[0]);
-
-  std::cout << "trafficserver user: " << TS_PKGSYSUSER << std::endl << std::endl;
-
+  std::string user;
+  char user_buf[MAX_LOGIN + 1];
+  if (arguments.get("with-user")) {
+    user = arguments.get("with-user").value();
+  } else {
+    RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
+    LibRecordsConfigInit();
+    if (RecGetRecordString("proxy.config.admin.user_id", user_buf, sizeof(user_buf)) != 0 || strlen(user_buf) == 0) {
+      user = user_buf;
+    } else {
+      user = TS_PKGSYSUSER;
+    }
+  }
   // put paths from yaml file or default paths to path_map
   RunrootMapType path_map;
   if (path.empty()) {
@@ -645,12 +668,16 @@ LayoutEngine::verify_runroot()
   RunrootMapType permission_map; // contains rwx bits
   RunrootMapType usergroup_map;  // map: owner, group, others
 
-  set_permission(dir_vector, path_map, permission_map, usergroup_map);
+  set_permission(dir_vector, path_map, permission_map, usergroup_map, user);
+
+  std::cout << "Verifying as user: " << user << std::endl << std::endl;
 
   // if --fix is used
   if (arguments.get("fix")) {
     fix_runroot(path_map, permission_map, usergroup_map);
-    set_permission(dir_vector, path_map, permission_map, usergroup_map);
+    set_permission(dir_vector, path_map, permission_map, usergroup_map, user);
+  } else {
+    std::cout << "Note: This only shows directory permissions, please use '--fix' to correct permissions on all files" << std::endl;
   }
 
   // display pass or fail for permission required
