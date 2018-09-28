@@ -337,6 +337,13 @@ ShowCache::handleCacheEvent(int event, Event *e)
     CacheHTTPInfoVector *vec = &(cache_vc->vector);
     int alt_count            = vec->count();
     if (alt_count) {
+      // check cache_vc->first_buf is NULL, response cache lookup busy.
+      if (cache_vc->first_buf == nullptr) {
+        cache_vc->do_io_close(-1);
+        CHECK_SHOW(show("<H3>Cache Lookup Busy, please try again</H3>\n"));
+        return complete(event, e);
+      }
+
       Doc *d = (Doc *)(cache_vc->first_buf->data());
       time_t t;
       char tmpstr[4096];
