@@ -1978,7 +1978,8 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
   QUICConfig::scoped_config params;
 
   if (!params->cm_exercise_enabled() || this->_connection_migration_initiated ||
-      remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) || this->_remote_alt_cids.empty()) {
+      remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) || this->_remote_alt_cids.empty() ||
+      this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT)) {
     return error;
   }
 
