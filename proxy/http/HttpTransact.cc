@@ -2378,7 +2378,7 @@ HttpTransact::CallOSDNSLookup(State *s)
   HostStatus &pstatus = HostStatus::instance();
   if (pstatus.getHostStatus(s->server_info.name) == HostStatus_t::HOST_STATUS_DOWN) {
     TxnDebug("http", "[HttpTransact::callos] %d ", s->cache_lookup_result);
-    s->current.state     = OUTBOUND_CONGESTION;
+    s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
         s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH) {
       s->cache_info.action = CACHE_DO_SERVE;
@@ -2823,7 +2823,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
           if (s->force_dns) {
             HandleCacheOpenReadMiss(s); // DNS is already completed no need of doing DNS
           } else {
-             CallOSDNSLookup(s);
+            CallOSDNSLookup(s);
           }
           return;
         }
