@@ -1,0 +1,37 @@
+ats-magick is a transformation plug-in which allows to run any ImageMagick's convert command while processing images from the origin.
+
+Ideas for how to use this plug-in are, but not limited to:
+ - convert from multiple formats to a single image format.
+ - do simple operatins like resize, crop, etc.
+ - add watermarks or automated labels.
+ - transform images in a very radical way.
+
+Once transformed, the image can (and should) be stored into ATS's cache.
+
+The input for the plug-in's request is the query parameter "magick" which contains a url escaped, base64 encoded version of the parameters passed to ImageMagick's convert command line utility. When this global plug-in is enabled, it will first look into the `Content-Type` response header in all transactions, to then check this query parameter in order to decide to do the transformation.
+
+To avoid being exploited, the plug-in accepts one configuration argument specified on `plugin.config`; a OpenSSL's RSA256 public key file used to verify if the raw content of the "magick" parameter is valid and authorized. When it is configured, an additional query parameter "magickSig" is required on each request.
+
+The size of the keys directly impact how easy to compute (and break) the signature as well as the length of it. Generate a private & public pair of RSA256 keys using the following openssl commands:
+
+```
+# private key
+openssl genrsa -out rsa256-private 512;
+
+# public key
+openssl rsa -in rsa256-private -pubout > rsa256-public;
+```
+
+The `test.sh` script, helps verifing ImageMagick's convert works. The script outputs the right query parameter for you.
+
+`
+
+##ImageMagick's convert examples:
+
+`convert input.jpg -flip output.jpg;`
+
+`convert input.jpg -rotate 90 output.jpg;`
+
+`convert input.jpg -resize 128x128 output.jpg;`
+
+`convert input.jpg output.png;`

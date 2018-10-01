@@ -99,8 +99,9 @@ if HAS_KYOTOCABINET
 include experimental/cache_key_genid/Makefile.inc
 endif
 
-if BUILD_WEBP_TRANSFORM_PLUGIN
+if BUILD_IMAGE_MAGICK_PLUGINS
 include experimental/webp_transform/Makefile.inc
+include experimental/magick/Makefile.inc
 endif
 
 if HAS_MYSQL

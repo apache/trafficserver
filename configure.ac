@@ -534,14 +534,14 @@ AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "
 PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [
   have_libmagickcpp=yes
   AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
-    enable_webp_transform_plugin=yes
+    enable_image_magick_plugins=yes
   ])
 ],
 [
   have_libmagickcpp=no
 ])
 
-AM_CONDITIONAL([BUILD_WEBP_TRANSFORM_PLUGIN], [test "x${enable_webp_transform_plugin}" = "xyes"])
+AM_CONDITIONAL([BUILD_IMAGE_MAGICK_PLUGINS], [test "x${enable_image_magick_plugins}" = "xyes"])
 
 #
 # Example plugins. The example plugins are only built and installed if this is enabled. Installing
