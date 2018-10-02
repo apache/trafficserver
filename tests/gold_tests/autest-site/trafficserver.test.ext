@@ -319,7 +319,7 @@ class Config(File):
         if self.content is not None:
             with open(name, 'w') as f:
                 f.write(self.content)
-        return (False, "Appended file {0}".format(self.Name), "Success")
+        return (True, "Appended file {0}".format(self.Name), "Success")
 
     def AddLine(self, line):
         if not self._added:
@@ -379,7 +379,7 @@ class RecordsConfig(Config, dict):
                             kind=self.reverse_kind_map[type(val)],
                             val=val)
                     )
-        return (False,
+        return (True,
                 "Writing config file {0}".format(os.path.split(self.Name)[-1]),
                 "Success")
 
