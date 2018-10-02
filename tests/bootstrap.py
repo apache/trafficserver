@@ -26,7 +26,7 @@ import platform
 import sys
 
 pip_packages = [
-    "autest==1.5.3",
+    "autest==1.7.0",
     "hyper",
     "requests",
     "dnslib",
@@ -49,7 +49,7 @@ distro_packages = {
         "install python3",
         "install python3-virtualenv",
         "install virtualenv",
-	"install python3-dev"
+        "install python3-dev"
     ],
     "CentOS": [
         "install epel-release",
