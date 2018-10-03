@@ -34,6 +34,7 @@ include cache_promote/Makefile.inc
 include conf_remap/Makefile.inc
 include escalate/Makefile.inc
 include esi/Makefile.inc
+include for_testing_only/test_cppapi/Makefile.inc
 include generator/Makefile.inc
 include compress/Makefile.inc
 include header_rewrite/Makefile.inc
@@ -48,7 +49,6 @@ include s3_auth/Makefile.inc
 include stats_over_http/Makefile.inc
 include tcpinfo/Makefile.inc
 include xdebug/Makefile.inc
-include test_cppapi/Makefile.inc
 
 if BUILD_EXPERIMENTAL_PLUGINS
 
