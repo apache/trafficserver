@@ -14,6 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += test_cppapi/test_cppapi.la
-test_cppapi_test_cppapi_la_LIBADD = $(top_builddir)/src/tscpp/api/libtscppapi.la
-test_cppapi_test_cppapi_la_SOURCES = test_cppapi/test_cppapi.cc
+pkglib_LTLIBRARIES += for_testing_only/test_cppapi/test_cppapi.la
+for_testing_only_test_cppapi_test_cppapi_la_LIBADD = $(top_builddir)/src/tscpp/api/libtscppapi.la
+for_testing_only_test_cppapi_test_cppapi_la_SOURCES = for_testing_only/test_cppapi/test_cppapi.cc
