@@ -1147,36 +1147,6 @@ QUICNetVConnection::_state_common_send_packet()
   return nullptr;
 }
 
-// RETRY packet contains ONLY a single STREAM frame
-QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_send_retry_packet()
-{
-  // size_t len = 0;
-  // ats_unique_buf buf(nullptr, [](void *p) { ats_free(p); });
-  // QUICPacketType current_packet_type = QUICPacketType::UNINITIALIZED;
-
-  // QUICFrameUPtr frame(nullptr, nullptr);
-  // bool retransmittable = this->_handshake_handler->is_stateless_retry_enabled() ? false : true;
-
-  // SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-  // SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
-
-  // frame = this->_stream_manager->generate_frame(this->_remote_flow_controller->credit(),
-  // this->_maximum_stream_frame_data_size()); ink_assert(frame); ink_assert(frame->type() == QUICFrameType::STREAM);
-  // this->_store_frame(buf, len, retransmittable, current_packet_type, std::move(frame));
-  // if (len == 0) {
-  //   return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
-  // }
-
-  // QUICPacketUPtr packet = this->_build_packet(std::move(buf), len, retransmittable, QUICPacketType::RETRY);
-  // this->_packet_handler->send_packet(*packet, this, this->_pn_protector);
-  // this->_loss_detector->on_packet_sent(std::move(packet));
-
-  // QUIC_INCREMENT_DYN_STAT_EX(QUICStats::total_packets_sent_stat, 1);
-
-  return nullptr;
-}
-
 QUICConnectionErrorUPtr
 QUICNetVConnection::_state_closing_send_packet()
 {
@@ -1442,12 +1412,6 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
     packet = this->_packet_factory.create_initial_packet(dcid, this->_quic_connection_id,
                                                          this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL),
                                                          std::move(buf), len, retransmittable, probing);
-    break;
-  }
-  case QUICPacketType::RETRY: {
-    // Echo "_largest_received_packet_number" as packet number. Probably this is the packet number from triggering client packet.
-    packet = this->_packet_factory.create_retry_packet(this->_peer_quic_connection_id, this->_quic_connection_id, std::move(buf),
-                                                       len, retransmittable, probing);
     break;
   }
   case QUICPacketType::HANDSHAKE: {

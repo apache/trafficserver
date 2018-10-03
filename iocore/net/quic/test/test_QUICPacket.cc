@@ -51,7 +51,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(header->has_key_phase() == false);
   }
 
-  SECTION("Long Header (load)")
+  SECTION("Long Header (load) INITIAL Packet")
   {
     const uint8_t input[] = {
       0xFF,                                           // Long header, Type: INITIAL
@@ -78,7 +78,41 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(header->has_key_phase() == false);
   }
 
-  SECTION("Long Header (store)")
+  SECTION("Long Header (load) RETRY Packet")
+  {
+    const uint8_t input[] = {
+      0xFE,                                           // Long header, Type: RETRY
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x55,                                           // DCIL/SCIL
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x05,                                           // ODCIL
+      0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
+      0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
+      0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
+    };
+
+    const uint8_t retry_token[] = {0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0};
+
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {const_cast<uint8_t *>(input), [](void *p) {}}, sizeof(input), 0);
+    CHECK(header->size() == sizeof(input) - 16); // Packet Length - Payload Length (Retry Token)
+    CHECK(header->packet_size() == sizeof(input));
+    CHECK(header->type() == QUICPacketType::RETRY);
+    CHECK(
+      (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
+    CHECK((header->source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
+
+    QUICPacketLongHeader *retry_header = static_cast<QUICPacketLongHeader *>(header.get());
+    CHECK((retry_header->original_dcid() ==
+           QUICConnectionId(reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8)));
+
+    CHECK(memcmp(header->payload(), retry_token, 16) == 0);
+    CHECK(header->has_version() == true);
+    CHECK(header->version() == 0x11223344);
+    CHECK(header->has_key_phase() == false);
+  }
+
+  SECTION("Long Header (store) INITIAL Packet")
   {
     uint8_t buf[64] = {0};
     size_t len      = 0;
@@ -115,6 +149,51 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     header->store(buf, &len);
     CHECK(len == header->size());
     CHECK(memcmp(buf, expected, len) == 0);
+  }
+
+  SECTION("Long Header (store) RETRY Packet")
+  {
+    uint8_t buf[64] = {0};
+    size_t len      = 0;
+
+    const uint8_t expected[] = {
+      0xFE,                                           // Long header, Type: RETRY
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x55,                                           // DCIL/SCIL
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x05,                                           // ODCIL
+      0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
+      0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
+      0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
+    };
+    ats_unique_buf payload = ats_unique_malloc(16);
+    memcpy(payload.get(), expected + 31, 16);
+
+    QUICPacketHeaderUPtr header =
+      QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, 0x11223344,
+                              {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
+                              {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8},
+                              {reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8}, std::move(payload), 16);
+
+    CHECK(header->size() == sizeof(expected) - 16);
+    CHECK(header->has_key_phase() == false);
+    CHECK(header->packet_size() == sizeof(expected));
+    CHECK(header->type() == QUICPacketType::RETRY);
+    CHECK(
+      (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
+    CHECK((header->source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
+    CHECK(header->has_version() == true);
+    CHECK(header->version() == 0x11223344);
+
+    QUICPacketLongHeader *retry_header = static_cast<QUICPacketLongHeader *>(header.get());
+    CHECK((retry_header->original_dcid() ==
+           QUICConnectionId(reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8)));
+
+    header->store(buf, &len);
+    CHECK(len == header->size());
+    CHECK(memcmp(buf, expected, 22) == 0);
+    CHECK(memcmp(buf + 22, expected + 22, 8) == 0);
   }
 }
 

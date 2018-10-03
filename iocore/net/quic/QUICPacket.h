@@ -131,6 +131,15 @@ public:
   /*
    * Build a QUICPacketHeader
    *
+   * This creates a QUICPacketLongHeader for RETRY packet
+   */
+  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version,
+                                    QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICConnectionId original_dcid,
+                                    ats_unique_buf retry_token, size_t retry_token_len);
+
+  /*
+   * Build a QUICPacketHeader
+   *
    * This creates a QUICPacketShortHeader that contains a ConnectionID.
    */
   static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
@@ -139,7 +148,7 @@ public:
   /*
    * Build a QUICPacketHeader
    *
-   * This creates a QUICPacketShortHeader that doesn't contain a ConnectionID..
+   * This creates a QUICPacketShortHeader that doesn't contain a ConnectionID (Stateless Reset Packet).
    */
   static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id,
                                     QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
@@ -178,9 +187,14 @@ public:
                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf,
                        size_t len, ats_unique_buf token = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }),
                        size_t token_len = 0);
+  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version, QUICConnectionId destination_cid,
+                       QUICConnectionId source_cid, QUICConnectionId original_dcid, ats_unique_buf retry_token,
+                       size_t retry_token_len);
+
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
   QUICConnectionId source_cid() const;
+  QUICConnectionId original_dcid() const;
   QUICPacketNumber packet_number() const;
   bool has_version() const;
   bool is_valid() const;
@@ -208,12 +222,15 @@ public:
   static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len);
 
 private:
+  bool _odcil(uint8_t &odcil, const uint8_t *buf, size_t buf_len);
+
   QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
   QUICConnectionId _source_cid      = QUICConnectionId::ZERO();
-  size_t _token_len                 = 0;                                                     //< only INITIAL packet
-  size_t _token_offset              = 0;                                                     //< only INITIAL packet
-  ats_unique_buf _token             = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }); //< only INITIAL packet
+  QUICConnectionId _original_dcid   = QUICConnectionId::ZERO();                              //< RETRY packet only
+  size_t _token_len                 = 0;                                                     //< INITIAL packet only
+  size_t _token_offset              = 0;                                                     //< INITIAL packet only
+  ats_unique_buf _token             = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }); //< INITIAL packet only
   size_t _payload_offset            = 0;
 };
 
@@ -389,14 +406,14 @@ public:
   static QUICPacketUPtr create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid);
   static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
                                                       QUICStatelessResetToken stateless_reset_token);
+  static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                            QUICConnectionId original_dcid, ats_unique_buf payload, size_t len);
 
   QUICPacketUPtr create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
                         QUICPacketCreationResult &result);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                        bool retransmittable, bool probing);
-  QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, ats_unique_buf payload,
-                                     size_t len, bool retransmittable, bool probing);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                          bool retransmittable, bool probing);

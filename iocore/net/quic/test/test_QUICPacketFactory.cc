@@ -75,12 +75,13 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
 
   QUICPacketUPtr packet = factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
                                                       QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4),
-                                                      std::move(payload), sizeof(raw), false, false);
+                                                      QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4),
+                                                      std::move(payload), sizeof(raw));
   CHECK(packet->type() == QUICPacketType::RETRY);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
   CHECK(packet->packet_number() == 0);
-  CHECK(packet->version() == 0x11223344);
+  CHECK(packet->version() == QUIC_SUPPORTED_VERSIONS[0]);
 }
 
 TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
