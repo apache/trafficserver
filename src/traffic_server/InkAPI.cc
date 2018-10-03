@@ -22,6 +22,7 @@
  */
 
 #include <cstdio>
+#include <cstdlib>
 #include <atomic>
 
 #include "tscore/ink_platform.h"
@@ -1024,6 +1025,50 @@ INKContInternal::free()
   INKContAllocator.free(this);
 }
 
+namespace
+{
+namespace SchedContsForDestroy
+{
+  namespace detail
+  {
+    bool enabled = true;
+
+    void
+    disable()
+    {
+      detail::enabled = false;
+    }
+
+  } // end namespace detail
+
+  bool
+  enabled()
+  {
+    return detail::enabled;
+  }
+
+  // By calling this in TSContCreate(), it is ensured that scheduling of of continuations for destruction will be disabled
+  // during destruction of static objects.  Otherwise, segment violations may occur (for unknown reasons).
+  //
+  void
+  setup()
+  {
+    bool done = false;
+
+    if (!done) {
+      // Since this is called after all static initialization is completed, detail::disable() will be called before any
+      // destruction occurs.
+      //
+      std::atexit(detail::disable);
+
+      done = true;
+    }
+  }
+
+} // end namespace SchedContsForDestroy
+
+} // end anonymous namespace
+
 void
 INKContInternal::destroy()
 {
@@ -1033,7 +1078,7 @@ INKContInternal::destroy()
   m_deleted = 1;
   if (m_deletable) {
     free();
-  } else {
+  } else if (SchedContsForDestroy::enabled()) {
     // TODO: Should this schedule on some other "thread" ?
     // TODO: we don't care about the return action?
     if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
@@ -4360,6 +4405,8 @@ TSMgmtSourceGet(const char *var_name, TSMgmtSource *source)
 TSCont
 TSContCreate(TSEventFunc funcp, TSMutex mutexp)
 {
+  SchedContsForDestroy::setup();
+
   // mutexp can be NULL
   if (mutexp != nullptr) {
     sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
