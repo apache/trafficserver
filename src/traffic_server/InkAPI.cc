@@ -1042,7 +1042,15 @@ INKContInternal::destroy()
     if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
       ink_assert(!"not reached");
     }
-    this_ethread()->schedule_imm(this);
+    EThread *p = this_ethread();
+
+    // If this_thread() returns null, the EThread object for the current thread has been destroyed (or it never existed).
+    // Presumably this will only happen during destruction of statically-initialized objects at TS shutdown, so no further
+    // action is needed.
+    //
+    if (p) {
+      p->schedule_imm(this);
+    }
   }
 }
 
