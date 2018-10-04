@@ -6807,6 +6807,34 @@ TSNetConnectTransparent(TSCont contp, sockaddr const *client_addr, sockaddr cons
   return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), server_addr, &opt));
 }
 
+TSCont
+TSNetInvokingContGet(TSVConn conn)
+{
+  NetVConnection *vc         = reinterpret_cast<NetVConnection *>(conn);
+  UnixNetVConnection *net_vc = dynamic_cast<UnixNetVConnection *>(vc);
+  TSCont ret                 = nullptr;
+  if (net_vc) {
+    const Action *action = net_vc->get_action();
+    ret                  = reinterpret_cast<TSCont>(action->continuation);
+  }
+  return ret;
+}
+
+TSHttpTxn
+TSNetInvokingTxnGet(TSVConn conn)
+{
+  TSCont cont   = TSNetInvokingContGet(conn);
+  TSHttpTxn ret = nullptr;
+  if (cont) {
+    Continuation *contobj = reinterpret_cast<Continuation *>(cont);
+    HttpSM *sm            = dynamic_cast<HttpSM *>(contobj);
+    if (sm) {
+      ret = reinterpret_cast<TSHttpTxn>(sm);
+    }
+  }
+  return ret;
+}
+
 TSAction
 TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 {

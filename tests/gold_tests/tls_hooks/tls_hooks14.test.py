@@ -1,5 +1,5 @@
 '''
-Test one delayed cert callback and two immediate cert callbacks
+Test two outbound start delayed hooks
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -24,13 +24,10 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
-Test.SkipUnless(
-    Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"),
-    Condition.HasOpenSSLVersion("1.0.2")
-    )
+Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
 
 ts = Test.MakeATSProcess("ts", select_ports=False)
-server = Test.MakeOriginServer("server")
+server = Test.MakeOriginServer("server", ssl=True)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # desired response form the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -56,12 +53,12 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:4443 http://127.0.0.1:{0}'.format(server.Variables.Port)
+    'map https://example.com:4443 https://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-cert=1 -i=2')
-
-tr = Test.AddTestRun("Test a combination of delayed and immediate cert hooks")
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-out_start_delay=2')
+ 
+tr = Test.AddTestRun("Test outbound delay start")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = ts
@@ -69,7 +66,7 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
-ts.Streams.stderr = "gold/ts-cert-1-im-2.gold"
+ts.Streams.stderr = "gold/ts-out-delay-start-2.gold"
 
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5

@@ -58,7 +58,7 @@ callback or from another piece of code.
 TS_VCONN_CLOSE_HOOK
 ------------------------
 
-This hook is invoked after the SSL handshake is done and when the IO is closing. The TSVConnArgs should be cleaned up here.
+This hook is invoked after the SSL handshake is done and when the IO is closing. The TSVConnArgs should be cleaned up here. A callback at this point must reenable.
 
 TS_SSL_SERVERNAME_HOOK
 ----------------------
@@ -107,11 +107,27 @@ Processing will continue regardless of whether the hook callback executes
 :c:func:`TSSslVConnReenable()` since the openssl implementation does not allow
 for pausing processing during the certificate verify callback.
 
+TS_VCONN_OUTBOUND_START_HOOK
+----------------------------
+
+This hook is invoked after ATS has connected to the upstream server and before the SSL handshake has started.  This gives the plugin the option of 
+overriding the default SSL connection options on the SSL object.
+
+In theory this hook could apply and be useful for non-SSL connections as well, but at this point this hook is only called in the SSL sequence.
+
+The TLS handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is called either from within the hook
+callback or from another piece of code.
+
+TS_VCONN_OUTBOUND_CLOSE_HOOK
+-----------------------------
+
+This hook is invoked after the SSL handshake is done and right before the outbound connection closes.  A callback at this point must reenable.
+
 TLS Hook State Diagram
 ----------------------
 
 .. graphviz::
-   :alt: TLS Hook State Diagram
+   :alt: TLS Inbound Hook State Diagram
 
    digraph tls_hook_state_diagram{
      HANDSHAKE_HOOKS_PRE -> TS_VCONN_START_HOOK;
@@ -144,4 +160,14 @@ TLS Hook State Diagram
      HANDSHAKE_HOOKS_DONE [shape=box];
    }
 
+.. graphviz::
+   :alt: TLS Outbound Hook State Diagram
+
+   digraph tls_hook_state_diagram{
+     HANDSHAKE_HOOKS_OUTBOUND_PRE -> HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE;
+     HANDSHAKE_HOOKS_PRE_INVOKE -> TSSslVConnReenable;
+     TSSslVConnReenable -> HANDSHAKE_HOOKS_OUTBOUND_PRE;
+     HANDSHAKE_HOOKS_OUTBOUND_PRE -> HANDSHAKE_HOOKS_DONE;
+     HANDSHAKE_HOOKS_DONE -> HANDSHAKE_HOOKS_OUTBOUND_CLOSE;
+   }
 

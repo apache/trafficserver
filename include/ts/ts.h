@@ -1742,6 +1742,16 @@ tsapi TSAction TSNetConnect(
   struct sockaddr const *to /**< Address to which to connect. */
 );
 
+/**
+ * Retrieves the continuation associated with creating the TSVConn
+ */
+tsapi TSCont TSNetInvokingContGet(TSVConn conn);
+
+/**
+ * Retrieves the transaction associated with creating the TSVConn
+ */
+tsapi TSHttpTxn TSNetInvokingTxnGet(TSVConn conn);
+
 tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
 
 /**

@@ -833,35 +833,42 @@ SSLNetVConnection::SSLNetVConnection() {}
 void
 SSLNetVConnection::do_io_close(int lerrno)
 {
-  if (this->ssl != nullptr && sslHandShakeComplete) {
-    callHooks(TS_EVENT_VCONN_CLOSE);
-    int shutdown_mode = SSL_get_shutdown(ssl);
-    Debug("ssl-shutdown", "previous shutdown state 0x%x", shutdown_mode);
-    int new_shutdown_mode = shutdown_mode | SSL_RECEIVED_SHUTDOWN;
-
-    if (new_shutdown_mode != shutdown_mode) {
-      // We do not need to sit around and wait for the client's close-notify if
-      // they have not already sent it.  We will still be standards compliant
-      Debug("ssl-shutdown", "new SSL_set_shutdown 0x%x", new_shutdown_mode);
-      SSL_set_shutdown(ssl, new_shutdown_mode);
+  if (this->ssl != nullptr) {
+    if (get_context() == NET_VCONNECTION_OUT) {
+      callHooks(TS_EVENT_VCONN_OUTBOUND_CLOSE);
+    } else {
+      callHooks(TS_EVENT_VCONN_CLOSE);
     }
 
-    // If the peer has already sent a FIN, don't bother with the shutdown
-    // They will just send us a RST for our troubles
-    // This test is not foolproof.  The client's fin could be on the wire
-    // at the same time we send the close-notify.  If so, the client will likely
-    // send RST anyway
-    char c;
-    ssize_t x = recv(this->con.fd, &c, 1, MSG_PEEK);
-    // x < 0 means error.  x == 0 means fin sent
-    bool do_shutdown = (x > 0);
-    if (x < 0) {
-      do_shutdown = (errno == EAGAIN || errno == EWOULDBLOCK);
-    }
-    if (do_shutdown) {
-      // Send the close-notify
-      int ret = SSL_shutdown(ssl);
-      Debug("ssl-shutdown", "SSL_shutdown %s", (ret) ? "success" : "failed");
+    if (sslHandShakeComplete) {
+      int shutdown_mode = SSL_get_shutdown(ssl);
+      Debug("ssl-shutdown", "previous shutdown state 0x%x", shutdown_mode);
+      int new_shutdown_mode = shutdown_mode | SSL_RECEIVED_SHUTDOWN;
+
+      if (new_shutdown_mode != shutdown_mode) {
+        // We do not need to sit around and wait for the client's close-notify if
+        // they have not already sent it.  We will still be standards compliant
+        Debug("ssl-shutdown", "new SSL_set_shutdown 0x%x", new_shutdown_mode);
+        SSL_set_shutdown(ssl, new_shutdown_mode);
+      }
+
+      // If the peer has already sent a FIN, don't bother with the shutdown
+      // They will just send us a RST for our troubles
+      // This test is not foolproof.  The client's fin could be on the wire
+      // at the same time we send the close-notify.  If so, the client will likely
+      // send RST anyway
+      char c;
+      ssize_t x = recv(this->con.fd, &c, 1, MSG_PEEK);
+      // x < 0 means error.  x == 0 means fin sent
+      bool do_shutdown = (x > 0);
+      if (x < 0) {
+        do_shutdown = (errno == EAGAIN || errno == EWOULDBLOCK);
+      }
+      if (do_shutdown) {
+        // Send the close-notify
+        int ret = SSL_shutdown(ssl);
+        Debug("ssl-shutdown", "SSL_shutdown %s", (ret) ? "success" : "failed");
+      }
     }
   }
   // Go on and do the unix socket cleanups
@@ -1321,6 +1328,33 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   ink_assert(SSLNetVCAccess(ssl) == this);
 
+  // Initialize properly for a client connection
+  if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
+    sslHandshakeHookState = HANDSHAKE_HOOKS_OUTBOUND_PRE;
+  }
+
+  // Do outbound hook processing here
+  // Continue on if we are in the invoked state.  The hook has not yet reenabled
+  if (sslHandshakeHookState == HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE) {
+    return SSL_WAIT_FOR_HOOK;
+  }
+
+  // Go do the preaccept hooks
+  if (sslHandshakeHookState == HANDSHAKE_HOOKS_OUTBOUND_PRE) {
+    if (!curHook) {
+      Debug("ssl", "Initialize outbound connect curHook from NULL");
+      curHook = ssl_hooks->get(TS_VCONN_OUTBOUND_START_INTERNAL_HOOK);
+    } else {
+      curHook = curHook->next();
+    }
+    // If no more hooks, carry on
+    if (nullptr != curHook) {
+      sslHandshakeHookState = HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE;
+      ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_OUTBOUND_START, this);
+      return SSL_WAIT_FOR_HOOK;
+    }
+  }
+
   ssl_error = SSLConnect(ssl);
   switch (ssl_error) {
   case SSL_ERROR_NONE:
@@ -1476,6 +1510,9 @@ SSLNetVConnection::reenable(NetHandler *nh)
   case HANDSHAKE_HOOKS_PRE_INVOKE:
     sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
     break;
+  case HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE:
+    sslHandshakeHookState = HANDSHAKE_HOOKS_OUTBOUND_PRE;
+    break;
   case HANDSHAKE_HOOKS_CERT_INVOKE:
     sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
     break;
@@ -1508,6 +1545,16 @@ SSLNetVConnection::reenable(NetHandler *nh)
       Debug("ssl", "Reenable preaccept");
       sslHandshakeHookState = HANDSHAKE_HOOKS_PRE_INVOKE;
       ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_START, this);
+    } else if (sslHandshakeHookState == HANDSHAKE_HOOKS_OUTBOUND_PRE) {
+      Debug("ssl", "Reenable outbound connect");
+      sslHandshakeHookState = HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE;
+      ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_OUTBOUND_START, this);
+    } else if (sslHandshakeHookState == HANDSHAKE_HOOKS_DONE) {
+      if (this->get_context() == NET_VCONNECTION_OUT) {
+        ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_OUTBOUND_CLOSE, this);
+      } else {
+        ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_CLOSE, this);
+      }
     }
     return;
   } else {
@@ -1523,6 +1570,13 @@ SSLNetVConnection::reenable(NetHandler *nh)
     case HANDSHAKE_HOOKS_CERT:
     case HANDSHAKE_HOOKS_CERT_INVOKE:
       sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_CERT;
+      break;
+    case HANDSHAKE_HOOKS_OUTBOUND_PRE:
+    case HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE:
+      this->write.triggered = true;
+      this->write.enabled   = true;
+      this->writeReschedule(nh);
+      sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
       break;
     case HANDSHAKE_HOOKS_CLIENT_CERT:
     case HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
@@ -1555,7 +1609,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
 {
   // Only dealing with the SNI/CERT hook so far.
   ink_assert(eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME || eventId == TS_EVENT_SSL_VERIFY_SERVER ||
-             eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE);
+             eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE || eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE);
   Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
 
   // Move state if it is appropriate
@@ -1618,8 +1672,21 @@ SSLNetVConnection::callHooks(TSEvent eventId)
     }
   // fallthrough
   case HANDSHAKE_HOOKS_DONE:
+  case HANDSHAKE_HOOKS_OUTBOUND_PRE:
     if (eventId == TS_EVENT_VCONN_CLOSE) {
-      curHook = ssl_hooks->get(TS_VCONN_CLOSE_INTERNAL_HOOK);
+      sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
+      if (curHook == nullptr) {
+        curHook = ssl_hooks->get(TS_VCONN_CLOSE_INTERNAL_HOOK);
+      } else {
+        curHook = curHook->next();
+      }
+    } else if (eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE) {
+      sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
+      if (curHook == nullptr) {
+        curHook = ssl_hooks->get(TS_VCONN_OUTBOUND_CLOSE_INTERNAL_HOOK);
+      } else {
+        curHook = curHook->next();
+      }
     }
     break;
   default:
@@ -1630,13 +1697,15 @@ SSLNetVConnection::callHooks(TSEvent eventId)
 
   Debug("ssl", "callHooks iterated to curHook=%p", curHook);
 
+  bool reenabled = true;
+
   this->serverName = const_cast<char *>(SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name));
   if (this->serverName) {
     auto *hs = TunnelMap.find(this->serverName);
     if (hs != nullptr) {
       this->SNIMapping = true;
       this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      return EVENT_DONE;
+      return reenabled;
     }
   }
 
@@ -1647,10 +1716,9 @@ SSLNetVConnection::callHooks(TSEvent eventId)
     // we get out of this callback, and then will shuffle
     // over the buffered handshake packets to the O.S.
     // sslHandShakeComplete = 1;
-    return EVENT_DONE;
+    return reenabled;
   }
 
-  bool reenabled = true;
   if (curHook != nullptr) {
     curHook->invoke(eventId, this);
     reenabled =
