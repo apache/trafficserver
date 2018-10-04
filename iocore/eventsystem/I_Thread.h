@@ -92,10 +92,6 @@ using ThreadFunction = std::function<void()>;
 class Thread
 {
 public:
-  /*-------------------------------------------*\
-  | Common Interface                            |
-  \*-------------------------------------------*/
-
   /**
     System-wide thread identifier. The thread identifier is represented
     by the platform independent type ink_thread and it is the system-wide
@@ -113,15 +109,8 @@ public:
   */
   Ptr<ProxyMutex> mutex;
 
-  // PRIVATE
-  Thread();
-  Thread(const Thread &) = delete;
-  Thread &operator=(const Thread &) = delete;
-  virtual ~Thread();
-
   void set_specific();
 
-  static ink_hrtime cur_time;
   inkcoreapi static ink_thread_key thread_data_key;
 
   // For THREAD_ALLOC
@@ -143,7 +132,6 @@ public:
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
 
-public:
   /** Start the underlying thread.
 
       The thread name is set to @a name. The stack for the thread is either @a stack or, if that is
@@ -171,6 +159,15 @@ public:
       @note This also updates the cached time.
   */
   static ink_hrtime get_hrtime_updated();
+
+  Thread(const Thread &) = delete;
+  Thread &operator=(const Thread &) = delete;
+  virtual ~Thread();
+
+protected:
+  Thread();
+
+  static ink_hrtime cur_time;
 };
 
 extern Thread *this_thread();
