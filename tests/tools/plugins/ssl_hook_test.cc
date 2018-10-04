@@ -73,7 +73,7 @@ CB_Pre_Accept_Delay(TSCont cont, TSEvent event, void *edata)
   TSContDataSet(cb, ssl_vc);
 
   // Schedule to reenable in a bit
-  TSContSchedule(cb, 2000, TS_THREAD_POOL_NET);
+  TSContScheduleOnPool(cb, 2000, TS_THREAD_POOL_NET);
 
   return TS_SUCCESS;
 }
@@ -108,7 +108,7 @@ CB_out_start_delay(TSCont cont, TSEvent event, void *edata)
   TSContDataSet(cb, ssl_vc);
 
   // Schedule to reenable in a bit
-  TSContSchedule(cb, 2000, TS_THREAD_POOL_NET);
+  TSContScheduleOnPool(cb, 2000, TS_THREAD_POOL_NET);
 
   return TS_SUCCESS;
 }
@@ -183,7 +183,7 @@ CB_Cert(TSCont cont, TSEvent event, void *edata)
   TSContDataSet(cb, ssl_vc);
 
   // Schedule to reenable in a bit
-  TSContSchedule(cb, 2000, TS_THREAD_POOL_NET);
+  TSContScheduleOnPool(cb, 2000, TS_THREAD_POOL_NET);
 
   return TS_SUCCESS;
 }

@@ -16,35 +16,25 @@
 
 .. include:: ../../../common.defs
 
-TSThreadPool
-************
+.. default-domain:: c
+
+TSContScheduleOnThread
+**********************
 
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+`#include <ts/ts.h>`
 
-.. c:type:: TSThreadPool
-
-Enum typedef.
-
-Enumeration Members
-===================
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_NET
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_TASK
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_SSL
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_DNS
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_REMAP
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_CLUSTER
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_UDP
+.. function:: TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
 
 Description
 ===========
 
+Mostly the same as :func:`TSContSchedule`. Schedules :arg:`contp` on :arg:`ethread`.
+
+See Also
+========
+
+:doc:`TSContSchedule.en`
+:doc:`TSContScheduleOnPool.en`

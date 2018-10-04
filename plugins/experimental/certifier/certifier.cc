@@ -568,7 +568,7 @@ cert_retriever(TSCont contp, TSEvent event, void *edata)
     TSDebug(PLUGIN_NAME, "cert_retriever(): schedule thread to generate/retrieve cert for %s", servername);
     TSCont schedule_cont = TSContCreate(shadow_cert_generator, TSMutexCreate());
     TSContDataSet(schedule_cont, (void *)servername);
-    TSContSchedule(schedule_cont, 0, TS_THREAD_POOL_TASK);
+    TSContScheduleOnPool(schedule_cont, 0, TS_THREAD_POOL_TASK);
   } else {
     // Use existing context
     TSDebug(PLUGIN_NAME, "cert_retriever(): Reuse existing cert and context for %s", servername);

@@ -227,6 +227,12 @@ TSThreadSelf(void)
   return ithread;
 }
 
+TSEventThread
+TSEventThreadSelf(void)
+{
+  return reinterpret_cast<TSEventThread>(this_event_thread());
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // Mutexes

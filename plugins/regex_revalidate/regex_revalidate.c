@@ -366,7 +366,7 @@ config_handler(TSCont cont, TSEvent event, void *edata)
     if (iptr) {
       free_cont = TSContCreate(free_handler, TSMutexCreate());
       TSContDataSet(free_cont, (void *)iptr);
-      TSContSchedule(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
+      TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
     }
   } else {
     TSDebug(LOG_PREFIX, "No Changes");
@@ -379,7 +379,7 @@ config_handler(TSCont cont, TSEvent event, void *edata)
 
   // Don't reschedule for TS_EVENT_MGMT_UPDATE
   if (event == TS_EVENT_TIMEOUT) {
-    TSContSchedule(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+    TSContScheduleOnPool(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
   }
   return 0;
 }
@@ -562,7 +562,7 @@ TSPluginInit(int argc, const char *argv[])
   TSMgmtUpdateRegister(config_cont, LOG_PREFIX);
 
   if (!disable_timed_reload) {
-    TSContSchedule(config_cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+    TSContScheduleOnPool(config_cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
   }
 
   TSDebug(LOG_PREFIX, "Plugin Init Complete");

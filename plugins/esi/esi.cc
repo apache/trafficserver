@@ -1012,7 +1012,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
       // lock on our continuation which will fail if we destroy
       // ourselves right now
       TSDebug(cont_debug_tag, "[%s] Deferring shutdown as data event was just processed", __FUNCTION__);
-      TSContSchedule(contp, 10, TS_THREAD_POOL_TASK);
+      TSContScheduleOnPool(contp, 10, TS_THREAD_POOL_TASK);
     } else {
       goto lShutdown;
     }

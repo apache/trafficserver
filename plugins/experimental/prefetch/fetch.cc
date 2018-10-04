@@ -596,7 +596,7 @@ BgFetch::schedule()
   /* Schedule */
   PrefetchDebug("schedule fetch: %s", _url.c_str());
   _startTime = TShrtime();
-  TSContSchedule(_cont, 0, TS_THREAD_POOL_NET);
+  TSContScheduleOnPool(_cont, 0, TS_THREAD_POOL_NET);
 }
 
 /* Log format is: name-space bytes status url */

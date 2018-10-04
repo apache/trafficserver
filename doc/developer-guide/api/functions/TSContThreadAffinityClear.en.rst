@@ -16,35 +16,19 @@
 
 .. include:: ../../../common.defs
 
-TSThreadPool
-************
+.. default-domain:: c
+
+TSContThreadAffinityClear
+**************
 
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+`#include <ts/ts.h>`
 
-.. c:type:: TSThreadPool
-
-Enum typedef.
-
-Enumeration Members
-===================
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_NET
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_TASK
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_SSL
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_DNS
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_REMAP
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_CLUSTER
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_UDP
+.. function:: void TSContThreadAffinityClear(TSCont contp)
 
 Description
 ===========
 
+Clear the thread affinity of continuation :arg:`contp`.

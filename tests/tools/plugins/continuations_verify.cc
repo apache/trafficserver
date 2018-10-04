@@ -56,7 +56,7 @@ handle_msg(TSCont contp, TSEvent event, void *edata)
     // threads do not get their thread local copy of the stats
     // merged in.  So externally, test.done was stuck at 0 without
     // the Schedule to a NET thread
-    TSContSchedule(contp, 0, TS_THREAD_POOL_NET);
+    TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
   } else {
     TSDebug(DEBUG_TAG_MSG, "event %d", event);
     TSStatIntIncrement(stat_test_done, 1);

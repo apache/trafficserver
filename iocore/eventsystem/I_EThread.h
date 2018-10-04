@@ -325,6 +325,8 @@ public:
   bool is_event_type(EventType et);
   void set_event_type(EventType et);
 
+  bool has_event_loop = false;
+
   // Private Interface
 
   void execute() override;
