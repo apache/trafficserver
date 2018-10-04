@@ -146,7 +146,7 @@ private:
   MIOBuffer *req_buffer       = nullptr;
   IOBufferReader *req_reader  = nullptr;
   char *client_response       = nullptr;
-  int client_bytes            = -1;
+  int client_bytes            = 0;
   MIOBuffer *resp_buffer      = nullptr; // response to HttpConnect Call
   IOBufferReader *resp_reader = nullptr;
   Continuation *contp         = nullptr;
