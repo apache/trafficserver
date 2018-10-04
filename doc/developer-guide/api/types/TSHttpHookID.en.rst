@@ -72,7 +72,11 @@ Enumeration Members
 
 .. c:macro:: TSHttpHookID TS_VCONN_START_HOOK
 
+.. c:macro:: TSHttpHookID TS_VCONN_OUTBOUND_START_HOOK
+
 .. c:macro:: TSHttpHookID TS_VCONN_CLOSE_HOOK
+
+.. c:macro:: TSHttpHookID TS_VCONN_OUTBOUND_CLOSE_HOOK
 
 .. c:macro:: TSHttpHookID TS_SSL_SNI_HOOK
 
