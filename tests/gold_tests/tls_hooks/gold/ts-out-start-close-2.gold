@@ -1,0 +1,4 @@
+`` DIAG: (ssl_hook_test) Outbound start callback 0 ``
+`` DIAG: (ssl_hook_test) Outbound close callback 0 ``
+`` DIAG: (ssl_hook_test) Outbound close callback 1 ``
+

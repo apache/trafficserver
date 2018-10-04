@@ -30,6 +30,7 @@
 #include <getopt.h>
 #include <openssl/ssl.h>
 #include <strings.h>
+#include <cstring>
 
 #define PN "ssl_hook_test"
 #define PCP "[" PN " Plugin] "
@@ -74,6 +75,70 @@ CB_Pre_Accept_Delay(TSCont cont, TSEvent event, void *edata)
   // Schedule to reenable in a bit
   TSContSchedule(cb, 2000, TS_THREAD_POOL_NET);
 
+  return TS_SUCCESS;
+}
+
+int
+CB_out_start(TSCont cont, TSEvent event, void *edata)
+{
+  TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
+
+  int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
+
+  TSDebug(PN, "Outbound start callback %d %p - event is %s", count, ssl_vc,
+          event == TS_EVENT_VCONN_OUTBOUND_START ? "good" : "bad");
+
+  // All done, reactivate things
+  TSVConnReenable(ssl_vc);
+  return TS_SUCCESS;
+}
+
+int
+CB_out_start_delay(TSCont cont, TSEvent event, void *edata)
+{
+  TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
+
+  int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
+
+  TSDebug(PN, "Outbound delay start callback %d %p - event is %s", count, ssl_vc,
+          event == TS_EVENT_VCONN_OUTBOUND_START ? "good" : "bad");
+
+  TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
+
+  TSContDataSet(cb, ssl_vc);
+
+  // Schedule to reenable in a bit
+  TSContSchedule(cb, 2000, TS_THREAD_POOL_NET);
+
+  return TS_SUCCESS;
+}
+
+int
+CB_close(TSCont cont, TSEvent event, void *edata)
+{
+  TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
+
+  int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
+
+  TSDebug(PN, "Close callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_VCONN_CLOSE ? "good" : "bad");
+
+  // All done, reactivate things
+  TSVConnReenable(ssl_vc);
+  return TS_SUCCESS;
+}
+
+int
+CB_out_close(TSCont cont, TSEvent event, void *edata)
+{
+  TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
+
+  int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
+
+  TSDebug(PN, "Outbound close callback %d %p - event is %s", count, ssl_vc,
+          event == TS_EVENT_VCONN_OUTBOUND_CLOSE ? "good" : "bad");
+
+  // All done, reactivate things
+  TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
 }
 
@@ -125,7 +190,8 @@ CB_Cert(TSCont cont, TSEvent event, void *edata)
 
 void
 parse_callbacks(int argc, const char *argv[], int &preaccept_count, int &sni_count, int &cert_count, int &cert_count_immediate,
-                int &preaccept_count_delay)
+                int &preaccept_count_delay, int &close_count, int &out_start_count, int &out_start_delay_count,
+                int &out_close_count)
 {
   int i = 0;
   const char *ptr;
@@ -147,7 +213,11 @@ parse_callbacks(int argc, const char *argv[], int &preaccept_count, int &sni_cou
       case 'c':
         ptr = index(argv[i], '=');
         if (ptr) {
-          cert_count = atoi(ptr + 1);
+          if (strncmp(argv[i] + 1, "close", strlen("close")) == 0) {
+            close_count = atoi(ptr + i);
+          } else {
+            cert_count = atoi(ptr + 1);
+          }
         }
         break;
       case 'd':
@@ -162,6 +232,17 @@ parse_callbacks(int argc, const char *argv[], int &preaccept_count, int &sni_cou
           cert_count_immediate = atoi(ptr + 1);
         }
         break;
+      case 'o':
+        ptr = index(argv[i], '=');
+        if (ptr) {
+          if (strncmp(argv[i] + 1, "out_start_delay", strlen("out_start_delay")) == 0) {
+            out_start_delay_count = atoi(ptr + 1);
+          } else if (strncmp(argv[i] + 1, "out_start", strlen("out_start")) == 0) {
+            out_start_count = atoi(ptr + 1);
+          } else if (strncmp(argv[i] + 1, "out_close", strlen("out_close")) == 0) {
+            out_close_count = atoi(ptr + 1);
+          }
+        }
       }
     }
   }
@@ -169,7 +250,7 @@ parse_callbacks(int argc, const char *argv[], int &preaccept_count, int &sni_cou
 
 void
 setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_count, int cert_count_immediate,
-                int preaccept_count_delay)
+                int preaccept_count_delay, int close_count, int out_start_count, int out_start_delay_count, int out_close_count)
 {
   TSCont cb = nullptr; // pre-accept callback continuation
   int i;
@@ -222,6 +303,43 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
 
+  for (i = 0; i < close_count; i++) {
+    cb = TSContCreate(&CB_close, TSMutexCreate());
+    TSContDataSet(cb, (void *)(intptr_t)i);
+    if (txn) {
+      TSHttpTxnHookAdd(txn, TS_VCONN_CLOSE_HOOK, cb);
+    } else {
+      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, cb);
+    }
+  }
+  for (i = 0; i < out_start_count; i++) {
+    cb = TSContCreate(&CB_out_start, TSMutexCreate());
+    TSContDataSet(cb, (void *)(intptr_t)i);
+    if (txn) {
+      TSHttpTxnHookAdd(txn, TS_VCONN_OUTBOUND_START_HOOK, cb);
+    } else {
+      TSHttpHookAdd(TS_VCONN_OUTBOUND_START_HOOK, cb);
+    }
+  }
+  for (i = 0; i < out_start_delay_count; i++) {
+    cb = TSContCreate(&CB_out_start_delay, TSMutexCreate());
+    TSContDataSet(cb, (void *)(intptr_t)i);
+    if (txn) {
+      TSHttpTxnHookAdd(txn, TS_VCONN_OUTBOUND_START_HOOK, cb);
+    } else {
+      TSHttpHookAdd(TS_VCONN_OUTBOUND_START_HOOK, cb);
+    }
+  }
+  for (i = 0; i < out_close_count; i++) {
+    cb = TSContCreate(&CB_out_close, TSMutexCreate());
+    TSContDataSet(cb, (void *)(intptr_t)i);
+    if (txn) {
+      TSHttpTxnHookAdd(txn, TS_VCONN_OUTBOUND_CLOSE_HOOK, cb);
+    } else {
+      TSHttpHookAdd(TS_VCONN_OUTBOUND_CLOSE_HOOK, cb);
+    }
+  }
+
   return;
 }
 
@@ -242,7 +360,13 @@ TSPluginInit(int argc, const char *argv[])
   int cert_count            = 0;
   int cert_count_immediate  = 0;
   int preaccept_count_delay = 0;
-  parse_callbacks(argc, argv, preaccept_count, sni_count, cert_count, cert_count_immediate, preaccept_count_delay);
-  setup_callbacks(nullptr, preaccept_count, sni_count, cert_count, cert_count_immediate, preaccept_count_delay);
+  int close_count           = 0;
+  int out_start_count       = 0;
+  int out_start_delay_count = 0;
+  int out_close_count       = 0;
+  parse_callbacks(argc, argv, preaccept_count, sni_count, cert_count, cert_count_immediate, preaccept_count_delay, close_count,
+                  out_start_count, out_start_delay_count, out_close_count);
+  setup_callbacks(nullptr, preaccept_count, sni_count, cert_count, cert_count_immediate, preaccept_count_delay, close_count,
+                  out_start_count, out_start_delay_count, out_close_count);
   return;
 }
