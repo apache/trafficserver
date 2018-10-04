@@ -1653,9 +1653,11 @@ HttpTransact::OSDNSLookup(State *s)
     if (true == Machine::instance()->is_self(s->host_db_info.ip())) {
       action = s->http_config_param->redirect_actions_self_action;
     } else {
+      // Make sure the return value from contains is big enough for a void*.
+      intptr_t x{intptr_t(RedirectEnabled::Action::INVALID)};
       ink_release_assert(s->http_config_param->redirect_actions_map != nullptr);
-      ink_release_assert(
-        s->http_config_param->redirect_actions_map->contains(s->host_db_info.ip(), reinterpret_cast<void **>(&action)));
+      ink_release_assert(s->http_config_param->redirect_actions_map->contains(s->host_db_info.ip(), reinterpret_cast<void **>(&x)));
+      action = static_cast<RedirectEnabled::Action>(x);
     }
     switch (action) {
     case RedirectEnabled::Action::FOLLOW:
