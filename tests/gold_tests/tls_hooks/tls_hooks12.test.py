@@ -65,23 +65,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
 
 ts.Streams.stderr = "gold/ts-preaccept-delayed-1-immdate-2.gold"
-
-# Not going to check for number of times the message appears.  With the current test framework
-# a probing TCP connection is made to test that the port is listening.  The entire preaccept hook
-# sequence may appear on that probe.  Or it may not.  If we move away from the probe connection
-# we can check for the right number of each message.
-#preacceptstring0 = "Pre accept delay callback 0"
-# ts.Streams.All = Testers.ContainsExpression(
-#    "\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring0), "Pre accept message appears only once or twice", reflags=re.S | re.M)
-#preacceptstring1 = "Pre accept callback 0"
-# ts.Streams.All = Testers.ContainsExpression(
-#    "\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring1), "Pre accept message appears only once or twice", reflags=re.S | re.M)
-#preacceptstring2 = "Pre accept callback 1"
-# ts.Streams.All = Testers.ContainsExpression(
-#    "\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring2), "Pre accept message appears only once or twice", reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
