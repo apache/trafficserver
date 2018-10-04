@@ -16,35 +16,27 @@
 
 .. include:: ../../../common.defs
 
-TSThreadPool
-************
+.. default-domain:: c
+
+TSContThreadAffinitySet
+**************
 
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+`#include <ts/ts.h>`
 
-.. c:type:: TSThreadPool
-
-Enum typedef.
-
-Enumeration Members
-===================
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_NET
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_TASK
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_SSL
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_DNS
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_REMAP
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_CLUSTER
-
-.. c:member:: TSThreadPool TS_THREAD_POOL_UDP
+.. function:: TSReturnCode TSContThreadAffinitySet(TSCont contp, TSEventThread ethread)
 
 Description
 ===========
 
+Set the thread affinity of continuation :arg:`contp` to :arg:`ethread`. Future calls to
+:func:`TSContSchedule`, and :func:`TSContScheduleOnPool` that has the same type as :arg:`ethread`
+will schedule the continuation on :arg:`ethread`, rather than an arbitrary thread of that type.
+
+Return Values
+=============
+
+:data:`TS_SUCCESS` if thread affinity of continuation :arg:`contp` was set to :arg:`ethread`,
+:data:`TS_ERROR` if not.

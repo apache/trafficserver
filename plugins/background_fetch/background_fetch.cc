@@ -296,7 +296,7 @@ BgFetchData::schedule()
   resp_io_buf_reader = TSIOBufferReaderAlloc(resp_io_buf);
 
   // Schedule
-  TSContSchedule(_cont, 0, TS_THREAD_POOL_NET);
+  TSContScheduleOnPool(_cont, 0, TS_THREAD_POOL_NET);
 }
 
 // Log format is:

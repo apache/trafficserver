@@ -823,7 +823,6 @@ typedef enum {
 /* The TASK pool of threads is the primary method of off-loading continuations from the
    net-threads. Configure this with proxy.config.task_threads in records.config. */
 typedef enum {
-  TS_THREAD_POOL_DEFAULT = -1,
   TS_THREAD_POOL_NET,
   TS_THREAD_POOL_TASK,
   /* unlikely you should use these */
@@ -901,6 +900,7 @@ typedef struct tsapi_cachetxn *TSCacheTxn;
 typedef struct tsapi_port *TSPortDescriptor;
 typedef struct tsapi_vio *TSVIO;
 typedef struct tsapi_thread *TSThread;
+typedef struct tsapi_event_thread *TSEventThread;
 typedef struct tsapi_x509 *TSSslX509;
 typedef struct tsapi_mutex *TSMutex;
 typedef struct tsapi_config *TSConfig;

@@ -1108,6 +1108,7 @@ tsapi TSThread TSThreadInit(void);
 tsapi void TSThreadDestroy(TSThread thread);
 tsapi void TSThreadWait(TSThread thread);
 tsapi TSThread TSThreadSelf(void);
+tsapi TSEventThread TSEventThreadSelf(void);
 
 /* --------------------------------------------------------------------------
    Mutexes */
@@ -1188,8 +1189,15 @@ tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
 tsapi void TSContDestroy(TSCont contp);
 tsapi void TSContDataSet(TSCont contp, void *data);
 tsapi void *TSContDataGet(TSCont contp);
-tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout, TSThreadPool tp);
-tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
+tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout);
+tsapi TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
+tsapi TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
+tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */);
+tsapi TSAction TSContScheduleEveryOnPool(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
+tsapi TSAction TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread);
+tsapi TSReturnCode TSContThreadAffinitySet(TSCont contp, TSEventThread ethread);
+tsapi TSEventThread TSContThreadAffinityGet(TSCont contp);
+tsapi void TSContThreadAffinityClear(TSCont contp);
 tsapi TSAction TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout);
 tsapi int TSContCall(TSCont contp, TSEvent event, void *edata);
 tsapi TSMutex TSContMutexGet(TSCont contp);

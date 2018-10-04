@@ -65,7 +65,14 @@ TS_INLINE Event *
 EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
 {
   ink_assert(etype < MAX_EVENT_TYPES);
-  e->ethread = assign_thread(etype);
+
+  EThread *ethread = e->continuation->getThreadAffinity();
+  if (ethread != nullptr && ethread->is_event_type(etype)) {
+    e->ethread = ethread;
+  } else {
+    e->ethread = assign_thread(etype);
+  }
+
   if (e->continuation->mutex) {
     e->mutex = e->continuation->mutex;
   } else {

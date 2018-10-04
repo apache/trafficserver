@@ -210,7 +210,7 @@ on_send_response_header(RequestData *req, TSHttpTxn &txnp, TSCont &contp)
     if (delay_request) {
       req->wl_retry++;
       TSDebug(DEBUG_TAG, "delaying request, url@%p: {{%s}} on retry: %d time", txnp, req->req_url.c_str(), req->wl_retry);
-      TSContSchedule(contp, OPEN_WRITE_FAIL_REQ_DELAY_TIMEOUT, TS_THREAD_POOL_TASK);
+      TSContScheduleOnPool(contp, OPEN_WRITE_FAIL_REQ_DELAY_TIMEOUT, TS_THREAD_POOL_TASK);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       return TS_SUCCESS;
     }

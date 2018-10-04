@@ -68,7 +68,7 @@ public:
   // For convenience, additional constructor prototypes.
 
   AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms = 0)
-    : AsyncTimer(type, period_in_ms, initial_period_in_ms, TS_THREAD_POOL_DEFAULT)
+    : AsyncTimer(type, period_in_ms, initial_period_in_ms, TS_THREAD_POOL_NET)
   {
   }
 

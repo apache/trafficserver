@@ -194,7 +194,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
         TSDebug(DEBUG_TAG_HOOK, "Scheduled execution of '%s' command", CONTROL_MSG_LOG);
         TSCont c = TSContCreate(CB_Command_Log, TSMutexCreate());
         TSContDataSet(c, new std::string(static_cast<const char *>(msgp->data), msgp->data_size));
-        TSContSchedule(c, 0, TS_THREAD_POOL_TASK);
+        TSContScheduleOnPool(c, 0, TS_THREAD_POOL_TASK);
       } else {
         TSError("[%s] Unknown command '%.*s'", PLUGIN_NAME, static_cast<int>(msgp->data_size),
                 static_cast<const char *>(msgp->data));

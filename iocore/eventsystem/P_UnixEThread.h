@@ -179,6 +179,17 @@ this_ethread()
   return (EThread *)this_thread();
 }
 
+TS_INLINE EThread *
+this_event_thread()
+{
+  EThread *ethread = this_ethread();
+  if (ethread != nullptr && ethread->has_event_loop) {
+    return ethread;
+  } else {
+    return nullptr;
+  }
+}
+
 TS_INLINE void
 EThread::free_event(Event *e)
 {

@@ -359,7 +359,7 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
       state->saved_event_ = event;
       state->saved_edata_ = edata;
     }
-    state->timeout_action_ = TSContSchedule(cont, 1, TS_THREAD_POOL_DEFAULT);
+    state->timeout_action_ = TSContScheduleOnPool(cont, 1, TS_THREAD_POOL_NET);
     return 0;
   }
   if (event == TS_EVENT_TIMEOUT) { // we have a saved event to restore
