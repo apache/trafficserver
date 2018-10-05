@@ -77,20 +77,20 @@ MemArena::alloc(size_t n)
     zret    = _active->alloc(n);
   } else if (n > _active->remaining()) { // too big, need another block
     BlockPtr block = this->make_block(n);
-    // For the new @a current, pick the block which will have the most free space after taking
+    // For the new @a _active, pick the block which will have the most free space after taking
     // the request space out of the new block.
     zret = block->alloc(n);
     if (block->remaining() > _active->remaining()) {
       block->next = _active;
       _active     = block;
-#if defined(__clang_analyzer__)
+#if 0
       // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
-      ink_assert(current.use_count() > 1);
+      ink_assert(_active.use_count() > 1);
 #endif
     } else {
       block->next   = _active->next;
       _active->next = block;
-#if defined(__clang_analyzer__)
+#if 0
       // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
       ink_assert(block.use_count() > 1);
 #endif

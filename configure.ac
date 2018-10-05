@@ -82,14 +82,7 @@ AC_SUBST(TS_VERSION_MICRO)
 
 dnl Hard-coded top of ink_autoconf.h:
 AH_TOP([
-#ifndef _ink_autoconf_h
-#define _ink_autoconf_h
-])
-
-dnl Hard-coded inclusion at the tail end of ink_autoconf.h:
-AH_BOTTOM([
-
-#endif /* _ink_autoconf_h */
+#pragma once
 ])
 
 #
@@ -1311,21 +1304,21 @@ TS_CHECK_LUAJIT
 #
 AC_CHECK_HEADERS([jansson.h], [
   AC_MSG_CHECKING([whether jansson is dynamic])
-  TS_LINK_WITH_FLAGS_IFELSE([-shared -fPIC -l:libjansson.a],[AC_LANG_PROGRAM(
+  TS_LINK_WITH_FLAGS_IFELSE([-fPIC -ljansson],[AC_LANG_PROGRAM(
                             [#include <jansson.h>],
                             [(void) json_object();])],
-                            [AC_MSG_RESULT([no]);  LIBJANSSON=-l:libjansson.a],
-                            [AC_MSG_RESULT([yes]); LIBJANSSON=-ljansson])
+                            [AC_MSG_RESULT([yes]); LIBJANSSON=-ljansson],
+                            [AC_MSG_RESULT([no]);  LIBJANSSON=-l:libjansson.a])
   ],
   [LIBJANSSON=])
 
 AC_CHECK_HEADERS([cjose/cjose.h], [
   AC_MSG_CHECKING([whether cjose is dynamic])
-  TS_LINK_WITH_FLAGS_IFELSE([-shared -fPIC -l:libcjose.a],[AC_LANG_PROGRAM(
+  TS_LINK_WITH_FLAGS_IFELSE([-fPIC -lcjose],[AC_LANG_PROGRAM(
                             [#include <cjose/cjose.h>],
                             [(void) cjose_jws_import("", 0, NULL);])],
-                            [AC_MSG_RESULT([no]);  LIBCJOSE=-l:libcjose.a],
-                            [AC_MSG_RESULT([yes]); LIBCJOSE=-lcjose])
+                            [AC_MSG_RESULT([yes]); LIBCJOSE=-lcjose],
+                            [AC_MSG_RESULT([no]);  LIBCJOSE=-l:libcjose.a])
   ],
   [LIBCJOSE=])
 AC_CHECK_LIB([crypto],[HMAC],[has_libcrypto=1],[has_libcrypto=0])
@@ -2011,9 +2004,9 @@ AC_CONFIG_FILES([
   doc/ext/local-config.py
   doc/uml/Makefile
   example/Makefile
-  include/Makefile 
-  include/ts/Makefile 
-  include/tscpp/api/Makefile 
+  include/Makefile
+  include/ts/Makefile
+  include/tscpp/api/Makefile
   include/tscpp/util/Makefile
   iocore/Makefile
   iocore/aio/Makefile
@@ -2050,7 +2043,7 @@ AC_CONFIG_FILES([
   rc/trafficserver.conf
   rc/trafficserver.service
   rc/trafficserver.xml
-  src/tscpp/util/Makefile 
+  src/tscpp/util/Makefile
   src/tscore/Makefile
   tools/Makefile
   tools/trafficserver.pc

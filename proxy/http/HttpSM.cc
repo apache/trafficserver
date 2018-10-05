@@ -870,6 +870,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       ua_entry = nullptr;
       tunnel.kill_tunnel();
       terminate_sm = true; // Just die already, the requester is gone
+      set_ua_abort(HttpTransact::ABORTED, event);
     }
     break;
   }
@@ -1729,7 +1730,8 @@ HttpSM::state_http_server_open(int event, void *data)
 {
   SMDebug("http_track", "entered inside state_http_server_open");
   STATE_ENTER(&HttpSM::state_http_server_open, event);
-  ink_release_assert(event == EVENT_INTERVAL || event == NET_EVENT_OPEN || event == NET_EVENT_OPEN_FAILED || pending_action == nullptr);
+  ink_release_assert(event == EVENT_INTERVAL || event == NET_EVENT_OPEN || event == NET_EVENT_OPEN_FAILED ||
+                     pending_action == nullptr);
   if (event != NET_EVENT_OPEN) {
     pending_action = nullptr;
   }

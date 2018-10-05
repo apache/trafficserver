@@ -155,11 +155,14 @@ TEST_CASE("test Map", "[libts][Map]")
     to_delete.push_back(item);
   }
 
+  int failures = 0;
   for (uint32_t i = 1; i <= N; ++i) {
     Table::Location l = t.find(i);
-    REQUIRE(l.isValid());
-    REQUIRE(i == l->_value);
+    if (!l.isValid() || i != l->_value) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   REQUIRE(!(t.find(N * 2).isValid()));
 
@@ -180,20 +183,30 @@ TEST_CASE("test Map", "[libts][Map]")
     t.remove(i);
   }
 
+  failures = 0;
   for (uint32_t i = 1; i <= N; ++i) {
     Table::Location l = t.find(i);
     if (1 & i) {
-      REQUIRE(!l.isValid());
+      if (l.isValid()) {
+        failures++;
+      }
     } else {
-      REQUIRE(l.isValid());
+      if (!l.isValid()) {
+        failures++;
+      }
     }
   }
+  REQUIRE(failures == 0);
 
-  int n = 0;
+  int n    = 0;
+  failures = 0;
   for (Table::iterator spot = t.begin(), limit = t.end(); spot != limit; ++spot) {
     ++n;
-    REQUIRE((spot->_value & 1) == 0);
+    if ((spot->_value & 1) != 0) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
   REQUIRE(n == N / 2);
 
   for (auto it : to_delete) {

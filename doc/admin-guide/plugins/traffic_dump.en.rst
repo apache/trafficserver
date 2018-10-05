@@ -18,7 +18,7 @@
 
 .. include:: ../../common.defs
 
-.. _admin-plugins-access_control:
+.. _admin-plugins-traffic_dump:
 
 
 Traffic Dump Plugin
@@ -35,9 +35,11 @@ Plugin Configuration
 
 * ``Traffic Dump`` is a global plugin and is configured via :file:`plugin.config`.
    .. option:: --logdir <path_to_dump>
+
    (`required`, default:empty/unused) - specifies the directory for writing all dump files. If path is relative, it is relative to the Traffic Server directory. The plugin will use first three characters of client ip to create subdirs in an attempt to spread dumps evenly and avoid too many files in a single directory.
 
    .. option:: --sample <N>
+
    (`optional`, default:1000) - specifies the sampling ratio N. Traffic Dump will capture every one out of N sessions. This ratio can also be changed via traffic_ctl without restarting ATS.
 
 * ``traffic_ctl`` command.

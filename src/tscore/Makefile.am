@@ -19,7 +19,7 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_arena test_atomic test_freelist test_geometry test_List test_Vec test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
 
@@ -54,10 +54,10 @@ libtscore_la_SOURCES = \
 	AcidPtr.h \
 	Arena.cc \
 	Arena.h \
+	ArgParser.cc \
+	ArgParser.h \
 	BaseLogFile.cc \
 	BaseLogFile.h \
-	Bitops.cc \
-	Bitops.h \
 	BufferWriter.h \
 	BufferWriterForward.h \
 	BufferWriterFormat.cc \
@@ -208,6 +208,7 @@ libtscore_la_SOURCES = \
 	Tokenizer.h \
 	Trie.h \
 	TsBuffer.h \
+	ts_file. h ts_file.cc \
 	Version.cc \
 	X509HostnameValidator.cc \
 	X509HostnameValidator.h
@@ -234,13 +235,6 @@ test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_freelist_SOURCES = test_freelist.cc
 test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
-test_arena_SOURCES = test_arena.cc
-test_arena_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
-test_List_SOURCES = test_List.cc
-test_Vec_SOURCES = test_Vec.cc
-test_Vec_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
-
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
 
@@ -256,6 +250,8 @@ test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la 
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
+	unit_tests/test_arena.cc \
+	unit_tests/test_ArgParser.cc \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
 	unit_tests/test_Extendible.cc \
@@ -267,6 +263,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
 	unit_tests/test_Map.cc \
+	unit_tests/test_List.cc \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
@@ -274,7 +271,9 @@ test_tscore_SOURCES = \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
-	unit_tests/test_scoped_resource.cc
+	unit_tests/test_scoped_resource.cc \
+	unit_tests/test_ts_file.cc \
+	unit_tests/test_Vec.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

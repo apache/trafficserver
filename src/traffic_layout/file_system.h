@@ -35,13 +35,6 @@ enum CopyStyle { FULL, HARD, SOFT };
 // append slash & remove slash of path for convinient use
 void append_slash(std::string &path);
 
-void remove_slash(std::string &path);
-
-// some checks for directory exist or is it a directory
-bool exists(const std::string &dir);
-
-bool is_directory(const std::string &directory);
-
 // for file system
 bool create_directory(const std::string &dir);
 
@@ -50,4 +43,11 @@ bool remove_directory(const std::string &dir);
 // remove everything inside this directory
 bool remove_inside_directory(const std::string &dir);
 
+// filter the ts related files and directories to copy / verify
+// return true if the file/directory is from traffic server
+// IMPORTANT: this should be updated if the directory structure of build is changed
+bool filter_ts_directories(const std::string &dir, const std::string &dst_path);
+bool filter_ts_files(const std::string &dir, const std::string &dst_path);
+
+// copy directory recursively
 bool copy_directory(const std::string &src, const std::string &dst, const std::string &dir = "", CopyStyle style = HARD);

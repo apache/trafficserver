@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /en/4.2.x/
+Disallow: /ja/4.2.x/
+Disallow: /en/5.3.x/
+Disallow: /ja/5.3.x/
+Disallow: /en/6.1.x/
+Disallow: /ja/6.1.x/
+Disallow: /en/6.2.x/
+Disallow: /ja/6.2.x/

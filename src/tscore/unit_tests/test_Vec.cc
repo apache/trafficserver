@@ -22,6 +22,8 @@
 
 /* UnionFind after Tarjan */
 
+#include "catch.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include "tscore/ink_assert.h"
@@ -202,8 +204,7 @@ UnionFind::unify(int n, int m)
   }
 }
 
-static void
-test_append()
+TEST_CASE("test append", "[Vec]")
 {
   static const char value[] = "this is a string";
   unsigned int len          = (int)sizeof(value) - 1;
@@ -211,25 +212,28 @@ test_append()
   Vec<char> str;
 
   str.append(value, 0);
-  ink_assert(str.length() == 0);
+  REQUIRE(str.length() == 0);
 
   str.append(value, len);
-  ink_assert(memcmp(&str[0], value, len) == 0);
-  ink_assert(str.length() == len);
+  REQUIRE(memcmp(&str[0], value, len) == 0);
+  REQUIRE(str.length() == len);
 
   str.clear();
-  ink_assert(str.length() == 0);
+  REQUIRE(str.length() == 0);
 
+  int failures = 0;
   for (unsigned i = 0; i < 1000; ++i) {
     str.append(value, len);
-    ink_assert(memcmp(&str[i * len], value, len) == 0);
+    if (memcmp(&str[i * len], value, len) != 0) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
-  ink_assert(str.length() == 1000 * len);
+  REQUIRE(str.length() == 1000 * len);
 }
 
-static void
-test_basic()
+TEST_CASE("test basic", "[libts][Vec]")
 {
   Vec<void *> v, vv, vvv;
   int tt = 99 * 50, t = 0;
@@ -240,7 +244,7 @@ test_basic()
   for (size_t i = 0; i < 100; i++) {
     t += (int)(intptr_t)v.v[i];
   }
-  ink_assert(t == tt);
+  REQUIRE(t == tt);
 
   t = 0;
   for (size_t i = 1; i < 100; i++) {
@@ -258,7 +262,7 @@ test_basic()
       t += (int)(intptr_t)vv.v[i];
     }
   }
-  ink_assert(t == tt + 1000 * tt);
+  REQUIRE(t == tt + 1000 * tt);
 
   v.clear();
   v.reserve(1000);
@@ -269,42 +273,41 @@ test_basic()
   for (size_t i = 0; i < 1000; i++) {
     t += (int)(intptr_t)v.v[i];
   }
-  ink_assert(t == 999 * 500);
-  printf("%zu %zu\n", v.n, v.i);
+  REQUIRE(t == 999 * 500);
 
   Intervals in;
   in.insert(1);
-  ink_assert(in.n == 2);
+  REQUIRE(in.n == 2);
   in.insert(2);
-  ink_assert(in.n == 2);
+  REQUIRE(in.n == 2);
   in.insert(6);
-  ink_assert(in.n == 4);
+  REQUIRE(in.n == 4);
   in.insert(7);
-  ink_assert(in.n == 4);
+  REQUIRE(in.n == 4);
   in.insert(9);
-  ink_assert(in.n == 6);
+  REQUIRE(in.n == 6);
   in.insert(4);
-  ink_assert(in.n == 8);
+  REQUIRE(in.n == 8);
   in.insert(5);
-  ink_assert(in.n == 6);
+  REQUIRE(in.n == 6);
   in.insert(3);
-  ink_assert(in.n == 4);
+  REQUIRE(in.n == 4);
   in.insert(8);
-  ink_assert(in.n == 2);
+  REQUIRE(in.n == 2);
 
   UnionFind uf;
   uf.size(4);
   uf.unify(0, 1);
   uf.unify(2, 3);
-  ink_assert(uf.find(2) == uf.find(3));
-  ink_assert(uf.find(0) == uf.find(1));
-  ink_assert(uf.find(0) != uf.find(3));
-  ink_assert(uf.find(1) != uf.find(3));
-  ink_assert(uf.find(1) != uf.find(2));
-  ink_assert(uf.find(0) != uf.find(2));
+  REQUIRE(uf.find(2) == uf.find(3));
+  REQUIRE(uf.find(0) == uf.find(1));
+  REQUIRE(uf.find(0) != uf.find(3));
+  REQUIRE(uf.find(1) != uf.find(3));
+  REQUIRE(uf.find(1) != uf.find(2));
+  REQUIRE(uf.find(0) != uf.find(2));
   uf.unify(1, 2);
-  ink_assert(uf.find(0) == uf.find(3));
-  ink_assert(uf.find(1) == uf.find(3));
+  REQUIRE(uf.find(0) == uf.find(3));
+  REQUIRE(uf.find(1) == uf.find(3));
 }
 
 static bool
@@ -313,27 +316,33 @@ compare(void *a, void *b)
   return a < b;
 }
 
-static void
-test_sort()
+TEST_CASE("test sort", "[libts][Vec]")
 {
   Vec<void *> v;
   for (long i = 1; i <= 1000; ++i) {
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 149) % 1000) + 1)));
   }
   v.qsort(&compare);
+  int failures = 0;
   for (int i = 0; i < 1000; ++i) {
-    ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   v.clear();
   for (long i = 1; i <= 1000000; ++i) {
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 51511) % 1000000) + 1)));
   }
   v.qsort(&compare);
-
+  failures = 0;
   for (long i = 0; i < 1000000; ++i) {
-    ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   v.clear();
   for (long i = 1; i <= 1000000; ++i) {
@@ -341,10 +350,13 @@ test_sort()
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 199999) % 500000) + 1)));
   }
   v.qsort(&compare);
-
+  failures = 0;
   for (long i = 0; i < 1000000; ++i) {
-    ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>((i / 2) + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>((i / 2) + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   // Very long array, already sorted. This is what broke before.
   v.clear();
@@ -352,9 +364,13 @@ test_sort()
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(i)));
   }
   v.qsort(&compare);
+  failures = 0;
   for (long i = 0; i < 10000000; ++i) {
-    ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
+  REQUIRE(failures == 0);
 
   // very long, reverse sorted.
   v.clear();
@@ -362,16 +378,11 @@ test_sort()
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(i)));
   }
   v.qsort(&compare);
+  failures = 0;
   for (long i = 0; i < 10000000; ++i) {
-    ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
+    if (reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) != v[i]) {
+      failures++;
+    }
   }
-}
-
-int
-main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
-{
-  test_append();
-  test_basic();
-  test_sort();
-  printf("test_Vec PASSED\n");
+  REQUIRE(failures == 0);
 }
