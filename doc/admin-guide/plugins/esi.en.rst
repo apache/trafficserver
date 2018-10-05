@@ -170,4 +170,4 @@ Differences from Spec - http://www.w3.org/TR/esi-lang
 
 5. HTTP_COOKIE supports fetching for sub-key
 
-6. HTTP_HEADER supports accessing request headers as variables
+6. HTTP_HEADER supports accessing request headers as variables except "Cookie"

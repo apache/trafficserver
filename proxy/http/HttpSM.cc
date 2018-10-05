@@ -5484,16 +5484,14 @@ HttpSM::handle_server_setup_error(int event, void *data)
         ua_producer->alive         = false;
         ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
         tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
-        return;
       }
     } else {
       // c could be null here as well
       if (c != nullptr) {
         tunnel.handleEvent(event, c->write_vio);
-        return;
       }
     }
-    // If there is no consumer, let the event pass through to shutdown
+    return;
   } else {
     if (post_transform_info.vc) {
       HttpTunnelConsumer *c = tunnel.get_consumer(post_transform_info.vc);
@@ -5506,13 +5504,16 @@ HttpSM::handle_server_setup_error(int event, void *data)
     }
   }
 
+  if (event == VC_EVENT_ERROR) {
+    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
+  }
+
   switch (event) {
   case VC_EVENT_EOS:
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     break;
   case VC_EVENT_ERROR:
-    t_state.current.state        = HttpTransact::CONNECTION_ERROR;
-    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
+    t_state.current.state = HttpTransact::CONNECTION_ERROR;
     break;
   case VC_EVENT_ACTIVE_TIMEOUT:
     t_state.current.state = HttpTransact::ACTIVE_TIMEOUT;
@@ -5524,25 +5525,21 @@ HttpSM::handle_server_setup_error(int event, void *data)
     //   server failed
     // In case of TIMEOUT, the iocore sends back
     // server_entry->read_vio instead of the write_vio
+    // if (vio->op == VIO::WRITE && vio->ndone == 0) {
     if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
+      if (server_entry) {
+        ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
+        vc_table.cleanup_entry(server_entry);
+        server_entry   = nullptr;
+        server_session = nullptr;
+      }
     } else {
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;
     }
     break;
   default:
     ink_release_assert(0);
-  }
-
-  if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR) {
-    // Clean up the vc_table entry so any events in play to the timed out server vio
-    // don't get handled.  The connection isn't there.
-    if (server_entry) {
-      ink_assert(server_entry->vc_type == HTTP_SERVER_VC);
-      vc_table.cleanup_entry(server_entry);
-      server_entry   = nullptr;
-      server_session = nullptr;
-    }
   }
 
   // Closedown server connection and deallocate buffers

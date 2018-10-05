@@ -247,20 +247,20 @@ LogHost::disconnect()
 // preprocess the given buffer data before sent to target host
 // and try to delete it when its reference become zero.
 //
-int
+bool
 LogHost::preproc_and_try_delete(LogBuffer *lb)
 {
-  int ret = -1;
-
   if (lb == nullptr) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
-    return -1;
+    return false;
   }
+
   LogBufferHeader *buffer_header = lb->header();
   if (buffer_header == nullptr) {
     Note("Cannot write LogBuffer to LogHost %s; LogBufferHeader is NULL", name());
     goto done;
   }
+
   if (buffer_header->entry_count == 0) {
     // no bytes to write
     goto done;
@@ -277,11 +277,11 @@ LogHost::preproc_and_try_delete(LogBuffer *lb)
     goto done;
   }
 
-  return 0;
+  return true;
 
 done:
   LogBuffer::destroy(lb);
-  return ret;
+  return false;
 }
 
 //
@@ -302,8 +302,8 @@ LogHost::orphan_write_and_try_delete(LogBuffer *lb)
     m_orphan_file->preproc_and_try_delete(lb);
   } else {
     Debug("log-host", "logging space exhausted, failed to write orphan file, drop(%" PRIu32 ") bytes", lb->header()->byte_count);
-    LogBuffer::destroy(lb);
   }
+  LogBuffer::destroy(lb);
 }
 
 void
@@ -405,15 +405,15 @@ LogHostList::clear()
 int
 LogHostList::preproc_and_try_delete(LogBuffer *lb)
 {
-  int ret;
-  unsigned nr_host, nr;
+  int success = false;
+  unsigned nr;
   bool need_orphan        = true;
   LogHost *available_host = nullptr;
 
   ink_release_assert(lb->m_references == 0);
 
-  nr_host = nr = count();
-  ink_atomic_increment(&lb->m_references, nr_host);
+  nr = count();
+  ink_atomic_increment(&lb->m_references, 1);
 
   for (LogHost *host = first(); host && nr; host = next(host)) {
     LogHost *lh    = host;
@@ -421,9 +421,9 @@ LogHostList::preproc_and_try_delete(LogBuffer *lb)
 
     do {
       ink_atomic_increment(&lb->m_references, 1);
-      ret         = lh->preproc_and_try_delete(lb);
-      need_orphan = need_orphan && (ret < 0);
-    } while (ret < 0 && (lh = lh->failover_link.next));
+      success     = lh->preproc_and_try_delete(lb);
+      need_orphan = need_orphan && (success == false);
+    } while (lb && (success == false) && (lh = lh->failover_link.next));
 
     nr--;
   }
