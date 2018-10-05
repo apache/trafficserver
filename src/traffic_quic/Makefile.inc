@@ -41,8 +41,8 @@ traffic_quic_traffic_quic_SOURCES = \
   traffic_quic/traffic_quic.cc
 
 traffic_quic_traffic_quic_LDADD = \
-  $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/iocore/net/libinknet.a \
+  $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
