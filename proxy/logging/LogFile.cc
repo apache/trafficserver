@@ -247,7 +247,20 @@ int
 LogFile::roll(long interval_start, long interval_end)
 {
   if (m_log) {
-    return m_log->roll(interval_start, interval_end);
+    // Due to commit 346b419 the BaseLogFile::close_file() is no longer called within BaseLogFile::roll().
+    // For diagnostic log files, the rolling is implemented by renaming and destroying the BaseLogFile object
+    // and then creating a new BaseLogFile object with the original filename. Due to possible race conditions
+    // the old/new object swap happens within lock/unlock calls within Diags.cc.
+    // For logging log files, the rolling is implemented by renaming the original file and closing it.
+    // Afterwards, the LogFile object will re-open a new file with the original file name using the original object.
+    // There is no need to protect against contention since the open/close/writes are all executed under a
+    // single log flush thread.
+    // Since these two methods of using BaseLogFile are not compatible, we perform the logging log file specific
+    // close file operation here within the containing LogFile object.
+    if (m_log->roll(interval_start, interval_end)) {
+      m_log->close_file();
+      return 1;
+    }
   }
 
   return 0;
