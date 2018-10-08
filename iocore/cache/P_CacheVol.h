@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #define CACHE_BLOCK_SHIFT 9
 #define CACHE_BLOCK_SIZE (1 << CACHE_BLOCK_SHIFT) // 512, smallest sector size
 #define ROUND_TO_STORE_BLOCK(_x) INK_ALIGN((_x), STORE_BLOCK_SIZE)
@@ -328,7 +330,7 @@ struct Doc {
 // Global Data
 
 extern Vol **gvol;
-extern int gnvol;
+extern std::atomic<int> gnvol;
 extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
 extern ClassAllocator<EvacuationKey> evacuationKeyAllocator;
