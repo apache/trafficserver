@@ -167,7 +167,10 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 nitpicky = True
-nitpick_ignore = [ ('cpp:typeOrConcept', 'T') # template arg
+nitpick_ignore = [ ('c:type', 'int64_t')
+                 , ('c:type', 'bool')
+                 , ('c:type', 'sockaddr')
+                 , ('cpp:typeOrConcept', 'T') # template arg
                  , ('cpp:typeOrConcept', 'F') # template arg
                  , ('cpp:typeOrConcept', 'Args') # variadic template arg
                  , ('cpp:typeOrConcept', 'Rest') # variadic template arg
