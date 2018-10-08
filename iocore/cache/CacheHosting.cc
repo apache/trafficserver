@@ -772,7 +772,6 @@ extern CacheDisk **gdisks;
 extern Queue<CacheVol> cp_list;
 extern int cp_list_len;
 extern ConfigVolumes config_volumes;
-extern int gnvol;
 
 extern void cplist_init();
 extern int cplist_reconfigure();
