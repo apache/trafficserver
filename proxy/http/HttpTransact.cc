@@ -260,6 +260,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
+    TxnDebug("http_trans", "request is from localhost, so bypass parent");
     s->parent_result.result = PARENT_DIRECT;
   } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
     s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
