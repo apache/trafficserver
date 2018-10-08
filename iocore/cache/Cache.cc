@@ -37,6 +37,8 @@
 
 #include "tscore/hugepages.h"
 
+#include <atomic>
+
 const VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
 
 // Compilation Options
@@ -87,11 +89,11 @@ int cache_config_compatibility_4_2_0_fixup = 1;
 
 // Globals
 
-RecRawStatBlock *cache_rsb = nullptr;
-Cache *theCache            = nullptr;
-CacheDisk **gdisks         = nullptr;
-int gndisks                = 0;
-static int initialize_disk;
+RecRawStatBlock *cache_rsb          = nullptr;
+Cache *theCache                     = nullptr;
+CacheDisk **gdisks                  = nullptr;
+int gndisks                         = 0;
+std::atomic<int> initialize_disk    = 0;
 Cache *caches[NUM_CACHE_FRAG_TYPES] = {nullptr};
 CacheSync *cacheDirSync             = nullptr;
 Store theCacheStore;
@@ -104,8 +106,8 @@ bool CacheProcessor::check               = false;
 int CacheProcessor::start_internal_flags = 0;
 int CacheProcessor::auto_clear_flag      = 0;
 CacheProcessor cacheProcessor;
-Vol **gvol = nullptr;
-int gnvol  = 0;
+Vol **gvol             = nullptr;
+std::atomic<int> gnvol = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
@@ -749,7 +751,7 @@ CacheProcessor::start_internal(int flags)
 void
 CacheProcessor::diskInitialized()
 {
-  int n_init    = ink_atomic_increment(&initialize_disk, 1);
+  int n_init    = initialize_disk++;
   int bad_disks = 0;
   int res       = 0;
   int i;
@@ -906,7 +908,8 @@ CacheProcessor::cacheInitialized()
   }
 
   if (caches_ready) {
-    Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready, gnvol);
+    Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
+          gnvol.load());
 
     int64_t ram_cache_bytes = 0;
 
@@ -1764,7 +1767,7 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(5), ET_CALL);
     return EVENT_CONT;
   } else {
-    int vol_no = ink_atomic_increment(&gnvol, 1);
+    int vol_no = gnvol++;
     ink_assert(!gvol[vol_no]);
     gvol[vol_no] = this;
     SET_HANDLER(&Vol::aggWrite);
