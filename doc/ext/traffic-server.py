@@ -373,37 +373,6 @@ class TrafficServerDomain(Domain):
                 yield var, var, 'stat', doc, var, 1
 
 
-# These types are ignored as missing references for the C++ domain.
-# We really need to do better with this. Editing this file for each of
-# these is already getting silly.
-EXTERNAL_TYPES = set((
-    'bool', 'int', 'uint',
-    'uint8_t', 'uint16_t', 'uint24_t', 'uint32_t', 'uint64_t',
-    'int8_t', 'int16_t', 'int24_t', 'int32_t', 'int64_t',
-    'unsigned', 'unsigned int',
-    'off_t', 'time_t',
-    'Event', 'INK_MD5',
-    'sockaddr'
-))
-
-# Clean up specific references that we know will never be defined but are implicitly used by
-# other domain directives. Hand convert them to literals.
-
-
-def xref_cleanup(app, env, node, contnode):
-    rdomain = node['refdomain']
-    rtype = node['reftype']
-    rtarget = node['reftarget']
-    if ('cpp' == rdomain) or ('c' == rdomain):
-        if 'type' == rtype:
-            # one of the predefined type, or a pointer or reference to it.
-            if (rtarget in EXTERNAL_TYPES) or (('*' == rtarget[-1] or '&' == rtarget[-1]) and rtarget[:-1] in EXTERNAL_TYPES):
-                node = nodes.literal()
-                node += contnode
-                return node
-    return
-
-
 # get the branch this documentation is building for in X.X.x form
 with open('../configure.ac', 'r') as f:
     contents = f.read()
@@ -459,9 +428,3 @@ def setup(app):
 
     # this lets us do :ts:git:`<file_path>` and link to the file on github
     app.add_role_to_domain('ts', 'git', make_github_link)
-
-    # Types that we want the C domain to consider built in
-    for word in EXTERNAL_TYPES:
-        sphinx.domains.c.CObject.stopwords.add(word)
-
-    app.connect('missing-reference', xref_cleanup)
