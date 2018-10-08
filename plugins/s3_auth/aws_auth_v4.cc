@@ -401,6 +401,8 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
  * @see http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
  * it is used to get the region programmatically  w/o configuration
  * parameters and can (meant to) be overwritten if necessary.
+ * @todo may be if one day AWS naming/mapping becomes 100% consistent
+ * we could just extract (calculate) the right region from hostname.
  */
 const StringMap
 createDefaultRegionMap()
@@ -412,47 +414,67 @@ createDefaultRegionMap()
   m["s3.dualstack.us-east-2.amazonaws.com"] = "us-east-2";
   /* "us-east-1" */
   m["s3.amazonaws.com"]                     = "us-east-1";
+  m["s3.us-east-1.amazonaws.com"]           = "us-east-1";
   m["s3-external-1.amazonaws.com"]          = "us-east-1";
   m["s3.dualstack.us-east-1.amazonaws.com"] = "us-east-1";
   /* us-west-1 */
+  m["s3.us-west-1.amazonaws.com"]           = "us-west-1";
   m["s3-us-west-1.amazonaws.com"]           = "us-west-1";
   m["s3.dualstack.us-west-1.amazonaws.com"] = "us-west-1";
   /* us-west-2 */
+  m["s3.us-west-2.amazonaws.com"]           = "us-west-2";
   m["s3-us-west-2.amazonaws.com"]           = "us-west-2";
   m["s3.dualstack.us-west-2.amazonaws.com"] = "us-west-2";
-  /* ca-central-1 */
-  m["s3.ca-central-1.amazonaws.com"]           = "ca-central-1";
-  m["s3-ca-central-1.amazonaws.com"]           = "ca-central-1";
-  m["s3.dualstack.ca-central-1.amazonaws.com"] = "ca-central-1";
   /* ap-south-1 */
   m["s3.ap-south-1.amazonaws.com"]           = "ap-south-1";
   m["s3-ap-south-1.amazonaws.com"]           = "ap-south-1";
   m["s3.dualstack.ap-south-1.amazonaws.com"] = "ap-south-1";
+  /* ap-northeast-3 */
+  m["s3.ap-northeast-3.amazonaws.com"]           = "ap-northeast-3";
+  m["s3-ap-northeast-3.amazonaws.com"]           = "ap-northeast-3";
+  m["s3.dualstack.ap-northeast-3.amazonaws.com"] = "ap-northeast-3";
   /* ap-northeast-2 */
   m["s3.ap-northeast-2.amazonaws.com"]           = "ap-northeast-2";
   m["s3-ap-northeast-2.amazonaws.com"]           = "ap-northeast-2";
   m["s3.dualstack.ap-northeast-2.amazonaws.com"] = "ap-northeast-2";
   /* ap-southeast-1 */
+  m["s3.ap-southeast-1.amazonaws.com"]           = "ap-southeast-1";
   m["s3-ap-southeast-1.amazonaws.com"]           = "ap-southeast-1";
   m["s3.dualstack.ap-southeast-1.amazonaws.com"] = "ap-southeast-1";
   /* ap-southeast-2 */
+  m["s3.ap-southeast-2.amazonaws.com"]           = "ap-southeast-2";
   m["s3-ap-southeast-2.amazonaws.com"]           = "ap-southeast-2";
   m["s3.dualstack.ap-southeast-2.amazonaws.com"] = "ap-southeast-2";
   /* ap-northeast-1 */
+  m["s3.ap-northeast-1.amazonaws.com"]           = "ap-northeast-1";
   m["s3-ap-northeast-1.amazonaws.com"]           = "ap-northeast-1";
   m["s3.dualstack.ap-northeast-1.amazonaws.com"] = "ap-northeast-1";
+  /* ca-central-1 */
+  m["s3.ca-central-1.amazonaws.com"]           = "ca-central-1";
+  m["s3-ca-central-1.amazonaws.com"]           = "ca-central-1";
+  m["s3.dualstack.ca-central-1.amazonaws.com"] = "ca-central-1";
+  /* cn-north-1 */
+  m["s3.cn-north-1.amazonaws.com.cn"] = "cn-north-1";
+  /* cn-northwest-1 */
+  m["s3.cn-northwest-1.amazonaws.com.cn"] = "cn-northwest-1";
   /* eu-central-1 */
   m["s3.eu-central-1.amazonaws.com"]           = "eu-central-1";
   m["s3-eu-central-1.amazonaws.com"]           = "eu-central-1";
   m["s3.dualstack.eu-central-1.amazonaws.com"] = "eu-central-1";
   /* eu-west-1 */
-  m["s3-eu-west-1.amazonaws.com"]           = "eu-central-1";
-  m["s3.dualstack.eu-west-1.amazonaws.com"] = "eu-central-1";
+  m["s3.eu-west-1.amazonaws.com"]           = "eu-west-1";
+  m["s3-eu-west-1.amazonaws.com"]           = "eu-west-1";
+  m["s3.dualstack.eu-west-1.amazonaws.com"] = "eu-west-1";
   /* eu-west-2 */
   m["s3.eu-west-2.amazonaws.com"]           = "eu-west-2";
   m["s3-eu-west-2.amazonaws.com"]           = "eu-west-2";
   m["s3.dualstack.eu-west-2.amazonaws.com"] = "eu-west-2";
+  /* eu-west-3 */
+  m["s3.eu-west-3.amazonaws.com"]           = "eu-west-3";
+  m["s3-eu-west-3.amazonaws.com"]           = "eu-west-3";
+  m["s3.dualstack.eu-west-3.amazonaws.com"] = "eu-west-3";
   /* sa-east-1 */
+  m["s3.sa-east-1.amazonaws.com"]           = "sa-east-1";
   m["s3-sa-east-1.amazonaws.com"]           = "sa-east-1";
   m["s3.dualstack.sa-east-1.amazonaws.com"] = "sa-east-1";
   /* default "us-east-1" * */
