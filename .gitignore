@@ -105,6 +105,7 @@ proxy/logging/test_LogUtils
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
+plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
 plugins/s3_auth/test_s3auth
 
