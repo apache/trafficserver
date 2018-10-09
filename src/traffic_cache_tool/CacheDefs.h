@@ -33,7 +33,6 @@
 #include <list>
 #include "tscore/CryptoHash.h"
 
-#include "Command.h"
 #include "File.h"
 
 namespace tag
