@@ -109,7 +109,7 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
         p.Ready = When.PortOpenv6(port)
     else:
         p.Ready = When.PortOpenv4(port)
-        
+
     AddMethodToInstance(p, AddRecord)
     AddMethodToInstance(p, addRecords)
 

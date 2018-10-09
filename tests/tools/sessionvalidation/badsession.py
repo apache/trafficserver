@@ -18,10 +18,10 @@
 
 
 class BadSession(object):
-    ''' 
+    '''
     Session encapsulates a single BAD user session. Bad meaning that for some reason the session is invalid.
 
-    _filename is the filename of the bad JSON session 
+    _filename is the filename of the bad JSON session
     _reason is a string with some kind of explanation on why the session was bad
     '''
 

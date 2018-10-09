@@ -85,7 +85,7 @@ Commands
 
 ``clear``
    Clear all the spans by writing updated span headers.
-   
+
    ``span``
      Clears an specific span and it's stripes. The span to be cleared is specified via ``--device``
 
@@ -115,9 +115,9 @@ Commands
    The span to be initialized can be passed via ``--input``
 
 ``find``
-  Determines the stripe in disk cache where the content corresponding to the provided URL may be cached. 
+  Determines the stripe in disk cache where the content corresponding to the provided URL may be cached.
   This command takes an input file which lists all the urls for which the stripe assignment needs to be determined.
-  
+
 ========
 Examples
 ========
@@ -140,27 +140,27 @@ Clear all spans.::
       --volumes=/usr/local/etc/trafficserver/volume.config \
       clear
 
-Clear a single span.:: 
+Clear a single span.::
 
     traffic_cache_tool \
     --span /opt/etc/trafficserver/storage.config \
     --volume /opt/etc/trafficserver/volume.config \
     clear span --device "/dev/sdb3" --write
-    
+
 Initialize a new span.::
- 
+
     traffic_cache_tool \
     --span /opt/etc/trafficserver/storage.config \
     --volume /opt/etc/trafficserver/volume.config \
     init --input "/dev/sdb3" --write
-    
+
 Find Stripe Assignment.::
- 
+
     traffic_cache_tool \
     --span /opt/etc/trafficserver/storage.config \
     --volume /opt/etc/trafficserver/volume.config \
     init --input "/home/user/urls.txt"
-    
+
 ========
 See also
 ========

@@ -20,8 +20,8 @@ experimental_server_push_preload_server_push_preload_la_SOURCES = \
   experimental/server_push_preload/server_push_preload.cc
 
 experimental_server_push_preload_server_push_preload_la_LDFLAGS = \
-  $(AM_LDFLAGS) 
+  $(AM_LDFLAGS)
 
 experimental_server_push_preload_server_push_preload_la_LIBADD = \
-  $(top_builddir)/src/tscpp/api/libtscppapi.la 
+  $(top_builddir)/src/tscpp/api/libtscppapi.la
 

@@ -77,7 +77,7 @@ ${LLVM_BASE}/bin/scan-build ./configure ${configure} \
 
 # Since we don't want the analyzer to look at yamlcpp, build it first
 # without scan-build. The subsequent make will then skip it.
-# the all-local can be taken out and lib changed to lib/yamlcpp 
+# the all-local can be taken out and lib changed to lib/yamlcpp
 # by making yaml cpp a SUBDIRS in lib/Makefile.am.
 ${ATS_MAKE} -j $NPROCS -C lib all-local V=1 Q=
 

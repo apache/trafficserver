@@ -1,7 +1,7 @@
 uWServer
 ========
 
-uWServer is a mock HTTP server that takes predefined set of sessions for serving response to HTTP requests. Each session includes one or more transactions. A transaction is composed of an HTTP request and an HTTP response. 
+uWServer is a mock HTTP server that takes predefined set of sessions for serving response to HTTP requests. Each session includes one or more transactions. A transaction is composed of an HTTP request and an HTTP response.
 uWServer accepts session data in JSON fromat only.
 
 
