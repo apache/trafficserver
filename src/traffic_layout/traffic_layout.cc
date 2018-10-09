@@ -40,14 +40,14 @@ main(int argc, const char **argv)
   engine.parser.add_global_usage("traffic_layout CMD [OPTIONS]");
 
   // global options
-  engine.parser.add_option("--features", "", "Show the compiled features");
-  engine.parser.add_option("--json", "-j", "Produce output in JSON format (when supported)");
-  engine.parser.add_option("--version", "-V", "Print version string");
   engine.parser.add_option("--help", "-h", "Print usage information");
   engine.parser.add_option("--run-root", "", "using TS_RUNROOT as sandbox", "", 1);
 
   // info command
-  engine.parser.add_command("info", "Show the layout information. <Default>", [&]() { engine.info(); });
+  engine.parser.add_command("info", "Show the layout as default", [&]() { engine.info(); })
+    .add_option("--features", "", "Show the compiled features")
+    .add_option("--json", "-j", "Produce output in JSON format (when supported)")
+    .set_default();
   // init command
   engine.parser.add_command("init", "Initialize(create) the runroot sandbox", [&]() { engine.create_runroot(); })
     .add_option("--absolute", "-a", "Produce absolute path in the runroot.yaml")
@@ -70,11 +70,7 @@ main(int argc, const char **argv)
   runroot_handler(argv, engine.arguments.get("json"));
   Layout::create();
 
-  if (engine.arguments.has_action()) {
-    engine.arguments.invoke();
-  } else {
-    engine.info();
-  }
+  engine.arguments.invoke();
 
   return 0;
 }
