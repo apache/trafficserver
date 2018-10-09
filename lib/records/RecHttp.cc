@@ -24,12 +24,12 @@
 #include <records/I_RecCore.h>
 #include <records/I_RecHttp.h>
 #include "tscore/ink_defs.h"
-#include "tscore/ink_hash_table.h"
 #include "tscore/TextBuffer.h"
 #include "tscore/Tokenizer.h"
 #include <strings.h>
 #include "tscore/ink_inet.h"
 #include <string_view>
+#include <unordered_set>
 
 SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 
@@ -57,7 +57,7 @@ const char *const TS_PROTO_TAG_UDP      = IP_PROTO_TAG_UDP.data();
 const char *const TS_PROTO_TAG_IPV4     = IP_PROTO_TAG_IPV4.data();
 const char *const TS_PROTO_TAG_IPV6     = IP_PROTO_TAG_IPV6.data();
 
-InkHashTable *TSProtoTags;
+std::unordered_set<std::string_view> TSProtoTags;
 
 // Precomputed indices for ease of use.
 int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
@@ -660,29 +660,25 @@ ts_session_protocol_well_known_name_indices_init()
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 
-  TSProtoTags = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_0)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_1_1)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_HTTP_2_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_HTTP_2_0)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_3, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_3)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_2, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_2)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_1, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_1)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TLS_1_0, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TLS_1_0)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_TCP, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_TCP)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_UDP, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_UDP)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_IPV4, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_IPV4)));
-  ink_hash_table_insert(TSProtoTags, TS_PROTO_TAG_IPV6, reinterpret_cast<void *>(const_cast<char *>(TS_PROTO_TAG_IPV6)));
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_1_0);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_1_1);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_2_0);
+  TSProtoTags.insert(TS_PROTO_TAG_TLS_1_3);
+  TSProtoTags.insert(TS_PROTO_TAG_TLS_1_2);
+  TSProtoTags.insert(TS_PROTO_TAG_TLS_1_1);
+  TSProtoTags.insert(TS_PROTO_TAG_TLS_1_0);
+  TSProtoTags.insert(TS_PROTO_TAG_TCP);
+  TSProtoTags.insert(TS_PROTO_TAG_UDP);
+  TSProtoTags.insert(TS_PROTO_TAG_IPV4);
+  TSProtoTags.insert(TS_PROTO_TAG_IPV6);
 }
 
 const char *
 RecNormalizeProtoTag(const char *tag)
 {
-  InkHashTableValue value;
-
-  if (ink_hash_table_lookup(TSProtoTags, tag, &value)) {
-    return reinterpret_cast<const char *>(value);
+  if (TSProtoTags.find(tag) != TSProtoTags.end()) {
+    return tag;
   }
-
   return nullptr;
 }
 
