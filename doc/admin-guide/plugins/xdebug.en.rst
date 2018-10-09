@@ -58,9 +58,9 @@ Diags
     that :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``.
 
 log-headers
-    If the ``log-headers`` is requested while :ts:cv:`proxy.config.diags.debug.tags` 
-    is set to ``xdebug.headers`` and :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``, 
-    then all client and server, request and response headers are logged. 
+    If the ``log-headers`` is requested while :ts:cv:`proxy.config.diags.debug.tags`
+    is set to ``xdebug.headers`` and :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``,
+    then all client and server, request and response headers are logged.
     Also, the ``X-Debug: log-headers`` header is always added to the upstream request.
 
 X-Cache-Key

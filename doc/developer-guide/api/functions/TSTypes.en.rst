@@ -43,11 +43,11 @@ more widely. Those are described on this page.
 .. type:: INK_MD5
 
    Buffer type sufficient to contain an MD5 hash value.
-   
+
 .. cpp:class:: INK_MD5
 
    See :type:`INK_MD5`.
-   
+
 .. cpp:class:: RecRawStatBlock
 
    A data block intended to contain |TS| statistics.
@@ -177,11 +177,11 @@ more widely. Those are described on this page.
 .. type:: ModuleVersion
 
     A module version.
-    
+
 .. cpp:type:: ModuleVersion
 
     A module version.
-    
+
 .. cpp:class:: template<typename T> DLL
 
     An anchor for a double linked instrusive list of instance of :arg:`T`.

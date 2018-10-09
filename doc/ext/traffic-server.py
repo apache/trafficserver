@@ -440,7 +440,7 @@ def setup(app):
     app.add_crossref_type('configfile', 'file',
                           objname='Configuration file',
                           indextemplate='pair: %s; Configuration files')
-    
+
     # Very ugly, but as of Sphinx 1.8 it must be done. There is an `override` option to add_crossref_type
     # but it only applies to the directive, not the role (`file` in this case). If this isn't cleared
     # explicitly the build will fail out due to the conflict. In this case, since the role action is the

@@ -46,7 +46,7 @@ class CopyATSConfig(SetupItem):
 
         # set up the config path for test manually
         config_dir = os.path.join(ts_dir, "config")
-        
+
         host.WriteVerbose("CopyATSConfig", "Copying {0} to {1}".format(
             self.file, config_dir))
         self.CopyAs(self.file, config_dir, self.targetname)
