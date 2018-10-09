@@ -142,12 +142,10 @@ from the :class:`Arguments` object returned from the parsing. The function can b
 
     args.invoke();
 
-Help and Version messages
+Help message
 -------------------------
 
 - Help message will be outputted when a wrong usage of the program is detected or `--help` option found.
-
-- Version message is defined unified in :code:`ArgParser::version_message()`.
 
 Classes
 +++++++
@@ -175,13 +173,13 @@ Classes
 
       Output usage to the console.
 
-   .. function:: void version_message() const
-
-      Output version string to the console.
-
    .. function:: void add_global_usage(std::string const &usage)
 
       Add a global_usage for :code:`help_message()`. Example: `traffic_blabla [--SWITCH [ARG]]`.
+
+   .. function:: void set_default_command(std::string const &cmd);
+
+      Set a default command to the parser. This method should be called after the adding of the commands.
 
    .. function:: Command &require_commands()
 
@@ -222,6 +220,10 @@ Classes
 
       Add an example usage for the command to output in `help_message`.
       For Example: :code:`command.add_example_usage("traffic_blabla init --path=/path/to/file")`.
+
+   .. function:: Command &set_default()
+
+      set the current command as default
 
 .. class:: Arguments
 
