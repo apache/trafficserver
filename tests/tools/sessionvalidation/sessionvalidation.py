@@ -48,8 +48,8 @@ class SessionValidator(object):
     '''
 
     def parse(self):
-        ''' 
-        Constructs Session objects from JSON files on disk and stores objects into _sessions 
+        '''
+        Constructs Session objects from JSON files on disk and stores objects into _sessions
 
         All sessions missing required fields (ie. a session timestamp, a response for every request, etc) are
         dropped and the filename is stored inside _bad_sessions

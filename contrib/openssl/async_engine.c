@@ -23,7 +23,7 @@
 
 /*
  * Test engine to exercise the asynchronous job interface
- * It performs the standard RSA operations, but for private key 
+ * It performs the standard RSA operations, but for private key
  * operations spawns a thread to sleep for 5 seconds before resuming
  * the asynchronous job
  */
@@ -236,11 +236,11 @@ spawn_delay_thread()
   } else {
     OSSL_ASYNC_FD pipefds[2] = {0,0};
     OSSL_ASYNC_FD *writefd = OPENSSL_malloc(sizeof(*writefd));
-    pipe(pipefds); 
+    pipe(pipefds);
     signal_fd = *writefd = pipefds[1];
     ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup);
   }
-  
+
   pthread_create(&thread_id, NULL, delay_method, (void *)((intptr_t)signal_fd));
 }
 

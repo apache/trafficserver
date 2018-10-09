@@ -45,4 +45,4 @@ clean-local:
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
-	
+

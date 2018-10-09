@@ -38,7 +38,7 @@ AM_CPPFLAGS += \
 
 libmgmt_c_la_SOURCES = \
 	RecordsConfig.cc \
-	RecordsConfig.h 
+	RecordsConfig.h
 
 libmgmt_COMMON = \
 	BaseManager.cc \

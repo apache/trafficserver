@@ -69,8 +69,8 @@ it receives:
 
 .. caution::
 
-   TS_HTTP_SEND_REQUEST_HDR_HOOK may callback several times when the  
-   OS crashed. Be careful to use functions such as TSContDestroy in 
+   TS_HTTP_SEND_REQUEST_HDR_HOOK may callback several times when the
+   OS crashed. Be careful to use functions such as TSContDestroy in
    TS_HTTP_SEND_REQUEST_HDR_HOOK hook.
 
 The following table lists events and the corresponding type of

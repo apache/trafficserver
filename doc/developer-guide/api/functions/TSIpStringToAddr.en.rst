@@ -33,10 +33,10 @@ Description
 
 :arg:`str` is expected to be an explicit address, not a hostname.  No hostname resolution is done. This attempts to
 recognize and process a port value if present. It is set appropriately, or to zero if no port was found or it was
-malformed. 
+malformed.
 
 It is intended to deal with the brackets that can optionally surround an IP address (usually IPv6) which in turn are
-used to differentiate between an address and an attached port. E.g. 
+used to differentiate between an address and an attached port. E.g.
 
 .. code-block:: none
 
@@ -45,7 +45,7 @@ used to differentiate between an address and an attached port. E.g.
 Return values
 =============
 
-It returns :data:`TS_SUCCESS` on success, or :data:`TS_ERROR` on failure. 
+It returns :data:`TS_SUCCESS` on success, or :data:`TS_ERROR` on failure.
 
 Notes
 =====

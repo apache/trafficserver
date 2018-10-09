@@ -29,7 +29,7 @@ How it Works
 ------------
 When activated during remap processing, this plugin calls ``setsockopt(SO_MAX_PACING_RATE)`` on the
 client socket. To prevent the rate from leaking to other remap rules the client may access in future
-requests, a hook is set to deactivate the pacing when the current transaction completes. 
+requests, a hook is set to deactivate the pacing when the current transaction completes.
 
 
 Installation

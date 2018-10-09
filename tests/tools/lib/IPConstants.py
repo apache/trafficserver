@@ -45,4 +45,4 @@ def getIP(addr):
 		addr = IPkw[addr]
 
 	return str(ipaddress.ip_address(addr))
- 
+

@@ -65,7 +65,7 @@ Named after the desirable properties of a database, ACID_ acronym:
      ----
      ~_finishCommit(T*)
    }
-   
+
    class AcidCommitPtr<T> {
      -AcidPtr& data_ptr
      -std::unique_lock commit_lock
@@ -136,7 +136,7 @@ When the writer is done, :func:`~AcidCommitPtr::~AcidCommitPtr()` is called and 
 
 .. uml::
    :align: center
-   
+
    title AcidPtr Reader/Reader Contention
    box "MemLock"
    participant "Access" as AccessMutex

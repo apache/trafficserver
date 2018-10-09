@@ -83,14 +83,14 @@ cmd = 'curl --http2 -k -vs https://127.0.0.1:{0}/'.format(ts.Variables.ssl_port)
 numberOfRequests = 25
 
 tr = Test.AddTestRun()
-# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands. 
+# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
 ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests)
 tr.Processes.Default.Env = ts.Env
 
 # Execution order is: ts/server, ps(curl cmds), Default Process.
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
-# Adds a delay once the ts port is ready. This is because we cannot test the ts state. 
+# Adds a delay once the ts port is ready. This is because we cannot test the ts state.
 tr.Processes.Default.StartBefore(ts, ready=10)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
