@@ -23,109 +23,132 @@
 
 /*****************************************************************************
  *
- *  HostLookup.h - Interface to genernal purpose matcher
+ *  HostLookup.h - Interface to general purpose matcher
  *
  *
  ****************************************************************************/
 
 #pragma once
 
-#include "DynArray.h"
+#include <vector>
+#include <string>
+#include <string_view>
+#include <functional>
+#include <unordered_map>
 
 // HostLookup  constantss
-const int HOST_TABLE_DEPTH = 3; // Controls the max number of levels in the logical tree
-const int HOST_ARRAY_MAX   = 8; // Sets the fixed array size
+constexpr int HOST_TABLE_DEPTH = 3; // Controls the max number of levels in the logical tree
+constexpr int HOST_ARRAY_MAX   = 8; // Sets the fixed array size
 
-//
-//  Begin Host Lookup Helper types
-//
-enum HostNodeType {
-  HOST_TERMINAL,
-  HOST_HASH,
-  HOST_INDEX,
-  HOST_ARRAY,
-};
-enum LeafType {
-  LEAF_INVALID,
-  HOST_PARTIAL,
-  HOST_COMPLETE,
-  DOMAIN_COMPLETE,
-  DOMAIN_PARTIAL,
-};
+class CharIndex;
+class HostArray;
 
-// The data in the HostMatcher tree is pointers to HostBranches.
-//   No duplicates keys permitted in the tree.  To handle multiple
-//   data items bound the same key, the HostBranch has the lead_indexs
-//   array which stores pointers (in the form of array indexes) to
-//   HostLeaf structs
+// The data in the HostMatcher tree is pointers to HostBranches. No duplicates keys permitted in the tree.  To handle
+// multiple data items bound the same key, the HostBranch has the lead_indexs array which stores pointers (in the form
+// of array indexes) to HostLeaf structs
 //
-// There is HostLeaf struct for each data item put into the
-//   table
+// There is HostLeaf struct for each data item put into the table
 //
 struct HostLeaf {
-  LeafType type;
-  char *match;       // Contains a copy of the match data
-  int len;           // length of the data
-  bool isNot;        // used by any fasssst path ...
-  void *opaque_data; // Data associated with this leaf
+  /// Type of leaf.
+  enum Type {
+    LEAF_INVALID,
+    HOST_PARTIAL,
+    HOST_COMPLETE,
+    DOMAIN_COMPLETE,
+    DOMAIN_PARTIAL,
+  };
+  Type type{LEAF_INVALID};    ///< Type of this leaf instance.
+  std::string match;          // Contains a copy of the match data
+  bool isNot{false};          // used by any fasssst path ...
+  void *opaque_data{nullptr}; // Data associated with this leaf
+
+  HostLeaf() {}
+  HostLeaf(std::string_view name, void *data) : opaque_data(data)
+  {
+    if (!name.empty() && name.front() == '!') {
+      name.remove_prefix(1);
+      isNot = true;
+    }
+    match.assign(name);
+  }
 };
 
 struct HostBranch {
-  HostBranch();
+  /// Branch type.
+  enum Type {
+    HOST_TERMINAL,
+    HOST_HASH,
+    HOST_INDEX,
+    HOST_ARRAY,
+  };
+
+  using HostTable = std::unordered_map<std::string_view, HostBranch *>;
+
+  using LeafIndices = std::vector<int>;
+
+  /// Type of data in this branch.
+  union Level {
+    std::nullptr_t _nil; ///< HOST_TERMINAL
+    HostTable *_table;   ///< HOST_HASH
+    CharIndex *_index;   ///< HOST_INDEX
+    HostArray *_array;   ///< HOST_ARRAY
+    void *_ptr;          ///< As generic pointer.
+  };
+
   ~HostBranch();
-  int level;                 // what level in the tree.  the root is level 0
-  HostNodeType type;         // tells what kind of data structure is next_level is
-  void *next_level;          // opaque pointer to lookup structure
-  DynArray<int> leaf_indexs; // pointers HostLeaf(s)
+  int level_idx{0};          // what level in the tree.  the root is level 0
+  Type type{HOST_TERMINAL};  // tells what kind of data structure is next_level is
+  Level next_level{nullptr}; // opaque pointer to lookup structure
+  LeafIndices leaf_indices;  // HostLeaf indices.
+  std::string key;
 };
 
-typedef void (*HostLookupPrintFunc)(void *opaque_data);
 //
 //  End Host Lookup Helper types
 //
 
 struct HostLookupState {
-  HostLookupState() : cur(nullptr), table_level(0), array_index(0), hostname(nullptr), host_copy(nullptr), host_copy_next(nullptr)
-  {
-  }
-  ~HostLookupState() { ats_free(host_copy); }
-  HostBranch *cur;
-  int table_level;
-  int array_index;
-  const char *hostname;
-  char *host_copy;      // request lower-cased host name copy
-  char *host_copy_next; // ptr to part of host_copy for next use
+  HostBranch *cur{nullptr};
+  int table_level{0};
+  int array_index{0};
+  std::string_view hostname;      ///< Original host name.
+  std::string_view hostname_stub; ///< Remaining host name to search.
 };
 
 class HostLookup
 {
 public:
-  HostLookup(const char *name);
-  ~HostLookup();
-  void NewEntry(const char *match_data, bool domain_record, void *opaque_data_in);
+  using LeafArray = std::vector<HostLeaf>;
+  using PrintFunc = std::function<void(void *)>;
+
+  HostLookup(std::string_view name);
+  void NewEntry(std::string_view match_data, bool domain_record, void *opaque_data_in);
   void AllocateSpace(int num_entries);
-  bool Match(const char *host);
-  bool Match(const char *host, void **opaque_ptr);
-  bool MatchFirst(const char *host, HostLookupState *s, void **opaque_ptr);
+  bool Match(std::string_view host);
+  bool Match(std::string_view host, void **opaque_ptr);
+  bool MatchFirst(std::string_view host, HostLookupState *s, void **opaque_ptr);
   bool MatchNext(HostLookupState *s, void **opaque_ptr);
-  void Print(HostLookupPrintFunc f);
+  void Print(PrintFunc const &f);
   void Print();
-  HostLeaf *
-  getLArray()
+
+  LeafArray *
+  get_leaf_array()
   {
-    return leaf_array;
-  };
+    return &leaf_array;
+  }
 
 private:
-  void TableInsert(const char *match_data, int index, bool domain_record);
-  HostBranch *TableNewLevel(HostBranch *from, const char *level_data);
-  HostBranch *InsertBranch(HostBranch *insert_in, const char *level_data);
-  HostBranch *FindNextLevel(HostBranch *from, const char *level_data, bool bNotProcess = false);
-  bool MatchArray(HostLookupState *s, void **opaque_ptr, DynArray<int> &array, bool host_done);
-  void PrintHostBranch(HostBranch *hb, HostLookupPrintFunc f);
-  HostBranch *root;         // The top of the search tree
-  HostLeaf *leaf_array;     // array of all leaves in tree
-  int array_len;            // the length of the arrays
-  int num_el;               // the numbe of itmems in the tree
-  const char *matcher_name; // Used for Debug/Warning/Error messages
+  using HostTable   = HostBranch::HostTable;
+  using LeafIndices = HostBranch::LeafIndices;
+
+  void TableInsert(std::string_view match_data, int index, bool domain_record);
+  HostBranch *TableNewLevel(HostBranch *from, std::string_view level_data);
+  HostBranch *InsertBranch(HostBranch *insert_in, std::string_view level_data);
+  HostBranch *FindNextLevel(HostBranch *from, std::string_view level_data, bool bNotProcess = false);
+  bool MatchArray(HostLookupState *s, void **opaque_ptr, LeafIndices &array, bool host_done);
+  void PrintHostBranch(HostBranch *hb, PrintFunc const &f);
+  HostBranch root;          // The top of the search tree
+  LeafArray leaf_array;     // array of all leaves in tree
+  std::string matcher_name; // Used for Debug/Warning/Error messages
 };
