@@ -58,7 +58,7 @@ cmd = 'curl -vs http://127.0.0.1:{0}'.format(ts.Variables.port)
 numberOfRequests = 25
 
 tr = Test.AddTestRun()
-# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands. 
+# Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
 ps = tr.SpawnCommands(cmdstr=cmd,  count=numberOfRequests)
 tr.Processes.Default.Env = ts.Env
 

@@ -46,7 +46,7 @@ refer to the :ref:`developer-api-reference`.
 
 Below is a section-by-section breakdown of this guide:
 
-:ref:`developer-header-files` 
+:ref:`developer-header-files`
    The header file directory structure, where to find headers for particular tasks.
 
 :ref:`developer-plugins-getting-started`

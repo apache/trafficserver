@@ -14,7 +14,7 @@
    KIND, either express or implied.  See the License for the
    specific language governing permissions and limitations
    under the License.
-   
+
 .. include:: ../../common.defs
 
 .. highlight:: cpp
@@ -63,7 +63,7 @@ Internals
    component [block] as b5
    component [block] as b6
 
-   b1 -> b2 
+   b1 -> b2
    b2 -> b3
    b3 -> b4
    b4 -> b5
@@ -130,10 +130,10 @@ After the next :func:`MemArena::alloc`:
 A caller can actually :func:`MemArena::alloc` **any** number of bytes. Internally, if the arena is unable to allocate enough memory for the allocation, it will create a new internal block of memory large enough and allocate from that. So if the arena is allocated like:
 
 .. code-block:: cpp
-   
+
    ts::MemArena *arena = new ts::MemArena(64);
 
-The caller can actually allocate more than 64 bytes. 
+The caller can actually allocate more than 64 bytes.
 
 .. code-block:: cpp
 
@@ -148,9 +148,9 @@ Now, span1 and span2 are in the same generation and can both be safely used. Aft
    ts::MemSpan span3 = arena->alloc(512);
    arena->thaw();
 
-span3 can still be used but span1 and span2 have been deallocated and usage is undefined. 
+span3 can still be used but span1 and span2 have been deallocated and usage is undefined.
 
-Internal blocks are adjusted for optimization. Each :class:`MemArena::Block` is just a header for the underlying memory it manages. The header and memory are allocated together for locality such that each :class:`MemArena::Block` is immediately followed with the memory it manages. If a :class:`MemArena::Block` is larger than a page (defaulted at 4KB), it is aligned to a power of two. The actual memory that a :class:`MemArena::Block` can allocate out is slightly smaller. This is because a portion of the allocated memory is reserved for the header. Another 16 bytes is reserved to track the allocation headers used by malloc; for page alignment. ie, the default block size is 32768 bytes, but it will only be able to allocate out 32720 bytes. 
+Internal blocks are adjusted for optimization. Each :class:`MemArena::Block` is just a header for the underlying memory it manages. The header and memory are allocated together for locality such that each :class:`MemArena::Block` is immediately followed with the memory it manages. If a :class:`MemArena::Block` is larger than a page (defaulted at 4KB), it is aligned to a power of two. The actual memory that a :class:`MemArena::Block` can allocate out is slightly smaller. This is because a portion of the allocated memory is reserved for the header. Another 16 bytes is reserved to track the allocation headers used by malloc; for page alignment. ie, the default block size is 32768 bytes, but it will only be able to allocate out 32720 bytes.
 
 Reference
 +++++++++
@@ -158,8 +158,8 @@ Reference
 .. class:: MemArena
 
    .. class:: Block
-      
-      Underlying memory allocated is owned by the :class:`Block`. A linked list. 
+
+      Underlying memory allocated is owned by the :class:`Block`. A linked list.
 
       .. member:: size_t size
       .. member:: size_t allocated
@@ -173,7 +173,7 @@ Reference
 
    .. function:: explicit MemArena(size_t n)
 
-      Construct an arena with :arg:`n` bytes. 
+      Construct an arena with :arg:`n` bytes.
 
    .. function:: MemSpan alloc(size_t n)
 
@@ -185,19 +185,19 @@ Reference
 
    .. function:: MemArena& thaw()
 
-      Unallocate all internal blocks that were allocated before the current generation. 
-    
+      Unallocate all internal blocks that were allocated before the current generation.
+
    .. function:: MemArena& empty()
-     
+
       Empties the entire arena and deallocates all underlying memory. Next block size will be equal to the sum of all allocations before the call to empty.
 
-   .. function:: size_t size() const 
+   .. function:: size_t size() const
 
-      Get the current generation size. The default size of the arena is 32KB unless otherwise specified. 
+      Get the current generation size. The default size of the arena is 32KB unless otherwise specified.
 
-   .. function:: size_t remaining() const 
+   .. function:: size_t remaining() const
 
-      Amount of space left in the generation. 
+      Amount of space left in the generation.
 
    .. function:: size_t allocated_size() const
 
@@ -205,23 +205,23 @@ Reference
 
    .. function:: size_t unallocated_size() const
 
-      Total number of bytes unallocated in the arena. Can be used to see the internal fragmentation. 
+      Total number of bytes unallocated in the arena. Can be used to see the internal fragmentation.
 
    .. function:: bool contains (void *ptr) const
 
       Returns whether or not a pointer is in the arena.
-       
+
    .. function:: Block* newInternalBlock(size_t n, bool custom)
 
-      Create a new internal block and returns a pointer to the block. 
+      Create a new internal block and returns a pointer to the block.
 
    .. member:: size_t arena_size
 
-      Current generation size. 
-  
+      Current generation size.
+
    .. member:: size_t total_alloc
 
-      Number of bytes allocated out. 
+      Number of bytes allocated out.
 
    .. member:: size_t next_block_size
 

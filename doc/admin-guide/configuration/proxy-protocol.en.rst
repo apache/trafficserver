@@ -31,7 +31,7 @@ TLS connections.
 
 .. note::
 
-    The current version only supports transforming client IP from PROXY Version 1 
+    The current version only supports transforming client IP from PROXY Version 1
     header to the Forwarded: header.
 
 In the current implementation, the client IP address in the PROXY protocol header

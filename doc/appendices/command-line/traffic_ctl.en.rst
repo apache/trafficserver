@@ -261,8 +261,8 @@ traffic_ctl host
 .. option:: down --time seconds HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as down so that they will not be chosen as a next hop parent.
-    If the --time option is included, the host is marked down for the specified number of 
-    seconds after which the host will automatically be marked up.  0 seconds marks the host 
+    If the --time option is included, the host is marked down for the specified number of
+    seconds after which the host will automatically be marked up.  0 seconds marks the host
     down indefinately until marked up manually and is the default.
 
 .. program:: traffic_ctl host

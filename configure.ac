@@ -2006,9 +2006,9 @@ AC_CONFIG_FILES([
   doc/ext/local-config.py
   doc/uml/Makefile
   example/Makefile
-  include/Makefile 
-  include/ts/Makefile 
-  include/tscpp/api/Makefile 
+  include/Makefile
+  include/ts/Makefile
+  include/tscpp/api/Makefile
   include/tscpp/util/Makefile
   iocore/Makefile
   iocore/aio/Makefile
@@ -2045,7 +2045,7 @@ AC_CONFIG_FILES([
   rc/trafficserver.conf
   rc/trafficserver.service
   rc/trafficserver.xml
-  src/tscpp/util/Makefile 
+  src/tscpp/util/Makefile
   src/tscore/Makefile
   tools/Makefile
   tools/trafficserver.pc

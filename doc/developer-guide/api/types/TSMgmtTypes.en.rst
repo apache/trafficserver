@@ -28,41 +28,41 @@ Macros used for RPC communications.
 Management Signals
 ==================
 
-.. c:macro:: MGMT_SIGNAL_PID 
+.. c:macro:: MGMT_SIGNAL_PID
 
-.. c:macro:: MGMT_SIGNAL_MACHINE_UP 
+.. c:macro:: MGMT_SIGNAL_MACHINE_UP
 
-.. c:macro:: MGMT_SIGNAL_MACHINE_DOWN 
+.. c:macro:: MGMT_SIGNAL_MACHINE_DOWN
 
-.. c:macro:: MGMT_SIGNAL_CONFIG_ERROR 
+.. c:macro:: MGMT_SIGNAL_CONFIG_ERROR
 
 .. c:macro:: MGMT_SIGNAL_SYSTEM_ERROR
- 
+
 .. c:macro:: MGMT_SIGNAL_LOG_SPACE_CRISIS
 
-.. c:macro:: MGMT_SIGNAL_CONFIG_FILE_READ 
+.. c:macro:: MGMT_SIGNAL_CONFIG_FILE_READ
 
-.. c:macro:: MGMT_SIGNAL_CACHE_ERROR 
+.. c:macro:: MGMT_SIGNAL_CACHE_ERROR
 
-.. c:macro:: MGMT_SIGNAL_CACHE_WARNING 
+.. c:macro:: MGMT_SIGNAL_CACHE_WARNING
 
-.. c:macro:: MGMT_SIGNAL_LOGGING_ERROR 
+.. c:macro:: MGMT_SIGNAL_LOGGING_ERROR
 
 .. c:macro:: MGMT_SIGNAL_LOGGING_WARNING
 
-.. c:macro:: MGMT_SIGNAL_PLUGIN_SET_CONFIG 
+.. c:macro:: MGMT_SIGNAL_PLUGIN_SET_CONFIG
 
-.. c:macro:: MGMT_SIGNAL_LOG_FILES_ROLLED 
+.. c:macro:: MGMT_SIGNAL_LOG_FILES_ROLLED
 
-.. c:macro:: MGMT_SIGNAL_LIBRECORDS 
+.. c:macro:: MGMT_SIGNAL_LIBRECORDS
 
-.. c:macro:: MGMT_SIGNAL_HTTP_CONGESTED_SERVER 
+.. c:macro:: MGMT_SIGNAL_HTTP_CONGESTED_SERVER
 
-.. c:macro:: MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER 
+.. c:macro:: MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER
 
-.. c:macro:: MGMT_SIGNAL_CONFIG_FILE_CHILD 
+.. c:macro:: MGMT_SIGNAL_CONFIG_FILE_CHILD
 
-.. c:macro:: MGMT_SIGNAL_SAC_SERVER_DOWN 
+.. c:macro:: MGMT_SIGNAL_SAC_SERVER_DOWN
 
 
 Management Events
@@ -70,13 +70,13 @@ Management Events
 
 .. c:macro:: MGMT_EVENT_SYNC_KEY
 
-.. c:macro:: MGMT_EVENT_SHUTDOWN 
+.. c:macro:: MGMT_EVENT_SHUTDOWN
 
-.. c:macro:: MGMT_EVENT_RESTART 
+.. c:macro:: MGMT_EVENT_RESTART
 
-.. c:macro:: MGMT_EVENT_BOUNCE 
+.. c:macro:: MGMT_EVENT_BOUNCE
 
-.. c:macro:: MGMT_EVENT_CLEAR_STATS 
+.. c:macro:: MGMT_EVENT_CLEAR_STATS
 
 .. c:macro:: MGMT_EVENT_CONFIG_FILE_UPDATE
 
@@ -84,7 +84,7 @@ Management Events
 
 .. c:macro:: MGMT_EVENT_ROLL_LOG_FILES
 
-.. c:macro:: MGMT_EVENT_LIBRECORDS 
+.. c:macro:: MGMT_EVENT_LIBRECORDS
 
 .. c:macro:: MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION
 
@@ -96,7 +96,7 @@ Management Events
 OpTypes (Possible operations or msgs that can be sent between TM and remote clients)
 ====================================================================================
 
-.. cpp:type:: OpType 
+.. cpp:type:: OpType
 
 .. c:macro:: RECORD_SET
 
@@ -138,7 +138,7 @@ OpTypes (Possible operations or msgs that can be sent between TM and remote clie
 
 .. c:macro:: LIFECYCLE_MESSAGE
 
-.. c:macro:: UNDEFINED_OP 
+.. c:macro:: UNDEFINED_OP
 
 
 TSMgmtError

@@ -127,7 +127,7 @@ def txn_replay(session_filename, txn, proxy, result_queue, request_session):
             nBytes = int(txn_req_headers_dict['Content-Length'])
             body = createDummyBodywithLength(nBytes)
         #print("request session is",id(request_session))
-        
+
         # NOTE: request_session here is actually python's HTTPSConnection, which is different from that in NonSSL, which uses the requests library -_-
         if method == 'GET':
             request_session.request('GET', extractHeader.extract_GET_path(
@@ -196,7 +196,7 @@ def client_replay(input, proxy, result_queue, nThread):
 
 
 def session_replay(input, proxy, result_queue):
-    ''' Replay all transactions in session 
+    ''' Replay all transactions in session
 
     This entire session will be replayed in one requests.Session (so one socket / TCP connection)'''
     # if timing_control:

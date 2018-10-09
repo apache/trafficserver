@@ -23,15 +23,15 @@ entity plugin
 
 traffic_manager -> traffic_server : traffic_server registers\ncallback for ""MGMT_EVENT_LIFECYCLE_EVENT""
 traffic_server -> plugin : register to ""TS_LIFECYCLE_MSG_HOOK""
-user -> traffic_ctl : "traffic_ctl plugin msg TAG hello" 
-traffic_ctl -> remote_rpc : lifecycle message 
+user -> traffic_ctl : "traffic_ctl plugin msg TAG hello"
+traffic_ctl -> remote_rpc : lifecycle message
 note left : msd id ""MGMT_EVENT_LIFECYCLE_MESSAGE""
 remote_rpc -[#blue]-> remote_rpc : <font color="blue">//serialize message//</font>
 remote_rpc -> traffic_manager : sent over sockets
 note over traffic_ctl, traffic_manager : Using remote RPC functions\n""CoreAPIRemote, NetworkUtilsRemote""
 
 traffic_manager -[#blue]-> local_rpc: <font color="blue">//serialized message//</font>
-local_rpc -> traffic_server : resent over sockets 
+local_rpc -> traffic_server : resent over sockets
 note over traffic_manager, traffic_server : Local RPC functions\n""CoreAPI, NetworkUtilsLocal""
 traffic_server -> traffic_server : callback function selected based on msg id\n""MGMT_EVENT_LIFECYCLE_MESSAGE""
 traffic_server -[#blue]-> local_rpc : <font color="blue">//unserialize message//</font>

@@ -99,7 +99,7 @@ def build_domain_mappings(path):
             domain_name = DomainName(d)
             print("Domain name:", domain_name)
             # we can test using python's built-in ipaddress module, but this should suffice
-            records[domain_name] = [A(x) if ":" not in x else AAAA(x) for x in domain[domain_name]] 
+            records[domain_name] = [A(x) if ":" not in x else AAAA(x) for x in domain[domain_name]]
             print(records[domain_name])
 
     if 'otherwise' in zone_file:
@@ -113,7 +113,7 @@ def add_authoritative_records(reply, domain):
 
 
 def dns_response(data):
-    ''' dns_response takes in the raw bytes from the socket and does all the logic behind what 
+    ''' dns_response takes in the raw bytes from the socket and does all the logic behind what
         RRs get returned as the response '''
     global default_records, records, TTL, round_robin
 

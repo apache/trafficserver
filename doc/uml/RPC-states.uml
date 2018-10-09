@@ -15,26 +15,26 @@ state "LocalManager\nruns in traffic_manager main event loop" as traffic_manager
         tm_dequeue -d-> tm_send_events : based on msg_id
         tm_send_events -u-> tm_dequeue
     }
-    
+
     state "pollMgmtProcessServer" as tm_poll_ts {
         state "poll socket" as tm_poll_sock : ""mgmt_select""
         state "new connection" as tm_new_process : register new client socket fd\nto start getting msgs from\nclient
         state "new message" as tm_new_message : new message from process
         state "handle msg" as tm_handle_msg : ""handleMgmtMsgFromProcesses"" will\noften ""signalAlarm"" with recieved\nmsg_id
-        
+
         tm_poll_sock -d-> tm_new_process : new process trying to connect
         tm_poll_sock -d-> tm_new_message : msg from ""traffic_server""
         tm_poll_sock -d-> [*] : timed out
         tm_new_message -d-> tm_handle_msg : based on msg_id
-        tm_handle_msg -u-> tm_poll_sock 
+        tm_handle_msg -u-> tm_poll_sock
         tm_new_process -u-> tm_poll_sock
-        
+
         state "External Event" as tm_ext_event : mechanism to stop polling
         tm_ext_event -u-> [*] : ""eventfd"" trigger
     }
- 
+
     [*] -d-> tm_process_events
-    tm_process_events -d-> tm_poll_ts 
+    tm_process_events -d-> tm_poll_ts
     tm_poll_ts -d-> [*] : other tasks ""traffic_manager"" is\nresponsible for including ""rotateLogs"",\nmanaging metrics and monitoring\n""traffic_server""
 }
 
@@ -47,12 +47,12 @@ state "ProcessManager\nruns in processManagerThread from traffic_server" as traf
         ts_handle_event -d-> ts_response : callback enqueues response
         ts_response -u-> ts_handle_event
         ts_handle_event -u-> ts_poll_sock
-        
+
         ts_poll_sock -down-> [*] : timed out
         state "External Event" as ts_ext_event : mechanism to stop polling
         ts_ext_event -u-> [*] : ""eventfd"" trigger
     }
-    
+
     state "processSignalQueue" as ts_send_signals {
         state "dequeue signal" as ts_dequeue_signal : dequeue from ""mgmt_signal_queue""
         state "send out msg" as ts_outgoing_msg : ""mgmt_write_pipe""
@@ -62,8 +62,8 @@ state "ProcessManager\nruns in processManagerThread from traffic_server" as traf
 
     }
     ts_send_signals : send outgoing messages via processSignalQueue
-    ts_poll_tm -down-> ts_send_signals 
-    ts_send_signals -up-> ts_poll_tm 
+    ts_poll_tm -down-> ts_send_signals
+    ts_send_signals -up-> ts_poll_tm
 }
 
 ts_send_signals -r-> tm_poll_ts : msg from ""traffic_server"" to ""traffic_manager""
