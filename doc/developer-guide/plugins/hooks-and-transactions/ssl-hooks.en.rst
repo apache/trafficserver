@@ -84,6 +84,29 @@ handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is ca
 It may be useful to delay the TLS handshake processing if other resources must be consulted to select or create
 a certificate.
 
+TS_SSL_VERIFY_CLIENT_HOOK
+-------------------------
+
+This hook is called when a client connects to Traffic Server and presents a 
+client certificate in the case of a mutual TLS handshake.  The callback can
+get the SSL object from the TSVConn argument and use that to access the client
+certificate and make any additional checks.
+
+Processing will continue regardless of whether the hook callback executes
+:c:func:`TSSslVConnReenable()` since the openssl implementation does not allow
+for pausing processing during the certificate verify callback.
+
+TS_SSL_VERIFY_SERVER_HOOK
+-------------------------
+
+This hooks is called when a Traffic Server connects to an origin and the origin
+presents a certificate.  The callback can get the SSL object from the TSVConn
+argument and use that to access the origin certificate and make any additional checks.
+
+Processing will continue regardless of whether the hook callback executes
+:c:func:`TSSslVConnReenable()` since the openssl implementation does not allow
+for pausing processing during the certificate verify callback.
+
 TLS Hook State Diagram
 ----------------------
 
@@ -92,9 +115,11 @@ TLS Hook State Diagram
 
    digraph tls_hook_state_diagram{
      HANDSHAKE_HOOKS_PRE -> TS_VCONN_START_HOOK;
+     HANDSHAKE_HOOKS_PRE -> TS_SSL_VERIFY_CLIENT_HOOK;
      HANDSHAKE_HOOKS_PRE -> TS_SSL_CERT_HOOK;
      HANDSHAKE_HOOKS_PRE -> TS_SSL_SERVERNAME_HOOK;
      HANDSHAKE_HOOKS_PRE -> HANDSHAKE_HOOKS_DONE;
+     TS_SSL_VERIFY_CLIENT_HOOK -> HANDSHAKE_HOOKS_PRE;
      TS_VCONN_START_HOOK -> HANDSHAKE_HOOKS_PRE_INVOKE;
      HANDSHAKE_HOOKS_PRE_INVOKE -> TSSslVConnReenable;
      TSSslVConnReenable -> HANDSHAKE_HOOKS_PRE;
@@ -110,6 +135,8 @@ TLS Hook State Diagram
      HANDSHAKE_HOOKS_DONE -> TS_VCONN_CLOSE_HOOK;
 
      HANDSHAKE_HOOKS_PRE [shape=box];
+     TS_VCONN_START_HOOK [shape=box];
+     TS_SSL_VERIFY_CLIENT_HOOK [shape=box];
      HANDSHAKE_HOOKS_PRE_INVOKE [shape=box];
      HANDSHAKE_HOOKS_SNI [shape=box];
      HANDSHAKE_HOOKS_CERT [shape=box];
