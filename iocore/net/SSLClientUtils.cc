@@ -79,7 +79,7 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
   }
 
   if (netvc != nullptr) {
-    netvc->callHooks(TS_EVENT_SSL_SERVER_VERIFY_HOOK);
+    netvc->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
     char *matched_name = nullptr;
     unsigned char *sni_name;
     char buff[INET6_ADDRSTRLEN];
