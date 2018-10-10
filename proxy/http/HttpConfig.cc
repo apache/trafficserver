@@ -1167,8 +1167,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.request_hdr_max_size, "proxy.config.http.request_header_max_size");
   HttpEstablishStaticConfigLongLong(c.oride.response_hdr_max_size, "proxy.config.http.response_header_max_size");
 
-  HttpEstablishStaticConfigByte(c.push_method_enabled, "proxy.config.http.push_method_enabled");
-
   HttpEstablishStaticConfigByte(c.reverse_proxy_enabled, "proxy.config.reverse_proxy.enabled");
   HttpEstablishStaticConfigByte(c.url_remap_required, "proxy.config.url_remap.remap_required");
 
@@ -1450,8 +1448,6 @@ HttpConfig::reconfigure()
 
   params->oride.request_hdr_max_size  = m_master.oride.request_hdr_max_size;
   params->oride.response_hdr_max_size = m_master.oride.response_hdr_max_size;
-
-  params->push_method_enabled = INT_TO_BOOL(m_master.push_method_enabled);
 
   params->reverse_proxy_enabled            = INT_TO_BOOL(m_master.reverse_proxy_enabled);
   params->url_remap_required               = INT_TO_BOOL(m_master.url_remap_required);

@@ -1759,65 +1759,25 @@ HttpTransact::OSDNSLookup(State *s)
   }
 }
 
+/*
+ * TODO: It looks like the StartAccessControl logic was cannibalized before 2009.
+ * We should re-examine this logic and probably simplify it.  Just removing the
+ * really old commented out code for now.
+ */
 void
 HttpTransact::StartAccessControl(State *s)
 {
-  // if (s->cop_test_page  || (s->state_machine->authAdapter.disabled() == true)) {
-  // Heartbeats should always be allowed.
-  // s->content_control.access = ACCESS_ALLOW;
   HandleRequestAuthorized(s);
-  //  return;
-  // }
-  // ua_txn is NULL for scheduled updates.
-  // Don't use req_flavor to do the test because if updated
-  // urls are remapped, the req_flavor is changed to REV_PROXY.
-  // if (s->state_machine->ua_txn == NULL) {
-  // Scheduled updates should always be allowed
-  // return;
-  //}
-  // pass the access control logic to the ACC module.
-  //(s->state_machine->authAdapter).StartLookup(s);
 }
 
 void
 HttpTransact::HandleRequestAuthorized(State *s)
 {
-  //(s->state_machine->authAdapter).SetState(s);
-  //(s->state_machine->authAdapter).UserAuthorized(NULL);
-  // TRANSACT_RETURN(HTTP_API_OS_DNS, HandleFiltering);
   if (s->force_dns) {
     TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HttpTransact::DecideCacheLookup);
   } else {
     HttpTransact::DecideCacheLookup(s);
   }
-}
-
-void
-HttpTransact::HandleFiltering(State *s)
-{
-  ink_release_assert(!"Fix-Me AUTH MERGE");
-
-  if (s->method == HTTP_WKSIDX_PUSH && s->http_config_param->push_method_enabled == 0) {
-    // config file says this request is not authorized.
-    // send back error response to client.
-    TxnDebug("http_trans", "[HandleFiltering] access denied.");
-    TxnDebug("http_seq", "[HttpTransact::HandleFiltering] Access Denied.");
-
-    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    // adding a comment so that cvs recognizes that I added a space in the text below
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
-    // s->cache_info.action = CACHE_DO_NO_ACTION;
-    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-  }
-
-  TxnDebug("http_seq", "[HttpTransact::HandleFiltering] Request Authorized.");
-  //////////////////////////////////////////////////////////////
-  // ok, the config file says that the request is authorized. //
-  //////////////////////////////////////////////////////////////
-
-  // request is not black listed so now decided if we ought to
-  //  lookup the cache
-  DecideCacheLookup(s);
 }
 
 void
