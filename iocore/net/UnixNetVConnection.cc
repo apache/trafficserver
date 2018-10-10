@@ -1451,25 +1451,48 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
 void
 UnixNetVConnection::add_to_keep_alive_queue()
 {
-  nh->add_to_keep_alive_queue(this);
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    nh->add_to_keep_alive_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
+  }
 }
 
 void
 UnixNetVConnection::remove_from_keep_alive_queue()
 {
-  nh->remove_from_keep_alive_queue(this);
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    nh->remove_from_keep_alive_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
+  }
 }
 
 bool
 UnixNetVConnection::add_to_active_queue()
 {
-  return nh->add_to_active_queue(this);
+  bool result = false;
+
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    result = nh->add_to_active_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on active_queue.");
+  }
+  return result;
 }
 
 void
 UnixNetVConnection::remove_from_active_queue()
 {
-  nh->remove_from_active_queue(this);
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    nh->remove_from_active_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on active_queue.");
+  }
 }
 
 int
