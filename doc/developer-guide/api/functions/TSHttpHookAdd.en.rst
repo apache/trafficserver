@@ -63,6 +63,24 @@ not possible to call :func:`TSHttpTxnHookAdd` from the plugin
 initialization routine but only when the plugin has a handle to an
 HTTP transaction.
 
+A single continuation can be attached to multiple hooks at the same time.
+It is good practice to conserve resources by reusing hooks in this way
+when possible.
+
+When a continuation on a hook is triggered, the name of the event passed to
+the continution function depends on the name of the hook.  The naming
+convention is that, for hook TS_xxx_HOOK, the event passed to the continuation
+function will be TS_EVENT_xxx.  For example, when a continuation attached to
+TS_HTTP_READ_REQUEST_HDR_HOOK is triggered, the event passed to the continuation
+function will be TS_EVENT_HTTP_READ_REQUEST_HDR.
+
+When a continuation is triggered by a hook, the actual type of the event data
+(the void pointer passed as the third parameter to the continuation function) is
+determined by which hook it is.  For example, for the hook ID TS_HTTP_TXN_CLOSE_HOOK,
+the event data is of type TSHttpTxn.  This is the case regardless of whether the
+continuation was added to the hook using :func:`TSHttpTxnHookAdd`, :func:`TSHttpSsnHookAdd`
+or :func:`TSHttpHookAdd`.
+
 Return Values
 =============
 
