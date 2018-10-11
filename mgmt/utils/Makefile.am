@@ -30,7 +30,7 @@ AM_CPPFLAGS += \
 	@OPENSSL_INCLUDES@
 
 # header files used by other libraries
-EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
+EXTRA_DIST = MgmtSocket.h
 
 noinst_LTLIBRARIES = libutils_lm.la libutils_p.la
 check_PROGRAMS = test_marshall
