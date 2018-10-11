@@ -71,7 +71,7 @@ using namespace std::literals;
 LocalManager *lmgmt = nullptr;
 FileManager *configFiles;
 
-static void fileUpdated(char *fname, bool incVersion);
+static void fileUpdated(char *fname, char *configName, bool incVersion);
 static void runAsUser(const char *userName);
 
 #if defined(freebsd)
@@ -948,56 +948,15 @@ SigChldHandler(int /* sig ATS_UNUSED */)
 }
 
 void
-fileUpdated(char *fname, bool incVersion)
+fileUpdated(char *fname, char *configName, bool incVersion)
 {
-  if (strcmp(fname, "remap.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.url_remap.filename");
-
-  } else if (strcmp(fname, "socks.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.socks.socks_config_file");
-
-  } else if (strcmp(fname, "records.config") == 0) {
-    lmgmt->signalFileChange("records.config", incVersion);
-
-  } else if (strcmp(fname, "cache.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.cache.control.filename");
-
-  } else if (strcmp(fname, "parent.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.http.parent_proxy.file");
-
-  } else if (strcmp(fname, "ip_allow.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.cache.ip_allow.filename");
-
-  } else if (strcmp(fname, "storage.config") == 0) {
-    mgmt_log("[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");
-
-  } else if (strcmp(fname, "volume.config") == 0) {
-    mgmt_log("[fileUpdated] volume.config changed, need restart\n");
-
-  } else if (strcmp(fname, "hosting.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.cache.hosting_filename");
-
-  } else if (strcmp(fname, "logging.yaml") == 0) {
-    lmgmt->signalFileChange("proxy.config.log.config.filename");
-
-  } else if (strcmp(fname, "splitdns.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.dns.splitdns.filename");
-
-  } else if (strcmp(fname, "plugin.config") == 0) {
-    mgmt_log("[fileUpdated] plugin.config file has been modified\n");
-
-  } else if (strcmp(fname, "ssl_multicert.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.ssl.server.multicert.filename");
-
-  } else if (strcmp(fname, "proxy.config.body_factory.template_sets_dir") == 0) {
-    lmgmt->signalFileChange("proxy.config.body_factory.template_sets_dir");
-
-  } else if (strcmp(fname, "proxy.config.ssl.server.ticket_key.filename") == 0) {
-    lmgmt->signalFileChange("proxy.config.ssl.server.ticket_key.filename");
-  } else if (strcmp(fname, SSL_SERVER_NAME_CONFIG) == 0) {
-    lmgmt->signalFileChange("proxy.config.ssl.servername.filename");
+  // If there is no config name recorded, assume this file is not reloadable
+  // Just log a message
+  if (configName == nullptr || configName[0] == '\0') {
+    mgmt_log("[fileUpdated] %s changed, need restart", fname);
   } else {
-    mgmt_log("[fileUpdated] Unknown config file updated '%s'\n", fname);
+    // Signal based on the config entry that has the changed file name
+    lmgmt->signalFileChange(configName);
   }
   return;
 } /* End fileUpdate */

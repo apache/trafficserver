@@ -44,7 +44,8 @@
 const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version was out of date", "System Call Error",
                                  "Invalid Version - Version Numbers Must Increase"};
 
-Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *parentRollback_, unsigned flags)
+Rollback::Rollback(const char *fileName_, const char *configName_, bool root_access_needed_, Rollback *parentRollback_,
+                   unsigned flags)
   : configFiles(nullptr),
     root_access_needed(root_access_needed_),
     parentRollback(parentRollback_),
@@ -78,6 +79,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
   // Copy the file name.
   fileNameLen = strlen(fileName_);
   fileName    = ats_strdup(fileName_);
+  configName  = ats_strdup(configName_);
 
   // Extract the file base name.
   fileBaseName = strrchr(fileName, '/');
@@ -471,7 +473,7 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
 
   // Post the change to the config file manager
   if (notifyChange && configFiles) {
-    configFiles->fileChanged(fileName, incVersion);
+    configFiles->fileChanged(fileName, configName, incVersion);
   }
 
 UPDATE_CLEANUP:
