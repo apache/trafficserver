@@ -27,6 +27,7 @@ AM_CPPFLAGS += -I$(abs_top_srcdir)/include
 libtscpputil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
 libtscpputil_la_SOURCES = \
+	OpsFromCmp.h \
 	PostScript.h \
 	TextView.h TextView.cc
 
@@ -37,6 +38,7 @@ test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscpputil_LDADD = libtscpputil.la
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
+	unit_tests/test_OpsFromCmp.cc \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_TextView.cc
 

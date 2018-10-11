@@ -29,6 +29,7 @@
 #include "tscpp/api/Headers.h"
 #include "logging_internal.h"
 #include "tscpp/api/noncopyable.h"
+#include "tscpp/util/TextView.h"
 
 using atscppapi::Headers;
 using atscppapi::HeaderField;
@@ -45,56 +46,38 @@ HeaderFieldName::HeaderFieldName(const std::string &name)
   name_ = name;
 }
 
-HeaderFieldName::operator std::string()
+HeaderFieldName::operator std::string() const
 {
   return name_;
 }
 
-HeaderFieldName::operator const char *()
+HeaderFieldName::operator const char *() const
 {
   return name_.c_str();
 }
 
 std::string
-HeaderFieldName::str()
+HeaderFieldName::str() const
 {
   return name_;
 }
 
 HeaderFieldName::size_type
-HeaderFieldName::length()
+HeaderFieldName::length() const
 {
   return name_.length();
 }
 
 const char *
-HeaderFieldName::c_str()
+HeaderFieldName::c_str() const
 {
   return name_.c_str();
 }
 
-bool
-HeaderFieldName::operator==(const char *field_name)
+int
+cmp(const HeaderFieldName &n, std::string_view field_name)
 {
-  return (::strcasecmp(c_str(), field_name) == 0);
-}
-
-bool
-HeaderFieldName::operator==(const std::string &field_name)
-{
-  return operator==(field_name.c_str());
-}
-
-bool
-HeaderFieldName::operator!=(const char *field_name)
-{
-  return !operator==(field_name);
-}
-
-bool
-HeaderFieldName::operator!=(const std::string &field_name)
-{
-  return !operator==(field_name.c_str());
+  return strcasecmp(ts::TextView(n.sV()), field_name);
 }
 
 /**
