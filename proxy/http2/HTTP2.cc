@@ -48,7 +48,6 @@ static const int HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
-static const char *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME    = "proxy.process.http2.current_client_sessions"; // DEPRECATED
 static const char *const HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_client_connections";
 static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME     = "proxy.process.http2.current_client_streams";
 static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME       = "proxy.process.http2.total_client_streams";
@@ -767,8 +766,6 @@ Http2::init()
 
   // Setup statistics
   http2_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP2_N_STATS));
-  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME, RECD_INT, RECP_NON_PERSISTENT,
-                     static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
   HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT);
