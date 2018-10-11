@@ -79,7 +79,7 @@ RemapConfigs::parse_inline(const char *arg)
   TSOverridableConfigKey name;
   TSRecordDataType type;
 
-  // Each token should be a status code then a URL, separated by '='.
+  // Each token should be a configuration variable then a value, separated by '='.
   sep = strchr(arg, '=');
   if (sep == nullptr) {
     return false;
@@ -90,7 +90,7 @@ RemapConfigs::parse_inline(const char *arg)
 
   if (TSHttpTxnConfigFind(key.c_str(), -1 /* len */, &name, &type) != TS_SUCCESS) {
     TSError("[%s] Invalid configuration variable '%s'", PLUGIN_NAME, key.c_str());
-    return false;
+    return true;
   }
 
   switch (type) {
