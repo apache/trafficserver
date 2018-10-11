@@ -33,6 +33,8 @@
 #include "tscore/Trie.h"
 #include "tscore/TestBox.h"
 
+#include <unordered_map>
+
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
 
@@ -101,7 +103,6 @@ public:
   int insert(const char *name, int idx);
   SSLCertContext *lookup(const char *name) const;
   void printWildDomains() const;
-  void freeWildDomains() const;
   unsigned
   count() const
   {
@@ -132,9 +133,9 @@ private:
 
   /// We can only match one layer with the wildcards
   /// This table stores the wildcarded subdomain
-  mutable HashMap<cchar *, StringHashFns, int> wilddomains;
+  std::unordered_map<std::string, int> wilddomains;
   /// Contexts stored by IP address or FQDN
-  InkHashTable *hostnames;
+  std::unordered_map<std::string, int> hostnames;
   /// List for cleanup.
   /// Exactly one pointer to each SSL context is stored here.
   Vec<SSLCertContext> ctx_store;
@@ -349,7 +350,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
   return ptr;
 }
 
-SSLContextStorage::SSLContextStorage() : wilddomains(-1), hostnames(ink_hash_table_create(InkHashTableKeyType_String)) {}
+SSLContextStorage::SSLContextStorage() {}
 
 bool
 SSLCtxCompare(SSLCertContext const &cc1, SSLCertContext const &cc2)
@@ -371,9 +372,6 @@ SSLContextStorage::~SSLContextStorage()
       this->ctx_store[i].release();
     }
   }
-
-  ink_hash_table_destroy(this->hostnames);
-  freeWildDomains();
 }
 
 int
@@ -399,7 +397,6 @@ int
 SSLContextStorage::insert(const char *name, int idx)
 {
   ats_wildcard_matcher wildcard;
-  InkHashTableValue value;
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
   make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
   if (wildcard.match(lower_case_name)) {
@@ -411,21 +408,22 @@ SSLContextStorage::insert(const char *name, int idx)
       subdomain = nullptr;
     }
     if (subdomain) {
-      auto index = this->wilddomains.get(subdomain);
-      if (index != -1) {
-        Debug("ssl", "previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, index, idx);
+      if (auto it = this->wilddomains.find(subdomain); it != this->wilddomains.end()) {
+        Debug("ssl", "previously indexed '%s' with SSL_CTX #%d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
+              idx);
         idx = -1;
       } else {
-        this->wilddomains.put(ats_strdup(subdomain), idx);
+        this->wilddomains.emplace(subdomain, idx);
         Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
       }
     }
   } else {
-    if (ink_hash_table_lookup(this->hostnames, lower_case_name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
-      Debug("ssl", "previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
+    if (auto it = this->hostnames.find(lower_case_name); it != this->hostnames.end() && idx != it->second) {
+      Debug("ssl", "previously indexed '%s' with SSL_CTX %d, cannot index it with SSL_CTX #%d now", lower_case_name, it->second,
+            idx);
       idx = -1;
     } else {
-      ink_hash_table_insert(this->hostnames, lower_case_name, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
+      this->hostnames.emplace(lower_case_name, idx);
       Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
     }
   }
@@ -435,47 +433,31 @@ SSLContextStorage::insert(const char *name, int idx)
 void
 SSLContextStorage::printWildDomains() const
 {
-  Vec<cchar *> keys;
-  this->wilddomains.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++) {
-    Debug("ssl", "Stored wilddomain %s", keys.get(i));
+  for (auto &&it : this->wilddomains) {
+    Debug("ssl", "Stored wilddomain %s", it.first.c_str());
   }
-}
-
-void
-SSLContextStorage::freeWildDomains() const
-{
-  Vec<cchar *> keys;
-  this->wilddomains.get_keys(keys);
-  size_t n = keys.length();
-  for (size_t i = 0; i < n; i++) {
-    ats_free((char *)keys.get(i));
-  }
-  this->wilddomains.clear();
 }
 
 SSLCertContext *
 SSLContextStorage::lookup(const char *name) const
 {
-  InkHashTableValue value;
   // First look for an exact name match
-  if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->hostnames), name, &value)) {
-    return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
+  if (auto it = this->hostnames.find(name); it != this->hostnames.end()) {
+    return &(this->ctx_store[it->second]);
   }
   // Try lower casing it
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
   make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
-  if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->hostnames), lower_case_name, &value)) {
-    return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
+  if (auto it_lower = this->hostnames.find(lower_case_name); it_lower != this->hostnames.end()) {
+    return &(this->ctx_store[it_lower->second]);
   }
 
   // Then strip off the top domain name and look for a wildcard domain match
   const char *subdomain = index(lower_case_name, '.');
   if (subdomain) {
     ++subdomain; // Move beyond the '.'
-    auto index = this->wilddomains.get(subdomain);
-    if (index >= 0) {
-      return &(this->ctx_store[index]);
+    if (auto it = this->wilddomains.find(subdomain); it != this->wilddomains.end()) {
+      return &(this->ctx_store[it->second]);
     }
   }
   return nullptr;

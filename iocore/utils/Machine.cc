@@ -66,12 +66,7 @@ Machine::init(char const *name, sockaddr const *ip)
 }
 
 Machine::Machine(char const *the_hostname, sockaddr const *addr)
-  : hostname(nullptr),
-    hostname_len(0),
-    ip_string_len(0),
-    ip_hex_string_len(0),
-    machine_id_strings(ink_hash_table_create(InkHashTableKeyType_String)),
-    machine_id_ipaddrs(ink_hash_table_create(InkHashTableKeyType_String))
+  : hostname(nullptr), hostname_len(0), ip_string_len(0), ip_hex_string_len(0)
 {
   char localhost[1024];
   char ip_strbuf[INET6_ADDRSTRLEN];
@@ -236,35 +231,15 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 Machine::~Machine()
 {
   ats_free(hostname);
-
-  // release machine_id_strings hash table.
-  InkHashTableIteratorState ht_iter;
-  InkHashTableEntry *ht_entry = nullptr;
-  ht_entry                    = ink_hash_table_iterator_first(machine_id_strings, &ht_iter);
-
-  while (ht_entry != nullptr) {
-    char *value = static_cast<char *>(ink_hash_table_entry_value(machine_id_strings, ht_entry));
-    ats_free(value);
-    ht_entry = ink_hash_table_iterator_next(machine_id_strings, &ht_iter);
+  for (auto spot = machine_id_ipaddrs.begin(); spot != machine_id_ipaddrs.end(); spot++) {
+    delete spot->second;
   }
-  ink_hash_table_destroy(machine_id_strings);
-
-  // release machine_id_ipaddrs hash table.
-  ht_entry = nullptr;
-  ht_entry = ink_hash_table_iterator_first(machine_id_ipaddrs, &ht_iter);
-  while (ht_entry != nullptr) {
-    IpAddr *ipaddr = static_cast<IpAddr *>(ink_hash_table_entry_value(machine_id_ipaddrs, ht_entry));
-    delete ipaddr;
-    ht_entry = ink_hash_table_iterator_next(machine_id_ipaddrs, &ht_iter);
-  }
-  ink_hash_table_destroy(machine_id_ipaddrs);
 }
 
 bool
 Machine::is_self(const char *name)
 {
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1] = {0};
-  void *value                                    = nullptr;
 
   if (name == nullptr) {
     return false;
@@ -272,55 +247,50 @@ Machine::is_self(const char *name)
 
   make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
 
-  return ink_hash_table_lookup(machine_id_strings, lower_case_name, &value) == 1 ? true : false;
+  return machine_id_strings.find(lower_case_name) != machine_id_strings.end();
 }
 
 bool
 Machine::is_self(const IpAddr *ipaddr)
 {
-  void *value                             = nullptr;
   char string_value[INET6_ADDRSTRLEN + 1] = {0};
 
   if (ipaddr == nullptr) {
     return false;
   }
   ipaddr->toString(string_value, sizeof(string_value));
-  return ink_hash_table_lookup(machine_id_ipaddrs, string_value, &value) == 1 ? true : false;
+  return machine_id_ipaddrs.find(string_value) != machine_id_ipaddrs.end();
 }
 
 bool
 Machine::is_self(struct sockaddr const *addr)
 {
-  void *value                             = nullptr;
   char string_value[INET6_ADDRSTRLEN + 1] = {0};
 
   if (addr == nullptr) {
     return false;
   }
   ats_ip_ntop(addr, string_value, sizeof(string_value));
-  return ink_hash_table_lookup(machine_id_ipaddrs, string_value, &value) == 1 ? true : false;
+  return machine_id_ipaddrs.find(string_value) != machine_id_ipaddrs.end();
 }
 
 void
 Machine::insert_id(char *id)
 {
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1] = {0};
-  char *value                                    = nullptr;
 
   make_to_lower_case(id, lower_case_name, sizeof(lower_case_name));
-  value = ats_strndup(lower_case_name, strlen(lower_case_name));
-  ink_hash_table_insert(machine_id_strings, lower_case_name, value);
+  machine_id_strings.emplace(lower_case_name);
 }
 
 void
 Machine::insert_id(IpAddr *ipaddr)
 {
-  int length = INET6_ADDRSTRLEN + 1;
+  char string_value[INET6_ADDRSTRLEN + 1] = {0};
 
   if (ipaddr != nullptr) {
-    char *string_value = static_cast<char *>(ats_calloc(length, 1));
-    ipaddr->toString(string_value, length);
-    ink_hash_table_insert(machine_id_strings, string_value, string_value);
-    ink_hash_table_insert(machine_id_ipaddrs, string_value, ipaddr);
+    ipaddr->toString(string_value, sizeof(string_value));
+    machine_id_strings.emplace(string_value);
+    machine_id_ipaddrs.emplace(string_value, ipaddr);
   }
 }
