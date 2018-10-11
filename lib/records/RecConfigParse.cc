@@ -36,9 +36,9 @@
 #include "P_RecCore.h"
 #include "tscore/I_Layout.h"
 
-const char *g_rec_config_fpath         = nullptr;
-LLQ *g_rec_config_contents_llq         = nullptr;
-InkHashTable *g_rec_config_contents_ht = nullptr;
+const char *g_rec_config_fpath = nullptr;
+LLQ *g_rec_config_contents_llq = nullptr;
+std::unordered_set<std::string> g_rec_config_contents_ht;
 ink_mutex g_rec_config_lock;
 
 //-------------------------------------------------------------------------
@@ -49,7 +49,6 @@ RecConfigFileInit()
 {
   ink_mutex_init(&g_rec_config_lock);
   g_rec_config_contents_llq = create_queue();
-  g_rec_config_contents_ht  = ink_hash_table_create(InkHashTableKeyType_String);
 }
 
 //-------------------------------------------------------------------------
@@ -168,8 +167,6 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
     ats_free(cfe->entry);
     ats_free(cfe);
   }
-  ink_hash_table_destroy(g_rec_config_contents_ht);
-  g_rec_config_contents_ht = ink_hash_table_create(InkHashTableKeyType_String);
 
   line_tok.Initialize(fbuf, SHARE_TOKS | ALLOW_EMPTY_TOKS);
   line     = line_tok.iterFirst(&line_tok_state);
@@ -264,7 +261,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
     cfe->entry_type = RECE_RECORD;
     cfe->entry      = ats_strdup(name_str);
     enqueue(g_rec_config_contents_llq, (void *)cfe);
-    ink_hash_table_insert(g_rec_config_contents_ht, name_str, nullptr);
+    g_rec_config_contents_ht.emplace(name_str);
     goto L_done;
 
   L_next_line:
