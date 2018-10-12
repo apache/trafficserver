@@ -274,6 +274,9 @@ public:
     return retval;
   }
 
+  void increment_current_active_client_connections_stat() override;
+  void decrement_current_active_client_connections_stat() override;
+
   void set_half_close_local_flag(bool flag);
   bool
   get_half_close_local_flag() const

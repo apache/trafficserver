@@ -49,18 +49,19 @@ static const int HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 // Statistics
 RecRawStatBlock *http2_rsb;
 static const char *const HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_client_connections";
-static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME     = "proxy.process.http2.current_client_streams";
-static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME       = "proxy.process.http2.total_client_streams";
-static const char *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME   = "proxy.process.http2.total_transactions_time";
-static const char *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME   = "proxy.process.http2.total_client_connections";
-static const char *const HTTP2_STAT_CONNECTION_ERRORS_NAME         = "proxy.process.http2.connection_errors";
-static const char *const HTTP2_STAT_STREAM_ERRORS_NAME             = "proxy.process.http2.stream_errors";
-static const char *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME       = "proxy.process.http2.session_die_default";
-static const char *const HTTP2_STAT_SESSION_DIE_OTHER_NAME         = "proxy.process.http2.session_die_other";
-static const char *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME        = "proxy.process.http2.session_die_active";
-static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME      = "proxy.process.http2.session_die_inactive";
-static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME           = "proxy.process.http2.session_die_eos";
-static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME         = "proxy.process.http2.session_die_error";
+static const char *const HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_active_client_connections";
+static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME            = "proxy.process.http2.current_client_streams";
+static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME              = "proxy.process.http2.total_client_streams";
+static const char *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME          = "proxy.process.http2.total_transactions_time";
+static const char *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME          = "proxy.process.http2.total_client_connections";
+static const char *const HTTP2_STAT_CONNECTION_ERRORS_NAME                = "proxy.process.http2.connection_errors";
+static const char *const HTTP2_STAT_STREAM_ERRORS_NAME                    = "proxy.process.http2.stream_errors";
+static const char *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME              = "proxy.process.http2.session_die_default";
+static const char *const HTTP2_STAT_SESSION_DIE_OTHER_NAME                = "proxy.process.http2.session_die_other";
+static const char *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME               = "proxy.process.http2.session_die_active";
+static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME             = "proxy.process.http2.session_die_inactive";
+static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME                  = "proxy.process.http2.session_die_eos";
+static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME                = "proxy.process.http2.session_die_error";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -769,6 +770,9 @@ Http2::init()
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
   HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
+  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
   HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT);
