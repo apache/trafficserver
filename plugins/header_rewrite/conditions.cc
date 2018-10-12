@@ -30,7 +30,6 @@
 #include "ts/ts.h"
 
 #include "conditions.h"
-#include "expander.h"
 #include "lulu.h"
 
 // ConditionStatus
@@ -1393,28 +1392,4 @@ ConditionStringLiteral::eval(const Resources &res)
   TSDebug(PLUGIN_NAME, "Evaluating StringLiteral");
 
   return static_cast<const MatcherType *>(_matcher)->test(_literal);
-}
-
-ConditionExpandableString::ConditionExpandableString(const std::string &v)
-{
-  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionExpandableString");
-  _value = v;
-}
-
-bool
-ConditionExpandableString::eval(const Resources &res)
-{
-  std::string s;
-
-  append_value(s, res);
-
-  return static_cast<const MatcherType *>(_matcher)->test(s);
-}
-
-void
-ConditionExpandableString::append_value(std::string &s, const Resources &res)
-{
-  VariableExpander ve(_value);
-  s += ve.expand(res);
-  TSDebug(PLUGIN_NAME, "Appending to evaluation value -> %s", s.c_str());
 }

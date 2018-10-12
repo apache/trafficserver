@@ -43,28 +43,29 @@ Value::set_value(const std::string &val)
 {
   _value = val;
 
-  if (_value.find("%{") != std::string::npos || _value.find("%<") != std::string::npos) {
+  if (_value.find("%{") != std::string::npos) {
     SimpleTokenizer tokenizer(_value);
-
     auto tokens = tokenizer.get_tokens();
+
     for (auto it = tokens.begin(); it != tokens.end(); it++) {
-      std::string token = *it;
-
+      std::string token    = *it;
       Condition *tcond_val = nullptr;
-      if (token.substr(0, 2) == "%<") {
-        tcond_val = new ConditionExpandableString(*it);
-      } else if (token.substr(0, 2) == "%{") {
-        std::string cond_token = token.substr(2, token.size() - 3);
-        tcond_val              = condition_factory(cond_token);
-      }
 
-      if (tcond_val) {
-        Parser parser(_value);
-        tcond_val->initialize(parser);
+      if (token.substr(0, 2) == "%{") {
+        std::string cond_token = token.substr(2, token.size() - 3);
+
+        if ((tcond_val = condition_factory(cond_token))) {
+          Parser parser(_value);
+
+          tcond_val->initialize(parser);
+        }
       } else {
         tcond_val = new ConditionStringLiteral(token);
       }
-      _cond_vals.push_back(tcond_val);
+
+      if (tcond_val) {
+        _cond_vals.push_back(tcond_val);
+      }
     }
   } else {
     _int_value   = strtol(_value.c_str(), nullptr, 10);

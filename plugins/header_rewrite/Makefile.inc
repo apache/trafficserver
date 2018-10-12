@@ -23,8 +23,6 @@ header_rewrite_header_rewrite_la_SOURCES = \
 	header_rewrite/condition.h \
 	header_rewrite/conditions.cc \
 	header_rewrite/conditions.h \
-	header_rewrite/expander.cc \
-	header_rewrite/expander.h \
 	header_rewrite/factory.cc \
 	header_rewrite/factory.h \
 	header_rewrite/header_rewrite.cc \

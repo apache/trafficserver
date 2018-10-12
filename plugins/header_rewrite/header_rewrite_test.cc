@@ -331,17 +331,6 @@ test_parsing()
   }
 
   {
-    ParserTest p(R"(add-header Client-IP "%<chi>")");
-
-    CHECK_EQ(p.getTokens().size(), 3UL);
-    CHECK_EQ(p.getTokens()[0], "add-header");
-    CHECK_EQ(p.getTokens()[1], "Client-IP");
-    CHECK_EQ(p.getTokens()[2], R"(%<chi>)");
-
-    END_TEST();
-  }
-
-  {
     ParserTest p(R"(add-header X-Url "http://trafficserver.apache.org/")");
 
     CHECK_EQ(p.getTokens().size(), 3UL);
@@ -487,10 +476,10 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens()[1], "%{NOW:YEAR}");
   }
   {
-    SimpleTokenizerTest p("A racoon's favorite tag is %<cqhm> in %{NOW:YEAR}!");
+    SimpleTokenizerTest p("A racoon's favorite tag is %{METHOD} in %{NOW:YEAR}!");
     CHECK_EQ(p.get_tokens().size(), 5UL);
     CHECK_EQ(p.get_tokens()[0], "A racoon's favorite tag is ");
-    CHECK_EQ(p.get_tokens()[1], "%<cqhm>");
+    CHECK_EQ(p.get_tokens()[1], "%{METHOD}c");
     CHECK_EQ(p.get_tokens()[2], " in ");
     CHECK_EQ(p.get_tokens()[3], "%{NOW:YEAR}");
     CHECK_EQ(p.get_tokens()[4], "!");
