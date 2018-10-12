@@ -96,7 +96,7 @@ Configuration
 
 #. Configure the Ingress |TS| to verify the Peer server certificate::
 
-      CONFIG proxy.config.ssl.client.verify.server INT 1
+      CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
 
 #. Configure Certificate Authority used by the Ingress |TS| to verify the Peer server certificate. If this
    is a directory all of the certificates in the directory are treated as Certificate Authorites. ::

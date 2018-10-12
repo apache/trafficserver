@@ -77,6 +77,8 @@ typedef enum {
   SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
 } SslVConnOp;
 
+enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
+
 //////////////////////////////////////////////////////////////////
 //
 //  class NetVConnection
@@ -103,13 +105,13 @@ public:
   bool
   getSSLHandShakeComplete() const override
   {
-    return sslHandShakeComplete;
+    return sslHandshakeStatus != SSL_HANDSHAKE_ONGOING;
   }
 
   virtual void
-  setSSLHandShakeComplete(bool state)
+  setSSLHandShakeComplete(enum SSLHandshakeStatus state)
   {
-    sslHandShakeComplete = state;
+    sslHandshakeStatus = state;
   }
 
   void
@@ -182,7 +184,7 @@ public:
   using super::reenable;
 
   /// Reenable the VC after a pre-accept or SNI hook is called.
-  virtual void reenable(NetHandler *nh);
+  virtual void reenable(NetHandler *nh, int event = TS_EVENT_CONTINUE);
 
   /// Set the SSL context.
   /// @note This must be called after the SSL endpoint has been created.
@@ -270,6 +272,10 @@ public:
       }
       break;
 
+    case HANDSHAKE_HOOKS_VERIFY_SERVER:
+      retval = (eventId == TS_EVENT_SSL_VERIFY_SERVER);
+      break;
+
     case HANDSHAKE_HOOKS_DONE:
       retval = true;
       break;
@@ -330,13 +336,13 @@ private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
 
-  bool sslHandShakeComplete        = false;
-  bool sslClientRenegotiationAbort = false;
-  bool sslSessionCacheHit          = false;
-  MIOBuffer *handShakeBuffer       = nullptr;
-  IOBufferReader *handShakeHolder  = nullptr;
-  IOBufferReader *handShakeReader  = nullptr;
-  int handShakeBioStored           = 0;
+  enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
+  bool sslClientRenegotiationAbort           = false;
+  bool sslSessionCacheHit                    = false;
+  MIOBuffer *handShakeBuffer                 = nullptr;
+  IOBufferReader *handShakeHolder            = nullptr;
+  IOBufferReader *handShakeReader            = nullptr;
+  int handShakeBioStored                     = 0;
 
   bool transparentPassThrough = false;
 
@@ -354,6 +360,7 @@ private:
     HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE,
     HANDSHAKE_HOOKS_OUTBOUND_PRE,
     HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE,
+    HANDSHAKE_HOOKS_VERIFY_SERVER,
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 

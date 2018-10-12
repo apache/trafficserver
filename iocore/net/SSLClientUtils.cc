@@ -37,7 +37,7 @@ typedef SSL_METHOD *ink_ssl_method_t;
 #endif
 
 int
-verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+verify_callback(int signature_ok, X509_STORE_CTX *ctx)
 {
   X509 *cert;
   int depth;
@@ -45,9 +45,6 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
   SSL *ssl;
 
   SSLDebug("Entered verify cb");
-  depth = X509_STORE_CTX_get_error_depth(ctx);
-  cert  = X509_STORE_CTX_get_current_cert(ctx);
-  err   = X509_STORE_CTX_get_error(ctx);
 
   /*
    * Retrieve the pointer to the SSL of the connection currently treated
@@ -55,31 +52,45 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
    */
   ssl                      = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  bool enforce_mode        = (netvc && netvc->options.clientVerificationFlag == static_cast<uint8_t>(YamlSNIConfig::Level::STRICT));
-  if (!preverify_ok && netvc != nullptr) {
-    // Don't bother to check the hostname if we failed openssl's verification
-    SSLDebug("verify error:num=%d:%s:depth=%d", err, X509_verify_cert_error_string(err), depth);
-    const char *sni_name;
-    char buff[INET6_ADDRSTRLEN];
-    ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
-    if (netvc->options.sni_servername) {
-      sni_name = netvc->options.sni_servername.get();
-    } else {
-      sni_name = buff;
-    }
-    Warning("Core server certificate verification failed for (%s). Action=%s Error=%s server=%s(%s) depth=%d", sni_name,
-            enforce_mode ? "Terminate" : "Continue", X509_verify_cert_error_string(err), netvc->options.ssl_servername.get(), buff,
-            depth);
-    // If not enforcing ignore the error, just log warning
-    return enforce_mode ? preverify_ok : 1;
-  }
-  if (depth != 0) {
-    // Not server cert....
-    return preverify_ok;
+
+  // No enforcing, go away
+  if (netvc && netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+    return true;       // Tell them that all is well
+  } else if (!netvc) { // No netvc, very bad.  Go away.  Things are not good.
+    Warning("Netvc gone by in verify_callback");
+    return false;
   }
 
-  if (netvc != nullptr) {
-    netvc->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
+  depth = X509_STORE_CTX_get_error_depth(ctx);
+  cert  = X509_STORE_CTX_get_current_cert(ctx);
+  err   = X509_STORE_CTX_get_error(ctx);
+
+  bool enforce_mode = (netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::ENFORCED);
+  bool check_sig =
+    static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::SIGNATURE_MASK);
+
+  if (check_sig) {
+    if (!signature_ok) {
+      SSLDebug("verify error:num=%d:%s:depth=%d", err, X509_verify_cert_error_string(err), depth);
+      const char *sni_name;
+      char buff[INET6_ADDRSTRLEN];
+      ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+      if (netvc->options.sni_servername) {
+        sni_name = netvc->options.sni_servername.get();
+      } else {
+        sni_name = buff;
+      }
+      Warning("Core server certificate verification failed for (%s). Action=%s Error=%s server=%s(%s) depth=%d", sni_name,
+              enforce_mode ? "Terminate" : "Continue", X509_verify_cert_error_string(err), netvc->options.ssl_servername.get(),
+              buff, depth);
+      // If not enforcing ignore the error, just log warning
+      return enforce_mode ? signature_ok : 1;
+    }
+  }
+
+  bool check_name =
+    static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
+  if (check_name) {
     char *matched_name = nullptr;
     unsigned char *sni_name;
     char buff[INET6_ADDRSTRLEN];
@@ -92,18 +103,34 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     if (validate_hostname(cert, sni_name, false, &matched_name)) {
       SSLDebug("Hostname %s verified OK, matched %s", netvc->options.sni_servername.get(), matched_name);
       ats_free(matched_name);
-      return preverify_ok;
+    } else { // Name validation failed
+      // Get the server address if we did't already compute it
+      if (netvc->options.sni_servername) {
+        ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
+      }
+      // If we got here the verification failed
+      Warning("SNI (%s) not in certificate. Action=%s server=%s(%s)", sni_name, enforce_mode ? "Terminate" : "Continue",
+              netvc->options.ssl_servername.get(), buff);
+      return !enforce_mode;
     }
-    // Get the server address if we did't already compute it
+  }
+  // If the previous configured checks passed, give the hook a try
+  netvc->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
+  if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
+    unsigned char *sni_name;
+    char buff[INET6_ADDRSTRLEN];
     if (netvc->options.sni_servername) {
+      sni_name = reinterpret_cast<unsigned char *>(netvc->options.sni_servername.get());
+    } else {
+      sni_name = reinterpret_cast<unsigned char *>(buff);
       ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
     }
-    // If we got here the verification failed
-    Warning("SNI (%s) not in certificate. Action=%s server=%s(%s)", sni_name, enforce_mode ? "Terminate" : "Continue",
-            netvc->options.ssl_servername.get(), buff);
-    return enforce_mode ? 0 : preverify_ok;
+    Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for %s.  Action=%s SNI=%s",
+            netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue", sni_name);
+    return !enforce_mode;
   }
-  return preverify_ok;
+  // Made it this far.  All is good
+  return true;
 }
 
 SSL_CTX *
@@ -179,10 +206,8 @@ SSLInitClientContext(const SSLConfigParams *params)
     }
   }
 
-  if (params->clientVerify) {
-    SSL_CTX_set_verify(client_ctx, SSL_VERIFY_PEER, verify_callback);
-    SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
-  }
+  SSL_CTX_set_verify(client_ctx, SSL_VERIFY_PEER, verify_callback);
+  SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
 
   if (params->clientCACertFilename != nullptr || params->clientCACertPath != nullptr) {
     if (!SSL_CTX_load_verify_locations(client_ctx, params->clientCACertFilename, params->clientCACertPath)) {
