@@ -55,10 +55,13 @@ YamlSNIConfig::loader(const char *cfgFilename)
   return ts::Errata();
 }
 
-TsEnumDescriptor LEVEL_DESCRIPTOR = {{{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
+TsEnumDescriptor LEVEL_DESCRIPTOR      = {{{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
+TsEnumDescriptor POLICY_DESCRIPTOR     = {{{"DISABLED", 0}, {"PERMISSIVE", 1}, {"ENFORCED", 2}}};
+TsEnumDescriptor PROPERTIES_DESCRIPTOR = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {"NAME", 0x2}, {"ALL", 0x3}}};
 
 std::set<std::string> valid_sni_config_keys = {
-  TS_fqdn, TS_disable_H2, TS_verify_client, TS_tunnel_route, TS_verify_origin_server, TS_client_cert, TS_ip_allow};
+  TS_fqdn,        TS_disable_H2, TS_verify_client, TS_tunnel_route, TS_verify_server_policy, TS_verify_server_properties,
+  TS_client_cert, TS_ip_allow};
 
 namespace YAML
 {
@@ -87,7 +90,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       auto value = node[TS_verify_client].as<std::string>();
       int level  = LEVEL_DESCRIPTOR.get(value);
       if (level < 0) {
-        throw std::runtime_error("unknown value " + value);
+        throw std::runtime_error("unknown value \"" + value + "\"");
       }
       item.verify_client_level = static_cast<uint8_t>(level);
     }
@@ -95,14 +98,41 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (node[TS_tunnel_route]) {
       item.tunnel_destination = node[TS_tunnel_route].as<std::string>();
     }
-
+    // remove before 9.0.0 release
+    // backwards compatibiity
     if (node[TS_verify_origin_server]) {
-      auto value = node[TS_verify_origin_server].as<std::string>();
-      int level  = LEVEL_DESCRIPTOR.get(value);
-      if (level < 0) {
-        throw std::runtime_error("unknown value " + value);
+      auto value                    = node[TS_verify_origin_server].as<std::string>();
+      YamlSNIConfig::Level level    = static_cast<YamlSNIConfig::Level>(LEVEL_DESCRIPTOR.get(value));
+      item.verify_server_properties = YamlSNIConfig::Property::ALL_MASK;
+      switch (level) {
+      case YamlSNIConfig::Level::NONE:
+        item.verify_server_policy = YamlSNIConfig::Policy::DISABLED;
+        break;
+      case YamlSNIConfig::Level::MODERATE:
+        item.verify_server_policy = YamlSNIConfig::Policy::PERMISSIVE;
+        break;
+      case YamlSNIConfig::Level::STRICT:
+        item.verify_server_policy = YamlSNIConfig::Policy::ENFORCED;
+        break;
       }
-      item.verify_origin_server = static_cast<uint8_t>(level);
+    }
+
+    if (node[TS_verify_server_policy]) {
+      auto value = node[TS_verify_server_policy].as<std::string>();
+      int policy = POLICY_DESCRIPTOR.get(value);
+      if (policy < 0) {
+        throw std::runtime_error("unknown value \"" + value + "\"");
+      }
+      item.verify_server_policy = static_cast<YamlSNIConfig::Policy>(policy);
+    }
+
+    if (node[TS_verify_server_properties]) {
+      auto value     = node[TS_verify_server_properties].as<std::string>();
+      int properties = PROPERTIES_DESCRIPTOR.get(value);
+      if (properties < 0) {
+        throw std::runtime_error("unknown value \"" + value + "\"");
+      }
+      item.verify_server_properties = static_cast<YamlSNIConfig::Property>(properties);
     }
 
     if (node[TS_client_cert]) {

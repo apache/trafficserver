@@ -354,7 +354,7 @@ set_context_cert(SSL *ssl)
     }
     if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
       netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      netvc->setSSLHandShakeComplete(true);
+      netvc->setSSLHandShakeComplete(SSL_HANDSHAKE_DONE);
       retval = -1;
       goto done;
     }

@@ -8775,7 +8775,7 @@ class TSSslCallback : public Continuation
 public:
   TSSslCallback(SSLNetVConnection *vc) : Continuation(vc->nh->mutex), m_vc(vc) { SET_HANDLER(&TSSslCallback::event_handler); }
   int
-  event_handler(int, void *)
+  event_handler(int event, void *)
   {
     m_vc->reenable(m_vc->nh);
     delete this;
