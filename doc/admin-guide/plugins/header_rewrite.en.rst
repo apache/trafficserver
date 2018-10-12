@@ -608,7 +608,7 @@ be specified multiple times, such as ``Set-Cookie``, but for headers which may
 only be specified once you may prefer to use `set-header`_ instead.
 
 The header's ``<value>`` may be specified as a literal string, or it may take
-advantage of `Variable Expansion`_ to calculate a dynamic value for the header.
+advantage of :ref:`header-rewrite-expansion` to calculate a dynamic value for the header.
 
 counter
 ~~~~~~~
@@ -721,7 +721,7 @@ Replaces the value of header ``<name>`` with ``<value>``, creating the header
 if necessary.
 
 The header's ``<value>`` may be specified according to `Header Values`_ or take
-advantage of `Variable Expansion`_ to calculate a dynamic value for the header.
+advantage of :ref:`header-rewrite-expansion` to calculate a dynamic value for the header.
 
 set-redirect
 ~~~~~~~~~~~~
@@ -732,7 +732,7 @@ set-redirect
 When invoked, sends a redirect response to the client, with HTTP status
 ``<code>``, and a new location of ``<destination>``. If the ``QSA`` flag is
 enabled, the original query string will be preserved and added to the new
-location automatically. This operator supports `Variable Expansion`_ for
+location automatically. This operator supports :ref:`header-rewrite-expansion` for
 ``<destination>``.
 
 set-status
@@ -804,6 +804,8 @@ L      Last rule, do not continue.
 QSA    Append the results of the rule to the query string.
 ====== ========================================================================
 
+.. _header-rewrite-expansion:
+
 Values and Variable Expansion
 -----------------------------
 
@@ -822,8 +824,9 @@ Variable                New condition variable to use
 %<cqhm>                 %{METHOD}
 %<cque>                 %[CLIENT-URL}
 %<cquup>                %{CLIENT-URL:PATH}
+======================= ==================================================================================
 
-Remember that the %<INBOUND:...> tags can now simply be replaced with the %{INBOUND:...} equivalent.
+The %<INBOUND:...> tags can now be replaced with the %{INBOUND:...} equivalent.
 
 You can concatenate values using strings, condition values and variable expansions via the ``+`` operator.
 Variables (eg %<tag>) in the concatenation must be enclosed in double quotes ``"``::

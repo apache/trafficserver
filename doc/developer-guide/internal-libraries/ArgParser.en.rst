@@ -44,10 +44,12 @@ All parsed arguments and function will be put in a key-value pairs structure
 Usage
 +++++
 
-The usage of the ArgParser is straightforward. The user is expected to create an
-ArgParser for the program. Commands and options can be added to the parser with details
-including ENV variable, arguments expected, etc. After a single method :code:`parse(argv)` is called,
-An object containing all information and parsed arguments available to use will be returned.
+The usage of the ArgParser is straightforward. An :code:`ArgParser` instance is
+created. Commands and options are then added to this instance, along with
+details including ENV variable, arguments expected, etc. The method
+:code:`parse(argv)` is called, passing the :code:`argv` from the command line
+(:code:`main` function arguments). An object containing the parsed command line
+information will be returned.
 
 Create a parser
 ---------------
@@ -177,7 +179,7 @@ Classes
 
       Add a global_usage for :code:`help_message()`. Example: `traffic_blabla [--SWITCH [ARG]]`.
 
-   .. function:: void set_default_command(std::string const &cmd);
+   .. function:: void set_default_command(std::string const &cmd)
 
       Set a default command to the parser. This method should be called after the adding of the commands.
 
