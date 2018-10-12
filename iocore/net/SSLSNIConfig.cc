@@ -92,10 +92,11 @@ SNIConfigParams::loadSNIConfig()
       clientCTX = params->getNewCTX(certFile);
       params->InsertCTX(certFile, clientCTX);
     }
-    NextHopProperty *nps = new NextHopProperty();
-    nps->name            = ats_strdup(servername);
-    nps->verifyLevel     = item.verify_origin_server;
-    nps->ctx             = clientCTX;
+    NextHopProperty *nps        = new NextHopProperty();
+    nps->name                   = ats_strdup(servername);
+    nps->verifyServerPolicy     = item.verify_server_policy;
+    nps->verifyServerProperties = item.verify_server_properties;
+    nps->ctx                    = clientCTX;
     if (wildcard) {
       wild_next_hop_table.put(nps->name, nps);
     } else {

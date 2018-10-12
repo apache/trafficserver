@@ -35,6 +35,7 @@
 #include "tscore/ink_inet.h"
 #include <openssl/rand.h>
 #include "P_SSLCertLookup.h"
+#include "YamlSNIConfig.h"
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
@@ -82,7 +83,8 @@ struct SSLConfigParams : public ConfigInfo {
   char *clientKeyPath;
   char *clientCACertFilename;
   char *clientCACertPath;
-  int8_t clientVerify;
+  YamlSNIConfig::Policy verifyServerPolicy;
+  YamlSNIConfig::Property verifyServerProperties;
   int client_verify_depth;
   long ssl_ctx_options;
   long ssl_client_ctx_options;

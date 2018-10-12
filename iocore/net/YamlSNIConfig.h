@@ -26,25 +26,32 @@
 
 #include "tsconfig/Errata.h"
 
-constexpr char TS_fqdn[]                 = "fqdn";
-constexpr char TS_disable_H2[]           = "disable_h2";
-constexpr char TS_verify_client[]        = "verify_client";
-constexpr char TS_tunnel_route[]         = "tunnel_route";
-constexpr char TS_verify_origin_server[] = "verify_origin_server";
-constexpr char TS_client_cert[]          = "client_cert";
-constexpr char TS_ip_allow[]             = "ip_allow";
+#define TSDECL(id) constexpr char TS_##id[] = #id
+TSDECL(fqdn);
+TSDECL(disable_H2);
+TSDECL(verify_client);
+TSDECL(tunnel_route);
+TSDECL(verify_server_policy);
+TSDECL(verify_server_properties);
+TSDECL(verify_origin_server);
+TSDECL(client_cert);
+TSDECL(ip_allow);
+#undef TSDECL
 
 const int start = 0;
 struct YamlSNIConfig {
   enum class Action {
     disable_h2 = start,
     verify_client,
-    tunnel_route,         // blind tunnel action
-    verify_origin_server, // this applies to server side vc only
+    tunnel_route,             // blind tunnel action
+    verify_server_policy,     // this applies to server side vc only
+    verify_server_properties, // this applies to server side vc only
     client_cert
 
   };
   enum class Level { NONE = 0, MODERATE, STRICT };
+  enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED };
+  enum class Property : uint8_t { NONE = 0, SIGNATURE_MASK = 0x1, NAME_MASK = 0x2, ALL_MASK = 0x3 };
 
   YamlSNIConfig() {}
 
@@ -53,7 +60,8 @@ struct YamlSNIConfig {
     bool disable_h2             = false;
     uint8_t verify_client_level = 0;
     std::string tunnel_destination;
-    uint8_t verify_origin_server = 0;
+    Policy verify_server_policy       = Policy::DISABLED;
+    Property verify_server_properties = Property::NONE;
     std::string client_cert;
     std::string ip_allow;
   };

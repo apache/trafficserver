@@ -36,6 +36,7 @@
 #include <cmath>
 #include "P_Net.h"
 #include "P_SSLConfig.h"
+#include "YamlSNIConfig.h"
 #include "P_SSLUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLSessionCache.h"
@@ -99,11 +100,13 @@ SSLConfigParams::reset()
   server_groups_list         = nullptr;
   client_groups_list         = nullptr;
   client_ctx                 = nullptr;
-  clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
-  ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_client_ctx_options                                              = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_session_cache                                                   = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
-  ssl_session_cache_size                                              = 1024 * 100;
+  clientCertLevel = client_verify_depth = verify_depth = 0;
+  verifyServerPolicy                                   = YamlSNIConfig::Policy::DISABLED;
+  verifyServerProperties                               = YamlSNIConfig::Property::NONE;
+  ssl_ctx_options                                      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_client_ctx_options                               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_session_cache                                    = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+  ssl_session_cache_size                               = 1024 * 100;
   ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
   ssl_session_cache_skip_on_contention = 0;
   ssl_session_cache_timeout            = 0;
@@ -320,7 +323,83 @@ SSLConfigParams::initialize()
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
-  REC_EstablishStaticConfigByte(clientVerify, "proxy.config.ssl.client.verify.server");
+
+  // remove before 9.0.0 release
+  // Backwards compatibility if proxy.config.ssl.client.verify.server is explicitly set
+  RecSourceT source             = REC_SOURCE_DEFAULT;
+  bool set_backwards_compatible = false;
+  if (RecGetRecordSource("proxy.config.ssl.client.verify.server", &source, false) == REC_ERR_OKAY) {
+    if (source != REC_SOURCE_DEFAULT && source != REC_SOURCE_NULL) {
+      int8_t verifyServer = 0;
+      REC_EstablishStaticConfigByte(verifyServer, "proxy.config.ssl.client.verify.server");
+      verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
+      switch (verifyServer) {
+      case 0:
+        verifyServerPolicy       = YamlSNIConfig::Policy::DISABLED;
+        set_backwards_compatible = true;
+        break;
+      case 1:
+        verifyServerPolicy       = YamlSNIConfig::Policy::ENFORCED;
+        set_backwards_compatible = true;
+        break;
+      case 2:
+        verifyServerPolicy       = YamlSNIConfig::Policy::PERMISSIVE;
+        set_backwards_compatible = true;
+        break;
+      }
+    }
+  }
+
+  bool policy_default     = true;
+  bool properties_default = true;
+  if (!set_backwards_compatible) {
+    policy_default = properties_default = false;
+  } else { // Only check for non-defaults if we have a backwards compatible situation
+    if (RecGetRecordSource("proxy.config.ssl.client.verify.server.policy", &source, false) == REC_ERR_OKAY &&
+        source != REC_SOURCE_DEFAULT && source != REC_SOURCE_NULL) {
+      policy_default = false;
+    }
+    if (RecGetRecordSource("proxy.config.ssl.client.verify.server.properties", &source, false) == REC_ERR_OKAY &&
+        source != REC_SOURCE_DEFAULT && source != REC_SOURCE_NULL) {
+      properties_default = false;
+    }
+  }
+
+  if (!set_backwards_compatible || !policy_default) {
+    char *verify_server = nullptr;
+    REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.policy");
+    if (strcmp(verify_server, "DISABLED") == 0) {
+      verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
+      verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
+    } else if (strcmp(verify_server, "ENFORCED") == 0) {
+      verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+              verify_server);
+      verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+    }
+    ats_free(verify_server);
+  }
+
+  if (!set_backwards_compatible || !properties_default) {
+    char *verify_server = nullptr;
+    REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.properties");
+    if (strcmp(verify_server, "SIGNATURE") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
+    } else if (strcmp(verify_server, "NAME") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
+    } else if (strcmp(verify_server, "ALL") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
+    } else if (strcmp(verify_server, "NONE") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::NONE;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
+              verify_server);
+      verifyServerProperties = YamlSNIConfig::Property::NONE;
+    }
+    ats_free(verify_server);
+  }
 
   ssl_client_cert_filename = nullptr;
   ssl_client_cert_path     = nullptr;
