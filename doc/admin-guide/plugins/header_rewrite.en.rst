@@ -608,7 +608,8 @@ be specified multiple times, such as ``Set-Cookie``, but for headers which may
 only be specified once you may prefer to use `set-header`_ instead.
 
 The header's ``<value>`` may be specified as a literal string, or it may take
-advantage of :ref:`header-rewrite-expansion` to calculate a dynamic value for the header.
+advantage of :ref:`header-rewrite-concatenations` to calculate a dynamic value
+for the header.
 
 counter
 ~~~~~~~
@@ -721,7 +722,8 @@ Replaces the value of header ``<name>`` with ``<value>``, creating the header
 if necessary.
 
 The header's ``<value>`` may be specified according to `Header Values`_ or take
-advantage of :ref:`header-rewrite-expansion` to calculate a dynamic value for the header.
+advantage of :ref:`header-rewrite-concatenations` to calculate a dynamic value
+for the header.
 
 set-redirect
 ~~~~~~~~~~~~
@@ -732,8 +734,8 @@ set-redirect
 When invoked, sends a redirect response to the client, with HTTP status
 ``<code>``, and a new location of ``<destination>``. If the ``QSA`` flag is
 enabled, the original query string will be preserved and added to the new
-location automatically. This operator supports :ref:`header-rewrite-expansion` for
-``<destination>``.
+location automatically. This operator supports
+:ref:`header-rewrite-concatenations` for ``<destination>``.
 
 set-status
 ~~~~~~~~~~
@@ -804,66 +806,30 @@ L      Last rule, do not continue.
 QSA    Append the results of the rule to the query string.
 ====== ========================================================================
 
-.. _header-rewrite-expansion:
+.. _header-rewrite-concatenations:
 
-Values and Variable Expansion
------------------------------
-
-.. note::
-
-   This feature is replaced with a new string concatenations as of ATS v8.1.0. In v9.0.0  the special
-   %<> string expansions below are no longer available, instead use the following mapping:
-
-======================= ==================================================================================
-Variable                New condition variable to use
-======================= ==================================================================================
-%<proto>                %{CLIENT-URL:SCHEME}
-%<port>                 %{CLIENT-URL:PORT}
-%<chi>                  %{IP:CLIENT}, %{INBOUND:REMOTE-ADDR} or e.g. %{CIDR:24,48}
-%<cqhl>                 %{CLIENT-HEADER:Content-Length}
-%<cqhm>                 %{METHOD}
-%<cque>                 %[CLIENT-URL}
-%<cquup>                %{CLIENT-URL:PATH}
-======================= ==================================================================================
-
-The %<INBOUND:...> tags can now be replaced with the %{INBOUND:...} equivalent.
+String concatenations
+---------------------
 
 You can concatenate values using strings, condition values and variable expansions on the same line.
 
-    add-header CustomHeader "Hello from %{IP:SERVER}:%<INBOUND:LOCAL-PORT>"
-
-However, the above example is somewhat contrived to show the old tags, it should instead be written as
-
     add-header CustomHeader "Hello from %{IP:SERVER}:%{INBOUND:LOCAL-PORT}"
 
+String concatenation is not yet supported in condition testing.
 
-Concatenation is not supported in condition testing.
+Note: In versions prior to ATS v9.0.0, an alternative string expansion was available. those
+expansions are no longer available, but the following table can help migrations:
 
-Supported substitutions are currently the following table, however they are deprecated and you should
-instead use the equivalent %{} conditions as shown above:
-
-======================= ==================================================================================
-Variable                Description
-======================= ==================================================================================
-%<proto>                (Deprecated) Protocol
-%<port>                 (Deprecated) Port
-%<chi>                  (Deprecated) Client IP
-%<cqhl>                 (Deprecated) Client request length
-%<cqhm>                 (Deprecated) Client HTTP method
-%<cque>                 (Deprecated) Client effective URI
-%<cquup>                (Deprecated) Client unmapped URI path
-%<INBOUND:LOCAL-ADDR>   (Deprecated) The local (ATS) address for the inbound connection.
-%<INBOUND:LOCAL-PORT>   (Deprecated) The local (ATS) port for the inbound connection.
-%<INBOUND:REMOTE-ADDR>  (Deprecated) The client address for the inbound connectoin.
-%<INBOUND:REMOTE-PORT>  (Deprecated) The client port for the inbound connectoin.
-%<INBOUND:TLS>          (Deprecated) The TLS protocol for the inbound connection if it is over TLS, otherwise the
-                        empty string.
-%<INBOUND:H2>           (Deprecated) The string "h2" if the inbound connection is HTTP/2, otherwise the empty string.
-%<INBOUND:IPV4>         (Deprecated) The string "ipv4" if the inbound connection is IPv4, otherwise the emtpy string.
-%<INBOUND:IPV6>         (Deprecated) The string "ipv6" if the inbound connection is IPv6, otherwise the empty string.
-%<INBOUND:IP-FAMILY>    (Deprecated) The IP family of the inbound connection (either "ipv4" or "ipv6").
-%<INBOUND:STACK>        (Deprecated) The full protocol stack of the inbound connection separated by ','.
-======================= ==================================================================================
+======================== ==================================================================================
+Old expansion variable   Condition variable to use with concatenatinos
+======================== ==================================================================================
+%<proto>                 %{CLIENT-URL:SCHEME}
+%<port>                  %{CLIENT-URL:PORT}
+%<chi>                   %{IP:CLIENT}, %{INBOUND:REMOTE-ADDR} or e.g. %{CIDR:24,48}
+%<cqhl>                  %{CLIENT-HEADER:Content-Length}
+%<cqhm>                  %{METHOD}
+%<cque>                  %[CLIENT-URL}
+%<cquup>                 %{CLIENT-URL:PATH}
 
 Header Values
 -------------
