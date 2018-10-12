@@ -539,3 +539,15 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
   }
   return 0;
 }
+
+void
+Http2ClientSession::increment_current_active_client_connections_stat()
+{
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
+}
+
+void
+Http2ClientSession::decrement_current_active_client_connections_stat()
+{
+  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
+}
