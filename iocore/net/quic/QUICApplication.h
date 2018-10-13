@@ -54,12 +54,6 @@ public:
   void write_done();
   virtual void write_reenable();
 
-  [[deprecated]] int64_t read_avail();
-  [[deprecated]] bool is_read_avail_more_than(int64_t size);
-  [[deprecated]] int64_t write_avail();
-  [[deprecated]] void set_write_vio_nbytes(int64_t);
-  [[deprecated]] IOBufferReader *get_read_buffer_reader();
-
 protected:
   MIOBuffer *_read_buffer  = nullptr;
   MIOBuffer *_write_buffer = nullptr;

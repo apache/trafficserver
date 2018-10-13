@@ -156,31 +156,6 @@ QUICStreamIO::write_done()
   this->_write_vio->nbytes = this->_nwritten;
 }
 
-// !!! DEPRECATED !!!
-int64_t
-QUICStreamIO::read_avail()
-{
-  return this->_read_buffer_reader->read_avail();
-}
-
-bool
-QUICStreamIO::is_read_avail_more_than(int64_t size)
-{
-  return this->_read_buffer_reader->is_read_avail_more_than(size);
-}
-
-int64_t
-QUICStreamIO::write_avail()
-{
-  return this->_write_buffer->write_avail();
-}
-
-void
-QUICStreamIO::set_write_vio_nbytes(int64_t nbytes)
-{
-  this->_write_vio->nbytes = nbytes;
-}
-
 void
 QUICStreamIO::read_reenable()
 {
@@ -191,12 +166,6 @@ void
 QUICStreamIO::write_reenable()
 {
   return this->_write_vio->reenable();
-}
-
-IOBufferReader *
-QUICStreamIO::get_read_buffer_reader()
-{
-  return this->_read_buffer_reader;
 }
 
 //
