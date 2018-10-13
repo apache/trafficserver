@@ -98,6 +98,9 @@ namespace file
     /// Access the path explicitly.
     char const *c_str() const;
 
+    /// Get a view of the path.
+    std::string_view view() const;
+
     /// Get a copy of the path.
     std::string string() const;
 
@@ -181,6 +184,12 @@ namespace file
   path::c_str() const
   {
     return _path.c_str();
+  }
+
+  inline std::string_view
+  path::view() const
+  {
+    return _path;
   }
 
   inline std::string
