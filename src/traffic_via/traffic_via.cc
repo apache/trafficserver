@@ -238,13 +238,13 @@ decodeViaHeader(const char *str)
     ++viaHdrLength;
   }
 
-  if (viaHdrLength == 23 || viaHdrLength == 6) {
+  if (viaHdrLength == 22 || viaHdrLength == 6) {
     // Decode via header
     printViaHeader(Via);
     return TS_ERR_OKAY;
   }
   // Invalid header size, come out.
-  printf("\nInvalid VIA header. VIA header length should be 6 or 23 characters\n");
+  printf("\nInvalid VIA header. VIA header length should be 6 or 22 characters\n");
   printf("Valid via header format is "
          "[u<client-stuff>c<cache-lookup-stuff>s<server-stuff>f<cache-fill-stuff>p<proxy-stuff>e<error-codes>:t<tunneling-info>c<"
          "cache type><cache-lookup-result>p<parent-proxy-conn-info>s<server-conn-info>]\n");
