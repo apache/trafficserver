@@ -105,6 +105,7 @@ private:
   QUICPacketProtection *_server_pp       = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
   bool _early_data_processed             = false;
+  bool _is_session_reused                = false;
   bool _early_data                       = true;
   QUICEncryptionLevel _current_level     = QUICEncryptionLevel::INITIAL;
   HandshakeState _state                  = HandshakeState::PROCESSING;
