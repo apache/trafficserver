@@ -69,8 +69,9 @@ TEST_CASE("QUICStream", "[quic]")
     MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *reader = read_buffer->alloc_reader();
 
-    std::unique_ptr<QUICStream> stream(
-      new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, 1024, 1024));
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 1024, 1024));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(*frame_1);
@@ -95,8 +96,9 @@ TEST_CASE("QUICStream", "[quic]")
     MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *reader = read_buffer->alloc_reader();
 
-    std::unique_ptr<QUICStream> stream(
-      new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, UINT64_MAX, UINT64_MAX));
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(*frame_8);
@@ -121,8 +123,9 @@ TEST_CASE("QUICStream", "[quic]")
     MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *reader = read_buffer->alloc_reader();
 
-    std::unique_ptr<QUICStream> stream(
-      new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, UINT64_MAX, UINT64_MAX));
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(*frame_8);
@@ -149,10 +152,10 @@ TEST_CASE("QUICStream", "[quic]")
     std::unique_ptr<QUICError> error = nullptr;
 
     MIOBuffer *read_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
-    IOBufferReader *reader = read_buffer->alloc_reader();
 
-    std::unique_ptr<QUICStream> stream(
-      new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, 4096, 4096));
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     // Start with 1024 but not 0 so received frames won't be processed
@@ -184,11 +187,11 @@ TEST_CASE("QUICStream", "[quic]")
 
     MIOBuffer *read_buffer              = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
-    IOBufferReader *read_buffer_reader  = read_buffer->alloc_reader();
     IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
 
-    std::unique_ptr<QUICStream> stream(
-      new QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), stream_id, 4096, 4096));
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
     SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
 
     MockContinuation mock_cont(stream->mutex);

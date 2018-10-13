@@ -33,9 +33,12 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
 {
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
-  MockQUICApplication mock_app;
+  MockQUICConnection connection;
+  MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
+  MockQUICConnectionInfoProvider cinfo_provider;
+  MockQUICRTTProvider rtt_provider;
+  QUICStreamManager sm(&cinfo_provider, &rtt_provider, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
   std::shared_ptr<QUICTransportParameters> remote_tp =
@@ -80,9 +83,12 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
 {
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
-  MockQUICApplication mock_app;
+  MockQUICConnection connection;
+  MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
+  MockQUICConnectionInfoProvider cinfo_provider;
+  MockQUICRTTProvider rtt_provider;
+  QUICStreamManager sm(&cinfo_provider, &rtt_provider, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(static_cast<QUICVersion>(0));
   std::shared_ptr<QUICTransportParameters> remote_tp =
@@ -101,7 +107,8 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
 {
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
-  MockQUICApplication mock_app;
+  MockQUICConnection connection;
+  MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
   QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =
@@ -130,7 +137,8 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
 {
   QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
   QUICApplicationMap app_map;
-  MockQUICApplication mock_app;
+  MockQUICConnection connection;
+  MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
   QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp =

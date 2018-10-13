@@ -35,22 +35,21 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   pf.set_hs_protocol(&hs_protocol);
   QUICRTTMeasure rtt_measure;
 
-  QUICAckFrameCreator *afc             = new QUICAckFrameCreator();
-  QUICConnectionId connection_id       = {reinterpret_cast<const uint8_t *>("\x01"), 1};
-  MockQUICPacketTransmitter *tx        = new MockQUICPacketTransmitter();
-  MockQUICConnectionInfoProvider *info = new MockQUICConnectionInfoProvider();
-  MockQUICCongestionController *cc     = new MockQUICCongestionController(info);
-  QUICLossDetector detector(tx, info, cc, &rtt_measure, 0);
+  QUICAckFrameCreator afc;
+  QUICConnectionId connection_id = {reinterpret_cast<const uint8_t *>("\x01"), 1};
+  MockQUICPacketTransmitter tx;
+  MockQUICConnectionInfoProvider info;
+  MockQUICCongestionController cc(&info);
+  QUICLossDetector detector(&tx, &info, &cc, &rtt_measure, 0);
   ats_unique_buf payload              = ats_unique_malloc(16);
   size_t payload_len                  = 16;
   QUICPacketUPtr packet               = QUICPacketFactory::create_null_packet();
   std::shared_ptr<QUICAckFrame> frame = QUICFrameFactory::create_null_ack_frame();
-  uint16_t ack_delay                  = 50;
 
   SECTION("Handshake")
   {
     // Check initial state
-    CHECK(tx->retransmitted.size() == 0);
+    CHECK(tx.retransmitted.size() == 0);
 
     // Send SERVER_CLEARTEXT (Handshake message)
     uint8_t raw[4]         = {0};
@@ -66,22 +65,22 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
       QUICPacketUPtr(new QUICPacket(std::move(header), std::move(payload), sizeof(raw), true), [](QUICPacket *p) { delete p; });
     detector.on_packet_sent(std::move(packet));
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
-    CHECK(tx->retransmitted.size() > 0);
+    CHECK(tx.retransmitted.size() > 0);
 
     // Receive ACK
     QUICAckFrame frame(0x01, 20, 0);
     frame.ack_block_section()->add_ack_block({0, 1ULL});
     detector.handle_frame(QUICEncryptionLevel::INITIAL, frame);
     ink_hrtime_sleep(HRTIME_MSECONDS(1500));
-    int retransmit_count = tx->retransmitted.size();
+    int retransmit_count = tx.retransmitted.size();
     ink_hrtime_sleep(HRTIME_MSECONDS(1500));
-    CHECK(tx->retransmitted.size() == retransmit_count);
+    CHECK(tx.retransmitted.size() == retransmit_count);
   }
 
   SECTION("1-RTT")
   {
     // Check initial state
-    CHECK(tx->retransmitted.size() == 0);
+    CHECK(tx.retransmitted.size() == 0);
 
     // Send packet (1) to (7)
     payload = ats_unique_malloc(16);
@@ -135,42 +134,42 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
 
     // Receive an ACK for (1) (4) (5) (7) (8) (9)
-    afc->update(QUICEncryptionLevel::INITIAL, pn1, true);
-    afc->update(QUICEncryptionLevel::INITIAL, pn4, true);
-    afc->update(QUICEncryptionLevel::INITIAL, pn5, true);
-    afc->update(QUICEncryptionLevel::INITIAL, pn7, true);
-    afc->update(QUICEncryptionLevel::INITIAL, pn8, true);
-    afc->update(QUICEncryptionLevel::INITIAL, pn9, true);
+    afc.update(QUICEncryptionLevel::INITIAL, pn1, true);
+    afc.update(QUICEncryptionLevel::INITIAL, pn4, true);
+    afc.update(QUICEncryptionLevel::INITIAL, pn5, true);
+    afc.update(QUICEncryptionLevel::INITIAL, pn7, true);
+    afc.update(QUICEncryptionLevel::INITIAL, pn8, true);
+    afc.update(QUICEncryptionLevel::INITIAL, pn9, true);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
-    std::shared_ptr<QUICFrame> x = afc->generate_frame(QUICEncryptionLevel::INITIAL, 2048, 2048);
+    std::shared_ptr<QUICFrame> x = afc.generate_frame(QUICEncryptionLevel::INITIAL, 2048, 2048);
     frame                        = std::dynamic_pointer_cast<QUICAckFrame>(x);
     detector.handle_frame(QUICEncryptionLevel::INITIAL, *frame.get());
     ink_hrtime_sleep(HRTIME_MSECONDS(5000));
 
-    CHECK(cc->lost_packets.size() == 3);
+    CHECK(cc.lost_packets.size() == 3);
 
-    CHECK(cc->lost_packets.find(pn1) == cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn2) != cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn3) != cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn4) == cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn5) == cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn6) != cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn7) == cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn8) == cc->lost_packets.end());
-    CHECK(cc->lost_packets.find(pn9) == cc->lost_packets.end());
+    CHECK(cc.lost_packets.find(pn1) == cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn2) != cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn3) != cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn4) == cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn5) == cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn6) != cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn7) == cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn8) == cc.lost_packets.end());
+    CHECK(cc.lost_packets.find(pn9) == cc.lost_packets.end());
   }
 }
 
 TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
 {
-  MockQUICPacketTransmitter *tx        = new MockQUICPacketTransmitter();
-  MockQUICConnectionInfoProvider *info = new MockQUICConnectionInfoProvider();
-  MockQUICCongestionController *cc     = new MockQUICCongestionController(info);
+  MockQUICPacketTransmitter tx;
+  MockQUICConnectionInfoProvider info;
+  MockQUICCongestionController cc(&info);
   QUICRTTMeasure rtt_measure;
-  QUICLossDetector detector(tx, info, cc, &rtt_measure, 0);
+  QUICLossDetector detector(&tx, &info, &cc, &rtt_measure, 0);
 
   // Check initial state
-  CHECK(tx->retransmitted.size() == 0);
+  CHECK(tx.retransmitted.size() == 0);
 
   auto t1                           = Thread::get_hrtime();
   std::shared_ptr<QUICAckFrame> ack = QUICFrameFactory::create_ack_frame(100000000, 100, 10000000);

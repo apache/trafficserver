@@ -35,22 +35,22 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   QUICStreamFrame streamFrame(std::move(payload), 1, 0x03, 0);
 
-  auto connection    = new MockQUICConnection();
-  auto streamManager = new MockQUICStreamManager();
-  auto tx            = new MockQUICPacketTransmitter();
-  auto info          = new MockQUICConnectionInfoProvider();
-  auto cc            = new MockQUICCongestionController(info);
+  MockQUICConnection connection;
+  MockQUICStreamManager streamManager;
+  MockQUICPacketTransmitter tx;
+  MockQUICConnectionInfoProvider info;
+  MockQUICCongestionController cc(&info);
   QUICRTTMeasure rtt_measure;
-  auto lossDetector = new MockQUICLossDetector(tx, info, cc, &rtt_measure, 0);
+  MockQUICLossDetector lossDetector(&tx, &info, &cc, &rtt_measure, 0);
 
-  QUICFrameDispatcher quicFrameDispatcher(info);
-  quicFrameDispatcher.add_handler(connection);
-  quicFrameDispatcher.add_handler(streamManager);
-  quicFrameDispatcher.add_handler(lossDetector);
+  QUICFrameDispatcher quicFrameDispatcher(&info);
+  quicFrameDispatcher.add_handler(&connection);
+  quicFrameDispatcher.add_handler(&streamManager);
+  quicFrameDispatcher.add_handler(&lossDetector);
 
   // Initial state
-  CHECK(connection->getTotalFrameCount() == 0);
-  CHECK(streamManager->getTotalFrameCount() == 0);
+  CHECK(connection.getTotalFrameCount() == 0);
+  CHECK(streamManager.getTotalFrameCount() == 0);
 
   // STREAM frame
   uint8_t buf[4096] = {0};
@@ -59,13 +59,13 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   bool should_send_ack;
   bool is_flow_controlled;
   quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled);
-  CHECK(connection->getTotalFrameCount() == 0);
-  CHECK(streamManager->getTotalFrameCount() == 1);
+  CHECK(connection.getTotalFrameCount() == 0);
+  CHECK(streamManager.getTotalFrameCount() == 1);
 
   // CONNECTION_CLOSE frame
   QUICConnectionCloseFrame connectionCloseFrame({});
   connectionCloseFrame.store(buf, &len, 4096);
   quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled);
-  CHECK(connection->getTotalFrameCount() == 1);
-  CHECK(streamManager->getTotalFrameCount() == 1);
+  CHECK(connection.getTotalFrameCount() == 1);
+  CHECK(streamManager.getTotalFrameCount() == 1);
 }

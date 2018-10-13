@@ -58,7 +58,8 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   uint8_t buf[1024] = {0};
   size_t buf_len;
   vn_packet->store(buf, &buf_len);
-  CHECK(memcmp(buf, expected, buf_len) == 0);
+  CHECK((buf[0] & 0x80) == 0x80); // Lower 7 bits of the first byte is random
+  CHECK(memcmp(buf + 1, expected + 1, buf_len - 1) == 0);
 }
 
 TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
@@ -110,15 +111,6 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   factory.set_hs_protocol(&hs_protocol);
   QUICStatelessResetToken token;
   token.generate({reinterpret_cast<const uint8_t *>("\x30\x39"), 2}, 67890);
-  uint8_t expected_output[] = {
-    0x41,                                           // 0CK0001
-    0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, // Connection ID
-    0xa1, 0x45, 0x7b, 0x7e, 0x8f, 0x85, 0x0b, 0x14, // Token
-    0xd2, 0x43, 0xa1, 0xaf, 0x7c, 0xe2, 0x91, 0x50,
-    // Random data
-  };
-  uint8_t output[1024];
-  size_t out_len = 0;
 
   QUICPacketUPtr packet =
     factory.create_stateless_reset_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4), token);
