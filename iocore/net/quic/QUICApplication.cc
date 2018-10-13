@@ -207,6 +207,13 @@ QUICApplication::QUICApplication(QUICConnection *qc) : Continuation(new_ProxyMut
   this->_qc = qc;
 }
 
+QUICApplication::~QUICApplication()
+{
+  for (const auto& [stream_id, stream_io] : this->_stream_map) {
+    delete stream_io;
+  }
+}
+
 // @brief Bind stream and application
 void
 QUICApplication::set_stream(QUICStream *stream, QUICStreamIO *stream_io)
