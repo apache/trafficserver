@@ -1,6 +1,6 @@
-Via header is [uIcRs f p eN;t cCH p s ], Length is 25
+Via header is [uScRs f p eN;t cCHp s ], Length is 24
 Via Header Details:
-Request headers received from client                   :IMS
+Request headers received from client                   :simple request (not conditional)
 Result of Traffic Server cache lookup for URL          :in cache, fresh Ram hit (a cache "HIT")
 Response information received from origin server       :no server connection needed
 Result of document write-to-cache:                     :no cache write performed
