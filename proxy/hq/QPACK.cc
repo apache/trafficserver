@@ -125,6 +125,7 @@ QPACK::event_handler(int event, Event *data)
     break;
   case VC_EVENT_WRITE_READY:
     ret = this->_on_write_ready(*stream_io);
+    break;
   case VC_EVENT_WRITE_COMPLETE:
     ret = EVENT_DONE;
     break;
@@ -643,7 +644,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   read_len += ret;
 
   // Create and attach a header
-  this->_attach_header(hdr, name, name_len, value, value_len);
+  this->_attach_header(hdr, name, name_len, value, value_len, never_index);
 
   QPACKDebug("Decoded Literal Header Field With Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              result.index, name_len, name, static_cast<int>(value_len), value);
@@ -680,7 +681,7 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
   read_len += ret;
 
   // Create and attach a header
-  this->_attach_header(hdr, name, name_len, value, value_len);
+  this->_attach_header(hdr, name, name_len, value, value_len, never_index);
 
   QPACKDebug("Decoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s", static_cast<uint16_t>(name_len), name,
              static_cast<uint16_t>(value_len), value);
@@ -714,7 +715,7 @@ QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, cons
   }
 
   // Create and attach a header
-  this->_attach_header(hdr, name, name_len, value, value_len);
+  this->_attach_header(hdr, name, name_len, value, value_len, false);
 
   QPACKDebug("Decoded Indexed Header Field With Postbase Index: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              result.index, name_len, name, value_len, value);
@@ -764,7 +765,7 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   read_len += ret;
 
   // Create and attach a header
-  this->_attach_header(hdr, name, name_len, value, value_len);
+  this->_attach_header(hdr, name, name_len, value, value_len, never_index);
 
   QPACKDebug("Decoded Literal Header Field With Postbase Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              static_cast<uint16_t>(index), name_len, name, static_cast<int>(value_len), value);
@@ -1109,8 +1110,9 @@ QPACK::_calc_postbase_index_from_absolute_index(uint16_t base_index, uint16_t ab
 }
 
 void
-QPACK::_attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len)
+QPACK::_attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index)
 {
+  // TODO If never_index is true, we need to mark this header as sensitive to not index the header when passing it to the other side
   MIMEField *new_field = hdr.field_create(name, name_len);
   new_field->value_set(hdr.m_heap, hdr.m_mime, value, value_len);
   hdr.field_attach(new_field);

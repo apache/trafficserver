@@ -302,7 +302,7 @@ private:
   uint16_t _calc_absolute_index_from_postbase_index(uint16_t base_index, uint16_t postbase_index);
   uint16_t _calc_relative_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index);
   uint16_t _calc_postbase_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index);
-  void _attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len);
+  void _attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index);
 
   int _on_read_ready(QUICStreamIO &stream_io);
   int _on_decoder_stream_read_ready(QUICStreamIO &stream_io);
