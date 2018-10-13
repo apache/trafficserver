@@ -29,6 +29,8 @@
 #include <openssl/kdf.h>
 #include <openssl/evp.h>
 
+#include "QUICConfig.h"
+
 #include "QUICDebugNames.h"
 
 static constexpr char tag[] = "quic_tls";
@@ -233,6 +235,30 @@ QUICTLS::QUICTLS(SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx)
 
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_tls_index, this);
   SSL_set_key_callback(this->_ssl, key_cb, this);
+
+  QUICConfig::scoped_config params;
+  if (params->session_file() && this->_netvc_context == NET_VCONNECTION_OUT) {
+    auto file = BIO_new_file(params->session_file(), "r");
+    if (file == nullptr) {
+      Debug(tag, "Could not read tls session file %s", params->session_file());
+      return;
+    }
+
+    auto session = PEM_read_bio_SSL_SESSION(file, nullptr, 0, nullptr);
+    if (session == nullptr) {
+      Debug(tag, "Could not read tls session file %s", params->session_file());
+    } else {
+      if (!SSL_set_session(this->_ssl, session)) {
+        Debug(tag, "Session resumption failed : %s", params->session_file());
+      } else {
+        Debug(tag, "Session resumption success : %s", params->session_file());
+        this->_is_session_reused = true;
+      }
+      SSL_SESSION_free(session);
+    }
+
+    BIO_free(file);
+  }
 }
 
 QUICEncryptionLevel

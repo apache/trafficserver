@@ -43,6 +43,7 @@ public:
 
   const char *server_supported_groups() const;
   const char *client_supported_groups() const;
+  const char *session_file() const;
 
   SSL_CTX *server_ssl_ctx() const;
   SSL_CTX *client_ssl_ctx() const;
@@ -95,6 +96,7 @@ private:
 
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;
+  char *_session_file            = nullptr;
 
   // TODO: integrate with SSLCertLookup or SNIConfigParams
   SSL_CTX *_server_ssl_ctx = nullptr;

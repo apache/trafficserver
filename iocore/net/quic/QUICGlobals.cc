@@ -27,6 +27,7 @@
 
 #include "P_SSLNextProtocolSet.h"
 #include "QUICStats.h"
+#include "QUICConfig.h"
 #include "QUICConnection.h"
 
 RecRawStatBlock *quic_rsb;
@@ -58,6 +59,21 @@ QUIC::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned cha
   *out    = nullptr;
   *outlen = 0;
   return SSL_TLSEXT_ERR_NOACK;
+}
+
+int
+QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
+{
+  QUICConfig::scoped_config params;
+  auto file = BIO_new_file(params->session_file(), "w");
+  if (file == nullptr) {
+    Debug("quic_global", "Could not write TLS session in %s", params->session_file());
+    return 0;
+  }
+
+  PEM_write_bio_SSL_SESSION(file, session);
+  BIO_free(file);
+  return 0;
 }
 
 void
