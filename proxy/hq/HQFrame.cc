@@ -286,6 +286,21 @@ HQFrameFactory::fast_create(const uint8_t *buf, size_t len)
   return frame;
 }
 
+std::shared_ptr<const HQFrame>
+HQFrameFactory::fast_create(QUICStreamIO &stream_io, size_t len)
+{
+  uint8_t buf[65536];
+
+  // FIXME DATA frames can be giga bytes
+  ink_assert(sizeof(buf) > len);
+
+  if (stream_io.peek(buf, sizeof(buf) < len)) {
+    // Return if whole frame data is not available
+    return nullptr;
+  }
+  return this->fast_create(buf, len);
+}
+
 HQHeadersFrameUPtr
 HQFrameFactory::create_headers_frame(const uint8_t *header_block, size_t header_block_len)
 {

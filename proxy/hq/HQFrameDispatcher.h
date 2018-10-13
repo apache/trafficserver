@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "QUICApplication.h"
 #include "HQFrame.h"
 #include "HQFrameHandler.h"
 #include <vector>
@@ -30,11 +31,18 @@
 class HQFrameDispatcher
 {
 public:
-  HQErrorUPtr on_read_ready(const uint8_t *source, uint16_t read_avail, uint16_t &nread);
+  HQErrorUPtr on_read_ready(QUICStreamIO &stream_io, uint64_t &nread);
 
   void add_handler(HQFrameHandler *handler);
 
 private:
+  enum READING_STATE {
+    READING_LENGTH_LEN,
+    READING_PAYLOAD_LEN,
+    READING_PAYLOAD,
+  } _reading_state = READING_LENGTH_LEN;
+  int64_t _reading_frame_length_len;
+  uint64_t _reading_frame_payload_len;
   HQFrameFactory _frame_factory;
   std::vector<HQFrameHandler *> _handlers[256];
 };

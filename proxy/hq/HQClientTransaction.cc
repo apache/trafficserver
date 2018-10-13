@@ -406,59 +406,62 @@ HQClientTransaction::_process_read_vio()
 
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
 
-  IOBufferReader *client_vio_reader = this->_stream_io->get_read_buffer_reader();
-  int64_t bytes_avail               = client_vio_reader->read_avail();
-
   // Nuke this block when we drop 0.9 support
   if (!this->_protocol_detected) {
-    if (bytes_avail < 3) {
+    uint8_t start[3];
+    if (this->_stream_io->peek(start, 3) < 3) {
       return 0;
     }
     // If the first two bit are 0 and 1, the 3rd byte is type field.
     // Because there is no type value larger than 0x20, we can assume that the
     // request is HTTP/0.9 if the value is larger than 0x20.
-    const uint8_t *start = reinterpret_cast<uint8_t *>(client_vio_reader->start());
-    if (0x40 <= *start && *start < 0x80 && *(start + 2) > 0x20) {
+    if (0x40 <= start[0] && start[0] < 0x80 && start[2] > 0x20) {
       this->_legacy_request = true;
     }
     this->_protocol_detected = true;
   }
 
   if (this->_legacy_request) {
+    uint64_t nread    = 0;
     MIOBuffer *writer = this->_read_vio.get_writer();
 
     // Nuke this branch when we drop 0.9 support
     if (!this->_client_req_header_complete) {
-      int n = 2;
+      uint8_t buf[4096];
+      int len = this->_stream_io->peek(buf, 4096);
       // Check client request is complete or not
-      if (bytes_avail < 2 || client_vio_reader->start()[bytes_avail - 1] != '\n') {
+      if (len < 2 || buf[len - 1] != '\n') {
         return 0;
       }
+      this->_stream_io->consume(len);
+      nread += len;
       this->_client_req_header_complete = true;
 
       // Check "CRLF" or "LF"
-      if (client_vio_reader->start()[bytes_avail - 2] != '\r') {
+      int n = 2;
+      if (buf[len - 2] != '\r') {
         n = 1;
       }
 
-      writer->write(client_vio_reader, bytes_avail - n);
-      client_vio_reader->consume(bytes_avail);
-
+      writer->write(buf, len - n);
       // FIXME: Get hostname from SNI?
       const char version[] = " HTTP/1.1\r\nHost: localhost\r\n\r\n";
       writer->write(version, sizeof(version));
     } else {
-      writer->write(client_vio_reader, bytes_avail);
-      client_vio_reader->consume(bytes_avail);
+      uint8_t buf[4096];
+      int len;
+      while ((len = this->_stream_io->read(buf, 4096)) > 0) {
+        nread += len;
+        writer->write(buf, len);
+      }
     }
 
-    return bytes_avail;
+    return nread;
     // End of code for HTTP/0.9
   } else {
     // This branch is for HQ
-    uint16_t nread = 0;
-    this->_frame_dispatcher.on_read_ready(reinterpret_cast<uint8_t *>(client_vio_reader->start()), bytes_avail, nread);
-    client_vio_reader->consume(nread);
+    uint64_t nread = 0;
+    this->_frame_dispatcher.on_read_ready(*this->_stream_io, nread);
     return nread;
   }
 }

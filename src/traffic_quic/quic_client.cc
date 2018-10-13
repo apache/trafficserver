@@ -174,13 +174,10 @@ QUICClientApp::main_event_handler(int event, Event *data)
       std::cout.rdbuf(f_stream.rdbuf());
     }
 
-    while (stream_io->is_read_avail_more_than(0)) {
-      uint8_t buf[8192] = {0};
-      int64_t len       = stream_io->get_read_buffer_reader()->block_read_avail();
-      len               = std::min(len, (int64_t)sizeof(buf));
-      stream_io->read(buf, len);
-
-      std::cout.write(reinterpret_cast<char *>(buf), len);
+    uint8_t buf[8192] = {0};
+    int64_t nread;
+    while ((nread = stream_io->read(buf, sizeof(buf))) > 0) {
+      std::cout.write(reinterpret_cast<char *>(buf), nread);
     }
     std::cout.flush();
 

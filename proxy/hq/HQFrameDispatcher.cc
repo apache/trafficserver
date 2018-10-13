@@ -21,11 +21,10 @@
  *  limitations under the License.
  */
 
+#include "QUICIntUtil.h"
 #include "HQFrameDispatcher.h"
 #include "HQDebugNames.h"
 #include "tscore/Diags.h"
-
-static constexpr char tag[] = "hq_frame";
 
 //
 // Frame Dispatcher
@@ -40,23 +39,45 @@ HQFrameDispatcher::add_handler(HQFrameHandler *handler)
 }
 
 HQErrorUPtr
-HQFrameDispatcher::on_read_ready(const uint8_t *src, uint16_t read_avail, uint16_t &nread)
+HQFrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
 {
   std::shared_ptr<const HQFrame> frame(nullptr);
-  const uint8_t *cursor = src;
-  HQErrorUPtr error     = HQErrorUPtr(new HQNoError());
-  uint64_t frame_length = 0;
+  HQErrorUPtr error = HQErrorUPtr(new HQNoError());
+  nread             = 0;
 
-  while (HQFrame::length(cursor, read_avail, frame_length) != -1 && read_avail >= frame_length) {
-    frame = this->_frame_factory.fast_create(cursor, read_avail);
+  while (true) {
+    if (_reading_state == READING_LENGTH_LEN) {
+      // Read a length of Length field
+      uint8_t head;
+      if (stream_io.peek(&head, 1) <= 0) {
+        break;
+      }
+      _reading_frame_length_len = QUICVariableInt::size(&head);
+      _reading_state            = READING_PAYLOAD_LEN;
+    }
+
+    if (_reading_state < READING_PAYLOAD_LEN) {
+      // Read a payload length
+      uint8_t length_buf[8];
+      if (stream_io.read(length_buf, _reading_frame_length_len) != _reading_frame_length_len) {
+        break;
+      }
+      nread += _reading_frame_length_len;
+      size_t dummy;
+      if (QUICVariableInt::decode(_reading_frame_payload_len, dummy, length_buf, sizeof(length_buf)) < 0) {
+        error = HQErrorUPtr(new HQStreamError());
+      }
+      _reading_state = READING_PAYLOAD;
+    }
+
+    // Create a frame
+    frame = this->_frame_factory.fast_create(stream_io, _reading_frame_payload_len);
     if (frame == nullptr) {
-      Debug(tag, "Failed to create a frame");
-      // error = HQErrorUPtr(new HQStreamError());
       break;
     }
-    cursor += frame->total_length();
-    read_avail -= frame->total_length();
+    nread += 1 + _reading_frame_payload_len; // Type field length (1) + Payload length
 
+    // Dispatch
     HQFrameType type                       = frame->type();
     std::vector<HQFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
@@ -65,9 +86,8 @@ HQFrameDispatcher::on_read_ready(const uint8_t *src, uint16_t read_avail, uint16
         return error;
       }
     }
+    _reading_state = READING_LENGTH_LEN;
   }
-
-  nread = cursor - src;
 
   return error;
 }

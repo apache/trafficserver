@@ -65,10 +65,11 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
   QUICStreamId stream_id   = stream_io->stream_id();
   HQClientTransaction *txn = this->_client_session->get_transaction(stream_id);
 
+  uint8_t dummy;
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
-    if (stream_io->is_read_avail_more_than(0)) {
+    if (stream_io->peek(&dummy, 1)) {
       if (txn == nullptr) {
         txn = new HQClientTransaction(this->_client_session, stream_io);
         SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
