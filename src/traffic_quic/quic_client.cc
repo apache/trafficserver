@@ -129,9 +129,9 @@ QUICClientApp::start(const char *path)
   }
 
   QUICStreamId stream_id;
-  QUICErrorUPtr error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
+  QUICConnectionErrorUPtr error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
 
-  if (error->cls != QUICErrorClass::NONE) {
+  if (error != nullptr) {
     Error("%s", error->msg);
     ink_assert(!error->msg);
   }

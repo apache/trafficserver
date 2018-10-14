@@ -85,13 +85,14 @@ QUICStreamManager::set_max_stream_id(QUICStreamId id)
   }
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::create_stream(QUICStreamId stream_id)
 {
   // TODO: check stream_id
-  QUICStream *stream = this->_find_or_create_stream(stream_id);
+  QUICConnectionErrorUPtr error = nullptr;
+  QUICStream *stream            = this->_find_or_create_stream(stream_id);
   if (!stream) {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(stream_id);
@@ -100,14 +101,14 @@ QUICStreamManager::create_stream(QUICStreamId stream_id)
     application->set_stream(stream);
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return error;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::create_uni_stream(QUICStreamId &new_stream_id)
 {
-  QUICErrorUPtr error = this->create_stream(this->_next_stream_id_uni);
-  if (error->cls == QUICErrorClass::NONE) {
+  QUICConnectionErrorUPtr error = this->create_stream(this->_next_stream_id_uni);
+  if (error == nullptr) {
     new_stream_id = this->_next_stream_id_uni;
     this->_next_stream_id_uni += 2;
   }
@@ -115,11 +116,11 @@ QUICStreamManager::create_uni_stream(QUICStreamId &new_stream_id)
   return error;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
 {
-  QUICErrorUPtr error = this->create_stream(this->_next_stream_id_bidi);
-  if (error->cls == QUICErrorClass::NONE) {
+  QUICConnectionErrorUPtr error = this->create_stream(this->_next_stream_id_bidi);
+  if (error == nullptr) {
     new_stream_id = this->_next_stream_id_bidi;
     this->_next_stream_id_bidi += 2;
   }
@@ -134,10 +135,10 @@ QUICStreamManager::reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr erro
   stream->reset(std::move(error));
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  QUICConnectionErrorUPtr error = nullptr;
 
   switch (frame.type()) {
   case QUICFrameType::MAX_STREAM_DATA:
@@ -168,34 +169,34 @@ QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
   return error;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStreamBlockedFrame &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStreamFrame &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (!stream) {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(frame.stream_id());
@@ -203,35 +204,34 @@ QUICStreamManager::_handle_frame(const QUICStreamFrame &frame)
   if (application && !application->is_stream_set(stream)) {
     application->set_stream(stream);
   }
-  QUICErrorUPtr error = stream->recv(frame);
 
-  return error;
+  return stream->recv(frame);
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     // TODO Reset the stream
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStopSendingFrame &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::STREAM_ID_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICMaxStreamIdFrame &frame)
 {
   QUICStreamType type = QUICTypeUtil::detect_stream_type(frame.maximum_stream_id());
@@ -240,7 +240,7 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamIdFrame &frame)
   } else {
     this->_remote_maximum_stream_id_uni = frame.maximum_stream_id();
   }
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
 QUICStream *

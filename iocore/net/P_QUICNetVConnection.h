@@ -215,7 +215,7 @@ public:
 
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
-  QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+  QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICConnection (QUICFrameGenerator)
   // bool will_generate_frame(QUICEncryptionLevel level);
@@ -306,30 +306,30 @@ private:
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
   QUICPacketUPtr _build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable);
 
-  QUICErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
 
-  QUICErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_handshake_process_version_negotiation_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_handshake_process_initial_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_handshake_process_handshake_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_connection_established_receive_packet();
-  QUICErrorUPtr _state_connection_established_process_protected_packet(QUICPacketUPtr packet);
-  QUICErrorUPtr _state_connection_established_migrate_connection(const QUICPacket &p);
-  QUICErrorUPtr _state_connection_established_initiate_connection_migration();
-  QUICErrorUPtr _state_closing_receive_packet();
-  QUICErrorUPtr _state_draining_receive_packet();
-  QUICErrorUPtr _state_common_send_packet();
-  QUICErrorUPtr _state_handshake_send_retry_packet();
-  QUICErrorUPtr _state_closing_send_packet();
+  QUICConnectionErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_handshake_process_version_negotiation_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_handshake_process_initial_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_handshake_process_handshake_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_connection_established_receive_packet();
+  QUICConnectionErrorUPtr _state_connection_established_process_protected_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_connection_established_migrate_connection(const QUICPacket &p);
+  QUICConnectionErrorUPtr _state_connection_established_initiate_connection_migration();
+  QUICConnectionErrorUPtr _state_closing_receive_packet();
+  QUICConnectionErrorUPtr _state_draining_receive_packet();
+  QUICConnectionErrorUPtr _state_common_send_packet();
+  QUICConnectionErrorUPtr _state_handshake_send_retry_packet();
+  QUICConnectionErrorUPtr _state_closing_send_packet();
 
   Ptr<ProxyMutex> _packet_transmitter_mutex;
   Ptr<ProxyMutex> _frame_transmitter_mutex;
 
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
-  void _handle_error(QUICErrorUPtr error);
+  void _handle_error(QUICConnectionErrorUPtr error);
   QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
   void _validate_new_path();
 
@@ -345,7 +345,7 @@ private:
 
   void _handle_idle_timeout();
 
-  QUICErrorUPtr _handle_frame(const QUICNewConnectionIdFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICNewConnectionIdFrame &frame);
 
   void _update_cids();
   void _update_peer_cid(const QUICConnectionId &new_cid);

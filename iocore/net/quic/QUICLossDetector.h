@@ -116,7 +116,7 @@ public:
   int event_handler(int event, Event *edata);
 
   std::vector<QUICFrameType> interests() override;
-  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+  virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
   void on_packet_sent(QUICPacketUPtr packet);
   QUICPacketNumber largest_acked_packet_number();
   void reset();

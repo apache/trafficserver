@@ -37,8 +37,8 @@ public:
   /*
    * Returns true if ACK frame should be sent
    */
-  QUICErrorUPtr receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &should_send_ackbool,
-                               bool &is_flow_controlled);
+  QUICConnectionErrorUPtr receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size,
+                                         bool &should_send_ackbool, bool &is_flow_controlled);
 
   void add_handler(QUICFrameHandler *handler);
 

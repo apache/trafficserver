@@ -37,7 +37,7 @@ public:
   /*
    * Becasue frames passed by FrameDispatcher is temporal, this clones a passed frame to ensure that we can use it later.
    */
-  virtual QUICErrorUPtr insert(const QUICFrame &frame) = 0;
+  virtual QUICConnectionErrorUPtr insert(const QUICFrame &frame) = 0;
   virtual void clear();
   virtual bool empty();
 
@@ -57,7 +57,7 @@ public:
   ~QUICIncomingStreamFrameBuffer();
 
   QUICFrameSPtr pop() override;
-  QUICErrorUPtr insert(const QUICFrame &frame) override;
+  QUICConnectionErrorUPtr insert(const QUICFrame &frame) override;
   void clear() override;
 
   // QUICTransferProgressProvider
@@ -67,7 +67,7 @@ public:
   uint64_t transfer_goal() const override;
 
 private:
-  QUICErrorUPtr _check_and_set_fin_flag(QUICOffset offset, size_t len = 0, bool fin_flag = false);
+  QUICConnectionErrorUPtr _check_and_set_fin_flag(QUICOffset offset, size_t len = 0, bool fin_flag = false);
 
   const QUICStream *_stream = nullptr;
   QUICOffset _max_offset    = 0;
@@ -83,7 +83,7 @@ public:
   ~QUICIncomingCryptoFrameBuffer();
 
   QUICFrameSPtr pop() override;
-  QUICErrorUPtr insert(const QUICFrame &frame) override;
+  QUICConnectionErrorUPtr insert(const QUICFrame &frame) override;
 
 private:
 };

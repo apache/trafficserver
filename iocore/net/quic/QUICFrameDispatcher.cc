@@ -41,15 +41,15 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
   }
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &should_send_ack,
                                     bool &is_flow_controlled)
 {
   std::shared_ptr<const QUICFrame> frame(nullptr);
-  uint16_t cursor     = 0;
-  should_send_ack     = false;
-  is_flow_controlled  = false;
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  uint16_t cursor               = 0;
+  should_send_ack               = false;
+  is_flow_controlled            = false;
+  QUICConnectionErrorUPtr error = nullptr;
 
   while (cursor < size) {
     frame = this->_frame_factory.fast_create(payload + cursor, size - cursor);
@@ -77,7 +77,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
     for (auto h : handlers) {
       error = h->handle_frame(level, *frame.get());
       // TODO: is there any case to continue this loop even if error?
-      if (error->cls != QUICErrorClass::NONE) {
+      if (error != nullptr) {
         return error;
       }
     }

@@ -105,10 +105,10 @@ QUICLossDetector::interests()
   return {QUICFrameType::ACK};
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICLossDetector::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  QUICConnectionErrorUPtr error = nullptr;
 
   if (this->_pn_space_index != QUICTypeUtil::pn_space_index(level)) {
     return error;

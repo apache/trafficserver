@@ -104,7 +104,7 @@ QUICHandshake::~QUICHandshake()
   delete this->_hs_protocol;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled)
 {
   QUICVersion initital_version = QUIC_SUPPORTED_VERSIONS[0];
@@ -115,16 +115,16 @@ QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled
   this->_load_local_client_transport_parameters(initital_version);
   packet_factory->set_version(initital_version);
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory)
 {
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
     if (initial_packet->type() != QUICPacketType::INITIAL) {
-      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
+      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
     }
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
@@ -135,13 +135,13 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
         ink_assert(!"Unsupported version initial packet should be droped QUICPakcetHandler");
       }
     } else {
-      return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
+      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
     }
   }
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet_factory)
 {
   // Client side only
@@ -151,12 +151,12 @@ QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NEGOTIATED ||
       this->_version_negotiator->status() == QUICVersionNegotiationStatus::VALIDATED) {
     QUICHSDebug("Ignore Version Negotiation packet");
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   }
 
   if (vn->version() != 0x00) {
     QUICHSDebug("Version field must be 0x00000000");
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
   }
 
   if (this->_version_negotiator->negotiate(vn) == QUICVersionNegotiationStatus::NEGOTIATED) {
@@ -165,10 +165,10 @@ QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet
     packet_factory->set_version(version);
   } else {
     QUICHSDebug("Version negotiation failed");
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
 bool
@@ -315,14 +315,16 @@ QUICHandshake::interests()
   };
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
-
+  QUICConnectionErrorUPtr error = nullptr;
   switch (frame.type()) {
   case QUICFrameType::CRYPTO:
     error = this->_crypto_streams[static_cast<int>(level)].recv(static_cast<const QUICCryptoFrame &>(frame));
+    if (error != nullptr) {
+      return error;
+    }
     break;
   default:
     QUICHSDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame.type()));
@@ -330,9 +332,7 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
     break;
   }
 
-  error = this->do_handshake();
-
-  return error;
+  return this->do_handshake();
 }
 
 bool
@@ -431,10 +431,10 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICHandshake::do_handshake()
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  QUICConnectionErrorUPtr error = nullptr;
 
   QUICHandshakeMsgs in;
   uint8_t in_buf[UDP_MAXIMUM_PAYLOAD_SIZE] = {0};
