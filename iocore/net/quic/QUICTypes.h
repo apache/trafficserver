@@ -139,7 +139,7 @@ enum class QUICPacketCreationResult {
 };
 
 enum class QUICErrorClass {
-  NONE,
+  UNDEFINED,
   TRANSPORT,
   APPLICATION,
 };
@@ -169,7 +169,7 @@ class QUICError
 public:
   virtual ~QUICError() {}
 
-  QUICErrorClass cls = QUICErrorClass::NONE;
+  QUICErrorClass cls = QUICErrorClass::UNDEFINED;
   uint16_t code      = 0;
   const char *msg    = nullptr;
 
@@ -179,12 +179,6 @@ protected:
     : cls(error_class), code(error_code), msg(error_msg)
   {
   }
-};
-
-class QUICNoError : public QUICError
-{
-public:
-  QUICNoError() : QUICError() {}
 };
 
 class QUICConnectionError : public QUICError

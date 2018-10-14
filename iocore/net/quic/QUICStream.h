@@ -67,10 +67,10 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  QUICErrorUPtr recv(const QUICStreamFrame &frame);
-  QUICErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
-  QUICErrorUPtr recv(const QUICStreamBlockedFrame &frame);
-  QUICErrorUPtr recv(const QUICStopSendingFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICStreamBlockedFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame);
 
   void reset(QUICStreamErrorUPtr error);
 
@@ -138,7 +138,7 @@ public:
   void reset_send_offset();
   void reset_recv_offset();
 
-  QUICErrorUPtr recv(const QUICCryptoFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame);
   int64_t read_avail();
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);

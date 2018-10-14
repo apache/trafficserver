@@ -75,7 +75,7 @@ QUICIncomingStreamFrameBuffer::pop()
   return nullptr;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICIncomingStreamFrameBuffer::insert(const QUICFrame &frame)
 {
   const QUICStreamFrame *stream_frame = static_cast<const QUICStreamFrame *>(&frame);
@@ -83,19 +83,19 @@ QUICIncomingStreamFrameBuffer::insert(const QUICFrame &frame)
   QUICOffset offset = stream_frame->offset();
   size_t len        = stream_frame->data_length();
 
-  QUICErrorUPtr err = this->_check_and_set_fin_flag(offset, len, stream_frame->has_fin_flag());
-  if (err->cls != QUICErrorClass::NONE) {
+  QUICConnectionErrorUPtr err = this->_check_and_set_fin_flag(offset, len, stream_frame->has_fin_flag());
+  if (err != nullptr) {
     return err;
   }
 
   // Ignore empty stream frame except pure fin stream frame
   if (len == 0 && !stream_frame->has_fin_flag()) {
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   }
 
   if (this->_recv_offset > offset) {
     // dup frame;
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   } else if (this->_recv_offset == offset) {
     this->_recv_offset   = offset + len;
     QUICFrameSPtr cloned = frame.clone();
@@ -105,7 +105,7 @@ QUICIncomingStreamFrameBuffer::insert(const QUICFrame &frame)
     this->_out_of_order_queue.insert(std::make_pair(offset, cloned));
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
 void
@@ -117,7 +117,7 @@ QUICIncomingStreamFrameBuffer::clear()
   super::clear();
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICIncomingStreamFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t len, bool fin_flag)
 {
   // stream with fin flag {11.3. Stream Final Offset}
@@ -134,23 +134,23 @@ QUICIncomingStreamFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t
     if (this->_fin_offset != UINT64_MAX) {
       if (this->_fin_offset == offset + len) {
         // dup fin frame
-        return QUICErrorUPtr(new QUICNoError());
+        return nullptr;
       }
-      return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
+      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_OFFSET_ERROR);
     }
 
     this->_fin_offset = offset + len;
 
     if (this->_max_offset > this->_fin_offset) {
-      return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
+      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_OFFSET_ERROR);
     }
 
   } else if (this->_fin_offset != UINT64_MAX && this->_fin_offset <= offset) {
-    return QUICErrorUPtr(new QUICStreamError(this->_stream, QUICTransErrorCode::FINAL_OFFSET_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_OFFSET_ERROR);
   }
   this->_max_offset = std::max(offset + len, this->_max_offset);
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
 bool
@@ -209,7 +209,7 @@ QUICIncomingCryptoFrameBuffer::pop()
   return nullptr;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICIncomingCryptoFrameBuffer::insert(const QUICFrame &frame)
 {
   const QUICCryptoFrame *crypto_frame = static_cast<const QUICCryptoFrame *>(&frame);
@@ -219,12 +219,12 @@ QUICIncomingCryptoFrameBuffer::insert(const QUICFrame &frame)
 
   // Ignore empty stream frame
   if (len == 0) {
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   }
 
   if (this->_recv_offset > offset) {
     // dup frame;
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   } else if (this->_recv_offset == offset) {
     this->_recv_offset   = offset + len;
     QUICFrameSPtr cloned = frame.clone();
@@ -234,5 +234,5 @@ QUICIncomingCryptoFrameBuffer::insert(const QUICFrame &frame)
     this->_out_of_order_queue.insert(std::make_pair(offset, cloned));
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }

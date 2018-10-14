@@ -30,6 +30,6 @@ class QUICFrameHandler
 {
 public:
   virtual ~QUICFrameHandler(){};
-  virtual std::vector<QUICFrameType> interests()                                        = 0;
-  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) = 0;
+  virtual std::vector<QUICFrameType> interests()                                                  = 0;
+  virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) = 0;
 };

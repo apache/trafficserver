@@ -38,7 +38,7 @@ public:
 
   // QUICFrameHandler
   std::vector<QUICFrameType> interests() override;
-  QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+  QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGeneratro
   bool will_generate_frame(QUICEncryptionLevel level) override;
@@ -58,5 +58,5 @@ private:
 
   void _generate_challenge();
   void _generate_response(const QUICPathChallengeFrame &frame);
-  QUICErrorUPtr _validate_response(const QUICPathResponseFrame &frame);
+  QUICConnectionErrorUPtr _validate_response(const QUICPathResponseFrame &frame);
 };

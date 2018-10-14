@@ -98,8 +98,8 @@ const char *
 QUICDebugNames::error_class(QUICErrorClass cls)
 {
   switch (cls) {
-  case QUICErrorClass::NONE:
-    return "NONE";
+  case QUICErrorClass::UNDEFINED:
+    return "UNDEFINED";
   case QUICErrorClass::TRANSPORT:
     return "TRANSPORT";
   case QUICErrorClass::APPLICATION:

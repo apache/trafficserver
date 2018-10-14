@@ -47,21 +47,21 @@ public:
 
   // QUICFrameHandler
   virtual std::vector<QUICFrameType> interests() override;
-  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+  virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level) override;
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
   // for client side
-  QUICErrorUPtr start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
-  QUICErrorUPtr negotiate_version(const QUICPacket *packet, QUICPacketFactory *packet_factory);
+  QUICConnectionErrorUPtr start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
+  QUICConnectionErrorUPtr negotiate_version(const QUICPacket *packet, QUICPacketFactory *packet_factory);
   void reset();
 
   // for server side
-  QUICErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
+  QUICConnectionErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory);
 
-  QUICErrorUPtr do_handshake();
+  QUICConnectionErrorUPtr do_handshake();
 
   bool check_remote_transport_parameters();
 

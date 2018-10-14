@@ -49,9 +49,9 @@ public:
   void add_total_offset_sent(uint32_t sent_byte);
 
   uint32_t stream_count() const;
-  QUICErrorUPtr create_stream(QUICStreamId stream_id);
-  QUICErrorUPtr create_uni_stream(QUICStreamId &new_stream_id);
-  QUICErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id);
+  QUICConnectionErrorUPtr create_stream(QUICStreamId stream_id);
+  QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id);
+  QUICConnectionErrorUPtr create_bidi_stream(QUICStreamId &new_stream_id);
   void reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error);
 
   void set_default_application(QUICApplication *app);
@@ -60,7 +60,7 @@ public:
 
   // QUICFrameHandler
   virtual std::vector<QUICFrameType> interests() override;
-  virtual QUICErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+  virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level) override;
@@ -69,12 +69,12 @@ public:
 private:
   QUICStream *_find_stream(QUICStreamId id);
   QUICStream *_find_or_create_stream(QUICStreamId stream_id);
-  QUICErrorUPtr _handle_frame(const QUICStreamFrame &frame);
-  QUICErrorUPtr _handle_frame(const QUICRstStreamFrame &frame);
-  QUICErrorUPtr _handle_frame(const QUICStopSendingFrame &frame);
-  QUICErrorUPtr _handle_frame(const QUICMaxStreamDataFrame &frame);
-  QUICErrorUPtr _handle_frame(const QUICStreamBlockedFrame &frame);
-  QUICErrorUPtr _handle_frame(const QUICMaxStreamIdFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICStreamFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICRstStreamFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICStopSendingFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamDataFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICStreamBlockedFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamIdFrame &frame);
   std::vector<QUICEncryptionLevel>
   _encryption_level_filter() override
   {

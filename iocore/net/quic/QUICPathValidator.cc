@@ -63,17 +63,17 @@ QUICPathValidator::_generate_response(const QUICPathChallengeFrame &frame)
   this->_has_outgoing_response = true;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICPathValidator::_validate_response(const QUICPathResponseFrame &frame)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::PROTOCOL_VIOLATION));
+  QUICConnectionErrorUPtr error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
 
   for (int i = 0; i < 3; ++i) {
     if (memcmp(this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * i), frame.data(),
                QUICPathChallengeFrame::DATA_LEN) == 0) {
       this->_state                  = ValidationState::VALIDATED;
       this->_has_outgoing_challenge = 0;
-      error                         = QUICErrorUPtr(new QUICNoError());
+      error                         = nullptr;
       break;
     }
   }
@@ -90,10 +90,10 @@ QUICPathValidator::interests()
   return {QUICFrameType::PATH_CHALLENGE, QUICFrameType::PATH_RESPONSE};
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICPathValidator::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 {
-  QUICErrorUPtr error = QUICErrorUPtr(new QUICNoError());
+  QUICConnectionErrorUPtr error = nullptr;
 
   switch (frame.type()) {
   case QUICFrameType::PATH_CHALLENGE:

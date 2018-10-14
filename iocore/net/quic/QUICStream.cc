@@ -99,7 +99,7 @@ int
 QUICStream::state_stream_open(int event, void *data)
 {
   QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
-  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
+  QUICErrorUPtr error = nullptr;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -133,7 +133,8 @@ QUICStream::state_stream_open(int event, void *data)
     ink_assert(false);
   }
 
-  if (error->cls != QUICErrorClass::NONE) {
+  // FIXME error is always nullptr
+  if (error != nullptr) {
     if (error->cls == QUICErrorClass::TRANSPORT) {
       QUICStreamDebug("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error->cls),
                       static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code),
@@ -293,7 +294,7 @@ QUICStream::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t 
  * If the reordering or writting operation is heavy, split out them to read function,
  * which is called by application via do_io_read() or reenable().
  */
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStream::recv(const QUICStreamFrame &frame)
 {
   ink_assert(_id == frame.stream_id());
@@ -302,7 +303,7 @@ QUICStream::recv(const QUICStreamFrame &frame)
   // Check stream state - Do this first before accept the frame
   if (!this->_state.is_allowed_to_receive(frame)) {
     QUICStreamDebug("Canceled receiving %s frame due to the stream state", QUICDebugNames::frame_type(frame.type()));
-    return QUICErrorUPtr(new QUICStreamError(this, QUICTransErrorCode::STREAM_STATE_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_STATE_ERROR);
   }
 
   // Flow Control - Even if it's allowed to receive on the state, it may exceed the limit
@@ -310,11 +311,11 @@ QUICStream::recv(const QUICStreamFrame &frame)
   QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                     this->_local_flow_controller.current_limit());
   if (ret != 0) {
-    return QUICErrorUPtr(new QUICConnectionError(QUICTransErrorCode::FLOW_CONTROL_ERROR));
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FLOW_CONTROL_ERROR);
   }
 
-  QUICErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
-  if (error->cls != QUICErrorClass::NONE) {
+  QUICConnectionErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
+  if (error != nullptr) {
     this->_received_stream_frame_buffer.clear();
     return error;
   }
@@ -342,10 +343,10 @@ QUICStream::recv(const QUICStreamFrame &frame)
 
   this->_signal_read_event();
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStream::recv(const QUICMaxStreamDataFrame &frame)
 {
   this->_remote_flow_controller.forward_limit(frame.maximum_stream_data());
@@ -357,23 +358,23 @@ QUICStream::recv(const QUICMaxStreamDataFrame &frame)
     this->_signal_write_event();
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStream::recv(const QUICStreamBlockedFrame &frame)
 {
   // STREAM_BLOCKED frames are for debugging. Nothing to do here.
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICStream::recv(const QUICStopSendingFrame &frame)
 {
   this->_state.update_with_receiving_frame(frame);
   this->_reset_reason = QUICStreamErrorUPtr(new QUICStreamError(this, QUIC_APP_ERROR_CODE_STOPPING));
   // We received and processed STOP_SENDING frame, so return NO_ERROR here
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
 bool
@@ -632,11 +633,11 @@ QUICCryptoStream::reset_recv_offset()
   this->_received_stream_frame_buffer.clear();
 }
 
-QUICErrorUPtr
+QUICConnectionErrorUPtr
 QUICCryptoStream::recv(const QUICCryptoFrame &frame)
 {
-  QUICErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
-  if (error->cls != QUICErrorClass::NONE) {
+  QUICConnectionErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
+  if (error != nullptr) {
     this->_received_stream_frame_buffer.clear();
     return error;
   }
@@ -649,7 +650,7 @@ QUICCryptoStream::recv(const QUICCryptoFrame &frame)
     new_frame = this->_received_stream_frame_buffer.pop();
   }
 
-  return QUICErrorUPtr(new QUICNoError());
+  return nullptr;
 }
 
 int64_t
@@ -679,7 +680,7 @@ QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level)
 QUICFrameUPtr
 QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
-  QUICErrorUPtr error = std::unique_ptr<QUICError>(new QUICNoError());
+  QUICConnectionErrorUPtr error = nullptr;
 
   if (this->_reset_reason) {
     return QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
