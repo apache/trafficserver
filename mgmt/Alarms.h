@@ -24,8 +24,9 @@
 
 #pragma once
 
-#include "tscore/ink_hash_table.h"
 #include "tscore/ink_mutex.h"
+#include <unordered_map>
+#include <string>
 
 class AppVersionInfo;
 
@@ -102,7 +103,7 @@ public:
   void execAlarmBin(const char *desc);
 
   const char *getAlarmText(alarm_t id);
-  InkHashTable *
+  std::unordered_map<std::string, Alarm *> const &
   getLocalAlarms()
   {
     return local_alarms;
@@ -112,9 +113,9 @@ private:
   int cur_cb;
   ink_mutex mutex;
 
-  InkHashTable *cblist;
-  InkHashTable *local_alarms;
-  InkHashTable *remote_alarms;
+  std::unordered_map<std::string, AlarmCallbackFunc> cblist;
+  std::unordered_map<std::string, Alarm *> local_alarms;
+  std::unordered_map<std::string, Alarm *> remote_alarms;
 
   /* counter is added in order to provide unique keys for OEM alarms,
      since an OEM_ALARM type can be associated with many different
