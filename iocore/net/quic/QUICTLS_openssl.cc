@@ -261,8 +261,18 @@ QUICTLS::get_encryption_level(int msg_type)
 int
 QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 {
+  if (this->is_handshake_finished()) {
+    return this->_process_post_handshake_messages(out, in);
+  }
+
+  return this->_handshake(out, in);
+}
+
+int
+QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+{
   ink_assert(this->_ssl != nullptr);
-  if (SSL_is_init_finished(this->_ssl) || this->_state == HandshakeState::ABORTED) {
+  if (this->_state == HandshakeState::ABORTED) {
     return 0;
   }
 
@@ -293,6 +303,49 @@ QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
   } else {
     ret = SSL_connect(this->_ssl);
   }
+
+  if (ret < 0) {
+    err = SSL_get_error(this->_ssl, ret);
+
+    switch (err) {
+    case SSL_ERROR_WANT_READ:
+    case SSL_ERROR_WANT_WRITE:
+      break;
+    default:
+      char err_buf[256] = {0};
+      ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+      Debug(tag, "Handshake: %s", err_buf);
+      return ret;
+    }
+  }
+
+  return 1;
+}
+
+int
+QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+{
+  ink_assert(this->_ssl != nullptr);
+
+  int err = SSL_ERROR_NONE;
+  ERR_clear_error();
+  int ret = 0;
+
+  SSL_set_msg_callback(this->_ssl, msg_cb);
+  SSL_set_msg_callback_arg(this->_ssl, out);
+
+  // TODO: set BIO_METHOD which read from QUICHandshakeMsgs directly
+  BIO *rbio = BIO_new(BIO_s_mem());
+  // TODO: set dummy BIO_METHOD which do nothing
+  BIO *wbio = BIO_new(BIO_s_mem());
+  if (in != nullptr && in->offsets[4] != 0) {
+    BIO_write(rbio, in->buf, in->offsets[4]);
+  }
+  SSL_set_bio(this->_ssl, rbio, wbio);
+
+  uint8_t data[2048];
+  size_t l = 0;
+  ret      = SSL_read_ex(this->_ssl, data, 2048, &l);
 
   if (ret < 0) {
     err = SSL_get_error(this->_ssl, ret);

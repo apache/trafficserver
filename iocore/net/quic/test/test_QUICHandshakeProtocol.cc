@@ -261,6 +261,14 @@ TEST_CASE("QUICHandshakeProtocol")
     std::cout << "### Messages from server" << std::endl;
     print_hex(msg4.buf, msg4.offsets[4]);
 
+    QUICHandshakeMsgs msg5;
+    uint8_t msg5_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
+    msg5.buf                                = msg5_buf;
+    msg5.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
+    REQUIRE(client->handshake(&msg5, &msg4) == 1);
+    std::cout << "### Messages from server" << std::endl;
+    print_hex(msg4.buf, msg4.offsets[4]);
+
     // encrypt - decrypt
     // client (encrypt) - server (decrypt)
     std::cout << "### Original Text" << std::endl;

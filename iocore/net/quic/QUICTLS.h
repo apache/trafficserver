@@ -95,6 +95,8 @@ private:
   bool _decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
                 const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const QUIC_EVP_CIPHER *aead, size_t tag_len) const;
   int _read_early_data();
+  int _handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in);
+  int _process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in);
   void _generate_0rtt_key();
   void _update_encryption_level(QUICEncryptionLevel level);
 
