@@ -49,7 +49,7 @@ using QUICOffset       = uint64_t;
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff00000e,
+  0xff00000f,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 
@@ -105,12 +105,13 @@ enum class QUICFrameType : uint8_t {
   STREAM_ID_BLOCKED,
   NEW_CONNECTION_ID,
   STOP_SENDING,
-  ACK,
+  RETIRE_CONNECTION_ID,
   PATH_CHALLENGE,
   PATH_RESPONSE,
   STREAM = 0x10, // 0x10 - 0x17
   CRYPTO = 0x18,
   NEW_TOKEN,
+  ACK, // 0x1a - 0x1b
   UNKNOWN,
 };
 

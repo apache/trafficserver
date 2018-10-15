@@ -46,6 +46,8 @@ public:
     DISABLE_MIGRATION,
     INITIAL_MAX_STREAM_DATA_BIDI_REMOTE,
     INITIAL_MAX_STREAM_DATA_UNI,
+    MAX_ACK_DELAY,
+    ORIGINAL_CONNECTION_ID,
   };
 
   explicit operator bool() const { return true; }

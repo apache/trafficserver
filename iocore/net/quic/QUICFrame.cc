@@ -604,6 +604,7 @@ QUICAckFrame::clone() const
 QUICFrameType
 QUICAckFrame::type() const
 {
+  // TODO ECN
   return QUICFrameType::ACK;
 }
 
@@ -2041,10 +2042,10 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
     uint8_t *p = buf;
     *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
     ++p;
-    QUICIntUtil::write_QUICVariableInt(this->_sequence, p, &n);
-    p += n;
     *p = this->_connection_id.length();
     p += 1;
+    QUICIntUtil::write_QUICVariableInt(this->_sequence, p, &n);
+    p += n;
     QUICTypeUtil::write_QUICConnectionId(this->_connection_id, p, &n);
     p += n;
     memcpy(p, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);

@@ -35,7 +35,7 @@ static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 static constexpr char tag[]                            = "quic_handshake";
 
 static constexpr uint32_t TP_ERROR_LENGTH         = 0x010000;
-static constexpr uint32_t TP_ERROR_VALUE          = 0x020000;
+// static constexpr uint32_t TP_ERROR_VALUE          = 0x020000;
 static constexpr uint32_t TP_ERROR_MUST_EXIST     = 0x030000;
 static constexpr uint32_t TP_ERROR_MUST_NOT_EXIST = 0x040000;
 
@@ -147,16 +147,6 @@ QUICTransportParameters::_validate_parameters() const
   decltype(this->_parameters)::const_iterator ite;
 
   // MUSTs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::IDLE_TIMEOUT)) != this->_parameters.end()) {
-    if (ite->second->len() != 2) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::IDLE_TIMEOUT);
-    }
-    if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 600) {
-      return -(TP_ERROR_VALUE | QUICTransportParameterId::IDLE_TIMEOUT);
-    }
-  } else {
-    return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::IDLE_TIMEOUT);
-  }
 
   // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_DATA)) != this->_parameters.end()) {
@@ -174,6 +164,12 @@ QUICTransportParameters::_validate_parameters() const
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
       return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS);
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::IDLE_TIMEOUT)) != this->_parameters.end()) {
+    if (ite->second->len() != 2) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::IDLE_TIMEOUT);
     }
   }
 
@@ -216,7 +212,13 @@ QUICTransportParameters::_validate_parameters() const
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::DISABLE_MIGRATION)) != this->_parameters.end()) {
     if (ite->second->len() != 0) {
-      return -6;
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::DISABLE_MIGRATION);
+    }
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_ACK_DELAY)) != this->_parameters.end()) {
+    if (ite->second->len() != 1) {
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::MAX_ACK_DELAY);
     }
   }
 
@@ -494,6 +496,14 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
   }
 
   decltype(this->_parameters)::const_iterator ite;
+
+  // MUSTs if the server sent a Retry packet
+  if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_CONNECTION_ID)) != this->_parameters.end()) {
+    // We cannot check the length because it's not a fixed length.
+  } else {
+    // TODO Need a way that checks if we received a Retry from the server
+    // return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::ORIGINAL_CONNECTION_ID);
+  }
 
   // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {

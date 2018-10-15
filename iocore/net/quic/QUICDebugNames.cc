@@ -88,6 +88,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "STREAM";
   case QUICFrameType::CRYPTO:
     return "CRYPTO";
+  case QUICFrameType::RETIRE_CONNECTION_ID:
+    return "RETIRE_CONNECTION_ID";
   case QUICFrameType::UNKNOWN:
   default:
     return "UNKNOWN";
@@ -195,6 +197,10 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_STREAM_DATA_BIDI_REMOTE";
   case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI:
     return "INITIAL_MAX_STREAM_DATA_UNI";
+  case QUICTransportParameterId::MAX_ACK_DELAY:
+    return "INITIAL_MAX_ACK_DELAY";
+  case QUICTransportParameterId::ORIGINAL_CONNECTION_ID:
+    return "INITIAL_ORIGINAL_CONNECTION_ID";
   default:
     return "UNKNOWN";
   }
