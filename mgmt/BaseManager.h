@@ -36,18 +36,11 @@
 #include "tscore/ink_thread.h"
 #include "tscore/ink_mutex.h"
 #include "tscore/ink_llqueue.h"
-#include "tscore/ink_hash_table.h"
 
 #include "MgmtDefs.h"
 #include "MgmtMarshall.h"
 
-/*******************************************
- * used by LocalManager and in Proxy Main. *
- */
-#define MAX_OPTION_SIZE 2048
-#define MAX_PROXY_SERVER_PORTS 2048
-#define MAX_ATTR_LEN 5
-/*******************************************/
+#include <unordered_map>
 
 /*
  * MgmtEvent defines.
@@ -124,7 +117,7 @@ public:
   int registerMgmtCallback(int msg_id, MgmtCallback func, void *opaque_callback_data = nullptr);
 
   LLQ *mgmt_event_queue;
-  InkHashTable *mgmt_callback_table;
+  std::unordered_map<int, MgmtCallbackList *> mgmt_callback_table;
 
 protected:
   void executeMgmtCallback(int msg_id, char *data_raw, int data_len);

@@ -26,6 +26,8 @@
 #include "ProxyConfig.h"
 #include "P_SSLUtils.h"
 
+#include <tscore/ink_hash_table.h>
+
 struct SSLConfigParams;
 struct SSLContextStorage;
 
