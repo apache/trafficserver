@@ -71,19 +71,19 @@ alarm_script_dir()
 
 Alarms::Alarms()
 {
-  cur_cb        = 0;
-  cblist        = ink_hash_table_create(InkHashTableKeyType_String);
-  local_alarms  = ink_hash_table_create(InkHashTableKeyType_String);
-  remote_alarms = ink_hash_table_create(InkHashTableKeyType_String);
+  cur_cb = 0;
   ink_mutex_init(&mutex);
   alarmOEMcount = minOEMkey;
 } /* End Alarms::Alarms */
 
 Alarms::~Alarms()
 {
-  ink_hash_table_destroy(cblist);
-  ink_hash_table_destroy_and_free_values(local_alarms);
-  ink_hash_table_destroy_and_free_values(remote_alarms);
+  for (auto &&it : local_alarms) {
+    ats_free(it.second);
+  }
+  for (auto &&it : remote_alarms) {
+    ats_free(it.second);
+  }
   ink_mutex_destroy(&mutex);
 } /* End Alarms::Alarms */
 
@@ -95,7 +95,7 @@ Alarms::registerCallback(AlarmCallbackFunc func)
   ink_mutex_acquire(&mutex);
   snprintf(cb_buf, sizeof(cb_buf), "%d", cur_cb++);
   Debug("alarm", "[Alarms::registerCallback] Registering Alarms callback");
-  ink_hash_table_insert(cblist, cb_buf, (void *)func);
+  cblist.emplace(cb_buf, func);
   ink_mutex_release(&mutex);
 } /* End Alarms::registerCallback */
 
@@ -104,7 +104,6 @@ Alarms::isCurrentAlarm(alarm_t a, char *ip)
 {
   bool ret = false;
   char buf[80];
-  InkHashTableValue hash_value;
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
@@ -113,9 +112,9 @@ Alarms::isCurrentAlarm(alarm_t a, char *ip)
     snprintf(buf, sizeof(buf), "%d-%s", a, ip);
   }
 
-  if (!ip && ink_hash_table_lookup(local_alarms, buf, &hash_value) != 0) {
+  if (!ip && local_alarms.find(buf) != local_alarms.end()) {
     ret = true;
-  } else if (ip && ink_hash_table_lookup(remote_alarms, buf, &hash_value) != 0) {
+  } else if (ip && remote_alarms.find(buf) != remote_alarms.end()) {
     ret = true;
   }
   ink_mutex_release(&mutex);
@@ -126,7 +125,6 @@ void
 Alarms::resolveAlarm(alarm_t a, char *ip)
 {
   char buf[80];
-  InkHashTableValue hash_value;
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
@@ -135,15 +133,15 @@ Alarms::resolveAlarm(alarm_t a, char *ip)
     snprintf(buf, sizeof(buf), "%d-%s", a, ip);
   }
 
-  if (!ip && ink_hash_table_lookup(local_alarms, buf, &hash_value) != 0) {
-    ink_hash_table_delete(local_alarms, buf);
-    ats_free(((Alarm *)hash_value)->description);
+  if (!ip && local_alarms.find(buf) != local_alarms.end()) {
+    Alarm *hash_value = local_alarms[buf];
+    local_alarms.erase(buf);
+    ats_free(hash_value->description);
     ats_free(hash_value);
-  } else if (ip && ink_hash_table_lookup(remote_alarms, buf, &hash_value) != 0) {
-    char buf2[1024];
-
-    snprintf(buf2, sizeof(buf2), "aresolv: %d\n", a);
-    ink_hash_table_delete(remote_alarms, buf);
+  } else if (ip && remote_alarms.find(buf) != remote_alarms.end()) {
+    Alarm *hash_value = remote_alarms[buf];
+    remote_alarms.erase(buf);
+    ats_free(hash_value->description);
     ats_free(hash_value);
   }
   ink_mutex_release(&mutex);
@@ -160,9 +158,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   int priority;
   char buf[80];
   Alarm *atmp;
-  InkHashTableValue hash_value;
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
 
   /* Assign correct priorities */
   switch (a) {
@@ -234,16 +229,16 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
       alarmOEMcount++;
     }
     snprintf(buf, sizeof(buf), "%d", a);
-    if (ink_hash_table_lookup(local_alarms, buf, &hash_value) != 0) {
+    if (local_alarms.find(buf) != local_alarms.end()) {
       ink_mutex_release(&mutex);
       return;
     }
   } else {
     snprintf(buf, sizeof(buf), "%d-%s", a, ip);
-    if (ink_hash_table_lookup(remote_alarms, buf, &hash_value) != 0) {
+    if (auto it = remote_alarms.find(buf); it != remote_alarms.end()) {
       // Reset the seen flag so that we know the remote alarm is
       //   still active
-      atmp       = (Alarm *)hash_value;
+      atmp       = it->second;
       atmp->seen = true;
       ink_mutex_release(&mutex);
       return;
@@ -260,11 +255,11 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   if (!ip) {
     atmp->local        = true;
     atmp->inet_address = 0;
-    ink_hash_table_insert(local_alarms, (InkHashTableKey)(buf), (atmp));
+    local_alarms.emplace(buf, atmp);
   } else {
     atmp->local        = false;
     atmp->inet_address = inet_addr(ip);
-    ink_hash_table_insert(remote_alarms, (InkHashTableKey)(buf), (atmp));
+    local_alarms.emplace(buf, atmp);
   }
 
   // Swap desc with time-stamped description.  Kinda hackish
@@ -288,9 +283,8 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   ink_mutex_release(&mutex);
 
-  for (entry = ink_hash_table_iterator_first(cblist, &iterator_state); entry != nullptr;
-       entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {
-    AlarmCallbackFunc func = (AlarmCallbackFunc)ink_hash_table_entry_value(remote_alarms, entry);
+  for (auto &&it : cblist) {
+    AlarmCallbackFunc func = it.second;
     Debug("alarm", "[Alarms::signalAlarm] invoke callback for %d", a);
     (*(func))(a, ip, desc);
   }
@@ -310,16 +304,11 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 void
 Alarms::resetSeenFlag(char *ip)
 {
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
-
   ink_mutex_acquire(&mutex);
-  for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != nullptr;
-       entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
-    char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
-    Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
-
-    if (strstr(key, ip)) {
+  for (auto &&it : remote_alarms) {
+    std::string const &key = it.first;
+    Alarm *tmp             = it.second;
+    if (key.find(ip) != std::string::npos) {
       tmp->seen = false;
     }
   }
@@ -335,18 +324,14 @@ Alarms::resetSeenFlag(char *ip)
 void
 Alarms::clearUnSeen(char *ip)
 {
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
-
   ink_mutex_acquire(&mutex);
-  for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != nullptr;
-       entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
-    char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
-    Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
+  for (auto &&it : remote_alarms) {
+    std::string const &key = it.first;
+    Alarm *tmp             = it.second;
 
-    if (strstr(key, ip)) {                         /* Make sure alarm is for correct ip */
-      if (!tmp->seen) {                            /* Make sure we did not see it in peer's report */
-        ink_hash_table_delete(remote_alarms, key); /* Safe in iterator? */
+    if (key.find(ip) != std::string::npos) { /* Make sure alarm is for correct ip */
+      if (!tmp->seen) {                      /* Make sure we did not see it in peer's report */
+        remote_alarms.erase(key);
         ats_free(tmp->description);
         ats_free(tmp);
       }
