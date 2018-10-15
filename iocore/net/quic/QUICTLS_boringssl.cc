@@ -50,6 +50,13 @@ QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 }
 
 int
+QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+{
+  ink_assert(false);
+  return 0;
+}
+
+int
 QUICTLS::_read_early_data()
 {
   uint8_t early_data[8];
