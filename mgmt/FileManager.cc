@@ -32,9 +32,6 @@
 
 FileManager::FileManager()
 {
-  bindings = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_assert(bindings != nullptr);
-
   ink_mutex_init(&accessLock);
   ink_mutex_init(&cbListLock);
 }
@@ -48,9 +45,6 @@ FileManager::FileManager()
 FileManager::~FileManager()
 {
   callbackListable *cb;
-  Rollback *rb;
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
 
   // Let other operations finish and do not start any new ones
   ink_mutex_acquire(&accessLock);
@@ -58,15 +52,9 @@ FileManager::~FileManager()
   for (cb = cblist.pop(); cb != nullptr; cb = cblist.pop()) {
     delete cb;
   }
-
-  for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
-       entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
-
-    delete rb;
+  for (auto &&it : bindings) {
+    delete it.second;
   }
-
-  ink_hash_table_destroy(bindings);
 
   ink_mutex_release(&accessLock);
   ink_mutex_destroy(&accessLock);
@@ -122,7 +110,7 @@ FileManager::addFileHelper(const char *fileName, const char *configName, bool ro
   Rollback *rb    = new Rollback(fileName, configName, root_access_needed, parentRollback, flags);
   rb->configFiles = this;
 
-  ink_hash_table_insert(bindings, fileName, rb);
+  bindings.emplace(fileName, rb);
 }
 
 // bool FileManager::getRollbackObj(char* fileName, Rollback** rbPtr)
@@ -135,15 +123,13 @@ FileManager::addFileHelper(const char *fileName, const char *configName, bool ro
 bool
 FileManager::getRollbackObj(const char *fileName, Rollback **rbPtr)
 {
-  InkHashTableValue lookup = nullptr;
-  int found;
-
   ink_mutex_acquire(&accessLock);
-  found = ink_hash_table_lookup(bindings, fileName, &lookup);
+  auto it    = bindings.find(fileName);
+  bool found = it != bindings.end();
   ink_mutex_release(&accessLock);
 
-  *rbPtr = (Rollback *)lookup;
-  return (found == 0) ? false : true;
+  *rbPtr = found ? it->second : nullptr;
+  return found;
 }
 
 // bool FileManager::fileChanged(const char* fileName)
@@ -184,16 +170,13 @@ void
 FileManager::rereadConfig()
 {
   Rollback *rb;
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
 
   std::vector<Rollback *> changedFiles;
   std::vector<Rollback *> parentFileNeedChange;
   size_t n;
   ink_mutex_acquire(&accessLock);
-  for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
-       entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+  for (auto &&it : bindings) {
+    rb = it.second;
     if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_AND_UPDATE : ROLLBACK_CHECK_ONLY)) {
       changedFiles.push_back(rb);
       if (rb->isChildRollback()) {
@@ -212,9 +195,8 @@ FileManager::rereadConfig()
       continue;
     }
     // for each parent file, if it is changed, then delete all its children
-    for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
-         entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-      rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    for (auto &&it : bindings) {
+      rb = it.second;
       if (rb->getParentRollback() == changedFiles[i]) {
         if (std::find(childFileNeedDelete.begin(), childFileNeedDelete.end(), rb) == childFileNeedDelete.end()) {
           childFileNeedDelete.push_back(rb);
@@ -224,7 +206,7 @@ FileManager::rereadConfig()
   }
   n = childFileNeedDelete.size();
   for (size_t i = 0; i < n; i++) {
-    ink_hash_table_delete(bindings, childFileNeedDelete[i]->getFileName());
+    bindings.erase(childFileNeedDelete[i]->getFileName());
     delete childFileNeedDelete[i];
   }
   ink_mutex_release(&accessLock);
@@ -249,14 +231,11 @@ bool
 FileManager::isConfigStale()
 {
   Rollback *rb;
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
   bool stale = false;
 
   ink_mutex_acquire(&accessLock);
-  for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != nullptr;
-       entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+  for (auto &&it : bindings) {
+    rb = it.second;
     if (rb->checkForUserUpdate(ROLLBACK_CHECK_ONLY)) {
       stale = true;
       break;
@@ -273,12 +252,10 @@ FileManager::isConfigStale()
 void
 FileManager::configFileChild(const char *parent, const char *child, unsigned flags)
 {
-  InkHashTableValue lookup;
   Rollback *parentRollback = nullptr;
   ink_mutex_acquire(&accessLock);
-  int htfound = ink_hash_table_lookup(bindings, parent, &lookup);
-  if (htfound) {
-    parentRollback = (Rollback *)lookup;
+  if (auto it = bindings.find(parent); it != bindings.end()) {
+    parentRollback = it->second;
     addFileHelper(child, "", parentRollback->rootAccessNeeded(), parentRollback, flags);
   }
   ink_mutex_release(&accessLock);

@@ -23,9 +23,10 @@
 
 #pragma once
 
-#include "tscore/ink_hash_table.h"
 #include "tscore/ink_mutex.h"
 #include "tscore/List.h"
+
+#include <unordered_map>
 
 class ExpandingArray;
 class Rollback;
@@ -92,7 +93,7 @@ private:
   ink_mutex accessLock; // Protects bindings hashtable
   ink_mutex cbListLock; // Protects the CallBack List
   DLL<callbackListable> cblist;
-  InkHashTable *bindings;
+  std::unordered_map<std::string_view, Rollback *> bindings;
   void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback,
                      unsigned flags = 0);
 };
