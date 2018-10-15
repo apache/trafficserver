@@ -78,3 +78,15 @@ Http1Transaction::allow_half_open() const
   }
   return false;
 }
+
+void
+Http1Transaction::increment_client_transactions_stat()
+{
+  HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
+}
+
+void
+Http1Transaction::decrement_client_transactions_stat()
+{
+  HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
+}

@@ -51,8 +51,6 @@ public:
     _start_time       = Thread::get_hrtime();
     _thread           = this_ethread();
     this->client_rwnd = initial_rwnd;
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
     sm_reader = request_reader = request_buffer.alloc_reader();
     http_parser_init(&http_parser);
     // FIXME: Are you sure? every "stream" needs request_header?
@@ -221,6 +219,9 @@ public:
   {
     return is_first_transaction_flag;
   }
+
+  void increment_client_transactions_stat() override;
+  void decrement_client_transactions_stat() override;
 
 private:
   void response_initialize_data_handling(bool &is_done);

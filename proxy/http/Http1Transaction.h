@@ -127,6 +127,9 @@ public:
     return get_transact_count();
   }
 
+  void increment_client_transactions_stat() override;
+  void decrement_client_transactions_stat() override;
+
 protected:
   bool outbound_transparent{false};
 };

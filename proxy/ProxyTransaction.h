@@ -264,6 +264,9 @@ public:
   void set_rx_error_code(ProxyError e);
   void set_tx_error_code(ProxyError e);
 
+  virtual void increment_client_transactions_stat() = 0;
+  virtual void decrement_client_transactions_stat() = 0;
+
 protected:
   ProxySession *parent;
   HttpSM *current_reader;

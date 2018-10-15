@@ -58,6 +58,8 @@ HTTP Connection
 .. ts:stat:: global proxy.process.http.current_client_transactions integer
    :type: gauge
 
+   Represents the current number of HTTP/1.0 and HTTP/1.1 transactions from client to the |TS|.
+
 .. ts:stat:: global proxy.process.http.current_server_connections integer
    :type: gauge
 
@@ -140,3 +142,8 @@ HTTP Connection
    :type: gauge
 
    Represents the current number of HTTP/2 connections from client to the |TS|.
+
+.. ts:stat:: global proxy.process.http2.current_client_streams integer
+   :type: gauge
+
+   Represents the current number of HTTP/2 streams from client to the |TS|.
