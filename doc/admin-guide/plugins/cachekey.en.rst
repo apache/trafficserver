@@ -110,11 +110,11 @@ Cache key structure and related plugin parameters
 
 ::
 
-  Optional components      | ┌───────────────────┬────────────────────┐
-                           | │ --include-headers │  --capture-headers │
-                           | ├────────────────────────────────────────┤
-  Default values if no     | │ (empty)           |  (empty)           |
-  optional components      | └───────────────────┴────────────────────┘
+  Optional components      | ┌───────────────────┬───────────────────┐
+                           | │ --include-headers │  --capture-header │
+                           | ├───────────────────────────────────────┤
+  Default values if no     | │ (empty)           |  (empty)          |
+  optional components      | └───────────────────┴───────────────────┘
   configured               |
 
 * ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the cache key. The list of headers defined by ``--include-headers`` are always sorted before adding them to the cache key.
@@ -405,7 +405,7 @@ The following headers ``HeaderA`` and ``HeaderB`` will be used when constructing
 The following would capture from the ``Authorization`` header and will add the captured element to the cache key ::
 
   @plugin=cachekey.so \
-      @pparam=--capture-header=Authorization:/AWS\s(?<clientID>[^:]+).*/clientID:$1/"
+      @pparam=--capture-header=Authorization:/AWS\s(?<clientID>[^:]+).*/clientID:$1/
 
 If the request looks like the following::
 
