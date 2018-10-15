@@ -738,7 +738,6 @@ Http2Stream::destroy()
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
 
-  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
   ink_hrtime end_time = Thread::get_hrtime();
   HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
   _req_header.destroy();
@@ -891,6 +890,19 @@ Http2Stream::release(IOBufferReader *r)
   super::release(r);
   current_reader = nullptr; // State machine is on its own way down.
   this->do_io_close();
+}
+
+void
+Http2Stream::increment_client_transactions_stat()
+{
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
+}
+
+void
+Http2Stream::decrement_client_transactions_stat()
+{
+  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
 }
 
 bool

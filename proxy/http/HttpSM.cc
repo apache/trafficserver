@@ -486,7 +486,6 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
 
   ink_release_assert(ua_txn->get_half_close_flag() == false);
   mutex = client_vc->mutex;
-  HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
   if (ua_txn->debug()) {
     debug_on = true;
   }
@@ -6918,7 +6917,6 @@ HttpSM::kill_this()
 
     SMDebug("http", "[%" PRId64 "] deallocating sm", sm_id);
     //    authAdapter.destroyState();
-    HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
     destroy();
   }
 }
