@@ -24,7 +24,6 @@
 #pragma once
 
 #include "MgmtDefs.h"
-#include "tscore/ink_hash_table.h"
 #include "records/P_RecCore.h"
 
 // class MgmtData - stores information from local manager
@@ -77,12 +76,6 @@ RecDataT varType(const char *varName);
 int convertHtmlToUnix(char *buffer);
 int substituteUnsafeChars(char *buffer);
 char *substituteForHTMLChars(const char *buffer);
-
-// Produce a hash table based on a HTML form submission
-//
-//  CALLEE deallocates hashtable
-InkHashTable *processFormSubmission(char *submission);
-InkHashTable *processFormSubmission_noSubstitute(char *submission);
 
 int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
