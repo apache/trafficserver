@@ -94,7 +94,7 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
     :param scenario: Defines the ACL to configure and the addresses to test.
     '''
 
-    config = ','.join(':'.join(t) for t in ((addr.name.lower(),action.name.lower()) for (addr,action) in scenario.items()))
+    config = ','.join(':'.join(t) for t in sorted((addr.name.lower(),action.name.lower()) for (addr,action) in scenario.items()))
 
     normRedirectTarget = normalizeForAutest(redirectTarget)
     normConfig = normalizeForAutest(config)

@@ -25,9 +25,9 @@ noinst_PROGRAMS =
 
 SUBDIRS = tscpp/api
 
-if BUILD_WCCP 
-SUBDIRS += wccp 
-include traffic_wccp/Makefile.inc 
+if BUILD_WCCP
+SUBDIRS += wccp
+include traffic_wccp/Makefile.inc
 endif
 
 include traffic_cache_tool/Makefile.inc

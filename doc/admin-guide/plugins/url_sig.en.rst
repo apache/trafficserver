@@ -245,8 +245,8 @@ Signature
 Signature query parameters embedded in the URL path.
 
     Optionally signature query parameters may be embedded in an opaque base64 encoded container
-    embedded in the URL path.  The format is  a semicolon, siganchor string, base64 encoded 
-    string.  ``url_sig`` automatically detects the use of embedded path parameters. The 
+    embedded in the URL path.  The format is  a semicolon, siganchor string, base64 encoded
+    string.  ``url_sig`` automatically detects the use of embedded path parameters. The
     following example shows how to generate an embedded path parameters with ``sign.pl``::
 
       ./sign.pl --url "http://test-remap.domain.com/vod/t/prog_index.m3u8?appid=2&t=1" --useparts 1 \

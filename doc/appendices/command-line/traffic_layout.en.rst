@@ -51,7 +51,7 @@ First we need to create a runroot. It can be created simply by calling command `
 
     traffic_layout init --path /path/to/runroot
 
-A runroot will be created in ``/path/to/runroot``, available for other programs to use. 
+A runroot will be created in ``/path/to/runroot``, available for other programs to use.
 If the path is not specified, the current working directory will be used.
 
 To run traffic_manager, for example, using the runroot, there are several ways:
@@ -71,10 +71,10 @@ Subcommands
 
 init
 ----
-Use the current working directory or the specific path to create runroot. 
+Use the current working directory or the specific path to create runroot.
 The path can be absolute or relative.
 
-workflow: 
+workflow:
     #. Create a sandbox directory for programs to run under.
     #. Copy and symlink build time directories and files to the sandbox, allowing users to modify freely.
     #. Emit a YAML file that defines layout structure for other programs to use (relative path).
@@ -121,10 +121,11 @@ Example: ::
 verify
 ------
 Verify the permission of the sandbox. The permission issues can be fixed with ``--fix`` option.
+``--with-user`` option can be used to verify the permission of the runroot for specific user.
 
 Example: ::
 
-    traffic_layout verify (--path /path/to/sandbox/) (--fix)
+    traffic_layout verify (--path /path/to/sandbox/) (--fix) (--with-user root)
 
 =======
 Options
@@ -142,38 +143,42 @@ Options
 
     Print usage information and exit.
 
-.. option:: --path
+.. option:: -p, --path
 
     Specify the path of runroot for commands (init, remove, verify).
 
 init
 ----
-.. option:: --force
+.. option:: -f, --force
 
     Force init will create sandbox even if the directory is not empty.
 
-.. option:: --absolute
+.. option:: -a, --absolute
 
     Put directories in the YAML file in the form of absolute paths when creating.
 
-.. option:: --copy-style=[HARD/SOFT/FULL]
+.. option:: -c, --copy-style [HARD/SOFT/FULL]
 
     Specify the way of copying executables when creating runroot.
     HARD means hard link. SOFT means symlink. FULL means full copy.
 
-.. option:: --layout=[<YAML file>]
+.. option:: -l, --layout [<YAML file>]
 
     Use specific layout (providing YAML file) to create runroot.
 
 remove
 ------
-.. option:: `--force`
+.. option:: `-f`, `--force`
 
     Force remove will remove the directory even if it has no YAML file.
 
 verify
 ------
 
-.. option:: --fix
+.. option:: -x, --fix
 
     Fix the permission issues verify found. ``--fix`` requires root privilege (sudo).
+
+.. option:: -w, --with-user
+
+    Verify runroot with certain user. The value can be passed in as the username or ``#`` followed by uid.

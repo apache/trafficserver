@@ -35,9 +35,8 @@ constexpr unsigned MORE_THAN_ZERO_ARG_N = ~0;
 // more than one arguments
 constexpr unsigned MORE_THAN_ONE_ARG_N = ~0 - 1;
 // customizable indent for help message
-constexpr int INDENT_ONE   = 24;
-constexpr int INDENT_TWO   = 32;
-constexpr int INDENT_THREE = 46;
+constexpr int INDENT_ONE = 32;
+constexpr int INDENT_TWO = 46;
 
 namespace ts
 {
@@ -155,6 +154,10 @@ public:
         @return The Command instance for chained calls.
     */
     Command &require_commands();
+    /** set the current command as default
+        @return The Command instance for chained calls.
+    */
+    Command &set_default();
 
   protected:
     // Main constructor called by add_command()
@@ -166,11 +169,12 @@ public:
     void check_command(std::string const &name, std::string const &key) const;
     // Helper method for ArgParser::help_message
     void output_command(std::ostream &out, std::string const &prefix) const;
+    // Helper method for ArgParser::help_message
+    void output_option() const;
     // Helper method for ArgParser::parse
     bool parse(Arguments &ret, AP_StrVec &args);
     // The help & version messages
     void help_message(std::string_view err = "") const;
-    void version_message() const;
     // Helpr method for parse()
     void append_option_data(Arguments &ret, AP_StrVec &args, int index);
     // The command name and help message
@@ -222,7 +226,8 @@ public:
                        std::string const &key = "");
   Command &add_command(std::string const &cmd_name, std::string const &cmd_description, std::string const &cmd_envvar,
                        unsigned cmd_arg_num, Function const &f = nullptr, std::string const &key = "");
-
+  // give a defaut command to this parser
+  void set_default_command(std::string const &cmd);
   /** Main parsing function
       @return The Arguments object available for program using
   */

@@ -27,7 +27,7 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_atomic.h"
 
-#if defined(freebsd)
+#if !defined(kfreebsd) && defined(freebsd)
 #include <malloc_np.h> // for malloc_usable_size
 #endif
 

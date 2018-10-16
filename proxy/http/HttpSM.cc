@@ -24,6 +24,7 @@
 
 #include "../ProxyClientTransaction.h"
 #include "HttpSM.h"
+#include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
 #include "ProxyConfig.h"
 #include "HttpServerSession.h"
@@ -1617,14 +1618,11 @@ HttpSM::handle_api_return()
     }
 
     // We only follow 3xx when redirect_in_process == false. Otherwise the redirection has already been launched (in
-    // SM_ACTION_SERVE_FROM_CACHE or SM_ACTION_SERVER_READ).redirect_in_process is set before this logic if we need more direction.
+    // SM_ACTION_SERVER_READ).redirect_in_process is set before this logic if we need more direction.
     // This redirection is only used with the build_error_reponse. Then, the redirection_tries will be increased by
     // state_read_server_reponse_header and never get into this logic again.
-    if (enable_redirection && !t_state.redirect_info.redirect_in_process && is_redirect_required() &&
-        (redirection_tries <= t_state.txn_conf->number_of_redirections)) {
+    if (enable_redirection && !t_state.redirect_info.redirect_in_process && is_redirect_required()) {
       do_redirect();
-    } else if (redirection_tries > t_state.txn_conf->number_of_redirections) {
-      t_state.squid_codes.subcode = SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED;
     }
     // we have further processing to do
     //  based on what t_state.next_action is
@@ -7428,11 +7426,10 @@ HttpSM::set_next_state()
       perform_cache_write_action();
       t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
 
-      // check to see if we are going to handle the redirection from server response and if there is a plugin hook set
-      if (hooks_set && is_redirect_required() == false) {
+      // check to see if there is a plugin hook set
+      if (hooks_set) {
         do_api_callout_internal();
       } else {
-        do_redirect();
         handle_api_return();
       }
     }
@@ -7617,6 +7614,11 @@ HttpSM::do_redirect()
   SMDebug("http_redirect", "[HttpSM::do_redirect]");
   if (!enable_redirection || redirection_tries > t_state.txn_conf->number_of_redirections) {
     this->postbuf_clear();
+
+    if (enable_redirection && redirection_tries > t_state.txn_conf->number_of_redirections) {
+      t_state.squid_codes.subcode = SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED;
+    }
+
     return;
   }
 
@@ -7956,7 +7958,8 @@ HttpSM::is_private()
 inline bool
 HttpSM::is_redirect_required()
 {
-  bool redirect_required = (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections));
+  bool redirect_required = (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections) &&
+                            !HttpTransact::is_cache_hit(t_state.cache_lookup_result));
 
   SMDebug("http_redirect", "is_redirect_required %u", redirect_required);
 

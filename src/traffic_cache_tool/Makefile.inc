@@ -31,12 +31,11 @@ traffic_cache_tool_traffic_cache_tool_SOURCES = \
     traffic_cache_tool/CacheTool.cc \
     traffic_cache_tool/File.h \
     traffic_cache_tool/File.cc \
-    traffic_cache_tool/Command.h \
-    traffic_cache_tool/Command.cc \
     traffic_cache_tool/CacheScan.h \
     traffic_cache_tool/CacheScan.cc
 
 traffic_cache_tool_traffic_cache_tool_LDADD = \
+    $(top_builddir)/src/tscore/.libs/ArgParser.o \
     $(top_builddir)/src/tscore/.libs/ink_assert.o \
     $(top_builddir)/src/tscore/.libs/ink_code.o \
     $(top_builddir)/src/tscore/.libs/ink_error.o \

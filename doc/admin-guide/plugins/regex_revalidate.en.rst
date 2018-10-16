@@ -60,7 +60,7 @@ The rule configuration file format is described below in `Revalidation Rules`_.
 
 By default The plugin regularly (every 60 seconds) checks its rules configuration
 file for changes and it will also check for changes when ``traffic_ctl config reload``
-is run. If the file has been modified since its last scan, the contents 
+is run. If the file has been modified since its last scan, the contents
 are read and the in-memory rules list is updated. Thus, new rules may be added and
 existing ones modified without requiring a service restart.
 

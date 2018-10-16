@@ -20,7 +20,7 @@ import subprocess
 if "PLANTUML_JAR" in os.environ:
     _plantuml_jar = os.environ["PLANTUML_JAR"]
 else:
-    _plantuml_jar = subprocess.check_output("./doc/plantuml_fetch.sh| tail -1",
+    _plantuml_jar = subprocess.check_output("@abs_srcdir@/plantuml_fetch.sh| tail -1",
                                             shell=True, universal_newlines=True)
 
 plantuml = '@JAVA@ -jar {}'.format(_plantuml_jar.rstrip('\n'))

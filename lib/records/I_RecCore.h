@@ -188,7 +188,7 @@ void RecSignalManager(int id, const char *, size_t);
 static inline void
 RecSignalManager(int id, const char *str)
 {
-  RecSignalManager(id, str, strlen(str + 1));
+  RecSignalManager(id, str, strlen(str) + 1);
 }
 
 // Format a message, and send it to the manager and to the Warning diagnostic.

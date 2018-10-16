@@ -29,7 +29,6 @@ traffic_layout_traffic_layout_CPPFLAGS = \
 
 traffic_layout_traffic_layout_LDFLAGS =	\
     $(AM_LDFLAGS) \
-    @OPENSSL_LDFLAGS@ \
     @YAMLCPP_LDFLAGS@
 
 traffic_layout_traffic_layout_SOURCES = \

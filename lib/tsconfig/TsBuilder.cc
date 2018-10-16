@@ -45,7 +45,7 @@ size_t unescape_string(char* text, size_t len) {
       if ('\\' != *src) { *dst++ = *src;
       } else if (++src < limit) { *dst++ = *src;
       } else { *dst++ = '\\'; // trailing backslash.
-    
+
 }
 }zret = dst - text;
   }

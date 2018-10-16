@@ -41,8 +41,8 @@ bSTOP = False
 
 def session_replay(input, proxy, result_queue):
     global bSTOP
-    ''' Replay all transactions in session 
-    
+    ''' Replay all transactions in session
+
     This entire session will be replayed in one requests.Session (so one socket / TCP connection)'''
     # if timing_control:
     #    time.sleep(float(session._timestamp))  # allow other threads to run

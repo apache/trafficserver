@@ -142,6 +142,15 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 #endif
 
+#ifdef SSL_CTX_set1_groups_list
+  if (params->client_groups_list != nullptr) {
+    if (!SSL_CTX_set1_groups_list(client_ctx, params->client_groups_list)) {
+      SSLError("invalid groups list for client in records.config");
+      goto fail;
+    }
+  }
+#endif
+
   // if no path is given for the client private key,
   // assume it is contained in the client certificate file.
   clientKeyPtr = params->clientKeyPath;

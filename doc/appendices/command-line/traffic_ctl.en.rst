@@ -261,12 +261,12 @@ traffic_ctl host
 .. option:: down --time seconds --reason 'manual|active|local' HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as down so that they will not be chosen as a next hop parent.
-    If the --time option is included, the host is marked down for the specified number of 
-    seconds after which the host will automatically be marked up.  0 seconds marks the host 
+    If the --time option is included, the host is marked down for the specified number of
+    seconds after which the host will automatically be marked up.  0 seconds marks the host
     down indefinitely until marked up manually and is the default. A reason tag may be used
-    when marking a host down.  Valid values are 'manual', 'active', or 'local', 'manual' is 
+    when marking a host down.  Valid values are 'manual', 'active', or 'local', 'manual' is
     used as the default.  The tags are used to indicate wehter the host was marked down
-    manually or by an 'active' or 'local' health check.  There are three reason tag 
+    manually or by an 'active' or 'local' health check.  There are three reason tag
     metrics for each host that may be viewed to see the reason a host was marked down.
 
 .. program:: traffic_ctl host

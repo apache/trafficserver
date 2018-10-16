@@ -38,8 +38,8 @@ Description
 ===========
 
 :type:`TSSslSessionID` represents the SSL session ID as a buffer and length.  The ``TS_SSL_MAX_SSL_SESSION_ID_LENGTH`` is the same value
-as the openssl constant ``SSL_MAX_SSL_SESSION_ID_LENGTH``. The plugin has direct access to this object since creating and 
-manipulating session IDs seems like a fairly common operation (rather than providing an API to access the data via an 
+as the openssl constant ``SSL_MAX_SSL_SESSION_ID_LENGTH``. The plugin has direct access to this object since creating and
+manipulating session IDs seems like a fairly common operation (rather than providing an API to access the data via an
 opaque TS object type).
 
 

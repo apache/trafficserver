@@ -37,6 +37,8 @@
 
 static bool remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti);
 
+load_remap_file_func load_remap_file_cb = nullptr;
+
 /**
   Returns the length of the URL.
 
@@ -286,17 +288,17 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   nbti.rules_list = bti->rules_list;
   nbti.rewrite    = bti->rewrite;
 
-  // XXX at this point, we need to register the included file(s) with the management subsystem
-  // so that we can correctly reload them when they change. Otherwise, the operator will have to
-  // touch remap.config before reloading the configuration.
-
   Debug("url_rewrite", "[%s] including remap configuration from %s", __func__, (const char *)path);
   success = remap_parse_config_bti(path, &nbti);
 
   // The sub-parse might have updated the rules list, so push it up to the parent parse.
   bti->rules_list = nbti.rules_list;
 
-  if (!success) {
+  if (success) {
+    // register the included file with the management subsystem so that we can correctly
+    // reload them when they change
+    load_remap_file_cb((const char *)path);
+  } else {
     snprintf(errbuf, errbufsize, "failed to parse included file %s", path);
     return (const char *)errbuf;
   }
@@ -897,7 +899,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   void *ih         = nullptr;
   TSReturnCode res = TS_SUCCESS;
   if (pi->fp_tsremap_new_instance) {
-#if defined(freebsd) || defined(darwin)
+#if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
     optreset = 1;
 #endif
 #if defined(__GLIBC__)

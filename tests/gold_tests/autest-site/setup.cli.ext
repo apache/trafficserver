@@ -49,16 +49,16 @@ if ENV['ATS_BIN'] is not None:
     host.WriteVerbose(['ats'], "Traffic server layout Data:\n", pprint.pformat(out))
     # if the above worked this should as well
     # this gets feature data
-    out = subprocess.check_output([traffic_layout, "-f", "--json"])
+    out = subprocess.check_output([traffic_layout, "--features", "--json"])
     out = json.loads(out.decode("utf-8"))
     Variables.update(out)
     host.WriteVerbose(['ats'], "Traffic server feature data:\n", pprint.pformat(out))
 
-    # update version number 
-    out = subprocess.check_output([traffic_layout, "--version"]) 
-    out = Version(out.decode("utf-8").split("-")[2].strip()) 
+    # update version number
+    out = subprocess.check_output([traffic_layout, "--version"])
+    out = Version(out.decode("utf-8").split("-")[2].strip())
     Variables.trafficserver_version = out
-    host.WriteVerbose(['ats'], "Traffic server version:", out) 
+    host.WriteVerbose(['ats'], "Traffic server version:", out)
 
     # this querys tsxs for build flags so we can build code for the tests and get certain
     # useful flags as which openssl to use when we don't use the system version

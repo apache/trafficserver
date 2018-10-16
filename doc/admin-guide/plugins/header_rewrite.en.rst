@@ -326,7 +326,7 @@ The data that can be checked is ::
 
    %{INBOUND:LOCAL-ADDR}      The local (ATS) address for the connection. Equivalent to %{IP:INBOUND}.
    %{INBOUND:LOCAL-PORT}      The local (ATS) port for the connection. Equivalent to %{INCOMING-PORT}.
-   %{INBOUND:REMOTE-ADDR}     The client address for the connection. Equivalent to %{IP::CLIENT}.
+   %{INBOUND:REMOTE-ADDR}     The client address for the connection. Equivalent to %{IP:CLIENT}.
    %{INBOUND:REMOTE-PORT}     The client port for the connection.
    %{INBOUND:TLS}             The TLS protocol if the connection is over TLS, otherwise the empty string.
    %{INBOUND:H2}              The string "h2" if the connection is HTTP/2, otherwise the empty string.
@@ -608,7 +608,7 @@ be specified multiple times, such as ``Set-Cookie``, but for headers which may
 only be specified once you may prefer to use `set-header`_ instead.
 
 The header's ``<value>`` may be specified as a literal string, or it may take
-advantage of `Variable Expansion`_ to calculate a dynamic value for the header.
+advantage of :ref:`header-rewrite-expansion` to calculate a dynamic value for the header.
 
 counter
 ~~~~~~~
@@ -721,7 +721,7 @@ Replaces the value of header ``<name>`` with ``<value>``, creating the header
 if necessary.
 
 The header's ``<value>`` may be specified according to `Header Values`_ or take
-advantage of `Variable Expansion`_ to calculate a dynamic value for the header.
+advantage of :ref:`header-rewrite-expansion` to calculate a dynamic value for the header.
 
 set-redirect
 ~~~~~~~~~~~~
@@ -732,7 +732,7 @@ set-redirect
 When invoked, sends a redirect response to the client, with HTTP status
 ``<code>``, and a new location of ``<destination>``. If the ``QSA`` flag is
 enabled, the original query string will be preserved and added to the new
-location automatically. This operator supports `Variable Expansion`_ for
+location automatically. This operator supports :ref:`header-rewrite-expansion` for
 ``<destination>``.
 
 set-status
@@ -804,40 +804,67 @@ L      Last rule, do not continue.
 QSA    Append the results of the rule to the query string.
 ====== ========================================================================
 
-Variable Expansion
-------------------
+.. _header-rewrite-expansion:
 
-Only limited variable expansion is supported in `add-header`_ and `set-header`_ . Supported
-substitutions are currently:
+Values and Variable Expansion
+-----------------------------
+
+.. note::
+
+   This feature is replaced with a new string concatenations as of ATS v8.1.0. In v9.0.0  the special
+   %<> string expansions below are no longer available, instead use the following mapping:
+
+======================= ==================================================================================
+Variable                New condition variable to use
+======================= ==================================================================================
+%<proto>                %{CLIENT-URL:SCHEME}
+%<port>                 %{CLIENT-URL:PORT}
+%<chi>                  %{IP:CLIENT}, %{INBOUND:REMOTE-ADDR} or e.g. %{CIDR:24,48}
+%<cqhl>                 %{CLIENT-HEADER:Content-Length}
+%<cqhm>                 %{METHOD}
+%<cque>                 %[CLIENT-URL}
+%<cquup>                %{CLIENT-URL:PATH}
+======================= ==================================================================================
+
+The %<INBOUND:...> tags can now be replaced with the %{INBOUND:...} equivalent.
+
+You can concatenate values using strings, condition values and variable expansions via the ``+`` operator.
+Variables (eg %<tag>) in the concatenation must be enclosed in double quotes ``"``::
+
+    add-header CustomHeader "Hello from " + %{IP:SERVER} + ":" + "%<INBOUND:LOCAL-PORT>"
+
+However, the above example is somewhat contrived to show the old tags, it should instead be written as
+
+    add-header CustomHeader "Hello from " + %{IP:SERVER} + ":" + %{INBOUND:LOCAL-PORT}
+
+
+Concatenation is not supported in condition testing.
+
+Supported substitutions are currently the following table, however they are deprecated and you should
+instead use the equivalent %{} conditions as shown above:
 
 ======================= ==================================================================================
 Variable                Description
 ======================= ==================================================================================
-%<proto>                Protocol
-%<port>                 Port
-%<chi>                  Client IP
-%<cqhl>                 Client request length
-%<cqhm>                 Client HTTP method
-%<cque>                 Client effective URI
-%<cquup>                Client unmapped URI path
-%<INBOUND:LOCAL-ADDR>   The local (ATS) address for the inbound connection.
-%<INBOUND:LOCAL-PORT>   The local (ATS) port for the inbound connection.
-%<INBOUND:REMOTE-ADDR>  The client address for the inbound connectoin.
-%<INBOUND:REMOTE-PORT>  The client port for the inbound connectoin.
-%<INBOUND:TLS>          The TLS protocol for the inbound connection if it is over TLS, otherwise the
+%<proto>                (Deprecated) Protocol
+%<port>                 (Deprecated) Port
+%<chi>                  (Deprecated) Client IP
+%<cqhl>                 (Deprecated) Client request length
+%<cqhm>                 (Deprecated) Client HTTP method
+%<cque>                 (Deprecated) Client effective URI
+%<cquup>                (Deprecated) Client unmapped URI path
+%<INBOUND:LOCAL-ADDR>   (Deprecated) The local (ATS) address for the inbound connection.
+%<INBOUND:LOCAL-PORT>   (Deprecated) The local (ATS) port for the inbound connection.
+%<INBOUND:REMOTE-ADDR>  (Deprecated) The client address for the inbound connectoin.
+%<INBOUND:REMOTE-PORT>  (Deprecated) The client port for the inbound connectoin.
+%<INBOUND:TLS>          (Deprecated) The TLS protocol for the inbound connection if it is over TLS, otherwise the
                         empty string.
-%<INBOUND:H2>           The string "h2" if the inbound connection is HTTP/2, otherwise the empty string.
-%<INBOUND:IPV4>         The string "ipv4" if the inbound connection is IPv4, otherwise the emtpy string.
-%<INBOUND:IPV6>         The string "ipv6" if the inbound connection is IPv6, otherwise the empty string.
-%<INBOUND:IP-FAMILY>    The IP family of the inbound connection (either "ipv4" or "ipv6").
-%<INBOUND:STACK>        The full protocol stack of the inbound connection separated by ','.
+%<INBOUND:H2>           (Deprecated) The string "h2" if the inbound connection is HTTP/2, otherwise the empty string.
+%<INBOUND:IPV4>         (Deprecated) The string "ipv4" if the inbound connection is IPv4, otherwise the emtpy string.
+%<INBOUND:IPV6>         (Deprecated) The string "ipv6" if the inbound connection is IPv6, otherwise the empty string.
+%<INBOUND:IP-FAMILY>    (Deprecated) The IP family of the inbound connection (either "ipv4" or "ipv6").
+%<INBOUND:STACK>        (Deprecated) The full protocol stack of the inbound connection separated by ','.
 ======================= ==================================================================================
-
-Variables to be expanded must be enclosed in double quotes ``"``, as in this example using the arbitrary header
-``Custom-Client-IP``::
-
-    set-header Custom-Client-IP "%<chi>"
-
 
 Header Values
 -------------

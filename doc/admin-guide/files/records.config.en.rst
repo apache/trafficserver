@@ -1313,6 +1313,8 @@ HTTP Redirection
    This setting determines the maximum number of times Trafficserver does a redirect follow location on receiving a 3XX Redirect response
    for a given client request.
 
+   .. note:: When :ts:cv:`proxy.config.http.number_of_redirections` is set to a positive value and |TS| has previously cached a 3XX Redirect response, the cached response will continue to be refreshed and returned until the response is no longer in the cache.
+
 .. ts:cv:: CONFIG proxy.config.http.redirect_host_no_port INT 1
    :reloadable:
 
@@ -3186,6 +3188,30 @@ SSL Termination
    Configures the cipher_suites which |TS| will use for TLSv1.3
    connections to origin or next hop. This configuration works
    with OpenSSL v1.1.1 and above.
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.groups_list STRING <See notes>
+
+   Configures the list of supported groups provided by OpenSSL which
+   |TS| will be used to determine the set of shared groups. The value
+   is a colon separated list of group NIDs or names, for example
+   "P-521:P-384:P-256". For instructions, see "Groups" section of
+   `TLS1.3 - OpenSSLWiki <https://wiki.openssl.org/index.php/TLS1.3#Groups>`_.
+
+   The current default value with OpenSSL is:
+
+   X25519:P-256:X448:P-521:P-384
+
+   This configuration works with OpenSSL v1.1.1 and above.
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.groups_list STRING <See notes under proxy.config.ssl.server.groups_list.>
+
+   Configures the list of supported groups provided by OpenSSL which
+   |TS| will use for the "key_share" and "supported groups" extention
+   of TLSv1.3 connections. The value is a colon separated list of
+   group NIDs or names, for example "P-521:P-384:P-256". For
+   instructions, see "Groups" section of `TLS1.3 - OpenSSLWiki <https://wiki.openssl.org/index.php/TLS1.3#Groups>`_.
+
+   This configuration works with OpenSSL v1.1.1 and above.
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
 

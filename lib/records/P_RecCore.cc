@@ -370,8 +370,8 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
   if (lock) {
     ink_rwlock_wrlock(&g_records_rwlock);
   }
-
-  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
+  if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
+    r1 = it->second;
     if (i_am_the_record_owner(r1->rec_type)) {
       rec_mutex_acquire(&(r1->lock));
       if ((data_type != RECD_NULL) && (r1->data_type != data_type)) {
@@ -445,7 +445,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
     } else {
       err = send_set_message(r1);
     }
-    ink_hash_table_insert(g_records_ht, name, (void *)r1);
+    g_records_ht.emplace(name, r1);
   }
 
 Ldone:
@@ -683,12 +683,12 @@ RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
       rec_mutex_acquire(&(r->lock));
       if (REC_TYPE_IS_CONFIG(r->rec_type)) {
         if (r->sync_required & REC_DISK_SYNC_REQUIRED) {
-          if (!ink_hash_table_isbound(g_rec_config_contents_ht, r->name)) {
+          if (g_rec_config_contents_ht.find(r->name) == g_rec_config_contents_ht.end()) {
             cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
             cfe->entry_type = RECE_RECORD;
             cfe->entry      = ats_strdup(r->name);
             enqueue(g_rec_config_contents_llq, (void *)cfe);
-            ink_hash_table_insert(g_rec_config_contents_ht, r->name, nullptr);
+            g_rec_config_contents_ht.emplace(r->name);
           }
           r->sync_required = r->sync_required & ~REC_DISK_SYNC_REQUIRED;
           sync_to_disk     = true;
@@ -719,7 +719,8 @@ RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
           tb->copyFrom(cfe->entry, strlen(cfe->entry));
           tb->copyFrom("\n", 1);
         } else {
-          if (ink_hash_table_lookup(g_records_ht, cfe->entry, (void **)&r)) {
+          if (auto it = g_records_ht.find(cfe->entry); it != g_records_ht.end()) {
+            r = it->second;
             rec_mutex_acquire(&(r->lock));
             // rec_type
             switch (r->rec_type) {
@@ -862,11 +863,10 @@ reset_stat_record(RecRecord *rec)
 RecErrT
 RecResetStatRecord(const char *name)
 {
-  RecRecord *r1 = nullptr;
-  RecErrT err   = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
-  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
-    err = reset_stat_record(r1);
+  if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
+    err = reset_stat_record(it->second);
   }
 
   return err;
@@ -916,8 +916,8 @@ RecSetSyncRequired(char *name, bool lock)
   if (lock) {
     ink_rwlock_wrlock(&g_records_rwlock);
   }
-
-  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
+  if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
+    r1 = it->second;
     if (i_am_the_record_owner(r1->rec_type)) {
       rec_mutex_acquire(&(r1->lock));
       r1->sync_required = REC_SYNC_REQUIRED;

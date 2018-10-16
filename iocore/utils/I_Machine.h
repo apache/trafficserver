@@ -32,7 +32,10 @@
 
 #include "tscore/ink_inet.h"
 #include "tscore/ink_uuid.h"
-#include "tscore/ink_hash_table.h"
+
+#include <unordered_map>
+#include <unordered_set>
+#include <memory>
 
 /**
   The Machine is a simple place holder for the hostname and the ip
@@ -89,7 +92,6 @@ protected:
   Machine(char const *hostname, sockaddr const *addr);
 
   static self *_instance; ///< Singleton for the class.
-
-  InkHashTable *machine_id_strings;
-  InkHashTable *machine_id_ipaddrs;
+  std::unordered_set<std::string> machine_id_strings;
+  std::unordered_map<std::string, IpAddr *> machine_id_ipaddrs;
 };

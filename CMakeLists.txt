@@ -81,6 +81,9 @@ CPP_LIB(tscore src/tscore include/tscore)
 CPP_LIB(tscpputil src/tscpp/util include/tscpp/util)
 CPP_LIB(tscppapi src/tscpp/api include/tscpp/api)
 
+CC_EXEC(test_tscore src/tscore/unit_tests)
+CC_EXEC(test_tsutil src/tscpp/util/unit_tests)
+
 CPP_LIB(proxy proxy proxy)
 CPP_ADD_SOURCES(proxy proxy/http)
 CPP_ADD_SOURCES(proxy proxy/http2)
@@ -99,6 +102,8 @@ CPP_ADD_SOURCES(iocore iocore/utils)
 CPP_LIB(mgmt mgmt mgmt)
 CPP_ADD_SOURCES(mgmt mgmt/api)
 CPP_ADD_SOURCES(mgmt mgmt/utils)
+
+CPP_LIB(records lib/records lib/records)
 
 CPP_LIB(tsconfig lib/tsconfig lib/tsconfig)
 CPP_LIB(wccp src/wccp include/wccp)

@@ -24,7 +24,7 @@
 # This can be overriden via command line option, e.g.  --define “release 12"
 %{!?release: %define release 1}
 
-Summary:	Apache Traffi Server, a reverse, forward and transparent HTTP proxy cache
+Summary:	Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache
 Name:		trafficserver
 Version:	9.0.0
 Release:	%{release}%{?dist}

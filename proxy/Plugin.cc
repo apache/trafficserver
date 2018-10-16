@@ -125,7 +125,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
       return false; // this line won't get called since Fatal brings down ATS
     }
 
-#if defined(freebsd) || defined(darwin)
+#if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
     optreset = 1;
 #endif
 #if defined(__GLIBC__)

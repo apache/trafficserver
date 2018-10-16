@@ -101,7 +101,7 @@ TS_ROOT=${TS_ROOT:-$TS_PREFIX}
 # ####################################
 # run root is not used by default
 # set this value if using a custom layout structure
-# TS_RUNROOT="" 
+# TS_RUNROOT=""
 
 # TS_BASE is offset inside the file system from where the layout starts
 # For standard installations TS_BASE will be empty
@@ -292,7 +292,7 @@ rc_start_hook()
     return $?
 }
 
-# Make sure the NOFILES limit is set high in case this process is not 
+# Make sure the NOFILES limit is set high in case this process is not
 # started from a logged in prompt
 ulimit -n 500000
 

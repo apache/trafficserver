@@ -37,8 +37,7 @@ struct UrlState;
  * @warning Url objects should never be constructed by the user.
  * If a user needs to create an unbound Url then they should create a Request
  * object using Request::Request(string) which will construct a Url object for them
- * and it can be retrieved via Request::getUrl(). A full example of this
- * is available in examples/detachedrequest/.
+ * and it can be retrieved via Request::getUrl().
  */
 class Url : noncopyable
 {
@@ -47,8 +46,7 @@ public:
    * @warning Url objects should never be constructed by the user.
    * If a user needs to create an unbound Url then they should create a Request
    * object using Request::Request(string) which will construct a Url object for them
-   * and it can be retrieved via Request::getUrl(). A full example of this
-   * is available in examples/detachedrequest/.
+   * and it can be retrieved via Request::getUrl().
    *
    * @private
    */
@@ -58,8 +56,7 @@ public:
    * @warning Url objects should never be constructed by the user.
    * If a user needs to create an unbound Url then they should create a Request
    * object using Request::Request(string) which will construct a Url object for them
-   * and it can be retrieved via Request::getUrl(). A full example of this
-   * is available in examples/detachedrequest/.
+   * and it can be retrieved via Request::getUrl().
    *
    * @private
    */
