@@ -30,7 +30,7 @@
 TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 {
   QUICStream *stream = new QUICStream();
-  QUICIncomingStreamFrameBuffer buffer(stream);
+  QUICIncomingStreamFrameBuffer buffer;
   QUICErrorUPtr err = nullptr;
 
   uint8_t data[1024] = {0};
@@ -59,7 +59,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
     CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
 
-    QUICIncomingStreamFrameBuffer buffer2(stream);
+    QUICIncomingStreamFrameBuffer buffer2;
 
     buffer2.insert(*stream1_frame_3_r);
     buffer2.insert(*stream1_frame_0_r);
@@ -68,7 +68,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
     CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
 
-    QUICIncomingStreamFrameBuffer buffer3(stream);
+    QUICIncomingStreamFrameBuffer buffer3;
 
     buffer3.insert(*stream1_frame_4_r);
     err = buffer3.insert(*stream1_frame_3_r);
@@ -98,7 +98,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 {
   QUICStream *stream = new QUICStream();
-  QUICIncomingStreamFrameBuffer buffer(stream);
+  QUICIncomingStreamFrameBuffer buffer;
   QUICErrorUPtr err = nullptr;
 
   uint8_t data[1024] = {0};
@@ -157,7 +157,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
 {
   QUICStream *stream = new QUICStream();
-  QUICIncomingStreamFrameBuffer buffer(stream);
+  QUICIncomingStreamFrameBuffer buffer;
   QUICErrorUPtr err = nullptr;
 
   uint8_t data[1024] = {0};

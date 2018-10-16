@@ -51,7 +51,7 @@ QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
-    _received_stream_frame_buffer(this),
+    _received_stream_frame_buffer(),
     _state(nullptr, nullptr, &_received_stream_frame_buffer, nullptr)
 {
   SET_HANDLER(&QUICStream::state_stream_open);

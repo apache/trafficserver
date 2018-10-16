@@ -45,7 +45,7 @@ public:
     : VConnection(nullptr),
       _remote_flow_controller(0, 0),
       _local_flow_controller(nullptr, 0, 0),
-      _received_stream_frame_buffer(this),
+      _received_stream_frame_buffer(),
       _state(nullptr, nullptr, nullptr, nullptr)
   {
   }

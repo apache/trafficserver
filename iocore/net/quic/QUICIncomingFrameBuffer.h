@@ -53,7 +53,7 @@ class QUICIncomingStreamFrameBuffer : public QUICIncomingFrameBuffer, public QUI
 public:
   using super = QUICIncomingFrameBuffer; ///< Parent type.
 
-  QUICIncomingStreamFrameBuffer(const QUICStream *stream) : _stream(stream) {}
+  QUICIncomingStreamFrameBuffer() {}
   ~QUICIncomingStreamFrameBuffer();
 
   QUICFrameSPtr pop() override;
@@ -69,9 +69,8 @@ public:
 private:
   QUICConnectionErrorUPtr _check_and_set_fin_flag(QUICOffset offset, size_t len = 0, bool fin_flag = false);
 
-  const QUICStream *_stream = nullptr;
-  QUICOffset _max_offset    = 0;
-  QUICOffset _fin_offset    = UINT64_MAX;
+  QUICOffset _max_offset = 0;
+  QUICOffset _fin_offset = UINT64_MAX;
 };
 
 class QUICIncomingCryptoFrameBuffer : public QUICIncomingFrameBuffer
