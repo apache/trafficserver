@@ -94,8 +94,6 @@ mgmt_host_status_down_callback(void *x, char *data, int len)
 
 HostStatus::HostStatus()
 {
-  hosts_statuses  = ink_hash_table_create(InkHashTableKeyType_String);
-  hosts_stats_ids = ink_hash_table_create(InkHashTableKeyType_String);
   ink_rwlock_init(&host_status_rwlock);
   ink_rwlock_init(&host_statids_rwlock);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, mgmt_host_status_up_callback, nullptr);
@@ -105,20 +103,10 @@ HostStatus::HostStatus()
 
 HostStatus::~HostStatus()
 {
-  // release host_statues hash table.
-  InkHashTableIteratorState ht_iter;
-  InkHashTableEntry *ht_entry = nullptr;
-  ht_entry                    = ink_hash_table_iterator_first(hosts_statuses, &ht_iter);
-
-  while (ht_entry != nullptr) {
-    HostStatRec_t *value = static_cast<HostStatRec_t *>(ink_hash_table_entry_value(hosts_statuses, ht_entry));
-    ats_free(value);
-    ht_entry = ink_hash_table_iterator_next(hosts_statuses, &ht_iter);
+  for (auto &&it : hosts_statuses) {
+    ats_free(it.second);
   }
-  ink_hash_table_destroy(hosts_statuses);
-
   // release host_stats_ids hash and the read and writer locks.
-  ink_hash_table_destroy(hosts_stats_ids);
   ink_rwlock_destroy(&host_status_rwlock);
   ink_rwlock_destroy(&host_statids_rwlock);
 }
@@ -150,9 +138,11 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
   // using the hash table pointer to store the HostStatus_t value.
   HostStatRec_t *host_stat = nullptr;
   ink_rwlock_wrlock(&host_status_rwlock);
-  if (ink_hash_table_lookup(hosts_statuses, name, reinterpret_cast<InkHashTableValue *>(&host_stat)) == 0) {
+  if (auto it = hosts_statuses.find(name); it != hosts_statuses.end()) {
+    host_stat = it->second;
+  } else {
     host_stat = static_cast<HostStatRec_t *>(ats_malloc(sizeof(HostStatRec_t)));
-    ink_hash_table_insert(hosts_statuses, name, reinterpret_cast<InkHashTableValue *>(host_stat));
+    hosts_statuses.emplace(name, host_stat);
   }
   host_stat->status    = status;
   host_stat->down_time = down_time;
@@ -175,16 +165,19 @@ HostStatus_t
 HostStatus::getHostStatus(const char *name)
 {
   HostStatRec_t *_status = 0;
-  int lookup             = 0;
   time_t now             = time(0);
 
   // the hash table value pointer has the HostStatus_t value.
   ink_rwlock_rdlock(&host_status_rwlock);
-  lookup = ink_hash_table_lookup(hosts_statuses, name, reinterpret_cast<void **>(&_status));
+  auto it     = hosts_statuses.find(name);
+  bool lookup = it != hosts_statuses.end();
+  if (lookup) {
+    _status = it->second;
+  }
   ink_rwlock_unlock(&host_status_rwlock);
 
   // if the host was marked down and it's down_time has elapsed, mark it up.
-  if (lookup == 1 && _status->status == HostStatus_t::HOST_STATUS_DOWN && _status->down_time > 0) {
+  if (lookup && _status->status == HostStatus_t::HOST_STATUS_DOWN && _status->down_time > 0) {
     if ((_status->down_time + _status->marked_down) < now) {
       Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld", name, now, _status->down_time,
             _status->marked_down);
@@ -192,27 +185,24 @@ HostStatus::getHostStatus(const char *name)
       return HostStatus_t::HOST_STATUS_UP;
     }
   }
-  return lookup == 1 ? static_cast<HostStatus_t>(_status->status) : HostStatus_t::HOST_STATUS_INIT;
+  return lookup ? static_cast<HostStatus_t>(_status->status) : HostStatus_t::HOST_STATUS_INIT;
 }
 
 void
 HostStatus::createHostStat(const char *name)
 {
-  InkHashTableEntry *entry;
-
   ink_rwlock_wrlock(&host_statids_rwlock);
   {
     for (const char *i : Reasons::reasons) {
       std::string reason_stat;
       getStatName(reason_stat, name, i);
-      entry = ink_hash_table_lookup_entry(hosts_stats_ids, reason_stat.c_str());
-      if (entry == nullptr) {
+      if (hosts_stats_ids.find(reason_stat) == hosts_stats_ids.end()) {
         RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (reason_stat).c_str(), RECD_INT, RECP_NON_PERSISTENT, (int)next_stat_id,
                            RecRawStatSyncSum);
         RecSetRawStatCount(host_status_rsb, next_stat_id, 1);
         RecSetRawStatSum(host_status_rsb, next_stat_id, 1);
 
-        ink_hash_table_insert(hosts_stats_ids, reason_stat.c_str(), reinterpret_cast<void *>(next_stat_id));
+        hosts_stats_ids.emplace(reason_stat, next_stat_id);
 
         Debug("host_statuses", "stat name: %s, id: %d", reason_stat.c_str(), next_stat_id);
         next_stat_id++;
@@ -226,13 +216,14 @@ HostStatus::createHostStat(const char *name)
 int
 HostStatus::getHostStatId(const char *stat_name)
 {
-  int lookup   = 0;
-  intptr_t _id = -1;
+  int _id = -1;
 
   ink_rwlock_rdlock(&host_statids_rwlock);
-  lookup = ink_hash_table_lookup(hosts_stats_ids, stat_name, reinterpret_cast<void **>(&_id));
+  if (auto it = hosts_stats_ids.find(stat_name); it != hosts_stats_ids.end()) {
+    _id = it->second;
+  }
   ink_rwlock_unlock(&host_statids_rwlock);
   Debug("host_statuses", "name: %s, id: %d", stat_name, static_cast<int>(_id));
 
-  return lookup == 1 ? static_cast<int>(_id) : -1;
+  return _id;
 }
