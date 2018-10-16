@@ -180,6 +180,12 @@ public:
   {
   }
 
+  virtual bool
+  ignore_keep_alive()
+  {
+    return true;
+  }
+
   virtual void destroy();
 
   virtual void transaction_done() = 0;
