@@ -288,7 +288,11 @@ int
 QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 {
   if (this->is_handshake_finished()) {
-    return this->_process_post_handshake_messages(out, in);
+    if (in != nullptr && in->offsets[4] != 0) {
+      return this->_process_post_handshake_messages(out, in);
+    }
+
+    return 0;
   }
 
   return this->_handshake(out, in);
@@ -330,7 +334,7 @@ QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
     ret = SSL_connect(this->_ssl);
   }
 
-  if (ret < 0) {
+  if (ret <= 0) {
     err = SSL_get_error(this->_ssl, ret);
 
     switch (err) {
@@ -373,7 +377,7 @@ QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHand
   size_t l = 0;
   ret      = SSL_read_ex(this->_ssl, data, 2048, &l);
 
-  if (ret < 0) {
+  if (ret <= 0) {
     err = SSL_get_error(this->_ssl, ret);
 
     switch (err) {
