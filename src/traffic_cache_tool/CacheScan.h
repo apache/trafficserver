@@ -43,9 +43,9 @@ class CacheScan
   url_matcher *u_matcher;
 
 public:
-  CacheScan(Stripe *str, ts::FilePath const &path) : stripe(str)
+  CacheScan(Stripe *str, ts::file::path const &path) : stripe(str)
   {
-    if (path.has_path()) {
+    if (!path.empty()) {
       u_matcher = new url_matcher(path);
     }
   };
