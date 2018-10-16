@@ -29,8 +29,6 @@ traffic_cache_tool_traffic_cache_tool_SOURCES = \
     traffic_cache_tool/CacheDefs.h \
     traffic_cache_tool/CacheDefs.cc \
     traffic_cache_tool/CacheTool.cc \
-    traffic_cache_tool/File.h \
-    traffic_cache_tool/File.cc \
     traffic_cache_tool/CacheScan.h \
     traffic_cache_tool/CacheScan.cc
 
@@ -43,6 +41,7 @@ traffic_cache_tool_traffic_cache_tool_LDADD = \
     $(top_builddir)/src/tscore/.libs/ink_memory.o \
     $(top_builddir)/src/tscore/.libs/ink_string.o \
     $(top_builddir)/src/tscore/.libs/BufferWriterFormat.o \
+    $(top_builddir)/src/tscore/.libs/ts_file.o \
     $(top_builddir)/src/tscpp/util/.libs/TextView.o \
     $(top_builddir)/lib/tsconfig/.libs/Errata.o \
     $(top_builddir)/src/tscore/.libs/Regex.o \

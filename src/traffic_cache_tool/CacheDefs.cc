@@ -23,6 +23,8 @@
 
 #include "CacheDefs.h"
 #include <iostream>
+#include <fcntl.h>
+
 using namespace std;
 using namespace ts;
 
@@ -216,7 +218,7 @@ Stripe::Chunk::clear()
 
 Stripe::Stripe(Span *span, Bytes start, CacheStoreBlocks len) : _span(span), _start(start), _len(len)
 {
-  ts::bwprint(hashText, "{} {}:{}", span->_path.path(), _start.count(), _len.count());
+  ts::bwprint(hashText, "{} {}:{}", span->_path.view(), _start.count(), _len.count());
   CryptoContext().hash_immediate(hash_id, hashText.data(), static_cast<int>(hashText.size()));
   printf("hash id of stripe is hash of %.*s\n", static_cast<int>(hashText.size()), hashText.data());
 }
@@ -695,7 +697,7 @@ Stripe::check_loop(int s)
     int i = dir_next(e);
     if (f_bitset.test(i)) {
       // bit was set in a previous round so a loop is present
-      std::cout << "<check_loop> Loop present in Span" << this->_span->_path.path() << " Stripe: " << this->hashText
+      std::cout << "<check_loop> Loop present in Span" << this->_span->_path.string() << " Stripe: " << this->hashText
                 << "Segment: " << s << std::endl;
       this->dir_init_segment(s);
       return 1;
@@ -896,8 +898,8 @@ Stripe::loadMeta()
   alignas(SBSIZE) char stripe_buff[SBSIZE];             // Use when reading a single stripe block.
   alignas(SBSIZE) char stripe_buff2[SBSIZE];            // use to save the stripe freelist
   if (io_align > SBSIZE) {
-    return Errata::Message(0, 1, "Cannot load stripe ", _idx, " on span ", _span->_path, " because the I/O block alignment ",
-                           io_align, " is larger than the buffer alignment ", SBSIZE);
+    return Errata::Message(0, 1, "Cannot load stripe ", _idx, " on span ", _span->_path.string(),
+                           " because the I/O block alignment ", io_align, " is larger than the buffer alignment ", SBSIZE);
   }
 
   _directory._start = pos;
