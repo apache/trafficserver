@@ -42,9 +42,11 @@
 #include "CoreAPIShared.h"
 #include "NetworkUtilsLocal.h"
 
+#include <unordered_map>
+
 #define TIMEOUT_SECS 1 // the num secs for select timeout
 
-static InkHashTable *accepted_con; // a list of all accepted client connections
+static std::unordered_map<int, ClientT *> accepted_con; // a list of all accepted client connections
 
 static TSMgmtError handle_control_message(int fd, void *msg, size_t msglen);
 
@@ -93,13 +95,13 @@ delete_client(ClientT *client)
  * output:
  *********************************************************************/
 static void
-remove_client(ClientT *client, InkHashTable *table)
+remove_client(ClientT *client, std::unordered_map<int, ClientT *> &table)
 {
   // close client socket
-  close_socket(client->fd); // close client socket
+  close_socket(client->fd);
 
   // remove client binding from hash table
-  ink_hash_table_delete(table, (char *)&client->fd);
+  table.erase(client->fd);
 
   // free ClientT
   delete_client(client);
@@ -126,20 +128,12 @@ ts_ctrl_main(void *arg)
   socket_fd     = (int *)arg;
   con_socket_fd = *socket_fd;
 
-  // initialize queue for accepted con
-  accepted_con = ink_hash_table_create(InkHashTableKeyType_Word);
-  if (!accepted_con) {
-    return nullptr;
-  }
-
   // now we can start listening, accepting connections and servicing requests
   int new_con_fd; // new socket fd when accept connection
 
-  fd_set selectFDs;                    // for select call
-  InkHashTableEntry *con_entry;        // used to obtain client connection info
-  ClientT *client_entry;               // an entry of fd to alarms mapping
-  InkHashTableIteratorState con_state; // used to iterate through hash table
-  int fds_ready;                       // stores return value for select
+  fd_set selectFDs;      // for select call
+  ClientT *client_entry; // an entry of fd to alarms mapping
+  int fds_ready;         // stores return value for select
   struct timeval timeout;
 
   // loops until TM dies; waits for and processes requests from clients
@@ -154,17 +148,13 @@ ts_ctrl_main(void *arg)
       FD_SET(con_socket_fd, &selectFDs);
       // Debug("ts_main", "[ts_ctrl_main] add fd %d to select set", con_socket_fd);
     }
-    // see if there are more fd to set
-    con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
 
-    // iterate through all entries in hash table
-    while (con_entry) {
-      client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
+    for (auto &&it : accepted_con) {
+      client_entry = it.second;
       if (client_entry->fd >= 0) { // add fd to select set
         FD_SET(client_entry->fd, &selectFDs);
         Debug("ts_main", "[ts_ctrl_main] add fd %d to select set", client_entry->fd);
       }
-      con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
     }
 
     // select call - timeout is set so we can check events at regular intervals
@@ -187,7 +177,7 @@ ts_ctrl_main(void *arg)
           socklen_t addr_len = (sizeof(struct sockaddr));
           new_con_fd         = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
-          ink_hash_table_insert(accepted_con, (char *)&new_client_con->fd, new_client_con);
+          accepted_con.emplace(new_client_con->fd, new_client_con);
           Debug("ts_main", "[ts_ctrl_main] Add new client connection");
         }
       } // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
@@ -195,10 +185,11 @@ ts_ctrl_main(void *arg)
       // some other file descriptor; for each one, service request
       if (fds_ready > 0) { // RECEIVED A REQUEST from remote API client
         // see if there are more fd to set - iterate through all entries in hash table
-        con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
-        while (con_entry) {
+
+        for (auto it = accepted_con.begin(); it != accepted_con.end();) {
           Debug("ts_main", "[ts_ctrl_main] We have a remote client request!");
-          client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
+          client_entry = it->second;
+          ++it; // prevent the breaking of remove_client
           // got information; check
           if (client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs)) {
             void *req = nullptr;
@@ -209,8 +200,6 @@ ts_ctrl_main(void *arg)
               // occurs when remote API client terminates connection
               Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d ", client_entry->fd);
               remove_client(client_entry, accepted_con);
-              // get next client connection (if any)
-              con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
               continue;
             }
 
@@ -219,19 +208,14 @@ ts_ctrl_main(void *arg)
 
             if (ret != TS_ERR_OKAY) {
               Debug("ts_main", "[ts_ctrl_main] ERROR: sending response for message (%d)", ret);
-
               // XXX this doesn't actually send a error response ...
-
               remove_client(client_entry, accepted_con);
-              con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
               continue;
             }
 
           } // end if(client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs))
-
-          con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-        } // end while (con_entry)
-      }   // end if (fds_ready > 0)
+        }   // end for (auto it = accepted_con.begin(); it != accepted_con.end();)
+      }     // end if (fds_ready > 0)
 
     } // end if (fds_ready > 0)
 
@@ -241,19 +225,16 @@ ts_ctrl_main(void *arg)
   Debug("ts_main", "[ts_ctrl_main] CLOSING AND SHUTTING DOWN OPERATIONS");
   close_socket(con_socket_fd);
 
-  // iterate through hash table; close client socket connections and remove entry
-  con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
-  while (con_entry) {
-    client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
+  for (auto &&it : accepted_con) {
+    client_entry = it.second;
     if (client_entry->fd >= 0) {
       close_socket(client_entry->fd); // close socket
     }
-    ink_hash_table_delete(accepted_con, (char *)&client_entry->fd); // remove binding
-    delete_client(client_entry);                                    // free ClientT
-    con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
+    accepted_con.erase(client_entry->fd);
+    delete_client(client_entry); // free ClientT
   }
   // all entries should be removed and freed already
-  ink_hash_table_destroy(accepted_con);
+  accepted_con.clear();
 
   ink_thread_exit(nullptr);
   return nullptr;
