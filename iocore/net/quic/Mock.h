@@ -36,13 +36,13 @@ class MockQUICStreamManager : public QUICStreamManager
 public:
   MockQUICStreamManager() : QUICStreamManager() {}
   // Override
-  virtual QUICErrorUPtr
+  virtual QUICConnectionErrorUPtr
   handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
     ++_frameCount[static_cast<int>(f.type())];
     ++_totalFrameCount;
 
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   }
 
   // for Test
@@ -197,13 +197,13 @@ public:
     return {QUICFrameType::CONNECTION_CLOSE};
   }
 
-  QUICErrorUPtr
+  QUICConnectionErrorUPtr
   handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
   {
     ++_frameCount[static_cast<int>(f.type())];
     ++_totalFrameCount;
 
-    return QUICErrorUPtr(new QUICNoError());
+    return nullptr;
   }
 
   uint32_t

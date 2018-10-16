@@ -160,21 +160,21 @@ TEST_CASE("QUICStream", "[quic]")
 
     // Start with 1024 but not 0 so received frames won't be processed
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
-    CHECK(error->cls == QUICErrorClass::NONE);
+    CHECK(error == nullptr);
     // duplicate
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
-    CHECK(error->cls == QUICErrorClass::NONE);
+    CHECK(error == nullptr);
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 3072));
-    CHECK(error->cls == QUICErrorClass::NONE);
+    CHECK(error == nullptr);
     // delay
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 2048));
-    CHECK(error->cls == QUICErrorClass::NONE);
+    CHECK(error == nullptr);
     // all frames should be processed
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 0));
-    CHECK(error->cls == QUICErrorClass::NONE);
+    CHECK(error == nullptr);
     // start again without the first block
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 5120));
-    CHECK(error->cls == QUICErrorClass::NONE);
+    CHECK(error == nullptr);
     // this should exceed the limit
     error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 8192));
     CHECK(error->cls == QUICErrorClass::TRANSPORT);

@@ -40,8 +40,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(data, 1024, 1, 0, true);
 
     err = buffer.insert(*stream1_frame_0_r);
-    CHECK(err->cls == QUICErrorClass::NONE);
-    CHECK(err->code != static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
+    CHECK(err == nullptr);
   }
 
   SECTION("multiple frames")
@@ -83,13 +82,13 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     std::shared_ptr<QUICStreamFrame> stream1_frame_pure_fin = QUICFrameFactory::create_stream_frame(data, 0, 1, 1024, true);
 
     err = buffer.insert(*stream1_frame_0_r);
-    CHECK(err->cls == QUICErrorClass::NONE);
+    CHECK(err == nullptr);
 
     err = buffer.insert(*stream1_frame_empty);
-    CHECK(err->cls == QUICErrorClass::NONE);
+    CHECK(err == nullptr);
 
     err = buffer.insert(*stream1_frame_pure_fin);
-    CHECK(err->cls == QUICErrorClass::NONE);
+    CHECK(err == nullptr);
   }
 
   delete stream;
@@ -171,7 +170,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   buffer.insert(*stream1_frame_1_r);
   buffer.insert(*stream1_frame_2_r);
   err = buffer.insert(*stream1_frame_3_r);
-  CHECK(err->cls == QUICErrorClass::NONE);
+  CHECK(err == nullptr);
 
   auto frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 0);
@@ -194,7 +193,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   buffer.insert(*stream2_frame_1_r);
   buffer.insert(*stream2_frame_2_r);
   err = buffer.insert(*stream2_frame_3_r);
-  CHECK(err->cls == QUICErrorClass::NONE);
+  CHECK(err == nullptr);
 
   frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
   CHECK(frame->offset() == 0);
