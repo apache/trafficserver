@@ -34,6 +34,8 @@
 #include "mgmtapi.h"       //add the include path b/c included in web dir
 #include "CoreAPIShared.h" // for NUM_EVENTS
 
+#include <unordered_map>
+
 // use events_registered[event_id] as index to check if alarm is registered
 typedef struct {
   int fd; // client socket
@@ -43,7 +45,7 @@ typedef struct {
 
 EventClientT *new_event_client();
 void delete_event_client(EventClientT *client);
-void remove_event_client(EventClientT *client, InkHashTable *table);
+void remove_event_client(EventClientT *client, std::unordered_map<int, EventClientT *> &table);
 
 TSMgmtError init_mgmt_events();
 void delete_mgmt_events();
