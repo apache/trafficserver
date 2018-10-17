@@ -38,7 +38,10 @@ TSError(const char *fmt, ...)
 class ParserTest : public Parser
 {
 public:
-  ParserTest(const std::string &line) : Parser(line), res(true) { std::cout << "Finished parser test: " << line << std::endl; }
+  ParserTest(const std::string &line, bool preserve_quotes = false) : Parser(line, preserve_quotes), res(true)
+  {
+    std::cout << "Finished parser test: " << line << std::endl;
+  }
   std::vector<std::string>
   getTokens()
   {
@@ -191,6 +194,20 @@ test_parsing()
     END_TEST();
   }
 
+  // Same test as above but preserving quotes
+  {
+    ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} =""          [AND])", true);
+
+    CHECK_EQ(p.getTokens().size(), 5UL);
+    CHECK_EQ(p.getTokens()[0], "cond");
+    CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:non_existent_header}");
+    CHECK_EQ(p.getTokens()[2], "=");
+    CHECK_EQ(p.getTokens()[3], "");
+    CHECK_EQ(p.getTokens()[4], "[AND]");
+
+    END_TEST();
+  }
+
   {
     ParserTest p(R"(cond %{PATH} /\/foo\/bar/ [OR])");
 
@@ -332,6 +349,22 @@ test_parsing()
     CHECK_EQ(p.getTokens()[0], "add-header");
     CHECK_EQ(p.getTokens()[1], "X-Url");
     CHECK_EQ(p.getTokens()[2], "http://trafficserver.apache.org/");
+
+    END_TEST();
+  }
+
+  // test quote preservation
+  {
+    ParserTest p(R"(add-header X-Party "let's party like it's " + %{NOW:YEAR} + "!")", true);
+
+    CHECK_EQ(p.getTokens().size(), 7UL);
+    CHECK_EQ(p.getTokens()[0], "add-header");
+    CHECK_EQ(p.getTokens()[1], "X-Party");
+    CHECK_EQ(p.getTokens()[2], R"("let's party like it's ")");
+    CHECK_EQ(p.getTokens()[3], "+");
+    CHECK_EQ(p.getTokens()[4], "%{NOW:YEAR}");
+    CHECK_EQ(p.getTokens()[5], "+");
+    CHECK_EQ(p.getTokens()[6], R"("!")");
 
     END_TEST();
   }
