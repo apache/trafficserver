@@ -77,12 +77,14 @@ Parser::Parser(const std::string &original_line, bool preserve_quotes) : _cond(f
         extracting_token = true;
         cur_token_start  = i + 1; // Eat the leading quote
       } else if ((state == PARSER_IN_QUOTE) && extracting_token) {
-        cur_token_length = i - cur_token_start;
-        if (preserve_quotes) {
+        cur_token_length  = i - cur_token_start;
+        std::string token = line.substr(cur_token_start, cur_token_length);
+        if (preserve_quotes && token != "") {
           _tokens.push_back(line.substr(cur_token_start - 1, i - cur_token_start + 2));
         } else {
-          _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+          _tokens.push_back(token);
         }
+
         state            = PARSER_DEFAULT;
         extracting_token = false;
       } else {
