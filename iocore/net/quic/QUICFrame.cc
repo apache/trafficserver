@@ -2070,7 +2070,7 @@ uint64_t
 QUICNewConnectionIdFrame::sequence() const
 {
   if (this->_buf) {
-    return QUICIntUtil::read_QUICVariableInt(this->_buf + sizeof(QUICFrameType));
+    return QUICIntUtil::read_QUICVariableInt(this->_buf + sizeof(QUICFrameType) + 1);
   } else {
     return this->_sequence;
   }
@@ -2101,7 +2101,7 @@ size_t
 QUICNewConnectionIdFrame::_get_sequence_field_length() const
 {
   if (this->_buf) {
-    return QUICVariableInt::size(this->_buf + sizeof(QUICFrameType));
+    return QUICVariableInt::size(this->_buf + sizeof(QUICFrameType) + 1);
   } else {
     return QUICVariableInt::size(this->_sequence);
   }
@@ -2111,7 +2111,7 @@ size_t
 QUICNewConnectionIdFrame::_get_connection_id_length() const
 {
   if (this->_buf) {
-    return this->_buf[sizeof(QUICFrameType) + this->_get_sequence_field_length()];
+    return this->_buf[sizeof(QUICFrameType)];
   } else {
     return this->_connection_id.length();
   }
