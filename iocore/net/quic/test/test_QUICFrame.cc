@@ -1221,6 +1221,41 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
   }
 }
 
+TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
+{
+  uint8_t raw_retire_connection_id_frame[] = {
+    0x0d,                                           // Type
+    0x08,                                           // Sequence Number (i)
+  };
+  size_t raw_retire_connection_id_frame_len = sizeof(raw_retire_connection_id_frame);
+  uint64_t seq_num = 8;
+
+  SECTION("load")
+  {
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(raw_retire_connection_id_frame, raw_retire_connection_id_frame_len);
+    CHECK(frame->type() == QUICFrameType::RETIRE_CONNECTION_ID);
+    CHECK(frame->size() == raw_retire_connection_id_frame_len);
+
+    std::shared_ptr<const QUICRetireConnectionIdFrame> retire_connection_id_frame = std::dynamic_pointer_cast<const
+    QUICRetireConnectionIdFrame>(frame);
+    CHECK(retire_connection_id_frame != nullptr);
+    CHECK(retire_connection_id_frame->seq_num() == seq_num);
+  }
+
+  SECTION("store")
+  {
+    uint8_t buf[32];
+    size_t len;
+
+    QUICRetireConnectionIdFrame frame(seq_num);
+    CHECK(frame.size() == raw_retire_connection_id_frame_len);
+
+    frame.store(buf, &len, 16);
+    CHECK(len == raw_retire_connection_id_frame_len);
+    CHECK(memcmp(buf, raw_retire_connection_id_frame, len) == 0);
+  }
+}
+
 TEST_CASE("QUICFrameFactory Create Unknown Frame", "[quic]")
 {
   uint8_t buf1[] = {

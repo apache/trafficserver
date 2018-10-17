@@ -684,6 +684,30 @@ private:
 };
 
 //
+// RETIRE_CONNECTION_ID
+//
+
+class QUICRetireConnectionIdFrame : public QUICFrame
+{
+public:
+  QUICRetireConnectionIdFrame() : QUICFrame() {}
+  QUICRetireConnectionIdFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICRetireConnectionIdFrame(uint64_t seq_num) : _seq_num(seq_num) {}
+  QUICFrameUPtr clone() const override;
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
+
+  uint64_t seq_num() const;
+
+private:
+  size_t _get_seq_num_field_length() const;
+
+  uint64_t _seq_num = 0;
+};
+
+//
 // Retransmission Frame - Not on the spec
 //
 
@@ -725,6 +749,7 @@ extern ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator;
 extern ClassAllocator<QUICPathChallengeFrame> quicPathChallengeFrameAllocator;
 extern ClassAllocator<QUICPathResponseFrame> quicPathResponseFrameAllocator;
 extern ClassAllocator<QUICNewTokenFrame> quicNewTokenFrameAllocator;
+extern ClassAllocator<QUICRetireConnectionIdFrame> quicRetireConnectionIdFrameAllocator;
 extern ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator;
 
 class QUICFrameDeleter
@@ -868,6 +893,13 @@ public:
   {
     frame->~QUICFrame();
     quicNewTokenFrameAllocator.free(static_cast<QUICNewTokenFrame *>(frame));
+  }
+
+  static void
+  delete_retire_connection_id_frame(QUICFrame *frame)
+  {
+    frame->~QUICFrame();
+    quicRetireConnectionIdFrameAllocator.free(static_cast<QUICRetireConnectionIdFrame *>(frame));
   }
 
   static void
@@ -1015,6 +1047,11 @@ public:
    * Creates a NEW_TOKEN frame
    */
   static std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc> create_new_token_frame(const uint8_t *token, uint64_t token_len);
+
+  /*
+   * Creates a RETIRE_CONNECTION_ID frame
+   */
+  static std::unique_ptr<QUICRetireConnectionIdFrame, QUICFrameDeleterFunc> create_retire_connection_id_frame(uint64_t seq_num);
 
   /*
    * Creates a retransmission frame, which is very special.
