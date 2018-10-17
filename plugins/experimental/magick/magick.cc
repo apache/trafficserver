@@ -39,8 +39,11 @@
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 
+#if MAGICK_VERSION > 6
 #include <MagickWand/MagickWand.h>
-#include <MagickWand/magick-cli.h>
+#else
+#include <wand/MagickWand.h>
+#endif
 
 #define PLUGIN_TAG "ats-magick"
 
