@@ -239,6 +239,22 @@ public:
     std::vector<QUICAckFrame::AckBlock> _ack_blocks;
   };
 
+  class EcnSection
+  {
+  public:
+    EcnSection(const uint8_t *buf);
+    size_t size() const;
+    uint64_t ect0_count() const;
+    uint64_t ect1_count() const;
+    uint64_t ecn_ce_count() const;
+
+  private:
+    uint64_t _section_size = 0;
+    uint64_t _ect0_count   = 0;
+    uint64_t _ect1_count   = 0;
+    uint64_t _ecn_ce_count = 0;
+  };
+
   QUICAckFrame() : QUICFrame() {}
   QUICAckFrame(const uint8_t *buf, size_t len);
   QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block);
@@ -256,6 +272,8 @@ public:
   uint64_t ack_block_count() const;
   const AckBlockSection *ack_block_section() const;
   AckBlockSection *ack_block_section();
+  const EcnSection *ecn_section() const;
+  EcnSection *ecn_section();
 
 private:
   size_t _get_largest_acknowledged_offset() const;
@@ -269,6 +287,7 @@ private:
   QUICPacketNumber _largest_acknowledged = 0;
   uint64_t _ack_delay                    = 0;
   AckBlockSection *_ack_block_section    = nullptr;
+  EcnSection *_ecn_section               = nullptr;
 };
 
 //

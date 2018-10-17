@@ -579,6 +579,10 @@ QUICAckFrame::~QUICAckFrame()
     delete this->_ack_block_section;
     this->_ack_block_section = nullptr;
   }
+  if (this->_ecn_section) {
+    delete this->_ecn_section;
+    this->_ecn_section = nullptr;
+  }
 }
 
 void
@@ -588,7 +592,14 @@ QUICAckFrame::reset(const uint8_t *buf, size_t len)
   if (this->_ack_block_section) {
     delete this->_ack_block_section;
   }
+  if (this->_ecn_section) {
+    delete this->_ecn_section;
+  }
+
   this->_ack_block_section = new AckBlockSection(buf + this->_get_ack_block_section_offset(), this->ack_block_count());
+  if (buf[0] == static_cast<uint8_t>(QUICFrameType::ACK) + 1) {
+    this->_ecn_section = new EcnSection(buf + this->_get_ack_block_section_offset() + this->_ack_block_section->size());
+  }
 }
 
 QUICFrameUPtr
@@ -614,7 +625,11 @@ QUICAckFrame::type() const
 size_t
 QUICAckFrame::size() const
 {
-  return this->_get_ack_block_section_offset() + this->_ack_block_section->size();
+  if (this->_ecn_section) {
+    return this->_get_ack_block_section_offset() + this->_ack_block_section->size() + this->_ecn_section->size();
+  } else {
+    return this->_get_ack_block_section_offset() + this->_ack_block_section->size();
+  }
 }
 
 size_t
@@ -704,6 +719,18 @@ const QUICAckFrame::AckBlockSection *
 QUICAckFrame::ack_block_section() const
 {
   return this->_ack_block_section;
+}
+
+QUICAckFrame::EcnSection *
+QUICAckFrame::ecn_section()
+{
+  return this->_ecn_section;
+}
+
+const QUICAckFrame::EcnSection *
+QUICAckFrame::ecn_section() const
+{
+  return this->_ecn_section;
 }
 
 size_t
@@ -1003,6 +1030,41 @@ const bool
 QUICAckFrame::AckBlockSection::const_iterator::operator==(const const_iterator &ite) const
 {
   return this->_index == ite._index;
+}
+
+QUICAckFrame::EcnSection::EcnSection(const uint8_t *buf)
+{
+  size_t ect0_length;
+  size_t ect1_length;
+  size_t ecn_ce_length;
+  QUICVariableInt::decode(this->_ect0_count, ect0_length, buf);
+  QUICVariableInt::decode(this->_ect1_count, ect1_length, buf + ect0_length);
+  QUICVariableInt::decode(this->_ecn_ce_count, ecn_ce_length, buf + ect0_length + ect1_length);
+  this->_section_size = ect0_length + ect1_length + ecn_ce_length;
+}
+
+size_t
+QUICAckFrame::EcnSection::size() const
+{
+  return this->_section_size;
+}
+
+uint64_t
+QUICAckFrame::EcnSection::ect0_count() const
+{
+  return this->_ect0_count;
+}
+
+uint64_t
+QUICAckFrame::EcnSection::ect1_count() const
+{
+  return this->_ect1_count;
+}
+
+uint64_t
+QUICAckFrame::EcnSection::ecn_ce_count() const
+{
+  return this->_ecn_ce_count;
 }
 
 //
@@ -2505,7 +2567,6 @@ QUICRetireConnectionIdFrame::_get_seq_num_field_length() const
   }
 }
 
-
 //
 // QUICRetransmissionFrame
 //
@@ -2895,7 +2956,8 @@ QUICFrameFactory::create_retire_connection_id_frame(uint64_t seq_num)
 {
   QUICRetireConnectionIdFrame *frame = quicRetireConnectionIdFrameAllocator.alloc();
   new (frame) QUICRetireConnectionIdFrame(seq_num);
-  return std::unique_ptr<QUICRetireConnectionIdFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_retire_connection_id_frame);
+  return std::unique_ptr<QUICRetireConnectionIdFrame, QUICFrameDeleterFunc>(frame,
+                                                                            &QUICFrameDeleter::delete_retire_connection_id_frame);
 }
 
 std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>

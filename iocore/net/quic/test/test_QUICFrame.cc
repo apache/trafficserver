@@ -447,6 +447,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ack_frame1->largest_acknowledged() == 0x01);
     CHECK(ack_frame1->ack_delay() == 0x0171);
     CHECK(ack_frame1->ack_block_count() == 0);
+    CHECK(ack_frame1->ecn_section() == nullptr);
 
     const QUICAckFrame::AckBlockSection *section = ack_frame1->ack_block_section();
     CHECK(section->first_ack_block() == 0x01);
@@ -474,6 +475,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ack_frame1->largest_acknowledged() == 0x12);
     CHECK(ack_frame1->ack_delay() == 0x3456);
     CHECK(ack_frame1->ack_block_count() == 2);
+    CHECK(ack_frame1->ecn_section() == nullptr);
 
     const QUICAckFrame::AckBlockSection *section = ack_frame1->ack_block_section();
     CHECK(section->first_ack_block() == 0x01);
@@ -487,6 +489,33 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ite->length() == 0x090a0b0c0d0e0f10);
     ++ite;
     CHECK(ite == section->end());
+  }
+
+  SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length with ECN section")
+  {
+    uint8_t buf1[] = {
+      0x1b,       // Type
+      0x12,       // Largest Acknowledged
+      0x74, 0x56, // Ack Delay
+      0x00,       // Ack Block Count
+      0x00,       // Ack Block Section
+      // ECN
+      0x01, // ECT0
+      0x02, // ECT1
+      0x03, // ECN-CE
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::ACK);
+    CHECK(frame1->size() == 9);
+    std::shared_ptr<const QUICAckFrame> ack_frame1 = std::dynamic_pointer_cast<const QUICAckFrame>(frame1);
+    CHECK(ack_frame1 != nullptr);
+    CHECK(ack_frame1->ack_block_count() == 0);
+    CHECK(ack_frame1->largest_acknowledged() == 0x12);
+    CHECK(ack_frame1->ack_delay() == 0x3456);
+    CHECK(ack_frame1->ecn_section());
+    CHECK(ack_frame1->ecn_section()->ect0_count() == 1);
+    CHECK(ack_frame1->ecn_section()->ect1_count() == 2);
+    CHECK(ack_frame1->ecn_section()->ecn_ce_count() == 3);
   }
 }
 
@@ -1224,20 +1253,21 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
 TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
 {
   uint8_t raw_retire_connection_id_frame[] = {
-    0x0d,                                           // Type
-    0x08,                                           // Sequence Number (i)
+    0x0d, // Type
+    0x08, // Sequence Number (i)
   };
   size_t raw_retire_connection_id_frame_len = sizeof(raw_retire_connection_id_frame);
-  uint64_t seq_num = 8;
+  uint64_t seq_num                          = 8;
 
   SECTION("load")
   {
-    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(raw_retire_connection_id_frame, raw_retire_connection_id_frame_len);
+    std::shared_ptr<const QUICFrame> frame =
+      QUICFrameFactory::create(raw_retire_connection_id_frame, raw_retire_connection_id_frame_len);
     CHECK(frame->type() == QUICFrameType::RETIRE_CONNECTION_ID);
     CHECK(frame->size() == raw_retire_connection_id_frame_len);
 
-    std::shared_ptr<const QUICRetireConnectionIdFrame> retire_connection_id_frame = std::dynamic_pointer_cast<const
-    QUICRetireConnectionIdFrame>(frame);
+    std::shared_ptr<const QUICRetireConnectionIdFrame> retire_connection_id_frame =
+      std::dynamic_pointer_cast<const QUICRetireConnectionIdFrame>(frame);
     CHECK(retire_connection_id_frame != nullptr);
     CHECK(retire_connection_id_frame->seq_num() == seq_num);
   }
