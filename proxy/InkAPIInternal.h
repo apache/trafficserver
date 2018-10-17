@@ -335,7 +335,7 @@ public:
   void invoke(INKContInternal *contp);
 
 private:
-  InkHashTable *cb_table;
+  std::unordered_map<std::string, INKContInternal *> cb_table;
 };
 
 void api_init();

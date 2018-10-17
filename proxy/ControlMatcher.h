@@ -87,7 +87,6 @@
 #pragma once
 
 #include "tscore/DynArray.h"
-#include "tscore/ink_hash_table.h"
 #include "tscore/IpMap.h"
 #include "tscore/Result.h"
 #include "tscore/MatcherUtils.h"
@@ -97,6 +96,8 @@
 #include "HTTP.h"
 #include "tscore/Regex.h"
 #include "URL.h"
+
+#include <unordered_map>
 
 #ifdef HAVE_CTYPE_H
 #include <cctype>
@@ -203,7 +204,7 @@ public:
   using super::array_len;
 
 private:
-  InkHashTable *url_ht;
+  std::unordered_map<std::string, int> url_ht;
   char **url_str = nullptr; // array of url strings
   int *url_value = nullptr; // array of posion of url strings
 };
