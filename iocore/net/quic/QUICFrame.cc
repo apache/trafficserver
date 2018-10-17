@@ -70,6 +70,8 @@ QUICFrame::type(const uint8_t *buf)
     return QUICFrameType::UNKNOWN;
   } else if (static_cast<uint8_t>(QUICFrameType::STREAM) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::CRYPTO)) {
     return QUICFrameType::STREAM;
+  } else if (static_cast<uint8_t>(QUICFrameType::ACK) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
+    return QUICFrameType::ACK;
   } else {
     return static_cast<QUICFrameType>(buf[0]);
   }

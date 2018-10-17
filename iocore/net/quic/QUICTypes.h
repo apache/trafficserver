@@ -112,7 +112,7 @@ enum class QUICFrameType : uint8_t {
   CRYPTO = 0x18,
   NEW_TOKEN,
   ACK, // 0x1a - 0x1b
-  UNKNOWN,
+  UNKNOWN = 0x1c,
 };
 
 enum class QUICVersionNegotiationStatus {
