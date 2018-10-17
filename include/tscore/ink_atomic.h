@@ -93,7 +93,7 @@ extern ink_mutex __global_death;
 
 template <>
 inline int64_t
-ink_atomic_swap<int64_t>(pvint64 mem, int64_t value)
+ink_atomic_swap<int64_t>(int64_t *mem, int64_t value)
 {
   int64_t old;
   ink_mutex_acquire(&__global_death);
@@ -105,7 +105,7 @@ ink_atomic_swap<int64_t>(pvint64 mem, int64_t value)
 
 template <>
 inline bool
-ink_atomic_cas<int64_t>(pvint64 mem, int64_t old, int64_t new_value)
+ink_atomic_cas<int64_t>(int64_t *mem, int64_t old, int64_t new_value)
 {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
@@ -120,7 +120,7 @@ ink_atomic_cas<int64_t>(pvint64 mem, int64_t old, int64_t new_value)
 
 template <typename Amount>
 static inline int64_t
-ink_atomic_increment(pvint64 mem, Amount value)
+ink_atomic_increment(int64_t *mem, Amount value)
 {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
@@ -132,7 +132,7 @@ ink_atomic_increment(pvint64 mem, Amount value)
 
 template <typename Amount>
 static inline int64_t
-ink_atomic_decrement(pvint64 mem, Amount value)
+ink_atomic_decrement(int64_t *mem, Amount value)
 {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
@@ -144,7 +144,7 @@ ink_atomic_decrement(pvint64 mem, Amount value)
 
 template <typename Amount>
 static inline uint64_t
-ink_atomic_increment(pvuint64 mem, Amount value)
+ink_atomic_increment(uint64_t *mem, Amount value)
 {
   uint64_t curr;
   ink_mutex_acquire(&__global_death);
@@ -156,7 +156,7 @@ ink_atomic_increment(pvuint64 mem, Amount value)
 
 template <typename Amount>
 static inline uint64_t
-ink_atomic_decrement(pvuint64 mem, Amount value)
+ink_atomic_decrement(uint64_t *mem, Amount value)
 {
   uint64_t curr;
   ink_mutex_acquire(&__global_death);
