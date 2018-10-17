@@ -74,10 +74,6 @@ Http2ClientSession::destroy()
 void
 Http2ClientSession::free()
 {
-  if (h2_pushed_urls) {
-    this->h2_pushed_urls = ink_hash_table_destroy(this->h2_pushed_urls);
-  }
-
   if (client_vc) {
     client_vc->do_io_close();
     client_vc = nullptr;
@@ -181,8 +177,6 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->read_buffer             = iobuf ? iobuf : new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
   this->read_buffer->water_mark = connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
   this->sm_reader               = reader ? reader : this->read_buffer->alloc_reader();
-  this->h2_pushed_urls          = ink_hash_table_create(InkHashTableKeyType_String);
-  this->h2_pushed_urls_size     = 0;
 
   this->write_buffer = new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
   this->sm_writer    = this->write_buffer->alloc_reader();

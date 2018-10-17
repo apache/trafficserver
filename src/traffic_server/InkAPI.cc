@@ -1353,50 +1353,33 @@ APIHooks::clear()
 //
 ////////////////////////////////////////////////////////////////////
 
-ConfigUpdateCbTable::ConfigUpdateCbTable()
-{
-  cb_table = ink_hash_table_create(InkHashTableKeyType_String);
-}
+ConfigUpdateCbTable::ConfigUpdateCbTable() {}
 
-ConfigUpdateCbTable::~ConfigUpdateCbTable()
-{
-  ink_assert(cb_table != nullptr);
-
-  ink_hash_table_destroy(cb_table);
-}
+ConfigUpdateCbTable::~ConfigUpdateCbTable() {}
 
 void
 ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name)
 {
-  ink_assert(cb_table != nullptr);
-
   if (contp && name) {
-    ink_hash_table_insert(cb_table, (InkHashTableKey)name, (InkHashTableValue)contp);
+    cb_table.emplace(name, contp);
   }
 }
 
 void
 ConfigUpdateCbTable::invoke(const char *name)
 {
-  ink_assert(cb_table != nullptr);
-
-  InkHashTableIteratorState ht_iter;
-  InkHashTableEntry *ht_entry;
   INKContInternal *contp;
 
   if (name != nullptr) {
     if (strcmp(name, "*") == 0) {
-      ht_entry = ink_hash_table_iterator_first(cb_table, &ht_iter);
-      while (ht_entry != nullptr) {
-        contp = (INKContInternal *)ink_hash_table_entry_value(cb_table, ht_entry);
+      for (auto &&it : cb_table) {
+        contp = it.second;
         ink_assert(contp != nullptr);
         invoke(contp);
-        ht_entry = ink_hash_table_iterator_next(cb_table, &ht_iter);
       }
     } else {
-      ht_entry = ink_hash_table_lookup_entry(cb_table, (InkHashTableKey)name);
-      if (ht_entry != nullptr) {
-        contp = (INKContInternal *)ink_hash_table_entry_value(cb_table, ht_entry);
+      if (auto it = cb_table.find(name); it != cb_table.end()) {
+        contp = it->second;
         ink_assert(contp != nullptr);
         invoke(contp);
       }
