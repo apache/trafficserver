@@ -42,14 +42,23 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0a")) == QUICFrameType::STREAM_ID_BLOCKED);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0b")) == QUICFrameType::NEW_CONNECTION_ID);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0c")) == QUICFrameType::STOP_SENDING);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::ACK);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::RETIRE_CONNECTION_ID);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0e")) == QUICFrameType::PATH_CHALLENGE);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0f")) == QUICFrameType::PATH_RESPONSE);
+
   // Range of STREAM
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x10")) == QUICFrameType::STREAM);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x17")) == QUICFrameType::STREAM);
+
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::CRYPTO);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x19")) == QUICFrameType::NEW_TOKEN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::CRYPTO);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x19")) == QUICFrameType::NEW_TOKEN);
+
+  // Range of ACK
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1a")) == QUICFrameType::ACK);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1b")) == QUICFrameType::ACK);
+
   // Undefined ragne
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x21")) == QUICFrameType::UNKNOWN);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
@@ -404,7 +413,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x0d,       // Type
+      0x1a,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -423,7 +432,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x0d,                   // Type
+      0x1a,                   // Type
       0x80, 0x00, 0x00, 0x01, // Largest Acknowledged
       0x41, 0x71,             // Ack Delay
       0x00,                   // Ack Block Count
@@ -446,7 +455,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x0d,                                           // Type
+      0x1a,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
@@ -489,7 +498,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x0d,       // Type
+      0x1a,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -510,7 +519,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x0d,                                           // Type
+      0x1a,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
