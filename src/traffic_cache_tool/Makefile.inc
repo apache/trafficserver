@@ -39,6 +39,7 @@ traffic_cache_tool_traffic_cache_tool_LDADD = \
     $(top_builddir)/src/tscore/.libs/ink_error.o \
     $(top_builddir)/src/tscore/.libs/ink_file.o \
     $(top_builddir)/src/tscore/.libs/ink_memory.o \
+    $(top_builddir)/src/tscore/.libs/ink_mutex.o \
     $(top_builddir)/src/tscore/.libs/ink_string.o \
     $(top_builddir)/src/tscore/.libs/BufferWriterFormat.o \
     $(top_builddir)/src/tscore/.libs/ts_file.o \
