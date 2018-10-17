@@ -6,3 +6,22 @@ Changes with Apache Traffic Server 7.1.5
   #4084 - Fixed http/2 issue with Http2Stream being updated after it was destroyed
   #4085 - Fix typo in header_normalize plugin.
   #4092 - Fix Http/2 priority crashes.
+  #4106 - make sure len is smaller than MAX_ENTRY before we use it as the index
+  #4121 - Added clear_event function to cancel inactive event before marking it…
+  #4126 - Fix typo in RecUtils
+  #4171 - Corrects IPv4 multicast ip address check
+  #4172 - make sure "traffic_ctl config reload" only reloads configs that changed
+  #4173 - Clear up evnets and timers for a H2 stream before destroying its mutex
+  #4174 - Fix crash in Http2ClientSession::release_netvc
+  #4179 - Back-port to 7.1.x -- Log Collation Memory Leaks (x2)
+  #4312 - Disable the HttpSM half open logic if the underlying transport is TLS
+  #4313 - HTTP/2 priority fixes to match common browser patterns
+  #4316 - Reset the inactivity timeout to the transaction timeout…
+  #4317 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of con…
+  #4319 - Fix another ProxySession and NetVC shutdown race crash
+  #4345 - Fixes spelling in spec summary
+  #4355 - make the lua context static for parsing logging.config
+  #4359 - Set log code when closing half open connections.
+  #4370 - Add a search path for Tcl
+  #4371 - Fix a TM crash on alarms
+  #4380 - Fix lost pending_actions causing actions on stale objects.
