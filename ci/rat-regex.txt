@@ -67,3 +67,8 @@ port\.h
 ^catch[.]hpp$
 ^configuru.hpp$
 ^yamlcpp$
+# tools/voluspa related
+^.gometalint.conf$
+.*\.conf$
+.*config_default$
+gojsonschema(?:                      Apache 2.0. Properly documented in LICENSE-APACHE-2.0.txt ){0}

@@ -1,0 +1,36 @@
+{
+	"ImportPath": "github.com/apache/trafficserver/tools/voluspa",
+	"GoVersion": "go1.12",
+	"GodepVersion": "v80",
+	"Packages": [
+		".",
+		"./adapters",
+		"./adapters/confremap",
+		"./adapters/headerrewrite",
+		"./adapters/lua",
+		"./adapters/util",
+		"./cmd/voluspa",
+		"./internal/util/regex",
+		"./version"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/xeipuuv/gojsonpointer",
+			"Rev": "4e3ac2762d5f479393488629ee9370b50873b3a6"
+		},
+		{
+			"ImportPath": "github.com/xeipuuv/gojsonreference",
+			"Rev": "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
+		},
+		{
+			"ImportPath": "github.com/xeipuuv/gojsonschema",
+			"Comment": "v1.1.0-14-g354ad34",
+			"Rev": "354ad34c2300dd6e84920ac70b41487336219e43"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Comment": "v2.2.2-1-g7b8349a",
+			"Rev": "7b8349ac747c6a24702b762d2c4fd9266cf4f1d6"
+		}
+	]
+}

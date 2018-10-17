@@ -1,0 +1,14 @@
+voluspa: errors validating configs:
+    - alias http://(.*.myalias.com not unique (all_bad/simple2.conf)
+    - alias http://inbound.testing.example.com not unique (all_bad/simple2.conf)
+    - alias https://inbound.testing.example.com not unique (all_bad/simple2.conf)
+    - invalid regex URL: error parsing regexp: missing closing ): `http://(.*.myalias.com` (all_bad/simple2.conf)
+    - invalid regex: error parsing regexp: unexpected ): `# If Cookie : ADCDownloadAuth is missing then
+# 302 to developer.example.com/unauthorized/
+cond %{COOKIE:Tasty} ="" [AND]
+cond %{CLIENT-IP} ^127\.0\.0\.1|10\..*)/ [NOT]
+  set-redirect 302 https://inbound.example.com/unauthorized/ [L]
+# If Origin serves a 000, 500 501 502 503 then
+# 302 to inboud.example.com/unauthorized/` (all_bad/simple2.conf)
+    - property All not unique (all_bad/simple.conf)
+    - property All not unique (all_bad/simple2.conf)

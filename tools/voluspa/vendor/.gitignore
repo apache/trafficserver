@@ -1,0 +1,9 @@
+github.com/hpcloud/tail/vendor
+.travis*
+README*
+CONTRIB*
+*sh
+*pl
+*conf
+Gopkg.*
+*yaml

@@ -1,0 +1,1126 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "$comment": "Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements; and to You under the Apache License, Version 2.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "rcpt",
+    "schema_version",
+    "owner"
+  ],
+  "definitions": {
+    "schemes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "http",
+          "https"
+        ],
+        "minItems": 1
+      },
+      "description": "http|https applied to alias and origin (if not specified there)"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "roles_edge_child"
+      ],
+      "description": "If this should be applied to specific set of machines."
+    },
+    "parent_child": {
+      "type": "boolean",
+      "description": "Use parent/child hierarchy"
+    },
+    "alias": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Inbound URI. Can have multiple. If there is no scheme, uses from schemes:. Any extra path and query parameters are passed along at end of origin."
+    },
+    "origin": {
+      "type": "string",
+      "description": "Outbound URL. If there is no scheme, uses it from schemes:. Extra path and query parameters after aliases are passed along at the end."
+    },
+    "propstats": {
+      "type": "boolean",
+      "description": "Keep metrics on this property or not."
+    },
+    "fetch_policy": {
+      "type": "string",
+      "description": "simple or lru (with lru size). eg lru:10000000"
+    },
+    "mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+          "alias",
+          "origin"
+      ],
+      "items": {
+        "type": "object"
+      },
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "alias": {
+          "$ref": "#/definitions/alias"
+        },
+        "origin":{
+          "$ref": "#/definitions/origin"
+        },
+        "group": {
+          "type": "string",
+          "enum": [
+            "group1",
+            "group2",
+            "group3",
+            "group4"
+          ],
+          "description": "Used to override resolver."
+        },
+        "rule": {
+          "type": "string",
+          "description": "Which ruleset to apply to this mapping set"
+        },
+        "parent_dest_domain": {
+          "type": "string",
+          "description": "May need to tell Voluspa what domain to use when finding the parent. Note: this option is being deprecated! Use parent_override instead!"
+        },
+        "regex_map": {
+          "type": "boolean",
+          "description": "if there is a regular expression in the hostname of this uri."
+        },
+        "role": {
+          "$ref": "#/definitions/role"
+        },
+        "schemes": {
+          "$ref": "#/definitions/schemes"
+        },
+        "parent_override": {
+          "description": "List of overrides for parent.config.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "comment": {
+                "type": "string"
+              },
+              "role": {
+                "$ref": "#/definitions/role"
+              },
+              "dest_domain": {
+                "type": "string",
+                "description": "What destination domain when finding the parent."
+              },
+              "strategy": {
+                "type": "string",
+                "enum": [
+                  "true_round_robin",
+                  "strict_round_robin",
+                  "no_round_robin",
+                  "consistent_hash",
+                  "latched"
+                ],
+                "default": "consistent_hash",
+                "description": "Routing strategy."
+              },
+              "ignore_querystring": {
+                "type": "boolean",
+                "default": false,
+                "description": "When set to true the query string will not be included in the hash to select the parent."
+              },
+              "http_port": {
+                "type": "integer",
+                "description": "Port to use for http scheme."
+              },
+              "https_port": {
+                "type": "integer",
+                "description": "Port to use for https scheme."
+              },
+              "go_direct": {
+                "type":"boolean",
+                "default": false,
+                "description": "When set to true, requests bypass parent hierarchies and go directly to the origin server."
+              },
+              "primary_list": {
+                "type":"array",
+                "minItems": 1,
+                "items": {
+                  "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "hostname"
+                  },
+                  {
+                    "type": "string",
+                    "format":"ipv4"
+                  },
+                  {
+                    "type": "string",
+                    "format":"ipv6"
+                  }
+                  ]
+                },
+                "description": "Array of hostnames (or IP adderesses) of the primary parents."
+              },
+              "secondary_list": {
+                "type":"array",
+                "minItems": 1,
+                "items": {
+                  "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "hostname"
+                  },
+                  {
+                    "type": "string",
+                    "format":"ipv4"
+                  },
+                  {
+                    "type": "string",
+                    "format":"ipv6"
+                  }
+                  ]
+                },
+                "description": "Array of hostnames (or IP adderesses) of the secondary parents."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "comment": {
+      "type": "string"
+    },
+    "schema_version": {
+      "oneOf": [
+          { "type": "string", "pattern": "^1(\\.0)?$" },
+          { "type": "integer", "minimum": 1, "maximum": 1 }
+        ],
+      "description": "Declares the version of the Voluspa schema this configuration is defined in terms of."
+    },
+    "alias": {
+      "$ref": "#/definitions/alias"
+    },
+    "cdn": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "edge",
+          "internal"
+        ]
+      },
+      "description": "Which machines to target."
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": [
+        "onboarding",
+        "live",
+        "retired"
+      ],
+      "description": "live: in production; onboarding: various things may not yet be working; retired: No longer active (no need for new ssl certs, etc);"
+    },
+    "org": {
+      "type": "string",
+      "enum": [
+        "IST",
+        "InternetServices",
+        "SoftwareEngineering"
+      ],
+      "description": "Used for billing the correct org. Metadata only, not used for cache configuration."
+    },
+    "owner": {
+      "type": "string",
+      "description": "What group should we email/page if there are problems?"
+    },
+    "propstats": {
+      "$ref": "#/definitions/propstats"
+    },
+    "rcpt": {
+      "type": "string",
+      "description": "A unique property name."
+    },
+    "reference": {
+      "type": "string",
+      "description": "Where to find more information about this property, such as a URL."
+    },
+    "role": {
+      "$ref": "#/definitions/role"
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "comment": {
+              "type": "string"
+            },
+            "set_header": {
+              "type": "string",
+              "description": "Set this header; overwrites if origin had set."
+            },
+            "cachekey": {
+              "type": "object",
+              "additionalProperties": false,
+              "items": {
+                "type": "string"
+              },
+              "description": "Defines how the cachekey is composed. Changing any of these parameters is likely to effectively clear the cache.",
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "remove_all_params": {
+                  "type": "boolean",
+                  "description": "Don't use the query string as part of the cachekey or parent_selection."
+                },
+                "include_headers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Include specific headers from the request in the cachekey."
+                },
+                "regex_replace_path": {
+                  "type": "string",
+                  "examples": [
+                    "/.*/probe-info-ok.html/"
+                  ],
+                  "description": "Replace cachekey URI path with regex capture. Format is PCRE pattern or PCRE pattern + replacement in format '/<pattern>/<replacement>/'"
+                },
+                "regex_replace_path_uri": {
+                  "type": "string",
+                  "examples": [
+                    ["/http[s]?:\\/\\/[^\\/]*(.*\\.html|.*).*/$1/"]
+                  ],
+                  "description": "Replace cachekey full URI with regex capture. Format is PCRE pattern or PCRE pattern + replacement in format '/<pattern>/<replacement>/'"
+                },
+                "include_params": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "examples": [
+                    ["queryparam1", "queryparam2"]
+                  ],
+                  "description": "Only use these query parameters in the cachekey."
+                },
+                "static_prefix": {
+                  "type": "string",
+                  "description": "Specified value will start the cachekey."
+                },
+                "include_cookies": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Include these specific cookies in the cachekey."
+                },
+                "exclude_params": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string"
+                  },
+                  "examples": [
+                    ["queryparam1", "queryparam2"]
+                  ],
+                  "description": "Ignore these query parameters in the cachekey."
+                },
+                "sort_query": {
+                  "type": "boolean",
+                  "description": "Sort the query parameters for the cachekey."
+                },
+                "parent_selection": {
+                  "type": "string",
+                  "enum": [
+                    "ignore_query"
+                  ],
+                  "description": "ignore_query: Ignore the query string when choosing the parent. Note: this option is being deprecated! Use parent_override in stead!"
+                },
+                "capture_header": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string"
+                  },
+                  "examples": [
+                    [ "Authorization:/AWS\\s([^:]+).*/clientID:$1/", "Authorization:/BYT\\s([^,]+).*/clientID:$1/" ]
+                  ],
+                  "description": "Add specific parts of headers to the cachekey via a regex capture. Format is PCRE pattern or PCRE pattern + replacement in format '/<pattern>/<replacement>/'"
+                }
+              }
+            },
+            "allow_ip": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              },
+              "description": "Only accept requests from these IPs and IP ranges.",
+              "examples": [
+                  [ "127.0.0.1", "::1" ],
+                  [ "10.0.0.0-10.255.255.255", "127.0.0.1", "::1" ]
+              ]
+            },
+            "allow_ip_parent": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              },
+              "description": "Only accept requests from these IPs and IP ranges (applies to parent hosts).",
+              "examples": [
+                  [ "10.0.0.0-10.255.255.255", "10.127.0.0-10.127.255.255" ]
+              ]
+
+            },
+            "header_rewrite": {
+              "type": "string",
+              "description": "Raw text to put into ATS header_rewrite configuration."
+            },
+            "add_header": {
+              "type": "string",
+              "description": "Add this header to the response.",
+              "examples": [ "Strict-Transport-Security \"max-age=31536000; includeSubDomains\"" ]
+            },
+            "add_header_origin": {
+              "type": "string",
+              "description": "Add this header to the origin request.",
+              "examples": [ "X-CLIENT-IP \"%<chi>\"" ]
+            },
+            "origin_host_header": {
+              "type": "string",
+              "enum": [
+                "origin",
+                "alias"
+              ],
+              "description": "What Host: to send to the origin. origin=Send the origin's Host; alias=send the inbound Host: (default)"
+            },
+            "content_type_forge": {
+              "type": "object",
+              "patternProperties": {
+                ".*": {
+                  "type": "string",
+                  "description": "'URL regex': content-type. URLs matching regex will have have the response Content-Type set to content-type"
+                }
+              },
+              "description": "Change the Content-Type based on a series of URL path regexes",
+              "examples": [ "\".*\\.json$\": \"application/json\"" ]
+            },
+            "conf_remap": {
+              "type": "string",
+              "description": "Raw text to put into ATS conf_remap configuration."
+            },
+            "cache_promote": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Configuration for the cache_promote plugin. Selectively cache objects. For really large working sets.",
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "policy": {
+                  "type": "string",
+                  "enum": [
+                    "lru",
+                    "chance"
+                  ],
+                  "description": "`chance`: randomly choose to cache the item (based on sample number); `lru`: Track most recently used URLs, and cache those with more than lru_hits."
+                },
+                "sample": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100,
+                  "description": "The percentage sampling rate for the request to be considered, for either policy."
+                },
+                "lru_hits": {
+                  "type": "integer",
+                  "description": "In `lru` policy, how often the object is fetched before promotion."
+                },
+                "lru_buckets": {
+                  "type": "integer",
+                  "description": "In `lru` policy, how many objects are tracked."
+                }
+              }
+            },
+            "propstats": {
+              "$ref": "#/definitions/propstats"
+            },
+            "regex_remap": {
+              "type": "string",
+              "description": "Use regex to match the inbound path (only) and substition for origin. Can add optional http status code (like @status=301). Can also use '|-' format",
+              "examples": [ "^/([^/]+)/([^\\?]*)\\??.* https://$1.s3.amazonaws.com/$2" ]
+            },
+            "negative_ttl": {
+              "type": "string",
+              "description": "Amount of time to cache http errors (404, 502, 504, etc). Default 10s.",
+              "examples": [ "10s" ]
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "background",
+                "foreground",
+                "streamingaudio",
+                "streamingvideo"
+              ],
+              "description": "QOS priority (DSCP bits)"
+            },
+            "default_ttl": {
+              "type": "string",
+              "description": "If the Origin doesn't set a Cache-Control, set it to this value. A number followed by a letter (like 17s, 5m, 3h, 2d, 1w) is a shortcut for 'max-age=N, public'",
+              "examples": [ "10s", "60m", "12h", "no-cache, no-store, must-revalidate, stale-while-revalidate=30" ],
+              "pattern": "^([0-9]+[smhdw])$|^((no-cache|no-store|no-transform|must-revalidate|public|private|proxy-revalidate|immutable|(max-age=|s-maxage=|stale-while-revalidate=|stale-if-error=)[0-9]+) *(, *|$))+$"
+            },
+            "set_header_origin": {
+              "type": "string",
+              "description": "Send this header to the origin; overwrites if client had set."
+            },
+            "authproxy": {
+              "type": "string",
+              "emum": [
+                "range",
+                "head"
+              ],
+              "description": "Send Range/Head request to secondary origin to authenticate request. Will need 2nd remap rule to catch these requests."
+            },
+            "parent_child": {
+              "$ref": "#/definitions/parent_child"
+            },
+            "parent": {
+              "type": "boolean"
+            },
+            "child": {
+              "type": "boolean"
+            },
+            "redirect": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Configure the Regex Remap Plugin. See https://docs.trafficserver.apache.org/en/7.1.x/admin-guide/plugins/regex_remap.en.html",
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "src": {
+                  "type": "string",
+                  "description": "regex src pattern, defaults to `(.*)`"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "regex URL to redirect to, may include substitution variables"
+                },
+                "http_code": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 999,
+                  "description": "HTTP status code to return, defaults to 302"
+                }
+              },
+              "examples": [
+                { "url": "https://example.com$0", "http_code": 410 },
+                { "src": "http://old.(.*).z.com", "url": "http://new.$1.z.com" }
+              ]
+            },
+            "video_background_fetch": {
+              "type": "object",
+              "description": "Prefetch sequential URLs for improved caching. Usually for HLS video.",
+              "additionalProperties": false,
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "log_name": {
+                  "type": "string",
+                  "description": "Rcpt to log these requests."
+                },
+                "fetch_count": {
+                  "type": "integer",
+                  "description": "How many URLs ahead to fetch."
+                },
+                "replace_host": {
+                  "type": "string",
+                  "description": "What Host: header to use in pre-fetch."
+                },
+                "exact_match": {
+                  "type": "boolean"
+                },
+                "api_header": {
+                  "type": "string",
+                  "description": "What header to use to signal this is a prefetch request."
+                },
+                "name_space": {
+                  "type": "string",
+                  "description": "Name Space to segregate LRU count."
+                },
+                "metrics_prefix": {
+                  "type": "string",
+                  "description": "Prefix for prefetch metrics."
+                },
+                "fetch_policy": {
+                  "$ref": "#/definitions/fetch_policy"
+                },
+                "frontend": {
+                  "type": "object",
+                  "properties": {
+                    "comment": {
+                      "type": "string"
+                    },
+                    "fetch_policy": {
+                      "$ref": "#/definitions/fetch_policy"
+                    },
+                    "fetch_path_pattern": {
+                      "type": "array",
+                      "minItems": 1,
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Regex to find the portion of the url that can be incremented."
+                    }
+                  }
+                },
+                "fetch_max": {
+                  "type": "integer"
+                },
+                "backend": {
+                  "type": "object",
+                  "properties": {
+                    "comment": {
+                      "type": "string"
+                    },
+                    "fetch_policy": {
+                      "type": "string",
+                      "description": "simple or lru (with lru size). eg lru:10000000",
+                      "pattern": "^(simple|lru:[0-9]+)$"
+                    }
+                  }
+                }
+              }
+            },
+            "log_header": {
+              "type": "object",
+              "properties": {},
+              "description": "Log specific request headers with the specified keyword names.",
+              "examples": [ { "name-in-log": "name-of-header", "cacheControlValue": "Cache-Control", "playbackSessionID": "X-PlayBack-Session-Id" } ]
+            },
+            "proxy_cache_control": {
+              "type": "string",
+              "description": "Use this header's value for Cache-Control.",
+              "examples": [ "Proxy-Cache-Control" ]
+            },
+            "failover": {
+              "type": "object",
+              "description": "When object is unavailable, try a different origin.",
+              "additionalProperties": false,
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "domain": {
+                  "type": "string",
+                  "description": "When object is unavailable, try what origin?"
+                },
+                "status_codes": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 999
+                  },
+                  "description": "What HTTP status codes indicate we should try another origin?"
+                },
+                "host_header": {
+                  "type": "string",
+                  "enum": [
+                    "origin",
+                    "alias"
+                  ],
+                  "description": "What hostname should we use when contacting the failover? (alias or origin)"
+                }
+              }
+            },
+            "remove_header": {
+              "type": "string",
+              "description": "Remove this header."
+            },
+            "remove_header_origin": {
+              "type": "string",
+              "description": "Remove this header in origin request."
+            },
+            "log_cookie": {
+              "type": "object",
+              "properties": {},
+              "description": "Log specific request cookies with the specified keyword names.",
+              "examples": [ { "name-in-log": "name-of-cookie", "session": "s", "auth": "ADCDownloadAuth" } ]
+            },
+            "force_ttl": {
+              "type": "string",
+              "description": "Always set Cache-Control to this value; overwrites if origin had set. A number followed by a letter (like 17s, 5m, 3h, 2d, 1w) is a shortcut for 'max-age=N, public'",
+              "pattern": "^([0-9]+[smhdw])$|^((no-cache|no-store|no-transform|must-revalidate|public|private|proxy-revalidate|immutable|(max-age=|s-maxage=|stale-while-revalidate=|stale-if-error=)[0-9]+) *(, *|$))+$"
+            },
+            "receipts": {
+              "type": "object",
+              "description": "Control receipt (eg log) production.",
+              "additionalProperties": false,
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Should we send receipts (eg logs) for this property?"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Should we use a different rcpt name for this ruleset?"
+                }
+              }
+            },
+            "allow_methods": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "HEAD",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "CONNECT",
+                  "OPTIONS",
+                  "TRACE",
+                  "PATCH",
+                  "PURGE"
+                ]
+              },
+              "description": "Accept only these HTTP verbs"
+            },
+            "deny_methods": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "HEAD",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "CONNECT",
+                  "OPTIONS",
+                  "TRACE",
+                  "PATCH"
+                ]
+              },
+              "description": "Reject these HTTP verbs"
+            },
+            "strip_query": {
+              "type": "boolean",
+              "description": "Strips the query string completely -- the origin won't see it."
+            },
+            "transaction_timeout": {
+              "type": "string",
+              "description": "Sets transaction timeouts (CDN default is 60s)"
+            },
+            "s3": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Use Amazon S3 authentication when contacting origin.",
+              "required": [
+                "path"
+              ],
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string",
+                  "description": "Path to the s3 configuration containing the shared secret."
+                },
+                "virtual_host": {
+                  "type": "boolean",
+                  "description": "Populate Host: header with S3 virtual host."
+                },
+                "version": {
+                  "type": "integer",
+                  "enum": [
+                    2,
+                    4
+                  ],
+                  "description": "Which version of Amazon AWS signature algorithm to use."
+                },
+                "v4_include_headers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "v4_exclude_headers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Don't use these headers in the authorization signature.",
+                  "examples": [ { "v4_exclude_headers": ["x-forwarded-for","forwarded","via","authorization"] } ]
+                },
+                "region_map": {
+                  "type": "string",
+                  "description": "Path to a region map config file."
+                }
+              }
+            },
+            "edge_compression": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "",
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Should we enable compression?"
+                },
+                "algorithms": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "gzip",
+                      "br"
+                    ],
+                    "description": "Specify compression algorithm(s) to use."
+                  }
+                },
+                "static_origin_compressible_content_type": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Compression for specified mime-types.",
+                  "examples": [ [ "application/x-mpegURL" ] ]
+                },
+                "flush": {
+                  "type": "boolean"
+                },
+                "remove_accept_encoding": {
+                  "type": "boolean",
+                  "description": "Removes Accept-Encoding header in origin requests."
+                },
+                "minimum_content_length": {
+                  "type": "integer",
+                  "description": "Minimum content length for compression to be enabled (in bytes)"
+                }
+              }
+            },
+            "alt_svc": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "authority": {
+                  "type": "string"
+                },
+                "protocol": {
+                  "type": "string"
+                },
+                "ma": {
+                  "type": "integer"
+                },
+                "health": {
+                  "type": "string"
+                },
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "disable_cache": {
+              "type": "boolean",
+              "description": "Turn off the cache for this rule."
+            },
+            "log_type": {
+              "type": "string",
+              "enum": [
+                "private",
+                "public"
+              ],
+              "description": "Private if we should not log privacy sensitive information, like the URL, referral URL, client IP, etc. Default is public."
+            },
+            "access_approval": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "raw": {
+                  "type": "string"
+                }
+              }
+            },
+            "storage_volume": {
+              "type": "string",
+              "description": "Selects which volume will be used for caching (disk_volume or ramdisk_volume); when this is omitted the default used is disk_volume.",
+              "enum": [
+                "disk_volume",
+                "ramdisk_volume"
+              ]
+            },
+            "lua": {
+              "type": "string",
+              "description": "Raw text to run as Lua remap script."
+            },
+            "echo_cors": {
+              "type": "string",
+              "description": "Header to echo back as Access-Control-Allow-Origin in response."
+            },
+            "cache_version": {
+              "type": "integer",
+              "description": "To clear the cache for this rule, increment the integer (or add this rule with value 1)."
+            }
+          }
+        }
+      }
+    },
+    "schemes": {
+      "$ref": "#/definitions/schemes"
+    },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/mapping"
+      }
+    },
+    "explicit": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/mapping"
+      },
+      "uniqueItems": true
+    },
+    "ha_proxy": {
+      "type": "array",
+      "additionalProperties": false,
+      "items": {
+        "type": "object",
+        "required": [
+          "port",
+          "rips"
+        ]
+      },
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "rips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ip",
+              "port"
+            ]
+          },
+          "properties": {
+            "ip": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "parent_child": {
+      "$ref": "#/definitions/parent_child"
+    },
+    "qps": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Approximate queries per second, used to order rules for efficiency."
+    },
+    "receiptsd": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "ignored_extensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sampling": {
+          "type": "object",
+          "properties": {
+            "comment": {
+              "type": "string"
+            },
+            "posters": {
+              "type": "object",
+              "description": "Name of the program posting the logs. Current values are Global (for iTunes splunk), adcdownload, and adcdownload-uat (for posting to WWDR's prod/uat)",
+              "examples": [ "global: 1%" ],
+              "patternProperties": {
+                ".*": {
+                  "type": "string",
+                  "pattern": "^\\d+%$"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "ssl_cert_names": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^([\\w\\-\\.,:/]+)$"
+      },
+      "description": "A list of SSL cert filenames. used to populate ssl_multicert.config."
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "comment": {
+              "type": "string"
+            },
+            "description": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "domain_names": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              },
+              "description": "Domain names for SSL tests"
+            },
+            "headers": {
+              "type": "object",
+              "patternProperties": {
+                ".*": {
+                  "type": "string"
+                }
+              },
+              "description": "Headers to go into the request."
+            },
+            "host_types": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "parent",
+                  "child"
+                ]
+              },
+              "description": "Which kind of hosts should the check run on?"
+            },
+            "insecure": {
+              "type": "boolean",
+              "description": "If curl should ignore certificate warnings."
+            },
+            "purge_before": {
+              "type": "boolean",
+              "description": "If we should run a PURGE command before the test."
+            },
+            "range": {
+              "type": "string",
+              "description": "Use a range request -- eg, 0-499 will ask for the 1st 500 bytes."
+            },
+            "role": {
+              "type": "string",
+              "description": "Specify role of host to run test against."
+            },
+            "success": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "headers": {
+                  "type": "object",
+                  "patternProperties": {
+                    ".*": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "Headers and their values that should be returned"
+                },
+                "serial_numbers": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Serial Number of cert or Intermediate."
+                },
+                "status_code": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 999,
+                  "description": "HTTP status code expected in the response."
+                }
+              }
+            },
+            "urls": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              },
+              "description": "URLs to test"
+            }
+          }
+        }
+      }
+    }
+  }
+}

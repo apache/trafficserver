@@ -1,0 +1,2 @@
+problem loading "scheme/test.conf": 
+    - mappings.0.schemes.0: mappings.0.schemes.0 must be one of the following: "http", "https"

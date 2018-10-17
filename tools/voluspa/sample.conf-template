@@ -1,0 +1,178 @@
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+schema_version: '1.0'
+owner: Owner Name <owner-email@domain.com>
+reference: reference number here
+rcpt: MyReceipt
+parent_child: true # use parent/child hierarchy
+qps: 2 # Approximate queries per second to order rules
+role: roles_edge_child # If this should be applied to specific salt role.
+lifecycle: onboarding|live|retired #live: in production; onboarding: various things may not yet be working; retired: No longer active (no need for new ssl certs, etc);
+cdn: [edge, internal]
+ssl_cert_names: # a list of SSL cert filenames. used to populate ssl_multicert.config
+  - /secret/mysecret1.domain.com
+  - /secret/mysecret2.domain.com
+
+mappings:
+  - alias:
+    - mydomain1.com # can have multiple. If no scheme, uses from schemes:
+    origin: http://myorigin.domain.com
+    schemes: [http, https] # applied to alias and origin (if not specified)
+    rule: default #not needed if "default"
+
+rules:
+  default: # named set of rules to apply to this target/origin
+    parent_child: false # child remap goes direct to origin. (Overrides metadata's parent_child for this ruleset)
+    strip_query: true # strips the query string completely -- the origin won't see it.
+    force_ttl: 7d # Always set Cache-Control: max-age: $time; overwrites if origin had set.
+    default_ttl: 7d # If the Origin doesn't set a Cache-Control, set it to Cache-Control: max-age: $time
+    negative_ttl: 10s # amount of time to cache http errors (404, 502, 504, etc)
+    transaction_timeout: 10m # Sets transaction timeouts (CDN default is 30s)
+    content_type_forge: # Change the content type based on a series of regexes (Need this line too)
+       # 'regex': content-type. urls matching regex will have have the Content-type header set to content-type
+       '.*\.json$': application/json
+       '.*\.css$': text/css
+    edge_compression: # if the origin does not surpport compression, CDN should do the compression instead
+      enabled: true
+      algorithms: [gzip] # only gzip for now
+      static_origin_compressible_content_type:
+        - application/json #compress only these mime types -- not the defaults
+    header_rewrite: |- # raw values to put into header_rewrite configration
+       cond %{SEND_REQUEST_HDR_HOOK}
+         set-header Authorization "Basic 123412341234"
+    deny_methods: [ CONNECT, POST, PUT, DELETE ] #Reject these HTTP verbs
+    priority: background | foreground | streamingaudio | streamingvideo # QOS priority (DSCP bits)
+    set_header: 'X-Client-Protocol "%<proto>"'# Set this header; overwrites if origin had set.
+    add_header: 'X-Client-Protocol "%<proto>"' # add this header;
+    remove_header: "X-Client-Protocol" # remove this header;
+    add_header_origin: 'X-Client-Protocol "%<proto>"' # Send this header to the origin
+    set_header_origin: 'X-Client-Protocol "%<proto>"' # Send this header to the origin; overwrites if client had set.
+    proxy_cache_control: "MyProxyHeader" # Use this header's value for Cache-Control.
+    disable_cache: true # turn off the cache for this rule
+    regex_remap: "^/([^/]+)/(.*) https://$1.s3.amazonaws.com/$2"  # use regex to match the inbound path (only) and substition for origin. Can add optional http status code (like @status=301). Can also use "|-" format
+    conf_remap: |- # raw values to override specific ATS settings.
+      CONFIG proxy.config.http.connect_attempts_timeout INT 600
+      CONFIG proxy.config.http.negative_caching_enabled FLOAT .050
+    allow_ip: [10.0.0.0-10.0.255.255, 10.13.0.0-10.13.255.255] # Only accept requests from these IP ranges
+    log_cookie: # log specific cookies for this property. Logger-cookie-Name1 will become the key name in logger
+      Logger-cookie-Name1: NameOfCookie1
+      Logger-cookie-Name2: NameOfCookie2
+    log_header: # log specific header for this property. Logger-header-Name1 will become the key name in logger
+      Logger-header-Name1: NameOfHeader1
+      Logger-header-Name2: NameOfHeader2
+    log_type: private|public # Private logs no personal info (no client IP, url, referalurl ...); Public is default
+    cachekey: #modify the cache key
+      include_params: ["param1", "param2"] # only use these query parameters in the cachekey
+      exclude_params: ["param1", "param2"] # ignore these query parameters in the cachekey
+      sort_query: true  # sort the query parameters for the cachekey
+      remove_all_params: true # Don't use the query string as part of the cachekey.
+      include_headers: ["Origin", "Content-Type"] # include specific headers in the cachekey
+      include_cookies: ["Cookie1", "Cookie2"] # include specific cookies in the cachekey
+      static_prefix: SomeString # specified value will be added to the cachekey
+      regex_replace_path: '/.*/filename.html/' # replace cachekey URI path with regex capture
+    cache_promote: #  cache promotion plugin options -- only cache the popular objects
+      policy: lru | chance
+      sample: 25
+      lru_hits: 10
+      lru_buckets: 10000
+    failover: #  escalate plugin options -- when object is unavailable, try another origin
+      domain: domain.com
+      status_codes: [401, 403, 404, 407, 410, 500, 501, 502, 503, 504, 505]
+      host_header: alias|origin # What hostname should we use when contacting the failover? (alias or origin)
+#  Flags to disable options automatically enabled:
+    receipts:
+      enabled: false # don't set a rcpt field in logs
+      name: override_name  # override receipt name on ruleset
+    propstats: false # don't send stats to epic for this remap rule
+    origin_host_header: alias| origin  # origin=Send the origin's Host: header to the origin. alias=send the inbound Host: header to origin (default)"
+#  Property Specific options:
+    s3: #Use Amazon S3 authentication
+      path: "path/to/config" # Origin is s3; eg certs/s3.config
+      version: 2|4 # which version of Amazon AWS signature algorithm to use; 2 or 4 with default of 2
+      virtual_host: true # populates Host: header with S3 virtual host
+    authproxy: range | head # Send Range/Head request to secondary origin to authenticate request. Will need 2nd remap rule to catch these requests.
+# Video background fetch plugin options
+    video_background_fetch:
+      fetch_count: 10
+      fetch_max: 1000
+      api_header: header1
+      replace_host: host1
+      name_space: ns1
+      metrics_prefix: prefix1
+      exact_match: true
+      log_name: log1
+      frontend:
+        fetch_path_pattern: '/(.*-)(\d+)(.*)/$1{$2+2}$3/'
+        fetch_policy: lru:10000000
+      backend:
+        fetch_policy: simple
+
+tests:
+# Status code checks
+  health:    # arbitrary name for test
+    urls:    # urls to test
+      - http://mydomain1.com/show/health
+      - https://mydomain1.com/show/health
+    success: # rules defining a successful test
+      status_code: 200
+
+# Header checks
+  parent_cache_key_and_etag:
+    description: run only on hosts in trafficserver_parent salt role
+    role: roles_uat # specify role of host to run test against
+    insecure: true  # Default False. Ignore ssl errors thus allowing insecure connection
+    range: 0-499    # specifies the first 500 bytes
+    purge_before: true # Default False. Purge url before running a test
+    headers:        # request headers
+      X-Debug: X-Cache-Key
+    host_types:      # valid values: parent|child
+      - parent
+    urls:
+      - http://mydomain1.com/test.txt
+    success:
+      status_code: 200
+      headers:
+        X-Cache-Key: /mydomain1.com:80/test.txt
+        ETag: \"d36f8f9425c4a8000ad9c4a97185aca5\"
+# domain names for SSL tests
+  ssl_tests:
+    domain_names:
+      - working.domain.com
+
+  cert_serial_number_check:
+    description: devimages has a pinned cert
+    type: ssl
+    domain_names:
+      - devimages-cdn.domain.com
+    success:
+      serial_numbers:
+        - ABC123
+
+# log settings
+receiptsd: # configure receipts (logs) sent
+  sampling:
+    posters:
+      global: 10% # only send 10% of logs to main instance
+      adcdownload: 100% # also send 100% of logs to the download instance
+  ignored_extensions: # don't send any logs for files with these extensions
+    - .dist
+    - .dist.gz
+    - .pkm
+
+# vim: set et sw=2 ts=2 ft=yaml :

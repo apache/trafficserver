@@ -1,0 +1,2 @@
+voluspa: errors validating configs:
+    - alias http://inbound.example.com not unique for rule role "roles_edge_child" (duped/test.conf)

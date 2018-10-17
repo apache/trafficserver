@@ -1,0 +1,3 @@
+voluspa: errors validating configs:
+    - invalid regex: error parsing regexp: missing closing ): `BYT\s([^,]+.*` (cachekey_bad/test.conf)
+    - invalid regex: unexpected / (cachekey_bad/test.conf)
