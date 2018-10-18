@@ -10,21 +10,18 @@
 
    @section license License
 
-   Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
+   Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+   agreements.  See the NOTICE file distributed with this work for additional information regarding
+   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with the License.  You may obtain
+   a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+   Unless required by applicable law or agreed to in writing, software distributed under the License
+   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+   or implied. See the License for the specific language governing permissions and limitations under
+   the License.
  */
 
 #pragma once
@@ -67,16 +64,6 @@ using ::memcmp; // Make this an overload, not an override.
 /// -  0 if the views contain identical strings.
 int strcmp(TextView const &lhs, TextView const &rhs);
 using ::strcmp; // Make this an overload, not an override.
-
-/** Convert the text in @c TextView @a src to a numeric value.
-
-    If @a parsed is non-null then the part of the string actually parsed is placed there.
-    @a base sets the conversion base. This defaults to 10 with two special cases:
-
-    - If the number starts with a literal '0' then it is treated as base 8.
-    - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
-*/
-intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
 
 /** A read only view of contiguous piece of memory.
 
@@ -180,6 +167,10 @@ public:
       @return @a this.
   */
   self_type &operator++();
+
+  /// Shift the view to discard the first byte.
+  /// @return A pre-increment copy of the view.
+  self_type operator++(int);
 
   /** Shift the view to discard the leading @a n bytes.
       Equivalent to @c std::string_view::remove_prefix
@@ -300,6 +291,12 @@ public:
   /// Overload to provide better return type.
   self_type &remove_prefix(size_t n);
 
+  /// Remove the prefix delimited by the first occurence of @a c.
+  self_type &remove_prefix_at(char c);
+
+  /// Remove the prefix delimited by the first occurence of a character for which @a pred is @c true.
+  template <typename F> self_type &remove_prefix_if(F const &pred);
+
   /** Split a prefix from the view on the character at offset @a n.
 
       The view is split in to two parts and the byte at offset @a n is discarded. @a this retains
@@ -393,6 +390,12 @@ public:
 
   /// Overload to provide better return type.
   self_type &remove_suffix(size_t n);
+
+  /// Remove a suffix, delimited by the last occurence of @c c.
+  self_type &remove_suffix_at(char c);
+
+  /// Remove a suffix, delimited by the last occurence of a character for which @a pred is @c true.
+  template <typename F> self_type &remove_suffix_if(F const &f);
 
   /** Split the view to get a suffix of size @a n.
 
@@ -510,6 +513,51 @@ protected:
   /// Initialize a bit mask to mark which characters are in this view.
   static void init_delimiter_set(super_type const &delimiters, std::bitset<256> &set);
 };
+
+// Internal character conversion table.
+// Converts a character to the numeric digit value, or negative if the character is not a valid digit.
+extern const int8_t svtoi_convert[256];
+;
+
+/** Convert the text in @c TextView @a src to a numeric value.
+
+    If @a parsed is non-null then the part of the string actually parsed is placed there.
+    @a base sets the conversion base. This defaults to 10 with two special cases:
+
+    - If the number starts with a literal '0' then it is treated as base 8.
+    - If the number starts with the literal characters '0x' or '0X' then it is treated as base 16.
+*/
+intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
+
+/** Convert the text in @c src to an unsigned numeric value.
+ *
+ * @tparam N The radix (must be  1..36)
+ * @param src The source text. Updated during parsing.
+ * @return The converted numeric value.
+ *
+ * This is a specialized function useful only where conversion performance is critical. It is used
+ * inside @c svtoi for the common cases of 8, 10, and 16, therefore normally this isn't much more
+ * performant in those cases than just @c svtoi. Because of this only positive values are parsed.
+ * If determining the radix from the text or signed value parsing is needed, used @c svtoi.
+ *
+ * @a src is updated in place to indicate what characters were parsed. Parsing stops on the first
+ * invalid digit, so any leading non-digit characters (e.g. whitespace) must already be removed.
+ */
+template <uintmax_t N>
+uintmax_t
+svto_radix(ts::TextView &src)
+{
+  static_assert(0 < N && N <= 36, "Radix must be in the range 1..36");
+  uintmax_t zret{0};
+  uintmax_t v;
+  while (src.size() && (0 <= (v = ts::svtoi_convert[static_cast<unsigned char>(*src)])) && v < N) {
+    zret *= N;
+    zret += v;
+    ++src;
+  }
+  return zret;
+};
+
 // ----------------------------------------------------------
 // Inline implementations.
 
@@ -564,6 +612,14 @@ TextView::operator++()
 {
   this->remove_prefix(1);
   return *this;
+}
+
+inline TextView
+TextView::operator++(int)
+{
+  self_type zret{*this};
+  this->remove_prefix(1);
+  return zret;
 }
 
 inline TextView &
@@ -667,16 +723,41 @@ template <typename F>
 inline TextView
 TextView::prefix_if(F const &pred) const
 {
-  return this->prefix(this->find(pred));
+  return this->prefix(this->find_if(pred));
 }
 
-inline auto
-TextView::remove_prefix(size_t n) -> self_type &
+inline TextView &
+TextView::remove_prefix(size_t n)
 {
   if (n > this->size()) {
     this->clear();
   } else {
     this->super_type::remove_prefix(n);
+  }
+  return *this;
+}
+
+inline TextView &
+TextView::remove_prefix_at(char c)
+{
+  auto n = this->find(c);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->super_type::remove_prefix(n + 1);
+  }
+  return *this;
+}
+
+template <typename F>
+TextView &
+TextView::remove_prefix_if(F const &pred)
+{
+  auto n = this->find_if(pred);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->super_type::remove_prefix(n + 1);
   }
   return *this;
 }
@@ -775,6 +856,31 @@ inline TextView
 TextView::suffix_if(F const &pred) const
 {
   return this->suffix((this->size() - std::min(this->size(), this->rfind_if(pred))) - 1);
+}
+
+inline TextView &
+TextView::remove_suffix_at(char c)
+{
+  auto n = this->rfind(c);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->remove_suffix(this->size() - n);
+  }
+  return *this;
+}
+
+template <typename F>
+TextView &
+TextView::remove_suffix_if(F const &pred)
+{
+  auto n = this->rfind_if(pred);
+  if (n == npos) {
+    this->clear();
+  } else {
+    this->remove_suffix(this->size() - n);
+  }
+  return *this;
 }
 
 inline auto
@@ -1023,7 +1129,7 @@ TextView::isNoCasePrefixOf(super_type const &that) const
 inline int
 strcmp(TextView const &lhs, TextView const &rhs)
 {
-  return ts::memcmp(lhs, rhs);
+  return memcmp(lhs, rhs);
 }
 
 template <typename Stream>

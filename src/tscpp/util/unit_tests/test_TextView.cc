@@ -21,12 +21,13 @@
     limitations under the License.
 */
 
-#include "tscpp/util/TextView.h"
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <iomanip>
-#include <catch.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include "tscpp/util/TextView.h"
+#include "catch.hpp"
 
 using ts::TextView;
 using namespace std::literals;
@@ -181,8 +182,9 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   REQUIRE(t.empty());
 
   // Simulate pulling off FQDN pieces in reverse order from a string_view.
-  // Simulates operations in HostLookup.cc, where the use of string_view necessitates this workaround of failures
-  // in the string_view API. With a TextView, it would just be repeated @c take_suffix_at('.')
+  // Simulates operations in HostLookup.cc, where the use of string_view
+  // necessitates this workaround of failures in the string_view API. With a
+  // TextView, it would just be repeated @c take_suffix_at('.')
   std::string_view fqdn{"bob.ne1.corp.ngeo.com"};
   TextView elt{TextView{fqdn}.suffix('.')};
   REQUIRE(elt == "com");
@@ -223,6 +225,33 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   token = s.take_prefix_at('.');
   REQUIRE(token.size() == 0);
   REQUIRE(token.empty());
+
+  auto is_not_alnum = [](char c) { return !isalnum(c); };
+
+  s = "file.cc";
+  REQUIRE(s.suffix('.') == "cc");
+  REQUIRE(s.suffix_if(is_not_alnum) == "cc");
+  REQUIRE(s.prefix('.') == "file");
+  REQUIRE(s.prefix_if(is_not_alnum) == "file");
+  s.remove_suffix_at('.');
+  REQUIRE(s == "file");
+  s = "file.cc.org.123";
+  REQUIRE(s.suffix('.') == "123");
+  REQUIRE(s.prefix('.') == "file");
+  s.remove_suffix_if(is_not_alnum);
+  REQUIRE(s == "file.cc.org");
+  s.remove_suffix_at('.');
+  REQUIRE(s == "file.cc");
+  s.remove_prefix_at('.');
+  REQUIRE(s == "cc");
+  s = "file.cc.org.123";
+  s.remove_prefix_if(is_not_alnum);
+  REQUIRE(s == "cc.org.123");
+  s.remove_suffix_at('!');
+  REQUIRE(s.empty());
+  s = "file.cc.org";
+  s.remove_prefix('!');
+  REQUIRE(s.empty());
 };
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")
