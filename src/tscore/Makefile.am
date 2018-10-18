@@ -264,7 +264,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_layout.cc \
 	unit_tests/test_Map.cc \
 	unit_tests/test_List.cc \
-	unit_tests/test_MemSpan.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_PriorityQueue.cc \

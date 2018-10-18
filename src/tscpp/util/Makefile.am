@@ -37,6 +37,7 @@ test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscpputil_LDADD = libtscpputil.la
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
+	unit_tests/test_MemSpan.cc \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_TextView.cc \
 	unit_tests/test_ts_meta.cc

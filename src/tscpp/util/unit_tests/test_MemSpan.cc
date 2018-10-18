@@ -21,9 +21,9 @@
     limitations under the License.
 */
 
-#include <catch.hpp>
-#include "tscore/MemSpan.h"
 #include <iostream>
+#include "tscpp/util/MemSpan.h"
+#include "catch.hpp"
 
 using ts::MemSpan;
 

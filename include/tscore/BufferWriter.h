@@ -32,7 +32,7 @@
 #include <string_view>
 
 #include "tscpp/util/TextView.h"
-#include "tscore/MemSpan.h"
+#include "tscpp/util/MemSpan.h"
 #include "tscore/BufferWriterForward.h"
 
 namespace ts
