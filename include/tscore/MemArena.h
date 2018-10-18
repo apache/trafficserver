@@ -27,7 +27,7 @@
 #include <mutex>
 #include <memory>
 #include <utility>
-#include "tscore/MemSpan.h"
+#include "tscpp/util/MemSpan.h"
 #include "tscore/Scalar.h"
 #include <tsconfig/IntrusivePtr.h>
 

@@ -27,7 +27,7 @@
 #include <iostream>
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
-#include "tscore/MemSpan.h"
+#include "tscpp/util/MemSpan.h"
 #include "tscore/INK_MD5.h"
 #include "tscore/CryptoHash.h"
 
