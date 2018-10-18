@@ -24,7 +24,6 @@
 #include "UrlRewrite.h"
 #include "ProxyConfig.h"
 #include "ReverseProxy.h"
-#include "UrlMappingPathIndex.h"
 #include "RemapConfig.h"
 #include "tscore/I_Layout.h"
 #include "HttpSM.h"
@@ -66,9 +65,6 @@ UrlRewrite::UrlRewrite()
     _valid(false)
 {
   ats_scoped_str config_file_path;
-
-  forward_mappings.hash_lookup = reverse_mappings.hash_lookup = permanent_redirects.hash_lookup = temporary_redirects.hash_lookup =
-    forward_mappings_with_recv_port.hash_lookup                                                 = nullptr;
 
   config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", "remap.config");
   if (!config_file_path) {
@@ -156,20 +152,12 @@ UrlRewrite::SetupBackdoorMapping()
 
 /** Deallocated a hash table and all the url_mappings in it. */
 void
-UrlRewrite::_destroyTable(InkHashTable *h_table)
+UrlRewrite::_destroyTable(std::unique_ptr<URLTable> &h_table)
 {
-  InkHashTableEntry *ht_entry;
-  InkHashTableIteratorState ht_iter;
-  UrlMappingPathIndex *item;
-
-  if (h_table != nullptr) { // Iterate over the hash tabel freeing up the all the url_mappings
-    //   contained with in
-    for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != nullptr;) {
-      item = (UrlMappingPathIndex *)ink_hash_table_entry_value(h_table, ht_entry);
-      delete item;
-      ht_entry = ink_hash_table_iterator_next(h_table, &ht_iter);
+  if (h_table) {
+    for (auto it = h_table->begin(); it != h_table->end(); ++it) {
+      delete it->second;
     }
-    ink_hash_table_destroy(h_table);
   }
 }
 
@@ -205,15 +193,9 @@ UrlRewrite::Print()
 void
 UrlRewrite::PrintStore(MappingsStore &store)
 {
-  if (store.hash_lookup != nullptr) {
-    InkHashTableEntry *ht_entry;
-    InkHashTableIteratorState ht_iter;
-    UrlMappingPathIndex *value;
-
-    for (ht_entry = ink_hash_table_iterator_first(store.hash_lookup, &ht_iter); ht_entry != nullptr;) {
-      value = (UrlMappingPathIndex *)ink_hash_table_entry_value(store.hash_lookup, ht_entry);
-      value->Print();
-      ht_entry = ink_hash_table_iterator_next(store.hash_lookup, &ht_iter);
+  if (store.hash_lookup) {
+    for (auto it = store.hash_lookup->begin(); it != store.hash_lookup->end(); ++it) {
+      it->second->Print();
     }
   }
 
@@ -229,13 +211,20 @@ UrlRewrite::PrintStore(MappingsStore &store)
 
 */
 url_mapping *
-UrlRewrite::_tableLookup(InkHashTable *h_table, URL *request_url, int request_port, char *request_host, int request_host_len)
+UrlRewrite::_tableLookup(std::unique_ptr<URLTable> &h_table, URL *request_url, int request_port, char *request_host,
+                         int request_host_len)
 {
-  UrlMappingPathIndex *ht_entry;
-  url_mapping *um = nullptr;
-  int ht_result;
+  if (!h_table) {
+    h_table.reset(new URLTable);
+  }
+  UrlMappingPathIndex *ht_entry = nullptr;
+  url_mapping *um               = nullptr;
+  int ht_result                 = 0;
 
-  ht_result = ink_hash_table_lookup(h_table, request_host, (void **)&ht_entry);
+  if (auto it = h_table->find(request_host); it != h_table->end()) {
+    ht_result = 1;
+    ht_entry  = it->second;
+  }
 
   if (likely(ht_result && ht_entry)) {
     // for empty host don't do a normal search, get a mapping arbitrarily
@@ -686,11 +675,11 @@ UrlRewrite::BuildTable(const char *path)
   ink_assert(num_rules_redirect_temporary == 0);
   ink_assert(num_rules_forward_with_recv_port == 0);
 
-  forward_mappings.hash_lookup                = ink_hash_table_create(InkHashTableKeyType_String);
-  reverse_mappings.hash_lookup                = ink_hash_table_create(InkHashTableKeyType_String);
-  permanent_redirects.hash_lookup             = ink_hash_table_create(InkHashTableKeyType_String);
-  temporary_redirects.hash_lookup             = ink_hash_table_create(InkHashTableKeyType_String);
-  forward_mappings_with_recv_port.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
+  forward_mappings.hash_lookup.reset(new URLTable);
+  reverse_mappings.hash_lookup.reset(new URLTable);
+  permanent_redirects.hash_lookup.reset(new URLTable);
+  temporary_redirects.hash_lookup.reset(new URLTable);
+  forward_mappings_with_recv_port.hash_lookup.reset(new URLTable);
 
   if (!remap_parse_config(path, this)) {
     // XXX handle file reload error
@@ -699,27 +688,27 @@ UrlRewrite::BuildTable(const char *path)
 
   // Destroy unused tables
   if (num_rules_forward == 0) {
-    forward_mappings.hash_lookup = ink_hash_table_destroy(forward_mappings.hash_lookup);
+    forward_mappings.hash_lookup.reset(nullptr);
   } else {
-    if (ink_hash_table_isbound(forward_mappings.hash_lookup, "")) {
+    if (forward_mappings.hash_lookup->find("") != forward_mappings.hash_lookup->end()) {
       nohost_rules = 1;
     }
   }
 
   if (num_rules_reverse == 0) {
-    reverse_mappings.hash_lookup = ink_hash_table_destroy(reverse_mappings.hash_lookup);
+    reverse_mappings.hash_lookup.reset(nullptr);
   }
 
   if (num_rules_redirect_permanent == 0) {
-    permanent_redirects.hash_lookup = ink_hash_table_destroy(permanent_redirects.hash_lookup);
+    permanent_redirects.hash_lookup.reset(nullptr);
   }
 
   if (num_rules_redirect_temporary == 0) {
-    temporary_redirects.hash_lookup = ink_hash_table_destroy(temporary_redirects.hash_lookup);
+    temporary_redirects.hash_lookup.reset(nullptr);
   }
 
   if (num_rules_forward_with_recv_port == 0) {
-    forward_mappings_with_recv_port.hash_lookup = ink_hash_table_destroy(forward_mappings_with_recv_port.hash_lookup);
+    forward_mappings_with_recv_port.hash_lookup.reset(nullptr);
   }
 
   return 0;
@@ -731,8 +720,11 @@ UrlRewrite::BuildTable(const char *path)
 
 */
 bool
-UrlRewrite::TableInsert(InkHashTable *h_table, url_mapping *mapping, const char *src_host)
+UrlRewrite::TableInsert(std::unique_ptr<URLTable> &h_table, url_mapping *mapping, const char *src_host)
 {
+  if (!h_table) {
+    h_table.reset(new URLTable);
+  }
   char src_host_tmp_buf[1];
   UrlMappingPathIndex *ht_contents;
 
@@ -741,16 +733,17 @@ UrlRewrite::TableInsert(InkHashTable *h_table, url_mapping *mapping, const char 
     src_host_tmp_buf[0] = 0;
   }
   // Insert the new_mapping into hash table
-  if (ink_hash_table_lookup(h_table, src_host, (void **)&ht_contents)) {
+  if (auto it = h_table->find(src_host); it != h_table->end()) {
+    ht_contents = it->second;
     // There is already a path index for this host
-    if (ht_contents == nullptr) {
+    if (it->second == nullptr) {
       // why should this happen?
       Warning("Found entry cannot be null!");
       return false;
     }
   } else {
     ht_contents = new UrlMappingPathIndex();
-    ink_hash_table_insert(h_table, src_host, ht_contents);
+    h_table->emplace(src_host, ht_contents);
   }
   if (!ht_contents->Insert(mapping)) {
     Warning("Could not insert new mapping");
