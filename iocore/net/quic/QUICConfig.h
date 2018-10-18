@@ -36,7 +36,7 @@ public:
   void initialize();
 
   uint32_t server_id() const;
-  uint32_t max_alt_connection_ids() const;
+  uint32_t num_alt_connection_ids() const;
   uint32_t stateless_retry() const;
   uint32_t vn_exercise_enabled() const;
   uint32_t cm_exercise_enabled() const;
@@ -91,7 +91,7 @@ private:
   static const uint8_t _scid_len = 18; //< Length of Source Connection ID
 
   uint32_t _server_id              = 0;
-  uint32_t _max_alt_connection_ids = 0;
+  uint32_t _num_alt_connection_ids = 0;
   uint32_t _stateless_retry        = 0;
   uint32_t _vn_exercise_enabled    = 0;
   uint32_t _cm_exercise_enabled    = 0;

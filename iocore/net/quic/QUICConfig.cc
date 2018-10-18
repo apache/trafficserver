@@ -135,7 +135,7 @@ QUICConfigParams::initialize()
 {
   REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
   REC_EstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
-  REC_EstablishStaticConfigInt32U(this->_max_alt_connection_ids, "proxy.config.quic.max_alt_connection_ids");
+  REC_EstablishStaticConfigInt32U(this->_num_alt_connection_ids, "proxy.config.quic.num_alt_connection_ids");
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
   REC_EstablishStaticConfigInt32U(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
   REC_EstablishStaticConfigInt32U(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
@@ -222,9 +222,9 @@ QUICConfigParams::connection_table_size()
 }
 
 uint32_t
-QUICConfigParams::max_alt_connection_ids() const
+QUICConfigParams::num_alt_connection_ids() const
 {
-  return this->_max_alt_connection_ids;
+  return this->_num_alt_connection_ids;
 }
 
 uint32_t
