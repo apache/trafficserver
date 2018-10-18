@@ -149,6 +149,7 @@ public:
   inkcoreapi int marshal_client_req_tcp_reused(char *);         // INT
   inkcoreapi int marshal_client_req_is_ssl(char *);             // INT
   inkcoreapi int marshal_client_req_ssl_reused(char *);         // INT
+  inkcoreapi int marshal_client_req_is_internal(char *);        // INT
   inkcoreapi int marshal_client_security_protocol(char *);      // STR
   inkcoreapi int marshal_client_security_cipher_suite(char *);  // STR
   inkcoreapi int marshal_client_finish_status_code(char *);     // INT
