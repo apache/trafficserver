@@ -858,8 +858,7 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
   if (len > 0) {
     unmarshal_ip(buf, &ip);
     if (!ats_is_ip(&ip)) {
-      *dest = '0';
-      zret  = 1;
+      zret = ink_strlcpy(dest, "0.0.0.0", len);
     } else if (ats_ip_ntop(&ip, dest, len)) {
       zret = static_cast<int>(::strlen(dest));
     }
