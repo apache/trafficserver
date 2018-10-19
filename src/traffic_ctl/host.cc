@@ -97,11 +97,11 @@ static int
 status_up(unsigned argc, const char **argv)
 {
   char *reason      = nullptr;
-  const char *usage = "host down HOST [OPTIONS]";
+  const char *usage = "host up HOST [OPTIONS]";
 
   const ArgumentDescription opts[] = {
     // memory is allocated for 'reason', if this option is used
-    {"reason", '-', "reason for marking the host down, one of 'manual|active|local'", "S*", &reason, nullptr, nullptr},
+    {"reason", '-', "reason for marking the host up, one of 'manual|active|local'", "S*", &reason, nullptr, nullptr},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
