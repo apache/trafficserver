@@ -31,8 +31,6 @@
  ****************************************************************************/
 #pragma once
 
-#include <queue>
-
 #include "tscore/ink_platform.h"
 #include "P_Net.h"
 #include "P_EventSystem.h"
@@ -233,12 +231,11 @@ private:
   std::random_device _rnd;
 
   QUICConnectionId _peer_quic_connection_id;     // dst cid in local
+  QUICConnectionId _peer_old_quic_connection_id; // dst previous cid in local
   QUICConnectionId _original_quic_connection_id; // dst cid of initial packet from client
   QUICConnectionId _quic_connection_id;          // src cid in local
   QUICFiveTuple _five_tuple;
   bool _connection_migration_initiated = false;
-  // TODO: Revisit life cycle of cids when draft-15 is published
-  std::queue<QUICConnectionId> _remote_alt_cids;
 
   char _cids_data[MAX_CIDS_SIZE] = {0};
   std::string_view _cids;

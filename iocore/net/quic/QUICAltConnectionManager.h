@@ -24,40 +24,79 @@
 #pragma once
 
 #include <inttypes.h>
+#include <queue>
+
 #include "QUICFrameGenerator.h"
 #include "QUICTypes.h"
 #include "QUICConnection.h"
 
 class QUICConnectionTable;
 
-class QUICAltConnectionManager : public QUICFrameGenerator
+class QUICAltConnectionManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable);
+  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid);
   ~QUICAltConnectionManager();
+
+  /**
+   * Check if AltConnectionManager has at least one CID advertised by the peer.
+   */
+  bool is_ready_to_migrate() const;
+
+  /**
+   * Prepare for new CID for the peer, and return one of CIDs advertised by the peer.
+   * New CID for the peer will be sent on next call for generate_frame()
+   */
+  QUICConnectionId migrate_to_alt_cid();
+
+  /**
+   * Migrate to new CID
+   *
+   * cid need to match with one of alt CID that AltConnnectionManager prepared.
+   */
   bool migrate_to(QUICConnectionId cid, QUICStatelessResetToken &new_reset_token);
+
+  void drop_cid(QUICConnectionId cid);
+
+  /**
+   * Invalidate all CIDs prepared
+   */
   void invalidate_alt_connections();
 
+  // QUICFrameHandler
+  virtual std::vector<QUICFrameType> interests() override;
+  virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level);
-  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size);
+  bool will_generate_frame(QUICEncryptionLevel level) override;
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
   class AltConnectionInfo
   {
   public:
-    int seq_num;
+    uint64_t seq_num;
     QUICConnectionId id;
     QUICStatelessResetToken token;
-    bool advertised;
+    union {
+      bool advertised; // For local info
+      bool used;       // For remote info
+    };
   };
 
   QUICConnection *_qc = nullptr;
   QUICConnectionTable &_ctable;
-  AltConnectionInfo *_alt_quic_connection_ids;
-  uint8_t _nids                          = 0;
-  int8_t _alt_quic_connection_id_seq_num = 0;
-  bool _need_advertise                   = false;
+  AltConnectionInfo *_alt_quic_connection_ids_local;
+  std::vector<AltConnectionInfo> _alt_quic_connection_ids_remote;
+  std::queue<uint64_t> _retired_seq_nums;
+  uint8_t _nids                            = 0;
+  uint64_t _alt_quic_connection_id_seq_num = 0;
+  bool _need_advertise                     = false;
 
-  void _update_alt_connection_ids(int8_t chosen = -1);
+  AltConnectionInfo _generate_next_alt_con_info();
+  void _init_alt_connection_ids();
+  bool _update_alt_connection_id(uint64_t chosen_seq_num);
+
+  QUICConnectionErrorUPtr _register_remote_connection_id(const QUICNewConnectionIdFrame &frame);
+  QUICConnectionErrorUPtr _retire_remote_connection_id(const QUICRetireConnectionIdFrame &frame);
 };

@@ -29,70 +29,182 @@ static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 
 #define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
-QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable) : _qc(qc), _ctable(ctable)
+QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
+                                                   QUICConnectionId peer_initial_cid)
+  : _qc(qc), _ctable(ctable)
 {
   QUICConfig::scoped_config params;
 
-  this->_nids                    = params->num_alt_connection_ids();
-  this->_alt_quic_connection_ids = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
-  this->_update_alt_connection_ids(-1);
+  // Sequence number of the initial CID is 0
+  this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
+
+  // TODO If preferred_address was provided, sequence number of the provided CID is 1
+
+  if (this->_qc->direction() == NET_VCONNECTION_IN) {
+    this->_nids                          = params->num_alt_connection_ids();
+    this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
+    this->_init_alt_connection_ids();
+  } else {
+    this->_nids                          = 1;
+    this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
+    // If this is a client, new connection id will be generated on demand
+  }
 }
 
 QUICAltConnectionManager::~QUICAltConnectionManager()
 {
-  ats_free(this->_alt_quic_connection_ids);
+  ats_free(this->_alt_quic_connection_ids_local);
+}
+
+std::vector<QUICFrameType>
+QUICAltConnectionManager::interests()
+{
+  return {QUICFrameType::NEW_CONNECTION_ID, QUICFrameType::RETIRE_CONNECTION_ID};
+}
+
+QUICConnectionErrorUPtr
+QUICAltConnectionManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
+{
+  QUICConnectionErrorUPtr error = nullptr;
+
+  switch (frame.type()) {
+  case QUICFrameType::NEW_CONNECTION_ID:
+    error = this->_register_remote_connection_id(static_cast<const QUICNewConnectionIdFrame &>(frame));
+    break;
+  case QUICFrameType::RETIRE_CONNECTION_ID:
+    error = this->_retire_remote_connection_id(static_cast<const QUICRetireConnectionIdFrame &>(frame));
+    break;
+  default:
+    QUICACMVDebug("Unexpected frame type: %02x", static_cast<unsigned int>(frame.type()));
+    ink_assert(false);
+    break;
+  }
+
+  return error;
+}
+
+QUICAltConnectionManager::AltConnectionInfo
+QUICAltConnectionManager::_generate_next_alt_con_info()
+{
+  QUICConfig::scoped_config params;
+  QUICConnectionId conn_id;
+  QUICStatelessResetToken token;
+  conn_id.randomize();
+  token.generate(conn_id, params->server_id());
+  AltConnectionInfo aci = {++this->_alt_quic_connection_id_seq_num, conn_id, token, {false}};
+
+  if (this->_qc->direction() == NET_VCONNECTION_IN) {
+    this->_ctable.insert(conn_id, this->_qc);
+  }
+
+  if (is_debug_tag_set(V_DEBUG_TAG)) {
+    char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+    conn_id.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+    QUICACMVDebug("alt-cid=%s", new_cid_str);
+  }
+
+  return aci;
 }
 
 void
-QUICAltConnectionManager::_update_alt_connection_ids(int8_t chosen)
+QUICAltConnectionManager::_init_alt_connection_ids()
 {
-  if (this->_nids == 0) {
-    // Connection migration is disabled
-    return;
+  for (int i = 0; i < this->_nids; ++i) {
+    this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
   }
-
-  if (chosen == -1) {
-    chosen = (this->_nids - 1) & 0xff;
-  }
-
-  QUICConfig::scoped_config params;
-  int n       = this->_nids;
-  int current = this->_alt_quic_connection_id_seq_num % n;
-  int delta   = chosen - current;
-  int count   = (n + delta) % n + 1;
-
-  for (int i = 0; i < count; ++i) {
-    int index = (current + i) % n;
-    QUICConnectionId conn_id;
-    QUICStatelessResetToken token;
-
-    conn_id.randomize();
-    token.generate(conn_id, params->server_id());
-    this->_alt_quic_connection_ids[index] = {this->_alt_quic_connection_id_seq_num + i, conn_id, token, false};
-    if (this->_qc->direction() == NET_VCONNECTION_IN) {
-      this->_ctable.insert(conn_id, this->_qc);
-    }
-
-    if (is_debug_tag_set(V_DEBUG_TAG)) {
-      char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-      conn_id.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-      QUICACMVDebug("alt-cid=%s", new_cid_str);
-    }
-  }
-  this->_alt_quic_connection_id_seq_num += count;
   this->_need_advertise = true;
+}
+
+bool
+QUICAltConnectionManager::_update_alt_connection_id(uint64_t chosen_seq_num)
+{
+  for (int i = 0; i < this->_nids; ++i) {
+    if (_alt_quic_connection_ids_local[i].seq_num == chosen_seq_num) {
+      _alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
+      this->_need_advertise             = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+QUICConnectionErrorUPtr
+QUICAltConnectionManager::_register_remote_connection_id(const QUICNewConnectionIdFrame &frame)
+{
+  QUICConnectionErrorUPtr error = nullptr;
+
+  if (frame.connection_id() == QUICConnectionId::ZERO()) {
+    error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received zero-length cid",
+                                                  QUICFrameType::NEW_CONNECTION_ID);
+  } else {
+    this->_alt_quic_connection_ids_remote.push_back(
+      {frame.sequence(), frame.connection_id(), frame.stateless_reset_token(), {false}});
+  }
+
+  return error;
+}
+
+QUICConnectionErrorUPtr
+QUICAltConnectionManager::_retire_remote_connection_id(const QUICRetireConnectionIdFrame &frame)
+{
+  QUICConnectionErrorUPtr error = nullptr;
+
+  if (!this->_update_alt_connection_id(frame.seq_num())) {
+    error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received unused sequence number",
+                                                  QUICFrameType::RETIRE_CONNECTION_ID);
+  }
+  return error;
+}
+
+bool
+QUICAltConnectionManager::is_ready_to_migrate() const
+{
+  if (this->_alt_quic_connection_ids_remote.empty()) {
+    return false;
+  }
+
+  for (auto &info : this->_alt_quic_connection_ids_remote) {
+    if (!info.used) {
+      return true;
+    }
+  }
+  return false;
+}
+
+QUICConnectionId
+QUICAltConnectionManager::migrate_to_alt_cid()
+{
+  if (this->_qc->direction() == NET_VCONNECTION_OUT) {
+    this->_init_alt_connection_ids();
+  }
+
+  for (auto &info : this->_alt_quic_connection_ids_remote) {
+    if (info.used) {
+      continue;
+    }
+    info.used = true;
+    return info.id;
+  }
+
+  ink_assert(!"Could not find CID available");
+  return QUICConnectionId::ZERO();
 }
 
 bool
 QUICAltConnectionManager::migrate_to(QUICConnectionId cid, QUICStatelessResetToken &new_reset_token)
 {
   for (unsigned int i = 0; i < this->_nids; ++i) {
-    AltConnectionInfo &info = this->_alt_quic_connection_ids[i];
+    AltConnectionInfo &info = this->_alt_quic_connection_ids_local[i];
     if (info.id == cid) {
       // Migrate connection
-      // TODO Unregister the old connection id (Should we wait for a while?)
       new_reset_token = info.token;
-      this->_update_alt_connection_ids(i);
+
+      if (this->_qc->direction() == NET_VCONNECTION_IN) {
+        // Replace alt connection info with a new one for future use
+        this->_update_alt_connection_id(info.seq_num);
+      }
+
       return true;
     }
   }
@@ -100,10 +212,23 @@ QUICAltConnectionManager::migrate_to(QUICConnectionId cid, QUICStatelessResetTok
 }
 
 void
+QUICAltConnectionManager::drop_cid(QUICConnectionId cid)
+{
+  for (auto it = this->_alt_quic_connection_ids_remote.begin(); it != this->_alt_quic_connection_ids_remote.end(); ++it) {
+    if (it->id == cid) {
+      QUICACMVDebug("Droppoing advertized CID seq# %" PRIu64, it->seq_num);
+      this->_retired_seq_nums.push(it->seq_num);
+      this->_alt_quic_connection_ids_remote.erase(it);
+      return;
+    }
+  }
+}
+
+void
 QUICAltConnectionManager::invalidate_alt_connections()
 {
   for (unsigned int i = 0; i < this->_nids; ++i) {
-    this->_ctable.erase(this->_alt_quic_connection_ids[i].id, this->_qc);
+    this->_ctable.erase(this->_alt_quic_connection_ids_local[i].id, this->_qc);
   }
 }
 
@@ -114,7 +239,7 @@ QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level)
     return false;
   }
 
-  return this->_need_advertise;
+  return this->_need_advertise || !this->_retired_seq_nums.empty();
 }
 
 QUICFrameUPtr
@@ -125,24 +250,34 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
     return frame;
   }
 
-  int count = this->_nids;
-  for (int i = 0; i < count; ++i) {
-    if (!this->_alt_quic_connection_ids[i].advertised) {
-      frame = QUICFrameFactory::create_new_connection_id_frame(
-        this->_alt_quic_connection_ids[i].seq_num, this->_alt_quic_connection_ids[i].id, this->_alt_quic_connection_ids[i].token);
+  if (this->_need_advertise) {
+    int count = this->_nids;
+    for (int i = 0; i < count; ++i) {
+      if (!this->_alt_quic_connection_ids_local[i].advertised) {
+        frame = QUICFrameFactory::create_new_connection_id_frame(this->_alt_quic_connection_ids_local[i].seq_num,
+                                                                 this->_alt_quic_connection_ids_local[i].id,
+                                                                 this->_alt_quic_connection_ids_local[i].token);
 
-      if (frame && frame->size() > maximum_frame_size) {
-        // Cancel generating frame
-        frame = QUICFrameFactory::create_null_frame();
-      } else {
-        this->_alt_quic_connection_ids[i].advertised = true;
+        if (frame && frame->size() > maximum_frame_size) {
+          // Cancel generating frame
+          frame = QUICFrameFactory::create_null_frame();
+        } else {
+          this->_alt_quic_connection_ids_local[i].advertised = true;
+        }
+
+        return frame;
       }
+    }
+    this->_need_advertise = false;
+  }
 
+  if (!this->_retired_seq_nums.empty()) {
+    if (auto s = this->_retired_seq_nums.front()) {
+      frame = QUICFrameFactory::create_retire_connection_id_frame(s);
+      this->_retired_seq_nums.pop();
       return frame;
     }
   }
-
-  this->_need_advertise = false;
 
   return frame;
 }

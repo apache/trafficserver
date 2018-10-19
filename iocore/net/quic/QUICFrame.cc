@@ -2128,7 +2128,7 @@ QUICNewConnectionIdFrame::debug_msg(char *msg, size_t msg_len) const
   char cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
   this->connection_id().hex(cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
 
-  return snprintf(msg, msg_len, "| NEW_CONNECTION_ID size=%zu cid=0x%s", this->size(), cid_str);
+  return snprintf(msg, msg_len, "| NEW_CONNECTION_ID size=%zu seq=%" PRIu64 " cid=0x%s", this->size(), this->sequence(), cid_str);
 }
 
 uint64_t

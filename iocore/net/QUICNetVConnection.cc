@@ -452,8 +452,7 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
 std::vector<QUICFrameType>
 QUICNetVConnection::interests()
 {
-  return {QUICFrameType::APPLICATION_CLOSE, QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA,
-          QUICFrameType::NEW_CONNECTION_ID};
+  return {QUICFrameType::APPLICATION_CLOSE, QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA};
 }
 
 QUICConnectionErrorUPtr
@@ -474,9 +473,6 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
     break;
   case QUICFrameType::BLOCKED:
     // BLOCKED frame is for debugging. Nothing to do here.
-    break;
-  case QUICFrameType::NEW_CONNECTION_ID:
-    error = this->_handle_frame(static_cast<const QUICNewConnectionIdFrame &>(frame));
     break;
   case QUICFrameType::APPLICATION_CLOSE:
   case QUICFrameType::CONNECTION_CLOSE:
@@ -502,21 +498,6 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
     ink_assert(false);
     break;
   }
-
-  return error;
-}
-
-QUICConnectionErrorUPtr
-QUICNetVConnection::_handle_frame(const QUICNewConnectionIdFrame &frame)
-{
-  QUICConnectionErrorUPtr error = nullptr;
-
-  if (frame.connection_id() == QUICConnectionId::ZERO()) {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received zero-length cid",
-                                                 QUICFrameType::NEW_CONNECTION_ID);
-  }
-
-  this->_remote_alt_cids.push(frame.connection_id());
 
   return error;
 }
@@ -1777,7 +1758,8 @@ QUICNetVConnection::_switch_to_established_state()
 
     if (netvc_context == NET_VCONNECTION_IN || (netvc_context == NET_VCONNECTION_OUT && params->cm_exercise_enabled() &&
                                                 !remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION))) {
-      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable);
+      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id);
+      this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
   } else {
     // Illegal state change
@@ -1894,7 +1876,8 @@ QUICNetVConnection::_update_peer_cid(const QUICConnectionId &new_cid)
     QUICConDebug("dcid: %s -> %s", old_cid_str, new_cid_str);
   }
 
-  this->_peer_quic_connection_id = new_cid;
+  this->_peer_old_quic_connection_id = this->_peer_quic_connection_id;
+  this->_peer_quic_connection_id     = new_cid;
   this->_update_cids();
 }
 
@@ -1955,15 +1938,13 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
   QUICConnectionId dcid         = p.destination_cid();
 
   if (this->netvc_context == NET_VCONNECTION_IN) {
-    if (this->_remote_alt_cids.empty()) {
+    if (!this->_alt_con_manager->is_ready_to_migrate()) {
       // TODO: Should endpoint send connection error when remote endpoint doesn't send NEW_CONNECTION_ID frames before initiating
       // connection migration ?
       QUICConDebug("Ignore connection migration - remote endpoint initiated CM before sending NEW_CONNECTION_ID frames");
-
       return error;
-    } else {
-      QUICConDebug("Connection migration is initiated by remote");
     }
+    QUICConDebug("Connection migration is initiated by remote");
   }
 
   if (this->_alt_con_manager->migrate_to(dcid, this->_reset_token)) {
@@ -1976,8 +1957,7 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
       con.setRemote(&(p.from().sa));
       this->con.move(con);
 
-      this->_update_peer_cid(this->_remote_alt_cids.front());
-      this->_remote_alt_cids.pop();
+      this->_update_peer_cid(this->_alt_con_manager->migrate_to_alt_cid());
       this->_validate_new_path();
     }
   } else {
@@ -2003,15 +1983,14 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
   std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
 
   if (this->_connection_migration_initiated || remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) ||
-      this->_remote_alt_cids.empty() || this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT)) {
+      !this->_alt_con_manager->is_ready_to_migrate() || this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT)) {
     return error;
   }
 
   QUICConDebug("Initiated connection migration");
   this->_connection_migration_initiated = true;
 
-  this->_update_peer_cid(this->_remote_alt_cids.front());
-  this->_remote_alt_cids.pop();
+  this->_update_peer_cid(this->_alt_con_manager->migrate_to_alt_cid());
 
   this->_validate_new_path();
 
@@ -2022,7 +2001,11 @@ void
 QUICNetVConnection::_handle_path_validation_timeout(Event *data)
 {
   this->_close_path_validation_timeout(data);
-  if (!this->_path_validator->is_validated()) {
+  if (this->_path_validator->is_validated()) {
+    QUICConDebug("Path validated");
+    this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
+  } else {
+    QUICConDebug("Path validation failed");
     this->_switch_to_close_state();
   }
 }
