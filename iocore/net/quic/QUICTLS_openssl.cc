@@ -230,6 +230,12 @@ QUICTLS::QUICTLS(SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
 
+  if (this->_netvc_context == NET_VCONNECTION_OUT) {
+    SSL_set_connect_state(this->_ssl);
+  } else {
+    SSL_set_accept_state(this->_ssl);
+  }
+
   this->_client_pp = new QUICPacketProtection();
   this->_server_pp = new QUICPacketProtection();
 
@@ -324,13 +330,22 @@ QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     if (!this->_early_data_processed) {
-      if (this->_read_early_data()) {
+      if (this->_read_early_data() != 1) {
+        out->error_code = static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION);
+        return 0;
+      } else {
         this->_early_data_processed = true;
       }
     }
 
     ret = SSL_accept(this->_ssl);
   } else {
+    if (!this->_early_data_processed) {
+      if (this->_write_early_data()) {
+        this->_early_data_processed = true;
+      }
+    }
+
     ret = SSL_connect(this->_ssl);
   }
 
@@ -435,14 +450,24 @@ QUICTLS::_read_early_data()
 {
   uint8_t early_data[8];
   size_t early_data_len = 0;
-  int ret               = 0;
 
-  do {
-    ERR_clear_error();
-    ret = SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
-  } while (ret == SSL_READ_EARLY_DATA_SUCCESS);
+  // Early data within the TLS connection MUST NOT be used. As it is for other TLS application data, a server MUST treat receiving
+  // early data on the TLS connection as a connection error of type PROTOCOL_VIOLATION.
+  SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
+  // error or reading empty data return 1, otherwise return 0.
+  return early_data_len != 0 ? 0 : 1;
+}
 
-  return ret == SSL_READ_EARLY_DATA_FINISH ? 1 : 0;
+int
+QUICTLS::_write_early_data()
+{
+  size_t early_data_len = 0;
+
+  // Early data within the TLS connection MUST NOT be used. As it is for other TLS application data, a server MUST treat receiving
+  // early data on the TLS connection as a connection error of type PROTOCOL_VIOLATION.
+  SSL_write_early_data(this->_ssl, "", 0, &early_data_len);
+  // always return 1
+  return 1;
 }
 
 const EVP_CIPHER *
