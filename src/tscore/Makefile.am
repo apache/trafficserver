@@ -174,9 +174,6 @@ libtscore_la_SOURCES = \
 	Map.h \
 	MatcherUtils.cc \
 	MatcherUtils.h \
-	MemSpan.h \
-	MemArena.cc \
-	MemArena.h \
 	MMH.cc \
 	MMH.h \
 	MT_hashtable.h \
@@ -262,7 +259,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_layout.cc \
 	unit_tests/test_Map.cc \
 	unit_tests/test_List.cc \
-	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \

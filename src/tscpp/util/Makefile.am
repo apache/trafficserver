@@ -28,6 +28,9 @@ libtscpputil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
 libtscpputil_la_SOURCES = \
 	IntrusiveDList.h \
+	MemArena.h \
+	MemArena.cc \
+	MemSpan.h \
 	PostScript.h \
 	TextView.h TextView.cc
 
@@ -38,6 +41,7 @@ test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscpputil_LDADD = libtscpputil.la
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
+	unit_tests/test_MemArena.cc \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_TextView.cc \

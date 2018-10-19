@@ -4,20 +4,17 @@
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
  */
 
@@ -27,11 +24,11 @@
 #include <mutex>
 #include <memory>
 #include <utility>
+
 #include "tscpp/util/MemSpan.h"
 #include "tscore/Scalar.h"
-#include <tsconfig/IntrusivePtr.h>
+#include "tscpp/util/IntrusiveDList.h"
 
-/// Apache Traffic Server commons.
 namespace ts
 {
 /** A memory arena.
@@ -46,19 +43,18 @@ class MemArena
 {
   using self_type = MemArena; ///< Self reference type.
 protected:
-  struct Block; // Forward declare
-  using BlockPtr = ts::IntrusivePtr<Block>;
-  friend struct IntrusivePtrPolicy<Block>;
-  /** Simple internal arena block of memory. Maintains the underlying memory.
-   *
-   * Intrusive pointer is used to keep all of the memory in this single block. This struct is just
-   * the header on the full memory block allowing the raw memory and the meta data to be obtained
-   * in a single memory allocation.
-   */
-  struct Block : public ts::IntrusivePtrCounter {
+  /// Simple internal arena block of memory. Maintains the underlying memory.
+  struct Block {
     size_t size;         ///< Actual block size.
     size_t allocated{0}; ///< Current allocated (in use) bytes.
-    BlockPtr next;       ///< List of previous blocks.
+    struct Linkage {
+      Block *_next{nullptr};
+      Block *_prev{nullptr};
+
+      static Block *&next_ptr(Block *);
+
+      static Block *&prev_ptr(Block *);
+    } _link;
 
     /** Construct to have @a n bytes of available storage.
      *
@@ -104,6 +100,8 @@ protected:
     static void operator delete(void *ptr);
   };
 
+  using BlockList = IntrusiveDList<Block::Linkage>;
+
 public:
   /** Construct with reservation hint.
    *
@@ -119,6 +117,16 @@ public:
    * @param n Minimum number of available bytes in the first internally reserved block.
    */
   explicit MemArena(size_t n = DEFAULT_BLOCK_SIZE);
+
+  /// no copying
+  MemArena(self_type const &that) = delete;
+  MemArena(self_type &&that)      = default;
+
+  /// Destructor.
+  ~MemArena();
+
+  self_type &operator=(self_type const &that) = delete;
+  self_type &operator=(self_type &&that) = default;
 
   /** Allocate @a n bytes of storage.
 
@@ -183,7 +191,7 @@ public:
   size_t remaining() const;
 
   /// @returns the remaining contiguous space in the active generation.
-  MemSpan remnant() const;
+  MemSpan remnant();
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -206,10 +214,14 @@ protected:
    * @param n Size of block to allocate.
    * @return
    */
-  BlockPtr make_block(size_t n);
+  Block *make_block(size_t n);
+  /// Clean up the frozen list.
+  void destroy_frozen();
+  /// Clean up the active list
+  void destroy_active();
 
-  using Page      = ts::Scalar<4096>; ///< Size for rounding block sizes.
-  using Paragraph = ts::Scalar<16>;   ///< Minimum unit of memory allocation.
+  using Page      = Scalar<4096>; ///< Size for rounding block sizes.
+  using Paragraph = Scalar<16>;   ///< Minimum unit of memory allocation.
 
   static constexpr size_t ALLOC_HEADER_SIZE = 16; ///< Guess of overhead of @c malloc
   /// Initial block size to allocate if not specified via API.
@@ -218,19 +230,31 @@ protected:
   size_t _active_allocated = 0; ///< Total allocations in the active generation.
   size_t _active_reserved  = 0; ///< Total current reserved memory.
   /// Total allocations in the previous generation. This is only non-zero while the arena is frozen.
-  size_t _prev_allocated = 0;
+  size_t _frozen_allocated = 0;
   /// Total frozen reserved memory.
-  size_t _prev_reserved = 0;
+  size_t _frozen_reserved = 0;
 
   /// Minimum free space needed in the next allocated block.
   /// This is not zero iff @c reserve was called.
   size_t _reserve_hint = 0;
 
-  BlockPtr _prev;   ///< Previous generation, frozen memory.
-  BlockPtr _active; ///< Current generation. Allocate here.
+  BlockList _frozen; ///< Previous generation, frozen memory.
+  BlockList _active; ///< Current generation. Allocate here.
 };
 
 // Implementation
+
+inline auto
+MemArena::Block::Linkage::next_ptr(Block *b) -> Block *&
+{
+  return b->_link._next;
+}
+
+inline auto
+MemArena::Block::Linkage::prev_ptr(Block *b) -> Block *&
+{
+  return b->_link._prev;
+}
 
 inline MemArena::Block::Block(size_t n) : size(n) {}
 
@@ -262,7 +286,9 @@ MemArena::Block::remaining() const
 inline MemSpan
 MemArena::Block::alloc(size_t n)
 {
-  ink_assert(n <= this->remaining());
+  if (n > this->remaining()) {
+    throw(std::invalid_argument{"MemArena::Block::alloc size is more than remaining."});
+  }
   MemSpan zret = this->remnant().prefix(n);
   allocated += n;
   return zret;
@@ -292,25 +318,25 @@ MemArena::size() const
 inline size_t
 MemArena::allocated_size() const
 {
-  return _prev_allocated + _active_allocated;
+  return _frozen_allocated + _active_allocated;
 }
 
 inline size_t
 MemArena::remaining() const
 {
-  return _active ? _active->remaining() : 0;
+  return _active.empty() ? 0 : _active.head()->remaining();
 }
 
 inline MemSpan
-MemArena::remnant() const
+MemArena::remnant()
 {
-  return _active ? _active->remnant() : MemSpan{};
+  return _active.empty() ? MemSpan() : _active.head()->remnant();
 }
 
 inline size_t
 MemArena::reserved_size() const
 {
-  return _active_reserved + _prev_reserved;
+  return _active_reserved + _frozen_reserved;
 }
 
 } // namespace ts

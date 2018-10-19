@@ -4,32 +4,29 @@
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
 */
 
-#include <catch.hpp>
-
 #include <string_view>
-#include "tscore/MemArena.h"
+#include "tscpp/util/MemArena.h"
+#include "catch.hpp"
+
 using ts::MemSpan;
 using ts::MemArena;
 using namespace std::literals;
 
-TEST_CASE("MemArena generic", "[libts][MemArena]")
+TEST_CASE("MemArena generic", "[libtscpputil][MemArena]")
 {
   ts::MemArena arena{64};
   REQUIRE(arena.size() == 0);
@@ -37,9 +34,11 @@ TEST_CASE("MemArena generic", "[libts][MemArena]")
   arena.alloc(0);
   REQUIRE(arena.size() == 0);
   REQUIRE(arena.reserved_size() >= 64);
+  REQUIRE(arena.remaining() >= 64);
 
   ts::MemSpan span1 = arena.alloc(32);
   REQUIRE(span1.size() == 32);
+  REQUIRE(arena.remaining() >= 32);
 
   ts::MemSpan span2 = arena.alloc(32);
   REQUIRE(span2.size() == 32);
@@ -52,7 +51,7 @@ TEST_CASE("MemArena generic", "[libts][MemArena]")
   REQUIRE(extent < arena.reserved_size());
 }
 
-TEST_CASE("MemArena freeze and thaw", "[libts][MemArena]")
+TEST_CASE("MemArena freeze and thaw", "[libtscpputil][MemArena]")
 {
   MemArena arena;
   MemSpan span1{arena.alloc(1024)};
@@ -114,7 +113,7 @@ TEST_CASE("MemArena freeze and thaw", "[libts][MemArena]")
   REQUIRE(arena.reserved_size() < 2 * 32000);
 }
 
-TEST_CASE("MemArena helper", "[libts][MemArena]")
+TEST_CASE("MemArena helper", "[libtscpputil][MemArena]")
 {
   struct Thing {
     int ten{10};
@@ -131,6 +130,7 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(arena.size() == 0);
   ts::MemSpan s = arena.alloc(56);
   REQUIRE(arena.size() == 56);
+  REQUIRE(arena.remaining() >= 200);
   void *ptr = s.begin();
 
   REQUIRE(arena.contains((char *)ptr));
@@ -142,7 +142,7 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr + 100));
   ts::MemSpan s2 = arena.alloc(10);
-  void *ptr2     = s2.begin();
+  void *ptr2       = s2.begin();
   REQUIRE(arena.contains((char *)ptr));
   REQUIRE(arena.contains((char *)ptr2));
   REQUIRE(arena.allocated_size() == 56 + 10);
@@ -177,7 +177,7 @@ TEST_CASE("MemArena helper", "[libts][MemArena]")
   REQUIRE(thing_one->name == "Persia");
 }
 
-TEST_CASE("MemArena large alloc", "[libts][MemArena]")
+TEST_CASE("MemArena large alloc", "[libtscpputil][MemArena]")
 {
   ts::MemArena arena;
   ts::MemSpan s = arena.alloc(4000);
@@ -204,7 +204,7 @@ TEST_CASE("MemArena large alloc", "[libts][MemArena]")
   }
 }
 
-TEST_CASE("MemArena block allocation", "[libts][MemArena]")
+TEST_CASE("MemArena block allocation", "[libtscpputil][MemArena]")
 {
   ts::MemArena arena{64};
   ts::MemSpan s  = arena.alloc(32);
@@ -227,7 +227,7 @@ TEST_CASE("MemArena block allocation", "[libts][MemArena]")
   REQUIRE((char *)s.begin() + 64 == s3.end());
 }
 
-TEST_CASE("MemArena full blocks", "[libts][MemArena]")
+TEST_CASE("MemArena full blocks", "[libtscpputil][MemArena]")
 {
   // couple of large allocations - should be exactly sized in the generation.
   size_t init_size = 32000;
@@ -249,4 +249,18 @@ TEST_CASE("MemArena full blocks", "[libts][MemArena]")
   REQUIRE(std::all_of(m1.begin(), m1.end(), [](uint8_t c) { return 0xa5 == c; }));
   REQUIRE(std::all_of(m2.begin(), m2.end(), [](uint8_t c) { return 0xc2 == c; }));
   REQUIRE(std::all_of(m3.begin(), m3.end(), [](uint8_t c) { return 0x56 == c; }));
+}
+
+TEST_CASE("MemArena esoterica", "[libtscpputil][MemArena]")
+{
+  MemArena a1;
+  MemSpan span;
+  {
+    MemArena a2{512};
+    span = a2.alloc(128);
+    REQUIRE(a2.contains(span.data()));
+    a1 = std::move(a2);
+  }
+  REQUIRE(a1.contains(span.data()));
+  REQUIRE(a1.remaining() >= 384);
 }

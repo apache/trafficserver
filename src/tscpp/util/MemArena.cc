@@ -23,10 +23,7 @@
  */
 
 #include <algorithm>
-
-#include "tscore/MemArena.h"
-#include "tscore/ink_memory.h"
-#include "tscore/ink_assert.h"
+#include "tscpp/util/MemArena.h"
 
 using namespace ts;
 
@@ -36,15 +33,15 @@ MemArena::Block::operator delete(void *ptr)
   ::free(ptr);
 }
 
-MemArena::BlockPtr
+MemArena::Block *
 MemArena::make_block(size_t n)
 {
   // If there's no reservation hint, use the extent. This is transient because the hint is cleared.
   if (_reserve_hint == 0) {
     if (_active_reserved) {
       _reserve_hint = _active_reserved;
-    } else if (_prev_allocated) {
-      _reserve_hint = _prev_allocated;
+    } else if (_frozen_allocated) {
+      _reserve_hint = _frozen_allocated;
     }
   }
 
@@ -63,53 +60,40 @@ MemArena::make_block(size_t n)
   // Easier to use malloc and override @c delete.
   auto free_space = n - sizeof(Block);
   _active_reserved += free_space;
-  return BlockPtr(new (::malloc(n)) Block(free_space));
+  return new (::malloc(n)) Block(free_space);
 }
 
 MemSpan
 MemArena::alloc(size_t n)
 {
-  MemSpan zret;
-  _active_allocated += n;
+  Block *block = _active.head();
 
-  if (!_active) {
-    _active = this->make_block(n);
-    zret    = _active->alloc(n);
-  } else if (n > _active->remaining()) { // too big, need another block
-    BlockPtr block = this->make_block(n);
-    // For the new @a _active, pick the block which will have the most free space after taking
-    // the request space out of the new block.
-    zret = block->alloc(n);
-    if (block->remaining() > _active->remaining()) {
-      block->next = _active;
-      _active     = block;
-#if 0
-      // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
-      ink_assert(_active.use_count() > 1);
-#endif
+  if (nullptr == block) {
+    block = this->make_block(n);
+    _active.prepend(block);
+  } else if (n > block->remaining()) { // too big, need another block
+    block = this->make_block(n);
+    // For the resulting active allocation block, pick the block which will have the most free space
+    // after taking the request space out of the new block.
+    if (block->remaining() - n > _active.head()->remaining()) {
+      _active.prepend(block);
     } else {
-      block->next   = _active->next;
-      _active->next = block;
-#if 0
-      // Defeat another clang analyzer false positive. Unit tests validate the code is correct.
-      ink_assert(block.use_count() > 1);
-#endif
+      _active.insert_after(_active.head(), block);
     }
-  } else {
-    zret = _active->alloc(n);
   }
-  return zret;
+  _active_allocated += n;
+  return block->alloc(n);
 }
 
 MemArena &
 MemArena::freeze(size_t n)
 {
-  _prev = _active;
-  _active.reset(); // it's in _prev now, start fresh.
+  this->destroy_frozen();
+  _frozen = std::move(_active);
   // Update the meta data.
-  _prev_allocated   = _active_allocated;
+  _frozen_allocated = _active_allocated;
   _active_allocated = 0;
-  _prev_reserved    = _active_reserved;
+  _frozen_reserved  = _active_reserved;
   _active_reserved  = 0;
 
   _reserve_hint = n;
@@ -120,36 +104,58 @@ MemArena::freeze(size_t n)
 MemArena &
 MemArena::thaw()
 {
-  _prev.reset();
-  _prev_reserved = _prev_allocated = 0;
+  this->destroy_frozen();
+  _frozen_reserved = _frozen_allocated = 0;
   return *this;
 }
 
 bool
 MemArena::contains(const void *ptr) const
 {
-  for (Block *b = _active.get(); b; b = b->next.get()) {
-    if (b->contains(ptr)) {
-      return true;
-    }
-  }
-  for (Block *b = _prev.get(); b; b = b->next.get()) {
-    if (b->contains(ptr)) {
-      return true;
-    }
-  }
+  auto pred = [ptr](const Block &b) -> bool { return b.contains(ptr); };
 
-  return false;
+  return std::any_of(_active.begin(), _active.end(), pred) || std::any_of(_frozen.begin(), _frozen.end(), pred);
+}
+
+void
+MemArena::destroy_active()
+{
+  _active.apply([](Block *b) { delete b; }).clear();
+}
+
+void
+MemArena::destroy_frozen()
+{
+  _frozen.apply([](Block *b) { delete b; }).clear();
 }
 
 MemArena &
 MemArena::clear(size_t n)
 {
-  _reserve_hint = n ? n : _prev_allocated + _active_allocated;
-  _prev.reset();
-  _prev_reserved = _prev_allocated = 0;
-  _active.reset();
+  _reserve_hint    = n ? n : _frozen_allocated + _active_allocated;
+  _frozen_reserved = _frozen_allocated = 0;
   _active_reserved = _active_allocated = 0;
+  this->destroy_frozen();
+  this->destroy_active();
 
   return *this;
+}
+
+MemArena::~MemArena()
+{
+  // Destruct in a way that makes it safe for the instance to be in one of its own memory blocks.
+  Block *ba = _active.head();
+  Block *bf = _frozen.head();
+  _active.clear();
+  _frozen.clear();
+  while (bf) {
+    Block *b = bf;
+    bf       = bf->_link._next;
+    delete b;
+  }
+  while (ba) {
+    Block *b = ba;
+    ba       = ba->_link._next;
+    delete b;
+  }
 }
