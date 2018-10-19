@@ -75,6 +75,15 @@ client_cert               The file containing the client certificate to use for 
                           :ts:cv:`proxy.config.ssl.server.cert.path`. If not set
                           :ts:cv:`proxy.config.ssl.client.cert.filename` is used.
 
+client_key                The file containing the client private key that corresponds to the certificate
+                          for the outbound connection.
+
+                          If this is relative it is relative to the path in
+                          :ts:cv:`proxy.config.ssl.server.private_key.path`. If not set,
+                          |TS| tries to use a private key in client_cert.  Otherwise, 
+                          :ts:cv:`proxy.config.ssl.client.private_key.filename` is used.
+
+
 disable_h2                :code:`true` or :code:`false`.
 
                           If :code:`false` then HTTP/2 is removed from

@@ -3497,7 +3497,6 @@ Client-Related Configuration
    :2: The provided certificate will be verified and the connection will be established 
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
-   :overridable:
 
    The filename of SSL client certificate installed on |TS|.
 

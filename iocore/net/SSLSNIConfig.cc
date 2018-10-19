@@ -86,11 +86,11 @@ SNIConfigParams::loadSNIConfig()
     aiVec->push_back(ai3);
     // set the next hop properties
     SSLConfig::scoped_config params;
-    auto clientCTX  = params->getCTX(servername);
+    auto clientCTX  = params->getClientSSL_CTX();
     cchar *certFile = item.client_cert.data();
-    if (!clientCTX && certFile) {
-      clientCTX = params->getNewCTX(certFile);
-      params->InsertCTX(certFile, clientCTX);
+    cchar *keyFile  = item.client_key.data();
+    if (certFile) {
+      clientCTX = params->getNewCTX(certFile, keyFile);
     }
     NextHopProperty *nps        = new NextHopProperty();
     nps->name                   = ats_strdup(servername);

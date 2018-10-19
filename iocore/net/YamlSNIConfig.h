@@ -35,6 +35,7 @@ TSDECL(verify_server_policy);
 TSDECL(verify_server_properties);
 TSDECL(verify_origin_server);
 TSDECL(client_cert);
+TSDECL(client_key);
 TSDECL(ip_allow);
 #undef TSDECL
 
@@ -47,7 +48,6 @@ struct YamlSNIConfig {
     verify_server_policy,     // this applies to server side vc only
     verify_server_properties, // this applies to server side vc only
     client_cert
-
   };
   enum class Level { NONE = 0, MODERATE, STRICT };
   enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED };
@@ -63,6 +63,7 @@ struct YamlSNIConfig {
     Policy verify_server_policy       = Policy::DISABLED;
     Property verify_server_properties = Property::NONE;
     std::string client_cert;
+    std::string client_key;
     std::string ip_allow;
   };
 
