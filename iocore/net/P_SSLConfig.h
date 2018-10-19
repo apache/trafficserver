@@ -126,13 +126,8 @@ struct SSLConfigParams : public ConfigInfo {
   mutable HashMap<cchar *, class StringHashFns, SSL_CTX *> ctx_map;
   mutable ink_mutex ctxMapLock;
 
-  SSL_CTX *getCTX(cchar *client_cert) const;
-  void deleteKey(cchar *key) const;
-  void freeCTXmap() const;
-  void printCTXmap() const;
-  bool InsertCTX(cchar *client_cert, SSL_CTX *cctx) const;
   SSL_CTX *getClientSSL_CTX(void) const;
-  SSL_CTX *getNewCTX(cchar *client_cert) const;
+  SSL_CTX *getNewCTX(cchar *client_cert, cchar *key_file) const;
 
   void initialize();
   void cleanup();

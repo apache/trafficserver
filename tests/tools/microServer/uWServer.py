@@ -136,6 +136,7 @@ class SSLServer(ThreadingMixIn, HTTPServer):
         pwd = os.path.dirname(os.path.realpath(__file__))
         keys = os.path.join(pwd, options.key)
         certs = os.path.join(pwd, options.cert)
+        clientCA = os.path.join(pwd, options.clientCA)
         self.options = options
         self.hook_set = HookSet()
 
@@ -145,9 +146,11 @@ class SSLServer(ThreadingMixIn, HTTPServer):
         if options.load:
             self.hook_set.load(options.load)
 
+        print ("clientverify={0}".format(options.clientverify))
+
         if options.clientverify:
             self.socket = ssl.wrap_socket(socket.socket(self.address_family, self.socket_type),
-                                          keyfile=keys, certfile=certs, server_side=True, cert_reqs=ssl.CERT_REQUIRED, ca_certs='/etc/ssl/certs/ca-certificates.crt')
+                                          keyfile=keys, certfile=certs, server_side=True, cert_reqs=ssl.CERT_REQUIRED, ca_certs=clientCA)
         else:
             self.socket = ssl.wrap_socket(socket.socket(self.address_family, self.socket_type),
                                           keyfile=keys, certfile=certs, server_side=True)
@@ -170,6 +173,7 @@ class MyHandler(BaseHTTPRequestHandler):
         global lookup_key_
         kpath = ""
         path = ""
+        print("Request={0} lookup_key={1}".format(requestline, lookup_key_))
         url_part = requestline.split(" ")
         if url_part:
             if url_part[1].startswith("http"):
@@ -190,7 +194,6 @@ class MyHandler(BaseHTTPRequestHandler):
             argsList.append(stringk)
         KeyList = []
         for argsL in argsList:
-            print("args", argsL, len(argsL))
             if len(argsL) > 0:
                 val = self.headers.get(argsL)
                 if val:
@@ -292,6 +295,7 @@ class MyHandler(BaseHTTPRequestHandler):
         self.command = None  # set in case of error on the first line
         self.request_version = version = self.default_request_version
         self.close_connection = True
+        print("Raw request {0}".format(self.raw_requestline))
         requestline = str(self.raw_requestline, 'UTF-8')
         requestline = requestline.rstrip('\r\n')
         self.requestline = requestline
@@ -600,7 +604,7 @@ def _bool(arg):
 
 def _argparse_bool(arg):
     try:
-        _bool(arg)
+        return _bool(arg)
     except ValueError as ve:
         raise argparse.ArgumentTypeError(ve)
 
@@ -654,6 +658,10 @@ def main():
                         type=str,
                         default="ssl/server.crt",
                         help="certificate")
+    parser.add_argument("--clientCA",
+                        type=str,
+                        default="",
+                        help="CA for client certificates")
     parser.add_argument("--clientverify", "-cverify",
                         type=_argparse_bool,
                         default=False,

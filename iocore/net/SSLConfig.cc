@@ -137,7 +137,6 @@ SSLConfigParams::cleanup()
   server_groups_list         = (char *)ats_free_null(server_groups_list);
   client_groups_list         = (char *)ats_free_null(client_groups_list);
 
-  freeCTXmap();
   SSLReleaseContext(client_ctx);
   reset();
 }
@@ -456,62 +455,12 @@ SSLConfigParams::initialize()
   client_ctx = SSLInitClientContext(this);
   if (!client_ctx) {
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
-  } else {
-    InsertCTX(this->clientCertPath, this->client_ctx);
   }
 }
 
-// getCTX: returns the context attached to the given certificate
-SSL_CTX *
-SSLConfigParams::getCTX(cchar *client_cert) const
-{
-  ink_mutex_acquire(&ctxMapLock);
-  auto client_ctx = ctx_map.get(client_cert);
-  ink_mutex_release(&ctxMapLock);
-  return client_ctx;
-}
-
-// InsertCTX hashes on the absolute path to the client certificate file and stores in the map
-bool
-SSLConfigParams::InsertCTX(cchar *client_cert, SSL_CTX *cctx) const
-{
-  ink_mutex_acquire(&ctxMapLock);
-  // dup is required here to avoid the nullifying of the keys stored in the map.
-  // client_cert is coming from the overridable clientcert config retrieved by the remap plugin.
-  cchar *cert = ats_strdup(client_cert);
-  // Hashmap has no delete functionality :(
-  ctx_map.put(cert, cctx);
-  ink_mutex_release(&ctxMapLock);
-  return true;
-}
-
-void
-SSLConfigParams::printCTXmap() const
-{
-  Vec<cchar *> keys;
-  ctx_map.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++) {
-    Debug("ssl", "Client certificates in the map %s: %p", keys.get(i), ctx_map.get(keys.get(i)));
-  }
-}
-void
-SSLConfigParams::freeCTXmap() const
-{
-  ink_mutex_acquire(&ctxMapLock);
-  Vec<cchar *> keys;
-  ctx_map.get_keys(keys);
-  size_t n = keys.length();
-  Debug("ssl", "freeing CTX Map");
-  for (size_t i = 0; i < n; i++) {
-    deleteKey(keys.get(i));
-    ats_free((char *)keys.get(i));
-  }
-  ctx_map.clear();
-  ink_mutex_release(&ctxMapLock);
-}
 // creates a new context attaching the provided certificate
 SSL_CTX *
-SSLConfigParams::getNewCTX(cchar *client_cert) const
+SSLConfigParams::getNewCTX(cchar *client_cert, cchar *client_key) const
 {
   SSL_CTX *nclient_ctx = nullptr;
   nclient_ctx          = SSLInitClientContext(this);
@@ -519,20 +468,23 @@ SSLConfigParams::getNewCTX(cchar *client_cert) const
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
     return nullptr;
   }
-  if (nclient_ctx && client_cert != nullptr && client_cert[0] != '\0') {
+  if (client_cert != nullptr && client_cert[0] != '\0') {
     if (!SSL_CTX_use_certificate_chain_file(nclient_ctx, (const char *)client_cert)) {
       SSLError("failed to load client certificate from %s", this->clientCertPath);
       SSLReleaseContext(nclient_ctx);
       return nullptr;
     }
   }
+  // If there is not private key specified, perhaps it is in the file with the cert
+  if (client_key == nullptr || client_key[0] == '\0') {
+    client_key = client_cert;
+  }
+  // Try loading the private key
+  if (client_key != nullptr && client_key[0] != '\0') {
+    // If it failed, then we are just going to use the previously set private key from records.config
+    SSL_CTX_use_PrivateKey_file(nclient_ctx, client_key, SSL_FILETYPE_PEM);
+  }
   return nclient_ctx;
-}
-
-void
-SSLConfigParams::deleteKey(cchar *key) const
-{
-  SSL_CTX_free((SSL_CTX *)ctx_map.get(key));
 }
 
 SSL_CTX *

@@ -5015,23 +5015,6 @@ HttpSM::do_http_server_open(bool raw)
       opt.set_ssl_servername(t_state.server_info.name);
     }
 
-    SSLConfig::scoped_config params;
-    // check if the overridden client cert filename is already attached to an existing ssl context
-    if (t_state.txn_conf->client_cert_filepath && t_state.txn_conf->client_cert_filename) {
-      ats_scoped_str clientCert(
-        Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
-      if (clientCert != nullptr) {
-        auto tCTX = params->getCTX(clientCert);
-
-        if (tCTX == nullptr) {
-          // make new client ctx and add it to the ctx list
-          Debug("ssl", "adding new cert for client cert %s", (char *)clientCert);
-          auto tctx = params->getNewCTX(clientCert);
-          params->InsertCTX(clientCert, tctx);
-        }
-        opt.set_client_certname(clientCert);
-      }
-    }
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);

@@ -59,9 +59,16 @@ TsEnumDescriptor LEVEL_DESCRIPTOR      = {{{"NONE", 0}, {"MODERATE", 1}, {"STRIC
 TsEnumDescriptor POLICY_DESCRIPTOR     = {{{"DISABLED", 0}, {"PERMISSIVE", 1}, {"ENFORCED", 2}}};
 TsEnumDescriptor PROPERTIES_DESCRIPTOR = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {"NAME", 0x2}, {"ALL", 0x3}}};
 
-std::set<std::string> valid_sni_config_keys = {
-  TS_fqdn,        TS_disable_H2, TS_verify_client, TS_tunnel_route, TS_verify_server_policy, TS_verify_server_properties,
-  TS_client_cert, TS_ip_allow};
+std::set<std::string> valid_sni_config_keys = {TS_fqdn,
+                                               TS_disable_H2,
+                                               TS_verify_client,
+                                               TS_tunnel_route,
+                                               TS_verify_origin_server,
+                                               TS_verify_server_policy,
+                                               TS_verify_server_properties,
+                                               TS_client_cert,
+                                               TS_client_key,
+                                               TS_ip_allow};
 
 namespace YAML
 {
@@ -137,6 +144,9 @@ template <> struct convert<YamlSNIConfig::Item> {
 
     if (node[TS_client_cert]) {
       item.client_cert = node[TS_client_cert].as<std::string>();
+    }
+    if (node[TS_client_key]) {
+      item.client_key = node[TS_client_key].as<std::string>();
     }
 
     if (node[TS_ip_allow]) {
