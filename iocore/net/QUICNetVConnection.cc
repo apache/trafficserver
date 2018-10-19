@@ -595,10 +595,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_close_path_validation_timeout(data);
-    if (!this->_path_validator->is_validated()) {
-      this->_switch_to_close_state();
-    }
+    this->_handle_path_validation_timeout(data);
     break;
   case EVENT_IMMEDIATE:
     // Start Immediate Close because of Idle Timeout
@@ -633,10 +630,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_close_path_validation_timeout(data);
-    if (!this->_path_validator->is_validated()) {
-      this->_switch_to_close_state();
-    }
+    this->_handle_path_validation_timeout(data);
     break;
   case EVENT_IMMEDIATE: {
     // Start Immediate Close because of Idle Timeout
@@ -670,10 +664,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_state_closing_send_packet();
     break;
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_close_path_validation_timeout(data);
-    if (!this->_path_validator->is_validated()) {
-      this->_switch_to_close_state();
-    }
+    this->_handle_path_validation_timeout(data);
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
@@ -703,10 +694,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     this->_close_packet_write_ready(data);
     break;
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_close_path_validation_timeout(data);
-    if (!this->_path_validator->is_validated()) {
-      this->_switch_to_close_state();
-    }
+    this->_handle_path_validation_timeout(data);
     break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
@@ -1994,4 +1982,13 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
   this->_validate_new_path();
 
   return error;
+}
+
+void
+QUICNetVConnection::_handle_path_validation_timeout(Event *data)
+{
+  this->_close_path_validation_timeout(data);
+  if (!this->_path_validator->is_validated()) {
+    this->_switch_to_close_state();
+  }
 }

@@ -343,6 +343,7 @@ private:
   bool _application_started = false;
   void _start_application();
 
+  void _handle_path_validation_timeout(Event *data);
   void _handle_idle_timeout();
 
   QUICConnectionErrorUPtr _handle_frame(const QUICNewConnectionIdFrame &frame);
