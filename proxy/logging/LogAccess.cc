@@ -295,21 +295,17 @@ LogAccess::marshal_record(char *record, char *buf)
         num_chars = record_not_found_chars;
       }
     } else if (LOG_STRING == stype) {
-      out_buf = REC_readString(record, &found);
-
-      if (found) {
-        if (out_buf != nullptr && out_buf[0] != 0) {
-          num_chars = ::strlen(out_buf) + 1;
-          if (num_chars > max_chars) {
+      if (RecGetRecordString(record, ascii_buf, sizeof(ascii_buf)) == REC_ERR_OKAY) {
+        if (strlen(ascii_buf) > 0) {
+          num_chars = ::strlen(ascii_buf) + 1;
+          if (num_chars == max_chars) {
             // truncate string and write ellipsis at the end
-            memcpy(ascii_buf, out_buf, max_chars - 4);
             ascii_buf[max_chars - 1] = 0;
             ascii_buf[max_chars - 2] = '.';
             ascii_buf[max_chars - 3] = '.';
             ascii_buf[max_chars - 4] = '.';
-            out_buf                  = ascii_buf;
-            num_chars                = max_chars;
           }
+          out_buf = ascii_buf;
         } else {
           out_buf   = "NULL";
           num_chars = ::strlen(out_buf) + 1;
