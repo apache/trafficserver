@@ -1343,18 +1343,18 @@ SSLDefaultServerContext()
 }
 
 static bool
-SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scoped_str &completeServerCertPath, const char *keyPath)
+SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::string &completeServerCertPath, const char *keyPath)
 {
   ENGINE *e = ENGINE_get_default_RSA();
   if (e != nullptr) {
-    const char *argkey = (keyPath == nullptr || keyPath[0] == '\0') ? completeServerCertPath : keyPath;
+    const char *argkey = (keyPath == nullptr || keyPath[0] == '\0') ? completeServerCertPath.c_str() : keyPath;
     if (!SSL_CTX_use_PrivateKey(ctx, ENGINE_load_private_key(e, argkey, nullptr, nullptr))) {
       SSLError("failed to load server private key from engine");
     }
   } else if (!keyPath) {
     // assume private key is contained in cert obtained from multicert file.
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", (const char *)completeServerCertPath);
+    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath.c_str(), SSL_FILETYPE_PEM)) {
+      SSLError("failed to load server private key from %s", completeServerCertPath.c_str());
       return false;
     }
   } else if (params->serverKeyPathOnly != nullptr) {
@@ -1581,7 +1581,6 @@ SSL_CTX *
 SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMultCertSettings, std::vector<X509 *> &certList)
 {
   int server_verify_client;
-  ats_scoped_str completeServerCertPath;
   SSL_CTX *ctx                 = SSLDefaultServerContext();
   EVP_MD_CTX *digest           = EVP_MD_CTX_new();
   STACK_OF(X509_NAME) *ca_list = nullptr;
@@ -1686,24 +1685,24 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
       }
 
       for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
-        completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
-        scoped_BIO bio(BIO_new_file(completeServerCertPath, "r"));
+        std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
+        scoped_BIO bio(BIO_new_file(completeServerCertPath.c_str(), "r"));
         X509 *cert = nullptr;
         if (bio) {
           cert = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
         }
         if (!bio || !cert) {
-          SSLError("failed to load certificate chain from %s", (const char *)completeServerCertPath);
+          SSLError("failed to load certificate chain from %s", completeServerCertPath.c_str());
           goto fail;
         }
         if (!SSL_CTX_use_certificate(ctx, cert)) {
-          SSLError("Failed to assign cert from %s to SSL_CTX", (const char *)completeServerCertPath);
+          SSLError("Failed to assign cert from %s to SSL_CTX", completeServerCertPath.c_str());
           X509_free(cert);
           goto fail;
         }
         certList.push_back(cert);
         if (SSLConfigParams::load_ssl_file_cb) {
-          SSLConfigParams::load_ssl_file_cb(completeServerCertPath, CONFIG_FLAG_UNVERSIONED);
+          SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str(), CONFIG_FLAG_UNVERSIONED);
         }
         // Load up any additional chain certificates
         SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
