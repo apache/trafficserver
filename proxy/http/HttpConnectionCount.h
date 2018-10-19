@@ -430,17 +430,7 @@ Action *register_ShowConnectionCount(Continuation *, HTTPHdr *);
 
 namespace ts
 {
-inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::MatchType type)
-{
-  if (spec.has_numeric_type()) {
-    bwformat(w, spec, static_cast<unsigned int>(type));
-  } else {
-    bwformat(w, spec, OutboundConnTrack::MATCH_TYPE_NAME[type]);
-  }
-  return w;
-}
-
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::MatchType type);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group::Key const &key);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, OutboundConnTrack::Group const &g);
 } // namespace ts

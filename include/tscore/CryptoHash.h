@@ -180,19 +180,9 @@ CryptoContext::finalize(CryptoHash &hash)
   return reinterpret_cast<CryptoContextBase *>(_obj)->finalize(hash);
 }
 
-} // namespace ats
+ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ats::CryptoHash const &hash);
 
-namespace ts
-{
-inline BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, ats::CryptoHash const &hash)
-{
-  BWFSpec local_spec{spec};
-  if ('X' != local_spec._type)
-    local_spec._type = 'x';
-  return bwformat(w, local_spec, std::string_view(reinterpret_cast<const char *>(hash.u8), CRYPTO_HASH_SIZE));
-}
-} // namespace ts
+} // namespace ats
 
 using ats::CryptoHash;
 using ats::CryptoContext;
