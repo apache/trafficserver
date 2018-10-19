@@ -160,7 +160,6 @@ libtscore_la_SOURCES = \
 	ink_time.h \
 	ink_uuid.cc \
 	ink_uuid.h \
-	IntrusiveDList.h \
 	IpMap.cc \
 	IpMapConf.cc \
 	IpMapConf.h \
@@ -257,7 +256,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_Extendible.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \
-	unit_tests/test_IntrusiveDList.cc \
 	unit_tests/test_IntrusiveHashMap.cc \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \

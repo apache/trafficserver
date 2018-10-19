@@ -27,6 +27,7 @@ AM_CPPFLAGS += -I$(abs_top_srcdir)/include
 libtscpputil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
 libtscpputil_la_SOURCES = \
+	IntrusiveDList.h \
 	PostScript.h \
 	TextView.h TextView.cc
 

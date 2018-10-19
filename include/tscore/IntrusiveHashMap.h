@@ -26,7 +26,7 @@
 #include <vector>
 #include <array>
 #include <algorithm>
-#include "tscore/IntrusiveDList.h"
+#include "tscpp/util/IntrusiveDList.h"
 
 /** Intrusive Hash Table.
 
@@ -105,11 +105,11 @@ protected:
    * All table elements are in this list. The buckets reference their starting element in the list, or nothing if
    * no elements are in that bucket.
    */
-  using List = IntrusiveDList<H>;
+  using List = ts::IntrusiveDList<H>;
 
   /// A bucket for the hash map.
   struct Bucket {
-    /// Support for IntrusiveDList<Bucket::Linkage>, definitions and link storage.
+    /// Support for ts::IntrusiveDList<Bucket::Linkage>, definitions and link storage.
     struct Linkage {
       static Bucket *&next_ptr(Bucket *b); ///< Access next pointer.
       static Bucket *&prev_ptr(Bucket *b); ///< Access prev pointer.
@@ -294,7 +294,7 @@ protected:
   Table _table; ///< Array of buckets.
 
   /// List of non-empty buckets.
-  IntrusiveDList<typename Bucket::Linkage> _active_buckets;
+  ts::IntrusiveDList<typename Bucket::Linkage> _active_buckets;
 
   Bucket *bucket_for(key_type key);
 
