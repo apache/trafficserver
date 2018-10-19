@@ -480,3 +480,43 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
 
   return "unknown hook";
 }
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::ServerState_t state)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(state));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_server_state_name(state));
+  }
+}
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::CacheAction_t state)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(state));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_cache_action_name(state));
+  }
+}
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::StateMachineAction_t state)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(state));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_action_name(state));
+  }
+}
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, TSHttpHookID id)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(id));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_api_hook_name(id));
+  }
+}
