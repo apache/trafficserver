@@ -56,6 +56,12 @@ QUICFrame::type() const
   return QUICFrame::type(this->_buf);
 }
 
+bool
+QUICFrame::is_probing_frame() const
+{
+  return false;
+}
+
 QUICFrameType
 QUICFrame::type(const uint8_t *buf)
 {
@@ -1177,6 +1183,12 @@ QUICPaddingFrame::size() const
   return 1;
 }
 
+bool
+QUICPaddingFrame::is_probing_frame() const
+{
+  return true;
+}
+
 size_t
 QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 {
@@ -2216,6 +2228,12 @@ QUICPathChallengeFrame::size() const
   return this->_data_offset() + QUICPathChallengeFrame::DATA_LEN;
 }
 
+bool
+QUICPathChallengeFrame::is_probing_frame() const
+{
+  return true;
+}
+
 size_t
 QUICPathChallengeFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 {
@@ -2270,6 +2288,12 @@ size_t
 QUICPathResponseFrame::size() const
 {
   return this->_data_offset() + 8;
+}
+
+bool
+QUICPathResponseFrame::is_probing_frame() const
+{
+  return true;
 }
 
 size_t

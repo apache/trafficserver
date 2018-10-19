@@ -302,9 +302,9 @@ private:
   void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr frame);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size);
   void _packetize_closing_frame();
-  QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable,
+  QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
-  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable);
+  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable, bool probing);
 
   QUICConnectionErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
 

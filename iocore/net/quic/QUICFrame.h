@@ -53,7 +53,8 @@ public:
 
   virtual QUICFrameUPtr clone() const = 0;
   virtual QUICFrameType type() const;
-  virtual size_t size() const                                         = 0;
+  virtual size_t size() const = 0;
+  virtual bool is_probing_frame() const;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const = 0;
   virtual void reset(const uint8_t *buf, size_t len);
   virtual QUICFrame *split(size_t size);
@@ -331,6 +332,7 @@ public:
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
+  virtual bool is_probing_frame() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
 };
 
@@ -618,6 +620,7 @@ public:
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
+  virtual bool is_probing_frame() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
 
   const uint8_t *data() const;
@@ -642,6 +645,7 @@ public:
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
+  virtual bool is_probing_frame() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
 
   const uint8_t *data() const;

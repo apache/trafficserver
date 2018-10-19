@@ -299,7 +299,7 @@ public:
    * This will be used for sending packets. Therefore, it is expected that payload is already encrypted.
    * However, QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
-  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable);
+  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable, bool probing);
 
   ~QUICPacket();
 
@@ -312,6 +312,7 @@ public:
   const QUICPacketHeader &header() const;
   const uint8_t *payload() const;
   bool is_retransmittable() const;
+  bool is_probing_packet() const;
 
   /*
    * Size of whole QUIC packet (header + payload + integrity check)
@@ -347,6 +348,7 @@ private:
   ats_unique_buf _payload      = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
   size_t _payload_size         = 0;
   bool _is_retransmittable     = false;
+  bool _is_probing_packet      = false;
 };
 
 class QUICPacketNumberGenerator
@@ -392,14 +394,14 @@ public:
                         QUICPacketCreationResult &result);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                       bool retransmittable);
+                                       bool retransmittable, bool probing);
   QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, ats_unique_buf payload,
-                                     size_t len, bool retransmittable);
+                                     size_t len, bool retransmittable, bool probing);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                         bool retransmittable);
+                                         bool retransmittable, bool probing);
   QUICPacketUPtr create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                         ats_unique_buf payload, size_t len, bool retransmittable);
+                                         ats_unique_buf payload, size_t len, bool retransmittable, bool probing);
   void set_version(QUICVersion negotiated_version);
 
   // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICCryptoInfoProvider or somethign instead.
@@ -415,5 +417,5 @@ private:
   QUICPacketNumberGenerator _packet_number_generator[3];
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
-  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable);
+  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable, bool probing);
 };
