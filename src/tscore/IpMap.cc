@@ -282,8 +282,8 @@ namespace detail
         return n->_prev;
       }
     };
-    using NodeList = IntrusiveDList<NodeLinkage>;
-    //    typedef IntrusiveDList<RBNode, &RBNode::_next, &RBNode::_prev> NodeList;
+    using NodeList = ts::IntrusiveDList<NodeLinkage>;
+    //    typedef ts::IntrusiveDList<RBNode, &RBNode::_next, &RBNode::_prev> NodeList;
     /// This keeps track of all allocated nodes in order.
     /// Iteration depends on this list being maintained.
     NodeList _list;

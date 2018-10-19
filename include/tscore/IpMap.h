@@ -27,7 +27,7 @@
 #include "tscore/ink_defs.h"
 #include "tscore/RbTree.h"
 #include "tscore/ink_inet.h"
-#include "tscore/IntrusiveDList.h"
+#include "tscpp/util/IntrusiveDList.h"
 #include "tscore/ink_assert.h"
 
 namespace ts
