@@ -46,7 +46,10 @@ initGeoIP()
     if (!gGeoIP[dbs[i]] && GeoIP_db_avail(dbs[i])) {
       // GEOIP_STANDARD seems to break threaded apps...
       gGeoIP[dbs[i]] = GeoIP_open_type(dbs[i], GEOIP_MMAP_CACHE);
-      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", dbs[i], GeoIP_database_info(gGeoIP[dbs[i]]));
+
+      char *db_info = GeoIP_database_info(gGeoIP[dbs[i]]);
+      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", dbs[i], db_info);
+      free(db_info);
     }
   }
 }
