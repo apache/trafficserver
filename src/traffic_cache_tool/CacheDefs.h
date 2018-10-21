@@ -400,7 +400,7 @@ namespace ct
 
 #define dir_in_seg(_s, _i) ((CacheDirEntry *)(((char *)(_s)) + (SIZEOF_DIR * (_i))))
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 dir_from_offset(int64_t i, CacheDirEntry *seg)
 {
 #if DIR_DEPTH < 5
@@ -413,26 +413,26 @@ dir_from_offset(int64_t i, CacheDirEntry *seg)
 #endif
 }
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 dir_bucket(int64_t b, CacheDirEntry *seg)
 {
   return dir_in_seg(seg, b * DIR_DEPTH);
 }
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 next_dir(CacheDirEntry *d, CacheDirEntry *seg)
 {
   int i = dir_next(d);
   return dir_from_offset(i, seg);
 }
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 dir_bucket_row(CacheDirEntry *b, int64_t i)
 {
   return dir_in_seg(b, i);
 }
 
-TS_INLINE int64_t
+inline int64_t
 dir_to_offset(const CacheDirEntry *d, const CacheDirEntry *seg)
 {
 #if DIR_DEPTH < 5
@@ -555,12 +555,12 @@ struct Stripe {
                                       // This is because the freelist is not being copied to _metap[2][2] correctly.
   // need to do something about it .. hmmm :-?
   int dir_freelist_length(int s);
-  TS_INLINE CacheDirEntry *
+  inline CacheDirEntry *
   vol_dir_segment(int s)
   {
     return (CacheDirEntry *)(((char *)this->dir) + (s * this->_buckets) * DIR_DEPTH * SIZEOF_DIR);
   }
-  TS_INLINE CacheDirEntry *
+  inline CacheDirEntry *
   dir_segment(int s)
   {
     return vol_dir_segment(s);
@@ -568,7 +568,7 @@ struct Stripe {
 
   Bytes stripe_offset(CacheDirEntry *e); // offset w.r.t the stripe content
   size_t vol_dirlen();
-  TS_INLINE int
+  inline int
   vol_headerlen()
   {
     return ROUND_TO_STORE_BLOCK(sizeof(StripeMeta) + sizeof(uint16_t) * (this->_segments - 1));
