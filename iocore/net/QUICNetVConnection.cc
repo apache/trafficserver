@@ -1582,7 +1582,7 @@ void
 QUICNetVConnection::_schedule_closing_timeout(ink_hrtime interval)
 {
   if (!this->_closing_timeout) {
-    QUICConDebug("Schedule %s event %" PRIu64 "ms", QUICDebugNames::quic_event(QUIC_EVENT_CLOSING_TIMEOUT), interval);
+    QUICConDebug("Schedule %s event in %" PRIu64 "ms", QUICDebugNames::quic_event(QUIC_EVENT_CLOSING_TIMEOUT), interval / HRTIME_MSECOND);
     this->_closing_timeout = this->thread->schedule_in_local(this, interval, QUIC_EVENT_CLOSING_TIMEOUT);
   }
 }
@@ -1657,7 +1657,7 @@ void
 QUICNetVConnection::_schedule_path_validation_timeout(ink_hrtime interval)
 {
   if (!this->_path_validation_timeout) {
-    QUICConDebug("Schedule %s event in %" PRIu64 "ms", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT), interval);
+    QUICConDebug("Schedule %s event in %" PRIu64 "ms", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT), interval / HRTIME_MSECOND);
     this->_path_validation_timeout = this->thread->schedule_in_local(this, interval, QUIC_EVENT_PATH_VALIDATION_TIMEOUT);
   }
 }
