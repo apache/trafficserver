@@ -172,9 +172,10 @@ public:
 
   ~S3Config()
   {
-    _secret_len = _keyid_len = 0;
+    _secret_len = _keyid_len = _token_len = 0;
     TSfree(_secret);
     TSfree(_keyid);
+    TSfree(_token);
     if (_cont) {
       TSContDestroy(_cont);
     }
@@ -199,6 +200,9 @@ public:
       }
       if (_region_map_modified && !_region_map.empty()) {
         TSError("[%s] region map is not used with AWS auth v2, parameter ignored", PLUGIN_NAME);
+      }
+      if (nullptr != _token || _token_len > 0) {
+        TSError("[%s] session token support with AWS auth v2 is not implemented, parameter ignored", PLUGIN_NAME);
       }
     } else {
       /* 4 == _version */
@@ -238,6 +242,11 @@ public:
     if (src->_keyid) {
       _keyid     = TSstrdup(src->_keyid);
       _keyid_len = src->_keyid_len;
+    }
+
+    if (src->_token) {
+      _token     = TSstrdup(src->_token);
+      _token_len = src->_token_len;
     }
 
     if (src->_version_modified) {
@@ -285,6 +294,12 @@ public:
     return _keyid;
   }
 
+  const char *
+  token() const
+  {
+    return _token;
+  }
+
   int
   secret_len() const
   {
@@ -295,6 +310,12 @@ public:
   keyid_len() const
   {
     return _keyid_len;
+  }
+
+  int
+  token_len() const
+  {
+    return _token_len;
   }
 
   int
@@ -335,6 +356,13 @@ public:
     TSfree(_keyid);
     _keyid     = TSstrdup(s);
     _keyid_len = strlen(s);
+  }
+  void
+  set_token(const char *s)
+  {
+    TSfree(_token);
+    _token     = TSstrdup(s);
+    _token_len = strlen(s);
   }
   void
   set_virt_host(bool f = true)
@@ -392,6 +420,8 @@ private:
   size_t _secret_len       = 0;
   char *_keyid             = nullptr;
   size_t _keyid_len        = 0;
+  char *_token             = nullptr;
+  size_t _token_len        = 0;
   bool _virt_host          = false;
   int _version             = 2;
   bool _version_modified   = false;
@@ -448,6 +478,8 @@ S3Config::parse_config(const std::string &config_fname)
         set_secret(pos2 + 11);
       } else if (0 == strncasecmp(pos2, "access_key=", 11)) {
         set_keyid(pos2 + 11);
+      } else if (0 == strncasecmp(pos2, "session_token=", 14)) {
+        set_token(pos2 + 14);
       } else if (0 == strncasecmp(pos2, "version=", 8)) {
         set_version(pos2 + 8);
       } else if (0 == strncasecmp(pos2, "virtual_host", 12)) {
@@ -663,6 +695,12 @@ S3Request::authorizeV4(S3Config *s3)
   size_t dateTimeLen   = 0;
   const char *dateTime = util.getDateTime(&dateTimeLen);
   if (!set_header(X_AMX_DATE.c_str(), X_AMX_DATE.length(), dateTime, dateTimeLen)) {
+    return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
+  }
+
+  /* set X-Amz-Security-Token if we have a token */
+  if (nullptr != s3->token() && '\0' != *(s3->token()) &&
+      !set_header(X_AMZ_SECURITY_TOKEN.data(), X_AMZ_SECURITY_TOKEN.size(), s3->token(), s3->token_len())) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
 
@@ -927,6 +965,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {const_cast<char *>("v4-include-headers"), required_argument, nullptr, 'i'},
     {const_cast<char *>("v4-exclude-headers"), required_argument, nullptr, 'e'},
     {const_cast<char *>("v4-region-map"), required_argument, nullptr, 'm'},
+    {const_cast<char *>("session_token"), required_argument, nullptr, 't'},
     {nullptr, no_argument, nullptr, '\0'},
   };
 
@@ -956,6 +995,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       break;
     case 's':
       s3->set_secret(optarg);
+      break;
+    case 't':
+      s3->set_token(optarg);
       break;
     case 'h':
       s3->set_virt_host();
