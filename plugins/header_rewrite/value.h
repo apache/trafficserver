@@ -44,6 +44,8 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value");
   }
 
+  virtual ~Value();
+
   void set_value(const std::string &val);
 
   void

@@ -105,6 +105,7 @@ public:
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Statement");
     free_pdata();
+    delete _next;
   }
 
   // Private data
