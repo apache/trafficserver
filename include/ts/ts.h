@@ -1215,6 +1215,9 @@ tsapi TSVConn TSHttpSsnServerVConnGet(TSHttpSsn ssnp);
 /* Re-enable an SSL connection from a hook.
    This must be called exactly once before the SSL connection will resume. */
 tsapi void TSVConnReenable(TSVConn sslvcp);
+/* Extended version that allows for passing a status event on reenabling
+ */
+tsapi void TSVConnReenableEx(TSVConn sslvcp, TSEvent event);
 /*  Set the connection to go into blind tunnel mode */
 tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
 /*  Return the SSL object associated with the connection */

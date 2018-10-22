@@ -114,9 +114,9 @@ HTTP Transaction State Diagram
      "lock URL in cache" -> "pick address";
      "pick address" -> "try connect" [label = "       "];
      "try connect" -> "pick address" [label = "fail"];
-     "try connect" -> TS_SSL_SERVER_VERIFY_HOOK [label = "HTTPS connection"];
-     TS_SSL_SERVER_VERIFY_HOOK -> TS_HTTP_SEND_REQUEST_HDR_HOOK [label = "success"];
-     TS_SSL_SERVER_VERIFY_HOOK -> "SSL Handshake Error" [label = "fail"];
+     "try connect" -> TS_SSL_VERIFY_SERVER_HOOK [label = "HTTPS connection"];
+     TS_SSL_VERIFY_SERVER_HOOK -> TS_HTTP_SEND_REQUEST_HDR_HOOK [label = "success"];
+     TS_SSL_VERIFY_SERVER_HOOK -> "SSL Handshake Error" [label = "fail"];
      "try connect" -> TS_HTTP_SEND_REQUEST_HDR_HOOK [label = "success"];
      TS_HTTP_SEND_REQUEST_HDR_HOOK -> "send req hdrs";
      "send req hdrs" -> "set up POST/PUT read" [label = "POST/PUT"];
@@ -145,8 +145,8 @@ HTTP Transaction State Diagram
      TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK[shape = box];
      TS_HTTP_SELECT_ALT_HOOK [shape = box];
      TS_HTTP_READ_CACHE_HDR_HOOK [shape = box];
-     TS_SSL_SERVER_VERIFY_HOOK [shape = box];
-     TS_SSL_SERVER_VERIFY_HOOK [tooltip = "verify server certificate"];
+     TS_SSL_VERIFY_SERVER_HOOK [shape = box];
+     TS_SSL_VERIFY_SERVER_HOOK [tooltip = "verify server certificate"];
      TS_HTTP_SEND_REQUEST_HDR_HOOK [shape = box];
      "set up req transform" [tooltip = "req transform takes place here"];
      TS_HTTP_READ_RESPONSE_HDR_HOOK [shape = box];
