@@ -1619,6 +1619,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   // Move state if it is appropriate
   switch (this->sslHandshakeHookState) {
   case HANDSHAKE_HOOKS_PRE:
+  case HANDSHAKE_HOOKS_OUTBOUND_PRE:
     if (eventId == TS_EVENT_SSL_SERVERNAME) {
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
     } else if (eventId == TS_EVENT_SSL_VERIFY_SERVER) {

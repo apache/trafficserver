@@ -26,7 +26,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: void TSSslVConnReenable(TSVConn svc)
+.. function:: void TSVConnReenable(TSVConn svc)
 
 Description
 ===========
@@ -48,4 +48,26 @@ Traffic Server.
 
 This call does appropriate locking and scheduling, so it is safe to call from
 another thread.
+
+TSVConnReenableEx
+*****************
+
+Synopsis
+========
+
+`#include <ts/ts.h>`
+
+.. function:: void TSVConnReenableEx(TSVConn svc, TSEvent event)
+
+Description
+===========
+
+An extended verion of TSVConnEnable that allows the plugin to return a status to
+the core logic.  If all goes well this is TS_EVENT_CONTINUE.  However, if
+the plugin wants to stop the processing it can set the event to TS_EVENT_ERROR.
+
+For example, in the case of the TS_SSL_VERIFY_SERVER_HOOK, the plugin make decide the 
+origin certificate is bad.  By calling TSVonnReenable with TS_EVENT_ERROR, the 
+certificate check will error and the TLS handshake will fail.
+
 
