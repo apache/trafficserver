@@ -358,7 +358,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
   bool rv           = true;
   OCSP_REQUEST *req = nullptr;
   OCSP_CERTID *id   = nullptr;
-  char *host, *path, *port;
+  char *host = nullptr, *port = nullptr, *path = nullptr;
   int ssl_flag    = 0;
   int req_timeout = -1;
 
@@ -401,6 +401,11 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
   } else {
     Debug("ssl_ocsp", "stapling_refresh_response: successful refresh OCSP response");
   }
+  goto done;
+
+err:
+  rv = false;
+  Error("stapling_refresh_response: failed to refresh OCSP response");
 
 done:
   if (req) {
@@ -409,12 +414,10 @@ done:
   if (*prsp) {
     OCSP_RESPONSE_free(*prsp);
   }
+  OPENSSL_free(host);
+  OPENSSL_free(path);
+  OPENSSL_free(port);
   return rv;
-
-err:
-  rv = false;
-  Error("stapling_refresh_response: failed to refresh OCSP response");
-  goto done;
 }
 
 void
