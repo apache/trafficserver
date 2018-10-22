@@ -185,6 +185,9 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   }
 
   if (!cinf->uri) {
+    OCSP_CERTID_free(cinf->cid);
+    cinf->cid = nullptr;
+
     Note("no OCSP responder URI for %s", certname);
     return false;
   }
