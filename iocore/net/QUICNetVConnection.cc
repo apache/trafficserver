@@ -906,7 +906,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
 
     // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
     if (this->_handshake_handler->is_version_negotiated()) {
-      error = this->_recv_and_ack(std::move(packet));
+      error = this->_recv_and_ack(*packet);
 
       if (error == nullptr && !this->_handshake_handler->has_remote_tp()) {
         error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
@@ -914,7 +914,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
     }
   } else {
     // on client side, _handshake_handler is already started. Just process packet like _state_handshake_process_handshake_packet()
-    error = this->_recv_and_ack(std::move(packet));
+    error = this->_recv_and_ack(*packet);
   }
 
   return error;
@@ -932,7 +932,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   this->_packet_retransmitter.reset();
 
-  QUICConnectionErrorUPtr error = this->_recv_and_ack(std::move(packet));
+  QUICConnectionErrorUPtr error = this->_recv_and_ack(*packet);
 
   // Packet number of RETRY packet is echo of INITIAL packet
   this->_packet_recv_queue.reset();
@@ -953,7 +953,7 @@ QUICNetVConnection::_state_handshake_process_handshake_packet(QUICPacketUPtr pac
   if (this->netvc_context == NET_VCONNECTION_IN && !this->_src_addr_verified) {
     this->_src_addr_verified = true;
   }
-  return this->_recv_and_ack(std::move(packet));
+  return this->_recv_and_ack(*packet);
 }
 
 QUICConnectionErrorUPtr
@@ -962,13 +962,42 @@ QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacke
   this->_stream_manager->init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                                   this->_handshake_handler->remote_transport_parameters());
   this->_start_application();
-  return this->_recv_and_ack(std::move(packet));
+  return this->_recv_and_ack(*packet);
 }
 
 QUICConnectionErrorUPtr
 QUICNetVConnection::_state_connection_established_process_protected_packet(QUICPacketUPtr packet)
 {
-  return this->_recv_and_ack(std::move(packet));
+  QUICConnectionErrorUPtr error = nullptr;
+  bool has_non_probing_frame    = false;
+
+  error = this->_recv_and_ack(*packet, &has_non_probing_frame);
+  if (error != nullptr) {
+    return error;
+  }
+
+  // Migrate connection if required
+  // FIXME Connection migration will be initiated when a peer sent non-probing frames.
+  // We need to two or more paths because we need to respond to probing packets on a new path and also need to send other frames
+  // on the old path until they initiate migration.
+  // if (packet.destination_cid() == this->_quic_connection_id && has_non_probing_frame) {
+  if (this->_alt_con_manager != nullptr && packet->destination_cid() != this->_quic_connection_id) {
+    if (!has_non_probing_frame) {
+      QUICConDebug("FIXME: Connection migration has been initiated without non-probing frames");
+    }
+    error = this->_state_connection_established_migrate_connection(*packet);
+    if (error != nullptr) {
+      return error;
+    }
+  }
+
+  // For Connection Migration excercise
+  QUICConfig::scoped_config params;
+  if (this->netvc_context == NET_VCONNECTION_OUT && params->cm_exercise_enabled()) {
+    this->_state_connection_established_initiate_connection_migration();
+  }
+
+  return error;
 }
 
 QUICConnectionErrorUPtr
@@ -994,23 +1023,13 @@ QUICNetVConnection::_state_connection_established_receive_packet()
     // Process the packet
     switch (p->type()) {
     case QUICPacketType::PROTECTED:
-      // Migrate connection if required
-      error = this->_state_connection_established_migrate_connection(*p);
-      if (error != nullptr) {
-        break;
-      }
-
-      if (this->netvc_context == NET_VCONNECTION_OUT) {
-        this->_state_connection_established_initiate_connection_migration();
-      }
-
       error = this->_state_connection_established_process_protected_packet(std::move(p));
       break;
     case QUICPacketType::INITIAL:
     case QUICPacketType::HANDSHAKE:
     case QUICPacketType::ZERO_RTT_PROTECTED:
       // Pass packet to _recv_and_ack to send ack to the packet. Stream data will be discarded by offset mismatch.
-      error = this->_recv_and_ack(std::move(p));
+      error = this->_recv_and_ack(*p);
       break;
     default:
       QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), static_cast<uint8_t>(p->type()));
@@ -1035,7 +1054,7 @@ QUICNetVConnection::_state_closing_receive_packet()
         // Ignore VN packets on closing state
         break;
       default:
-        this->_recv_and_ack(std::move(packet));
+        this->_recv_and_ack(*packet);
         break;
       }
     }
@@ -1061,7 +1080,7 @@ QUICNetVConnection::_state_draining_receive_packet()
     QUICPacketCreationResult result;
     QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::SUCCESS) {
-      this->_recv_and_ack(std::move(packet));
+      this->_recv_and_ack(*packet);
       // Do NOT schedule WRITE_READY event from this point.
       // An endpoint in the draining state MUST NOT send any packets.
     }
@@ -1354,24 +1373,27 @@ QUICNetVConnection::_packetize_closing_frame()
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_recv_and_ack(QUICPacketUPtr packet)
+QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_frame)
 {
-  const uint8_t *payload      = packet->payload();
-  uint16_t size               = packet->payload_length();
-  QUICPacketNumber packet_num = packet->packet_number();
-  QUICEncryptionLevel level   = QUICTypeUtil::encryption_level(packet->type());
+  const uint8_t *payload      = packet.payload();
+  uint16_t size               = packet.payload_length();
+  QUICPacketNumber packet_num = packet.packet_number();
+  QUICEncryptionLevel level   = QUICTypeUtil::encryption_level(packet.type());
 
   bool should_send_ack;
   bool is_flow_controlled;
 
   QUICConnectionErrorUPtr error = nullptr;
+  if (has_non_probing_frame) {
+    *has_non_probing_frame = false;
+  }
 
-  error = this->_frame_dispatcher->receive_frames(level, payload, size, should_send_ack, is_flow_controlled);
+  error = this->_frame_dispatcher->receive_frames(level, payload, size, should_send_ack, is_flow_controlled, has_non_probing_frame);
   if (error != nullptr) {
     return error;
   }
 
-  if (packet->type() == QUICPacketType::RETRY) {
+  if (packet.type() == QUICPacketType::RETRY) {
     should_send_ack = false;
   }
 
@@ -1882,10 +1904,6 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
   QUICConnectionErrorUPtr error = nullptr;
   QUICConnectionId dcid         = p.destination_cid();
 
-  if (dcid == this->_quic_connection_id) {
-    return error;
-  }
-
   if (this->netvc_context == NET_VCONNECTION_IN) {
     if (this->_remote_alt_cids.empty()) {
       // TODO: Should endpoint send connection error when remote endpoint doesn't send NEW_CONNECTION_ID frames before initiating
@@ -1933,11 +1951,9 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
   QUICConnectionErrorUPtr error = nullptr;
 
   std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
-  QUICConfig::scoped_config params;
 
-  if (!params->cm_exercise_enabled() || this->_connection_migration_initiated ||
-      remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) || this->_remote_alt_cids.empty() ||
-      this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT)) {
+  if (this->_connection_migration_initiated || remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) ||
+      this->_remote_alt_cids.empty() || this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT)) {
     return error;
   }
 

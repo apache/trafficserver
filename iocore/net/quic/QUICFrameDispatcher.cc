@@ -43,7 +43,7 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 
 QUICConnectionErrorUPtr
 QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &should_send_ack,
-                                    bool &is_flow_controlled)
+                                    bool &is_flow_controlled, bool *has_non_probing_frame)
 {
   std::shared_ptr<const QUICFrame> frame(nullptr);
   uint16_t cursor               = 0;
@@ -56,6 +56,9 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
     if (frame == nullptr) {
       QUICDebug("Failed to create a frame (%u bytes skipped)", size - cursor);
       break;
+    }
+    if (has_non_probing_frame) {
+      *has_non_probing_frame |= !frame->is_probing_frame();
     }
     cursor += frame->size();
 

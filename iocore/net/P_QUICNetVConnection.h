@@ -306,7 +306,7 @@ private:
                                QUICPacketType type = QUICPacketType::UNINITIALIZED);
   QUICPacketUPtr _build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable, bool probing);
 
-  QUICConnectionErrorUPtr _recv_and_ack(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _recv_and_ack(QUICPacket &packet, bool *has_non_probing_frame = nullptr);
 
   QUICConnectionErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
   QUICConnectionErrorUPtr _state_handshake_process_version_negotiation_packet(QUICPacketUPtr packet);
