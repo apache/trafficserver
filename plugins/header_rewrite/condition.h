@@ -52,6 +52,12 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition");
   }
 
+  virtual ~Condition()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Condition");
+    delete _matcher;
+  }
+
   // Inline this, it's critical for speed (and only used twice)
   bool
   do_eval(const Resources &res)
@@ -112,7 +118,7 @@ public:
     return _qualifier;
   }
 
-  // Virtual methods, has to be implemented by each conditional
+  // Virtual methods, has to be implemented by each conditional;
   void initialize(Parser &p) override;
   virtual void append_value(std::string &s, const Resources &res) = 0;
 
