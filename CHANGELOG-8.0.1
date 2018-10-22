@@ -1,5 +1,7 @@
 Changes with Apache Traffic Server 8.0.1
   #3832 - Plugin Certifier: Load, manage and/or dynamically generate certificates
+  #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
+  #4040 - Add configs for groups list
   #4055 - Remove ignore_keep_alive method entirely
   #4069 - Setup better defaults for service file logic
   #4116 - Increase limit on open files allowed as a service
@@ -8,10 +10,12 @@ Changes with Apache Traffic Server 8.0.1
   #4201 - Runroot: Update doc
   #4212 - HTTP/2 priority fixes to match common browser patterns
   #4215 - HostStatus debug logging segfault fix.
+  #4216 - Improve the logging messages on server certificate verification failure.
   #4227 - ArgParser: 'ArgParser' Class for command line arguments parsing
   #4231 - Fix storage.config path issue for runroot
   #4238 - Runroot: Update doc according to the storage.config change
   #4266 - Run automake and autoconf everytime on a docs build
+  #4267 - Set log code when closing half open connections.
   #4269 - Test: Convert test_List.cc to Catch
   #4270 - Test: Convert test_arena.cc to Catch
   #4272 - Test: Convert test_Map.cc to Catch
@@ -26,6 +30,7 @@ Changes with Apache Traffic Server 8.0.1
   #4296 - Fix libjansson & libcjose static or dynamic detection
   #4299 - Inherit parent config file root-required attribute
   #4307 - Add a search path for Tcl
+  #4308 - remap.config .include files trigger reloads
   #4320 - Runroot: make runroot accept defective yaml file
   #4322 - Remove Bitops - apparently not used anywhere
   #4323 - Removed headers that are not used
@@ -46,6 +51,6 @@ Changes with Apache Traffic Server 8.0.1
   #4386 - docs: reference to overridable config not parsed
   #4389 - Rename stats for HTTP/2 current client connections
   #4393 - Removes reference to non-existent example
-  #4395 - Cleanup: Remove MgmtHashTable.h
+  #4395 - TCL: Remove MgmtHashTable.h
   #4396 - Allows unknown configuration variables when specified on the commandline
   #4401 - Removes errant mid-sentence extra space from message
