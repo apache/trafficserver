@@ -49,6 +49,7 @@ static constexpr std::string_view QUIC_DEBUG_TAG = "quic_net"sv;
 #define QUICConDebug(fmt, ...) Debug(QUIC_DEBUG_TAG.data(), "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+#define QUICConVVVDebug(fmt, ...) Debug("vvv_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICFCDebug(fmt, ...) Debug("quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
@@ -1564,7 +1565,7 @@ QUICNetVConnection::_schedule_packet_write_ready(bool delay)
 {
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (!this->_packet_write_ready) {
-    QUICConVDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
+    QUICConVVVDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
     if (delay) {
       this->_packet_write_ready = this->thread->schedule_in(this, WRITE_READY_INTERVAL, QUIC_EVENT_PACKET_WRITE_READY, nullptr);
     } else {
@@ -1595,7 +1596,7 @@ void
 QUICNetVConnection::_schedule_closing_timeout(ink_hrtime interval)
 {
   if (!this->_closing_timeout) {
-    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_CLOSING_TIMEOUT));
+    QUICConDebug("Schedule %s event %" PRIu64 "ms", QUICDebugNames::quic_event(QUIC_EVENT_CLOSING_TIMEOUT), interval);
     this->_closing_timeout = this->thread->schedule_in_local(this, interval, QUIC_EVENT_CLOSING_TIMEOUT);
   }
 }
@@ -1604,6 +1605,7 @@ void
 QUICNetVConnection::_unschedule_closing_timeout()
 {
   if (this->_closing_timeout) {
+    QUICConDebug("Unschedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_CLOSING_TIMEOUT));
     this->_closing_timeout->cancel();
     this->_closing_timeout = nullptr;
   }
@@ -1629,6 +1631,7 @@ void
 QUICNetVConnection::_unschedule_closed_event()
 {
   if (!this->_closed_event) {
+    QUICConDebug("Unschedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_SHUTDOWN));
     this->_closed_event->cancel();
     this->_closed_event = nullptr;
   }
@@ -1668,7 +1671,7 @@ void
 QUICNetVConnection::_schedule_path_validation_timeout(ink_hrtime interval)
 {
   if (!this->_path_validation_timeout) {
-    QUICConDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT));
+    QUICConDebug("Schedule %s event in %" PRIu64 "ms", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT), interval);
     this->_path_validation_timeout = this->thread->schedule_in_local(this, interval, QUIC_EVENT_PATH_VALIDATION_TIMEOUT);
   }
 }
@@ -1677,6 +1680,7 @@ void
 QUICNetVConnection::_unschedule_path_validation_timeout()
 {
   if (this->_path_validation_timeout) {
+    QUICConDebug("Unschedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT));
     this->_path_validation_timeout->cancel();
     this->_path_validation_timeout = nullptr;
   }
@@ -1764,7 +1768,7 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
   ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
 
-  QUICConDebug("Enter state_connection_closing %" PRIu64 "ms", 3 * rto / HRTIME_MSECOND);
+  QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
 
   // This states SHOULD persist for three times the
@@ -1789,7 +1793,7 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
   ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
 
-  QUICConDebug("Enter state_connection_draining %" PRIu64 "ms", 3 * rto / HRTIME_MSECOND);
+  QUICConDebug("Enter state_connection_draining");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
 
   // This states SHOULD persist for three times the
