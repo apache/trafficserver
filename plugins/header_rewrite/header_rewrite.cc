@@ -70,8 +70,9 @@ static int cont_rewrite_headers(TSCont, TSEvent, void *);
 class RulesConfig
 {
 public:
-  RulesConfig() : _ref_count(0)
+  RulesConfig()
   {
+    TSDebug(PLUGIN_NAME_DBG, "RulesConfig CTOR");
     memset(_rules, 0, sizeof(_rules));
     memset(_resids, 0, sizeof(_resids));
 
@@ -114,7 +115,8 @@ public:
 private:
   ~RulesConfig()
   {
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+    TSDebug(PLUGIN_NAME_DBG, "RulesConfig DTOR");
+    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) {
       delete _rules[i];
     }
     TSContDestroy(_cont);
@@ -235,12 +237,12 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
     if (p.is_cond()) {
       if (!rule->add_condition(p, filename.c_str(), lineno)) {
         delete rule;
-        return false;
+        //        return false;
       }
     } else {
       if (!rule->add_operator(p, filename.c_str(), lineno)) {
         delete rule;
-        return false;
+        //        return false;
       }
     }
   }
