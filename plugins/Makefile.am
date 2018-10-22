@@ -34,8 +34,6 @@ include cache_promote/Makefile.inc
 include conf_remap/Makefile.inc
 include escalate/Makefile.inc
 include esi/Makefile.inc
-include for_testing_only/test_cppapi/Makefile.inc
-include for_testing_only/test_hooks/Makefile.inc
 include generator/Makefile.inc
 include compress/Makefile.inc
 include header_rewrite/Makefile.inc

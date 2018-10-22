@@ -37,11 +37,11 @@ ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.tags': 'http|test_hooks'
 })
 
-ts.Disk.plugin_config.AddLine('test_hooks.so')
-
 ts.Disk.remap_config.AddLine(
     "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
 )
+
+Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/test_hooks.cc', ts)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)

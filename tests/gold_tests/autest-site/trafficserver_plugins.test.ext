@@ -19,7 +19,7 @@ Builds, installs, and enables an ATS plugin in the sandbox environment
 
 import os
 
-def prepare_plugin(self, path, tsproc, plugin_args = ""):
+def prepare_plugin(self, path, tsproc, plugin_args = "", extra_build_args=''):
     """Builds, installs, and enables an ATS plugin in the sandbox environment
 
     The source file at the given path is copied to the sandbox directory of the
@@ -39,12 +39,22 @@ def prepare_plugin(self, path, tsproc, plugin_args = ""):
         Condition.HasProgram(tsxs, "tsxs needs be installed with trafficserver package for this test to run")
         )
 
+    link_gxx="export CC=c++ &&"
     # Compile the plugin.
     in_basename = os.path.basename(path)
+    if in_basename.endswith(".c"):
+        link_gxx = ''
     in_path = os.path.join(plugin_dir, in_basename)
     out_basename = os.path.splitext(in_basename)[0] + '.so'
     out_path = os.path.join(plugin_dir, out_basename)
-    tsproc.Setup.RunCommand("{tsxs} -c {0} -o {1}".format(in_path, out_path, tsxs=tsxs))
+    tsproc.Setup.RunCommand(
+        "{pre_args} {tsxs} {args} -c {0} -o {1}".format(
+            in_path,
+            out_path,
+            tsxs=tsxs,
+            args=" -L {0} {1}".format(self.Variables.LIBDIR, extra_build_args),
+            pre_args=link_gxx)
+    )
 
     # Add an entry to plugin.config.
     tsproc.Disk.plugin_config.AddLine("{0} {1}".format(out_basename,plugin_args))
