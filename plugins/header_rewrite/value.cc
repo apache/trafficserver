@@ -30,6 +30,14 @@
 #include "parser.h"
 #include "conditions.h"
 
+Value::~Value()
+{
+  TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Value");
+  for (auto it = _cond_vals.begin(); it != _cond_vals.end(); it++) {
+    delete *it;
+  }
+}
+
 void
 Value::set_value(const std::string &val)
 {
