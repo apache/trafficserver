@@ -19,8 +19,8 @@
   limitations under the License.
  */
 
-#include "tscore/ink_defs.h"
-#include "tscore/ink_platform.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,6 +57,13 @@ static inline void
 ts_free(void *s)
 {
   return TSfree(s);
+}
+
+static void
+setup_memory_allocation()
+{
+  pcre_malloc = &ts_malloc;
+  pcre_free   = &ts_free;
 }
 
 typedef struct invalidate_t {
@@ -331,7 +338,7 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
 }
 
 static int
-free_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
+free_handler(TSCont cont, TSEvent event, void *edata)
 {
   invalidate_t *iptr;
 
@@ -343,7 +350,7 @@ free_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 }
 
 static int
-config_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
+config_handler(TSCont cont, TSEvent event, void *edata)
 {
   plugin_state_t *pstate;
   invalidate_t *i, *iptr;
@@ -453,6 +460,108 @@ main_handler(TSCont cont, TSEvent event, void *edata)
   return 0;
 }
 
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+{
+  TSCont main_cont = NULL;
+
+  main_cont = TSContCreate(main_handler, NULL);
+  TSContDataSet(main_cont, ih);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, main_cont);
+
+  return TSREMAP_NO_REMAP;
+}
+
+static bool
+configure_plugin_state(plugin_state_t *pstate, int argc, const char **argv, bool *const disable_timed_reload)
+{
+  int c;
+  invalidate_t *iptr                    = NULL;
+  static const struct option longopts[] = {{"config", required_argument, NULL, 'c'},
+                                           {"log", required_argument, NULL, 'l'},
+                                           {"disable-timed-reload", no_argument, NULL, 'd'},
+                                           {NULL, 0, NULL, 0}};
+
+  while ((c = getopt_long(argc, (char *const *)argv, "c:l:", longopts, NULL)) != -1) {
+    switch (c) {
+    case 'c':
+      pstate->config_file = TSstrdup(optarg);
+      TSDebug(LOG_PREFIX, "Config File: %s", pstate->config_file);
+      break;
+    case 'l':
+      if (TS_SUCCESS == TSTextLogObjectCreate(optarg, TS_LOG_MODE_ADD_TIMESTAMP, &pstate->log)) {
+        TSTextLogObjectRollingEnabledSet(pstate->log, 1);
+        TSTextLogObjectRollingIntervalSecSet(pstate->log, LOG_ROLL_INTERVAL);
+        TSTextLogObjectRollingOffsetHrSet(pstate->log, LOG_ROLL_OFFSET);
+        TSDebug(LOG_PREFIX, "Logging Mode enabled");
+      }
+      break;
+    case 'd':
+      *disable_timed_reload = true;
+      TSDebug(LOG_PREFIX, "Timed reload disabled (disable-timed-reload)");
+      break;
+    default:
+      break;
+    }
+  }
+
+  if (!pstate->config_file) {
+    TSError("[regex_revalidate] Plugin requires a --config option along with a config file name");
+    return false;
+  }
+
+  if (!load_config(pstate, &iptr)) {
+    TSDebug(LOG_PREFIX, "Problem loading config from file %s", pstate->config_file);
+  } else {
+    pstate->invalidate_list = iptr;
+    list_config(pstate, iptr);
+  }
+
+  return true;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+{
+  TSCont config_cont        = NULL;
+  plugin_state_t *pstate    = NULL;
+  bool disable_timed_reload = false;
+
+  TSDebug(LOG_PREFIX, "Starting remap init");
+  pstate = (plugin_state_t *)TSmalloc(sizeof(plugin_state_t));
+  init_plugin_state_t(pstate);
+
+  if (!configure_plugin_state(pstate, argc - 1, (const char **)(argv + 1), &disable_timed_reload)) {
+    free_plugin_state_t(pstate);
+    TSError("[regex_revalidate] Remap plugin registration failed");
+    return TS_ERROR;
+  }
+
+  *ih = (void *)pstate;
+
+  config_cont = TSContCreate(config_handler, TSMutexCreate());
+  TSContDataSet(config_cont, (void *)pstate);
+
+  TSMgmtUpdateRegister(config_cont, LOG_PREFIX);
+
+  if (!disable_timed_reload) {
+    TSContSchedule(config_cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+  }
+
+  TSDebug(LOG_PREFIX, "Remap plugin registration succeeded");
+
+  return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void *ih)
+{
+  if (NULL != ih) {
+    plugin_state_t *const pstate = (plugin_state_t *)ih;
+    free_plugin_state_t(pstate);
+  }
+}
+
 static bool
 check_ts_version()
 {
@@ -467,8 +576,7 @@ check_ts_version()
       return false;
     }
 
-    if ((TS_VERSION_MAJOR == major_ts_version) && (TS_VERSION_MINOR == minor_ts_version) &&
-        (TS_VERSION_MICRO == micro_ts_version)) {
+    if ((TS_VERSION_MAJOR == major_ts_version)) {
       return true;
     }
   }
@@ -476,13 +584,25 @@ check_ts_version()
   return false;
 }
 
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
+{
+  setup_memory_allocation();
+
+  if (!check_ts_version()) {
+    TSError("[regex_revalidate] Plugin requires Traffic Server %d", TS_VERSION_MAJOR);
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
   TSCont main_cont, config_cont;
-  plugin_state_t *pstate;
-  invalidate_t *iptr        = NULL;
+  plugin_state_t *pstate    = NULL;
   bool disable_timed_reload = false;
 
   TSDebug(LOG_PREFIX, "Starting plugin init");
@@ -490,43 +610,9 @@ TSPluginInit(int argc, const char *argv[])
   pstate = (plugin_state_t *)TSmalloc(sizeof(plugin_state_t));
   init_plugin_state_t(pstate);
 
-  int c;
-  static const struct option longopts[] = {{"config", required_argument, NULL, 'c'},
-                                           {"log", required_argument, NULL, 'l'},
-                                           {"disable-timed-reload", no_argument, NULL, 'd'},
-                                           {NULL, 0, NULL, 0}};
-
-  while ((c = getopt_long(argc, (char *const *)argv, "c:l:", longopts, NULL)) != -1) {
-    switch (c) {
-    case 'c':
-      pstate->config_file = TSstrdup(optarg);
-      break;
-    case 'l':
-      if (TS_SUCCESS == TSTextLogObjectCreate(optarg, TS_LOG_MODE_ADD_TIMESTAMP, &pstate->log)) {
-        TSTextLogObjectRollingEnabledSet(pstate->log, 1);
-        TSTextLogObjectRollingIntervalSecSet(pstate->log, LOG_ROLL_INTERVAL);
-        TSTextLogObjectRollingOffsetHrSet(pstate->log, LOG_ROLL_OFFSET);
-      }
-      break;
-    case 'd':
-      disable_timed_reload = true;
-      break;
-    default:
-      break;
-    }
-  }
-
-  if (!pstate->config_file) {
-    TSError("[regex_revalidate] Plugin requires a --config option along with a config file name");
+  if (!configure_plugin_state(pstate, argc, argv, &disable_timed_reload)) {
     free_plugin_state_t(pstate);
     return;
-  }
-
-  if (!load_config(pstate, &iptr)) {
-    TSDebug(LOG_PREFIX, "Problem loading config from file %s", pstate->config_file);
-  } else {
-    pstate->invalidate_list = iptr;
-    list_config(pstate, iptr);
   }
 
   info.plugin_name   = LOG_PREFIX;
@@ -543,13 +629,12 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (!check_ts_version()) {
-    TSError("[regex_revalidate] Plugin requires Traffic Server %d.%d.%d", TS_VERSION_MAJOR, TS_VERSION_MINOR, TS_VERSION_MICRO);
+    TSError("[regex_revalidate] Plugin requires Traffic Server %d", TS_VERSION_MAJOR);
     free_plugin_state_t(pstate);
     return;
   }
 
-  pcre_malloc = &ts_malloc;
-  pcre_free   = &ts_free;
+  setup_memory_allocation();
 
   main_cont = TSContCreate(main_handler, NULL);
   TSContDataSet(main_cont, (void *)pstate);
