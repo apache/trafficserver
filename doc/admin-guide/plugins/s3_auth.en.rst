@@ -36,6 +36,7 @@ Using the plugin in a remap rule would be e.g.::
 
    ...  @plugin=s3_auth.so @pparam=--access_key @pparam=my-key \
                            @pparam=--secret_key @pparam=my-secret \
+                           @pparam=--session_token @pparam=my-token \
                            @pparam=--virtual_host
 
 
@@ -71,6 +72,7 @@ Configuration options::
     --version=4
 
     # Optional
+    --session_token=<token>
     --v4-include-headers=<comma-separated-list-of-headers-to-be-signed>
     --v4-exclude-headers=<comma-separated-list-of-headers-not-to-be-signed>
     --v4-region-map=region_map.config
@@ -87,6 +89,7 @@ The ``s3_auth_v4.config`` config file could look like this::
 
     access_key=<access_id>
     secret_key=<secret_key>
+    session_token=<token>
     version=4
     v4-include-headers=<comma-separated-list-of-headers-to-be-signed>
     v4-exclude-headers=<comma-separated-list-of-headers-not-to-be-signed>
@@ -141,6 +144,7 @@ This is a pretty barebone start for the S3 services, it is missing a number of f
 - It does not deal with canonicalization of AMZ headers.
 - It does not handle POST requests (but do we need to ?)
 - It does not incorporate query parameters.
+- It does not support session tokens.
 
 
 Contributions to any of these would be appreciated.
