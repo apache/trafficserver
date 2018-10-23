@@ -1339,7 +1339,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.max_alt_connection_ids", RECD_INT, "3", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-5]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.stateless_retry", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.server.stateless_retry_enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.client.vn_exercise_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
