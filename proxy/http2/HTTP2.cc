@@ -48,7 +48,7 @@ static const int HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
-static const char *const HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_client_connections";
+static const char *const HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME        = "proxy.process.http2.current_client_connections";
 static const char *const HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_active_client_connections";
 static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME            = "proxy.process.http2.current_client_streams";
 static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME              = "proxy.process.http2.total_client_streams";
