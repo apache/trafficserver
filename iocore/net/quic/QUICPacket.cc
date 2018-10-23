@@ -1344,6 +1344,15 @@ QUICPacketFactory::is_ready_to_create_protected_packet()
 {
   return this->_hs_protocol->is_handshake_finished();
 }
+
+void
+QUICPacketFactory::reset()
+{
+  for (auto s : QUIC_PN_SPACES) {
+    this->_packet_number_generator[static_cast<int>(s)].reset();
+  }
+}
+
 //
 // QUICPacketNumberGenerator
 //
@@ -1354,4 +1363,10 @@ QUICPacketNumberGenerator::next()
 {
   // TODO Increment the number at least one but not only always one
   return this->_current++;
+}
+
+void
+QUICPacketNumberGenerator::reset()
+{
+  this->_current = 0;
 }

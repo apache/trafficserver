@@ -383,6 +383,7 @@ class QUICPacketNumberGenerator
 public:
   QUICPacketNumberGenerator();
   QUICPacketNumber next();
+  void reset();
 
 private:
   std::atomic<QUICPacketNumber> _current = 0;
@@ -438,6 +439,7 @@ public:
   void set_hs_protocol(const QUICHandshakeProtocol *hs_protocol);
 
   bool is_ready_to_create_protected_packet();
+  void reset();
 
 private:
   QUICVersion _version                      = QUIC_SUPPORTED_VERSIONS[0];
