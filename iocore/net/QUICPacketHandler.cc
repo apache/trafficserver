@@ -29,8 +29,10 @@
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
+#include "QUICStatelessRetry.h"
 
-static constexpr char tag[] = "quic_sec";
+static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
+static constexpr char tag[]                        = "quic_sec";
 
 #define QUICDebug(fmt, ...) Debug(tag, fmt, ##__VA_ARGS__)
 #define QUICDebugQC(qc, fmt, ...) Debug(tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
@@ -258,6 +260,15 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       return;
     }
 
+    QUICConfig::scoped_config params;
+    if (params->stateless_retry()) {
+      int ret = this->_stateless_retry(buf, buf_len, udp_packet->getConnection(), udp_packet->from, dcid, scid);
+      if (ret < 0) {
+        udp_packet->free();
+        return;
+      }
+    }
+
     if (dcid == QUICConnectionId::ZERO()) {
       // TODO: lookup DCID by 5-tuple when ATS omits SCID
       return;
@@ -343,6 +354,53 @@ void
 QUICPacketHandlerIn::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload)
 {
   this->_send_packet(this, vc, udp_payload);
+}
+
+int
+QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from,
+                                      QUICConnectionId dcid, QUICConnectionId scid)
+{
+  QUICPacketType type = QUICPacketType::UNINITIALIZED;
+  QUICPacketLongHeader::type(type, buf, buf_len);
+
+  if (type != QUICPacketType::INITIAL) {
+    return 1;
+  }
+
+  // TODO: refine packet parsers in here, QUICPacketLongHeader, and QUICPacketReceiveQueue
+  size_t token_length            = 0;
+  uint8_t token_length_field_len = 0;
+  if (!QUICPacketLongHeader::token_length(token_length, &token_length_field_len, buf, buf_len)) {
+    return -1;
+  }
+
+  if (token_length == 0) {
+    ats_unique_buf retry_token = ats_unique_malloc(QUICStatelessRetry::MAX_TOKEN_LEN);
+    size_t retry_token_len     = 0;
+    QUICStatelessRetry::generate_cookie(retry_token.get(), &retry_token_len, from);
+
+    QUICConnectionId local_cid;
+    local_cid.randomize();
+    QUICPacketUPtr retry_packet =
+      QUICPacketFactory::create_retry_packet(scid, local_cid, dcid, std::move(retry_token), retry_token_len);
+
+    this->_send_packet(this, *retry_packet, connection, from, 1200, nullptr, 0);
+
+    return -2;
+  } else {
+    uint8_t dcil, scil;
+    QUICPacketLongHeader::dcil(dcil, buf, buf_len);
+    QUICPacketLongHeader::scil(scil, buf, buf_len);
+
+    const uint8_t *token = buf + LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil + token_length_field_len;
+    if (QUICStatelessRetry::verify_cookie(token, token_length, from)) {
+      return 0;
+    } else {
+      return -3;
+    }
+  }
+
+  return 0;
 }
 
 //

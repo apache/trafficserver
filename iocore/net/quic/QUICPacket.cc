@@ -1112,6 +1112,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
   } else {
     switch (header->type()) {
     case QUICPacketType::STATELESS_RESET:
+    case QUICPacketType::RETRY:
       // These packets are unprotected. Just copy the payload
       memcpy(plain_txt.get(), header->payload(), header->payload_size());
       plain_txt_len = header->payload_size();
@@ -1142,21 +1143,6 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
           }
         } else {
           result = QUICPacketCreationResult::SUCCESS;
-        }
-      } else {
-        result = QUICPacketCreationResult::IGNORED;
-      }
-      break;
-    case QUICPacketType::RETRY:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::INITIAL, false)) {
-        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                        QUICKeyPhase::INITIAL)) {
-          result = QUICPacketCreationResult::SUCCESS;
-        } else {
-          // ignore failure - probably clear text key is already updated
-          // FIXME: make sure packet number is smaller than largest sent packet number
-          result = QUICPacketCreationResult::IGNORED;
         }
       } else {
         result = QUICPacketCreationResult::IGNORED;
