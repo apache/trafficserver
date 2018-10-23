@@ -23,12 +23,16 @@
 
 #pragma once
 
-#include <openssl/ssl.h>
+#include <openssl/evp.h>
+
+#include "tscore/ink_inet.h"
 
 class QUICStatelessRetry
 {
 public:
+  static constexpr size_t MAX_TOKEN_LEN = EVP_MAX_MD_SIZE;
+
   static void init();
-  static int generate_cookie(SSL *ssl, unsigned char *cookie, size_t *cookie_len);
-  static int verify_cookie(SSL *ssl, const unsigned char *cookie, size_t cookie_len);
+  static int generate_cookie(unsigned char *cookie, size_t *cookie_len, IpEndpoint src);
+  static int verify_cookie(const unsigned char *cookie, size_t cookie_len, IpEndpoint src);
 };

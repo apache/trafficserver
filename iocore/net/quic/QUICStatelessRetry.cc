@@ -41,13 +41,11 @@ QUICStatelessRetry::init()
 }
 
 int
-QUICStatelessRetry::generate_cookie(SSL *ssl, unsigned char *cookie, size_t *cookie_len)
+QUICStatelessRetry::generate_cookie(unsigned char *cookie, size_t *cookie_len, IpEndpoint src)
 {
-  QUICConnection *qc = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
-
   uint8_t key[INET6_ADDRPORTSTRLEN] = {0};
   size_t key_len                    = INET6_ADDRPORTSTRLEN;
-  ats_ip_nptop(qc->five_tuple().source(), reinterpret_cast<char *>(key), key_len);
+  ats_ip_nptop(src, reinterpret_cast<char *>(key), key_len);
 
   unsigned int dst_len = 0;
   HMAC(EVP_sha1(), stateless_cookie_secret, STATELESS_COOKIE_SECRET_LENGTH, key, key_len, cookie, &dst_len);
@@ -57,12 +55,12 @@ QUICStatelessRetry::generate_cookie(SSL *ssl, unsigned char *cookie, size_t *coo
 }
 
 int
-QUICStatelessRetry::verify_cookie(SSL *ssl, const unsigned char *cookie, size_t cookie_len)
+QUICStatelessRetry::verify_cookie(const unsigned char *cookie, size_t cookie_len, IpEndpoint src)
 {
   uint8_t token[EVP_MAX_MD_SIZE];
   size_t token_len;
 
-  if (QUICStatelessRetry::generate_cookie(ssl, token, &token_len) && cookie_len == token_len &&
+  if (QUICStatelessRetry::generate_cookie(token, &token_len, src) && cookie_len == token_len &&
       memcmp(token, cookie, cookie_len) == 0) {
     return 1;
   } else {

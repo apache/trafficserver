@@ -83,11 +83,6 @@ quic_init_server_ssl_ctx(const QUICConfigParams *params)
     Error("check private key failed");
   }
 
-  // callbacks for cookie ext
-  // Requires OpenSSL-1.1.1-pre3+ : https://github.com/openssl/openssl/pull/5463
-  SSL_CTX_set_stateless_cookie_generate_cb(ssl_ctx, QUICStatelessRetry::generate_cookie);
-  SSL_CTX_set_stateless_cookie_verify_cb(ssl_ctx, QUICStatelessRetry::verify_cookie);
-
   SSL_CTX_set_alpn_select_cb(ssl_ctx, QUIC::ssl_select_next_protocol, nullptr);
 
   if (params->server_supported_groups() != nullptr) {
