@@ -58,14 +58,14 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   streamFrame.store(buf, &len, 4096);
   bool should_send_ack;
   bool is_flow_controlled;
-  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled);
+  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr);
   CHECK(connection.getTotalFrameCount() == 0);
   CHECK(streamManager.getTotalFrameCount() == 1);
 
   // CONNECTION_CLOSE frame
   QUICConnectionCloseFrame connectionCloseFrame({});
   connectionCloseFrame.store(buf, &len, 4096);
-  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled);
+  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr);
   CHECK(connection.getTotalFrameCount() == 1);
   CHECK(streamManager.getTotalFrameCount() == 1);
 }
