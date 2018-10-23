@@ -39,6 +39,7 @@
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 #include "QUICConfig.h"
+#include "QUICIntUtil.h"
 
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
@@ -920,29 +921,44 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
   return error;
 }
 
+/**
+   This doesn't call this->_recv_and_ack(), because RETRY packet doesn't have any frames.
+ */
 QUICConnectionErrorUPtr
 QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
 {
+  ink_assert(this->netvc_context == NET_VCONNECTION_OUT);
+
+  if (this->_retry_token) {
+    QUICConDebug("Ignore RETRY packet - already processed before");
+    return nullptr;
+  }
+
+  // TODO: move packet->payload to _retry_token
+  this->_retry_token_len = packet->payload_length();
+  this->_retry_token     = ats_unique_malloc(this->_retry_token_len);
+  memcpy(this->_retry_token.get(), packet->payload(), this->_retry_token_len);
+
   // discard all transport state
   this->_handshake_handler->reset();
+  this->_packet_factory.reset();
   for (auto s : QUIC_PN_SPACES) {
     this->_loss_detector[static_cast<int>(s)]->reset();
   }
   this->_congestion_controller->reset();
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   this->_packet_retransmitter.reset();
-
-  QUICConnectionErrorUPtr error = this->_recv_and_ack(*packet);
-
-  // Packet number of RETRY packet is echo of INITIAL packet
   this->_packet_recv_queue.reset();
 
-  // Generate new Connection ID
-  this->_rerandomize_original_cid();
+  // Initialize Key Materials with peer CID. Because peer CID is DCID of (second) INITIAL packet from client which reply to RETRY
+  // packet from server
+  this->_hs_protocol->initialize_key_materials(this->_peer_quic_connection_id);
 
-  this->_hs_protocol->initialize_key_materials(this->_original_quic_connection_id);
+  // start handshake over
+  this->_handshake_handler->do_handshake();
+  this->_schedule_packet_write_ready();
 
-  return error;
+  return nullptr;
 }
 
 QUICConnectionErrorUPtr
@@ -1214,7 +1230,10 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   // TODO: adjust MAX_PACKET_OVERHEAD for each encryption level
   uint64_t max_frame_size = max_packet_size - MAX_PACKET_OVERHEAD;
-  max_frame_size          = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
+  if (level == QUICEncryptionLevel::INITIAL && this->_retry_token) {
+    max_frame_size = max_frame_size - (QUICVariableInt::size(this->_retry_token_len) + this->_retry_token_len);
+  }
+  max_frame_size = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
 
   bool probing       = false;
   int frame_count    = 0;
@@ -1328,7 +1347,11 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     if (level == QUICEncryptionLevel::INITIAL && this->netvc_context == NET_VCONNECTION_OUT) {
       // Pad with PADDING frames
       uint64_t min_size = this->minimum_quic_packet_size();
-      min_size          = std::min(min_size, max_packet_size);
+      if (this->_retry_token) {
+        min_size = min_size - this->_retry_token_len;
+      }
+      min_size = std::min(min_size, max_packet_size);
+
       if (min_size > len) {
         // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
         memset(buf.get() + len, 0, min_size - len);
@@ -1375,6 +1398,8 @@ QUICNetVConnection::_packetize_closing_frame()
 QUICConnectionErrorUPtr
 QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_frame)
 {
+  ink_assert(packet.type() != QUICPacketType::RETRY);
+
   const uint8_t *payload      = packet.payload();
   uint16_t size               = packet.payload_length();
   QUICPacketNumber packet_num = packet.packet_number();
@@ -1391,10 +1416,6 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
   error = this->_frame_dispatcher->receive_frames(level, payload, size, should_send_ack, is_flow_controlled, has_non_probing_frame);
   if (error != nullptr) {
     return error;
-  }
-
-  if (packet.type() == QUICPacketType::RETRY) {
-    should_send_ack = false;
   }
 
   if (is_flow_controlled) {
@@ -1429,11 +1450,24 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 
   switch (type) {
   case QUICPacketType::INITIAL: {
-    QUICConnectionId dcid =
-      (this->netvc_context == NET_VCONNECTION_OUT) ? this->_original_quic_connection_id : this->_peer_quic_connection_id;
-    packet = this->_packet_factory.create_initial_packet(dcid, this->_quic_connection_id,
-                                                         this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL),
-                                                         std::move(buf), len, retransmittable, probing);
+    QUICConnectionId dcid = this->_peer_quic_connection_id;
+    ats_unique_buf token  = {nullptr, [](void *p) { ats_free(p); }};
+    size_t token_len      = 0;
+
+    if (this->netvc_context == NET_VCONNECTION_OUT) {
+      // TODO: Add a case of using token which is advertized by NEW_TOKEN frame
+      if (this->_retry_token) {
+        token     = ats_unique_malloc(this->_retry_token_len);
+        token_len = this->_retry_token_len;
+        memcpy(token.get(), this->_retry_token.get(), token_len);
+      } else {
+        dcid = this->_original_quic_connection_id;
+      }
+    }
+
+    packet = this->_packet_factory.create_initial_packet(
+      dcid, this->_quic_connection_id, this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len,
+      retransmittable, probing, std::move(token), token_len);
     break;
   }
   case QUICPacketType::HANDSHAKE: {

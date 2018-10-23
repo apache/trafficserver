@@ -122,15 +122,19 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
         pkt_len = remaining_len;
       } else {
         QUICPacketLongHeader::type(type, this->_payload.get() + this->_offset, remaining_len);
-        if (!long_hdr_pkt_len(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
-          this->_payload.release();
-          this->_payload     = nullptr;
-          this->_payload_len = 0;
-          this->_offset      = 0;
+        if (type == QUICPacketType::RETRY) {
+          pkt_len = remaining_len;
+        } else {
+          if (!long_hdr_pkt_len(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
+            this->_payload.release();
+            this->_payload     = nullptr;
+            this->_payload_len = 0;
+            this->_offset      = 0;
 
-          result = QUICPacketCreationResult::IGNORED;
+            result = QUICPacketCreationResult::IGNORED;
 
-          return quic_packet;
+            return quic_packet;
+          }
         }
       }
     } else {
