@@ -131,6 +131,16 @@ public:
   /*
    * Build a QUICPacketHeader
    *
+   * This creates a QUICPacketLongHeader for INITIAL packet
+   */
+  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
+                                    QUICConnectionId source_cid, QUICPacketNumber packet_number,
+                                    QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len,
+                                    ats_unique_buf token, size_t token_len);
+
+  /*
+   * Build a QUICPacketHeader
+   *
    * This creates a QUICPacketLongHeader for RETRY packet
    */
   static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version,
@@ -413,7 +423,9 @@ public:
                         QUICPacketCreationResult &result);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                       bool retransmittable, bool probing);
+                                       bool retransmittable, bool probing,
+                                       ats_unique_buf token = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }),
+                                       size_t token_len     = 0);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                          bool retransmittable, bool probing);
