@@ -68,7 +68,9 @@ char *SSLConfigParams::ssl_wire_trace_server_name = nullptr;
 int SSLConfigParams::async_handshake_enabled      = 0;
 char *SSLConfigParams::engine_conf_file           = nullptr;
 
-static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
+static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
+static std::unique_ptr<ConfigUpdateHandler<SSLConfig>> sslConfigUpdate;
+static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
@@ -496,6 +498,11 @@ SSLConfigParams::getClientSSL_CTX() const
 void
 SSLConfig::startup()
 {
+  sslConfigUpdate.reset(new ConfigUpdateHandler<SSLConfig>());
+  sslConfigUpdate->attach("proxy.config.ssl.client.cert.path");
+  sslConfigUpdate->attach("proxy.config.ssl.client.cert.filename");
+  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.path");
+  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.filename");
   reconfigure();
 }
 
@@ -523,7 +530,7 @@ SSLConfig::release(SSLConfigParams *params)
 bool
 SSLCertificateConfig::startup()
 {
-  sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
+  sslCertUpdate.reset(new ConfigUpdateHandler<SSLCertificateConfig>());
   sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
@@ -654,7 +661,7 @@ SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 void
 SSLTicketKeyConfig::startup()
 {
-  auto sslTicketKey = new ConfigUpdateHandler<SSLTicketKeyConfig>();
+  sslTicketKey.reset(new ConfigUpdateHandler<SSLTicketKeyConfig>());
 
   sslTicketKey->attach("proxy.config.ssl.server.ticket_key.filename");
   SSLConfig::scoped_config params;

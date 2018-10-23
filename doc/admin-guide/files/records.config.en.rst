@@ -3497,21 +3497,25 @@ Client-Related Configuration
    :2: The provided certificate will be verified and the connection will be established 
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
+   :reloadable:
 
    The filename of SSL client certificate installed on |TS|.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.path STRING /config
+   :reloadable:
 
    The location of the SSL client certificate installed on Traffic
    Server.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.private_key.filename STRING NULL
+   :reloadable:
 
    The filename of the |TS| private key. Change this variable
    only if the private key is not located in the |TS| SSL
    client certificate file.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.private_key.path STRING NULL
+   :reloadable:
 
    The location of the |TS| private key. Change this variable
    only if the private key is not located in the SSL client certificate
