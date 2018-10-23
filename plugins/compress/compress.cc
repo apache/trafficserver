@@ -52,7 +52,6 @@ using namespace Gzip;
 // to be about the best level to use in an HTTP Server.
 
 const int ZLIB_COMPRESSION_LEVEL = 6;
-const char *global_hidden_header_name;
 const char *dictionary           = nullptr;
 const char *TS_HTTP_VALUE_BROTLI = "br";
 const int TS_HTTP_LEN_BROTLI     = 2;
@@ -62,6 +61,8 @@ const int TS_HTTP_LEN_BROTLI     = 2;
 const int BROTLI_COMPRESSION_LEVEL = 6;
 const int BROTLI_LGW               = 16;
 #endif
+
+static const char *global_hidden_header_name = nullptr;
 
 // Current global configuration, and the previous one (for cleanup)
 Configuration *cur_config  = nullptr;
@@ -972,7 +973,7 @@ load_global_configuration(TSCont contp)
 
   debug("config swapped, old config %p", oldconfig);
 
-  // First, if there was a previous configuration, clean that one out. This avois the
+  // First, if there was a previous configuration, clean that one out. This avoids the
   // small race condition tht exist between doing a find() and calling hold() on a
   // HostConfig object.
   if (prev_config) {
@@ -1078,7 +1079,9 @@ void
 TSRemapDeleteInstance(void *instance)
 {
   debug("Cleanup configs read from remap");
-  static_cast<Configuration *>(instance)->release_all();
+  auto c = static_cast<Configuration *>(instance);
+  c->release_all();
+  delete c;
 }
 
 TSRemapStatus
