@@ -58,6 +58,10 @@ QUICPacketHeader::buf()
   } else {
     // TODO Reuse serialzied data if nothing has changed
     this->store(this->_serialized, &this->_buf_len);
+    if (this->_buf_len > MAX_PACKET_HEADER_LEN) {
+      ink_assert(!"Serialized packet header is too long");
+    }
+
     this->_buf_len += this->_payload_length;
     return this->_serialized;
   }
