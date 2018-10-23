@@ -206,10 +206,12 @@ QUICNetVConnection::start()
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
+    this->_ack_frame_creator.set_ack_delay_exponent(params->ack_delay_exponent_in());
     this->_reset_token.generate(this->_quic_connection_id, params->server_id());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->server_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol, this->_reset_token, params->stateless_retry());
   } else {
+    this->_ack_frame_creator.set_ack_delay_exponent(params->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
@@ -1682,6 +1684,12 @@ QUICNetVConnection::_complete_handshake_if_possible()
 
   this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                   this->_handshake_handler->remote_transport_parameters());
+
+  // PN space doesn't matter but seems like this is the way to pick the LossDetector for 0-RTT and Short packet
+  int index_for_1rtt = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::ONE_RTT);
+  uint8_t ack_delay_exponent =
+    this->_handshake_handler->remote_transport_parameters()->getAsUInt8(QUICTransportParameterId::ACK_DELAY_EXPONENT);
+  this->_loss_detector[index_for_1rtt]->update_ack_delay_exponent(ack_delay_exponent);
 
   this->_start_application();
 

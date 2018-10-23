@@ -25,6 +25,14 @@
 #include "QUICAckFrameCreator.h"
 #include <algorithm>
 
+void
+QUICAckFrameCreator::set_ack_delay_exponent(uint8_t ack_delay_exponent)
+{
+  // This function should be called only once
+  ink_assert(this->_ack_delay_exponent == 0);
+  this->_ack_delay_exponent = ack_delay_exponent;
+}
+
 int
 QUICAckFrameCreator::update(QUICEncryptionLevel level, QUICPacketNumber packet_number, bool should_send)
 {
@@ -140,11 +148,13 @@ uint64_t
 QUICAckFrameCreator::_calculate_delay(QUICEncryptionLevel level)
 {
   // Ack delay is in microseconds and scaled
-  ink_hrtime now = Thread::get_hrtime();
-  int index      = QUICTypeUtil::pn_space_index(level);
-  uint64_t delay = (now - this->_packet_numbers[index].largest_ack_received_time()) / 1000;
-  // FXIME ack delay exponent has to be read from transport parameters
+  ink_hrtime now             = Thread::get_hrtime();
+  int index                  = QUICTypeUtil::pn_space_index(level);
+  uint64_t delay             = (now - this->_packet_numbers[index].largest_ack_received_time()) / 1000;
   uint8_t ack_delay_exponent = 3;
+  if (level != QUICEncryptionLevel::INITIAL && level != QUICEncryptionLevel::HANDSHAKE) {
+    ack_delay_exponent = this->_ack_delay_exponent;
+  }
   return delay >> ack_delay_exponent;
 }
 

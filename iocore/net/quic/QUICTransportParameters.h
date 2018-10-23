@@ -84,6 +84,7 @@ public:
   bool contains(QUICTransportParameterId id) const;
 
   void set(QUICTransportParameterId id, const uint8_t *value, uint16_t value_len);
+  void set(QUICTransportParameterId id, uint8_t value);
   void set(QUICTransportParameterId id, uint16_t value);
   void set(QUICTransportParameterId id, uint32_t value);
 

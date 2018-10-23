@@ -119,11 +119,14 @@ public:
   virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
   void on_packet_sent(QUICPacketUPtr packet);
   QUICPacketNumber largest_acked_packet_number();
+  void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
   ink_hrtime current_rto_period();
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;
+
+  uint8_t _ack_delay_exponent = 3;
 
   // [draft-11 recovery] 3.5.1.  Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor

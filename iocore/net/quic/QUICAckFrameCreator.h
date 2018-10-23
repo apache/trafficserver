@@ -58,6 +58,8 @@ public:
   static constexpr int MAXIMUM_PACKET_COUNT = 256;
   QUICAckFrameCreator(){};
 
+  void set_ack_delay_exponent(uint8_t ack_delay_exponent);
+
   /*
    * All packet numbers ATS received need to be passed to this method.
    * Returns 0 if updated successfully.
@@ -97,4 +99,6 @@ private:
 
   // Initial, 0/1-RTT, and Handshake
   QUICAckPacketNumbers _packet_numbers[3];
+
+  uint8_t _ack_delay_exponent = 0;
 };

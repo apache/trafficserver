@@ -290,6 +290,15 @@ QUICTransportParameters::set(QUICTransportParameterId id, const uint8_t *value, 
 }
 
 void
+QUICTransportParameters::set(QUICTransportParameterId id, uint8_t value)
+{
+  uint8_t v[1];
+  size_t n;
+  QUICIntUtil::write_uint_as_nbytes(value, 1, v, &n);
+  this->set(id, v, 1);
+}
+
+void
 QUICTransportParameters::set(QUICTransportParameterId id, uint16_t value)
 {
   uint8_t v[2];
@@ -322,6 +331,7 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
   p += sizeof(uint16_t);
 
   for (auto &it : this->_parameters) {
+    // TODO Skip non-MUST parameters that have their default values
     p[0] = (it.first & 0xff00) >> 8;
     p[1] = it.first & 0xff;
     p += 2;

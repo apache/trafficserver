@@ -390,6 +390,7 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
 
   // MAYs (server)
   tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
+  tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, params->ack_delay_exponent_in());
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
@@ -426,6 +427,7 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   if (params->initial_max_stream_data_uni_out() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_out());
   }
+  tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, params->ack_delay_exponent_out());
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));

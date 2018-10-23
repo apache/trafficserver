@@ -181,6 +181,12 @@ QUICLossDetector::reset()
 }
 
 void
+QUICLossDetector::update_ack_delay_exponent(uint8_t ack_delay_exponent)
+{
+  this->_ack_delay_exponent = ack_delay_exponent;
+}
+
+void
 QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_ack_only, bool is_handshake, size_t sent_bytes,
                                   QUICPacketUPtr packet)
 {
@@ -220,9 +226,7 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
   if (pi != this->_sent_packets.end()) {
     this->_latest_rtt = Thread::get_hrtime() - pi->second->time;
     // _latest_rtt is nanosecond but ack_frame.ack_delay is microsecond and scaled
-    // FIXME ack delay exponent has to be read from transport parameters
-    uint8_t ack_delay_exponent = 3;
-    ink_hrtime delay           = HRTIME_USECONDS(ack_frame.ack_delay() << ack_delay_exponent);
+    ink_hrtime delay = HRTIME_USECONDS(ack_frame.ack_delay() << this->_ack_delay_exponent);
     this->_update_rtt(this->_latest_rtt, delay, ack_frame.largest_acknowledged());
   }
 
