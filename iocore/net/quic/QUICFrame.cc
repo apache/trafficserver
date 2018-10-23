@@ -593,7 +593,11 @@ QUICAckFrame::clone() const
 {
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> newframe = QUICFrameFactory::create_ack_frame(
     this->largest_acknowledged(), this->ack_delay(), this->ack_block_section()->first_ack_block());
-  // TODO Copy ack block section
+
+  for (auto &ack_block : *this->ack_block_section()) {
+    newframe->ack_block_section()->add_ack_block({ack_block.gap(), ack_block.length()});
+  }
+
   return newframe;
 }
 

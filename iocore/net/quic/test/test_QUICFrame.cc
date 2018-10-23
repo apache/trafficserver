@@ -530,6 +530,33 @@ TEST_CASE("Store Ack Frame", "[quic]")
     CHECK(len == 21);
     CHECK(memcmp(buf, expected, len) == 0);
   }
+
+  SECTION("Clone ACK frame", "[quic]")
+  {
+    uint8_t buf[32] = {0};
+    size_t len;
+
+    uint8_t expected[] = {
+      0x0d,                                           // Type
+      0x12,                                           // Largest Acknowledged
+      0x74, 0x56,                                     // Ack Delay
+      0x02,                                           // Ack Block Count
+      0x01,                                           // Ack Block Section (First ACK Block Length)
+      0x02,                                           // Ack Block Section (Gap 1)
+      0x43, 0x04,                                     // Ack Block Section (ACK Block 1 Length)
+      0x85, 0x06, 0x07, 0x08,                         // Ack Block Section (Gap 2)
+      0xc9, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, // Ack Block Section (ACK Block 2 Length)
+    };
+    QUICAckFrame ack_frame(0x12, 0x3456, 0x01);
+    QUICAckFrame::AckBlockSection *section = ack_frame.ack_block_section();
+    section->add_ack_block({0x02, 0x0304});
+    section->add_ack_block({0x05060708, 0x090a0b0c0d0e0f10});
+
+    auto cloned = ack_frame.clone();
+    cloned->store(buf, &len, sizeof(buf));
+    CHECK(len == 21);
+    CHECK(memcmp(buf, expected, len) == 0);
+  }
 }
 
 TEST_CASE("Load RST_STREAM Frame", "[quic]")
