@@ -120,9 +120,6 @@ stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
     }
   }
 
-  if (!X509_STORE_CTX_init(inctx, st, nullptr, nullptr)) {
-    goto end;
-  }
   if (X509_STORE_CTX_get1_issuer(&issuer, inctx, x) <= 0) {
     issuer = nullptr;
   }
@@ -169,13 +166,14 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   issuer = stapling_get_issuer(ctx, cert);
   if (issuer == nullptr) {
     Note("cannot get issuer certificate from %s", certname);
-    return false;
+    goto err;
   }
 
   cinf->cid = OCSP_cert_to_id(nullptr, cert, issuer);
   if (!cinf->cid) {
-    return false;
+    goto err;
   }
+
   X509_digest(cert, EVP_sha1(), cinf->idx, nullptr);
 
   aia = X509_get1_ocsp(cert);
@@ -185,17 +183,28 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   }
 
   if (!cinf->uri) {
-    OCSP_CERTID_free(cinf->cid);
-    cinf->cid = nullptr;
-
     Note("no OCSP responder URI for %s", certname);
-    return false;
+    goto err;
   }
 
   SSL_CTX_set_ex_data(ctx, ssl_stapling_index, cinf);
 
   Note("successfully initialized stapling for %s into SSL_CTX: %p", certname, ctx);
   return true;
+
+err:
+  if (cinf->uri) {
+    OCSP_CERTID_free(cinf->cid);
+  }
+
+  if (cinf->certname) {
+    ats_free(cinf->certname);
+  }
+
+  if (cinf) {
+    OPENSSL_free(cinf);
+  }
+  return false;
 }
 
 static certinfo *
