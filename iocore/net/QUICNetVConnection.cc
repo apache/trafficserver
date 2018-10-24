@@ -1478,6 +1478,12 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
                                                            std::move(buf), len, retransmittable, probing);
     break;
   }
+  case QUICPacketType::ZERO_RTT_PROTECTED: {
+    packet = this->_packet_factory.create_zero_rtt_packet(this->_original_quic_connection_id, this->_quic_connection_id,
+                                                          this->largest_acked_packet_number(QUICEncryptionLevel::ZERO_RTT),
+                                                          std::move(buf), len, retransmittable, probing);
+    break;
+  }
   case QUICPacketType::PROTECTED: {
     packet = this->_packet_factory.create_protected_packet(this->_peer_quic_connection_id,
                                                            this->largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
@@ -1485,7 +1491,7 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
     break;
   }
   default:
-    // should not be here except zero_rtt
+    // should not be here
     ink_assert(false);
     break;
   }

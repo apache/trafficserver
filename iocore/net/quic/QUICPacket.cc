@@ -1245,6 +1245,19 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
 }
 
 QUICPacketUPtr
+QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
+                                          bool retransmittable, bool probing)
+{
+  int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::ZERO_RTT);
+  QUICPacketNumber pn = this->_packet_number_generator[index].next();
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::build(QUICPacketType::ZERO_RTT_PROTECTED, QUICKeyPhase::ZERO_RTT, destination_cid, source_cid, pn,
+                            base_packet_number, this->_version, std::move(payload), len);
+  return this->_create_encrypted_packet(std::move(header), retransmittable, probing);
+}
+
+QUICPacketUPtr
 QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                            ats_unique_buf payload, size_t len, bool retransmittable, bool probing)
 {

@@ -431,6 +431,9 @@ public:
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                          bool retransmittable, bool probing);
+  QUICPacketUPtr create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
+                                        bool retransmittable, bool probing);
   QUICPacketUPtr create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                          ats_unique_buf payload, size_t len, bool retransmittable, bool probing);
   void set_version(QUICVersion negotiated_version);
