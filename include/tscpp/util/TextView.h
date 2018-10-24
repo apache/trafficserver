@@ -27,6 +27,7 @@
 #pragma once
 #include <bitset>
 #include <functional>
+#include <type_traits>
 #include <iosfwd>
 #include <memory.h>
 #include <algorithm>
@@ -1168,7 +1169,242 @@ TextView::stream_write(Stream &os, const TextView &b) const
 // Provide an instantiation for @c std::ostream as it's likely this is the only one ever used.
 extern template std::ostream &TextView::stream_write(std::ostream &, const TextView &) const;
 
-} // namespace ts
+/** A transform view.
+ *
+ * @tparam X Transform functor type.
+ * @tparam V Source view type.
+ *
+ * A transform view acts like a view on the original source view @a V with each element transformed by
+ * @a X.
+ *
+ * This is used most commonly with @c std::string_view. For example, if the goal is to handle a
+ * piece of text as if it were lower case without changing the actual text, the following would
+ * make that possible.
+ * @code
+ * std:::string_view source; // original text.
+ * TransformView<int (*)(int) noexcept, std::string_view> xv(&tolower, source);
+ * @endcode
+ *
+ * To avoid having to figure out the exact signature of the transform, the convenience function
+ * @c transform_view_of is provide.
+ * @code
+ * std::string_view source; // original text.
+ * auto xv = transform_view_of(&tolower, source);
+ * @endcode
+ */
+template <typename X, typename V> class TransformView
+{
+  using self_type = TransformView; ///< Self reference type.
+  using iter      = decltype(static_cast<V *>(nullptr)->begin());
+
+public:
+  using transform_type    = X; ///< Export transform functor type.
+  using source_view_type  = V; ///< Export source view type.
+  using source_value_type = decltype(**static_cast<iter *>(nullptr));
+  /// Result type of calling the transform on an element of the source view.
+  using value_type = typename std::invoke_result<transform_type, source_value_type>::type;
+
+  /** Construct a transform view using transform @a xf on source view @a v.
+   *
+   * @param xf Transform instance.
+   * @param v Source view.
+   */
+  TransformView(transform_type &&xf, source_view_type const &v);
+
+  /** Construct a transform view using transform @a xf on source view @a v.
+   *
+   * @param xf Transform instance.
+   * @param v Source view.
+   */
+  TransformView(transform_type const &xf, source_view_type const &v);
+
+  /// Copy constructor.
+  TransformView(self_type const &that) = default;
+  /// Move constructor.
+  TransformView(self_type &&that) = default;
+
+  /// Copy assignment.
+  self_type &operator=(self_type const &that) = default;
+  /// Move assignment.
+  self_type &operator=(self_type &&that) = default;
+
+  /// Equality.
+  bool operator==(self_type const &that) const;
+  /// Inequality.
+  bool operator!=(self_type const &that) const;
+
+  /// Get the current element.
+  value_type operator*() const;
+  /// Move to next element.
+  self_type &operator++();
+  /// Move to next element.
+  self_type operator++(int);
+
+  /// Check if view is empty.
+  bool empty() const;
+  /// Check if bool is not empty.
+  explicit operator bool() const;
+
+protected:
+  transform_type _xf;
+  iter _spot;
+  iter _limit;
+};
+
+template <typename X, typename V>
+TransformView<X, V>::TransformView(transform_type &&xf, source_view_type const &v) : _xf(xf), _spot(v.begin()), _limit(v.end())
+{
+}
+
+template <typename X, typename V>
+TransformView<X, V>::TransformView(transform_type const &xf, source_view_type const &v) : _xf(xf), _spot(v.begin()), _limit(v.end())
+{
+}
+
+template <typename X, typename V> auto TransformView<X, V>::operator*() const -> value_type
+{
+  return _xf(*_spot);
+}
+
+template <typename X, typename V>
+auto
+TransformView<X, V>::operator++() -> self_type &
+{
+  ++_spot;
+  return *this;
+}
+
+template <typename X, typename V>
+auto
+TransformView<X, V>::operator++(int) -> self_type
+{
+  self_type zret{*this};
+  ++_spot;
+  return zret;
+}
+
+template <typename X, typename V>
+bool
+TransformView<X, V>::empty() const
+{
+  return _spot == _limit;
+}
+
+template <typename X, typename V> TransformView<X, V>::operator bool() const
+{
+  return _spot != _limit;
+}
+
+template <typename X, typename V>
+bool
+TransformView<X, V>::operator==(self_type const &that) const
+{
+  return _spot == that._spot && _limit == that._limit;
+}
+
+template <typename X, typename V>
+bool
+TransformView<X, V>::operator!=(self_type const &that) const
+{
+  return _spot != that._spot || _limit != that._limit;
+}
+
+template <typename X, typename V>
+TransformView<X, V>
+transform_view_of(X const &xf, V const &v)
+{
+  return TransformView<X, V>(xf, v);
+}
+
+// Specialization for identity transform.
+template <typename V> class TransformView<void, V>
+{
+  using self_type = TransformView; ///< Self reference type.
+  using iter      = decltype(static_cast<V *>(nullptr)->begin());
+
+public:
+  using source_view_type  = V; ///< Export source view type.
+  using source_value_type = decltype(**static_cast<iter *>(nullptr));
+  /// Result type of calling the transform on an element of the source view.
+  using value_type = source_value_type;
+
+  /** Construct identity transform view from @a v.
+   *
+   * @param v Source view.
+   */
+  TransformView(source_view_type const &v) : _spot(v.begin()), _limit(v.end()) {}
+
+  /// Copy constructor.
+  TransformView(self_type const &that) = default;
+  /// Move constructor.
+  TransformView(self_type &&that) = default;
+
+  /// Copy assignment.
+  self_type &operator=(self_type const &that) = default;
+  /// Move assignment.
+  self_type &operator=(self_type &&that) = default;
+
+  /// Equality.
+  bool operator==(self_type const &that) const;
+  /// Inequality.
+  bool operator!=(self_type const &that) const;
+
+  /// Get the current element.
+  value_type operator*() const { return *_spot; }
+  /// Move to next element.
+  self_type &
+  operator++()
+  {
+    ++_spot;
+    return *this;
+  }
+  /// Move to next element.
+  self_type
+  operator++(int)
+  {
+    auto zret{*this};
+    ++*this;
+    return zret;
+  }
+
+  /// Check if view is empty.
+  bool
+  empty() const
+  {
+    return _spot == _limit;
+  }
+  /// Check if bool is not empty.
+  explicit operator bool() const { return _spot != _limit; }
+
+protected:
+  iter _spot;
+  iter _limit;
+};
+
+template <typename V>
+TransformView<void, V>
+transform_view_of(V const &v)
+{
+  return TransformView<void, V>(v);
+}
+
+// Avoid complaints about no operator for cross type comparisons - just return false. If the
+// types are the same the class method will be used.
+template <typename X1, typename V1, typename X2, typename V2>
+bool
+operator==(TransformView<X1, V1> const &, TransformView<X2, V2> const &)
+{
+  return false;
+}
+
+template <typename X1, typename V1, typename X2, typename V2>
+bool
+operator!=(TransformView<X1, V1> const &, TransformView<X2, V2> const &)
+{
+  return false;
+}
+
+}; // namespace ts
 
 namespace std
 {
@@ -1187,6 +1423,13 @@ template <> struct iterator_traits<ts::TextView> {
   using iterator_category = forward_iterator_tag;
 };
 
+template <typename X, typename V> struct iterator_traits<ts::TransformView<X, V>> {
+  using value_type        = typename ts::TransformView<X, V>::value_type;
+  using pointer_type      = const value_type *;
+  using reference_type    = const value_type &;
+  using difference_type   = ssize_t;
+  using iterator_category = forward_iterator_tag;
+};
 } // namespace std
 
 // @c constexpr literal constructor for @c std::string_view

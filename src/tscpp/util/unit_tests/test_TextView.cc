@@ -315,3 +315,39 @@ TEST_CASE("TextView Conversions", "[libts][TextView]")
   REQUIRE(25 == svtoi(n3));
   REQUIRE(31 == svtoi(n3, nullptr, 10));
 }
+
+TEST_CASE("TransformView", "[libts][TransformView]")
+{
+  std::string_view source{"Evil Dave Rulz"};
+  ts::TransformView<int (*)(int), std::string_view> xv1(&tolower, source);
+  // clang and gnu differ on the type of tolower wrt "noexcept". This makes xv1 a different type
+  // from xv2 (or not) depending on the compiler. Therefore we need xv3 to test the equality operator.
+  auto xv2 = ts::transform_view_of(&tolower, source);
+  auto xv3 = ts::transform_view_of(&tolower, source);
+  TextView tv{source};
+
+  bool match_p = true;
+  while (xv1) {
+    if (*xv1 != tolower(*tv)) {
+      match_p = false;
+      break;
+    }
+    ++xv1;
+    ++tv;
+  }
+  REQUIRE(match_p);
+
+  REQUIRE(xv2 == xv3);
+  tv      = source;
+  match_p = true;
+  while (xv2) {
+    if (*xv2 != tolower(*tv)) {
+      match_p = false;
+      break;
+    }
+    ++xv2;
+    ++tv;
+  }
+  REQUIRE(match_p);
+  REQUIRE(xv2 != xv3);
+};
