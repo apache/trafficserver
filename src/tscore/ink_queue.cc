@@ -277,7 +277,7 @@ malloc_new(InkFreeList *f)
 void
 ink_freelist_free(InkFreeList *f, void *item, const InkFreeListOps *ops)
 {
-  ink_assert(ops != nullptr);
+          ink_assert(ops != nullptr);
 
   if (likely(item != nullptr)) {
     ink_assert(f->used != 0);
