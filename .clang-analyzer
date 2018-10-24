@@ -16,10 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 # Additional checkers
+# This has a lot of potential FPs:           -enable-checker alpha.unix.PthreadLock\
 checkers="-enable-checker alpha.unix.cstring.BufferOverlap \
-          -enable-checker alpha.unix.PthreadLock\
           -enable-checker alpha.core.BoolAssignment \
           -enable-checker alpha.core.CastSize \
           -enable-checker alpha.core.SizeofPtr"
