@@ -167,6 +167,11 @@ they reach a certain size, adjust the following settings in
 
     CONFIG proxy.config.log.rolling_interval_sec INT 21600
 
+#. Set the minimum number of rolled files with
+   :ts:cv:`proxy.config.log.rolling_min_count`. ::
+
+    CONFIG proxy.config.log.rolling_min_count INT 0
+
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
@@ -190,8 +195,9 @@ following actions:
 
 -  If the autodelete option is enabled, then |TS| identifies previously-rolled
    log files (log files with the ``.old`` extension). It starts deleting files
-   one by one, beginning with the oldest file, until it emerges from the low
-   state. |TS| logs a record of all deleted files in the system error log.
+   one by one, beginning with the oldest file with largest ratio to the minimum
+   rolling count, until it emerges from the low state. |TS| logs a record of all
+   deleted files in the system error log.
 
 -  If the autodelete option is disabled or there are not enough old log files
    to delete for the system to emerge from its low space state, then |TS|

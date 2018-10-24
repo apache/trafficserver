@@ -102,8 +102,8 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
 TsEnumDescriptor ROLLING_MODE = {{{"none", 0}, {"time", 1}, {"size", 2}, {"both", 3}, {"any", 4}}};
 
 std::set<std::string> valid_log_object_keys = {
-  "filename",          "format",          "mode",    "header",         "rolling_enabled", "rolling_interval_sec",
-  "rolling_offset_hr", "rolling_size_mb", "filters", "collation_hosts"};
+  "filename",          "format",          "mode",    "header",          "rolling_enabled", "rolling_interval_sec",
+  "rolling_offset_hr", "rolling_size_mb", "filters", "collation_hosts", "min_count"};
 
 LogObject *
 YamlLogConfig::decodeLogObject(const YAML::Node &node)
@@ -149,6 +149,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   int obj_rolling_interval_sec = cfg->rolling_interval_sec;
   int obj_rolling_offset_hr    = cfg->rolling_offset_hr;
   int obj_rolling_size_mb      = cfg->rolling_size_mb;
+  int obj_min_count            = cfg->rolling_min_count;
 
   if (node["rolling_enabled"]) {
     auto value          = node["rolling_enabled"].as<std::string>();
@@ -166,7 +167,9 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   if (node["rolling_size_mb"]) {
     obj_rolling_size_mb = node["rolling_size_mb"].as<int>();
   }
-
+  if (node["min_count"]) {
+    obj_min_count = node["min_count"].as<int>();
+  }
   if (!LogRollingEnabledIsValid(obj_rolling_enabled)) {
     Warning("Invalid log rolling value '%d' in log object", obj_rolling_enabled);
   }
@@ -174,6 +177,23 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
                                  (Log::RollingEnabledValues)obj_rolling_enabled, Log::config->collation_preproc_threads,
                                  obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb);
+
+  // Generate LogDeletingInfo entry for later use
+  std::string ext;
+  switch (file_type) {
+  case LOG_FILE_ASCII:
+    ext = LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION;
+    break;
+  case LOG_FILE_PIPE:
+    ext = LOG_FILE_PIPE_OBJECT_FILENAME_EXTENSION;
+    break;
+  case LOG_FILE_BINARY:
+    ext = LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION;
+    break;
+  default:
+    break;
+  }
+  cfg->deleting_info.insert(new LogDeletingInfo(filename + ext, ((obj_min_count == 0) ? INT_MAX : obj_min_count)));
 
   // filters
   auto filters = node["filters"];
