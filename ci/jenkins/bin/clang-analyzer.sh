@@ -66,7 +66,10 @@ export CCC_CC=${LLVM_BASE}/bin/clang
 export CCC_CXX=${LLVM_BASE}/bin/clang++
 
 # This can be used to override any of those settings above
-# [ -f ./.clang-analyzer ] && source ./.clang-analyzer
+[ -f ./.clang-analyzer ] && source ./.clang-analyzer
+
+# Don't do clang-analyzer runs on 7.1.x branch
+grep -q 700100 configure.ac && echo "7.1.x branch detected, stop here!" && exit 0
 
 # Start the build / scan
 [ "$output" != "/tmp" ] && echo "Results (if any) can be found at ${results_url}"
