@@ -55,7 +55,11 @@ Changes with Apache Traffic Server 8.0.1
   #4395 - TCL: Remove MgmtHashTable.h
   #4396 - Allows unknown configuration variables when specified on the commandline
   #4401 - Removes errant mid-sentence extra space from message
+  #4429 - Fix build for 32bits armhf arch. Partialy closes #4361
   #4444 - Uses stack-based buffer for record lookup during logging
+  #4445 - Converts loop and callees in SSLInitServerContext to std::string
   #4447 - Fixes memory leak in header_rewrite when GeoIP is used
   #4451 - Fixes leak when no OCSP URL is available
+  #4452 - Fix leak in stapling_refresh_response
+  #4464 - Fixes more leaks when no OCSP URL is available
   #4465 - Fixes memory leaks in compress plugin
