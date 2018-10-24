@@ -165,6 +165,8 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_initial_max_uni_streams_out, "proxy.config.quic.initial_max_uni_streams_out");
   REC_EstablishStaticConfigInt32U(this->_ack_delay_exponent_in, "proxy.config.quic.ack_delay_exponent_in");
   REC_EstablishStaticConfigInt32U(this->_ack_delay_exponent_out, "proxy.config.quic.ack_delay_exponent_out");
+  REC_EstablishStaticConfigInt32U(this->_max_ack_delay_in, "proxy.config.quic.max_ack_delay_in");
+  REC_EstablishStaticConfigInt32U(this->_max_ack_delay_out, "proxy.config.quic.max_ack_delay_out");
 
   // Loss Detection
   REC_EstablishStaticConfigInt32U(this->_ld_max_tlps, "proxy.config.quic.loss_detection.max_tlps");
@@ -327,6 +329,18 @@ uint8_t
 QUICConfigParams::ack_delay_exponent_out() const
 {
   return this->_ack_delay_exponent_out;
+}
+
+uint8_t
+QUICConfigParams::max_ack_delay_in() const
+{
+  return this->_max_ack_delay_in;
+}
+
+uint8_t
+QUICConfigParams::max_ack_delay_out() const
+{
+  return this->_max_ack_delay_out;
 }
 
 const char *

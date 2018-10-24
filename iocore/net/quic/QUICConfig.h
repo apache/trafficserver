@@ -65,6 +65,8 @@ public:
   uint16_t initial_max_uni_streams_out() const;
   uint8_t ack_delay_exponent_in() const;
   uint8_t ack_delay_exponent_out() const;
+  uint8_t max_ack_delay_in() const;
+  uint8_t max_ack_delay_out() const;
 
   // Loss Detection
   uint32_t ld_max_tlps() const;
@@ -121,6 +123,8 @@ private:
   uint32_t _initial_max_uni_streams_out             = 0;
   uint32_t _ack_delay_exponent_in                   = 0;
   uint32_t _ack_delay_exponent_out                  = 0;
+  uint32_t _max_ack_delay_in                        = 0;
+  uint32_t _max_ack_delay_out                       = 0;
 
   // [draft-11 recovery] 3.5.1.  Constants of interest
   uint32_t _ld_max_tlps              = 2;
