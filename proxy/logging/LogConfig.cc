@@ -63,6 +63,7 @@
 #define DISK_IS_ACTUAL_LOW_MESSAGE "Access logging to local log directory suspended - partition space is low."
 
 #define PARTITION_HEADROOM_MB 10
+#define DIAGS_LOG_FILENAME "diags.log"
 
 void
 LogConfig::setup_default_values()
@@ -220,8 +221,8 @@ LogConfig::read_configuration_variables()
   rolling_interval_sec = (int)REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
   rolling_offset_hr    = (int)REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
   rolling_size_mb      = (int)REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
+  rolling_min_count    = (int)REC_ConfigReadInteger("proxy.config.log.rolling_min_count");
+  val                  = (int)REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
     rolling_enabled = (Log::RollingEnabledValues)val;
   } else {
@@ -232,6 +233,23 @@ LogConfig::read_configuration_variables()
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
 
+  // Read in min_count control values for auto deletion
+  if (auto_delete_rolled_files) {
+    // For diagnostic logs
+    val = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_min_count");
+    val = ((val == 0) ? INT_MAX : val);
+    deleting_info.insert(new LogDeletingInfo(DIAGS_LOG_FILENAME, val));
+
+    // For traffic.out
+    ats_scoped_str name(REC_ConfigReadString("proxy.config.output.logfile"));
+    val = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count");
+    val = ((val == 0) ? INT_MAX : val);
+    if (name) {
+      deleting_info.insert(new LogDeletingInfo(name.get(), val));
+    } else {
+      deleting_info.insert(new LogDeletingInfo("traffic.out", val));
+    }
+  }
   // PERFORMANCE
   val = (int)REC_ConfigReadInteger("proxy.config.log.sampling_frequency");
   if (val > 0) {
@@ -697,12 +715,6 @@ LogConfig::space_to_write(int64_t bytes_to_write) const
   periodic space check.
   -------------------------------------------------------------------------*/
 
-static int
-delete_candidate_compare(const LogDeleteCandidate *a, const LogDeleteCandidate *b)
-{
-  return ((int)(a->mtime - b->mtime));
-}
-
 void
 LogConfig::update_space_used()
 {
@@ -712,9 +724,7 @@ LogConfig::update_space_used()
     return;
   }
 
-  static const int MAX_CANDIDATES = 128;
-  LogDeleteCandidate candidates[MAX_CANDIDATES];
-  int i, victim, candidate_count;
+  int candidate_count;
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
@@ -758,6 +768,9 @@ LogConfig::update_space_used()
   total_space_used = 0LL;
   candidate_count  = 0;
 
+  for (auto it = deleting_info.begin(); it != deleting_info.end(); it++) {
+    Debug("%s", it->name.c_str());
+  }
   while ((entry = readdir(ld))) {
     snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry->d_name);
 
@@ -765,13 +778,21 @@ LogConfig::update_space_used()
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
       total_space_used += (int64_t)sbuf.st_size;
 
-      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name) && candidate_count < MAX_CANDIDATES) {
+      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name)) {
         //
-        // then add this entry to the candidate list
+        // then check if the candidate belongs to any given log type
         //
-        candidates[candidate_count].name  = ats_strdup(path);
-        candidates[candidate_count].size  = (int64_t)sbuf.st_size;
-        candidates[candidate_count].mtime = sbuf.st_mtime;
+        ts::TextView type_name(entry->d_name, strlen(entry->d_name));
+        auto suffix = type_name;
+        type_name.remove_suffix(suffix.remove_prefix(suffix.find('.') + 1).remove_prefix(suffix.find('.')).size());
+        auto iter = deleting_info.find(type_name);
+        if (iter == deleting_info.end()) {
+          // We won't delete the log if its name doesn't match any give type.
+          break;
+        }
+
+        auto &candidates = iter->candidates;
+        candidates.push_back(LogDeleteCandidate(path, (int64_t)sbuf.st_size, sbuf.st_mtime));
         candidate_count++;
       }
     }
@@ -818,36 +839,61 @@ LogConfig::update_space_used()
   if (candidate_count > 0 && !space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");
     Debug("logspace", "sorting %d delete candidates ...", candidate_count);
-    qsort(candidates, candidate_count, sizeof(LogDeleteCandidate), (int (*)(const void *, const void *))delete_candidate_compare);
 
-    for (victim = 0; victim < candidate_count; victim++) {
+    deleting_info.apply([](LogDeletingInfo &info) {
+      std::sort(info.candidates.begin(), info.candidates.end(),
+                [](LogDeleteCandidate const &a, LogDeleteCandidate const &b) { return a.mtime > b.mtime; });
+    });
+
+    while (candidate_count > 0) {
       if (space_to_write(headroom + log_buffer_size)) {
         Debug("logspace", "low water mark reached; stop deleting");
         break;
       }
 
-      Debug("logspace", "auto-deleting %s", candidates[victim].name);
+      // Select the group with biggest ratio
+      auto target =
+        std::max_element(deleting_info.begin(), deleting_info.end(), [](LogDeletingInfo const &A, LogDeletingInfo const &B) {
+          double diff =
+            static_cast<double>(A.candidates.size()) / A.min_count - static_cast<double>(B.candidates.size()) / B.min_count;
+          return diff < 0.0;
+        });
 
-      if (unlink(candidates[victim].name) < 0) {
-        Note("Traffic Server was Unable to auto-delete rolled "
-             "logfile %s: %s.",
-             candidates[victim].name, strerror(errno));
+      auto &candidates = target->candidates;
+
+      // Check if any candidate exists
+      if (candidates.empty()) {
+        // This shouldn't be triggered unless min_count are configured wrong or extra non-log files occupy the directory
+        Debug("logspace", "No more victims for log type %s. Check your rolling_min_count settings and logging directory.",
+              target->name.c_str());
       } else {
-        Debug("logspace",
-              "The rolled logfile, %s, was auto-deleted; "
-              "%" PRId64 " bytes were reclaimed.",
-              candidates[victim].name, candidates[victim].size);
-        m_space_used -= candidates[victim].size;
-        m_partition_space_left += candidates[victim].size;
+        auto &victim = candidates.back();
+        Debug("logspace", "auto-deleting %s", victim.name.c_str());
+
+        if (unlink(victim.name.c_str()) < 0) {
+          Note("Traffic Server was Unable to auto-delete rolled "
+               "logfile %s: %s.",
+               victim.name.c_str(), strerror(errno));
+        } else {
+          Debug("logspace",
+                "The rolled logfile, %s, was auto-deleted; "
+                "%" PRId64 " bytes were reclaimed.",
+                victim.name.c_str(), victim.size);
+
+          // Update after successful unlink;
+          m_space_used -= victim.size;
+          m_partition_space_left += victim.size;
+        }
+        // Update total candidates and remove victim
+        --candidate_count;
+        candidates.pop_back();
       }
     }
   }
   //
   // Clean up the candidate array
   //
-  for (i = 0; i < candidate_count; i++) {
-    ats_free(candidates[i].name);
-  }
+  deleting_info.apply([](LogDeletingInfo &info) { info.clear(); });
 
   //
   // Now that we've updated the m_space_used value, see if we need to

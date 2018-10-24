@@ -272,6 +272,12 @@ System Variables
 
    Specifies at what size to roll the output log at.
 
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_min_count INT 0
+   :reloadable:
+
+   Specifies the minimum count of rolled output logs to keep. This value will be used to decide the
+   order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
+   output logs as much as possible.
 
 Thread Variables
 ----------------
@@ -2950,6 +2956,13 @@ Logging Configuration
    The size, in megabytes, that log files must reach before rolling takes place.
    The minimum value for this setting is ``10``.
 
+.. ts:cv:: CONFIG proxy.config.log.rolling_min_count INT 0
+   :reloadable:
+
+   Specifies the minimum count of rolled (event) logs to keep. This value will be used to decide the
+   order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
+   logs as much as possible. This value can be and should be overridden in logging.yaml.
+
 .. ts:cv:: CONFIG proxy.config.log.auto_delete_rolled_files INT 1
    :reloadable:
 
@@ -3111,6 +3124,13 @@ Diagnostic Logging Configuration
    :units: megabytes
 
    Specifies at what size to roll the diagnostics log at.
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_min_count INT 0
+   :reloadable:
+
+   Specifies the minimum count of rolled diagnostic logs to keep. This value will be used to decide the
+   order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
+   diagnostic logs as much as possible.
 
 Reverse Proxy
 =============
@@ -3457,11 +3477,11 @@ Client-Related Configuration
 
    You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
 
-:code:`DISABLED` 
+:code:`DISABLED`
    Server Certificate will not be verified
-:code:`PERMISSIVE` 
+:code:`PERMISSIVE`
    Certificate will be verified and the connection will not be established if verification fails.
-:code:`ENFORCED` 
+:code:`ENFORCED`
    The provided certificate will be verified and the connection will be established irrespective of the verification result. If verification fails the name of the server will be logged.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.properties STRING ALL
@@ -3494,7 +3514,7 @@ Client-Related Configuration
 
    :0: Server Certificate will not be verified
    :1: Certificate will be verified and the connection will not be established if verification fail
-   :2: The provided certificate will be verified and the connection will be established 
+   :2: The provided certificate will be verified and the connection will be established
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
    :reloadable:
@@ -3930,7 +3950,7 @@ Sockets
 
         Reduce the number of worker threads (net-threads)
         Reduce the number of disk (AIO) threads
-	Make sure accept threads are enabled
+   Make sure accept threads are enabled
 
    The relevant configurations for this are::
 
