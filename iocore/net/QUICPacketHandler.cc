@@ -260,15 +260,6 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       return;
     }
 
-    QUICConfig::scoped_config params;
-    if (params->stateless_retry()) {
-      int ret = this->_stateless_retry(buf, buf_len, udp_packet->getConnection(), udp_packet->from, dcid, scid);
-      if (ret < 0) {
-        udp_packet->free();
-        return;
-      }
-    }
-
     if (dcid == QUICConnectionId::ZERO()) {
       // TODO: lookup DCID by 5-tuple when ATS omits SCID
       return;
@@ -284,6 +275,16 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
   QUICConnection *qc     = this->_ctable->lookup(dcid);
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(qc);
+
+  // Server Stateless Retry
+  QUICConfig::scoped_config params;
+  if (!vc && params->stateless_retry()) {
+    int ret = this->_stateless_retry(buf, buf_len, udp_packet->getConnection(), udp_packet->from, dcid, scid);
+    if (ret < 0) {
+      udp_packet->free();
+      return;
+    }
+  }
 
   // [draft-12] 6.1.2.  Server Packet Handling
   // Servers MUST drop incoming packets under all other circumstances. They SHOULD send a Stateless Reset (Section 6.10.4) if a
