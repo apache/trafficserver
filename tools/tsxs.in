@@ -128,6 +128,8 @@ compile() {
 
 case $host in
 *-*-darwin*)
+        LDFLAGS="$LDFLAGS @OPENSSL_LDFLAGS@"
+        CPPFLAGS="$CPPFLAGS"
         PICFLAGS="-fPIC"
         MODULELD="$CC -bundle -flat_namespace -undefined suppress"
         MODULELDXX="$CXX -bundle -flat_namespace -undefined suppress"
