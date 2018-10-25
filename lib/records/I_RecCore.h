@@ -23,13 +23,15 @@
 
 #pragma once
 
+#include <functional>
+
 #include "tscore/Diags.h"
 
 #include "I_RecDefs.h"
 #include "I_RecAlarms.h"
 #include "I_RecSignals.h"
 #include "I_RecEvents.h"
-#include <functional>
+#include "tscpp/util/MemSpan.h"
 
 struct RecRecord;
 
@@ -305,5 +307,5 @@ RecErrT RecSetSyncRequired(char *name, bool lock = true);
 //------------------------------------------------------------------------
 // Manager Callback
 //------------------------------------------------------------------------
-typedef void *(*RecManagerCb)(void *opaque_cb_data, char *data_raw, int data_len);
-int RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data = nullptr);
+using RecManagerCb = std::function<void(ts::MemSpan)>;
+int RecRegisterManagerCb(int _signal, RecManagerCb const &_fn);

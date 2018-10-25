@@ -23,14 +23,17 @@
 
 #pragma once
 
+#include <list>
+#include <queue>
+#include <mutex>
+#include <unordered_map>
+
 #include "tscore/ink_thread.h"
 #include "tscore/ink_mutex.h"
-#include "tscore/ink_llqueue.h"
+#include "tscpp/util/MemSpan.h"
 
 #include "MgmtDefs.h"
 #include "MgmtMarshall.h"
-
-#include <unordered_map>
 
 /*
  * MgmtEvent defines.
@@ -88,30 +91,61 @@
 
 #define MGMT_SIGNAL_SAC_SERVER_DOWN 400
 
-typedef struct _mgmt_message_hdr_type {
+struct MgmtMessageHdr {
   int msg_id;
   int data_len;
-} MgmtMessageHdr;
-
-typedef struct _mgmt_event_callback_list {
-  MgmtCallback func;
-  void *opaque_data;
-  struct _mgmt_event_callback_list *next;
-} MgmtCallbackList;
+  ts::MemSpan
+  payload()
+  {
+    return {reinterpret_cast<char *>(this) + sizeof(*this), data_len};
+  }
+};
 
 class BaseManager
 {
+  using MgmtCallbackList = std::list<MgmtCallback>;
+
 public:
   BaseManager();
+
   ~BaseManager();
 
-  int registerMgmtCallback(int msg_id, MgmtCallback func, void *opaque_callback_data = nullptr);
+  /** Associate a callback function @a func with message identifier @a msg_id.
+   *
+   * @param msg_id Message identifier for the callback.
+   * @param func The callback function.
+   * @return @a msg_id on success, -1 on failure.
+   *
+   * @a msg_id should be one of the @c MGMT_EVENT_... values.
+   *
+   * If a management message with @a msg is received, the callbacks for that message id
+   * are invoked and passed the message payload (not including the header).
+   */
+  int registerMgmtCallback(int msg_id, MgmtCallback const &func);
 
-  LLQ *mgmt_event_queue;
-  std::unordered_map<int, MgmtCallbackList *> mgmt_callback_table;
+  /// Add a @a msg to the queue.
+  /// This must be the entire message as read off the wire including the header.
+  void enqueue(MgmtMessageHdr *msg);
+
+  /// Current size of the queue.
+  /// @note This does not block on the semaphore.
+  bool queue_empty();
+
+  /// Dequeue a msg.
+  /// This waits on the semaphore for a message to arrive.
+  MgmtMessageHdr *dequeue();
 
 protected:
-  void executeMgmtCallback(int msg_id, char *data_raw, int data_len);
+  void executeMgmtCallback(int msg_id, ts::MemSpan span);
 
-private:
-}; /* End class BaseManager */
+  /// The mapping from an event type to a list of callbacks to invoke.
+  std::unordered_map<int, MgmtCallbackList> mgmt_callback_table;
+
+  /// Message queue.
+  // These holds the entire message object, including the header.
+  std::queue<MgmtMessageHdr *> queue;
+  /// Locked access to the queue.
+  std::mutex q_mutex;
+  /// Semaphore to signal queue state.
+  ink_semaphore q_sem;
+};

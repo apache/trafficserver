@@ -31,6 +31,7 @@
 #include "records/P_RecProcess.h"
 #include "ProxyConfig.h"
 #include "LogObject.h"
+#include "tscpp/util/MemSpan.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -210,7 +211,7 @@ public:
   void read_configuration_variables();
 
   // CVR This is the mgmt callback function, hence all the strange arguments
-  static void *reconfigure_mgmt_variables(void *token, char *data_raw, int data_len);
+  static void reconfigure_mgmt_variables(ts::MemSpan);
 
   int
   get_max_space_mb() const

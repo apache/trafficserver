@@ -231,7 +231,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, nullptr);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, &RecMessageRecvThis);
   message_initialized_p = true;
 }
 
@@ -300,9 +300,9 @@ RecSignalManager(int id, const char *msg, size_t msgsize)
 }
 
 int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
+RecRegisterManagerCb(int _signal, RecManagerCb const &_fn)
 {
-  return pmgmt->registerMgmtCallback(_signal, _fn, _data);
+  return pmgmt->registerMgmtCallback(_signal, _fn);
 }
 
 //-------------------------------------------------------------------------

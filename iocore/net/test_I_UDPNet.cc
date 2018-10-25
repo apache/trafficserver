@@ -362,7 +362,7 @@ StatPagesManager statPagesManager;
 inkcoreapi ProcessManager *pmgmt = nullptr;
 
 int
-BaseManager::registerMgmtCallback(int, MgmtCallback, void *)
+BaseManager::registerMgmtCallback(int, MgmtCallback const &)
 {
   ink_assert(false);
   return 0;

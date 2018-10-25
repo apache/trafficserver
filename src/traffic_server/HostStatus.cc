@@ -37,16 +37,18 @@ getStatName(std::string &stat_name, const char *name, const char *reason)
   }
 }
 
-static void *
-mgmt_host_status_up_callback(void *x, char *data, int len)
+static void
+mgmt_host_status_up_callback(ts::MemSpan span)
 {
   MgmtInt op;
   MgmtMarshallString name;
   MgmtMarshallInt down_time;
   MgmtMarshallString reason;
   std::string reason_stat;
+  char *data                             = static_cast<char *>(span.data());
+  auto len                               = span.size();
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
-  Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
+  Debug("host_statuses", "%s:%s:%d - data: %s, len: %ld\n", __FILE__, __func__, __LINE__, data, len);
 
   if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason, &down_time) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
@@ -61,19 +63,20 @@ mgmt_host_status_up_callback(void *x, char *data, int len)
     }
     hs.setHostStatus(name, HostStatus_t::HOST_STATUS_UP, down_time, reason);
   }
-  return nullptr;
 }
 
-static void *
-mgmt_host_status_down_callback(void *x, char *data, int len)
+static void
+mgmt_host_status_down_callback(ts::MemSpan span)
 {
   MgmtInt op;
   MgmtMarshallString name;
   MgmtMarshallInt down_time;
   MgmtMarshallString reason;
   std::string reason_stat;
+  char *data                             = static_cast<char *>(span.data());
+  auto len                               = span.size();
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
-  Debug("host_statuses", "%s:%s:%d - data: %s, len: %d\n", __FILE__, __func__, __LINE__, data, len);
+  Debug("host_statuses", "%s:%s:%d - data: %s, len: %ld\n", __FILE__, __func__, __LINE__, data, len);
 
   if (mgmt_message_parse(data, len, fields, countof(fields), &op, &name, &reason, &down_time) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
@@ -89,15 +92,14 @@ mgmt_host_status_down_callback(void *x, char *data, int len)
     }
     hs.setHostStatus(name, HostStatus_t::HOST_STATUS_DOWN, down_time, reason);
   }
-  return nullptr;
 }
 
 HostStatus::HostStatus()
 {
   ink_rwlock_init(&host_status_rwlock);
   ink_rwlock_init(&host_statids_rwlock);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, mgmt_host_status_up_callback, nullptr);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, mgmt_host_status_down_callback, nullptr);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
   host_status_rsb = RecAllocateRawStatBlock((int)TS_MAX_API_STATS);
 }
 

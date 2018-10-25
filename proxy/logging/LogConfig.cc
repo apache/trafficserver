@@ -109,13 +109,10 @@ LogConfig::setup_default_values()
   max_line_size     = 9216; // size of pipe buffer for SunOS 5.6
 }
 
-void *
-LogConfig::reconfigure_mgmt_variables(void * /* token ATS_UNUSED */, char * /* data_raw ATS_UNUSED */,
-                                      int /* data_len ATS_UNUSED */)
+void LogConfig::reconfigure_mgmt_variables(ts::MemSpan)
 {
   Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;
-  return nullptr;
 }
 
 void
@@ -668,7 +665,7 @@ LogConfig::register_stat_callbacks()
 void
 LogConfig::register_mgmt_callbacks()
 {
-  RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables, nullptr);
+  RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables);
 }
 
 /*-------------------------------------------------------------------------
