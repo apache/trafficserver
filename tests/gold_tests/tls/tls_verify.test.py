@@ -114,6 +114,7 @@ tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Varia
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("Override-enforcing-Test")
@@ -122,6 +123,7 @@ tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5
 tr2.StillRunningAfter = ts
+tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.TimeOut = 5
 
 tr3 = Test.AddTestRun("Override-enforcing-Test-fail-name-check")

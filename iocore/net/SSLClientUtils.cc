@@ -87,6 +87,11 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
       return enforce_mode ? signature_ok : 1;
     }
   }
+  // Don't check names and other things unless this is the terminal cert
+  if (depth != 0) {
+    // Not server cert....
+    return signature_ok;
+  }
 
   bool check_name =
     static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
