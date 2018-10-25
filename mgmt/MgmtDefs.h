@@ -30,6 +30,7 @@
 #include <string_view>
 
 #include "tscore/ink_defs.h"
+#include "tscpp/util/MemSpan.h"
 
 typedef int64_t MgmtIntCounter;
 typedef int64_t MgmtInt;
@@ -37,20 +38,19 @@ typedef int8_t MgmtByte;
 typedef float MgmtFloat;
 typedef char *MgmtString;
 
-typedef enum {
+enum MgmtType {
   MGMT_INVALID  = -1,
   MGMT_INT      = 0,
   MGMT_FLOAT    = 1,
   MGMT_STRING   = 2,
   MGMT_COUNTER  = 3,
   MGMT_TYPE_MAX = 4,
-} MgmtType;
+};
 
-/*
- * MgmtCallback
- *   Management Callback functions.
- */
-using MgmtCallback = void *(*)(void *opaque_cb_data, char *data_raw, int data_len);
+/// Management callback signature.
+/// The memory span is the message payload for the callback.
+/// This can be a lambda, which should be used if additional context information is needed.
+using MgmtCallback = std::function<void(ts::MemSpan)>;
 
 //-------------------------------------------------------------------------
 // API conversion functions.
@@ -142,4 +142,4 @@ inline MgmtConverter::MgmtConverter(MgmtInt (*_load_int)(void *), void (*_store_
 {
 }
 
-#define LM_CONNECTION_SERVER "processerver.sock"
+constexpr std::string_view LM_CONNECTION_SERVER{"processerver.sock"};

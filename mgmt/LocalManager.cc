@@ -579,9 +579,9 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   }
   case MGMT_SIGNAL_LIBRECORDS:
     if (mh->data_len > 0) {
-      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, data_raw, mh->data_len);
+      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, {data_raw, mh->data_len});
     } else {
-      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, nullptr, 0);
+      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, {});
     }
     break;
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
@@ -755,12 +755,15 @@ void
 LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 {
   MgmtMessageHdr *mh;
+  size_t n = sizeof(MgmtMessageHdr) + data_len;
 
-  mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
+  mh           = static_cast<MgmtMessageHdr *>(ats_malloc(n));
   mh->msg_id   = msg_id;
   mh->data_len = data_len;
-  memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
-  ink_assert(enqueue(mgmt_event_queue, mh));
+  auto payload = mh->payload();
+  memcpy(payload.data(), data_raw, data_len);
+  this->enqueue(mh);
+  //  ink_assert(enqueue(mgmt_event_queue, mh));
 
 #if HAVE_EVENTFD
   // we don't care about the actual value of wakeup_fd, so just keep adding 1. just need to
@@ -788,16 +791,16 @@ LocalManager::processEventQueue()
 {
   bool handled_by_mgmt;
 
-  while (!queue_is_empty(mgmt_event_queue)) {
+  while (!this->queue_empty()) {
     handled_by_mgmt = false;
 
-    MgmtMessageHdr *mh = (MgmtMessageHdr *)dequeue(mgmt_event_queue);
-    char *data_raw     = (char *)mh + sizeof(MgmtMessageHdr);
+    MgmtMessageHdr *mh = this->dequeue();
+    auto payload       = mh->payload();
 
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE || mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION) {
       // records.config
-      if (!(strcmp(data_raw, REC_CONFIG_FILE))) {
+      if (!(strcmp(payload.begin(), REC_CONFIG_FILE))) {
         bool incVersion = mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE;
         if (RecReadConfigFile(incVersion) != REC_ERR_OKAY) {
           mgmt_elog(errno, "[fileUpdated] Config update failed for records.config\n");
@@ -813,10 +816,10 @@ LocalManager::processEventQueue()
         // Fix INKqa04984
         // If traffic server hasn't completely come up yet,
         // we will hold off until next round.
-        ink_assert(enqueue(mgmt_event_queue, mh));
+        this->enqueue(mh);
         return;
       }
-      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' %s payload=%d", mh->msg_id, data_raw, mh->data_len);
+      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' %s payload=%d", mh->msg_id, payload.begin(), int(payload.size()));
       lmgmt->sendMgmtMsgToProcesses(mh);
     }
     ats_free(mh);

@@ -122,7 +122,7 @@ ProcessManager::stop()
   poll_thread = ink_thread_null();
 
   while (!queue_is_empty(mgmt_signal_queue)) {
-    char *sig = (char *)dequeue(mgmt_signal_queue);
+    char *sig = (char *)::dequeue(mgmt_signal_queue);
     ats_free(sig);
   }
 
@@ -244,7 +244,7 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
   mh->data_len = data_len;
   memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
 
-  ink_release_assert(enqueue(mgmt_signal_queue, mh));
+  ink_release_assert(::enqueue(mgmt_signal_queue, mh));
 
 #if HAVE_EVENTFD
   // we don't care about the actual value of wakeup_fd, so just keep adding 1. just need to
@@ -265,7 +265,7 @@ int
 ProcessManager::processSignalQueue()
 {
   while (!queue_is_empty(mgmt_signal_queue)) {
-    MgmtMessageHdr *mh = (MgmtMessageHdr *)dequeue(mgmt_signal_queue);
+    MgmtMessageHdr *mh = (MgmtMessageHdr *)::dequeue(mgmt_signal_queue);
 
     Debug("pmgmt", "signaling local manager with message ID %d", mh->msg_id);
 
@@ -414,35 +414,35 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
 {
   ink_assert(mh != nullptr);
 
-  char *data_raw = (char *)mh + sizeof(MgmtMessageHdr);
+  auto payload = mh->payload();
 
   Debug("pmgmt", "processing event id '%d' payload=%d", mh->msg_id, mh->data_len);
   switch (mh->msg_id) {
   case MGMT_EVENT_SHUTDOWN:
-    executeMgmtCallback(MGMT_EVENT_SHUTDOWN, nullptr, 0);
+    executeMgmtCallback(MGMT_EVENT_SHUTDOWN, {});
     Alert("exiting on shutdown message");
     break;
   case MGMT_EVENT_RESTART:
-    executeMgmtCallback(MGMT_EVENT_RESTART, nullptr, 0);
+    executeMgmtCallback(MGMT_EVENT_RESTART, {});
     break;
   case MGMT_EVENT_DRAIN:
-    executeMgmtCallback(MGMT_EVENT_DRAIN, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_DRAIN, payload);
     break;
   case MGMT_EVENT_CLEAR_STATS:
-    executeMgmtCallback(MGMT_EVENT_CLEAR_STATS, nullptr, 0);
+    executeMgmtCallback(MGMT_EVENT_CLEAR_STATS, {});
     break;
   case MGMT_EVENT_HOST_STATUS_UP:
-    executeMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, payload);
     break;
   case MGMT_EVENT_HOST_STATUS_DOWN:
-    executeMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, payload);
     break;
   case MGMT_EVENT_ROLL_LOG_FILES:
-    executeMgmtCallback(MGMT_EVENT_ROLL_LOG_FILES, nullptr, 0);
+    executeMgmtCallback(MGMT_EVENT_ROLL_LOG_FILES, {});
     break;
   case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
-    if (data_raw != nullptr && data_raw[0] != '\0' && this->cbtable) {
-      this->cbtable->invoke(data_raw);
+    if (!payload.empty() && payload.at<char>(0) != '\0' && this->cbtable) {
+      this->cbtable->invoke(static_cast<char const *>(payload.data()));
     }
     break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
@@ -463,13 +463,13 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
     */
     break;
   case MGMT_EVENT_LIBRECORDS:
-    executeMgmtCallback(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_LIBRECORDS, payload);
     break;
   case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
-    executeMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, payload);
     break;
   case MGMT_EVENT_LIFECYCLE_MESSAGE:
-    executeMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, data_raw, mh->data_len);
+    executeMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, payload);
     break;
   default:
     Warning("received unknown message ID %d\n", mh->msg_id);
