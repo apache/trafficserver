@@ -1,0 +1,4 @@
+Global: event=TS_EVENT_VCONN_START
+Global: ssl flag=1
+Global: event=TS_EVENT_VCONN_CLOSE
+Global: ssl flag=1

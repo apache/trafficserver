@@ -113,6 +113,11 @@ transaction hooks::
             TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
             TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
             return 0;
+        case TS_EVENT_HTTP_READ_REQUEST_HDR:
+            txnp = (TSHttpTxn) edata;
+            // ...
+            TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+            return 0;
         default:
              break;
         }
@@ -127,6 +132,9 @@ transaction hooks::
         contp = TSContCreate(handler, NULL);
         TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
     }
+
+For more example code using hooks, see the test_hooks plugin in tests/tools/plugins (used by the test_hooks.test.py
+Gold test).
 
 See Also
 ========

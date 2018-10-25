@@ -44,6 +44,8 @@ char PIName[] = PINAME;
 //
 std::fstream logFile;
 
+TSVConn activeVConn;
+
 TSHttpSsn activeSsn;
 
 TSHttpTxn activeTxn;
@@ -167,6 +169,41 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
   TSDebug(PIName, "Global: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
 
   switch (event) {
+  case TS_EVENT_VCONN_START: {
+    ALWAYS_ASSERT(!activeVConn)
+
+    auto vConn = static_cast<TSVConn>(eventData);
+
+    activeVConn = vConn;
+
+    logFile << "Global: ssl flag=" << TSVConnIsSsl(vConn) << std::endl;
+
+    TSVConnReenable(vConn);
+  } break;
+
+  case TS_EVENT_SSL_CERT:
+  case TS_EVENT_SSL_SERVERNAME: {
+    auto vConn = static_cast<TSVConn>(eventData);
+
+    ALWAYS_ASSERT(vConn == activeVConn)
+
+    logFile << "Global: ssl flag=" << TSVConnIsSsl(vConn) << std::endl;
+
+    TSVConnReenable(vConn);
+  } break;
+
+  case TS_EVENT_VCONN_CLOSE: {
+    auto vConn = static_cast<TSVConn>(eventData);
+
+    ALWAYS_ASSERT(vConn == activeVConn)
+
+    logFile << "Global: ssl flag=" << TSVConnIsSsl(vConn) << std::endl;
+
+    TSVConnReenable(vConn);
+
+    activeVConn = nullptr;
+  } break;
+
   case TS_EVENT_HTTP_SSN_START: {
     ALWAYS_ASSERT(!activeSsn)
 
@@ -288,6 +325,22 @@ TSPluginInit(int argc, const char *argv[])
   TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, gCont);
   TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, gCont);
   TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, gCont);
+  TSHttpHookAdd(TS_SSL_CERT_HOOK, gCont);
+  TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, gCont);
+
+  // NOTE: as of January 2019 these two hooks are only triggered for TLS connections.  It seems that, at trafficserver
+  // startup, spurious data on the TLS TCP port may cause trafficserver to attempt (and fail) to create a TLS
+  // connection.  If this happens, it will result in TS_VCONN_START_HOOK being triggered, and then TS_VCONN_CLOSE_HOOK
+  // will be triggered when the connection closes due to failure.
+  //
+  TSHttpHookAdd(TS_VCONN_START_HOOK, gCont);
+  TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, gCont);
+
+  // TSHttpHookAdd(TS_SSL_SESSION_HOOK, gCont); -- Event is TS_EVENT_SSL_SESSION_NEW -- Event data is TSHttpSsn
+  // TSHttpHookAdd(TS_SSL_SERVER_VERIFY_HOOK, gCont);
+  // TSHttpHookAdd(TS_SSL_VERIFY_CLIENT_HOOK, gCont);
+  // TSHttpHookAdd(TS_VCONN_OUTBOUND_START_HOOK, gCont);
+  // TSHttpHookAdd(TS_VCONN_OUTBOUND_CLOSE_HOOK, gCont);
 
   sCont = TSContCreate(sessionContFunc, mtx);
 
