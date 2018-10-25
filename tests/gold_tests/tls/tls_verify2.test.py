@@ -110,7 +110,6 @@ tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
 tr.Processes.Default.Command = "curl -k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(server)
@@ -118,6 +117,7 @@ tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Varia
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("override-disabled")
@@ -126,6 +126,7 @@ tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5
 tr2.StillRunningAfter = ts
+tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.TimeOut = 5
 
 tr3 = Test.AddTestRun("override-permissive")
@@ -134,6 +135,7 @@ tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
 tr3.Processes.Default.TimeOut = 5
+tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr4 = Test.AddTestRun("override-permissive-bad-name")
 tr4.Processes.Default.Command = "curl -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
@@ -141,8 +143,9 @@ tr4.ReturnCode = 0
 tr4.StillRunningAfter = server
 tr4.StillRunningAfter = ts
 tr4.Processes.Default.TimeOut = 5
+tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
-tr5 = Test.AddTestRun("override-permissive-bad-sig")
+tr5 = Test.AddTestRun("default-enforce-bad-sig")
 tr5.Processes.Default.Command = "curl -k -H \"host: random2.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr5.ReturnCode = 0
 tr5.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
@@ -162,6 +165,7 @@ tr6.Processes.Default.TimeOut = 5
 # Over riding the built in ERROR check since we expect tr4 and tr7 to fail
 # No name checking for the sig-only permissive override for bad_bar
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
+ts.Disk.diags_log.Content = Testers.ExcludesExpression("WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped.")
 # No checking for the self-signed on random.com.  No messages
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("ERROR: SSL connection failed for 'random.com'", "random.com should not fail")
