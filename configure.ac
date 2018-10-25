@@ -2035,6 +2035,7 @@ AC_CONFIG_FILES([
   lib/tsconfig/Makefile
   src/wccp/Makefile
   lib/yamlcpp/Makefile
+  lib/swoc++/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile

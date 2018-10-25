@@ -107,6 +107,9 @@ CPP_LIB(records lib/records lib/records)
 
 CPP_LIB(tsconfig lib/tsconfig lib/tsconfig)
 CPP_LIB(wccp src/wccp include/wccp)
+CPP_LIB(swoc++ lib/swoc++/src lib/swoc++/include/swoc)
+CPP_LIB(yamlcpp lib/yamlcpp/src lib/yamlcpp/include/yaml-cpp)
+set_target_properties(yamlcpp PROPERTIES LINKER_LANGUAGE CXX)
 
 file(GLOB plugin_files
         plugins/*/*.h
