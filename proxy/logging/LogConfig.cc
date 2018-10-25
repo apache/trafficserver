@@ -768,9 +768,6 @@ LogConfig::update_space_used()
   total_space_used = 0LL;
   candidate_count  = 0;
 
-  for (auto it = deleting_info.begin(); it != deleting_info.end(); it++) {
-    Debug("%s", it->name.c_str());
-  }
   while ((entry = readdir(ld))) {
     snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry->d_name);
 
