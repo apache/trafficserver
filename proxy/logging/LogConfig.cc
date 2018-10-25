@@ -851,9 +851,7 @@ LogConfig::update_space_used()
       // Select the group with biggest ratio
       auto target =
         std::max_element(deleting_info.begin(), deleting_info.end(), [](LogDeletingInfo const &A, LogDeletingInfo const &B) {
-          double diff =
-            static_cast<double>(A.candidates.size()) / A.min_count - static_cast<double>(B.candidates.size()) / B.min_count;
-          return diff < 0.0;
+          return static_cast<double>(A.candidates.size()) / A.min_count < static_cast<double>(B.candidates.size()) / B.min_count;
         });
 
       auto &candidates = target->candidates;
