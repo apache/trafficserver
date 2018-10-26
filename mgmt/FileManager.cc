@@ -110,7 +110,7 @@ FileManager::addFileHelper(const char *fileName, const char *configName, bool ro
   Rollback *rb    = new Rollback(fileName, configName, root_access_needed, parentRollback, flags);
   rb->configFiles = this;
 
-  bindings.emplace(fileName, rb);
+  bindings.emplace(rb->getFileName(), rb);
 }
 
 // bool FileManager::getRollbackObj(char* fileName, Rollback** rbPtr)
