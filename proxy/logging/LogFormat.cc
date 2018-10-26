@@ -550,6 +550,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         Note("The log format symbol %s was not found in the "
              "list of known symbols.",
              symbol);
+        field_list->addBadSymbol(symbol);
       }
     }
 

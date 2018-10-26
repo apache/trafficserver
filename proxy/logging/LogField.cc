@@ -716,6 +716,7 @@ LogFieldList::clear()
     delete f; // safe given the semantics stated above
   }
   m_marshal_len = 0;
+  _badSymbols.clear();
 }
 
 void
@@ -821,4 +822,13 @@ LogFieldList::display(FILE *fd)
   for (LogField *f = first(); f; f = next(f)) {
     f->display(fd);
   }
+}
+
+void
+LogFieldList::addBadSymbol(std::string_view badSymbol)
+{
+  if (_badSymbols.size() > 0) {
+    _badSymbols += ", ";
+  }
+  _badSymbols += badSymbol;
 }
