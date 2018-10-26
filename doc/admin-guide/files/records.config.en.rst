@@ -702,13 +702,13 @@ mptcp
 
 .. topic:: Example
 
-   Listen on port 9090 for TSL enabled HTTP/2 or HTTP connections, accept no other session protocols.::
+   Listen on port 9090 for TLS enabled HTTP/2 or HTTP connections, accept no other session protocols.::
 
       9090:proto=http2;http:ssl
 
 .. topic:: Example
 
-   Listen on port 9090 for TSL disabled HTTP/2 and enabled HTTP connections, accept no other session protocols.::
+   Listen on port 9090 for TLS disabled HTTP/2 and enabled HTTP connections, accept no other session protocols.::
 
       9090:proto=http:ssl
 
