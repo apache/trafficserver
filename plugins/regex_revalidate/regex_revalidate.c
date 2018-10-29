@@ -41,8 +41,8 @@
 #endif
 
 #define LOG_PREFIX "regex_revalidate"
-#define CONFIG_TMOUT 60000
-#define FREE_TMOUT 300000
+#define CONFIG_TMOUT 60000 // ms, 60s
+#define FREE_TMOUT 300000  // ms, 300s
 #define OVECTOR_SIZE 30
 #define LOG_ROLL_INTERVAL 86400
 #define LOG_ROLL_OFFSET 0
@@ -80,6 +80,7 @@ typedef struct {
   char *config_file;
   time_t last_load;
   TSTextLogObject log;
+  TSCont config_cont;
 } plugin_state_t;
 
 static invalidate_t *
@@ -116,10 +117,11 @@ free_invalidate_t(invalidate_t *i)
 static void
 free_invalidate_t_list(invalidate_t *i)
 {
-  if (i->next) {
-    free_invalidate_t_list(i->next);
+  while (i) {
+    invalidate_t *const next = i->next;
+    free_invalidate_t(i);
+    i = next;
   }
-  free_invalidate_t(i);
 }
 
 static plugin_state_t *
@@ -363,30 +365,39 @@ config_handler(TSCont cont, TSEvent event, void *edata)
 
   TSDebug(LOG_PREFIX, "In config Handler");
   pstate = (plugin_state_t *)TSContDataGet(cont);
-  i      = copy_config(pstate->invalidate_list);
 
-  updated = prune_config(&i);
-  updated = load_config(pstate, &i) || updated;
+  // pstate may have nulled the config_cont's handle
+  if (NULL != pstate) {
+    i = copy_config(pstate->invalidate_list);
 
-  if (updated) {
-    list_config(pstate, i);
-    iptr = __sync_val_compare_and_swap(&(pstate->invalidate_list), pstate->invalidate_list, i);
+    updated = prune_config(&i);
+    updated = load_config(pstate, &i) || updated;
 
-    if (iptr) {
-      free_cont = TSContCreate(free_handler, TSMutexCreate());
-      TSContDataSet(free_cont, (void *)iptr);
-      TSContSchedule(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
-    }
-  } else {
-    TSDebug(LOG_PREFIX, "No Changes");
-    if (i) {
-      free_invalidate_t_list(i);
+    if (updated) {
+      list_config(pstate, i);
+      iptr = __sync_val_compare_and_swap(&(pstate->invalidate_list), pstate->invalidate_list, i);
+
+      if (iptr) {
+        free_cont = TSContCreate(free_handler, TSMutexCreate());
+        TSContDataSet(free_cont, (void *)iptr);
+        TSContSchedule(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
+      }
+    } else {
+      TSDebug(LOG_PREFIX, "No Changes");
+      if (i) {
+        free_invalidate_t_list(i);
+      }
     }
   }
 
   TSMutexUnlock(mutex);
 
-  TSContSchedule(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+  if (NULL != pstate) {
+    TSContSchedule(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+  } else {
+    TSDebug(LOG_PREFIX, "config_cont exiting");
+    TSContDestroy(cont);
+  }
   return 0;
 }
 
@@ -452,6 +463,9 @@ main_handler(TSCont cont, TSEvent event, void *edata)
       }
     }
     break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    TSContDestroy(cont);
+    break;
   default:
     break;
   }
@@ -467,7 +481,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   main_cont = TSContCreate(main_handler, NULL);
   TSContDataSet(main_cont, ih);
-  TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, main_cont);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, main_cont);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, main_cont);
 
   return TSREMAP_NO_REMAP;
 }
@@ -539,7 +554,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   *ih = (void *)pstate;
 
-  config_cont = TSContCreate(config_handler, TSMutexCreate());
+  config_cont         = TSContCreate(config_handler, TSMutexCreate());
+  pstate->config_cont = config_cont;
   TSContDataSet(config_cont, (void *)pstate);
 
   TSMgmtUpdateRegister(config_cont, LOG_PREFIX);
@@ -558,6 +574,17 @@ TSRemapDeleteInstance(void *ih)
 {
   if (NULL != ih) {
     plugin_state_t *const pstate = (plugin_state_t *)ih;
+
+    // signal the config to quit by nulling out its pstate
+    TSCont const config_cont = pstate->config_cont;
+    if (NULL != config_cont) {
+      TSMutex mutex;
+      mutex = TSContMutexGet(config_cont);
+      TSMutexLock(mutex);
+      TSContDataSet(config_cont, NULL);
+      TSMutexUnlock(mutex);
+    }
+
     free_plugin_state_t(pstate);
   }
 }
@@ -640,7 +667,8 @@ TSPluginInit(int argc, const char *argv[])
   TSContDataSet(main_cont, (void *)pstate);
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, main_cont);
 
-  config_cont = TSContCreate(config_handler, TSMutexCreate());
+  config_cont         = TSContCreate(config_handler, TSMutexCreate());
+  pstate->config_cont = config_cont;
   TSContDataSet(config_cont, (void *)pstate);
 
   TSMgmtUpdateRegister(config_cont, LOG_PREFIX);
