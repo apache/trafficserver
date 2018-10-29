@@ -63,6 +63,7 @@ parse_jwt(json_t *raw)
   jwt->cdniv      = parse_integer_default(json_object_get(raw, "cdniv"), 1);
   jwt->cdniets    = json_integer_value(json_object_get(raw, "cdniets"));
   jwt->cdnistt    = json_integer_value(json_object_get(raw, "cdnistt"));
+  jwt->cdnicrit   = json_string_value(json_object_get(raw, "cdnicrit"));
   return jwt;
 }
 
@@ -133,6 +134,11 @@ jwt_validate(struct jwt *jwt)
 
   if (!unsupported_string_claim(jwt->jti)) {
     PluginDebug("Initial JWT Failure: nonse unsupported");
+    return false;
+  }
+
+  if (!unsupported_string_claim(jwt->cdnicrit)) {
+    PluginDebug("Initial JWT Failure: cdnicrit unsupported");
     return false;
   }
 
