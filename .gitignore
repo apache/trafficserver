@@ -122,6 +122,7 @@ plugins/esi/vars_test
 plugins/experimental/slice/test_config
 plugins/experimental/slice/test_content_range
 plugins/experimental/slice/test_range
+plugins/experimental/uri_signing/test_uri_signing
 
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop

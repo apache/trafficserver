@@ -1,8 +1,7 @@
 URI Signing Plugin
 ==================
 
-This remap plugin implements the draft URI Signing protocol documented here:
-https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-12 .
+This remap plugin implements the draft URI Signing protocol documented [here](https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-16):
 
 It takes a single argument: the name of a config file that contains key information.
 
@@ -16,6 +15,8 @@ this plugin gets the URI.
 
 Config
 ------
+
+### Keys
 
 The config file should be a JSON object that maps issuer names to JWK-sets.
 Exactly one of these JWK-sets must have an additional member indicating the
@@ -75,6 +76,33 @@ It's worth noting that multiple issuers can provide `auth_directives`.
 Each issuer will be processed in order and any issuer can provide access to
 a path.
 
+### More Configuration Options
+
+**Strip Token**
+When the strip_token parameter is set to true, the plugin removes the
+token from both the url that is sent upstream to the origin and the url that
+is used as the cache key. The strip_token parameter defaults to false and should
+be set by only one issuer.
+**ID**
+The id field takes a string indicating the identification of the entity processing the request.
+This is used in aud claim checks to ensure that the receiver is the intended audience of a
+tokenized request. The id parameter can only be set by one issuer.
+
+Example:
+
+    {
+      "Kabletown URI Authority": {
+        "renewal_kid": "Second Key",
+        "strip_token" : true,
+        "id" : "mycdn",
+        "auth_directives": [
+          ⋮
+        ]
+        "keys": [
+          ⋮
+        ]
+    }
+
 Usage
 -----
 
@@ -85,31 +113,34 @@ will receive a 403 Forbidden response, instead of receiving content.
 Tokens will be found in either of these places:
 
   - A query parameter named `URISigningPackage`. The value must be the JWT.
+  - A path parameter named `URISigningPackage`. The value must be the JWT.
   - A cookie named `URISigningPackage`. The value of the cookie must be the JWT.
-
-Path parameters will not be searched for JWTs.
 
 ### Supported Claims
 
 The following claims are understood:
 
   - `iss`: Must be present. The issuer is used to locate the key for verification.
-  - `sub`: Validated last, after key verification. **Only `uri-regex` is supported!**
+  - `sub`: May be present, but is not validated.
   - `exp`: Expired tokens are not valid.
+  - `nbf`: Tokens processed before this time are not valid.
+  - `aud`: Token aud claim strings must match the configured id to be considered valid.
   - `iat`: May be present, but is not validated.
   - `cdniv`: Must be missing or 1.
-  - `cdnistt`: If present, must be 1.
+  - `cdniuc`: Validated last, after key verificationD. **Only `regex` is supported!**
   - `cdniets`: If cdnistt is 1, this must be present and non-zero.
+  - `cdnistt`: If present, must be 1.
+  - `cdnistd`: If present, must be 0.
 
 ### Unsupported Claims
 
 These claims are not supported. If they are present, the token will not validate:
 
-  - `aud`
-  - `nbf`
   - `jti`
+  - `cdnicrit`
+  - `cdniip`
 
-In addition, the `sub` containers of `uri`, `uri-pattern`, and `uri-hash` are
+In addition, the `cdniuc` container of `hash` is
 **not supported**.
 
 ### Token Renewal
@@ -147,6 +178,9 @@ This builds in-tree with the rest of the ATS plugins. Of special note, however,
 are the first two libraries: cjose and jansson. These libraries are not
 currently used anywhere else, so they may not be installed.
 
+Note that the default prefix value for cjose is /usr/local. Ensure this is visible to
+any executables that are being run using this library.
+
 As of this writing, both libraries install a dynamic library and a static
 archive. However, by default, the static archive is not compiled with Position
 Independent Code. The build script will detect this and build a dynamic
@@ -156,3 +190,42 @@ plugin.
 If you would like to statically link them, you will need to ensure that they are
 compiled with the `-fPIC` flag in their CFLAGs. If the archives have PIC, the
 build scripts will automatically statically link them.
+
+Here are some sample commands for building jansson, cjose and trafficserver
+locally using static linking.  This assumes all source is under ${HOME}/git.
+
+### Sample
+
+If using local jansson:
+
+    cd ${HOME}/git
+    git clone https://github.com/akheron/jansson.git
+    cd jansson
+    autoreconf -i
+    ./configure --disable-shared CC="gcc -fpic"
+    make -j`nproc`
+
+    # Needed for ATS configure
+    ln -s src/.libs lib
+    ln -s src include
+
+If using local cjose:
+
+    cd ${HOME}/git
+    git clone https://github.com/cisco/cjose.git
+    cd cjose
+    autoreconf -i
+    ./configure --with-jansson=${HOME}/git/jansson --disable-shared CC="gcc -fpic"
+    make -j`nproc`
+
+    # Needed for ATS configure
+    ln -s src/.libs lib
+
+ATS:
+
+    cd ${HOME}/git/
+    git clone https://github.com/apache/trafficserver.git
+    cd trafficserver
+		autoreconf -i
+    ./configure --enable-experimental-plugins --with-jansson=${HOME}/git/jansson --with-cjose=${HOME}/git/cjose
+    make -j`nproc`
