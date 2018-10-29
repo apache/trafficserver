@@ -218,7 +218,7 @@ runroot_map(const std::string &file)
     YAML::Node yamlfile = YAML::LoadFile(file);
     std::string prefix  = file.substr(0, file.find_last_of("/"));
 
-    for (auto it : yamlfile) {
+    for (const auto &it : yamlfile) {
       // key value pairs of dirs
       std::string value = it.second.as<std::string>();
       if (value[0] != '/') {

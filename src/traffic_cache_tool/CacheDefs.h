@@ -292,7 +292,7 @@ struct url_matcher {
       }
       patterns = (const char **)ats_malloc(count * sizeof(char *));
       int i    = 0;
-      for (auto str : str_vec) {
+      for (const auto &str : str_vec) {
         patterns[i++] = ats_strdup(str.data());
 
         std::cout << "regex input\n" << patterns[i - 1] << std::endl;
