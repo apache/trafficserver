@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "uri_signing.h"
+#include "common.h"
 #include "parse.h"
 #include "config.h"
 #include "jwt.h"
@@ -25,41 +25,68 @@
 #include <cjose/cjose.h>
 #include <jansson.h>
 #include <string.h>
-#include <ts/ts.h>
 #include <inttypes.h>
 
 cjose_jws_t *
-get_jws_from_query(const char *uri, size_t uri_ct, const char *paramName)
+get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *strip_uri, size_t buff_ct, size_t *strip_ct)
 {
-  PluginDebug("Parsing JWS from query string: %.*s", (int)uri_ct, uri);
-  const char *query = uri;
-  const char *end   = uri + uri_ct;
-  while (query != end && *query != '?') {
-    ++query;
-  }
-  if (query == end) {
+  /* Reserved characters as defined by the URI Generic Syntax RFC: https://tools.ietf.org/html/rfc3986#section-2.2 */
+  static char const *const reserved_string  = ":/?#[]@!$&\'()*+,;=";
+  static char const *const sub_delim_string = "!$&\'()*+,;=";
+
+  /* If param name ends in reserved character this will be treated as the termination symbol when parsing for package. Default is
+   * '='. */
+  char termination_symbol;
+  size_t termination_ct;
+  size_t param_ct = strlen(paramName);
+
+  if (param_ct <= 0) {
+    PluginDebug("URI signing package name cannot be empty");
     return NULL;
   }
 
-  ++query;
+  if (strchr(reserved_string, paramName[param_ct - 1])) {
+    termination_symbol = paramName[param_ct - 1];
+    termination_ct     = param_ct - 1;
+  } else {
+    termination_symbol = '=';
+    termination_ct     = param_ct;
+  }
 
-  const char *key   = query, *key_end;
-  const char *value = query, *value_end;
+  PluginDebug("Parsing JWS from query string: %.*s", (int)uri_ct, uri);
+  const char *param = uri;
+  const char *end   = uri + uri_ct;
+  const char *key, *key_end;
+  const char *value, *value_end;
+
   for (;;) {
-    while (value != end && *value != '=') {
-      ++value;
+    /* Search the URI for a reserved character. */
+    while (param != end && strchr(reserved_string, *param) == NULL) {
+      ++param;
+    }
+    if (param == end) {
+      break;
     }
 
+    ++param;
+
+    /* Parse the parameter for a key value pair separated by the termination symbol. */
+    key   = param;
+    value = param;
+    while (value != end && *value != termination_symbol) {
+      ++value;
+    }
     if (value == end) {
       break;
     }
-    key_end   = value;
-    value_end = ++value;
-    while (value_end != end && *value_end != '&') {
-      ++value_end;
-    }
+    key_end = value;
 
-    if (!strncmp(paramName, key, (size_t)(key_end - key))) {
+    /* If the Parameter key is our target parameter name, attempt to import a JWS from the value. */
+    if ((size_t)(key_end - key) == termination_ct && !strncmp(paramName, key, (size_t)(key_end - key))) {
+      value_end = ++value;
+      while (value_end != end && strchr(reserved_string, *value_end) == NULL) {
+        ++value_end;
+      }
       PluginDebug("Decoding JWS: %.*s", (int)(key_end - key), key);
       cjose_err err    = {0};
       cjose_jws_t *jws = cjose_jws_import(value, (size_t)(value_end - value), &err);
@@ -67,15 +94,32 @@ get_jws_from_query(const char *uri, size_t uri_ct, const char *paramName)
         PluginDebug("Unable to read JWS: %.*s, %s", (int)(key_end - key), key, err.message ? err.message : "");
       } else {
         PluginDebug("Parsed JWS: %.*s (%16p)", (int)(key_end - key), key, jws);
+
+        /* Strip token */
+        /* Check that passed buffer is large enough */
+        *strip_ct = ((key - uri) + (end - value_end));
+        if (buff_ct <= *strip_ct) {
+          PluginDebug("Strip URI buffer is not large enough");
+          return NULL;
+        }
+
+        if (value_end != end && strchr(sub_delim_string, *value_end)) {
+          /*Strip from first char of package name to sub-delimeter that terminates the signed JWT */
+          memcpy(strip_uri, uri, (key - uri));
+          memcpy(strip_uri + (key - uri), value_end + 1, (end - value_end + 1));
+        } else {
+          /*Strip from reserved char to the last char of the JWT */
+          memcpy(strip_uri, uri, (key - uri - 1));
+          memcpy(strip_uri + (key - uri - 1), value_end, (end - value_end));
+        }
+
+        if (strip_uri[*strip_ct - 1] != '\0') {
+          strip_uri[*strip_ct - 1] = '\0';
+        }
+        PluginDebug("Stripped URI: %s", strip_uri);
       }
       return jws;
     }
-
-    if (value_end == end) {
-      break;
-    }
-
-    key = value = value_end + 1;
   }
   PluginDebug("Unable to locate signing key in uri: %.*s", (int)uri_ct, uri);
   return NULL;
@@ -142,7 +186,7 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
     PluginDebug("Initial validation of JWT failed for %16p", jws);
     goto jwt_fail;
   }
-  TimerDebug("inital validation of jwt");
+  TimerDebug("initial validation of jwt");
 
   cjose_header_t *hdr = cjose_jws_get_protected(jws);
   TimerDebug("getting header of jws");
@@ -184,7 +228,12 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
     }
   }
 
-  if (!jwt_check_uri(jwt->sub, uri)) {
+  if (!jwt_check_aud(jwt->aud, config_get_id(cfg))) {
+    PluginDebug("Valid key for %16p that does not match aud.", jws);
+    goto jwt_fail;
+  }
+
+  if (!jwt_check_uri(jwt->cdniuc, uri)) {
     PluginDebug("Valid key for %16p that does not match uri.", jws);
     goto jwt_fail;
   }

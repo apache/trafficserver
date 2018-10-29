@@ -17,8 +17,7 @@
  */
 
 #include "cookie.h"
-#include "uri_signing.h"
-#include <ts/ts.h>
+#include "common.h"
 #include <string.h>
 
 const char *

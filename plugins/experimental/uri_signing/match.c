@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
-#include "uri_signing.h"
-#include "ts/ts.h"
+#include <regex.h>
+#include "common.h"
 #include <stdbool.h>
-#include <pcre.h>
 #include <string.h>
 
 bool
-match_glob(const char *needle, const char *haystack)
+match_hash(const char *needle, const char *haystack)
 {
   return false;
 }
@@ -31,16 +30,27 @@ match_glob(const char *needle, const char *haystack)
 bool
 match_regex(const char *pattern, const char *uri)
 {
-  const char *err;
-  int err_off;
+  struct re_pattern_buffer pat_buff;
+
+  pat_buff.translate = 0;
+  pat_buff.fastmap   = 0;
+  pat_buff.buffer    = 0;
+  pat_buff.allocated = 0;
+
+  re_syntax_options = RE_SYNTAX_POSIX_MINIMAL_EXTENDED;
+
   PluginDebug("Testing regex pattern /%s/ against \"%s\"", pattern, uri);
-  pcre *re = pcre_compile(pattern, PCRE_ANCHORED | PCRE_UCP | PCRE_UTF8, &err, &err_off, NULL);
-  if (!re) {
-    PluginDebug("Regex /%s/ failed to compile.", pattern);
+
+  const char *comp_err = re_compile_pattern(pattern, strlen(pattern), &pat_buff);
+
+  if (comp_err) {
+    PluginDebug("Regex Compilation ERROR: %s", comp_err);
     return false;
   }
 
-  int rc = pcre_exec(re, NULL, uri, strlen(uri), 0, 0, NULL, 0);
-  pcre_free(re);
-  return rc >= 0;
+  int match_ret;
+  match_ret = re_match(&pat_buff, uri, strlen(uri), 0, 0);
+  regfree(&pat_buff);
+
+  return match_ret >= 0;
 }
