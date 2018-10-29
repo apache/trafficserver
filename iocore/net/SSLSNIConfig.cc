@@ -56,7 +56,7 @@ SNIConfigParams::getPropertyConfig(cchar *servername) const
 void
 SNIConfigParams::loadSNIConfig()
 {
-  for (auto item : Y_sni.items) {
+  for (const auto &item : Y_sni.items) {
     actionVector *aiVec = new actionVector();
     Debug("ssl", "name: %s", item.fqdn.data());
     cchar *servername = item.fqdn.data();

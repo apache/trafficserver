@@ -259,7 +259,7 @@ public:
   Tunnel_hashMap TunnelhMap;
 
   void
-  emplace(cchar *key, std::string &hostname)
+  emplace(cchar *key, const std::string &hostname)
   {
     std::string_view addr, port;
     if (ats_ip_parse(std::string_view(hostname), &addr, &port) == 0) {

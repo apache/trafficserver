@@ -179,7 +179,7 @@ FCGIClientRequest::GenerateFcgiRequestHeaders()
 void
 FCGIClientRequest::printFCGIRequestHeaders()
 {
-  for (auto it : state_->requestHeaders) {
+  for (const auto &it : state_->requestHeaders) {
     cout << it.first << " => " << it.second << endl;
   }
 }
@@ -232,7 +232,7 @@ FCGIClientRequest::createBeginRequest()
   state_->header = createHeader(FCGI_PARAMS);
   int len = 0, nb = 0;
 
-  for (auto it : state_->requestHeaders) {
+  for (const auto &it : state_->requestHeaders) {
     nb = serializeNameValue(state_->pBuffInc, it);
     len += nb;
   }
@@ -244,7 +244,7 @@ FCGIClientRequest::createBeginRequest()
   serialize(state_->pBuffInc, state_->header, sizeof(FCGI_Header));
   state_->pBuffInc += sizeof(FCGI_Header);
 
-  for (auto it : state_->requestHeaders) {
+  for (const auto &it : state_->requestHeaders) {
     nb = serializeNameValue(state_->pBuffInc, it);
     state_->pBuffInc += nb;
   }

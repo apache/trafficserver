@@ -96,7 +96,7 @@ public:
     // std::regex e(".*.[wp*|php|js|css|scss|png|gif](p{2})?");
     std::regex e(".*");
     while (std::regex_search(path, urlMatch, e)) {
-      // for (auto x : urlMatch)
+      // for (auto &x : urlMatch)
       //   std::cout << x << " " << std::endl;
       // path = urlMatch.suffix().str();
       // std::cout << "Path:" << path << std::endl;
