@@ -366,7 +366,10 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 
   recursion--;
   if (!connection_state.is_recursing() && this->recursion == 0 && kill_me) {
-    this->free();
+    MUTEX_TRY_LOCK(lock, this->mutex, this_ethread());
+    if (lock.is_locked()) {
+      this->free();
+    }
   }
   return retval;
 }
