@@ -195,9 +195,14 @@ following actions:
 
 -  If the autodelete option is enabled, then |TS| identifies previously-rolled
    log files (log files with the ``.old`` extension). It starts deleting files
-   one by one, beginning with the oldest file with largest ratio to the minimum
-   rolling count, until it emerges from the low state. |TS| logs a record of all
-   deleted files in the system error log.
+   one by one, beginning with the oldest file with largest ratio between current
+   number of files and the minimum rolling count, until it emerges from the low
+   state. The default minimum rolling count of 0 is treated as INT_MAX during
+   ratio calculation. Hence the `rolling_min_count` is not guaranteed to be
+   reserved; instead, it is used as a reference to decide the priority of log
+   files to delete. In low space state, even when all log files are below minimum
+   count, |TS| still tries to delete files until it emerges from the low state.
+   |TS| logs a record of all deleted files in the system error log.
 
 -  If the autodelete option is disabled or there are not enough old log files
    to delete for the system to emerge from its low space state, then |TS|
