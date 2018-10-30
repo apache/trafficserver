@@ -79,7 +79,7 @@ SNIConfigParams::loadSNIConfig()
     }
 
     if (item.tunnel_destination.length()) {
-      TunnelMap.emplace(item.fqdn.data(), item.tunnel_destination);
+      TunnelMap.emplace(item.fqdn, item.tunnel_destination);
     }
 
     auto ai3 = new SNI_IpAllow(item.ip_allow, servername);

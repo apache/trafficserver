@@ -2111,8 +2111,6 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
 
   Note("loading SSL certificate configuration from %s", params->configFilePath);
 
-  //  TunnelMap.clear();
-
   if (params->configFilePath) {
     file_buf = readIntoBuffer(params->configFilePath, __func__, nullptr);
   }
