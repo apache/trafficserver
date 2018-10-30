@@ -33,6 +33,8 @@
 #endif
 #include <openssl/ssl.h>
 
+#include <unordered_map>
+
 struct SSLConfigParams;
 struct SSLCertLookup;
 class SSLNetVConnection;
@@ -244,41 +246,44 @@ class TunnelHashMap
 {
 public:
   struct HostStruct {
-    cchar *hostname;
-    int len;
+    std::string hostname;
     int port;
-    HostStruct(cchar *name, int hostnamelen, int port_)
-    {
-      hostname = name;
-      len      = hostnamelen;
-      port     = port_;
-    }
+    HostStruct(const std::string &name, int port_) : hostname(name), port(port_) {}
   };
-
-  typedef HashMap<cchar *, StringHashFns, const HostStruct *> Tunnel_hashMap;
+  using Tunnel_hashMap = std::unordered_map<std::string, HostStruct>;
   Tunnel_hashMap TunnelhMap;
 
   void
-  emplace(cchar *key, const std::string &hostname)
+  emplace(const std::string &key, const std::string &hostname)
   {
     std::string_view addr, port;
     if (ats_ip_parse(std::string_view(hostname), &addr, &port) == 0) {
-      auto *hs = new HostStruct(ats_strdup(addr.data()), addr.length(), atoi(port.data()));
-      TunnelhMap.put(ats_strdup(key), hs);
+      TunnelhMap.emplace(key, HostStruct(addr.data(), atoi(port.data())));
     }
   }
 
   void
-  emplace(cchar *key, cchar *name, int hostnamelen, int port_)
+  emplace(const std::string &key, const std::string &name, int port_)
   {
-    auto *hs = new HostStruct(ats_strdup(name), hostnamelen, port_);
-    TunnelhMap.put(ats_strdup(key), hs);
+    TunnelhMap.emplace(key, HostStruct(name, port_));
   }
 
-  const HostStruct *
-  find(cchar *key)
+  Tunnel_hashMap::const_iterator
+  find(const std::string &key) const
   {
-    return TunnelhMap.get(key);
+    return TunnelhMap.find(key);
+  }
+
+  Tunnel_hashMap::const_iterator
+  begin() const
+  {
+    return TunnelhMap.begin();
+  }
+
+  Tunnel_hashMap::const_iterator
+  end() const
+  {
+    return TunnelhMap.end();
   }
 };
 

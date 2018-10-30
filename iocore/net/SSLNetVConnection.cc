@@ -1709,8 +1709,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
 
   this->serverName = const_cast<char *>(SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name));
   if (this->serverName) {
-    auto *hs = TunnelMap.find(this->serverName);
-    if (hs != nullptr) {
+    if (auto it = TunnelMap.find(this->serverName); it != TunnelMap.end()) {
       this->SNIMapping = true;
       this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       return reenabled;

@@ -575,11 +575,10 @@ HttpSM::setup_blind_tunnel_port()
       t_state.hdr_info.client_request.url_create(&u);
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
-      auto *hs = TunnelMap.find(ssl_vc->serverName);
-      if (hs != nullptr) {
-        t_state.hdr_info.client_request.url_get()->host_set(hs->hostname, hs->len);
-        if (hs->port > 0) {
-          t_state.hdr_info.client_request.url_get()->port_set(hs->port);
+      if (auto it = TunnelMap.find(ssl_vc->serverName); it != TunnelMap.end()) {
+        t_state.hdr_info.client_request.url_get()->host_set(it->second.hostname.c_str(), it->second.hostname.size());
+        if (it->second.port > 0) {
+          t_state.hdr_info.client_request.url_get()->port_set(it->second.port);
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
@@ -1386,11 +1385,10 @@ plugins required to work with sni_routing.
       SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
 
       if (ssl_vc && ssl_vc->GetSNIMapping()) {
-        auto *hs = TunnelMap.find(ssl_vc->serverName);
-        if (hs != nullptr) {
-          t_state.hdr_info.client_request.url_get()->host_set(hs->hostname, hs->len);
-          if (hs->port > 0) {
-            t_state.hdr_info.client_request.url_get()->port_set(hs->port);
+        if (auto it = TunnelMap.find(ssl_vc->serverName); it != TunnelMap.end()) {
+          t_state.hdr_info.client_request.url_get()->host_set(it->second.hostname.c_str(), it->second.hostname.size());
+          if (it->second.port > 0) {
+            t_state.hdr_info.client_request.url_get()->port_set(it->second.port);
           } else {
             t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
           }
