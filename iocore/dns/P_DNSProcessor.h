@@ -210,6 +210,8 @@ struct DNSHandler : public Continuation {
   // bitmap of query ids in use
   uint64_t qid_in_flight[(USHRT_MAX + 1) / 64];
 
+  bool scheduled_failovercheck;
+
   void
   received_one(int i)
   {
@@ -321,7 +323,8 @@ DNSHandler::DNSHandler()
     last_primary_reopen(0),
     m_res(nullptr),
     txn_lookup_timeout(0),
-    generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
+    generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this)),
+    scheduled_failovercheck(false)
 {
   ats_ip_invalidate(&ip);
   for (int i = 0; i < MAX_NAMED; i++) {

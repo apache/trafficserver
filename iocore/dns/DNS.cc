@@ -913,6 +913,8 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 int
 DNSHandler::mainEvent(int event, Event *e)
 {
+  scheduled_failovercheck = false;
+
   recv_dns(event, e);
   if (dns_ns_rr) {
     ink_hrtime t = Thread::get_hrtime();
@@ -1037,6 +1039,14 @@ write_dns(DNSHandler *h, bool tcp_retry)
         }
         if (h->ns_down[h->name_server] || !write_dns_event(h, e, over_tcp)) {
           break;
+        }
+
+        // https://github.com/apache/trafficserver/issues/4514
+        // If we send out a query, schedule the DNSHandler's main event
+        // periodically to check for failover.
+        if (!h->scheduled_failovercheck) {
+          h->scheduled_failovercheck = true;
+          this_ethread()->schedule_at(h, DNS_PRIMARY_RETRY_PERIOD);
         }
       }
       if (h->in_flight >= dns_max_dns_in_flight) {
