@@ -39,19 +39,12 @@ class BgFetchConfig
 {
 public:
   BgFetchConfig(TSCont cont) : _cont(cont) { TSContDataSet(cont, static_cast<void *>(this)); }
-  void
-  acquire()
-  {
-    ++_ref_count;
-  }
 
-  void
-  release()
+  ~BgFetchConfig()
   {
-    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count.load());
-    if (--_ref_count == 0) {
-      TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
-      delete this;
+    delete _rules;
+    if (_cont) {
+      TSContDestroy(_cont);
     }
   }
 
@@ -73,15 +66,6 @@ public:
   bool bgFetchAllowed(TSHttpTxn txnp) const;
 
 private:
-  ~BgFetchConfig()
-  {
-    delete _rules;
-    if (_cont) {
-      TSContDestroy(_cont);
-    }
-  }
-
   TSCont _cont;
   BgFetchRule *_rules{nullptr};
-  std::atomic<int> _ref_count{0};
 };
