@@ -34,6 +34,8 @@
 #include "tscore/TestBox.h"
 
 #include <unordered_map>
+#include <vector>
+#include <algorithm>
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
@@ -101,15 +103,15 @@ public:
   /// cert context.
   /// @return @a idx
   int insert(const char *name, int idx);
-  SSLCertContext *lookup(const char *name) const;
+  SSLCertContext *lookup(const char *name);
   void printWildDomains() const;
   unsigned
   count() const
   {
-    return this->ctx_store.length();
+    return this->ctx_store.size();
   }
   SSLCertContext *
-  get(unsigned i) const
+  get(unsigned i)
   {
     return &this->ctx_store[i];
   }
@@ -138,7 +140,7 @@ private:
   std::unordered_map<std::string, int> hostnames;
   /// List for cleanup.
   /// Exactly one pointer to each SSL context is stored here.
-  Vec<SSLCertContext> ctx_store;
+  std::vector<SSLCertContext> ctx_store;
 
   /// Add a context to the clean up list.
   /// @return The index of the added context.
@@ -364,12 +366,12 @@ SSLContextStorage::~SSLContextStorage()
 {
   // First sort the array so we can efficiently detect duplicates
   // and avoid the double free
-  this->ctx_store.qsort(SSLCtxCompare);
+  std::sort(ctx_store.begin(), ctx_store.end(), SSLCtxCompare);
   SSL_CTX *last_ctx = nullptr;
-  for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
-    if (this->ctx_store[i].ctx != last_ctx) {
-      last_ctx = this->ctx_store[i].ctx;
-      this->ctx_store[i].release();
+  for (auto &&it : this->ctx_store) {
+    if (it.ctx != last_ctx) {
+      last_ctx = it.ctx;
+      it.release();
     }
   }
 }
@@ -377,9 +379,8 @@ SSLContextStorage::~SSLContextStorage()
 int
 SSLContextStorage::store(SSLCertContext const &cc)
 {
-  int idx = this->ctx_store.length();
-  this->ctx_store.add(cc);
-  return idx;
+  this->ctx_store.push_back(cc);
+  return this->ctx_store.size() - 1;
 }
 
 int
@@ -388,7 +389,7 @@ SSLContextStorage::insert(const char *name, SSLCertContext const &cc)
   int idx = this->store(cc);
   idx     = this->insert(name, idx);
   if (idx < 0) {
-    this->ctx_store.drop();
+    this->ctx_store.pop_back();
   }
   return idx;
 }
@@ -439,7 +440,7 @@ SSLContextStorage::printWildDomains() const
 }
 
 SSLCertContext *
-SSLContextStorage::lookup(const char *name) const
+SSLContextStorage::lookup(const char *name)
 {
   // First look for an exact name match
   if (auto it = this->hostnames.find(name); it != this->hostnames.end()) {
