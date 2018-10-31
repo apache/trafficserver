@@ -531,9 +531,6 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
         }
       }
       break;
-    case TS_EVENT_HTTP_TXN_CLOSE:
-      config->release(); // Release the configuration lease when txn closes
-      break;
     default:
       TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
       TSDebug(PLUGIN_NAME, "unknown event for this plugin");
@@ -567,7 +564,6 @@ TSPluginInit(int argc, const char *argv[])
   TSCont cont = TSContCreate(cont_handle_response, nullptr);
 
   gConfig = new BgFetchConfig(cont);
-  gConfig->acquire(); // Inc refcount, although this global config should never go out of scope
 
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, nullptr);
@@ -624,8 +620,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
   TSCont cont           = TSContCreate(cont_handle_response, nullptr);
   BgFetchConfig *config = new BgFetchConfig(cont);
 
-  config->acquire(); // Inc refcount
-
   // Parse the optional rules, wihch becomes a linked list of BgFetchRule's.
   if (argc > 2) {
     TSDebug(PLUGIN_NAME, "config file %s", argv[2]);
@@ -642,7 +636,7 @@ TSRemapDeleteInstance(void *ih)
 {
   BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
 
-  config->release();
+  delete config;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -664,10 +658,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
     if (field_loc) {
       BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
 
-      config->acquire(); // Inc refcount
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, config->getCont());
-      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, config->getCont());
-
       TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap");
       TSHandleMLocRelease(bufp, req_hdrs, field_loc);
     }
