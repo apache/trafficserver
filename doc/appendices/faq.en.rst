@@ -310,30 +310,6 @@ blank no server connection
 ===== ==========================
 
 
-
-Support for HTTP Expect: Header
--------------------------------
-
-Traffic Server currently does not handle Expect: request headers
-according to the HTTP/1.1 spec.
-
-Clients such as cURL automatically send Expect: for POST
-requests with large POST bodies, with a 1 second timeout if a 100
-Continue response is not received. To avoid the timeout when using cURL
-as a client to Traffic Server, you can turn off the Expect: header::
-
-   curl -H"Expect:" http://www.example.com/
-
-Or with the C (libcurl) library from within your own applications::
-
-   struct curl_slist *header_list=NULL;
-   header_list = curl_slist_append(header_list, "Expect:");
-   curl_easy_setopt(my_curlp, CURLOPT_HTTPHEADER, header_list);
-
-Or with the PHP cURL library::
-
-   curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
-
 Troubleshooting Tips
 ====================
 
