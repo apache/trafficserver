@@ -23,7 +23,8 @@
 
 #pragma once
 
-#include "tscore/ink_memory.h"
+#include <atomic>
+
 #include "ProcessManager.h"
 #include "I_Tasks.h"
 
@@ -36,8 +37,8 @@ void *config_string511_cb(void *data, void *value);
 void *config_string_alloc_cb(void *data, void *value);
 
 // Configuration file flags shared by proxy configuration and mgmt.
-#define CONFIG_FLAG_NONE 0u
-#define CONFIG_FLAG_UNVERSIONED 1u // Don't version this config file
+static constexpr unsigned int CONFIG_FLAG_NONE        = 0;
+static constexpr unsigned int CONFIG_FLAG_UNVERSIONED = 1; // Don't version this config file
 
 //
 // Macros that spin waiting for the data to be bound
@@ -58,7 +59,7 @@ typedef RefCountObj ConfigInfo;
 class ConfigProcessor
 {
 public:
-  ConfigProcessor();
+  ConfigProcessor() = default;
 
   enum {
     // The number of seconds to wait before garbage collecting stale ConfigInfo objects. There's
@@ -82,8 +83,8 @@ public:
   void release(unsigned int id, ConfigInfo *data);
 
 public:
-  ConfigInfo *infos[MAX_CONFIGS];
-  int ninfos;
+  std::atomic<ConfigInfo *> infos[MAX_CONFIGS] = {nullptr};
+  std::atomic<int> ninfos{0};
 };
 
 // A Continuation wrapper that calls the static reconfigure() method of the given class.

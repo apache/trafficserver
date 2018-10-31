@@ -112,15 +112,6 @@ public:
   ConfigInfo *m_info;
 };
 
-ConfigProcessor::ConfigProcessor() : ninfos(0)
-{
-  int i;
-
-  for (i = 0; i < MAX_CONFIGS; i++) {
-    infos[i] = nullptr;
-  }
-}
-
 unsigned int
 ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
 {
@@ -128,7 +119,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   int idx;
 
   if (id == 0) {
-    id = ink_atomic_increment((int *)&ninfos, 1) + 1;
+    id = ++ninfos;
     ink_assert(id != 0);
     ink_assert(id <= MAX_CONFIGS);
   }
@@ -148,7 +139,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   }
 
   idx      = id - 1;
-  old_info = ink_atomic_swap(&infos[idx], info);
+  old_info = infos[idx].exchange(info);
 
   Debug("config", "Set for slot %d 0x%" PRId64 " was 0x%" PRId64 " with ref count %d", id, (int64_t)info, (int64_t)old_info,
         (old_info) ? old_info->refcount() : 0);
