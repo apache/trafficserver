@@ -27,7 +27,6 @@
 #include <bitset>
 #include <initializer_list>
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include "HttpConfig.h"

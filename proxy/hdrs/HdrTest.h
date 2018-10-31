@@ -47,7 +47,6 @@ public:
   int go(RegressionTest *t, int atype);
 
 private:
-  int test_error_page_selection();
   int test_http_hdr_print_and_copy();
   int test_parse_date();
   int test_format_date();
