@@ -41,6 +41,7 @@
 #include "CoreAPIShared.h"
 
 #include "tscore/TextBuffer.h"
+#include "ts/apidefs.h"
 
 /***************************************************************************
  * API Memory Management

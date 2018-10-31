@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "ts/apidefs.h"
 #include "tscore/List.h"
 
 struct PluginRegInfo {

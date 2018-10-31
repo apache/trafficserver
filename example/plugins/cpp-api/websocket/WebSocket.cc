@@ -24,6 +24,7 @@
 #include "WebSocket.h"
 
 #include "tscpp/api/Logger.h"
+#include <tscpp/api/PluginInit.h>
 
 // DISCLAIMER: this is intended for demonstration purposes only and
 // does not pretend to implement a complete (or useful) server.

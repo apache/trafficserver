@@ -950,6 +950,16 @@ typedef struct TSSslSessionID_s {
    Init */
 
 /**
+    Cause TSPluginInit to have _<m> appended, when <m> is the major TS version nunber.
+ */
+#define TSPluginInit TS_PLUGIN_INIT_(TS_VERSION_MAJOR)
+
+/* PRIVATE -- do not use these diredtly *****/
+#define TS_PLUGIN_INIT_(MAJOR) TS_PLUGIN_INIT__(MAJOR)
+#define TS_PLUGIN_INIT__(MAJOR) TSPluginInit_##MAJOR
+/********************************************/
+
+/**
     This function must be defined by all plugins. Traffic Server
     calls this initialization routine when it loads the plugin (at
     startup), and sets argc and argv appropriately based on the values

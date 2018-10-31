@@ -39,6 +39,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ServerAPI.h"
+#include <ts/apidefs.h>
 
 #define PSI_TAG_FORMAT "<!--include=file%d.txt-->"
 #define PSI_TAG_MAX_SIZE 128

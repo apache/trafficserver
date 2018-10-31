@@ -44,6 +44,12 @@ calls this initialization routine when it loads the plugin and sets
 argument vector is the plugins name, which must exist in order for
 the plugin to be loaded.
 
+(Note that the identifier ``TSPluginInit`` is really a preprocessor symbol,
+defined by including ``<ts/ts.h>``,
+that translates to ``TSPluginInit_<M>``, where <M> is the Traffic Server major release number.
+This helps ensure that plugins are rebuilt before use with a new major release of Traffic
+Server.)
+
 :func:`TSPluginRegister` registers the appropriate SDK version specific in
 :arg:`sdk_version` for your plugin. Use this function to make sure that the
 version of Traffic Server on which your plugin is running supports the plugin.

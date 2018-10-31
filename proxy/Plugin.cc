@@ -112,13 +112,22 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     plugin_reg_current->plugin_path = ats_strdup(path);
     plugin_reg_current->dlh         = handle;
 
-    init = reinterpret_cast<init_func_t>(dlsym(plugin_reg_current->dlh, "TSPluginInit"));
+#define X(P) Y(P)
+#define Y(P) #P
+
+    init = reinterpret_cast<init_func_t>(dlsym(plugin_reg_current->dlh, X(TSPluginInit)));
+
+#undef X
+#undef Y
+
     if (!init) {
       delete plugin_reg_current;
       if (validateOnly) {
         return false;
       }
-      Fatal("unable to find TSPluginInit function in '%s': %s", path, dlerror());
+      Fatal("unable to find TSPluginInit function in '%s': %s\n"
+            "make sure plugin was built with include files and libraries exported by major version %d of Traffic Server",
+            path, dlerror(), TS_VERSION_MAJOR);
       return false; // this line won't get called since Fatal brings down ATS
     }
 

@@ -371,8 +371,15 @@ SCENARIO("looking for symbols inside a plugin DSO", "[plugin][core]")
     {
       THEN("expect to find them all")
       {
+        // TSPluginInit is a preprocessor symbol.  Expand it, then turn it into a string.
+#undef MS
+#undef MS_
+#define MS(X) MS_(X)
+#define MS_(X) #X
         std::vector<const char *> list{"TSRemapInit",           "TSRemapDone",       "TSRemapDoRemap", "TSRemapNewInstance",
-                                       "TSRemapDeleteInstance", "TSRemapOSResponse", "TSPluginInit",   "pluginDsoVersionTest"};
+                                       "TSRemapDeleteInstance", "TSRemapOSResponse", MS(TSPluginInit), "pluginDsoVersionTest"};
+#undef MS
+#undef MS_
         for (auto symbol : list) {
           void *s = nullptr;
           CHECK(plugin.getSymbol(symbol, s, error));
