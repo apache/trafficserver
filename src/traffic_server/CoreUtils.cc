@@ -116,7 +116,7 @@ int program_counter = 0;
 bool inTable;
 FILE *fp;
 memTable default_memTable = {0, 0, 0};
-DynArray<struct memTable> arrayMem(&default_memTable, 0);
+std::vector<struct memTable> arrayMem(0, default_memTable);
 
 HTTPHdrImpl *global_http;
 HttpSM *last_seen_http_sm = nullptr;
@@ -172,39 +172,11 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
   m.fsize = fsize1;
 #endif
 
-  if (arrayMem.length() == 0) {
-    arrayMem(0);
-    arrayMem[(intptr_t)0].vaddr  = vaddr1;
-    arrayMem[(intptr_t)0].offset = offset1;
-    arrayMem[(intptr_t)0].fsize  = fsize1;
+  if (arrayMem.empty()) {
+    arrayMem.push_back({vaddr1, offset1, fsize1});
   } else {
-    intptr_t index = find_vaddr(vaddr1, arrayMem.length(), 0);
-    if (index == arrayMem.length()) {
-      arrayMem(index);
-      arrayMem[index].vaddr  = vaddr1;
-      arrayMem[index].offset = offset1;
-      arrayMem[index].fsize  = fsize1;
-    } else if (index == 0) {
-      arrayMem(arrayMem.length());
-      for (intptr_t i = 0; i < arrayMem.length(); i++) {
-        arrayMem[arrayMem.length() - i - 1].vaddr  = arrayMem[arrayMem.length() - i - 2].vaddr;
-        arrayMem[arrayMem.length() - i - 1].offset = arrayMem[arrayMem.length() - i - 2].offset;
-        arrayMem[arrayMem.length() - i - 1].fsize  = arrayMem[arrayMem.length() - i - 2].fsize;
-      }
-      arrayMem[(intptr_t)0].vaddr  = vaddr1;
-      arrayMem[(intptr_t)0].offset = offset1;
-      arrayMem[(intptr_t)0].fsize  = fsize1;
-    } else {
-      arrayMem(arrayMem.length());
-      for (intptr_t i = 1; i < arrayMem.length() - index; i++) {
-        arrayMem[arrayMem.length() - i].vaddr  = arrayMem[arrayMem.length() - i - 1].vaddr;
-        arrayMem[arrayMem.length() - i].offset = arrayMem[arrayMem.length() - i - 1].offset;
-        arrayMem[arrayMem.length() - i].fsize  = arrayMem[arrayMem.length() - i - 1].fsize;
-      }
-      arrayMem[index].vaddr  = vaddr1;
-      arrayMem[index].offset = offset1;
-      arrayMem[index].fsize  = fsize1;
-    }
+    unsigned index = find_vaddr(vaddr1, arrayMem.size(), 0);
+    arrayMem.insert(arrayMem.begin() + index, {vaddr1, offset1, fsize1});
   }
 }
 
@@ -213,7 +185,7 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
 intptr_t
 CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
 {
-  intptr_t index   = find_vaddr(vaddr, arrayMem.length(), 0);
+  intptr_t index   = find_vaddr(vaddr, arrayMem.size(), 0);
   intptr_t vadd    = arrayMem[index - 1].vaddr;
   intptr_t offset  = arrayMem[index - 1].offset;
   intptr_t size    = arrayMem[index - 1].fsize;
@@ -253,7 +225,7 @@ void
 CoreUtils::get_base_frame(intptr_t framep, core_stack_state *coress)
 {
   // finds vaddress less than framep
-  intptr_t index = find_vaddr(framep, arrayMem.length(), 0);
+  intptr_t index = find_vaddr(framep, arrayMem.size(), 0);
   intptr_t vadd  = arrayMem[index - 1].vaddr;
   intptr_t off   = arrayMem[index - 1].offset;
   intptr_t off2  = std::abs(vadd - framep);
@@ -294,7 +266,7 @@ CoreUtils::get_next_frame(core_stack_state *coress)
   intptr_t i      = 0;
   intptr_t framep = coress->framep;
 
-  intptr_t index = find_vaddr(framep, arrayMem.length(), 0);
+  intptr_t index = find_vaddr(framep, arrayMem.size(), 0);
 
   // finds vaddress less than framep
   intptr_t vadd = arrayMem[index - 1].vaddr;
@@ -490,16 +462,14 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
 {
   char buf[sizeof(char) * sizeof(HdrHeap)];
   // Load HdrHeap chain
-  HTTPHdr *http_hdr                 = core_hdr;
-  HdrHeap *heap                     = (HdrHeap *)core_hdr->m_heap;
-  HdrHeap *heap_ptr                 = (HdrHeap *)http_hdr->m_heap;
-  intptr_t ptr_heaps                = 0;
-  intptr_t ptr_heap_size            = 0;
-  intptr_t ptr_xl_size              = 2;
-  intptr_t str_size                 = 0;
-  intptr_t str_heaps                = 0;
-  MarshalXlate default_MarshalXlate = {nullptr, nullptr, nullptr};
-  DynArray<struct MarshalXlate> ptr_xlation(&default_MarshalXlate, 2);
+  HTTPHdr *http_hdr      = core_hdr;
+  HdrHeap *heap          = (HdrHeap *)core_hdr->m_heap;
+  HdrHeap *heap_ptr      = (HdrHeap *)http_hdr->m_heap;
+  intptr_t ptr_heaps     = 0;
+  intptr_t ptr_heap_size = 0;
+  intptr_t str_size      = 0;
+  intptr_t str_heaps     = 0;
+  std::vector<struct MarshalXlate> ptr_xlation(2);
   // MarshalXlate static_table[2];
   // MarshalXlate* ptr_xlation = static_table;
   intptr_t used;
@@ -537,8 +507,8 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
       ::exit(0);
     }
     // Expand ptr xlation table if necessary
-    if (ptr_heaps >= ptr_xl_size) {
-      ptr_xlation(ptr_heaps);
+    if (static_cast<unsigned>(ptr_heaps) >= ptr_xlation.size()) {
+      ptr_xlation.resize(ptr_heaps + 1);
     }
 
     char *data, *free, *off;
@@ -647,18 +617,18 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
       }
       break;
     case HDR_HEAP_OBJ_HTTP_HEADER:
-      if (((HTTPHdrImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
+      if (((HTTPHdrImpl *)obj)->marshal(&ptr_xlation[0], ptr_heaps, str_xlation, str_heaps) < 0) {
         goto Failed;
       }
       live_hdr->m_http = (HTTPHdrImpl *)obj;
       break;
     case HDR_HEAP_OBJ_FIELD_BLOCK:
-      if (((MIMEFieldBlockImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
+      if (((MIMEFieldBlockImpl *)obj)->marshal(&ptr_xlation[0], ptr_heaps, str_xlation, str_heaps) < 0) {
         goto Failed;
       }
       break;
     case HDR_HEAP_OBJ_MIME_HEADER:
-      if (((MIMEHdrImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps)) {
+      if (((MIMEHdrImpl *)obj)->marshal(&ptr_xlation[0], ptr_heaps, str_xlation, str_heaps)) {
         goto Failed;
       }
       break;

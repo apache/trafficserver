@@ -616,6 +616,8 @@ HdrHeap::marshal(char *buf, int len)
   int ptr_xl_size = 2;
   MarshalXlate static_table[2];
   MarshalXlate *ptr_xlation = static_table;
+  // need to initialize it here because of those gotos
+  MarshalXlate str_xlation[HDR_BUF_RONLY_HEAPS + 1];
 
   // Let's start by skipping over the header block
   //  and copying the pointer blocks to marshalled
@@ -690,7 +692,6 @@ HdrHeap::marshal(char *buf, int len)
   //   is too big and only copy over live strings if it is.  May
   //   not be too much of a problem since I've prevented too much
   //   lost string space both in string alloc and inherit
-  MarshalXlate str_xlation[HDR_BUF_RONLY_HEAPS + 1];
 
   if (m_read_write_heap) {
     char *copy_start = ((char *)m_read_write_heap.get()) + sizeof(HdrStrHeap);

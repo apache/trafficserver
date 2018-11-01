@@ -25,7 +25,6 @@
 
 #include "I_EventSystem.h"
 #include "tscore/Regression.h"
-#include "tscore/DynArray.h"
 
 /*
   Regression Test Composition State Machine
@@ -50,17 +49,17 @@ struct RegressionSM : public Continuation {
   void run_in(int *pstatus, ink_hrtime t);
 
   // internal
-  int status                        = REGRESSION_TEST_INPROGRESS;
-  int *pstatus                      = nullptr;
-  RegressionSM *parent              = nullptr;
-  int nwaiting                      = 0;
-  int nchildren                     = 0;
-  DynArray<RegressionSM *> children = nullptr;
-  intptr_t n                        = 0;
-  intptr_t ichild                   = 0;
-  bool parallel                     = false;
-  bool repeat                       = false;
-  Action *pending_action            = nullptr;
+  int status           = REGRESSION_TEST_INPROGRESS;
+  int *pstatus         = nullptr;
+  RegressionSM *parent = nullptr;
+  int nwaiting         = 0;
+  int nchildren        = 0;
+  std::vector<RegressionSM *> children;
+  intptr_t n             = 0;
+  intptr_t ichild        = 0;
+  bool parallel          = false;
+  bool repeat            = false;
+  Action *pending_action = nullptr;
 
   int regression_sm_start(int event, void *data);
   int regression_sm_waiting(int event, void *data);
