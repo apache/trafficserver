@@ -29,7 +29,7 @@
 class VariableExpander
 {
 public:
-  VariableExpander(const std::string &source) : _source(source) {}
+  explicit VariableExpander(const std::string &source) : _source(source) {}
   std::string expand(const Resources &res);
 
 private:

@@ -43,7 +43,7 @@ enum OperModifiers {
 class Operator : public Statement
 {
 public:
-  Operator() : _mods(OPER_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
+  Operator() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
   OperModifiers get_oper_modifiers() const;
   void initialize(Parser &p) override;
 
@@ -62,7 +62,7 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(Operator);
 
-  OperModifiers _mods;
+  OperModifiers _mods = OPER_NONE;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ private:
 class OperatorHeaders : public Operator
 {
 public:
-  OperatorHeaders() : _header("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
+  OperatorHeaders() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
   void initialize(Parser &p) override;
 
 protected:
@@ -89,7 +89,7 @@ private:
 class OperatorCookies : public Operator
 {
 public:
-  OperatorCookies() : _cookie("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCookies"); }
+  OperatorCookies() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCookies"); }
   void initialize(Parser &p) override;
 
 protected:

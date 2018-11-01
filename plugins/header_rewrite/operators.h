@@ -35,10 +35,7 @@
 class OperatorSetConfig : public Operator
 {
 public:
-  OperatorSetConfig() : _key(TS_CONFIG_NULL), _type(TS_RECORDDATATYPE_NULL)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConfig");
-  }
+  OperatorSetConfig() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetConfig"); }
   void initialize(Parser &p) override;
 
 protected:
@@ -47,8 +44,8 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetConfig);
 
-  TSOverridableConfigKey _key;
-  TSRecordDataType _type;
+  TSOverridableConfigKey _key = TS_CONFIG_NULL;
+  TSRecordDataType _type      = TS_RECORDDATATYPE_NULL;
 
   std::string _config;
   Value _value;
@@ -57,7 +54,7 @@ private:
 class OperatorSetStatus : public Operator
 {
 public:
-  OperatorSetStatus() : _reason(nullptr), _reason_len(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatus"); }
+  OperatorSetStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetStatus"); }
   void initialize(Parser &p) override;
 
 protected:
@@ -68,8 +65,8 @@ private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetStatus);
 
   Value _status;
-  const char *_reason;
-  int _reason_len;
+  const char *_reason = nullptr;
+  int _reason_len     = 0;
 };
 
 class OperatorSetStatusReason : public Operator
@@ -91,7 +88,7 @@ private:
 class OperatorSetDestination : public Operator
 {
 public:
-  OperatorSetDestination() : _url_qual(URL_QUAL_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetDestination"); }
+  OperatorSetDestination() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetDestination"); }
   void initialize(Parser &p) override;
 
 protected:
@@ -100,7 +97,7 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSetDestination);
 
-  UrlQualifiers _url_qual;
+  UrlQualifiers _url_qual = URL_QUAL_NONE;
   Value _value;
 };
 
@@ -109,16 +106,17 @@ class OperatorSetRedirect : public Operator
 public:
   OperatorSetRedirect() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetRedirect"); }
   void initialize(Parser &p) override;
+
   TSHttpStatus
-  get_status()
+  get_status() const
   {
     return static_cast<TSHttpStatus>(_status.get_int_value());
   }
-  std::string
-  get_location(int &size)
+
+  const std::string &
+  get_location() const
   {
-    size = (int)_location.size();
-    return static_cast<std::string>(_location.get_value());
+    return _location.get_value();
   }
 
 protected:
@@ -146,7 +144,7 @@ private:
 class OperatorSetTimeoutOut : public Operator
 {
 public:
-  OperatorSetTimeoutOut() : _type(TO_OUT_UNDEFINED) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetTimeoutOut"); }
+  OperatorSetTimeoutOut() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetTimeoutOut"); }
   void initialize(Parser &p) override;
 
 protected:
@@ -163,14 +161,14 @@ private:
     TO_OUT_DNS,
   };
 
-  TimeoutOutType _type;
+  TimeoutOutType _type = TO_OUT_UNDEFINED;
   Value _timeout;
 };
 
 class OperatorSkipRemap : public Operator
 {
 public:
-  OperatorSkipRemap() : _skip_remap(false) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSkipRemap"); }
+  OperatorSkipRemap() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSkipRemap"); }
   void initialize(Parser &p) override;
 
 protected:
@@ -179,7 +177,7 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorSkipRemap);
 
-  bool _skip_remap;
+  bool _skip_remap = false;
 };
 
 // All the header operators share a base class
@@ -228,7 +226,7 @@ private:
 class OperatorCounter : public Operator
 {
 public:
-  OperatorCounter() : _counter_name(""), _counter(TS_ERROR) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCounter"); }
+  OperatorCounter() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCounter"); }
   void initialize(Parser &p) override;
 
 protected:
@@ -238,7 +236,7 @@ private:
   DISALLOW_COPY_AND_ASSIGN(OperatorCounter);
 
   std::string _counter_name;
-  int _counter;
+  int _counter = TS_ERROR;
 };
 
 class OperatorRMCookie : public OperatorCookies

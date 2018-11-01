@@ -292,14 +292,13 @@ OperatorSetRedirect::initialize(Parser &p)
 }
 
 void
-EditRedirectResponse(TSHttpTxn txnp, std::string const &location, int const &size, TSHttpStatus status, TSMBuffer bufp,
-                     TSMLoc hdr_loc)
+EditRedirectResponse(TSHttpTxn txnp, const std::string &location, TSHttpStatus status, TSMBuffer bufp, TSMLoc hdr_loc)
 {
   // Set new location.
   TSMLoc field_loc;
   static std::string header("Location");
   if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
-    if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, location.c_str(), size)) {
+    if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, location.c_str(), location.size())) {
       TSDebug(PLUGIN_NAME, "   Adding header %s", header.c_str());
       TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
     }
@@ -329,11 +328,10 @@ cont_add_location(TSCont contp, TSEvent event, void *edata)
   TSHttpStatus status = osd->get_status();
   switch (event) {
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: {
-    int size;
     TSMBuffer bufp;
     TSMLoc hdr_loc;
     if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
-      EditRedirectResponse(txnp, osd->get_location(size), size, status, bufp, hdr_loc);
+      EditRedirectResponse(txnp, osd->get_location(), status, bufp, hdr_loc);
     } else {
       TSDebug(PLUGIN_NAME, "Could not retrieve the response header");
     }
@@ -389,8 +387,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
       value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
       int path_len     = 0;
-      const char *path = nullptr;
-      path             = TSUrlPathGet(bufp, url_loc, &path_len);
+      const char *path = TSUrlPathGet(bufp, url_loc, &path_len);
       if (path_len > 0) {
         TSDebug(PLUGIN_NAME, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
         value.insert(pos_path, path, path_len);
@@ -399,8 +396,8 @@ OperatorSetRedirect::exec(const Resources &res) const
 
     // Append the original query string
     int query_len     = 0;
-    const char *query = nullptr;
-    query             = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
+    const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
+
     if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
       TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
       std::string connector = (value.find('?') == std::string::npos) ? "?" : "&";
@@ -435,7 +432,7 @@ OperatorSetRedirect::exec(const Resources &res) const
         break;
       }
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);
-      EditRedirectResponse(res.txnp, value, value.size(), status, res.bufp, res.hdr_loc);
+      EditRedirectResponse(res.txnp, value, status, res.bufp, res.hdr_loc);
     }
     TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
             _status.get_int_value());
