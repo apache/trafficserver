@@ -39,10 +39,7 @@
 class Value : Statement
 {
 public:
-  Value() : _need_expander(false), _value(""), _int_value(0), _float_value(0.0)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value");
-  }
+  Value() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value"); }
 
   virtual ~Value();
 
@@ -99,9 +96,9 @@ public:
 private:
   DISALLOW_COPY_AND_ASSIGN(Value);
 
-  bool _need_expander;
+  bool _need_expander = false;
+  int _int_value      = 0;
+  double _float_value = 0.0;
   std::string _value;
-  int _int_value;
-  double _float_value;
   std::vector<Condition *> _cond_vals;
 };

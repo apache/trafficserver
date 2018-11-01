@@ -35,17 +35,7 @@
 class RuleSet
 {
 public:
-  RuleSet()
-    : next(nullptr),
-      _cond(nullptr),
-      _oper(nullptr),
-      _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK),
-      _ids(RSRC_NONE),
-      _opermods(OPER_NONE),
-      _last(false)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "RuleSet CTOR");
-  }
+  RuleSet() { TSDebug(PLUGIN_NAME_DBG, "RuleSet CTOR"); }
 
   ~RuleSet()
   {
@@ -114,17 +104,17 @@ public:
     return _opermods;
   }
 
-  RuleSet *next; // Linked list
+  RuleSet *next = nullptr; // Linked list
 
 private:
   DISALLOW_COPY_AND_ASSIGN(RuleSet);
 
-  Condition *_cond;   // First pre-condition (linked list)
-  Operator *_oper;    // First operator (linked list)
-  TSHttpHookID _hook; // Which hook is this rule for
+  Condition *_cond   = nullptr;                        // First pre-condition (linked list)
+  Operator *_oper    = nullptr;                        // First operator (linked list)
+  TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
 
   // State values (updated when conds / operators are added)
-  ResourceIDs _ids;
-  OperModifiers _opermods;
-  bool _last;
+  ResourceIDs _ids        = RSRC_NONE;
+  OperModifiers _opermods = OPER_NONE;
+  bool _last              = false;
 };

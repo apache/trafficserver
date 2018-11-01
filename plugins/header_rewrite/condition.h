@@ -47,10 +47,7 @@ enum CondModifiers {
 class Condition : public Statement
 {
 public:
-  Condition() : _qualifier(""), _cond_op(MATCH_EQUAL), _matcher(nullptr), _mods(COND_NONE)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition");
-  }
+  Condition() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition"); }
 
   virtual ~Condition()
   {
@@ -127,11 +124,11 @@ protected:
   virtual bool eval(const Resources &res) = 0;
 
   std::string _qualifier;
-  MatcherOps _cond_op;
-  Matcher *_matcher;
+  MatcherOps _cond_op = MATCH_EQUAL;
+  Matcher *_matcher   = nullptr;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(Condition);
 
-  CondModifiers _mods;
+  CondModifiers _mods = COND_NONE;
 };
