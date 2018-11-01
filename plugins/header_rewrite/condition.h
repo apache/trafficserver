@@ -52,12 +52,6 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition");
   }
 
-  virtual ~Condition()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Condition");
-    delete _matcher;
-  }
-
   // Inline this, it's critical for speed (and only used twice)
   bool
   do_eval(const Resources &res)
