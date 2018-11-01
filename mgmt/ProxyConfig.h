@@ -110,7 +110,8 @@ ConfigScheduleUpdate(Ptr<ProxyMutex> &mutex)
 
 template <typename UpdateClass> struct ConfigUpdateHandler {
   ConfigUpdateHandler() : mutex(new_ProxyMutex()) {}
-  ~ConfigUpdateHandler() { mutex->free(); }
+  // The mutex member is ref-counted so should not explicitly free it
+  ~ConfigUpdateHandler() {}
   int
   attach(const char *name)
   {
