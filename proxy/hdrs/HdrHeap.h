@@ -320,6 +320,7 @@ struct MarshalXlate {
   char *start;
   char *end;
   char *offset;
+  MarshalXlate() : start(nullptr), end(nullptr), offset(nullptr) {}
 };
 
 struct HeapCheck {

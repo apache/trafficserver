@@ -70,7 +70,6 @@ libtscore_la_SOURCES = \
 	defalloc.h \
 	Diags.cc \
 	Diags.h \
-	DynArray.h \
 	EventNotify.cc \
 	EventNotify.h \
 	Extendible.h \

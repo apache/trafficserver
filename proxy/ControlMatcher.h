@@ -86,7 +86,6 @@
 
 #pragma once
 
-#include "tscore/DynArray.h"
 #include "tscore/IpMap.h"
 #include "tscore/Result.h"
 #include "tscore/MatcherUtils.h"
