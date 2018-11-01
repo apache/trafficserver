@@ -101,24 +101,24 @@ RemapPlugins::run_single_remap()
     return 1;
   }
 
-  if (TSREMAP_NO_REMAP == plugin_retcode || TSREMAP_NO_REMAP_STOP == plugin_retcode) {
-    // After running the first plugin, rewrite the request URL. This is doing the default rewrite rule
-    // to handle the case where no plugin ever rewrites.
-    //
-    // XXX we could probably optimize this a bit more by keeping a flag and only rewriting the request URL
-    // if no plugin has rewritten it already.
-    if (_cur == 1) {
-      Debug("url_rewrite", "plugin did not change host, port or path, copying from mapping rule");
-      url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
-    }
+  if (TSREMAP_DID_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP == plugin_retcode) {
+    _rewriten++;
   }
 
   if (TSREMAP_NO_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
+    if (_rewriten == 0) {
+      Debug("url_rewrite", "plugin did not change host, port or path, copying from mapping rule");
+      url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
+    }
     Debug("url_rewrite", "breaking remap plugin chain since last plugin said we should stop");
     return 1;
   }
 
   if (_cur >= map->plugin_count()) {
+    if (_rewriten == 0) {
+      Debug("url_rewrite", "plugin did not change host, port or path, copying from mapping rule");
+      url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
+    }
     // Normally, we would callback into this function but we dont have anything more to do!
     Debug("url_rewrite", "completed all remap plugins for rule id %d", map->map_id);
     return 1;
