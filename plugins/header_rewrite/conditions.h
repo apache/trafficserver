@@ -124,7 +124,7 @@ class ConditionRandom : public Condition
   typedef Matchers<unsigned int> MatcherType;
 
 public:
-  ConditionRandom() : _seed(0), _max(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
+  ConditionRandom() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -134,15 +134,15 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionRandom);
 
-  unsigned int _seed;
-  unsigned int _max;
+  unsigned int _seed = 0;
+  unsigned int _max  = 0;
 };
 
 // access(file)
 class ConditionAccess : public Condition
 {
 public:
-  ConditionAccess() : _next(0), _last(false) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionAccess"); }
+  ConditionAccess() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionAccess"); }
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -152,8 +152,8 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionAccess);
 
-  time_t _next;
-  bool _last;
+  time_t _next = 0;
+  bool _last   = false;
 };
 
 // cookie(name)
@@ -289,10 +289,7 @@ class ConditionUrl : public Condition
 public:
   enum UrlType { CLIENT, URL, FROM, TO };
 
-  explicit ConditionUrl(const UrlType type) : _url_qual(URL_QUAL_NONE), _type(type)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl");
-  }
+  explicit ConditionUrl(const UrlType type) : _type(type) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl"); }
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -304,7 +301,7 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionUrl);
 
-  UrlQualifiers _url_qual;
+  UrlQualifiers _url_qual = URL_QUAL_NONE;
   UrlType _type;
 };
 
@@ -316,9 +313,9 @@ class ConditionDBM : public Condition
 public:
   ConditionDBM()
     : //_dbm(NULL),
-      _file("")
+      _file(""),
+      _mutex(TSMutexCreate())
   {
-    _mutex = TSMutexCreate();
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionDBM");
   }
 
@@ -363,7 +360,7 @@ class ConditionIp : public Condition
   typedef Matchers<std::string> MatcherType;
 
 public:
-  explicit ConditionIp() : _ip_qual(IP_QUAL_CLIENT) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
+  explicit ConditionIp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -373,7 +370,7 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionIp);
-  IpQualifiers _ip_qual;
+  IpQualifiers _ip_qual = IP_QUAL_CLIENT;
 };
 
 class ConditionIncomingPort : public Condition
@@ -415,7 +412,7 @@ class ConditionNow : public Condition
   typedef Matchers<int64_t> MatcherType;
 
 public:
-  explicit ConditionNow() : _now_qual(NOW_QUAL_EPOCH) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
+  explicit ConditionNow() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -427,17 +424,14 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionNow);
 
   int64_t get_now_qualified(NowQualifiers qual) const;
-  NowQualifiers _now_qual;
+  NowQualifiers _now_qual = NOW_QUAL_EPOCH;
 };
 
 // GeoIP class for the "integer" based Geo information pieces
 class ConditionGeo : public Condition
 {
 public:
-  explicit ConditionGeo() : _geo_qual(GEO_QUAL_COUNTRY), _int_type(false)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionGeo");
-  }
+  explicit ConditionGeo() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionGeo"); }
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -464,15 +458,15 @@ private:
 
   int64_t get_geo_int(const sockaddr *addr) const;
   const char *get_geo_string(const sockaddr *addr) const;
-  GeoQualifiers _geo_qual;
-  bool _int_type;
+  GeoQualifiers _geo_qual = GEO_QUAL_COUNTRY;
+  bool _int_type          = false;
 };
 
 // id: Various identifiers for the requests, server process etc.
 class ConditionId : public Condition
 {
 public:
-  explicit ConditionId() : _id_qual(ID_QUAL_UNIQUE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionId"); };
+  explicit ConditionId() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionId"); };
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -482,7 +476,7 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionId);
-  IdQualifiers _id_qual;
+  IdQualifiers _id_qual = ID_QUAL_UNIQUE;
 };
 
 // cidr: A CIDR masked string representation of the Client's IP.
@@ -547,7 +541,7 @@ class ConditionStringLiteral : public Condition
   typedef Matchers<std::string> MatcherType;
 
 public:
-  ConditionStringLiteral(const std::string &v);
+  explicit ConditionStringLiteral(const std::string &v);
 
   void append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
 
@@ -564,7 +558,7 @@ class ConditionExpandableString : public Condition
   typedef Matchers<std::string> MatcherType;
 
 public:
-  ConditionExpandableString(const std::string &v);
+  explicit ConditionExpandableString(const std::string &v);
 
   void append_value(std::string &s, const Resources &res) override;
 

@@ -96,14 +96,13 @@ ConditionMethod::append_value(std::string &s, const Resources &res)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
-  const char *value;
   int len;
 
   bufp    = res.client_bufp;
   hdr_loc = res.client_hdr_loc;
 
   if (bufp && hdr_loc) {
-    value = TSHttpHdrMethodGet(bufp, hdr_loc, &len);
+    const char *value = TSHttpHdrMethodGet(bufp, hdr_loc, &len);
     TSDebug(PLUGIN_NAME, "Appending METHOD(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
     s.append(value, len);
   }
@@ -207,7 +206,6 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
-  const char *value;
   int len;
 
   if (_client) {
@@ -219,14 +217,15 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
   }
 
   if (bufp && hdr_loc) {
-    TSMLoc field_loc, next_field_loc;
+    TSMLoc field_loc;
 
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size());
     TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
 
     while (field_loc) {
-      value          = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
-      next_field_loc = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
+      const char *value     = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
+      TSMLoc next_field_loc = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
+
       TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
       // multiple headers with the same name must be semantically the same as one value which is comma separated
