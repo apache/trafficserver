@@ -22,6 +22,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -32,7 +33,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <ts/ts.h>
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -41,8 +41,8 @@
 #endif
 
 #define LOG_PREFIX "regex_revalidate"
-#define CONFIG_TMOUT 60000
-#define FREE_TMOUT 300000
+#define CONFIG_TMOUT 60000 // ms, 60s
+#define FREE_TMOUT 5000    // ms, 5s
 #define OVECTOR_SIZE 30
 #define LOG_ROLL_INTERVAL 86400
 #define LOG_ROLL_OFFSET 0
@@ -66,6 +66,18 @@ setup_memory_allocation()
   pcre_free   = &ts_free;
 }
 
+static inline bool
+timelt(size_t const time0, size_t const time1)
+{
+  return difftime(time0, time1) < 0;
+}
+
+static inline bool
+timelte(size_t const time0, size_t const time1)
+{
+  return difftime(time0, time1) <= 0;
+}
+
 typedef struct invalidate_t {
   const char *regex_text;
   pcre *regex;
@@ -76,10 +88,18 @@ typedef struct invalidate_t {
 } invalidate_t;
 
 typedef struct {
+  atomic_uint count;
   invalidate_t *invalidate_list;
+} guard_t;
+
+typedef struct {
+  atomic_intptr_t invalidate_guard;
+  //  guard_t *invalidate_guard;
+  //  TSMutex mutex; // protect invalidate_guard
   char *config_file;
   time_t last_load;
   TSTextLogObject log;
+  TSCont config_cont; // handle to config continuation
 } plugin_state_t;
 
 static invalidate_t *
@@ -116,27 +136,46 @@ free_invalidate_t(invalidate_t *i)
 static void
 free_invalidate_t_list(invalidate_t *i)
 {
-  if (i->next) {
-    free_invalidate_t_list(i->next);
+  while (i) {
+    invalidate_t *next = i->next;
+    free_invalidate_t(i);
+    i = next;
   }
-  free_invalidate_t(i);
+}
+
+static guard_t *
+init_guard_t(guard_t *guard)
+{
+  atomic_store(&guard->count, 0);
+  guard->invalidate_list = NULL;
+  return guard;
+}
+
+static void
+free_guard_t(guard_t *guard)
+{
+  if (guard->invalidate_list) {
+    free_invalidate_t_list(guard->invalidate_list);
+  }
+  TSfree(guard);
 }
 
 static plugin_state_t *
 init_plugin_state_t(plugin_state_t *pstate)
 {
-  pstate->invalidate_list = NULL;
-  pstate->config_file     = NULL;
-  pstate->last_load       = 0;
-  pstate->log             = NULL;
+  atomic_store(&pstate->invalidate_guard, (intptr_t)NULL);
+  pstate->config_file = NULL;
+  pstate->last_load   = 0;
+  pstate->log         = NULL;
   return pstate;
 }
 
 static void
 free_plugin_state_t(plugin_state_t *pstate)
 {
-  if (pstate->invalidate_list) {
-    free_invalidate_t_list(pstate->invalidate_list);
+  guard_t *const guard = (guard_t *)atomic_load(&pstate->invalidate_guard);
+  if (guard) {
+    free_guard_t(guard);
   }
   if (pstate->config_file) {
     TSfree(pstate->config_file);
@@ -187,17 +226,15 @@ copy_config(invalidate_t *old_list)
 static bool
 prune_config(invalidate_t **i)
 {
-  invalidate_t *iptr, *ilast;
-  time_t now;
+  time_t now  = time(NULL);
   bool pruned = false;
 
-  now = time(NULL);
-
   if (*i) {
+    invalidate_t *iptr, *ilast;
     iptr  = *i;
     ilast = NULL;
     while (iptr) {
-      if (difftime(iptr->expiry, now) < 0) {
+      if (timelt(iptr->expiry, now)) {
         TSDebug(LOG_PREFIX, "Removing %s expiry: %d now: %d", iptr->regex_text, (int)iptr->expiry, (int)now);
         if (ilast) {
           ilast->next = iptr->next;
@@ -244,7 +281,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
     TSDebug(LOG_PREFIX, "Could not stat %s", path);
     return false;
   }
-  if (s.st_mtime > pstate->last_load) {
+  if (timelt(pstate->last_load, s.st_mtime)) {
     now = time(NULL);
     if (!(fs = fopen(path, "r"))) {
       TSDebug(LOG_PREFIX, "Could not open %s for reading", path);
@@ -260,12 +297,9 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
         init_invalidate_t(i);
         pcre_get_substring(line, ovector, rc, 1, &i->regex_text);
         i->epoch  = now;
-        i->expiry = atoi(line + ovector[4]);
+        i->expiry = (time_t)atoll(line + ovector[4]);
         i->regex  = pcre_compile(i->regex_text, 0, &errptr, &erroffset, NULL);
-        if (i->expiry <= i->epoch) {
-          TSDebug(LOG_PREFIX, "Rule is already expired!");
-          free_invalidate_t(i);
-        } else if (i->regex == NULL) {
+        if (i->regex == NULL) {
           TSDebug(LOG_PREFIX, "%s did not compile", i->regex_text);
           free_invalidate_t(i);
         } else {
@@ -338,55 +372,77 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
 }
 
 static int
-free_handler(TSCont cont, TSEvent event, void *edata)
+free_handler(TSCont free_cont, TSEvent event, void *edata)
 {
-  invalidate_t *iptr;
+  guard_t *guard = (guard_t *)TSContDataGet(free_cont);
+  int count      = atomic_load(&guard->count);
 
-  TSDebug(LOG_PREFIX, "Freeing old config");
-  iptr = (invalidate_t *)TSContDataGet(cont);
-  free_invalidate_t_list(iptr);
-  TSContDestroy(cont);
+  if (0 == count) {
+    TSDebug(LOG_PREFIX, "Freeing old config");
+    free_guard_t(guard);
+    TSContDestroy(free_cont);
+  } else if (0 < count) {
+    TSDebug(LOG_PREFIX, "Old config still referenced");
+    TSContSchedule(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
+  } else {
+    TSError("Guard Refcnt less than zero?!?");
+  }
   return 0;
 }
 
 static int
-config_handler(TSCont cont, TSEvent event, void *edata)
+config_handler(TSCont config_cont, TSEvent event, void *edata)
 {
-  plugin_state_t *pstate;
-  invalidate_t *i, *iptr;
-  TSCont free_cont;
-  bool updated;
-  TSMutex mutex;
-
-  mutex = TSContMutexGet(cont);
+  TSMutex mutex = TSContMutexGet(config_cont);
   TSMutexLock(mutex);
 
-  TSDebug(LOG_PREFIX, "In config Handler");
-  pstate = (plugin_state_t *)TSContDataGet(cont);
-  i      = copy_config(pstate->invalidate_list);
+  TSDebug(LOG_PREFIX, "In config handler");
+  plugin_state_t *pstate = (plugin_state_t *)TSContDataGet(config_cont);
 
-  updated = prune_config(&i);
-  updated = load_config(pstate, &i) || updated;
+  // pstate == NULL is a signal to exit
+  if (NULL != pstate) {
+    // only config_handler per
+    guard_t *guardold = (guard_t *)atomic_load(&pstate->invalidate_guard);
 
-  if (updated) {
-    list_config(pstate, i);
-    iptr = __sync_val_compare_and_swap(&(pstate->invalidate_list), pstate->invalidate_list, i);
+    invalidate_t *i = copy_config(guardold->invalidate_list);
 
-    if (iptr) {
-      free_cont = TSContCreate(free_handler, TSMutexCreate());
-      TSContDataSet(free_cont, (void *)iptr);
-      TSContSchedule(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
-    }
-  } else {
-    TSDebug(LOG_PREFIX, "No Changes");
-    if (i) {
-      free_invalidate_t_list(i);
+    bool const loaded  = load_config(pstate, &i);
+    bool const pruned  = prune_config(&i);
+    bool const updated = loaded | pruned;
+
+    if (updated) {
+      list_config(pstate, i);
+
+      guard_t *guardnew = (guard_t *)TSmalloc(sizeof(guard_t));
+      init_guard_t(guardnew);
+      guardnew->invalidate_list = i;
+
+      guardold = (guard_t *)atomic_exchange(&pstate->invalidate_guard, (intptr_t)guardnew);
+
+      // schedule the old config to be deleted
+      if (guardold->invalidate_list) {
+        TSCont free_cont = TSContCreate(free_handler, TSMutexCreate());
+        TSContDataSet(free_cont, (void *)guardold);
+        TSContSchedule(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
+      } else {
+        free_guard_t(guardold);
+      }
+    } else {
+      TSDebug(LOG_PREFIX, "No Changes");
+      if (i) {
+        free_invalidate_t_list(i);
+      }
     }
   }
 
   TSMutexUnlock(mutex);
 
-  TSContSchedule(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+  if (NULL != pstate) {
+    TSContSchedule(config_cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+  } else {
+    TSDebug(LOG_PREFIX, "config_cont exiting");
+    TSContDestroy(config_cont);
+  }
   return 0;
 }
 
@@ -414,8 +470,6 @@ main_handler(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn = (TSHttpTxn)edata;
   int status;
-  invalidate_t *iptr;
-  plugin_state_t *pstate;
 
   time_t date = 0, now = 0;
   char *url   = NULL;
@@ -425,21 +479,28 @@ main_handler(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_SUCCESS) {
       if (status == TS_CACHE_LOOKUP_HIT_FRESH) {
-        pstate = (plugin_state_t *)TSContDataGet(cont);
-        iptr   = pstate->invalidate_list;
+        plugin_state_t *const pstate = (plugin_state_t *)TSContDataGet(cont);
+
+        guard_t *const guard = (guard_t *)atomic_load(&pstate->invalidate_guard);
+
+        // incr reference count
+        atomic_fetch_add(&guard->count, 1);
+
+        invalidate_t *iptr = guard->invalidate_list;
         while (iptr) {
           if (!date) {
             date = get_date_from_cached_hdr(txn);
             now  = time(NULL);
           }
-          if ((difftime(iptr->epoch, date) >= 0) && (difftime(iptr->expiry, now) >= 0)) {
+
+          if (timelte(date, iptr->epoch) && timelte(now, iptr->expiry)) {
             if (!url) {
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
             }
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, NULL, 0) >= 0) {
               TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_STALE);
+              TSDebug(LOG_PREFIX, "Forced revalidate - %.*s from %s", url_len, url, iptr->regex_text);
               iptr = NULL;
-              TSDebug(LOG_PREFIX, "Forced revalidate - %.*s", url_len, url);
             }
           }
           if (iptr) {
@@ -449,8 +510,14 @@ main_handler(TSCont cont, TSEvent event, void *edata)
         if (url) {
           TSfree(url);
         }
+
+        // decr reference count
+        atomic_fetch_sub(&guard->count, 1);
       }
     }
+    break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    TSContDestroy(cont);
     break;
   default:
     break;
@@ -467,7 +534,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   main_cont = TSContCreate(main_handler, NULL);
   TSContDataSet(main_cont, ih);
-  TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, main_cont);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, main_cont);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, main_cont);
 
   return TSREMAP_NO_REMAP;
 }
@@ -513,8 +581,12 @@ configure_plugin_state(plugin_state_t *pstate, int argc, const char **argv, bool
   if (!load_config(pstate, &iptr)) {
     TSDebug(LOG_PREFIX, "Problem loading config from file %s", pstate->config_file);
   } else {
-    pstate->invalidate_list = iptr;
+    prune_config(&iptr);
+    guard_t *guard = (guard_t *)TSmalloc(sizeof(guard_t));
+    init_guard_t(guard);
+    guard->invalidate_list = iptr;
     list_config(pstate, iptr);
+    atomic_store(&pstate->invalidate_guard, (intptr_t)guard);
   }
 
   return true;
@@ -539,7 +611,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   *ih = (void *)pstate;
 
-  config_cont = TSContCreate(config_handler, TSMutexCreate());
+  config_cont         = TSContCreate(config_handler, TSMutexCreate());
+  pstate->config_cont = config_cont;
   TSContDataSet(config_cont, (void *)pstate);
 
   TSMgmtUpdateRegister(config_cont, LOG_PREFIX);
@@ -558,6 +631,16 @@ TSRemapDeleteInstance(void *ih)
 {
   if (NULL != ih) {
     plugin_state_t *const pstate = (plugin_state_t *)ih;
+
+    // signal the config to quit by nulling out its pstate back pointer
+    TSCont const config_cont = pstate->config_cont;
+    if (NULL != config_cont) {
+      TSMutex mutex = TSContMutexGet(config_cont);
+      TSMutexLock(mutex);
+      TSContDataSet(config_cont, NULL);
+      TSMutexUnlock(mutex);
+    }
+
     free_plugin_state_t(pstate);
   }
 }
@@ -640,7 +723,8 @@ TSPluginInit(int argc, const char *argv[])
   TSContDataSet(main_cont, (void *)pstate);
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, main_cont);
 
-  config_cont = TSContCreate(config_handler, TSMutexCreate());
+  config_cont         = TSContCreate(config_handler, TSMutexCreate());
+  pstate->config_cont = config_cont;
   TSContDataSet(config_cont, (void *)pstate);
 
   TSMgmtUpdateRegister(config_cont, LOG_PREFIX);
