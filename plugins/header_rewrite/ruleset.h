@@ -42,18 +42,7 @@ public:
       _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK),
       _ids(RSRC_NONE),
       _opermods(OPER_NONE),
-      _last(false)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "RuleSet CTOR");
-  }
-
-  ~RuleSet()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "RulesSet DTOR");
-    delete next;
-    delete _cond;
-    delete _oper;
-  }
+      _last(false){};
 
   // No reason to inline these
   void append(RuleSet *rule);
