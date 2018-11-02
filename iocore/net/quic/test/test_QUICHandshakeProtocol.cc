@@ -402,12 +402,14 @@ TEST_CASE("QUICHandshakeProtocol")
 
     // ## Client -> Server
     client_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
-    server_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::INITIAL);
+    server_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+                                  QUICKeyPhase::INITIAL);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
     // ## Server -> Client
     server_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
-    client_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::INITIAL);
+    client_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+                                  QUICKeyPhase::INITIAL);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
 
@@ -488,12 +490,14 @@ TEST_CASE("QUICHandshakeProtocol")
 
     // ## Client -> Server
     client_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
-    server_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::PHASE_0);
+    server_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+                                  QUICKeyPhase::PHASE_0);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
     // ## Server -> Client
     server_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
-    client_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, QUICKeyPhase::PHASE_0);
+    client_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+                                  QUICKeyPhase::PHASE_0);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
 
