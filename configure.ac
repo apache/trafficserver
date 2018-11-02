@@ -291,20 +291,19 @@ AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 # makes the diagnostic output ugly and hard to follow.
 AC_ARG_VAR(JAVA, [path to java executor])
 AC_CHECK_PROG(JAVA, java, java)
-AC_MSG_CHECKING([whether to build documentation])
+AC_MSG_RESULT([Checking whether to build documentation:])
 AC_ARG_ENABLE([docs],
   [AS_HELP_STRING([--enable-docs],[enable documentation building])],
   [
     enable_doc_build=yes
-    AM_PATH_PYTHON([2.4], [
-      dnl action-if-found
+    AM_PATH_PYTHON([3.4], [
       TS_MAN1_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
       TS_MAN3_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
       TS_MAN5_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
       TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
     ], [
-      dnl action-if-not-found
-      :
+      enable_doc_build=no
+      AC_ERROR([Doc building disabled, python 3.4 or better required])
     ])
 
     AS_IF([test -z "$JAVA"],
@@ -314,7 +313,7 @@ AC_ARG_ENABLE([docs],
       ])
     AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
     AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
-    AC_PATH_PROG([SPHINXBUILD], [sphinx-build], [])
+    AC_PATH_PROG([SPHINXBUILD], [$SPHINXBUILD], [$PYTHON -m sphinx])
     AS_IF(["$PYTHON" "$srcdir/doc/checkvers.py" --check-version],
       [
         sphinx_version_check=yes
@@ -342,7 +341,7 @@ AC_ARG_ENABLE([docs],
   ],
   [enable_doc_build=no]
 )
-AC_MSG_RESULT([$enable_doc_build])
+AC_MSG_RESULT([Will build documentation: $enable_doc_build])
 AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
 AM_CONDITIONAL([BUILD_MANPAGES], [test "xtrue" = "x$build_manpages"])
 
