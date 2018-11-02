@@ -50,6 +50,8 @@ public:
   const char *get_protocol_string() const override;
   void release(ProxyClientTransaction *trans) override;
   int populate_protocol(std::string_view *result, int size) const override;
+  void increment_current_active_client_connections_stat() override;
+  void decrement_current_active_client_connections_stat() override;
 
   // HQClientSession specific methods
   void add_transaction(HQClientTransaction *);

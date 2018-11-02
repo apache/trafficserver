@@ -25,7 +25,7 @@
 
 #include "I_EventSystem.h"
 #include "I_Event.h"
-#include "tscore/IntrusiveDList.h"
+#include "tscpp/util/IntrusiveDList.h"
 #include "MIME.h"
 #include "QUICApplication.h"
 
@@ -246,7 +246,7 @@ private:
 
   bool _invalid = false;
 
-  IntrusiveDList<DecodeRequest::Linkage> _blocked_list;
+  ts::IntrusiveDList<DecodeRequest::Linkage> _blocked_list;
   bool _add_to_blocked_list(DecodeRequest *decode_request);
 
   uint16_t _largest_known_received_index = 0;

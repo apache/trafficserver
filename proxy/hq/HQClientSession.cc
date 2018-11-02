@@ -129,6 +129,18 @@ HQClientSession::populate_protocol(std::string_view *result, int size) const
 }
 
 void
+HQClientSession::increment_current_active_client_connections_stat()
+{
+  // TODO Implement stats
+}
+
+void
+HQClientSession::decrement_current_active_client_connections_stat()
+{
+  // TODO Implement stats
+}
+
+void
 HQClientSession::add_transaction(HQClientTransaction *trans)
 {
   this->_transaction_list.enqueue(trans);
