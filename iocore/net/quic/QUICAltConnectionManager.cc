@@ -216,7 +216,7 @@ QUICAltConnectionManager::drop_cid(QUICConnectionId cid)
 {
   for (auto it = this->_alt_quic_connection_ids_remote.begin(); it != this->_alt_quic_connection_ids_remote.end(); ++it) {
     if (it->id == cid) {
-      QUICACMVDebug("Droppoing advertized CID seq# %" PRIu64, it->seq_num);
+      QUICACMVDebug("Dropping advertized CID %" PRIx32 " seq# %" PRIu64, it->id.h32(), it->seq_num);
       this->_retired_seq_nums.push(it->seq_num);
       this->_alt_quic_connection_ids_remote.erase(it);
       return;
