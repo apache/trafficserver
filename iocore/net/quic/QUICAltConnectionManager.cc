@@ -126,6 +126,11 @@ QUICAltConnectionManager::_update_alt_connection_id(uint64_t chosen_seq_num)
     }
   }
 
+  // Seq 0 is special so it's not in the array
+  if (chosen_seq_num == 0) {
+    return true;
+  }
+
   return false;
 }
 
@@ -199,12 +204,6 @@ QUICAltConnectionManager::migrate_to(QUICConnectionId cid, QUICStatelessResetTok
     if (info.id == cid) {
       // Migrate connection
       new_reset_token = info.token;
-
-      if (this->_qc->direction() == NET_VCONNECTION_IN) {
-        // Replace alt connection info with a new one for future use
-        this->_update_alt_connection_id(info.seq_num);
-      }
-
       return true;
     }
   }
