@@ -71,7 +71,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -104,7 +104,7 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.Processes.Default.Command = "curl -k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v -k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server_foo)
@@ -118,7 +118,7 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Conn
 tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("Override-enforcing-Test")
-tr2.Processes.Default.Command = "curl -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5
@@ -127,7 +127,7 @@ tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 tr2.TimeOut = 5
 
 tr3 = Test.AddTestRun("Override-enforcing-Test-fail-name-check")
-tr3.Processes.Default.Command = "curl -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr3.Processes.Default.Command = "curl -v -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
