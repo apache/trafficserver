@@ -45,6 +45,12 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value");
   }
 
+  virtual ~Value()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Value");
+    delete _cond_val;
+  }
+
   void
   set_value(const std::string &val)
   {
