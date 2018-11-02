@@ -72,6 +72,7 @@ class RulesConfig
 public:
   RulesConfig() : _ref_count(0)
   {
+    TSDebug(PLUGIN_NAME_DBG, "RulesConfig CTOR");
     memset(_rules, 0, sizeof(_rules));
     memset(_resids, 0, sizeof(_resids));
 
@@ -114,7 +115,8 @@ public:
 private:
   ~RulesConfig()
   {
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+    TSDebug(PLUGIN_NAME_DBG, "RulesConfig DTOR");
+    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) {
       delete _rules[i];
     }
     TSContDestroy(_cont);
