@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <string_view>
+#include <string>
+
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
 #include "tscore/TsBuffer.h"
@@ -243,6 +246,18 @@ public:
   unsigned count();
   void display(FILE *fd = stdout);
 
+  // Add a bad symbol seen in the log format to the list of bad symbols.
+  //
+  void addBadSymbol(std::string_view badSymbol);
+
+  // Return blank-separated list of added bad symbols.
+  //
+  std::string_view
+  badSymbols() const
+  {
+    return _badSymbols;
+  }
+
   // noncopyable
   // -- member functions that are not allowed --
   LogFieldList(const LogFieldList &rhs) = delete;
@@ -251,6 +266,7 @@ public:
 private:
   unsigned m_marshal_len;
   Queue<LogField> m_field_list;
+  std::string _badSymbols;
 };
 
 /** Base IP address data.

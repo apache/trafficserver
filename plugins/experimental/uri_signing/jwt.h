@@ -28,6 +28,7 @@ struct jwt {
   double nbf;
   double iat;
   const char *jti;
+  const char *cdnicrit;
   int cdniv;
   int cdniets;
   int cdnistt;

@@ -716,6 +716,7 @@ LogFieldList::clear()
     delete f; // safe given the semantics stated above
   }
   m_marshal_len = 0;
+  _badSymbols.clear();
 }
 
 void
@@ -750,11 +751,10 @@ LogFieldList::find_by_symbol(const char *symbol) const
 {
   LogField *field = nullptr;
 
-  if (Log::field_symbol_hash) {
-    if (ink_hash_table_lookup(Log::field_symbol_hash, (char *)symbol, (InkHashTableValue *)&field) && field) {
-      Debug("log-field-hash", "Field %s found", field->symbol());
-      return field;
-    }
+  if (auto it = Log::field_symbol_hash.find(symbol); it != Log::field_symbol_hash.end() && it->second) {
+    field = it->second;
+    Debug("log-field-hash", "Field %s found", field->symbol());
+    return field;
   }
   // trusty old method
 
@@ -822,4 +822,13 @@ LogFieldList::display(FILE *fd)
   for (LogField *f = first(); f; f = next(f)) {
     f->display(fd);
   }
+}
+
+void
+LogFieldList::addBadSymbol(std::string_view badSymbol)
+{
+  if (_badSymbols.size() > 0) {
+    _badSymbols += ", ";
+  }
+  _badSymbols += badSymbol;
 }

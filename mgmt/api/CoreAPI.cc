@@ -39,7 +39,6 @@
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
 #include "tscore/Diags.h"
-#include "tscore/ink_hash_table.h"
 #include "ExpandingArray.h"
 
 #include "CoreAPI.h"
@@ -790,9 +789,6 @@ EventResolve(const char *event_name)
 TSMgmtError
 ActiveEventGetMlt(LLQ *active_events)
 {
-  InkHashTable *event_ht;
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
   int event_id;
   char *event_name;
 
@@ -803,15 +799,12 @@ ActiveEventGetMlt(LLQ *active_events)
   // Alarms stores a hashtable of all active alarms where:
   // key = alarm_t,
   // value = alarm_description defined in Alarms.cc alarmText[] array
-  event_ht = lmgmt->alarm_keeper->getLocalAlarms();
+  std::unordered_map<std::string, Alarm *> const &event_ht = lmgmt->alarm_keeper->getLocalAlarms();
 
   // iterate through hash-table and insert event_name's into active_events list
-  for (entry = ink_hash_table_iterator_first(event_ht, &iterator_state); entry != nullptr;
-       entry = ink_hash_table_iterator_next(event_ht, &iterator_state)) {
-    char *key = (char *)ink_hash_table_entry_key(event_ht, entry);
-
+  for (auto &&it : event_ht) {
     // convert key to int; insert into llQ
-    event_id   = ink_atoi(key);
+    event_id   = ink_atoi(it.first.c_str());
     event_name = get_event_name(event_id);
     if (event_name) {
       if (!enqueue(active_events, event_name)) { // returns true if successful

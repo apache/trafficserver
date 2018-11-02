@@ -36,9 +36,19 @@ extern FileManager *configFiles;
  ****************************************************************************/
 
 void
-testcall(char *foo, bool /* incVersion */)
+testcall(char *foo, char * /*configName */, bool /* incVersion */)
 {
   Debug("lm", "Received Callback that %s has changed", foo);
+}
+
+void
+registerFile(const char *configName, const char *defaultName)
+{
+  bool found        = false;
+  const char *fname = REC_readString(configName, &found);
+  if (!found)
+    fname = defaultName;
+  configFiles->addFile(fname, configName, false);
 }
 
 //
@@ -61,19 +71,20 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  configFiles->addFile("logging.yaml", false);
-  configFiles->addFile("storage.config", false);
-  configFiles->addFile("socks.config", false);
-  configFiles->addFile("records.config", false);
-  configFiles->addFile("cache.config", false);
-  configFiles->addFile("ip_allow.config", false);
-  configFiles->addFile("parent.config", false);
-  configFiles->addFile("remap.config", false);
-  configFiles->addFile("volume.config", false);
-  configFiles->addFile("hosting.config", false);
-  configFiles->addFile("plugin.config", false);
-  configFiles->addFile("splitdns.config", false);
-  configFiles->addFile("ssl_multicert.config", false);
-  configFiles->addFile(SSL_SERVER_NAME_CONFIG, false);
+  registerFile("proxy.config.log.config.filename", "logging.yaml");
+  registerFile("", "storage.config");
+  registerFile("proxy.config.socks.socks_config_file", "socks.config");
+  registerFile("records.config", "records.config");
+  registerFile("proxy.config.cache.control.filename", "cache.config");
+  registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.config");
+  registerFile("proxy.config.http.parent_proxy.file", "parent.config");
+  registerFile("proxy.config.url_remap.filename", "remap.config");
+  registerFile("", "volume.config");
+  registerFile("proxy.config.cache.hosting_filename", "hosting.config");
+  registerFile("", "plugin.config");
+  registerFile("proxy.config.dns.splitdns.filename", "splitdns.config");
+  registerFile("proxy.config.ssl.server.multicert.filename", "ssl_multicert.config");
+  registerFile("proxy.config.ssl.servername.filename", SSL_SERVER_NAME_CONFIG);
+
   configFiles->registerCallback(testcall);
 }

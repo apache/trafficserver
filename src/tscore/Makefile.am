@@ -160,7 +160,6 @@ libtscore_la_SOURCES = \
 	ink_time.h \
 	ink_uuid.cc \
 	ink_uuid.h \
-	IntrusiveDList.h \
 	IpMap.cc \
 	IpMapConf.cc \
 	IpMapConf.h \
@@ -268,14 +267,12 @@ test_tscore_SOURCES = \
 	unit_tests/test_Extendible.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \
-	unit_tests/test_IntrusiveDList.cc \
 	unit_tests/test_IntrusiveHashMap.cc \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
 	unit_tests/test_Map.cc \
 	unit_tests/test_List.cc \
-	unit_tests/test_MemSpan.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
 	unit_tests/test_PriorityQueue.cc \
@@ -284,7 +281,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
 	unit_tests/test_ts_file.cc \
-	unit_tests/test_ts_meta.cc \
 	unit_tests/test_Vec.cc
 
 if HAS_HKDF

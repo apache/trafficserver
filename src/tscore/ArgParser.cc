@@ -155,7 +155,7 @@ ArgParser::parse(const char **argv)
   // if there is anything left, then output usage
   if (!args.empty()) {
     std::string msg = "Unkown command, option or args:";
-    for (auto it : args) {
+    for (const auto &it : args) {
       msg = msg + " '" + it + "'";
     }
     _top_level_command.help_message(msg);
@@ -295,7 +295,7 @@ ArgParser::Command::output_command(std::ostream &out, std::string const &prefix)
     }
   }
   // recursive call
-  for (auto it : _subcommand_list) {
+  for (const auto &it : _subcommand_list) {
     it.second.output_command(out, "  " + prefix);
   }
 }
@@ -304,7 +304,7 @@ ArgParser::Command::output_command(std::ostream &out, std::string const &prefix)
 void
 ArgParser::Command::output_option() const
 {
-  for (auto it : _option_list) {
+  for (const auto &it : _option_list) {
     std::string msg;
     if (!it.second.short_option.empty()) {
       msg = it.second.short_option + ", ";
@@ -435,14 +435,14 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
     }
   }
   // check for wrong number of arguments for --arg=...
-  for (auto it : check_map) {
+  for (const auto &it : check_map) {
     unsigned num = _option_list.at(it.first).arg_num;
     if (num != it.second && num < MORE_THAN_ONE_ARG_N) {
       help_message(std::to_string(_option_list.at(it.first).arg_num) + " arguments expected by " + it.first);
     }
   }
   // put in the default value of options
-  for (auto it : _option_list) {
+  for (const auto &it : _option_list) {
     if (!it.second.default_value.empty() && ret.get(it.second.key).empty()) {
       std::istringstream ss(it.second.default_value);
       std::string token;
@@ -482,7 +482,7 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
   if (command_called) {
     bool flag = false;
     // recursively call subcommand
-    for (auto it : _subcommand_list) {
+    for (auto &it : _subcommand_list) {
       if (it.second.parse(ret, args)) {
         flag = true;
         break;
@@ -552,11 +552,11 @@ Arguments::set_env(std::string const &key, std::string const &value)
 void
 Arguments::show_all_configuration() const
 {
-  for (auto it : _data_map) {
+  for (const auto &it : _data_map) {
     std::cout << "name: " + it.first << std::endl;
     std::string msg;
     msg = "args value:";
-    for (auto it_data : it.second._values) {
+    for (const auto &it_data : it.second._values) {
       msg += " " + it_data;
     }
     std::cout << msg << std::endl;

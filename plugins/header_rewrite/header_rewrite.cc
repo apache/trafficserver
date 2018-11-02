@@ -46,7 +46,10 @@ initGeoIP()
     if (!gGeoIP[dbs[i]] && GeoIP_db_avail(dbs[i])) {
       // GEOIP_STANDARD seems to break threaded apps...
       gGeoIP[dbs[i]] = GeoIP_open_type(dbs[i], GEOIP_MMAP_CACHE);
-      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", dbs[i], GeoIP_database_info(gGeoIP[dbs[i]]));
+
+      char *db_info = GeoIP_database_info(gGeoIP[dbs[i]]);
+      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", dbs[i], db_info);
+      free(db_info);
     }
   }
 }
@@ -69,6 +72,7 @@ class RulesConfig
 public:
   RulesConfig()
   {
+    TSDebug(PLUGIN_NAME_DBG, "RulesConfig CTOR");
     memset(_rules, 0, sizeof(_rules));
     memset(_resids, 0, sizeof(_resids));
 
@@ -78,7 +82,8 @@ public:
 
   ~RulesConfig()
   {
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+    TSDebug(PLUGIN_NAME_DBG, "RulesConfig DTOR");
+    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i <= TS_HTTP_LAST_HOOK; ++i) {
       delete _rules[i];
     }
     TSContDestroy(_cont);

@@ -135,7 +135,8 @@ class Rollback
 {
 public:
   // fileName_ should be rooted or a base file name.
-  Rollback(const char *fileName_, bool root_access_needed, Rollback *parentRollback = nullptr, unsigned flags = 0);
+  Rollback(const char *fileName_, const char *configName_, bool root_access_needed, Rollback *parentRollback = nullptr,
+           unsigned flags = 0);
   ~Rollback();
 
   // Manual take out of lock required
@@ -197,6 +198,11 @@ public:
   {
     return fileName;
   }
+  const char *
+  getConfigName() const
+  {
+    return configName;
+  }
   bool
   isChildRollback() const
   {
@@ -233,6 +239,7 @@ private:
   ink_mutex fileAccessLock;
   char *fileName;
   char *fileBaseName;
+  char *configName;
   size_t fileNameLen;
   bool root_access_needed;
   Rollback *parentRollback;

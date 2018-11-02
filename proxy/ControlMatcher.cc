@@ -234,7 +234,6 @@ HostMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 template <class Data, class MatchResult>
 UrlMatcher<Data, MatchResult>::UrlMatcher(const char *name, const char *filename) : BaseMatcher<Data>(name, filename)
 {
-  url_ht = ink_hash_table_create(InkHashTableKeyType_String);
 }
 
 //
@@ -242,7 +241,6 @@ UrlMatcher<Data, MatchResult>::UrlMatcher(const char *name, const char *filename
 //
 template <class Data, class MatchResult> UrlMatcher<Data, MatchResult>::~UrlMatcher()
 {
-  ink_hash_table_destroy(url_ht);
   for (int i = 0; i < num_el; i++) {
     ats_free(url_str[i]);
   }
@@ -293,7 +291,6 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 {
   Data *cur_d;
   char *pattern;
-  int *value;
   Result error = Result::ok();
 
   // Make sure space has been allocated
@@ -308,7 +305,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
   ink_assert(pattern != nullptr);
 
-  if (ink_hash_table_lookup(url_ht, pattern, (void **)&value)) {
+  if (url_ht.find(pattern) != url_ht.end()) {
     return Result::failure("%s url expression error (have exist) at line %d position", matcher_name, line_info->line_num);
   }
 
@@ -322,7 +319,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   if (error.failed()) {
     url_str[num_el]   = ats_strdup(pattern);
     url_value[num_el] = num_el;
-    ink_hash_table_insert(url_ht, url_str[num_el], (void *)&url_value[num_el]);
+    url_ht.emplace(url_str[num_el], url_value[num_el]);
     num_el++;
   }
 
@@ -340,7 +337,6 @@ void
 UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
 {
   char *url_str;
-  int *value;
 
   // Check to see there is any work to before we copy the
   //   URL
@@ -356,9 +352,9 @@ UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
     url_str = ats_strdup("");
   }
 
-  if (ink_hash_table_lookup(url_ht, url_str, (void **)&value)) {
-    Debug("matcher", "%s Matched %s with url at line %d", matcher_name, url_str, data_array[*value].line_num);
-    data_array[*value].UpdateMatch(result, rdata);
+  if (auto it = url_ht.find(url_str); it != url_ht.end()) {
+    Debug("matcher", "%s Matched %s with url at line %d", matcher_name, url_str, data_array[it->second].line_num);
+    data_array[it->second].UpdateMatch(result, rdata);
   }
 
   ats_free(url_str);

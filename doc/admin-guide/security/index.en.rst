@@ -220,10 +220,10 @@ and origin server connections, you must do the following:
         CONFIG proxy.config.ssl.client.private_key.filename STRING "client.pem"
 
 #. Enable or disable, per your security policy, server SSL certificate
-   verification using :ts:cv:`proxy.config.ssl.client.verify.server` in
+   verification using :ts:cv:`proxy.config.ssl.client.verify.server.policy` in
    :file:`records.config`. ::
 
-        CONFIG proxy.config.ssl.client.verify.server INT 1
+        CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
 
 #. Add the collection of authorized Certificate Authorities to the Traffic
    Server configuration in :file:`records.config` using the settings

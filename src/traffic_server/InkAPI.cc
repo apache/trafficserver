@@ -1042,7 +1042,15 @@ INKContInternal::destroy()
     if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
       ink_assert(!"not reached");
     }
-    this_ethread()->schedule_imm(this);
+    EThread *p = this_ethread();
+
+    // If this_thread() returns null, the EThread object for the current thread has been destroyed (or it never existed).
+    // Presumably this will only happen during destruction of statically-initialized objects at TS shutdown, so no further
+    // action is needed.
+    //
+    if (p) {
+      p->schedule_imm(this);
+    }
   }
 }
 
@@ -1345,50 +1353,33 @@ APIHooks::clear()
 //
 ////////////////////////////////////////////////////////////////////
 
-ConfigUpdateCbTable::ConfigUpdateCbTable()
-{
-  cb_table = ink_hash_table_create(InkHashTableKeyType_String);
-}
+ConfigUpdateCbTable::ConfigUpdateCbTable() {}
 
-ConfigUpdateCbTable::~ConfigUpdateCbTable()
-{
-  ink_assert(cb_table != nullptr);
-
-  ink_hash_table_destroy(cb_table);
-}
+ConfigUpdateCbTable::~ConfigUpdateCbTable() {}
 
 void
 ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name)
 {
-  ink_assert(cb_table != nullptr);
-
   if (contp && name) {
-    ink_hash_table_insert(cb_table, (InkHashTableKey)name, (InkHashTableValue)contp);
+    cb_table.emplace(name, contp);
   }
 }
 
 void
 ConfigUpdateCbTable::invoke(const char *name)
 {
-  ink_assert(cb_table != nullptr);
-
-  InkHashTableIteratorState ht_iter;
-  InkHashTableEntry *ht_entry;
   INKContInternal *contp;
 
   if (name != nullptr) {
     if (strcmp(name, "*") == 0) {
-      ht_entry = ink_hash_table_iterator_first(cb_table, &ht_iter);
-      while (ht_entry != nullptr) {
-        contp = (INKContInternal *)ink_hash_table_entry_value(cb_table, ht_entry);
+      for (auto &&it : cb_table) {
+        contp = it.second;
         ink_assert(contp != nullptr);
         invoke(contp);
-        ht_entry = ink_hash_table_iterator_next(cb_table, &ht_iter);
       }
     } else {
-      ht_entry = ink_hash_table_lookup_entry(cb_table, (InkHashTableKey)name);
-      if (ht_entry != nullptr) {
-        contp = (INKContInternal *)ink_hash_table_entry_value(cb_table, ht_entry);
+      if (auto it = cb_table.find(name); it != cb_table.end()) {
+        contp = it->second;
         ink_assert(contp != nullptr);
         invoke(contp);
       }
@@ -6816,6 +6807,34 @@ TSNetConnectTransparent(TSCont contp, sockaddr const *client_addr, sockaddr cons
   return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), server_addr, &opt));
 }
 
+TSCont
+TSNetInvokingContGet(TSVConn conn)
+{
+  NetVConnection *vc         = reinterpret_cast<NetVConnection *>(conn);
+  UnixNetVConnection *net_vc = dynamic_cast<UnixNetVConnection *>(vc);
+  TSCont ret                 = nullptr;
+  if (net_vc) {
+    const Action *action = net_vc->get_action();
+    ret                  = reinterpret_cast<TSCont>(action->continuation);
+  }
+  return ret;
+}
+
+TSHttpTxn
+TSNetInvokingTxnGet(TSVConn conn)
+{
+  TSCont cont   = TSNetInvokingContGet(conn);
+  TSHttpTxn ret = nullptr;
+  if (cont) {
+    Continuation *contobj = reinterpret_cast<Continuation *>(cont);
+    HttpSM *sm            = dynamic_cast<HttpSM *>(contobj);
+    if (sm) {
+      ret = reinterpret_cast<TSHttpTxn>(sm);
+    }
+  }
+  return ret;
+}
+
 TSAction
 TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 {
@@ -8754,17 +8773,21 @@ TSHttpEventNameLookup(TSEvent event)
 class TSSslCallback : public Continuation
 {
 public:
-  TSSslCallback(SSLNetVConnection *vc) : Continuation(vc->nh->mutex), m_vc(vc) { SET_HANDLER(&TSSslCallback::event_handler); }
-  int
-  event_handler(int, void *)
+  TSSslCallback(SSLNetVConnection *vc, TSEvent event) : Continuation(vc->nh->mutex), m_vc(vc), m_event(event)
   {
-    m_vc->reenable(m_vc->nh);
+    SET_HANDLER(&TSSslCallback::event_handler);
+  }
+  int
+  event_handler(int event, void *)
+  {
+    m_vc->reenable(m_vc->nh, m_event);
     delete this;
     return 0;
   }
 
 private:
   SSLNetVConnection *m_vc;
+  TSEvent m_event;
 };
 
 /// SSL Hooks
@@ -8797,6 +8820,10 @@ TSVConnSSLConnectionGet(TSVConn sslp)
 tsapi TSSslContext
 TSSslContextFindByName(const char *name)
 {
+  if (nullptr == name || 0 == strlen(name)) {
+    // an empty name is an invalid input
+    return nullptr;
+  }
   TSSslContext ret      = nullptr;
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
   if (lookup != nullptr) {
@@ -8930,6 +8957,12 @@ TSVConnIsSsl(TSVConn sslp)
 void
 TSVConnReenable(TSVConn vconn)
 {
+  TSVConnReenableEx(vconn, TS_EVENT_CONTINUE);
+}
+
+void
+TSVConnReenableEx(TSVConn vconn, TSEvent event)
+{
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(vconn);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
   // We really only deal with a SSLNetVConnection at the moment
@@ -8939,10 +8972,10 @@ TSVConnReenable(TSVConn vconn)
     // We use the mutex of VC's NetHandler so we can put the VC into ready_list by reenable()
     MUTEX_TRY_LOCK(trylock, ssl_vc->nh->mutex, eth);
     if (trylock.is_locked()) {
-      ssl_vc->reenable(ssl_vc->nh);
+      ssl_vc->reenable(ssl_vc->nh, event);
     } else {
       // We schedule the reenable to the home thread of ssl_vc.
-      ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
+      ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc, event));
     }
   }
 }

@@ -4,20 +4,17 @@
 
     @section license License
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+    agreements.  See the NOTICE file distributed with this work for additional information regarding
+    copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with the License.  You may
+    obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
     limitations under the License.
 */
 
@@ -26,10 +23,12 @@
 #include <string>
 #include <algorithm>
 
-#include "tscore/IntrusiveDList.h"
-#include "tscore/BufferWriter.h"
+#include "tscpp/util/IntrusiveDList.h"
+#include "tscpp/util/bwf_base.h"
 
-#include <catch.hpp>
+#include "catch.hpp"
+
+using ts::IntrusiveDList;
 
 // --------------------
 // Code for documentation - placed here to guarantee the examples at least compile.
@@ -82,7 +81,7 @@ Message::is_in_list() const
 class Container
 {
   using self_type   = Container;
-  using MessageList = IntrusiveDList<Message::Linkage>;
+  using MessageList = ts::IntrusiveDList<Message::Linkage>;
 
 public:
   ~Container();
@@ -147,7 +146,7 @@ Container::print() const
   }
 }
 
-TEST_CASE("IntrusiveDList Example", "[libts][IntrusiveDList]")
+TEST_CASE("IntrusiveDList Example", "[libtscpputil][IntrusiveDList]")
 {
   Container container;
 
@@ -210,10 +209,10 @@ public:
 // If any lines above here are changed, the documentation must be updated.
 // --------------------
 
-using ThingList        = IntrusiveDList<Thing::Linkage>;
-using PrivateThingList = IntrusiveDList<PrivateThing::Linkage>;
+using ThingList        = ts::IntrusiveDList<Thing::Linkage>;
+using PrivateThingList = ts::IntrusiveDList<PrivateThing::Linkage>;
 
-TEST_CASE("IntrusiveDList", "[libts][IntrusiveDList]")
+TEST_CASE("IntrusiveDList", "[libtscpputil][IntrusiveDList]")
 {
   ThingList list;
   int n;

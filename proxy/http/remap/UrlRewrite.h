@@ -25,8 +25,11 @@
 
 #include "tscore/ink_config.h"
 #include "UrlMapping.h"
+#include "UrlMappingPathIndex.h"
 #include "HttpTransact.h"
 #include "tscore/Regex.h"
+
+#include <memory>
 
 #define URL_REMAP_FILTER_NONE 0x00000000
 #define URL_REMAP_FILTER_REFERER 0x00000001      /* enable "referer" header validation */
@@ -53,6 +56,7 @@ enum mapping_type {
 class UrlRewrite : public RefCountObj
 {
 public:
+  using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
   UrlRewrite();
   ~UrlRewrite() override;
 
@@ -114,7 +118,7 @@ public:
   typedef Queue<RegexMapping> RegexMappingList;
 
   struct MappingsStore {
-    InkHashTable *hash_lookup;
+    std::unique_ptr<URLTable> hash_lookup;
     RegexMappingList regex_list;
     bool
     empty()
@@ -138,7 +142,7 @@ public:
   bool InsertMapping(mapping_type maptype, url_mapping *new_mapping, RegexMapping *reg_map, const char *src_host,
                      bool is_cur_mapping_regex);
 
-  bool TableInsert(InkHashTable *h_table, url_mapping *mapping, const char *src_host);
+  bool TableInsert(std::unique_ptr<URLTable> &h_table, url_mapping *mapping, const char *src_host);
 
   MappingsStore forward_mappings;
   MappingsStore reverse_mappings;
@@ -195,12 +199,13 @@ private:
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
                       UrlMappingContainer &mapping_container);
-  url_mapping *_tableLookup(InkHashTable *h_table, URL *request_url, int request_port, char *request_host, int request_host_len);
+  url_mapping *_tableLookup(std::unique_ptr<URLTable> &h_table, URL *request_url, int request_port, char *request_host,
+                            int request_host_len);
   bool _regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port, const char *request_host,
                            int request_host_len, int rank_ceiling, UrlMappingContainer &mapping_container);
   int _expandSubstitutions(int *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
                            int dest_buf_size);
-  void _destroyTable(InkHashTable *h_table);
+  void _destroyTable(std::unique_ptr<URLTable> &h_table);
   void _destroyList(RegexMappingList &regexes);
   inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, const char *src_host,
                           bool is_cur_mapping_regex, int &count);

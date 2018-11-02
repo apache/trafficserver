@@ -66,9 +66,9 @@ public:
   }
 
   bool
-  mod_exist(const std::string m) const
+  mod_exist(const std::string &m) const
   {
-    return (std::find(_mods.begin(), _mods.end(), m) != _mods.end());
+    return std::find(_mods.begin(), _mods.end(), m) != _mods.end();
   }
 
   bool cond_is_hook(TSHttpHookID &hook) const;

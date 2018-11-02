@@ -1248,8 +1248,11 @@ Close Connections for draining
 ------------------------------
 
 When a healthcheck file is missing (in this example, ``/path/to/the/healthcheck/file.txt``),
-add a ``Connection: close`` header to have HTTP/1.1 clients drop their connection,
-allowing the server to drain. This should be a global configuration.::
+add a ``Connection: close`` header to have clients drop their connection,
+allowing the server to drain. Although Connection header is only available on
+HTTP/1.1 in terms of protocols, but this also works for HTTP/2 connections
+because the header triggers HTTP/2 graceful shutdown. This should be a global
+configuration.::
 
    cond %{SEND_RESPONSE_HDR_HOOK}
    cond %{ACCESS:/path/to/the/healthcheck/file.txt}    [NOT,OR]

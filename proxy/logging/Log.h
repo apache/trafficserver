@@ -54,11 +54,12 @@
 #include <cstdarg>
 #include "tscore/ink_platform.h"
 #include "tscore/EventNotify.h"
-#include "tscore/ink_hash_table.h"
 #include "tscore/Regression.h"
 #include "records/P_RecProcess.h"
 #include "LogFile.h"
 #include "LogBuffer.h"
+
+#include <unordered_map>
 
 class LogAccess;
 class LogFieldList;
@@ -182,7 +183,7 @@ public:
   inkcoreapi static LogObject *error_log;
   static LogConfig *config;
   static LogFieldList global_field_list;
-  static InkHashTable *field_symbol_hash;
+  static std::unordered_map<std::string, LogField *> field_symbol_hash;
   static LogFormat *global_scrap_format;
   static LogObject *global_scrap_object;
   static LoggingMode logging_mode;

@@ -43,32 +43,10 @@ enum MatcherOps {
 class Matcher
 {
 public:
-  explicit Matcher(const MatcherOps op) : _pdata(nullptr), _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
-  virtual ~Matcher()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher");
-    free_pdata();
-  }
-
-  void
-  set_pdata(void *pdata)
-  {
-    _pdata = pdata;
-  }
-  void *
-  get_pdata() const
-  {
-    return _pdata;
-  }
-  virtual void
-  free_pdata()
-  {
-    TSfree(_pdata);
-    _pdata = nullptr;
-  }
+  explicit Matcher(const MatcherOps op) : _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
+  virtual ~Matcher() { TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher"); }
 
 protected:
-  void *_pdata;
   const MatcherOps _op;
 
 private:
@@ -111,7 +89,7 @@ public:
   }
 
   void
-  set(const T d)
+  set(const T &d)
   {
     _data = d;
     if (_op == MATCH_REGULAR_EXPRESSION) {
@@ -121,7 +99,7 @@ public:
 
   // Evaluate this matcher
   bool
-  test(const T t) const
+  test(const T &t) const
   {
     switch (_op) {
     case MATCH_EQUAL:
@@ -145,7 +123,7 @@ public:
 
 private:
   void
-  debug_helper(const T t, const char *op, bool r) const
+  debug_helper(const T &t, const char *op, bool r) const
   {
     std::stringstream ss;
 
@@ -155,7 +133,7 @@ private:
 
   // For basic types
   bool
-  test_eq(const T t) const
+  test_eq(const T &t) const
   {
     bool r = (t == _data);
 
@@ -166,7 +144,7 @@ private:
   }
 
   bool
-  test_lt(const T t) const
+  test_lt(const T &t) const
   {
     bool r = (t < _data);
 
@@ -177,7 +155,7 @@ private:
   }
 
   bool
-  test_gt(const T t) const
+  test_gt(const T &t) const
   {
     bool r = t > _data;
 
@@ -202,7 +180,7 @@ private:
   }
 
   bool
-  test_reg(const std::string t) const
+  test_reg(const std::string &t) const
   {
     int ovector[OVECCOUNT];
 

@@ -268,6 +268,8 @@ public:
 
   void set_session_active();
   void clear_session_active();
+  virtual void increment_current_active_client_connections_stat() = 0;
+  virtual void decrement_current_active_client_connections_stat() = 0;
 
   static int64_t next_connection_id();
 

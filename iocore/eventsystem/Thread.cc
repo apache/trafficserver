@@ -57,6 +57,13 @@ Thread::Thread()
 Thread::~Thread()
 {
   ink_release_assert(mutex->thread_holding == (EThread *)this);
+
+  if (ink_thread_getspecific(Thread::thread_data_key) == this) {
+    // Clear pointer to this object stored in thread-specific data by set_specific.
+    //
+    ink_thread_setspecific(Thread::thread_data_key, nullptr);
+  }
+
   mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
   MUTEX_UNTAKE_LOCK(mutex, (EThread *)this);
 }

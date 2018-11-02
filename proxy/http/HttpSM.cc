@@ -575,11 +575,10 @@ HttpSM::setup_blind_tunnel_port()
       t_state.hdr_info.client_request.url_create(&u);
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
-      auto *hs = TunnelMap.find(ssl_vc->serverName);
-      if (hs != nullptr) {
-        t_state.hdr_info.client_request.url_get()->host_set(hs->hostname, hs->len);
-        if (hs->port > 0) {
-          t_state.hdr_info.client_request.url_get()->port_set(hs->port);
+      if (auto it = TunnelMap.find(ssl_vc->serverName); it != TunnelMap.end()) {
+        t_state.hdr_info.client_request.url_get()->host_set(it->second.hostname.c_str(), it->second.hostname.size());
+        if (it->second.port > 0) {
+          t_state.hdr_info.client_request.url_get()->port_set(it->second.port);
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
@@ -1386,11 +1385,10 @@ plugins required to work with sni_routing.
       SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
 
       if (ssl_vc && ssl_vc->GetSNIMapping()) {
-        auto *hs = TunnelMap.find(ssl_vc->serverName);
-        if (hs != nullptr) {
-          t_state.hdr_info.client_request.url_get()->host_set(hs->hostname, hs->len);
-          if (hs->port > 0) {
-            t_state.hdr_info.client_request.url_get()->port_set(hs->port);
+        if (auto it = TunnelMap.find(ssl_vc->serverName); it != TunnelMap.end()) {
+          t_state.hdr_info.client_request.url_get()->host_set(it->second.hostname.c_str(), it->second.hostname.size());
+          if (it->second.port > 0) {
+            t_state.hdr_info.client_request.url_get()->port_set(it->second.port);
           } else {
             t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
           }
@@ -5015,23 +5013,6 @@ HttpSM::do_http_server_open(bool raw)
       opt.set_ssl_servername(t_state.server_info.name);
     }
 
-    SSLConfig::scoped_config params;
-    // check if the overridden client cert filename is already attached to an existing ssl context
-    if (t_state.txn_conf->client_cert_filepath && t_state.txn_conf->client_cert_filename) {
-      ats_scoped_str clientCert(
-        Layout::relative_to(t_state.txn_conf->client_cert_filepath, t_state.txn_conf->client_cert_filename));
-      if (clientCert != nullptr) {
-        auto tCTX = params->getCTX(clientCert);
-
-        if (tCTX == nullptr) {
-          // make new client ctx and add it to the ctx list
-          Debug("ssl", "adding new cert for client cert %s", (char *)clientCert);
-          auto tctx = params->getNewCTX(clientCert);
-          params->InsertCTX(clientCert, tctx);
-        }
-        opt.set_client_certname(clientCert);
-      }
-    }
     connect_action_handle = sslNetProcessor.connect_re(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // addr + port
                                                        &opt);

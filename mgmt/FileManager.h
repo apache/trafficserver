@@ -23,14 +23,15 @@
 
 #pragma once
 
-#include "tscore/ink_hash_table.h"
 #include "tscore/ink_mutex.h"
 #include "tscore/List.h"
+
+#include <unordered_map>
 
 class ExpandingArray;
 class Rollback;
 
-typedef void (*FileCallbackFunc)(char *, bool);
+typedef void (*FileCallbackFunc)(char *, char *, bool);
 
 struct callbackListable {
 public:
@@ -47,7 +48,7 @@ enum lockAction_t {
 //
 //  public functions:
 //
-//  addFile(char*, configFileInfo*) - adds a new config file to be
+//  addFile(char*, char *, configFileInfo*) - adds a new config file to be
 //       managed.  A rollback object is created for the file.
 //       if the file_info ptr is not NULL, a WebFileEdit object
 //       is also created
@@ -65,7 +66,7 @@ enum lockAction_t {
 //       callback function should NOT use the calling thread to
 //       access any Rollback objects or block for a long time
 //
-//  fileChanged(const char* fileName) - called by Rollback objects
+//  fileChanged(const char* fileName, const char *configName) - called by Rollback objects
 //       when their contents change.  Triggers callbacks to FileCallbackFuncs
 //
 //  isConfigStale() - returns whether the in-memory files might be stale
@@ -79,10 +80,11 @@ class FileManager
 public:
   FileManager();
   ~FileManager();
-  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = nullptr, unsigned flags = 0);
+  void addFile(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback = nullptr,
+               unsigned flags = 0);
   bool getRollbackObj(const char *fileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
-  void fileChanged(const char *fileName, bool incVersion);
+  void fileChanged(const char *fileName, const char *configName, bool incVersion);
   void rereadConfig();
   bool isConfigStale();
   void configFileChild(const char *parent, const char *child, unsigned int options);
@@ -91,8 +93,9 @@ private:
   ink_mutex accessLock; // Protects bindings hashtable
   ink_mutex cbListLock; // Protects the CallBack List
   DLL<callbackListable> cblist;
-  InkHashTable *bindings;
-  void addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback, unsigned flags = 0);
+  std::unordered_map<std::string_view, Rollback *> bindings;
+  void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback,
+                     unsigned flags = 0);
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc

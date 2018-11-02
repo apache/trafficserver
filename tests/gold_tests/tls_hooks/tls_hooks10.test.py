@@ -68,15 +68,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
 
 ts.Streams.stderr = "gold/ts-cert-1-im-2.gold"
 
-certstring0 = "Cert callback 0"
-certstring1 = "Cert callback 1"
-ts.Streams.All = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}.*{0}(?!.*{0}).*\Z".format(certstring0), "Cert message appears twicd", reflags=re.S | re.M)
-ts.Streams.All = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring1), "Cert message appears only once", reflags=re.S | re.M)
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5

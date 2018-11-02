@@ -43,7 +43,6 @@
 #include "tscore/ArgParser.h"
 #include <thread>
 
-#include "File.h"
 #include "CacheDefs.h"
 #include "CacheScan.h"
 
@@ -54,7 +53,6 @@ using ts::CacheStripeBlocks;
 using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
 using ts::Errata;
-using ts::FilePath;
 using ts::CacheDirEntry;
 using ts::MemSpan;
 using ts::Doc;
@@ -64,8 +62,8 @@ extern int cache_config_min_average_object_size;
 extern CacheStoreBlocks Vol_hash_alloc_size;
 extern int OPEN_RW_FLAG;
 const Bytes ts::CacheSpan::OFFSET{CacheStoreBlocks{1}};
-FilePath SpanFile;
-FilePath VolumeFile;
+ts::file::path SpanFile;
+ts::file::path VolumeFile;
 ts::ArgParser parser;
 
 Errata err;
@@ -104,7 +102,7 @@ Volume::clear()
 /* --------------------------------------------------------------------------------------- */
 /// Data parsed from the volume config file.
 struct VolumeConfig {
-  Errata load(FilePath const &path);
+  Errata load(ts::file::path const &path);
 
   /// Data direct from the config file.
   struct Data {
@@ -185,10 +183,10 @@ VolumeConfig::convertToAbsolute(ts::CacheStripeBlocks n)
 struct Cache {
   ~Cache();
 
-  Errata loadSpan(FilePath const &path);
-  Errata loadSpanConfig(FilePath const &path);
-  Errata loadSpanDirect(FilePath const &path, int vol_idx = -1, Bytes size = Bytes(-1));
-  Errata loadURLs(FilePath const &path);
+  Errata loadSpan(ts::file::path const &path);
+  Errata loadSpanConfig(ts::file::path const &path);
+  Errata loadSpanDirect(ts::file::path const &path, int vol_idx = -1, Bytes size = Bytes(-1));
+  Errata loadURLs(ts::file::path const &path);
 
   Errata allocStripe(Span *span, int vol_idx, CacheStripeBlocks len);
 
@@ -216,7 +214,7 @@ Errata
 Cache::allocStripe(Span *span, int vol_idx, CacheStripeBlocks len)
 {
   auto rv = span->allocStripe(vol_idx, len);
-  std::cout << span->_path << ":" << vol_idx << std::endl;
+  std::cout << span->_path.string() << ":" << vol_idx << std::endl;
   if (rv.isOK()) {
     _volumes[vol_idx]._stripes.push_back(rv);
   }
@@ -274,10 +272,10 @@ class VolumeAllocator
 public:
   VolumeAllocator();
 
-  Errata load(FilePath const &spanFile, FilePath const &volumeFile);
+  Errata load(ts::file::path const &spanFile, ts::file::path const &volumeFile);
   Errata fillEmptySpans();
   Errata fillAllSpans();
-  Errata allocateSpan(FilePath const &spanFile);
+  Errata allocateSpan(ts::file::path const &spanFile);
   void dumpVolumes();
 
 protected:
@@ -288,14 +286,14 @@ protected:
 VolumeAllocator::VolumeAllocator() {}
 
 Errata
-VolumeAllocator::load(FilePath const &spanFile, FilePath const &volumeFile)
+VolumeAllocator::load(ts::file::path const &spanFile, ts::file::path const &volumeFile)
 {
   Errata zret;
 
-  if (!volumeFile) {
+  if (volumeFile.empty()) {
     zret.push(0, 9, "Volume config file not set");
   }
-  if (!spanFile) {
+  if (spanFile.empty()) {
     zret.push(0, 9, "Span file not set");
   }
 
@@ -340,11 +338,11 @@ VolumeAllocator::fillEmptySpans()
 }
 
 Errata
-VolumeAllocator::allocateSpan(FilePath const &input_file_path)
+VolumeAllocator::allocateSpan(ts::file::path const &input_file_path)
 {
   Errata zret;
   for (auto span : _cache._spans) {
-    if (0 == strcmp(span->_path.path(), input_file_path.path())) {
+    if (span->_path.view() == input_file_path.view()) {
       std::cout << "===============================" << std::endl;
       if (span->_header) {
         zret.push(0, 1, "Disk already initialized with valid header");
@@ -389,8 +387,8 @@ VolumeAllocator::allocateFor(Span &span)
   int64_t total_shares       = 0;
 
   if (Verbosity >= NORMAL) {
-    std::cout << "Allocating " << CacheStripeBlocks(round_down(span._len)).count() << " stripe blocks from span " << span._path
-              << std::endl;
+    std::cout << "Allocating " << CacheStripeBlocks(round_down(span._len)).count() << " stripe blocks from span "
+              << span._path.string() << std::endl;
   }
 
   // Walk the volumes and get the relative allocations.
@@ -453,14 +451,17 @@ VolumeAllocator::allocateFor(Span &span)
 }
 /* --------------------------------------------------------------------------------------- */
 Errata
-Cache::loadSpan(FilePath const &path)
+Cache::loadSpan(ts::file::path const &path)
 {
   Errata zret;
-  if (!path.has_path()) {
+  std::error_code ec;
+  auto fs = ts::file::status(path, ec);
+
+  if (path.empty()) {
     zret = Errata::Message(0, EINVAL, "A span file specified by --spans is required");
-  } else if (!path.is_readable()) {
-    zret = Errata::Message(0, EPERM, '\'', path.path(), "' is not readable.");
-  } else if (path.is_regular_file()) {
+  } else if (!ts::file::is_readable(path)) {
+    zret = Errata::Message(0, EPERM, '\'', path.string(), "' is not readable.");
+  } else if (ts::file::is_regular_file(fs)) {
     zret = this->loadSpanConfig(path);
   } else {
     zret = this->loadSpanDirect(path);
@@ -469,7 +470,7 @@ Cache::loadSpan(FilePath const &path)
 }
 
 Errata
-Cache::loadSpanDirect(FilePath const &path, int vol_idx, Bytes size)
+Cache::loadSpanDirect(ts::file::path const &path, int vol_idx, Bytes size)
 {
   Errata zret;
   std::unique_ptr<Span> span(new Span(path));
@@ -503,16 +504,16 @@ Cache::loadSpanDirect(FilePath const &path, int vol_idx, Bytes size)
 }
 
 Errata
-Cache::loadSpanConfig(FilePath const &path)
+Cache::loadSpanConfig(ts::file::path const &path)
 {
   static const ts::TextView TAG_ID("id");
   static const ts::TextView TAG_VOL("volume");
 
   Errata zret;
-
-  ts::BulkFile cfile(path);
-  if (0 == cfile.load()) {
-    ts::TextView content = cfile.content();
+  std::error_code ec;
+  std::string load_content = ts::file::load(path, ec);
+  if (ec.value() == 0) {
+    ts::TextView content(load_content);
     while (content) {
       ts::TextView line = content.take_prefix_at('\n');
       line.ltrim_if(&isspace);
@@ -538,26 +539,26 @@ Cache::loadSpanConfig(FilePath const &path)
             }
           }
         }
-        zret = this->loadSpan(FilePath(path));
+        zret = this->loadSpan(ts::file::path(path));
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path);
+    zret = Errata::Message(0, EBADF, "Unable to load ", path.string());
   }
   return zret;
 }
 
 Errata
-Cache::loadURLs(FilePath const &path)
+Cache::loadURLs(ts::file::path const &path)
 {
   static const ts::TextView TAG_VOL("url");
   ts::URLparser parser;
   Errata zret;
 
-  ts::BulkFile cfile(path);
-  if (0 == cfile.load()) {
-    ts::TextView content = cfile.content();
-
+  std::error_code ec;
+  std::string load_content = ts::file::load(path, ec);
+  if (ec.value() == 0) {
+    ts::TextView content(load_content);
     while (!content.empty()) {
       ts::TextView blob = content.take_prefix_at('\n');
 
@@ -577,7 +578,7 @@ Cache::loadURLs(FilePath const &path)
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path);
+    zret = Errata::Message(0, EBADF, "Unable to load ", path.string());
   }
   return zret;
 }
@@ -588,10 +589,10 @@ Cache::dumpSpans(SpanDumpDepth depth)
   if (depth >= SpanDumpDepth::SPAN) {
     for (auto span : _spans) {
       if (nullptr == span->_header) {
-        std::cout << "Span: " << span->_path << " is uninitialized" << std::endl;
+        std::cout << "Span: " << span->_path.string() << " is uninitialized" << std::endl;
       } else {
         std::cout << "\n----------------------------------\n"
-                  << "Span: " << span->_path << "\n----------------------------------\n"
+                  << "Span: " << span->_path.string() << "\n----------------------------------\n"
                   << "#Magic: " << span->_header->magic << " #Volumes: " << span->_header->num_volumes
                   << "  #in use: " << span->_header->num_used << "  #free: " << span->_header->num_free
                   << "  #stripes: " << span->_header->num_diskvol_blks << "  Len(bytes): " << span->_header->num_blocks.value()
@@ -694,14 +695,17 @@ Errata
 Span::load()
 {
   Errata zret;
-  if (!_path.is_readable()) {
-    zret = Errata::Message(0, EPERM, _path, " is not readable.");
-  } else if (_path.is_char_device() || _path.is_block_device()) {
+  std::error_code ec;
+  auto fs = ts::file::status(_path, ec);
+
+  if (!ts::file::is_readable(_path)) {
+    zret = Errata::Message(0, EPERM, _path.string(), " is not readable.");
+  } else if (ts::file::is_char_device(fs) || ts::file::is_block_device(fs)) {
     zret = this->loadDevice();
-  } else if (_path.is_dir()) {
+  } else if (ts::file::is_dir(fs)) {
     zret.push(0, 1, "Directory support not yet available");
   } else {
-    zret.push(0, EBADF, _path, " is not a valid file type");
+    zret.push(0, EBADF, _path.string(), " is not a valid file type");
   }
   return zret;
 }
@@ -721,7 +725,7 @@ Span::loadDevice()
 #endif
     ;
 
-  ats_scoped_fd fd(_path.open(flags));
+  ats_scoped_fd fd(!_path.empty() ? ::open(_path.c_str(), flags) : ats_scoped_fd());
 
   if (fd.isValid()) {
     if (ink_file_get_geometry(fd, _geometry)) {
@@ -749,21 +753,21 @@ Span::loadDevice()
           }
           _len = _header->num_blocks;
         } else {
-          zret = Errata::Message(0, 0, _path, " header is uninitialized or invalid");
-          std::cout << "Span: " << _path << " header is uninitialized or invalid" << std::endl;
+          zret = Errata::Message(0, 0, _path.string(), " header is uninitialized or invalid");
+          std::cout << "Span: " << _path.string() << " header is uninitialized or invalid" << std::endl;
           _len = round_down(_geometry.totalsz) - _base;
         }
         // valid FD means the device is accessible and has enough storage to be configured.
         _fd     = fd.release();
         _offset = _base + span_hdr_size;
       } else {
-        zret = Errata::Message(0, errno, "Failed to read from ", _path, '[', errno, ':', strerror(errno), ']');
+        zret = Errata::Message(0, errno, "Failed to read from ", _path.string(), '[', errno, ':', strerror(errno), ']');
       }
     } else {
-      zret = Errata::Message(0, 23, "Unable to get device geometry for ", _path);
+      zret = Errata::Message(0, 23, "Unable to get device geometry for ", _path.string());
     }
   } else {
-    zret = Errata::Message(0, errno, "Unable to open ", _path);
+    zret = Errata::Message(0, errno, "Unable to open ", _path.string());
   }
   return zret;
 }
@@ -877,7 +881,7 @@ Span::clearPermanently()
 {
   if (OPEN_RW_FLAG) {
     alignas(512) static char zero[CacheStoreBlocks::SCALE]; // should be all zero, it's static.
-    std::cout << "Clearing " << _path << " permanently on disk ";
+    std::cout << "Clearing " << _path.string() << " permanently on disk ";
     ssize_t n = pwrite(_fd, zero, sizeof(zero), ts::CacheSpan::OFFSET);
     if (n == sizeof(zero)) {
       std::cout << "done";
@@ -898,7 +902,7 @@ Span::clearPermanently()
       strp->clear();
     }
   } else {
-    std::cout << "Clearing " << _path << " not performed, write not enabled" << std::endl;
+    std::cout << "Clearing " << _path.string() << " not performed, write not enabled" << std::endl;
   }
 }
 
@@ -1023,7 +1027,7 @@ Cache::key_to_stripe(CryptoHash *key, const char *hostname, int host_len)
 
 /* --------------------------------------------------------------------------------------- */
 Errata
-VolumeConfig::load(FilePath const &path)
+VolumeConfig::load(ts::file::path const &path)
 {
   static const ts::TextView TAG_SIZE("size");
   static const ts::TextView TAG_VOL("volume");
@@ -1032,9 +1036,10 @@ VolumeConfig::load(FilePath const &path)
 
   int ln = 0;
 
-  ts::BulkFile cfile(path);
-  if (0 == cfile.load()) {
-    ts::TextView content = cfile.content();
+  std::error_code ec;
+  std::string load_content = ts::file::load(path, ec);
+  if (ec.value() == 0) {
+    ts::TextView content(load_content);
     while (content) {
       Data v;
 
@@ -1098,7 +1103,7 @@ VolumeConfig::load(FilePath const &path)
       }
     }
   } else {
-    zret = Errata::Message(0, EBADF, "Unable to load ", path);
+    zret = Errata::Message(0, EBADF, "Unable to load ", path.string());
   }
   return zret;
 }
@@ -1132,10 +1137,10 @@ Simulate_Span_Allocation()
 {
   VolumeAllocator va;
 
-  if (!VolumeFile) {
+  if (VolumeFile.empty()) {
     err.push(0, 9, "Volume config file not set");
   }
-  if (!SpanFile) {
+  if (SpanFile.empty()) {
     err.push(0, 9, "Span file not set");
   }
 
@@ -1165,7 +1170,7 @@ Clear_Spans()
 }
 
 void
-Find_Stripe(FilePath const &input_file_path)
+Find_Stripe(ts::file::path const &input_file_path)
 {
   // scheme=http user=u password=p host=172.28.56.109 path=somepath query=somequery port=1234
   // input file format: scheme://hostname:port/somepath;params?somequery user=USER password=PASS
@@ -1179,8 +1184,8 @@ Find_Stripe(FilePath const &input_file_path)
   //    std::cout << h << " : is NOT valid" << std::endl;
 
   Cache cache;
-  if (input_file_path) {
-    printf("passed argv %s\n", input_file_path.path());
+  if (!input_file_path.empty()) {
+    printf("passed argv %s\n", input_file_path.c_str());
   }
   cache.loadURLs(input_file_path);
   if ((err = cache.loadSpan(SpanFile))) {
@@ -1221,7 +1226,7 @@ walk_bucket_chain(std::string devicePath)
   if ((err = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
     for (auto sp : cache._spans) {
-      if (devicePath.size() > 0 && 0 == strncmp(sp->_path.path(), devicePath.data(), devicePath.size())) {
+      if (devicePath.size() > 0 && sp->_path.view() == devicePath) {
         for (auto strp : sp->_stripes) {
           strp->loadMeta();
           strp->loadDir();
@@ -1239,7 +1244,7 @@ Clear_Span(std::string devicePath)
   if ((err = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
     for (auto sp : cache._spans) {
-      if (devicePath.size() > 0 && 0 == strncmp(sp->_path.path(), devicePath.data(), devicePath.size())) {
+      if (devicePath.size() > 0 && sp->_path.view() == devicePath) {
         printf("clearing %s\n", devicePath.data());
         sp->clearPermanently();
       }
@@ -1255,7 +1260,7 @@ Check_Freelist(std::string devicePath)
   if ((err = cache.loadSpan(SpanFile))) {
     cache.dumpSpans(Cache::SpanDumpDepth::SPAN);
     for (auto sp : cache._spans) {
-      if (devicePath.size() > 0 && 0 == strncmp(sp->_path.path(), devicePath.data(), devicePath.size())) {
+      if (devicePath.size() > 0 && sp->_path.view() == devicePath) {
         printf("Scanning %s\n", devicePath.data());
         for (auto strp : sp->_stripes) {
           strp->loadMeta();
@@ -1271,7 +1276,7 @@ Check_Freelist(std::string devicePath)
 }
 
 void
-Init_disk(FilePath const &input_file_path)
+Init_disk(ts::file::path const &input_file_path)
 {
   Cache cache;
   VolumeAllocator va;
@@ -1286,7 +1291,7 @@ Init_disk(FilePath const &input_file_path)
 }
 
 void
-Get_Response(FilePath const &input_file_path)
+Get_Response(ts::file::path const &input_file_path)
 {
   // scheme=http user=u password=p host=172.28.56.109 path=somepath query=somequery port=1234
   // input file format: scheme://hostname:port/somepath;params?somequery user=USER password=PASS
@@ -1295,8 +1300,8 @@ Get_Response(FilePath const &input_file_path)
   //  char* h= http://user:pass@IPADDRESS/path_to_file;?port      <== this is the format we need
 
   Cache cache;
-  if (input_file_path) {
-    printf("passed argv %s\n", input_file_path.path());
+  if (!input_file_path.empty()) {
+    printf("passed argv %s\n", input_file_path.c_str());
   }
   cache.loadURLs(input_file_path);
   if ((err = cache.loadSpan(SpanFile))) {
@@ -1321,13 +1326,13 @@ Get_Response(FilePath const &input_file_path)
   }
 }
 
-void static scan_span(Span *span, ts::FilePath const &regex_path)
+void static scan_span(Span *span, ts::file::path const &regex_path)
 {
   for (auto strp : span->_stripes) {
     strp->loadMeta();
     strp->loadDir();
 
-    if (regex_path.has_path()) {
+    if (!regex_path.empty()) {
       CacheScan cs(strp, regex_path);
       cs.Scan(true);
     } else {
@@ -1338,7 +1343,7 @@ void static scan_span(Span *span, ts::FilePath const &regex_path)
 }
 
 void
-Scan_Cache(ts::FilePath const &regex_path)
+Scan_Cache(ts::file::path const &regex_path)
 {
   Cache cache;
   std::vector<std::thread> threadPool;
@@ -1358,7 +1363,7 @@ Scan_Cache(ts::FilePath const &regex_path)
 int
 main(int argc, const char *argv[])
 {
-  FilePath input_url_file;
+  ts::file::path input_url_file;
   std::string inputFile;
 
   parser.add_global_usage(std::string(argv[0]) + " --spans <SPAN> --volume <FILE> <COMMAND> [<SUBCOMMAND> ...]\n");
@@ -1394,13 +1399,13 @@ main(int argc, const char *argv[])
   // parse the arguments
   auto arguments = parser.parse(argv);
   if (auto data = arguments.get("spans")) {
-    SpanFile = data.value().c_str();
+    SpanFile = data.value();
   }
   if (auto data = arguments.get("volumes")) {
-    VolumeFile = data.value().c_str();
+    VolumeFile = data.value();
   }
   if (auto data = arguments.get("input")) {
-    input_url_file = data.value().c_str();
+    input_url_file = data.value();
   }
   if (auto data = arguments.get("aos")) {
     cache_config_min_average_object_size = std::stoi(data.value());

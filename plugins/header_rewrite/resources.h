@@ -48,32 +48,12 @@ enum ResourceIDs {
 class Resources
 {
 public:
-  explicit Resources(TSHttpTxn txnptr, TSCont contptr)
-    : txnp(txnptr),
-      contp(contptr),
-      bufp(nullptr),
-      hdr_loc(nullptr),
-      client_bufp(nullptr),
-      client_hdr_loc(nullptr),
-      resp_status(TS_HTTP_STATUS_NONE),
-      _rri(nullptr),
-      changed_url(false),
-      _ready(false)
+  explicit Resources(TSHttpTxn txnptr, TSCont contptr) : txnp(txnptr), contp(contptr)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (InkAPI)");
   }
 
-  Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri)
-    : txnp(txnptr),
-      contp(nullptr),
-      bufp(nullptr),
-      hdr_loc(nullptr),
-      client_bufp(nullptr),
-      client_hdr_loc(nullptr),
-      resp_status(TS_HTTP_STATUS_NONE),
-      _rri(rri),
-      changed_url(false),
-      _ready(false)
+  Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri) : txnp(txnptr), _rri(rri)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (RemapAPI)");
   }
@@ -87,18 +67,18 @@ public:
   }
 
   TSHttpTxn txnp;
-  TSCont contp;
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMBuffer client_bufp;
-  TSMLoc client_hdr_loc;
-  TSHttpStatus resp_status;
-  TSRemapRequestInfo *_rri;
-  bool changed_url;
+  TSCont contp             = nullptr;
+  TSRemapRequestInfo *_rri = nullptr;
+  TSMBuffer bufp           = nullptr;
+  TSMLoc hdr_loc           = nullptr;
+  TSMBuffer client_bufp    = nullptr;
+  TSMLoc client_hdr_loc    = nullptr;
+  TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
+  bool changed_url         = false;
 
 private:
   void destroy();
   DISALLOW_COPY_AND_ASSIGN(Resources);
 
-  bool _ready;
+  bool _ready = false;
 };

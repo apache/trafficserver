@@ -163,6 +163,9 @@ public:
     return f_transparent_passthrough;
   }
 
+  void increment_current_active_client_connections_stat() override;
+  void decrement_current_active_client_connections_stat() override;
+
 private:
   Http1ClientSession(Http1ClientSession &);
 

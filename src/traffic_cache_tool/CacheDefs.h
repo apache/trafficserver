@@ -32,8 +32,7 @@
 #include "tscore/ink_file.h"
 #include <list>
 #include "tscore/CryptoHash.h"
-
-#include "File.h"
+#include "tscore/ts_file.h"
 
 namespace tag
 {
@@ -276,11 +275,12 @@ class DFA;
 // this class matches url of the format : scheme://hostname:port/path;params?query
 
 struct url_matcher {
-  url_matcher(ts::FilePath const &path) // file contains a list of regex
+  url_matcher(ts::file::path const &path) // file contains a list of regex
   {
-    ts::BulkFile cfile(path);
-    if (cfile.load() == 0) {
-      ts::TextView fileContent = cfile.content();
+    std::error_code ec;
+    std::string load_content = ts::file::load(path, ec);
+    ts::TextView fileContent(load_content);
+    if (ec.value() == 0) {
       const char **patterns;
       std::vector<std::string> str_vec;
       int count = 0;
@@ -292,7 +292,7 @@ struct url_matcher {
       }
       patterns = (const char **)ats_malloc(count * sizeof(char *));
       int i    = 0;
-      for (auto str : str_vec) {
+      for (const auto &str : str_vec) {
         patterns[i++] = ats_strdup(str.data());
 
         std::cout << "regex input\n" << patterns[i - 1] << std::endl;
@@ -355,7 +355,6 @@ using ts::CacheStripeBlocks;
 using ts::StripeMeta;
 using ts::CacheStripeDescriptor;
 using ts::Errata;
-using ts::FilePath;
 using ts::CacheDirEntry;
 using ts::MemSpan;
 using ts::Doc;
@@ -401,7 +400,7 @@ namespace ct
 
 #define dir_in_seg(_s, _i) ((CacheDirEntry *)(((char *)(_s)) + (SIZEOF_DIR * (_i))))
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 dir_from_offset(int64_t i, CacheDirEntry *seg)
 {
 #if DIR_DEPTH < 5
@@ -414,26 +413,26 @@ dir_from_offset(int64_t i, CacheDirEntry *seg)
 #endif
 }
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 dir_bucket(int64_t b, CacheDirEntry *seg)
 {
   return dir_in_seg(seg, b * DIR_DEPTH);
 }
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 next_dir(CacheDirEntry *d, CacheDirEntry *seg)
 {
   int i = dir_next(d);
   return dir_from_offset(i, seg);
 }
 
-TS_INLINE CacheDirEntry *
+inline CacheDirEntry *
 dir_bucket_row(CacheDirEntry *b, int64_t i)
 {
   return dir_in_seg(b, i);
 }
 
-TS_INLINE int64_t
+inline int64_t
 dir_to_offset(const CacheDirEntry *d, const CacheDirEntry *seg)
 {
 #if DIR_DEPTH < 5
@@ -447,7 +446,7 @@ dir_to_offset(const CacheDirEntry *d, const CacheDirEntry *seg)
 
 struct Stripe;
 struct Span {
-  Span(FilePath const &path) : _path(path) {}
+  Span(ts::file::path const &path) : _path(path) {}
   Errata load();
   Errata loadDevice();
   bool isEmpty() const;
@@ -462,7 +461,7 @@ struct Span {
   ts::Rv<Stripe *> allocStripe(int vol_idx, CacheStripeBlocks len);
   Errata updateHeader(); ///< Update serialized header and write to disk.
 
-  FilePath _path;           ///< File system location of span.
+  ts::file::path _path;     ///< File system location of span.
   ats_scoped_fd _fd;        ///< Open file descriptor for span.
   int _vol_idx = 0;         ///< Forced volume.
   CacheStoreBlocks _base;   ///< Offset to first usable byte.
@@ -556,12 +555,12 @@ struct Stripe {
                                       // This is because the freelist is not being copied to _metap[2][2] correctly.
   // need to do something about it .. hmmm :-?
   int dir_freelist_length(int s);
-  TS_INLINE CacheDirEntry *
+  inline CacheDirEntry *
   vol_dir_segment(int s)
   {
     return (CacheDirEntry *)(((char *)this->dir) + (s * this->_buckets) * DIR_DEPTH * SIZEOF_DIR);
   }
-  TS_INLINE CacheDirEntry *
+  inline CacheDirEntry *
   dir_segment(int s)
   {
     return vol_dir_segment(s);
@@ -569,7 +568,7 @@ struct Stripe {
 
   Bytes stripe_offset(CacheDirEntry *e); // offset w.r.t the stripe content
   size_t vol_dirlen();
-  TS_INLINE int
+  inline int
   vol_headerlen()
   {
     return ROUND_TO_STORE_BLOCK(sizeof(StripeMeta) + sizeof(uint16_t) * (this->_segments - 1));

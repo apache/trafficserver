@@ -56,7 +56,7 @@ SNIConfigParams::getPropertyConfig(cchar *servername) const
 void
 SNIConfigParams::loadSNIConfig()
 {
-  for (auto item : Y_sni.items) {
+  for (const auto &item : Y_sni.items) {
     actionVector *aiVec = new actionVector();
     Debug("ssl", "name: %s", item.fqdn.data());
     cchar *servername = item.fqdn.data();
@@ -79,23 +79,24 @@ SNIConfigParams::loadSNIConfig()
     }
 
     if (item.tunnel_destination.length()) {
-      TunnelMap.emplace(item.fqdn.data(), item.tunnel_destination);
+      TunnelMap.emplace(item.fqdn, item.tunnel_destination);
     }
 
     auto ai3 = new SNI_IpAllow(item.ip_allow, servername);
     aiVec->push_back(ai3);
     // set the next hop properties
     SSLConfig::scoped_config params;
-    auto clientCTX  = params->getCTX(servername);
+    auto clientCTX  = params->getClientSSL_CTX();
     cchar *certFile = item.client_cert.data();
-    if (!clientCTX && certFile) {
-      clientCTX = params->getNewCTX(certFile);
-      params->InsertCTX(certFile, clientCTX);
+    cchar *keyFile  = item.client_key.data();
+    if (certFile) {
+      clientCTX = params->getNewCTX(certFile, keyFile);
     }
-    NextHopProperty *nps = new NextHopProperty();
-    nps->name            = ats_strdup(servername);
-    nps->verifyLevel     = item.verify_origin_server;
-    nps->ctx             = clientCTX;
+    NextHopProperty *nps        = new NextHopProperty();
+    nps->name                   = ats_strdup(servername);
+    nps->verifyServerPolicy     = item.verify_server_policy;
+    nps->verifyServerProperties = item.verify_server_properties;
+    nps->ctx                    = clientCTX;
     if (wildcard) {
       wild_next_hop_table.put(nps->name, nps);
     } else {

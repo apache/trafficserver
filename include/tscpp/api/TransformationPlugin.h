@@ -29,6 +29,7 @@
 namespace atscppapi
 {
 struct TransformationPluginState;
+class Continuation;
 
 /**
  * @brief The interface used when you wish to transform Request or Response body content.
@@ -97,13 +98,19 @@ public:
 
   /**
    * Call this method if you wish to pause the transformation.
-   * Schedule the return value continuation to resume the transforamtion.
-   * If the continuation is scheduled and called after the transform is destroyed it
-   * won't do anything beyond cleanups.
-   * Note: You must schedule the continuation or destroy it (using TSContDestroy) yourself,
-   * otherwise it will leak.
    */
-  TSCont pause();
+  void pause();
+
+  /**
+   * Returns true if the transformation is paused, false otherwise.
+   */
+  bool isPaused() const;
+
+  /**
+   * Returns a reference to the Continuation to schedule to resume (unpause) the transformation.  It will be resumed when this
+   * continuation is executed.  Must not call this unless the transformation is paused.
+   */
+  Continuation &resumeCont();
 
   /**
    * A method that you must implement when writing a TransformationPlugin, this method

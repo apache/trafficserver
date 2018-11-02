@@ -40,7 +40,7 @@ The following actions are valid from these callbacks.
 
   * Fetch the SSL object associated with the connection - :c:func:`TSVConnSslConnectionGet`
   * Set a connection to blind tunnel - :c:func:`TSVConnTunnel`
-  * Reenable the ssl connection - :c:func:`TSSslVConnReenable`
+  * Reenable the ssl connection - :c:func:`TSVConnReenable`
   * Find SSL context by name - :c:func:`TSSslContextFindByName`
   * Find SSL context by address - :c:func:`TSSslContextFindByAddr`
   * Determine whether the TSVConn is really representing a SSL connection - :c:func:`TSVConnIsSsl`
@@ -52,13 +52,13 @@ This hook is invoked after the client has connected to ATS and before the SSL ha
 
 In theory this hook could apply and be useful for non-SSL connections as well, but at this point this hook is only called in the SSL sequence.
 
-The TLS handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is called either from within the hook
+The TLS handshake processing will not proceed until :c:func:`TSVConnReenable()` is called either from within the hook
 callback or from another piece of code.
 
 TS_VCONN_CLOSE_HOOK
 ------------------------
 
-This hook is invoked after the SSL handshake is done and when the IO is closing. The TSVConnArgs should be cleaned up here.
+This hook is invoked after the SSL handshake is done and when the IO is closing. The TSVConnArgs should be cleaned up here. A callback at this point must reenable.
 
 TS_SSL_SERVERNAME_HOOK
 ----------------------
@@ -67,7 +67,7 @@ This hook is called if the client provides SNI information in the SSL handshake.
 
 The Traffic Server core first evaluates the settings in the ssl_multicert.config file based on the server name. Then the core SNI callback executes the plugin registered SNI callback code. The plugin callback can access the servername by calling the openssl function SSL_get_servername().
 
-Processing will continue regardless of whether the hook callback executes :c:func:`TSSslVConnReenable()` since the openssl
+Processing will continue regardless of whether the hook callback executes :c:func:`TSVConnReenable()` since the openssl
 implementation does not allow for pausing processing during the openssl servername callback.
 
 TS_SSL_CERT_HOOK
@@ -78,38 +78,81 @@ code to create or select the certificate that should be used for the TLS handsha
 Traffic Server certificate selection.
 
 If you are running with openssl 1.0.2 or later, you can control whether the TLS handshake processing will
-continue after the certificate hook callback execute by calling :c:func:`TSSslVConnReenable()` or not.  The TLS
-handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is called.
+continue after the certificate hook callback execute by calling :c:func:`TSVConnReenable()` or not.  The TLS
+handshake processing will not proceed until :c:func:`TSVConnReenable()` is called.
 
 It may be useful to delay the TLS handshake processing if other resources must be consulted to select or create
 a certificate.
+
+TS_SSL_VERIFY_CLIENT_HOOK
+-------------------------
+
+This hook is called when a client connects to Traffic Server and presents a 
+client certificate in the case of a mutual TLS handshake.  The callback can
+get the SSL object from the TSVConn argument and use that to access the client
+certificate and make any additional checks.
+
+Processing will continue regardless of whether the hook callback executes
+:c:func:`TSSslVConnReenable()` since the openssl implementation does not allow
+for pausing processing during the certificate verify callback.
+
+TS_SSL_VERIFY_SERVER_HOOK
+-------------------------
+
+This hooks is called when a Traffic Server connects to an origin and the origin
+presents a certificate.  The callback can get the SSL object from the TSVConn
+argument and use that to access the origin certificate and make any additional checks.
+
+Processing will continue regardless of whether the hook callback executes
+:c:func:`TSSslVConnReenable()` since the openssl implementation does not allow
+for pausing processing during the certificate verify callback.
+
+TS_VCONN_OUTBOUND_START_HOOK
+----------------------------
+
+This hook is invoked after ATS has connected to the upstream server and before the SSL handshake has started.  This gives the plugin the option of 
+overriding the default SSL connection options on the SSL object.
+
+In theory this hook could apply and be useful for non-SSL connections as well, but at this point this hook is only called in the SSL sequence.
+
+The TLS handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is called either from within the hook
+callback or from another piece of code.
+
+TS_VCONN_OUTBOUND_CLOSE_HOOK
+-----------------------------
+
+This hook is invoked after the SSL handshake is done and right before the outbound connection closes.  A callback at this point must reenable.
 
 TLS Hook State Diagram
 ----------------------
 
 .. graphviz::
-   :alt: TLS Hook State Diagram
+   :alt: TLS Inbound Hook State Diagram
 
    digraph tls_hook_state_diagram{
      HANDSHAKE_HOOKS_PRE -> TS_VCONN_START_HOOK;
+     HANDSHAKE_HOOKS_PRE -> TS_SSL_VERIFY_CLIENT_HOOK;
      HANDSHAKE_HOOKS_PRE -> TS_SSL_CERT_HOOK;
      HANDSHAKE_HOOKS_PRE -> TS_SSL_SERVERNAME_HOOK;
      HANDSHAKE_HOOKS_PRE -> HANDSHAKE_HOOKS_DONE;
+     TS_SSL_VERIFY_CLIENT_HOOK -> HANDSHAKE_HOOKS_PRE;
      TS_VCONN_START_HOOK -> HANDSHAKE_HOOKS_PRE_INVOKE;
-     HANDSHAKE_HOOKS_PRE_INVOKE -> TSSslVConnReenable;
-     TSSslVConnReenable -> HANDSHAKE_HOOKS_PRE;
+     HANDSHAKE_HOOKS_PRE_INVOKE -> TSVConnReenable;
+     TSVConnReenable -> HANDSHAKE_HOOKS_PRE;
      TS_SSL_SERVERNAME_HOOK -> HANDSHAKE_HOOKS_SNI;
      HANDSHAKE_HOOKS_SNI -> TS_SSL_SERVERNAME_HOOK;
      HANDSHAKE_HOOKS_SNI -> TS_SSL_CERT_HOOK;
      HANDSHAKE_HOOKS_SNI -> HANDSHAKE_HOOKS_DONE;
      HANDSHAKE_HOOKS_CERT -> TS_SSL_CERT_HOOK;
      TS_SSL_CERT_HOOK -> HANDSHAKE_HOOKS_CERT_INVOKE;
-     HANDSHAKE_HOOKS_CERT_INVOKE -> TSSslVConnReenable2;
-     TSSslVConnReenable2 -> HANDSHAKE_HOOKS_CERT;
+     HANDSHAKE_HOOKS_CERT_INVOKE -> TSVConnReenable2;
+     TSVConnReenable2 -> HANDSHAKE_HOOKS_CERT;
      HANDSHAKE_HOOKS_CERT -> HANDSHAKE_HOOKS_DONE;
      HANDSHAKE_HOOKS_DONE -> TS_VCONN_CLOSE_HOOK;
 
      HANDSHAKE_HOOKS_PRE [shape=box];
+     TS_VCONN_START_HOOK [shape=box];
+     TS_SSL_VERIFY_CLIENT_HOOK [shape=box];
      HANDSHAKE_HOOKS_PRE_INVOKE [shape=box];
      HANDSHAKE_HOOKS_SNI [shape=box];
      HANDSHAKE_HOOKS_CERT [shape=box];
@@ -117,4 +160,14 @@ TLS Hook State Diagram
      HANDSHAKE_HOOKS_DONE [shape=box];
    }
 
+.. graphviz::
+   :alt: TLS Outbound Hook State Diagram
+
+   digraph tls_hook_state_diagram{
+     HANDSHAKE_HOOKS_OUTBOUND_PRE -> HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE;
+     HANDSHAKE_HOOKS_PRE_INVOKE -> TSSslVConnReenable;
+     TSSslVConnReenable -> HANDSHAKE_HOOKS_OUTBOUND_PRE;
+     HANDSHAKE_HOOKS_OUTBOUND_PRE -> HANDSHAKE_HOOKS_DONE;
+     HANDSHAKE_HOOKS_DONE -> HANDSHAKE_HOOKS_OUTBOUND_CLOSE;
+   }
 

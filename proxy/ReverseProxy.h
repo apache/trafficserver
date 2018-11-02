@@ -34,7 +34,6 @@
 
 #include "records/P_RecProcess.h"
 
-#include "tscore/ink_hash_table.h"
 #include "tscore/ink_defs.h"
 #include "HttpTransact.h"
 #include "RemapPluginInfo.h"

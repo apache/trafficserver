@@ -547,3 +547,15 @@ Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool tran
     slave_ka_vio = nullptr;
   }
 }
+
+void
+Http1ClientSession::increment_current_active_client_connections_stat()
+{
+  HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
+}
+
+void
+Http1ClientSession::decrement_current_active_client_connections_stat()
+{
+  HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
+}

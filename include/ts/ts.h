@@ -1215,6 +1215,9 @@ tsapi TSVConn TSHttpSsnServerVConnGet(TSHttpSsn ssnp);
 /* Re-enable an SSL connection from a hook.
    This must be called exactly once before the SSL connection will resume. */
 tsapi void TSVConnReenable(TSVConn sslvcp);
+/* Extended version that allows for passing a status event on reenabling
+ */
+tsapi void TSVConnReenableEx(TSVConn sslvcp, TSEvent event);
 /*  Set the connection to go into blind tunnel mode */
 tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
 /*  Return the SSL object associated with the connection */
@@ -1741,6 +1744,16 @@ tsapi TSAction TSNetConnect(
   TSCont contp,             /**< continuation that is called back when the attempted net connection either succeeds or fails. */
   struct sockaddr const *to /**< Address to which to connect. */
 );
+
+/**
+ * Retrieves the continuation associated with creating the TSVConn
+ */
+tsapi TSCont TSNetInvokingContGet(TSVConn conn);
+
+/**
+ * Retrieves the transaction associated with creating the TSVConn
+ */
+tsapi TSHttpTxn TSNetInvokingTxnGet(TSVConn conn);
 
 tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
 

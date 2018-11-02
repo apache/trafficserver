@@ -1244,6 +1244,10 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
 
   if (ua_session) {
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+    if (!ua_session) {
+      // Workaround fix for GitHub #4504. The `ua_session` could be freed while waiting for acquiring the above lock.
+      return;
+    }
 
     // If the number of clients is 0 and ua_session is active, then mark the connection as inactive
     if (total_client_streams_count == 0 && ua_session->is_active()) {

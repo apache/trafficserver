@@ -1001,8 +1001,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.insert_response_via_string, "proxy.config.http.insert_response_via_str");
   HttpEstablishStaticConfigLongLong(c.oride.proxy_response_hsts_max_age, "proxy.config.ssl.hsts_max_age");
   HttpEstablishStaticConfigByte(c.oride.proxy_response_hsts_include_subdomains, "proxy.config.ssl.hsts_include_subdomains");
-  HttpEstablishStaticConfigStringAlloc(c.oride.client_cert_filename, "proxy.config.ssl.client.cert.filename");
-  HttpEstablishStaticConfigStringAlloc(c.oride.client_cert_filepath, "proxy.config.ssl.client.cert.path");
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_request_via_string, "proxy.config.http.request_via_str");
   c.proxy_request_via_string_len = -1;
@@ -1487,8 +1485,6 @@ HttpConfig::reconfigure()
   params->redirection_host_no_port          = INT_TO_BOOL(m_master.redirection_host_no_port);
   params->oride.number_of_redirections      = m_master.oride.number_of_redirections;
   params->post_copy_size                    = m_master.post_copy_size;
-  params->oride.client_cert_filename        = ats_strdup(m_master.oride.client_cert_filename);
-  params->oride.client_cert_filepath        = ats_strdup(m_master.oride.client_cert_filepath);
   params->redirect_actions_string           = ats_strdup(m_master.redirect_actions_string);
   params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
 

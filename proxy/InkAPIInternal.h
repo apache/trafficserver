@@ -279,9 +279,11 @@ typedef enum {
   TS_VCONN_CLOSE_INTERNAL_HOOK,
   TS_SSL_CERT_INTERNAL_HOOK,
   TS_SSL_SERVERNAME_INTERNAL_HOOK,
-  TS_SSL_SERVER_VERIFY_INTERNAL_HOOK,
+  TS_SSL_VERIFY_SERVER_INTERNAL_HOOK,
   TS_SSL_VERIFY_CLIENT_INTERNAL_HOOK,
   TS_SSL_SESSION_INTERNAL_HOOK,
+  TS_VCONN_OUTBOUND_START_INTERNAL_HOOK,
+  TS_VCONN_OUTBOUND_CLOSE_INTERNAL_HOOK,
   TS_SSL_INTERNAL_LAST_HOOK
 } TSSslHookInternalID;
 
@@ -335,7 +337,7 @@ public:
   void invoke(INKContInternal *contp);
 
 private:
-  InkHashTable *cb_table;
+  std::unordered_map<std::string, INKContInternal *> cb_table;
 };
 
 void api_init();

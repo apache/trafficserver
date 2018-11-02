@@ -36,6 +36,7 @@
 #include <cmath>
 #include "P_Net.h"
 #include "P_SSLConfig.h"
+#include "YamlSNIConfig.h"
 #include "P_SSLUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLSessionCache.h"
@@ -67,7 +68,9 @@ char *SSLConfigParams::ssl_wire_trace_server_name = nullptr;
 int SSLConfigParams::async_handshake_enabled      = 0;
 char *SSLConfigParams::engine_conf_file           = nullptr;
 
-static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
+static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
+static std::unique_ptr<ConfigUpdateHandler<SSLConfig>> sslConfigUpdate;
+static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
@@ -99,11 +102,13 @@ SSLConfigParams::reset()
   server_groups_list         = nullptr;
   client_groups_list         = nullptr;
   client_ctx                 = nullptr;
-  clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
-  ssl_ctx_options                                                     = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_client_ctx_options                                              = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-  ssl_session_cache                                                   = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
-  ssl_session_cache_size                                              = 1024 * 100;
+  clientCertLevel = client_verify_depth = verify_depth = 0;
+  verifyServerPolicy                                   = YamlSNIConfig::Policy::DISABLED;
+  verifyServerProperties                               = YamlSNIConfig::Property::NONE;
+  ssl_ctx_options                                      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_client_ctx_options                               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_session_cache                                    = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+  ssl_session_cache_size                               = 1024 * 100;
   ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
   ssl_session_cache_skip_on_contention = 0;
   ssl_session_cache_timeout            = 0;
@@ -134,7 +139,6 @@ SSLConfigParams::cleanup()
   server_groups_list         = (char *)ats_free_null(server_groups_list);
   client_groups_list         = (char *)ats_free_null(client_groups_list);
 
-  freeCTXmap();
   SSLReleaseContext(client_ctx);
   reset();
 }
@@ -320,7 +324,83 @@ SSLConfigParams::initialize()
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
-  REC_EstablishStaticConfigByte(clientVerify, "proxy.config.ssl.client.verify.server");
+
+  // remove before 9.0.0 release
+  // Backwards compatibility if proxy.config.ssl.client.verify.server is explicitly set
+  RecSourceT source             = REC_SOURCE_DEFAULT;
+  bool set_backwards_compatible = false;
+  if (RecGetRecordSource("proxy.config.ssl.client.verify.server", &source, false) == REC_ERR_OKAY) {
+    if (source != REC_SOURCE_DEFAULT && source != REC_SOURCE_NULL) {
+      int8_t verifyServer = 0;
+      REC_EstablishStaticConfigByte(verifyServer, "proxy.config.ssl.client.verify.server");
+      verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
+      switch (verifyServer) {
+      case 0:
+        verifyServerPolicy       = YamlSNIConfig::Policy::DISABLED;
+        set_backwards_compatible = true;
+        break;
+      case 1:
+        verifyServerPolicy       = YamlSNIConfig::Policy::ENFORCED;
+        set_backwards_compatible = true;
+        break;
+      case 2:
+        verifyServerPolicy       = YamlSNIConfig::Policy::PERMISSIVE;
+        set_backwards_compatible = true;
+        break;
+      }
+    }
+  }
+
+  bool policy_default     = true;
+  bool properties_default = true;
+  if (!set_backwards_compatible) {
+    policy_default = properties_default = false;
+  } else { // Only check for non-defaults if we have a backwards compatible situation
+    if (RecGetRecordSource("proxy.config.ssl.client.verify.server.policy", &source, false) == REC_ERR_OKAY &&
+        source != REC_SOURCE_DEFAULT && source != REC_SOURCE_NULL) {
+      policy_default = false;
+    }
+    if (RecGetRecordSource("proxy.config.ssl.client.verify.server.properties", &source, false) == REC_ERR_OKAY &&
+        source != REC_SOURCE_DEFAULT && source != REC_SOURCE_NULL) {
+      properties_default = false;
+    }
+  }
+
+  if (!set_backwards_compatible || !policy_default) {
+    char *verify_server = nullptr;
+    REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.policy");
+    if (strcmp(verify_server, "DISABLED") == 0) {
+      verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
+      verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
+    } else if (strcmp(verify_server, "ENFORCED") == 0) {
+      verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+              verify_server);
+      verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+    }
+    ats_free(verify_server);
+  }
+
+  if (!set_backwards_compatible || !properties_default) {
+    char *verify_server = nullptr;
+    REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.properties");
+    if (strcmp(verify_server, "SIGNATURE") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
+    } else if (strcmp(verify_server, "NAME") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
+    } else if (strcmp(verify_server, "ALL") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
+    } else if (strcmp(verify_server, "NONE") == 0) {
+      verifyServerProperties = YamlSNIConfig::Property::NONE;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
+              verify_server);
+      verifyServerProperties = YamlSNIConfig::Property::NONE;
+    }
+    ats_free(verify_server);
+  }
 
   ssl_client_cert_filename = nullptr;
   ssl_client_cert_path     = nullptr;
@@ -377,62 +457,12 @@ SSLConfigParams::initialize()
   client_ctx = SSLInitClientContext(this);
   if (!client_ctx) {
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
-  } else {
-    InsertCTX(this->clientCertPath, this->client_ctx);
   }
 }
 
-// getCTX: returns the context attached to the given certificate
-SSL_CTX *
-SSLConfigParams::getCTX(cchar *client_cert) const
-{
-  ink_mutex_acquire(&ctxMapLock);
-  auto client_ctx = ctx_map.get(client_cert);
-  ink_mutex_release(&ctxMapLock);
-  return client_ctx;
-}
-
-// InsertCTX hashes on the absolute path to the client certificate file and stores in the map
-bool
-SSLConfigParams::InsertCTX(cchar *client_cert, SSL_CTX *cctx) const
-{
-  ink_mutex_acquire(&ctxMapLock);
-  // dup is required here to avoid the nullifying of the keys stored in the map.
-  // client_cert is coming from the overridable clientcert config retrieved by the remap plugin.
-  cchar *cert = ats_strdup(client_cert);
-  // Hashmap has no delete functionality :(
-  ctx_map.put(cert, cctx);
-  ink_mutex_release(&ctxMapLock);
-  return true;
-}
-
-void
-SSLConfigParams::printCTXmap() const
-{
-  Vec<cchar *> keys;
-  ctx_map.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++) {
-    Debug("ssl", "Client certificates in the map %s: %p", keys.get(i), ctx_map.get(keys.get(i)));
-  }
-}
-void
-SSLConfigParams::freeCTXmap() const
-{
-  ink_mutex_acquire(&ctxMapLock);
-  Vec<cchar *> keys;
-  ctx_map.get_keys(keys);
-  size_t n = keys.length();
-  Debug("ssl", "freeing CTX Map");
-  for (size_t i = 0; i < n; i++) {
-    deleteKey(keys.get(i));
-    ats_free((char *)keys.get(i));
-  }
-  ctx_map.clear();
-  ink_mutex_release(&ctxMapLock);
-}
 // creates a new context attaching the provided certificate
 SSL_CTX *
-SSLConfigParams::getNewCTX(cchar *client_cert) const
+SSLConfigParams::getNewCTX(cchar *client_cert, cchar *client_key) const
 {
   SSL_CTX *nclient_ctx = nullptr;
   nclient_ctx          = SSLInitClientContext(this);
@@ -440,20 +470,23 @@ SSLConfigParams::getNewCTX(cchar *client_cert) const
     SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
     return nullptr;
   }
-  if (nclient_ctx && client_cert != nullptr && client_cert[0] != '\0') {
+  if (client_cert != nullptr && client_cert[0] != '\0') {
     if (!SSL_CTX_use_certificate_chain_file(nclient_ctx, (const char *)client_cert)) {
       SSLError("failed to load client certificate from %s", this->clientCertPath);
       SSLReleaseContext(nclient_ctx);
       return nullptr;
     }
   }
+  // If there is not private key specified, perhaps it is in the file with the cert
+  if (client_key == nullptr || client_key[0] == '\0') {
+    client_key = client_cert;
+  }
+  // Try loading the private key
+  if (client_key != nullptr && client_key[0] != '\0') {
+    // If it failed, then we are just going to use the previously set private key from records.config
+    SSL_CTX_use_PrivateKey_file(nclient_ctx, client_key, SSL_FILETYPE_PEM);
+  }
   return nclient_ctx;
-}
-
-void
-SSLConfigParams::deleteKey(cchar *key) const
-{
-  SSL_CTX_free((SSL_CTX *)ctx_map.get(key));
 }
 
 SSL_CTX *
@@ -465,6 +498,11 @@ SSLConfigParams::getClientSSL_CTX() const
 void
 SSLConfig::startup()
 {
+  sslConfigUpdate.reset(new ConfigUpdateHandler<SSLConfig>());
+  sslConfigUpdate->attach("proxy.config.ssl.client.cert.path");
+  sslConfigUpdate->attach("proxy.config.ssl.client.cert.filename");
+  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.path");
+  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.filename");
   reconfigure();
 }
 
@@ -492,7 +530,7 @@ SSLConfig::release(SSLConfigParams *params)
 bool
 SSLCertificateConfig::startup()
 {
-  sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
+  sslCertUpdate.reset(new ConfigUpdateHandler<SSLCertificateConfig>());
   sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
@@ -623,7 +661,7 @@ SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 void
 SSLTicketKeyConfig::startup()
 {
-  auto sslTicketKey = new ConfigUpdateHandler<SSLTicketKeyConfig>();
+  sslTicketKey.reset(new ConfigUpdateHandler<SSLTicketKeyConfig>());
 
   sslTicketKey->attach("proxy.config.ssl.server.ticket_key.filename");
   SSLConfig::scoped_config params;

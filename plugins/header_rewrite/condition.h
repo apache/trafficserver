@@ -47,9 +47,12 @@ enum CondModifiers {
 class Condition : public Statement
 {
 public:
-  Condition() : _qualifier(""), _cond_op(MATCH_EQUAL), _matcher(nullptr), _mods(COND_NONE)
+  Condition() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition"); }
+
+  virtual ~Condition()
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition");
+    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Condition");
+    delete _matcher;
   }
 
   // Inline this, it's critical for speed (and only used twice)
@@ -112,7 +115,7 @@ public:
     return _qualifier;
   }
 
-  // Virtual methods, has to be implemented by each conditional
+  // Virtual methods, has to be implemented by each conditional;
   void initialize(Parser &p) override;
   virtual void append_value(std::string &s, const Resources &res) = 0;
 
@@ -121,11 +124,11 @@ protected:
   virtual bool eval(const Resources &res) = 0;
 
   std::string _qualifier;
-  MatcherOps _cond_op;
-  Matcher *_matcher;
+  MatcherOps _cond_op = MATCH_EQUAL;
+  Matcher *_matcher   = nullptr;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(Condition);
 
-  CondModifiers _mods;
+  CondModifiers _mods = COND_NONE;
 };
