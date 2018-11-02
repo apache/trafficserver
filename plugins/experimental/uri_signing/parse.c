@@ -29,37 +29,64 @@
 #include <inttypes.h>
 
 cjose_jws_t *
-get_jws_from_query(const char *uri, size_t uri_ct, const char *paramName)
+get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName)
 {
-  PluginDebug("Parsing JWS from query string: %.*s", (int)uri_ct, uri);
-  const char *query = uri;
-  const char *end   = uri + uri_ct;
-  while (query != end && *query != '?') {
-    ++query;
-  }
-  if (query == end) {
+  /* Reserved characters as defined by the URI Generic Syntax RFC: https://tools.ietf.org/html/rfc3986#section-2.2 */
+  const char *reserved_string = ":/?#[]@!$&\'()*+,;=";
+
+  /* If param name ends in reserved character this will be treated as the termination symbol when parsing for package. Default is
+   * '='. */
+  char termination_symbol;
+  size_t termination_ct;
+  size_t param_ct = strlen(paramName);
+
+  if (param_ct <= 0) {
+    PluginDebug("URI signing package name cannot be empty");
     return NULL;
   }
 
-  ++query;
+  if (strchr(reserved_string, paramName[param_ct - 1])) {
+    termination_symbol = paramName[param_ct - 1];
+    termination_ct     = param_ct - 1;
+  } else {
+    termination_symbol = '=';
+    termination_ct     = param_ct;
+  }
 
-  const char *key   = query, *key_end;
-  const char *value = query, *value_end;
+  PluginDebug("Parsing JWS from query string: %.*s", (int)uri_ct, uri);
+  const char *param = uri;
+  const char *end   = uri + uri_ct;
+  const char *key, *key_end;
+  const char *value, *value_end;
+
   for (;;) {
-    while (value != end && *value != '=') {
-      ++value;
+    /* Search the URI for a reserved character. */
+    while (param != end && strchr(reserved_string, *param) == NULL) {
+      ++param;
+    }
+    if (param == end) {
+      break;
     }
 
+    ++param;
+
+    /* Parse the parameter for a key value pair separated by the termination symbol. */
+    key   = param;
+    value = param;
+    while (value != end && *value != termination_symbol) {
+      ++value;
+    }
     if (value == end) {
       break;
     }
-    key_end   = value;
-    value_end = ++value;
-    while (value_end != end && *value_end != '&') {
-      ++value_end;
-    }
+    key_end = value;
 
-    if (!strncmp(paramName, key, (size_t)(key_end - key))) {
+    /* If the Parameter key is our target parameter name, attempt to import a JWS from the value. */
+    if ((size_t)(key_end - key) == termination_ct && !strncmp(paramName, key, (size_t)(key_end - key))) {
+      value_end = ++value;
+      while (value_end != end && strchr(reserved_string, *value_end) == NULL) {
+        ++value_end;
+      }
       PluginDebug("Decoding JWS: %.*s", (int)(key_end - key), key);
       cjose_err err    = {0};
       cjose_jws_t *jws = cjose_jws_import(value, (size_t)(value_end - value), &err);
@@ -70,12 +97,6 @@ get_jws_from_query(const char *uri, size_t uri_ct, const char *paramName)
       }
       return jws;
     }
-
-    if (value_end == end) {
-      break;
-    }
-
-    key = value = value_end + 1;
   }
   PluginDebug("Unable to locate signing key in uri: %.*s", (int)uri_ct, uri);
   return NULL;
