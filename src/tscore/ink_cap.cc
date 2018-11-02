@@ -260,17 +260,73 @@ RestrictCapabilities()
 {
   int zret = 0; // return value.
 #if TS_USE_POSIX_CAP
-  cap_t caps = cap_init(); // start with nothing.
+  cap_t caps_good = cap_init(); // Start with nothing
+  cap_t caps_orig = cap_get_proc();
+
   // Capabilities we need.
   cap_value_t perm_list[]         = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE, CAP_FOWNER};
   static int const PERM_CAP_COUNT = sizeof(perm_list) / sizeof(*perm_list);
   cap_value_t eff_list[]          = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
   static int const EFF_CAP_COUNT  = sizeof(eff_list) / sizeof(*eff_list);
 
-  cap_set_flag(caps, CAP_PERMITTED, PERM_CAP_COUNT, perm_list, CAP_SET);
-  cap_set_flag(caps, CAP_EFFECTIVE, EFF_CAP_COUNT, eff_list, CAP_SET);
-  zret = cap_set_proc(caps);
-  cap_free(caps);
+  // Request capabilities one at a time.  If one capability fails
+  // the rest may succeed.  If this scenario does not need that capability
+  // Must start with the current privileges in case we fail we can get back in
+  // that is ok.
+  for (int i = 0; i < PERM_CAP_COUNT; i++) {
+    cap_t caps = cap_get_proc();
+    if (cap_set_flag(caps, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {
+    } else {
+      if (cap_set_proc(caps) == -1) { // it failed, back out
+        Warning("CAP_PERMITTED failed for option %d", i);
+      } else {
+        if (cap_set_flag(caps_good, CAP_PERMITTED, 1, perm_list + i, CAP_SET) < 0) {
+        }
+      }
+    }
+    if (cap_set_proc(caps_orig) < 0) {
+      ink_release_assert(0);
+    }
+    cap_free(caps);
+  }
+  for (int i = 0; i < EFF_CAP_COUNT; i++) {
+    cap_t caps = cap_get_proc();
+    if (cap_set_flag(caps, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {
+    } else {
+      if (cap_set_proc(caps) == -1) { // it failed, back out
+        Warning("CAP_EFFECTIVE failed for option %d", i);
+      } else {
+        if (cap_set_flag(caps_good, CAP_EFFECTIVE, 1, eff_list + i, CAP_SET) < 0) {
+        }
+      }
+    }
+    if (cap_set_proc(caps_orig) < 0) {
+      ink_release_assert(0);
+    }
+    cap_free(caps);
+  }
+
+  if (cap_set_proc(caps_good) == -1) { // it failed, back out
+    ink_release_assert(0);
+  }
+
+  for (int i = 0; i < PERM_CAP_COUNT; i++) {
+    cap_flag_value_t val;
+    if (cap_get_flag(caps_good, perm_list[i], CAP_PERMITTED, &val) < 0) {
+    } else {
+      Warning("CAP_PERMITTED offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
+    }
+  }
+  for (int i = 0; i < EFF_CAP_COUNT; i++) {
+    cap_flag_value_t val;
+    if (cap_get_flag(caps_good, eff_list[i], CAP_EFFECTIVE, &val) < 0) {
+    } else {
+      Warning("CAP_EFFECTIVE offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
+    }
+  }
+
+  cap_free(caps_good);
+  cap_free(caps_orig);
 #endif
   Debug("privileges", "[RestrictCapabilities] zret : %d", zret);
   return zret == 0;
