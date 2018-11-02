@@ -993,7 +993,21 @@ restoreCapabilities()
   };
   static int const CAP_COUNT = sizeof(cap_list) / sizeof(*cap_list);
 
-  cap_set_flag(cap_set, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
+  for (int i = 0; i < CAP_COUNT; i++) {
+    if (cap_set_flag(cap_set, CAP_EFFECTIVE, 1, cap_list + i, CAP_SET) < 0) {
+      Warning("restore CAP_EFFECTIVE failed for option %d", i);
+    }
+    if (cap_set_proc(cap_set) == -1) { // it failed, back out
+      cap_set_flag(cap_set, CAP_EFFECTIVE, 1, cap_list + i, CAP_CLEAR);
+    }
+  }
+  for (int i = 0; i < CAP_COUNT; i++) {
+    cap_flag_value_t val;
+    if (cap_get_flag(cap_set, cap_list[i], CAP_EFFECTIVE, &val) < 0) {
+    } else {
+      Warning("CAP_EFFECTIVE offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
+    }
+  }
   zret = cap_set_proc(cap_set);
   cap_free(cap_set);
   return zret;
