@@ -277,7 +277,7 @@ System Variables
 
    Specifies the minimum count of rolled output logs to keep. This value will be used to decide the
    order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
-   output logs as much as possible. See :doc:`../logging/rotation.en.rst` for guidance.
+   output logs as much as possible. See :doc:`../logging/rotation.en` for guidance.
 
 Thread Variables
 ----------------
@@ -2961,7 +2961,7 @@ Logging Configuration
 
    Specifies the minimum count of rolled (event) logs to keep. This value will be used to decide the
    order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
-   logs as much as possible. This value can be and should be overridden in logging.yaml. See :doc:`../logging/rotation.en.rst` for guidance.
+   logs as much as possible. This value can be and should be overridden in logging.yaml. See :doc:`../logging/rotation.en` for guidance.
 
 .. ts:cv:: CONFIG proxy.config.log.auto_delete_rolled_files INT 1
    :reloadable:
@@ -3130,7 +3130,7 @@ Diagnostic Logging Configuration
 
    Specifies the minimum count of rolled diagnostic logs to keep. This value will be used to decide the
    order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
-   diagnostic logs as much as possible. See :doc:`../logging/rotation.en.rst` for guidance.
+   diagnostic logs as much as possible. See :doc:`../logging/rotation.en` for guidance.
 
 Reverse Proxy
 =============
@@ -3954,6 +3954,7 @@ Sockets
 
         Reduce the number of worker threads (net-threads)
         Reduce the number of disk (AIO) threads
+
    Make sure accept threads are enabled
 
    The relevant configurations for this are::

@@ -64,7 +64,7 @@ scenario.  The SSL Session Resuse configuration file describes how to communicat
 
 * :ts:cv:`proxy.config.ssl.session_cache` should be set to 2 to enable the ATS implementation of session cache
 * :ts:cv:`proxy.config.ssl.session_cache.size` and :ts:cv:`proxy.config.ssl.session_cache.num_buckets` may need to be adjusted to ensure good hash table performance for your workload.  For example, we needed to increase the number of buckets to avoid long hash chains.
-* :ts:cv:`proxy.config.ssl.server.session_ticket_enable` should be set to 1 to enable session ticket support.
+* :ts:cv:`proxy.config.ssl.server.session_ticket.enable` should be set to 1 to enable session ticket support.
 
 
 Config File

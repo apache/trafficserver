@@ -93,7 +93,7 @@ get the SSL object from the TSVConn argument and use that to access the client
 certificate and make any additional checks.
 
 Processing will continue regardless of whether the hook callback executes
-:c:func:`TSSslVConnReenable()` since the openssl implementation does not allow
+:c:func:`TSVConnReenable()` since the openssl implementation does not allow
 for pausing processing during the certificate verify callback.
 
 TS_SSL_VERIFY_SERVER_HOOK
@@ -104,7 +104,7 @@ presents a certificate.  The callback can get the SSL object from the TSVConn
 argument and use that to access the origin certificate and make any additional checks.
 
 Processing will continue regardless of whether the hook callback executes
-:c:func:`TSSslVConnReenable()` since the openssl implementation does not allow
+:c:func:`TSVConnReenable()` since the openssl implementation does not allow
 for pausing processing during the certificate verify callback.
 
 TS_VCONN_OUTBOUND_START_HOOK
@@ -115,7 +115,7 @@ overriding the default SSL connection options on the SSL object.
 
 In theory this hook could apply and be useful for non-SSL connections as well, but at this point this hook is only called in the SSL sequence.
 
-The TLS handshake processing will not proceed until :c:func:`TSSslVConnReenable()` is called either from within the hook
+The TLS handshake processing will not proceed until :c:func:`TSVConnReenable()` is called either from within the hook
 callback or from another piece of code.
 
 TS_VCONN_OUTBOUND_CLOSE_HOOK
@@ -165,8 +165,8 @@ TLS Hook State Diagram
 
    digraph tls_hook_state_diagram{
      HANDSHAKE_HOOKS_OUTBOUND_PRE -> HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE;
-     HANDSHAKE_HOOKS_PRE_INVOKE -> TSSslVConnReenable;
-     TSSslVConnReenable -> HANDSHAKE_HOOKS_OUTBOUND_PRE;
+     HANDSHAKE_HOOKS_PRE_INVOKE -> TSVConnReenable;
+     TSVConnReenable -> HANDSHAKE_HOOKS_OUTBOUND_PRE;
      HANDSHAKE_HOOKS_OUTBOUND_PRE -> HANDSHAKE_HOOKS_DONE;
      HANDSHAKE_HOOKS_DONE -> HANDSHAKE_HOOKS_OUTBOUND_CLOSE;
    }
