@@ -248,7 +248,7 @@ public:
   struct HostStruct {
     std::string hostname;
     int port;
-    HostStruct(const std::string &name, int port_) : hostname(name), port(port_) {}
+    HostStruct(const std::string_view &name, int port_) : hostname(name), port(port_) {}
   };
   using Tunnel_hashMap = std::unordered_map<std::string, HostStruct>;
   Tunnel_hashMap TunnelhMap;
@@ -258,7 +258,7 @@ public:
   {
     std::string_view addr, port;
     if (ats_ip_parse(std::string_view(hostname), &addr, &port) == 0) {
-      TunnelhMap.emplace(key, HostStruct(addr.data(), atoi(port.data())));
+      TunnelhMap.emplace(key, HostStruct(addr, atoi(port.data())));
     }
   }
 

@@ -71,7 +71,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -162,14 +162,10 @@ tr6.StillRunningAfter = ts
 tr6.Processes.Default.TimeOut = 5
 
 
-# Over riding the built in ERROR check since we expect tr4 and tr7 to fail
 # No name checking for the sig-only permissive override for bad_bar
-ts.Disk.diags_log.Content = Testers.ExcludesExpression("WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped.")
 # No checking for the self-signed on random.com.  No messages
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped")
-ts.Disk.diags_log.Content += Testers.ExcludesExpression("ERROR: SSL connection failed for 'random.com'", "random.com should not fail")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("ERROR: SSL connection failed for 'random2.com'", "random2.com should fail")
 ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: Core server certificate verification failed for \(random2.com\)", "signature check for random.com should fail'")
 ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bad_foo.com\) not in certificate", "bad_foo name checked should be checked.")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("ERROR: SSL connection failed for 'bad_foo.com'", "bad_foo.com should fail")

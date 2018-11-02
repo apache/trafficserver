@@ -420,6 +420,11 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   bool reenabled;
   int retval = 1;
 
+  // If we are in tunnel mode, don't select a cert.  Pause!
+  if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
+    return -1; // Pause
+  }
+
   // Do the common certificate lookup only once.  If we pause
   // and restart processing, do not execute the common logic again
   if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
@@ -469,6 +474,11 @@ ssl_servername_and_cert_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool reenabled;
   int retval = 1;
+
+  // If we are in tunnel mode, don't select a cert.  Pause!
+  if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
+    return -1; // Pause
+  }
 
   // Do the common certificate lookup only once.  If we pause
   // and restart processing, do not execute the common logic again
