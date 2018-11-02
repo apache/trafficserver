@@ -59,7 +59,7 @@ test_AIO_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@LIBTCL@ @HWLOC_LIBS@
+	@HWLOC_LIBS@
 
 include $(top_srcdir)/build/tidy.mk
 

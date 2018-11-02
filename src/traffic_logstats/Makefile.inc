@@ -54,6 +54,6 @@ traffic_logstats_traffic_logstats_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 traffic_logstats_traffic_logstats_LDADD += \
-  @LIBTCL@ @HWLOC_LIBS@ \
+  @HWLOC_LIBS@ \
   @YAMLCPP_LIBS@ \
   @LIBPROFILER@ -lm

@@ -34,12 +34,12 @@ URL:		https://trafficserver.apache.org/
 
 Source0:	http://www.apache.org/dist/%{name}/%{name}-%{version}.tar.bz2
 
-BuildRequires:	expat-devel hwloc-devel openssl-devel pcre-devel tcl-devel zlib-devel xz-devel
+BuildRequires:	expat-devel hwloc-devel openssl-devel pcre-devel zlib-devel xz-devel
 BuildRequires:  libcurl-devel ncurses-devel
 BuildRequires:	gcc gcc-c++ perl-ExtUtils-MakeMaker
 BuildRequires:  libcap-devel
 
-Requires:	expat hwloc openssl pcre tcl zlib xz libcurl ncurses pkgconfig
+Requires:	expat hwloc openssl pcre zlib xz libcurl ncurses pkgconfig
 Requires:	libcap
 
 # Can't seem to use libunwind on RHEL7 or older

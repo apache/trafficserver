@@ -83,7 +83,7 @@ traffic_api_cli_remote_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@LIBTCL@ @OPENSSL_LIBS@
+	@OPENSSL_LIBS@
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
