@@ -327,11 +327,11 @@ class TrafficServerDomain(Domain):
 
     def clear_doc(self, docname):
         cv_list = self.data['cv']
-        for var, doc in cv_list.items():
+        for var, doc in list(cv_list.items()):
             if doc == docname:
                 del cv_list[var]
         stat_list = self.data['stat']
-        for var, doc in stat_list.items():
+        for var, doc in list(stat_list.items()):
             if doc == docname:
                 del stat_list[var]
 
