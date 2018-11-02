@@ -36,8 +36,7 @@ trusty*|jessie*)
         libssl-dev \
         m4 \
         ncurses-dev \
-        git \
-        tcl-dev
+        git
 ;;
 
 centos*)
@@ -57,8 +56,7 @@ centos*)
         ncurses-devel \
         openssl-devel \
         pcre-devel \
-        git \
-        tcl-devel
+        git
 ;;
 
 fedora*)
@@ -78,7 +76,6 @@ fedora*)
         ncurses-devel \
         openssl-devel \
         pcre-devel \
-        tcl-devel \
         git \
         make
 ;;
@@ -106,7 +103,6 @@ omnios)
         developer/versioning/git \
         library/idnkit \
         library/idnkit/header-idnkit \
-        omniti/runtime/tcl-8 \
         omniti/system/hwloc \
         system/header \
         system/library/math \

@@ -119,7 +119,7 @@
             export CXXFLAGS=-m64
             export CPPFLAGS=-I/opt/omni/include
             export LDFLAGS="-L/opt/omni/lib/amd64 -R/opt/omni/lib/amd64"
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             gmake -j2 V=1
             gmake check
             gmake install

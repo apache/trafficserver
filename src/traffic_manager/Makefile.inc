@@ -49,7 +49,7 @@ traffic_manager_traffic_manager_LDADD = \
 	$(top_builddir)/lib/records/librecords_lm.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
    	$(LIBUNWIND_LIBS) \
-	@LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
+	@LIBPCRE@ @LIBCAP@ @HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@
 	-lm
 

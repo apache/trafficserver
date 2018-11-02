@@ -59,8 +59,7 @@ load_http_hdr_SOURCES = \
 
 load_http_hdr_LDADD = -L. -lhdrs \
 	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@LIBTCL@
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
 check_PROGRAMS = test_mime
 
@@ -74,7 +73,7 @@ test_mime_LDADD = -L. -lhdrs \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@ \
-	@LIBTCL@ @LIBCAP@
+	@LIBCAP@
 
 test_mime_SOURCES = test_mime.cc
 

@@ -83,7 +83,6 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
-	@LIBTCL@ \
 	@LIBRESOLV@ \
 	@LIBZ@ \
 	@LIBLZMA@ \

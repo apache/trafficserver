@@ -49,6 +49,6 @@ traffic_top_traffic_top_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	@CURL_LIBS@ \
 	@CURSES_LIBS@ \
-	@LIBTCL@ @HWLOC_LIBS@
+	@HWLOC_LIBS@
 
 endif

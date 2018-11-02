@@ -107,7 +107,7 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	@HWLOC_LIBS@ \
-	@LIBTCL@ @LIBCAP@
+	@LIBCAP@
 
 clang-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)

@@ -88,7 +88,6 @@ plugins to build large scale web applications.
     perl-ExtUtils-MakeMaker
     gcc/g++ or clang/clang++
     openssl-devel
-    tcl-devel
     pcre-devel
     ncurses-devel and libcurl-devel(optional, needed for traffic_top)
     libcap-devel (optional, highly recommended)
@@ -103,7 +102,6 @@ plugins to build large scale web applications.
     libmodule-install-perl
     gcc/g++ or clang/clang++
     libssl-dev
-    tcl-dev
     libpcre3-dev
     libcap-dev (optional, highly recommended)
     libhwloc-dev (optional, highly recommended)
@@ -119,7 +117,6 @@ plugins to build large scale web applications.
     autoconf
     automake
     libtool
-    tcl-dev
     linux-headers
 
   OSX (we recommend HomeBrew):
@@ -127,7 +124,6 @@ plugins to build large scale web applications.
     automake
     pkg-config
     libtool
-    tcl-tk (or tcl from Homebrew-Cask)
     openssl
     pcre
 
@@ -137,7 +133,6 @@ plugins to build large scale web applications.
     devel/automake
     devel/pkgconf
     devel/libtool
-    lang/tcl85
     security/openssl
     devel/pcre
     textproc/flex (optional, install newer version from ports, fix PATH)
@@ -149,7 +144,6 @@ plugins to build large scale web applications.
     developer/build/autoconf
     developer/build/automake-111
     developer/build/libtool
-    omniti/runtime/tcl-8
     library/security/openssl
     library/pcre
 

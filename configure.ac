@@ -1252,26 +1252,6 @@ TS_CHECK_ZLIB
 # Check for lzma presence and usability
 TS_CHECK_LZMA
 
-#
-# Tcl macros provided by build/tcl.m4
-#
-# this will error out if tclConfig.sh is not found
-SC_PATH_TCLCONFIG
-
-# if tclConfig.sh loads properly, assume libraries are there and working
-SC_LOAD_TCLCONFIG
-
-# expect tclConfig.sh to populate TCL_LIB_FLAG and TCL_INCLUDE_SPEC
-if test "$host_os_def" == "darwin"; then
-    TCL_LIB_SPEC="-ltcl" # OSX fails to populate this variable
-fi
-AC_SUBST([LIBTCL],[$TCL_LIB_SPEC])
-
-
-if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
-   TS_ADDTO(TS_INCLUDES, [$TCL_INCLUDE_SPEC])
-fi
-
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
 AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])

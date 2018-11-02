@@ -68,7 +68,6 @@ prog() {
 
 extras() {
   case $(uname -v) in
-    omnios*) echo --with-tcl=/opt/omni/lib/amd64 ;;
     Darwin*) echo --with-openssl=$(brew --prefix openssl) ;;
   esac
 }
