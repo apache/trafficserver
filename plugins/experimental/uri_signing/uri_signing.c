@@ -175,7 +175,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
-  cjose_jws_t *jws = get_jws_from_query(url, url_ct, package);
+  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package);
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
