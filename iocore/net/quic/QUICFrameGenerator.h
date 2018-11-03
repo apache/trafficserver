@@ -32,6 +32,15 @@ public:
   virtual bool will_generate_frame(QUICEncryptionLevel level)                                                              = 0;
   virtual QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) = 0;
 
+  virtual void
+  on_frame_acked(QUICFrameUPtr &frame, QUICEncryptionLevel level)
+  {
+  }
+  virtual void
+  on_frame_lost(QUICFrameUPtr &frame, QUICEncryptionLevel level)
+  {
+  }
+
 protected:
   virtual std::vector<QUICEncryptionLevel>
   _encryption_level_filter()

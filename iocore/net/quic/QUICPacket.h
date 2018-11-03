@@ -32,6 +32,7 @@
 
 #include "QUICTypes.h"
 #include "QUICHandshakeProtocol.h"
+#include "QUICFrame.h"
 
 #define QUIC_FIELD_OFFSET_CONNECTION_ID 1
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4
@@ -48,6 +49,18 @@ extern ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator;
 
 using QUICPacketHeaderDeleterFunc = void (*)(QUICPacketHeader *p);
 using QUICPacketHeaderUPtr        = std::unique_ptr<QUICPacketHeader, QUICPacketHeaderDeleterFunc>;
+
+class QUICTrackablePacket
+{
+public:
+  virtual ~QUICTrackablePacket() {}
+  std::vector<QUICFrameUPtr> &frames();
+
+protected:
+  QUICTrackablePacket() {}
+  QUICTrackablePacket(std::vector<QUICFrameUPtr> &frames);
+  std::vector<QUICFrameUPtr> _frames;
+};
 
 class QUICPacketHeader
 {
@@ -307,7 +320,7 @@ public:
   }
 };
 
-class QUICPacket
+class QUICPacket : public QUICTrackablePacket
 {
 public:
   QUICPacket();
@@ -320,6 +333,8 @@ public:
    */
   QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len);
 
+  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, std::vector<QUICFrameUPtr> &frames);
+
   /*
    * Creates a QUICPacket with a QUICPacketHeader, a buffer that contains payload and a flag that indicates whether the packet is
    * retransmittable
@@ -328,6 +343,9 @@ public:
    * However, QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
   QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable, bool probing);
+
+  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable, bool probing,
+             std::vector<QUICFrameUPtr> &frames);
 
   ~QUICPacket();
 
@@ -425,17 +443,18 @@ public:
                         QUICPacketCreationResult &result);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                       bool retransmittable, bool probing,
+                                       bool retransmittable, bool probing, std::vector<QUICFrameUPtr> &frame,
                                        ats_unique_buf token = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }),
                                        size_t token_len     = 0);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                         bool retransmittable, bool probing);
+                                         bool retransmittable, bool probing, std::vector<QUICFrameUPtr> &frame);
   QUICPacketUPtr create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                        bool retransmittable, bool probing);
+                                        bool retransmittable, bool probing, std::vector<QUICFrameUPtr> &frame);
   QUICPacketUPtr create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                         ats_unique_buf payload, size_t len, bool retransmittable, bool probing);
+                                         ats_unique_buf payload, size_t len, bool retransmittable, bool probing,
+                                         std::vector<QUICFrameUPtr> &frame);
   void set_version(QUICVersion negotiated_version);
 
   // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICCryptoInfoProvider or somethign instead.
@@ -452,5 +471,6 @@ private:
   QUICPacketNumberGenerator _packet_number_generator[3];
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
-  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable, bool probing);
+  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable, bool probing,
+                                          std::vector<QUICFrameUPtr> &frame);
 };

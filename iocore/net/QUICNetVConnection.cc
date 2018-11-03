@@ -1185,7 +1185,8 @@ QUICNetVConnection::_state_closing_send_packet()
 }
 
 void
-QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr frame)
+QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr &frame,
+                                 std::vector<QUICFrameUPtr> &frames)
 {
   size_t l = 0;
   frame->store(buf.get() + offset, &l, max_frame_size);
@@ -1201,6 +1202,8 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &
     frame->debug_msg(msg, sizeof(msg));
     QUICConDebug("[TX] %s", msg);
   }
+
+  frames.push_back(std::move(frame));
 }
 
 QUICPacketUPtr
@@ -1226,13 +1229,14 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
+  std::vector<QUICFrameUPtr> frames;
 
   // CRYPTO
   frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
   while (frame) {
     ++frame_count;
     probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, std::move(frame));
+    this->_store_frame(buf, len, max_frame_size, frame, frames);
     frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
   }
 
@@ -1241,7 +1245,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   if (frame) {
     ++frame_count;
     probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, std::move(frame));
+    this->_store_frame(buf, len, max_frame_size, frame, frames);
   }
 
   // NEW_CONNECTION_ID
@@ -1250,7 +1254,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     while (frame) {
       ++frame_count;
       probing |= frame->is_probing_frame();
-      this->_store_frame(buf, len, max_frame_size, std::move(frame));
+      this->_store_frame(buf, len, max_frame_size, frame, frames);
 
       frame = this->_alt_con_manager->generate_frame(level, UINT16_MAX, max_frame_size);
     }
@@ -1261,7 +1265,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   while (frame) {
     ++frame_count;
     probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, std::move(frame));
+    this->_store_frame(buf, len, max_frame_size, frame, frames);
 
     frame = this->_packet_retransmitter.generate_frame(level, UINT16_MAX, max_frame_size);
   }
@@ -1271,7 +1275,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   if (frame) {
     ++frame_count;
     probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, std::move(frame));
+    this->_store_frame(buf, len, max_frame_size, frame, frames);
   }
 
   // BLOCKED
@@ -1280,7 +1284,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     if (frame) {
       ++frame_count;
       probing |= frame->is_probing_frame();
-      this->_store_frame(buf, len, max_frame_size, std::move(frame));
+      this->_store_frame(buf, len, max_frame_size, frame, frames);
     }
   }
 
@@ -1296,7 +1300,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
                     this->_remote_flow_controller->current_limit());
         ink_assert(ret == 0);
       }
-      this->_store_frame(buf, len, max_frame_size, std::move(frame));
+      this->_store_frame(buf, len, max_frame_size, frame, frames);
 
       if (++this->_stream_frames_sent % MAX_CONSECUTIVE_STREAMS == 0) {
         break;
@@ -1322,7 +1326,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     }
     ++frame_count;
     probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, std::move(frame));
+    this->_store_frame(buf, len, max_frame_size, frame, frames);
   }
 
   // Schedule a packet
@@ -1343,7 +1347,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     }
 
     // Packet is retransmittable if it's not ack only packet
-    packet = this->_build_packet(level, std::move(buf), len, !ack_only, probing);
+    packet = this->_build_packet(level, std::move(buf), len, !ack_only, probing, frames);
   }
 
   return packet;
@@ -1371,11 +1375,12 @@ QUICNetVConnection::_packetize_closing_frame()
 
   size_t len              = 0;
   uint64_t max_frame_size = static_cast<uint64_t>(max_size);
-  this->_store_frame(buf, len, max_frame_size, std::move(frame));
+  std::vector<QUICFrameUPtr> frames;
+  this->_store_frame(buf, len, max_frame_size, frame, frames);
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
   ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
-  this->_the_final_packet = this->_build_packet(level, std::move(buf), len, false, false);
+  this->_the_final_packet = this->_build_packet(level, std::move(buf), len, false, false, frames);
 }
 
 QUICConnectionErrorUPtr
@@ -1421,13 +1426,15 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable, bool probing)
+QUICNetVConnection::_build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
+                                  std::vector<QUICFrameUPtr> &frames)
 {
-  return this->_build_packet(std::move(buf), len, retransmittable, probing, QUICTypeUtil::packet_type(level));
+  return this->_build_packet(std::move(buf), len, retransmittable, probing, frames, QUICTypeUtil::packet_type(level));
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, bool probing, QUICPacketType type)
+QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
+                                  std::vector<QUICFrameUPtr> &frames, QUICPacketType type)
 {
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
@@ -1450,25 +1457,25 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 
     packet = this->_packet_factory.create_initial_packet(
       dcid, this->_quic_connection_id, this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len,
-      retransmittable, probing, std::move(token), token_len);
+      retransmittable, probing, frames, std::move(token), token_len);
     break;
   }
   case QUICPacketType::HANDSHAKE: {
     packet = this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
                                                            this->largest_acked_packet_number(QUICEncryptionLevel::HANDSHAKE),
-                                                           std::move(buf), len, retransmittable, probing);
+                                                           std::move(buf), len, retransmittable, probing, frames);
     break;
   }
   case QUICPacketType::ZERO_RTT_PROTECTED: {
     packet = this->_packet_factory.create_zero_rtt_packet(this->_original_quic_connection_id, this->_quic_connection_id,
                                                           this->largest_acked_packet_number(QUICEncryptionLevel::ZERO_RTT),
-                                                          std::move(buf), len, retransmittable, probing);
+                                                          std::move(buf), len, retransmittable, probing, frames);
     break;
   }
   case QUICPacketType::PROTECTED: {
     packet = this->_packet_factory.create_protected_packet(this->_peer_quic_connection_id,
                                                            this->largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
-                                                           std::move(buf), len, retransmittable, probing);
+                                                           std::move(buf), len, retransmittable, probing, frames);
     break;
   }
   default:

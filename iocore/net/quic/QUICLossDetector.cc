@@ -28,6 +28,7 @@
 #include "QUICConfig.h"
 #include "QUICEvents.h"
 #include "QUICDebugNames.h"
+#include "QUICFrameGenerator.h"
 
 #define QUICLDDebug(fmt, ...)                                                                                                \
   Debug("quic_loss_detector", "[%s] [%s] " fmt, this->_info->cids().data(), QUICDebugNames::pn_space(this->_pn_space_index), \
@@ -302,6 +303,16 @@ QUICLossDetector::_on_packet_acked(const PacketInfo &acked_packet)
   this->_handshake_count = 0;
   this->_tlp_count       = 0;
   this->_rto_count       = 0;
+
+  for (QUICFrameUPtr &frame : acked_packet.packet->frames()) {
+    auto reactor = frame->generated_by();
+    if (reactor == nullptr) {
+      continue;
+    }
+
+    reactor->on_frame_acked(frame, QUICTypeUtil::encryption_level(acked_packet.packet->type()));
+  }
+
   this->_remove_from_sent_packet_list(acked_packet.packet_number);
 }
 
@@ -424,7 +435,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_loss_time = 0;
-  std::map<QUICPacketNumber, const PacketInfo *> lost_packets;
+  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
   double delay_until_lost = INFINITY;
 
   if (this->_k_using_time_loss_detection) {
@@ -472,12 +483,12 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
   // lets it decide whether to retransmit immediately.
   if (!lost_packets.empty()) {
     this->_cc->on_packets_lost(lost_packets);
-    for (auto &lost_packet : lost_packets) {
+    for (auto lost_packet : lost_packets) {
       // -- ADDITIONAL CODE --
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
       // them somewhere.
       // I couldn't find the place so just send them here for now.
-      this->_retransmit_lost_packet(*lost_packet.second->packet);
+      this->_retransmit_lost_packet(lost_packet.second->packet);
       // -- END OF ADDITIONAL CODE --
       // -- ADDITIONAL CODE --
       this->_remove_from_sent_packet_list(lost_packet.first);
@@ -494,7 +505,7 @@ QUICLossDetector::_retransmit_all_unacked_handshake_data()
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   std::set<QUICPacketNumber> retransmitted_handshake_packets;
-  std::map<QUICPacketNumber, const PacketInfo *> lost_packets;
+  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
 
   for (auto &info : this->_sent_packets) {
     retransmitted_handshake_packets.insert(info.first);
@@ -538,11 +549,20 @@ QUICLossDetector::_send_two_packets()
 // ===== Functions below are helper functions =====
 
 void
-QUICLossDetector::_retransmit_lost_packet(const QUICPacket &packet)
+QUICLossDetector::_retransmit_lost_packet(QUICPacketUPtr &packet)
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  this->_transmitter->retransmit_packet(packet);
+
+  for (QUICFrameUPtr &frame : packet->frames()) {
+    auto reactor = frame->generated_by();
+    if (reactor == nullptr) {
+      continue;
+    }
+
+    reactor->on_frame_lost(frame, QUICTypeUtil::encryption_level(packet->type()));
+  }
+  this->_transmitter->retransmit_packet(*packet);
 }
 
 std::set<QUICAckFrame::PacketNumberRange>
