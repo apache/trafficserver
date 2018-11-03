@@ -49,6 +49,7 @@ RuleSet::add_condition(Parser &p, const char *filename, int lineno)
     TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
     c->initialize(p);
     if (!c->set_hook(_hook)) {
+      delete c;
       TSError("[%s] in %s:%d: can't use this condition in hook=%s: %%{%s} with arg: %s", PLUGIN_NAME, filename, lineno,
               TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
       return false;
@@ -79,6 +80,7 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
     TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)", p.get_op().c_str(), p.get_arg().c_str());
     o->initialize(p);
     if (!o->set_hook(_hook)) {
+      delete o;
       TSDebug(PLUGIN_NAME, "in %s:%d: can't use this operator in hook=%s:  %s(%s)", filename, lineno, TSHttpHookNameLookup(_hook),
               p.get_op().c_str(), p.get_arg().c_str());
       TSError("[%s] in %s:%d: can't use this operator in hook=%s:  %s(%s)", PLUGIN_NAME, filename, lineno,
