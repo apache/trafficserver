@@ -537,7 +537,7 @@ PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++ >= 7], [
     enable_image_magick_plugins=yes
   ])
 ],
-
+[
   PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++ < 7], [
     TS_ADDTO(LIBMAGICKCPP_CFLAGS, [-DMAGICK_VERSION=6])
     have_libmagickcpp=yes
@@ -547,7 +547,7 @@ PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++ >= 7], [
   ],
   [
     have_libmagickcpp=no
-  ]))
+  ])])
 
 AM_CONDITIONAL([BUILD_IMAGE_MAGICK_PLUGINS], [test "x${enable_image_magick_plugins}" = "xyes"])
 
