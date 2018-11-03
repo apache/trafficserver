@@ -28,6 +28,7 @@
 #include "QUICStream.h"
 #include "QUICIntUtil.h"
 #include "QUICDebugNames.h"
+#include "QUICPacket.h"
 
 ClassAllocator<QUICStreamFrame> quicStreamFrameAllocator("quicStreamFrameAllocator");
 ClassAllocator<QUICCryptoFrame> quicCryptoFrameAllocator("quicCryptoFrameAllocator");
@@ -61,6 +62,18 @@ bool
 QUICFrame::is_probing_frame() const
 {
   return false;
+}
+
+void
+QUICFrame::set_owner(QUICFrameGenerator *owner)
+{
+  this->_owner = owner;
+}
+
+QUICFrameGenerator *
+QUICFrame::generated_by() const
+{
+  return this->_owner;
 }
 
 QUICFrameType

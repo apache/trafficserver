@@ -24,16 +24,18 @@
 #pragma once
 
 #include <memory>
+#include "tscore/Allocator.h"
 #include "tscore/List.h"
 #include <vector>
 #include <iterator>
 
 #include "QUICTypes.h"
-#include "QUICPacket.h"
 
 class QUICFrame;
 class QUICStreamFrame;
 class QUICCryptoFrame;
+class QUICPacket;
+class QUICFrameGenerator;
 
 using QUICFrameDeleterFunc = void (*)(QUICFrame *p);
 using QUICFrameUPtr        = std::unique_ptr<QUICFrame, QUICFrameDeleterFunc>;
@@ -59,12 +61,15 @@ public:
   virtual void reset(const uint8_t *buf, size_t len);
   virtual QUICFrame *split(size_t size);
   virtual int debug_msg(char *msg, size_t msg_len) const;
+  virtual void set_owner(QUICFrameGenerator *owner);
+  virtual QUICFrameGenerator *generated_by() const;
   LINK(QUICFrame, link);
 
 protected:
   QUICFrame() {}
-  const uint8_t *_buf = nullptr;
-  size_t _len         = 0;
+  const uint8_t *_buf        = nullptr;
+  size_t _len                = 0;
+  QUICFrameGenerator *_owner = nullptr;
 };
 
 //

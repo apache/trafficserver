@@ -74,7 +74,7 @@ public:
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const PacketInfo &acked_packet);
-  virtual void on_packets_lost(const std::map<QUICPacketNumber, const PacketInfo *> &packets);
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets);
   void on_retransmission_timeout_verified();
   bool check_credit() const;
   uint32_t open_window() const;
@@ -184,7 +184,7 @@ private:
   void _detect_lost_packets(QUICPacketNumber largest_acked);
   void _set_loss_detection_alarm();
   void _on_loss_detection_alarm();
-  void _retransmit_lost_packet(const QUICPacket &packet);
+  void _retransmit_lost_packet(QUICPacketUPtr &packet);
 
   std::set<QUICAckFrame::PacketNumberRange> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
 
