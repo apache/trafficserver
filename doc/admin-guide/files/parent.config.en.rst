@@ -15,6 +15,8 @@
   specific language governing permissions and limitations
   under the License.
 
+.. include:: ../../common.defs
+
 =============
 parent.config
 =============
@@ -122,16 +124,27 @@ The following list shows the possible actions and their allowed values.
 
 .. _parent-config-format-parent:
 
-``parent``
-    An ordered list of parent servers. If the request cannot be handled
-    by the last parent server in the list, then it will be routed to the
-    origin server. You can specify either a hostname or an IP address,
-    but; you must specify the port number.
+``parent`` `(hostname or IP address):port[|weight][,another host]`
+    An ordered list of parent servers, separated by commas or
+    semicolons. If the request cannot be handled by the last parent
+    server in the list, then it will be routed to the origin server.
+    You can specify either a hostname or an IP address, but, you must
+    specify the port number. If there are multiple IP addresses associated
+    with the hostname, |TS| will treat them as a single entity when tracking
+    health. Example::
+
+        parent="p1.x.com:8080, 192.168.0.3:80, 192.168.0.4:80"
+
+    An optional weight can be specified after a pipe (``|``). This example
+    has one parent take 20% (2/(2+3+5)) of the requests, another 30% (3/(2+3+5)),
+    and the last 50% (5/(2+3+5))::
+
+        parent="p1.x.com:8080|2.0, 192.168.0.3:80|3.0, 192.168.0.4:80|5.0"
 
 .. _parent-config-format-secondary-parent:
 
 ``secondary_parent``
-    An optional ordered list of secondary parent servers.  This
+    An optional ordered list of secondary parent servers in the same format as parent.  This
     optional list may only be used when ``round_robin`` is set to
     ``consistent_hash``.  If the request cannot be handled by the
     first parent server chosen from the ``parent`` list, then the
@@ -177,11 +190,11 @@ The following list shows the possible actions and their allowed values.
     One of the following values:
 
     -  ``true`` - This is the default.  The list of parents and secondary parents
-        are proxy cache servers.
+       are proxy cache servers.
     -  ``false`` - The list of parents and secondary parents are the origin
-        servers ``go_direct`` flag is ignored and origins are selected using
-        the specified ``round_robin`` algorithm.  The FQDN is removed from
-        the http request line.
+       servers ``go_direct`` flag is ignored and origins are selected using
+       the specified ``round_robin`` algorithm.  The FQDN is removed from
+       the http request line.
 
 .. _parent-config-format-parent-retry:
 
