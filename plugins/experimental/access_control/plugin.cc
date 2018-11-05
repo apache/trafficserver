@@ -385,11 +385,11 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
                *            a secure channel, typically HTTP over Transport Layer Security (TLS)
                * HttpOnly - instructs the UA to omit the cookie when providing access to cookies via “non-HTTP” APIs such as a web
                *            browser API that exposes cookies to scripts */
-              cookieValue.append("Secure; HttpOnly");
+              cookieValue.append("path=/; Secure; HttpOnly");
 
               AccessControlDebug("%.*s: %s", TS_MIME_LEN_SET_COOKIE, TS_MIME_FIELD_SET_COOKIE, cookieValue.c_str());
               setHeader(clientRespBufp, clientRespHdrLoc, TS_MIME_FIELD_SET_COOKIE, TS_MIME_LEN_SET_COOKIE, cookieValue.c_str(),
-                        cookieValue.size());
+                        cookieValue.size(), /* duplicateOk = */ true);
 
               delete token;
             } else {
