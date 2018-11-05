@@ -56,6 +56,11 @@ using StringViewVector  = std::vector<std::string_view>;
 
 using byte = unsigned char;
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 struct ThreadPool {
   using Callback = std::function<void(void)>;
   using Queue    = std::list<Callback>;
@@ -621,5 +626,5 @@ TSPluginInit(int argc, const char **argv)
     key = argv[1];
   }
 
-  new GlobalHookPlugin(key);
+  plugin = new GlobalHookPlugin(key);
 }
