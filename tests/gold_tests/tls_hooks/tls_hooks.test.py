@@ -45,6 +45,7 @@ ts.Disk.records_config.update({
     # enable ssl port
     'proxy.config.http.server_ports': '{0}:ssl'.format(ts.Variables.ssl_port),
     'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.TLSv1_3': 0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
 })
 
@@ -63,9 +64,10 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'curl -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -v -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression("TLSv1.3 (IN), TLS handshake, Finished (20):", "Should not negotiate a TLSv1.3 connection")
 
 ts.Streams.stderr = "gold/ts-preaccept-1.gold"
 
