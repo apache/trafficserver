@@ -44,8 +44,7 @@ config.h
 configs/records.config.default
 configs/storage.config.default
 
-doc/_build/html/api/
-doc/_build/locale/
+doc/_build
 doc/docbuild/
 doc/locale/pot
 doc/xml/
