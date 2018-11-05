@@ -34,14 +34,20 @@ TEST_CASE("Ptr", "[libts][ptr]")
 
   Ptr<PtrObject> p1 = make_ptr(new PtrObject(&alive));
   PtrObject *p2     = p1.detach();
+  Ptr<PtrObject> p3;
 
   REQUIRE(p1.get() == nullptr);
   REQUIRE(p2->refcount() == 1);
+  REQUIRE(p3.get() == nullptr);
 
   // Note that there's no symmetric attach.
   p1 = p2;
   REQUIRE(p2->refcount() == 2);
-  p1 = p1;
+  p3 = p1;
+  REQUIRE(p1->refcount() == 3);
+  p1 = p3; // self assign, must not bump ref count.
+  REQUIRE(p1->refcount() == 3);
+  p3 = nullptr; // clear ref drops ref count.
   REQUIRE(p1->refcount() == 2);
   p2->refcount_dec();
   delete p1.detach();
