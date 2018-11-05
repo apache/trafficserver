@@ -236,6 +236,17 @@ SSLConfigParams::initialize()
     ssl_client_ctx_options |= SSL_OP_NO_TLSv1_2;
   }
 #endif
+#ifdef SSL_OP_NO_TLSv1_3
+  REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_3");
+  if (!options) {
+    ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
+  }
+
+  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_3");
+  if (!client_ssl_options) {
+    ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
+  }
+#endif
 
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
   REC_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
