@@ -3245,6 +3245,10 @@ SSL Termination
 
    Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_3 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.3.  If not specified, enabled by default.  [Requires OpenSSL v1.1.1 and higher]
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.certification_level INT 0
 
    Sets the client certification level:
@@ -3570,6 +3574,10 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_2 INT 1
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3 INT 1
+
+   Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
 
