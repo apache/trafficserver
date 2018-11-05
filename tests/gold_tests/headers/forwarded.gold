@@ -31,11 +31,11 @@ for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=http
 for=0.6.6.6
 for=_argh, for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=http;host=www.no-oride.com;connection=http;connection=http/1.0;connection=http/1.0-tcp-ipv4
 -
-for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=https;host=www.no-oride.com;connection=https;connection=https/2;connection=http/1.1-h2-tls/1.2-tcp-ipv4
+for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=https;host=www.no-oride.com;connection=https;connection=https/2;connection=http/1.1-h2-tls/1.{}-tcp-ipv4
 -
-for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=https;host=www.no-oride.com;connection=https;connection=https/1.1;connection=http/1.1-tls/1.2-tcp-ipv4
+for=127.0.0.1;by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by=127.0.0.1;proto=https;host=www.no-oride.com;connection=https;connection=https/1.1;connection=http/1.1-tls/1.{}-tcp-ipv4
 -
 for="[::1]";by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by="[::1]";proto=http;host=www.no-oride.com;connection=http;connection=http/1.1;connection=http/1.1-tcp-ipv6
 -
-for="[::1]";by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by="[::1]";proto=https;host=www.no-oride.com;connection=https;connection=https/1.1;connection=http/1.1-tls/1.2-tcp-ipv6
+for="[::1]";by=unknown;by=Poxy_Proxy;__BY_EQUAL_UUID__;by="[::1]";proto=https;host=www.no-oride.com;connection=https;connection=https/1.1;connection=http/1.1-tls/1.{}-tcp-ipv6
 -
