@@ -64,12 +64,6 @@ QUICFrame::is_probing_frame() const
   return false;
 }
 
-void
-QUICFrame::set_owner(QUICFrameGenerator *owner)
-{
-  this->_owner = owner;
-}
-
 QUICFrameGenerator *
 QUICFrame::generated_by() const
 {
@@ -113,7 +107,7 @@ QUICFrame::split(size_t size)
 // STREAM Frame
 //
 
-QUICStreamFrame::QUICStreamFrame(ats_unique_buf data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last)
+QUICStreamFrame::QUICStreamFrame(ats_unique_buf data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last, QUICFrameGenerator *owner) : QUICFrame(owner)
 {
   this->_data      = std::move(data);
   this->_data_len  = data_len;
@@ -155,7 +149,7 @@ QUICStreamFrame::split(size_t size)
   this->reset(nullptr, 0);
 
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(std::move(buf2), buf2_len, this->stream_id(), this->offset() + this->data_length(), fin);
+  new (frame) QUICStreamFrame(std::move(buf2), buf2_len, this->stream_id(), this->offset() + this->data_length(), fin, this->_owner);
 
   return frame;
 }
@@ -164,7 +158,7 @@ QUICFrameUPtr
 QUICStreamFrame::clone() const
 {
   return QUICFrameFactory::create_stream_frame(this->data(), this->data_length(), this->stream_id(), this->offset(),
-                                               this->has_fin_flag());
+                                               this->has_fin_flag(), this->_owner);
 }
 
 QUICFrameType
@@ -406,7 +400,7 @@ QUICStreamFrame::_get_length_field_len() const
 // CRYPTO frame
 //
 
-QUICCryptoFrame::QUICCryptoFrame(ats_unique_buf data, size_t data_len, QUICOffset offset)
+QUICCryptoFrame::QUICCryptoFrame(ats_unique_buf data, size_t data_len, QUICOffset offset, QUICFrameGenerator *owner) : QUICFrame(owner)
 {
   this->_data     = std::move(data);
   this->_data_len = data_len;
@@ -579,7 +573,7 @@ QUICAckFrame::QUICAckFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len)
   this->reset(buf, len);
 }
 
-QUICAckFrame::QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block)
+QUICAckFrame::QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, QUICFrameGenerator *owner) : QUICFrame(owner)
 {
   this->_largest_acknowledged = largest_acknowledged;
   this->_ack_delay            = ack_delay;
@@ -1084,8 +1078,8 @@ QUICAckFrame::EcnSection::ecn_ce_count() const
 // RST_STREAM frame
 //
 
-QUICRstStreamFrame::QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset)
-  : _stream_id(stream_id), _error_code(error_code), _final_offset(final_offset)
+QUICRstStreamFrame::QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset, QUICFrameGenerator *owner)
+  : QUICFrame(owner), _stream_id(stream_id), _error_code(error_code), _final_offset(final_offset)
 {
 }
 
@@ -1288,8 +1282,8 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 // CONNECTION_CLOSE frame
 //
 QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length,
-                                                   const char *reason_phrase)
-  : _error_code(error_code), _frame_type(frame_type), _reason_phrase_length(reason_phrase_length), _reason_phrase(reason_phrase)
+                                                   const char *reason_phrase, QUICFrameGenerator *owner)
+  : QUICFrame(owner), _error_code(error_code), _frame_type(frame_type), _reason_phrase_length(reason_phrase_length), _reason_phrase(reason_phrase)
 {
 }
 
@@ -1297,7 +1291,7 @@ QUICFrameUPtr
 QUICConnectionCloseFrame::clone() const
 {
   return QUICFrameFactory::create_connection_close_frame(this->error_code(), this->frame_type(), this->reason_phrase_length(),
-                                                         this->reason_phrase());
+                                                         this->reason_phrase(), this->_owner);
 }
 
 QUICFrameType
@@ -1476,7 +1470,7 @@ QUICConnectionCloseFrame::_get_reason_phrase_field_offset() const
 // APPLICATION_CLOSE frame
 //
 QUICApplicationCloseFrame::QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length,
-                                                     const char *reason_phrase)
+                                                     const char *reason_phrase, QUICFrameGenerator *owner) : QUICFrame(owner)
 {
   this->_error_code           = error_code;
   this->_reason_phrase_length = reason_phrase_length;
@@ -1607,7 +1601,7 @@ QUICApplicationCloseFrame::_get_reason_phrase_field_offset() const
 //
 // MAX_DATA frame
 //
-QUICMaxDataFrame::QUICMaxDataFrame(uint64_t maximum_data)
+QUICMaxDataFrame::QUICMaxDataFrame(uint64_t maximum_data, QUICFrameGenerator *owner) : QUICFrame(owner)
 {
   this->_maximum_data = maximum_data;
 }
@@ -1683,7 +1677,7 @@ QUICMaxDataFrame::_get_max_data_field_length() const
 //
 // MAX_STREAM_DATA
 //
-QUICMaxStreamDataFrame::QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t maximum_stream_data)
+QUICMaxStreamDataFrame::QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t maximum_stream_data, QUICFrameGenerator *owner) : QUICFrame(owner)
 {
   this->_stream_id           = stream_id;
   this->_maximum_stream_data = maximum_stream_data;
@@ -1792,7 +1786,7 @@ QUICMaxStreamDataFrame::_get_max_stream_data_field_length() const
 //
 // MAX_STREAM_ID
 //
-QUICMaxStreamIdFrame::QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id)
+QUICMaxStreamIdFrame::QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, QUICFrameGenerator *owner) : QUICFrame(owner)
 {
   this->_maximum_stream_id = maximum_stream_id;
 }
@@ -2205,8 +2199,8 @@ QUICNewConnectionIdFrame::_get_connection_id_field_offset() const
 // STOP_SENDING frame
 //
 
-QUICStopSendingFrame::QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorCode error_code)
-  : _stream_id(stream_id), _error_code(error_code)
+QUICStopSendingFrame::QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICFrameGenerator *owner)
+  : QUICFrame(owner), _stream_id(stream_id), _error_code(error_code)
 {
 }
 
@@ -2420,7 +2414,10 @@ QUICPathResponseFrame::_data_offset() const
 QUICFrameUPtr
 QUICNewTokenFrame::clone() const
 {
-  return QUICFrameFactory::create_new_token_frame(this->token(), this->token_length());
+  ats_unique_buf buf = ats_unique_malloc(this->token_length());
+  memcpy(buf.get(), this->token(), this->token_length());
+  
+  return QUICFrameFactory::create_new_token_frame(std::move(buf), this->token_length(), this->_owner);
 }
 
 QUICFrameType
@@ -2584,7 +2581,7 @@ QUICRetireConnectionIdFrame::_get_seq_num_field_length() const
 // QUICRetransmissionFrame
 //
 QUICRetransmissionFrame::QUICRetransmissionFrame(QUICFrameUPtr original_frame, const QUICPacket &original_packet)
-  : _packet_type(original_packet.type())
+  : QUICFrame(original_frame->generated_by()), _packet_type(original_packet.type())
 {
   this->_frame = std::move(original_frame);
 }
@@ -2767,24 +2764,24 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len)
 }
 
 QUICStreamFrameUPtr
-QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last)
+QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last, QUICFrameGenerator *owner)
 {
   ats_unique_buf buf = ats_unique_malloc(data_len);
   memcpy(buf.get(), data, data_len);
 
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(std::move(buf), data_len, stream_id, offset, last);
+  new (frame) QUICStreamFrame(std::move(buf), data_len, stream_id, offset, last, owner);
   return QUICStreamFrameUPtr(frame, &QUICFrameDeleter::delete_stream_frame);
 }
 
 QUICCryptoFrameUPtr
-QUICFrameFactory::create_crypto_frame(const uint8_t *data, uint64_t data_len, QUICOffset offset)
+QUICFrameFactory::create_crypto_frame(const uint8_t *data, uint64_t data_len, QUICOffset offset, QUICFrameGenerator *owner)
 {
   ats_unique_buf buf = ats_unique_malloc(data_len);
   memcpy(buf.get(), data, data_len);
 
   QUICCryptoFrame *frame = quicCryptoFrameAllocator.alloc();
-  new (frame) QUICCryptoFrame(std::move(buf), data_len, offset);
+  new (frame) QUICCryptoFrame(std::move(buf), data_len, offset, owner);
   return QUICCryptoFrameUPtr(frame, &QUICFrameDeleter::delete_crypto_frame);
 }
 
@@ -2800,175 +2797,175 @@ QUICFrameFactory::split_frame(QUICFrame *frame, size_t size)
 }
 
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block)
+QUICFrameFactory::create_ack_frame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, QUICFrameGenerator *owner)
 {
   QUICAckFrame *frame = quicAckFrameAllocator.alloc();
-  new (frame) QUICAckFrame(largest_acknowledged, ack_delay, first_ack_block);
+  new (frame) QUICAckFrame(largest_acknowledged, ack_delay, first_ack_block, owner);
   return std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_ack_frame);
 }
 
 std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_connection_close_frame(uint16_t error_code, QUICFrameType frame_type, uint16_t reason_phrase_length,
-                                                const char *reason_phrase)
+                                                const char *reason_phrase, QUICFrameGenerator *owner)
 {
   QUICConnectionCloseFrame *frame = quicConnectionCloseFrameAllocator.alloc();
-  new (frame) QUICConnectionCloseFrame(error_code, frame_type, reason_phrase_length, reason_phrase);
+  new (frame) QUICConnectionCloseFrame(error_code, frame_type, reason_phrase_length, reason_phrase, owner);
   return std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_connection_close_frame);
 }
 
 std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_connection_close_frame(QUICConnectionErrorUPtr error)
+QUICFrameFactory::create_connection_close_frame(QUICConnectionErrorUPtr error, QUICFrameGenerator *owner)
 {
   ink_assert(error->cls == QUICErrorClass::TRANSPORT);
   if (error->msg) {
-    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type(), strlen(error->msg), error->msg);
+    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type(), strlen(error->msg), error->msg, owner);
   } else {
-    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type());
+    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type(), 0, nullptr, owner);
   }
 }
 
 std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_application_close_frame(QUICAppErrorCode error_code, uint16_t reason_phrase_length,
-                                                 const char *reason_phrase)
+                                                 const char *reason_phrase, QUICFrameGenerator *owner)
 {
   QUICApplicationCloseFrame *frame = quicApplicationCloseFrameAllocator.alloc();
-  new (frame) QUICApplicationCloseFrame(error_code, reason_phrase_length, reason_phrase);
+  new (frame) QUICApplicationCloseFrame(error_code, reason_phrase_length, reason_phrase, owner);
   return std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_connection_close_frame);
 }
 
 std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_application_close_frame(QUICConnectionErrorUPtr error)
+QUICFrameFactory::create_application_close_frame(QUICConnectionErrorUPtr error, QUICFrameGenerator *owner)
 {
   ink_assert(error->cls == QUICErrorClass::APPLICATION);
   if (error->msg) {
-    return QUICFrameFactory::create_application_close_frame(error->code, strlen(error->msg), error->msg);
+    return QUICFrameFactory::create_application_close_frame(error->code, strlen(error->msg), error->msg, owner);
   } else {
-    return QUICFrameFactory::create_application_close_frame(error->code);
+    return QUICFrameFactory::create_application_close_frame(error->code, 0, nullptr, owner);
   }
 }
 
 std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_max_data_frame(uint64_t maximum_data)
+QUICFrameFactory::create_max_data_frame(uint64_t maximum_data, QUICFrameGenerator *owner)
 {
   QUICMaxDataFrame *frame = quicMaxDataFrameAllocator.alloc();
-  new (frame) QUICMaxDataFrame(maximum_data);
+  new (frame) QUICMaxDataFrame(maximum_data, owner);
   return std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_data_frame);
 }
 
 std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_max_stream_data_frame(QUICStreamId stream_id, uint64_t maximum_data)
+QUICFrameFactory::create_max_stream_data_frame(QUICStreamId stream_id, uint64_t maximum_data, QUICFrameGenerator *owner)
 {
   QUICMaxStreamDataFrame *frame = quicMaxStreamDataFrameAllocator.alloc();
-  new (frame) QUICMaxStreamDataFrame(stream_id, maximum_data);
+  new (frame) QUICMaxStreamDataFrame(stream_id, maximum_data, owner);
   return std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_data_frame);
 }
 
 std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_max_stream_id_frame(QUICStreamId maximum_stream_id)
+QUICFrameFactory::create_max_stream_id_frame(QUICStreamId maximum_stream_id, QUICFrameGenerator *owner)
 {
   QUICMaxStreamIdFrame *frame = quicMaxStreamIdFrameAllocator.alloc();
-  new (frame) QUICMaxStreamIdFrame(maximum_stream_id);
+  new (frame) QUICMaxStreamIdFrame(maximum_stream_id, owner);
   return std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_id_frame);
 }
 
 std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_ping_frame()
+QUICFrameFactory::create_ping_frame(QUICFrameGenerator *owner)
 {
   QUICPingFrame *frame = quicPingFrameAllocator.alloc();
-  new (frame) QUICPingFrame();
+  new (frame) QUICPingFrame(owner);
   return std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_ping_frame);
 }
 
 std::unique_ptr<QUICPathChallengeFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_path_challenge_frame(const uint8_t *data)
+QUICFrameFactory::create_path_challenge_frame(const uint8_t *data, QUICFrameGenerator *owner)
 {
   ats_unique_buf buf = ats_unique_malloc(QUICPathChallengeFrame::DATA_LEN);
   memcpy(buf.get(), data, QUICPathChallengeFrame::DATA_LEN);
 
   QUICPathChallengeFrame *frame = quicPathChallengeFrameAllocator.alloc();
-  new (frame) QUICPathChallengeFrame(std::move(buf));
+  new (frame) QUICPathChallengeFrame(std::move(buf), owner);
   return std::unique_ptr<QUICPathChallengeFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_path_challenge_frame);
 }
 
 std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_path_response_frame(const uint8_t *data)
+QUICFrameFactory::create_path_response_frame(const uint8_t *data, QUICFrameGenerator *owner)
 {
   ats_unique_buf buf = ats_unique_malloc(QUICPathResponseFrame::DATA_LEN);
   memcpy(buf.get(), data, QUICPathResponseFrame::DATA_LEN);
 
   QUICPathResponseFrame *frame = quicPathResponseFrameAllocator.alloc();
-  new (frame) QUICPathResponseFrame(std::move(buf));
+  new (frame) QUICPathResponseFrame(std::move(buf), owner);
   return std::unique_ptr<QUICPathResponseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_path_response_frame);
 }
 
 std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_blocked_frame(QUICOffset offset)
+QUICFrameFactory::create_blocked_frame(QUICOffset offset, QUICFrameGenerator *owner)
 {
   QUICBlockedFrame *frame = quicBlockedFrameAllocator.alloc();
-  new (frame) QUICBlockedFrame(offset);
+  new (frame) QUICBlockedFrame(offset, owner);
   return std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_blocked_frame);
 }
 
 std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_stream_blocked_frame(QUICStreamId stream_id, QUICOffset offset)
+QUICFrameFactory::create_stream_blocked_frame(QUICStreamId stream_id, QUICOffset offset, QUICFrameGenerator *owner)
 {
   QUICStreamBlockedFrame *frame = quicStreamBlockedFrameAllocator.alloc();
-  new (frame) QUICStreamBlockedFrame(stream_id, offset);
+  new (frame) QUICStreamBlockedFrame(stream_id, offset, owner);
   return std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stream_blocked_frame);
 }
 
 std::unique_ptr<QUICStreamIdBlockedFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_stream_id_blocked_frame(QUICStreamId stream_id)
+QUICFrameFactory::create_stream_id_blocked_frame(QUICStreamId stream_id, QUICFrameGenerator *owner)
 {
   QUICStreamIdBlockedFrame *frame = quicStreamIdBlockedFrameAllocator.alloc();
-  new (frame) QUICStreamIdBlockedFrame(stream_id);
+  new (frame) QUICStreamIdBlockedFrame(stream_id, owner);
   return std::unique_ptr<QUICStreamIdBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stream_id_blocked_frame);
 }
 
 std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset)
+QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset, QUICFrameGenerator *owner)
 {
   QUICRstStreamFrame *frame = quicRstStreamFrameAllocator.alloc();
-  new (frame) QUICRstStreamFrame(stream_id, error_code, final_offset);
+  new (frame) QUICRstStreamFrame(stream_id, error_code, final_offset, owner);
   return std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_rst_stream_frame);
 }
 
 std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_rst_stream_frame(QUICStreamErrorUPtr error)
+QUICFrameFactory::create_rst_stream_frame(QUICStreamErrorUPtr error, QUICFrameGenerator *owner)
 {
-  return QUICFrameFactory::create_rst_stream_frame(error->stream->id(), error->code, error->stream->final_offset());
+  return QUICFrameFactory::create_rst_stream_frame(error->stream->id(), error->code, error->stream->final_offset(), owner);
 }
 
 std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_stop_sending_frame(QUICStreamId stream_id, QUICAppErrorCode error_code)
+QUICFrameFactory::create_stop_sending_frame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICFrameGenerator *owner)
 {
   QUICStopSendingFrame *frame = quicStopSendingFrameAllocator.alloc();
-  new (frame) QUICStopSendingFrame(stream_id, error_code);
+  new (frame) QUICStopSendingFrame(stream_id, error_code, owner);
   return std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stop_sending_frame);
 }
 
 std::unique_ptr<QUICNewConnectionIdFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_new_connection_id_frame(uint32_t sequence, QUICConnectionId connectoin_id,
-                                                 QUICStatelessResetToken stateless_reset_token)
+                                                 QUICStatelessResetToken stateless_reset_token, QUICFrameGenerator *owner)
 {
   QUICNewConnectionIdFrame *frame = quicNewConnectionIdFrameAllocator.alloc();
-  new (frame) QUICNewConnectionIdFrame(sequence, connectoin_id, stateless_reset_token);
+  new (frame) QUICNewConnectionIdFrame(sequence, connectoin_id, stateless_reset_token, owner);
   return std::unique_ptr<QUICNewConnectionIdFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_new_connection_id_frame);
 }
 
 std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_new_token_frame(const uint8_t *token, uint64_t token_len)
+QUICFrameFactory::create_new_token_frame(ats_unique_buf token, uint64_t token_len, QUICFrameGenerator *owner)
 {
   QUICNewTokenFrame *frame = quicNewTokenFrameAllocator.alloc();
-  new (frame) QUICNewTokenFrame(token, token_len);
+  new (frame) QUICNewTokenFrame(std::move(token), token_len, owner);
   return std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_new_token_frame);
 }
 
 std::unique_ptr<QUICRetireConnectionIdFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_retire_connection_id_frame(uint64_t seq_num)
+QUICFrameFactory::create_retire_connection_id_frame(uint64_t seq_num, QUICFrameGenerator *owner)
 {
   QUICRetireConnectionIdFrame *frame = quicRetireConnectionIdFrameAllocator.alloc();
-  new (frame) QUICRetireConnectionIdFrame(seq_num);
+  new (frame) QUICRetireConnectionIdFrame(seq_num, owner);
   return std::unique_ptr<QUICRetireConnectionIdFrame, QUICFrameDeleterFunc>(frame,
                                                                             &QUICFrameDeleter::delete_retire_connection_id_frame);
 }
