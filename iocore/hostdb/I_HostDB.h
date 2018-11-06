@@ -39,7 +39,4 @@
 // TS-1925: switch from MMH to MD5 hash; bumped to version 2
 // switch from MD5 to SHA256 hash; bumped to version 3
 // 2.1: Switched to mark RR elements.
-#define HOSTDB_MODULE_MAJOR_VERSION 3
-#define HOSTDB_MODULE_MINOR_VERSION 1
-
-#define HOSTDB_MODULE_VERSION makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
+static constexpr ts::ModuleVersion HOSTDB_MODULE_PUBLIC_VERSION(3, 1);

@@ -163,10 +163,10 @@ struct HostDBInfo : public RefCountObj {
   }
 
   // return a version number-- so we can manage compatibility with the marshal/unmarshal
-  static VersionNumber
+  static ts::VersionNumber
   version()
   {
-    return VersionNumber(1, 0);
+    return ts::VersionNumber(1, 0);
   }
 
   static HostDBInfo *
@@ -522,4 +522,4 @@ void run_HostDBTest();
 
 extern inkcoreapi HostDBProcessor hostDBProcessor;
 
-void ink_hostdb_init(ModuleVersion version);
+void ink_hostdb_init(ts::ModuleVersion version);

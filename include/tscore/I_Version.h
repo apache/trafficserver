@@ -30,18 +30,40 @@
 
 #pragma once
 
+namespace ts
+{
+/** Container for standard two part version number.
+ */
 struct VersionNumber {
-  short int ink_major; // incompatible change
-  short int ink_minor; // minor change, not incompatible
+  /// Construct invalid (0.0) version.
+  constexpr VersionNumber() = default;
 
-  VersionNumber() : ink_major(0), ink_minor(0) {}
-  VersionNumber(short int major, short int minor) : ink_major(major), ink_minor(minor) {}
+  /// Construct explicit version.
+  constexpr explicit VersionNumber(unsigned short major, unsigned short minor = 0);
+
+  // Can't use unadorned "major" because that's a macro.
+  unsigned short _major = 0; ///< Major version.
+  unsigned short _minor = 0; ///< Minor version.
 };
+
+inline constexpr VersionNumber::VersionNumber(unsigned short major, unsigned short minor) : _major(major), _minor(minor) {}
 
 inline bool
 operator<(VersionNumber const &lhs, VersionNumber const &rhs)
 {
-  return lhs.ink_major < rhs.ink_major || (lhs.ink_major == rhs.ink_major && lhs.ink_minor < rhs.ink_minor);
+  return lhs._major < rhs._major || (lhs._major == rhs._major && lhs._minor < rhs._minor);
+}
+
+inline bool
+operator==(VersionNumber const &lhs, VersionNumber const &rhs)
+{
+  return lhs._major == rhs._major && lhs._minor == rhs._minor;
+}
+
+inline bool
+operator!=(VersionNumber const &lhs, VersionNumber const &rhs)
+{
+  return !(lhs == rhs);
 }
 
 inline bool
@@ -51,9 +73,15 @@ operator>(VersionNumber const &lhs, VersionNumber const &rhs)
 }
 
 inline bool
-operator==(VersionNumber const &lhs, VersionNumber const &rhs)
+operator<=(VersionNumber const &lhs, VersionNumber const &rhs)
 {
-  return lhs.ink_major == rhs.ink_major && lhs.ink_minor == rhs.ink_minor;
+  return !(lhs > rhs);
+}
+
+inline bool
+operator>=(VersionNumber const &lhs, VersionNumber const &rhs)
+{
+  return !(rhs > lhs);
 }
 
 struct Version {
@@ -61,38 +89,49 @@ struct Version {
   VersionNumber cacheDir;
 };
 
-enum ModuleVersion {
-  MODULE_VERSION_MIN = 0,
-  MODULE_VERSION_MAX = 2147483647,
+/// Container for a module version.
+struct ModuleVersion {
+  /// Type of module.
+  enum Type : unsigned char { PUBLIC, PRIVATE };
+
+  constexpr ModuleVersion(unsigned char major, unsigned char minor, Type type = PUBLIC);
+  constexpr ModuleVersion(ModuleVersion const &base, Type type);
+
+  /** Check if @a that is a version compatible with @a this.
+   *
+   * @param that Version to check against.
+   * @return @a true if @a that is compatible with @a this, @c false otherwise.
+   */
+  bool check(ModuleVersion const &that);
+
+  Type _type           = PUBLIC; ///< The numeric value of the module version.
+  unsigned char _major = 0;      ///< Major version.
+  unsigned char _minor = 0;
 };
-enum ModuleHeaderType {
-  PUBLIC_MODULE_HEADER,
-  PRIVATE_MODULE_HEADER,
-};
 
-#define makeModuleVersion(_major_version, _minor_version, _module_type) \
-  ((ModuleVersion)((((int)_module_type) << 24) + (((int)_major_version) << 16) + (((int)_minor_version) << 8)))
-
-#define majorModuleVersion(_v) ((((int)_v) >> 16) & 255)
-#define minorModuleVersion(_v) ((((int)_v) >> 8) & 255)
-#define moduleVersionType(_v) ((((int)_v) >> 24) & 127)
-
-static inline int
-checkModuleVersion(ModuleVersion userVersion, ModuleVersion libVersion)
+inline constexpr ModuleVersion::ModuleVersion(unsigned char major, unsigned char minor, ts::ModuleVersion::Type type)
+  : _type(type), _major(major), _minor(minor)
 {
-  if (moduleVersionType(userVersion) == PUBLIC_MODULE_HEADER) {
-    if ((majorModuleVersion(userVersion) != majorModuleVersion(libVersion)) ||
-        (minorModuleVersion(userVersion) > minorModuleVersion(libVersion)))
-      return -1;
-    return 0;
-  } else if (moduleVersionType(userVersion) == PRIVATE_MODULE_HEADER) {
-    if ((majorModuleVersion(userVersion) != majorModuleVersion(libVersion)) ||
-        (minorModuleVersion(userVersion) != minorModuleVersion(libVersion)))
-      return -1;
-    return 0;
-  } else
-    return -1;
 }
+
+inline constexpr ModuleVersion::ModuleVersion(ModuleVersion const &base, ts::ModuleVersion::Type type)
+  : _type(type), _major(base._major), _minor(base._minor)
+{
+}
+
+inline bool
+ModuleVersion::check(ModuleVersion const &that)
+{
+  switch (_type) {
+  case PUBLIC:
+    return _major == that._major && _minor <= that._minor;
+  case PRIVATE:
+    return _major == that._major && _minor == that._minor;
+  }
+  return false;
+};
+
+} // namespace ts
 
 class AppVersionInfo
 {

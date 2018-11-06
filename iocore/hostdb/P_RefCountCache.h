@@ -37,8 +37,10 @@
 #define REFCOUNT_CACHE_EVENT_SYNC REFCOUNT_CACHE_EVENT_EVENTS_START
 
 #define REFCOUNTCACHE_MAGIC_NUMBER 0x0BAD2D9
-#define REFCOUNTCACHE_MAJOR_VERSION 1
-#define REFCOUNTCACHE_MINOR_VERSION 0
+
+static constexpr unsigned char REFCOUNTCACHE_MAJOR_VERSION = 1;
+static constexpr unsigned char REFCOUNTCACHE_MINOR_VERSION = 0;
+static constexpr ts::VersionNumber REFCOUNTCACHE_VERSION(1, 0);
 
 // Stats
 enum RefCountCache_Stats {
@@ -367,10 +369,10 @@ class RefCountCacheHeader
 {
 public:
   unsigned int magic;
-  VersionNumber version;
-  VersionNumber object_version; // version passed in of whatever it is we are caching
+  ts::VersionNumber version{REFCOUNTCACHE_VERSION};
+  ts::VersionNumber object_version; // version passed in of whatever it is we are caching
 
-  RefCountCacheHeader(VersionNumber object_version = VersionNumber());
+  RefCountCacheHeader(ts::VersionNumber object_version = ts::VersionNumber());
   bool operator==(const RefCountCacheHeader other) const;
   bool compatible(RefCountCacheHeader *other) const;
 };
@@ -393,7 +395,7 @@ template <class C> class RefCountCache
 {
 public:
   // Constructor
-  RefCountCache(unsigned int num_partitions, int size = -1, int items = -1, VersionNumber object_version = VersionNumber(),
+  RefCountCache(unsigned int num_partitions, int size = -1, int items = -1, ts::VersionNumber object_version = ts::VersionNumber(),
                 std::string metrics_prefix = "");
   // Destructor
   ~RefCountCache();
@@ -424,7 +426,7 @@ private:
 };
 
 template <class C>
-RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, VersionNumber object_version,
+RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, ts::VersionNumber object_version,
                                 std::string metrics_prefix)
   : header(RefCountCacheHeader(object_version)), rsb(nullptr)
 {

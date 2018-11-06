@@ -43,8 +43,8 @@ main()
 
   init_diags("net_test", nullptr);
   RecProcessInit(mode_type);
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
-  ink_net_init(NET_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
+  ink_net_init(NET_SYSTEM_MODULE_PUBLIC_VERSION);
 
   /*
    * ignore broken pipe

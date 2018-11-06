@@ -414,7 +414,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   Layout::create();
   init_diags("", nullptr);
   RecProcessInit(RECM_STAND_ALONE);
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(ink_number_of_processors());
 
   Thread *main_thread = new EThread;
@@ -431,7 +431,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 #endif
 
   RecProcessStart();
-  ink_aio_init(AIO_MODULE_VERSION);
+  ink_aio_init(AIO_MODULE_PUBLIC_VERSION);
   srand48(time(nullptr));
   printf("input file %s\n", argv[1]);
   if (!read_config(argv[1])) {

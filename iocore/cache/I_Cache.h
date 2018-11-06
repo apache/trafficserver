@@ -29,9 +29,7 @@
 #include "I_CacheDefs.h"
 #include "I_Store.h"
 
-#define CACHE_MODULE_MAJOR_VERSION 1
-#define CACHE_MODULE_MINOR_VERSION 0
-#define CACHE_MODULE_VERSION makeModuleVersion(CACHE_MODULE_MAJOR_VERSION, CACHE_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
+static constexpr ts::ModuleVersion CACHE_MODULE_VERSION(1, 0);
 
 #define CACHE_WRITE_OPT_OVERWRITE 0x0001
 #define CACHE_WRITE_OPT_CLOSE_COMPLETE 0x0002
@@ -158,8 +156,8 @@ struct CacheProcessor : public Processor {
   static int start_internal_flags;
   static int auto_clear_flag;
 
-  VersionNumber min_stripe_version;
-  VersionNumber max_stripe_version;
+  ts::VersionNumber min_stripe_version;
+  ts::VersionNumber max_stripe_version;
 
   CALLBACK_FUNC cb_after_init;
   int wait_for_cache;
@@ -218,6 +216,6 @@ struct CacheVConnection : public VConnection {
   CacheVConnection();
 };
 
-void ink_cache_init(ModuleVersion version);
+void ink_cache_init(ts::ModuleVersion version);
 extern inkcoreapi CacheProcessor cacheProcessor;
 extern Continuation *cacheRegexDeleteCont;

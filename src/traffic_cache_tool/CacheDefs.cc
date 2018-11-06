@@ -237,9 +237,9 @@ Stripe::InitializeMeta()
   // memset(this->raw_dir, 0, dir_len);
   for (auto &i : _meta) {
     for (auto &j : i) {
-      j.magic             = StripeMeta::MAGIC;
-      j.version.ink_major = ts::CACHE_DB_MAJOR_VERSION;
-      j.version.ink_minor = ts::CACHE_DB_MINOR_VERSION;
+      j.magic          = StripeMeta::MAGIC;
+      j.version._major = ts::CACHE_DB_MAJOR_VERSION;
+      j.version._minor = ts::CACHE_DB_MINOR_VERSION;
       j.agg_pos = j.last_write_pos = j.write_pos = this->_content;
       j.phase = j.cycle = j.sync_serial = j.write_serial = j.dirty = 0;
       j.create_time                                                = time(nullptr);
@@ -264,8 +264,8 @@ bool
 Stripe::validateMeta(StripeMeta const *meta)
 {
   // Need to be bit more robust at some point.
-  return StripeMeta::MAGIC == meta->magic && meta->version.ink_major <= ts::CACHE_DB_MAJOR_VERSION &&
-         meta->version.ink_minor <= 2 // This may have always been zero, actually.
+  return StripeMeta::MAGIC == meta->magic && meta->version._major <= ts::CACHE_DB_MAJOR_VERSION &&
+         meta->version._minor <= 2 // This may have always been zero, actually.
     ;
 }
 

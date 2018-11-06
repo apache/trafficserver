@@ -33,9 +33,9 @@ class HostDBTest : Continuation
 main()
 {
   init_diags("net_test", nullptr);
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
-  ink_net_init(NET_SYSTEM_MODULE_VERSION);
-  ink_hostdb_init(HOSTDB_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
+  ink_net_init(NET_SYSTEM_MODULE_PUBLIC_VERSION);
+  ink_hostdb_init(HOSTDB_MODULE_PUBLIC_VERSION);
   signal(SIGPIPE, SIG_IGN);
 
   eventProcessor.start(2);

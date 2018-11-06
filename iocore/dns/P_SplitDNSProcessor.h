@@ -42,7 +42,7 @@
 /* ---------------------------
    forward declarations ...
    --------------------------- */
-void ink_split_dns_init(ModuleVersion version);
+void ink_split_dns_init(ts::ModuleVersion version);
 
 struct RequestData;
 
