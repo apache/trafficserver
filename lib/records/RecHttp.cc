@@ -676,10 +676,8 @@ ts_session_protocol_well_known_name_indices_init()
 const char *
 RecNormalizeProtoTag(const char *tag)
 {
-  if (TSProtoTags.find(tag) != TSProtoTags.end()) {
-    return tag;
-  }
-  return nullptr;
+  auto findResult = TSProtoTags.find(tag);
+  return findResult == TSProtoTags.end() ? nullptr : findResult->data();
 }
 
 SessionProtocolNameRegistry::SessionProtocolNameRegistry() : m_n(0)
