@@ -33,6 +33,12 @@ const char PLUGIN_NAME_DBG[] = "TEST_dbg_header_rewrite";
 extern "C" void
 TSError(const char *fmt, ...)
 {
+  va_list args;
+
+  va_start(args, fmt);
+  vfprintf(stderr, fmt, args);
+  va_end(args);
+  fprintf(stderr, "\n");
 }
 
 class ParserTest : public Parser
@@ -40,7 +46,7 @@ class ParserTest : public Parser
 public:
   ParserTest(const std::string &line) : Parser(line), res(true) { std::cout << "Finished parser test: " << line << std::endl; }
   std::vector<std::string>
-  getTokens()
+  getTokens() const
   {
     return _tokens;
   }
@@ -58,17 +64,38 @@ public:
   bool res;
 };
 
+class SimpleTokenizerTest : public SimpleTokenizer
+{
+public:
+  SimpleTokenizerTest(const std::string &line) : SimpleTokenizer(line), res(true)
+  {
+    std::cout << "Finished tokenizer test: " << line << std::endl;
+  }
+
+  template <typename T, typename U>
+  void
+  do_parser_check(T x, U y, int line = 0)
+  {
+    if (x != y) {
+      std::cerr << "CHECK FAILED on line " << line << ": |" << x << "| != |" << y << "|" << std::endl;
+      res = false;
+    }
+  }
+
+  bool res;
+};
+
 #define CHECK_EQ(x, y)                     \
   do {                                     \
     p.do_parser_check((x), (y), __LINE__); \
-  } while (false);
+  } while (false)
 
 #define END_TEST(s) \
   do {              \
     if (!p.res) {   \
       ++errors;     \
     }               \
-  } while (false);
+  } while (false)
 
 int
 test_parsing()
@@ -336,6 +363,17 @@ test_parsing()
     END_TEST();
   }
 
+  {
+    ParserTest p(R"(set-header Alt-Svc "quic=\":443\"; v=\"35\"")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-header");
+    CHECK_EQ(p.getTokens()[1], "Alt-Svc");
+    CHECK_EQ(p.getTokens()[2], R"(quic=":443"; v="35")");
+
+    END_TEST();
+  }
+
   /*
    * test some failure scenarios
    */
@@ -426,9 +464,54 @@ test_processing()
 }
 
 int
+test_tokenizer()
+{
+  int errors = 0;
+
+  {
+    SimpleTokenizerTest p("a simple test");
+    CHECK_EQ(p.get_tokens().size(), 1UL);
+    CHECK_EQ(p.get_tokens()[0], "a simple test");
+  }
+
+  {
+    SimpleTokenizerTest p(R"(quic=":443"; v="35")");
+    CHECK_EQ(p.get_tokens().size(), 1UL);
+    CHECK_EQ(p.get_tokens()[0], R"(quic=":443"; v="35")");
+  }
+
+  {
+    SimpleTokenizerTest p(R"(let's party like it's  %{NOW:YEAR})");
+    CHECK_EQ(p.get_tokens().size(), 2UL);
+    CHECK_EQ(p.get_tokens()[0], "let's party like it's  ");
+    CHECK_EQ(p.get_tokens()[1], "%{NOW:YEAR}");
+  }
+  {
+    SimpleTokenizerTest p("A racoon's favorite tag is %<cqhm> in %{NOW:YEAR}!");
+    CHECK_EQ(p.get_tokens().size(), 5UL);
+    CHECK_EQ(p.get_tokens()[0], "A racoon's favorite tag is ");
+    CHECK_EQ(p.get_tokens()[1], "%<cqhm>");
+    CHECK_EQ(p.get_tokens()[2], " in ");
+    CHECK_EQ(p.get_tokens()[3], "%{NOW:YEAR}");
+    CHECK_EQ(p.get_tokens()[4], "!");
+  }
+
+  {
+    SimpleTokenizerTest p(R"(Hello from %{IP:SERVER}:%{INBOUND:LOCAL-PORT})");
+    CHECK_EQ(p.get_tokens().size(), 4UL);
+    CHECK_EQ(p.get_tokens()[0], "Hello from ");
+    CHECK_EQ(p.get_tokens()[1], "%{IP:SERVER}");
+    CHECK_EQ(p.get_tokens()[2], ":");
+    CHECK_EQ(p.get_tokens()[3], "%{INBOUND:LOCAL-PORT}");
+  }
+
+  return errors;
+}
+
+int
 main()
 {
-  if (test_parsing() || test_processing()) {
+  if (test_parsing() || test_processing() || test_tokenizer()) {
     return 1;
   }
 

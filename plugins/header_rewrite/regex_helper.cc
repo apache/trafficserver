@@ -40,18 +40,6 @@ regexHelper::setRegexMatch(const std::string &s)
   return true;
 }
 
-const std::string &
-regexHelper::getRegexString() const
-{
-  return regexString;
-}
-
-int
-regexHelper::getRegexCcount() const
-{
-  return regexCcount;
-}
-
 int
 regexHelper::regexMatch(const char *str, int len, int ovector[]) const
 {
