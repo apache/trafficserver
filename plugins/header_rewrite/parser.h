@@ -33,7 +33,7 @@
 class Parser
 {
 public:
-  explicit Parser(const std::string &line, bool preserve_quotes = false);
+  explicit Parser(const std::string &line);
 
   bool
   empty() const
@@ -84,6 +84,20 @@ private:
   std::string _op;
   std::string _arg;
   std::string _val;
+
+protected:
+  std::vector<std::string> _tokens;
+};
+
+class SimpleTokenizer
+{
+public:
+  explicit SimpleTokenizer(const std::string &line);
+
+  const std::vector<std::string> &get_tokens() const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(SimpleTokenizer);
 
 protected:
   std::vector<std::string> _tokens;
