@@ -33,6 +33,7 @@ from sphinx.domains import Domain, ObjType, std
 from sphinx.roles import XRefRole
 from sphinx.locale import l_, _
 import sphinx
+import copy
 
 import subprocess
 import re
@@ -327,7 +328,8 @@ class TrafficServerDomain(Domain):
 
     def clear_doc(self, docname):
         cv_list = self.data['cv']
-        for var, doc in cv_list.items():
+        cv_list_copy = copy.deepcopy(cv_list);
+        for var, doc in cv_list_copy.items():
             if doc == docname:
                 del cv_list[var]
         stat_list = self.data['stat']
