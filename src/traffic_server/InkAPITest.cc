@@ -8978,7 +8978,7 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
   bool success            = true;
   const char state_name[] = "INACTIVE_TIMEOUT";
   const char hook_name[]  = "TS_HTTP_READ_RESPONSE_HDR_HOOK";
-  const char event_name[] = "VC_EVENT_IMMEDIATE";
+  const char event_name[] = "TS_EVENT_IMMEDIATE";
   const char *str;
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -9002,9 +9002,9 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
   }
 
   str = TSHttpEventNameLookup(TS_EVENT_IMMEDIATE);
-  if ((strlen(str) != strlen(event_name) || strcmp(str, event_name))) {
-    SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_FAIL, "Failed on %d, expected %s, got %s", TS_EVENT_IMMEDIATE,
-               hook_name, str);
+  if (strstr(str, event_name) == nullptr) {
+    SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_FAIL, "Failed on %d, expected %s to be within %s", TS_EVENT_IMMEDIATE,
+               event_name, str);
     success = false;
   } else {
     SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_PASS, "ok");
