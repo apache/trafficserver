@@ -50,12 +50,9 @@
 #define NET_MAX_IOV UIO_MAXIOV
 #endif
 
-#define NET_SYSTEM_MODULE_MAJOR_VERSION 1
-#define NET_SYSTEM_MODULE_MINOR_VERSION 0
-#define NET_SYSTEM_MODULE_VERSION \
-  makeModuleVersion(NET_SYSTEM_MODULE_MAJOR_VERSION, NET_SYSTEM_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
+static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
-static int const NO_FD = -1;
+static constexpr int NO_FD = -1;
 
 // All in milli-seconds
 extern int net_config_poll_timeout;
@@ -93,4 +90,4 @@ extern int net_throttle_delay;
 #include "I_NetProcessor.h"
 #include "I_SessionAccept.h"
 
-void ink_net_init(ModuleVersion version);
+void ink_net_init(ts::ModuleVersion version);

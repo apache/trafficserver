@@ -120,11 +120,12 @@ register_net_stats()
 }
 
 void
-ink_net_init(ModuleVersion version)
+ink_net_init(ts::ModuleVersion version)
 {
   static int init_called = 0;
 
-  ink_release_assert(!checkModuleVersion(version, NET_SYSTEM_MODULE_VERSION));
+  ink_release_assert(version.check(NET_SYSTEM_MODULE_INTERNAL_VERSION));
+
   if (!init_called) {
     // do one time stuff
     // create a stat block for NetStats

@@ -37,7 +37,7 @@ static const uint8_t CACHE_DB_MINOR_VERSION = 1;
 // This is used in various comparisons because otherwise if the minor version is 0,
 // the compile fails because the condition is always true or false. Running it through
 // VersionNumber prevents that.
-extern const VersionNumber CACHE_DB_VERSION;
+extern const ts::VersionNumber CACHE_DB_VERSION;
 
 static const uint8_t CACHE_DIR_MAJOR_VERSION = 18;
 static const uint8_t CACHE_DIR_MINOR_VERSION = 0;

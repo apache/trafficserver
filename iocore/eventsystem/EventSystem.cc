@@ -31,9 +31,9 @@
 #include "P_EventSystem.h"
 
 void
-ink_event_system_init(ModuleVersion v)
+ink_event_system_init(ts::ModuleVersion v)
 {
-  ink_release_assert(!checkModuleVersion(v, EVENT_SYSTEM_MODULE_VERSION));
+  ink_release_assert(v.check(EVENT_SYSTEM_MODULE_INTERNAL_VERSION));
   int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
   int iobuffer_advice          = 0;
 

@@ -39,7 +39,7 @@
 
 #include <atomic>
 
-const VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
+constexpr ts::VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
 
 // Compilation Options
 #define USELESS_REENABLES // allow them for now
@@ -1192,9 +1192,9 @@ vol_clear_init(Vol *d)
   size_t dir_len = d->dirlen();
   memset(d->raw_dir, 0, dir_len);
   vol_init_dir(d);
-  d->header->magic             = VOL_MAGIC;
-  d->header->version.ink_major = CACHE_DB_MAJOR_VERSION;
-  d->header->version.ink_minor = CACHE_DB_MINOR_VERSION;
+  d->header->magic          = VOL_MAGIC;
+  d->header->version._major = CACHE_DB_MAJOR_VERSION;
+  d->header->version._minor = CACHE_DB_MINOR_VERSION;
   d->scan_pos = d->header->agg_pos = d->header->write_pos = d->start;
   d->header->last_write_pos                               = d->header->write_pos;
   d->header->phase                                        = 0;
@@ -1363,12 +1363,12 @@ Vol::handle_dir_read(int event, void *data)
     }
   }
 
-  if (!(header->magic == VOL_MAGIC && footer->magic == VOL_MAGIC &&
-        CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version.ink_major && header->version.ink_major <= CACHE_DB_MAJOR_VERSION)) {
+  if (!(header->magic == VOL_MAGIC && footer->magic == VOL_MAGIC && CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version._major &&
+        header->version._major <= CACHE_DB_MAJOR_VERSION)) {
     Warning("bad footer in cache directory for '%s', clearing", hash_text.get());
     Note("VOL_MAGIC %d\n header magic: %d\n footer_magic %d\n CACHE_DB_MAJOR_VERSION_COMPATIBLE %d\n major version %d\n"
          "CACHE_DB_MAJOR_VERSION %d\n",
-         VOL_MAGIC, header->magic, footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE, header->version.ink_major,
+         VOL_MAGIC, header->magic, footer->magic, CACHE_DB_MAJOR_VERSION_COMPATIBLE, header->version._major,
          CACHE_DB_MAJOR_VERSION);
     Note("clearing cache directory '%s'", hash_text.get());
     clear_dir();
@@ -2295,7 +2295,7 @@ CacheVC::handleReadDone(int event, Event *e)
         goto Ldone;
       }
     } else if (doc->doc_type == CACHE_FRAG_TYPE_HTTP) { // handle any version updates based on the object version
-      if (VersionNumber(doc->v_major, doc->v_minor) > CACHE_DB_VERSION) {
+      if (ts::VersionNumber(doc->v_major, doc->v_minor) > CACHE_DB_VERSION) {
         // future version, count as corrupted
         doc->magic = DOC_CORRUPT;
         Debug("cache_bc", "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major, doc->v_minor,
@@ -3153,9 +3153,9 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
 }
 
 void
-ink_cache_init(ModuleVersion v)
+ink_cache_init(ts::ModuleVersion v)
 {
-  ink_release_assert(!checkModuleVersion(v, CACHE_MODULE_VERSION));
+  ink_release_assert(v.check(CACHE_MODULE_VERSION));
 
   cache_rsb = RecAllocateRawStatBlock((int)cache_stat_count);
 

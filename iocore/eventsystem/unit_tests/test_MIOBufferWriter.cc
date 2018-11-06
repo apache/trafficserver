@@ -42,7 +42,7 @@ main(int argc, char *argv[])
   init_diags("", nullptr);
   RecProcessInit(RECM_STAND_ALONE);
 
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(2);
 
   Thread *main_thread = new EThread;

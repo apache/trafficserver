@@ -686,11 +686,11 @@ CB_After_Cache_Init()
 
 #if TS_ENABLE_FIPS == 0
   // Check for cache BC after the cache is initialized and before listen, if possible.
-  if (cacheProcessor.min_stripe_version.ink_major < CACHE_DB_MAJOR_VERSION) {
+  if (cacheProcessor.min_stripe_version._major < CACHE_DB_MAJOR_VERSION) {
     // Versions before 23 need the MMH hash.
-    if (cacheProcessor.min_stripe_version.ink_major < 23) {
+    if (cacheProcessor.min_stripe_version._major < 23) {
       Debug("cache_bc", "Pre 4.0 stripe (cache version %d.%d) found, forcing MMH hash for cache URLs",
-            cacheProcessor.min_stripe_version.ink_major, cacheProcessor.min_stripe_version.ink_minor);
+            cacheProcessor.min_stripe_version._major, cacheProcessor.min_stripe_version._minor);
       URLHashContext::Setting = URLHashContext::MMH;
     }
   }
@@ -1794,13 +1794,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   REC_ReadConfigInteger(thread_max_heartbeat_mseconds, "proxy.config.thread.max_heartbeat_mseconds");
 
-  ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_aio_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_cache_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-  ink_hostdb_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER));
-  ink_dns_init(makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER));
-  ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
+  ink_event_system_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
+  ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
+  ink_aio_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
+  ink_cache_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
+  ink_hostdb_init(
+    ts::ModuleVersion(HOSTDB_MODULE_INTERNAL_VERSION._major, HOSTDB_MODULE_INTERNAL_VERSION._minor, ts::ModuleVersion::PRIVATE));
+  ink_dns_init(
+    ts::ModuleVersion(HOSTDB_MODULE_INTERNAL_VERSION._major, HOSTDB_MODULE_INTERNAL_VERSION._minor, ts::ModuleVersion::PRIVATE));
+  ink_split_dns_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
 
   naVecMutex = new_ProxyMutex();
 

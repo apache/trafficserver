@@ -39,7 +39,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   init_diags("", nullptr);
   RecProcessInit(mode_type);
 
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(TEST_THREADS);
 
   Thread *main_thread = new EThread;

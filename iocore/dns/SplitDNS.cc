@@ -544,11 +544,11 @@ SplitDNSRecord::Print()
 }
 
 void
-ink_split_dns_init(ModuleVersion v)
+ink_split_dns_init(ts::ModuleVersion v)
 {
   static int init_called = 0;
 
-  ink_release_assert(!checkModuleVersion(v, SPLITDNS_MODULE_VERSION));
+  ink_release_assert(v.check(SPLITDNS_MODULE_INTERNAL_VERSION));
   if (init_called) {
     return;
   }
