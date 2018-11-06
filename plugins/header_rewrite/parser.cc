@@ -28,9 +28,9 @@
 
 #include "parser.h"
 
-enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX };
+enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_EXPANSION };
 
-Parser::Parser(const std::string &original_line, bool preserve_quotes) : _cond(false), _empty(false)
+Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
 {
   std::string line        = original_line;
   ParserState state       = PARSER_DEFAULT;
@@ -39,8 +39,7 @@ Parser::Parser(const std::string &original_line, bool preserve_quotes) : _cond(f
   size_t cur_token_length = 0;
 
   for (size_t i = 0; i < line.size(); ++i) {
-    if ((state == PARSER_DEFAULT) &&
-        (std::isspace(line[i]) || ((line[i] == '=') || (line[i] == '>') || (line[i] == '<') || (line[i] == '+')))) {
+    if ((state == PARSER_DEFAULT) && (std::isspace(line[i]) || ((line[i] == '=')))) {
       if (extracting_token) {
         cur_token_length = i - cur_token_start;
         if (cur_token_length > 0) {
@@ -78,11 +77,7 @@ Parser::Parser(const std::string &original_line, bool preserve_quotes) : _cond(f
         cur_token_start  = i + 1; // Eat the leading quote
       } else if ((state == PARSER_IN_QUOTE) && extracting_token) {
         cur_token_length = i - cur_token_start;
-        if (preserve_quotes) {
-          _tokens.push_back(line.substr(cur_token_start - 1, i - cur_token_start + 2));
-        } else {
-          _tokens.push_back(line.substr(cur_token_start, cur_token_length));
-        }
+        _tokens.push_back(line.substr(cur_token_start, cur_token_length));
         state            = PARSER_DEFAULT;
         extracting_token = false;
       } else {
@@ -99,7 +94,7 @@ Parser::Parser(const std::string &original_line, bool preserve_quotes) : _cond(f
         break;
       }
 
-      if ((line[i] == '=') || (line[i] == '>') || (line[i] == '<') || (line[i] == '+')) {
+      if ((line[i] == '=') || (line[i] == '+')) {
         // These are always a seperate token
         _tokens.push_back(std::string(1, line[i]));
         continue;
@@ -202,7 +197,7 @@ Parser::preprocess(std::vector<std::string> tokens)
         }
       } else {
         // Syntax error
-        TSError("[%s] mods have to be embraced in []", PLUGIN_NAME);
+        TSError("[%s] mods have to be enclosed in []", PLUGIN_NAME);
         return;
       }
     }
@@ -248,6 +243,60 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
 
 const std::vector<std::string> &
 Parser::get_tokens() const
+{
+  return _tokens;
+}
+
+SimpleTokenizer::SimpleTokenizer(const std::string &original_line)
+{
+  std::string line        = original_line;
+  ParserState state       = PARSER_DEFAULT;
+  bool extracting_token   = false;
+  off_t cur_token_start   = 0;
+  size_t cur_token_length = 0;
+
+  for (size_t i = 0; i < line.size(); ++i) {
+    extracting_token = true;
+    switch (state) {
+    case PARSER_DEFAULT:
+      if ((line[i] == '{') || (line[i] == '<')) {
+        if (line[i - 1] == '%') {
+          // pickup what we currently have
+          cur_token_length = i - cur_token_start - 1;
+          if (cur_token_length > 0) {
+            _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+          }
+
+          cur_token_start  = i - 1;
+          state            = PARSER_IN_EXPANSION;
+          extracting_token = false;
+        }
+      }
+      break;
+    case PARSER_IN_EXPANSION:
+      if ((line[i] == '}') || (line[i] == '>')) {
+        cur_token_length = i - cur_token_start + 1;
+        if (cur_token_length > 0) {
+          _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+        }
+        cur_token_start  = i + 1;
+        state            = PARSER_DEFAULT;
+        extracting_token = false;
+      }
+      break;
+    default:
+      break;
+    }
+  }
+
+  // take what was left behind
+  if (extracting_token) {
+    _tokens.push_back(line.substr(cur_token_start));
+  }
+}
+
+const std::vector<std::string> &
+SimpleTokenizer::get_tokens() const
 {
   return _tokens;
 }
