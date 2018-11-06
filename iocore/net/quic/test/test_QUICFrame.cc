@@ -575,7 +575,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x0d,                                           // Type
+      0x1a,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
