@@ -24,6 +24,7 @@
 #pragma once
 
 #include <sys/time.h>
+#include <string_view>
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_apidefs.h"
@@ -952,6 +953,7 @@ public:
 
   int value_get_index(const char *name, int name_length, const char *value, int value_length) const;
   const char *value_get(const char *name, int name_length, int *value_length) const;
+  std::string_view value_get(std::string_view const &name) const; // Convenience overload.
   int32_t value_get_int(const char *name, int name_length) const;
   uint32_t value_get_uint(const char *name, int name_length) const;
   int64_t value_get_int64(const char *name, int name_length) const;
@@ -1258,6 +1260,15 @@ MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) 
     return (mime_field_value_get(field, value_length_return));
   else
     return (nullptr);
+}
+
+inline std::string_view
+MIMEHdr::value_get(std::string_view const &name) const
+{
+  if (MIMEField const *field = field_find(name.data(), name.size()); field) {
+    return {field->m_ptr_value, field->m_len_value};
+  }
+  return {};
 }
 
 inline int32_t
