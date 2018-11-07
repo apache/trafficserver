@@ -134,9 +134,11 @@ SSLNextProtocolSet::unregisterEndpoint(const char *proto, Continuation *ep)
 {
   for (NextProtocolEndpoint *e = this->endpoints.head; e; e = this->endpoints.next(e)) {
     if (strcmp(proto, e->protocol) == 0 && (ep == nullptr || e->endpoint == ep)) {
-      // Protocol must be registered only once; no need to remove
+      // Protocol can only be registered once; no need to remove
       // any more entries.
       this->endpoints.remove(e);
+      delete e;
+
       create_npn_advertisement(this->endpoints, &npn, &npnsz);
       return true;
     }
