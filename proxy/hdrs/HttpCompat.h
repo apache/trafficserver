@@ -26,6 +26,7 @@
 #include "tscore/ink_string++.h"
 #include "MIME.h"
 #include "tscore/Diags.h"
+#include "tscpp/util/TextView.h"
 
 class HttpCompat
 {
@@ -33,6 +34,25 @@ public:
   static void parse_tok_list(StrList *list, int trim_quotes, const char *comma_list_str, int comma_list_len, char tok);
 
   static void parse_tok_list(StrList *list, int trim_quotes, const char *comma_list_str, char tok);
+
+  /** Parse a single token from @a src.
+   *
+   * @param src Source string to parse, updated after parsing.
+   * @param tok Separator character between tokens.
+   * @param strip_quotes_p Strip outer quotes from returned token.
+   * @return The next token in @s src.
+   *
+   * After parsing @a src is updated to remove the returned token and the separator (if any). Leading
+   * and trailing white space are stripped from the returned token.
+   *
+   * Quoted separators are kept in the returned token and not treated as separators. Unterminated quotes
+   * are treated as if there was a terminal quote in @a src.
+   *
+   * If @a strip_quotes_p is @c true then the outer most quotes are removed, but inner quotes are not.
+   * E.g. "Delain" becomes Delain but Middle"Quote remains Middle"Quote. Quotes are stripped after
+   * stripping leading and trailing whitespace.
+   */
+  static ts::TextView parse_token(ts::TextView &src, char tok, bool strip_quotes_p = true);
 
   static bool lookup_param_in_strlist(StrList *param_list, const char *param_name, char *param_val, int param_val_length);
 

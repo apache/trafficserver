@@ -30,126 +30,84 @@
 #include "HTTP.h"
 #include "HttpCompat.h"
 #include "tscore/InkErrno.h"
+#include "tscpp/util/TextView.h"
+
+using ts::TextView;
+
+namespace
+{
+constexpr TextView ETAG_WEAK_MATCH_PREFIX{"W/"};
 
 /**
   Find the pointer and length of an etag, after stripping off any leading
   "W/" prefix, and surrounding double quotes.
 
 */
-inline static const char *
-find_etag(const char *raw_tag_field, int raw_tag_field_len, int *length)
+TextView
+extract_etag(TextView field)
 {
-  const char *quote;
-  int etag_length        = 0;
-  const char *etag_start = raw_tag_field;
-  const char *etag_end   = raw_tag_field + raw_tag_field_len;
-
-  if ((raw_tag_field_len >= 2) && (etag_start[0] == 'W' && etag_start[1] == '/')) {
-    etag_start += 2;
-  }
-
-  etag_length = etag_end - etag_start;
-
-  if ((etag_start < etag_end) && (*etag_start == '"')) {
-    ++etag_start;
-    --etag_length;
-    quote = (const char *)memchr(etag_start, '"', etag_length);
-    if (quote) {
-      etag_length = quote - etag_start;
+  if (!field.empty()) {
+    if (field.prefix(2) == ETAG_WEAK_MATCH_PREFIX) {
+      field.remove_prefix(2);
+    }
+    // Handle quoted tag - extract the quoted content.
+    if (!field.empty() && *field == '"') {
+      ++field;
+      field = field.take_prefix_at('"');
     }
   }
-  *length = etag_length;
-  return etag_start;
+  return field;
 }
 
-/**
-  Match an etag raw_tag_field with a list of tags in the comma-separated
-  string field_to_match, using strong rules.
+/// Style to match ETAG
+enum EtagMatch {
+  ETAG_MATCH_WEAK,  ///< Allow weak matches.
+  ETAG_MATCH_STRONG ///< Require strong matches.
+};
 
-*/
-inline static bool
-do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, const char *comma_sep_tag_list,
-                          int comma_sep_tag_list_len)
+/** Determine if @a etag is in the @a field_value.
+ *
+ * @param etag The ETAG, may be the raw field value.
+ * @param field_value The header field value (list) to search for @a etag
+ * @param match Type of matching.
+ * @return @c true if @a etag is found in @a field_value, @c false otherwise.
+ */
+bool
+do_strings_match(ts::TextView etag, ts::TextView field_value, EtagMatch match)
 {
-  StrList tag_list;
-  const char *etag_start;
-  int n, etag_length;
-
-  // Can never match a weak tag with a strong compare
-  if ((raw_tag_field_len >= 2) && (raw_tag_field[0] == 'W' && raw_tag_field[1] == '/')) {
+  // if doing a strong match, a weak tag never matches.
+  if (match == ETAG_MATCH_STRONG && etag.prefix(2) == ETAG_WEAK_MATCH_PREFIX) {
     return false;
   }
-  // Find the unalterated tag
-  etag_start = find_etag(raw_tag_field, raw_tag_field_len, &etag_length);
 
-  // Rip the field list into a comma-separated field list
-  HttpCompat::parse_comma_list(&tag_list, comma_sep_tag_list, comma_sep_tag_list_len);
+  // Get the etag value, stripped of extraneous text.
+  etag = extract_etag(etag);
 
-  // Loop over all the tags in the tag list
-  for (Str *tag = tag_list.head; tag; tag = tag->next) {
-    // If field is "*", then we got a match
-    if ((tag->len == 1) && (tag->str[0] == '*')) {
-      return true;
+  while (field_value) {
+    ts::TextView item{HttpCompat::parse_token(field_value, ',')};
+    if (ETAG_MATCH_WEAK == match) { // strip weak indicator if matching weakly.
+      item = extract_etag(item);
     }
-
-    n = 0;
-
-    if (((int)(tag->len - n) == etag_length) && (strncmp(etag_start, tag->str + n, etag_length) == 0)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
-  Match an etag raw_tag_field with a list of tags in the comma-separated
-  string field_to_match, using weak rules.
-
-*/
-inline static bool
-do_strings_match_weakly(const char *raw_tag_field, int raw_tag_field_len, const char *comma_sep_tag_list,
-                        int comma_sep_tag_list_len)
-{
-  StrList tag_list;
-  const char *etag_start;
-  const char *cur_tag;
-  int etag_length, cur_tag_len;
-
-  // Find the unalterated tag
-  etag_start = find_etag(raw_tag_field, raw_tag_field_len, &etag_length);
-
-  // Rip the field list into a comma-separated field list
-  HttpCompat::parse_comma_list(&tag_list, comma_sep_tag_list, comma_sep_tag_list_len);
-
-  for (Str *tag = tag_list.head; tag; tag = tag->next) {
-    // If field is "*", then we got a match
-    if ((tag->len == 1) && (tag->str[0] == '*')) {
-      return true;
-    }
-
-    // strip off the leading 'W/' and quotation marks from the
-    // current tag, then compare for equality with above tag.
-    cur_tag = find_etag(tag->str, tag->len, &cur_tag_len);
-    if ((cur_tag_len == etag_length) && (strncmp(cur_tag, etag_start, cur_tag_len) == 0)) {
+    if (item == etag || item == "*"_sv) {
       return true;
     }
   }
   return false;
 }
 
-inline static bool
+inline bool
 is_asterisk(char *s)
 {
   return ((s[0] == '*') && (s[1] == NUL));
 }
 
-inline static bool
+inline bool
 is_empty(char *s)
 {
   return (s[0] == NUL);
 }
 
+} // namespace
 /**
   Given a set of alternates, select the best match.
 
@@ -1325,28 +1283,21 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-None-Match: may match weakly //
   if (request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
-    int raw_etags_len, comma_sep_tag_list_len;
-    const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
-    const char *comma_sep_tag_list = nullptr;
+    auto raw_etag = response->value_get({MIME_FIELD_ETAG, size_t(MIME_LEN_ETAG)});
 
-    if (raw_etags) {
-      comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
-      if (!comma_sep_tag_list) {
-        comma_sep_tag_list     = "";
-        comma_sep_tag_list_len = 0;
-      }
+    if (!raw_etag.empty()) {
+      auto tag_list = request->value_get({MIME_FIELD_IF_NONE_MATCH, size_t(MIME_LEN_IF_NONE_MATCH)});
 
       ////////////////////////////////////////////////////////////////////////
       // If we have an etag and a if-none-match, we are talking to someone  //
       // who is doing a 1.1 revalidate. Since this is a GET request with no //
       // sub-ranges, we can do a weak validation.                           //
       ////////////////////////////////////////////////////////////////////////
-      if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
+      if (do_strings_match(raw_etag, tag_list, ETAG_MATCH_WEAK)) {
         // the response already failed If-modified-since (if one exists)
         return HTTP_STATUS_NOT_MODIFIED;
-      } else {
-        return response->status_get();
       }
+      return response->status_get();
     }
   }
 
@@ -1376,31 +1327,17 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-Match: must match strongly //
   if (request->presence(MIME_PRESENCE_IF_MATCH)) {
-    int raw_etags_len, comma_sep_tag_list_len;
-    const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
-    const char *comma_sep_tag_list = nullptr;
+    auto raw_etag = response->value_get({MIME_FIELD_ETAG, size_t(MIME_LEN_ETAG)});
 
-    if (raw_etags) {
-      comma_sep_tag_list = request->value_get(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH, &comma_sep_tag_list_len);
+    if (!raw_etag.empty()) {
+      auto tag_list = request->value_get({MIME_FIELD_IF_MATCH, size_t(MIME_LEN_IF_MATCH)});
+      if (do_strings_match(raw_etag, tag_list, ETAG_MATCH_STRONG)) {
+        // at the point, the response passed both If-unmodified-since
+        // and If-match, so we can return the original response code
+        return response->status_get();
+      }
     }
-
-    if (!comma_sep_tag_list) {
-      comma_sep_tag_list     = "";
-      comma_sep_tag_list_len = 0;
-    }
-
-    if (!raw_etags) {
-      raw_etags     = "";
-      raw_etags_len = 0;
-    }
-
-    if (do_strings_match_strongly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
-      // at the point, the response passed both If-unmodified-since
-      // and If-match, so we can return the original response code
-      return response->status_get();
-    } else {
-      return HTTP_STATUS_PRECONDITION_FAILED;
-    }
+    return HTTP_STATUS_PRECONDITION_FAILED;
   }
   // There is no If-match, and If-unmodified-since passed,
   // so return the original response code
@@ -1412,41 +1349,26 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
   // As Range && If-Range don't occur often, we want to put the
   // If-Range code in the end
   if (request->presence(MIME_PRESENCE_RANGE) && request->presence(MIME_PRESENCE_IF_RANGE)) {
-    int raw_len, comma_sep_list_len;
-
-    const char *if_value = request->value_get(MIME_FIELD_IF_RANGE, MIME_LEN_IF_RANGE, &comma_sep_list_len);
+    auto if_value = request->value_get({MIME_FIELD_IF_RANGE, size_t(MIME_LEN_IF_RANGE)});
 
     // this is an ETag, similar to If-Match
-    if (!if_value || if_value[0] == '"' || (comma_sep_list_len > 1 && if_value[1] == '/')) {
-      if (!if_value) {
-        if_value           = "";
-        comma_sep_list_len = 0;
-      }
+    if (if_value.empty() || if_value[0] == '"' || (if_value.size() > 1 && if_value[1] == '/')) {
+      auto raw_etag = response->value_get({MIME_FIELD_ETAG, size_t(MIME_LEN_ETAG)});
 
-      const char *raw_etags = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_len);
-
-      if (!raw_etags) {
-        raw_etags = "";
-        raw_len   = 0;
-      }
-
-      if (do_strings_match_strongly(raw_etags, raw_len, if_value, comma_sep_list_len)) {
+      if (do_strings_match(raw_etag, if_value, ETAG_MATCH_STRONG)) {
         return response->status_get();
-      } else {
-        return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
       }
-    }
-    // this a Date, similar to If-Unmodified-Since
-    else {
+      return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
+    } else {
+      // this a Date, similar to If-Unmodified-Since
       // lm_value is zero if Last-modified not exists
       ink_time_t lm_value = response->get_last_modified();
 
       // condition fails if Last-modified not exists
       if ((request->get_if_range_date() < lm_value) || (lm_value == 0)) {
         return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
-      } else {
-        return response->status_get();
       }
+      return response->status_get();
     }
   }
 

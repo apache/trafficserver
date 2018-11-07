@@ -179,6 +179,42 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
   }
 }
 
+ts::TextView
+HttpCompat::parse_token(ts::TextView &src, char sep, bool strip_quotes_p)
+{
+  ts::TextView::size_type idx = 0;
+  // Characters of interest in a null terminated string.
+  char sep_list[3] = {'"', sep, 0};
+  bool in_quote_p  = false;
+  while (idx < src.size()) {
+    // Next character of interest.
+    idx = src.find_first_of(sep_list, idx);
+    if (ts::TextView::npos == idx) {
+      // no more, consume all of @a src.
+      break;
+    } else if ('"' == src[idx]) {
+      // quote, skip it and flip the quote state.
+      in_quote_p = !in_quote_p;
+      ++idx;
+    } else if (sep == src[idx]) { // separator.
+      if (in_quote_p) {
+        // quoted separator, skip and continue.
+        ++idx;
+      } else {
+        // found token, finish up.
+        break;
+      }
+    }
+  }
+
+  // clip the token from @a src and trim whitespace.
+  auto zret = src.take_prefix_at(idx).trim_if(&isspace);
+  if (strip_quotes_p) {
+    zret.trim('"');
+  }
+  return zret;
+};
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //      bool HttpCompat::lookup_param_in_strlist(
