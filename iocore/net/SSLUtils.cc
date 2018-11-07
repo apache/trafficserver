@@ -1496,7 +1496,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
       if (name->type == GEN_DNS) {
         ats_scoped_str dns(asn1_strdup(name->d.dNSName));
         // only try to insert if the alternate name is not the main name
-        if (strcmp(dns, subj_name) != 0) {
+        if (subj_name == nullptr || strcmp(dns, subj_name) != 0) {
           Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
           if (lookup->insert(dns, cc) >= 0) {
             inserted = true;
