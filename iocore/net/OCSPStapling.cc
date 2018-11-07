@@ -60,6 +60,9 @@ certinfo_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/
   if (cinf->certname) {
     ats_free(cinf->certname);
   }
+  if (cinf->cid) {
+    OCSP_CERTID_free(cinf->cid);
+  }
   ink_mutex_destroy(&cinf->stapling_mutex);
   OPENSSL_free(cinf);
 }
@@ -193,7 +196,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   return true;
 
 err:
-  if (cinf->uri) {
+  if (cinf->cid) {
     OCSP_CERTID_free(cinf->cid);
   }
 
