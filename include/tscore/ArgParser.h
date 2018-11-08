@@ -175,6 +175,7 @@ public:
     bool parse(Arguments &ret, AP_StrVec &args);
     // The help & version messages
     void help_message(std::string_view err = "") const;
+    void version_message() const;
     // Helpr method for parse()
     void append_option_data(Arguments &ret, AP_StrVec &args, int index);
     // The command name and help message

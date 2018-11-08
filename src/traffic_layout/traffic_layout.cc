@@ -40,8 +40,9 @@ main(int argc, const char **argv)
   engine.parser.add_global_usage("traffic_layout CMD [OPTIONS]");
 
   // global options
-  engine.parser.add_option("--help", "-h", "Print usage information");
-  engine.parser.add_option("--run-root", "", "using TS_RUNROOT as sandbox", "", 1);
+  engine.parser.add_option("--help", "-h", "Print usage information")
+    .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "", 1)
+    .add_option("--version", "-V", "Print version string");
 
   // info command
   engine.parser.add_command("info", "Show the layout as default", [&]() { engine.info(); })
