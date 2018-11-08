@@ -23,35 +23,46 @@
   limitations under the License.
 */
 
-#define __STDC_FORMAT_MACROS 1 // for inttypes.h
-#include <inttypes.h>          // for PRIu64
-#include <iostream>
 #include <stdlib.h> // for abort
-#include <string.h> // for NULL macro
 #include <ts/ts.h>  // for debug
-
-// TODO Is LIFECYCLE_MSG enabled in 6.2.0, or 7.0.0, might require push
-// with version rework
 
 // debug messages viewable by setting 'proxy.config.diags.debug.tags'
 // in 'records.config'
 
 // debug messages during one-time initialization
 static const char DEBUG_TAG_INIT[] = "continuations_verify.init";
+static const char DEBUG_TAG_MSG[]  = "continuations_verify.msg";
+static const char DEBUG_TAG_HOOK[] = "continuations_verify.hook";
 
 // plugin registration info
 static char plugin_name[]   = "continuations_verify";
-static char vendor_name[]   = "Yahoo! Inc.";
-static char support_email[] = "ats-devel@yahoo-inc.com";
-
-static TSMutex order_mutex_1; // lock on global data
-static TSMutex order_mutex_2; // lock on global data
+static char vendor_name[]   = "apache";
+static char support_email[] = "shinrich@apache.org";
 
 // Statistics provided by the plugin
 static int stat_ssn_close_1 = 0; // number of TS_HTTP_SSN_CLOSE hooks caught by the first continuation
 static int stat_ssn_close_2 = 0; // number of TS_HTTP_SSN_CLOSE hooks caught by the second continuation
 static int stat_txn_close_1 = 0; // number of TS_HTTP_TXN_CLOSE hooks caught by the first continuation
 static int stat_txn_close_2 = 0; // number of TS_HTTP_TXN_CLOSE hooks caught by the second continuation
+static int stat_test_done   = 0; // Incremented when receiving a traffic_ctl message
+
+static int
+handle_msg(TSCont contp, TSEvent event, void *edata)
+{
+  if (event == TS_EVENT_LIFECYCLE_MSG) { // External trigger, such as traffic_ctl
+    TSDebug(DEBUG_TAG_MSG, "event TS_EVENT_LIFECYCLE_MSG");
+    // Send to a ET net thread just to be sure.
+    // Turns out the msg is sent to a task thread, but task
+    // threads do not get their thread local copy of the stats
+    // merged in.  So externally, test.done was stuck at 0 without
+    // the Schedule to a NET thread
+    TSContSchedule(contp, 0, TS_THREAD_POOL_NET);
+  } else {
+    TSDebug(DEBUG_TAG_MSG, "event %d", event);
+    TSStatIntIncrement(stat_test_done, 1);
+  }
+  return 0;
+}
 
 /**
     This function is called on every request and logs session and transaction
@@ -63,6 +74,8 @@ handle_order_1(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp; // session data
   TSHttpTxn txnp; // transaction data
+
+  TSDebug(DEBUG_TAG_HOOK, "order_1 event %d", event);
 
   // Find the event that happened
   switch (event) {
@@ -91,6 +104,8 @@ handle_order_2(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp; // session data
   TSHttpTxn txnp; // transaction data
+
+  TSDebug(DEBUG_TAG_HOOK, "order_2 event %d", event);
 
   // Find the event that happened
   switch (event) {
@@ -142,14 +157,11 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed. \n", plugin_name);
   }
 
-  order_mutex_1 = TSMutexCreate();
-  TSCont contp_1;
-  order_mutex_2 = TSMutexCreate();
-  TSCont contp_2;
+  TSCont contp_1 = TSContCreate(handle_order_1, TSMutexCreate());
+  TSCont contp_2 = TSContCreate(handle_order_2, TSMutexCreate());
+  TSCont contp   = TSContCreate(handle_msg, TSMutexCreate());
 
-  contp_1 = TSContCreate(handle_order_1, order_mutex_1);
-  contp_2 = TSContCreate(handle_order_2, order_mutex_2);
-  if (contp_1 == NULL || contp_2 == NULL) {
+  if (contp_1 == nullptr || contp_2 == nullptr || contp == nullptr) {
     // Continuation initialization failed. Unrecoverable, report and exit.
     TSError("[%s] could not create continuation", plugin_name);
     abort();
@@ -164,6 +176,8 @@ TSPluginInit(int argc, const char *argv[])
       TSStatCreate("continuations_verify.txn.close.2", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     stat_ssn_close_2 =
       TSStatCreate("continuations_verify.ssn.close.2", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+    stat_test_done =
+      TSStatCreate("continuations_verify.test.done", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
     // Add all hooks.
     TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, contp_1);
@@ -171,5 +185,8 @@ TSPluginInit(int argc, const char *argv[])
 
     TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, contp_2);
     TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, contp_2);
+
+    // Respond to a traffic_ctl message
+    TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, contp);
   }
 }

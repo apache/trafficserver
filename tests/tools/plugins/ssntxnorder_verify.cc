@@ -22,19 +22,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
-#define __STDC_FORMAT_MACROS 1 // for inttypes.h
-#include <inttypes.h>          // for PRIu64
 #include <iostream>
-#include <map>
 #include <set>
 #include <sstream>
-#include <stdlib.h> // for abort
-#include <string.h> // for NULL macro
-#include <ts/ts.h>  // for debug
-
-// TODO Is LIFECYCLE_MSG enabled in 6.2.0, or 7.0.0, might require push
-// with version rework
+#include <stdlib.h>   // for abort
+#include <ts/ts.h>    // for debug
+#include <inttypes.h> // for PRIu64
+#include <string.h>
 
 // debug messages viewable by setting 'proxy.config.diags.debug.tags'
 // in 'records.config'
@@ -47,10 +41,8 @@ static const char DEBUG_TAG_HOOK[] = "ssntxnorder_verify.hook";
 
 // plugin registration info
 static char plugin_name[]   = "ssntxnorder_verify";
-static char vendor_name[]   = "Yahoo! Inc.";
-static char support_email[] = "ats-devel@yahoo-inc.com";
-
-static TSMutex order_mutex; // lock on global data
+static char vendor_name[]   = "Apache";
+static char support_email[] = "shinrich@apache.org";
 
 // List of started sessions, SSN_START seen, SSN_CLOSE not seen yet.
 static std::set<TSHttpSsn> started_ssns;
@@ -84,6 +76,7 @@ static int stat_ssn_start = 0; // number of TS_HTTP_SSN_START hooks caught
 static int stat_txn_close = 0; // number of TS_HTTP_TXN_CLOSE hooks caught
 static int stat_txn_start = 0; // number of TS_HTTP_TXN_START hooks caught
 static int stat_err       = 0; // number of inaccuracies encountered
+static int stat_test_done = 0; // Set to 1 when the test is done
 
 // IPC information
 static char *ctl_tag         = plugin_name; // name is a convenient identifier
@@ -255,11 +248,17 @@ handle_order(TSCont contp, TSEvent event, void *edata)
     // Verify message is with the appropriate tag
     if (!strcmp(ctl_tag, msgp->tag) && strncmp(ctl_dump, reinterpret_cast<const char *>(msgp->data), strlen(ctl_dump)) == 0) {
       dump_tables();
+    } else {
+      TSContSchedule(contp, 0, TS_THREAD_POOL_NET);
     }
 
     break;
   }
 #endif
+
+  case TS_EVENT_IMMEDIATE:
+    TSStatIntIncrement(stat_test_done, 1);
+    break;
 
   // Just release the lock for all other states and do nothing
   default:
@@ -297,11 +296,8 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed. \n", plugin_name);
   }
 
-  order_mutex = TSMutexCreate();
-  TSCont contp;
-
-  contp = TSContCreate(handle_order, order_mutex);
-  if (contp == NULL) {
+  TSCont contp = TSContCreate(handle_order, TSMutexCreate());
+  if (contp == nullptr) {
     // Continuation initialization failed. Unrecoverable, report and exit.
     TSError("[%s] could not create continuation", plugin_name);
     abort();
@@ -313,6 +309,7 @@ TSPluginInit(int argc, const char *argv[])
     stat_txn_start = TSStatCreate("ssntxnorder_verify.txn.start", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     stat_txn_close = TSStatCreate("ssntxnorder_verify.txn.close", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     stat_err       = TSStatCreate("ssntxnorder_verify.err", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+    stat_test_done = TSStatCreate("ssntxnorder_verify.test.done", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
     // Add all hooks.
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
