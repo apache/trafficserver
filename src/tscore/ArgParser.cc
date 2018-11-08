@@ -22,10 +22,13 @@
  */
 
 #include "tscore/ArgParser.h"
+#include "tscore/ink_file.h"
+#include "tscore/I_Version.h"
 
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <sysexits.h>
 
 std::string global_usage;
 std::string parser_program_name;
@@ -76,7 +79,7 @@ ArgParser::add_global_usage(std::string const &usage)
 void
 ArgParser::help_message(std::string_view err) const
 {
-  return _top_level_command.help_message(err);
+  _top_level_command.help_message(err);
 }
 
 // a graceful way to output help message
@@ -103,6 +106,17 @@ ArgParser::Command::help_message(std::string_view err) const
   if (!_example_usage.empty()) {
     std::cout << "\nExample Usage: " << _example_usage << std::endl;
   }
+  // standard return code
+  exit(EX_USAGE);
+}
+
+void
+ArgParser::Command::version_message() const
+{
+  // unified version message of ATS
+  AppVersionInfo appVersionInfo;
+  appVersionInfo.setup(PACKAGE_NAME, _name.c_str(), PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  ink_fputln(stdout, appVersionInfo.FullVersionInfoStr);
   exit(0);
 }
 
@@ -158,7 +172,16 @@ ArgParser::parse(const char **argv)
     for (const auto &it : args) {
       msg = msg + " '" + it + "'";
     }
-    _top_level_command.help_message(msg);
+    // find the correct level to output help message
+    ArgParser::Command *command = &_top_level_command;
+    for (unsigned i = 1; i < _argv.size(); i++) {
+      auto it = command->_subcommand_list.find(_argv[i]);
+      if (it == command->_subcommand_list.end()) {
+        break;
+      }
+      command = &it->second;
+    }
+    command->help_message(msg);
   }
   return ret;
 }
@@ -398,8 +421,12 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         i -= 1;
       }
     } else {
+      // output version message
+      if ((args[i] == "--version" || args[i] == "-V") && _option_list.find("--version") != _option_list.end()) {
+        version_message();
+      }
       // output help message
-      if (args[i] == "--help" || args[i] == "-h") {
+      if ((args[i] == "--help" || args[i] == "-h") && _option_list.find("--help") != _option_list.end()) {
         ArgParser::Command *command = this;
         // find the correct level to output help messsage
         for (unsigned i = 1; i < args.size(); i++) {

@@ -144,10 +144,12 @@ from the :class:`Arguments` object returned from the parsing. The function can b
 
     args.invoke();
 
-Help message
+Help and Version messages
 -------------------------
 
 - Help message will be outputted when a wrong usage of the program is detected or `--help` option found.
+
+- Version message is defined unified in :code:`ArgParser::version_message()`.
 
 Classes
 +++++++
@@ -174,6 +176,10 @@ Classes
    .. function:: void help_message() const
 
       Output usage to the console.
+
+   .. function:: void version_message() const
+
+      Output version string to the console.
 
    .. function:: void add_global_usage(std::string const &usage)
 
