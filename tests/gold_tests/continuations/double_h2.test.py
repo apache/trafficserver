@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 import os
+import subprocess
 Test.Summary = '''
 Test transactions and sessions for http2, making sure the two continuations catch the same number of hooks.
 '''
@@ -28,11 +29,12 @@ Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False, command="traffic_manager")
 server = Test.MakeOriginServer("server")
+server2 = Test.MakeOriginServer("server2")
 
 Test.testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: double_h2.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 
 # add response to the server dictionary
@@ -45,7 +47,7 @@ ts.addSSLfile("ssl/server.key")
 # add port and remap rule
 ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
-    'map http://double_h2.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
+    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -54,7 +56,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'continuations_verify.*',
+    'proxy.config.diags.debug.tags': 'continuations_verify',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.http.cache.http': 0,  # disable cache to simply the test.
@@ -75,7 +77,8 @@ if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -
      echo yes;\
     else \
     echo no; \
-    fi;
+    fi; \
+    traffic_ctl metric match continuations_verify
     '''
 
 # curl with http2
@@ -85,69 +88,66 @@ numberOfRequests = 25
 tr = Test.AddTestRun()
 
 # Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
-ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests)
+# On Fedora 28/29, it seems that curl will occaisionally timeout after a couple seconds and return exitcode 2
+# Examinig the packet capture shows that Traffic Server dutifully sends the response
+ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0,2))
 tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = Any(0,2)
 
 # Execution order is: ts/server, ps(curl cmds), Default Process.
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
 # Adds a delay once the ts port is ready. This is because we cannot test the ts state.
-tr.Processes.Default.StartBefore(ts, ready=10)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts
 
-# Watch the records snapshot file.
-records = ts.Disk.File(os.path.join(ts.Variables.RUNTIMEDIR, "records.snap"))
+# Signal that all the curl processes have completed
+tr = Test.AddTestRun("Curl Done")
+tr.Processes.Default.Command = "traffic_ctl plugin msg done done"
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.StillRunningAfter = ts
 
+# Parking this as a ready tester on a meaningless process
+# To stall the test runs that check for the stats until the
+# stats have propagated and are ready to read.
+def make_done_stat_ready(tsenv): 
+  def done_stat_ready(process, hasRunFor, **kw):
+    retval = subprocess.run("traffic_ctl metric get continuations_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
+    if retval.returncode == 0:
+      retval = subprocess.run("grep 1 done > /dev/null", shell = True, env=tsenv)
+    return retval.returncode == 0
+
+  return done_stat_ready
+  
 # number of sessions/transactions opened and closed are equal
-tr = Test.AddTestRun()
-tr.DelayStart = 10 # wait for stats to be updated
+tr = Test.AddTestRun("Check Ssn")
+server2.StartupTimeout = 60
+# Again, here the imporant thing is the ready function not the server2 process
+tr.Processes.Default.StartBefore(server2, ready=make_done_stat_ready(ts.Env))
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
+# Session and Txn's should be non-zero
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("continations_verify.ssn.close.1 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("continations_verify.ssn.close.2 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("continations_verify.txn.close.1 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("continations_verify.txn.close.2 0", 'should be nonzero')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "continuations_verify.txn.close.1 {}".format(numberOfRequests), 'should be the number of transactions we made')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "continuations_verify.txn.close.2 {}".format(numberOfRequests), 'should be the number of transactions we made')
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server2
 
-# for debugging session number
-ssn1 = tr.Processes.Process("session1", 'traffic_ctl metric get continuations_verify.ssn.close.1 > ssn1')
-ssn2 = tr.Processes.Process("session2", 'traffic_ctl metric get continuations_verify.ssn.close.2 > ssn2')
-ssn1.Env = ts.Env
-ssn2.Env = ts.Env
-tr.Processes.Default.StartBefore(ssn1)
-tr.Processes.Default.StartBefore(ssn2)
-
-tr = Test.AddTestRun()
-tr.DelayStart = 10 # wait for stats to be updated
+tr = Test.AddTestRun("Check Txn")
 tr.Processes.Default.Command = comparator_command.format('txn')
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server2
 
-# for debugging transaction number
-txn1 = tr.Processes.Process("transaction1", 'traffic_ctl metric get continuations_verify.txn.close.1 > txn1')
-txn2 = tr.Processes.Process("transaction2", 'traffic_ctl metric get continuations_verify.txn.close.2 > txn2')
-txn1.Env = ts.Env
-txn2.Env = ts.Env
-tr.Processes.Default.StartBefore(txn1)
-tr.Processes.Default.StartBefore(txn2)
-
-# session count is positive,
-tr = Test.AddTestRun()
-tr.DelayStart = 10 # wait for stats to be updated
-tr.Processes.Default.Command = "traffic_ctl metric get continuations_verify.ssn.close.1"
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(" 0", 'should be nonzero')
-tr.StillRunningAfter = ts
-
-# and we receive the same number of transactions as we asked it to make
-tr = Test.AddTestRun()
-tr.DelayStart = 10 # wait for stats to be updated
-tr.Processes.Default.Command = "traffic_ctl metric get continuations_verify.txn.close.1"
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "continuations_verify.txn.close.1 {}".format(numberOfRequests), 'should be the number of transactions we made')
-tr.StillRunningAfter = ts
