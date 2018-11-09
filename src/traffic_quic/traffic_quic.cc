@@ -75,7 +75,7 @@ main(int argc, const char **argv)
   Thread *main_thread = new EThread;
   main_thread->set_specific();
   net_config_poll_timeout = 10;
-  ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
+  ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
 
   SSLInitializeLibrary();
   SSLConfig::startup();
@@ -83,7 +83,7 @@ main(int argc, const char **argv)
   netProcessor.init();
   quic_NetProcessor.init();
 
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(THREADS);
   udpNet.start(1, stacksize);
   quic_NetProcessor.start(-1, stacksize);
