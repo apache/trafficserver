@@ -2,7 +2,6 @@ HTTP/1.1 200 OK
 Cache-Control: max-age=10,public
 Content-Length: 11
 Date: ``
-Age: 0
 Connection: keep-alive
 Via: ``
 Server: ``

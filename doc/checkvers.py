@@ -31,7 +31,7 @@ if __name__ == '__main__':
         min_sphinx_version_info = (1,7,5)
         min_sphinx_version = '.'.join([str(x) for x in min_sphinx_version_info])
 
-        print('checking for sphinx version >= {0}... '.format(min_sphinx_version))
+        print('checking for sphinx version >= {0}... '.format(min_sphinx_version), end="")
         # Need at least 1.5.1 to use svg
         # version >= 1.2 guarantees sphinx.version_info is available.
         try:
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             print(e)
             sys.exit(1)
 
-        print('checking for sphinx.writers.manpage... '),
+        print('checking for sphinx.writers.manpage... ', end="")
         try:
             from sphinx.writers import manpage
             print('yes')
@@ -60,7 +60,7 @@ if __name__ == '__main__':
             print(e)
             sys.exit(1)
 
-        print('checking for sphinxcontrib.plantuml...'),
+        print('checking for sphinxcontrib.plantuml...', end="")
         try:
             import sphinxcontrib.plantuml
             print('yes')

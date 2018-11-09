@@ -76,7 +76,7 @@ struct CacheVol;
 
 struct VolHeaderFooter {
   unsigned int magic;
-  VersionNumber version;
+  ts::VersionNumber version;
   time_t create_time;
   off_t write_pos;
   off_t last_write_pos;

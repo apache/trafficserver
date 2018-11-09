@@ -133,7 +133,7 @@ getHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, char
  * @return true - OK, false - failed
  */
 bool
-setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, const char *value, int valuelen)
+setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, const char *value, int valuelen, bool duplicateOk)
 {
   if (!bufp || !hdrLoc || !header || headerlen <= 0 || !value || valuelen <= 0) {
     return false;
@@ -142,8 +142,8 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
   bool ret        = false;
   TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
 
-  if (!fieldLoc) {
-    // No existing header, so create one
+  if (!fieldLoc || duplicateOk) {
+    // No existing header or duplicates ok, so create one
     if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdrLoc, header, headerlen, &fieldLoc)) {
       if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdrLoc, fieldLoc, -1, value, valuelen)) {
         TSMimeHdrFieldAppend(bufp, hdrLoc, fieldLoc);

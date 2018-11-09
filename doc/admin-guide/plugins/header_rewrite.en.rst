@@ -828,14 +828,13 @@ Variable                New condition variable to use
 
 The %<INBOUND:...> tags can now be replaced with the %{INBOUND:...} equivalent.
 
-You can concatenate values using strings, condition values and variable expansions via the ``+`` operator.
-Variables (eg %<tag>) in the concatenation must be enclosed in double quotes ``"``::
+You can concatenate values using strings, condition values and variable expansions on the same line.
 
-    add-header CustomHeader "Hello from " + %{IP:SERVER} + ":" + "%<INBOUND:LOCAL-PORT>"
+    add-header CustomHeader "Hello from %{IP:SERVER}:%<INBOUND:LOCAL-PORT>"
 
 However, the above example is somewhat contrived to show the old tags, it should instead be written as
 
-    add-header CustomHeader "Hello from " + %{IP:SERVER} + ":" + %{INBOUND:LOCAL-PORT}
+    add-header CustomHeader "Hello from %{IP:SERVER}:%{INBOUND:LOCAL-PORT}"
 
 
 Concatenation is not supported in condition testing.

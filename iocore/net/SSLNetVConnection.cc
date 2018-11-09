@@ -361,6 +361,8 @@ SSLNetVConnection::read_raw_data()
     NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
     total_read += rattempted;
 
+    Debug("ssl", "read_raw_data r=%" PRId64 " rattempted=%" PRId64 " total_read=%" PRId64 " fd=%d", r, rattempted, total_read,
+          con.fd);
     // last read failed or was incomplete
     if (r != rattempted || !b) {
       break;
@@ -368,7 +370,6 @@ SSLNetVConnection::read_raw_data()
 
     rattempted = b->write_avail();
   }
-
   // If we have already moved some bytes successfully, adjust total_read to reflect reality
   // If any read succeeded, we should return success
   if (r != rattempted) {
@@ -567,6 +568,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       nh->write_ready_list.remove(this);
       writeReschedule(nh);
     } else if (ret == EVENT_DONE) {
+      Debug("ssl", "ssl handshake EVENT_DONE ntodo=%" PRId64, ntodo);
       // If this was driven by a zero length read, signal complete when
       // the handshake is complete. Otherwise set up for continuing read
       // operations.
@@ -1423,18 +1425,17 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
     // FIXME -- This triggers a retry on cases of cert validation errors....
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     TraceIn(trace, get_remote_addr(), get_remote_port(),
             "SSL client handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, errno);
     if (e) {
       if (this->options.sni_servername) {
-        Error("SSL connection failed for '%s': %s", this->options.sni_servername.get(), buf);
+        Debug("ssl.error", "SSL connection failed for '%s': %s", this->options.sni_servername.get(), buf);
       } else {
         char buff[INET6_ADDRSTRLEN];
         ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
-        Error("SSL connection failed for '%s': %s", buff, buf);
+        Debug("ssl.error", "SSL connection failed for '%s': %s", buff, buf);
       }
     }
     return EVENT_ERROR;
@@ -1614,7 +1615,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   // Only dealing with the SNI/CERT hook so far.
   ink_assert(eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME || eventId == TS_EVENT_SSL_VERIFY_SERVER ||
              eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE || eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE);
-  Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
+  Debug("ssl", "callHooks sslHandshakeHookState=%d eventID=%d", this->sslHandshakeHookState, eventId);
 
   // Move state if it is appropriate
   switch (this->sslHandshakeHookState) {
@@ -1631,6 +1632,9 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   case HANDSHAKE_HOOKS_SNI:
     if (eventId == TS_EVENT_SSL_CERT) {
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
+    } else if (eventId == TS_EVENT_VCONN_CLOSE) {
+      // Jump to the end
+      this->sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
     }
     break;
   default:

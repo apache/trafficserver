@@ -1771,13 +1771,13 @@ Lerror:;
 RecRawStatBlock *dns_rsb;
 
 void
-ink_dns_init(ModuleVersion v)
+ink_dns_init(ts::ModuleVersion v)
 {
   static int init_called = 0;
 
   Debug("dns", "ink_dns_init: called with init_called = %d", init_called);
 
-  ink_release_assert(!checkModuleVersion(v, HOSTDB_MODULE_VERSION));
+  ink_release_assert(v.check(HOSTDB_MODULE_PUBLIC_VERSION));
   if (init_called) {
     return;
   }

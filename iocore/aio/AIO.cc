@@ -143,9 +143,9 @@ ink_aio_set_callback(Continuation *callback)
 }
 
 void
-ink_aio_init(ModuleVersion v)
+ink_aio_init(ts::ModuleVersion v)
 {
-  ink_release_assert(!checkModuleVersion(v, AIO_MODULE_VERSION));
+  ink_release_assert(v.check(AIO_MODULE_INTERNAL_VERSION));
 
   aio_rsb = RecAllocateRawStatBlock((int)AIO_STAT_COUNT);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.read_per_sec", RECD_FLOAT, RECP_PERSISTENT,

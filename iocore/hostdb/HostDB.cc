@@ -2182,11 +2182,11 @@ REGRESSION_TEST(HostDBTests)(RegressionTest *t, int atype, int *pstatus)
 RecRawStatBlock *hostdb_rsb;
 
 void
-ink_hostdb_init(ModuleVersion v)
+ink_hostdb_init(ts::ModuleVersion v)
 {
   static int init_called = 0;
 
-  ink_release_assert(!checkModuleVersion(v, HOSTDB_MODULE_VERSION));
+  ink_release_assert(v.check(HOSTDB_MODULE_INTERNAL_VERSION));
   if (init_called) {
     return;
   }

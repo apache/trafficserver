@@ -1,6 +1,6 @@
 Via: http/1.1 = http/1.1 tcp ipv4
 Via: http/1.0 = http/1.0 tcp ipv4
-Via: https/2 = http/1.1 h2 tls/1.2 tcp ipv4
-Via: https/1.1 = http/1.1 tls/1.2 tcp ipv4
+Via: https/2 = http/1.1 h2 tls/1.{} tcp ipv4
+Via: https/1.1 = http/1.1 tls/1.{} tcp ipv4
 Via: http/1.1 = http/1.1 tcp ipv6
-Via: https/1.1 = http/1.1 tls/1.2 tcp ipv6
+Via: https/1.1 = http/1.1 tls/1.{} tcp ipv6

@@ -32,6 +32,11 @@ using namespace atscppapi;
 
 #define TAG "webp_transform"
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class ImageTransform : public TransformationPlugin
 {
 public:
@@ -103,5 +108,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
     return;
   }
   InitializeMagick("");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

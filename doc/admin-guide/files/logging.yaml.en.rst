@@ -313,6 +313,8 @@ rolling_offset_hr      number      Specifies an hour (from 0 to 23) at which log
                                    :ts:cv:`proxy.config.log.rolling_offset_hr`.
 rolling_size_mb        number      Size, in megabytes, at which log files are
                                    rolled.
+rolling_min_count      number      Specifies the minimum number of rolled logs to
+                                   keep.
 filters                array of    The optional list of filter objects which
                        filters     restrict the individual events logged. The array
                                    may only contain one accept filter.

@@ -272,6 +272,12 @@ System Variables
 
    Specifies at what size to roll the output log at.
 
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_min_count INT 0
+   :reloadable:
+
+   Specifies the minimum count of rolled output logs to keep. This value will be used to decide the
+   order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
+   output logs as much as possible. See :doc:`../logging/rotation.en` for guidance.
 
 Thread Variables
 ----------------
@@ -2950,6 +2956,13 @@ Logging Configuration
    The size, in megabytes, that log files must reach before rolling takes place.
    The minimum value for this setting is ``10``.
 
+.. ts:cv:: CONFIG proxy.config.log.rolling_min_count INT 0
+   :reloadable:
+
+   Specifies the minimum count of rolled (event) logs to keep. This value will be used to decide the
+   order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
+   logs as much as possible. This value can be and should be overridden in logging.yaml. See :doc:`../logging/rotation.en` for guidance.
+
 .. ts:cv:: CONFIG proxy.config.log.auto_delete_rolled_files INT 1
    :reloadable:
 
@@ -3112,6 +3125,13 @@ Diagnostic Logging Configuration
 
    Specifies at what size to roll the diagnostics log at.
 
+.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_min_count INT 0
+   :reloadable:
+
+   Specifies the minimum count of rolled diagnostic logs to keep. This value will be used to decide the
+   order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
+   diagnostic logs as much as possible. See :doc:`../logging/rotation.en` for guidance.
+
 Reverse Proxy
 =============
 
@@ -3224,6 +3244,10 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
 
    Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
+
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_3 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.3.  If not specified, enabled by default.  [Requires OpenSSL v1.1.1 and higher]
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.certification_level INT 0
 
@@ -3387,6 +3411,10 @@ SSL Termination
    ``1`` Disable the SSL session cache for a connection during lock contention.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.enable INT 1
+
+  Set to 1 to enable Traffic Server to process TLS tickets for TLS session resumption.
+
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
    :overridable:
 
@@ -3457,11 +3485,11 @@ Client-Related Configuration
 
    You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
 
-:code:`DISABLED` 
+:code:`DISABLED`
    Server Certificate will not be verified
-:code:`PERMISSIVE` 
+:code:`PERMISSIVE`
    Certificate will be verified and the connection will not be established if verification fails.
-:code:`ENFORCED` 
+:code:`ENFORCED`
    The provided certificate will be verified and the connection will be established irrespective of the verification result. If verification fails the name of the server will be logged.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.properties STRING ALL
@@ -3494,7 +3522,7 @@ Client-Related Configuration
 
    :0: Server Certificate will not be verified
    :1: Certificate will be verified and the connection will not be established if verification fail
-   :2: The provided certificate will be verified and the connection will be established 
+   :2: The provided certificate will be verified and the connection will be established
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
    :reloadable:
@@ -3546,6 +3574,10 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_2 INT 1
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3 INT 1
+
+   Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
 
@@ -3930,7 +3962,8 @@ Sockets
 
         Reduce the number of worker threads (net-threads)
         Reduce the number of disk (AIO) threads
-	Make sure accept threads are enabled
+
+   Make sure accept threads are enabled
 
    The relevant configurations for this are::
 

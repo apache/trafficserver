@@ -186,7 +186,7 @@ CtrlProcessArguments(int /* argc */, const char **argv, const ArgumentDescriptio
 int
 CtrlUnimplementedCommand(unsigned /* argc */, const char **argv)
 {
-  CtrlDebug("the '%s' command is not implemented", *argv);
+  fprintf(stderr, "'%s' command is not implemented\n", *argv);
   return CTRL_EX_UNIMPLEMENTED;
 }
 

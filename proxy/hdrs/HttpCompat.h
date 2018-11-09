@@ -28,14 +28,6 @@
 #include "tscore/RawHashTable.h"
 #include "tscore/Diags.h"
 
-struct HttpBodySetRawData {
-  unsigned int magic;
-  char *set_name;
-  char *content_language;
-  char *content_charset;
-  RawHashTable *table_of_pages;
-};
-
 class HttpCompat
 {
 public:
@@ -62,9 +54,6 @@ public:
 
   static float match_accept_charset(const char *charset_str, int charset_len, StrList *acpt_charset_list, int *matching_index,
                                     bool ignore_wildcards = false);
-
-  static const char *determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt_language_list, StrList *acpt_charset_list,
-                                               float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr, int *I_best_ptr);
 
   static void
   parse_comma_list(StrList *list, const char *comma_list_str)

@@ -49,6 +49,10 @@ typedef std::unordered_map<std::string, bool> OutstandingRequests;
 class BgFetchState
 {
 public:
+  BgFetchState()                     = default;
+  BgFetchState(BgFetchState const &) = delete;
+  void operator=(BgFetchState const &) = delete;
+
   static BgFetchState &
   getInstance()
   {
@@ -107,13 +111,9 @@ public:
   }
 
 private:
-  BgFetchState() : _log(nullptr), _lock(TSMutexCreate()) {}
-  BgFetchState(BgFetchState const &);   // Don't Implement
-  void operator=(BgFetchState const &); // Don't implement
-
-  TSTextLogObject _log;
   OutstandingRequests _urls;
-  TSMutex _lock;
+  TSTextLogObject _log = nullptr;
+  TSMutex _lock        = TSMutexCreate();
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -121,22 +121,7 @@ private:
 // This is necessary, because the TXN is likely to not be available
 // during the time we fetch from origin.
 struct BgFetchData {
-  BgFetchData()
-    : hdr_loc(TS_NULL_MLOC),
-      url_loc(TS_NULL_MLOC),
-      vc(nullptr),
-      req_io_buf(nullptr),
-      resp_io_buf(nullptr),
-      req_io_buf_reader(nullptr),
-      resp_io_buf_reader(nullptr),
-      r_vio(nullptr),
-      w_vio(nullptr),
-      _bytes(0),
-      _cont(nullptr)
-  {
-    mbuf = TSMBufferCreate();
-    memset(&client_ip, 0, sizeof(client_ip));
-  }
+  BgFetchData() { memset(&client_ip, 0, sizeof(client_ip)); }
 
   ~BgFetchData()
   {
@@ -191,21 +176,25 @@ struct BgFetchData {
   void schedule();
   void log(TSEvent event) const;
 
-  TSMBuffer mbuf;
-  TSMLoc hdr_loc;
-  TSMLoc url_loc;
+  TSMBuffer mbuf = TSMBufferCreate();
+  TSMLoc hdr_loc = TS_NULL_MLOC;
+  TSMLoc url_loc = TS_NULL_MLOC;
+
   struct sockaddr_storage client_ip;
 
   // This is for the actual background fetch / NetVC
-  TSVConn vc;
-  TSIOBuffer req_io_buf, resp_io_buf;
-  TSIOBufferReader req_io_buf_reader, resp_io_buf_reader;
-  TSVIO r_vio, w_vio;
+  TSVConn vc                          = nullptr;
+  TSIOBuffer req_io_buf               = nullptr;
+  TSIOBuffer resp_io_buf              = nullptr;
+  TSIOBufferReader req_io_buf_reader  = nullptr;
+  TSIOBufferReader resp_io_buf_reader = nullptr;
+  TSVIO r_vio                         = nullptr;
+  TSVIO w_vio                         = nullptr;
 
 private:
   std::string _url;
-  int64_t _bytes;
-  TSCont _cont;
+  int64_t _bytes = 0;
+  TSCont _cont   = nullptr;
 };
 
 // This sets up the data and continuation properly, this is done outside

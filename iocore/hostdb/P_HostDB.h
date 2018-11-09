@@ -45,8 +45,8 @@
 #include "P_RefCountCache.h"
 #include "P_HostDBProcessor.h"
 
-#undef HOSTDB_MODULE_VERSION
-#define HOSTDB_MODULE_VERSION makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
+static constexpr ts::ModuleVersion HOSTDB_MODULE_INTERNAL_VERSION{HOSTDB_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};
+
 Ptr<HostDBInfo> probe(ProxyMutex *mutex, CryptoHash const &hash, bool ignore_timeout);
 
 void make_crypto_hash(CryptoHash &hash, const char *hostname, int len, int port, const char *pDNSServers, HostDBMark mark);

@@ -618,9 +618,8 @@ Cache::dumpSpans(SpanDumpDepth depth)
               for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
                   std::cout << "\n" << MetaCopy[i] << ":" << MetaType[j] << "\n" << std::endl;
-                  std::cout << " Magic:" << stripe->_meta[i][j].magic
-                            << "\n version: ink_major: " << stripe->_meta[i][j].version.ink_major
-                            << "\n version: ink_minor: " << stripe->_meta[i][j].version.ink_minor
+                  std::cout << " Magic:" << stripe->_meta[i][j].magic << "\n version: major: " << stripe->_meta[i][j].version._major
+                            << "\n version: minor: " << stripe->_meta[i][j].version._minor
                             << "\n create_time: " << stripe->_meta[i][j].create_time
                             << "\n write_pos: " << stripe->_meta[i][j].write_pos
                             << "\n last_write_pos: " << stripe->_meta[i][j].last_write_pos

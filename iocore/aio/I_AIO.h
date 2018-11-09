@@ -34,9 +34,7 @@
 #include "I_EventSystem.h"
 #include "records/I_RecProcess.h"
 
-#define AIO_MODULE_MAJOR_VERSION 1
-#define AIO_MODULE_MINOR_VERSION 0
-#define AIO_MODULE_VERSION makeModuleVersion(AIO_MODULE_MAJOR_VERSION, AIO_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
+static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
 #define AIO_EVENT_DONE (AIO_EVENT_EVENTS_START + 0)
 
@@ -141,7 +139,7 @@ struct DiskHandler : public Continuation {
 };
 #endif
 
-void ink_aio_init(ModuleVersion version);
+void ink_aio_init(ts::ModuleVersion version);
 int ink_aio_start();
 void ink_aio_set_callback(Continuation *error_callback);
 

@@ -36,8 +36,7 @@
 // for debugging
 // #define AIO_STATS 1
 
-#undef AIO_MODULE_VERSION
-#define AIO_MODULE_VERSION makeModuleVersion(AIO_MODULE_MAJOR_VERSION, AIO_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
+static constexpr ts::ModuleVersion AIO_MODULE_INTERNAL_VERSION{AIO_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};
 
 TS_INLINE int
 AIOCallback::ok()

@@ -44,8 +44,7 @@ config.h
 configs/records.config.default
 configs/storage.config.default
 
-doc/_build/html/api/
-doc/_build/locale/
+doc/_build
 doc/docbuild/
 doc/locale/pot
 doc/xml/
@@ -117,7 +116,7 @@ iocore/hostdb/test_RefCountCache
 
 proxy/hdrs/test_mime
 proxy/hdrs/test_Huffmancode
-proxy/http/test_ForwardedConfig
+proxy/http/test_proxy_http
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results

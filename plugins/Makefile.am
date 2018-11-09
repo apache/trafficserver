@@ -34,8 +34,6 @@ include cache_promote/Makefile.inc
 include conf_remap/Makefile.inc
 include escalate/Makefile.inc
 include esi/Makefile.inc
-include for_testing_only/test_cppapi/Makefile.inc
-include for_testing_only/test_hooks/Makefile.inc
 include generator/Makefile.inc
 include compress/Makefile.inc
 include header_rewrite/Makefile.inc
@@ -86,6 +84,10 @@ include experimental/prefetch/Makefile.inc
 
 if BUILD_URI_SIGNING_PLUGIN
 include experimental/uri_signing/Makefile.inc
+endif
+
+if BUILD_SSL_SESSION_REUSE_PLUGIN
+include experimental/ssl_session_reuse/Makefile.inc
 endif
 
 if BUILD_MEMCACHED_REMAP_PLUGIN

@@ -211,7 +211,7 @@ test()
   Layout::create();
   init_diags("", nullptr);
   RecProcessInit(mode_type);
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
 
   int ret = 0;
 

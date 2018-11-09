@@ -102,14 +102,29 @@ public:
 
 ////////////////////////////////////////////////////////////////////////
 //
+//      class HttpBodySetRawData
+//
+//      Raw data members of HttpBodySet
+//
+////////////////////////////////////////////////////////////////////////
+
+struct HttpBodySetRawData {
+  unsigned int magic = 0;
+  char *set_name;
+  char *content_language;
+  char *content_charset;
+  RawHashTable *table_of_pages;
+};
+
+////////////////////////////////////////////////////////////////////////
+//
 //      class HttpBodySet
 //
 //      An HttpBodySet object represents a set of body factory
 //      templates.  It includes operators to get the hash table of
 //      templates, and the associated metadata for the set.
 //
-//      The raw data members come from HttpBodySetRawData, which
-//      is defined in proxy/hdrs/HttpCompat.h
+//      The raw data members come from HttpBodySetRawData above
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -182,6 +197,8 @@ public:
 
   void dump_template_tables(FILE *fp = stderr);
   void reconfigure();
+  static const char *determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt_language_list, StrList *acpt_charset_list,
+                                               float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr, int *I_best_ptr);
 
 private:
   char *fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
