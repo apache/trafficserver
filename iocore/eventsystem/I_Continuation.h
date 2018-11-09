@@ -46,6 +46,8 @@ class Processor;
 class ProxyMutex;
 class EThread;
 
+extern EThread *this_ethread();
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //  Constants and Type Definitions
@@ -157,6 +159,8 @@ public:
   int
   handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr)
   {
+    // If there is a lock, we must be holding it on entry
+    ink_release_assert(!mutex || mutex->thread_holding == this_ethread());
     return (this->*handler)(event, data);
   }
 
