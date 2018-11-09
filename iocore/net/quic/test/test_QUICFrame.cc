@@ -1373,8 +1373,9 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
   QUICPacketFactory factory;
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
+  std::vector<QUICFrameUPtr> frames;
   QUICPacketUPtr packet = factory.create_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0,
-                                                          {nullptr, [](void *p) { ats_free(p); }}, 0, true, false);
+                                                          {nullptr, [](void *p) { ats_free(p); }}, 0, true, false, frames);
   SECTION("STREAM frame split")
   {
     size_t len;
