@@ -47,6 +47,10 @@
 #include <pthread_np.h>
 #endif
 
+#if HAVE_SYS_PRCTL_H && defined(PR_SET_NAME)
+#include <sys/prctl.h>
+#endif
+
 #define INK_MUTEX_INIT PTHREAD_MUTEX_INITIALIZER
 #define INK_THREAD_STACK_MIN PTHREAD_STACK_MIN
 
@@ -304,6 +308,20 @@ ink_set_thread_name(const char *name ATS_UNUSED)
   pthread_set_name_np(pthread_self(), name);
 #elif defined(HAVE_SYS_PRCTL_H) && defined(PR_SET_NAME)
   prctl(PR_SET_NAME, name, 0, 0, 0);
+#endif
+}
+
+static inline void
+ink_get_thread_name(char *name, size_t len)
+{
+#if defined(HAVE_PTHREAD_GETNAME_NP)
+  pthread_getname_np(pthread_self(), name, len);
+#elif defined(HAVE_PTHREAD_GET_NAME_NP)
+  pthread_get_name_np(pthread_self(), name, len);
+#elif defined(HAVE_SYS_PRCTL_H) && defined(PR_GET_NAME)
+  prctl(PR_GET_NAME, name, 0, 0, 0);
+#else
+  snprintf(name, len, "0x%" PRIx64, (uint64_t)ink_thread_self());
 #endif
 }
 
