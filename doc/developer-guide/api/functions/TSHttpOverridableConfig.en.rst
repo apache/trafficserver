@@ -66,6 +66,8 @@ The following configurations (from ``records.config``) are overridable:
 TSOverridableConfigKey Value                                        Configuration Value
 ==================================================================  ====================================================================
 :c:macro:`TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE`                     :ts:cv:`proxy.config.body_factory.template_base`
+:c:macro:`TS_CONFIG_HTTP_ALLOW_HALF_OPEN`                           :ts:cv:`proxy.config.http.allow_half_open`
+:c:macro:`TS_CONFIG_HTTP_ALLOW_MULTI_RANGE`                         :ts:cv:`proxy.config.http.allow_multi_range`
 :c:macro:`TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP`                :ts:cv:`proxy.config.http.insert_client_ip`
 :c:macro:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP`                :ts:cv:`proxy.config.http.anonymize_remove_client_ip`
 :c:macro:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE`                   :ts:cv:`proxy.config.http.anonymize_remove_cookie`
@@ -86,10 +88,10 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME`              :ts:cv:`proxy.config.http.cache.heuristic_max_lifetime`
 :c:macro:`TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME`              :ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`
 :c:macro:`TS_CONFIG_HTTP_CACHE_HTTP`                                :ts:cv:`proxy.config.http.cache.http`
-:c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH`              :ts:cv:`proxy.config.http.cache.ignore_accept_mismatch`
 :c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH`      :ts:cv:`proxy.config.http.cache.ignore_accept_charset_mismatch`
 :c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH`     :ts:cv:`proxy.config.http.cache.ignore_accept_encoding_mismatch`
 :c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH`     :ts:cv:`proxy.config.http.cache.ignore_accept_language_mismatch`
+:c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH`              :ts:cv:`proxy.config.http.cache.ignore_accept_mismatch`
 :c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION`               :ts:cv:`proxy.config.http.cache.ignore_authentication`
 :c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE`            :ts:cv:`proxy.config.http.cache.ignore_client_cc_max_age`
 :c:macro:`TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE`              :ts:cv:`proxy.config.http.cache.ignore_client_no_cache`
@@ -109,8 +111,8 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE`                  :ts:cv:`proxy.config.http.cache.when_to_revalidate`
 :c:macro:`TS_CONFIG_HTTP_CHUNKING_ENABLED`                          :ts:cv:`proxy.config.http.chunking_enabled`
 :c:macro:`TS_CONFIG_HTTP_CHUNKING_SIZE`                             :ts:cv:`proxy.config.http.chunking.size`
-:c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES`              :ts:cv:`proxy.config.http.connect_attempts_max_retries`
 :c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER`  :ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server`
+:c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES`              :ts:cv:`proxy.config.http.connect_attempts_max_retries`
 :c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES`               :ts:cv:`proxy.config.http.connect_attempts_rr_retries`
 :c:macro:`TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT`                  :ts:cv:`proxy.config.http.connect_attempts_timeout`
 :c:macro:`TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE`                       :ts:cv:`proxy.config.http.default_buffer_size`
@@ -125,10 +127,10 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT`              :ts:cv:`proxy.config.http.forward.proxy_auth_to_parent`
 :c:macro:`TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER`                  :ts:cv:`proxy.config.http.global_user_agent_header`
 :c:macro:`TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE`                    :ts:cv:`proxy.config.http.insert_age_in_response`
+:c:macro:`TS_CONFIG_HTTP_INSERT_FORWARDED`                          :ts:cv:`proxy.config.http.insert_forwarded`
 :c:macro:`TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR`                    :ts:cv:`proxy.config.http.insert_request_via_str`
 :c:macro:`TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR`                   :ts:cv:`proxy.config.http.insert_response_via_str`
 :c:macro:`TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR`              :ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`
-:c:macro:`TS_CONFIG_HTTP_INSERT_FORWARDED`                          :ts:cv:`proxy.config.http.insert_forwarded`
 :c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN`                     :ts:cv:`proxy.config.http.keep_alive_enabled_in`
 :c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT`                    :ts:cv:`proxy.config.http.keep_alive_enabled_out`
 :c:macro:`TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN`         :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`
@@ -138,13 +140,19 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME`                 :ts:cv:`proxy.config.http.negative_caching_lifetime`
 :c:macro:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED`             :ts:cv:`proxy.config.http.negative_revalidating_enabled`
 :c:macro:`TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME`            :ts:cv:`proxy.config.http.negative_revalidating_lifetime`
+:c:macro:`TS_CONFIG_HTTP_NORMALIZE_AE`                              :ts:cv:`proxy.config.http.normalize_ae`
 :c:macro:`TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS`                    :ts:cv:`proxy.config.http.number_of_redirections`
+:c:macro:`TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT`            :ts:cv:`proxy.config.http.parent_proxy.connect_attempts_timeout`
+:c:macro:`TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD`               :ts:cv:`proxy.config.http.parent_proxy.fail_threshold`
+:c:macro:`TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME`                   :ts:cv:`proxy.config.http.parent_proxy.retry_time`
 :c:macro:`TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS`       :ts:cv:`proxy.config.http.parent_proxy.total_connect_attempts`
-:c:macro:`TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB`                  :ts:cv:`proxy.config.http.parent_proxy.mark_down_hostdb`
+:c:macro:`TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS`               :ts:cv:`proxy.config.http.parent_proxy.per_parent_connect_attempts`
+:c:macro:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH`               :ts:cv:`proxy.config.http.per_server.connection.match`
+:c:macro:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX`                 :ts:cv:`proxy.config.http.per_server.connection.max`
 :c:macro:`TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED`         :ts:cv:`proxy.config.http.post.check.content_length.enabled`
 :c:macro:`TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT`             :ts:cv:`proxy.config.http.post_connect_attempts_timeout`
 :c:macro:`TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY`               :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
-:c:macro:`TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED`                    :ts:cv:`proxy.config.http.request_buffer_enabled`
+TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED                               proxy.config.http.request_buffer_enabled
 :c:macro:`TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE`                   :ts:cv:`proxy.config.http.request_header_max_size`
 :c:macro:`TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE`                  :ts:cv:`proxy.config.http.response_header_max_size`
 :c:macro:`TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED`                   :ts:cv:`proxy.config.http.response_server_enabled`
@@ -163,24 +171,16 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_NET_SOCK_PACKET_TOS_OUT`                        :ts:cv:`proxy.config.net.sock_packet_tos_out`
 :c:macro:`TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT`                  :ts:cv:`proxy.config.net.sock_recv_buffer_size_out`
 :c:macro:`TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT`                  :ts:cv:`proxy.config.net.sock_send_buffer_size_out`
+:c:macro:`TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB`                  :ts:cv:`proxy.config.http.parent_proxy.mark_down_hostdb`
 :c:macro:`TS_CONFIG_SRV_ENABLED`                                    :ts:cv:`proxy.config.srv_enabled`
+:c:macro:`TS_CONFIG_SSL_CERT_FILENAME`                              :ts:cv:`proxy.config.ssl.client.cert.filename`
+:c:macro:`TS_CONFIG_SSL_CERT_FILEPATH`                              :ts:cv:`proxy.config.ssl.client.cert.path`
+TS_CONFIG_SSL_CLIENT_VERIFY_SERVER                                  :ts:cv:`proxy.config.ssl.client.verify.server`
 :c:macro:`TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS`                    :ts:cv:`proxy.config.ssl.hsts_include_subdomains`
 :c:macro:`TS_CONFIG_SSL_HSTS_MAX_AGE`                               :ts:cv:`proxy.config.ssl.hsts_max_age`
 :c:macro:`TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR`                    :ts:cv:`proxy.config.url_remap.pristine_host_hdr`
 :c:macro:`TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT`                       :ts:cv:`proxy.config.websocket.active_timeout`
 :c:macro:`TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT`                  :ts:cv:`proxy.config.websocket.no_activity_timeout`
-:c:macro:`TS_CONFIG_SSL_CERT_FILEPATH`                              :ts:cv:`proxy.config.ssl.client.cert.path`
-:c:macro:`TS_CONFIG_SSL_CERT_FILENAME`                              :ts:cv:`proxy.config.ssl.client.cert.filename`
-:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER`                       :ts:cv:`proxy.config.ssl.client.verify.server`
-:c:macro:`TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD`               :ts:cv:`proxy.config.http.parent_proxy.fail_threshold`
-:c:macro:`TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME`                   :ts:cv:`proxy.config.http.parent_proxy.retry_time`
-:c:macro:`TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS`               :ts:cv:`proxy.config.http.parent_proxy.per_parent_connect_attempts`
-:c:macro:`TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT`            :ts:cv:`proxy.config.http.parent_proxy.connect_attempts_timeout`
-:c:macro:`TS_CONFIG_HTTP_NORMALIZE_AE`                              :ts:cv:`proxy.config.http.normalize_ae`
-:c:macro:`TS_CONFIG_HTTP_ALLOW_MULTI_RANGE`                         :ts:cv:`proxy.config.http.allow_multi_range`
-:c:macro:`TS_CONFIG_HTTP_ALLOW_HALF_OPEN`                           :ts:cv:`proxy.config.http.allow_half_open`
-:c:macro:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX`                 :ts:cv:`proxy.config.http.per_server.connection.max`
-:c:macro:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH`               :ts:cv:`proxy.config.http.per_server.connection.match`
 ==================================================================  ====================================================================
 
 Examples
