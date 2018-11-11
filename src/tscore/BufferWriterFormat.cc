@@ -23,6 +23,7 @@
 
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
+#include "tscore/ink_thread.h"
 #include <unistd.h>
 #include <sys/param.h>
 #include <cctype>
@@ -993,13 +994,9 @@ BWF_ThreadID(ts::BufferWriter &w, ts::BWFSpec const &spec)
 void
 BWF_ThreadName(ts::BufferWriter &w, ts::BWFSpec const &spec)
 {
-#if defined(__FreeBSD_version)
-  bwformat(w, spec, "thread"sv); // no thread names in FreeBSD.
-#else
   char name[32]; // manual says at least 16, bump that up a bit.
-  pthread_getname_np(pthread_self(), name, sizeof(name));
+  ink_get_thread_name(name, sizeof(name));
   bwformat(w, spec, std::string_view{name});
-#endif
 }
 
 static bool BW_INITIALIZED __attribute__((unused)) = []() -> bool {
