@@ -1807,6 +1807,46 @@ AC_LINK_IFELSE([
     AC_MSG_RESULT([no])
 ])
 
+# pthread_getname_np / pthread_get_name_np:
+AC_MSG_CHECKING([pthread_getname_np()])
+AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        char name[[32]];
+        pthread_getname_np(pthread_self(), name, sizeof(name));
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_GETNAME_NP, 1, [Whether pthread_getname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+    AC_MSG_CHECKING([pthread_get_name_np()])
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([
+    #if HAVE_PTHREAD_H
+    #include <pthread.h>
+    #endif
+    #if PTHREAD_NP_H
+    #include <pthread_np.h>
+    #endif
+          ], [
+            char name[[32]];
+            pthread_get_name_np(pthread_self(), name, sizeof(name));
+        ])
+      ], [
+        AC_DEFINE(HAVE_PTHREAD_GET_NAME_NP, 1, [Whether pthread_get_name_np() is available])
+        AC_MSG_RESULT([yes])
+      ], [
+        AC_MSG_RESULT([no])
+    ])
+])
+
 # BSD-derived systems populate the socket length in the structure itself. It's
 # redundant to check all of these, but hey, I need the typing practice.
 AC_CHECK_MEMBER([struct sockaddr.sa_len], [], [], [#include <netinet/in.h>])
