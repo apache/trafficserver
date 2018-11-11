@@ -109,12 +109,6 @@ public:
   bool change_state(uint8_t type, uint8_t flags);
 
   void
-  set_id(Http2StreamId sid)
-  {
-    _id = sid;
-  }
-
-  void
   update_initial_rwnd(Http2WindowSize new_size)
   {
     client_rwnd = new_size;
@@ -298,6 +292,3 @@ private:
 };
 
 extern ClassAllocator<Http2Stream> http2StreamAllocator;
-
-extern bool check_continuation(Continuation *cont);
-extern bool check_stream_thread(Continuation *cont);
