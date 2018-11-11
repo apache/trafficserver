@@ -535,6 +535,7 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
   ink_rwlock_rdlock(&g_records_rwlock);
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       if (r->stat_meta.sync_cb) {

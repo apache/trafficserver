@@ -314,6 +314,7 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_CONFIG(r->rec_type)) {
       /* -- upgrade to support a list of callback functions
@@ -389,6 +390,7 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
   }
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (!r->registered || (r->data_type != RECD_STRING)) {
       err = REC_ERR_FAIL;
@@ -468,6 +470,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     callback(r, data);
     err = REC_ERR_OKAY;
@@ -522,6 +525,7 @@ RecGetRecordType(const char *name, RecT *rec_type, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     *rec_type = r->rec_type;
     err       = REC_ERR_OKAY;
@@ -546,6 +550,7 @@ RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (!r->registered) {
       err = REC_ERR_FAIL;
@@ -576,6 +581,7 @@ RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lo
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       *persist_type = r->stat_meta.persist_type;
@@ -602,6 +608,7 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     if (r->registered) {
       rec_mutex_acquire(&(r->lock));
       if (order) {
@@ -633,6 +640,7 @@ RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_CONFIG(r->rec_type)) {
       *update_type = r->config_meta.update_type;
@@ -661,6 +669,7 @@ RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_CONFIG(r->rec_type)) {
       *check_type = r->config_meta.check_type;
@@ -689,6 +698,7 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_CONFIG(r->rec_type)) {
       *check_expr = r->config_meta.check_expr;
@@ -717,7 +727,8 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
-    *buf         = (char *)ats_malloc(sizeof(char) * 1024);
+
+    *buf = (char *)ats_malloc(sizeof(char) * 1024);
     memset(*buf, 0, 1024);
     err = REC_ERR_OKAY;
 
@@ -767,6 +778,7 @@ RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     *access = r->config_meta.access_type;
     err     = REC_ERR_OKAY;
@@ -791,6 +803,7 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     r->config_meta.access_type = access;
     err                        = REC_ERR_OKAY;
@@ -815,6 +828,7 @@ RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     *source = r->config_meta.source;
     err     = REC_ERR_OKAY;
@@ -902,6 +916,7 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
+
     rec_mutex_acquire(&(r->lock));
     if (!r->registered || (r->data_type != data_type)) {
       err = REC_ERR_FAIL;
