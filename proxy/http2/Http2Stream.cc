@@ -757,24 +757,6 @@ Http2Stream::destroy()
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
 }
 
-bool
-check_stream_thread(Continuation *cont)
-{
-  Http2Stream *stream = dynamic_cast<Http2Stream *>(cont);
-  if (stream) {
-    return stream->get_thread() == this_ethread();
-  } else {
-    return true;
-  }
-}
-
-bool
-check_continuation(Continuation *cont)
-{
-  Http2Stream *stream = dynamic_cast<Http2Stream *>(cont);
-  return stream == nullptr;
-}
-
 void
 Http2Stream::response_initialize_data_handling(bool &is_done)
 {
