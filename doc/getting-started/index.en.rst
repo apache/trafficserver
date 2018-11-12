@@ -284,7 +284,12 @@ and want little more than to proxy all requests to our single origin server.
 This is accomplished with the following rule added to the :file:`remap.config`
 configuration::
 
-    regex_map http://(.*)/ http://localhost:80/
+    map http://www.acme.com/ http://localhost:80/
+
+With this mapping rule, all paths that |TS| receives with a Host: header of
+``www.acme.com`` will be proxied to ``localhost:80``. For instance, a request
+for ``http://www.acme.com/foo/bar`` will be proxied to ``http://localhost:80/foo/bar``,
+while requests with other Host: headers will be rejected.
 
 It is worth pausing at this point to note that in a reverse proxying scenario,
 it is |TS| itself which should be responding to HTTP requests made to your
@@ -304,12 +309,45 @@ they reconfigure their origin service to listen on port ``8080`` instead of the
 default, and change |TS| to bind to ``80`` itself. Updating the remap is thus
 required, and it should now be::
 
-    regex_map http://(.*)/ http://localhost:8080/
+    map http://www.acme.com/ http://localhost:8080/
 
 Now all requests made to ``www.acme.com`` are received by |TS| which knows to
 proxy those requests to ``localhost:8080`` if it cannot already serve them from
 its cache. Because we enabled pristine host headers earlier, the origin service
 will continue to receive ``Host: www.acme.com`` in the HTTP request.
+
+If |AW| decides to use |TS| to reverse proxy a second domain ``static.acme.com``
+with a different origin server than the original, they need to make further
+changes, as a new remap line needs to be added to handle the additional domain::
+
+    map http://static.acme.com/ http://origin-static.acme.com/
+
+If they also decide to have requests to ``www.acme.com`` with paths that start with
+``/api`` to a different origin server. The api origin server shouldn't get the ``/api``,
+they will remap it away. And, since the above remap rules catch all paths,
+this remap rule needs to be above it::
+
+    map http://www.acme.com/api/ http://api-origin.acme.com/
+
+With this remap rule in place, a request to ``http://www.acme.com/api/example/foo``
+will be proxied to ``http://api-origin.acme.com/example/foo``.
+
+Finally, if |AW| decides to secure their site with https, they will need two
+additional remap rules to handle the https requests. |TS| can translate an inbound
+https request to an http request to origin. So, they would have additional remap
+rules like::
+
+    map https://www.acme.com/ http://localhost:8080/
+    map https://static.acme.com/ https://origin-static.acme.com/
+
+This will require installing a certificate, and adding a line to
+:file:`ssl_multicert.config`. Assuming the cert has the static.acme.com alternate
+name, and that cert should be presented by default::
+
+    dest_ip=* ssl_cert_name=/path/to/secret/privatekey/acme.rsa
+
+Further information about configuring |TS| for TLS can be found :ref:`admin-ssl-termination`
+section of the documentation.
 
 Adjust Cache Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -346,11 +384,20 @@ entries:
 
 :file:`remap.config`::
 
-    regex_map http://(.*)/ http://localhost:8080/
+    map http://www.acme.com/api/ http://api-origin.acme.com/
+    map https://www.acme.com/api/ https://api-origin.acme.com/
+    map http://www.acme.com/ http://localhost:8080/
+    map https://www.acme.com/ http://localhost:8080/
+    map http://static.acme.com/ http://origin-static.acme.com/
+    map https://static.acme.com/ https://origin-static.acme.com/
 
 :file:`storage.config`::
 
     /cache/trafficserver 500G
+
+:file:`ssl_multicert.config`::
+
+    ssl_cert_name=/path/to/secret/acme.rsa
 
 Configuring A Forward Proxy
 ---------------------------
@@ -423,15 +470,6 @@ or instead of, the default |TS| logs.
 
 The Administrator's Guide discusses logging options in great detail in
 :ref:`admin-logging`.
-
-Using Traffic Top
------------------
-
-Using Stats Over HTTP
----------------------
-
-Using Cache Inspector
----------------------
 
 Further Steps
 =============
