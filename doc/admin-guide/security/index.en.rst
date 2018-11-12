@@ -116,8 +116,8 @@ Client/Traffic Server connections, you must do the following:
    which your Traffic Server system will be using to terminate SSL connections
    with clients. ::
 
-        ip_dest=1.2.3.4 ssl_cert_name=example.com.pem
-        ip_dest=* ssl_cert_name=default.pem
+        dest_ip=1.2.3.4 ssl_cert_name=example.com.pem
+        dest_ip=* ssl_cert_name=default.pem
 
 #. *Optional*: Configure the use of client certificates using the variable
    :ts:cv:`proxy.config.ssl.client.certification_level` in :file:`records.config`.
