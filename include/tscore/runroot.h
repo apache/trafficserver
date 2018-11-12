@@ -54,6 +54,8 @@ typedef std::unordered_map<std::string, std::string> RunrootMapType;
 bool exists(const std::string &dir);
 bool is_directory(const std::string &directory);
 
+// argparser_runroot_handler should replace runroot_handler below when all program use ArgParser.
+void argparser_runroot_handler(std::string const &value, const char *executable, bool json);
 void runroot_handler(const char **argv, bool json = false);
 
 // get a map from default layout
