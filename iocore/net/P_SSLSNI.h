@@ -31,13 +31,14 @@
 #pragma once
 
 #include "ProxyConfig.h"
-#include "tscore/Map.h"
 #include "P_SNIActionPerformer.h"
 #include "tscore/MatcherUtils.h"
 #include "openssl/ossl_typ.h"
 #include <vector>
 #include <strings.h>
 #include "YamlSNIConfig.h"
+
+#include <unordered_map>
 
 // Properties for the next hop server
 struct NextHopProperty {
@@ -48,9 +49,9 @@ struct NextHopProperty {
   NextHopProperty();
 };
 
-typedef std::vector<ActionItem *> actionVector;
-typedef HashMap<cchar *, StringHashFns, actionVector *> SNIMap;
-typedef HashMap<cchar *, StringHashFns, NextHopProperty *> NextHopPropertyTable;
+using actionVector         = std::vector<ActionItem *>;
+using SNIMap               = std::unordered_map<std::string, actionVector *>;
+using NextHopPropertyTable = std::unordered_map<std::string, NextHopProperty *>;
 
 struct SNIConfigParams : public ConfigInfo {
   char *sni_filename = nullptr;
