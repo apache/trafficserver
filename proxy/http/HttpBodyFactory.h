@@ -61,8 +61,10 @@
 #include "HttpConfig.h"
 #include "HttpCompat.h"
 #include "HttpTransact.h"
-#include "tscore/RawHashTable.h"
 #include "tscore/ink_sprintf.h"
+
+#include <memory>
+#include <unordered_map>
 
 #define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
 #define HTTP_BODY_SET_MAGIC 0xB0DFAC55
@@ -109,11 +111,12 @@ public:
 ////////////////////////////////////////////////////////////////////////
 
 struct HttpBodySetRawData {
-  unsigned int magic = 0;
+  using TemplateTable = std::unordered_map<std::string, HttpBodyTemplate *>;
+  unsigned int magic  = 0;
   char *set_name;
   char *content_language;
   char *content_charset;
-  RawHashTable *table_of_pages;
+  std::unique_ptr<TemplateTable> table_of_pages;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -162,6 +165,7 @@ public:
 class HttpBodyFactory
 {
 public:
+  using BodySetTable = std::unordered_map<std::string, HttpBodySetRawData *>;
   HttpBodyFactory();
   ~HttpBodyFactory();
 
@@ -197,8 +201,9 @@ public:
 
   void dump_template_tables(FILE *fp = stderr);
   void reconfigure();
-  static const char *determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt_language_list, StrList *acpt_charset_list,
-                                               float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr, int *I_best_ptr);
+  static const char *determine_set_by_language(std::unique_ptr<BodySetTable> &table_of_sets, StrList *acpt_language_list,
+                                               StrList *acpt_charset_list, float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr,
+                                               int *I_best_ptr);
 
 private:
   char *fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
@@ -225,7 +230,7 @@ private:
   // initialization methods //
   ////////////////////////////
   void nuke_template_tables();
-  RawHashTable *load_sets_from_directory(char *set_dir);
+  std::unique_ptr<BodySetTable> load_sets_from_directory(char *set_dir);
   HttpBodySet *load_body_set_from_directory(char *set_name, char *tmpl_dir);
 
   /////////////////////////////////////////////////
@@ -254,6 +259,6 @@ private:
   ////////////////////
   unsigned int magic = HTTP_BODY_FACTORY_MAGIC; // magic for sanity checks/debugging
   ink_mutex mutex;                              // prevents reconfig/read races
-  bool callbacks_established  = false;          // all config variables present
-  RawHashTable *table_of_sets = nullptr;        // sets of template hash tables
+  bool callbacks_established = false;           // all config variables present
+  std::unique_ptr<BodySetTable> table_of_sets;  // sets of template hash tables
 };

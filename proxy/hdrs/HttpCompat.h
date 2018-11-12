@@ -25,7 +25,6 @@
 
 #include "tscore/ink_string++.h"
 #include "MIME.h"
-#include "tscore/RawHashTable.h"
 #include "tscore/Diags.h"
 
 class HttpCompat
