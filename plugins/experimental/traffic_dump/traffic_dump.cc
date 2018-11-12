@@ -290,7 +290,7 @@ int
 session_aio_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
-  case TS_AIO_EVENT_DONE: {
+  case TS_EVENT_AIO_DONE: {
     TSAIOCallback cb = static_cast<TSAIOCallback>(edata);
     SsnData *ssnData = static_cast<SsnData *>(TSContDataGet(contp));
     if (!ssnData) {

@@ -430,7 +430,6 @@ typedef enum {
   TS_EVENT_SSL_SESSION_NEW                      = 2001,
   TS_EVENT_SSL_SESSION_REMOVE                   = 2002,
   TS_EVENT_AIO_DONE                             = 3900,
-  TS_AIO_EVENT_DONE                             = TS_EVENT_AIO_DONE,  // Deprecated, do not use in new code.
   TS_EVENT_HTTP_CONTINUE                        = 60000,
   TS_EVENT_HTTP_ERROR                           = 60001,
   TS_EVENT_HTTP_READ_REQUEST_HDR                = 60002,
