@@ -543,12 +543,12 @@ pvc_plugin(TSCont contp, TSEvent event, void *edata)
     pvc_process_n_read(contp, event, my_state);
   } else if (edata == my_state->n_write_vio) {
     pvc_process_n_write(contp, event, my_state);
-  } else if (event == TS_AIO_EVENT_DONE && uconfig->use_disk_buffer) {
+  } else if (event == TS_EVENT_AIO_DONE && uconfig->use_disk_buffer) {
     TSMutexLock(my_state->disk_io_mutex);
     int size  = TSAIONBytesGet(callback);
     char *buf = TSAIOBufGet(callback);
     if (buf != my_state->chunk_buffer) {
-      // this TS_AIO_EVENT_DONE event is from TSAIOWrite()
+      // this TS_EVENT_AIO_DONE event is from TSAIOWrite()
       TSDebug(DEBUG_TAG, "aio write size: %d", size);
       my_state->size_written += size;
       if (buf != nullptr) {
@@ -561,7 +561,7 @@ pvc_plugin(TSCont contp, TSEvent event, void *edata)
         }
       }
     } else {
-      // this TS_AIO_EVENT_DONE event is from TSAIORead()
+      // this TS_EVENT_AIO_DONE event is from TSAIORead()
       TSDebug(DEBUG_TAG, "aio read size: %d", size);
       TSIOBufferWrite(my_state->req_buffer, my_state->chunk_buffer, size);
       my_state->size_read += size;
