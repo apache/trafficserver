@@ -74,16 +74,16 @@ TEST_CASE("error page selection test", "[http]")
   int nsets  = sizeof(sets) / sizeof(sets[0]);
   int ntests = sizeof(tests) / sizeof(tests[0]);
   // (1) build fake hash table of sets
-  RawHashTable *table_of_sets = new RawHashTable(RawHashTable_KeyType_String);
+  std::unique_ptr<HttpBodyFactory::BodySetTable> table_of_sets;
+  table_of_sets.reset(new HttpBodyFactory::BodySetTable);
   for (i = 0; i < nsets; i++) {
-    HttpBodySetRawData *body_set;
-    body_set                   = (HttpBodySetRawData *)ats_malloc(sizeof(HttpBodySetRawData));
-    body_set->magic            = 0;
-    body_set->set_name         = (char *)(sets[i].set_name);
-    body_set->content_language = (char *)(sets[i].content_language);
-    body_set->content_charset  = (char *)(sets[i].content_charset);
-    body_set->table_of_pages   = (RawHashTable *)1; // hack --- can't be NULL
-    table_of_sets->setValue((RawHashTable_Key)(body_set->set_name), (RawHashTable_Value)body_set);
+    HttpBodySetRawData *body_set = new HttpBodySetRawData;
+    body_set->magic              = 0;
+    body_set->set_name           = strdup(sets[i].set_name);
+    body_set->content_language   = strdup(sets[i].content_language);
+    body_set->content_charset    = strdup(sets[i].content_charset);
+    body_set->table_of_pages.reset(new HttpBodySetRawData::TemplateTable);
+    table_of_sets->emplace(body_set->set_name, body_set);
   }
   // (2) for each test, parse accept headers into lists, and test matching
   for (i = 0; i < ntests; i++) {
@@ -104,5 +104,12 @@ TEST_CASE("error page selection test", "[http]")
     REQUIRE(La_best == tests[i].expected_La);
     REQUIRE(I_best == tests[i].expected_I);
   }
-  delete table_of_sets;
+  for (const auto &it : *table_of_sets.get()) {
+    ats_free(it.second->set_name);
+    ats_free(it.second->content_language);
+    ats_free(it.second->content_charset);
+    it.second->table_of_pages.reset(nullptr);
+    delete it.second;
+  }
+  table_of_sets.reset(nullptr);
 }

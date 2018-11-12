@@ -184,8 +184,6 @@ libtscore_la_SOURCES = \
 	ParseRules.h \
 	PriorityQueue.h \
 	Ptr.h \
-	RawHashTable.cc \
-	RawHashTable.h \
 	RbTree.cc \
 	RbTree.h \
 	Regex.cc \
