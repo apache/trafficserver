@@ -140,7 +140,7 @@ static ink_mutex *mutex_buf      = nullptr;
 static bool open_ssl_initialized = false;
 
 RecRawStatBlock *ssl_rsb = nullptr;
-HashMap<cchar *, class StringHashFns, intptr_t> cipher_map;
+std::unordered_map<std::string, intptr_t> cipher_map;
 
 /* Using pthread thread ID and mutex functions directly, instead of
  * ATS this_ethread / ProxyMutex, so that other linked libraries
@@ -1137,8 +1137,8 @@ SSLInitializeStatistics()
     }
 
     // If not already registered ...
-    if (0 == cipher_map.get(cipherName)) {
-      cipher_map.put(cipherName, (intptr_t)(ssl_cipher_stats_start + index));
+    if (cipherName && cipher_map.find(cipherName) == cipher_map.end()) {
+      cipher_map.emplace(cipherName, (intptr_t)(ssl_cipher_stats_start + index));
       // Register as non-persistent since the order/index is dependent upon configuration.
       RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT,
                          (int)ssl_cipher_stats_start + index, RecRawStatSyncSum);
@@ -1550,9 +1550,8 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
     if (cipher) {
       const char *cipherName = SSL_CIPHER_get_name(cipher);
       // lookup index of stat by name and incr count
-      auto data = cipher_map.get(cipherName);
-      if (data != 0) {
-        SSL_INCREMENT_DYN_STAT((intptr_t)data);
+      if (auto it = cipher_map.find(cipherName); it != cipher_map.end()) {
+        SSL_INCREMENT_DYN_STAT((intptr_t)it->second);
       }
     }
   }

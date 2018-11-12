@@ -38,19 +38,20 @@
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
-Map<int, SSLNextProtocolSet *> snpsMap;
+std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
 extern TunnelHashMap TunnelMap;
 NextHopProperty::NextHopProperty() {}
 
 NextHopProperty *
 SNIConfigParams::getPropertyConfig(cchar *servername) const
 {
-  NextHopProperty *nps = nullptr;
-  nps                  = next_hop_table.get(servername);
-  if (!nps) {
-    nps = wild_next_hop_table.get(servername);
+  if (auto it = next_hop_table.find(servername); it != next_hop_table.end()) {
+    return it->second;
   }
-  return nps;
+  if (auto it = wild_next_hop_table.find(servername); it != wild_next_hop_table.end()) {
+    return it->second;
+  }
+  return nullptr;
 }
 
 void
@@ -72,10 +73,10 @@ SNIConfigParams::loadSNIConfig()
       ts::TextView domain{servername, strlen(servername)};
       domain.take_prefix_at('.');
       if (!domain.empty()) {
-        wild_sni_action_map.put(ats_stringdup(domain), aiVec);
+        wild_sni_action_map.emplace(domain, aiVec);
       }
     } else {
-      sni_action_map.put(ats_strdup(servername), aiVec);
+      sni_action_map.emplace(servername, aiVec);
     }
 
     if (item.tunnel_destination.length()) {
@@ -92,15 +93,18 @@ SNIConfigParams::loadSNIConfig()
     if (certFile) {
       clientCTX = params->getNewCTX(certFile, keyFile);
     }
-    NextHopProperty *nps        = new NextHopProperty();
-    nps->name                   = ats_strdup(servername);
-    nps->verifyServerPolicy     = item.verify_server_policy;
-    nps->verifyServerProperties = item.verify_server_properties;
-    nps->ctx                    = clientCTX;
-    if (wildcard) {
-      wild_next_hop_table.put(nps->name, nps);
-    } else {
-      next_hop_table.put(nps->name, nps);
+    if (servername) { // a safety check
+      NextHopProperty *nps = new NextHopProperty();
+
+      nps->name                   = ats_strdup(servername);
+      nps->verifyServerPolicy     = item.verify_server_policy;
+      nps->verifyServerProperties = item.verify_server_properties;
+      nps->ctx                    = clientCTX;
+      if (wildcard) {
+        wild_next_hop_table.emplace(nps->name, nps);
+      } else {
+        next_hop_table.emplace(nps->name, nps);
+      }
     }
   } // end for
 }
@@ -112,29 +116,25 @@ SNIConfigParams::SNIConfigParams() {}
 actionVector *
 SNIConfigParams::get(cchar *servername) const
 {
-  auto actionVec = sni_action_map.get(servername);
-  if (!actionVec) {
-    Vec<cchar *> keys;
-    wild_sni_action_map.get_keys(keys);
-    for (int i = 0; i < static_cast<int>(keys.length()); i++) {
-      std::string_view sv{servername, strlen(servername)};
-      std::string_view key_sv{keys.get(i)};
+  auto action_it = sni_action_map.find(servername);
+  if (action_it != sni_action_map.end()) {
+    for (const auto &it : wild_sni_action_map) {
+      std::string_view sv{servername};
+      std::string_view key_sv{it.first};
       if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
-        return wild_sni_action_map.get(key_sv.data());
+        auto wild_action_it = wild_sni_action_map.find(key_sv.data());
+        return wild_action_it != wild_sni_action_map.end() ? wild_action_it->second : nullptr;
       }
     }
   }
-  return actionVec;
+  return action_it != sni_action_map.end() ? action_it->second : nullptr;
 }
 
 void
 SNIConfigParams::printSNImap() const
 {
-  Vec<cchar *> keys;
-  sni_action_map.get_keys(keys);
-  for (size_t i = 0; i < keys.length(); i++) {
-    Debug("ssl", "Domain name in the map %s: # of registered action items %lu", (char *)keys.get(i),
-          sni_action_map.get(keys.get(i))->size());
+  for (const auto &it : sni_action_map) {
+    Debug("ssl", "Domain name in the map %s: # of registered action items %lu", it.first.c_str(), it.second->size());
   }
 }
 
@@ -169,42 +169,26 @@ SNIConfigParams::Initialize()
 void
 SNIConfigParams::cleanup()
 {
-  Vec<cchar *> keys;
-  sni_action_map.get_keys(keys);
-  for (int i = keys.length() - 1; i >= 0; i--) {
-    auto actionVec = sni_action_map.get(keys.get(i));
-    for (auto &ai : *actionVec) {
+  for (const auto &it : sni_action_map) {
+    auto actionVec = it.second;
+    for (const auto &ai : *actionVec) {
       delete ai;
     }
-
-    actionVec->clear();
+    delete actionVec;
   }
-  keys.free_and_clear();
-
-  wild_sni_action_map.get_keys(keys);
-  for (int i = keys.length() - 1; i >= 0; i--) {
-    auto actionVec = wild_sni_action_map.get(keys.get(i));
-    for (auto &ai : *actionVec) {
+  for (const auto &it : wild_sni_action_map) {
+    auto actionVec = it.second;
+    for (const auto &ai : *actionVec) {
       delete ai;
     }
-
-    actionVec->clear();
+    delete actionVec;
   }
-  keys.free_and_clear();
-
-  next_hop_table.get_keys(keys);
-  for (int i = 0; i < static_cast<int>(keys.length()); i++) {
-    auto *nps = next_hop_table.get(keys.get(i));
-    delete (nps);
+  for (const auto &it : next_hop_table) {
+    delete it.second;
   }
-  keys.free_and_clear();
-
-  wild_next_hop_table.get_keys(keys);
-  for (int i = 0; static_cast<int>(keys.length()); i++) {
-    auto *nps = wild_next_hop_table.get(keys.get(i));
-    delete (nps);
+  for (const auto &it : wild_next_hop_table) {
+    delete it.second;
   }
-  keys.free_and_clear();
 }
 
 SNIConfigParams::~SNIConfigParams()
@@ -229,7 +213,7 @@ SNIConfig::cloneProtoSet()
     if (na->snpa) {
       auto snps = na->snpa->cloneProtoSet();
       snps->unregisterEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, nullptr);
-      snpsMap.put(na->id, snps);
+      snpsMap.emplace(na->id, snps);
     }
   }
 }
