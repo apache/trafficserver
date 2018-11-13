@@ -28,10 +28,12 @@ struct jwt {
   double nbf;
   double iat;
   const char *jti;
-  const char *cdnicrit;
   int cdniv;
+  const char *cdnicrit;
+  const char *cdniip;
   int cdniets;
   int cdnistt;
+  int cdnistd;
 };
 struct jwt *parse_jwt(json_t *raw);
 void jwt_delete(struct jwt *jwt);
