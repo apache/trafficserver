@@ -870,14 +870,9 @@ mptcp
 
 .. note::
 
-   If HTTP/1.1 is used, then |TS| can use keep-alive connections with
-   pipelining to origin servers.
+   If HTTP/1.1 is used, then |TS| can use keep-alive connections to origin servers.
 
-   If HTTP/1.0 is used, then |TS| can use keep-alive connections without
-   pipelining to origin servers.
-
-   If HTTP/0.9 is used, then |TS| does not use keep-alive connections to
-   origin servers.
+   If HTTP/1.0 is used, then |TS| can use keep-alive connections to origin servers.
 
 .. ts:cv:: CONFIG proxy.config.http.chunking.size INT 4096
    :overridable:
