@@ -61,9 +61,11 @@ parse_jwt(json_t *raw)
   jwt->iat        = parse_number(json_object_get(raw, "iat"));
   jwt->jti        = json_string_value(json_object_get(raw, "jti"));
   jwt->cdniv      = parse_integer_default(json_object_get(raw, "cdniv"), 1);
+  jwt->cdnicrit   = json_string_value(json_object_get(raw, "cdnicrit"));
+  jwt->cdniip     = json_string_value(json_object_get(raw, "cdniip"));
   jwt->cdniets    = json_integer_value(json_object_get(raw, "cdniets"));
   jwt->cdnistt    = json_integer_value(json_object_get(raw, "cdnistt"));
-  jwt->cdnicrit   = json_string_value(json_object_get(raw, "cdnicrit"));
+  jwt->cdnistd    = parse_integer_default(json_object_get(raw, "cdnistd"), 0);
   return jwt;
 }
 
@@ -132,6 +134,11 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
+  if (!unsupported_string_claim(jwt->cdniip)) {
+    PluginDebug("Initial JWT Failure: cdniip unsupported");
+    return false;
+  }
+
   if (!unsupported_string_claim(jwt->jti)) {
     PluginDebug("Initial JWT Failure: nonse unsupported");
     return false;
@@ -144,6 +151,11 @@ jwt_validate(struct jwt *jwt)
 
   if (jwt->cdnistt < 0 || jwt->cdnistt > 1) {
     PluginDebug("Initial JWT Failure: unsupported value for cdnistt: %d", jwt->cdnistt);
+    return false;
+  }
+
+  if (jwt->cdnistd != 0) {
+    PluginDebug("Initial JWT Failure: unsupported value for cdnistd: %d", jwt->cdnistd);
     return false;
   }
 
