@@ -24,103 +24,72 @@
 #include "traffic_ctl.h"
 #include "records/P_RecUtils.h"
 
-static int
-metric_get(unsigned argc, const char **argv)
+void
+CtrlEngine::metric_get()
 {
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments < 1) {
-    return CtrlCommandUsage("metric get METRIC [METRIC ...]", nullptr, 0);
-  }
-
-  for (unsigned i = 0; i < n_file_arguments; ++i) {
+  for (const auto &it : arguments.get("get")) {
     CtrlMgmtRecord record;
     TSMgmtError error;
 
-    error = record.fetch(file_arguments[i]);
+    error = record.fetch(it.c_str());
     if (error != TS_ERR_OKAY) {
-      CtrlMgmtError(error, "failed to fetch %s", file_arguments[i]);
-      return CTRL_EX_ERROR;
+      CtrlMgmtError(error, "failed to fetch %s", it.c_str());
+      status_code = CTRL_EX_ERROR;
+      return;
     }
 
     if (REC_TYPE_IS_STAT(record.rclass())) {
-      printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
+      std::cout << record.name() << ' ' << CtrlMgmtRecordValue(record).c_str() << std::endl;
     }
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-metric_match(unsigned argc, const char **argv)
+void
+CtrlEngine::metric_match()
 {
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments < 1) {
-    return CtrlCommandUsage("metric match [OPTIONS] REGEX [REGEX ...]", nullptr, 0);
-  }
-
-  for (unsigned i = 0; i < n_file_arguments; ++i) {
+  for (const auto &it : arguments.get("match")) {
     CtrlMgmtRecordList reclist;
     TSMgmtError error;
 
-    error = reclist.match(file_arguments[i]);
+    error = reclist.match(it.c_str());
     if (error != TS_ERR_OKAY) {
-      CtrlMgmtError(error, "failed to fetch %s", file_arguments[i]);
-      return CTRL_EX_ERROR;
+      CtrlMgmtError(error, "failed to fetch %s", it.c_str());
+      status_code = CTRL_EX_ERROR;
+      return;
     }
 
     while (!reclist.empty()) {
       CtrlMgmtRecord record(reclist.next());
       if (REC_TYPE_IS_STAT(record.rclass())) {
-        printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
+        std::cout << record.name() << ' ' << CtrlMgmtRecordValue(record).c_str() << std::endl;
       }
     }
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-metric_clear(unsigned argc, const char **argv)
+void
+CtrlEngine::metric_clear()
 {
   TSMgmtError error;
 
   error = TSStatsReset(nullptr);
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "failed to clear metrics");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-metric_zero(unsigned argc, const char **argv)
+void
+CtrlEngine::metric_zero()
 {
   TSMgmtError error;
 
-  for (unsigned i = 0; i < n_file_arguments; ++i) {
-    error = TSStatsReset(file_arguments[i]);
+  for (const auto &it : arguments.get("zero")) {
+    error = TSStatsReset(it.c_str());
     if (error != TS_ERR_OKAY) {
-      CtrlMgmtError(error, "failed to clear %s", file_arguments[i]);
-      return CTRL_EX_ERROR;
+      CtrlMgmtError(error, "failed to clear %s", it.c_str());
+      status_code = CTRL_EX_ERROR;
     }
   }
-
-  return CTRL_EX_OK;
-}
-
-int
-subcommand_metric(unsigned argc, const char **argv)
-{
-  const subcommand commands[] = {
-    {metric_get, "get", "Get one or more metric values"},
-    {metric_clear, "clear", "Clear all metric values"},
-    {CtrlUnimplementedCommand, "describe", "Show detailed information about one or more metric values"},
-    {metric_match, "match", "Get metrics matching a regular expression"},
-    {CtrlUnimplementedCommand, "monitor", "Display the value of a metric over time"},
-
-    // We could allow clearing all the metrics in the "clear" subcommand, but that seems error-prone. It
-    // would be too easy to just expect a help message and accidentally nuke all the metrics.
-    {metric_zero, "zero", "Clear one or more metric values"},
-  };
-
-  return CtrlGenericSubcommand("metric", commands, countof(commands), argc, argv);
 }
