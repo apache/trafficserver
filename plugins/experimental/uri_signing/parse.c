@@ -184,7 +184,7 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
     }
   }
 
-  if (!jwt_check_uri(jwt->sub, uri)) {
+  if (!jwt_check_uri(jwt->cdniuc, uri)) {
     PluginDebug("Valid key for %16p that does not match uri.", jws);
     goto jwt_fail;
   }
