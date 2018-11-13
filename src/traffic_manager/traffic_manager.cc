@@ -656,8 +656,6 @@ main(int argc, const char **argv)
 
   lmgmt->initMgmtProcessServer(); /* Setup p-to-p process server */
 
-  lmgmt->listenForProxy();
-
   // Setup the API and event sockets
   std::string rundir(RecConfigReadRuntimeDir());
   std::string apisock(Layout::relative_to(rundir, MGMTAPI_MGMT_SOCKET_NAME));

@@ -639,7 +639,6 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
   }
   case MGMT_EVENT_RESTART:
     run_proxy = true;
-    listenForProxy();
     return;
   case MGMT_EVENT_BOUNCE: /* Just bouncing the cluster, have it exit well restart */
     mh->msg_id = MGMT_EVENT_SHUTDOWN;
