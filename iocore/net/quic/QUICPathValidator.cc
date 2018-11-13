@@ -49,9 +49,12 @@ QUICPathValidator::validate()
 void
 QUICPathValidator::_generate_challenge()
 {
-  for (int i = countof(this->_outgoing_challenge) - 1; i >= 0; --i) {
-    // TODO Randomize challenge data
-    this->_outgoing_challenge[i] = i;
+  size_t seed =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  std::minstd_rand random(seed);
+
+  for (auto &i : this->_outgoing_challenge) {
+    i = random();
   }
   this->_has_outgoing_challenge = 3;
 }
