@@ -30,28 +30,22 @@
 #include "tscore/ink_args.h"
 #include "tscore/I_Version.h"
 #include "tscore/BaseLogFile.h"
+#include "tscore/ArgParser.h"
 
 #include <vector>
 #include <string>
+#include <iostream>
 
-struct subcommand {
-  int (*handler)(unsigned, const char **);
-  const char *name;
-  const char *help;
-};
-
-extern AppVersionInfo CtrlVersionInfo;
+// Exit status codes, following BSD's sysexits(3)
+constexpr int CTRL_EX_OK            = 0;
+constexpr int CTRL_EX_ERROR         = 2;
+constexpr int CTRL_EX_UNIMPLEMENTED = 3;
+constexpr int CTRL_EX_USAGE         = EX_USAGE;
+constexpr int CTRL_EX_UNAVAILABLE   = 69;
 
 #define CtrlDebug(...) Debug("traffic_ctl", __VA_ARGS__)
 
 void CtrlMgmtError(TSMgmtError err, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
-int CtrlSubcommandUsage(const char *name, const subcommand *cmds, unsigned ncmds, const ArgumentDescription *desc, unsigned ndesc);
-int CtrlCommandUsage(const char *msg, const ArgumentDescription *desc = nullptr, unsigned ndesc = 0);
-
-bool CtrlProcessArguments(int argc, const char **argv, const ArgumentDescription *desc, unsigned ndesc);
-int CtrlUnimplementedCommand(unsigned argc, const char **argv);
-
-int CtrlGenericSubcommand(const char *, const subcommand *cmds, unsigned ncmds, unsigned argc, const char **argv);
 
 #define CTRL_MGMT_CHECK(expr)                          \
   do {                                                 \
@@ -59,7 +53,8 @@ int CtrlGenericSubcommand(const char *, const subcommand *cmds, unsigned ncmds, 
     if (e != TS_ERR_OKAY) {                            \
       CtrlDebug("%s failed with status %d", #expr, e); \
       CtrlMgmtError(e, nullptr);                       \
-      return CTRL_EX_ERROR;                            \
+      status_code = CTRL_EX_ERROR;                     \
+      return;                                          \
     }                                                  \
   } while (0)
 
@@ -167,47 +162,59 @@ struct CtrlMgmtRecordList : CtrlMgmtList<RecordListPolicy> {
   TSMgmtError match(const char *);
 };
 
-struct CtrlCommandLine {
-  CtrlCommandLine() { this->args.push_back(nullptr); }
-  void
-  init(unsigned argc, const char **argv)
-  {
-    this->args.clear();
-    for (unsigned i = 0; i < argc; ++i) {
-      this->args.push_back(argv[i]);
-    }
+// this is a engine for traffic_ctl containing the ArgParser and all the methods
+// it also has a status code which can be set by these methods to return
+struct CtrlEngine {
+  // the parser for traffic_ctl
+  ts::ArgParser parser;
+  // parsed arguments
+  ts::Arguments arguments;
+  // the return status code from functions
+  // By default it is set to CTRL_EX_OK so we don't need to set it
+  // in each method when they finish successfully.
+  int status_code = CTRL_EX_OK;
 
-    // Always nullptr-terminate to keep ink_args happy. Note that we adjust arg() accordingly.
-    this->args.push_back(nullptr);
-  }
+  // All traffic_ctl methods:
+  // umimplemented command
+  void CtrlUnimplementedCommand(std::string_view command);
 
-  unsigned
-  argc()
-  {
-    return args.size() - 1;
-  }
+  // alarm methods
+  void alarm_list();
+  void alarm_clear();
+  void alarm_resolve();
 
-  const char **
-  argv()
-  {
-    return &args[0];
-  }
+  // config methods
+  void config_defaults();
+  void config_diff();
+  void config_status();
+  void config_reload();
+  void config_match();
+  void config_get();
+  void config_set();
+  void config_describe();
 
-private:
-  std::vector<const char *> args;
+  // host methods
+  void status_get();
+  void status_down();
+  void status_up();
+
+  // metric methods
+  void metric_get();
+  void metric_match();
+  void metric_clear();
+  void metric_zero();
+
+  // metric methods
+  void plugin_msg();
+
+  // server methods
+  void server_restart();
+  void server_backtrace();
+  void server_status();
+  void server_stop();
+  void server_start();
+  void server_drain();
+
+  // storage methods
+  void storage_offline();
 };
-
-int subcommand_alarm(unsigned argc, const char **argv);
-int subcommand_config(unsigned argc, const char **argv);
-int subcommand_metric(unsigned argc, const char **argv);
-int subcommand_server(unsigned argc, const char **argv);
-int subcommand_storage(unsigned argc, const char **argv);
-int subcommand_plugin(unsigned argc, const char **argv);
-int subcommand_host(unsigned argc, const char **argv);
-
-// Exit status codes, following BSD's sysexits(3)
-#define CTRL_EX_OK 0
-#define CTRL_EX_ERROR 2
-#define CTRL_EX_UNIMPLEMENTED 3
-#define CTRL_EX_USAGE EX_USAGE
-#define CTRL_EX_UNAVAILABLE 69

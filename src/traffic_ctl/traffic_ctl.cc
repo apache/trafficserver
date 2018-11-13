@@ -28,8 +28,6 @@
 #include "tscore/I_Layout.h"
 #include "tscore/runroot.h"
 
-AppVersionInfo CtrlVersionInfo;
-
 const char *
 CtrlMgmtRecord::name() const
 {
@@ -145,120 +143,137 @@ CtrlMgmtError(TSMgmtError err, const char *fmt, ...)
   }
 }
 
-int
-CtrlSubcommandUsage(const char *name, const subcommand *cmds, unsigned ncmds, const ArgumentDescription *desc, unsigned ndesc)
+void
+CtrlEngine::CtrlUnimplementedCommand(std::string_view command)
 {
-  const char *opt = ndesc ? "[OPTIONS]" : "";
-  const char *sep = (ndesc && name) ? " " : "";
-
-  fprintf(stderr, "Usage: traffic_ctl %s%s%s CMD [ARGS ...]\n\nSubcommands:\n", name ? name : "", sep, opt);
-
-  for (unsigned i = 0; i < ncmds; ++i) {
-    fprintf(stderr, "    %-16s%s\n", cmds[i].name, cmds[i].help);
-  }
-
-  if (ndesc) {
-    usage(desc, ndesc, "\nOptions:");
-  }
-
-  return CTRL_EX_USAGE;
+  fprintf(stderr, "'%s' command is not implemented\n", command.data());
+  status_code = CTRL_EX_UNIMPLEMENTED;
 }
-
-int
-CtrlCommandUsage(const char *msg, const ArgumentDescription *desc, unsigned ndesc)
-{
-  fprintf(stderr, "Usage: traffic_ctl %s\n", msg);
-
-  if (ndesc) {
-    usage(desc, ndesc, "\nOptions:");
-  }
-
-  return CTRL_EX_USAGE;
-}
-
-bool
-CtrlProcessArguments(int /* argc */, const char **argv, const ArgumentDescription *desc, unsigned ndesc)
-{
-  n_file_arguments = 0;
-  return process_args_ex(&CtrlVersionInfo, desc, ndesc, argv);
-}
-
-int
-CtrlUnimplementedCommand(unsigned /* argc */, const char **argv)
-{
-  fprintf(stderr, "'%s' command is not implemented\n", *argv);
-  return CTRL_EX_UNIMPLEMENTED;
-}
-
-int
-CtrlGenericSubcommand(const char *name, const subcommand *cmds, unsigned ncmds, unsigned argc, const char **argv)
-{
-  CtrlCommandLine cmdline;
-
-  // Process command line arguments and dump into variables
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments < 1) {
-    return CtrlSubcommandUsage(name, cmds, ncmds, nullptr, 0);
-  }
-
-  cmdline.init(n_file_arguments, file_arguments);
-
-  for (unsigned i = 0; i < ncmds; ++i) {
-    if (strcmp(file_arguments[0], cmds[i].name) == 0) {
-      return cmds[i].handler(cmdline.argc(), cmdline.argv());
-    }
-  }
-
-  return CtrlSubcommandUsage(name, cmds, ncmds, nullptr, 0);
-}
-
-static const subcommand commands[] = {
-  {subcommand_alarm, "alarm", "Manipulate alarms"},
-  {subcommand_config, "config", "Manipulate configuration records"},
-  {subcommand_metric, "metric", "Manipulate performance metrics"},
-  {subcommand_server, "server", "Stop, restart and examine the server"},
-  {subcommand_storage, "storage", "Manipulate cache storage"},
-  {subcommand_plugin, "plugin", "Interact with plugins"},
-  {subcommand_host, "host", "Interact with host status"},
-};
 
 int
 main(int argc, const char **argv)
 {
-  CtrlCommandLine cmdline;
-  int debug = false;
+  CtrlEngine engine;
 
-  CtrlVersionInfo.setup(PACKAGE_NAME, "traffic_ctl", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
-  program_name = CtrlVersionInfo.AppStr;
+  engine.parser.add_global_usage("traffic_ctl [OPTIONS] CMD [ARGS ...]");
+  engine.parser.require_commands();
 
-  ArgumentDescription argument_descriptions[] = {
-    {"debug", '-', "Enable debugging output", "F", &debug, nullptr, nullptr},
-    {"help", 'h', "Print usage information", nullptr, nullptr, nullptr,
-     [](const ArgumentDescription *args, unsigned nargs, const char *arg_unused) {
-       CtrlSubcommandUsage(nullptr, commands, countof(commands), args, nargs);
-     }},
-    VERSION_ARGUMENT_DESCRIPTION(),
-    RUNROOT_ARGUMENT_DESCRIPTION(),
-  };
+  engine.parser.add_option("--debug", "", "Enable debugging output")
+    .add_option("--version", "-V", "Print version string")
+    .add_option("--help", "-h", "Print usage information")
+    .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "TS_RUNROOT", 1);
+
+  auto &alarm_command   = engine.parser.add_command("alarm", "Manipulate alarms").require_commands();
+  auto &config_command  = engine.parser.add_command("config", "Manipulate configuration records").require_commands();
+  auto &metric_command  = engine.parser.add_command("metric", "Manipulate performance metrics").require_commands();
+  auto &server_command  = engine.parser.add_command("server", "Stop, restart and examine the server").require_commands();
+  auto &storage_command = engine.parser.add_command("storage", "Manipulate cache storage").require_commands();
+  auto &plugin_command  = engine.parser.add_command("plugin", "Interact with plugins").require_commands();
+  auto &host_command    = engine.parser.add_command("host", "Interact with host status").require_commands();
+
+  // alarm commands
+  alarm_command.add_command("clear", "Clear all current alarms", [&]() { engine.alarm_clear(); })
+    .add_example_usage("traffic_ctl alarm clear");
+  alarm_command.add_command("list", "List all current alarms", [&]() { engine.alarm_list(); })
+    .add_example_usage("traffic_ctl alarm list");
+  alarm_command.add_command("resolve", "Resolve the listed alarms", "", MORE_THAN_ONE_ARG_N, [&]() { engine.alarm_resolve(); })
+    .add_example_usage("traffic_ctl alarm resolve ALARM [ALARM ...]");
+
+  // config commands
+  config_command.add_command("defaults", "Show default information configuration values", [&]() { engine.config_defaults(); })
+    .add_example_usage("traffic_ctl config defaults [OPTIONS]")
+    .add_option("--records", "", "Emit output in records.config format");
+  config_command
+    .add_command("describe", "Show detailed information about configuration values", "", MORE_THAN_ONE_ARG_N,
+                 [&]() { engine.config_describe(); })
+    .add_example_usage("traffic_ctl config describe RECORD [RECORD ...]");
+  config_command.add_command("diff", "Show non-default configuration values", [&]() { engine.config_diff(); })
+    .add_example_usage("traffic_ctl config diff [OPTIONS]")
+    .add_option("--records", "", "Emit output in records.config format");
+  config_command.add_command("get", "Get one or more configuration values", "", MORE_THAN_ONE_ARG_N, [&]() { engine.config_get(); })
+    .add_example_usage("traffic_ctl config get [OPTIONS] RECORD [RECORD ...]")
+    .add_option("--records", "", "Emit output in records.config format");
+  config_command
+    .add_command("match", "Get configuration matching a regular expression", "", MORE_THAN_ONE_ARG_N,
+                 [&]() { engine.config_match(); })
+    .add_example_usage("traffic_ctl config match [OPTIONS] REGEX [REGEX ...]")
+    .add_option("--records", "", "Emit output in records.config format");
+  config_command.add_command("reload", "Request a configuration reload", [&]() { engine.config_reload(); })
+    .add_example_usage("traffic_ctl config reload");
+  config_command.add_command("status", "Check the configuration status", [&]() { engine.config_status(); })
+    .add_example_usage("traffic_ctl config status");
+  config_command.add_command("set", "Set a configuration value", "", 2, [&]() { engine.config_set(); })
+    .add_example_usage("traffic_ctl config set RECORD VALUE");
+
+  // host commands
+  host_command.add_command("status", "Get one or more host statuses", "", MORE_THAN_ONE_ARG_N, [&]() { engine.status_get(); })
+    .add_example_usage("traffic_ctl host status HOST  [HOST  ...]");
+  host_command.add_command("down", "Set down one or more host(s)", "", MORE_THAN_ONE_ARG_N, [&]() { engine.status_down(); })
+    .add_example_usage("traffic_ctl host down HOST [OPTIONS]")
+    .add_option("--time", "-I", "number of seconds that a host is marked down", "", 1)
+    .add_option("--reason", "", "reason for marking the host down, one of 'manual|active|local");
+  host_command.add_command("up", "Set up one or more host(s)", "", MORE_THAN_ONE_ARG_N, [&]() { engine.status_up(); })
+    .add_example_usage("traffic_ctl host up METRIC value")
+    .add_option("--reason", "", "reason for marking the host up, one of 'manual|active|local");
+
+  // metric commands
+  metric_command.add_command("get", "Get one or more metric values", "", MORE_THAN_ONE_ARG_N, [&]() { engine.metric_get(); })
+    .add_example_usage("traffic_ctl metric get METRIC [METRIC ...]");
+  metric_command.add_command("clear", "Clear all metric values", [&]() { engine.metric_clear(); });
+  metric_command.add_command("describe", "Show detailed information about one or more metric values", "", MORE_THAN_ONE_ARG_N,
+                             [&]() { engine.CtrlUnimplementedCommand("describe"); }); // not implemented
+  metric_command.add_command("match", "Get metrics matching a regular expression", "", MORE_THAN_ZERO_ARG_N,
+                             [&]() { engine.metric_match(); });
+  metric_command.add_command("monitor", "Display the value of a metric over time", "", MORE_THAN_ZERO_ARG_N,
+                             [&]() { engine.CtrlUnimplementedCommand("monitor"); }); // not implemented
+  metric_command.add_command("zero", "Clear one or more metric values", "", MORE_THAN_ONE_ARG_N, [&]() { engine.metric_zero(); });
+
+  // plugin command
+  plugin_command.add_command("msg", "Send message to plugins - a TAG and the message DATA", "", 2, [&]() { engine.plugin_msg(); })
+    .add_example_usage("traffic_ctl plugin msg TAG DATA");
+
+  // server commands
+  server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",
+                             [&]() { engine.server_backtrace(); });
+  server_command.add_command("restart", "Restart Traffic Server", [&]() { engine.server_backtrace(); })
+    .add_example_usage("traffic_ctl server restart [OPTIONS]")
+    .add_option("--drain", "", "Wait for client connections to drain before restarting")
+    .add_option("--manager", "", "Restart traffic_manager as well as traffic_server");
+  server_command.add_command("start", "Start the proxy", [&]() { engine.server_start(); })
+    .add_example_usage("traffic_ctl server start [OPTIONS]")
+    .add_option("--clear-cache", "", "Clear the disk cache on startup")
+    .add_option("--clear-hostdb", "", "Clear the DNS cache on startup");
+  server_command.add_command("status", "Show the proxy status", [&]() { engine.server_status(); })
+    .add_example_usage("traffic_ctl server status");
+  server_command.add_command("stop", "Stop the proxy", [&]() { engine.server_stop(); })
+    .add_example_usage("traffic_ctl server stop [OPTIONS]")
+    .add_option("--drain", "", "Wait for client connections to drain before stopping");
+  server_command.add_command("drain", "Drain the requests", [&]() { engine.server_drain(); })
+    .add_example_usage("traffic_ctl server drain [OPTIONS]")
+    .add_option("--no-new-connection", "-N", "Wait for new connections down to threshold before starting draining")
+    .add_option("--undo", "-U", "Recover server from the drain mode");
+
+  // storage commands
+  storage_command
+    .add_command("offline", "Take one or more storage volumes offline", "", MORE_THAN_ONE_ARG_N,
+                 [&]() { engine.storage_offline(); })
+    .add_example_usage("storage offline DEVICE [DEVICE ...]");
+  storage_command.add_command("status", "Show the storage configuration", "", MORE_THAN_ZERO_ARG_N,
+                              [&]() { engine.CtrlUnimplementedCommand("status"); }); // not implemented
+
+  // parse the arguments
+  engine.arguments = engine.parser.parse(argv);
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
-  diags                      = new Diags(program_name, "" /* tags */, "" /* actions */, base_log_file);
+  diags                      = new Diags("traffic_ctl", "" /* tags */, "" /* actions */, base_log_file);
 
-  // Process command line arguments and dump into variables
-  if (!CtrlProcessArguments(argc, argv, argument_descriptions, countof(argument_descriptions))) {
-    return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
-  }
-
-  if (debug) {
+  if (engine.arguments.get("debug")) {
     diags->activate_taglist("traffic_ctl", DiagsTagType_Debug);
     diags->config.enabled[DiagsTagType_Debug] = true;
     diags->show_location                      = SHOW_LOCATION_DEBUG;
   }
 
-  if (n_file_arguments < 1) {
-    return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
-  }
-
-  runroot_handler(argv);
+  argparser_runroot_handler(engine.arguments.get("--run-root").value(), argv[0]);
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, diags);
   LibRecordsConfigInit();
@@ -272,16 +287,10 @@ main(int argc, const char **argv)
   // error.
   TSInit(rundir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
 
-  for (unsigned i = 0; i < countof(commands); ++i) {
-    if (strcmp(file_arguments[0], commands[i].name) == 0) {
-      CtrlCommandLine cmdline;
-
-      cmdline.init(n_file_arguments, file_arguments);
-      return commands[i].handler(cmdline.argc(), cmdline.argv());
-    }
-  }
+  engine.arguments.invoke();
 
   // Done with the mgmt API.
   TSTerminate();
-  return CtrlSubcommandUsage(nullptr, commands, countof(commands), argument_descriptions, countof(argument_descriptions));
+
+  return engine.status_code;
 }
