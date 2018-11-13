@@ -23,14 +23,15 @@ logging.yaml
 **************
 
 The :file:`logging.yaml` file defines all custom log file formats, filters,
-and processing options. The file itself is a Lua script.
+and processing options.
 
 .. important::
 
-   This configuration file replaces the XML based logs_xml.config from past
-   |TS| releases. If you are upgrading from a |TS| release which used that
-   configuration file, and you have created custom log formats, filters, and
-   destinations, you will need to update those settings to this format.
+   This configuration file replaces the XML based logs_xml.config, as well as
+   the Lua based logging.config from past |TS| releases. If you are upgrading
+   from a |TS| release which used either the XML or the Lua configuration file
+   format, and you have created custom log formats, filters, and destinations,
+   you will need to update those settings to this format.
 
 .. _admin-custom-logs:
 
@@ -62,11 +63,10 @@ format. Which approach you use is entirely up to you, though it's strongly
 recommended to create an explicit format object if you intend to reuse the same
 format for multiple log files.
 
-To create a format object, store the result of the ``format`` function in a
-variable. The function takes a table with two attributes: a mandatory string
-``Format`` which defines the output format string for every event; and an
-optional number ``Interval`` defining the aggregation interval for summary
-logs.
+Custom formats are defined by choosing a ``name`` to identify the given logging
+format, and a ``format`` string, which defines the output format string for
+every event. An optional ``interval`` attribute can be specified to define the
+aggregation interval for summary logs.
 
 .. code:: yaml
 
@@ -89,8 +89,8 @@ desire.
 Format Specification
 ~~~~~~~~~~~~~~~~~~~~
 
-The format specification provided as the required ``Format`` entry of the table
-passed to the format function is a simple string, containing whatever mixture
+The format specification provided as the required ``format`` attribute of the
+objects listed in ``formats`` is a simple string, containing whatever mixture
 of logging field variables and literal characters meet your needs. Logging
 fields are discussed in great detail in the :ref:`admin-logging-fields`
 section.
@@ -142,7 +142,7 @@ You will find a complete listing of the available fields in
 Aggregation Interval
 ~~~~~~~~~~~~~~~~~~~~
 
-Every format may be given an optional ``Interval`` value, specified as the
+Every format may be given an optional ``interval`` value, specified as the
 number of seconds over which events destined for a log using the format are
 aggregated and summarized. Logs which use formats containing an aggregation
 interval do not behave like regular logs, with a single line for every event.
@@ -159,29 +159,26 @@ given one.
 Filters
 -------
 
-Filters may be used, optionally, to accept or reject logging for matching
-events, or to scrub the values of individual fields from logging output (while
-retaining other information; useful for ensuring that sensitive information
-cannot inadvertently make it into log files).
+Two different type of filters are available: ``accept`` and ``reject``.  They
+may be used, optionally, to accept or reject logging for matching events.
 
-Filter objects are created by calling one of the following functions:
-
-filter.accept(string)
-    Creates a filter object which accepts events for logging which match the
-    rule specified in ``string``. Note that you may only have one accept filter.
-
-filter.reject(string)
-    Creates a filter object which rejects events for logging which match the
-    rule specified in ``string``. You may have multiple reject filters.
-
-filter.wipe(string)
-    Creates a filter object which clears the values of query parameters listed
-    in ``string``.
-
-For both ``accept`` and ``wipe`` filters, the string passed defines a rule in
-the following format::
+Filter objects are created by assigning them a ``name`` to be used later to
+refer to the filter, as well as an ``action`` (either ``accept`` or
+``reject``). ``Accept`` and ``reject`` filters require a ``condition`` against
+which to match all events. The ``condition`` fields must be in the following
+format::
 
     <field> <operator> <value>
+
+For example, the following snippet defines a filter that matches all POST
+requests:
+
+.. code:: yaml
+
+   filters:
+   - name: postfilter
+     action: accept
+     condition: cqhm MATCH POST
 
 Filter Fields
 ~~~~~~~~~~~~~
@@ -245,21 +242,6 @@ supported at this time.
     expect. If, for example, we had 2 accept log filters, each disjoint from the other,
     nothing will ever get logged on the given log object.
 
-Wiping Filters
-~~~~~~~~~~~~~~
-
-Filters created with ``filter.wipe`` function differently than the accept and
-reject filters. Instead of a rule, as described above for those filter types,
-the wiping filter simply lists the query parameter(s) whose values should be
-scrubbed before any logging occurs. This prevents sensitive information from
-being logged by fields which include the query string portion of the request
-URL. It can also be useful to remove things like cache-busting or
-inconsequentially variable parameters that might otherwise obfuscate the
-reporting from log analyzers.
-
-Multiple query parameters may be listed, separated by spaces, though only the
-first occurence of each will be wiped from the query string if any individual
-parameter appears more than once in the URL.
 
 .. _admin-custom-logs-logs:
 
@@ -268,28 +250,16 @@ Logs
 
 Up to this point, we've only described what events should be logged and what
 they should look like in the logging output. Now we define where those logs
-should be sent. Three options currently exist for the type of logging output,
-and each is selected by invoking the appropriate function. All three functions
-take a single Lua table as their argument, with the same set of key/value
-pairs.
+should be sent.
 
-log.ascii(table)
-    Creates an ASCII logging object.
+Three options currently exist for the type of logging output: ``ascii``,
+``binary``, and ``ascii_pipe``.  Which type of logging output you choose
+depends largely on how you intend to process the logs with other tools, and a
+discussion of the merits of each is covered elsewhere, in
+:ref:`admin-logging-ascii-v-binary`.
 
-log.binary(table)
-    Creates a binaryy logging object.
-
-log.pipe(table)
-    Creates a logging object that logs to a pipe.
-
-There is no need to capture the return values of these functions. Which type of
-logging output you choose depends largely on how you intend to process the logs
-with other tools, and a discussion of the merits of each is covered elsewhere,
-in :ref:`admin-logging-ascii-v-binary`.
-
-The following subsections cover the contents of the table which should be
-passed when creating your logging object. Only ``Filename`` and ``Format`` are
-required.
+The following subsections cover the attributes you should specify when creating
+your logging object. Only ``filename`` and ``format`` are required.
 
 ====================== =========== =================================================
 Name                   Type        Description
@@ -379,16 +349,8 @@ to be logged:
 
    filters:
    - name: refreshhitfilter
-     accept: pssc MATCH REFRESH_HIT
-
-The following is an example of a filter that will cause the value of the first
-query parameter named ``passwd`` to be wiped.
-
-.. code:: yaml
-
-   filters:
-   - name: passwdfilter
-     wipe: passwd
+     action: accept
+     condition: pssc MATCH REFRESH_HIT
 
 The following is an example of a log specification that creates a local log
 file for the minimal format defined earlier. The log filename will be
