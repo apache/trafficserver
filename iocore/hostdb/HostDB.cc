@@ -1558,14 +1558,13 @@ HostDBContinuation::iterateEvent(int event, Event *e)
       return EVENT_CONT;
     }
 
-    TSHashTable<RefCountCacheHashing> *partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
-    for (RefCountCachePartition<HostDBInfo>::iterator_type i = partMap->begin(); i != partMap->end(); ++i) {
-      HostDBInfo *r = (HostDBInfo *)i.m_value->item.get();
+    IntrusiveHashMap<RefCountCacheLinkage> &partMap = hostDB.refcountcache->get_partition(current_iterate_pos).get_map();
+    for (const auto &it : partMap) {
+      HostDBInfo *r = static_cast<HostDBInfo *>(it.item.get());
       if (r && !r->is_failed()) {
         action.continuation->handleEvent(EVENT_INTERVAL, static_cast<void *>(r));
       }
     }
-
     current_iterate_pos++;
     // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
     Debug("hostdb", "iterateEvent event=%d eventp=%p: completed current iteration %ld of %ld", event, e, current_iterate_pos,
