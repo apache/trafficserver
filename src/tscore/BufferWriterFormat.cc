@@ -965,12 +965,14 @@ namespace
 void
 BWF_Timestamp(ts::BufferWriter &w, ts::BWFSpec const &spec)
 {
-  // Unfortunately need to write to a temporary buffer or the sizing isn't correct if @a w is clipped
-  // because @c strftime returns 0 if the buffer isn't large enough.
-  char buff[32];
-  std::time_t t = std::time(nullptr);
-  auto n        = strftime(buff, sizeof(buff), "%Y %b %d %H:%M:%S", std::localtime(&t));
-  w.write(buff, n);
+  auto now   = std::chrono::system_clock::now();
+  auto epoch = std::chrono::system_clock::to_time_t(now);
+  ts::LocalBufferWriter<48> lw;
+
+  ctime_r(&epoch, lw.auxBuffer());
+  lw.fill(19); // clip trailing stuff, do not want.
+  lw.print(".{:03}", std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count() % 1000);
+  w.write(lw.view().substr(4));
 }
 
 void
