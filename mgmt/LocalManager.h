@@ -64,7 +64,7 @@ enum ManagementPendingOperation {
 class LocalManager : public BaseManager
 {
 public:
-  explicit LocalManager(bool proxy_on);
+  explicit LocalManager(bool proxy_on, bool listen);
   ~LocalManager();
 
   void initAlarm();
@@ -101,6 +101,7 @@ public:
   bool processRunning();
 
   bool run_proxy;
+  bool listen_for_proxy;
   bool proxy_recoverable = true; // false if traffic_server cannot recover with a reboot
   time_t manager_started_at;
   time_t proxy_started_at                              = -1;

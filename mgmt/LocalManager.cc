@@ -192,7 +192,7 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on)
+LocalManager::LocalManager(bool proxy_on, bool listen) : BaseManager(), run_proxy(proxy_on), listen_for_proxy(listen)
 {
   bool found;
   std::string rundir(RecConfigReadRuntimeDir());
@@ -980,7 +980,7 @@ LocalManager::closeProxyPorts()
 void
 LocalManager::listenForProxy()
 {
-  if (!run_proxy) {
+  if (!run_proxy || !listen_for_proxy) {
     return;
   }
 
