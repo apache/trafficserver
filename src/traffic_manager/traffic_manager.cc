@@ -84,6 +84,7 @@ static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024]  = "";
 static char action_tags[1024] = "";
 static int proxy_off          = false;
+static int listen_off         = false;
 static char bind_stdout[512]  = "";
 static char bind_stderr[512]  = "";
 
@@ -491,6 +492,7 @@ main(int argc, const char **argv)
 
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, nullptr, nullptr},
+    {"listenOff", '-', "Disable traffic manager listen to proxy ports", "F", &listen_off, nullptr, nullptr},
     {"path", '-', "Path to the management socket", "S*", &mgmt_path, nullptr, nullptr},
     {"recordsConf", '-', "Path to records.config", "S*", &recs_conf, nullptr, nullptr},
     {"tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, nullptr, nullptr},
@@ -572,7 +574,7 @@ main(int argc, const char **argv)
 #endif
   ts_host_res_global_init();
   ts_session_protocol_well_known_name_indices_init();
-  lmgmt = new LocalManager(proxy_off == false);
+  lmgmt = new LocalManager(proxy_off == false, listen_off == false);
   RecLocalInitMessage();
   lmgmt->initAlarm();
 
