@@ -126,7 +126,7 @@ struct UR_UpdateContinuation : public Continuation {
 bool
 reloadUrlRewrite()
 {
-  UrlRewrite *newTable;
+  UrlRewrite *newTable, *oldTable;
 
   Debug("url_rewrite", "remap.config updated, reloading...");
   newTable = new UrlRewrite();
@@ -136,7 +136,13 @@ reloadUrlRewrite()
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
 
-    ink_atomic_swap(&rewrite_table, newTable)->release(); // Swap configurations, and release the old one
+    // Swap configurations
+    oldTable = ink_atomic_swap(&rewrite_table, newTable);
+    if (oldTable != nullptr) {
+      // release the old one
+      oldTable->release();
+    }
+
     Debug("url_rewrite", "%s", msg);
     Note("%s", msg);
     return true;
