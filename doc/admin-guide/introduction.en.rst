@@ -30,102 +30,98 @@ nightmare for IT professionals as they struggle with overloaded servers
 and congested networks. It can be challenging to consistently and
 reliably accommodate society’s growing data demands.
 
-Traffic Server is a high-performance web proxy cache that improves
+|TS| is a high-performance web proxy cache that improves
 network efficiency and performance by caching frequently-accessed
 information at the edge of the network. This brings content physically
 closer to end users, while enabling faster delivery and reduced
-bandwidth use. Traffic Server is designed to improve content delivery
+bandwidth use. |TS| is designed to improve content delivery
 for enterprises, Internet service providers (ISPs), backbone providers,
 and large intranets by maximizing existing and available bandwidth.
 
-Traffic Server Deployment Options
-=================================
+|TS| Deployment Options
+=======================
 
-To best suit your needs, Traffic Server can be deployed in several ways:
+To best suit your needs, |TS| can be deployed in several ways:
 
 -  As a web proxy cache
 -  As a reverse proxy
 -  In a cache hierarchy
 
-The following sections provide a summary of these Traffic Server
+The following sections provide a summary of these |TS|
 deployment options.
 
-Traffic Server as a Web Proxy Cache
------------------------------------
+|TS| as a Web Proxy Cache
+-------------------------
 
-As a web proxy cache, Traffic Server receives user requests for web
+As a web proxy cache, |TS| receives user requests for web
 content as those requests travel to the destined web server (origin
-server). If Traffic Server contains the requested content, then it
+server). If |TS| contains the requested content, then it
 serves the content directly. If the requested content is not available
-from cache, then Traffic Server acts as a proxy: it obtains the content
+from cache, then |TS| acts as a proxy: it obtains the content
 from the origin server on the user’s behalf and also keeps a copy to
 satisfy future requests.
 
-Traffic Server provides explicit proxy caching, in which the user’s
+|TS| provides explicit proxy caching, in which the user’s
 client software must be configured to send requests directly to Traffic
 Server. Explicit proxy caching is described in the :ref:`explicit-proxy-caching`
 chapter.
 
-Traffic Server can also be employed as a transparent caching proxy server, in
+|TS| can also be employed as a transparent caching proxy server, in
 which the client software needs no special configuration or even knowledge of
 the proxy's existence. This setup is described in the :ref:`transparent-proxy`
 section.
 
-Traffic Server as a Reverse Proxy
----------------------------------
+|TS| as a Reverse Proxy
+-----------------------
 
-As a reverse proxy, Traffic Server is configured to be the origin server
+As a reverse proxy, |TS| is configured to be the origin server
 to which the user is trying to connect (typically, the origin server’s
-advertised hostname resolves to Traffic Server, which acts as the real
+advertised hostname resolves to |TS|, which acts as the real
 origin server). The reverse proxy feature is also called server
 acceleration. Reverse proxy is described in more detail in
 :ref:`reverse-proxy-and-http-redirects`.
 
-Traffic Server in a Cache Hierarchy
------------------------------------
+|TS| in a Cache Hierarchy
+-------------------------
 
-Traffic Server can participate in flexible cache hierarchies, in which
+|TS| can participate in flexible cache hierarchies, in which
 Internet requests not fulfilled from one cache are routed to other
 regional caches, thereby leveraging the contents and proximity of nearby
-caches. In a hierarchy of proxy servers, Traffic Server can act either
-as a parent or a child cache to other Traffic Server systems or to
+caches. In a hierarchy of proxy servers, |TS| can act either
+as a parent or a child cache to other |TS| systems or to
 similar caching products.
 
-Deployment Limitations
-----------------------
+|TS| as a Load Balancer
+-----------------------
 
-There are a number of deployment options that Traffic Server does not support
-right out of the box. Such functionality may be implemented in a plugin, but
-in some cases Traffic Server's internal APIs or architectural restrictions
-won't make it easy:
+|TS| can act as a layer 7 HTTP load balancer distributing requests across
+several servers. It can choose the next hop server using request attributes
+like the Host: header, URL attributes, scheme, method, and client IP address.
+It has a few selection strategies in place like weighted round robin, and
+URL consistent hashing.
 
-* Load Balancing - note that there is an experimental plugin for this,
-  :ref:`admin-plugins-balancer`.
+|TS| Components
+===============
 
-.. XXX needs re-work: the leadin states there's "a number" of scenarios, and then only lists one -- one's a number, but not much of a list
-
-Traffic Server Components
-=========================
-
-Traffic Server consists of several components that work together to form
+|TS| consists of several components that work together to form
 a web proxy cache you can easily monitor and configure.
 
-The Traffic Server Cache
-------------------------
+The |TS| Cache
+--------------
 
-The Traffic Server cache consists of a high-speed object database called
+The |TS| cache consists of a high-speed object database called
 the *object store*. The object store indexes objects according to URLs and
 associated headers. Using sophisticated object management, the object
 store can cache alternate versions of the same object (perhaps in a
 different language or encoding type). It can also efficiently store very
 small and very large objects, thereby minimizing wasted space. When the
-cache is full, Traffic Server removes stale data to ensure that the most
+cache is full, |TS| removes stale data to ensure that the most
 requested objects are readily available and fresh.
 
-Traffic Server is designed to tolerate total disk failures on any of the
-cache disks. If the disk fails completely, then Traffic Server marks the
+|TS| is designed to tolerate total disk failures on any of the
+cache disks. If the disk fails completely, then |TS| marks the
 entire disk as corrupt and continues to use remaining disks. If all of
-the cache disks fail, then Traffic Server switches to proxy-only mode.
+the cache disks fail, then |TS| switches to proxy-only mode.
 You can partition the cache to reserve a certain amount of disk space
 for storing data for specific protocols and origin servers. For more
 information about the cache, see :ref:`http-proxy-caching`.
@@ -133,7 +129,7 @@ information about the cache, see :ref:`http-proxy-caching`.
 The RAM Cache
 -------------
 
-Traffic Server maintains a small RAM cache that contains extremely
+|TS| maintains a small RAM cache that contains extremely
 popular objects. This RAM cache serves the most popular objects as fast
 as possible and reduces load on disks, especially during temporary
 traffic peaks. You can configure the RAM cache size to suit your needs.
@@ -142,8 +138,8 @@ For detailed information, refer to :ref:`changing-the-size-of-the-ram-cache`.
 The Host Database
 -----------------
 
-The Traffic Server host database stores the domain name server (DNS)
-entries of origin servers to which Traffic Server connects to fulfill
+The |TS| host database stores the domain name server (DNS)
+entries of origin servers to which |TS| connects to fulfill
 user requests. This information is used to adapt future protocol
 interactions and optimize performance. Along with other information, the
 host database tracks:
@@ -159,26 +155,26 @@ host database tracks:
 The DNS Resolver
 ----------------
 
-Traffic Server includes a fast, asynchronous DNS resolver to streamline
-conversion of hostnames to IP addresses. Traffic Server implements the
+|TS| includes a fast, asynchronous DNS resolver to streamline
+conversion of hostnames to IP addresses. |TS| implements the
 DNS resolver natively by directly issuing DNS command packets rather
 than relying on slower, conventional resolver libraries. Since many DNS
 queries can be issued in parallel and a fast DNS cache maintains popular
 bindings in memory, DNS traffic is reduced.
 
-Traffic Server Processes
-------------------------
+|TS| Processes
+--------------
 
-Traffic Server contains three processes that work together to serve
+|TS| contains three processes that work together to serve
 requests and manage, control, and monitor the health of the system.
 
 -  The :program:`traffic_server` process is the transaction processing engine
-   of Traffic Server. It is responsible for accepting connections,
+   of |TS|. It is responsible for accepting connections,
    processing protocol requests, and serving documents from the cache or
    origin server.
 
 -  The :program:`traffic_manager` process is the command and control facility
-   of the Traffic Server, responsible for launching, monitoring, and
+   of the |TS|, responsible for launching, monitoring, and
    reconfiguring the :program:`traffic_server` process. The :program:`traffic_manager`
    process is also responsible for the proxy autoconfiguration port, the
    statistics interface, and virtual IP failover.
@@ -191,51 +187,51 @@ requests and manage, control, and monitor the health of the system.
    first-served order. This connection queueing shields users from any
    server restart downtime.
 
-The figure below illustrates the Traffic Server processes.
+The figure below illustrates the |TS| processes.
 
 .. figure:: ../static/images/admin/process.jpg
    :align: center
-   :alt: Illustration of the Traffic Server Processes
+   :alt: Illustration of the |TS| Processes
 
-   Illustration of the Traffic Server Processes
+   Illustration of the |TS| Processes
 
 Administration Tools
 --------------------
 
-Traffic Server offers the following administration options:
+|TS| offers the following administration options:
 
 -  The :program:`traffic_ctl` command-line interface is a
-   text-based interface from which you can monitor Traffic Server performance
-   and network traffic, as well as configure the Traffic Server system.
+   text-based interface from which you can monitor |TS| performance
+   and network traffic, as well as configure the |TS| system.
 
--  Various configuration files enable you to configure Traffic Server
+-  Various configuration files enable you to configure |TS|
    through a simple file-editing and signal-handling interface. Any
    changes you make through :program:`traffic_ctl` are
    automatically made to the configuration files as well.
 
 -  Finally, there is a clean C API which can be put to good use from a
-   multitude of languages. The Traffic Server Admin Client demonstrates
+   multitude of languages. The |TS| Admin Client demonstrates
    this for Perl.
 
 Traffic Analysis Options
 ========================
 
-Traffic Server provides several options for network traffic analysis and
+|TS| provides several options for network traffic analysis and
 monitoring:
 
 -  :program:`traffic_ctl` enables you to collect and process
    statistics obtained from network traffic information.
 
 -  Transaction logging enables you to record information (in a log file)
-   about every request Traffic Server receives and every error it
+   about every request |TS| receives and every error it
    detects. By analyzing the log files, you can determine how many
-   clients used the Traffic Server cache, how much information each of
+   clients used the |TS| cache, how much information each of
    them requested, and what pages were most popular. You can also see
    why a particular transaction was in error and what state the Traffic
    Server was in at a particular time. For example, you can see that
-   Traffic Server was restarted.
+   |TS| was restarted.
 
-   Traffic Server supports several standard log file formats, such as
+   |TS| supports several standard log file formats, such as
    Squid and Netscape, and its own custom format. You can analyze the
    standard format log files with off-the-shelf analysis packages. To
    help with log file analysis, you can separate log files so that they
@@ -244,37 +240,37 @@ monitoring:
 |TS| event and error logging, monitoring, and analysis is covered in greater
 detail in :ref:`admin-monitoring`.
 
-Traffic Server Security Options
-===============================
+|TS| Security Options
+=====================
 
-Traffic Server provides numerous options that enable you to establish
-secure communication between the Traffic Server system and other
+|TS| provides numerous options that enable you to establish
+secure communication between the |TS| system and other
 computers on the network. Using the security options, you can do the
 following:
 
--  Control client access to the Traffic Server proxy cache.
+-  Control client access to the |TS| proxy cache.
 
--  Configure Traffic Server to use multiple DNS servers to match your
-   site's security configuration. For example, Traffic Server can use
+-  Configure |TS| to use multiple DNS servers to match your
+   site's security configuration. For example, |TS| can use
    different DNS servers, depending on whether it needs to resolve
    hostnames located inside or outside a firewall. This enables you to
    keep your internal network configuration secure while continuing to
    provide transparent access to external sites on the Internet.
 
--  Configure Traffic Server to verify that clients are authenticated
-   before they can access content from the Traffic Server cache.
+-  Configure |TS| to verify that clients are authenticated
+   before they can access content from the |TS| cache.
 
 -  Secure connections in reverse proxy mode between a client and Traffic
-   Server, and Traffic Server and the origin server, using the SSL
+   Server, and |TS| and the origin server, using the SSL
    termination option.
 
 -  Control access via SSL (Secure Sockets Layer).
 
-Traffic Server security options are described in more detail in
+|TS| security options are described in more detail in
 :ref:`admin-security`.
 
-Tuning Traffic Server
-=====================
+Tuning |TS|
+===========
 
 Finally, this last chapter on :ref:`performance-tuning` discusses the vast
 number of options that allow administrators to optimally tune Apache Traffic
