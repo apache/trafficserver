@@ -106,7 +106,6 @@ struct SSLConfigParams : public ConfigInfo {
   static size_t session_cache_number_buckets;
   static size_t session_cache_max_bucket_size;
   static bool session_cache_skip_on_lock_contention;
-  static bool sni_map_enable;
 
   // TS-3435 Wiretracing for SSL Connections
   static int ssl_wire_trace_enabled;

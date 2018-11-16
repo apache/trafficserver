@@ -30,6 +30,7 @@
 #include "SSLSessionCache.h"
 #include "InkAPIInternal.h"
 #include "SSLDynlock.h"
+#include "P_SSLSNI.h"
 
 #include <string>
 #include <openssl/err.h>
@@ -45,7 +46,6 @@
 #include <unistd.h>
 #include <termios.h>
 #include <vector>
-#include "P_SNIActionPerformer.h"
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -88,7 +88,6 @@
 #endif
 #endif
 
-TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
 /*
  * struct ssl_user_config: gather user provided settings from ssl_multicert.config in to this single struct
  * ssl_ticket_enabled - session ticket enabled
@@ -446,10 +445,27 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   return retval;
 }
 
+static int
+PerformAction(Continuation *cont, const char *servername)
+{
+  SNIConfig::scoped_config params;
+  const actionVector *actionvec = params->get(servername);
+  if (!actionvec) {
+    Debug("ssl_sni", "%s not available in the map", servername);
+  } else {
+    for (auto &&item : *actionvec) {
+      auto ret = item->SNIAction(cont);
+      if (ret != SSL_TLSEXT_ERR_OK) {
+        return ret;
+      }
+    }
+  }
+  return SSL_TLSEXT_ERR_OK;
+}
+
 /*
  * Cannot stop this callback. Always reeneabled
  */
-extern SNIActionPerformer sni_action_performer;
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
@@ -458,7 +474,7 @@ ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   Debug("ssl", "Requested servername is %s", servername);
   if (servername != nullptr) {
-    ret = sni_action_performer.PerformAction(netvc, servername);
+    ret = PerformAction(netvc, servername);
   }
   if (ret != SSL_TLSEXT_ERR_OK)
     return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -1579,6 +1595,10 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
     server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE;
   } else if (certLevel == 1) {
     server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE;
+  } else if (certLevel == 0) {
+    server_verify_client = SSL_VERIFY_NONE;
+  } else {
+    ink_release_assert(!"Invalid client verify level");
   }
 
   Debug("ssl", "setting cert level to %d", server_verify_client);

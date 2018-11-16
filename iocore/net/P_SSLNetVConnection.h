@@ -178,12 +178,6 @@ public:
     return transparentPassThrough;
   }
 
-  bool
-  GetSNIMapping()
-  {
-    return SNIMapping;
-  }
-
   void
   setTransparentPassThrough(bool val)
   {
@@ -318,6 +312,40 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
+  bool
+  has_tunnel_destination() const
+  {
+    return tunnel_host != nullptr;
+  }
+
+  const char *
+  get_tunnel_host() const
+  {
+    return tunnel_host;
+  }
+
+  ushort
+  get_tunnel_port() const
+  {
+    return tunnel_port;
+  }
+
+  void
+  set_tunnel_destination(const std::string_view &destination)
+  {
+    auto pos = destination.find(":");
+    if (nullptr != tunnel_host) {
+      ats_free(tunnel_host);
+    }
+    if (pos != std::string::npos) {
+      tunnel_port = std::stoi(destination.substr(pos + 1).data());
+      tunnel_host = ats_strndup(destination.substr(0, pos).data(), pos);
+    } else {
+      tunnel_port = 0;
+      tunnel_host = ats_strndup(destination.data(), destination.length());
+    }
+  }
+
   int populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
 
@@ -378,8 +406,9 @@ private:
   Continuation *npnEndpoint        = nullptr;
   SessionAccept *sessionAcceptPtr  = nullptr;
   bool sslTrace                    = false;
-  bool SNIMapping                  = false;
   int64_t redoWriteSize            = 0;
+  char *tunnel_host                = nullptr;
+  in_port_t tunnel_port            = 0;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

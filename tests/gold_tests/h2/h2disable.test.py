@@ -63,8 +63,8 @@ ts.Disk.records_config.update({
 ts.Disk.ssl_server_name_yaml.AddLines([
   '- fqdn: bar.com',
   '  disable_h2: true',
-#  '- fqdn: bob.*.com',
-#  '  disable_h2: true',
+  '- fqdn: bob.*.com',
+  '  disable_h2: true',
 ])
 
 tr = Test.AddTestRun("Negotiate-h2")
@@ -89,14 +89,14 @@ tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connec
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Using HTTP2", "Curl should not negotiate HTTP2")
 tr2.TimeOut = 5
 
-#tr2 = Test.AddTestRun("Do not negotiate h2")
-#tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port)
-#tr2.ReturnCode = 0
-#tr2.StillRunningAfter = server
-#tr2.Processes.Default.TimeOut = 5
-#tr2.StillRunningAfter = ts
-#tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-#tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Using HTTP2", "Curl should not negotiate HTTP2")
-#tr2.TimeOut = 5
+tr2 = Test.AddTestRun("Do not negotiate h2")
+tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port)
+tr2.ReturnCode = 0
+tr2.StillRunningAfter = server
+tr2.Processes.Default.TimeOut = 5
+tr2.StillRunningAfter = ts
+tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Using HTTP2", "Curl should not negotiate HTTP2")
+tr2.TimeOut = 5
 
 

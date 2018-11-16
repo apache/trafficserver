@@ -54,15 +54,15 @@ ts.addSSLfile("ssl/signer.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
+    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server_foo.Variables.Port, ts.Variables.ssl_port))
+ts.Disk.remap_config.AddLine(
+    'map https://bob.foo.com:{1}/ https://127.0.0.1:{0}'.format(server_foo.Variables.Port, ts.Variables.ssl_port))
+ts.Disk.remap_config.AddLine(
+    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.Port, ts.Variables.ssl_port))
+ts.Disk.remap_config.AddLine(
+    'map https://bob.bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.Port,ts.Variables.ssl_port))
+ts.Disk.remap_config.AddLine(
     'map / https://127.0.0.1:{0}'.format(server.Variables.Port))
-ts.Disk.remap_config.AddLine(
-    'map https://foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.Port))
-ts.Disk.remap_config.AddLine(
-    'map https://bad_foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.Port))
-ts.Disk.remap_config.AddLine(
-    'map https://bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.Port))
-ts.Disk.remap_config.AddLine(
-    'map https://bad_bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.Port))
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
@@ -71,8 +71,8 @@ ts.Disk.ssl_multicert_config.AddLine(
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl',
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'ssl|http|url',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
@@ -80,29 +80,30 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     # set global policy
     'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
+    'proxy.config.ssl.client.verify.server.properties': 'ALL',
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
 ts.Disk.ssl_server_name_yaml.AddLines([
-  '- fqdn: bar.com',
+  '- fqdn: bob.bar.com',
   '  verify_server_policy: ENFORCED',
   '  verify_server_properties: ALL',
-  '- fqdn: bad_bar.com',
+  '- fqdn: bob.*.com',
   '  verify_server_policy: ENFORCED',
-  '  verify_server_properties: ALL'
+  '  verify_server_properties: SIGNATURE',
+  "- fqdn: '*bar.com'",
+  '  verify_server_policy: DISABLED',
 ])
 
-tr = Test.AddTestRun("Permissive-Test")
+tr = Test.AddTestRun("foo.com Permissive-Test")
 tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.Processes.Default.Command = "curl -v -k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(server)
@@ -113,23 +114,34 @@ tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.TimeOut = 5
 
-tr2 = Test.AddTestRun("Override-enforcing-Test")
-tr2.Processes.Default.Command = "curl -v -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr2 = Test.AddTestRun("bob.bar.com Override-enforcing-Test")
+tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5
 tr2.StillRunningAfter = ts
-tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.TimeOut = 5
 
-tr3 = Test.AddTestRun("Override-enforcing-Test-fail-name-check")
-tr3.Processes.Default.Command = "curl -v -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
-tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
+tr3 = Test.AddTestRun("bob.foo.com override-enforcing-name-test")
+tr3.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/".format(ts.Variables.ssl_port)
+tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should not fail")
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
 tr3.Processes.Default.TimeOut = 5
+tr3.TimeOut = 5
+
+tr3 = Test.AddTestRun("random.bar.com override-no-test")
+tr3.Processes.Default.Command = "curl -v -k --resolve 'random.bar.com:{0}:127.0.0.1' https://random.bar.com:{0}".format(ts.Variables.ssl_port)
+tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should not fail")
+tr3.ReturnCode = 0
+tr3.StillRunningAfter = server
+tr3.StillRunningAfter = ts
+tr3.Processes.Default.TimeOut = 5
+tr3.TimeOut = 5
+
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bad_bar.com\) not in certificate", "Make sure bad_bar name checked failed.")
+ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed.")
