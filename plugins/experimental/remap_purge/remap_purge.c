@@ -105,10 +105,10 @@ delete_purge_instance(PurgeInstance *purge)
   }
 }
 
-/* This is where we start the PURGE events, setting up the transactino to fail,
+/* This is where we start the PURGE events, setting up the transaction to fail,
    and bump the generation ID, and finally save the state. */
-static int
-on_http_cache_lookup_complete(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
+static void
+update_purge_state(PurgeInstance *purge)
 {
   FILE *file;
 
@@ -126,14 +126,11 @@ on_http_cache_lookup_complete(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge
   }
 
   TSMutexUnlock(purge->lock);
-
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-  return TS_SUCCESS;
 }
 
 /* Before we can send the response, we want to modify it to a "200 OK" again,
    and produce some reasonable body output. */
-static int
+static TSReturnCode
 on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
 {
   TSMBuffer bufp;
@@ -153,6 +150,7 @@ on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
   } else {
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
   }
+  TSContDestroy(contp);
 
   return TS_SUCCESS;
 }
@@ -168,10 +166,6 @@ purge_cont(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     return on_send_response_header(txnp, contp, purge);
-    break;
-
-  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    return on_http_cache_lookup_complete(txnp, contp, purge);
     break;
 
   default:
@@ -219,11 +213,13 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
           if (path && (path_len >= purge->secret_len)) {
             int s_path = path_len - 1;
 
-            while ((s_path >= 0) && ('/' != path[s_path])) { /* No memrchr in OSX */
+            /* Find the last /, essentially memrchr (which does not exist on macOS) */
+            while ((s_path >= 0) && ('/' != path[s_path])) {
               --s_path;
             }
 
-            if (!memcmp(s_path > 0 ? path + s_path + 1 : path, purge->secret, purge->secret_len)) {
+            if (((path_len - s_path - 1) == purge->secret_len) &&
+                !memcmp(s_path > 0 ? path + s_path + 1 : path, purge->secret, purge->secret_len)) {
               should_purge = true;
             }
           }
@@ -238,10 +234,12 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
   if (should_purge) {
     TSCont cont = TSContCreate(purge_cont, TSMutexCreate());
 
+    TSDebug(PLUGIN_NAME, "Setting up continuation for PURGE operation");
     TSContDataSet(cont, purge);
-    TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
+    update_purge_state(purge);
   } else if (purge->gen_id > 0) {
+    TSDebug(PLUGIN_NAME, "Setting request gen_id to %" PRId64, purge->gen_id);
     TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_GENERATION, purge->gen_id);
   }
 }
