@@ -35,56 +35,49 @@
 #include "P_SSLConfig.h"
 #include "tscore/ink_memory.h"
 #include "tscpp/util/TextView.h"
+#include <sstream>
+#include <pcre.h>
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
 std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
-extern TunnelHashMap TunnelMap;
 NextHopProperty::NextHopProperty() {}
 
-NextHopProperty *
-SNIConfigParams::getPropertyConfig(const char *servername) const
+const NextHopProperty *
+SNIConfigParams::getPropertyConfig(const std::string &servername) const
 {
-  if (auto it = next_hop_table.find(servername); it != next_hop_table.end()) {
-    return it->second;
+  const NextHopProperty *nps = nullptr;
+  for (auto &&item : next_hop_list) {
+    if (pcre_exec(item.match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
+      // Found a match
+      nps = &item.prop;
+      break;
+    }
   }
-  if (auto it = wild_next_hop_table.find(servername); it != wild_next_hop_table.end()) {
-    return it->second;
-  }
-  return nullptr;
+  return nps;
 }
 
 void
 SNIConfigParams::loadSNIConfig()
 {
-  for (const auto &item : Y_sni.items) {
-    actionVector *aiVec = new actionVector();
+  for (auto &item : Y_sni.items) {
+    auto ai = sni_action_list.emplace(sni_action_list.end());
+    ai->setGlobName(item.fqdn);
     Debug("ssl", "name: %s", item.fqdn.data());
-    const char *servername = item.fqdn.data();
-    ats_wildcard_matcher w_Matcher;
-    auto wildcard = w_Matcher.match(servername);
 
     // set SNI based actions to be called in the ssl_servername_only callback
-    auto ai1 = new DisableH2();
-    aiVec->push_back(ai1);
-    auto ai2 = new VerifyClient(item.verify_client_level);
-    aiVec->push_back(ai2);
-    if (wildcard) {
-      ts::TextView domain{servername, strlen(servername)};
-      domain.take_prefix_at('.');
-      if (!domain.empty()) {
-        wild_sni_action_map.emplace(domain, aiVec);
-      }
-    } else {
-      sni_action_map.emplace(servername, aiVec);
+    if (item.disable_h2) {
+      ai->actions.push_back(std::make_unique<DisableH2>());
+    }
+    if (item.verify_client_level != 255) {
+      ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level));
+    }
+    if (item.tunnel_destination.length() > 0) {
+      ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination));
     }
 
-    if (item.tunnel_destination.length()) {
-      TunnelMap.emplace(item.fqdn, item.tunnel_destination);
-    }
+    ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
 
-    auto ai3 = new SNI_IpAllow(item.ip_allow, servername);
-    aiVec->push_back(ai3);
     // set the next hop properties
     SSLConfig::scoped_config params;
     auto clientCTX       = params->getClientSSL_CTX();
@@ -93,19 +86,12 @@ SNIConfigParams::loadSNIConfig()
     if (certFile) {
       clientCTX = params->getNewCTX(certFile, keyFile);
     }
-    if (servername) { // a safety check
-      NextHopProperty *nps = new NextHopProperty();
 
-      nps->name                   = ats_strdup(servername);
-      nps->verifyServerPolicy     = item.verify_server_policy;
-      nps->verifyServerProperties = item.verify_server_properties;
-      nps->ctx                    = clientCTX;
-      if (wildcard) {
-        wild_next_hop_table.emplace(nps->name, nps);
-      } else {
-        next_hop_table.emplace(nps->name, nps);
-      }
-    }
+    auto nps = next_hop_list.emplace(next_hop_list.end());
+    nps->setGlobName(item.fqdn);
+    nps->prop.verifyServerPolicy     = item.verify_server_policy;
+    nps->prop.verifyServerProperties = item.verify_server_properties;
+    nps->prop.ctx                    = clientCTX;
   } // end for
 }
 
@@ -113,29 +99,15 @@ int SNIConfig::configid = 0;
 /*definition of member functions of SNIConfigParams*/
 SNIConfigParams::SNIConfigParams() {}
 
-actionVector *
-SNIConfigParams::get(const char *servername) const
+const actionVector *
+SNIConfigParams::get(const std::string &servername) const
 {
-  auto action_it = sni_action_map.find(servername);
-  if (action_it != sni_action_map.end()) {
-    for (const auto &it : wild_sni_action_map) {
-      std::string_view sv{servername};
-      std::string_view key_sv{it.first};
-      if (sv.size() >= key_sv.size() && sv.substr(sv.size() - key_sv.size()) == key_sv) {
-        auto wild_action_it = wild_sni_action_map.find(key_sv.data());
-        return wild_action_it != wild_sni_action_map.end() ? wild_action_it->second : nullptr;
-      }
+  for (auto retval = sni_action_list.begin(); retval != sni_action_list.end(); ++retval) {
+    if (pcre_exec(retval->match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
+      return &retval->actions;
     }
   }
-  return action_it != sni_action_map.end() ? action_it->second : nullptr;
-}
-
-void
-SNIConfigParams::printSNImap() const
-{
-  for (const auto &it : sni_action_map) {
-    Debug("ssl", "Domain name in the map %s: # of registered action items %lu", it.first.c_str(), it.second->size());
-  }
+  return nullptr;
 }
 
 int
@@ -166,34 +138,9 @@ SNIConfigParams::Initialize()
   return 0;
 }
 
-void
-SNIConfigParams::cleanup()
-{
-  for (const auto &it : sni_action_map) {
-    auto actionVec = it.second;
-    for (const auto &ai : *actionVec) {
-      delete ai;
-    }
-    delete actionVec;
-  }
-  for (const auto &it : wild_sni_action_map) {
-    auto actionVec = it.second;
-    for (const auto &ai : *actionVec) {
-      delete ai;
-    }
-    delete actionVec;
-  }
-  for (const auto &it : next_hop_table) {
-    delete it.second;
-  }
-  for (const auto &it : wild_next_hop_table) {
-    delete it.second;
-  }
-}
-
 SNIConfigParams::~SNIConfigParams()
 {
-  cleanup();
+  // sni_action_list and next_hop_list should cleanup with the params object
 }
 
 /*definition of member functions of SNIConfig*/

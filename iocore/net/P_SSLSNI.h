@@ -42,32 +42,73 @@
 
 // Properties for the next hop server
 struct NextHopProperty {
-  const char *name                               = nullptr;                         // name of the server
+  std::string name;                                                                 // name of the server
   YamlSNIConfig::Policy verifyServerPolicy       = YamlSNIConfig::Policy::DISABLED; // whether to verify the next hop
   YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::NONE;   // what to verify on the next hop
   SSL_CTX *ctx                                   = nullptr; // ctx generated off the certificate to present to this server
   NextHopProperty();
 };
 
-using actionVector         = std::vector<ActionItem *>;
-using SNIMap               = std::unordered_map<std::string, actionVector *>;
-using NextHopPropertyTable = std::unordered_map<std::string, NextHopProperty *>;
+using actionVector = std::vector<std::unique_ptr<ActionItem>>;
+
+struct namedElement {
+public:
+  namedElement() {}
+
+  void
+  setGlobName(std::string name)
+  {
+    std::string::size_type pos = 0;
+    while ((pos = name.find(".", pos)) != std::string::npos) {
+      name.replace(pos, 1, "\\.");
+      pos += 2;
+    }
+    pos = 0;
+    while ((pos = name.find("*", pos)) != std::string::npos) {
+      name.replace(pos, 1, ".{0,}");
+    }
+    Debug("ssl_sni", "Regexed fqdn=%s", name.c_str());
+    setRegexName(name);
+  }
+
+  void
+  setRegexName(const std::string &regexName)
+  {
+    const char *err_ptr;
+    int err_offset = 0;
+    match          = pcre_compile(regexName.c_str(), 0, &err_ptr, &err_offset, nullptr);
+  }
+
+  pcre *match = nullptr;
+};
+
+struct actionElement : public namedElement {
+public:
+  actionVector actions;
+};
+
+struct NextHopItem : public namedElement {
+public:
+  NextHopProperty prop;
+};
+
+// typedef HashMap<cchar *, StringHashFns, actionVector *> SNIMap;
+typedef std::vector<actionElement> SNIList;
+// typedef HashMap<cchar *, StringHashFns, NextHopProperty *> NextHopPropertyTable;
+typedef std::vector<NextHopItem> NextHopPropertyList;
 
 struct SNIConfigParams : public ConfigInfo {
   char *sni_filename = nullptr;
-  SNIMap sni_action_map;
-  SNIMap wild_sni_action_map;
-  NextHopPropertyTable next_hop_table;
-  NextHopPropertyTable wild_next_hop_table;
+  SNIList sni_action_list;
+  NextHopPropertyList next_hop_list;
   YamlSNIConfig Y_sni;
-  NextHopProperty *getPropertyConfig(const char *servername) const;
+  const NextHopProperty *getPropertyConfig(const std::string &servername) const;
   SNIConfigParams();
   ~SNIConfigParams() override;
   void cleanup();
   int Initialize();
   void loadSNIConfig();
-  actionVector *get(const char *servername) const;
-  void printSNImap() const;
+  const actionVector *get(const std::string &servername) const;
 };
 
 struct SNIConfig {

@@ -57,7 +57,6 @@ bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
-bool SSLConfigParams::sni_map_enable                        = false;
 
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled       = 0;
@@ -436,9 +435,6 @@ SSLConfigParams::initialize()
   ats_free(ssl_client_ca_cert_filename);
 
   REC_ReadConfigStringAlloc(client_groups_list, "proxy.config.ssl.client.groups_list");
-
-  // Enable/disable sni mapping
-  REC_ReadConfigInteger(sni_map_enable, "proxy.config.ssl.sni.map.enable");
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 

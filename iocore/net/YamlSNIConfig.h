@@ -58,7 +58,7 @@ struct YamlSNIConfig {
   struct Item {
     std::string fqdn;
     bool disable_h2             = false;
-    uint8_t verify_client_level = 0;
+    uint8_t verify_client_level = 255;
     std::string tunnel_destination;
     Policy verify_server_policy       = Policy::DISABLED;
     Property verify_server_properties = Property::NONE;
