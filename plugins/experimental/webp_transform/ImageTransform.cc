@@ -92,7 +92,12 @@ public:
   {
     string ctype      = transaction.getServerResponse().getHeaders().values("Content-Type");
     string user_agent = transaction.getServerRequest().getHeaders().values("User-Agent");
-    if (user_agent.find("Chrome") != string::npos && (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
+    string accept     = transaction.getServerRequest().getHeaders().values("Accept");
+
+    bool webp_supported = accept.find("image/webp") != string::npos || user_agent.find("Chrome") != string::npos;
+    bool image_format   = ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos;
+
+    if (webp_supported && image_format) {
       TS_DEBUG(TAG, "Content type is either jpeg or png. Converting to webp");
       transaction.addPlugin(new ImageTransform(transaction));
     }
