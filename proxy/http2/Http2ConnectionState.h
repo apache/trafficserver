@@ -154,15 +154,18 @@ public:
   {
     cleanup_streams();
 
-    mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
     delete local_hpack_handle;
+    local_hpack_handle = nullptr;
     delete remote_hpack_handle;
+    remote_hpack_handle = nullptr;
     delete dependency_tree;
+    dependency_tree  = nullptr;
     this->ua_session = nullptr;
 
     if (fini_event) {
       fini_event->cancel();
     }
+    mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
   }
 
   // Event handlers
