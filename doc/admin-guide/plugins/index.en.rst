@@ -160,7 +160,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Signed URLs <url_sig.en>
    SSL Headers <sslheaders.en>
    SSL Session Reuse <ssl_session_reuse.en>
-   Stale While Revalidate <stale_while_revalidate.en>
    System Statistics <system_stats.en>
    Traffic Dump <traffic_dump.en>
    WebP Transform <webp_transform.en>
@@ -227,11 +226,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`SSL Headers <sslheaders.en>`
    Populate request headers with SSL session information.
-
-:doc:`Stale While Revalidate <stale_while_revalidate.en>`
-   :deprecated:
-
-   Refresh content asynchronously while serving stale data.
 
 :doc:`System Stats <system_stats.en>`
     Inserts system statistics in to the stats list
