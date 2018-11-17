@@ -59,6 +59,17 @@ X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
 0
 
 ======
+HTTP/1.1 404 Not Found
+Server: ATS/``
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: keep-alive
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+0
+
+======
 HTTP/1.1 200 OK
 Date: ``
 Age: ``
