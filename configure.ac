@@ -1168,6 +1168,11 @@ CFLAGS="$__saved_CFLAGS"
 AC_SUBST([CURSES_LDFLAGS],[$curses_ldflags])
 
 #
+# Check for -latomic need (at least for mips arch)
+TS_CHECK_ATOMIC
+TS_ADDTO([LDFLAGS], [$ATOMIC_LIBS])
+
+#
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
 
