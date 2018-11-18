@@ -36,6 +36,8 @@ Changes with Apache Traffic Server 7.1.5
   #4483 - Fixes more leaks when no OCSP URL is available
   #4498 - Fixes plugin builds using tsxs on MacOS
   #4507 - Handle inactivity timeout event in state_http_server_open
+  #4534 - Fix logging log file roll issue (#2544).
   #4537 - Make sure ua_session is not nullptr
   #4543 - Fixes memory leaks in header_rewrite
   #4565 - Doc: Describe parent weight and format
+  #4617 - Release the mutex after the events are cancelled
