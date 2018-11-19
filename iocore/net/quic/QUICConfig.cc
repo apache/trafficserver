@@ -468,6 +468,8 @@ QUICConfig::reconfigure()
   // re-read configuration
   params->initialize();
   _config_id = configProcessor.set(_config_id, params);
+
+  QUICConnectionId::SCID_LEN = params->scid_len();
 }
 
 QUICConfigParams *

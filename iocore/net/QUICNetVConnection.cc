@@ -1765,7 +1765,8 @@ QUICNetVConnection::_switch_to_established_state()
 
     if (netvc_context == NET_VCONNECTION_IN || (netvc_context == NET_VCONNECTION_OUT && params->cm_exercise_enabled() &&
                                                 !remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION))) {
-      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id);
+      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
+                                                            params->instance_id(), params->num_alt_connection_ids());
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
   } else {

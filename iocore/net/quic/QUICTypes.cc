@@ -24,7 +24,8 @@
 #include <algorithm>
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
-#include "QUICConfig.h"
+
+uint8_t QUICConnectionId::SCID_LEN = 0;
 
 // TODO: move to somewhere in lib/ts/
 static int
@@ -360,13 +361,13 @@ QUICConnectionId::randomize()
 {
   std::random_device rnd;
   uint32_t x;
-  for (int i = QUICConfigParams::scid_len(); i >= 0; --i) {
+  for (int i = QUICConnectionId::SCID_LEN; i >= 0; --i) {
     if (i % 4 == 0) {
       x = rnd();
     }
     this->_id[i] = (x >> (8 * (i % 4))) & 0xFF;
   }
-  this->_len = QUICConfigParams::scid_len();
+  this->_len = QUICConnectionId::SCID_LEN;
 }
 
 uint64_t
@@ -466,7 +467,7 @@ QUICInvariants::dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
     dcid_offset = QUICInvariants::LH_DCID_OFFSET;
   } else {
     // remote dcil is local scil
-    dcid_len    = QUICConfigParams::scid_len();
+    dcid_len    = QUICConnectionId::SCID_LEN;
     dcid_offset = QUICInvariants::SH_DCID_OFFSET;
   }
 

@@ -25,7 +25,6 @@
 
 #include "QUICApplication.h"
 #include "QUICTransportParameters.h"
-#include "QUICConfig.h"
 
 static constexpr char tag[] = "quic_stream_manager";
 

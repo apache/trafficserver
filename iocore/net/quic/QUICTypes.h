@@ -220,6 +220,8 @@ using QUICStreamErrorUPtr     = std::unique_ptr<QUICStreamError>;
 class QUICConnectionId
 {
 public:
+  static uint8_t SCID_LEN;
+
   static const int MAX_LENGTH            = 18;
   static const size_t MAX_HEX_STR_LENGTH = MAX_LENGTH * 2 + 1;
   static QUICConnectionId ZERO();

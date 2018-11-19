@@ -24,7 +24,6 @@
 #include "QUICPacketReceiveQueue.h"
 
 #include "QUICIntUtil.h"
-#include "QUICConfig.h"
 
 // FIXME: workaround for coalescing packets
 static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;

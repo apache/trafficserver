@@ -35,7 +35,8 @@ class QUICConnectionTable;
 class QUICAltConnectionManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid);
+  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid, uint32_t instance_id,
+                           uint8_t num_alt_con);
   ~QUICAltConnectionManager();
 
   /**
@@ -89,6 +90,7 @@ private:
   AltConnectionInfo *_alt_quic_connection_ids_local;
   std::vector<AltConnectionInfo> _alt_quic_connection_ids_remote;
   std::queue<uint64_t> _retired_seq_nums;
+  uint32_t _instance_id                    = 0;
   uint8_t _nids                            = 0;
   uint64_t _alt_quic_connection_id_seq_num = 0;
   bool _need_advertise                     = false;

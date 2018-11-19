@@ -23,25 +23,22 @@
 
 #include "QUICAltConnectionManager.h"
 #include "QUICConnectionTable.h"
-#include "QUICConfig.h"
 
 static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 
 #define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
-                                                   QUICConnectionId peer_initial_cid)
-  : _qc(qc), _ctable(ctable)
+                                                   QUICConnectionId peer_initial_cid, uint32_t instance_id, uint8_t num_alt_con)
+  : _qc(qc), _ctable(ctable), _instance_id(instance_id)
 {
-  QUICConfig::scoped_config params;
-
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
 
   // TODO If preferred_address was provided, sequence number of the provided CID is 1
 
   if (this->_qc->direction() == NET_VCONNECTION_IN) {
-    this->_nids                          = params->num_alt_connection_ids();
+    this->_nids                          = num_alt_con;
     this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
     this->_init_alt_connection_ids();
   } else {
@@ -86,11 +83,10 @@ QUICAltConnectionManager::handle_frame(QUICEncryptionLevel level, const QUICFram
 QUICAltConnectionManager::AltConnectionInfo
 QUICAltConnectionManager::_generate_next_alt_con_info()
 {
-  QUICConfig::scoped_config params;
   QUICConnectionId conn_id;
   QUICStatelessResetToken token;
   conn_id.randomize();
-  token.generate(conn_id, params->instance_id());
+  token.generate(conn_id, this->_instance_id);
   AltConnectionInfo aci = {++this->_alt_quic_connection_id_seq_num, conn_id, token, {false}};
 
   if (this->_qc->direction() == NET_VCONNECTION_IN) {

@@ -28,7 +28,6 @@
 
 #include "QUICIntUtil.h"
 #include "QUICDebugNames.h"
-#include "QUICConfig.h"
 
 using namespace std::literals;
 static constexpr std::string_view tag   = "quic_packet"sv;
@@ -614,7 +613,7 @@ QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_b
   this->_packet_number_len = QUICTypeUtil::read_QUICPacketNumberLen(this->_buf.get() + offset);
   QUICPacketNumber src     = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + offset);
   QUICPacket::decode_packet_number(this->_packet_number, src, this->_packet_number_len, this->_base_packet_number);
-  this->_payload_length = len - (1 + QUICConfigParams::scid_len() + this->_packet_number_len);
+  this->_payload_length = len - (1 + QUICConnectionId::SCID_LEN + this->_packet_number_len);
 }
 
 QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
@@ -1083,7 +1082,7 @@ QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QU
 
   } else {
     QUICPacketShortHeader::key_phase(phase, packet, packet_len);
-    if (!QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConfigParams::scid_len())) {
+    if (!QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConnectionId::SCID_LEN)) {
       Debug(tag.data(), "Failed to calculate packet number offset");
       return false;
     }
