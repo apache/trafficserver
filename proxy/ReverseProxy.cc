@@ -118,6 +118,12 @@ struct UR_UpdateContinuation : public Continuation {
   }
 };
 
+bool
+urlRewriteVerify()
+{
+  return UrlRewrite().is_valid();
+}
+
 /**
   Called when the remap.config file changes. Since it called infrequently,
   we do the load of new file as blocking I/O and lock aquire is also
@@ -127,7 +133,7 @@ struct UR_UpdateContinuation : public Continuation {
 bool
 reloadUrlRewrite()
 {
-  UrlRewrite *newTable;
+  UrlRewrite *newTable, *oldTable;
 
   Debug("url_rewrite", "remap.config updated, reloading...");
   newTable = new UrlRewrite();
@@ -137,7 +143,14 @@ reloadUrlRewrite()
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
 
-    ink_atomic_swap(&rewrite_table, newTable)->release(); // Swap configurations, and release the old one
+    // Swap configurations
+    oldTable = ink_atomic_swap(&rewrite_table, newTable);
+
+    ink_assert(oldTable != nullptr);
+
+    // Release the old one
+    oldTable->release();
+
     Debug("url_rewrite", "%s", msg);
     Note("%s", msg);
     return true;
