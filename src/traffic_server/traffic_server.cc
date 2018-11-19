@@ -848,7 +848,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     Layout::get()->update_sysconfdir(conf_dir);
   }
 
-  if (!reloadUrlRewrite()) {
+  if (!urlRewriteVerify()) {
     exitStatus |= (1 << 0);
     fprintf(stderr, "ERROR: Failed to load remap.config, exitStatus %d\n\n", exitStatus);
   } else {
