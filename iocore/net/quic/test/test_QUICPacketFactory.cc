@@ -90,7 +90,7 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
   factory.set_version(0x11223344);
-  std::vector<QUICFrameUPtr> dummy_frames;
+  std::vector<QUICFrameInfo> dummy_frames;
 
   uint8_t raw[]          = {0xaa, 0xbb, 0xcc, 0xdd};
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));

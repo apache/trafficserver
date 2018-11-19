@@ -33,11 +33,11 @@ public:
   virtual QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) = 0;
 
   virtual void
-  on_frame_acked(QUICFrameUPtr &frame, QUICEncryptionLevel level)
+  on_frame_acked(QUICFrameId id)
   {
   }
   virtual void
-  on_frame_lost(QUICFrameUPtr &frame, QUICEncryptionLevel level)
+  on_frame_lost(QUICFrameId id)
   {
   }
 

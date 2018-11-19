@@ -1186,7 +1186,7 @@ QUICNetVConnection::_state_closing_send_packet()
 
 void
 QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr &frame,
-                                 std::vector<QUICFrameUPtr> &frames)
+                                 std::vector<QUICFrameInfo> &frames)
 {
   size_t l = 0;
   frame->store(buf.get() + offset, &l, max_frame_size);
@@ -1203,7 +1203,7 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &
     QUICConDebug("[TX] %s", msg);
   }
 
-  frames.push_back(std::move(frame));
+  frames.emplace_back(frame->id(), frame->generated_by());
 }
 
 QUICPacketUPtr
@@ -1229,7 +1229,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
-  std::vector<QUICFrameUPtr> frames;
+  std::vector<QUICFrameInfo> frames;
 
   // CRYPTO
   frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
@@ -1375,7 +1375,7 @@ QUICNetVConnection::_packetize_closing_frame()
 
   size_t len              = 0;
   uint64_t max_frame_size = static_cast<uint64_t>(max_size);
-  std::vector<QUICFrameUPtr> frames;
+  std::vector<QUICFrameInfo> frames;
   this->_store_frame(buf, len, max_frame_size, frame, frames);
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
@@ -1427,14 +1427,14 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
 
 QUICPacketUPtr
 QUICNetVConnection::_build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
-                                  std::vector<QUICFrameUPtr> &frames)
+                                  std::vector<QUICFrameInfo> &frames)
 {
   return this->_build_packet(std::move(buf), len, retransmittable, probing, frames, QUICTypeUtil::packet_type(level));
 }
 
 QUICPacketUPtr
 QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
-                                  std::vector<QUICFrameUPtr> &frames, QUICPacketType type)
+                                  std::vector<QUICFrameInfo> &frames, QUICPacketType type)
 {
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 

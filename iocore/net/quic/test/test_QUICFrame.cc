@@ -881,7 +881,7 @@ TEST_CASE("Store MaxData Frame", "[quic]")
     0x04,                                          // Type
     0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
   };
-  QUICMaxDataFrame max_data_frame(0x1122334455667788);
+  QUICMaxDataFrame max_data_frame(0x1122334455667788, 0, nullptr);
   CHECK(max_data_frame.size() == 9);
 
   max_data_frame.store(buf, &len, 65535);
@@ -947,7 +947,7 @@ TEST_CASE("Store MaxStreamId Frame", "[quic]")
     0x06,                   // Type
     0x81, 0x02, 0x03, 0x04, // Stream ID
   };
-  QUICMaxStreamIdFrame max_stream_id_frame(0x01020304);
+  QUICMaxStreamIdFrame max_stream_id_frame(0x01020304, 0, nullptr);
   CHECK(max_stream_id_frame.size() == 5);
 
   max_stream_id_frame.store(buf, &len, 65535);
@@ -978,7 +978,7 @@ TEST_CASE("Store Blocked Frame", "[quic]")
     0x08, // Type
     0x07, // Offset
   };
-  QUICBlockedFrame blocked_stream_frame(0x07);
+  QUICBlockedFrame blocked_stream_frame(0x07, 0, nullptr);
   CHECK(blocked_stream_frame.size() == 2);
 
   blocked_stream_frame.store(buf, &len, 65535);
@@ -1045,7 +1045,7 @@ TEST_CASE("Store StreamIdBlocked Frame", "[quic]")
     0x0a,       // Type
     0x41, 0x02, // Stream ID
   };
-  QUICStreamIdBlockedFrame stream_id_blocked_frame(0x0102);
+  QUICStreamIdBlockedFrame stream_id_blocked_frame(0x0102, 0, nullptr);
   CHECK(stream_id_blocked_frame.size() == 3);
 
   stream_id_blocked_frame.store(buf, &len, 65535);
@@ -1277,7 +1277,7 @@ TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
     uint8_t buf[32];
     size_t len;
 
-    QUICRetireConnectionIdFrame frame(seq_num);
+    QUICRetireConnectionIdFrame frame(seq_num, 0, nullptr);
     CHECK(frame.size() == raw_retire_connection_id_frame_len);
 
     frame.store(buf, &len, 16);
@@ -1373,7 +1373,7 @@ TEST_CASE("Retransmit", "[quic][frame][retransmit]")
   QUICPacketFactory factory;
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
-  std::vector<QUICFrameUPtr> frames;
+  std::vector<QUICFrameInfo> frames;
   QUICPacketUPtr packet = factory.create_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0, {nullptr},
                                                           0, true, false, frames);
   SECTION("STREAM frame split")

@@ -45,7 +45,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   size_t payload_len                  = 16;
   QUICPacketUPtr packet               = QUICPacketFactory::create_null_packet();
   std::shared_ptr<QUICAckFrame> frame = QUICFrameFactory::create_null_ack_frame();
-  std::vector<QUICFrameUPtr> dummy_frames;
+  std::vector<QUICFrameInfo> dummy_frames;
 
   SECTION("Handshake")
   {
