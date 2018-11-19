@@ -90,7 +90,7 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
   QUICConnectionId conn_id;
   QUICStatelessResetToken token;
   conn_id.randomize();
-  token.generate(conn_id, params->server_id());
+  token.generate(conn_id, params->instance_id());
   AltConnectionInfo aci = {++this->_alt_quic_connection_id_seq_num, conn_id, token, {false}};
 
   if (this->_qc->direction() == NET_VCONNECTION_IN) {

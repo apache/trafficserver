@@ -274,9 +274,9 @@ public:
   QUICStatelessResetToken() {}
   QUICStatelessResetToken(const uint8_t *buf) { memcpy(this->_token, buf, QUICStatelessResetToken::LEN); }
   void
-  generate(QUICConnectionId conn_id, uint32_t server_id)
+  generate(QUICConnectionId conn_id, uint32_t instance_id)
   {
-    this->_gen_token(conn_id ^ server_id);
+    this->_gen_token(conn_id ^ instance_id);
   }
 
   const uint8_t *

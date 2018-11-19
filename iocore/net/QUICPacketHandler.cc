@@ -293,7 +293,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     QUICStatelessResetToken token;
     {
       QUICConfig::scoped_config params;
-      token.generate(dcid, params->server_id());
+      token.generate(dcid, params->instance_id());
     }
     auto packet = QUICPacketFactory::create_stateless_reset_packet(dcid, token);
     this->_send_packet(this, *packet, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);

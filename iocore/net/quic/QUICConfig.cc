@@ -133,7 +133,7 @@ QUICConfigParams::~QUICConfigParams()
 void
 QUICConfigParams::initialize()
 {
-  REC_EstablishStaticConfigInt32U(this->_server_id, "proxy.config.quic.server_id");
+  REC_EstablishStaticConfigInt32U(this->_instance_id, "proxy.config.quic.instance_id");
   REC_EstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
   REC_EstablishStaticConfigInt32U(this->_num_alt_connection_ids, "proxy.config.quic.num_alt_connection_ids");
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
@@ -212,9 +212,9 @@ QUICConfigParams::no_activity_timeout_out() const
 }
 
 uint32_t
-QUICConfigParams::server_id() const
+QUICConfigParams::instance_id() const
 {
-  return this->_server_id;
+  return this->_instance_id;
 }
 
 int
