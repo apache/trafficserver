@@ -403,7 +403,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   netvc->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
-  return SSL_TLSEXT_ERR_OK;
+  return preverify_ok;
 }
 
 // Use the certificate callback for openssl 1.0.2 and greater
