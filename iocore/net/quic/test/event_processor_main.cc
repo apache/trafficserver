@@ -54,7 +54,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     QUICConfig::startup();
 
-    ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+    ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
     eventProcessor.start(TEST_THREADS);
 
     Thread *main_thread = new EThread;
