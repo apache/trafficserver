@@ -304,13 +304,13 @@ QUICLossDetector::_on_packet_acked(const PacketInfo &acked_packet)
   this->_tlp_count       = 0;
   this->_rto_count       = 0;
 
-  for (QUICFrameUPtr &frame : acked_packet.packet->frames()) {
-    auto reactor = frame->generated_by();
+  for (QUICFrameInfo &frame_info : acked_packet.packet->frames()) {
+    auto reactor = frame_info.generated_by();
     if (reactor == nullptr) {
       continue;
     }
 
-    reactor->on_frame_acked(frame, QUICTypeUtil::encryption_level(acked_packet.packet->type()));
+    reactor->on_frame_acked(frame_info.id());
   }
 
   this->_remove_from_sent_packet_list(acked_packet.packet_number);
@@ -554,13 +554,13 @@ QUICLossDetector::_retransmit_lost_packet(QUICPacketUPtr &packet)
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
-  for (QUICFrameUPtr &frame : packet->frames()) {
-    auto reactor = frame->generated_by();
+  for (QUICFrameInfo &frame_info : packet->frames()) {
+    auto reactor = frame_info.generated_by();
     if (reactor == nullptr) {
       continue;
     }
 
-    reactor->on_frame_lost(frame, QUICTypeUtil::encryption_level(packet->type()));
+    reactor->on_frame_lost(frame_info.id());
   }
   this->_transmitter->retransmit_packet(*packet);
 }
