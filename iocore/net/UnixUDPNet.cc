@@ -66,8 +66,14 @@ initialize_thread_for_udp_net(EThread *thread)
   new ((ink_dummy_for_new *)get_UDPPollCont(thread)) PollCont(thread->mutex);
   // The UDPNetHandler cannot be accessed across EThreads.
   // Because the UDPNetHandler should be called back immediately after UDPPollCont.
-  nh->mutex = thread->mutex.get();
+  nh->mutex  = thread->mutex.get();
+  nh->thread = thread;
 
+  PollCont *upc       = get_UDPPollCont(thread);
+  PollDescriptor *upd = upc->pollDescriptor;
+  // due to ET_UDP is really simple, it should sleep for a long time
+  // TODO: fixed size
+  upc->poll_timeout = 100;
   // This variable controls how often we cleanup the cancelled packets.
   // If it is set to 0, then cleanup never occurs.
   REC_ReadConfigInt32(g_udp_periodicFreeCancelledPkts, "proxy.config.udp.free_cancelled_pkts_sec");
@@ -82,8 +88,15 @@ initialize_thread_for_udp_net(EThread *thread)
   REC_ReadConfigInt32(g_udp_numSendRetries, "proxy.config.udp.send_retries");
   g_udp_numSendRetries = g_udp_numSendRetries < 0 ? 0 : g_udp_numSendRetries;
 
-  thread->schedule_every(get_UDPPollCont(thread), -9);
-  thread->schedule_imm(get_UDPNetHandler(thread));
+  thread->set_tail_handler(nh);
+  thread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
+  new (thread->ep) EventIO();
+  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
+#if HAVE_EVENTFD
+  thread->ep->start(upd, thread->evfd, nullptr, EVENTIO_READ);
+#else
+  thread->ep->start(upd, thread->evpipe[0], nullptr, EVENTIO_READ);
+#endif
 }
 
 int
@@ -890,6 +903,20 @@ UDPQueue::send(UDPPacket *p)
 
 #undef LINK
 
+static void
+net_signal_hook_callback(EThread *thread)
+{
+#if HAVE_EVENTFD
+  uint64_t counter;
+  ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
+#elif TS_USE_PORT
+/* Nothing to drain or do */
+#else
+  char dummy[1024];
+  ATS_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
+#endif
+}
+
 UDPNetHandler::UDPNetHandler()
 {
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
@@ -911,10 +938,15 @@ int
 UDPNetHandler::mainNetEvent(int event, Event *e)
 {
   ink_assert(trigger_event == e && event == EVENT_POLL);
-  (void)event;
-  (void)e;
+  return this->waitForActivity(net_config_poll_timeout);
+}
 
+int
+UDPNetHandler::waitForActivity(ink_hrtime timeout)
+{
   UnixUDPConnection *uc;
+  PollCont *pc = get_UDPPollCont(this->thread);
+  pc->do_poll(timeout);
 
   /* Notice: the race between traversal of newconn_list and UDPBind()
    *
@@ -943,7 +975,6 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
 
   // handle UDP read operations
   int i, nread = 0;
-  PollCont *pc = get_UDPPollCont(e->ethread);
   EventIO *epd = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
     epd = (EventIO *)get_ev_data(pc->pollDescriptor, i);
@@ -973,8 +1004,7 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
 #endif
       }
     } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
-      // TODO: receive signal from event system
-      // net_signal_hook_callback(this->trigger_event->ethread);
+      net_signal_hook_callback(this->thread);
     }
   } // end for
 
@@ -997,7 +1027,7 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
   udp_callbacks.clear();
   while ((uc = q.dequeue())) {
     ink_assert(uc->mutex && uc->continuation);
-    if (udpNetInternal.udp_callback(this, uc, trigger_event->ethread)) { // not successful
+    if (udpNetInternal.udp_callback(this, uc, this->thread)) { // not successful
       // schedule on a thread of its own.
       ink_assert(uc->callback_link.next == nullptr);
       ink_assert(uc->callback_link.prev == nullptr);
@@ -1011,4 +1041,19 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
   }
 
   return EVENT_CONT;
+}
+
+void
+UDPNetHandler::signalActivity()
+{
+#if HAVE_EVENTFD
+  uint64_t counter = 1;
+  ATS_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64_t)));
+#elif TS_USE_PORT
+  PollDescriptor *pd = get_PollDescriptor(thread);
+  ATS_UNUSED_RETURN(port_send(pd->port_fd, 0, thread->ep));
+#else
+  char dummy = 1;
+  ATS_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));
+#endif
 }
