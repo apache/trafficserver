@@ -303,7 +303,7 @@ public:
 
 void initialize_thread_for_udp_net(EThread *thread);
 
-class UDPNetHandler : public Continuation
+class UDPNetHandler : public Continuation, public EThread::LoopTailHandler
 {
 public:
   // engine for outgoing packets
@@ -319,11 +319,15 @@ public:
   Que(UnixUDPConnection, callback_link) udp_callbacks;
 
   Event *trigger_event = nullptr;
+  EThread *thread      = nullptr;
   ink_hrtime nextCheck;
   ink_hrtime lastCheck;
 
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);
+
+  int waitForActivity(ink_hrtime timeout) override;
+  void signalActivity() override;
 
   UDPNetHandler();
 };
