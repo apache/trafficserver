@@ -41,7 +41,8 @@ test_tscpputil_SOURCES = \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_TextView.cc \
-	unit_tests/test_ts_meta.cc
+	unit_tests/test_ts_meta.cc \
+	unit_tests/test_cmp_op.cc
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper
