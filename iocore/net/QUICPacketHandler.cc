@@ -340,7 +340,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   qe->init(qc, static_cast<UDPPacketInternal *>(udp_packet));
   // Push the packet into QUICPollCont
   get_QUICPollCont(eth)->inQueue.push(qe);
-
+  get_NetHandler(eth)->signalActivity();
   return;
 }
 
