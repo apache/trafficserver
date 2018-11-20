@@ -27,6 +27,7 @@ Changes with Apache Traffic Server 8.0.1
   #4283 - Test: Convert test_Http2DependencyTree.cc to Catch
   #4287 - Test: Fix issues with new Catch unit tests
   #4288 - Rewrite traffic_layout with ArgParser
+  #4296 - Fix libjansson & libcjose static or dynamic detection
   #4299 - Inherit parent config file root-required attribute
   #4307 - Add a search path for Tcl
   #4308 - remap.config .include files trigger reloads
@@ -46,6 +47,7 @@ Changes with Apache Traffic Server 8.0.1
   #4364 - Added debugging information on parent proxy
   #4367 - s3_auth_v4: update default region map
   #4373 - Cache: update internal counters to be std::atomic.
+  #4376 - Ats magick
   #4378 - Removed spaces and tabs at the end of lines
   #4381 - Add details for documentation for hook addition functions.
   #4386 - docs: reference to overridable config not parsed
@@ -55,6 +57,8 @@ Changes with Apache Traffic Server 8.0.1
   #4396 - Allows unknown configuration variables when specified on the commandline
   #4401 - Removes errant mid-sentence extra space from message
   #4429 - Fix build for 32bits armhf arch. Partialy closes #4361
+  #4435 - supporting ImageMagick 6 and 7
+  #4442 - Don't buffer the logging for TSError
   #4444 - Uses stack-based buffer for record lookup during logging
   #4445 - Converts loop and callees in SSLInitServerContext to std::string
   #4447 - Fixes memory leak in header_rewrite when GeoIP is used
@@ -64,3 +68,12 @@ Changes with Apache Traffic Server 8.0.1
   #4465 - Fixes memory leaks in compress plugin
   #4484 - Fixes memory leaks in header_rewrite
   #4489 - Fixes plugin builds using tsxs on MacOS
+  #4515 - Make sure ua_session is not nullptr
+  #4548 - Fixing the Magick versioned checks
+  #4557 - access_control: changes after 1st integration
+  #4559 - This hides the memory leak that CA otherwise finds
+  #4577 - Doc: change code snippet highlighting scheme
+  #4581 - Doc: Add missing overrides and sort
+  #4592 - Doc: sort overrides in table; remove missing references
+  #4595 - Doc: getting started case shouldn't used regex_remap
+  #4599 - Doc: Remove pipeline references
