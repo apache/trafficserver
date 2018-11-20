@@ -65,8 +65,8 @@ static constexpr uint32_t MAX_PACKET_OVERHEAD       = 62; // Max long header len
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 // static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD   = 16;
 static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
-static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(20);
-static constexpr uint32_t PACKET_PER_EVENT            = 32;
+static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(2);
+static constexpr uint32_t PACKET_PER_EVENT            = 256;
 static constexpr uint32_t MAX_CONSECUTIVE_STREAMS     = 8; //< Interrupt sending STREAM frames to send ACK frame
 
 static constexpr uint32_t MAX_PACKETS_WITHOUT_SRC_ADDR_VARIDATION = 3;
