@@ -102,7 +102,7 @@ public:
   LINK(QUICStreamFrame, link);
 
 private:
-  ats_unique_buf _data    = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _data    = {nullptr};
   size_t _data_len        = 0;
   QUICStreamId _stream_id = 0;
   QUICOffset _offset      = 0;
@@ -144,7 +144,7 @@ public:
 private:
   QUICOffset _offset   = 0;
   uint64_t _data_len   = 0;
-  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _data = {nullptr};
 
   size_t _get_offset_field_offset() const;
   size_t _get_length_field_offset() const;
@@ -657,7 +657,7 @@ public:
 private:
   const size_t _data_offset() const;
 
-  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _data = {nullptr};
 };
 
 //
@@ -682,7 +682,7 @@ public:
 private:
   const size_t _data_offset() const;
 
-  ats_unique_buf _data = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _data = {nullptr};
 };
 
 //
@@ -712,7 +712,7 @@ private:
   size_t _get_token_field_offset() const;
 
   uint64_t _token_length = 0;
-  ats_unique_buf _token  = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _token  = {nullptr};
 };
 
 //
@@ -758,7 +758,7 @@ public:
 
 private:
   QUICFrameUPtr _frame = QUICFrameUPtr(nullptr, nullptr);
-  ats_unique_buf _data = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
+  ats_unique_buf _data = ats_unique_buf(nullptr);
   QUICPacketType _packet_type;
 };
 

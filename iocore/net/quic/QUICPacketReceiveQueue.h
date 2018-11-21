@@ -44,7 +44,7 @@ private:
   QUICPacketNumberProtector &_pn_protector;
   QUICPacketNumber _largest_received_packet_number = 0;
   // FIXME: workaround code for coalescing packets
-  ats_unique_buf _payload = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _payload = {nullptr};
   size_t _payload_len     = 0;
   size_t _offset          = 0;
   IpEndpoint _from;

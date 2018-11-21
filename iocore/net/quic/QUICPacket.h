@@ -184,12 +184,12 @@ protected:
   const IpEndpoint _from = {};
 
   // These two are used only if the instance was created with a buffer
-  ats_unique_buf _buf = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _buf = {nullptr};
   size_t _buf_len     = 0;
 
   // These are used only if the instance was created without a buffer
   uint8_t _serialized[MAX_PACKET_HEADER_LEN];
-  ats_unique_buf _payload              = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
+  ats_unique_buf _payload              = ats_unique_buf(nullptr);
   QUICPacketType _type                 = QUICPacketType::UNINITIALIZED;
   QUICKeyPhase _key_phase              = QUICKeyPhase::INITIAL;
   QUICConnectionId _connection_id      = QUICConnectionId::ZERO();
@@ -209,8 +209,7 @@ public:
   QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
   QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf,
-                       size_t len, ats_unique_buf token = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }),
-                       size_t token_len = 0);
+                       size_t len, ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
   QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version, QUICConnectionId destination_cid,
                        QUICConnectionId source_cid, QUICConnectionId original_dcid, ats_unique_buf retry_token,
                        size_t retry_token_len);
@@ -251,10 +250,10 @@ private:
   QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
   QUICConnectionId _source_cid      = QUICConnectionId::ZERO();
-  QUICConnectionId _original_dcid   = QUICConnectionId::ZERO();                              //< RETRY packet only
-  size_t _token_len                 = 0;                                                     //< INITIAL packet only
-  size_t _token_offset              = 0;                                                     //< INITIAL packet only
-  ats_unique_buf _token             = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }); //< INITIAL packet only
+  QUICConnectionId _original_dcid   = QUICConnectionId::ZERO(); //< RETRY packet only
+  size_t _token_len                 = 0;                        //< INITIAL packet only
+  size_t _token_offset              = 0;                        //< INITIAL packet only
+  ats_unique_buf _token             = ats_unique_buf(nullptr);  //< INITIAL packet only
   size_t _payload_offset            = 0;
 };
 
@@ -391,7 +390,7 @@ public:
 
 private:
   QUICPacketHeaderUPtr _header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
-  ats_unique_buf _payload      = ats_unique_buf(nullptr, [](void *p) { ats_free(p); });
+  ats_unique_buf _payload      = ats_unique_buf(nullptr);
   size_t _payload_size         = 0;
   bool _is_retransmittable     = false;
   bool _is_probing_packet      = false;
@@ -444,8 +443,7 @@ public:
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                        bool retransmittable, bool probing, std::vector<QUICFrameUPtr> &frame,
-                                       ats_unique_buf token = ats_unique_buf(nullptr, [](void *p) { ats_free(p); }),
-                                       size_t token_len     = 0);
+                                       ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                          bool retransmittable, bool probing, std::vector<QUICFrameUPtr> &frame);

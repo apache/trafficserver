@@ -85,7 +85,7 @@ public:
 
 private:
   const uint8_t *_payload      = nullptr;
-  ats_unique_buf _payload_uptr = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _payload_uptr = {nullptr};
   size_t _payload_len          = 0;
 };
 
@@ -108,7 +108,7 @@ public:
 
 private:
   const uint8_t *_header_block      = nullptr;
-  ats_unique_buf _header_block_uptr = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf _header_block_uptr = {nullptr};
   size_t _header_block_len          = 0;
 };
 

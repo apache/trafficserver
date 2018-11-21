@@ -100,7 +100,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     }
   }
 
-  ats_unique_buf pkt     = {nullptr, [](void *p) { ats_free(p); }};
+  ats_unique_buf pkt     = {nullptr};
   size_t pkt_len         = 0;
   bool has_packet_number = true;
   QUICPacketType type    = QUICPacketType::UNINITIALIZED;

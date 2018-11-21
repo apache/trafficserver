@@ -1225,7 +1225,7 @@ QUICPacketUPtr
 QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid)
 {
   size_t len = sizeof(QUICVersion) * countof(QUIC_SUPPORTED_VERSIONS);
-  ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)), [](void *p) { ats_free(p); });
+  ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)));
   uint8_t *p = versions.get();
 
   size_t n;

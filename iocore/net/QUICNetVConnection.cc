@@ -1441,7 +1441,7 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
   switch (type) {
   case QUICPacketType::INITIAL: {
     QUICConnectionId dcid = this->_peer_quic_connection_id;
-    ats_unique_buf token  = {nullptr, [](void *p) { ats_free(p); }};
+    ats_unique_buf token  = {nullptr};
     size_t token_len      = 0;
 
     if (this->netvc_context == NET_VCONNECTION_OUT) {
