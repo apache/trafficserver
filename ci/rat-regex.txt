@@ -28,6 +28,7 @@
 ^\.indent.pro$
 ^\.vimrc$
 ^\.clang-.*$
+^\.ripgreprc$
 ^Doxyfile$
 ^CHANGES$
 ^CHANGELOG.*$
