@@ -101,6 +101,75 @@ get_parent_yaml_path(const std::string &path)
   return {};
 }
 
+static void
+runroot_extra_handling(const char *executable, bool json)
+{
+  std::string path;
+  // 2. check Environment variable
+  char *env_val = getenv("TS_RUNROOT");
+  if (env_val) {
+    path = get_yaml_path(env_val);
+    if (!path.empty()) {
+      runroot_file = path;
+      if (!json) {
+        ink_notice("using the environment variable TS_RUNROOT");
+      }
+      return;
+    } else if (!json) {
+      ink_warning("Unable to access runroot: '%s' from $TS_RUNROOT", env_val);
+    }
+  }
+  // 3. find cwd or parent path of cwd to check
+  char cwd[PATH_MAX] = {0};
+  if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+    path = get_parent_yaml_path(cwd);
+    if (!path.empty()) {
+      runroot_file = path;
+      if (!json) {
+        ink_notice("using cwd as TS_RUNROOT");
+      }
+      return;
+    }
+  }
+  // 4. installed executable
+  char RealBinPath[PATH_MAX] = {0};
+  if ((executable != nullptr) && realpath(executable, RealBinPath) != nullptr) {
+    std::string bindir = RealBinPath;
+    bindir             = bindir.substr(0, bindir.find_last_of("/")); // getting the bin dir not executable path
+    path               = get_parent_yaml_path(bindir);
+    if (!path.empty()) {
+      runroot_file = path;
+      if (!json) {
+        ink_notice("using the installed dir as TS_RUNROOT");
+      }
+      return;
+    }
+  }
+  // 5. if no runroot use, using default build
+  return;
+}
+
+// This is a temporary approach to handle runroot with migration to ArgParser.
+// When all program use ArgParser, we can remove the runroot_handler below and replace it with this one.
+void
+argparser_runroot_handler(std::string const &value, const char *executable, bool json)
+{
+  // 1.if --run-root is provided
+  if (!value.empty()) {
+    std::string path = get_yaml_path(value);
+    if (!path.empty()) {
+      if (!json) {
+        ink_notice("using command line path as RUNROOT");
+      }
+      runroot_file = path;
+      return;
+    } else if (!json) {
+      ink_warning("Unable to access runroot: '%s'", value.c_str());
+    }
+  }
+  runroot_extra_handling(executable, json);
+}
+
 // handler for ts runroot
 // this function set up runroot_file
 void
@@ -139,50 +208,7 @@ runroot_handler(const char **argv, bool json)
     }
   }
 
-  // 2. check Environment variable
-  char *env_val = getenv("TS_RUNROOT");
-  if (env_val) {
-    path = get_yaml_path(env_val);
-    if (!path.empty()) {
-      runroot_file = path;
-      if (!json) {
-        ink_notice("using the environment variable TS_RUNROOT");
-      }
-      return;
-    } else if (!json) {
-      ink_warning("Unable to access runroot: '%s' from $TS_RUNROOT", env_val);
-    }
-  }
-
-  // 3. find cwd or parent path of cwd to check
-  char cwd[PATH_MAX] = {0};
-  if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-    path = get_parent_yaml_path(cwd);
-    if (!path.empty()) {
-      runroot_file = path;
-      if (!json) {
-        ink_notice("using cwd as TS_RUNROOT");
-      }
-      return;
-    }
-  }
-
-  // 4. installed executable
-  char RealBinPath[PATH_MAX] = {0};
-  if ((argv[0] != nullptr) && realpath(argv[0], RealBinPath) != nullptr) {
-    std::string bindir = RealBinPath;
-    bindir             = bindir.substr(0, bindir.find_last_of("/")); // getting the bin dir not executable path
-    path               = get_parent_yaml_path(bindir);
-    if (!path.empty()) {
-      runroot_file = path;
-      if (!json) {
-        ink_notice("using the installed dir as TS_RUNROOT");
-      }
-      return;
-    }
-  }
-  // 5. if no runroot use, using default build
-  return;
+  runroot_extra_handling(argv[0], json);
 }
 
 // return a map of all path with default layout

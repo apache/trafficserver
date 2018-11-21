@@ -243,10 +243,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   size_t timestamp_end_offset = format_writer.size();
 
   ///////////////////////
-  // add the thread id //
+  // add the thread name //
   ///////////////////////
-  format_writer.fill(
-    snprintf(format_writer.auxBuffer(), format_writer.remaining(), "{0x%" PRIx64 "} ", (uint64_t)ink_thread_self()));
+  format_writer.print("{thread-name} ");
 
   //////////////////////////////////
   // append the diag level prefix //

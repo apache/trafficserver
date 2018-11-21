@@ -1167,6 +1167,11 @@ CFLAGS="$__saved_CFLAGS"
 AC_SUBST([CURSES_LDFLAGS],[$curses_ldflags])
 
 #
+# Check for -latomic need (at least for mips arch)
+TS_CHECK_ATOMIC
+TS_ADDTO([LDFLAGS], [$ATOMIC_LIBS])
+
+#
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
 
@@ -1833,6 +1838,46 @@ AC_LINK_IFELSE([
     AC_MSG_RESULT([yes])
   ], [
     AC_MSG_RESULT([no])
+])
+
+# pthread_getname_np / pthread_get_name_np:
+AC_MSG_CHECKING([pthread_getname_np()])
+AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        char name[[32]];
+        pthread_getname_np(pthread_self(), name, sizeof(name));
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_GETNAME_NP, 1, [Whether pthread_getname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+    AC_MSG_CHECKING([pthread_get_name_np()])
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([
+    #if HAVE_PTHREAD_H
+    #include <pthread.h>
+    #endif
+    #if PTHREAD_NP_H
+    #include <pthread_np.h>
+    #endif
+          ], [
+            char name[[32]];
+            pthread_get_name_np(pthread_self(), name, sizeof(name));
+        ])
+      ], [
+        AC_DEFINE(HAVE_PTHREAD_GET_NAME_NP, 1, [Whether pthread_get_name_np() is available])
+        AC_MSG_RESULT([yes])
+      ], [
+        AC_MSG_RESULT([no])
+    ])
 ])
 
 # BSD-derived systems populate the socket length in the structure itself. It's

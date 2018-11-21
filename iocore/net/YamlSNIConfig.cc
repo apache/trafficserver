@@ -60,7 +60,7 @@ TsEnumDescriptor POLICY_DESCRIPTOR     = {{{"DISABLED", 0}, {"PERMISSIVE", 1}, {
 TsEnumDescriptor PROPERTIES_DESCRIPTOR = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {"NAME", 0x2}, {"ALL", 0x3}}};
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
-                                               TS_disable_H2,
+                                               TS_disable_h2,
                                                TS_verify_client,
                                                TS_tunnel_route,
                                                TS_verify_origin_server,
@@ -88,8 +88,8 @@ template <> struct convert<YamlSNIConfig::Item> {
     } else {
       return false; // servername must be present
     }
-    if (node[TS_disable_H2]) {
-      item.disable_h2 = node[TS_disable_H2].as<bool>();
+    if (node[TS_disable_h2]) {
+      item.disable_h2 = node[TS_disable_h2].as<bool>();
     }
 
     // enum

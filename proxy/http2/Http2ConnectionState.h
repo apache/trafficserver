@@ -141,10 +141,12 @@ public:
     }
     cleanup_streams();
 
-    mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
     delete local_hpack_handle;
+    local_hpack_handle = nullptr;
     delete remote_hpack_handle;
+    remote_hpack_handle = nullptr;
     delete dependency_tree;
+    dependency_tree  = nullptr;
     this->ua_session = nullptr;
 
     if (fini_event) {
@@ -153,6 +155,8 @@ public:
     if (zombie_event) {
       zombie_event->cancel();
     }
+    // release the mutex after the events are cancelled and sessions are destroyed.
+    mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
   }
 
   // Event handlers
