@@ -100,6 +100,7 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
 
   // NOTE: packet will be enqueued to udpOutQueue of UDPNetHandler
   udp_con->send(c, udp_packet);
+  get_UDPNetHandler(static_cast<UnixUDPConnection *>(udp_con)->ethread)->signalActivity();
 }
 
 void
@@ -132,6 +133,7 @@ QUICPacketHandler::_send_packet(Continuation *c, QUICNetVConnection *vc, Ptr<IOB
   }
 
   udp_con->send(c, udp_packet);
+  get_UDPNetHandler(static_cast<UnixUDPConnection *>(udp_con)->ethread)->signalActivity();
 }
 
 //
