@@ -600,7 +600,14 @@ path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
   return x.release();
 }
 
-using ats_unique_buf = std::unique_ptr<uint8_t, decltype(&ats_free)>;
+struct ats_unique_buf_deleter {
+  void
+  operator()(uint8_t *p)
+  {
+    ats_free(p);
+  }
+};
+using ats_unique_buf = std::unique_ptr<uint8_t[], ats_unique_buf_deleter>;
 ats_unique_buf ats_unique_malloc(size_t size);
 
 #endif /* __cplusplus */

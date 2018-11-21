@@ -164,7 +164,7 @@ ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
 ats_unique_buf
 ats_unique_malloc(size_t size)
 {
-  return ats_unique_buf(reinterpret_cast<uint8_t *>(ats_malloc(size)), [](void *p) { ats_free(p); });
+  return ats_unique_buf(static_cast<uint8_t *>(ats_malloc(size)));
 }
 
 int
