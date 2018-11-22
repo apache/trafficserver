@@ -360,8 +360,8 @@ void
 QUICConnectionId::randomize()
 {
   std::random_device rnd;
-  uint32_t x;
-  for (int i = QUICConnectionId::SCID_LEN; i >= 0; --i) {
+  uint32_t x = rnd();
+  for (int i = QUICConnectionId::SCID_LEN - 1; i >= 0; --i) {
     if (i % 4 == 0) {
       x = rnd();
     }
