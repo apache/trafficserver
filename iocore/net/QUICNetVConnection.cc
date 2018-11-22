@@ -886,7 +886,14 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
 
   // Start handshake
   if (this->netvc_context == NET_VCONNECTION_IN) {
-    error = this->_handshake_handler->start(packet.get(), &this->_packet_factory);
+    if (!this->_alt_con_manager) {
+      QUICConfig::scoped_config params;
+      this->_alt_con_manager =
+        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, params->instance_id(),
+                                     params->num_alt_connection_ids(), params->preferred_address());
+      this->_frame_dispatcher->add_handler(this->_alt_con_manager);
+    }
+    error = this->_handshake_handler->start(packet.get(), &this->_packet_factory, this->_alt_con_manager->preferred_address());
 
     // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
     if (this->_handshake_handler->is_version_negotiated()) {
@@ -1760,13 +1767,14 @@ QUICNetVConnection::_switch_to_established_state()
 
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
-    std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
-    QUICConfig::scoped_config params;
-
-    if (netvc_context == NET_VCONNECTION_IN || (netvc_context == NET_VCONNECTION_OUT && params->cm_exercise_enabled() &&
-                                                !remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION))) {
+    if (this->direction() == NET_VCONNECTION_OUT) {
+      std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
+      const uint8_t *pref_addr_buf;
+      uint16_t len;
+      QUICConfig::scoped_config params;
+      pref_addr_buf          = remote_tp->getAsBytes(QUICTransportParameterId::PREFERRED_ADDRESS, len);
       this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
-                                                            params->instance_id(), params->num_alt_connection_ids());
+                                                            params->instance_id(), 1, {pref_addr_buf, len});
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
   } else {

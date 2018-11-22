@@ -1370,6 +1370,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.no_activity_timeout_out", RECD_INT, "30", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.quic.preferred_address", RECD_STRING, nullptr , RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.quic.initial_max_data_in", RECD_INT, "65536", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.initial_max_data_out", RECD_INT, "65536", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}

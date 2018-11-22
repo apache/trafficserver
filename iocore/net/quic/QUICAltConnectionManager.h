@@ -35,8 +35,16 @@ class QUICConnectionTable;
 class QUICAltConnectionManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
+  /**
+   * Constructor for clients
+   */
   QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid, uint32_t instance_id,
-                           uint8_t num_alt_con);
+                           uint8_t num_alt_con, const QUICPreferredAddress preferred_address);
+  /**
+   * Constructor for servers
+   */
+  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid, uint32_t instance_id,
+                           uint8_t num_alt_con, const IpEndpoint *preferred_endpoint = nullptr);
   ~QUICAltConnectionManager();
 
   /**
@@ -63,6 +71,11 @@ public:
    * Invalidate all CIDs prepared
    */
   void invalidate_alt_connections();
+
+  /**
+   * Returns server preferred address if available
+   */
+  const QUICPreferredAddress *preferred_address() const;
 
   // QUICFrameHandler
   virtual std::vector<QUICFrameType> interests() override;
@@ -91,12 +104,13 @@ private:
   std::vector<AltConnectionInfo> _alt_quic_connection_ids_remote;
   std::queue<uint64_t> _retired_seq_nums;
   uint32_t _instance_id                    = 0;
-  uint8_t _nids                            = 0;
+  uint8_t _nids                            = 1;
   uint64_t _alt_quic_connection_id_seq_num = 0;
   bool _need_advertise                     = false;
+  QUICPreferredAddress *_preferred_address = nullptr;
 
   AltConnectionInfo _generate_next_alt_con_info();
-  void _init_alt_connection_ids();
+  void _init_alt_connection_ids(const IpEndpoint *preferred_endpoint = nullptr);
   bool _update_alt_connection_id(uint64_t chosen_seq_num);
 
   QUICConnectionErrorUPtr _register_remote_connection_id(const QUICNewConnectionIdFrame &frame);

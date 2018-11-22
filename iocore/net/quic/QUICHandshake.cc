@@ -119,7 +119,7 @@ QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory)
+QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory, const QUICPreferredAddress *pref_addr)
 {
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
@@ -129,7 +129,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
         QUICHSDebug("Version negotiation succeeded: %x", initial_packet->version());
-        this->_load_local_server_transport_parameters(initial_packet->version());
+        this->_load_local_server_transport_parameters(initial_packet->version(), pref_addr);
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
         ink_assert(!"Unsupported version initial packet should be droped QUICPakcetHandler");
@@ -360,7 +360,7 @@ QUICHandshake::generate_frame(QUICEncryptionLevel level, uint64_t connection_cre
 }
 
 void
-QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_version)
+QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_version, const QUICPreferredAddress *pref_addr)
 {
   QUICConfig::scoped_config params;
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(negotiated_version);
@@ -386,6 +386,12 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   }
   if (params->initial_max_stream_data_uni_out() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_out());
+  }
+  if (pref_addr != nullptr) {
+    uint8_t pref_addr_buf[QUICPreferredAddress::MAX_LEN];
+    uint16_t len;
+    pref_addr->store(pref_addr_buf, len);
+    tp->set(QUICTransportParameterId::PREFERRED_ADDRESS, pref_addr_buf, len);
   }
 
   // MAYs (server)

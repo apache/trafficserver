@@ -85,6 +85,7 @@ libquic_a_SOURCES = \
 #
 check_PROGRAMS = \
   test_QUICAckFrameCreator \
+  test_QUICAltConnectionManager \
   test_QUICFlowController \
   test_QUICFrame \
   test_QUICFrameDispatcher \
@@ -132,6 +133,13 @@ test_QUICAckFrameCreator_LDADD = $(test_LDADD)
 test_QUICAckFrameCreator_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_QUICAckFrameCreator.cc
+
+test_QUICAltConnectionManager_CPPFLAGS = $(test_CPPFLAGS)
+test_QUICAltConnectionManager_LDFLAGS = @AM_LDFLAGS@
+test_QUICAltConnectionManager_LDADD = $(test_LDADD)
+test_QUICAltConnectionManager_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_QUICAltConnectionManager.cc
 
 test_QUICFlowController_CPPFLAGS = $(test_CPPFLAGS)
 test_QUICFlowController_LDFLAGS = @AM_LDFLAGS@

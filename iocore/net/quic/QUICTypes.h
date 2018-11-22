@@ -299,7 +299,24 @@ public:
   constexpr static int16_t MIN_LEN = 26;
   constexpr static int16_t MAX_LEN = 295;
 
-  QUICPreferredAddress() {}
+  QUICPreferredAddress(IpEndpoint endpoint, QUICConnectionId cid, QUICStatelessResetToken token)
+    : _endpoint(endpoint), _cid(cid), _token(token), _valid(true)
+  {
+  }
+  QUICPreferredAddress(const uint8_t *buf, uint16_t len);
+
+  bool is_available() const;
+  const IpEndpoint endpoint() const;
+  const QUICConnectionId cid() const;
+  const QUICStatelessResetToken token() const;
+
+  void store(uint8_t *buf, uint16_t &len) const;
+
+private:
+  IpEndpoint _endpoint;
+  QUICConnectionId _cid;
+  QUICStatelessResetToken _token;
+  bool _valid = false;
 };
 
 enum class QUICStreamType : uint8_t {
@@ -384,3 +401,5 @@ public:
   static const size_t LH_MIN_LEN        = 6;
   static const size_t SH_MIN_LEN        = 1;
 };
+
+int to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len);

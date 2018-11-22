@@ -30,6 +30,7 @@
 #include "QUICHandshake.h"
 #include "QUICDebugNames.h"
 #include "QUICTLS.h"
+#include "QUICTypes.h"
 
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 static constexpr char tag[]                            = "quic_handshake";
@@ -362,6 +363,20 @@ QUICTransportParameters::_print() const
       Debug(tag, "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
             QUICIntUtil::read_nbytes_as_uint(p.second->data(), p.second->len()),
             QUICIntUtil::read_nbytes_as_uint(p.second->data(), p.second->len()));
+    } else if (p.second->len() <= 24) {
+      char hex_str[65];
+      to_hex_str(hex_str, sizeof(hex_str), p.second->data(), p.second->len());
+      Debug(tag, "%s: %s", QUICDebugNames::transport_parameter_id(p.first), hex_str);
+    } else if (QUICTransportParameterId::PREFERRED_ADDRESS == p.first) {
+      QUICPreferredAddress pref_addr(p.second->data(), p.second->len());
+      char cid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+      char token_hex_str[QUICStatelessResetToken::LEN * 2 + 1];
+      char ep_hex_str[512];
+      pref_addr.cid().hex(cid_hex_str, sizeof(cid_hex_str));
+      to_hex_str(token_hex_str, sizeof(token_hex_str), pref_addr.token().buf(), QUICStatelessResetToken::LEN);
+      ats_ip_nptop(pref_addr.endpoint(), ep_hex_str, sizeof(ep_hex_str));
+      Debug(tag, "%s: Endpoint=%s, CID=%s, Token=%s", QUICDebugNames::transport_parameter_id(p.first), ep_hex_str, cid_hex_str,
+            token_hex_str);
     } else {
       Debug(tag, "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
     }
@@ -376,7 +391,9 @@ QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const
 {
   this->_initial_version = QUICTypeUtil::read_QUICVersion(buf);
   this->_load(buf, len);
-  this->_print();
+  if (is_debug_tag_set(tag)) {
+    this->_print();
+  }
 }
 
 void
@@ -434,7 +451,9 @@ QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncrypted
     this->_versions[i] = QUICTypeUtil::read_QUICVersion(buf + 5 + (i * 4));
   }
   this->_load(buf, len);
-  this->_print();
+  if (is_debug_tag_set(tag)) {
+    this->_print();
+  }
 }
 
 void

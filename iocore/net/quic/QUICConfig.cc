@@ -147,6 +147,10 @@ QUICConfigParams::initialize()
   // Transport Parameters
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
+  REC_ReadConfigStringAlloc(this->_preferred_address, "proxy.config.quic.preferred_address");
+  if (this->_preferred_address) {
+    ats_ip_pton(this->_preferred_address, &this->_preferred_endpoint);
+  }
   REC_EstablishStaticConfigInt32U(this->_initial_max_data_in, "proxy.config.quic.initial_max_data_in");
   REC_EstablishStaticConfigInt32U(this->_initial_max_data_out, "proxy.config.quic.initial_max_data_out");
   REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_bidi_local_in,
@@ -209,6 +213,16 @@ uint32_t
 QUICConfigParams::no_activity_timeout_out() const
 {
   return this->_no_activity_timeout_out;
+}
+
+const IpEndpoint *
+QUICConfigParams::preferred_address() const
+{
+  if (!this->_preferred_address) {
+    return nullptr;
+  }
+
+  return &this->_preferred_endpoint;
 }
 
 uint32_t

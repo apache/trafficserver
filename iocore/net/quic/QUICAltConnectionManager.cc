@@ -29,28 +29,43 @@ static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 #define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
-                                                   QUICConnectionId peer_initial_cid, uint32_t instance_id, uint8_t num_alt_con)
-  : _qc(qc), _ctable(ctable), _instance_id(instance_id)
+                                                   QUICConnectionId peer_initial_cid, uint32_t instance_id, uint8_t num_alt_con,
+                                                   const QUICPreferredAddress preferred_address)
+  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _nids(num_alt_con)
 {
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
 
-  // TODO If preferred_address was provided, sequence number of the provided CID is 1
-
-  if (this->_qc->direction() == NET_VCONNECTION_IN) {
-    this->_nids                          = num_alt_con;
-    this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
-    this->_init_alt_connection_ids();
-  } else {
-    this->_nids                          = 1;
-    this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
-    // If this is a client, new connection id will be generated on demand
+  // Sequence number of the preferred address is 1 if available
+  if (preferred_address.is_available()) {
+    this->_alt_quic_connection_ids_remote.push_back({1, preferred_address.cid(), preferred_address.token(), {false}});
   }
+
+  this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
+}
+
+QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
+                                                   QUICConnectionId peer_initial_cid, uint32_t instance_id, uint8_t num_alt_con,
+                                                   const IpEndpoint *preferred_endpoint)
+  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _nids(num_alt_con)
+{
+  // Sequence number of the initial CID is 0
+  this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
+
+  this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
+  this->_init_alt_connection_ids(preferred_endpoint);
 }
 
 QUICAltConnectionManager::~QUICAltConnectionManager()
 {
   ats_free(this->_alt_quic_connection_ids_local);
+  delete this->_preferred_address;
+}
+
+const QUICPreferredAddress *
+QUICAltConnectionManager::preferred_address() const
+{
+  return this->_preferred_address;
 }
 
 std::vector<QUICFrameType>
@@ -103,9 +118,18 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
 }
 
 void
-QUICAltConnectionManager::_init_alt_connection_ids()
+QUICAltConnectionManager::_init_alt_connection_ids(const IpEndpoint *preferred_endpoint)
 {
-  for (int i = 0; i < this->_nids; ++i) {
+  if (preferred_endpoint) {
+    this->_alt_quic_connection_ids_local[0] = this->_generate_next_alt_con_info();
+    // This alt cid will be advertised via Transport Parameter
+    this->_alt_quic_connection_ids_local[0].advertised = true;
+
+    this->_preferred_address = new QUICPreferredAddress(*preferred_endpoint, this->_alt_quic_connection_ids_local[0].id,
+                                                        this->_alt_quic_connection_ids_local[0].token);
+  }
+
+  for (int i = (preferred_endpoint ? 1 : 0); i < this->_nids; ++i) {
     this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
   }
   this->_need_advertise = true;

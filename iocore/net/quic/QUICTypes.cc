@@ -28,7 +28,7 @@
 uint8_t QUICConnectionId::SCID_LEN = 0;
 
 // TODO: move to somewhere in lib/ts/
-static int
+int
 to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len)
 {
   if (dst_len < src_len * 2 + 1) {
@@ -280,6 +280,134 @@ QUICConnectionError::frame_type() const
 {
   ink_assert(this->cls != QUICErrorClass::APPLICATION);
   return _frame_type;
+}
+
+//
+// QUICPreferredAddress
+//
+
+QUICPreferredAddress::QUICPreferredAddress(const uint8_t *buf, uint16_t len)
+{
+  if (len < QUICPreferredAddress::MIN_LEN || buf == nullptr) {
+    return;
+  }
+
+  const uint8_t *p = buf;
+
+  // ipVersion
+  uint64_t type = p[0];
+  p += 1;
+
+  // ipAddress
+  uint16_t addr_len = p[0];
+  p += 1;
+  if (type == 4) {
+    if (addr_len == 4) {
+      in_addr_t addr;
+      memcpy(&addr, p, addr_len);
+      p += 4;
+      in_port_t port;
+      memcpy(&port, p, 2);
+      p += 2;
+      ats_ip4_set(&this->_endpoint, addr, port);
+    } else {
+      return;
+    }
+  } else if (type == 6) {
+    if (addr_len == TS_IP6_SIZE) {
+      in6_addr addr;
+      memcpy(&addr, p, addr_len);
+      p += TS_IP6_SIZE;
+      in_port_t port;
+      memcpy(&port, p, 2);
+      p += 2;
+      ats_ip6_set(&this->_endpoint, addr, port);
+    } else {
+      return;
+    }
+  } else {
+    return;
+  }
+
+  // CID
+  uint16_t cid_len = QUICIntUtil::read_nbytes_as_uint(p, 1);
+  p += 1;
+  this->_cid = QUICTypeUtil::read_QUICConnectionId(p, cid_len);
+  p += cid_len;
+
+  // Token
+  this->_token = {p};
+
+  this->_valid = true;
+}
+
+bool
+QUICPreferredAddress::is_available() const
+{
+  return this->_valid;
+}
+
+const IpEndpoint
+QUICPreferredAddress::endpoint() const
+{
+  return this->_endpoint;
+}
+
+const QUICConnectionId
+QUICPreferredAddress::cid() const
+{
+  return this->_cid;
+}
+
+const QUICStatelessResetToken
+QUICPreferredAddress::token() const
+{
+  return this->_token;
+}
+
+void
+QUICPreferredAddress::store(uint8_t *buf, uint16_t &len) const
+{
+  size_t dummy;
+  uint8_t *p = buf;
+
+  // ipVersion
+  if (this->_endpoint.isIp4()) {
+    p[0] = 4;
+  } else if (this->_endpoint.isIp6()) {
+    p[0] = 6;
+  } else {
+    return;
+  }
+  p += 1;
+
+  // ipAddress
+  size_t addr_len = ats_ip_addr_size(this->_endpoint);
+  p[0]            = addr_len;
+  p += 1;
+  if (this->_endpoint.isIp4()) {
+    memcpy(p, &ats_ip4_addr_cast(this->_endpoint), addr_len);
+  } else {
+    memcpy(p, &ats_ip6_addr_cast(this->_endpoint), addr_len);
+  }
+  p += addr_len;
+
+  // port
+  memcpy(p, &ats_ip_port_cast(this->_endpoint), 2);
+  p += 2;
+
+  // CID
+  uint8_t cid_len = this->_cid.length();
+  p[0]            = cid_len;
+  p += 1;
+  QUICTypeUtil::write_QUICConnectionId(this->_cid, p, &dummy);
+  p += cid_len;
+
+  // Token
+  memcpy(p, this->_token.buf(), 16);
+  p += 16;
+
+  len = p - buf;
 }
 
 //

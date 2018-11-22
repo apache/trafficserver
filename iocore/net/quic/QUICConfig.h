@@ -51,6 +51,7 @@ public:
   // Transport Parameters
   uint32_t no_activity_timeout_in() const;
   uint32_t no_activity_timeout_out() const;
+  const IpEndpoint *preferred_address() const;
   uint32_t initial_max_data_in() const;
   uint32_t initial_max_data_out() const;
   uint32_t initial_max_stream_data_bidi_local_in() const;
@@ -107,8 +108,10 @@ private:
   SSL_CTX *_client_ssl_ctx = nullptr;
 
   // Transport Parameters
-  uint32_t _no_activity_timeout_in                  = 0;
-  uint32_t _no_activity_timeout_out                 = 0;
+  uint32_t _no_activity_timeout_in  = 0;
+  uint32_t _no_activity_timeout_out = 0;
+  const char *_preferred_address    = nullptr;
+  IpEndpoint _preferred_endpoint;
   uint32_t _initial_max_data_in                     = 0;
   uint32_t _initial_max_data_out                    = 0;
   uint32_t _initial_max_stream_data_bidi_local_in   = 0;
