@@ -18,6 +18,7 @@ Makefile.in
 
 .project
 .cproject
+.idea
 
 .diags.log.meta
 

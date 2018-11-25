@@ -219,6 +219,10 @@ TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
   REQUIRE(w.view() == "172. 17. 99.231");
   w.reset().print("{::=a}", ep);
   REQUIRE(w.view() == "172.017.099.231");
+  w.reset().print("{}", ts::bwf::Hex_Dump(ep));
+  REQUIRE(w.view() == "ac1163e7");
+  w.reset().print("{:#X}", ts::bwf::Hex_Dump(ep));
+  REQUIRE(w.view() == "0XAC1163E7");
 
   // Documentation examples
   REQUIRE(0 == ats_ip_pton(addr_7, &ep.sa));
@@ -247,4 +251,8 @@ TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
 
   w.reset().print("{:p}", reinterpret_cast<sockaddr const *>(0x1337beef));
   REQUIRE(w.view() == "0x1337beef");
+
+  ats_ip_pton(addr_1, &ep.sa);
+  w.reset().print("{}", ts::bwf::Hex_Dump(ep));
+  REQUIRE(w.view() == "ffee00000000000024c333493cee0143");
 }
