@@ -24,35 +24,20 @@
 #pragma once
 
 #include "QUICFrame.h"
-#include "QUICFrameRecord.h"
 
-class QUICFrameGenerator
-{
-public:
-  virtual ~QUICFrameGenerator(){};
-  virtual bool will_generate_frame(QUICEncryptionLevel level)                                                              = 0;
-  virtual QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) = 0;
+constexpr QUICFrameType QUIC_RECORD_FRAME[] = {
+  QUICFrameType::ACK,
+};
 
-  void on_frame_acked(QUICFrameId id);
-  void on_frame_lost(QUICFrameId id);
+struct QUICFrameInformation {
+  QUICFrameType type;
+  QUICEncryptionLevel level;
 
-protected:
-  virtual void
-  _on_frame_acked(QUICFrameInformation info)
-  {
-  }
+  union {
+    // ack information 
+    struct QUICAckFrameInfo {
+      QUICPacketNumber largest_acknowledged;
+    } ack_frame_info;
 
-  virtual void
-  _on_frame_lost(QUICFrameInformation info)
-  {
-  }
-
-  virtual std::vector<QUICEncryptionLevel> _encryption_level_filter();
-  virtual bool _is_level_matched(QUICEncryptionLevel level);
-  void _records_frame(QUICFrameInformation info);
-
-  uint64_t _frame_ids = 0;
-
-private:
-  std::map<uint64_t, QUICFrameInformation> _info;
+  } frame_info;
 };
