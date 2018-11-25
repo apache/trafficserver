@@ -31,6 +31,8 @@
 #include "tscore/MatcherUtils.h"
 #include "tscore/Regex.h"
 #include "tscore/Trie.h"
+#include "tscore/BufferWriter.h"
+#include "tscore/bwf_std_format.h"
 #include "tscore/TestBox.h"
 
 #include <unordered_map>
@@ -45,26 +47,19 @@
 #endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct SSLAddressLookupKey {
-  explicit SSLAddressLookupKey(const IpEndpoint &ip) : sep(0)
+  explicit SSLAddressLookupKey(const IpEndpoint &ip)
   {
-    static const char hextab[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    // For IP addresses, the cache key is the hex address with the port concatenated. This makes the
+    // lookup insensitive to address formatting and also allow the longest match semantic to produce
+    // different matches if there is a certificate on the port.
 
-    int nbytes;
-    uint16_t port = ntohs(ip.port());
-
-    // For IP addresses, the cache key is the hex address with the port concatenated. This makes the lookup
-    // insensitive to address formatting and also allow the longest match semantic to produce different matches
-    // if there is a certificate on the port.
-    nbytes = ats_ip_to_hex(&ip.sa, key, sizeof(key));
-    if (port) {
-      sep           = nbytes;
-      key[nbytes++] = '.';
-      key[nbytes++] = hextab[(port >> 12) & 0x000F];
-      key[nbytes++] = hextab[(port >> 8) & 0x000F];
-      key[nbytes++] = hextab[(port >> 4) & 0x000F];
-      key[nbytes++] = hextab[(port)&0x000F];
+    ts::FixedBufferWriter w{key, sizeof(key)};
+    w.print("{}", ts::bwf::Hex_Dump(ip)); // dump raw bytes in hex, don't format as IP address.
+    if (in_port_t port = ip.host_order_port(); port) {
+      sep = unsigned(w.size());
+      w.print(".{:x}", port);
     }
-    key[nbytes++] = 0;
+    w.print("\0");
   }
 
   const char *
@@ -85,7 +80,7 @@ struct SSLAddressLookupKey {
 
 private:
   char key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* nullptr */];
-  unsigned char sep; // offset of address/port separator
+  unsigned char sep = 0; // offset of address/port separator
 };
 
 struct SSLContextStorage {

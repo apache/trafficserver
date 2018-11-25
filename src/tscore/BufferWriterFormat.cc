@@ -32,6 +32,7 @@
 #include <cmath>
 #include <array>
 #include <chrono>
+#include <exception>
 
 using namespace std::literals;
 
@@ -587,7 +588,7 @@ namespace bw_fmt
 
   /// Write out the @a data as hexadecimal, using @a digits as the conversion.
   void
-  Hex_Dump(BufferWriter &w, std::string_view data, const char *digits)
+  Format_As_Hex(BufferWriter &w, std::string_view data, const char *digits)
   {
     const char *ptr = data.data();
     for (auto n = data.size(); n > 0; --n) {
@@ -608,14 +609,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
   }
 
   if ('x' == spec._type || 'X' == spec._type) {
-    const char *digits = 'x' == spec._type ? bw_fmt::LOWER_DIGITS : bw_fmt::UPPER_DIGITS;
-    width -= sv.size() * 2;
-    if (spec._radix_lead_p) {
-      w.write('0');
-      w.write(spec._type);
-      width -= 2;
-    }
-    bw_fmt::Write_Aligned(w, [&w, &sv, digits]() { bw_fmt::Hex_Dump(w, sv, digits); }, spec._align, width, spec._fill, 0);
+    return bwformat(w, spec, bwf::detail::MemDump(sv.data(), sv.size()));
   } else {
     width -= sv.size();
     bw_fmt::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
@@ -628,12 +622,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span)
 {
   static const BWFormat default_fmt{"{:#x}@{:p}"};
   if (spec._ext.size() && 'd' == spec._ext.front()) {
-    const char *digits = 'X' == spec._type ? bw_fmt::UPPER_DIGITS : bw_fmt::LOWER_DIGITS;
-    if (spec._radix_lead_p) {
-      w.write('0');
-      w.write(digits[33]);
-    }
-    bw_fmt::Hex_Dump(w, span.view(), digits);
+    bwformat(w, spec, bwf::detail::MemDump(span.data(), span.size()));
   } else {
     w.print(default_fmt, span.size(), span.data());
   }
@@ -956,6 +945,28 @@ BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, bwf::OptionalAffix const &opts)
 {
   return w.write(opts._prefix).write(opts._text).write(opts._suffix);
+}
+
+BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, bwf::detail::MemDump const &hex)
+{
+  char fmt_type      = spec._type;
+  const char *digits = bw_fmt::UPPER_DIGITS;
+
+  if ('X' != fmt_type) {
+    fmt_type = 'x';
+    digits   = bw_fmt::LOWER_DIGITS;
+  }
+
+  int width = int(spec._min) - hex._view.size() * 2; // amount left to fill.
+  if (spec._radix_lead_p) {
+    w.write('0');
+    w.write(fmt_type);
+    width -= 2;
+  }
+  bw_fmt::Write_Aligned(w, [&w, &hex, digits]() { bw_fmt::Format_As_Hex(w, hex._view, digits); }, spec._align, width, spec._fill,
+                        0);
+  return w;
 }
 
 } // namespace ts
