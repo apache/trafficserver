@@ -89,6 +89,7 @@ CPP_ADD_SOURCES(proxy proxy/http)
 CPP_ADD_SOURCES(proxy proxy/http2)
 CPP_ADD_SOURCES(proxy proxy/http/remap)
 CPP_ADD_SOURCES(proxy proxy/hdrs)
+CPP_ADD_SOURCES(proxy proxy/logging)
 
 CPP_LIB(iocore iocore iocore)
 CPP_ADD_SOURCES(iocore iocore/eventsystem)

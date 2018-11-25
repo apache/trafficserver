@@ -183,34 +183,4 @@ public:
   }
 };
 
-/*****************************************************************************
-
-The LogFieldAliasTimehex class implements a LogFieldAliasMap that converts time
-from their integer value to the "hex" notation and back.
-
- *****************************************************************************/
-
-class LogFieldAliasTimeHex : public LogFieldAliasMap
-{
-public:
-  int
-  asInt(char *str, IntType *time, bool /* case_sensitive ATS_UNUSED */) const override
-  {
-    unsigned long a;
-    // coverity[secure_coding]
-    if (sscanf(str, "%lx", (unsigned long *)&a) == 1) {
-      *time = (IntType)a;
-      return ALL_OK;
-    } else {
-      return INVALID_STRING;
-    }
-  }
-
-  int
-  asString(IntType time, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const override
-  {
-    return (LogUtils::timestamp_to_hex_str(time, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
-  }
-};
-
 // LOG_FIELD_ALIAS_MAP_H
