@@ -22,7 +22,6 @@
  */
 
 #include "QUICFrameGenerator.h"
-#include "QUICFrameRecord.h"
 
 void
 QUICFrameGenerator::_records_frame(QUICFrameInformation info)
