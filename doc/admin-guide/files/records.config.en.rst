@@ -396,7 +396,7 @@ Network
    can handle simultaneously. This is in fact the max number of file
    descriptors that the :program:`traffic_server` process can have open at any
    given time. Roughly 10% of these connections are reserved for origin server
-   connections, i.e. from the default, only ~9,000 client connections can be
+   connections, i.e. from the default, only ~27,000 client connections can be
    handled. This should be tuned according to your memory size, and expected
    work load.  If this is set to 0, the throttling logic is disabled.
 
