@@ -98,7 +98,7 @@ class SNI_IpAllow : public ActionItem
   IpMap ip_map;
 
 public:
-  SNI_IpAllow(std::string const &ip_allow_list, cchar *servername)
+  SNI_IpAllow(std::string const &ip_allow_list, const char *servername)
   {
     // the server identified by item.fqdn requires ATS to do IP filtering
     if (ip_allow_list.length()) {
@@ -147,5 +147,5 @@ class SNIActionPerformer
 {
 public:
   SNIActionPerformer() = default;
-  static int PerformAction(Continuation *cont, cchar *servername);
+  static int PerformAction(Continuation *cont, const char *servername);
 };

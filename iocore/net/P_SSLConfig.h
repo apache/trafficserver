@@ -127,7 +127,7 @@ struct SSLConfigParams : public ConfigInfo {
   mutable ink_mutex ctxMapLock;
 
   SSL_CTX *getClientSSL_CTX(void) const;
-  SSL_CTX *getNewCTX(cchar *client_cert, cchar *key_file) const;
+  SSL_CTX *getNewCTX(const char *client_cert, const char *key_file) const;
 
   void initialize();
   void cleanup();

@@ -43,7 +43,7 @@ extern TunnelHashMap TunnelMap;
 NextHopProperty::NextHopProperty() {}
 
 NextHopProperty *
-SNIConfigParams::getPropertyConfig(cchar *servername) const
+SNIConfigParams::getPropertyConfig(const char *servername) const
 {
   if (auto it = next_hop_table.find(servername); it != next_hop_table.end()) {
     return it->second;
@@ -60,7 +60,7 @@ SNIConfigParams::loadSNIConfig()
   for (const auto &item : Y_sni.items) {
     actionVector *aiVec = new actionVector();
     Debug("ssl", "name: %s", item.fqdn.data());
-    cchar *servername = item.fqdn.data();
+    const char *servername = item.fqdn.data();
     ats_wildcard_matcher w_Matcher;
     auto wildcard = w_Matcher.match(servername);
 
@@ -87,9 +87,9 @@ SNIConfigParams::loadSNIConfig()
     aiVec->push_back(ai3);
     // set the next hop properties
     SSLConfig::scoped_config params;
-    auto clientCTX  = params->getClientSSL_CTX();
-    cchar *certFile = item.client_cert.data();
-    cchar *keyFile  = item.client_key.data();
+    auto clientCTX       = params->getClientSSL_CTX();
+    const char *certFile = item.client_cert.data();
+    const char *keyFile  = item.client_key.data();
     if (certFile) {
       clientCTX = params->getNewCTX(certFile, keyFile);
     }
@@ -114,7 +114,7 @@ int SNIConfig::configid = 0;
 SNIConfigParams::SNIConfigParams() {}
 
 actionVector *
-SNIConfigParams::get(cchar *servername) const
+SNIConfigParams::get(const char *servername) const
 {
   auto action_it = sni_action_map.find(servername);
   if (action_it != sni_action_map.end()) {

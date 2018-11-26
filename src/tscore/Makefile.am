@@ -170,7 +170,6 @@ libtscore_la_SOURCES = \
 	List.h \
 	llqueue.cc \
 	lockfile.cc \
-	Map.h \
 	MatcherUtils.cc \
 	MatcherUtils.h \
 	MemSpan.h \
@@ -257,7 +256,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
-	unit_tests/test_Map.cc \
 	unit_tests/test_List.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
@@ -266,8 +264,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
-	unit_tests/test_ts_file.cc \
-	unit_tests/test_Vec.cc
+	unit_tests/test_ts_file.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
