@@ -24,7 +24,13 @@
 #pragma once
 
 #include "QUICFrame.h"
-#include "QUICFrameRecord.h"
+
+struct QUICFrameInformation {
+  QUICFrameType type;
+  QUICEncryptionLevel level;
+
+  uint8_t data[1024] = {};
+};
 
 class QUICFrameGenerator
 {
