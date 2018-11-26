@@ -27,29 +27,28 @@
 #include "QUICFrameGenerator.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"
-#include <vector>
+#include <list>
 #include <set>
 
 class QUICAckPacketNumbers
 {
 public:
   void push_back(QUICPacketNumber packet_number);
-  QUICPacketNumber front();
-  QUICPacketNumber back();
   size_t size();
   void clear();
   void sort();
+  void forget(QUICPacketNumber largest_acknowledged);
+
+  const std::list<QUICPacketNumber> list() const;
 
   QUICPacketNumber largest_ack_number();
   ink_hrtime largest_ack_received_time();
-
-  const QUICPacketNumber &operator[](int i) const { return this->_packet_numbers[i]; }
 
 private:
   QUICPacketNumber _largest_ack_number  = 0;
   ink_hrtime _largest_ack_received_time = 0;
 
-  std::vector<QUICPacketNumber> _packet_numbers;
+  std::list<QUICPacketNumber> _packet_numbers;
 };
 
 class QUICAckFrameCreator : public QUICFrameGenerator
@@ -77,11 +76,17 @@ public:
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
+  struct AckFrameInfomation {
+    QUICPacketNumber largest_acknowledged = 0;
+  };
+
+  virtual void _on_frame_acked(QUICFrameInformation info) override;
+
   /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.
    * Caller must send the ACK frame to the peer if it was returned.
    */
-  QUICFrameUPtr _create_ack_frame(QUICEncryptionLevel level);
+  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame(QUICEncryptionLevel level);
   uint64_t _calculate_delay(QUICEncryptionLevel level);
   std::vector<QUICEncryptionLevel>
   _encryption_level_filter() override
