@@ -72,7 +72,7 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
   CHECK(frame->ack_block_section()->begin()->gap() == 1);
 
-  // on frame acked 
+  // on frame acked
   creator.on_frame_acked(frame->id());
 
   CHECK(creator.will_generate_frame(level) == false);
