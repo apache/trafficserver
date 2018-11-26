@@ -25,16 +25,12 @@
 
 #include "QUICFrame.h"
 
-constexpr QUICFrameType QUIC_RECORD_FRAME[] = {
-  QUICFrameType::ACK,
-};
-
 struct QUICFrameInformation {
   QUICFrameType type;
   QUICEncryptionLevel level;
 
   union {
-    // ack information 
+    // ack information
     struct QUICAckFrameInfo {
       QUICPacketNumber largest_acknowledged;
     } ack_frame_info;

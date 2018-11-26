@@ -27,12 +27,7 @@
 void
 QUICFrameGenerator::_records_frame(QUICFrameInformation info)
 {
-  for (auto type : QUIC_RECORD_FRAME) {
-    if (type == info.type) {
-      this->_info.insert(std::make_pair(this->_frame_ids++, info));
-      return;
-    }
-  }
+  this->_info.insert(std::make_pair(this->_frame_ids++, info));
 }
 
 std::vector<QUICEncryptionLevel>
