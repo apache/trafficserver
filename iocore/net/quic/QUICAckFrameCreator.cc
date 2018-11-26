@@ -244,5 +244,5 @@ void
 QUICAckPacketNumbers::sort()
 {
   //  TODO Find more smart way
-  this->_packet_numbers.sort([] (const QUICPacketNumber a, const QUICPacketNumber b)-> bool { return a > b; });
+  this->_packet_numbers.sort([](const QUICPacketNumber a, const QUICPacketNumber b) -> bool { return a > b; });
 }
