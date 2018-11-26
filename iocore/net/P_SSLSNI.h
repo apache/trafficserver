@@ -60,13 +60,13 @@ struct SNIConfigParams : public ConfigInfo {
   NextHopPropertyTable next_hop_table;
   NextHopPropertyTable wild_next_hop_table;
   YamlSNIConfig Y_sni;
-  NextHopProperty *getPropertyConfig(cchar *servername) const;
+  NextHopProperty *getPropertyConfig(const char *servername) const;
   SNIConfigParams();
   ~SNIConfigParams() override;
   void cleanup();
   int Initialize();
   void loadSNIConfig();
-  actionVector *get(cchar *servername) const;
+  actionVector *get(const char *servername) const;
   void printSNImap() const;
 };
 
