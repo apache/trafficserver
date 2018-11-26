@@ -62,7 +62,7 @@ QUICAckFrameCreator::update(QUICEncryptionLevel level, QUICPacketNumber packet_n
 QUICFrameUPtr
 QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
-  QUICFrameUPtr ack_frame = QUICFrameFactory::create_null_frame();
+  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
 
   if (!this->_is_level_matched(level) || level == QUICEncryptionLevel::ZERO_RTT) {
     return ack_frame;
@@ -73,38 +73,48 @@ QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connecti
     ack_frame = this->_create_ack_frame(level);
     if (ack_frame && ack_frame->size() > maximum_frame_size) {
       // Cancel generating frame
-      ack_frame = QUICFrameFactory::create_null_frame();
+      ack_frame = QUICFrameFactory::create_null_ack_frame();
     } else {
-      this->_can_send[index]    = false;
+      this->_can_send[index]    = true;
       this->_should_send[index] = false;
-      this->_packet_numbers[index].clear();
     }
+  }
+
+  if (ack_frame != nullptr) {
+    AckFrameInfomation ack_info;
+    ack_info.largest_acknowledged = ack_frame->largest_acknowledged();
+
+    QUICFrameInformation info;
+    info.level = level;
+    info.type  = ack_frame->type();
+    memcpy(info.data, &ack_info, sizeof(ack_info));
+    this->_records_frame(info);
   }
 
   return ack_frame;
 }
 
-QUICFrameUPtr
+std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
 QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
 {
-  int index                            = QUICTypeUtil::pn_space_index(level);
-  QUICAckPacketNumbers *packet_numbers = &this->_packet_numbers[index];
+  int index = QUICTypeUtil::pn_space_index(level);
+  this->_packet_numbers[index].sort();
+  auto list = this->_packet_numbers[index].list();
 
   std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> ack_frame = QUICFrameFactory::create_null_ack_frame();
-  packet_numbers->sort();
-  QUICPacketNumber largest_ack_number = packet_numbers->largest_ack_number();
-  QUICPacketNumber last_ack_number    = largest_ack_number;
+  QUICPacketNumber largest_ack_number                           = list.front();
+  QUICPacketNumber last_ack_number                              = largest_ack_number;
 
-  size_t i        = 0;
   uint8_t gap     = 0;
   uint64_t length = 0;
 
-  while (i < packet_numbers->size()) {
-    QUICPacketNumber pn = (*packet_numbers)[i];
+  auto it = list.begin();
+  while (it != list.end()) {
+    QUICPacketNumber pn = *it;
     if (pn == last_ack_number) {
       last_ack_number--;
       length++;
-      i++;
+      it++;
       continue;
     }
 
@@ -114,7 +124,7 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
       ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
     } else {
       uint64_t delay = this->_calculate_delay(level);
-      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
+      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, this->_frame_ids, this);
     }
 
     gap             = last_ack_number - pn;
@@ -126,7 +136,7 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
     ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
   } else {
     uint64_t delay = this->_calculate_delay(level);
-    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1);
+    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, this->_frame_ids, this);
   }
 
   return ack_frame;
@@ -158,9 +168,35 @@ QUICAckFrameCreator::_calculate_delay(QUICEncryptionLevel level)
   return delay >> ack_delay_exponent;
 }
 
+void
+QUICAckFrameCreator::_on_frame_acked(QUICFrameInformation info)
+{
+  ink_assert(info.type == QUICFrameType::ACK);
+  AckFrameInfomation *ack_info = reinterpret_cast<AckFrameInfomation *>(info.data);
+  int index                    = QUICTypeUtil::pn_space_index(info.level);
+  this->_packet_numbers[index].forget(ack_info->largest_acknowledged);
+  if (this->_packet_numbers[index].size() == 0) {
+    this->_can_send[index]    = false;
+    this->_should_send[index] = false;
+  }
+}
+
 //
 // QUICAckPacketNumbers
 //
+void
+QUICAckPacketNumbers::forget(QUICPacketNumber largest_acknowledged)
+{
+  this->sort();
+  std::list<QUICPacketNumber> remove_list;
+  for (auto it = this->_packet_numbers.begin(); it != this->_packet_numbers.end(); it++) {
+    if (*it == largest_acknowledged) {
+      remove_list.splice(remove_list.begin(), this->_packet_numbers, it, this->_packet_numbers.end());
+      return;
+    }
+  }
+}
+
 void
 QUICAckPacketNumbers::push_back(QUICPacketNumber packet_number)
 {
@@ -172,16 +208,10 @@ QUICAckPacketNumbers::push_back(QUICPacketNumber packet_number)
   this->_packet_numbers.push_back(packet_number);
 }
 
-QUICPacketNumber
-QUICAckPacketNumbers::front()
+const std::list<QUICPacketNumber>
+QUICAckPacketNumbers::list() const
 {
-  return this->_packet_numbers.front();
-}
-
-QUICPacketNumber
-QUICAckPacketNumbers::back()
-{
-  return this->_packet_numbers.back();
+  return this->_packet_numbers;
 }
 
 size_t
@@ -214,6 +244,5 @@ void
 QUICAckPacketNumbers::sort()
 {
   //  TODO Find more smart way
-  std::sort(this->_packet_numbers.begin(), this->_packet_numbers.end(),
-            [](QUICPacketNumber a, QUICPacketNumber b) -> bool { return b < a; });
+  this->_packet_numbers.sort([] (const QUICPacketNumber a, const QUICPacketNumber b)-> bool { return a > b; });
 }

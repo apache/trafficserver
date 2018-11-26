@@ -45,9 +45,8 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->largest_acknowledged() == 1);
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
 
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
-  CHECK(frame == nullptr);
+  // retry
+  CHECK(creator.will_generate_frame(level) == false);
 
   // Not sequential
   creator.update(level, 2, true);
@@ -59,7 +58,7 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 5);
-  CHECK(frame->ack_block_section()->first_ack_block() == 3);
+  CHECK(frame->ack_block_section()->first_ack_block() == 4);
 
   // Loss
   creator.update(level, 6, true);
@@ -72,6 +71,24 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->largest_acknowledged() == 10);
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
   CHECK(frame->ack_block_section()->begin()->gap() == 1);
+
+  // on frame acked 
+  creator.on_frame_acked(frame->id());
+
+  CHECK(creator.will_generate_frame(level) == false);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  CHECK(ack_frame == nullptr);
+
+  creator.update(level, 11, true);
+  creator.update(level, 12, true);
+  creator.update(level, 13, true);
+  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  CHECK(frame != nullptr);
+  CHECK(frame->ack_block_count() == 0);
+  CHECK(frame->largest_acknowledged() == 13);
+  CHECK(frame->ack_block_section()->first_ack_block() == 2);
+  CHECK(frame->ack_block_section()->begin()->gap() == 0);
 }
 
 TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
@@ -98,9 +115,7 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
-  CHECK(frame == nullptr);
+  CHECK(creator.will_generate_frame(level) == false);
 
   creator.update(level, 7, true);
   creator.update(level, 4, true);
@@ -108,9 +123,9 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
-  CHECK(frame->largest_acknowledged() == 7);
-  CHECK(frame->ack_block_section()->first_ack_block() == 0);
-  CHECK(frame->ack_block_section()->begin()->gap() == 1);
+  CHECK(frame->largest_acknowledged() == 9);
+  CHECK(frame->ack_block_section()->first_ack_block() == 5);
+  CHECK(frame->ack_block_section()->begin()->gap() == 0);
 }
 
 TEST_CASE("QUICAckFrameCreator_QUICAckPacketNumbers", "[quic]")
