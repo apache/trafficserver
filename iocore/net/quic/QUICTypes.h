@@ -29,9 +29,9 @@
 #include <memory>
 #include <random>
 #include <cstdint>
-#include "tscore/INK_MD5.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_inet.h"
+#include "openssl/evp.h"
 
 // These magical defines should be removed when we implement seriously
 #define MAGIC_NUMBER_0 0
@@ -274,11 +274,13 @@ public:
   constexpr static int8_t LEN = 16;
 
   QUICStatelessResetToken() {}
+  QUICStatelessResetToken(QUICConnectionId conn_id, uint32_t instance_id);
   QUICStatelessResetToken(const uint8_t *buf) { memcpy(this->_token, buf, QUICStatelessResetToken::LEN); }
-  void
-  generate(QUICConnectionId conn_id, uint32_t instance_id)
+
+  bool
+  operator==(const QUICStatelessResetToken &x) const
   {
-    this->_gen_token(conn_id ^ instance_id);
+    return memcmp(this->_token, x._token, QUICStatelessResetToken::LEN) == 0;
   }
 
   const uint8_t *
@@ -288,9 +290,42 @@ public:
   }
 
 private:
-  uint8_t _token[16] = {0};
+  uint8_t _token[LEN] = {0};
 
-  void _gen_token(uint64_t data);
+  void _generate(uint64_t data);
+};
+
+class QUICRetryToken
+{
+public:
+  QUICRetryToken() {}
+  QUICRetryToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICRetryToken(const IpEndpoint &src);
+
+  bool
+  operator==(const QUICRetryToken &x) const
+  {
+    if (this->_token_len != x._token_len) {
+      return false;
+    }
+    return memcmp(this->_token, x._token, this->_token_len) == 0;
+  }
+
+  const uint8_t *
+  buf() const
+  {
+    return this->_token;
+  }
+
+  uint8_t
+  length() const
+  {
+    return this->_token_len;
+  }
+
+private:
+  uint8_t _token[EVP_MAX_MD_SIZE] = {};
+  unsigned int _token_len         = 0;
 };
 
 class QUICPreferredAddress

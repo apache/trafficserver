@@ -1257,10 +1257,14 @@ QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICC
 
 QUICPacketUPtr
 QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                       QUICConnectionId original_dcid, ats_unique_buf payload, size_t len)
+                                       QUICConnectionId original_dcid, QUICRetryToken &token)
 {
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, QUIC_SUPPORTED_VERSIONS[0],
-                                                        destination_cid, source_cid, original_dcid, std::move(payload), len);
+  ats_unique_buf payload = ats_unique_malloc(token.length());
+  memcpy(payload.get(), token.buf(), token.length());
+
+  QUICPacketHeaderUPtr header =
+    QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, QUIC_SUPPORTED_VERSIONS[0], destination_cid, source_cid,
+                            original_dcid, std::move(payload), token.length());
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }
 

@@ -31,7 +31,6 @@
 
 #include "QUICGlobals.h"
 #include "QUICTransportParameters.h"
-#include "QUICStatelessRetry.h"
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
@@ -196,8 +195,6 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_cc_initial_window_scale, "proxy.config.quic.congestion_control.initial_window_scale");
   REC_EstablishStaticConfigInt32U(this->_cc_minimum_window_scale, "proxy.config.quic.congestion_control.minimum_window_scale");
   REC_EstablishStaticConfigFloat(this->_cc_loss_reduction_factor, "proxy.config.quic.congestion_control.loss_reduction_factor");
-
-  QUICStatelessRetry::init();
 
   this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);

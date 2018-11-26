@@ -78,7 +78,6 @@ libquic_a_SOURCES = \
   QUICPacketReceiveQueue.cc \
   QUICPacketRetransmitter.cc \
   QUICPathValidator.cc \
-  QUICStatelessRetry.cc \
   QUICFrameGenerator.cc
 
 #

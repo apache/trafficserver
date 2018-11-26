@@ -29,7 +29,6 @@
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
-#include "QUICStatelessRetry.h"
 
 static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
 static constexpr char tag[]                        = "quic_sec";
@@ -292,11 +291,8 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   // Servers MUST drop incoming packets under all other circumstances. They SHOULD send a Stateless Reset (Section 6.10.4) if a
   // connection ID is present in the header.
   if ((!vc && !QUICInvariants::is_long_header(buf)) || (vc && vc->in_closed_queue)) {
-    QUICStatelessResetToken token;
-    {
-      QUICConfig::scoped_config params;
-      token.generate(dcid, params->instance_id());
-    }
+    QUICConfig::scoped_config params;
+    QUICStatelessResetToken token(dcid, params->instance_id());
     auto packet = QUICPacketFactory::create_stateless_reset_packet(dcid, token);
     this->_send_packet(this, *packet, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
     udp_packet->free();
@@ -378,14 +374,10 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
   }
 
   if (token_length == 0) {
-    ats_unique_buf retry_token = ats_unique_malloc(QUICStatelessRetry::MAX_TOKEN_LEN);
-    size_t retry_token_len     = 0;
-    QUICStatelessRetry::generate_cookie(retry_token.get(), &retry_token_len, from);
-
+    QUICRetryToken token(from);
     QUICConnectionId local_cid;
     local_cid.randomize();
-    QUICPacketUPtr retry_packet =
-      QUICPacketFactory::create_retry_packet(scid, local_cid, dcid, std::move(retry_token), retry_token_len);
+    QUICPacketUPtr retry_packet = QUICPacketFactory::create_retry_packet(scid, local_cid, dcid, token);
 
     this->_send_packet(this, *retry_packet, connection, from, 1200, nullptr, 0);
 
@@ -394,9 +386,11 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
     uint8_t dcil, scil;
     QUICPacketLongHeader::dcil(dcil, buf, buf_len);
     QUICPacketLongHeader::scil(scil, buf, buf_len);
-
     const uint8_t *token = buf + LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil + token_length_field_len;
-    if (QUICStatelessRetry::verify_cookie(token, token_length, from)) {
+
+    QUICRetryToken token1(token, token_length);
+    QUICRetryToken token2(from);
+    if (token1 == token2) {
       return 0;
     } else {
       return -3;

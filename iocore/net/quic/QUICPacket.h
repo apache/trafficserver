@@ -436,7 +436,7 @@ public:
   static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
                                                       QUICStatelessResetToken stateless_reset_token);
   static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                            QUICConnectionId original_dcid, ats_unique_buf payload, size_t len);
+                                            QUICConnectionId original_dcid, QUICRetryToken &token);
 
   QUICPacketUPtr create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
                         QUICPacketCreationResult &result);

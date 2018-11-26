@@ -24,6 +24,8 @@
 #include <algorithm>
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
+#include "tscore/CryptoHash.h"
+#include <openssl/hmac.h>
 
 uint8_t QUICConnectionId::SCID_LEN = 0;
 
@@ -260,9 +262,9 @@ QUICTypeUtil::write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len)
   QUICIntUtil::write_QUICVariableInt(max_data, buf, len);
 }
 
-void
-QUICStatelessResetToken::_gen_token(uint64_t data)
+QUICStatelessResetToken::QUICStatelessResetToken(QUICConnectionId conn_id, uint32_t instance_id)
 {
+  uint64_t data = conn_id ^ instance_id;
   CryptoHash _hash;
   static constexpr char STATELESS_RESET_TOKEN_KEY[] = "stateless_token_reset_key";
   CryptoContext ctx;
@@ -273,6 +275,19 @@ QUICStatelessResetToken::_gen_token(uint64_t data)
   size_t dummy;
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[0], 8, _token, &dummy);
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[1], 8, _token + 8, &dummy);
+}
+
+QUICRetryToken::QUICRetryToken(const IpEndpoint &src)
+{
+  // TODO: read cookie secret from file like SSLTicketKeyConfig
+  static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
+
+  uint8_t key[INET6_ADDRPORTSTRLEN] = {0};
+  size_t key_len                    = INET6_ADDRPORTSTRLEN;
+  ats_ip_nptop(src, reinterpret_cast<char *>(key), key_len);
+
+  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), key, key_len, this->_token,
+       &this->_token_len);
 }
 
 QUICFrameType

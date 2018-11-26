@@ -69,14 +69,13 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
   factory.set_hs_protocol(&hs_protocol);
   factory.set_version(0x11223344);
 
-  uint8_t raw[]          = {0xaa, 0xbb, 0xcc, 0xdd};
-  ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
-  memcpy(payload.get(), raw, sizeof(raw));
+  uint8_t raw[] = {0xaa, 0xbb, 0xcc, 0xdd};
+  QUICRetryToken token(raw, 4);
 
-  QUICPacketUPtr packet = factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
-                                                      QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4),
-                                                      QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4),
-                                                      std::move(payload), sizeof(raw));
+  QUICPacketUPtr packet =
+    factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
+                                QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4),
+                                QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4), token);
   CHECK(packet->type() == QUICPacketType::RETRY);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
@@ -112,8 +111,7 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   QUICPacketFactory factory;
   MockQUICHandshakeProtocol hs_protocol;
   factory.set_hs_protocol(&hs_protocol);
-  QUICStatelessResetToken token;
-  token.generate({reinterpret_cast<const uint8_t *>("\x30\x39"), 2}, 67890);
+  QUICStatelessResetToken token({reinterpret_cast<const uint8_t *>("\x30\x39"), 2}, 67890);
 
   QUICPacketUPtr packet =
     factory.create_stateless_reset_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4), token);
