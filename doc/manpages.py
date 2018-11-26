@@ -66,4 +66,4 @@ if __name__ == '__main__':
     # Print the names of the man pages for the requested manual section.
     for page in man_pages:
         if options.section == 0 or options.section == int(page[4][0]):
-            print page[1] + '.' + page[4]
+            print(page[1] + '.' + page[4])
