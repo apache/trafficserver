@@ -50,7 +50,6 @@ traffic_quic_traffic_quic_LDADD = \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/lib/tsconfig/libtsconfig.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
-  @LIBTCL@ \
   @HWLOC_LIBS@ \
   @YAMLCPP_LIBS@ \
   @OPENSSL_LIBS@

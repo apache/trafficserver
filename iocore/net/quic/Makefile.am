@@ -116,7 +116,7 @@ test_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@ @OPENSSL_LIBS@ \
+  @OPENSSL_LIBS@ \
   @HWLOC_LIBS@
 
 test_event_main_SOURCES = \
