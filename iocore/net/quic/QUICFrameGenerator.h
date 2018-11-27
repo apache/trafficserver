@@ -43,6 +43,12 @@ public:
   void on_frame_lost(QUICFrameId id);
 
 protected:
+  QUICFrameId
+  _issue_frame_id()
+  {
+    return this->_latest_frame_Id++;
+  }
+
   virtual void
   _on_frame_acked(QUICFrameInformation info)
   {
@@ -55,10 +61,9 @@ protected:
 
   virtual std::vector<QUICEncryptionLevel> _encryption_level_filter();
   virtual bool _is_level_matched(QUICEncryptionLevel level);
-  void _records_frame(QUICFrameInformation info);
-
-  uint64_t _frame_ids = 0;
+  void _records_frame(QUICFrameId id, QUICFrameInformation info);
 
 private:
-  std::map<uint64_t, QUICFrameInformation> _info;
+  QUICFrameId _latest_frame_Id = 0;
+  std::map<QUICFrameId, QUICFrameInformation> _info;
 };
