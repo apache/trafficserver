@@ -53,16 +53,16 @@ Required Functions
 
 A remap plugin is required to implement the following functions:
 
--  `TSRemapInit <http://people.apache.org/~amc/ats/doc/html/remap_8h.html#af7e9b1eee1c38c6f8dcc67a65ba02c24>`_:
+-  :c:func:`TSRemapInit`:
    the remap initialization function, called once when the plugin is
    loaded
 
--  `TSRemapNewInstance <http://people.apache.org/~amc/ats/doc/html/remap_8h.html#a963de3eeed2ed7a2da483acf77dc42ca>`_:
+-  :c:func:`TSRemapNewInstance`:
    a new instance is created for each rule associated with the plugin.
    Called each time the plugin used in a remap rule (this function is
    what processes the pparam values)
 
--  `TSRemapDoRemap <http://people.apache.org/~amc/ats/doc/html/remap_8h.html#acf73f0355c591e145398211b3c0596fe>`_:
+-  :c:func:`TSRemapDoRemap`:
    the entry point used by Traffic Server to find the new URL to which
    it remaps; called every time a request comes in
 
