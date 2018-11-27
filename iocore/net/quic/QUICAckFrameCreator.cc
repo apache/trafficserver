@@ -81,13 +81,12 @@ QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connecti
   }
 
   if (ack_frame != nullptr) {
-    AckFrameInfomation ack_info;
-    ack_info.largest_acknowledged = ack_frame->largest_acknowledged();
-
     QUICFrameInformation info;
+    AckFrameInfomation *ack_info   = reinterpret_cast<AckFrameInfomation *>(info.data);
+    ack_info->largest_acknowledged = ack_frame->largest_acknowledged();
+
     info.level = level;
     info.type  = ack_frame->type();
-    memcpy(info.data, &ack_info, sizeof(ack_info));
     this->_records_frame(ack_frame->id(), info);
   }
 
