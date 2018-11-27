@@ -367,6 +367,10 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
 
   // MUSTs
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
+  if (this->_stateless_retry) {
+    tp->set(QUICTransportParameterId::ORIGINAL_CONNECTION_ID, this->_qc->first_connection_id(),
+            this->_qc->first_connection_id().length());
+  }
 
   // MAYs
   if (params->initial_max_data_in() != 0) {

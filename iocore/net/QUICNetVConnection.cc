@@ -79,7 +79,7 @@ ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 // XXX This might be called on ET_UDP thread
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
-                         QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)
+                         QUICPacketHandler *packet_handler)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_packet_transmitter_mutex    = new_ProxyMutex();
@@ -89,7 +89,32 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
   this->_peer_quic_connection_id     = peer_cid;
   this->_original_quic_connection_id = original_cid;
   this->_quic_connection_id.randomize();
-  // PacketHandler for out going connection doesn't have connection table
+
+  this->_update_cids();
+
+  if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
+    char dcid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+    char scid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+    this->_peer_quic_connection_id.hex(dcid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+    this->_quic_connection_id.hex(scid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+
+    QUICConDebug("dcid=%s scid=%s", dcid_hex_str, scid_hex_str);
+  }
+}
+void
+QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
+                         UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)
+{
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+  this->_packet_transmitter_mutex    = new_ProxyMutex();
+  this->_frame_transmitter_mutex     = new_ProxyMutex();
+  this->_udp_con                     = udp_con;
+  this->_packet_handler              = packet_handler;
+  this->_peer_quic_connection_id     = peer_cid;
+  this->_original_quic_connection_id = original_cid;
+  this->_first_quic_connection_id    = first_cid;
+  this->_quic_connection_id.randomize();
+
   if (ctable) {
     this->_ctable = ctable;
     this->_ctable->insert(this->_quic_connection_id, this);
@@ -345,6 +370,12 @@ QUICConnectionId
 QUICNetVConnection::original_connection_id() const
 {
   return this->_original_quic_connection_id;
+}
+
+QUICConnectionId
+QUICNetVConnection::first_connection_id() const
+{
+  return this->_first_quic_connection_id;
 }
 
 QUICConnectionId

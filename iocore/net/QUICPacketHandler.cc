@@ -279,8 +279,9 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
   // Server Stateless Retry
   QUICConfig::scoped_config params;
+  QUICConnectionId cid_in_retry_token;
   if (!vc && params->stateless_retry()) {
-    int ret = this->_stateless_retry(buf, buf_len, udp_packet->getConnection(), udp_packet->from, dcid, scid);
+    int ret = this->_stateless_retry(buf, buf_len, udp_packet->getConnection(), udp_packet->from, dcid, scid, &cid_in_retry_token);
     if (ret < 0) {
       udp_packet->free();
       return;
@@ -316,7 +317,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
-    vc->init(peer_cid, original_cid, udp_packet->getConnection(), this, this->_ctable);
+    vc->init(peer_cid, original_cid, cid_in_retry_token, udp_packet->getConnection(), this, this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
@@ -357,7 +358,7 @@ QUICPacketHandlerIn::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_
 
 int
 QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from,
-                                      QUICConnectionId dcid, QUICConnectionId scid)
+                                      QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId *original_cid)
 {
   QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketLongHeader::type(type, buf, buf_len);
@@ -374,7 +375,7 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
   }
 
   if (token_length == 0) {
-    QUICRetryToken token(from);
+    QUICRetryToken token(from, dcid);
     QUICConnectionId local_cid;
     local_cid.randomize();
     QUICPacketUPtr retry_packet = QUICPacketFactory::create_retry_packet(scid, local_cid, dcid, token);
@@ -388,9 +389,12 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
     QUICPacketLongHeader::scil(scil, buf, buf_len);
     const uint8_t *token = buf + LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil + token_length_field_len;
 
+    QUICConnectionId attached_cid = QUICTypeUtil::read_QUICConnectionId(token + 20, token_length - 20);
     QUICRetryToken token1(token, token_length);
-    QUICRetryToken token2(from);
+    QUICRetryToken token2(from, attached_cid);
     if (token1 == token2) {
+      // Tokein is valid
+      *original_cid = attached_cid;
       return 0;
     } else {
       return -3;

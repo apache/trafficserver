@@ -300,7 +300,7 @@ class QUICRetryToken
 public:
   QUICRetryToken() {}
   QUICRetryToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
-  QUICRetryToken(const IpEndpoint &src);
+  QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid);
 
   bool
   operator==(const QUICRetryToken &x) const
@@ -310,6 +310,8 @@ public:
     }
     return memcmp(this->_token, x._token, this->_token_len) == 0;
   }
+
+  const QUICConnectionId original_dcid() const;
 
   const uint8_t *
   buf() const
@@ -324,8 +326,9 @@ public:
   }
 
 private:
-  uint8_t _token[EVP_MAX_MD_SIZE] = {};
-  unsigned int _token_len         = 0;
+  uint8_t _token[EVP_MAX_MD_SIZE + QUICConnectionId::MAX_LENGTH] = {};
+  unsigned int _token_len                                        = 0;
+  QUICConnectionId _original_dcid;
 };
 
 class QUICPreferredAddress

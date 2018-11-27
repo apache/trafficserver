@@ -80,7 +80,7 @@ public:
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
   int _stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from, QUICConnectionId dcid,
-                       QUICConnectionId scid);
+                       QUICConnectionId scid, QUICConnectionId *original_cid);
 
   QUICConnectionTable *_ctable = nullptr;
 };

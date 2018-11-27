@@ -277,17 +277,33 @@ QUICStatelessResetToken::QUICStatelessResetToken(QUICConnectionId conn_id, uint3
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[1], 8, _token + 8, &dummy);
 }
 
-QUICRetryToken::QUICRetryToken(const IpEndpoint &src)
+QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid)
 {
   // TODO: read cookie secret from file like SSLTicketKeyConfig
   static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
 
-  uint8_t key[INET6_ADDRPORTSTRLEN] = {0};
-  size_t key_len                    = INET6_ADDRPORTSTRLEN;
-  ats_ip_nptop(src, reinterpret_cast<char *>(key), key_len);
+  uint8_t data[INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH] = {0};
+  size_t data_len                                                   = 0;
+  ats_ip_nptop(src, reinterpret_cast<char *>(data), sizeof(data));
+  data_len = strlen(reinterpret_cast<char *>(data));
 
-  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), key, key_len, this->_token,
+  size_t cid_len;
+  QUICTypeUtil::write_QUICConnectionId(original_dcid, data + data_len, &cid_len);
+  data_len += cid_len;
+
+  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), data, data_len, this->_token,
        &this->_token_len);
+  ink_assert(this->_token_len == 20);
+
+  QUICTypeUtil::write_QUICConnectionId(original_dcid, this->_token + this->_token_len, &cid_len);
+  this->_token_len += cid_len;
+}
+
+const QUICConnectionId
+QUICRetryToken::original_dcid() const
+{
+  // Output of EVP_sha1() should be 160 bits
+  return QUICTypeUtil::read_QUICConnectionId(this->_token + 20, this->_token_len - 20);
 }
 
 QUICFrameType

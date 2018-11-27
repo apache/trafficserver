@@ -166,6 +166,12 @@ public:
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
+  QUICConnectionId
+  first_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
   const QUICFiveTuple
   five_tuple() const override
   {
@@ -297,6 +303,12 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 
   QUICConnectionId
   original_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  first_connection_id() const override
   {
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
