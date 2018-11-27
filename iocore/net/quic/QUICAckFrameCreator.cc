@@ -88,7 +88,7 @@ QUICAckFrameCreator::generate_frame(QUICEncryptionLevel level, uint64_t connecti
     info.level = level;
     info.type  = ack_frame->type();
     memcpy(info.data, &ack_info, sizeof(ack_info));
-    this->_records_frame(info);
+    this->_records_frame(ack_frame->id(), info);
   }
 
   return ack_frame;
@@ -124,7 +124,7 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
       ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
     } else {
       uint64_t delay = this->_calculate_delay(level);
-      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, this->_frame_ids, this);
+      ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, this->_issue_frame_id(), this);
     }
 
     gap             = last_ack_number - pn;
@@ -136,7 +136,7 @@ QUICAckFrameCreator::_create_ack_frame(QUICEncryptionLevel level)
     ack_frame->ack_block_section()->add_ack_block({static_cast<uint8_t>(gap - 1), length - 1});
   } else {
     uint64_t delay = this->_calculate_delay(level);
-    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, this->_frame_ids, this);
+    ack_frame      = QUICFrameFactory::create_ack_frame(largest_ack_number, delay, length - 1, this->_issue_frame_id(), this);
   }
 
   return ack_frame;

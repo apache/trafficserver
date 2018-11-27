@@ -24,9 +24,9 @@
 #include "QUICFrameGenerator.h"
 
 void
-QUICFrameGenerator::_records_frame(QUICFrameInformation info)
+QUICFrameGenerator::_records_frame(QUICFrameId id, QUICFrameInformation info)
 {
-  this->_info.insert(std::make_pair(this->_frame_ids++, info));
+  this->_info.insert(std::make_pair(id, info));
 }
 
 std::vector<QUICEncryptionLevel>
