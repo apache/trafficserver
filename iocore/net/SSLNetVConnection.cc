@@ -999,7 +999,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // Making the check here instead of later, so we only
       // do this setting immediately after we create the SSL object
       SNIConfig::scoped_config sniParam;
-      cchar *serverKey = this->options.sni_servername;
+      const char *serverKey = this->options.sni_servername;
       if (!serverKey) {
         ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
         serverKey = buff;

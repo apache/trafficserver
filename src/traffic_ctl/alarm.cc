@@ -41,46 +41,38 @@ struct AlarmListPolicy {
 
 using CtrlAlarmList = CtrlMgmtList<AlarmListPolicy>;
 
-static int
-alarm_list(unsigned argc, const char **argv)
+void
+CtrlEngine::alarm_list()
 {
   TSMgmtError error;
   CtrlAlarmList alarms;
-
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
-    return CtrlCommandUsage("alarm list", nullptr, 0);
-  }
 
   error = TSActiveEventGetMlt(alarms.list);
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "failed to fetch active alarms");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
 
   while (!alarms.empty()) {
     char *a = alarms.next();
-    printf("%s\n", a);
+    std::cout << a << std::endl;
     TSfree(a);
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-alarm_clear(unsigned argc, const char **argv)
+void
+CtrlEngine::alarm_clear()
 {
   TSMgmtError error;
   CtrlAlarmList alarms;
-
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
-    return CtrlCommandUsage("alarm clear", nullptr, 0);
-  }
 
   // First get the active alarms ...
   error = TSActiveEventGetMlt(alarms.list);
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "failed to fetch active alarms");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
 
   // Now resolve them all ...
@@ -91,49 +83,26 @@ alarm_clear(unsigned argc, const char **argv)
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to resolve %s", a);
       TSfree(a);
-      return CTRL_EX_ERROR;
+      status_code = CTRL_EX_ERROR;
+      return;
     }
 
     TSfree(a);
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-alarm_resolve(unsigned argc, const char **argv)
+void
+CtrlEngine::alarm_resolve()
 {
   TSMgmtError error;
   CtrlAlarmList alarms;
 
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments == 0) {
-    return CtrlCommandUsage("alarm resolve ALARM [ALARM ...]", nullptr, 0);
-  }
-
-  for (unsigned i = 0; i < n_file_arguments; ++i) {
-    error = TSEventResolve(file_arguments[i]);
+  for (const auto &it : arguments.get("resolve")) {
+    error = TSEventResolve(it.c_str());
     if (error != TS_ERR_OKAY) {
-      CtrlMgmtError(error, "failed to resolve %s", file_arguments[i]);
-      return CTRL_EX_ERROR;
+      CtrlMgmtError(error, "failed to resolve %s", it.c_str());
+      status_code = CTRL_EX_ERROR;
+      return;
     }
   }
-
-  return CTRL_EX_OK;
-}
-
-int
-subcommand_alarm(unsigned argc, const char **argv)
-{
-  const subcommand commands[] = {
-    {alarm_clear, "clear", "Clear all current alarms"},
-    {alarm_list, "list", "List all current alarms"},
-
-    // Note that we separate resolve one from resolve all for the same reasons that
-    // we have "metric zero" and "metric clear".
-    {alarm_resolve, "resolve", "Resolve the listed alarms"},
-    /* XXX describe a specific alarm? */
-    /* XXX raise an alarm? */
-  };
-
-  return CtrlGenericSubcommand("alarm", commands, countof(commands), argc, argv);
 }

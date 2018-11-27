@@ -31,13 +31,13 @@
 #pragma once
 
 #include "I_EventSystem.h"
-#include "tscore/Map.h"
 //#include"P_UnixNetProcessor.h"
 #include <vector>
 #include "P_SSLNextProtocolAccept.h"
 #include "tscore/ink_inet.h"
+#include <unordered_map>
 
-extern Map<int, SSLNextProtocolSet *> snpsMap;
+extern std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
 // enum of all the actions
 enum AllActions {
   TS_DISABLE_H2 = 0,
@@ -67,8 +67,9 @@ public:
     auto ssl_vc     = reinterpret_cast<SSLNetVConnection *>(cont);
     auto accept_obj = ssl_vc ? ssl_vc->accept_object : nullptr;
     if (accept_obj && accept_obj->snpa && ssl_vc) {
-      auto nps = snpsMap.get(accept_obj->id);
-      ssl_vc->registerNextProtocolSet(reinterpret_cast<SSLNextProtocolSet *>(nps));
+      if (auto it = snpsMap.find(accept_obj->id); it != snpsMap.end()) {
+        ssl_vc->registerNextProtocolSet(it->second);
+      }
     }
     return SSL_TLSEXT_ERR_OK;
   }
@@ -97,7 +98,7 @@ class SNI_IpAllow : public ActionItem
   IpMap ip_map;
 
 public:
-  SNI_IpAllow(std::string const &ip_allow_list, cchar *servername)
+  SNI_IpAllow(std::string const &ip_allow_list, const char *servername)
   {
     // the server identified by item.fqdn requires ATS to do IP filtering
     if (ip_allow_list.length()) {
@@ -146,5 +147,5 @@ class SNIActionPerformer
 {
 public:
   SNIActionPerformer() = default;
-  static int PerformAction(Continuation *cont, cchar *servername);
+  static int PerformAction(Continuation *cont, const char *servername);
 };

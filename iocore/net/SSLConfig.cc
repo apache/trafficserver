@@ -473,7 +473,7 @@ SSLConfigParams::initialize()
 
 // creates a new context attaching the provided certificate
 SSL_CTX *
-SSLConfigParams::getNewCTX(cchar *client_cert, cchar *client_key) const
+SSLConfigParams::getNewCTX(const char *client_cert, const char *client_key) const
 {
   SSL_CTX *nclient_ctx = nullptr;
   nclient_ctx          = SSLInitClientContext(this);

@@ -25,7 +25,7 @@
 #include <I_EventSystem.h>
 #include <P_EventSystem.h> // TODO: less? just need ET_TASK
 
-#include "tscore/Map.h"
+#include "tscore/IntrusiveHashMap.h"
 #include "tscore/PriorityQueue.h"
 
 #include "tscore/List.h"
@@ -75,7 +75,8 @@ class RefCountCacheHashEntry
 {
 public:
   Ptr<RefCountObj> item;
-  LINK(RefCountCacheHashEntry, item_link);
+  RefCountCacheHashEntry *_next{nullptr};
+  RefCountCacheHashEntry *_prev{nullptr};
   PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry;
   RefCountCacheItemMeta meta;
 
@@ -115,24 +116,32 @@ public:
 // Since the hashing values are all fixed size, we can simply use a classAllocator to avoid mallocs
 extern ClassAllocator<PriorityQueueEntry<RefCountCacheHashEntry *>> expiryQueueEntry;
 
-struct RefCountCacheHashing {
-  typedef uint64_t ID;
-  typedef uint64_t const Key;
-  typedef RefCountCacheHashEntry Value;
-  typedef DList(RefCountCacheHashEntry, item_link) ListHead;
+struct RefCountCacheLinkage {
+  using key_type   = uint64_t const;
+  using value_type = RefCountCacheHashEntry;
 
-  static ID
-  hash(Key key)
+  static value_type *&
+  next_ptr(value_type *value)
+  {
+    return value->_next;
+  }
+  static value_type *&
+  prev_ptr(value_type *value)
+  {
+    return value->_prev;
+  }
+  static uint64_t
+  hash_of(key_type key)
   {
     return key;
   }
-  static Key
-  key(Value const *value)
+  static key_type
+  key_of(value_type *v)
   {
-    return value->meta.key;
+    return v->meta.key;
   }
   static bool
-  equal(Key lhs, Key rhs)
+  equal(key_type lhs, key_type rhs)
   {
     return lhs == rhs;
   }
@@ -143,6 +152,8 @@ struct RefCountCacheHashing {
 template <class C> class RefCountCachePartition
 {
 public:
+  using hash_type = IntrusiveHashMap<RefCountCacheLinkage>;
+
   RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RecRawStatBlock *rsb = nullptr);
   Ptr<C> get(uint64_t key);
   void put(uint64_t key, C *item, int size = 0, int expire_time = 0);
@@ -151,15 +162,12 @@ public:
   void clear();
   bool is_full() const;
   bool make_space_for(unsigned int);
-  template <class Iterator> void dealloc_entry(Iterator ptr);
+  void dealloc_entry(hash_type::iterator ptr);
 
   size_t count() const;
   void copy(std::vector<RefCountCacheHashEntry *> &items);
 
-  typedef typename TSHashTable<RefCountCacheHashing>::iterator iterator_type;
-  typedef typename TSHashTable<RefCountCacheHashing>::self hash_type;
-  typedef typename TSHashTable<RefCountCacheHashing>::Location location_type;
-  TSHashTable<RefCountCacheHashing> *get_map();
+  hash_type &get_map();
 
   Ptr<ProxyMutex> lock; // Lock
 
@@ -190,11 +198,10 @@ Ptr<C>
 RefCountCachePartition<C>::get(uint64_t key)
 {
   this->metric_inc(refcountcache_total_lookups_stat, 1);
-  location_type l = this->item_map.find(key);
-  if (l.isValid()) {
+  if (auto it = this->item_map.find(key); it != this->item_map.end()) {
     // found
     this->metric_inc(refcountcache_total_hits_stat, 1);
-    return make_ptr((C *)l.m_value->item.get());
+    return make_ptr(static_cast<C *>(it->item.get()));
   } else {
     return Ptr<C>();
   }
@@ -241,44 +248,37 @@ template <class C>
 void
 RefCountCachePartition<C>::erase(uint64_t key, ink_time_t expiry_time)
 {
-  location_type l = this->item_map.find(key);
-  if (l.isValid()) {
-    if (expiry_time >= 0 && l.m_value->meta.expiry_time != expiry_time) {
+  if (auto it = this->item_map.find(key); it != this->item_map.end()) {
+    if (expiry_time >= 0 && it->meta.expiry_time != expiry_time) {
       return;
     }
-
-    // TSHashMap does NOT clean up the item-- this remove just removes it from the map
-    // we are responsible for cleaning it up here
-    this->item_map.remove(l);
-    this->dealloc_entry(l);
+    this->item_map.erase(it);
+    this->dealloc_entry(it);
   }
 }
 
 template <class C>
-template <class Iterator>
 void
-RefCountCachePartition<C>::dealloc_entry(Iterator ptr)
+RefCountCachePartition<C>::dealloc_entry(hash_type::iterator ptr)
 {
-  if (ptr.m_value) {
-    // decrement usag are not cleaned up. The values are not touched in this method, therefore it is safe
-    // counters
-    this->size -= ptr->meta.size;
-    this->items--;
+  // decrement usage are not cleaned up. The values are not touched in this method, therefore it is safe
+  // counters
+  this->size -= ptr->meta.size;
+  this->items--;
 
-    this->metric_inc(refcountcache_current_size_stat, -((int64_t)ptr->meta.size));
-    this->metric_inc(refcountcache_current_items_stat, -1);
+  this->metric_inc(refcountcache_current_size_stat, -((int64_t)ptr->meta.size));
+  this->metric_inc(refcountcache_current_items_stat, -1);
 
-    // remove from expiry queue
-    if (ptr->expiry_entry != nullptr) {
-      Debug("refcountcache", "partition %d deleting item from expiry_queue idx=%d", this->part_num, ptr->expiry_entry->index);
+  // remove from expiry queue
+  if (ptr->expiry_entry != nullptr) {
+    Debug("refcountcache", "partition %d deleting item from expiry_queue idx=%d", this->part_num, ptr->expiry_entry->index);
 
-      this->expiry_queue.erase(ptr->expiry_entry);
-      expiryQueueEntry.free(ptr->expiry_entry);
-      ptr->expiry_entry = nullptr; // To avoid the destruction of `l` calling the destructor again-- and causing issues
-    }
-
-    RefCountCacheHashEntry::free<C>(ptr.m_value);
+    this->expiry_queue.erase(ptr->expiry_entry);
+    expiryQueueEntry.free(ptr->expiry_entry);
+    ptr->expiry_entry = nullptr; // To avoid the destruction of `l` calling the destructor again-- and causing issues
   }
+
+  RefCountCacheHashEntry::free<C>(ptr);
 }
 
 template <class C>
@@ -288,12 +288,12 @@ RefCountCachePartition<C>::clear()
   // Since the hash nodes embed the list pointers, you can't iterate over the
   // hash elements and deallocate them, let alone remove them from the hash.
   // Hence, this monstrosity.
-  while (this->item_map.count() > 0) {
-    location_type pos = this->item_map.find(this->item_map.begin().m_value);
+  auto it = this->item_map.begin();
+  while (it != this->item_map.end()) {
+    auto cur = it;
 
-    ink_assert(pos.isValid());
-    this->item_map.remove(pos);
-    this->dealloc_entry(pos);
+    it = this->item_map.erase(it);
+    this->dealloc_entry(cur);
   }
 }
 
@@ -341,9 +341,9 @@ template <class C>
 void
 RefCountCachePartition<C>::copy(std::vector<RefCountCacheHashEntry *> &items)
 {
-  for (RefCountCachePartition<C>::iterator_type i = this->item_map.begin(); i != this->item_map.end(); ++i) {
+  for (auto &&it : this->item_map) {
     RefCountCacheHashEntry *val = RefCountCacheHashEntry::alloc();
-    val->set(i.m_value->item.get(), i.m_value->meta.key, i.m_value->meta.size, i.m_value->meta.expiry_time);
+    val->set(it.item.get(), it.meta.key, it.meta.size, it.meta.expiry_time);
     items.push_back(val);
   }
 }
@@ -358,10 +358,10 @@ RefCountCachePartition<C>::metric_inc(RefCountCache_Stats metric_enum, int64_t d
 }
 
 template <class C>
-TSHashTable<RefCountCacheHashing> *
+IntrusiveHashMap<RefCountCacheLinkage> &
 RefCountCachePartition<C>::get_map()
 {
-  return &this->item_map;
+  return this->item_map;
 }
 
 // The header for the cache, this is used to check if the serialized cache is compatible

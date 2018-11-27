@@ -23,30 +23,17 @@
 
 #include "traffic_ctl.h"
 
-static int drain   = 0;
-static int manager = 0;
-
-static int
-restart(unsigned argc, const char **argv)
+void
+CtrlEngine::server_restart()
 {
   TSMgmtError error;
-  const char *usage = "server restart [OPTIONS]";
-  unsigned flags    = TS_RESTART_OPT_NONE;
+  unsigned flags = TS_RESTART_OPT_NONE;
 
-  const ArgumentDescription opts[] = {
-    {"drain", '-', "Wait for client connections to drain before restarting", "F", &drain, nullptr, nullptr},
-    {"manager", '-', "Restart traffic_manager as well as traffic_server", "F", &manager, nullptr, nullptr},
-  };
-
-  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
-    return CtrlCommandUsage(usage, opts, countof(opts));
-  }
-
-  if (drain) {
+  if (arguments.get("drain")) {
     flags |= TS_RESTART_OPT_DRAIN;
   }
 
-  if (manager) {
+  if (arguments.get("manager")) {
     error = TSRestart(flags);
   } else {
     error = TSBounce(flags);
@@ -54,79 +41,51 @@ restart(unsigned argc, const char **argv)
 
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "server restart failed");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-server_restart(unsigned argc, const char **argv)
-{
-  return restart(argc, argv);
-}
-
-static int
-server_backtrace(unsigned argc, const char **argv)
+void
+CtrlEngine::server_backtrace()
 {
   TSMgmtError error;
   TSString trace = nullptr;
 
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
-    return CtrlCommandUsage("server backtrace");
-  }
-
   error = TSProxyBacktraceGet(0, &trace);
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "server backtrace failed");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
 
-  printf("%s\n", trace);
+  std::cout << trace << std::endl;
   TSfree(trace);
-  return CTRL_EX_OK;
 }
 
-static int
-server_status(unsigned argc, const char **argv)
+void
+CtrlEngine::server_status()
 {
-  if (!CtrlProcessArguments(argc, argv, nullptr, 0) || n_file_arguments != 0) {
-    return CtrlCommandUsage("server status");
-  }
-
   switch (TSProxyStateGet()) {
   case TS_PROXY_ON:
-    printf("Proxy -- on\n");
+    std::cout << "Proxy -- on" << std::endl;
     break;
   case TS_PROXY_OFF:
-    printf("Proxy -- off\n");
+    std::cout << "Proxy -- off" << std::endl;
     break;
   case TS_PROXY_UNDEFINED:
-    printf("Proxy status undefined\n");
+    std::cout << "Proxy status undefined" << std::endl;
     break;
   }
-
-  // XXX Surely we can report more useful status that this !?!!
-
-  return CTRL_EX_OK;
 }
 
-static int
-server_stop(unsigned argc, const char **argv)
+void
+CtrlEngine::server_stop()
 {
   TSMgmtError error;
-  const char *usage = "server stop [OPTIONS]";
-  unsigned flags    = TS_RESTART_OPT_NONE;
+  unsigned flags = TS_RESTART_OPT_NONE;
 
-  const ArgumentDescription opts[] = {
-    {"drain", '-', "Wait for client connections to drain before stopping", "F", &drain, nullptr, nullptr},
-  };
-
-  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
-    return CtrlCommandUsage(usage, opts, countof(opts));
-  }
-
-  if (drain) {
+  if (arguments.get("drain")) {
     flags |= TS_STOP_OPT_DRAIN;
   }
 
@@ -134,62 +93,36 @@ server_stop(unsigned argc, const char **argv)
 
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "server stop failed");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-server_start(unsigned argc, const char **argv)
+void
+CtrlEngine::server_start()
 {
   TSMgmtError error;
-  int cache      = 0;
-  int hostdb     = 0;
   unsigned clear = TS_CACHE_CLEAR_NONE;
 
-  const ArgumentDescription opts[] = {
-    {"clear-cache", '-', "Clear the disk cache on startup", "F", &cache, nullptr, nullptr},
-    {"clear-hostdb", '-', "Clear the DNS cache on startup", "F", &hostdb, nullptr, nullptr},
-  };
-
-  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
-    return CtrlCommandUsage("server start [OPTIONS]", opts, countof(opts));
-  }
-
-  clear |= cache ? TS_CACHE_CLEAR_CACHE : TS_CACHE_CLEAR_NONE;
-  clear |= hostdb ? TS_CACHE_CLEAR_HOSTDB : TS_CACHE_CLEAR_NONE;
+  clear |= arguments.get("clear-cache") ? TS_CACHE_CLEAR_CACHE : TS_CACHE_CLEAR_NONE;
+  clear |= arguments.get("clear-hostdb") ? TS_CACHE_CLEAR_HOSTDB : TS_CACHE_CLEAR_NONE;
 
   error = TSProxyStateSet(TS_PROXY_ON, clear);
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "server start failed");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
-
-  return CTRL_EX_OK;
 }
 
-static int
-server_drain(unsigned argc, const char **argv)
+void
+CtrlEngine::server_drain()
 {
   TSMgmtError error;
-  const char *usage = "server drain [OPTIONS]";
 
-  int no_new_connection            = 0;
-  int undo                         = 0;
-  const ArgumentDescription opts[] = {
-    {"no-new-connection", 'N', "Wait for new connections down to threshold before starting draining", "F", &no_new_connection,
-     nullptr, nullptr},
-    {"undo", 'U', "Recover server from the drain mode", "F", &undo, nullptr, nullptr},
-  };
-
-  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
-    return CtrlCommandUsage(usage, opts, countof(opts));
-  }
-
-  if (undo) {
+  if (arguments.get("undo")) {
     error = TSDrain(TS_DRAIN_OPT_UNDO);
-  } else if (no_new_connection) {
+  } else if (arguments.get("no-new-connection")) {
     error = TSDrain(TS_DRAIN_OPT_IDLE);
   } else {
     error = TSDrain(TS_DRAIN_OPT_NONE);
@@ -197,21 +130,7 @@ server_drain(unsigned argc, const char **argv)
 
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "server drain failed");
-    return CTRL_EX_ERROR;
+    status_code = CTRL_EX_ERROR;
+    return;
   }
-
-  return CTRL_EX_OK;
-}
-
-int
-subcommand_server(unsigned argc, const char **argv)
-{
-  const subcommand commands[] = {{server_backtrace, "backtrace", "Show a full stack trace of the traffic_server process"},
-                                 {server_restart, "restart", "Restart Traffic Server"},
-                                 {server_start, "start", "Start the proxy"},
-                                 {server_status, "status", "Show the proxy status"},
-                                 {server_stop, "stop", "Stop the proxy"},
-                                 {server_drain, "drain", "Drain the requests"}};
-
-  return CtrlGenericSubcommand("server", commands, countof(commands), argc, argv);
 }

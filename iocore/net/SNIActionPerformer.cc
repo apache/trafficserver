@@ -35,10 +35,10 @@
 #include "P_SSLNextProtocolAccept.h"
 #include "P_SSLUtils.h"
 
-extern Map<int, SSLNextProtocolSet *> snpsMap;
+extern std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
 
 int
-SNIActionPerformer::PerformAction(Continuation *cont, cchar *servername)
+SNIActionPerformer::PerformAction(Continuation *cont, const char *servername)
 {
   SNIConfig::scoped_config params;
   auto actionvec = params->get(servername);

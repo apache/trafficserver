@@ -95,7 +95,7 @@ test_LD_ADD = \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@LIBTCL@ @HWLOC_LIBS@
+	@HWLOC_LIBS@
 
 test_Buffer_SOURCES = \
 	test_Buffer.cc

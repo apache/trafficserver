@@ -143,10 +143,6 @@ msgstr ""
 msgid "openssl"
 msgstr "openssl"
 
-#: ../../../admin-guide/installation/index.en.rst:108
-msgid "tcl"
-msgstr "tcl"
-
 #: ../../../admin-guide/installation/index.en.rst:109
 msgid "expat"
 msgstr "expat"

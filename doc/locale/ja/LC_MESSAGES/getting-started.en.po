@@ -236,10 +236,6 @@ msgstr ""
 msgid "openssl"
 msgstr ""
 
-#: ../../getting-started.en.rst:157
-msgid "tcl"
-msgstr ""
-
 #: ../../getting-started.en.rst:158
 msgid "expat"
 msgstr ""

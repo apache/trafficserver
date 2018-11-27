@@ -47,4 +47,4 @@ traffic_ctl_traffic_ctl_LDADD = \
 	$(top_builddir)/mgmt/api/libtsmgmt.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	@LIBTCL@ @HWLOC_LIBS@
+	@HWLOC_LIBS@

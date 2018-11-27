@@ -105,7 +105,6 @@ development tools and libraries installed:
 -  gcc (>= 4.3 or clang > 3.0)
 -  GNU make
 -  openssl (libssl-dev for Ubuntu 16.04)
--  tcl (tcl-8.6-dev for Ubuntu 16.04)
 -  pcre (libpcre3-dev for Ubuntu 16.04)
 -  libcap
 -  flex (for TPROXY)

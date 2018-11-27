@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include "tscore/Map.h"
 #include "tscore/List.h"
 #include "tscore/ink_mutex.h"
 #include "P_EventSystem.h"

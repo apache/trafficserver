@@ -42,7 +42,6 @@ libtscore_la_LIBADD = \
 	@LIBOBJS@ \
 	@LIBPCRE@ \
 	@OPENSSL_LIBS@ \
-	@LIBTCL@ \
 	@LIBRESOLV@ \
 	@LIBCAP@ \
 	@YAMLCPP_LIBS@ \
@@ -112,8 +111,6 @@ libtscore_la_SOURCES = \
 	ink_exception.h \
 	ink_file.cc \
 	ink_file.h \
-	ink_hash_table.cc \
-	ink_hash_table.h \
 	ink_hrtime.cc \
 	ink_hrtime.h \
 	ink_inet.cc \
@@ -170,7 +167,6 @@ libtscore_la_SOURCES = \
 	List.h \
 	llqueue.cc \
 	lockfile.cc \
-	Map.h \
 	MatcherUtils.cc \
 	MatcherUtils.h \
 	MemSpan.h \
@@ -183,8 +179,6 @@ libtscore_la_SOURCES = \
 	ParseRules.h \
 	PriorityQueue.h \
 	Ptr.h \
-	RawHashTable.cc \
-	RawHashTable.h \
 	RbTree.cc \
 	RbTree.h \
 	Regex.cc \
@@ -239,16 +233,16 @@ ParseRulesCType: CompileParseRules
 mkdfa_SOURCES = mkdfa.c
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
+test_atomic_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@
 
 test_freelist_SOURCES = test_freelist.cc
-test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
+test_freelist_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@
 
 test_geometry_SOURCES = test_geometry.cc
-test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@
+test_geometry_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@
 
 test_X509HostnameValidator_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
-test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS@
+test_X509HostnameValidator_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la @LIBPCRE@ @OPENSSL_LIBS@
 test_X509HostnameValidator_SOURCES = unit_tests/test_X509HostnameValidator.cc
 
 test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
@@ -270,7 +264,6 @@ test_tscore_SOURCES = \
 	unit_tests/test_IntrusivePtr.cc \
 	unit_tests/test_IpMap.cc \
 	unit_tests/test_layout.cc \
-	unit_tests/test_Map.cc \
 	unit_tests/test_List.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
@@ -279,8 +272,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
-	unit_tests/test_ts_file.cc \
-	unit_tests/test_Vec.cc
+	unit_tests/test_ts_file.cc
 
 if HAS_HKDF
 test_tscore_SOURCES += \

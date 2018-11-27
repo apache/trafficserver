@@ -190,50 +190,29 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   }
   unlock();
 
-  return (buffer);
+  return buffer;
 }
 
 void
 HttpBodyFactory::dump_template_tables(FILE *fp)
 {
-  RawHashTable *h1, *h2;
-  RawHashTable_Key k1, k2;
-  RawHashTable_Value v1, v2;
-  RawHashTable_Binding *b1, *b2;
-  RawHashTable_IteratorState i1, i2;
-  HttpBodySet *body_set;
-
   lock();
-
-  h1 = table_of_sets;
-
-  if (h1 != nullptr) {
-    ///////////////////////////////////////////
-    // loop over set->body-types hash table //
-    ///////////////////////////////////////////
-
-    for (b1 = h1->firstBinding(&i1); b1 != nullptr; b1 = h1->nextBinding(&i1)) {
-      k1       = table_of_sets->getKeyFromBinding(b1);
-      v1       = table_of_sets->getValueFromBinding(b1);
-      body_set = (HttpBodySet *)v1;
-
-      if (body_set != nullptr) {
-        fprintf(fp, "set %s: name '%s', lang '%s', charset '%s'\n", k1, body_set->set_name, body_set->content_language,
-                body_set->content_charset);
+  if (table_of_sets) {
+    for (const auto &it1 : *table_of_sets.get()) {
+      HttpBodySet *body_set = static_cast<HttpBodySet *>(it1.second);
+      if (body_set) {
+        fprintf(fp, "set %s: name '%s', lang '%s', charset '%s'\n", it1.first.c_str(), body_set->set_name,
+                body_set->content_language, body_set->content_charset);
 
         ///////////////////////////////////////////
         // loop over body-types->body hash table //
         ///////////////////////////////////////////
 
         ink_assert(body_set->is_sane());
-        h2 = body_set->table_of_pages;
-
-        for (b2 = h2->firstBinding(&i2); b2 != nullptr; b2 = h2->nextBinding(&i2)) {
-          k2                  = table_of_sets->getKeyFromBinding(b2);
-          v2                  = table_of_sets->getValueFromBinding(b2);
-          HttpBodyTemplate *t = (HttpBodyTemplate *)v2;
-
-          fprintf(fp, "  %-30s: %" PRId64 " bytes\n", k2, t->byte_count);
+        if (body_set->table_of_pages) {
+          for (const auto &it2 : *body_set->table_of_pages.get()) {
+            fprintf(fp, "  %-30s: %" PRId64 " bytes\n", it2.first.c_str(), it2.second->byte_count);
+          }
         }
       }
     }
@@ -254,7 +233,7 @@ config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UN
 {
   HttpBodyFactory *body_factory = (HttpBodyFactory *)cookie;
   body_factory->reconfigure();
-  return (0);
+  return 0;
 }
 
 void
@@ -372,7 +351,7 @@ HttpBodyFactory::HttpBodyFactory()
 HttpBodyFactory::~HttpBodyFactory()
 {
   // FIX: need to implement destructor
-  delete table_of_sets;
+  table_of_sets.reset(nullptr);
 }
 
 // LOCKING: must be called with lock taken
@@ -457,13 +436,12 @@ const char *
 HttpBodyFactory::determine_set_by_host(HttpTransact::State *context)
 {
   const char *set;
-  RawHashTable_Value v;
   int host_len = context->hh_info.host_len;
   char host_buffer[host_len + 1];
   strncpy(host_buffer, context->hh_info.request_host, host_len);
   host_buffer[host_len] = '\0';
-  if (table_of_sets->getValue((RawHashTable_Key)host_buffer, &v)) {
-    set = table_of_sets->getKeyFromBinding(table_of_sets->getCurrentBinding((RawHashTable_Key)host_buffer));
+  if (auto it = table_of_sets->find(host_buffer); it != table_of_sets->end()) {
+    set = it->first.c_str();
   } else {
     set = "default";
   }
@@ -471,21 +449,15 @@ HttpBodyFactory::determine_set_by_host(HttpTransact::State *context)
 }
 
 const char *
-HttpBodyFactory::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt_language_list, StrList *acpt_charset_list,
-                                           float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr, int *I_best_ptr)
+HttpBodyFactory::determine_set_by_language(std::unique_ptr<BodySetTable> &table_of_sets, StrList *acpt_language_list,
+                                           StrList *acpt_charset_list, float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr,
+                                           int *I_best_ptr)
 {
   float Q, Ql, Qc, Q_best;
   int I, Idummy, I_best;
   int La, Lc, La_best, Lc_best;
   int is_the_default_set;
   const char *set_best;
-
-  RawHashTable_Key k1;
-  RawHashTable_Value v1;
-  RawHashTable_Binding *b1;
-  RawHashTable_IteratorState i1;
-  RawHashTable *table_of_pages;
-  HttpBodySetRawData *body_set;
 
   set_best = "default";
   Q_best   = 0.00001;
@@ -506,20 +478,15 @@ HttpBodyFactory::determine_set_by_language(RawHashTable *table_of_sets, StrList 
     goto done;
   }
 
-  if (table_of_sets != nullptr) {
+  if (table_of_sets) {
     ///////////////////////////////////////////
     // loop over set->body-types hash table //
     ///////////////////////////////////////////
+    for (const auto &it : *table_of_sets.get()) {
+      const char *set_name         = it.first.c_str();
+      HttpBodySetRawData *body_set = it.second;
 
-    for (b1 = table_of_sets->firstBinding(&i1); b1 != nullptr; b1 = table_of_sets->nextBinding(&i1)) {
-      k1                   = table_of_sets->getKeyFromBinding(b1);
-      v1                   = table_of_sets->getValueFromBinding(b1);
-      const char *set_name = (const char *)k1;
-
-      body_set       = (HttpBodySetRawData *)v1;
-      table_of_pages = body_set->table_of_pages;
-
-      if ((set_name == nullptr) || (table_of_pages == nullptr)) {
+      if ((it.first.empty()) || (body_set->table_of_pages == nullptr)) {
         continue;
       }
 
@@ -635,7 +602,7 @@ done:
   *La_best_ptr = La_best;
   *Lc_best_ptr = Lc_best;
   *I_best_ptr  = I_best;
-  return (set_best);
+  return set_best;
 }
 
 // LOCKING: must be called with lock taken
@@ -648,46 +615,42 @@ HttpBodyFactory::determine_set_by_language(StrList *acpt_language_list, StrList 
 
   set_best = determine_set_by_language(table_of_sets, acpt_language_list, acpt_charset_list, &Q_best, &La_best, &Lc_best, &I_best);
 
-  return (set_best);
+  return set_best;
 }
 
 // LOCKING: must be called with lock taken
 HttpBodyTemplate *
 HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **body_set_return)
 {
-  RawHashTable_Value v;
-
   Debug("body_factory", "calling find_template(%s,%s)", set, type);
 
   *body_set_return = nullptr;
 
-  if (table_of_sets == nullptr) {
-    return (nullptr);
+  if (table_of_sets == nullptr || !set || !type) {
+    return nullptr;
   }
-  if (table_of_sets->getValue((RawHashTable_Key)set, &v)) {
-    HttpBodySet *body_set        = (HttpBodySet *)v;
-    RawHashTable *table_of_types = body_set->table_of_pages;
-
-    if (table_of_types == nullptr) {
-      return (nullptr);
+  if (auto it = table_of_sets->find(set); it != table_of_sets->end()) {
+    HttpBodySet *body_set = static_cast<HttpBodySet *>(it->second);
+    if (body_set->table_of_pages == nullptr) {
+      return nullptr;
     }
 
-    if (table_of_types->getValue((RawHashTable_Key)type, &v)) {
-      HttpBodyTemplate *t = (HttpBodyTemplate *)v;
+    if (auto it_page = body_set->table_of_pages->find(type); it_page != body_set->table_of_pages->end()) {
+      HttpBodyTemplate *t = it_page->second;
       if ((t == nullptr) || (!t->is_sane())) {
-        return (nullptr);
+        return nullptr;
       }
       *body_set_return = body_set;
 
       Debug("body_factory", "find_template(%s,%s) -> (file %s, length %" PRId64 ", lang '%s', charset '%s')", set, type,
             t->template_pathname, t->byte_count, body_set->content_language, body_set->content_charset);
 
-      return (t);
+      return t;
     }
   }
   Debug("body_factory", "find_template(%s,%s) -> NULL", set, type);
 
-  return (nullptr);
+  return nullptr;
 }
 
 // LOCKING: must be called with lock taken
@@ -705,17 +668,17 @@ HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
      } else
    */
   if (response_suppression_mode == 0) {
-    return (false);
+    return false;
   } else if (response_suppression_mode == 1) {
-    return (true);
+    return true;
   } else if (response_suppression_mode == 2) {
     if (context->req_flavor == HttpTransact::REQ_FLAVOR_INTERCEPTED) {
-      return (true);
+      return true;
     } else {
-      return (false);
+      return false;
     }
   } else {
-    return (false);
+    return false;
   }
 }
 
@@ -723,69 +686,43 @@ HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
 void
 HttpBodyFactory::nuke_template_tables()
 {
-  RawHashTable *h1, *h2;
-  RawHashTable_Value v1, v2;
-  RawHashTable_Binding *b1, *b2;
-  RawHashTable_IteratorState i1, i2;
-  HttpBodySet *body_set;
-  HttpBodyTemplate *hbt;
-
-  h1 = table_of_sets;
-
-  if (h1) {
+  if (table_of_sets) {
     Debug("body_factory", "deleting pre-existing template tables");
   } else {
     Debug("body_factory", "no pre-existing template tables");
   }
-  if (h1 != nullptr) {
+  if (table_of_sets) {
     ///////////////////////////////////////////
     // loop over set->body-types hash table //
     ///////////////////////////////////////////
-
-    for (b1 = h1->firstBinding(&i1); b1 != nullptr; b1 = h1->nextBinding(&i1)) {
-      v1 = h1->getValueFromBinding(b1);
-
-      body_set = (HttpBodySet *)v1;
+    for (const auto &it : *table_of_sets.get()) {
+      HttpBodySet *body_set = static_cast<HttpBodySet *>(it.second);
       ink_assert(body_set->is_sane());
-      h2 = body_set->table_of_pages;
-
-      if (h2 != nullptr) {
-        body_set->table_of_pages = nullptr;
-
+      if (body_set->table_of_pages) {
         ///////////////////////////////////////////
         // loop over body-types->body hash table //
         ///////////////////////////////////////////
-
-        for (b2 = h2->firstBinding(&i2); b2 != nullptr; b2 = h2->nextBinding(&i2)) {
-          v2 = h2->getValueFromBinding(b2);
-          if (v2) {
-            // need a cast here
-            hbt = (HttpBodyTemplate *)v2;
-            delete hbt;
-          }
+        for (const auto &it_page : *body_set->table_of_pages.get()) {
+          delete it_page.second;
         }
-
-        delete h2;
+        body_set->table_of_pages.reset(nullptr);
       }
-
       delete body_set;
     }
-    delete h1;
+    table_of_sets.reset(nullptr);
   }
-
-  table_of_sets = nullptr;
 }
 
 // LOCKING: must be called with lock taken
-RawHashTable *
+std::unique_ptr<HttpBodyFactory::BodySetTable>
 HttpBodyFactory::load_sets_from_directory(char *set_dir)
 {
   DIR *dir;
   struct dirent *dirEntry;
-  RawHashTable *new_table_of_sets;
+  std::unique_ptr<HttpBodyFactory::BodySetTable> new_table_of_sets;
 
   if (set_dir == nullptr) {
-    return (nullptr);
+    return nullptr;
   }
 
   Debug("body_factory", "load_sets_from_directory(%s)", set_dir);
@@ -798,10 +735,10 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   if (dir == nullptr) {
     Warning("can't open response template directory '%s' (%s)", set_dir, (strerror(errno) ? strerror(errno) : "unknown reason"));
     Warning("no response templates --- using default error pages");
-    return (nullptr);
+    return nullptr;
   }
 
-  new_table_of_sets = new RawHashTable(RawHashTable_KeyType_String);
+  new_table_of_sets.reset(new HttpBodyFactory::BodySetTable);
 
   //////////////////////////////////////////
   // loop over each language subdirectory //
@@ -837,13 +774,13 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
     HttpBodySet *body_set = load_body_set_from_directory(dirEntry->d_name, subdir);
     if (body_set != nullptr) {
       Debug("body_factory", "  %s -> %p", dirEntry->d_name, body_set);
-      new_table_of_sets->setValue((RawHashTable_Key)(dirEntry->d_name), (RawHashTable_Value)body_set);
+      new_table_of_sets->emplace(dirEntry->d_name, body_set);
     }
   }
 
   closedir(dir);
 
-  return (new_table_of_sets);
+  return new_table_of_sets;
 }
 
 // LOCKING: must be called with lock taken
@@ -931,7 +868,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   }
 
   closedir(dir);
-  return (body_set);
+  return body_set;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -956,9 +893,7 @@ HttpBodySet::~HttpBodySet()
   ats_free(set_name);
   ats_free(content_language);
   ats_free(content_charset);
-  if (table_of_pages) {
-    delete table_of_pages;
-  }
+  table_of_pages.reset(nullptr);
 }
 
 int
@@ -972,15 +907,11 @@ HttpBodySet::init(char *set, char *dir)
   ink_filepath_make(info_path, sizeof(info_path), dir, ".body_factory_info");
   fd = open(info_path, O_RDONLY);
   if (fd < 0) {
-    return (-1);
+    return -1;
   }
 
   this->set_name = ats_strdup(set);
-
-  if (this->table_of_pages) {
-    delete (this->table_of_pages);
-  }
-  this->table_of_pages = new RawHashTable(RawHashTable_KeyType_String);
+  this->table_of_pages.reset(new TemplateTable);
 
   lineno = 0;
 
@@ -1079,37 +1010,37 @@ HttpBodySet::init(char *set, char *dir)
   }
 
   close(fd);
-  return (lines_added);
+  return lines_added;
 }
 
 HttpBodyTemplate *
 HttpBodySet::get_template_by_name(const char *name)
 {
-  RawHashTable_Value v;
-
   Debug("body_factory", "    calling get_template_by_name(%s)", name);
 
   if (table_of_pages == nullptr) {
-    return (nullptr);
+    return nullptr;
   }
 
-  if (table_of_pages->getValue((RawHashTable_Key)name, &v)) {
-    HttpBodyTemplate *t = (HttpBodyTemplate *)v;
+  if (auto it = table_of_pages->find(name); it != table_of_pages->end()) {
+    HttpBodyTemplate *t = it->second;
     if ((t == nullptr) || (!t->is_sane())) {
-      return (nullptr);
+      return nullptr;
     }
     Debug("body_factory", "    get_template_by_name(%s) -> (file %s, length %" PRId64 ")", name, t->template_pathname,
           t->byte_count);
-    return (t);
+    return t;
   }
   Debug("body_factory", "    get_template_by_name(%s) -> NULL", name);
-  return (nullptr);
+  return nullptr;
 }
 
 void
 HttpBodySet::set_template_by_name(const char *name, HttpBodyTemplate *t)
 {
-  table_of_pages->setValue((RawHashTable_Key)name, (RawHashTable_Value)t);
+  if (name) {
+    table_of_pages->emplace(name, t);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1158,10 +1089,10 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   // coverity[fs_check_call]
   status = stat(path, &stat_buf);
   if (status != 0) {
-    return (0);
+    return 0;
   }
   if (!S_ISREG(stat_buf.st_mode)) {
-    return (0);
+    return 0;
   }
 
   ///////////////////
@@ -1171,7 +1102,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   // coverity[toctou]
   fd = open(path, O_RDONLY);
   if (fd < 0) {
-    return (0);
+    return 0;
   }
 
   ////////////////////////////////////////
@@ -1192,7 +1123,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
     Warning("reading template file '%s', got %" PRId64 " bytes instead of %" PRId64 " (%s)", path, bytes_read, new_byte_count,
             (strerror(errno) ? strerror(errno) : "unknown error"));
     ats_free(new_template_buffer);
-    return (0);
+    return 0;
   }
 
   Debug("body_factory", "    read %" PRId64 " bytes from '%s'", new_byte_count, path);
@@ -1206,7 +1137,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   byte_count        = new_byte_count;
   template_pathname = ats_strdup(path);
 
-  return (1);
+  return 1;
 }
 
 char *
@@ -1224,5 +1155,5 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State *context, int64_
   Debug("body_factory_instantiation", "    after instantiation: [%s]", buffer);
   Debug("body_factory", "  returning %" PRId64 " byte instantiated buffer", *buflen_return);
 
-  return (buffer);
+  return buffer;
 }

@@ -434,42 +434,6 @@ LogUtils::remove_content_type_attributes(char *type_str, int *type_len)
   }
 }
 
-/*-------------------------------------------------------------------------
-  LogUtils::timestamp_to_hex_str
-
-  This routine simply writes the given timestamp integer [time_t] in the equivalent
-  hexadecimal string format "xxxxxxxxxx" into the provided buffer [buf] of
-  size [bufLen].
-
-  It returns 1 if the provided buffer is not big enough to hold the
-  equivalent ip string (and its null terminator), and 0 otherwise.
-  If the buffer is not big enough, only the ip "segments" that completely
-  fit into it are written, and the buffer is null terminated.
-  -------------------------------------------------------------------------*/
-
-int
-LogUtils::timestamp_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t *numCharsPtr)
-{
-  static const char *table = "0123456789abcdef@";
-  int retVal               = 1;
-  int shift                = 28;
-  if (buf && bufLen > 0) {
-    if (bufLen > 8) {
-      bufLen = 8;
-    }
-    for (retVal = 0; retVal < (int)bufLen;) {
-      buf[retVal++] = (char)table[((ip >> shift) & 0xf)];
-      shift -= 4;
-    }
-
-    if (numCharsPtr) {
-      *numCharsPtr = (size_t)retVal;
-    }
-    retVal = (retVal == 8) ? 0 : 1;
-  }
-  return retVal;
-}
-
 /*
 int
 LogUtils::ip_to_str (unsigned ip, char *str, unsigned len)

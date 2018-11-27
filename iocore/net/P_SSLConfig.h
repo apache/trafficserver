@@ -123,11 +123,11 @@ struct SSLConfigParams : public ConfigInfo {
 
   SSL_CTX *client_ctx;
 
-  mutable HashMap<cchar *, class StringHashFns, SSL_CTX *> ctx_map;
+  mutable std::unordered_map<std::string, SSL_CTX *> ctx_map;
   mutable ink_mutex ctxMapLock;
 
   SSL_CTX *getClientSSL_CTX(void) const;
-  SSL_CTX *getNewCTX(cchar *client_cert, cchar *key_file) const;
+  SSL_CTX *getNewCTX(const char *client_cert, const char *key_file) const;
 
   void initialize();
   void cleanup();

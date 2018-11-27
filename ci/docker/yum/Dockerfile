@@ -50,7 +50,7 @@ RUN yum -y update; \
     # Various other tools
     git rpm-build distcc-server file; \
     # Devel packages that ATS needs
-    yum -y install openssl-devel tcl-devel expat-devel pcre-devel libcap-devel hwloc-devel libunwind-devel \
+    yum -y install openssl-devel expat-devel pcre-devel libcap-devel hwloc-devel libunwind-devel \
     xz-devel libcurl-devel ncurses-devel jemalloc-devel GeoIP-devel kyotocabinet-devel luajit-devel \
     brotli-devel ImageMagick-devel ImageMagick-c++-devel perl-ExtUtils-MakeMaker perl-Digest-SHA; \
     # This is for autest stuff

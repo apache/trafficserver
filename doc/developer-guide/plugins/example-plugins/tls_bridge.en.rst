@@ -1,18 +1,14 @@
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
+.. Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+   agreements.  See the NOTICE file distributed with this work for additional information regarding
+   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with the License.  You may obtain
+   a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
+   Unless required by applicable law or agreed to in writing, software distributed under the License
+   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+   or implied.  See the License for the specific language governing permissions and limitations
    under the License.
 
 .. include:: ../../../common.defs
@@ -26,7 +22,8 @@
 
 This plugin is used to provide secured TLS tunnels for connections between a Client and a Service
 via two gateway |TS| instances. By configuring the |TS| instances the level of security in the
-tunnel can be easily controlled for all communications across the tunnels.
+tunnel can be easily controlled for all communications across the tunnels without having to update
+the client or service.
 
 Description
 ===========
@@ -94,6 +91,13 @@ Configuration
    to run in a restricted environment or use access control (via ``ip_allow.config`` or
    ``iptables``).
 
+   If this is unsuitable then an identity remap rule can be added for the peer |TS|. If the peer |TS|
+   was named "peer.ats" then the remap rule would be ::
+
+      remap https://peer.ats https://peer.ats
+
+   Remapping will be disabled for the user agent connection and so it will not need a rule.
+
 #. Configure the Ingress |TS| to verify the Peer server certificate::
 
       CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
@@ -114,13 +118,16 @@ Configuration
 
 #. Enable the |Name| plugin in ``plugin.config``. The plugin is configured by arguments in
    ``plugin.config``. These are arguments are in pairs of a *destination* and a *peer*. The
-   destination is a anchored regular expression which is matched against the host name in the Client
+   destination is an anchored regular expression which is matched against the host name in the Client
    ``CONNECT``. The destinations are checked in order and the first match is used to select the Peer
    |TS|. The peer should be an FQDN or IP address with an optional port. For the example above, if
    the Peer |TS| was named "peer.example.com" on port 4443 and the Service at ``*.service.com``, the
    peer argument would be "peer.example.com:4443". In ``plugin.config`` this would be::
 
       tls_bridge.so .*[.]service[.]com peer.example.com:4443
+
+   Note the '.' characters are escaped with brackets so that, for instance, "someservice.com" does
+   not match the rule.
 
 Notes
 =====
@@ -161,7 +168,7 @@ If the session is valid then a separate connection to the peer |TS| is created u
 :code:`TSHttpConnect`.
 
 After the ingress |TS| connects to the peer |TS| it sends a duplicate of the Client ``CONNECT``
-request. This is processed by the peer |TS| to connect on to the Service. After this both |TS|
+request. This is processed by the peer |TS| to connect to the Service. After this both |TS|
 instances then tunnel data between the Client and the Service, in effect becoming a transparent
 tunnel.
 
@@ -243,3 +250,8 @@ socket read.
    State_3 --> State_1 : CR
    State_3 --> State_0 : *
    @enduml
+
+Debugging
+---------
+
+Debugging messages for the plugin can be enabled with the "tls_bridge" debug tag.

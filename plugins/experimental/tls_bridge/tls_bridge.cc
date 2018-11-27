@@ -24,7 +24,7 @@
 #include "regex.h"
 
 #define PLUGIN_NAME "TLS Bridge"
-#define PLUGIN_TAG "tls-bridge"
+#define PLUGIN_TAG "tls_bridge"
 
 using ts::TextView;
 
@@ -606,6 +606,8 @@ CB_Read_Request_Hdr(TSCont contp, TSEvent ev_idx, void *data)
           TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, actor);
           // Arrange for cleanup.
           TSHttpTxnHookAdd(txn, TS_HTTP_TXN_CLOSE_HOOK, actor);
+          // Skip remap and remap rule requirement - authorized by TLS bridge config.
+          TSSkipRemappingSet(txn, 1);
           // Grab the transaction
           TSHttpTxnIntercept(actor, txn);
         }
