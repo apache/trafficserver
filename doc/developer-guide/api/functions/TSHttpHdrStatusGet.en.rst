@@ -30,3 +30,13 @@ Synopsis
 
 Description
 ===========
+
+Retrieve the status code value from the HTTP response header identified by :arg:`bufp` and
+:arg:`offset`. The value should be an enumeration value of :c:type:`TSHttpStatus`, although because
+plugins can call :c:func:`TSHttpHdrStatusSet` this may not be true. If the header is not a valid
+response then :c:macro:`TS_HTTP_STATUS_NONE` is returned.
+
+See Also
+========
+
+:c:func:`TSHttpTxnClientRespGet`, :c:func:`TSHttpTxnServerRespGet`, :c:func:`TSHttpHdrTypeGet`.
