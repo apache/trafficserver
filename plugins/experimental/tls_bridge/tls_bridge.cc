@@ -186,8 +186,6 @@ struct Bridge {
   TSHttpStatus _out_response_code = TS_HTTP_STATUS_NONE;
   /// Response reason, if not TS_HTTP_STATUS_OK
   std::string _out_response_reason;
-  /// Is the response to the user agent suspended?
-  bool _ua_response_suspended = false;
 
   /// Bridge requires a continuation for scheduling and the transaction.
   Bridge(TSCont cont, TSHttpTxn txn, TextView peer);
@@ -231,7 +229,7 @@ Bridge::net_accept(TSVConn vc)
   char buff[1024];
   int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, static_cast<int>(_peer.size()), _peer.data());
 
-  TSDebug(PLUGIN_TAG, "Received UA VConn");
+  TSDebug(PLUGIN_TAG, "Received UA VConn, connecting to peer %.*s", int(_peer.size()), _peer.data());
   // UA side intercepted.
   _ua.init(vc);
   _ua.do_read(_self_cont, INT64_MAX);
@@ -315,12 +313,6 @@ Bridge::check_outbound_OK()
         }
         // 519 is POOMA, useful for debugging, but may want to change this later.
         _out_response_code = c ? c : static_cast<TSHttpStatus>(519);
-        if (_ua_response_suspended) {
-          this->update_ua_response();
-          TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
-          _ua_response_suspended = false;
-          TSDebug(PLUGIN_TAG, "TXN resumed");
-        }
         _out.consume(block.data() - raw.data());
         zret = true;
         TSDebug(PLUGIN_TAG, "Outbound status %d", c);
@@ -415,24 +407,19 @@ Bridge::eos(TSVIO vio)
   }
   _out.do_close();
   _ua.do_close();
-  _out_resp_state = EOS;
-  if (_ua_response_suspended) {
-    TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
+  if (_out_resp_state != ERROR) {
+    _out_resp_state = EOS;
   }
 }
 
 void
 Bridge::send_response_cb()
 {
-  // If the upstream response hasn't been parsed yet, make the UA response wait for that.
-  // Set a flag so the upstream response parser knows to update response and reenable.
-  if (_out_resp_state < OK) {
-    _ua_response_suspended = true;
-    TSDebug(PLUGIN_TAG, "TXN suspended");
-  } else { // Already have all the data needed to do the update, so do it and move on.
-    this->update_ua_response();
-    TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
-  }
+  // This happens either after the upstream connection and the writing the response there,
+  // or because the upstream connection was blocked. In either case the upstream work is
+  // done and the original transaction can proceed.
+  this->update_ua_response();
+  TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
 }
 
 void
@@ -441,12 +428,10 @@ Bridge::update_ua_response()
   TSMBuffer mbuf;
   TSMLoc hdr_loc;
   if (TS_SUCCESS == TSHttpTxnClientRespGet(_ua_txn, &mbuf, &hdr_loc)) {
-    // A 200 for @a out_response_code only means there wasn't an internal failure on the upstream
-    // CONNECT. Network and other failures get reported in this response. This response code will
-    // be more accurate, so use it unless it's 200, in which case use the stored response code if
-    // that's not 200.
-    TSHttpStatus status = TSHttpHdrStatusGet(mbuf, hdr_loc);
-    if (TS_HTTP_STATUS_OK == status && TS_HTTP_STATUS_OK != _out_response_code) {
+    // If there is a non-200 upstream code then that's the most accurate because it was from
+    // an actual upstream connection. Otherwise, let the original connection response code
+    // ride.
+    if (_out_response_code != TS_HTTP_STATUS_OK && _out_response_code != TS_HTTP_STATUS_NONE) {
       TSHttpHdrStatusSet(mbuf, hdr_loc, _out_response_code);
       if (!_out_response_reason.empty()) {
         TSHttpHdrReasonSet(mbuf, hdr_loc, _out_response_reason.data(), _out_response_reason.size());
