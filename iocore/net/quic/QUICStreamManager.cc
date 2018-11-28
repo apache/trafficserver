@@ -212,8 +212,7 @@ QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
-    // TODO Reset the stream
-    return nullptr;
+    return stream->recv(frame);
   } else {
     return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }

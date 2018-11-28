@@ -21,13 +21,54 @@
  *  limitations under the License.
  */
 
+#include "I_VIO.h"
+
 #pragma once
 
 class QUICTransferProgressProvider
 {
 public:
   virtual bool is_transfer_goal_set() const  = 0;
-  virtual bool is_transfer_complete() const  = 0;
   virtual uint64_t transfer_progress() const = 0;
   virtual uint64_t transfer_goal() const     = 0;
+  virtual bool is_cancelled() const          = 0;
+
+  virtual bool
+  is_transfer_complete() const
+  {
+    return this->transfer_progress() == this->transfer_goal();
+  }
+};
+
+class QUICTransferProgressProviderVIO : public QUICTransferProgressProvider
+{
+public:
+  QUICTransferProgressProviderVIO(VIO &vio) : _vio(vio) {}
+
+  bool
+  is_transfer_goal_set() const
+  {
+    return this->_vio.nbytes != INT64_MAX;
+  }
+
+  uint64_t
+  transfer_progress() const
+  {
+    return this->_vio.ndone;
+  }
+
+  uint64_t
+  transfer_goal() const
+  {
+    return this->_vio.nbytes;
+  }
+
+  bool
+  is_cancelled() const
+  {
+    return false;
+  }
+
+private:
+  VIO &_vio;
 };

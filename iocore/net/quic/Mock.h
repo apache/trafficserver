@@ -672,6 +672,7 @@ class MockQUICRTTProvider : public QUICRTTProvider
 
 class MockQUICTransferProgressProvider : public QUICTransferProgressProvider
 {
+public:
   bool
   is_transfer_goal_set() const override
   {
@@ -681,18 +682,54 @@ class MockQUICTransferProgressProvider : public QUICTransferProgressProvider
   bool
   is_transfer_complete() const override
   {
-    return false;
+    return this->_is_transfer_complete;
+  }
+
+  bool
+  is_cancelled() const override
+  {
+    return this->_is_reset_complete;
   }
 
   uint64_t
   transfer_progress() const override
   {
-    return 0;
+    return this->_transfer_progress;
   }
 
   uint64_t
   transfer_goal() const override
   {
-    return 0;
+    return this->_transfer_goal;
   }
+
+  void
+  set_transfer_complete(bool b)
+  {
+    this->_is_transfer_complete = b;
+  }
+
+  void
+  set_cancelled(bool b)
+  {
+    this->_is_reset_complete = b;
+  }
+
+  void
+  set_transfer_progress(uint64_t v)
+  {
+    this->_transfer_progress = v;
+  }
+
+  void
+  set_transfer_goal(uint64_t v)
+  {
+    this->_transfer_goal = v;
+  }
+
+private:
+  bool _is_transfer_complete  = false;
+  bool _is_reset_complete     = false;
+  uint64_t _transfer_progress = 0;
+  uint64_t _transfer_goal     = UINT64_MAX;
 };

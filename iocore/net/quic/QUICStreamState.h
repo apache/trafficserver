@@ -43,9 +43,9 @@ public:
     // ReceiveStreamState
     Recv,
     SizeKnown,
-    /* DataRecvd, */
+    /* DataRecvd, (dup)*/
     DataRead,
-    /* ResetRecvd, */
+    /* ResetRecvd, (dup)*/
     ResetRead,
     // Bidirectional
     Open,
@@ -102,6 +102,7 @@ public:
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
   void update(const QUICStreamState &opposite_side) override;
+  void update_on_ack();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
@@ -120,6 +121,8 @@ public:
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
   void update(const QUICStreamState &opposite_side) override;
+  void update_on_read();
+  void update_on_eos();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
@@ -140,6 +143,9 @@ public:
 
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
+  void update_on_ack();
+  void update_on_read();
+  void update_on_eos();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;

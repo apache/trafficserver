@@ -52,7 +52,7 @@ QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
     _received_stream_frame_buffer(),
-    _state(nullptr, nullptr, &_received_stream_frame_buffer, nullptr)
+    _state(nullptr, &this->_progress_vio, this, nullptr)
 {
   SET_HANDLER(&QUICStream::state_stream_open);
   mutex = new_ProxyMutex();
@@ -288,6 +288,18 @@ QUICStream::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t 
   }
 }
 
+void
+QUICStream::on_read()
+{
+  this->_state.update_on_read();
+}
+
+void
+QUICStream::on_eos()
+{
+  this->_state.update_on_eos();
+}
+
 /**
  * @brief Receive STREAM frame
  * @detail When receive STREAM frame, reorder frames and write to buffer of read_vio.
@@ -377,6 +389,14 @@ QUICStream::recv(const QUICStopSendingFrame &frame)
   return nullptr;
 }
 
+QUICConnectionErrorUPtr
+QUICStream::recv(const QUICRstStreamFrame &frame)
+{
+  this->_state.update_with_receiving_frame(frame);
+  this->_signal_read_eos_event();
+  return nullptr;
+}
+
 bool
 QUICStream::will_generate_frame(QUICEncryptionLevel level)
 {
@@ -388,12 +408,15 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
-  // RST_STREAM
-  if (this->_reset_reason) {
-    return QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
-  }
-
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  // RST_STREAM
+  if (this->_reset_reason && !this->_is_reset_sent) {
+    frame = QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
+    this->_state.update_with_sending_frame(*frame);
+    this->_is_reset_sent = true;
+    return frame;
+  }
 
   // MAX_STREAM_DATA
   frame = this->_local_flow_controller.generate_frame(level, UINT16_MAX, maximum_frame_size);
@@ -483,6 +506,34 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   return frame;
 }
 
+void
+QUICStream::_on_frame_acked(QUICFrameInformation info)
+{
+  if (info.type == QUICFrameType::RST_STREAM) {
+    this->_is_reset_complete = true;
+  } else if (info.type == QUICFrameType::STREAM) {
+    // TODO Check if it received acks for every parts of data
+    if (false) {
+      this->_is_transfer_complete = true;
+    }
+  }
+  this->_state.update_on_ack();
+}
+
+void
+QUICStream::_on_frame_lost(QUICFrameInformation info)
+{
+  if (info.type == QUICFrameType::RST_STREAM) {
+    // [draft-16] 13.2.  Retransmission of Information
+    // Cancellation of stream transmission, as carried in a RST_STREAM
+    // frame, is sent until acknowledged or until all stream data is
+    // acknowledged by the peer (that is, either the "Reset Recvd" or
+    // "Data Recvd" state is reached on the send stream).  The content of
+    // a RST_STREAM frame MUST NOT change when it is sent again.
+    this->_is_reset_sent = false;
+  }
+}
+
 /**
  * Replace existing event only if the new event is different than the inprogress event
  */
@@ -547,6 +598,28 @@ QUICStream::_signal_write_event()
   QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
 }
 
+/**
+ * @brief Signal event to this->_write_vio.cont
+ */
+void
+QUICStream::_signal_read_eos_event()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return;
+  }
+  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
+  int event = VC_EVENT_EOS;
+
+  if (lock.is_locked()) {
+    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+  }
+
+  QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
+}
+
 int64_t
 QUICStream::_process_read_vio()
 {
@@ -597,6 +670,30 @@ QUICOffset
 QUICStream::largest_offset_sent() const
 {
   return this->_remote_flow_controller.current_offset();
+}
+
+bool
+QUICStream::is_transfer_goal_set() const
+{
+  return this->_received_stream_frame_buffer.is_transfer_goal_set();
+}
+
+uint64_t
+QUICStream::transfer_progress() const
+{
+  return this->_received_stream_frame_buffer.transfer_progress();
+}
+
+uint64_t
+QUICStream::transfer_goal() const
+{
+  return this->_received_stream_frame_buffer.transfer_goal();
+}
+
+bool
+QUICStream::is_cancelled() const
+{
+  return this->_is_reset_complete;
 }
 
 //

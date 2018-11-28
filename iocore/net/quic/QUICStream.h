@@ -38,7 +38,7 @@
  * @brief QUIC Stream
  * TODO: This is similar to Http2Stream. Need to think some integration.
  */
-class QUICStream : public VConnection, public QUICFrameGenerator
+class QUICStream : public VConnection, public QUICFrameGenerator, public QUICTransferProgressProvider
 {
 public:
   QUICStream()
@@ -67,10 +67,17 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
+  /*
+   * QUICApplication need to call one of these functions when it process VC_EVENT_*
+   */
+  void on_read();
+  void on_eos();
+
   QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICStreamBlockedFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame);
 
   void reset(QUICStreamErrorUPtr error);
 
@@ -84,16 +91,25 @@ public:
   bool will_generate_frame(QUICEncryptionLevel level) override;
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
+  // QUICTransferProgressProvider
+  bool is_transfer_goal_set() const override;
+  uint64_t transfer_progress() const override;
+  uint64_t transfer_goal() const override;
+  bool is_cancelled() const override;
+
 protected:
   virtual int64_t _process_read_vio();
   virtual int64_t _process_write_vio();
   void _signal_read_event();
   void _signal_write_event();
+  void _signal_read_eos_event();
   Event *_send_tracked_event(Event *, int, VIO *);
 
   void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
 
-  QUICStreamErrorUPtr _reset_reason            = nullptr;
+  QUICStreamErrorUPtr _reset_reason = nullptr;
+  bool _is_reset_sent               = false;
+
   QUICConnectionInfoProvider *_connection_info = nullptr;
   QUICStreamId _id                             = 0;
   QUICOffset _send_offset                      = 0;
@@ -106,8 +122,13 @@ protected:
   VIO _read_vio;
   VIO _write_vio;
 
+  QUICTransferProgressProviderVIO _progress_vio = {this->_read_vio};
+
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
+
+  bool _is_transfer_complete = false;
+  bool _is_reset_complete    = false;
 
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
@@ -115,6 +136,10 @@ protected:
 
   // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
   QUICBidirectionalStreamState _state;
+
+  // QUICFrameGenerator
+  void _on_frame_acked(QUICFrameInformation info) override;
+  void _on_frame_lost(QUICFrameInformation info) override;
 };
 
 /**

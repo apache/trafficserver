@@ -77,6 +77,8 @@ QUICStreamIO::read(uint8_t *buf, int64_t len)
     this->_read_vio->ndone += nread;
   }
 
+  this->_stream->on_read();
+
   return nread;
 }
 
@@ -90,6 +92,7 @@ void
 QUICStreamIO::consume(int64_t len)
 {
   this->_read_buffer_reader->consume(len);
+  this->_stream->on_read();
 }
 
 bool

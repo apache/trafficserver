@@ -159,12 +159,6 @@ QUICIncomingStreamFrameBuffer::is_transfer_goal_set() const
   return this->_fin_offset != UINT64_MAX;
 }
 
-bool
-QUICIncomingStreamFrameBuffer::is_transfer_complete() const
-{
-  return this->is_transfer_goal_set() && this->transfer_progress() == this->transfer_goal();
-}
-
 uint64_t
 QUICIncomingStreamFrameBuffer::transfer_progress() const
 {
@@ -175,6 +169,12 @@ uint64_t
 QUICIncomingStreamFrameBuffer::transfer_goal() const
 {
   return this->_fin_offset;
+}
+
+bool
+QUICIncomingStreamFrameBuffer::is_cancelled() const
+{
+  return false;
 }
 
 //

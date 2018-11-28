@@ -62,9 +62,9 @@ public:
 
   // QUICTransferProgressProvider
   bool is_transfer_goal_set() const override;
-  bool is_transfer_complete() const override;
   uint64_t transfer_progress() const override;
   uint64_t transfer_goal() const override;
+  bool is_cancelled() const override;
 
 private:
   QUICConnectionErrorUPtr _check_and_set_fin_flag(QUICOffset offset, size_t len = 0, bool fin_flag = false);

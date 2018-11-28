@@ -168,7 +168,7 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
     if (frame.type() == QUICFrameType::STREAM) {
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
         this->_set_state(State::SizeKnown);
-        if (this->_in_progress->is_transfer_complete()) {
+        if (this->_in_progress->transfer_progress() == this->_in_progress->transfer_goal()) {
           this->_set_state(State::DataRecvd);
         }
       }
@@ -178,7 +178,7 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
     break;
   case State::SizeKnown:
     if (frame.type() == QUICFrameType::STREAM) {
-      if (this->_in_progress->is_transfer_complete()) {
+      if (this->_in_progress->transfer_progress() == this->_in_progress->transfer_goal()) {
         this->_set_state(State::DataRecvd);
       }
     } else if (frame.type() == QUICFrameType::RST_STREAM) {
@@ -193,6 +193,11 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
   case State::DataRead:
     break;
   case State::ResetRecvd:
+    if (frame.type() == QUICFrameType::STREAM) {
+      if (this->_in_progress->transfer_progress() == this->_in_progress->transfer_goal()) {
+        this->_set_state(State::DataRecvd);
+      }
+    }
     break;
   case State::ResetRead:
     break;
@@ -217,6 +222,20 @@ QUICReceiveStreamState::update(const QUICStreamState &opposite_side)
     ink_assert(!"This shouldn't be happen");
     break;
   }
+}
+
+void
+QUICReceiveStreamState::update_on_read()
+{
+  if (this->_in_progress->is_transfer_complete()) {
+    this->_set_state(State::DataRead);
+  }
+}
+
+void
+QUICReceiveStreamState::update_on_eos()
+{
+  this->_set_state(State::ResetRead);
 }
 
 // ---------- QUICSendStreamState -------------
@@ -341,6 +360,16 @@ QUICSendStreamState::update(const QUICStreamState &opposite_side)
   }
 }
 
+void
+QUICSendStreamState::update_on_ack()
+{
+  if (this->_out_progress->is_transfer_complete()) {
+    this->_set_state(State::DataRecvd);
+  } else if (this->_out_progress->is_cancelled()) {
+    this->_set_state(State::ResetRecvd);
+  }
+}
+
 // ---------QUICBidirectionalStreamState -----------
 
 QUICStreamState::State
@@ -406,6 +435,24 @@ QUICBidirectionalStreamState::update_with_receiving_frame(const QUICFrame &frame
   if (this->_send_stream_state.get() == State::_Init) {
     this->_send_stream_state.update(this->_recv_stream_state);
   }
+}
+
+void
+QUICBidirectionalStreamState::update_on_ack()
+{
+  this->_send_stream_state.update_on_ack();
+}
+
+void
+QUICBidirectionalStreamState::update_on_read()
+{
+  this->_recv_stream_state.update_on_read();
+}
+
+void
+QUICBidirectionalStreamState::update_on_eos()
+{
+  this->_recv_stream_state.update_on_eos();
 }
 
 bool
