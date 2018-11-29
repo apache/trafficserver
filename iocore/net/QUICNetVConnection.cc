@@ -1431,7 +1431,7 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
   QUICPacketNumber packet_num = packet.packet_number();
   QUICEncryptionLevel level   = QUICTypeUtil::encryption_level(packet.type());
 
-  bool should_send_ack;
+  bool ack_only;
   bool is_flow_controlled;
 
   QUICConnectionErrorUPtr error = nullptr;
@@ -1439,7 +1439,7 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
     *has_non_probing_frame = false;
   }
 
-  error = this->_frame_dispatcher->receive_frames(level, payload, size, should_send_ack, is_flow_controlled, has_non_probing_frame);
+  error = this->_frame_dispatcher->receive_frames(level, payload, size, ack_only, is_flow_controlled, has_non_probing_frame);
   if (error != nullptr) {
     return error;
   }
@@ -1458,7 +1458,7 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
                 this->_local_flow_controller->current_limit());
   }
 
-  this->_ack_frame_creator.update(level, packet_num, should_send_ack);
+  this->_ack_frame_creator.update(level, packet_num, size, ack_only);
 
   return error;
 }
@@ -2055,4 +2055,10 @@ QUICNetVConnection::_handle_path_validation_timeout(Event *data)
     QUICConDebug("Path validation failed");
     this->_switch_to_close_state();
   }
+}
+
+void
+QUICNetVConnection::common_send_packet()
+{
+  this->_schedule_packet_write_ready();
 }
