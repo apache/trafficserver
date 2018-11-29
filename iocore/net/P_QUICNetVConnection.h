@@ -228,7 +228,7 @@ public:
   LINK(QUICNetVConnection, closed_link);
   SLINK(QUICNetVConnection, closed_alink);
 
-  void common_send_packet();
+  void common_send_packet() override;
 
 private:
   QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
