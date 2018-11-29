@@ -131,11 +131,11 @@ QUICAckFrameCreator::QUICAckPacketNumbers::forget(QUICPacketNumber largest_ackno
   this->sort();
   std::list<RecvdPacket> remove_list;
   for (auto it = this->_packet_numbers.begin(); it != this->_packet_numbers.end(); it++) {
-    this->_available |= !(*it).ack_only;
     if ((*it).packet_number == largest_acknowledged) {
       remove_list.splice(remove_list.begin(), this->_packet_numbers, it, this->_packet_numbers.end());
       break;
     }
+    this->_available |= !(*it).ack_only;
   }
 
   if (this->_packet_numbers.size() == 0 || !this->_available) {
