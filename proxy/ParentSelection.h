@@ -102,6 +102,7 @@ struct pRecord : ATSConsistentHashNode {
   const char *scheme; // for which parent matches (if any)
   int idx;
   float weight;
+  char hash_string[MAXDNAME + 1];
 };
 
 typedef ControlMatcher<ParentRecord, ParentResult> P_table;
