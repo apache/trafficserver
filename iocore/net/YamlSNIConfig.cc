@@ -63,6 +63,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_disable_h2,
                                                TS_verify_client,
                                                TS_tunnel_route,
+                                               TS_forward_route,
                                                TS_verify_origin_server,
                                                TS_verify_server_policy,
                                                TS_verify_server_properties,
@@ -104,7 +105,12 @@ template <> struct convert<YamlSNIConfig::Item> {
 
     if (node[TS_tunnel_route]) {
       item.tunnel_destination = node[TS_tunnel_route].as<std::string>();
+      item.tunnel_decrypt     = false;
+    } else if (node[TS_forward_route]) {
+      item.tunnel_destination = node[TS_forward_route].as<std::string>();
+      item.tunnel_decrypt     = true;
     }
+
     // remove before 9.0.0 release
     // backwards compatibiity
     if (node[TS_verify_origin_server]) {
