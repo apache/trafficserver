@@ -38,15 +38,17 @@
 #include <unordered_map>
 
 extern std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
-// enum of all the actions
+
+/*// enum of all the actions
 enum AllActions {
   TS_DISABLE_H2 = 0,
   TS_VERIFY_CLIENT, // this applies to server side vc only
   TS_TUNNEL_ROUTE,  // blind tunnel action
 };
+*/
 
 /** action for setting next hop properties should be listed in the following enum*/
-enum PropertyActions { TS_VERIFY_SERVER = 200, TS_CLIENT_CERT };
+/* enum PropertyActions { TS_VERIFY_SERVER = 200, TS_CLIENT_CERT }; */
 
 class ActionItem
 {
@@ -78,7 +80,7 @@ public:
 class TunnelDestination : public ActionItem
 {
 public:
-  TunnelDestination(const std::string_view &dest) : destination(dest) {}
+  TunnelDestination(const std::string_view &dest, bool decrypt) : destination(dest), tunnel_decrypt(decrypt) {}
   ~TunnelDestination() {}
 
   int
@@ -87,11 +89,12 @@ public:
     // Set the netvc option?
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(cont);
     if (ssl_netvc) {
-      ssl_netvc->set_tunnel_destination(destination);
+      ssl_netvc->set_tunnel_destination(destination, tunnel_decrypt);
     }
     return SSL_TLSEXT_ERR_OK;
   }
   std::string destination;
+  bool tunnel_decrypt = false;
 };
 
 class VerifyClient : public ActionItem

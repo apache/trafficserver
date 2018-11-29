@@ -475,7 +475,7 @@ ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   if (ret != SSL_TLSEXT_ERR_OK) {
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
-  if (netvc->has_tunnel_destination()) {
+  if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
     netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
   }
 

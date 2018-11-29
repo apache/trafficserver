@@ -317,8 +317,16 @@ public:
     return tunnel_port;
   }
 
+  /* Returns true if this vc was configured for forward_route
+   */
+  bool
+  decrypt_tunnel()
+  {
+    return has_tunnel_destination() && tunnel_decrypt;
+  }
+
   void
-  set_tunnel_destination(const std::string_view &destination)
+  set_tunnel_destination(const std::string_view &destination, bool decrypt)
   {
     auto pos = destination.find(":");
     if (nullptr != tunnel_host) {
@@ -331,6 +339,7 @@ public:
       tunnel_port = 0;
       tunnel_host = ats_strndup(destination.data(), destination.length());
     }
+    tunnel_decrypt = decrypt;
   }
 
   int populate_protocol(std::string_view *results, int n) const override;
@@ -400,6 +409,7 @@ private:
   int64_t redoWriteSize            = 0;
   char *tunnel_host                = nullptr;
   in_port_t tunnel_port            = 0;
+  bool tunnel_decrypt              = false;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

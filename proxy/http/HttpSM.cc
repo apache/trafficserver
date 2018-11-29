@@ -517,7 +517,7 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   http_parser_init(&http_parser);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
-  if (is_transparent_passthrough_allowed()) {
+  if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
     ua_raw_buffer_reader = buffer_reader->clone();
   }
 
@@ -664,7 +664,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // We need to handle EOS as well as READ_READY because the client
   // may have sent all of the data already followed by a fIN and that
   // should be OK.
-  if (is_transparent_passthrough_allowed() && ua_raw_buffer_reader != nullptr) {
+  if (ua_raw_buffer_reader != nullptr) {
     bool do_blind_tunnel = false;
     // If we had a parse error and we're done reading data
     // blind tunnel
@@ -686,7 +686,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       // Turn off read eventing until we get the
       // blind tunnel infrastructure set up
       if (netvc) {
-        netvc->do_io_read(this, 0, nullptr);
+        netvc->do_io_read(nullptr, 0, nullptr);
       }
 
       /* establish blind tunnel */
@@ -1578,14 +1578,17 @@ void
 HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
-  case HttpTransact::SM_ACTION_API_SM_START:
-    if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+  case HttpTransact::SM_ACTION_API_SM_START: {
+    NetVConnection *netvc     = ua_txn->get_netvc();
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+    bool forward_dest         = ssl_vc != nullptr && ssl_vc->decrypt_tunnel();
+    if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || forward_dest) {
       setup_blind_tunnel_port();
     } else {
       setup_client_read_request_header();
     }
     return;
-
+  }
   case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
   case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
     if (t_state.api_cleanup_cache_read && t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {

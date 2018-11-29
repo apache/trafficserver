@@ -91,6 +91,16 @@ disable_h2                :code:`true` or :code:`false`.
                           for proxy ports on which HTTP/2 is not enabled.
 
 tunnel_route              Destination as an FQDN and port, separated by a colon ``:``.
+
+
+                          This will forward all traffic to the specified destination without first terminating 
+                          the incoming TLS connection.
+
+forward_route             Destination as an FQDN and port, separated by a colon ``:``.
+
+                          This is similar to tunnel_route, but it terminates the TLS connection and forwards the
+                          decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not 
+                          need to be HTTP.
 ========================= ==============================================================================
 
 Client verification, via ``verify_client``, correponds to setting
