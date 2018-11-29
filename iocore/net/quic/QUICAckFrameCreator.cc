@@ -24,9 +24,9 @@
 #include "I_EventSystem.h"
 #include "QUICAckFrameCreator.h"
 #include <algorithm>
-#include <P_QUICNetVConnection.h>
+#include <QUICConnection.h>
 
-QUICAckFrameCreator::QUICAckFrameCreator(QUICNetVConnection *qc)
+QUICAckFrameCreator::QUICAckFrameCreator(QUICConnection *qc)
 {
   for (auto i = 0; i < 3; i++) {
     this->_packet_numbers[i] = std::make_unique<QUICAckPacketNumbers>(qc, this);
@@ -357,7 +357,7 @@ QUICAckFrameCreator::QUICAckPacketNumbers::_cancel_timer()
   }
 }
 
-QUICAckFrameCreator::QUICAckPacketNumbers::QUICAckPacketNumbers(QUICNetVConnection *qc, QUICAckFrameCreator *ack_creator)
+QUICAckFrameCreator::QUICAckPacketNumbers::QUICAckPacketNumbers(QUICConnection *qc, QUICAckFrameCreator *ack_creator)
   : _qc(qc), _ack_creator(ack_creator)
 {
   SET_HANDLER(&QUICAckFrameCreator::QUICAckPacketNumbers::timer_fired);

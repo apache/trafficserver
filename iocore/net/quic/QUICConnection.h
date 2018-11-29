@@ -71,4 +71,5 @@ public:
   virtual QUICStreamManager *stream_manager()             = 0;
   virtual void close(QUICConnectionErrorUPtr error)       = 0;
   virtual void handle_received_packet(UDPPacket *packeet) = 0;
+  virtual void common_send_packet()                       = 0;
 };

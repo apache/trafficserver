@@ -34,7 +34,7 @@
 
 #define QUIC_ACK_CREATOR_MAX_DELAY 25 * HRTIME_MSECOND
 
-class QUICNetVConnection;
+class QUICConnection;
 
 class QUICAckFrameCreator : public QUICFrameGenerator
 {
@@ -46,7 +46,7 @@ public:
       bool ack_only                  = false;
       QUICPacketNumber packet_number = 0;
     };
-    QUICAckPacketNumbers(QUICNetVConnection *qc, QUICAckFrameCreator *ack_creator);
+    QUICAckPacketNumbers(QUICConnection *qc, QUICAckFrameCreator *ack_creator);
     ~QUICAckPacketNumbers();
 
     void set_creator(QUICAckFrameCreator *ack_creator);
@@ -79,12 +79,13 @@ public:
     QUICPacketNumber _expect_next         = 0;
     ink_hrtime _largest_ack_received_time = 0;
 
-    QUICNetVConnection *_qc           = nullptr;
+    QUICConnection *_qc               = nullptr;
     QUICAckFrameCreator *_ack_creator = nullptr;
   };
 
   static constexpr int MAXIMUM_PACKET_COUNT = 256;
-  QUICAckFrameCreator(QUICNetVConnection *qc);
+
+  QUICAckFrameCreator(QUICConnection *qc);
 
   void set_ack_delay_exponent(uint8_t ack_delay_exponent);
 
