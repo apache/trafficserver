@@ -42,9 +42,9 @@
 
 // Properties for the next hop server
 struct NextHopProperty {
-  std::string name;                                                                 // name of the server
-  YamlSNIConfig::Policy verifyServerPolicy       = YamlSNIConfig::Policy::DISABLED; // whether to verify the next hop
-  YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::NONE;   // what to verify on the next hop
+  std::string name;                                                                // name of the server
+  YamlSNIConfig::Policy verifyServerPolicy       = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
+  YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
   SSL_CTX *ctx                                   = nullptr; // ctx generated off the certificate to present to this server
   NextHopProperty();
 };

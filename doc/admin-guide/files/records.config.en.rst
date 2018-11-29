@@ -3455,11 +3455,14 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING DISABLED
    :reloadable:
+   :overridable:
 
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the ssl_server_name.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
 
 :code:`DISABLED`
    Server Certificate will not be verified
@@ -3470,10 +3473,13 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.properties STRING ALL
    :reloadable:
+   :overridable:
 
    Configures |TS| for what the default verify callback should check during origin server verification.
 
    You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
+
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
