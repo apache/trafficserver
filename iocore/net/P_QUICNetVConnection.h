@@ -151,7 +151,7 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, pub
   using super = UnixNetVConnection; ///< Parent type.
 
 public:
-  QUICNetVConnection() {}
+  QUICNetVConnection() : _ack_frame_creator(this) {}
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, UDPConnection *,
             QUICPacketHandler *, QUICConnectionTable *ctable);
@@ -227,6 +227,8 @@ public:
 
   LINK(QUICNetVConnection, closed_link);
   SLINK(QUICNetVConnection, closed_alink);
+
+  void common_send_packet();
 
 private:
   QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;

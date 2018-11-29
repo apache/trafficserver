@@ -42,12 +42,12 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 }
 
 QUICConnectionErrorUPtr
-QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &should_send_ack,
+QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &ack_only,
                                     bool &is_flow_controlled, bool *has_non_probing_frame)
 {
   std::shared_ptr<const QUICFrame> frame(nullptr);
   uint16_t cursor               = 0;
-  should_send_ack               = false;
+  ack_only                      = true;
   is_flow_controlled            = false;
   QUICConnectionErrorUPtr error = nullptr;
 
@@ -74,7 +74,9 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
       QUICDebug("[RX] %s", msg);
     }
 
-    should_send_ack |= (type != QUICFrameType::PADDING && type != QUICFrameType::ACK);
+    if (type != QUICFrameType::PADDING && type != QUICFrameType::ACK) {
+      ack_only = false;
+    }
 
     std::vector<QUICFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
