@@ -76,7 +76,11 @@ public:
   {
     const char *err_ptr;
     int err_offset = 0;
-    match          = pcre_compile(regexName.c_str(), 0, &err_ptr, &err_offset, nullptr);
+    if (!regexName.empty()) {
+      match = pcre_compile(regexName.c_str(), 0, &err_ptr, &err_offset, nullptr);
+    } else {
+      match = nullptr;
+    }
   }
 
   pcre *match = nullptr;

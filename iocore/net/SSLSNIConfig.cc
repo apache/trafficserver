@@ -103,7 +103,9 @@ const actionVector *
 SNIConfigParams::get(const std::string &servername) const
 {
   for (auto retval = sni_action_list.begin(); retval != sni_action_list.end(); ++retval) {
-    if (pcre_exec(retval->match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
+    if (retval->match == nullptr && servername.length() == 0) {
+      return &retval->actions;
+    } else if (pcre_exec(retval->match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
       return &retval->actions;
     }
   }

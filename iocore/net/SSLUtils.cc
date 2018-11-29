@@ -405,6 +405,24 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   return preverify_ok;
 }
 
+static int
+PerformAction(Continuation *cont, const char *servername)
+{
+  SNIConfig::scoped_config params;
+  const actionVector *actionvec = params->get(servername);
+  if (!actionvec) {
+    Debug("ssl_sni", "%s not available in the map", servername);
+  } else {
+    for (auto &&item : *actionvec) {
+      auto ret = item->SNIAction(cont);
+      if (ret != SSL_TLSEXT_ERR_OK) {
+        return ret;
+      }
+    }
+  }
+  return SSL_TLSEXT_ERR_OK;
+}
+
 // Use the certificate callback for openssl 1.0.2 and greater
 // otherwise use the SNI callback
 #if TS_USE_CERT_CB
@@ -445,41 +463,25 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   return retval;
 }
 
-static int
-PerformAction(Continuation *cont, const char *servername)
-{
-  SNIConfig::scoped_config params;
-  const actionVector *actionvec = params->get(servername);
-  if (!actionvec) {
-    Debug("ssl_sni", "%s not available in the map", servername);
-  } else {
-    for (auto &&item : *actionvec) {
-      auto ret = item->SNIAction(cont);
-      if (ret != SSL_TLSEXT_ERR_OK) {
-        return ret;
-      }
-    }
-  }
-  return SSL_TLSEXT_ERR_OK;
-}
-
 /*
  * Cannot stop this callback. Always reeneabled
  */
 static int
 ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
-  int ret                  = SSL_TLSEXT_ERR_OK;
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  Debug("ssl", "Requested servername is %s", servername);
-  if (servername != nullptr) {
-    ret = PerformAction(netvc, servername);
-  }
-  if (ret != SSL_TLSEXT_ERR_OK)
-    return SSL_TLSEXT_ERR_ALERT_FATAL;
-
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
+
+  const char *name  = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  netvc->serverName = std::string{name ? name : ""};
+  int ret           = PerformAction(netvc, netvc->serverName.c_str());
+  if (ret != SSL_TLSEXT_ERR_OK) {
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+  if (netvc->has_tunnel_destination()) {
+    netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+  }
+
   return SSL_TLSEXT_ERR_OK;
 }
 
@@ -490,6 +492,16 @@ ssl_servername_and_cert_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool reenabled;
   int retval = 1;
+
+  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  if (servername == nullptr) {
+    servername = "";
+  }
+  Debug("ssl", "Requested servername is %s", servername);
+  int ret = PerformAction(netvc, servername);
+  if (ret != SSL_TLSEXT_ERR_OK) {
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
 
   // If we are in tunnel mode, don't select a cert.  Pause!
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
