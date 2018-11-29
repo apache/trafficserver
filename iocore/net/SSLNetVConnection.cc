@@ -1709,12 +1709,6 @@ SSLNetVConnection::callHooks(TSEvent eventId)
 
   bool reenabled = true;
 
-  this->serverName = const_cast<char *>(SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name));
-  if (this->has_tunnel_destination()) {
-    this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-    return reenabled;
-  }
-
   if (SSL_HOOK_OP_TUNNEL == hookOpRequested) {
     this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
     // Don't mark the handshake as complete yet,
