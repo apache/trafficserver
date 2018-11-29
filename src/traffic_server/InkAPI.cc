@@ -8204,6 +8204,13 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_SSL_CERT_FILEPATH:
     ret = _memberp_to_generic(&overridableHttpConfig->client_cert_filepath, conv);
     break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER:
+    ret = _memberp_to_generic(&overridableHttpConfig->ssl_client_verify_server, conv);
+    break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
+    // String, must be handled elsewhere
+    break;
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = _memberp_to_generic(&overridableHttpConfig->parent_failures_update_hostdb, conv);
     break;
@@ -8408,6 +8415,16 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       }
     }
     break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_verify_server_policy = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_verify_server_properties = const_cast<char *>(value);
+    }
+    break;
   default: {
     MgmtConverter const *conv;
     void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
@@ -8594,7 +8611,11 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.http.connect_attempts_max_retries_dead_server",
     {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.parent_proxy.per_parent_connect_attempts",
-    {TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS, TS_RECORDDATATYPE_INT}}});
+    {TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.ssl.client.verify.server", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.ssl.client.verify.server.policy", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY, TS_RECORDDATATYPE_STRING}},
+   {"proxy.config.ssl.client.verify.server.properties",
+    {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES, TS_RECORDDATATYPE_STRING}}});
 
 TSReturnCode
 TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)

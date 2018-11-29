@@ -4671,6 +4671,46 @@ HttpSM::send_origin_throttled_response()
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
+static void
+set_tls_options(NetVCOptions &opt, OverridableHttpConfigParams *txn_conf)
+{
+  char *verify_server = nullptr;
+  if (txn_conf->ssl_client_verify_server_policy == nullptr) {
+    opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
+  } else {
+    verify_server = txn_conf->ssl_client_verify_server_policy;
+    if (strcmp(verify_server, "DISABLED") == 0) {
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
+    } else if (strcmp(verify_server, "ENFORCED") == 0) {
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+              verify_server);
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
+    }
+  }
+  if (txn_conf->ssl_client_verify_server_properties == nullptr) {
+    opt.verifyServerProperties = YamlSNIConfig::Property::UNSET;
+  } else {
+    verify_server = txn_conf->ssl_client_verify_server_properties;
+    if (strcmp(verify_server, "SIGNATURE") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
+    } else if (strcmp(verify_server, "NAME") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
+    } else if (strcmp(verify_server, "ALL") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
+    } else if (strcmp(verify_server, "NONE") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::NONE;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
+              verify_server);
+      opt.verifyServerProperties = YamlSNIConfig::Property::NONE;
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::do_http_server_open()
@@ -4958,6 +4998,8 @@ HttpSM::do_http_server_open(bool raw)
   opt.set_sock_param(t_state.txn_conf->sock_recv_buffer_size_out, t_state.txn_conf->sock_send_buffer_size_out,
                      t_state.txn_conf->sock_option_flag_out, t_state.txn_conf->sock_packet_mark_out,
                      t_state.txn_conf->sock_packet_tos_out);
+
+  set_tls_options(opt, t_state.txn_conf);
 
   opt.ip_family = ip_family;
 
