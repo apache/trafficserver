@@ -275,4 +275,80 @@ TEST_CASE("QUICStream", "[quic]")
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level) == false);
   }
+
+  /*
+   * This test does not pass now
+   *
+  SECTION("Retransmit STREAM frame")
+  {
+    MIOBuffer *write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
+
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+
+    MockContinuation mock_cont(stream->mutex);
+    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    const char data1[] = "this is a test data";
+    const char data2[] = "THIS IS ANOTHER TEST DATA";
+    QUICFrameUPtr frame   = QUICFrameFactory::create_null_frame();
+
+    QUICFrameUPtr frame1 = QUICFrameFactory::create_null_frame();
+    QUICFrameUPtr frame2 = QUICFrameFactory::create_null_frame();
+
+    // Write data1
+    write_buffer->write(data1, 1024);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    // Generate STREAM frame
+    frame1 = stream->generate_frame(level, 4096, 4096);
+    CHECK(frame->type() == QUICFrameType::STREAM);
+    CHECK(stream->generate_frame(level, 4096, 4096) == nullptr);
+    // Write data2
+    write_buffer->write(data1, 1024);
+    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    // Lost the frame
+    stream->on_frame_lost(frame->id());
+    // Regenerate a frame
+    frame2 = stream->generate_frame(level, 4096, 4096);
+    // Lost data should be resent first
+    CHECK(frame->type() == QUICFrameType::STREAM);
+    CHECK(frame1->offset() == frame2->offset());
+    CHECK(frame1->data_length() == frame2->data_length());
+    CHECK(memcmp(frame1->data(), frame2->data(), frame1->data_length());
+  }
+  */
+
+  SECTION("Retransmit RST_STREAM frame")
+  {
+    MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
+
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+
+    MockContinuation mock_cont(stream->mutex);
+    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    QUICFrameUPtr frame       = QUICFrameFactory::create_null_frame();
+
+    stream->reset(QUICStreamErrorUPtr(new QUICStreamError(stream.get(), QUIC_APP_ERROR_CODE_STOPPING)));
+    frame = stream->generate_frame(level, 4096, 4096);
+    REQUIRE(frame);
+    CHECK(frame->type() == QUICFrameType::RST_STREAM);
+    // Don't send it again untill it is considers as lost
+    CHECK(stream->generate_frame(level, 4096, 4096) == nullptr);
+    // Loss the frame
+    stream->on_frame_lost(frame->id());
+    // After the loss the frame should be regenerated
+    frame = stream->generate_frame(level, 4096, 4096);
+    REQUIRE(frame);
+    CHECK(frame->type() == QUICFrameType::RST_STREAM);
+  }
 }

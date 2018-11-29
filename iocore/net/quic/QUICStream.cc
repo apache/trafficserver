@@ -412,7 +412,8 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 
   // RST_STREAM
   if (this->_reset_reason && !this->_is_reset_sent) {
-    frame = QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
+    frame = QUICFrameFactory::create_rst_stream_frame(*this->_reset_reason);
+    this->_records_frame(frame->id(), {frame->type(), level});
     this->_state.update_with_sending_frame(*frame);
     this->_is_reset_sent = true;
     return frame;
@@ -780,7 +781,7 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   QUICConnectionErrorUPtr error = nullptr;
 
   if (this->_reset_reason) {
-    return QUICFrameFactory::create_rst_stream_frame(std::move(this->_reset_reason));
+    return QUICFrameFactory::create_rst_stream_frame(*this->_reset_reason);
   }
 
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();

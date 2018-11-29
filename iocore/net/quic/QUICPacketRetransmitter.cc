@@ -45,6 +45,7 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     case QUICFrameType::ACK:
     case QUICFrameType::PATH_CHALLENGE:
     case QUICFrameType::PATH_RESPONSE:
+    case QUICFrameType::RST_STREAM:
       break;
     default:
       frame     = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);

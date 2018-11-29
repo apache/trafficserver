@@ -1096,7 +1096,7 @@ public:
                                                                                            QUICOffset final_offset,
                                                                                            QUICFrameId id            = 0,
                                                                                            QUICFrameGenerator *owner = nullptr);
-  static std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> create_rst_stream_frame(QUICStreamErrorUPtr error,
+  static std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> create_rst_stream_frame(QUICStreamError &error,
                                                                                            QUICFrameId id            = 0,
                                                                                            QUICFrameGenerator *owner = nullptr);
 

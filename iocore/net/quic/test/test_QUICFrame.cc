@@ -1360,8 +1360,7 @@ TEST_CASE("QUICFrameFactory Create RST_STREAM with a QUICStreamError", "[quic]")
   QUICStream stream(&mock_rtt, &mock_connection, 0x1234, 0, 0);
   std::unique_ptr<QUICStreamError> error =
     std::unique_ptr<QUICStreamError>(new QUICStreamError(&stream, static_cast<QUICAppErrorCode>(0x01)));
-  std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> rst_stream_frame1 =
-    QUICFrameFactory::create_rst_stream_frame(std::move(error));
+  std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> rst_stream_frame1 = QUICFrameFactory::create_rst_stream_frame(*error);
   CHECK(rst_stream_frame1->error_code() == 0x01);
   CHECK(rst_stream_frame1->stream_id() == 0x1234);
   CHECK(rst_stream_frame1->final_offset() == 0);

@@ -2962,9 +2962,9 @@ QUICFrameFactory::create_rst_stream_frame(QUICStreamId stream_id, QUICAppErrorCo
 }
 
 std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_rst_stream_frame(QUICStreamErrorUPtr error, QUICFrameId id, QUICFrameGenerator *owner)
+QUICFrameFactory::create_rst_stream_frame(QUICStreamError &error, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  return QUICFrameFactory::create_rst_stream_frame(error->stream->id(), error->code, error->stream->final_offset(), id, owner);
+  return QUICFrameFactory::create_rst_stream_frame(error.stream->id(), error.code, error.stream->final_offset(), id, owner);
 }
 
 std::unique_ptr<QUICStopSendingFrame, QUICFrameDeleterFunc>
