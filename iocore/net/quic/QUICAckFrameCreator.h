@@ -71,13 +71,14 @@ public:
     std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame(QUICEncryptionLevel level);
 
     std::list<RecvdPacket> _packet_numbers;
-    Event *_event                         = nullptr;
-    bool _available                       = false;
-    bool _should_send                     = false;
-    size_t _size_unsend                   = 0;
-    QUICPacketNumber _largest_ack_number  = 0;
-    QUICPacketNumber _expect_next         = 0;
-    ink_hrtime _largest_ack_received_time = 0;
+    Event *_event                           = nullptr;
+    bool _available                         = false;
+    bool _should_send                       = false;
+    size_t _size_unsend                     = 0;
+    QUICPacketNumber _largest_ack_number    = 0;
+    QUICPacketNumber _expect_next           = 0;
+    ink_hrtime _largest_ack_received_time   = 0;
+    ink_hrtime _latest_packet_received_time = 0;
 
     QUICConnection *_qc               = nullptr;
     QUICAckFrameCreator *_ack_creator = nullptr;

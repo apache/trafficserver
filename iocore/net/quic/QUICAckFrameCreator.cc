@@ -153,14 +153,17 @@ QUICAckFrameCreator::QUICAckPacketNumbers::push_back(QUICEncryptionLevel level, 
     this->_largest_ack_number        = packet_number;
   }
 
+  if (!this->_latest_packet_received_time) {
+    this->_latest_packet_received_time = Thread::get_hrtime();
+  }
+
   // delay too much time
-  if (this->_largest_ack_received_time + QUIC_ACK_CREATOR_MAX_DELAY <= Thread::get_hrtime()) {
+  if (this->_latest_packet_received_time + QUIC_ACK_CREATOR_MAX_DELAY <= Thread::get_hrtime()) {
     this->_should_send = true;
   }
 
   // unorder packet should send ack immediately to accellerate the recovery
   if (this->_expect_next != packet_number) {
-    this->_expect_next = std::max(this->_expect_next, packet_number + 1);
     this->_should_send = true;
   }
 
@@ -186,6 +189,7 @@ QUICAckFrameCreator::QUICAckPacketNumbers::push_back(QUICEncryptionLevel level, 
     this->_start_timer();
   }
 
+  this->_expect_next = packet_number + 1;
   this->_packet_numbers.push_back({ack_only, packet_number});
 }
 
@@ -237,8 +241,9 @@ QUICAckFrameCreator::QUICAckPacketNumbers::create_ack_frame(QUICEncryptionLevel 
     // Cancel generating frame
     ack_frame = QUICFrameFactory::create_null_ack_frame();
   } else {
-    this->_available   = false;
-    this->_should_send = false;
+    this->_available                   = false;
+    this->_should_send                 = false;
+    this->_latest_packet_received_time = 0;
     this->_cancel_timer();
   }
 
@@ -344,7 +349,11 @@ void
 QUICAckFrameCreator::QUICAckPacketNumbers::_start_timer()
 {
   if (this->_event == nullptr) {
-    this->_event = this_ethread()->schedule_at(this, Thread::get_hrtime() + QUIC_ACK_CREATOR_MAX_DELAY);
+    auto ethread = this_ethread();
+    // this check for test.
+    if (ethread) {
+      this->_event = ethread->schedule_at(this, Thread::get_hrtime() + QUIC_ACK_CREATOR_MAX_DELAY);
+    }
   }
 }
 

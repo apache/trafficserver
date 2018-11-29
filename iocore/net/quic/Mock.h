@@ -276,8 +276,8 @@ public:
   {
   }
 
-  void 
-  common_send_packet() override 
+  void
+  common_send_packet() override
   {
   }
 
