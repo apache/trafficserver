@@ -59,7 +59,6 @@ tr.Processes.Default.Command = "mkdir " + path4 + ";touch " + randomfile + ";$AT
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(os.path.join(path4, "runroot.yaml"))
 f.Exists = True
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("Forcing creating runroot", "force message")
 
 # create runroot with junk to guarantee only traffic server related files are copied
 bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1:]

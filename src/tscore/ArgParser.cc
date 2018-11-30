@@ -34,6 +34,10 @@ std::string global_usage;
 std::string parser_program_name;
 std::string default_command;
 
+// by default return EX_USAGE(64) when usage is called.
+// if -h or --help is called specifically, return 0
+int usage_return_code = EX_USAGE;
+
 namespace ts
 {
 ArgParser::ArgParser() {}
@@ -107,7 +111,7 @@ ArgParser::Command::help_message(std::string_view err) const
     std::cout << "\nExample Usage: " << _example_usage << std::endl;
   }
   // standard return code
-  exit(EX_USAGE);
+  exit(usage_return_code);
 }
 
 void
@@ -436,6 +440,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
           }
           command = &it->second;
         }
+        usage_return_code = 0;
         command->help_message();
       }
       // deal with normal --arg val1 val2 ...
