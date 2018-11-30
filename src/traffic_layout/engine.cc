@@ -39,16 +39,20 @@
 #include <ftw.h>
 #include <yaml-cpp/yaml.h>
 #include <grp.h>
+#include <sysexits.h>
 
 static const long MAX_LOGIN        = ink_login_name_max();
 static constexpr int MAX_GROUP_NUM = 32;
 
-// for nftw check_directory
-std::string directory_check;
+// Personally I don't really like the way that nftw needs global variables. Right now there is no other options.
+// This iteration through directory can be avoided after std::filesystem is in.
 
+// for nftw check_directory
+static std::string empty_check_directory;
 // for 'verify --fix' nftw iteration
-int permission;
-std::string cur_fix_dir;
+static PermissionEntry permission_entry;
+// if fix_flag is set, permission handler will perform fixing operation
+static bool fix_flag = false;
 
 // the function for the checking of the yaml file in the passed in path
 // if found return the path, if not return empty string
@@ -85,51 +89,27 @@ check_parent_path(const std::string &path)
   return {};
 }
 
-// check if we can create the runroot using path
-// return true if the path is good to use
-static bool
-check_run_path(const std::string &arg, const bool forceflag)
-{
-  if (arg.empty()) {
-    return false;
-  }
-  // the condition of force create
-  if (is_directory(arg) && forceflag) {
-    std::cout << "Forcing creating runroot ..." << std::endl;
-    return true;
-  }
-
-  // if directory already exist
-  if (is_directory(arg)) {
-    return true;
-  } else {
-    // try to create & remove
-    if (!create_directory(arg)) {
-      return false;
-    }
-    remove_directory(arg);
-    return true;
-  }
-}
-
 // handle the path of the engine during parsing
 static std::string
 path_handler(const std::string &path, bool run_flag, const std::string &command)
 {
+  std::string cur_working_dir = "";
   char cwd[PATH_MAX];
-  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
+  if (!getcwd(cwd, sizeof(cwd))) {
+    ink_warning("unexcepted failure from getcwd() - %s", strerror(errno));
+  } else {
+    cur_working_dir = cwd;
   }
 
   if (run_flag) {
     // no path passed in, use cwd
     if (path.empty()) {
-      return cwd;
+      return cur_working_dir;
     }
     if (path[0] == '/') {
       return path;
     } else {
-      return Layout::relative_to(cwd, path);
+      return Layout::relative_to(cur_working_dir, path);
     }
   }
 
@@ -140,7 +120,7 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
     if (path[0] == '/') {
       cmdpath = check_path(path);
     } else {
-      cmdpath = check_path(Layout::relative_to(cwd, path));
+      cmdpath = check_path(Layout::relative_to(cur_working_dir, path));
     }
     if (!cmdpath.empty()) {
       return cmdpath;
@@ -148,7 +128,7 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
   }
 
   // 2. find cwd or parent path of cwd to check
-  std::string cwdpath = check_parent_path(cwd);
+  std::string cwdpath = check_parent_path(cur_working_dir);
   if (!cwdpath.empty()) {
     return cwdpath;
   }
@@ -157,8 +137,9 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
   char RealBinPath[PATH_MAX] = {0};
   if (!command.empty() && realpath(command.c_str(), RealBinPath) != nullptr) {
     std::string bindir = RealBinPath;
-    bindir             = bindir.substr(0, bindir.find_last_of("/")); // getting the bin dir not executable path
-    bindir             = check_parent_path(bindir);
+
+    bindir = bindir.substr(0, bindir.find_last_of("/")); // getting the bin dir not executable path
+    bindir = check_parent_path(bindir);
     if (!bindir.empty()) {
       return bindir;
     }
@@ -167,29 +148,11 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
   return path;
 }
 
-// if directory is not empty, ask input from user Y/N
+// check if there is any directory inside empty_check_directory to see if it is empty or not
 static int
-check_directory(const char *path, const struct stat *s, int flag, struct FTW *f)
+check_directory_empty(const char *path, const struct stat *s, int flag)
 {
-  std::string checkpath = path;
-  if (checkpath != directory_check) {
-    // check for valid Y/N
-    for (int i = 0; i < 3; i++) {
-      std::cout << "Are you sure to create runroot inside a non-empty directory Y/N: ";
-      std::string input;
-      std::cin >> input;
-      if (input == "Y" || input == "y") {
-        // terminate nftw
-        return 1;
-      }
-      if (input == "N" || input == "n") {
-        exit(0);
-      }
-    }
-    ink_error("Invalid input Y/N");
-    exit(70);
-  }
-  return 0;
+  return std::string(path) != empty_check_directory ? -1 : 0;
 }
 
 void
@@ -208,14 +171,20 @@ void
 LayoutEngine::create_runroot()
 {
   // set up options
-  std::string path        = path_handler(arguments.get("path").value(), true, _argv[0]);
+  std::string path = path_handler(arguments.get("path").value(), true, _argv[0]);
+  if (path.empty()) {
+    ink_error("Path not valid for creating");
+    status_code = EX_SOFTWARE;
+    return;
+  }
   bool force_flag         = arguments.get("force");
   bool abs_flag           = arguments.get("absolute");
   std::string layout_file = arguments.get("layout").value();
   if (layout_file.find("runroot.yaml") != std::string::npos) {
     ink_error(
       "'runroot.yaml' is a potentially dangerous name for '--layout' option.\nPlease set other name to the file for '--layout'");
-    exit(70);
+    status_code = EX_SOFTWARE;
+    return;
   }
   // deal with the copy style
   CopyStyle copy_style = HARD;
@@ -230,12 +199,9 @@ LayoutEngine::create_runroot()
       copy_style = HARD;
     } else {
       ink_error("Unknown copy style: '%s'", style.c_str());
-      exit(70);
+      status_code = EX_USAGE;
+      return;
     }
-  }
-  // check validity of the path
-  if (!check_run_path(path, force_flag)) {
-    ink_fatal("Failed to create runroot with path '%s'", path.c_str());
   }
   std::string original_root = Layout::get()->prefix;
   std::string ts_runroot    = path;
@@ -247,15 +213,35 @@ LayoutEngine::create_runroot()
     return;
   }
   if (!force_flag && !check_parent_path(ts_runroot).empty()) {
-    ink_fatal("Cannot create runroot inside another runroot");
+    ink_error("Cannot create runroot inside another runroot");
+    status_code = EX_SOFTWARE;
+    return;
   }
 
   std::cout << "creating runroot - " + ts_runroot << std::endl;
 
   // check if directory is empty when --force is not used
   if (is_directory(ts_runroot) && !force_flag) {
-    directory_check = ts_runroot;
-    nftw(ts_runroot.c_str(), check_directory, OPEN_MAX_FILE, FTW_DEPTH);
+    empty_check_directory = ts_runroot;
+    if (ftw(ts_runroot.c_str(), check_directory_empty, OPEN_MAX_FILE) != 0) {
+      // if the directory is not empty, check for valid Y/N
+      for (int i = 0; i < 3; i++) {
+        std::cout << "Are you sure to create runroot inside a non-empty directory Y/N: ";
+        std::string input;
+        std::cin >> input;
+        if (input == "Y" || input == "y") {
+          break;
+        }
+        if (input == "N" || input == "n") {
+          return;
+        }
+        if (i == 2) {
+          ink_error("Invalid input Y/N");
+          status_code = EX_SOFTWARE;
+          return;
+        }
+      }
+    }
   }
 
   // create new root & copy from original to new runroot. then fill in the map
@@ -281,10 +267,10 @@ LayoutEngine::create_runroot()
   if (layout_file.size() != 0) {
     try {
       YAML::Node yamlfile = YAML::LoadFile(layout_file);
-      for (auto &&it : yamlfile) {
+      for (const auto &it : yamlfile) {
         std::string key   = it.first.as<std::string>();
         std::string value = it.second.as<std::string>();
-        auto &&iter       = new_map.find(key);
+        auto iter         = new_map.find(key);
         if (iter != new_map.end()) {
           iter->second = value;
         } else {
@@ -303,7 +289,7 @@ LayoutEngine::create_runroot()
   // symlink the executables
   // set up path_map for yaml to emit key-value pairs
   RunrootMapType path_map;
-  for (auto &&it : original_map) {
+  for (const auto &it : original_map) {
     // path handle
     std::string join_path;
     if (it.second[0] && it.second[0] == '/') {
@@ -345,7 +331,7 @@ LayoutEngine::create_runroot()
   YAML::Emitter yamlfile;
   // emit key value pairs to the yaml file
   yamlfile << YAML::BeginMap;
-  for (auto &&it : dir_vector) {
+  for (const auto &it : dir_vector) {
     yamlfile << YAML::Key << it;
     yamlfile << YAML::Value << path_map[it];
   }
@@ -367,17 +353,13 @@ LayoutEngine::remove_runroot()
   std::string path = path_handler(arguments.get("path").value(), false, _argv[0]);
   // check validity of the path
   if (path.empty()) {
-    ink_fatal("Path not valid (runroot.yaml not found)");
+    ink_error("Path not valid (runroot.yaml not found)");
+    status_code = EX_IOERR;
+    return;
   }
 
   std::string clean_root = path;
   append_slash(clean_root);
-
-  char cwd[PATH_MAX];
-  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    ink_fatal("unexcepted failure from getcwd() code=%d", errno);
-  }
-  std::string cur_working_dir = cwd;
 
   if (arguments.get("force")) {
     // the force remove
@@ -390,11 +372,20 @@ LayoutEngine::remove_runroot()
     RunrootMapType map = runroot_map(Layout::relative_to(clean_root, "runroot.yaml"));
     map.erase(LAYOUT_PREFIX);
     map.erase(LAYOUT_EXEC_PREFIX);
-    for (auto &&it : map) {
+    // get current working directory
+    std::string cur_working_dir = "";
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+      ink_warning("unexcepted failure from getcwd() - %s", strerror(errno));
+    } else {
+      cur_working_dir = cwd;
+    }
+    for (const auto &it : map) {
       std::string dir = it.second;
       append_slash(dir);
       // get the directory to remove: prefix/etc/trafficserver -> prefix/etc
       dir = dir.substr(0, dir.substr(clean_root.size()).find_first_of("/") + clean_root.size());
+      // don't remove cwd
       if (cur_working_dir != dir) {
         remove_directory(dir);
       } else {
@@ -418,230 +409,250 @@ LayoutEngine::remove_runroot()
   }
 }
 
-// return an array containing gid and uid of provided user
-static std::pair<gid_t, uid_t>
-get_giduid(std::string &user)
-{
-  passwd *pwd;
-  if (user[0] == '#') {
-    // Numeric user notation.
-    uid_t uid = (uid_t)atoi(&user[1]);
-    pwd       = getpwuid(uid);
-  } else {
-    pwd = getpwnam(user.c_str());
-  }
-  if (!pwd) {
-    // null ptr
-    ink_fatal("missing password database entry for '%s'", user.c_str());
-  }
-  user                           = pwd->pw_name;
-  std::pair<gid_t, uid_t> giduid = {pwd->pw_gid, pwd->pw_uid};
-  return giduid;
-}
-
-// output read permission
-static void
-output_read_permission(const std::string &permission)
-{
-  if (permission[0] == '1') {
-    std::cout << "\tRead Permission: \033[1;32mPASSED\033[0m" << std::endl;
-  } else {
-    std::cout << "\tRead Permission: \033[1;31mFAILED\033[0m" << std::endl;
-  }
-}
-
-// output write permission
-static void
-output_write_permission(const std::string &permission)
-{
-  if (permission[1] == '1') {
-    std::cout << "\tWrite Permission: \033[1;32mPASSED\033[0m" << std::endl;
-  } else {
-    std::cout << "\tWrite Permission: \033[1;31mFAILED\033[0m" << std::endl;
-  }
-}
-
-// output execute permission
-static void
-output_execute_permission(const std::string &permission)
-{
-  if (permission[2] == '1') {
-    std::cout << "\tExecute Permission: \033[1;32mPASSED\033[0m" << std::endl;
-  } else {
-    std::cout << "\tExecute Permission: \033[1;31mFAILED\033[0m" << std::endl;
-  }
-}
-
-// chmod the file permission
+// check permission for verify
 static int
-chmod_files_permission(const char *path, const struct stat *s, int flag, struct FTW *f)
+permission_handler(const char *path, const struct stat *s, int flag)
 {
-  // ----- filter traffic server related files -----
-  if (!filter_ts_files(cur_fix_dir, path)) {
+  std::string cur_directory = permission_entry.name;
+  // filter traffic server related files
+  if (!filter_ts_files(cur_directory, path)) {
     return 0;
   }
+  if (flag == FTW_NS || !s) {
+    ink_warning("unable to stat() destination path %s - %s", path, strerror(errno));
+    return -1;
+  }
+
+  int ret = 0;
+  // --------- for directories ---------
+  if (flag == FTW_D || flag == FTW_DNR) {
+    // always need read permission for directories
+    if (!(s->st_mode & permission_entry.r_mode)) {
+      if (fix_flag) {
+        if (chmod(path, s->st_mode | permission_entry.r_mode) < 0) {
+          ink_warning("Unable to change file mode on %s - %s", path, strerror(errno));
+        } else {
+          std::cout << "Fixed read permission: " << path << std::endl;
+        }
+      } else {
+        std::cout << "Read permission failed for directory: " << path << std::endl;
+        ret = -1;
+      }
+    }
+    // need write permission for logdir, runtimedir and cachedir
+    if (cur_directory == LAYOUT_LOGDIR || cur_directory == LAYOUT_RUNTIMEDIR || cur_directory == LAYOUT_CACHEDIR) {
+      if (!(s->st_mode & permission_entry.w_mode)) {
+        if (fix_flag) {
+          if (chmod(path, s->st_mode | permission_entry.w_mode) < 0) {
+            ink_warning("Unable to change file mode on %s - %s", path, strerror(errno));
+          } else {
+            std::cout << "Fixed write permission: " << path << std::endl;
+          }
+        } else {
+          std::cout << "Write permission failed for directory: " << path << std::endl;
+          ret = -1;
+        }
+      }
+    }
+    // always need execute permission for directories
+    if (!(s->st_mode & permission_entry.e_mode)) {
+      if (fix_flag) {
+        if (chmod(path, s->st_mode | permission_entry.e_mode) < 0) {
+          ink_warning("Unable to change file mode on %s - %s", path, strerror(errno));
+        } else {
+          std::cout << "Fixed execute permission: " << path << std::endl;
+        }
+      } else {
+        std::cout << "Execute permission failed for directory: " << path << std::endl;
+        ret = -1;
+      }
+    }
+  } else {
+    // --------- for files ---------
+    // always need read permission for all files
+    if (!(s->st_mode & permission_entry.r_mode)) {
+      if (fix_flag) {
+        if (chmod(path, s->st_mode | permission_entry.r_mode) < 0) {
+          ink_warning("Unable to change file mode on %s - %s", path, strerror(errno));
+        } else {
+          std::cout << "Fixed read permission: " << path << std::endl;
+        }
+      } else {
+        std::cout << "Read permission failed for file " << path << std::endl;
+        ret = -1;
+      }
+    }
+    // need write permission for files in logdir, runtimedir and cachedir
+    if (cur_directory == LAYOUT_LOGDIR || cur_directory == LAYOUT_RUNTIMEDIR || cur_directory == LAYOUT_CACHEDIR) {
+      if (!(s->st_mode & permission_entry.w_mode)) {
+        if (fix_flag) {
+          if (chmod(path, s->st_mode | permission_entry.w_mode) < 0) {
+            ink_warning("Unable to change file mode on %s - %s", path, strerror(errno));
+          } else {
+            std::cout << "Fixed write permission: " << path << std::endl;
+          }
+        } else {
+          std::cout << "Write permission failed for file " << path << std::endl;
+          ret = -1;
+        }
+      }
+    }
+    // execute permission on files in bindir, sbindir, libdir and libexecdir
+    if (cur_directory == LAYOUT_BINDIR || cur_directory == LAYOUT_SBINDIR || cur_directory == LAYOUT_LIBDIR ||
+        cur_directory == LAYOUT_LIBEXECDIR) {
+      std::string tmp_path = path;
+      // skip the files in perl5 and pkgconfig from libdir
+      if (tmp_path.find("/perl5/") != std::string::npos || tmp_path.find("/pkgconfig/") != std::string::npos) {
+        return 0;
+      }
+      if (!(s->st_mode & permission_entry.e_mode)) {
+        if (fix_flag) {
+          if (chmod(path, s->st_mode | permission_entry.e_mode) < 0) {
+            ink_warning("Unable to change file mode on %s - %s", path, strerror(errno));
+          } else {
+            std::cout << "Fixed execute permission: " << path << std::endl;
+          }
+        } else {
+          std::cout << "Execute permission failed for file: " << path << std::endl;
+          ret = -1;
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+// used for prefix, exec_prefix and localstatedir
+// only check the read/execute permission on those directories
+static bool
+check_directory_permission(const char *path)
+{
   struct stat stat_buffer;
   if (stat(path, &stat_buffer) < 0) {
-    ink_warning("unable to stat() destination path %s: %s", path, strerror(errno));
-    return 0;
+    ink_warning("unable to stat() destination path %s - %s", path, strerror(errno));
+    return false;
   }
-  if (chmod(path, stat_buffer.st_mode | permission) < 0) {
-    ink_warning("Unable to change file mode on %s: %s", path, strerror(errno));
+  if (!(stat_buffer.st_mode & permission_entry.r_mode)) {
+    std::cout << "Read permission failed for: " << path << std::endl;
+    return false;
   }
-  return 0;
+  if (!(stat_buffer.st_mode & permission_entry.e_mode)) {
+    std::cout << "Execute permission failed for: " << path << std::endl;
+    return false;
+  }
+  return true;
 }
 
-// the fixing permission of runroot used by verify command
-static void
-fix_runroot(RunrootMapType &path_map, RunrootMapType &permission_map, RunrootMapType &usergroup_map)
-{
-  if (getuid() != 0) {
-    ink_error("To fix permission issues, root privileges are required.\nPlease run with sudo.");
-    exit(70);
-  }
-  for (auto &&it : permission_map) {
-    std::string name      = it.first;
-    std::string usergroup = usergroup_map[name];
-    std::string path      = path_map[name];
-    std::cout << "Fixing " + name + "..." << std::endl;
-
-    int read_permission;
-    int write_permission;
-    int execute_permission;
-    if (usergroup == "owner") {
-      read_permission    = S_IRUSR;
-      write_permission   = S_IWUSR;
-      execute_permission = S_IXUSR;
-    } else if (usergroup == "group") {
-      read_permission    = S_IRGRP;
-      write_permission   = S_IWGRP;
-      execute_permission = S_IXGRP;
-    } else {
-      read_permission    = S_IROTH;
-      write_permission   = S_IWOTH;
-      execute_permission = S_IXOTH;
-    }
-    // fix read permission
-    permission  = read_permission;
-    cur_fix_dir = name;
-    nftw(path.c_str(), chmod_files_permission, OPEN_MAX_FILE, FTW_DEPTH);
-    // fix write permission
-    if (name == LAYOUT_LOGDIR || name == LAYOUT_RUNTIMEDIR || name == LAYOUT_CACHEDIR) {
-      permission = write_permission;
-      nftw(path.c_str(), chmod_files_permission, OPEN_MAX_FILE, FTW_DEPTH);
-    }
-    // fix execute permission
-    if (name == LAYOUT_BINDIR || name == LAYOUT_SBINDIR || name == LAYOUT_LIBDIR || name == LAYOUT_LIBEXECDIR) {
-      permission = execute_permission;
-      nftw(path.c_str(), chmod_files_permission, OPEN_MAX_FILE, FTW_DEPTH);
-    }
-  }
-}
+#if defined(darwin)
+// on Darwin, getgrouplist() takes int.
+using gid_type = int;
+#else
+using gid_type = gid_t;
+#endif
 
 // helper function to check if user is from the same group of path_gid
 static bool
-from_group(std::string const &user, gid_t group_id, gid_t path_gid)
+from_group(const char *user, gid_type group_id, gid_type path_gid)
 {
   int ngroups = MAX_GROUP_NUM;
-  // Retrieve group list
-#if defined(darwin)
-  // on Darwin, getgrouplist() takes int.
-  int groups[ngroups];
-  if (getgrouplist(user.c_str(), static_cast<int>(group_id), groups, &ngroups) == -1) {
-    ink_fatal("Failed to get group list as user '%s'\n", user.c_str());
-  }
-  for (int i = 0; i < ngroups; i++) {
-    if (static_cast<int>(path_gid) == groups[i]) {
-      return true;
-    }
-  }
-#else
-  gid_t groups[ngroups];
-  if (getgrouplist(user.c_str(), group_id, groups, &ngroups) == -1) {
-    ink_fatal("Failed to get group list as user '%s'\n", user.c_str());
+  gid_type groups[ngroups];
+  if (getgrouplist(user, group_id, groups, &ngroups) == -1) {
+    ink_warning("Unable to get group list as user '%s'\n", user);
+    return false;
   }
   for (int i = 0; i < ngroups; i++) {
     if (path_gid == groups[i]) {
       return true;
     }
   }
-#endif
   return false;
 }
 
 // set permission to the map in verify runroot
 static void
-set_permission(std::vector<std::string> const &dir_vector, RunrootMapType &path_map, RunrootMapType &permission_map,
-               RunrootMapType &usergroup_map, std::string &user)
+set_permission(PermissionMapType &permission_map, const struct passwd *pwd)
 {
-  // active group and user of the path
-  std::pair<gid_t, uid_t> giduid = get_giduid(user);
-
-  gid_t ts_gid = giduid.first;
-  uid_t ts_uid = giduid.second;
-
-  struct stat stat_buffer;
+  gid_t ts_gid  = pwd->pw_gid;
+  uid_t ts_uid  = pwd->pw_uid;
+  bool new_line = false;
 
   // set up permission map for all permissions
-  for (auto &&it : dir_vector) {
-    std::string name  = it;
-    std::string value = path_map[name];
+  for (auto &it : permission_map) {
+    std::string name  = it.first;
+    std::string value = it.second.path;
 
-    if (name == LAYOUT_PREFIX || name == LAYOUT_EXEC_PREFIX) {
-      continue;
-    }
-
+    struct stat stat_buffer;
     if (stat(value.c_str(), &stat_buffer) < 0) {
-      ink_warning("unable to stat() destination path %s: %s", value.c_str(), strerror(errno));
+      ink_warning("unable to stat() destination path %s - %s", value.c_str(), strerror(errno));
+      it.second.result = false;
+      new_line         = true;
       continue;
     }
     gid_t path_gid = stat_buffer.st_gid;
     uid_t path_uid = stat_buffer.st_uid;
 
-    permission_map[name] = "000"; // default rwx all 0
     if (ts_uid == path_uid) {
-      // check for owner permission of st_mode
-      usergroup_map[name] = "owner";
-      if (stat_buffer.st_mode & S_IRUSR) {
-        permission_map[name][0] = '1';
-      }
-      if (stat_buffer.st_mode & S_IWUSR) {
-        permission_map[name][1] = '1';
-      }
-      if (stat_buffer.st_mode & S_IXUSR) {
-        permission_map[name][2] = '1';
-      }
-    } else if (from_group(user, ts_gid, path_gid)) { // current user is in the path_gid group
-      // check for group permission of st_mode
-      usergroup_map[name] = "group";
-      if (stat_buffer.st_mode & S_IRGRP) {
-        permission_map[name][0] = '1';
-      }
-      if (stat_buffer.st_mode & S_IWGRP) {
-        permission_map[name][1] = '1';
-      }
-      if (stat_buffer.st_mode & S_IXGRP) {
-        permission_map[name][2] = '1';
+      it.second.r_mode = S_IRUSR;
+      it.second.w_mode = S_IWUSR;
+      it.second.e_mode = S_IXUSR;
+    } else if (from_group(pwd->pw_name, ts_gid, path_gid)) {
+      it.second.r_mode = S_IRGRP;
+      it.second.w_mode = S_IWGRP;
+      it.second.e_mode = S_IXGRP;
+    } else {
+      it.second.r_mode = S_IROTH;
+      it.second.w_mode = S_IWOTH;
+      it.second.e_mode = S_IXOTH;
+    }
+    // set the result in permission entry
+    permission_entry = it.second;
+    it.second.result = true;
+    // Special case with prefix, exec_prefix and localstatedir. We only need to check the directory itself
+    // but not the files within because they are just container dir for others.
+    if (name == LAYOUT_PREFIX || name == LAYOUT_EXEC_PREFIX || name == LAYOUT_LOCALSTATEDIR) {
+      if (!check_directory_permission(value.c_str())) {
+        it.second.result = false;
+        new_line         = true;
       }
     } else {
-      // check for others permission of st_mode
-      usergroup_map[name] = "others";
-      if (stat_buffer.st_mode & S_IROTH) {
-        permission_map[name][0] = '1';
-      }
-      if (stat_buffer.st_mode & S_IWOTH) {
-        permission_map[name][1] = '1';
-      }
-      if (stat_buffer.st_mode & S_IXOTH) {
-        permission_map[name][2] = '1';
+      // go through all files to check permission
+      if (ftw(value.c_str(), permission_handler, OPEN_MAX_FILE) != 0) {
+        it.second.result = false;
+        new_line         = true;
       }
     }
   }
+  if (new_line) {
+    std::cout << std::endl; // print a new line after the failed permission messages
+  }
+}
+
+// the fixing permission of runroot used by verify command
+static void
+fix_runroot(PermissionMapType &permission_map, const struct passwd *pwd)
+{
+  fix_flag = true;
+  for (const auto &it : permission_map) {
+    std::string name  = it.first;
+    std::string value = it.second.path;
+    permission_entry  = permission_map[name];
+    ftw(value.c_str(), permission_handler, OPEN_MAX_FILE);
+  }
+  fix_flag = false;
+  set_permission(permission_map, pwd);
 }
 
 void
 LayoutEngine::verify_runroot()
 {
+  // require sudo permission for --fix
+  if (arguments.get("fix") && getuid() != 0) {
+    ink_error("To fix permission issues, root privilege is required.\nPlease run with sudo.");
+    status_code = EX_SOFTWARE;
+    return;
+  }
+
+  // retrieve information
   std::string path = path_handler(arguments.get("path").value(), false, _argv[0]);
   std::string user;
   char user_buf[MAX_LOGIN + 1];
@@ -656,49 +667,53 @@ LayoutEngine::verify_runroot()
       user = TS_PKGSYSUSER;
     }
   }
+  // Numeric user notation for user
+  if (user[0] == '#') {
+    struct passwd *pwd = getpwuid(atoi(&user[1]));
+    if (!pwd) {
+      ink_error("No user found under id '%s'", user.c_str());
+      status_code = EX_OSERR;
+      return;
+    }
+    user = pwd->pw_name;
+  }
+  std::cout << "Verifying permission as user: \x1b[1m" << user << "\x1b[0m" << std::endl << std::endl;
+  // try to find the user from password file
+  struct passwd *pwd = getpwnam(user.c_str());
+  if (!pwd) {
+    ink_error("No user found under name '%s'", user.c_str());
+    status_code = EX_OSERR;
+    return;
+  }
   // put paths from yaml file or default paths to path_map
   RunrootMapType path_map;
   if (path.empty()) {
     path_map = runroot_map_default();
-    std::cout << "Verifying default build ..." << std::endl;
   } else {
     path_map = runroot_map(Layout::relative_to(path, "runroot.yaml"));
   }
-
-  RunrootMapType permission_map; // contains rwx bits
-  RunrootMapType usergroup_map;  // map: owner, group, others
-
-  set_permission(dir_vector, path_map, permission_map, usergroup_map, user);
-
-  std::cout << "Verifying as user: " << user << std::endl << std::endl;
-
-  // if --fix is used
-  if (arguments.get("fix")) {
-    fix_runroot(path_map, permission_map, usergroup_map);
-    set_permission(dir_vector, path_map, permission_map, usergroup_map, user);
-  } else {
-    std::cout << "Note: This only shows directory permissions, please use '--fix' to correct permissions on all files" << std::endl;
+  // setup the permission map
+  PermissionMapType permission_map;
+  for (const auto &it : dir_vector) {
+    permission_map[it].name = it;
+    permission_map[it].path = path_map[it];
+  }
+  // root always has full access and no need to check for root
+  if (user != "root") {
+    set_permission(permission_map, pwd);
+    // if --fix is used
+    if (arguments.get("fix")) {
+      fix_runroot(permission_map, pwd);
+    }
   }
 
   // display pass or fail for permission required
-  for (uint i = 2; i < dir_vector.size(); i++) {
-    std::string name       = dir_vector[i];
-    std::string permission = permission_map[dir_vector[i]];
-    std::cout << name << ": \x1b[1m" + path_map[name] + "\x1b[0m" << std::endl;
-
-    // output read permission
-    if (name == LAYOUT_LOCALSTATEDIR || name == LAYOUT_INCLUDEDIR || name == LAYOUT_SYSCONFDIR || name == LAYOUT_DATADIR) {
-      output_read_permission(permission);
-    }
-    // output write permission
-    if (name == LAYOUT_LOGDIR || name == LAYOUT_RUNTIMEDIR || name == LAYOUT_CACHEDIR) {
-      output_read_permission(permission);
-      output_write_permission(permission);
-    }
-    // output execute permission
-    if (name == LAYOUT_BINDIR || name == LAYOUT_SBINDIR || name == LAYOUT_LIBDIR || name == LAYOUT_LIBEXECDIR) {
-      output_read_permission(permission);
-      output_execute_permission(permission);
+  for (const auto &it : dir_vector) {
+    if (permission_map[it].result) {
+      std::cout << it << ": \x1b[1m" << path_map[it] << "\x1b[0m \033[1;32mPASSED\033[0m" << std::endl;
+    } else {
+      std::cout << it << ": \x1b[1m" << path_map[it] << "\x1b[0m \033[1;31mFAILED\033[0m" << std::endl;
+      status_code = EX_SOFTWARE;
     }
   }
 }

@@ -42,12 +42,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     os.path.join(path, "bin"), "example bindir output")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     os.path.join(path, "var/log/trafficserver"), "example logdir output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Read Permission: ", "read permission output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Execute Permission: ", "execute permission output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Write Permission: ", "write permission output")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("PASSED", "contain passed message")
 
 # verify test #2
 bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(
@@ -60,9 +55,5 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     os.path.join(path, "bin"), "example bindir output")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     os.path.join(path, "var/log/trafficserver"), "example logdir output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Read Permission: ", "read permission output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Execute Permission: ", "execute permission output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Write Permission: ", "write permission output")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("PASSED", "contain passed message")
+

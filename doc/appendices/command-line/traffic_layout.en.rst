@@ -54,7 +54,7 @@ First we need to create a runroot. It can be created simply by calling command `
 A runroot will be created in ``/path/to/runroot``, available for other programs to use.
 If the path is not specified, the current working directory will be used.
 
-To run traffic_manager, for example, using the runroot, there are several ways:
+For example, to run traffic_manager, using the runroot, there are several ways:
     #. ``/path/to/runroot/bin/traffic_manager``
     #. ``traffic_manager --run-root=/path/to/runroot``
     #. ``traffic_manager --run-root=/path/to/runroot/runroot.yaml``
@@ -126,6 +126,13 @@ Verify the permission of the sandbox. The permission issues can be fixed with ``
 Example: ::
 
     traffic_layout verify (--path /path/to/sandbox/) (--fix) (--with-user root)
+
+.. Warning::
+
+   If a custom layout is used and system files are included in some directories, ``--fix`` option might potentially have unexpected behaviors.
+   For example, if sysconfdir is defined as ``/etc`` instead of ``/etc/trafficserver`` in ``runroot.yaml``,
+   ``--fix`` may perform permission changes on the system configuration files. With normally created runroot with default layout,
+   there is no such issue since traffic server related files are filtered.
 
 =======
 Options

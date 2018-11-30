@@ -26,7 +26,21 @@
 #include "tscore/ArgParser.h"
 #include <unordered_map>
 
-typedef std::unordered_map<std::string, std::string> RunrootMapType;
+// used by runroot verify
+struct PermissionEntry {
+  std::string name; // sysconfdir, libdir ...
+  std::string path; // real path of the directory
+  // required permission
+  mode_t r_mode;
+  mode_t w_mode;
+  mode_t e_mode;
+  // result set by set_permission()
+  bool result = true;
+};
+
+// this map contain the corresponding permission information of directories
+// PermissionEntry contains the read/write/execute mode and the result of output
+using PermissionMapType = std::unordered_map<std::string, PermissionEntry>;
 
 // structure for informaiton of the runroot passing around
 struct LayoutEngine {
@@ -49,4 +63,6 @@ struct LayoutEngine {
   ts::Arguments arguments;
   // mordern argv
   std::vector<std::string> _argv;
+
+  int status_code = 0;
 };
