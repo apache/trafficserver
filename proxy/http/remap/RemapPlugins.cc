@@ -84,7 +84,7 @@ RemapPlugins::run_single_remap()
   url_mapping *map             = _s->url_map.getMapping();
   remap_plugin_info *plugin    = map->get_plugin(_cur); // get the nth plugin in our list of plugins
   TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
-
+  int zret                     = 1;
   Debug("url_rewrite", "running single remap rule id %d for the %d%s time", map->map_id, _cur,
         _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
 
@@ -94,38 +94,30 @@ RemapPlugins::run_single_remap()
     plugin_retcode = run_plugin(plugin);
   }
 
-  _cur++;
+  ++_cur;
 
-  // If the plugin redirected, we need to end the remap chain now.
-  if (_s->remap_redirect) {
-    return 1;
-  }
+  // If the plugin redirected, we need to end the remap chain now. Otherwise see what's next.
+  if (!_s->remap_redirect) {
+    if (TSREMAP_DID_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP == plugin_retcode) {
+      ++_rewritten;
+    }
 
-  if (TSREMAP_DID_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP == plugin_retcode) {
-    _rewriten++;
-  }
+    if (TSREMAP_NO_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
+      Debug("url_rewrite", "breaking remap plugin chain since last plugin said we should stop after %d rewrites", _rewritten);
+    } else if (_cur >= map->plugin_count()) {
+      Debug("url_rewrite", "completed all remap plugins for rule id %d, changed by %d plugins", map->map_id, _rewritten);
+    } else {
+      Debug("url_rewrite", "completed single remap, attempting another via immediate callback");
+      zret = 0; // not done yet.
+    }
 
-  if (TSREMAP_NO_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
-    if (_rewriten == 0) {
-      Debug("url_rewrite", "plugin did not change host, port or path, copying from mapping rule");
+    // If the chain is finished, and the URL hasn't been rewritten, do the rule remap.
+    if (zret && 0 == _rewritten) {
+      Debug("url_rewrite", "plugins did not change host, port or path, copying from mapping rule");
       url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
     }
-    Debug("url_rewrite", "breaking remap plugin chain since last plugin said we should stop");
-    return 1;
   }
-
-  if (_cur >= map->plugin_count()) {
-    if (_rewriten == 0) {
-      Debug("url_rewrite", "plugin did not change host, port or path, copying from mapping rule");
-      url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
-    }
-    // Normally, we would callback into this function but we dont have anything more to do!
-    Debug("url_rewrite", "completed all remap plugins for rule id %d", map->map_id);
-    return 1;
-  }
-
-  Debug("url_rewrite", "completed single remap, attempting another via immediate callback");
-  return 0;
+  return zret;
 }
 
 int
