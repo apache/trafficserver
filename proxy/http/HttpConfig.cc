@@ -1225,7 +1225,11 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
-  http_config_cont->dispatchEvent(EVENT_NONE, nullptr);
+  MUTEX_TRY_LOCK(lock, http_config_cont->mutex, this_ethread());
+  if (!lock.is_locked()) {
+    ink_release_assert(0);
+  }
+  http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
   return;
 }
