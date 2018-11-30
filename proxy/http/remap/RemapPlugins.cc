@@ -78,13 +78,13 @@ RemapPlugins::run_plugin(remap_plugin_info *plugin)
     there actually *is* something to do).
 
 */
-int
+bool
 RemapPlugins::run_single_remap()
 {
   url_mapping *map             = _s->url_map.getMapping();
   remap_plugin_info *plugin    = map->get_plugin(_cur); // get the nth plugin in our list of plugins
   TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
-  int zret                     = 1;
+  bool zret                    = true; // default - last iteration.
   Debug("url_rewrite", "running single remap rule id %d for the %d%s time", map->map_id, _cur,
         _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
 
@@ -108,7 +108,7 @@ RemapPlugins::run_single_remap()
       Debug("url_rewrite", "completed all remap plugins for rule id %d, changed by %d plugins", map->map_id, _rewritten);
     } else {
       Debug("url_rewrite", "completed single remap, attempting another via immediate callback");
-      zret = 0; // not done yet.
+      zret = false; // not done yet.
     }
 
     // If the chain is finished, and the URL hasn't been rewritten, do the rule remap.
@@ -128,8 +128,6 @@ RemapPlugins::run_remap(int event, Event *e)
   ink_assert(action.continuation);
   ink_assert(action.continuation);
 
-  int ret = 0;
-
   /* make sure we weren't cancelled */
   if (action.cancelled) {
     mutex.clear();
@@ -140,14 +138,14 @@ RemapPlugins::run_remap(int event, Event *e)
   switch (event) {
   case EVENT_IMMEDIATE:
     Debug("url_rewrite", "handling immediate event inside RemapPlugins::run_remap");
-    ret = run_single_remap();
     /**
-     * If ret !=0 then we are done with this processor and we call back into the SM;
-     * otherwise, we call this function again immediately (which really isn't immediate)
-     * thru the eventProcessor, thus forcing another run of run_single_remap() which will
+     * If @c run_single_remap returns @c true then we are done with this processor and we call back
+     * into the SM; otherwise, we call this function again immediately (which really isn't
+     * immediate) thru the eventProcessor, thus forcing another run of run_single_remap() which will
      * then operate on _request_url, etc performing additional remaps (mainly another plugin run)
+     *
      **/
-    if (ret) {
+    if (run_single_remap()) {
       action.continuation->handleEvent(EVENT_REMAP_COMPLETE, nullptr);
       mutex.clear();
       action.mutex.clear();
