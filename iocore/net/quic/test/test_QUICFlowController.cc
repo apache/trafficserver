@@ -311,7 +311,7 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
 
 TEST_CASE("Frame retransmission", "[quic]")
 {
-  QUICEncryptionLevel level = QUICEncryptionLevel::NONE;
+  QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
   SECTION("BLOCKED frame")
   {
@@ -325,41 +325,75 @@ TEST_CASE("Frame retransmission", "[quic]")
     ret = fc.update(1024);
     CHECK(ret == 0);
     frame = fc.generate_frame(level, 1024, 1024);
-    CHECK(frame);
-    CHECK(static_cast<QUICBlockedFrame*>(frame.get())->offset() == 1024);
+    REQUIRE(frame);
+    CHECK(static_cast<QUICBlockedFrame *>(frame.get())->offset() == 1024);
+    QUICFrameId id = frame->id();
 
     // Don't retransmit unless the frame is lost
     frame = fc.generate_frame(level, 1024, 1024);
-    CHECK(frame);
+    REQUIRE(!frame);
 
     // Retransmit
-    fc.on_frame_lost(frame->id());
+    fc.on_frame_lost(id);
     frame = fc.generate_frame(level, 1024, 1024);
-    CHECK(frame);
-    CHECK(static_cast<QUICBlockedFrame*>(frame.get())->offset() == 1024);
+    REQUIRE(frame);
+    CHECK(static_cast<QUICBlockedFrame *>(frame.get())->offset() == 1024);
 
     // Don't send if it was not blocked
     fc.on_frame_lost(frame->id());
-    fc.forward_limit(1024);
-    ret = fc.update(512);
+    fc.forward_limit(2048);
+    ret   = fc.update(1536);
     frame = fc.generate_frame(level, 1024, 1024);
     CHECK(!frame);
 
     // This should not be retransmition
-    ret = fc.update(512);
+    ret   = fc.update(2048);
     frame = fc.generate_frame(level, 1024, 1024);
-    CHECK(static_cast<QUICBlockedFrame*>(frame.get())->offset() == 2048);
+    REQUIRE(frame);
+    CHECK(static_cast<QUICBlockedFrame *>(frame.get())->offset() == 2048);
   }
 
   SECTION("STREAM_BLOCKED frame")
   {
+    int ret = 0;
+    QUICRemoteStreamFlowController fc(1024, 0);
+
+    // Check initial state
+    auto frame = fc.generate_frame(level, 1024, 1024);
+    CHECK(!frame);
+
+    ret = fc.update(1024);
+    CHECK(ret == 0);
+    frame = fc.generate_frame(level, 1024, 1024);
+    REQUIRE(frame);
+    CHECK(static_cast<QUICBlockedFrame *>(frame.get())->offset() == 1024);
+    QUICFrameId id = frame->id();
+
+    // Don't retransmit unless the frame is lost
+    frame = fc.generate_frame(level, 1024, 1024);
+    REQUIRE(!frame);
+
+    // Retransmit
+    fc.on_frame_lost(id);
+    frame = fc.generate_frame(level, 1024, 1024);
+    REQUIRE(frame);
+    CHECK(static_cast<QUICBlockedFrame *>(frame.get())->offset() == 1024);
+
+    // Don't send if it was not blocked
+    fc.on_frame_lost(frame->id());
+    fc.forward_limit(2048);
+    ret   = fc.update(1536);
+    frame = fc.generate_frame(level, 1024, 1024);
+    CHECK(!frame);
+
+    // This should not be retransmition
+    ret   = fc.update(2048);
+    frame = fc.generate_frame(level, 1024, 1024);
+    REQUIRE(frame);
+    CHECK(static_cast<QUICBlockedFrame *>(frame.get())->offset() == 2048);
   }
 
-  SECTION("MAX_DATA frame")
-  {
-  }
+  SECTION("MAX_DATA frame") {}
 
-  SECTION("MAX_STREAM_DATA frame")
-  {
-  }
+  SECTION("MAX_STREAM_DATA frame") {}
 }

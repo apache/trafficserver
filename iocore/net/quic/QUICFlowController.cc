@@ -130,6 +130,7 @@ QUICRemoteFlowController::forward_limit(QUICOffset new_limit)
 {
   QUICFlowController::forward_limit(new_limit);
   this->_blocked = false;
+  this->_frame   = nullptr;
 }
 
 int
@@ -139,7 +140,7 @@ QUICRemoteFlowController::update(QUICOffset offset)
 
   // Create BLOCKED(_STREAM) frame
   // The frame will be sent if stream has something to send.
-  if (!this->_blocked && offset >= this->_limit) {
+  if (offset >= this->_limit) {
     this->_frame   = this->_create_frame();
     this->_blocked = true;
   }
@@ -151,7 +152,7 @@ void
 QUICRemoteFlowController::_on_frame_lost(QUICFrameInformation info)
 {
   ink_assert(info.type == QUICFrameType::BLOCKED || info.type == QUICFrameType::STREAM_ID_BLOCKED);
-  if (this->_offset == reinterpret_cast<QUICOffset>(info.data)) {
+  if (this->_offset == *reinterpret_cast<QUICOffset *>(info.data)) {
     this->_frame = this->_create_frame();
   }
 }
@@ -194,7 +195,7 @@ void
 QUICLocalFlowController::_on_frame_lost(QUICFrameInformation info)
 {
   ink_assert(info.type == QUICFrameType::MAX_DATA || info.type == QUICFrameType::MAX_STREAM_DATA);
-  if (this->_limit == reinterpret_cast<QUICOffset>(info.data)) {
+  if (this->_limit == *reinterpret_cast<QUICOffset *>(info.data)) {
     this->_frame = this->_create_frame();
   }
 }
@@ -216,9 +217,9 @@ QUICLocalFlowController::_need_to_forward_limit()
 QUICFrameUPtr
 QUICRemoteConnectionFlowController::_create_frame()
 {
-  auto frame = QUICFrameFactory::create_blocked_frame(this->_offset, this->_issue_frame_id(), this);
+  auto frame                = QUICFrameFactory::create_blocked_frame(this->_offset, this->_issue_frame_id(), this);
   QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
-  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_offset;
+  *(reinterpret_cast<QUICOffset *>(info.data)) = this->_offset;
   this->_records_frame(frame->id(), info);
   return frame;
 }
@@ -226,9 +227,9 @@ QUICRemoteConnectionFlowController::_create_frame()
 QUICFrameUPtr
 QUICLocalConnectionFlowController::_create_frame()
 {
-  auto frame = QUICFrameFactory::create_max_data_frame(this->_limit, this->_issue_frame_id(), this);
+  auto frame                = QUICFrameFactory::create_max_data_frame(this->_limit, this->_issue_frame_id(), this);
   QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
-  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_limit;
+  *(reinterpret_cast<QUICOffset *>(info.data)) = this->_limit;
   this->_records_frame(frame->id(), info);
   return frame;
 }
@@ -237,8 +238,8 @@ QUICFrameUPtr
 QUICRemoteStreamFlowController::_create_frame()
 {
   auto frame = QUICFrameFactory::create_stream_blocked_frame(this->_stream_id, this->_offset, this->_issue_frame_id(), this);
-  QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
-  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_offset;
+  QUICFrameInformation info                    = {frame->type(), QUICEncryptionLevel::NONE};
+  *(reinterpret_cast<QUICOffset *>(info.data)) = this->_offset;
   this->_records_frame(frame->id(), info);
   return frame;
 }
@@ -247,8 +248,8 @@ QUICFrameUPtr
 QUICLocalStreamFlowController::_create_frame()
 {
   auto frame = QUICFrameFactory::create_max_stream_data_frame(this->_stream_id, this->_limit, this->_issue_frame_id(), this);
-  QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
-  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_limit;
+  QUICFrameInformation info                    = {frame->type(), QUICEncryptionLevel::NONE};
+  *(reinterpret_cast<QUICOffset *>(info.data)) = this->_limit;
   this->_records_frame(frame->id(), info);
   return frame;
 }
