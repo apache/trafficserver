@@ -21,13 +21,11 @@
 traffic_layout
 **************
 
-========
 Synopsis
 ========
 
 :program:`traffic_layout` SUBCOMMAND [OPTIONS]
 
-===========
 Environment
 ===========
 
@@ -35,15 +33,13 @@ Environment
 
    The path to the run root file. It has the same effect as the command line option :option:`--run-root`.
 
-===========
 Description
 ===========
 
-Document for the special functionality of ``runroot`` inside :program:`traffic_layout`. This feature
-is for the setup of traffic server runroot. It will create a runtime sandbox for any program of
-traffic server to run under.
+Document for the :program:`traffic_layout` about the ``runroot``. This feature is for the setup of traffic server runroot.
+It will create a runtime sandbox for any program of traffic server to run under.
+For details about runroot for programs, please refer to ``developer-guide/layout/runroot.en``.
 
-=====
 Usage
 =====
 
@@ -65,7 +61,6 @@ For example, to run traffic_manager, using the runroot, there are several ways:
 
    if none of the above is found as runroot, runroot will not be used and the program will fall back to the default.
 
-===========
 Subcommands
 ===========
 
@@ -134,7 +129,6 @@ Example: ::
    ``--fix`` may perform permission changes on the system configuration files. With normally created runroot with default layout,
    there is no such issue since traffic server related files are filtered.
 
-=======
 Options
 =======
 
