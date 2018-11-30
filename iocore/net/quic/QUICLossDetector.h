@@ -27,8 +27,8 @@
 #include <map>
 #include <set>
 
-#include "../../eventsystem/I_EventSystem.h"
-#include "../../eventsystem/I_Action.h"
+#include "I_EventSystem.h"
+#include "I_Action.h"
 #include "tscore/ink_hrtime.h"
 #include "I_VConnection.h"
 #include "QUICTypes.h"

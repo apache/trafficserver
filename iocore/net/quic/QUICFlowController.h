@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "../../eventsystem/I_EventSystem.h"
+#include "I_EventSystem.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"
 #include "QUICFrameGenerator.h"
