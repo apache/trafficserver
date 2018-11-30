@@ -1221,7 +1221,11 @@ HttpConfig::startup()
 
   OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
 
-  http_config_cont->dispatchEvent(EVENT_NONE, nullptr);
+  MUTEX_TRY_LOCK(lock, http_config_cont->mutex, this_ethread());
+  if (!lock.is_locked()) {
+    ink_release_assert(0);
+  }
+  http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
   return;
 }

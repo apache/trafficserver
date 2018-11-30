@@ -1295,7 +1295,16 @@ APIHook::invoke(int event, void *edata)
       ink_assert(!"not reached");
     }
   }
-  return m_cont->dispatchEvent(event, edata);
+  if (m_cont->mutex != nullptr) {
+    MUTEX_TRY_LOCK(lock, m_cont->mutex, this_ethread());
+    if (!lock.is_locked()) {
+      // If we cannot get the lock, the caller needs to restructure to handle rescheduling
+      ink_release_assert(0);
+    }
+    return m_cont->handleEvent(event, edata);
+  } else {
+    return m_cont->handleEvent(event, edata);
+  }
 }
 
 APIHook *
@@ -4510,7 +4519,16 @@ int
 TSContCall(TSCont contp, TSEvent event, void *edata)
 {
   Continuation *c = (Continuation *)contp;
-  return c->dispatchEvent((int)event, edata);
+  if (c->mutex != nullptr) {
+    MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
+    if (!lock.is_locked()) {
+      // If we cannot get the lock, the caller needs to restructure to handle rescheduling
+      ink_release_assert(0);
+    }
+    return c->handleEvent((int)event, edata);
+  } else {
+    return c->handleEvent((int)event, edata);
+  }
 }
 
 TSMutex

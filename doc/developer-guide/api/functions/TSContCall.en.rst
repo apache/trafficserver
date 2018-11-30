@@ -44,24 +44,17 @@ As a result :func:`TSContCall` will effectively do::
 
    return CallbackHandler(contp, event, edata);
 
-:func:`TSContCall` will check :arg:`contp` for a mutex. If there is a mutex an attempt will be made
-to lock that mutex. If either there is no mutex, or the mutex lock was acquired, the handler will be
-called directly. Otherwise there is a mutex and it was not successfully locked. In that case an
-event will be scheduled to dispatch as soon as possible, but not in the current call stack. The
-nature of event dispatch means the event will not be dispatched until the mutext can be locked. In
-all cases the handler in :arg:`contp` will be called with the same arguments. :func:`TSContCall`
-will return 0 if a mutex was present but the lock was not acquired. Otherwise it will return the
+If there is a mutex associated with :arg:`contp`, :func:`TSComtCall` assumes that mutex is held already.
+:func:`TSContCall` will directly call the handler associated with the continuation.  It will return the
 value returned by the handler in :arg:`contp`.
 
-If the scheduling behavior of :func:`TSContCall` isn't appropriate, either :arg:`contp` must not
-have a mutex, or the plugin must acquire the lock on the mutex for :arg:`contp` before calling
-:func:`TSContCall`. See :func:`TSContMutexGet` and :func:`TSMutexLockTry` for mechanisms for doing
-the latter. This is what :func:`TSContCall` does internally, and should be done by the plugin only
-if a different approach for waiting for the lock is needed. The most common case is the code called
-by :func:`TSContCall` must complete before further code is executed at the call site. An alternative
-approach to handling the locking directly would be to split the call site in to two continuations,
-one of which is signalled (possibly via :func:`TSContCall`) from the original :func:`TSContCall`
-target.
+If :arg:`contp` has a mutex, the plugin must acquire the lock on the mutex for :arg:`contp` before calling
+:func:`TSContCall`. See :func:`TSContMutexGet` and :func:`TSMutexLockTry` for mechanisms for doing this. 
+
+The most common case is the code called by :func:`TSContCall` must complete before further code is executed
+at the call site. An alternative approach to handling the locking directly would be to split the call site
+into two continuations, one of which is signalled (possibly via :func:`TSContCall`) from the original 
+:func:`TSContCall` target.
 
 Note mutexes returned by :func:`TSMutexCreate` are recursive mutexes, therefore if the lock is
 already held on the thread of execution acquiring the lock again is very fast. Mutexes are also

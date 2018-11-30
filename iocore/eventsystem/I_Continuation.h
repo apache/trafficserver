@@ -165,20 +165,6 @@ public:
     return (this->*handler)(event, data);
   }
 
-  /**
-    Receives the event code and data for an Event.
-
-    It will attempt to get the lock for the continuation, and reschedule
-    the event if the lock cannot be obtained.  If the lock can be obtained
-    dispatchEvent acts like handleEvent.
-
-    @param event Event code to be passed at callback (Processor specific).
-    @param data General purpose data related to the event code (Processor specific).
-    @return State machine and processor specific return code.
-
-  */
-  int dispatchEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr);
-
 protected:
   /**
     Constructor of the Continuation object. It should not be used
