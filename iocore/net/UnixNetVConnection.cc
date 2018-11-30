@@ -1087,8 +1087,15 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   if (active_timeout_in) {
     UnixNetVConnection::set_active_timeout(active_timeout_in);
   }
-
-  action_.continuation->dispatchEvent(NET_EVENT_ACCEPT, this);
+  if (action_.continuation->mutex != nullptr) {
+    MUTEX_TRY_LOCK(lock3, action_.continuation->mutex, t);
+    if (!lock3.is_locked()) {
+      ink_release_assert(0);
+    }
+    action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  } else {
+    action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  }
   return EVENT_DONE;
 }
 
