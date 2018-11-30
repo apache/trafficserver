@@ -151,7 +151,7 @@ QUICRemoteFlowController::update(QUICOffset offset)
 void
 QUICRemoteFlowController::_on_frame_lost(QUICFrameInformation info)
 {
-  ink_assert(info.type == QUICFrameType::BLOCKED || info.type == QUICFrameType::STREAM_ID_BLOCKED);
+  ink_assert(info.type == QUICFrameType::BLOCKED || info.type == QUICFrameType::STREAM_BLOCKED);
   if (this->_offset == *reinterpret_cast<QUICOffset *>(info.data)) {
     this->_frame = this->_create_frame();
   }
