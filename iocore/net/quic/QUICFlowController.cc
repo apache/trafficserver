@@ -147,6 +147,15 @@ QUICRemoteFlowController::update(QUICOffset offset)
   return ret;
 }
 
+void
+QUICRemoteFlowController::_on_frame_lost(QUICFrameInformation info)
+{
+  ink_assert(info.type == QUICFrameType::BLOCKED || info.type == QUICFrameType::STREAM_ID_BLOCKED);
+  if (this->_offset == reinterpret_cast<QUICOffset>(info.data)) {
+    this->_frame = this->_create_frame();
+  }
+}
+
 //
 // QUICLocalFlowController
 //
@@ -181,6 +190,15 @@ QUICLocalFlowController::set_limit(QUICOffset limit)
   QUICFlowController::set_limit(limit);
 }
 
+void
+QUICLocalFlowController::_on_frame_lost(QUICFrameInformation info)
+{
+  ink_assert(info.type == QUICFrameType::MAX_DATA || info.type == QUICFrameType::MAX_STREAM_DATA);
+  if (this->_limit == reinterpret_cast<QUICOffset>(info.data)) {
+    this->_frame = this->_create_frame();
+  }
+}
+
 bool
 QUICLocalFlowController::_need_to_forward_limit()
 {
@@ -198,23 +216,39 @@ QUICLocalFlowController::_need_to_forward_limit()
 QUICFrameUPtr
 QUICRemoteConnectionFlowController::_create_frame()
 {
-  return QUICFrameFactory::create_blocked_frame(this->_offset);
+  auto frame = QUICFrameFactory::create_blocked_frame(this->_offset, this->_issue_frame_id(), this);
+  QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
+  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_offset;
+  this->_records_frame(frame->id(), info);
+  return frame;
 }
 
 QUICFrameUPtr
 QUICLocalConnectionFlowController::_create_frame()
 {
-  return QUICFrameFactory::create_max_data_frame(this->_limit);
+  auto frame = QUICFrameFactory::create_max_data_frame(this->_limit, this->_issue_frame_id(), this);
+  QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
+  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_limit;
+  this->_records_frame(frame->id(), info);
+  return frame;
 }
 
 QUICFrameUPtr
 QUICRemoteStreamFlowController::_create_frame()
 {
-  return QUICFrameFactory::create_stream_blocked_frame(this->_stream_id, this->_offset);
+  auto frame = QUICFrameFactory::create_stream_blocked_frame(this->_stream_id, this->_offset, this->_issue_frame_id(), this);
+  QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
+  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_offset;
+  this->_records_frame(frame->id(), info);
+  return frame;
 }
 
 QUICFrameUPtr
 QUICLocalStreamFlowController::_create_frame()
 {
-  return QUICFrameFactory::create_max_stream_data_frame(this->_stream_id, this->_limit);
+  auto frame = QUICFrameFactory::create_max_stream_data_frame(this->_stream_id, this->_limit, this->_issue_frame_id(), this);
+  QUICFrameInformation info = {frame->type(), QUICEncryptionLevel::NONE};
+  *(reinterpret_cast<QUICOffset*>(info.data)) = this->_limit;
+  this->_records_frame(frame->id(), info);
+  return frame;
 }
