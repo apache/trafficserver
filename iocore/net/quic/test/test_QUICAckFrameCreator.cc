@@ -27,20 +27,19 @@
 #include "quic/QUICAckFrameCreator.h"
 #include "Mock.h"
 
-TEST_CASE("QUICAckFrameCreator", "[quic]")
+TEST_CASE("QUICAckFrameManager", "[quic]")
 {
-  MockQUICConnection qc;
-  QUICAckFrameCreator creator(&qc);
+  QUICAckFrameManager ack_manager;
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
 
   // Initial state
-  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
   // One packet
-  creator.update(level, 1, 1, false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_manager.update(level, 1, 1, false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -48,14 +47,14 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
 
   // retry
-  CHECK(creator.will_generate_frame(level) == false);
+  CHECK(ack_manager.will_generate_frame(level) == false);
 
   // Not sequential
-  creator.update(level, 2, 1, false);
-  creator.update(level, 5, 1, false);
-  creator.update(level, 3, 1, false);
-  creator.update(level, 4, 1, false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_manager.update(level, 2, 1, false);
+  ack_manager.update(level, 5, 1, false);
+  ack_manager.update(level, 3, 1, false);
+  ack_manager.update(level, 4, 1, false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -63,10 +62,10 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 4);
 
   // Loss
-  creator.update(level, 6, 1, false);
-  creator.update(level, 7, 1, false);
-  creator.update(level, 10, 1, false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_manager.update(level, 6, 1, false);
+  ack_manager.update(level, 7, 1, false);
+  ack_manager.update(level, 10, 1, false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
@@ -75,16 +74,16 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->begin()->gap() == 1);
 
   // on frame acked
-  creator.on_frame_acked(frame->id());
+  ack_manager.on_frame_acked(frame->id());
 
-  CHECK(creator.will_generate_frame(level) == false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  CHECK(ack_manager.will_generate_frame(level) == false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   CHECK(ack_frame == nullptr);
 
-  creator.update(level, 11, 1, false);
-  creator.update(level, 12, 1, false);
-  creator.update(level, 13, 1, false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_manager.update(level, 11, 1, false);
+  ack_manager.update(level, 12, 1, false);
+  ack_manager.update(level, 13, 1, false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -92,17 +91,17 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 2);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  creator.on_frame_acked(frame->id());
+  ack_manager.on_frame_acked(frame->id());
 
   // ack-only
-  creator.update(level, 14, 1, true);
-  creator.update(level, 15, 1, true);
-  creator.update(level, 16, 1, true);
-  CHECK(creator.will_generate_frame(level) == false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_manager.update(level, 14, 1, true);
+  ack_manager.update(level, 15, 1, true);
+  ack_manager.update(level, 16, 1, true);
+  CHECK(ack_manager.will_generate_frame(level) == false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
 
-  creator.update(level, 17, 1, false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_manager.update(level, 17, 1, false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
@@ -111,89 +110,122 @@ TEST_CASE("QUICAckFrameCreator", "[quic]")
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 }
 
-TEST_CASE("QUICAckFrameCreator should send", "[quic]")
+TEST_CASE("QUICAckFrameManager should send", "[quic]")
 {
   SECTION("QUIC unorder packet", "[quic]")
   {
-    MockQUICConnection qc;
-    QUICAckFrameCreator creator(&qc);
+    QUICAckFrameManager ack_manager;
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
-    creator.update(level, 2, 1, false);
-    CHECK(creator.will_generate_frame(level) == true);
+    ack_manager.update(level, 2, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == true);
   }
 
   SECTION("QUIC delay ack and unorder packet", "[quic]")
   {
-    MockQUICConnection qc;
-    QUICAckFrameCreator creator(&qc);
+    QUICAckFrameManager ack_manager;
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
-    creator.update(level, 0, 1, false);
-    CHECK(creator.will_generate_frame(level) == false);
+    ack_manager.update(level, 0, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == false);
 
-    creator.update(level, 1, 1, false);
-    CHECK(creator.will_generate_frame(level) == false);
+    ack_manager.update(level, 1, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == false);
 
-    creator.update(level, 3, 1, false);
-    CHECK(creator.will_generate_frame(level) == true);
+    ack_manager.update(level, 3, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == true);
   }
 
   SECTION("QUIC delay too much time", "[quic]")
   {
     Thread::get_hrtime_updated();
-    MockQUICConnection qc;
-    QUICAckFrameCreator creator(&qc);
+    QUICAckFrameManager ack_manager;
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
-    creator.update(level, 0, 1, false);
-    CHECK(creator.will_generate_frame(level) == false);
+    ack_manager.update(level, 0, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == false);
 
     sleep(1);
     Thread::get_hrtime_updated();
-    creator.update(level, 1, 1, false);
-    CHECK(creator.will_generate_frame(level) == true);
+    ack_manager.update(level, 1, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == true);
   }
 
   SECTION("QUIC intial packet", "[quic]")
   {
-    MockQUICConnection qc;
-    QUICAckFrameCreator creator(&qc);
+    QUICAckFrameManager ack_manager;
 
     QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
-    creator.update(level, 0, 1, false);
-    CHECK(creator.will_generate_frame(level) == true);
+    ack_manager.update(level, 0, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == true);
   }
 
   SECTION("QUIC handshake packet", "[quic]")
   {
-    MockQUICConnection qc;
-    QUICAckFrameCreator creator(&qc);
+    QUICAckFrameManager ack_manager;
 
     QUICEncryptionLevel level = QUICEncryptionLevel::HANDSHAKE;
-    creator.update(level, 0, 1, false);
-    CHECK(creator.will_generate_frame(level) == true);
+    ack_manager.update(level, 0, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == true);
+  }
+
+  SECTION("QUIC frame fired", "[quic]")
+  {
+    QUICAckFrameManager ack_manager;
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+
+    ack_manager.update(level, 0, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == false);
+
+    ack_manager.timer_fired(0, nullptr);
+    CHECK(ack_manager.will_generate_frame(level) == true);
+  }
+
+  SECTION("QUIC refresh frame", "[quic]")
+  {
+    QUICAckFrameManager ack_manager;
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+
+    std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+    std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+    CHECK(frame == nullptr);
+
+    // unorder frame should sent immediately
+    ack_manager.update(level, 1, 1, false);
+    CHECK(ack_manager.will_generate_frame(level) == true);
+
+    ack_manager.update(level, 2, 1, false);
+
+    // Delay due to some reason, the frame is not valued any more, but still valued
+    ack_manager.timer_fired(0, nullptr);
+    CHECK(ack_manager.will_generate_frame(level) == true);
+    ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+    frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+
+    CHECK(frame->ack_block_count() == 0);
+    CHECK(frame->largest_acknowledged() == 2);
+    CHECK(frame->ack_block_section()->first_ack_block() == 1);
+    CHECK(frame->ack_block_section()->begin()->gap() == 0);
   }
 }
 
-TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
+TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
 {
-  MockQUICConnection qc;
-  QUICAckFrameCreator creator(&qc);
+  QUICAckFrameManager ack_manager;
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
 
   // Initial state
-  std::shared_ptr<QUICFrame> ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame == nullptr);
 
-  creator.update(level, 2, 1, false);
-  creator.update(level, 5, 1, false);
-  creator.update(level, 6, 1, false);
-  creator.update(level, 8, 1, false);
-  creator.update(level, 9, 1, false);
+  ack_manager.update(level, 2, 1, false);
+  ack_manager.update(level, 5, 1, false);
+  ack_manager.update(level, 6, 1, false);
+  ack_manager.update(level, 8, 1, false);
+  ack_manager.update(level, 9, 1, false);
 
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
@@ -201,11 +233,11 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  CHECK(creator.will_generate_frame(level) == false);
+  CHECK(ack_manager.will_generate_frame(level) == false);
 
-  creator.update(level, 7, 1, false);
-  creator.update(level, 4, 1, false);
-  ack_frame = creator.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_manager.update(level, 7, 1, false);
+  ack_manager.update(level, 4, 1, false);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
   frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
@@ -214,12 +246,11 @@ TEST_CASE("QUICAckFrameCreator_loss_recover", "[quic]")
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 }
 
-TEST_CASE("QUICAckFrameCreator_QUICAckPacketNumbers", "[quic]")
+TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
 {
-  MockQUICConnection qc;
-  QUICAckFrameCreator creator(&qc);
-  QUICAckFrameCreator::QUICAckPacketNumbers packet_numbers(&qc, &creator);
+  QUICAckFrameManager ack_manager;
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
+  QUICAckFrameManager::QUICAckFrameCreator packet_numbers(level, &ack_manager);
 
   CHECK(packet_numbers.size() == 0);
   CHECK(packet_numbers.largest_ack_number() == 0);
@@ -227,7 +258,7 @@ TEST_CASE("QUICAckFrameCreator_QUICAckPacketNumbers", "[quic]")
 
   Thread::get_hrtime_updated();
 
-  packet_numbers.push_back(level, 3, 2, false);
+  packet_numbers.push_back(3, 2, false);
   CHECK(packet_numbers.size() == 1);
   CHECK(packet_numbers.largest_ack_number() == 3);
 
@@ -236,14 +267,14 @@ TEST_CASE("QUICAckFrameCreator_QUICAckPacketNumbers", "[quic]")
 
   Thread::get_hrtime_updated();
 
-  packet_numbers.push_back(level, 2, 2, false);
+  packet_numbers.push_back(2, 2, false);
   CHECK(packet_numbers.size() == 2);
   CHECK(packet_numbers.largest_ack_number() == 3);
   CHECK(packet_numbers.largest_ack_received_time() == ti);
 
   Thread::get_hrtime_updated();
 
-  packet_numbers.push_back(level, 10, 2, false);
+  packet_numbers.push_back(10, 2, false);
   CHECK(packet_numbers.size() == 3);
   CHECK(packet_numbers.largest_ack_number() == 10);
   CHECK(packet_numbers.largest_ack_received_time() > ti);

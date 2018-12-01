@@ -151,7 +151,8 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, pub
   using super = UnixNetVConnection; ///< Parent type.
 
 public:
-  QUICNetVConnection() : _ack_frame_creator(this) {}
+  QUICNetVConnection();
+  ~QUICNetVConnection();
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, UDPConnection *,
             QUICPacketHandler *, QUICConnectionTable *ctable);
@@ -228,8 +229,6 @@ public:
   LINK(QUICNetVConnection, closed_link);
   SLINK(QUICNetVConnection, closed_alink);
 
-  void common_send_packet() override;
-
 private:
   QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
   std::random_device _rnd;
@@ -249,7 +248,7 @@ private:
   QUICPacketHandler *_packet_handler = nullptr;
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
-  QUICAckFrameCreator _ack_frame_creator;
+  QUICAckFrameManager _ack_frame_manager;
   QUICPacketRetransmitter _packet_retransmitter;
   QUICPacketNumberProtector _pn_protector;
   QUICRTTMeasure _rtt_measure;
@@ -299,6 +298,10 @@ private:
   void _unschedule_path_validation_timeout();
   void _close_path_validation_timeout(Event *data);
   Event *_path_validation_timeout = nullptr;
+
+  void _unschedule_ack_manager_periodic();
+  Event *_ack_manager_periodic = nullptr;
+  bool _refresh_ack_frame_manager();
 
   uint64_t _maximum_stream_frame_data_size();
   void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr &frame,
