@@ -76,6 +76,17 @@ static constexpr uint32_t STATE_CLOSING_MAX_RECV_PKT_WIND = 1 << STATE_CLOSING_M
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
+QUICNetVConnection::QUICNetVConnection() {}
+
+QUICNetVConnection::~QUICNetVConnection()
+{
+  this->_unschedule_ack_manager_periodic();
+  this->_unschedule_packet_write_ready();
+  this->_unschedule_closing_timeout();
+  this->_unschedule_closed_event();
+  this->_unschedule_path_validation_timeout();
+}
+
 // XXX This might be called on ET_UDP thread
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
@@ -197,6 +208,11 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
     set_active_timeout(active_timeout_in);
   }
 
+  auto ethread = this_ethread();
+  if (ethread != nullptr) {
+    this->_ack_manager_periodic = ethread->schedule_every(this, HRTIME_MSECONDS(25), QUIC_EVENT_ACK_PERIODIC);
+  }
+
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   this->_schedule_packet_write_ready();
 
@@ -231,12 +247,12 @@ QUICNetVConnection::start()
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
-    this->_ack_frame_creator.set_ack_delay_exponent(params->ack_delay_exponent_in());
+    this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_in());
     this->_reset_token       = QUICStatelessResetToken(this->_quic_connection_id, params->instance_id());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->server_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol, this->_reset_token, params->stateless_retry());
   } else {
-    this->_ack_frame_creator.set_ack_delay_exponent(params->ack_delay_exponent_out());
+    this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
@@ -599,6 +615,15 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     } while (error == nullptr && (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::IGNORED));
     break;
   }
+  case QUIC_EVENT_ACK_PERIODIC: {
+    if (!this->_refresh_ack_frame_manager()) {
+      break;
+    }
+  }
+
+    // we have ack to send
+    // FIXME: should sent depend on socket event.
+  /* fall through */
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_close_packet_write_ready(data);
 
@@ -638,6 +663,15 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     error = this->_state_connection_established_receive_packet();
     break;
   }
+  case QUIC_EVENT_ACK_PERIODIC: {
+    if (!this->_refresh_ack_frame_manager()) {
+      break;
+    }
+  }
+    // we have ack to send
+    // FIXME: should sent depend on socket event.
+
+  /* fall through */
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_close_packet_write_ready(data);
     error = this->_state_common_send_packet();
@@ -686,6 +720,7 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
     break;
+  case QUIC_EVENT_ACK_PERIODIC:
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
     ink_assert(false);
@@ -716,6 +751,7 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
     break;
+  case QUIC_EVENT_ACK_PERIODIC:
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
     ink_assert(false);
@@ -730,6 +766,7 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   switch (event) {
   case QUIC_EVENT_SHUTDOWN: {
+    this->_unschedule_ack_manager_periodic();
     this->_unschedule_packet_write_ready();
     this->_unschedule_closing_timeout();
     this->_unschedule_path_validation_timeout();
@@ -1350,11 +1387,11 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   // ACK
   if (frame_count == 0) {
-    if (this->_ack_frame_creator.will_generate_frame(level)) {
-      frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
+    if (this->_ack_frame_manager.will_generate_frame(level)) {
+      frame = this->_ack_frame_manager.generate_frame(level, UINT16_MAX, max_frame_size);
     }
   } else {
-    frame = this->_ack_frame_creator.generate_frame(level, UINT16_MAX, max_frame_size);
+    frame = this->_ack_frame_manager.generate_frame(level, UINT16_MAX, max_frame_size);
   }
 
   bool ack_only = false;
@@ -1458,7 +1495,7 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
                 this->_local_flow_controller->current_limit());
   }
 
-  this->_ack_frame_creator.update(level, packet_num, size, ack_only);
+  this->_ack_frame_manager.update(level, packet_num, size, ack_only);
 
   return error;
 }
@@ -1667,6 +1704,16 @@ QUICNetVConnection::_unschedule_closing_timeout()
 }
 
 void
+QUICNetVConnection::_unschedule_ack_manager_periodic()
+{
+  if (this->_ack_manager_periodic) {
+    QUICConDebug("Unschedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_ACK_PERIODIC));
+    this->_ack_manager_periodic->cancel();
+    this->_ack_manager_periodic = nullptr;
+  }
+}
+
+void
 QUICNetVConnection::_close_closing_timeout(Event *data)
 {
   ink_assert(this->_closing_timeout == data);
@@ -1824,6 +1871,10 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
     QUICConDebug("Reason: %.*s", static_cast<int>(strlen(error->msg)), error->msg);
   }
 
+  // Once we are in closing or draining state, the ack_manager is not needed anymore. Because we don't send
+  // any frame other than close_frame.
+  this->_unschedule_ack_manager_periodic();
+
   this->_connection_error = std::move(error);
   this->_schedule_packet_write_ready();
 
@@ -1851,6 +1902,10 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   if (error->msg) {
     QUICConDebug("Reason: %.*s", static_cast<int>(strlen(error->msg)), error->msg);
   }
+
+  // Once we are in closing or draining state, the ack_manager is not needed anymore. Because we don't send
+  // any frame other than close_frame.
+  this->_unschedule_ack_manager_periodic();
 
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
@@ -2057,8 +2112,15 @@ QUICNetVConnection::_handle_path_validation_timeout(Event *data)
   }
 }
 
-void
-QUICNetVConnection::common_send_packet()
+bool
+QUICNetVConnection::_refresh_ack_frame_manager()
 {
-  this->_schedule_packet_write_ready();
+  this->_ack_frame_manager.timer_fired();
+  for (auto level : QUIC_PN_SPACES) {
+    if (this->_ack_frame_manager.will_generate_frame(level)) {
+      return true;
+    }
+  }
+
+  return false;
 }

@@ -164,6 +164,8 @@ QUICDebugNames::quic_event(int event)
     return "QUIC_EVENT_SHUTDOWN";
   case QUIC_EVENT_LD_SHUTDOWN:
     return "QUIC_EVENT_LD_SHUTDOWN";
+  case QUIC_EVENT_ACK_PERIODIC:
+    return "QUIC_EVENT_ACK_PERIODIC";
   default:
     return "UNKNOWN";
   }

@@ -23,9 +23,6 @@
 
 #pragma once
 
-#include "../../eventsystem/I_EventSystem.h"
-#include "../../eventsystem/I_Action.h"
-#include "tscore/ink_hrtime.h"
 #include "QUICFrameGenerator.h"
 #include "QUICTypes.h"
 #include "QUICFrame.h"
@@ -36,42 +33,42 @@
 
 class QUICConnection;
 
-class QUICAckFrameCreator : public QUICFrameGenerator
+class QUICAckFrameManager : public QUICFrameGenerator
 {
 public:
-  class QUICAckPacketNumbers : public Continuation
+  class QUICAckFrameCreator
   {
   public:
     struct RecvdPacket {
       bool ack_only                  = false;
       QUICPacketNumber packet_number = 0;
     };
-    QUICAckPacketNumbers(QUICConnection *qc, QUICAckFrameCreator *ack_creator);
-    ~QUICAckPacketNumbers();
+    QUICAckFrameCreator(QUICEncryptionLevel level, QUICAckFrameManager *ack_manager);
+    ~QUICAckFrameCreator();
 
-    void set_creator(QUICAckFrameCreator *ack_creator);
-    void push_back(QUICEncryptionLevel level, QUICPacketNumber packet_number, size_t size, bool ack_only);
+    void push_back(QUICPacketNumber packet_number, size_t size, bool ack_only);
     size_t size();
     void clear();
     void sort();
     void forget(QUICPacketNumber largest_acknowledged);
     bool available() const;
-    bool should_send() const;
-    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_ack_frame(QUICEncryptionLevel level, uint16_t maximum_frame_size);
+    bool is_ack_frame_ready() const;
+    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_ack_frame();
+
+    // Checks maximum_frame_size and return _ack_frame
+    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> generate_ack_frame(uint16_t maximum_frame_size);
+
+    // timer event handler, refresh _ack_frame;
+    void refresh_frame();
 
     QUICPacketNumber largest_ack_number();
     ink_hrtime largest_ack_received_time();
-    int timer_fired(int event, Event *edata);
 
   private:
-    void _cancel_timer();
-    void _start_timer();
-
-    uint64_t _calculate_delay(QUICEncryptionLevel level);
-    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame(QUICEncryptionLevel level);
+    uint64_t _calculate_delay();
+    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame();
 
     std::list<RecvdPacket> _packet_numbers;
-    Event *_event                           = nullptr;
     bool _available                         = false;
     bool _should_send                       = false;
     size_t _size_unsend                     = 0;
@@ -80,13 +77,16 @@ public:
     ink_hrtime _largest_ack_received_time   = 0;
     ink_hrtime _latest_packet_received_time = 0;
 
-    QUICConnection *_qc               = nullptr;
-    QUICAckFrameCreator *_ack_creator = nullptr;
+    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _ack_frame = QUICFrameFactory::create_null_ack_frame();
+    QUICAckFrameManager *_ack_manager                              = nullptr;
+
+    QUICEncryptionLevel _level = QUICEncryptionLevel::NONE;
   };
 
   static constexpr int MAXIMUM_PACKET_COUNT = 256;
 
-  QUICAckFrameCreator(QUICConnection *qc);
+  QUICAckFrameManager();
+  ~QUICAckFrameManager();
 
   void set_ack_delay_exponent(uint8_t ack_delay_exponent);
 
@@ -106,6 +106,7 @@ public:
    */
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
+  int timer_fired();
   QUICFrameId issue_frame_id();
   uint8_t ack_delay_exponent() const;
 
@@ -113,8 +114,6 @@ private:
   struct AckFrameInfomation {
     QUICPacketNumber largest_acknowledged = 0;
   };
-
-  Event *_event = nullptr;
 
   virtual void _on_frame_acked(QUICFrameInformation info) override;
 
@@ -139,9 +138,7 @@ private:
   bool _should_send[4] = {false};
 
   // Initial, 0/1-RTT, and Handshake
-  std::unique_ptr<QUICAckPacketNumbers> _packet_numbers[3];
+  std::unique_ptr<QUICAckFrameCreator> _ack_creator[3];
 
   uint8_t _ack_delay_exponent = 0;
-
-  ink_hrtime _latest_sent_time = 0;
 };
