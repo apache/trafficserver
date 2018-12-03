@@ -58,14 +58,8 @@ size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
 
-// TS-3534 Wiretracing for SSL Connections
-int SSLConfigParams::ssl_wire_trace_enabled       = 0;
-char *SSLConfigParams::ssl_wire_trace_addr        = nullptr;
-IpAddr *SSLConfigParams::ssl_wire_trace_ip        = nullptr;
-int SSLConfigParams::ssl_wire_trace_percentage    = 0;
-char *SSLConfigParams::ssl_wire_trace_server_name = nullptr;
-int SSLConfigParams::async_handshake_enabled      = 0;
-char *SSLConfigParams::engine_conf_file           = nullptr;
+int SSLConfigParams::async_handshake_enabled = 0;
+char *SSLConfigParams::engine_conf_file      = nullptr;
 
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLConfig>> sslConfigUpdate;
@@ -131,7 +125,6 @@ SSLConfigParams::cleanup()
   cipherSuite             = (char *)ats_free_null(cipherSuite);
   client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
   dhparamsFile            = (char *)ats_free_null(dhparamsFile);
-  ssl_wire_trace_ip       = (IpAddr *)ats_free_null(ssl_wire_trace_ip);
 
   server_tls13_cipher_suites = (char *)ats_free_null(server_tls13_cipher_suites);
   client_tls13_cipher_suites = (char *)ats_free_null(client_tls13_cipher_suites);
@@ -438,26 +431,6 @@ SSLConfigParams::initialize()
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
-  // SSL Wire Trace configurations
-  REC_EstablishStaticConfigInt32(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
-  if (ssl_wire_trace_enabled) {
-    // wire trace specific source ip
-    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
-    if (ssl_wire_trace_addr) {
-      ssl_wire_trace_ip = new IpAddr();
-      ssl_wire_trace_ip->load(ssl_wire_trace_addr);
-    } else {
-      ssl_wire_trace_ip = nullptr;
-    }
-    // wire trace percentage of requests
-    REC_EstablishStaticConfigInt32(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
-    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
-  } else {
-    ssl_wire_trace_addr        = nullptr;
-    ssl_wire_trace_ip          = nullptr;
-    ssl_wire_trace_percentage  = 0;
-    ssl_wire_trace_server_name = nullptr;
-  }
   // Enable client regardless of config file settings as remap file
   // can cause HTTP layer to connect using SSL. But only if SSL
   // initialization hasn't failed already.

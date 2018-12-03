@@ -5860,30 +5860,9 @@ HttpSM::attach_server_session(HttpServerSession *s)
   // Get server and client connections
   UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(server_session->get_netvc());
   UnixNetVConnection *client_vc = (UnixNetVConnection *)(ua_txn->get_netvc());
-  SSLNetVConnection *ssl_vc     = dynamic_cast<SSLNetVConnection *>(client_vc);
 
   // Verifying that the user agent and server sessions/transactions are operating on the same thread.
   ink_release_assert(!server_vc || !client_vc || server_vc->thread == client_vc->thread);
-  bool associated_connection = false;
-  if (server_vc) { // if server_vc isn't a PluginVC
-    if (ssl_vc) {  // if incoming connection is SSL
-      bool client_trace = ssl_vc->getSSLTrace();
-      if (client_trace) {
-        // get remote address and port to mark corresponding traces
-        const sockaddr *remote_addr = ssl_vc->get_remote_addr();
-        uint16_t remote_port        = ssl_vc->get_remote_port();
-        server_vc->setOriginTrace(true);
-        server_vc->setOriginTraceAddr(remote_addr);
-        server_vc->setOriginTracePort(remote_port);
-        associated_connection = true;
-      }
-    }
-  }
-  if (!associated_connection && server_vc) {
-    server_vc->setOriginTrace(false);
-    server_vc->setOriginTraceAddr(nullptr);
-    server_vc->setOriginTracePort(0);
-  }
 
   // set flag for server session is SSL
   SSLNetVConnection *server_ssl_vc = dynamic_cast<SSLNetVConnection *>(server_vc);

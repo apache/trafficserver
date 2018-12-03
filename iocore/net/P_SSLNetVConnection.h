@@ -286,19 +286,6 @@ public:
     }
     return retval;
   }
-  bool
-  getSSLTrace() const
-  {
-    return sslTrace || super::origin_trace;
-  }
-
-  void
-  setSSLTrace(bool state)
-  {
-    sslTrace = state;
-  }
-
-  bool computeSSLTrace();
 
   const char *
   getSSLProtocol(void) const
