@@ -177,7 +177,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     ack_manager.update(level, 0, 1, false);
     CHECK(ack_manager.will_generate_frame(level) == false);
 
-    ack_manager.timer_fired(0, nullptr);
+    ack_manager.timer_fired();
     CHECK(ack_manager.will_generate_frame(level) == true);
   }
 
@@ -197,7 +197,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     ack_manager.update(level, 2, 1, false);
 
     // Delay due to some reason, the frame is not valued any more, but still valued
-    ack_manager.timer_fired(0, nullptr);
+    ack_manager.timer_fired();
     CHECK(ack_manager.will_generate_frame(level) == true);
     ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
     frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
