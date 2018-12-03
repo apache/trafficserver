@@ -27,23 +27,27 @@
 
 #include "tscore/ink_error.h"
 #include "tscore/runroot.h"
+#include "tscore/ts_file.h"
 #include "file_system.h"
 
 #include <fstream>
 #include <ftw.h>
-#include <set>
+#include <unordered_set>
+#include <iostream>
 
-// global variables for copy function
+// global variables for copy callback function from ftw
 static std::string dst_root;
 static std::string src_root;
 static std::string copy_dir; // the current dir we are copying. e.x. sysconfdir, bindir...
 static std::string remove_path;
-CopyStyle copy_style;
-
+static CopyStyle copy_style;
+static int symlink_failure_counter  = 0;
+static int hardlink_failure_counter = 0;
+static bool msg_flag                = false;
 // list of all executables of traffic server
-std::set<std::string> const executables = {"traffic_crashlog", "traffic_ctl",     "traffic_layout", "traffic_logcat",
-                                           "traffic_logstats", "traffic_manager", "traffic_server", "traffic_top",
-                                           "traffic_via",      "trafficserver",   "tspush",         "tsxs"};
+std::unordered_set<std::string> const executables = {"traffic_crashlog", "traffic_ctl",     "traffic_layout", "traffic_logcat",
+                                                     "traffic_logstats", "traffic_manager", "traffic_server", "traffic_top",
+                                                     "traffic_via",      "trafficserver",   "tspush",         "tsxs"};
 
 void
 append_slash(std::string &path)
@@ -56,7 +60,7 @@ append_slash(std::string &path)
 static void
 remove_slash(std::string &path)
 {
-  if (path.back() == '/') {
+  while (path.back() == '/') {
     path.pop_back();
   }
 }
@@ -67,7 +71,9 @@ create_directory(const std::string &dir)
   std::string s = dir;
   append_slash(s);
 
-  if (is_directory(dir)) {
+  std::error_code ec;
+  auto fs = ts::file::status(ts::file::path(s), ec);
+  if (ts::file::is_dir(fs)) {
     return true;
   }
 
@@ -88,11 +94,8 @@ create_directory(const std::string &dir)
     ret  = mkdir(s.substr(0, pos).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     pos1 = pos + 1;
   }
-  if (ret) {
-    return false;
-  } else {
-    return true;
-  }
+
+  return ret == 0 ? true : false;
 }
 
 static int
@@ -100,15 +103,13 @@ remove_function(const char *path, const struct stat *s, int flag, struct FTW *f)
 {
   int (*rm_func)(const char *);
 
-  switch (flag) {
-  default:
-    rm_func = unlink;
-    break;
-  case FTW_DP:
+  if (flag == FTW_DP || flag == FTW_D || flag == FTW_DNR) {
     rm_func = rmdir;
+  } else {
+    rm_func = unlink;
   }
   if (rm_func(path) == -1) {
-    ink_notice("Failed removing directory: %s\n", strerror(errno));
+    ink_notice("Failed removing directory %s - %s\n", path, strerror(errno));
     return -1;
   }
   return 0;
@@ -119,15 +120,13 @@ remove_inside_function(const char *path, const struct stat *s, int flag, struct 
 {
   std::string path_to_remove = path;
   if (path_to_remove != remove_path) {
-    switch (flag) {
-    default:
-      if (remove(path) != 0) {
+    if (flag == FTW_DP || flag == FTW_D || flag == FTW_DNR) {
+      if (!remove_directory(path_to_remove)) {
         ink_error("unable to remove: %s", path);
         return -1;
       }
-      break;
-    case FTW_DP:
-      if (!remove_directory(path_to_remove)) {
+    } else {
+      if (remove(path) != 0) {
         ink_error("unable to remove: %s", path);
         return -1;
       }
@@ -245,22 +244,38 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
       break;
     }
     // if the file already exist, overwrite it
-    if (exists(dst_path)) {
+    std::error_code ec;
+    ts::file::status(ts::file::path(dst_path), ec);
+    if (ec.value() == 0 || errno != ENOENT) {
       if (remove(dst_path.c_str())) {
-        ink_error("overwrite file falied during copy");
+        ink_warning("overwrite file falied during copy");
       }
     }
     // hardlink bin executable
     if (sb->st_mode & S_IEXEC) {
       if (copy_style == SOFT) {
         if (symlink(src_path, dst_path.c_str()) != 0 && errno != EEXIST) {
-          ink_warning("failed to create symlink - %s", strerror(errno));
+          // prevent too many messages generated
+          if (symlink_failure_counter < 3) {
+            ink_warning("failed to create symlink from %s - %s\nFall back to a full copy", src_path, strerror(errno));
+            symlink_failure_counter += 1;
+          } else if (!msg_flag) {
+            std::cout << "All failure symlinks fall back to full copies" << std::endl;
+            msg_flag = true;
+          }
         } else {
           return 0;
         }
       } else if (copy_style == HARD) {
         if (link(src_path, dst_path.c_str()) != 0 && errno != EEXIST) {
-          ink_warning("failed to create hard link - %s", strerror(errno));
+          // prevent too many messages generated
+          if (hardlink_failure_counter < 3) {
+            ink_warning("failed to create hard link from %s - %s\nFall back to a full copy", src_path, strerror(errno));
+            hardlink_failure_counter += 1;
+          } else if (!msg_flag) {
+            std::cout << "All failure symlinks fall back to full copies" << std::endl;
+            msg_flag = true;
+          }
         } else {
           return 0;
         }

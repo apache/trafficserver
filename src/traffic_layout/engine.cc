@@ -28,6 +28,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/ink_error.h"
 #include "tscore/ink_defs.h"
+#include "tscore/ts_file.h"
 #include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
 #include "engine.h"
@@ -59,8 +60,10 @@ static bool fix_flag = false;
 std::string
 check_path(const std::string &path)
 {
+  std::error_code ec;
   std::string yaml_file = Layout::relative_to(path, "runroot.yaml");
-  if (!exists(yaml_file)) {
+  auto yaml_fs          = ts::file::status(ts::file::path(yaml_file), ec);
+  if (!is_regular_file(yaml_fs)) {
     ink_warning("Unable to access runroot: '%s' - %s", yaml_file.c_str(), strerror(errno));
     return {};
   }
@@ -81,7 +84,9 @@ check_parent_path(const std::string &path)
     if (yaml_path.empty()) {
       return {};
     }
-    if (exists(Layout::relative_to(yaml_path, "runroot.yaml"))) {
+    std::error_code ec;
+    auto yaml_fs = ts::file::status(ts::file::path(Layout::relative_to(yaml_path, "runroot.yaml")), ec);
+    if (is_regular_file(yaml_fs)) {
       return yaml_path;
     }
     yaml_path = yaml_path.substr(0, yaml_path.find_last_of("/"));
@@ -206,7 +211,9 @@ LayoutEngine::create_runroot()
   std::string original_root = Layout::get()->prefix;
   std::string ts_runroot    = path;
   // check for existing runroot to use rather than create new one
-  if (!force_flag && exists(Layout::relative_to(ts_runroot, "runroot.yaml"))) {
+  std::error_code ec;
+  auto yaml_fs = ts::file::status(ts::file::path(Layout::relative_to(ts_runroot, "runroot.yaml")), ec);
+  if (!force_flag && is_regular_file(yaml_fs)) {
     std::cout << "Using existing runroot...\n"
                  "Please remove the old runroot if new runroot is needed"
               << std::endl;
@@ -221,7 +228,8 @@ LayoutEngine::create_runroot()
   std::cout << "creating runroot - " + ts_runroot << std::endl;
 
   // check if directory is empty when --force is not used
-  if (is_directory(ts_runroot) && !force_flag) {
+  auto fs = ts::file::status(ts::file::path(ts_runroot), ec);
+  if (ts::file::is_dir(fs) && !force_flag) {
     empty_check_directory = ts_runroot;
     if (ftw(ts_runroot.c_str(), check_directory_empty, OPEN_MAX_FILE) != 0) {
       // if the directory is not empty, check for valid Y/N

@@ -28,26 +28,10 @@
 #include "tscore/ink_error.h"
 #include "tscore/I_Layout.h"
 #include "tscore/runroot.h"
+#include "tscore/ts_file.h"
 #include <yaml-cpp/yaml.h>
 
 static std::string runroot_file = {};
-
-// this is a temporary approach and will be replaced when std::filesystem is in
-bool
-exists(const std::string &dir)
-{
-  struct stat buffer;
-  int result = stat(dir.c_str(), &buffer);
-  return (!result) ? true : false;
-}
-
-bool
-is_directory(const std::string &directory)
-{
-  struct stat buffer;
-  int result = stat(directory.c_str(), &buffer);
-  return (!result && (S_IFDIR & buffer.st_mode)) ? true : false;
-}
 
 // the function for the checking of the yaml file in the passed in path
 // if found return the path to the yaml file, if not return empty string.
@@ -59,20 +43,26 @@ get_yaml_path(const std::string &path)
   std::string yaml_file;
   std::string yaml_file2;
   std::string yaml_file3;
-  if (is_directory(path.c_str())) {
-    std::string yaml_file(Layout::relative_to(path, "runroot.yaml"));
-    if (exists(yaml_file)) {
+
+  std::error_code ec;
+  auto fs = ts::file::status(ts::file::path(path), ec);
+  if (ts::file::is_dir(fs)) {
+    std::string yaml_file = Layout::relative_to(path, "runroot.yaml");
+    auto yaml_fs          = ts::file::status(ts::file::path(yaml_file), ec);
+    if (is_regular_file(yaml_fs)) {
       return yaml_file;
     }
-    std::string yaml_file2(Layout::relative_to(path, "runroot.yml"));
-    if (exists(yaml_file2)) {
-      return yaml_file2;
+    yaml_file = Layout::relative_to(path, "runroot.yml");
+    yaml_fs   = ts::file::status(ts::file::path(yaml_file), ec);
+    if (is_regular_file(yaml_fs)) {
+      return yaml_file;
     }
-    std::string yaml_file3(Layout::relative_to(path, "runroot_path.yml"));
-    if (exists(yaml_file3)) {
-      return yaml_file3;
+    yaml_file = Layout::relative_to(path, "runroot_path.yml");
+    yaml_fs   = ts::file::status(ts::file::path(yaml_file), ec);
+    if (is_regular_file(yaml_fs)) {
+      return yaml_file;
     }
-  } else if (exists(path)) {
+  } else if (is_regular_file(fs)) {
     return path;
   }
   return {};
