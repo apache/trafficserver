@@ -21,6 +21,7 @@
 #include <vector>
 #include <cinttypes>
 #include "tscpp/util/TextView.h"
+#include "tscore/ts_file.h"
 #include "regex.h"
 
 #define PLUGIN_NAME "TLS Bridge"
@@ -28,10 +29,15 @@
 
 using ts::TextView;
 
+namespace
+{
 // Base format string for making the internal CONNECT.
 char const CONNECT_FORMAT[] = "CONNECT https:%.*s HTTP/1.1\r\n\r\n";
 
 const TextView METHOD_CONNECT{TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT};
+constexpr TextView CONFIG_FILE_ARG{"--file"};
+const std::string TS_CONFIG_DIR{TSConfigDirGet()};
+}; // namespace
 
 /* ------------------------------------------------------------------------------------ */
 // Utility functions
@@ -64,11 +70,11 @@ class BridgeConfig
     using self_type = BridgeConfig;
 
     /// Construct an item.
-    Item(const char *pattern, Regex &&r, const char *dest) : _pattern(pattern), _r(std::move(r)), _dest(dest) {}
+    Item(std::string_view pattern, Regex &&r, std::string_view service) : _pattern(pattern), _r(std::move(r)), _service(service) {}
 
     std::string _pattern; ///< Original configuration regular expression.
     Regex _r;             ///< Compiled regex.
-    std::string _dest;    ///< Destination if matched.
+    std::string _service; ///< Destination service if matched.
   };
 
 public:
@@ -83,6 +89,14 @@ public:
 private:
   /// Configuration item storage.
   std::vector<Item> _items;
+
+  /** Load a configuration item pair.
+   *
+   * @param rxp The regular expression to match.
+   * @param service The destination service.
+   * @param ln Line number, or 0 if from plugin.config.
+   */
+  void load_pair(std::string_view rxp, std::string_view service, ts::file::path const &src, int ln = 0);
 };
 
 inline int
@@ -92,17 +106,75 @@ BridgeConfig::count() const
 }
 
 void
+BridgeConfig::load_pair(std::string_view rxp, std::string_view service, ts::file::path const &src, int ln)
+{
+  Regex r;
+  if (r.compile(rxp.data(), Regex::ANCHORED)) {
+    _items.emplace_back(rxp, std::move(r), service);
+  } else {
+    char buff[std::numeric_limits<int>::digits10 + 2];
+    char const *place = "";
+    if (ln) {
+      snprintf(buff, sizeof(buff), " on line %d", ln);
+      place = buff;
+    }
+    TSError("%s: Failed to compile regular expression '%.*s' in %s%s", PLUGIN_TAG, int(rxp.size()), rxp.data(), src.c_str(), place);
+  }
+}
+
+void
 BridgeConfig::load_config(int argc, const char *argv[])
 {
+  static const ts::file::path plugin_config_fp{"plugin.config"};
+
   for (int i = 0; i < argc; i += 2) {
-    Regex r;
-    if (i + 1 >= argc) {
-      TSError("%s: Destination regular expression without peer", PLUGIN_TAG);
-    } else {
-      if (r.compile(argv[i]), Regex::ANCHORED) {
-        _items.emplace_back(argv[i], std::move(r), argv[i + 1]);
+    if (argv[i] == CONFIG_FILE_ARG) {
+      if (i + 1 >= argc) {
+        TSError("%s: Invalid '%.*s' argument - no file name found.", PLUGIN_TAG, int(CONFIG_FILE_ARG.size()),
+                CONFIG_FILE_ARG.data());
       } else {
-        TSError("%s: Failed to compile regular expression '%s'", PLUGIN_TAG, argv[i]);
+        ts::file::path fp(argv[i + 1]);
+        std::error_code ec;
+        if (!fp.is_absolute()) {
+          fp = ts::file::path{TS_CONFIG_DIR} / fp; // slap the config dir on it to make it absolute.
+        }
+        // bulk load the file.
+        std::string content{ts::file::load(fp, ec)};
+        if (ec) {
+          TSError("%s: Invalid '%.*s' argument - unable to read file '%s' : %s.", PLUGIN_TAG, int(CONFIG_FILE_ARG.size()),
+                  CONFIG_FILE_ARG.data(), fp.c_str(), ec.message().c_str());
+
+        } else {
+          // walk the lines.
+          int line_no = 0;
+          TextView src{content};
+          while (!src.empty()) {
+            TextView line{src.take_prefix_at('\n').trim_if(&isspace)};
+            ++line_no;
+            if (line.empty() || '#' == *line)
+              continue; // empty or comment, ignore.
+
+            // Pick apart the line into the regular expression and destination service.
+            TextView service{line};
+            TextView rxp{service.take_prefix_if(&isspace)};
+            service.ltrim_if(&isspace); // dump extra separating space.
+            // Only need to check service, as if the line isn't empty rxp will also be non-empty.
+            if (service.empty()) {
+              TSError("%s: Invalid line %d in '%s' - no destination service found.", PLUGIN_TAG, line_no, fp.c_str());
+            } else {
+              this->load_pair(rxp, service, fp, line_no);
+            }
+          }
+        }
+      }
+    } else if (argv[i][0] == '-') {
+      TSError("%s: Unrecognized option '%s'", PLUGIN_TAG, argv[i]);
+      i -= 1; // Don't skip next arg.
+    } else {
+      if (i + 1 >= argc) {
+        TSError("%s: Regular expression '%s' without destination service", PLUGIN_TAG, argv[i]);
+      } else {
+        this->load_pair(argv[i], argv[i + 1], plugin_config_fp);
       }
     }
   }
@@ -113,7 +185,7 @@ BridgeConfig::match(TextView name)
 {
   for (auto &item : _items) {
     if (item._r.exec(name)) {
-      return {item._dest};
+      return {item._service};
     }
   }
   return {};
