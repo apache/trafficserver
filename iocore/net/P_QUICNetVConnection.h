@@ -366,8 +366,8 @@ private:
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
 
-  ats_unique_buf _retry_token = {nullptr};
-  size_t _retry_token_len     = 0;
+  ats_unique_buf _av_token = {nullptr};
+  size_t _av_token_len     = 0;
 
   // This is for limiting number of packets that a server can send without path validation
   uint32_t _handshake_packets_sent = 0;

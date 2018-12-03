@@ -989,15 +989,15 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
 {
   ink_assert(this->netvc_context == NET_VCONNECTION_OUT);
 
-  if (this->_retry_token) {
+  if (this->_av_token) {
     QUICConDebug("Ignore RETRY packet - already processed before");
     return nullptr;
   }
 
-  // TODO: move packet->payload to _retry_token
-  this->_retry_token_len = packet->payload_length();
-  this->_retry_token     = ats_unique_malloc(this->_retry_token_len);
-  memcpy(this->_retry_token.get(), packet->payload(), this->_retry_token_len);
+  // TODO: move packet->payload to _av_token
+  this->_av_token_len = packet->payload_length();
+  this->_av_token     = ats_unique_malloc(this->_av_token_len);
+  memcpy(this->_av_token.get(), packet->payload(), this->_av_token_len);
 
   // discard all transport state
   this->_handshake_handler->reset();
@@ -1293,8 +1293,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   // TODO: adjust MAX_PACKET_OVERHEAD for each encryption level
   uint64_t max_frame_size = max_packet_size - MAX_PACKET_OVERHEAD;
-  if (level == QUICEncryptionLevel::INITIAL && this->_retry_token) {
-    max_frame_size = max_frame_size - (QUICVariableInt::size(this->_retry_token_len) + this->_retry_token_len);
+  if (level == QUICEncryptionLevel::INITIAL && this->_av_token) {
+    max_frame_size = max_frame_size - (QUICVariableInt::size(this->_av_token_len) + this->_av_token_len);
   }
   max_frame_size = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
 
@@ -1432,8 +1432,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     if (level == QUICEncryptionLevel::INITIAL && this->netvc_context == NET_VCONNECTION_OUT) {
       // Pad with PADDING frames
       uint64_t min_size = this->minimum_quic_packet_size();
-      if (this->_retry_token) {
-        min_size = min_size - this->_retry_token_len;
+      if (this->_av_token) {
+        min_size = min_size - this->_av_token_len;
       }
       min_size = std::min(min_size, max_packet_size);
 
@@ -1544,10 +1544,10 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
 
     if (this->netvc_context == NET_VCONNECTION_OUT) {
       // TODO: Add a case of using token which is advertized by NEW_TOKEN frame
-      if (this->_retry_token) {
-        token     = ats_unique_malloc(this->_retry_token_len);
-        token_len = this->_retry_token_len;
-        memcpy(token.get(), this->_retry_token.get(), token_len);
+      if (this->_av_token) {
+        token     = ats_unique_malloc(this->_av_token_len);
+        token_len = this->_av_token_len;
+        memcpy(token.get(), this->_av_token.get(), token_len);
       } else {
         dcid = this->_original_quic_connection_id;
       }

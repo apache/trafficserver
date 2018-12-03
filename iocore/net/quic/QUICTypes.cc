@@ -25,6 +25,7 @@
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
 #include "tscore/CryptoHash.h"
+#include "I_EventSystem.h"
 #include <openssl/hmac.h>
 
 uint8_t QUICConnectionId::SCID_LEN = 0;
@@ -277,13 +278,64 @@ QUICStatelessResetToken::QUICStatelessResetToken(QUICConnectionId conn_id, uint3
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[1], 8, _token + 8, &dummy);
 }
 
+QUICResumptionToken::QUICResumptionToken(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time)
+{
+  // TODO: read cookie secret from file like SSLTicketKeyConfig
+  static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
+  size_t dummy;
+
+  uint8_t data[1 + INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH + 4] = {0};
+  size_t data_len                                                           = 0;
+  ats_ip_nptop(src, reinterpret_cast<char *>(data), sizeof(data));
+  data_len = strlen(reinterpret_cast<char *>(data));
+
+  size_t cid_len;
+  QUICTypeUtil::write_QUICConnectionId(cid, data + data_len, &cid_len);
+  data_len += cid_len;
+
+  QUICIntUtil::write_uint_as_nbytes(expire_time >> 30, 4, data + data_len, &dummy);
+  data_len += 4;
+
+  this->_token[0] = static_cast<uint8_t>(Type::RESUMPTION);
+  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), data, data_len, this->_token + 1,
+       &this->_token_len);
+  ink_assert(this->_token_len == 20);
+  this->_token_len += 1;
+
+  QUICIntUtil::write_uint_as_nbytes(expire_time >> 30, 4, this->_token + this->_token_len, &dummy);
+  this->_token_len += 4;
+
+  QUICTypeUtil::write_QUICConnectionId(cid, this->_token + this->_token_len, &cid_len);
+  this->_token_len += cid_len;
+}
+
+bool
+QUICResumptionToken::is_valid(const IpEndpoint &src) const
+{
+  QUICResumptionToken x(src, this->cid(), this->expire_time() << 30);
+  return *this == x && this->expire_time() >= (Thread::get_hrtime() >> 30);
+}
+
+const QUICConnectionId
+QUICResumptionToken::cid() const
+{
+  // Type uses 1 byte and output of EVP_sha1() should be 160 bits
+  return QUICTypeUtil::read_QUICConnectionId(this->_token + (1 + 20 + 4), this->_token_len - (1 + 20 + 4));
+}
+
+const ink_hrtime
+QUICResumptionToken::expire_time() const
+{
+  return QUICIntUtil::read_nbytes_as_uint(this->_token + (1 + 20), 4);
+}
+
 QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid)
 {
   // TODO: read cookie secret from file like SSLTicketKeyConfig
   static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
 
-  uint8_t data[INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH] = {0};
-  size_t data_len                                                   = 0;
+  uint8_t data[1 + INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH] = {0};
+  size_t data_len                                                       = 0;
   ats_ip_nptop(src, reinterpret_cast<char *>(data), sizeof(data));
   data_len = strlen(reinterpret_cast<char *>(data));
 
@@ -291,19 +343,27 @@ QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_
   QUICTypeUtil::write_QUICConnectionId(original_dcid, data + data_len, &cid_len);
   data_len += cid_len;
 
-  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), data, data_len, this->_token,
+  this->_token[0] = static_cast<uint8_t>(Type::RETRY);
+  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), data, data_len, this->_token + 1,
        &this->_token_len);
   ink_assert(this->_token_len == 20);
+  this->_token_len += 1;
 
   QUICTypeUtil::write_QUICConnectionId(original_dcid, this->_token + this->_token_len, &cid_len);
   this->_token_len += cid_len;
 }
 
+bool
+QUICRetryToken::is_valid(const IpEndpoint &src) const
+{
+  return *this == QUICRetryToken(src, this->original_dcid());
+}
+
 const QUICConnectionId
 QUICRetryToken::original_dcid() const
 {
-  // Output of EVP_sha1() should be 160 bits
-  return QUICTypeUtil::read_QUICConnectionId(this->_token + 20, this->_token_len - 20);
+  // Type uses 1 byte and output of EVP_sha1() should be 160 bits
+  return QUICTypeUtil::read_QUICConnectionId(this->_token + (1 + 20), this->_token_len - (1 + 20));
 }
 
 QUICFrameType

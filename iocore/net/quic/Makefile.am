@@ -100,6 +100,7 @@ check_PROGRAMS = \
   test_QUICStreamManager \
   test_QUICStreamState \
   test_QUICTransportParameters \
+  test_QUICType \
   test_QUICTypeUtil \
   test_QUICVersionNegotiator
 
@@ -246,6 +247,13 @@ test_QUICTransportParameters_LDADD = $(test_LDADD)
 test_QUICTransportParameters_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_QUICTransportParameters.cc
+
+test_QUICType_CPPFLAGS = $(test_CPPFLAGS)
+test_QUICType_LDFLAGS = @AM_LDFLAGS@
+test_QUICType_LDADD = $(test_LDADD)
+test_QUICType_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_QUICType.cc
 
 test_QUICTypeUtil_CPPFLAGS = $(test_CPPFLAGS)
 test_QUICTypeUtil_LDFLAGS = @AM_LDFLAGS@

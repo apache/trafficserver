@@ -389,15 +389,17 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
     QUICPacketLongHeader::scil(scil, buf, buf_len);
     const uint8_t *token = buf + LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil + token_length_field_len;
 
-    QUICConnectionId attached_cid = QUICTypeUtil::read_QUICConnectionId(token + 20, token_length - 20);
-    QUICRetryToken token1(token, token_length);
-    QUICRetryToken token2(from, attached_cid);
-    if (token1 == token2) {
-      // Tokein is valid
-      *original_cid = attached_cid;
-      return 0;
+    if (QUICAddressValidationToken::type(token) == QUICAddressValidationToken::Type::RETRY) {
+      QUICRetryToken token1(token, token_length);
+      if (token1.is_valid(from)) {
+        *original_cid = token1.original_dcid();
+        return 0;
+      } else {
+        return -3;
+      }
     } else {
-      return -3;
+      // TODO Handle ResumptionToken
+      return -4;
     }
   }
 

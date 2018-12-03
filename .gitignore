@@ -91,6 +91,7 @@ lib/perl/lib/Apache/TS.pm
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
 iocore/net/quic/test_QUICAckFrameCreator
+iocore/net/quic/test_QUICAltConnectionManager
 iocore/net/quic/test_QUICFlowController
 iocore/net/quic/test_QUICFrame
 iocore/net/quic/test_QUICFrameDispatcher
@@ -106,6 +107,7 @@ iocore/net/quic/test_QUICStream
 iocore/net/quic/test_QUICStreamManager
 iocore/net/quic/test_QUICStreamState
 iocore/net/quic/test_QUICTransportParameters
+iocore/net/quic/test_QUICType
 iocore/net/quic/test_QUICTypeUtil
 iocore/net/quic/test_QUICVersionNegotiator
 iocore/aio/test_AIO
