@@ -13,7 +13,7 @@
 
 .. include:: ../../../common.defs
 
-.. highlight:: cpp
+.. highlight:: text
 .. default-domain:: cpp
 .. |Name| replace:: TLS Bridge
 
@@ -149,6 +149,42 @@ ingress |TS|, and the peer |TS| connects to the service.
    the configuration would be ::
 
       tls_bridge.so .*[.]service[.]com peer.ats:4443 .*[.]altsvc.ats altpeer.ats:4443
+
+   Mappings can also be specified in an external file. For instance, if the file named "bridge.config" in the default |TS|
+   configuration directory contained mappings, the ``plugin.config`` configuration line could look
+   like ::
+
+      tls_bridge.so .*[.]service[.]com peer.ats:4443 --file bridge.config
+
+   or
+
+      tls_bridge.so --file bridge.config .*[.]service[.]com peer.ats:4443
+
+   These are not identical - direct mappings and file mappings are processed in order. This means in
+   the first example, the direct mapping is checked before any mappping in "bridge.config", and in
+   the latter example the mappings in "bridge.config" are checked before the direct mapping. There
+   can be multiple "--file" arguments, which are processed in the order they appear in
+   "plugin.config". The file name can be absolute, or relative. If the file name is relative, it is
+   relative to the |TS| configuration directory. Therefore, in these examples, "bridge.config" must
+   be in the same directory as ``plugin.config``.
+
+   The contents of "bridge.config" must be one mapping per line, with a regular expression separated
+   by white space from the destination service. This is identical to the format in ``plugin.config``
+   except there is only one pair per line. E.g., valid content for "bridge.config" could be ::
+
+      # Primary service location.
+      .*[.]service[.]com peer.ats:4443
+
+      # Secondary.
+      .*[.]altsvc.ats      altpeer.ats:4443
+
+   Leading whitespace on a line is ignored, and if the first non-whitespace character is '#' then
+   the entire line is ignored. Therefore if that is the content of "bridge.config", these two
+   lines in "plugin.config" would behave identically ::
+
+      tls_bridge.so --file bridge.config
+
+      tls_bridge.so .*[.]service[.]com peer.ats:4443     .*[.]altsvc.ats altpeer.ats:4443
 
 Notes
 =====
