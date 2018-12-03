@@ -278,11 +278,8 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_path_validator);
   this->_frame_dispatcher->add_handler(this->_handshake_handler);
 
-  if (this->thread) {
-    this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);
-  } else {
-    this->_ack_frame_manager.set_force_to_send();
-  }
+  ink_release_assert(this->thread != nullptr);
+  this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);
 }
 
 void
