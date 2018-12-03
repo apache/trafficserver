@@ -253,24 +253,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
 
-      if (vc->origin_trace) {
-        char origin_trace_ip[INET6_ADDRSTRLEN];
-
-        ats_ip_ntop(vc->origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
-
-        if (r > 0) {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
-                  vc->origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
-
-        } else if (r == 0) {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d closed connection",
-                  origin_trace_ip, vc->origin_trace_port);
-        } else {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip,
-                  vc->origin_trace_port, strerror(errno));
-        }
-      }
-
       total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
 
@@ -896,10 +878,7 @@ UnixNetVConnection::UnixNetVConnection()
     submit_time(0),
     oob_ptr(nullptr),
     from_accept_thread(false),
-    accept_object(nullptr),
-    origin_trace(false),
-    origin_trace_addr(nullptr),
-    origin_trace_port(0)
+    accept_object(nullptr)
 {
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }
@@ -996,22 +975,6 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
 
     } else {
       r = socketManager.writev(con.fd, &tiovec[0], niov);
-    }
-
-    if (origin_trace) {
-      char origin_trace_ip[INET6_ADDRSTRLEN];
-      ats_ip_ntop(origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
-
-      if (r > 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
-                 origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
-
-      } else if (r == 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=0", origin_trace_ip, origin_trace_port);
-      } else {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip, origin_trace_port,
-                 strerror(errno));
-      }
     }
 
     if (r > 0) {
