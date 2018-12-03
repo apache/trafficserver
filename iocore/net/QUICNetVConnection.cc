@@ -208,11 +208,6 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
     set_active_timeout(active_timeout_in);
   }
 
-  auto ethread = this_ethread();
-  if (ethread != nullptr) {
-    this->_ack_manager_periodic = ethread->schedule_every(this, HRTIME_MSECONDS(25), QUIC_EVENT_ACK_PERIODIC);
-  }
-
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   this->_schedule_packet_write_ready();
 
@@ -282,6 +277,12 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_path_validator);
   this->_frame_dispatcher->add_handler(this->_handshake_handler);
+
+  if (this->thread) {
+    this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);
+  } else {
+    this->_ack_frame_manager.set_force_to_send();
+  }
 }
 
 void
@@ -619,11 +620,13 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     if (!this->_refresh_ack_frame_manager()) {
       break;
     }
-  }
 
     // we have ack to send
     // FIXME: should sent depend on socket event.
-  /* fall through */
+    this->_schedule_packet_write_ready();
+    break;
+  }
+
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_close_packet_write_ready(data);
 
@@ -667,11 +670,13 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     if (!this->_refresh_ack_frame_manager()) {
       break;
     }
-  }
+
     // we have ack to send
     // FIXME: should sent depend on socket event.
+    this->_schedule_packet_write_ready();
+    break;
+  }
 
-  /* fall through */
   case QUIC_EVENT_PACKET_WRITE_READY: {
     this->_close_packet_write_ready(data);
     error = this->_state_common_send_packet();

@@ -29,8 +29,6 @@
 #include <list>
 #include <set>
 
-#define QUIC_ACK_CREATOR_MAX_DELAY 25 * HRTIME_MSECOND
-
 class QUICConnection;
 
 class QUICAckFrameManager : public QUICFrameGenerator
@@ -89,6 +87,8 @@ public:
   ~QUICAckFrameManager();
 
   void set_ack_delay_exponent(uint8_t ack_delay_exponent);
+  void set_force_to_send(bool on = true);
+  bool force_to_send() const;
 
   /*
    * All packet numbers ATS received need to be passed to this method.
@@ -140,5 +140,6 @@ private:
   // Initial, 0/1-RTT, and Handshake
   std::unique_ptr<QUICAckFrameCreator> _ack_creator[3];
 
+  bool _force_to_send         = false;
   uint8_t _ack_delay_exponent = 0;
 };

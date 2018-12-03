@@ -23,8 +23,8 @@
 
 #include "I_EventSystem.h"
 #include "QUICAckFrameCreator.h"
+#include "QUICConfig.h"
 #include <algorithm>
-#include <QUICConnection.h>
 
 QUICAckFrameManager::QUICAckFrameManager()
 {
@@ -127,6 +127,18 @@ QUICAckFrameManager::timer_fired()
   return 0;
 }
 
+void
+QUICAckFrameManager::set_force_to_send(bool on)
+{
+  this->_force_to_send = on;
+}
+
+bool
+QUICAckFrameManager::force_to_send() const
+{
+  return this->_force_to_send;
+}
+
 //
 // QUICAckFrameManager::QUICAckFrameCreator
 //
@@ -161,6 +173,8 @@ QUICAckFrameManager::QUICAckFrameCreator::forget(QUICPacketNumber largest_acknow
 void
 QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_number, size_t size, bool ack_only)
 {
+  QUICConfig::scoped_config params;
+
   if (packet_number == 0 || packet_number > this->_largest_ack_number) {
     this->_largest_ack_received_time = Thread::get_hrtime();
     this->_largest_ack_number        = packet_number;
@@ -171,7 +185,7 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
   }
 
   // delay too much time
-  if (this->_latest_packet_received_time + QUIC_ACK_CREATOR_MAX_DELAY <= Thread::get_hrtime()) {
+  if (this->_latest_packet_received_time + params->max_ack_delay_in() <= Thread::get_hrtime()) {
     this->_should_send = true;
   }
 
@@ -182,6 +196,7 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
 
   // every 2 full-packet should send a ack frame like tcp
   this->_size_unsend += size;
+  // FIXME: this size should be fixed with PMTU
   if (this->_size_unsend > 2 * 1480) {
     this->_size_unsend = 0;
     this->_should_send = true;
@@ -189,6 +204,10 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
 
   // can not delay handshake packet
   if (this->_level == QUICEncryptionLevel::INITIAL || this->_level == QUICEncryptionLevel::HANDSHAKE) {
+    this->_should_send = true;
+  }
+
+  if (this->_ack_manager->force_to_send()) {
     this->_should_send = true;
   }
 
