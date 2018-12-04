@@ -127,18 +127,6 @@ QUICAckFrameManager::timer_fired()
   return 0;
 }
 
-void
-QUICAckFrameManager::set_force_to_send(bool on)
-{
-  this->_force_to_send = on;
-}
-
-bool
-QUICAckFrameManager::force_to_send() const
-{
-  return this->_force_to_send;
-}
-
 //
 // QUICAckFrameManager::QUICAckFrameCreator
 //
@@ -204,10 +192,6 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
 
   // can not delay handshake packet
   if (this->_level == QUICEncryptionLevel::INITIAL || this->_level == QUICEncryptionLevel::HANDSHAKE) {
-    this->_should_send = true;
-  }
-
-  if (this->_ack_manager->force_to_send()) {
     this->_should_send = true;
   }
 
