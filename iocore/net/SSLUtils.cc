@@ -472,9 +472,11 @@ ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
 
-  const char *name  = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  netvc->serverName = std::string{name ? name : ""};
-  int ret           = PerformAction(netvc, netvc->serverName.c_str());
+  netvc->serverName = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  if (nullptr == netvc->serverName) {
+    netvc->serverName = "";
+  }
+  int ret = PerformAction(netvc, netvc->serverName);
   if (ret != SSL_TLSEXT_ERR_OK) {
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
