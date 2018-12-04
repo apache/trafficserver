@@ -361,7 +361,11 @@ public:
   ink_hrtime sslHandshakeEndTime   = 0;
   ink_hrtime sslLastWriteTime      = 0;
   int64_t sslTotalBytesSent        = 0;
-  std::string serverName;
+  // The serverName is either a pointer to the name fetched from the
+  // SSL object or the empty string.  Therefore, we do not allocate
+  // extra memory for this value.  If plugins in the future can set the
+  // serverName value, this strategy will have to change.
+  const char *serverName = nullptr;
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
