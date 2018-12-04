@@ -38,12 +38,6 @@ static std::string runroot_file = {};
 static std::string
 get_yaml_path(const std::string &path)
 {
-  // yaml_file 2 and 3 are for temporary use in case the change may break for people using runroot already
-  // this can be removed in the future.
-  std::string yaml_file;
-  std::string yaml_file2;
-  std::string yaml_file3;
-
   std::error_code ec;
   auto fs = ts::file::status(ts::file::path(path), ec);
   if (ts::file::is_dir(fs)) {
