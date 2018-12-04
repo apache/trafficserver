@@ -39,7 +39,7 @@ format::
     dest_ip=<range of IP addresses> action=<action> [method=<list of methods separated by '|'>]
 
 For ``src_ip`` the remote inbound connection address, i.e. the IP address of the client, is checked
-against the specified range of IP addresses. For ``dst_ip`` the outbound remote address (i.e. the IP
+against the specified range of IP addresses. For ``dest_ip`` the outbound remote address (i.e. the IP
 address to which |TS| connects) is checked against the specified IP address range.
 
 Range specifications can be IPv4 or IPv6, but any single range must be one or the other. Ranges can
@@ -67,7 +67,7 @@ For each inbound or outbound connection the applicable rule is selectd by first 
 address. The rule is then applied (if the method matches) or its opposite is applied (if the method
 doesn't match). If no rule is matched access is allowed. This makes each rule both an accept and
 deny, one explicit and the other implicit. The ``src_ip`` rules are checked when a host connects
-to |TS|. The ``dst_ip`` rules are checked when |TS| connects to another host.
+to |TS|. The ``dest_ip`` rules are checked when |TS| connects to another host.
 
 By default the :file:`ip_allow.config` file contains the following lines, which allows all methods
 to connections from localhost and denies the ``PUSH``, ``PURGE`` and ``DELETE`` methods to all other

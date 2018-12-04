@@ -529,7 +529,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       }
     }
 
-    if (ul & REMAP_OPTFLG_IN_IP) { /* "dst_ip=" option */
+    if (ul & REMAP_OPTFLG_IN_IP) { /* "dest_ip=" option */
       if (rule->in_ip_cnt >= ACL_FILTER_MAX_IN_IP) {
         Debug("url_rewrite", "[validate_filter_args] Too many \"in_ip=\" filters");
         snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"in_ip=\" filters!", ACL_FILTER_MAX_IN_IP);

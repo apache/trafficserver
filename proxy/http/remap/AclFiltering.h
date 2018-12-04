@@ -91,7 +91,7 @@ public:
   src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
 
   // in_ip
-  int in_ip_cnt; // how many valid dst_ip rules we have
+  int in_ip_cnt; // how many valid dest_ip rules we have
   src_ip_info_t in_ip_array[ACL_FILTER_MAX_IN_IP];
 
   acl_filter_rule();
