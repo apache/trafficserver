@@ -47,13 +47,13 @@ get_yaml_path(const std::string &path)
       return yaml_file.string();
     }
     ts::file::path yaml_file2{Layout::relative_to(path, "runroot.yml")};
-    yaml_fs = ts::file::status(yaml_file2, ec);
-    if (ts::file::is_regular_file(yaml_fs)) {
+    auto yaml_fs2 = ts::file::status(yaml_file2, ec);
+    if (ts::file::is_regular_file(yaml_fs2)) {
       return yaml_file2.string();
     }
     ts::file::path yaml_file3{Layout::relative_to(path, "runroot_path.yml")};
-    yaml_fs = ts::file::status(yaml_file3, ec);
-    if (ts::file::is_regular_file(yaml_fs)) {
+    auto yaml_fs3 = ts::file::status(yaml_file3, ec);
+    if (ts::file::is_regular_file(yaml_fs3)) {
       return yaml_file3.string();
     }
   } else if (ts::file::is_regular_file(fs)) {
