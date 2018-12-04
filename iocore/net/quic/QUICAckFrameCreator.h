@@ -140,6 +140,5 @@ private:
   // Initial, 0/1-RTT, and Handshake
   std::unique_ptr<QUICAckFrameCreator> _ack_creator[3];
 
-  bool _force_to_send         = false;
   uint8_t _ack_delay_exponent = 0;
 };
