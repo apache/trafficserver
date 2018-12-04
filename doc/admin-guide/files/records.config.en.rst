@@ -1418,7 +1418,7 @@ Origin Server Connect Attempts
 
    This value is used in determining when and if to prune active origin
    sessions. Without this value set, connections to origins can consume all the
-   way up to ts:cv:`proxy.config.net.connections_throttle` connections, which
+   way up to :ts:cv:`proxy.config.net.connections_throttle` connections, which
    in turn can starve incoming requests from available connections.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.max INT 0
