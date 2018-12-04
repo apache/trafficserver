@@ -47,22 +47,22 @@ get_yaml_path(const std::string &path)
   std::error_code ec;
   auto fs = ts::file::status(ts::file::path(path), ec);
   if (ts::file::is_dir(fs)) {
-    std::string yaml_file = Layout::relative_to(path, "runroot.yaml");
-    auto yaml_fs          = ts::file::status(ts::file::path(yaml_file), ec);
-    if (is_regular_file(yaml_fs)) {
-      return yaml_file;
+    ts::file::path yaml_file{Layout::relative_to(path, "runroot.yaml")};
+    auto yaml_fs = ts::file::status(yaml_file, ec);
+    if (ts::file::is_regular_file(yaml_fs)) {
+      return yaml_file.string();
     }
-    yaml_file = Layout::relative_to(path, "runroot.yml");
-    yaml_fs   = ts::file::status(ts::file::path(yaml_file), ec);
-    if (is_regular_file(yaml_fs)) {
-      return yaml_file;
+    ts::file::path yaml_file2{Layout::relative_to(path, "runroot.yml")};
+    yaml_fs = ts::file::status(yaml_file2, ec);
+    if (ts::file::is_regular_file(yaml_fs)) {
+      return yaml_file2.string();
     }
-    yaml_file = Layout::relative_to(path, "runroot_path.yml");
-    yaml_fs   = ts::file::status(ts::file::path(yaml_file), ec);
-    if (is_regular_file(yaml_fs)) {
-      return yaml_file;
+    ts::file::path yaml_file3{Layout::relative_to(path, "runroot_path.yml")};
+    yaml_fs = ts::file::status(yaml_file3, ec);
+    if (ts::file::is_regular_file(yaml_fs)) {
+      return yaml_file3.string();
     }
-  } else if (is_regular_file(fs)) {
+  } else if (ts::file::is_regular_file(fs)) {
     return path;
   }
   return {};

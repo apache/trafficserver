@@ -61,9 +61,9 @@ std::string
 check_path(const std::string &path)
 {
   std::error_code ec;
-  std::string yaml_file = Layout::relative_to(path, "runroot.yaml");
-  auto yaml_fs          = ts::file::status(ts::file::path(yaml_file), ec);
-  if (!is_regular_file(yaml_fs)) {
+  ts::file::path yaml_file{Layout::relative_to(path, "runroot.yaml")};
+  auto yaml_fs = ts::file::status(yaml_file, ec);
+  if (!ts::file::is_regular_file(yaml_fs)) {
     ink_warning("Unable to access runroot: '%s' - %s", yaml_file.c_str(), strerror(errno));
     return {};
   }
@@ -86,7 +86,7 @@ check_parent_path(const std::string &path)
     }
     std::error_code ec;
     auto yaml_fs = ts::file::status(ts::file::path(Layout::relative_to(yaml_path, "runroot.yaml")), ec);
-    if (is_regular_file(yaml_fs)) {
+    if (ts::file::is_regular_file(yaml_fs)) {
       return yaml_path;
     }
     yaml_path = yaml_path.substr(0, yaml_path.find_last_of("/"));
@@ -213,7 +213,7 @@ LayoutEngine::create_runroot()
   // check for existing runroot to use rather than create new one
   std::error_code ec;
   auto yaml_fs = ts::file::status(ts::file::path(Layout::relative_to(ts_runroot, "runroot.yaml")), ec);
-  if (!force_flag && is_regular_file(yaml_fs)) {
+  if (!force_flag && ts::file::is_regular_file(yaml_fs)) {
     std::cout << "Using existing runroot...\n"
                  "Please remove the old runroot if new runroot is needed"
               << std::endl;

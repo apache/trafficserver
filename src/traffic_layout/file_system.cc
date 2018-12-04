@@ -248,7 +248,7 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
     ts::file::status(ts::file::path(dst_path), ec);
     if (ec.value() == 0 || errno != ENOENT) {
       if (remove(dst_path.c_str())) {
-        ink_warning("overwrite file falied during copy");
+        ink_warning("overwrite file failed during copy, unable to remove %s - %s", dst_path.c_str(), strerror(errno));
       }
     }
     // hardlink bin executable
