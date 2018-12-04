@@ -77,7 +77,7 @@ fi
 ],
 [
 AC_CHECK_HEADER([brotli/encode.h], [], [has_brotli=0])
-AC_CHECK_LIB([brotlienc], BrotliEncoderCreateInstance, [], [has_brotli=0])
+AC_CHECK_LIB([brotlienc], BrotliEncoderCreateInstance, [:], [has_brotli=0])
 
 if test "x$has_brotli" == "x0"; then
     PKG_CHECK_EXISTS([LIBBROTLIENC],
