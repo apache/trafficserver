@@ -16,17 +16,6 @@ object is written to cache using the new cache key url.  The response code sent
 to the client will be changed back to a 206 and all requests to the origin server
 will contain the range header so that the correct response is received.
 
-Installation:
-
-    make
-    sudo make install
-
-If you don't have the traffic server binaries in your path, then you will need
-to specify the path to tsxs manually:
-
-    make TSXS=/opt/trafficserver/bin/tsxs
-    sudo make TSXS=/opt/trafficserver/bin/tsxs install
-
 Configuration:
 
     Add @plugin=cache_range_requests.so to your remap.config rules.
