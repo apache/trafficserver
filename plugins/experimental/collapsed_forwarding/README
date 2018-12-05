@@ -25,24 +25,10 @@
 // contention and so can not work. The setting proxy.config.http.wait_for_cache
 // may be enabled which allows blocking incoming connections from being
 // accepted until cache is ready.
-////////////////////////////////////////////////////////////////////////////////////
-// This plugin currently supports only per-remap mode activation.
-////////////////////////////////////////////////////////////////////////////////////
 
 More details are available at
 
-https://docs.trafficserver.apache.org/en/6.0.x/admin/http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd
-
-Installation:
-
-    make
-    sudo make install
-
-If you don't have the traffic server binaries in your path, then you will need
-to specify the path to tsxs manually:
-
-    make TSXS=/opt/trafficserver/bin/tsxs
-    sudo make TSXS=/opt/trafficserver/bin/tsxs install
+https://docs.trafficserver.apache.org/en/latest/admin-guide/configuration/cache-basics.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd
 
 Configuration:
 
