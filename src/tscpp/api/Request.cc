@@ -204,10 +204,6 @@ Request::~Request()
       TSMLoc null_parent_loc = nullptr;
       TSHandleMLocRelease(state_->hdr_buf_, null_parent_loc, state_->url_loc_);
       TSMBufferDestroy(state_->hdr_buf_);
-    } else {
-      LOG_DEBUG("Destroying request object on hdr_buf=%p, hdr_loc=%p, url_loc=%p", state_->hdr_buf_, state_->hdr_loc_,
-                state_->url_loc_);
-      TSHandleMLocRelease(state_->hdr_buf_, state_->hdr_loc_, state_->url_loc_);
     }
   }
   delete state_;
