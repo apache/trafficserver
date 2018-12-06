@@ -44,7 +44,7 @@ As a result :func:`TSContCall` will effectively do::
 
    return CallbackHandler(contp, event, edata);
 
-If there is a mutex associated with :arg:`contp`, :func:`TSComtCall` assumes that mutex is held already.
+If there is a mutex associated with :arg:`contp`, :func:`TSContCall` assumes that mutex is held already.
 :func:`TSContCall` will directly call the handler associated with the continuation.  It will return the
 value returned by the handler in :arg:`contp`.
 
