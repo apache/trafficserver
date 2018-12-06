@@ -7324,7 +7324,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   // now, see if the age is "fresh enough" //
   ///////////////////////////////////////////
 
-  if (do_revalidate || current_age > age_limit) { // client-modified limit
+  if (do_revalidate || !age_limit || current_age > age_limit) { // client-modified limit
     TxnDebug("http_match", "[..._document_freshness] document needs revalidate/too old; "
                            "returning FRESHNESS_STALE");
     return (FRESHNESS_STALE);
