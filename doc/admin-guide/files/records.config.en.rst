@@ -3508,6 +3508,7 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
    :reloadable:
+   :overridable:
 
    The filename of SSL client certificate installed on |TS|.
 
@@ -3519,6 +3520,7 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.private_key.filename STRING NULL
    :reloadable:
+   :overridable:
 
    The filename of the |TS| private key. Change this variable
    only if the private key is not located in the |TS| SSL
@@ -3532,11 +3534,14 @@ Client-Related Configuration
    file.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
+   :reloadable:
+   :overridable:
 
    The filename of the certificate authority against which the origin
    server will be verified.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.CA.cert.path STRING NULL
+   :reloadable:
 
    Specifies the location of the certificate authority file against
    which the origin server will be verified.

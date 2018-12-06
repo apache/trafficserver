@@ -552,8 +552,9 @@ struct OverridableHttpConfigParams {
       global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10),
       background_fill_threshold(0.5),
-      client_cert_filename(nullptr),
-      client_cert_filepath(nullptr),
+      ssl_client_cert_filename(nullptr),
+      ssl_client_private_key_filename(nullptr),
+      ssl_client_ca_cert_filename(nullptr),
       cache_vary_default_text(nullptr),
       cache_vary_default_images(nullptr),
       cache_vary_default_other(nullptr)
@@ -798,8 +799,9 @@ struct OverridableHttpConfigParams {
   MgmtFloat background_fill_threshold;
 
   // Various strings, good place for them here ...
-  char *client_cert_filename;
-  char *client_cert_filepath;
+  char *ssl_client_cert_filename;
+  char *ssl_client_private_key_filename;
+  char *ssl_client_ca_cert_filename;
 
   char *cache_vary_default_text;
   char *cache_vary_default_images;
@@ -968,8 +970,9 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.body_factory_template_base);
   ats_free(oride.proxy_response_server_string);
   ats_free(oride.global_user_agent_header);
-  ats_free(oride.client_cert_filename);
-  ats_free(oride.client_cert_filepath);
+  ats_free(oride.ssl_client_cert_filename);
+  ats_free(oride.ssl_client_private_key_filename);
+  ats_free(oride.ssl_client_ca_cert_filename);
   ats_free(oride.cache_vary_default_text);
   ats_free(oride.cache_vary_default_images);
   ats_free(oride.cache_vary_default_other);

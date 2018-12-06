@@ -2289,10 +2289,11 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 }
 #endif /* HAVE_OPENSSL_SESSION_TICKETS */
 
+// Release SSL_CTX and the associated data. This works for both
+// client and server contexts and gracefully accepts nullptr.
 void
 SSLReleaseContext(SSL_CTX *ctx)
 {
-  // SSL_CTX_free() does nothing if ctx in nullptr, so there's no need to check.
   SSL_CTX_free(ctx);
 }
 

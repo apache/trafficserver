@@ -41,7 +41,6 @@
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
 std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
-NextHopProperty::NextHopProperty() {}
 
 const NextHopProperty *
 SNIConfigParams::getPropertyConfig(const std::string &servername) const
@@ -83,8 +82,8 @@ SNIConfigParams::loadSNIConfig()
     auto clientCTX       = params->getClientSSL_CTX();
     const char *certFile = item.client_cert.data();
     const char *keyFile  = item.client_key.data();
-    if (certFile) {
-      clientCTX = params->getNewCTX(certFile, keyFile);
+    if (certFile && certFile[0] != '\0') {
+      clientCTX = params->getCTX(certFile, keyFile, params->clientCACertFilename, params->clientCACertPath);
     }
 
     auto nps = next_hop_list.emplace(next_hop_list.end());
