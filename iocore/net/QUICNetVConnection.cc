@@ -354,7 +354,6 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
 {
   int res        = 0;
   NetHandler *nh = get_NetHandler(t);
-  this->thread   = this_ethread();
   ink_assert(nh->mutex->thread_holding == this->thread);
 
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_pre_handshake);
