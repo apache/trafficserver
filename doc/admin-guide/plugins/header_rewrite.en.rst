@@ -1,18 +1,14 @@
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
+.. Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+   agreements.  See the NOTICE file distributed with this work for additional information regarding
+   copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with the License.  You may obtain
+   a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
+   Unless required by applicable law or agreed to in writing, software distributed under the License
+   is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+   or implied.  See the License for the specific language governing permissions and limitations
    under the License.
 
 .. include:: ../../common.defs
@@ -820,9 +816,9 @@ String concatenation is not yet supported in condition testing.
 Note: In versions prior to ATS v9.0.0, an alternative string expansion was available. those
 expansions are no longer available, but the following table can help migrations:
 
-======================== ==================================================================================
+======================== ==========================================================================
 Old expansion variable   Condition variable to use with concatenatinos
-======================== ==================================================================================
+======================== ==========================================================================
 %<proto>                 %{CLIENT-URL:SCHEME}
 %<port>                  %{CLIENT-URL:PORT}
 %<chi>                   %{IP:CLIENT}, %{INBOUND:REMOTE-ADDR} or e.g. %{CIDR:24,48}
@@ -830,6 +826,7 @@ Old expansion variable   Condition variable to use with concatenatinos
 %<cqhm>                  %{METHOD}
 %<cque>                  %[CLIENT-URL}
 %<cquup>                 %{CLIENT-URL:PATH}
+======================== ==========================================================================
 
 Header Values
 -------------
@@ -865,13 +862,18 @@ The URL part names which may be used for these conditions and actions are:
 Part     Description
 ======== ======================================================================
 HOST     Full hostname.
-PATH     URL substring beginning with (but not including) the first ``/`` after the hostname up to,
-         but not including, the query string.
+
+PATH     URL substring beginning with (but not including) the first ``/`` after
+         the hostname up to, but not including, the query string.
+
 PORT     Port number.
+
 QUERY    URL substring from the ``?``, signifying the beginning of the query
          parameters, until the end of the URL. Empty string if there were no
-         quuery parameters.
+         query parameters.
+
 SCHEME   URL scheme in use (e.g. ``http`` and ``https``).
+
 URL      The complete URL.
 ======== ======================================================================
 
