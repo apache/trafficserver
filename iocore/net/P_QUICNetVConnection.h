@@ -374,7 +374,8 @@ private:
   uint64_t _stream_frames_sent     = 0;
 
   // TODO: Source addresses verification through an address validation token
-  bool _src_addr_verified = false;
+  bool _src_addr_verified       = false;
+  bool _has_ack_only_packet_out = false;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

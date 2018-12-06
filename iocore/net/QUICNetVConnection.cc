@@ -1406,6 +1406,27 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     this->_store_frame(buf, len, max_frame_size, frame, frames);
   }
 
+  QUICConfig::scoped_config params;
+  if (ack_only) {
+    if (this->_has_ack_only_packet_out) {
+      // Sent too much ack_only packet. At this moment we need to packetize a ping frame
+      // to force peer send ack frame.
+      if (max_frame_size > len) {
+        this->_has_ack_only_packet_out = false;
+        // don't care ping frame lost or acked
+        frame = QUICFrameFactory::create_ping_frame(0, nullptr);
+        ++frame_count;
+        ack_only = false;
+        probing |= frame->is_probing_frame();
+        this->_store_frame(buf, len, max_frame_size, frame, frames);
+      }
+    } else {
+      this->_has_ack_only_packet_out = true;
+    }
+  } else if (!ack_only) {
+    this->_has_ack_only_packet_out = false;
+  }
+
   // Schedule a packet
   if (len != 0) {
     if (level == QUICEncryptionLevel::INITIAL && this->netvc_context == NET_VCONNECTION_OUT) {
