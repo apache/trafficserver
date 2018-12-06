@@ -80,7 +80,9 @@ struct SSLConfigParams : public ConfigInfo {
   int ssl_session_cache_auto_clear;
 
   char *clientCertPath;
+  char *clientCertPathOnly;
   char *clientKeyPath;
+  char *clientKeyPathOnly;
   char *clientCACertFilename;
   char *clientCACertPath;
   YamlSNIConfig::Policy verifyServerPolicy;
@@ -115,11 +117,15 @@ struct SSLConfigParams : public ConfigInfo {
 
   SSL_CTX *client_ctx;
 
+  // Making this mutable since this is a updatable
+  // cache on an otherwise immutable config object
+  // The ctx_map owns the client SSL_CTX objects and is responseible for cleaning them up
   mutable std::unordered_map<std::string, SSL_CTX *> ctx_map;
   mutable ink_mutex ctxMapLock;
 
   SSL_CTX *getClientSSL_CTX(void) const;
-  SSL_CTX *getNewCTX(const char *client_cert, const char *key_file) const;
+  SSL_CTX *getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const;
+  void cleanupCTXTable();
 
   void initialize();
   void cleanup();

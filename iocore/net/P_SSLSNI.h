@@ -46,7 +46,7 @@ struct NextHopProperty {
   YamlSNIConfig::Policy verifyServerPolicy       = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
   YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
   SSL_CTX *ctx                                   = nullptr; // ctx generated off the certificate to present to this server
-  NextHopProperty();
+  NextHopProperty() {}
 };
 
 using actionVector = std::vector<std::unique_ptr<ActionItem>>;

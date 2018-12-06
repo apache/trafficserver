@@ -5044,6 +5044,9 @@ HttpSM::do_http_server_open(bool raw)
   if (scheme_to_use == URL_WKSIDX_HTTPS || HttpTransactHeaders::is_method_idempotent(t_state.method)) {
     opt.f_tcp_fastopen = (t_state.txn_conf->sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN);
   }
+  opt.ssl_client_cert_name        = t_state.txn_conf->ssl_client_cert_filename;
+  opt.ssl_client_private_key_name = t_state.txn_conf->ssl_client_private_key_filename;
+  opt.ssl_client_ca_cert_name     = t_state.txn_conf->ssl_client_ca_cert_filename;
 
   if (scheme_to_use == URL_WKSIDX_HTTPS) {
     SMDebug("http", "calling sslNetProcessor.connect_re");

@@ -186,7 +186,20 @@ struct NetVCOptions {
   /**
    * Client certificate to use in response to OS's certificate request
    */
-  ats_scoped_str clientCertificate;
+  const char *ssl_client_cert_name = nullptr;
+  /*
+   * File containing private key matching certificate
+   */
+  const char *ssl_client_private_key_name = nullptr;
+  /*
+   * File containing CA certs for verifying origin's cert
+   */
+  const char *ssl_client_ca_cert_name = nullptr;
+  /*
+   * Directory containing CA certs for verifying origin's cert
+   */
+  const char *ssl_client_ca_cert_path = nullptr;
+
   /// Reset all values to defaults.
 
   /**
@@ -233,13 +246,6 @@ struct NetVCOptions {
     }
     return *this;
   }
-  self &
-  set_client_certname(const char *name)
-  {
-    clientCertificate = ats_strdup(name);
-    // clientCertificate = name;
-    return *this;
-  }
 
   self &
   operator=(self const &that)
@@ -255,9 +261,8 @@ struct NetVCOptions {
        * memcpy removes the extra reference to that's copy of the string
        * Removing the release will eventualy cause a double free crash
        */
-      sni_servername    = nullptr; // release any current name.
-      ssl_servername    = nullptr;
-      clientCertificate = nullptr;
+      sni_servername = nullptr; // release any current name.
+      ssl_servername = nullptr;
       memcpy(static_cast<void *>(this), &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
@@ -266,10 +271,6 @@ struct NetVCOptions {
       if (that.ssl_servername) {
         ssl_servername.release(); // otherwise we'll free the source string.
         this->ssl_servername = ats_strdup(that.ssl_servername);
-      }
-      if (that.clientCertificate) {
-        clientCertificate.release(); // otherwise we'll free the source string.
-        this->clientCertificate = ats_strdup(that.clientCertificate);
       }
     }
     return *this;
