@@ -16,7 +16,7 @@
 #  limitations under the License.
 
 experimental_webp_transform_WebpTransform_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBMAGICKCPP_CFLAGS)
-experimental_webp_transform_WebpTransform_la_CXXFLAGS = $(AM_CXXFLAGS) -Wno-unused-variable
+experimental_webp_transform_WebpTransform_la_CXXFLAGS = $(AM_CXXFLAGS)
 
 pkglib_LTLIBRARIES += experimental/webp_transform/WebpTransform.la
 
