@@ -198,14 +198,12 @@ SslHdrParseOptions(int argc, const char **argv)
   }
 
   // Pick up the remaining options as SSL header expansions.
+  hdr->expansions.resize(argc - optind);
   for (int i = optind; i < argc; ++i) {
-    SslHdrExpansion exp;
-    if (!SslHdrParseExpansion(argv[i], exp)) {
+    if (!SslHdrParseExpansion(argv[i], hdr->expansions[i - optind])) {
       // If we fail, the expansion parsing logs the error.
       return nullptr;
     }
-
-    hdr->expansions.push_back(exp);
   }
 
   return hdr.release();
