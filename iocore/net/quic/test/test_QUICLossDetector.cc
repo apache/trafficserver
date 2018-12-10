@@ -35,14 +35,14 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   pf.set_hs_protocol(&hs_protocol);
   QUICRTTMeasure rtt_measure;
 
-  QUICAckFrameCreator afc;
+  QUICAckFrameManager afm;
   QUICConnectionId connection_id = {reinterpret_cast<const uint8_t *>("\x01"), 1};
   MockQUICPacketTransmitter tx;
   MockQUICConnectionInfoProvider info;
   MockQUICCongestionController cc(&info);
   QUICLossDetector detector(&tx, &info, &cc, &rtt_measure, 0);
-  ats_unique_buf payload              = ats_unique_malloc(16);
-  size_t payload_len                  = 16;
+  ats_unique_buf payload              = ats_unique_malloc(512);
+  size_t payload_len                  = 512;
   QUICPacketUPtr packet               = QUICPacketFactory::create_null_packet();
   std::shared_ptr<QUICAckFrame> frame = QUICFrameFactory::create_null_ack_frame();
   std::vector<QUICFrameInfo> dummy_frames;
@@ -84,31 +84,31 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     CHECK(tx.retransmitted.size() == 0);
 
     // Send packet (1) to (7)
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet1 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet2 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet3 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet4 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet5 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet6 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet7 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet8 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
-    payload                = ats_unique_malloc(16);
+    payload                = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet9 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false, dummy_frames);
 
@@ -135,14 +135,14 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
 
     // Receive an ACK for (1) (4) (5) (7) (8) (9)
-    afc.update(QUICEncryptionLevel::INITIAL, pn1, true);
-    afc.update(QUICEncryptionLevel::INITIAL, pn4, true);
-    afc.update(QUICEncryptionLevel::INITIAL, pn5, true);
-    afc.update(QUICEncryptionLevel::INITIAL, pn7, true);
-    afc.update(QUICEncryptionLevel::INITIAL, pn8, true);
-    afc.update(QUICEncryptionLevel::INITIAL, pn9, true);
+    afm.update(QUICEncryptionLevel::INITIAL, pn1, payload_len, false);
+    afm.update(QUICEncryptionLevel::INITIAL, pn4, payload_len, false);
+    afm.update(QUICEncryptionLevel::INITIAL, pn5, payload_len, false);
+    afm.update(QUICEncryptionLevel::INITIAL, pn7, payload_len, false);
+    afm.update(QUICEncryptionLevel::INITIAL, pn8, payload_len, false);
+    afm.update(QUICEncryptionLevel::INITIAL, pn9, payload_len, false);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
-    std::shared_ptr<QUICFrame> x = afc.generate_frame(QUICEncryptionLevel::INITIAL, 2048, 2048);
+    std::shared_ptr<QUICFrame> x = afm.generate_frame(QUICEncryptionLevel::INITIAL, 2048, 2048);
     frame                        = std::dynamic_pointer_cast<QUICAckFrame>(x);
     detector.handle_frame(QUICEncryptionLevel::INITIAL, *frame.get());
     ink_hrtime_sleep(HRTIME_MSECONDS(5000));
