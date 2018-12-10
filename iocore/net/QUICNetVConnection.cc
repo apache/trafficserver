@@ -1190,6 +1190,10 @@ QUICNetVConnection::_state_common_send_packet()
 
     uint32_t written = 0;
     for (auto level : QUIC_ENCRYPTION_LEVELS) {
+      if (level == QUICEncryptionLevel::ONE_RTT && !this->_handshake_handler->is_completed()) {
+        continue;
+      }
+
       if (this->netvc_context == NET_VCONNECTION_IN && !this->_is_src_addr_verified() &&
           this->_handshake_packets_sent >= MAX_PACKETS_WITHOUT_SRC_ADDR_VARIDATION) {
         error = 1;
@@ -1315,6 +1319,14 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     probing |= frame->is_probing_frame();
     this->_store_frame(buf, len, max_frame_size, frame, frames);
     frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
+  }
+
+  // NEW_TOKEN
+  frame = this->generate_frame(level, UINT16_MAX, max_frame_size);
+  if (frame) {
+    ++frame_count;
+    probing |= frame->is_probing_frame();
+    this->_store_frame(buf, len, max_frame_size, frame, frames);
   }
 
   // PATH_CHALLENGE, PATH_RESPOSNE
@@ -2146,4 +2158,49 @@ QUICNetVConnection::_refresh_ack_frame_manager()
   }
 
   return false;
+}
+
+// QUICFrameGenerator
+bool
+QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level)
+{
+  if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
+  return !this->_is_resumption_token_sent;
+}
+
+QUICFrameUPtr
+QUICNetVConnection::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+{
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  if (!this->_is_level_matched(level)) {
+    return frame;
+  }
+
+  if (this->_is_resumption_token_sent) {
+    return frame;
+  }
+
+  // TODO Make expiration period configurable
+  QUICResumptionToken token(this->get_remote_endpoint(), this->connection_id(), Thread::get_hrtime() + HRTIME_HOURS(24));
+  frame = QUICFrameFactory::create_new_token_frame(token, this->_issue_frame_id(), this);
+  if (frame) {
+    if (frame->size() < maximum_frame_size) {
+      this->_is_resumption_token_sent = true;
+    } else {
+      // Cancel generating frame
+      frame = QUICFrameFactory::create_null_frame();
+    }
+  }
+
+  return frame;
+}
+
+void
+QUICNetVConnection::_on_frame_lost(QUICFrameInformation info)
+{
+  this->_is_resumption_token_sent = false;
 }

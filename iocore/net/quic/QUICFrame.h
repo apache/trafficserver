@@ -1118,7 +1118,7 @@ public:
   /*
    * Creates a NEW_TOKEN frame
    */
-  static std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc> create_new_token_frame(ats_unique_buf token, uint64_t token_len,
+  static std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc> create_new_token_frame(const QUICResumptionToken &token,
                                                                                          QUICFrameId id            = 0,
                                                                                          QUICFrameGenerator *owner = nullptr);
 

@@ -146,7 +146,7 @@ class SSLNextProtocolSet;
  *    WRITE:
  *      Do nothing
  **/
-class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public RefCountObj
+class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public QUICFrameGenerator, public RefCountObj
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -218,9 +218,9 @@ public:
   std::vector<QUICFrameType> interests() override;
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
-  // QUICConnection (QUICFrameGenerator)
-  // bool will_generate_frame(QUICEncryptionLevel level);
-  // QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint16_t connection_credit, uint16_t maximum_frame_size);
+  // QUICFrameGenerator
+  bool will_generate_frame(QUICEncryptionLevel level) override;
+  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
   int in_closed_queue = 0;
 
@@ -366,8 +366,9 @@ private:
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
 
-  ats_unique_buf _av_token = {nullptr};
-  size_t _av_token_len     = 0;
+  ats_unique_buf _av_token       = {nullptr};
+  size_t _av_token_len           = 0;
+  bool _is_resumption_token_sent = false;
 
   // This is for limiting number of packets that a server can send without path validation
   uint32_t _handshake_packets_sent = 0;
@@ -376,6 +377,16 @@ private:
   // TODO: Source addresses verification through an address validation token
   bool _src_addr_verified       = false;
   bool _has_ack_only_packet_out = false;
+
+  // QUICFrameGenerator
+  void _on_frame_lost(QUICFrameInformation info) override;
+  std::vector<QUICEncryptionLevel>
+  _encryption_level_filter() override
+  {
+    return {
+      QUICEncryptionLevel::ONE_RTT,
+    };
+  }
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

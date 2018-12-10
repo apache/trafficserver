@@ -90,6 +90,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "CRYPTO";
   case QUICFrameType::RETIRE_CONNECTION_ID:
     return "RETIRE_CONNECTION_ID";
+  case QUICFrameType::NEW_TOKEN:
+    return "NEW_TOKEN";
   case QUICFrameType::UNKNOWN:
   default:
     return "UNKNOWN";

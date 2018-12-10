@@ -2439,10 +2439,8 @@ QUICPathResponseFrame::_data_offset() const
 QUICFrameUPtr
 QUICNewTokenFrame::clone() const
 {
-  ats_unique_buf buf = ats_unique_malloc(this->token_length());
-  memcpy(buf.get(), this->token(), this->token_length());
-
-  return QUICFrameFactory::create_new_token_frame(std::move(buf), this->token_length(), this->_id, this->_owner);
+  // clone() will be removed when all frame generators are responsible for retransmittion
+  return QUICFrameFactory::create_null_frame();
 }
 
 QUICFrameType
@@ -2987,10 +2985,14 @@ QUICFrameFactory::create_new_connection_id_frame(uint32_t sequence, QUICConnecti
 }
 
 std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_new_token_frame(ats_unique_buf token, uint64_t token_len, QUICFrameId id, QUICFrameGenerator *owner)
+QUICFrameFactory::create_new_token_frame(const QUICResumptionToken &token, QUICFrameId id, QUICFrameGenerator *owner)
 {
+  uint64_t token_len       = token.length();
+  ats_unique_buf token_buf = ats_unique_malloc(token_len);
+  memcpy(token_buf.get(), token.buf(), token_len);
+
   QUICNewTokenFrame *frame = quicNewTokenFrameAllocator.alloc();
-  new (frame) QUICNewTokenFrame(std::move(token), token_len, id, owner);
+  new (frame) QUICNewTokenFrame(std::move(token_buf), token_len, id, owner);
   return std::unique_ptr<QUICNewTokenFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_new_token_frame);
 }
 
