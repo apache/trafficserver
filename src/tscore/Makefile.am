@@ -276,7 +276,7 @@ test_tscore_SOURCES = \
 
 if HAS_HKDF
 test_tscore_SOURCES += \
-	unit-tests/test_HKDF.cc
+	unit_tests/test_HKDF.cc
 endif
 
 CompileParseRules_SOURCES = CompileParseRules.cc
