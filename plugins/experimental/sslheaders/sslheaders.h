@@ -20,6 +20,7 @@
 #include <ts/remap.h>
 #include <cstring>
 #include <vector>
+#include <string>
 
 extern "C" {
 typedef struct x509_st X509;
