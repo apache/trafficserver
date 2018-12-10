@@ -124,14 +124,14 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
 {
   if (ssl == nullptr) {
     for (const auto &expansion : expansions) {
-      SslHdrRemoveHeader(mbuf, mhdr, expansion->name);
+      SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
     }
   } else {
     X509 *x509;
     BIO *exp = BIO_new(BIO_s_mem());
 
     for (const auto &expansion : expansions) {
-      switch (expansion->scope) {
+      switch (expansion.scope) {
       case SSL_HEADERS_SCOPE_CLIENT:
         x509 = SSL_get_peer_certificate(ssl);
         break;
@@ -146,15 +146,15 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
         continue;
       }
 
-      SslHdrExpandX509Field(exp, x509, expansion->field);
+      SslHdrExpandX509Field(exp, x509, expansion.field);
       if (BIO_pending(exp)) {
-        SslHdrSetHeader(mbuf, mhdr, expansion->name, exp);
+        SslHdrSetHeader(mbuf, mhdr, expansion.name, exp);
       } else {
-        SslHdrRemoveHeader(mbuf, mhdr, expansion->name);
+        SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
       }
 
       // Getting the peer certificate takes a reference count, but the server certificate doesn't.
-      if (x509 && expansion->scope == SSL_HEADERS_SCOPE_CLIENT) {
+      if (x509 && expansion.scope == SSL_HEADERS_SCOPE_CLIENT) {
         X509_free(x509);
       }
     }
@@ -199,14 +199,12 @@ SslHdrParseOptions(int argc, const char **argv)
   }
 
   // Pick up the remaining options as SSL header expansions.
+  hdr->expansions.resize(argc - optind);
   for (int i = optind; i < argc; ++i) {
-    SslHdrExpansion exp;
-    if (!SslHdrParseExpansion(argv[i], exp)) {
+    if (!SslHdrParseExpansion(argv[i], hdr->expansions[i - optind])) {
       // If we fail, the expansion parsing logs the error.
       return nullptr;
     }
-
-    hdr->expansions.push_back(&exp);
   }
 
   return hdr.release();
