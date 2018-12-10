@@ -116,6 +116,49 @@ SslHdrSetHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string &name, BIO *value
   }
 }
 
+namespace
+{
+template <bool IsClient> class WrapX509
+{
+public:
+  WrapX509(SSL *ssl) : _ssl(ssl), _x509(_nonNullInvalidValue()) {}
+
+  X509 *
+  get()
+  {
+    if (_x509 == _nonNullInvalidValue()) {
+      _set();
+    }
+
+    return _x509;
+  }
+
+  ~WrapX509()
+  {
+    if (IsClient && (_x509 != _nonNullInvalidValue()) && (_x509 != nullptr)) {
+      X509_free(_x509);
+    }
+  }
+
+private:
+  SSL *_ssl;
+  X509 *_x509;
+
+  // The address of this object can not be a valid X509 structure address.
+  X509 *
+  _nonNullInvalidValue() const
+  {
+    return reinterpret_cast<X509 *>(const_cast<WrapX509 *>(this));
+  }
+
+  void
+  _set()
+  {
+    _x509 = (IsClient ? SSL_get_peer_certificate : SSL_get_certificate)(_ssl);
+  }
+};
+} // end anonymous namespace
+
 // Process SSL header expansions. If this is not an SSL connection, then we need to delete the SSL headers
 // so that malicious clients cannot inject bogus information. Otherwise, we populate the header with the
 // expanded value. If the value expands to something empty, we nuke the header.
@@ -127,22 +170,28 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
       SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
     }
   } else {
+    WrapX509<true> clientX509(ssl);
+    WrapX509<false> serverX509(ssl);
     X509 *x509;
+
     BIO *exp = BIO_new(BIO_s_mem());
 
     for (const auto &expansion : expansions) {
       switch (expansion.scope) {
       case SSL_HEADERS_SCOPE_CLIENT:
-        x509 = SSL_get_peer_certificate(ssl);
+        x509 = clientX509.get();
+        if (x509 == nullptr) {
+          SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
+          continue;
+        }
         break;
       case SSL_HEADERS_SCOPE_SERVER:
-        x509 = SSL_get_certificate(ssl);
+        x509 = serverX509.get();
+        if (x509 == nullptr) {
+          continue;
+        }
         break;
       default:
-        x509 = nullptr;
-      }
-
-      if (x509 == nullptr) {
         continue;
       }
 
@@ -151,11 +200,6 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
         SslHdrSetHeader(mbuf, mhdr, expansion.name, exp);
       } else {
         SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
-      }
-
-      // Getting the peer certificate takes a reference count, but the server certificate doesn't.
-      if (x509 && expansion.scope == SSL_HEADERS_SCOPE_CLIENT) {
-        X509_free(x509);
       }
     }
 
