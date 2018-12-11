@@ -79,6 +79,7 @@ public:
   QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame);
 
+  void stop_sending(QUICStreamErrorUPtr error);
   void reset(QUICStreamErrorUPtr error);
 
   QUICOffset reordered_bytes() const;
@@ -107,8 +108,10 @@ protected:
 
   void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
 
-  QUICStreamErrorUPtr _reset_reason = nullptr;
-  bool _is_reset_sent               = false;
+  QUICStreamErrorUPtr _reset_reason        = nullptr;
+  bool _is_reset_sent                      = false;
+  QUICStreamErrorUPtr _stop_sending_reason = nullptr;
+  bool _is_stop_sending_sent               = false;
 
   QUICConnectionInfoProvider *_connection_info = nullptr;
   QUICStreamId _id                             = 0;
@@ -168,6 +171,7 @@ public:
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);
 
+  void stop_sending(QUICStreamErrorUPtr error);
   void reset(QUICStreamErrorUPtr error);
 
   QUICOffset largest_offset_received();

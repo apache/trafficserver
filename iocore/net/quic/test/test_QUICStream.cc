@@ -351,4 +351,34 @@ TEST_CASE("QUICStream", "[quic]")
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::RST_STREAM);
   }
+
+  SECTION("Retransmit STOP_SENDING frame")
+  {
+    MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
+
+    MockQUICRTTProvider rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+
+    MockContinuation mock_cont(stream->mutex);
+    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    QUICFrameUPtr frame       = QUICFrameFactory::create_null_frame();
+
+    stream->stop_sending(QUICStreamErrorUPtr(new QUICStreamError(stream.get(), QUIC_APP_ERROR_CODE_STOPPING)));
+    frame = stream->generate_frame(level, 4096, 4096);
+    REQUIRE(frame);
+    CHECK(frame->type() == QUICFrameType::STOP_SENDING);
+    // Don't send it again untill it is considers as lost
+    CHECK(stream->generate_frame(level, 4096, 4096) == nullptr);
+    // Loss the frame
+    stream->on_frame_lost(frame->id());
+    // After the loss the frame should be regenerated
+    frame = stream->generate_frame(level, 4096, 4096);
+    REQUIRE(frame);
+    CHECK(frame->type() == QUICFrameType::STOP_SENDING);
+  }
 }

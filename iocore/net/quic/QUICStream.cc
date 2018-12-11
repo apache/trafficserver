@@ -419,6 +419,16 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     return frame;
   }
 
+  // STOP_SENDING
+  if (this->_stop_sending_reason && !this->_is_stop_sending_sent) {
+    frame =
+      QUICFrameFactory::create_stop_sending_frame(this->id(), this->_stop_sending_reason->code, this->_issue_frame_id(), this);
+    this->_records_frame(frame->id(), {frame->type(), level});
+    this->_state.update_with_sending_frame(*frame);
+    this->_is_stop_sending_sent = true;
+    return frame;
+  }
+
   // MAX_STREAM_DATA
   frame = this->_local_flow_controller.generate_frame(level, UINT16_MAX, maximum_frame_size);
   if (frame) {
@@ -532,6 +542,8 @@ QUICStream::_on_frame_lost(QUICFrameInformation info)
     // "Data Recvd" state is reached on the send stream).  The content of
     // a RST_STREAM frame MUST NOT change when it is sent again.
     this->_is_reset_sent = false;
+  } else if (info.type == QUICFrameType::STOP_SENDING) {
+    this->_is_stop_sending_sent = false;
   }
 }
 
@@ -647,6 +659,12 @@ QUICStream::_process_write_vio()
   }
 
   return 0;
+}
+
+void
+QUICStream::stop_sending(QUICStreamErrorUPtr error)
+{
+  this->_stop_sending_reason = std::move(error);
 }
 
 void
