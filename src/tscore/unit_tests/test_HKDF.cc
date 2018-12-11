@@ -23,7 +23,7 @@
 
 #include "catch.hpp"
 #include <cstring>
-#include "ts/HKDF.h"
+#include "tscore/HKDF.h"
 
 TEST_CASE("HKDF tests", "[hkdf]")
 {
