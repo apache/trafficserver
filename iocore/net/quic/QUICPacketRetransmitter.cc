@@ -51,6 +51,7 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     case QUICFrameType::MAX_DATA:
     case QUICFrameType::MAX_STREAM_DATA:
     case QUICFrameType::NEW_TOKEN:
+    case QUICFrameType::PING:
       break;
     default:
       frame     = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);
