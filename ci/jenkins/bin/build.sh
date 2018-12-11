@@ -48,4 +48,4 @@ set -x
     ${WERROR} \
     ${DEBUG}
 
-${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
+${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q= || exit 1
