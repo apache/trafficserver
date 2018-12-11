@@ -1423,20 +1423,23 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     if (this->_has_ack_only_packet_out) {
       // Sent too much ack_only packet. At this moment we need to packetize a ping frame
       // to force peer send ack frame.
-      if (max_frame_size > len) {
-        this->_has_ack_only_packet_out = false;
-        // don't care ping frame lost or acked
-        frame = QUICFrameFactory::create_ping_frame(0, nullptr);
-        ++frame_count;
-        ack_only = false;
-        probing |= frame->is_probing_frame();
-        this->_store_frame(buf, len, max_frame_size, frame, frames);
-      }
+      // Just call trigger to not send multiple PING frames, because application could request sending PING.
+      this->_pinger.trigger(level);
     } else {
       this->_has_ack_only_packet_out = true;
     }
   } else if (!ack_only) {
     this->_has_ack_only_packet_out = false;
+  }
+
+  // PING
+  frame = this->_pinger.generate_frame(level, UINT16_MAX, max_frame_size);
+  if (frame) {
+    ++frame_count;
+    ack_only                       = false;
+    this->_has_ack_only_packet_out = false;
+    probing |= frame->is_probing_frame();
+    this->_store_frame(buf, len, max_frame_size, frame, frames);
   }
 
   // Schedule a packet
