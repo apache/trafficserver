@@ -53,6 +53,8 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     case QUICFrameType::NEW_TOKEN:
     case QUICFrameType::PING:
     case QUICFrameType::STOP_SENDING:
+    case QUICFrameType::CONNECTION_CLOSE:
+    case QUICFrameType::APPLICATION_CLOSE:
       break;
     default:
       frame     = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);
