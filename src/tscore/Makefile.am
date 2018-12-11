@@ -249,7 +249,7 @@ test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a
+test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @OPENSSL_LIBS@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
