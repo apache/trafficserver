@@ -28,8 +28,12 @@ cd "${WORKSPACE}/${BUILD_NUMBER}/build"
     --enable-debug \
     --enable-ccache
 
-${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
-${ATS_MAKE} install
+# Not great, but these can fail on the "docs' builds for older versions, sigh
+${ATS_MAKE} -i ${ATS_MAKE_FLAGS} V=1 Q=
+${ATS_MAKE} -i install
+
+[ -x ${PREFIX}/bin/traffic_server ] || exit 1
+
 
 # Setup and start ATS with the required remap rule
 echo "map http://127.0.0.1:8080 http://192.168.3.13:8000" >> ${PREFIX}/etc/trafficserver/remap.config

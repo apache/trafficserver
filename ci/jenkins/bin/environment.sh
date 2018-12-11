@@ -42,6 +42,7 @@ export TODAY=$(/bin/date +'%m%d%Y')
 ATS_BRANCH=master
 ATS_IS_7="yes"
 
+test "${JOB_NAME#*-5.3.x}" != "${JOB_NAME}" && ATS_BRANCH=5.3.x && ATS_IS_7="no"
 test "${JOB_NAME#*-6.2.x}" != "${JOB_NAME}" && ATS_BRANCH=6.2.x && ATS_IS_7="no"
 test "${JOB_NAME#*-7.1.x}" != "${JOB_NAME}" && ATS_BRANCH=7.1.x
 test "${JOB_NAME#*-8.0.x}" != "${JOB_NAME}" && ATS_BRANCH=8.0.x
