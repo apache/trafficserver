@@ -276,6 +276,11 @@ public:
   {
   }
 
+  void
+  ping() override
+  {
+  }
+
   int _transmit_count   = 0;
   int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;

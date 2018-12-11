@@ -195,6 +195,7 @@ public:
   QUICStreamManager *stream_manager() override;
   void close(QUICConnectionErrorUPtr error) override;
   void handle_received_packet(UDPPacket *packet) override;
+  void ping() override;
 
   // QUICConnection (QUICConnectionInfoProvider)
   QUICConnectionId peer_connection_id() const override;
