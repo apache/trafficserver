@@ -1024,7 +1024,7 @@ public:
     QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   static std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> create_connection_close_frame(
-    QUICConnectionErrorUPtr error, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+    QUICConnectionError &error, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*
    * Creates a APPLICATION_CLOSE frame.
@@ -1033,7 +1033,7 @@ public:
     QUICAppErrorCode error_code, uint16_t reason_phrase_length = 0, const char *reason_phrase = nullptr, QUICFrameId id = 0,
     QUICFrameGenerator *owner = nullptr);
   static std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc> create_application_close_frame(
-    QUICConnectionErrorUPtr error, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+    QUICConnectionError &error, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*
    * Creates a MAX_DATA frame.

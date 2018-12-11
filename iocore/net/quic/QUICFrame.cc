@@ -2840,14 +2840,13 @@ QUICFrameFactory::create_connection_close_frame(uint16_t error_code, QUICFrameTy
 }
 
 std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_connection_close_frame(QUICConnectionErrorUPtr error, QUICFrameId id, QUICFrameGenerator *owner)
+QUICFrameFactory::create_connection_close_frame(QUICConnectionError &error, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  ink_assert(error->cls == QUICErrorClass::TRANSPORT);
-  if (error->msg) {
-    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type(), strlen(error->msg), error->msg, id,
-                                                           owner);
+  ink_assert(error.cls == QUICErrorClass::TRANSPORT);
+  if (error.msg) {
+    return QUICFrameFactory::create_connection_close_frame(error.code, error.frame_type(), strlen(error.msg), error.msg, id, owner);
   } else {
-    return QUICFrameFactory::create_connection_close_frame(error->code, error->frame_type(), 0, nullptr, id, owner);
+    return QUICFrameFactory::create_connection_close_frame(error.code, error.frame_type(), 0, nullptr, id, owner);
   }
 }
 
@@ -2861,13 +2860,13 @@ QUICFrameFactory::create_application_close_frame(QUICAppErrorCode error_code, ui
 }
 
 std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_application_close_frame(QUICConnectionErrorUPtr error, QUICFrameId id, QUICFrameGenerator *owner)
+QUICFrameFactory::create_application_close_frame(QUICConnectionError &error, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  ink_assert(error->cls == QUICErrorClass::APPLICATION);
-  if (error->msg) {
-    return QUICFrameFactory::create_application_close_frame(error->code, strlen(error->msg), error->msg, id, owner);
+  ink_assert(error.cls == QUICErrorClass::APPLICATION);
+  if (error.msg) {
+    return QUICFrameFactory::create_application_close_frame(error.code, strlen(error.msg), error.msg, id, owner);
   } else {
-    return QUICFrameFactory::create_application_close_frame(error->code, 0, nullptr, id, owner);
+    return QUICFrameFactory::create_application_close_frame(error.code, 0, nullptr, id, owner);
   }
 }
 

@@ -1478,15 +1478,17 @@ QUICNetVConnection::_packetize_closing_frame()
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
-  if (this->_connection_error == nullptr) {
+  if (this->_connection_error == nullptr || this->_the_final_packet) {
     return;
   }
 
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  // CONNECTION_CLOSE or APPLICATION_CLOSE
   if (this->_connection_error->cls == QUICErrorClass::APPLICATION) {
-    frame = QUICFrameFactory::create_application_close_frame(std::move(this->_connection_error));
+    frame = QUICFrameFactory::create_application_close_frame(*this->_connection_error);
   } else {
-    frame = QUICFrameFactory::create_connection_close_frame(std::move(this->_connection_error));
+    frame = QUICFrameFactory::create_connection_close_frame(*this->_connection_error);
   }
 
   uint32_t max_size  = this->maximum_quic_packet_size();
