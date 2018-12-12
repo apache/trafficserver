@@ -55,7 +55,7 @@ CryptoContext::CryptoContext()
     break;
 #endif
   default:
-    ink_release_assert("Invalid global URL hash context");
+    ink_release_assert(!"Invalid global URL hash context");
   };
 #if TS_ENABLE_FIPS == 0
   static_assert(CryptoContext::OBJ_SIZE >= sizeof(MD5Context), "bad OBJ_SIZE");
