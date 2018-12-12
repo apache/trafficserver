@@ -1338,7 +1338,7 @@ LogObjectManager::log(LogAccess *lad)
   } else if (likely(ret & Log::SKIP)) {
     RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_skip_stat, 1);
   } else {
-    ink_release_assert("Unexpected result");
+    ink_release_assert(!"Unexpected result");
   }
 
   return ret;

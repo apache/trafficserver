@@ -1632,7 +1632,7 @@ HttpSM::handle_api_return()
     state_remove_from_list(EVENT_NONE, nullptr);
     return;
   default:
-    ink_release_assert("! Not reached");
+    ink_release_assert(!"Not reached");
     break;
   }
 
@@ -2563,7 +2563,7 @@ HttpSM::state_cache_open_read(int event, void *data)
     break;
 
   default:
-    ink_release_assert("!Unknown event");
+    ink_release_assert(!"Unknown event");
     break;
   }
 
@@ -3980,7 +3980,7 @@ HttpSM::state_remap_request(int event, void * /* data ATS_UNUSED */)
   }
 
   default:
-    ink_assert("Unexpected event inside state_remap_request");
+    ink_assert(!"Unexpected event inside state_remap_request");
     break;
   }
 
@@ -7559,7 +7559,7 @@ HttpSM::set_next_state()
   }
 
   default: {
-    ink_release_assert("!Unknown next action");
+    ink_release_assert(!"Unknown next action");
   }
   }
 }
