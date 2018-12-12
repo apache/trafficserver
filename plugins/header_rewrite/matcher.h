@@ -46,11 +46,12 @@ public:
   explicit Matcher(const MatcherOps op) : _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
   virtual ~Matcher() { TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher"); }
 
+  // noncopyable
+  Matcher(const Matcher &) = delete;
+  void operator=(const Matcher &) = delete;
+
 protected:
   const MatcherOps _op;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(Matcher);
 };
 
 // Template class to match on various types of data

@@ -25,15 +25,6 @@
 
 #include <vector>
 
-#define DISALLOW_COPY_AND_ASSIGN(T) \
-  T(const T &) = delete;            \
-  void operator=(const T &) = delete
-
-#define DISALLOW_IMPLICIT_CONSTRUCTORS(T) \
-private:                                  \
-  T(void);                                \
-  DISALLOW_COPY_AND_ASSIGN(T)
-
 namespace util
 {
 typedef std::vector<char> Buffer;
