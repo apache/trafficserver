@@ -28,12 +28,6 @@
 
 namespace ats_plugin
 {
-// A macro to disallow the copy constructor and operator= functions
-// This should be used in the private: declarations for a class
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(TypeName &) = delete;           \
-  void operator=(TypeName) = delete;
-
 // A single profile, stores data of a taken profile
 class Profile
 {
@@ -195,8 +189,6 @@ private:
 
   // The mutex for safe access
   mutable std::mutex profiles_mutex_;
-
-  // DISALLOW_COPY_AND_ASSIGN(Profiler);
 };
 
 // Takes a profile during its life time
@@ -233,7 +225,5 @@ private:
 
   // The owner profiler
   Profiler *owner_;
-
-  // DISALLOW_COPY_AND_ASSIGN(ProfileTaker);
 };
 } // namespace ats_plugin

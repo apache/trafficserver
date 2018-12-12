@@ -45,6 +45,10 @@ public:
     delete _oper;
   }
 
+  // noncopyable
+  RuleSet(const RuleSet &) = delete;
+  void operator=(const RuleSet &) = delete;
+
   // No reason to inline these
   void append(RuleSet *rule);
   bool add_condition(Parser &p, const char *filename, int lineno);
@@ -107,8 +111,6 @@ public:
   RuleSet *next = nullptr; // Linked list
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(RuleSet);
-
   Condition *_cond   = nullptr;                        // First pre-condition (linked list)
   Operator *_oper    = nullptr;                        // First operator (linked list)
   TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for

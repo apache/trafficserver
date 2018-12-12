@@ -42,6 +42,11 @@ class ConditionTrue : public Condition
 {
 public:
   ConditionTrue() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue"); }
+
+  // noncopyable
+  ConditionTrue(const ConditionTrue &) = delete;
+  void operator=(const ConditionTrue &) = delete;
+
   void
   append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
   {
@@ -55,9 +60,6 @@ protected:
     TSDebug(PLUGIN_NAME, "Evaluating TRUE()");
     return true;
   }
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionTrue);
 };
 
 // Always false
@@ -65,6 +67,11 @@ class ConditionFalse : public Condition
 {
 public:
   ConditionFalse() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionFalse"); }
+
+  // noncopyable
+  ConditionFalse(const ConditionFalse &) = delete;
+  void operator=(const ConditionFalse &) = delete;
+
   void
   append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
   {
@@ -78,9 +85,6 @@ protected:
     TSDebug(PLUGIN_NAME, "Evaluating FALSE()");
     return false;
   }
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionFalse);
 };
 
 // Check the HTTP return status
@@ -90,15 +94,17 @@ class ConditionStatus : public Condition
 
 public:
   ConditionStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStatus"); }
+
+  // noncopyable
+  ConditionStatus(const ConditionStatus &) = delete;
+  void operator=(const ConditionStatus &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
   void initialize_hooks() override; // Return status only valid in certain hooks
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionStatus);
 };
 
 // Check the HTTP method
@@ -108,14 +114,16 @@ class ConditionMethod : public Condition
 
 public:
   ConditionMethod() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod"); }
+
+  // noncopyable
+  ConditionMethod(const ConditionMethod &) = delete;
+  void operator=(const ConditionMethod &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionMethod);
 };
 
 // Random 0 to (N-1)
@@ -125,6 +133,11 @@ class ConditionRandom : public Condition
 
 public:
   ConditionRandom() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
+
+  // noncopyable
+  ConditionRandom(const ConditionRandom &) = delete;
+  void operator=(const ConditionRandom &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -132,8 +145,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionRandom);
-
   unsigned int _seed = 0;
   unsigned int _max  = 0;
 };
@@ -143,6 +154,11 @@ class ConditionAccess : public Condition
 {
 public:
   ConditionAccess() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionAccess"); }
+
+  // noncopyable
+  ConditionAccess(const ConditionAccess &) = delete;
+  void operator=(const ConditionAccess &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -150,8 +166,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionAccess);
-
   time_t _next = 0;
   bool _last   = false;
 };
@@ -163,6 +177,11 @@ class ConditionCookie : public Condition
 
 public:
   ConditionCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCookie"); }
+
+  // noncopyable
+  ConditionCookie(const ConditionCookie &) = delete;
+  void operator=(const ConditionCookie &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -170,8 +189,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionCookie);
-
   // Nginx-style cookie parsing:
   //   nginx/src/http/ngx_http_parse.c:ngx_http_parse_multi_header_lines()
   inline int
@@ -235,6 +252,10 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionHeader, client %d", client);
   }
 
+  // noncopyable
+  ConditionHeader(const ConditionHeader &) = delete;
+  void operator=(const ConditionHeader &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -242,8 +263,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionHeader);
-
   bool _client;
 };
 
@@ -254,14 +273,16 @@ class ConditionPath : public Condition
 
 public:
   explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); }
+
+  // noncopyable
+  ConditionPath(const ConditionPath &) = delete;
+  void operator=(const ConditionPath &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionPath);
 };
 
 // query
@@ -271,14 +292,16 @@ class ConditionQuery : public Condition
 
 public:
   explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); }
+
+  // noncopyable
+  ConditionQuery(const ConditionQuery &) = delete;
+  void operator=(const ConditionQuery &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionQuery);
 };
 
 // url
@@ -291,6 +314,10 @@ public:
 
   explicit ConditionUrl(const UrlType type) : _type(type) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl"); }
 
+  // noncopyable
+  ConditionUrl(const ConditionUrl &) = delete;
+  void operator=(const ConditionUrl &) = delete;
+
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -299,8 +326,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionUrl);
-
   UrlQualifiers _url_qual = URL_QUAL_NONE;
   UrlType _type;
 };
@@ -327,6 +352,10 @@ public:
     // }
   }
 
+  // noncopyable
+  ConditionDBM(const ConditionDBM &) = delete;
+  void operator=(const ConditionDBM &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
@@ -334,7 +363,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionDBM);
   // MDBM* _dbm;
   std::string _file;
   Value _key;
@@ -361,6 +389,11 @@ class ConditionIp : public Condition
 
 public:
   explicit ConditionIp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIp"); };
+
+  // noncopyable
+  ConditionIp(const ConditionIp &) = delete;
+  void operator=(const ConditionIp &) = delete;
+
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -369,7 +402,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionIp);
   IpQualifiers _ip_qual = IP_QUAL_CLIENT;
 };
 
@@ -379,14 +411,16 @@ class ConditionIncomingPort : public Condition
 
 public:
   ConditionIncomingPort() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIncomingPort"); }
+
+  // noncopyable
+  ConditionIncomingPort(const ConditionIncomingPort &) = delete;
+  void operator=(const ConditionIncomingPort &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionIncomingPort);
 };
 
 // Transact Count
@@ -396,14 +430,16 @@ class ConditionTransactCount : public Condition
 
 public:
   ConditionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTransactCount"); }
+
+  // noncopyable
+  ConditionTransactCount(const ConditionTransactCount &) = delete;
+  void operator=(const ConditionTransactCount &) = delete;
+
   void initialize(Parser &p) override;
   void append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionTransactCount);
 };
 
 // now: Keeping track of current time / day / hour etc.
@@ -413,6 +449,11 @@ class ConditionNow : public Condition
 
 public:
   explicit ConditionNow() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
+
+  // noncopyable
+  ConditionNow(const ConditionNow &) = delete;
+  void operator=(const ConditionNow &) = delete;
+
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -421,8 +462,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionNow);
-
   int64_t get_now_qualified(NowQualifiers qual) const;
   NowQualifiers _now_qual = NOW_QUAL_EPOCH;
 };
@@ -432,6 +471,10 @@ class ConditionGeo : public Condition
 {
 public:
   explicit ConditionGeo() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionGeo"); }
+
+  // noncopyable
+  ConditionGeo(const ConditionGeo &) = delete;
+  void operator=(const ConditionGeo &) = delete;
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
@@ -454,8 +497,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionGeo);
-
   int64_t get_geo_int(const sockaddr *addr) const;
   const char *get_geo_string(const sockaddr *addr) const;
   GeoQualifiers _geo_qual = GEO_QUAL_COUNTRY;
@@ -467,6 +508,11 @@ class ConditionId : public Condition
 {
 public:
   explicit ConditionId() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionId"); };
+
+  // noncopyable
+  ConditionId(const ConditionId &) = delete;
+  void operator=(const ConditionId &) = delete;
+
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
@@ -475,7 +521,6 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(ConditionId);
   IdQualifiers _id_qual = ID_QUAL_UNIQUE;
 };
 
@@ -543,6 +588,10 @@ class ConditionStringLiteral : public Condition
 public:
   explicit ConditionStringLiteral(const std::string &v);
 
+  // noncopyable
+  ConditionStringLiteral(const ConditionStringLiteral &) = delete;
+  void operator=(const ConditionStringLiteral &) = delete;
+
   void append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
 
 protected:
@@ -550,5 +599,4 @@ protected:
 
 private:
   std::string _literal;
-  DISALLOW_COPY_AND_ASSIGN(ConditionStringLiteral);
 };

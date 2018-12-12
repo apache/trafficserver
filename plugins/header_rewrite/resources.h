@@ -59,6 +59,11 @@ public:
   }
 
   ~Resources() { destroy(); }
+
+  // noncopyable
+  Resources(const Resources &) = delete;
+  void operator=(const Resources &) = delete;
+
   void gather(const ResourceIDs ids, TSHttpHookID hook);
   bool
   ready() const
@@ -78,7 +83,6 @@ public:
 
 private:
   void destroy();
-  DISALLOW_COPY_AND_ASSIGN(Resources);
 
   bool _ready = false;
 };

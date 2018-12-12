@@ -104,6 +104,10 @@ public:
     delete _next;
   }
 
+  // noncopyable
+  Statement(const Statement &) = delete;
+  void operator=(const Statement &) = delete;
+
   // Which hook are we adding this statement to?
   bool set_hook(TSHttpHookID hook);
   TSHttpHookID
@@ -152,8 +156,6 @@ protected:
   Statement *_next = nullptr; // Linked list
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(Statement);
-
   ResourceIDs _rsrc  = RSRC_NONE;
   bool _initialized  = false;
   TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;

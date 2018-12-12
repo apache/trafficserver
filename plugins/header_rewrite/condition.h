@@ -55,6 +55,10 @@ public:
     delete _matcher;
   }
 
+  // noncopyable
+  Condition(const Condition &) = delete;
+  void operator=(const Condition &) = delete;
+
   // Inline this, it's critical for speed (and only used twice)
   bool
   do_eval(const Resources &res)
@@ -128,7 +132,5 @@ protected:
   Matcher *_matcher   = nullptr;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(Condition);
-
   CondModifiers _mods = COND_NONE;
 };
