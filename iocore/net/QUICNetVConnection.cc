@@ -484,12 +484,6 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 }
 
 void
-QUICNetVConnection::ping()
-{
-  this->_pinger.trigger(QUICEncryptionLevel::ONE_RTT);
-}
-
-void
 QUICNetVConnection::close(QUICConnectionErrorUPtr error)
 {
   if (this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closed) ||
