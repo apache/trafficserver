@@ -135,7 +135,6 @@ public:
   APIHook *get() const;
   void clear();
   bool is_empty() const;
-  void invoke(int event, void *data);
 
 private:
   Que(APIHook, m_link) m_hooks;
@@ -145,13 +144,6 @@ inline bool
 APIHooks::is_empty() const
 {
   return nullptr == m_hooks.head;
-}
-
-inline void
-APIHooks::invoke(int event, void *data)
-{
-  for (APIHook *hook = m_hooks.head; nullptr != hook; hook = hook->next())
-    hook->invoke(event, data);
 }
 
 /** Container for API hooks for a specific feature.
