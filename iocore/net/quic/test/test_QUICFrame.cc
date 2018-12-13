@@ -1340,14 +1340,14 @@ TEST_CASE("QUICFrameFactory Create CONNECTION_CLOSE with a QUICConnectionError",
   std::unique_ptr<QUICConnectionError> error =
     std::unique_ptr<QUICConnectionError>(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
   std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> connection_close_frame1 =
-    QUICFrameFactory::create_connection_close_frame(std::move(error));
+    QUICFrameFactory::create_connection_close_frame(*error);
   CHECK(connection_close_frame1->error_code() == static_cast<uint16_t>(QUICTransErrorCode::INTERNAL_ERROR));
   CHECK(connection_close_frame1->reason_phrase_length() == 0);
   CHECK(connection_close_frame1->reason_phrase() == nullptr);
 
   error = std::unique_ptr<QUICConnectionError>(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR, "test"));
   std::unique_ptr<QUICConnectionCloseFrame, QUICFrameDeleterFunc> connection_close_frame2 =
-    QUICFrameFactory::create_connection_close_frame(std::move(error));
+    QUICFrameFactory::create_connection_close_frame(*error);
   CHECK(connection_close_frame2->error_code() == static_cast<uint16_t>(QUICTransErrorCode::INTERNAL_ERROR));
   CHECK(connection_close_frame2->reason_phrase_length() == 4);
   CHECK(memcmp(connection_close_frame2->reason_phrase(), "test", 4) == 0);
