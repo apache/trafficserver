@@ -115,13 +115,13 @@ EThread::set_event_type(EventType et)
 }
 
 void
-EThread::process_event(Event *e, int calling_code)
+EThread::process_event(Event *e, int calling_code, Que(Event, link) * PostQueue)
 {
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
   MUTEX_TRY_LOCK(lock, e->mutex, this);
   if (!lock.is_locked()) {
     e->timeout_at = cur_time + DELAY_FOR_RETRY;
-    EventQueueExternal.enqueue_local(e);
+    PostQueue->enqueue(e);
   } else {
     if (e->cancelled) {
       free_event(e);
@@ -144,7 +144,7 @@ EThread::process_event(Event *e, int calling_code)
             e->timeout_at = cur_time;
           }
         }
-        EventQueueExternal.enqueue_local(e);
+        PostQueue->enqueue(e);
       }
     } else if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
       free_event(e);
@@ -153,7 +153,7 @@ EThread::process_event(Event *e, int calling_code)
 }
 
 void
-EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count)
+EThread::process_queue(Que(Event, link) * NegativeQueue, Que(Event, link) * PostQueue, int *ev_count, int *nq_count)
 {
   Event *e;
 
@@ -162,13 +162,13 @@ EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_
 
   // execute all the available external events that have
   // already been dequeued
-  while ((e = EventQueueExternal.dequeue_local())) {
+  while ((e = PostQueue->dequeue()) || (e = EventQueueExternal.dequeue_local())) {
     ++(*ev_count);
     if (e->cancelled) {
       free_event(e);
     } else if (!e->timeout_at) { // IMMEDIATE
       ink_assert(e->period == 0);
-      process_event(e, e->callback_event);
+      process_event(e, e->callback_event, PostQueue);
     } else if (e->timeout_at > 0) { // INTERVAL
       EventQueue.enqueue(e, cur_time);
     } else { // NEGATIVE
@@ -193,6 +193,7 @@ EThread::execute_regular()
 {
   Event *e;
   Que(Event, link) NegativeQueue;
+  Que(Event, link) PostQueue;
   ink_hrtime next_time = 0;
   ink_hrtime delta     = 0;    // time spent in the event loop
   ink_hrtime loop_start_time;  // Time the loop started.
@@ -228,7 +229,7 @@ EThread::execute_regular()
     }
     ++(current_metric->_count);
 
-    process_queue(&NegativeQueue, &ev_count, &nq_count);
+    process_queue(&NegativeQueue, &PostQueue, &ev_count, &nq_count);
 
     bool done_one;
     do {
@@ -242,24 +243,24 @@ EThread::execute_regular()
           free_event(e);
         } else {
           done_one = true;
-          process_event(e, e->callback_event);
+          process_event(e, e->callback_event, &PostQueue);
         }
       }
     } while (done_one);
 
     // execute any negative (poll) events
     if (NegativeQueue.head) {
-      process_queue(&NegativeQueue, &ev_count, &nq_count);
+      process_queue(&NegativeQueue, &PostQueue, &ev_count, &nq_count);
 
       // execute poll events
       while ((e = NegativeQueue.dequeue())) {
-        process_event(e, EVENT_POLL);
+        process_event(e, EVENT_POLL, &PostQueue);
       }
     }
 
     next_time             = EventQueue.earliest_timeout();
     ink_hrtime sleep_time = next_time - Thread::get_hrtime_updated();
-    if (sleep_time > 0) {
+    if (sleep_time > 0 && EventQueueExternal.empty()) {
       sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
       ++(current_metric->_wait);
     } else {
@@ -271,6 +272,10 @@ EThread::execute_regular()
     }
 
     tail_cb->waitForActivity(sleep_time);
+
+    while ((e = PostQueue.dequeue())) {
+      EventQueueExternal.enqueue_local(e);
+    }
 
     // loop cleanup
     loop_finish_time = this->get_hrtime_updated();

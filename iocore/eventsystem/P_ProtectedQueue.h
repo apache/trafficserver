@@ -91,3 +91,9 @@ ProtectedQueue::dequeue_local()
   }
   return e;
 }
+
+TS_INLINE bool
+ProtectedQueue::empty() const
+{
+  return INK_ATOMICLIST_EMPTY(al) && this->localQueue.empty();
+}
