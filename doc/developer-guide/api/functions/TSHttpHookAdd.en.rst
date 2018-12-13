@@ -45,7 +45,7 @@ transaction, or for specific transactions only.
 HTTP :term:`transaction` hooks are set on a global basis using the function
 :func:`TSHttpHookAdd`. This means that the continuation specified
 as the parameter to :func:`TSHttpHookAdd` is called for every
-transaction. :func:`TSHttpHookAdd` is typically called from
+transaction. :func:`TSHttpHookAdd` must only be called from
 :func:`TSPluginInit` or :func:`TSRemapInit`.
 
 :func:`TSHttpSsnHookAdd` adds :arg:`contp` to
