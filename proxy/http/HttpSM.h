@@ -581,8 +581,10 @@ protected:
   // Continuation time keeper
   int64_t prev_hook_start_time = 0;
 
-  int cur_hooks                = 0;
-  HttpApiState_t callout_state = HTTP_API_NO_CALLOUT;
+  enum class HTTP_HOOK_LEVEL { GLOBAL, SESSION, TRANSACTION, FINISHED };
+
+  HTTP_HOOK_LEVEL cur_hook_level = HTTP_HOOK_LEVEL::GLOBAL;
+  HttpApiState_t callout_state   = HTTP_API_NO_CALLOUT;
 
   // api_hooks must not be changed directly
   //  Use txn_hook_{ap,pre}pend so hooks_set is

@@ -1399,29 +1399,31 @@ plugins required to work with sni_routing.
       }
     }
   // FALLTHROUGH
-  case HTTP_API_CONTINUE:
+  case HTTP_API_CONTINUE: // This event is triggered whan a plugin continuation reenables core handling of the current hook.
     if ((cur_hook_id >= 0) && (cur_hook_id < TS_HTTP_LAST_HOOK)) {
       if (!cur_hook) {
-        if (cur_hooks == 0) {
+        if (cur_hook_level == HTTP_HOOK_LEVEL::GLOBAL) {
           cur_hook = http_global_hooks->get(cur_hook_id);
-          cur_hooks++;
+          // This will be the new level after executing all continuations in the linked list with head cur_hook.
+          cur_hook_level = HTTP_HOOK_LEVEL::SESSION;
         }
       }
-      // even if ua_txn is NULL, cur_hooks must
-      // be incremented otherwise cur_hooks is not set to 2 and
+      // even if ua_txn is NULL, cur_hook_level must set to TRANSACTION otherwise
       // transaction hooks (stored in api_hooks object) are not called.
       if (!cur_hook) {
-        if (cur_hooks == 1) {
+        if (cur_hook_level == HTTP_HOOK_LEVEL::SESSION) {
           if (ua_txn) {
             cur_hook = ua_txn->ssn_hook_get(cur_hook_id);
           }
-          cur_hooks++;
+          // This will be the new level after executing all continuations in the linked list with head cur_hook.
+          cur_hook_level = HTTP_HOOK_LEVEL::TRANSACTION;
         }
       }
       if (!cur_hook) {
-        if (cur_hooks == 2) {
+        if (cur_hook_level == HTTP_HOOK_LEVEL::TRANSACTION) {
           cur_hook = api_hooks.get(cur_hook_id);
-          cur_hooks++;
+          // This will be the new level after executing all continuations in the linked list with head cur_hook.
+          cur_hook_level = HTTP_HOOK_LEVEL::FINISHED;
         }
       }
       if (cur_hook) {
@@ -1481,6 +1483,7 @@ plugins required to work with sni_routing.
 
         return 0;
       }
+      // If cur_hook is null and cur_hook_level equals HTTP_HOOK_LEVEL::FINISHED execution will fall through here.
     }
     // Map the callout state into api_next
     switch (callout_state) {
@@ -5090,8 +5093,8 @@ HttpSM::do_api_callout_internal()
     ink_assert(!"not reached");
   }
 
-  cur_hook  = nullptr;
-  cur_hooks = 0;
+  cur_hook       = nullptr;
+  cur_hook_level = HTTP_HOOK_LEVEL::GLOBAL;
   state_api_callout(0, nullptr);
 }
 
