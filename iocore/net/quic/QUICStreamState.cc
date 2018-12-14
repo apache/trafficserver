@@ -250,18 +250,15 @@ bool
 QUICSendStreamState::is_allowed_to_send(QUICFrameType type) const
 {
   switch (this->get()) {
-  case State::_Init:
-    break;
   case State::Ready:
-    if (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_BLOCKED || type == QUICFrameType::RST_STREAM) {
-      return true;
-    }
-    break;
   case State::Send:
     if (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_BLOCKED || type == QUICFrameType::RST_STREAM) {
       return true;
     }
     break;
+  /*A sender MUST NOT send STREAM or STREAM_DATA_BLOCKED after sending a RESET_STREAM; that is, in the terminal states and in the
+   * “Reset Sent” state.*/
+  case State::ResetSent:
   case State::DataSent:
     if (type == QUICFrameType::RST_STREAM) {
       return true;
@@ -269,12 +266,10 @@ QUICSendStreamState::is_allowed_to_send(QUICFrameType type) const
     break;
   case State::DataRecvd:
     break;
-  case State::ResetSent:
-    break;
   case State::ResetRecvd:
     break;
   case State::_Invalid:
-    break;
+  case State::_Init:
   default:
     ink_assert("This shouuldn't be happen");
     break;
@@ -292,6 +287,19 @@ QUICSendStreamState::is_allowed_to_receive(const QUICFrame &frame) const
 bool
 QUICSendStreamState::is_allowed_to_receive(QUICFrameType type) const
 {
+  // An endpoint that receives a RESET_STREAM frame for a send-only stream MUST terminate the connection with error
+  // PROTOCOL_VIOLATION. 
+  // PS: RST_STREAM should be processed before Stream transition.
+  ink_assert(type != QUICFrameType::RST_STREAM);
+
+  switch (type) {
+  case QUICFrameType::STOP_SENDING:
+  case QUICFrameType::MAX_STREAM_DATA:
+    return true;
+  default:
+    break;
+  }
+
   return false;
 }
 
@@ -299,8 +307,6 @@ void
 QUICSendStreamState::update_with_sending_frame(const QUICFrame &frame)
 {
   switch (this->get()) {
-  case State::_Init:
-    break;
   case State::Ready:
     if (frame.type() == QUICFrameType::STREAM) {
       this->_set_state(State::Send);
@@ -333,8 +339,8 @@ QUICSendStreamState::update_with_sending_frame(const QUICFrame &frame)
     break;
   case State::ResetRecvd:
     break;
+  case State::_Init:
   case State::_Invalid:
-    break;
   default:
     ink_assert(!"Unknown state");
     break;

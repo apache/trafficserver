@@ -116,6 +116,7 @@ public:
   QUICReceiveStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
     : QUICUnidirectionalStreamState(in, out)
   {
+    this->_set_state(State::Recv);
   }
 
   void update_with_sending_frame(const QUICFrame &frame) override;
