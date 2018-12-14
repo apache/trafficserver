@@ -694,7 +694,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   }
 
   if (error != nullptr) {
-    QUICConDebug("QUICError: cls=%u, code=0x%" PRIu16, static_cast<unsigned int>(error->cls), error->code);
+    QUICConDebug("QUICError: cls=%u, code=0x%" PRIx16, static_cast<unsigned int>(error->cls), error->code);
     this->_handle_error(std::move(error));
   }
 
@@ -1627,10 +1627,10 @@ void
 QUICNetVConnection::_handle_error(QUICConnectionErrorUPtr error)
 {
   if (error->cls == QUICErrorClass::APPLICATION) {
-    QUICError("QUICError: %s (%u), APPLICATION ERROR (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
+    QUICError("QUICError: %s (%u), APPLICATION ERROR (0x%" PRIx16 ")", QUICDebugNames::error_class(error->cls),
               static_cast<unsigned int>(error->cls), error->code);
   } else {
-    QUICError("QUICError: %s (%u), %s (0x%" PRIu16 ")", QUICDebugNames::error_class(error->cls),
+    QUICError("QUICError: %s (%u), %s (0x%" PRIx16 ")", QUICDebugNames::error_class(error->cls),
               static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code), error->code);
   }
 
