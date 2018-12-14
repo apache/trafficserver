@@ -101,7 +101,7 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
     return;
   }
 
-  if (!write_p || !arg || version != TLS1_3_VERSION || (content_type != SSL3_RT_HANDSHAKE && content_type != SSL3_RT_ALERT)) {
+  if (!write_p || !arg || (content_type != SSL3_RT_HANDSHAKE && content_type != SSL3_RT_ALERT)) {
     return;
   }
 
@@ -113,6 +113,10 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
   const uint8_t *msg_buf = reinterpret_cast<const uint8_t *>(buf);
 
   if (content_type == SSL3_RT_HANDSHAKE) {
+    if (version != TLS1_3_VERSION) {
+      return;
+    }
+
     int msg_type = msg_buf[0];
 
     QUICEncryptionLevel level = QUICTLS::get_encryption_level(msg_type);
