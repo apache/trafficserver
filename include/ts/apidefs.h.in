@@ -324,7 +324,7 @@ typedef enum {
       accept connections. This is *not* guaranteed to be called
       before the first connection is accepted.
 
-      Event: TS_EVENT_LIFECYCLE_PORTS_READY_HOOK
+      Event: TS_EVENT_LIFECYCLE_PORTS_READY
 
     TS_LIFECYCLE_CACHE_READY_HOOK
 
@@ -354,6 +354,12 @@ typedef enum {
 
       Event: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
 
+    TS_LIFECYCLE_TASK_THREADS_READY_HOOK
+
+      called once, after the task threads have been started.
+
+      Event: TS_EVENT_LIFECYCLE_TASK_THREADS_READY
+
     Ordering guarantees:
 
     - TS_LIFECYCLE_PORTS_INITIALIZED_HOOK before TS_LIFECYCLE_PORTS_READY_HOOK.
@@ -368,6 +374,7 @@ typedef enum {
   TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK,
   TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
   TS_LIFECYCLE_MSG_HOOK,
+  TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
   TS_LIFECYCLE_LAST_HOOK
 } TSLifecycleHookID;
 
@@ -453,6 +460,7 @@ typedef enum {
   TS_EVENT_LIFECYCLE_CACHE_READY                = 60020,
   TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60021,
   TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60022,
+  TS_EVENT_LIFECYCLE_TASK_THREADS_READY         = 60027,
   TS_EVENT_VCONN_START                          = 60023,
   TS_EVENT_VCONN_PRE_ACCEPT                     = TS_EVENT_VCONN_START, // Deprecated but still compatible
   TS_EVENT_VCONN_CLOSE                          = 60026,
