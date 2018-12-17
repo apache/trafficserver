@@ -308,6 +308,7 @@ public:
     int _next_round_robin     = 0;                   ///< Index of thread to use for events assigned to this group.
     Que(Event, link) _spawnQueue;                    ///< Events to dispatch when thread is spawned.
     EThread *_thread[MAX_THREADS_IN_EACH_TYPE] = {}; ///< The actual threads in this group.
+    std::function<void()> _afterStartCallback  = nullptr;
   };
 
   /// Storage for per group data.

@@ -98,6 +98,13 @@ Types
 
       Called after every SSL context initialization used by |TS| for inbound connections (|TS| as the server).
 
+   .. cpp:enumerator:: TS_LIFECYCLE_TASK_THREADS_READY_HOOK
+
+      Called after |TS| task threads have been started.
+
+      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``NULL``
+      data.
+
 .. c:type:: TSPluginMsg
 
    The format of the data for the plugin message event :c:data:`TS_EVENT_LIFECYCLE_MSG`.
