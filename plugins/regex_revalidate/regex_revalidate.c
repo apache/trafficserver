@@ -19,8 +19,7 @@
   limitations under the License.
  */
 
-#include "tscore/ink_defs.h"
-#include "tscore/ink_platform.h"
+#include <ts/ts.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,7 +31,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <ts/ts.h>
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -331,7 +329,7 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
 }
 
 static int
-free_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
+free_handler(TSCont cont, TSEvent event, void *edata)
 {
   invalidate_t *iptr;
 
@@ -343,7 +341,7 @@ free_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 }
 
 static int
-config_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
+config_handler(TSCont cont, TSEvent event, void *edata)
 {
   plugin_state_t *pstate;
   invalidate_t *i, *iptr;
@@ -379,7 +377,10 @@ config_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 
   TSMutexUnlock(mutex);
 
-  TSContSchedule(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+  // Don't reschedule for TS_EVENT_MGMT_UPDATE
+  if (event == TS_EVENT_TIMEOUT) {
+    TSContSchedule(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
+  }
   return 0;
 }
 
