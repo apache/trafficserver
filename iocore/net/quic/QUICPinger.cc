@@ -1,0 +1,56 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+#include "QUICPinger.h"
+
+void
+QUICPinger::trigger(QUICEncryptionLevel level)
+{
+  this->_need_to_fire[QUICTypeUtil::pn_space_index(level)] = true;
+}
+
+bool
+QUICPinger::will_generate_frame(QUICEncryptionLevel level)
+{
+  return this->_need_to_fire[QUICTypeUtil::pn_space_index(level)];
+}
+
+QUICFrameUPtr
+QUICPinger::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+{
+  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+
+  if (!this->_is_level_matched(level)) {
+    return frame;
+  }
+
+  int index = QUICTypeUtil::pn_space_index(level);
+
+  if (this->_need_to_fire[index] && maximum_frame_size > 0) {
+    // don't care ping frame lost or acked
+    frame                      = QUICFrameFactory::create_ping_frame(0, nullptr);
+    this->_need_to_fire[index] = false;
+  }
+
+  return frame;
+}
