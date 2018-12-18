@@ -1378,8 +1378,9 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  int len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
-                     QUICDebugNames::error_code(this->error_code()), this->error_code() , QUICDebugNames::frame_type(this->frame_type()));
+  int len =
+    snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
+             QUICDebugNames::error_code(this->error_code()), this->error_code(), QUICDebugNames::frame_type(this->frame_type()));
 
   if (this->reason_phrase_length() != 0 && this->reason_phrase() != nullptr) {
     memcpy(msg + len, " reason=", 8);
