@@ -306,6 +306,14 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
     ts::bwprint(out, fmt, std::string_view(), "Leif", "confused");
     REQUIRE(out == "Did you know? Leif is confused");
   }
+
+  char const *null_string{nullptr};
+  ts::bwprint(s, "Null {0:x}.{0}", null_string);
+  REQUIRE(s == "Null 0x0.");
+  ts::bwprint(s, "Null {0:X}.{0}", nullptr);
+  REQUIRE(s == "Null 0X0.");
+  ts::bwprint(s, "Null {0:p}.{0:P}.{0:s}.{0:S}", null_string);
+  REQUIRE(s == "Null 0x0.0X0.null.NULL");
 }
 
 TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
