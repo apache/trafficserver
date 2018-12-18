@@ -114,10 +114,15 @@ ProtectedQueue::dequeue_external()
 void
 ProtectedQueue::wait(ink_hrtime timeout)
 {
-  ink_mutex_acquire(&lock);
+  // If there are no external events available, don't do a cond_timedwait.
   if (INK_ATOMICLIST_EMPTY(al)) {
-    timespec ts = ink_hrtime_to_timespec(timeout);
-    ink_cond_timedwait(&might_have_data, &lock, &ts);
+    ink_mutex_acquire(&lock);
+    // The "al" may have new events while waiting for the mutex become available.
+    // We have to recheck the external queue again.
+    if (INK_ATOMICLIST_EMPTY(al)) {
+      timespec ts = ink_hrtime_to_timespec(timeout);
+      ink_cond_timedwait(&might_have_data, &lock, &ts);
+    }
+    ink_mutex_release(&lock);
   }
-  ink_mutex_release(&lock);
 }
