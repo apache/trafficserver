@@ -323,7 +323,16 @@ EThread::execute()
 
   switch (tt) {
   case REGULAR: {
+    /* The Event Thread has two status: busy and sleep:
+     *   - Keep `EThread::lock` locked while Event Thread is busy,
+     *   - The `EThread::lock` is released while Event Thread is sleep.
+     * When other threads try to acquire the `EThread::lock` of the target Event Thread:
+     *   - Acquired, indicating that the target Event Thread is sleep,
+     *   - Failed, indicating that the target Event Thread is busy.
+     */
+    ink_mutex_acquire(&EventQueueExternal.lock);
     this->execute_regular();
+    ink_mutex_release(&EventQueueExternal.lock);
     break;
   }
   case DEDICATED: {

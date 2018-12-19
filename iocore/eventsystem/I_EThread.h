@@ -371,7 +371,12 @@ public:
     void
     signalActivity() override
     {
-      _q.signal();
+      /* Try to acquire the `EThread::lock` of the Event Thread:
+       *   - Acquired, indicating that the Event Thread is sleep,
+       *               must send a wakeup signal to the Event Thread.
+       *   - Failed, indicating that the Event Thread is busy, do nothing.
+       */
+      (void)_q.try_signal();
     }
 
     ProtectedQueue &_q;
