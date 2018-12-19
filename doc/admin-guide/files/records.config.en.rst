@@ -3541,6 +3541,13 @@ Client-Related Configuration
    Specifies the location of the certificate authority file against
    which the origin server will be verified.
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.sni_policy STRING NULL
+   :overridable:
+
+   Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is 
+   `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
+   remapped origin name is used for the SNI value.
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.SSLv3 INT 0
 
    Enables (``1``) or disables (``0``) SSLv3 in the ATS client context. Disabled by default

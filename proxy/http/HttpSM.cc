@@ -5048,10 +5048,15 @@ HttpSM::do_http_server_open(bool raw)
   if (scheme_to_use == URL_WKSIDX_HTTPS) {
     SMDebug("http", "calling sslNetProcessor.connect_re");
 
-    int len          = 0;
-    const char *host = t_state.hdr_info.server_request.host_get(&len);
-    if (host && len > 0) {
-      opt.set_sni_servername(host, len);
+    int len = 0;
+    if (t_state.txn_conf->ssl_client_sni_policy != nullptr && !strcmp(t_state.txn_conf->ssl_client_sni_policy, "remap")) {
+      len = strlen(t_state.server_info.name);
+      opt.set_sni_servername(t_state.server_info.name, len);
+    } else { // Do the default of host header for SNI
+      const char *host = t_state.hdr_info.server_request.host_get(&len);
+      if (host && len > 0) {
+        opt.set_sni_servername(host, len);
+      }
     }
     if (t_state.server_info.name) {
       opt.set_ssl_servername(t_state.server_info.name);
