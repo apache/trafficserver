@@ -32,6 +32,8 @@ server_foo = Test.MakeOriginServer("server_foo", ssl=True, options = {"--key": "
 server_bar = Test.MakeOriginServer("server_bar", ssl=True, options = {"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 
+dns = Test.MakeDNServer("dns")
+
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -54,23 +56,31 @@ ts.addSSLfile("ssl/signer.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
-    'map http://foo.com/basic https://127.0.0.1:{0}'.format(server_foo.Variables.Port))
+    'map http://foo.com/basic https://foo.com:{0}'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://foo.com/override https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
+    'map http://foo.com/override https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/basic https://127.0.0.1:{0}'.format(server_foo.Variables.Port))
+    'map http://bar.com/basic https://bar.com:{0}'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/overridedisabled https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=DISABLED'.format(server_foo.Variables.Port))
+    'map http://bar.com/overridedisabled https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=DISABLED'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/overridesignature https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
+    'map http://bar.com/overridesignature https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://bar.com/overrideenforced https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
+    'map http://bar.com/overrideenforced https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
     'map /basic https://127.0.0.1:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
     'map /overrideenforce https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
     'map /overridename  https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME'.format(server.Variables.Port))
+ts.Disk.remap_config.AddLine(
+    'map /snipolicyfooremap  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=remap'.format(server_bar.Variables.Port))
+ts.Disk.remap_config.AddLine(
+    'map /snipolicyfoohost  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'.format(server_bar.Variables.Port))
+ts.Disk.remap_config.AddLine(
+    'map /snipolicybarremap  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=remap'.format(server_bar.Variables.Port))
+ts.Disk.remap_config.AddLine(
+    'map /snipolicybarhost  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'.format(server_bar.Variables.Port))
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
@@ -91,8 +101,13 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.verify.server.properties': 'ALL',
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-    'proxy.config.url_remap.pristine_host_hdr': 1
+    'proxy.config.url_remap.pristine_host_hdr': 1,
+    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
+
+dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
+dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
 
 # Should succeed without message
 tr = Test.AddTestRun("default-permissive-success")
@@ -102,6 +117,7 @@ tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
 tr.Processes.Default.Command = 'curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/basic'.format(ts.Variables.port)
 tr.ReturnCode = 0
+tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(server)
@@ -168,18 +184,52 @@ tr6.StillRunningAfter = server
 tr6.StillRunningAfter = ts
 tr6.Processes.Default.TimeOut = 5
 
+# Should succeed
+tr = Test.AddTestRun("foo-to-bar-sni-policy-remap")
+tr.Processes.Default.Command = "curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/snipolicybarremap".format(ts.Variables.port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not connect", "Curl attempt should succeed")
+
+# Should fail
+tr = Test.AddTestRun("foo-to-bar-sni-policy-host")
+tr.Processes.Default.Command = "curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/snipolicybarhost".format(ts.Variables.port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not connect", "Curl attempt should fail")
+
+# Should fail
+tr = Test.AddTestRun("bar-to-foo-sni-policy-remap")
+tr.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfooremap".format(ts.Variables.port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not connect", "Curl attempt should fail")
+
+# Should succeed
+tr = Test.AddTestRun("bar-to-foo-sni-policy-host")
+tr.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfoohost".format(ts.Variables.port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not connect", "Curl attempt should succeed")
+
 
 # Over riding the built in ERROR check since we expect some cases to fail
 
 # checks on random.com should fail with message only
 ts.Disk.diags_log.Content = Testers.ContainsExpression("WARNING: Core server certificate verification failed for \(random.com\). Action=Continue Error=self signed certificate server=127.0.0.1\(127.0.0.1\) depth=0", "Warning for self signed certificate")
-# No complaints about foo
-ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI \(foo.com\) not in certificate", "foo.com name requests are good")
 # permissive failure for bar.com
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=127.0.0.1\(127.0.0.1\)", "Warning on missing name for bar.com")
+ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com\(127.0.0.1\)", "Warning on missing name for bar.com")
 # name check failure for random.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(random.com\) not in certificate. Action=Continue server=127.0.0.1\(127.0.0.1\)", "Warning on missing name for randome.com")
 # name check failure for bar.com
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=127.0.0.1\(127.0.0.1\)", "Failure on missing name for bar.com")
+ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com\(127.0.0.1\)", "Failure on missing name for bar.com")
 
 

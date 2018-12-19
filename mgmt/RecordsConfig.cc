@@ -1154,6 +1154,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.CA.cert.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.ssl.client.sni_policy", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.ssl.session_cache", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.session_cache.size", RECD_INT, "102400", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
