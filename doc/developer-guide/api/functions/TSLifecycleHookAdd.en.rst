@@ -105,6 +105,12 @@ Types
       Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``NULL``
       data.
 
+   .. cpp:enumerator:: TS_LIFECYCLE_SHUTDOWN_HOOK
+
+      Called after |TS| receiving a shutdown signal, such as SIGTERM.
+
+      Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``NULL`` data.
+
 .. c:type:: TSPluginMsg
 
    The format of the data for the plugin message event :c:data:`TS_EVENT_LIFECYCLE_MSG`.

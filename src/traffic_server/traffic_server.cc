@@ -219,6 +219,12 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
+    APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
+    while (hook) {
+      hook->invoke(TS_EVENT_LIFECYCLE_SHUTDOWN, nullptr);
+      hook = hook->next();
+    }
+
     pmgmt->stop();
     shutdown_event_system = true;
     delete this;
