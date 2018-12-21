@@ -171,11 +171,11 @@ Enumeration Members
 
 .. c:macro:: TS_EVENT_LIFECYCLE_CACHE_READY
 
-.. c:macro:: TS_EVENT_LIFECYCLE_MSG
-
 .. c:macro:: TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED
 
 .. c:macro:: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
+
+.. c:macro:: TS_EVENT_LIFECYCLE_MSG
 
 .. c:macro:: TS_EVENT_VCONN_START
 
@@ -213,4 +213,3 @@ These are the event types used to drive continuations in the event system.
 .. cpp:var:: EventType EVENT_IMMEDIATE
 
    See :c:macro:`EVENT_IMMEDIATE`.
-
