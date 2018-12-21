@@ -52,6 +52,26 @@ ClassAllocator<QUICNewTokenFrame> quicNewTokenFrameAllocator("quicNewTokenFrameA
 ClassAllocator<QUICRetireConnectionIdFrame> quicRetireConnectionIdFrameAllocator("quicRetireConnectionIdFrameAllocator");
 ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator("quicRetransmissionFrameAllocator");
 
+#define LEFT_SPACE(pos) ((size_t)(buf + len - pos))
+
+// the pos will auto move forward . return true if the data vaild
+static bool
+read_varint(uint8_t *&pos, size_t len, uint64_t &field, size_t &field_len)
+{
+  if (len < 1) {
+    return false;
+  }
+
+  field_len = QUICVariableInt::size(pos);
+  if (len < field_len) {
+    return false;
+  }
+
+  field = QUICIntUtil::read_QUICVariableInt(pos);
+  pos += field_len;
+  return true;
+}
+
 QUICFrameType
 QUICFrame::type() const
 {
@@ -109,32 +129,83 @@ QUICFrame::split(size_t size)
   return nullptr;
 }
 
+bool
+QUICFrame::valid() const
+{
+  return this->_valid;
+}
+
 //
 // STREAM Frame
 //
 
 QUICStreamFrame::QUICStreamFrame(ats_unique_buf data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last,
-                                 QUICFrameId id, QUICFrameGenerator *owner)
-  : QUICFrame(id, owner)
+                                 bool has_offset_field, bool has_length_field, QUICFrameId id, QUICFrameGenerator *owner)
+  : QUICFrame(id, owner),
+    _data(std::move(data)),
+    _data_len(data_len),
+    _stream_id(stream_id),
+    _offset(offset),
+    _fin(last),
+    _has_offset_field(has_offset_field),
+    _has_length_field(has_length_field)
 {
-  this->_data      = std::move(data);
-  this->_data_len  = data_len;
-  this->_stream_id = stream_id;
-  this->_offset    = offset;
-  this->_fin       = last;
+}
+
+QUICStreamFrame::QUICStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(nullptr, 0)
+{
+  ink_assert(len >= 1);
+
+  uint8_t *pos            = const_cast<uint8_t *>(buf);
+  this->_has_offset_field = (buf[0] & 0x04) != 0; // "O" of "0b00010OLF"
+  this->_has_length_field = (buf[0] & 0x02) != 0; // "L" of "0b00010OLF"
+  this->_fin              = (buf[0] & 0x01) != 0; // "F" of "0b00010OLF"
+  pos += 1;
+
+  size_t field_len = 0;
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
+    return;
+  }
+
+  if (this->_has_offset_field && !read_varint(pos, LEFT_SPACE(pos), this->_offset, field_len)) {
+    return;
+  }
+
+  if (this->_has_length_field && !read_varint(pos, LEFT_SPACE(pos), this->_data_len, field_len)) {
+    return;
+  }
+
+  if (!this->_has_length_field) {
+    this->_data_len = LEFT_SPACE(pos);
+  } else if (LEFT_SPACE(pos) < this->_data_len) {
+    return;
+  }
+
+  this->_valid = true;
+  this->_data  = ats_unique_malloc(this->_data_len);
+  memcpy(this->_data.get(), pos, this->_data_len);
+  return;
 }
 
 QUICFrame *
 QUICStreamFrame::split(size_t size)
 {
-  if (size <= this->_get_data_field_offset()) {
+  size_t header_len = 1 + QUICVariableInt::size(this->_stream_id);
+  if (this->_has_offset_field) {
+    header_len += QUICVariableInt::size(this->_offset);
+  }
+  if (this->_has_length_field) {
+    header_len += QUICVariableInt::size(this->_data_len);
+  }
+
+  if (size <= header_len) {
     return nullptr;
   }
   bool fin = this->has_fin_flag();
 
   ink_assert(size < this->size());
 
-  size_t data_len = size - this->_get_data_field_offset();
+  size_t data_len = size - header_len;
   size_t buf2_len = this->data_length() - data_len;
 
   ats_unique_buf buf  = ats_unique_malloc(data_len);
@@ -157,8 +228,8 @@ QUICStreamFrame::split(size_t size)
   this->reset(nullptr, 0);
 
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(std::move(buf2), buf2_len, this->stream_id(), this->offset() + this->data_length(), fin, this->_id,
-                              this->_owner);
+  new (frame) QUICStreamFrame(std::move(buf2), buf2_len, this->stream_id(), this->offset() + this->data_length(), fin,
+                              this->_has_offset_field, this->_has_length_field, this->_id, this->_owner);
 
   return frame;
 }
@@ -167,7 +238,8 @@ QUICFrameUPtr
 QUICStreamFrame::clone() const
 {
   return QUICFrameFactory::create_stream_frame(this->data(), this->data_length(), this->stream_id(), this->offset(),
-                                               this->has_fin_flag(), this->_id, this->_owner);
+                                               this->has_fin_flag(), this->has_offset_field(), this->has_length_field(), this->_id,
+                                               this->_owner);
 }
 
 QUICFrameType
@@ -179,7 +251,18 @@ QUICStreamFrame::type() const
 size_t
 QUICStreamFrame::size() const
 {
-  return this->_get_data_field_offset() + this->data_length();
+  size_t size = 1;
+  size += QUICVariableInt::size(this->_stream_id);
+  if (this->_has_offset_field) {
+    size += QUICVariableInt::size(this->_offset);
+  }
+
+  if (this->_has_length_field) {
+    size += QUICVariableInt::size(this->_data_len);
+  }
+
+  size += this->_data_len;
+  return size;
 }
 
 size_t
@@ -241,49 +324,29 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit, bool include_len
 QUICStreamId
 QUICStreamFrame::stream_id() const
 {
-  if (this->_buf) {
-    return QUICTypeUtil::read_QUICStreamId(this->_buf + _get_stream_id_field_offset());
-  } else {
-    return this->_stream_id;
-  }
+  return this->_stream_id;
 }
 
 QUICOffset
 QUICStreamFrame::offset() const
 {
-  if (this->_buf) {
-    if (this->has_offset_field()) {
-      return QUICTypeUtil::read_QUICOffset(this->_buf + _get_offset_field_offset());
-    } else {
-      return 0;
-    }
-  } else {
+  if (this->has_offset_field()) {
     return this->_offset;
   }
+
+  return 0;
 }
 
 uint64_t
 QUICStreamFrame::data_length() const
 {
-  if (this->_buf) {
-    if (this->has_length_field()) {
-      return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_length_field_offset());
-    } else {
-      return this->_len - this->_get_data_field_offset();
-    }
-  } else {
-    return this->_data_len;
-  }
+  return this->_data_len;
 }
 
 const uint8_t *
 QUICStreamFrame::data() const
 {
-  if (this->_buf) {
-    return this->_buf + this->_get_data_field_offset();
-  } else {
-    return this->_data.get();
-  }
+  return this->_data.get();
 }
 
 /**
@@ -292,11 +355,7 @@ QUICStreamFrame::data() const
 bool
 QUICStreamFrame::has_offset_field() const
 {
-  if (this->_buf) {
-    return (this->_buf[0] & 0x04) != 0;
-  } else {
-    return this->_offset != 0;
-  }
+  return this->_has_offset_field;
 }
 
 /**
@@ -305,13 +364,9 @@ QUICStreamFrame::has_offset_field() const
 bool
 QUICStreamFrame::has_length_field() const
 {
-  if (this->_buf) {
-    return (this->_buf[0] & 0x02) != 0;
-  } else {
-    // This depends on `include_length_field` arg of QUICStreamFrame::store.
-    // Returning true for just in case.
-    return true;
-  }
+  // This depends on `include_length_field` arg of QUICStreamFrame::store.
+  // Returning true for just in case.
+  return this->_has_length_field;
 }
 
 /**
@@ -320,89 +375,7 @@ QUICStreamFrame::has_length_field() const
 bool
 QUICStreamFrame::has_fin_flag() const
 {
-  if (this->_buf) {
-    return (this->_buf[0] & 0x01) != 0;
-  } else {
-    return this->_fin;
-  }
-}
-
-size_t
-QUICStreamFrame::_get_stream_id_field_offset() const
-{
-  return sizeof(QUICFrameType);
-}
-
-size_t
-QUICStreamFrame::_get_offset_field_offset() const
-{
-  size_t offset_field_offset = this->_get_stream_id_field_offset();
-  offset_field_offset += this->_get_stream_id_field_len();
-
-  return offset_field_offset;
-}
-
-size_t
-QUICStreamFrame::_get_length_field_offset() const
-{
-  size_t length_field_offset = this->_get_stream_id_field_offset();
-  length_field_offset += this->_get_stream_id_field_len();
-  length_field_offset += this->_get_offset_field_len();
-
-  return length_field_offset;
-}
-
-size_t
-QUICStreamFrame::_get_data_field_offset() const
-{
-  size_t data_field_offset = this->_get_stream_id_field_offset();
-  data_field_offset += this->_get_stream_id_field_len();
-  data_field_offset += this->_get_offset_field_len();
-  data_field_offset += this->_get_length_field_len();
-
-  return data_field_offset;
-}
-
-size_t
-QUICStreamFrame::_get_stream_id_field_len() const
-{
-  if (this->_buf) {
-    return QUICVariableInt::size(this->_buf + this->_get_stream_id_field_offset());
-  } else {
-    return QUICVariableInt::size(this->_stream_id);
-  }
-}
-
-size_t
-QUICStreamFrame::_get_offset_field_len() const
-{
-  if (this->_buf) {
-    if (this->has_offset_field()) {
-      return QUICVariableInt::size(this->_buf + this->_get_offset_field_offset());
-    } else {
-      return 0;
-    }
-  } else {
-    if (this->_offset != 0) {
-      return QUICVariableInt::size(this->_offset);
-    } else {
-      return 0;
-    }
-  }
-}
-
-size_t
-QUICStreamFrame::_get_length_field_len() const
-{
-  if (this->_buf) {
-    if (this->has_length_field()) {
-      return QUICVariableInt::size(this->_buf + this->_get_length_field_offset());
-    } else {
-      return 0;
-    }
-  } else {
-    return QUICVariableInt::size(this->_data_len);
-  }
+  return this->_fin;
 }
 
 //
@@ -2789,13 +2762,13 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len)
 
 QUICStreamFrameUPtr
 QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last,
-                                      QUICFrameId id, QUICFrameGenerator *owner)
+                                      bool has_offset_field, bool has_length_field, QUICFrameId id, QUICFrameGenerator *owner)
 {
   ats_unique_buf buf = ats_unique_malloc(data_len);
   memcpy(buf.get(), data, data_len);
 
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(std::move(buf), data_len, stream_id, offset, last, id, owner);
+  new (frame) QUICStreamFrame(std::move(buf), data_len, stream_id, offset, last, has_offset_field, has_length_field, id, owner);
   return QUICStreamFrameUPtr(frame, &QUICFrameDeleter::delete_stream_frame);
 }
 
