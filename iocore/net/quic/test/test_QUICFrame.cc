@@ -144,6 +144,31 @@ TEST_CASE("Load STREAM Frame", "[quic]")
     CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04\x05", 5) == 0);
     CHECK(stream_frame->has_fin_flag() == true);
   }
+
+  SECTION("BAD DATA")
+  {
+    uint8_t buf1[] = {
+      0x17,                   // 0b00010OLF (OLF=110)
+      0x01,                   // Stream ID
+      0x02,                   // Data Length
+      0x05,                   // Data Length
+      0x01, 0x02, 0x03, 0x04, // BAD Stream Data
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM);
+    CHECK(frame1->valid() == false);
+  }
+
+  SECTION("BAD DATA")
+  {
+    uint8_t buf1[] = {
+      0x17, // 0b00010OLF (OLF=110)
+      0x01, // Stream ID
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store STREAM Frame", "[quic]")
@@ -163,7 +188,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     ats_unique_buf payload1 = ats_unique_malloc(5);
     memcpy(payload1.get(), raw1, 5);
 
-    QUICStreamFrame stream_frame(std::move(payload1), 5, 0x01, 0x00);
+    QUICStreamFrame stream_frame(std::move(payload1), 5, 0x01, 0x00, false, false, true);
     CHECK(stream_frame.size() == 8);
 
     stream_frame.store(buf, &len, 32);

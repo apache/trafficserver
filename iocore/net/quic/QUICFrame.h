@@ -66,12 +66,14 @@ public:
   virtual QUICFrame *split(size_t size);
   virtual int debug_msg(char *msg, size_t msg_len) const;
   virtual QUICFrameGenerator *generated_by();
+  bool valid() const;
   LINK(QUICFrame, link);
 
 protected:
   QUICFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : _id(id), _owner(owner) {}
   const uint8_t *_buf        = nullptr;
   size_t _len                = 0;
+  bool _valid                = false;
   const QUICFrameId _id      = 0;
   QUICFrameGenerator *_owner = nullptr;
 };
@@ -84,8 +86,9 @@ class QUICStreamFrame : public QUICFrame
 {
 public:
   QUICStreamFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
-  QUICStreamFrame(ats_unique_buf buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false, QUICFrameId id = 0,
+  QUICStreamFrame(const uint8_t *buf, size_t len);
+  QUICStreamFrame(ats_unique_buf buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false,
+                  bool has_offset_field = true, bool has_length_field = true, QUICFrameId id = 0,
                   QUICFrameGenerator *owner = nullptr);
 
   QUICFrame *split(size_t size) override;
@@ -112,14 +115,8 @@ private:
   QUICStreamId _stream_id = 0;
   QUICOffset _offset      = 0;
   bool _fin               = false;
-  size_t _get_stream_id_field_offset() const;
-  size_t _get_offset_field_offset() const;
-  size_t _get_length_field_offset() const;
-  size_t _get_data_field_offset() const;
-
-  size_t _get_stream_id_field_len() const;
-  size_t _get_offset_field_len() const;
-  size_t _get_length_field_len() const;
+  bool _has_offset_field  = true;
+  bool _has_length_field  = true;
 };
 
 //
@@ -998,7 +995,8 @@ public:
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
   static QUICStreamFrameUPtr create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset,
-                                                 bool last = false, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+                                                 bool last = false, bool has_offset_field = true, bool has_length_field = true,
+                                                 QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*
    * Creates a CRYPTO frame.
