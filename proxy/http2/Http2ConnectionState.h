@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <atomic>
 #include "HTTP2.h"
 #include "HPACK.h"
 #include "Http2Stream.h"
@@ -304,16 +305,16 @@ private:
   Queue<Http2Stream> stream_list;
   Http2StreamId latest_streamid_in  = 0;
   Http2StreamId latest_streamid_out = 0;
-  int stream_requests               = 0;
+  std::atomic<int> stream_requests  = 0;
 
   // Counter for current active streams which is started by client
-  uint32_t client_streams_in_count = 0;
+  std::atomic<uint32_t> client_streams_in_count = 0;
 
   // Counter for current acive streams which is started by server
-  uint32_t client_streams_out_count = 0;
+  std::atomic<uint32_t> client_streams_out_count = 0;
 
   // Counter for current active streams and streams in the process of shutting down
-  uint32_t total_client_streams_count = 0;
+  std::atomic<uint32_t> total_client_streams_count = 0;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
