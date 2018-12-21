@@ -410,6 +410,17 @@ TEST_CASE("CRYPTO Frame", "[quic]")
     CHECK(memcmp(crypto_frame->data(), "\x01\x02\x03\x04\x05", 5) == 0);
   }
 
+  SECTION("BAD Loading")
+  {
+    uint8_t buf[] = {
+      0x18,                   // Type
+      0x80, 0x01, 0x00, 0x00, // Offset
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::CRYPTO);
+    CHECK(frame->valid() == false);
+  }
+
   SECTION("Storing")
   {
     uint8_t buf[32] = {0};

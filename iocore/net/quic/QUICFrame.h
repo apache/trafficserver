@@ -127,7 +127,7 @@ class QUICCryptoFrame : public QUICFrame
 {
 public:
   QUICCryptoFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICCryptoFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICCryptoFrame(const uint8_t *buf, size_t len);
   QUICCryptoFrame(ats_unique_buf buf, size_t len, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   QUICFrame *split(size_t size) override;
@@ -147,13 +147,6 @@ private:
   QUICOffset _offset   = 0;
   uint64_t _data_len   = 0;
   ats_unique_buf _data = {nullptr};
-
-  size_t _get_offset_field_offset() const;
-  size_t _get_length_field_offset() const;
-  size_t _get_data_field_offset() const;
-
-  size_t _get_offset_field_len() const;
-  size_t _get_length_field_len() const;
 };
 
 //

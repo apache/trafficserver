@@ -383,23 +383,41 @@ QUICStreamFrame::has_fin_flag() const
 //
 
 QUICCryptoFrame::QUICCryptoFrame(ats_unique_buf data, size_t data_len, QUICOffset offset, QUICFrameId id, QUICFrameGenerator *owner)
-  : QUICFrame(id, owner)
+  : QUICFrame(id, owner), _offset(offset), _data_len(data_len), _data(std::move(data))
 {
-  this->_data     = std::move(data);
-  this->_data_len = data_len;
-  this->_offset   = offset;
+}
+
+QUICCryptoFrame::QUICCryptoFrame(const uint8_t *buf, size_t len) : QUICFrame(nullptr, 0)
+{
+  ink_assert(len >= 1);
+  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+
+  size_t field_len = 0;
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_offset, field_len)) {
+    return;
+  }
+
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_data_len, field_len)) {
+    return;
+  }
+
+  this->_valid = true;
+  this->_data  = ats_unique_malloc(this->_data_len);
+  memcpy(this->_data.get(), pos, this->_data_len);
+  return;
 }
 
 QUICFrame *
 QUICCryptoFrame::split(size_t size)
 {
-  if (size <= this->_get_data_field_offset()) {
+  size_t header_len = 1 + QUICVariableInt::size(this->_offset) + QUICVariableInt::size(this->_data_len);
+  if (size <= header_len) {
     return nullptr;
   }
 
   ink_assert(size < this->size());
 
-  size_t data_len = size - this->_get_data_field_offset();
+  size_t data_len = size - header_len;
   size_t buf2_len = this->data_length() - data_len;
 
   ats_unique_buf buf  = ats_unique_malloc(data_len);
@@ -434,7 +452,7 @@ QUICCryptoFrame::type() const
 size_t
 QUICCryptoFrame::size() const
 {
-  return this->_get_data_field_offset() + this->data_length();
+  return 1 + this->_data_len + QUICVariableInt::size(this->_offset) + QUICVariableInt::size(this->_data_len);
 }
 
 int
@@ -475,76 +493,19 @@ QUICCryptoFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 QUICOffset
 QUICCryptoFrame::offset() const
 {
-  if (this->_buf) {
-    return QUICTypeUtil::read_QUICOffset(this->_buf + this->_get_offset_field_offset());
-  } else {
-    return this->_offset;
-  }
+  return this->_offset;
 }
 
 uint64_t
 QUICCryptoFrame::data_length() const
 {
-  if (this->_buf) {
-    return QUICIntUtil::read_QUICVariableInt(this->_buf + this->_get_length_field_offset());
-  } else {
-    return this->_data_len;
-  }
+  return this->_data_len;
 }
 
 const uint8_t *
 QUICCryptoFrame::data() const
 {
-  if (this->_buf) {
-    return this->_buf + this->_get_data_field_offset();
-  } else {
-    return this->_data.get();
-  }
-}
-
-size_t
-QUICCryptoFrame::_get_offset_field_offset() const
-{
-  return sizeof(QUICFrameType);
-}
-
-size_t
-QUICCryptoFrame::_get_length_field_offset() const
-{
-  size_t length_field_offset = this->_get_offset_field_offset();
-  length_field_offset += this->_get_offset_field_len();
-
-  return length_field_offset;
-}
-
-size_t
-QUICCryptoFrame::_get_data_field_offset() const
-{
-  size_t data_field_offset = this->_get_offset_field_offset();
-  data_field_offset += this->_get_offset_field_len();
-  data_field_offset += this->_get_length_field_len();
-
-  return data_field_offset;
-}
-
-size_t
-QUICCryptoFrame::_get_offset_field_len() const
-{
-  if (this->_buf) {
-    return QUICVariableInt::size(this->_buf + this->_get_offset_field_offset());
-  } else {
-    return QUICVariableInt::size(this->_offset);
-  }
-}
-
-size_t
-QUICCryptoFrame::_get_length_field_len() const
-{
-  if (this->_buf) {
-    return QUICVariableInt::size(this->_buf + this->_get_length_field_offset());
-  } else {
-    return QUICVariableInt::size(this->_data_len);
-  }
+  return this->_data.get();
 }
 
 //
