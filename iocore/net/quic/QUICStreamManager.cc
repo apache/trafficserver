@@ -269,7 +269,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
     switch (QUICTypeUtil::detect_stream_type(stream_id)) {
     case QUICStreamType::CLIENT_BIDI:
-      if (stream_id > this->_local_maximum_stream_id_bidi) {
+      if (this->_local_maximum_stream_id_bidi == 0 || stream_id > this->_local_maximum_stream_id_bidi) {
         return nullptr;
       }
 
@@ -285,7 +285,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       break;
     case QUICStreamType::CLIENT_UNI:
-      if (stream_id > this->_local_maximum_stream_id_uni) {
+      if (this->_local_maximum_stream_id_uni == 0 || stream_id > this->_local_maximum_stream_id_uni) {
         return nullptr;
       }
 
@@ -294,7 +294,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       break;
     case QUICStreamType::SERVER_BIDI:
-      if (stream_id > this->_remote_maximum_stream_id_bidi) {
+      if (this->_remote_maximum_stream_id_bidi == 0 || stream_id > this->_remote_maximum_stream_id_bidi) {
         return nullptr;
       }
 
@@ -310,7 +310,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       break;
     case QUICStreamType::SERVER_UNI:
-      if (stream_id > this->_remote_maximum_stream_id_uni) {
+      if (this->_remote_maximum_stream_id_uni == 0 || stream_id > this->_remote_maximum_stream_id_uni) {
         return nullptr;
       }
 
