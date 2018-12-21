@@ -65,6 +65,11 @@ public:
   virtual void reset(const uint8_t *buf, size_t len);
   virtual QUICFrame *split(size_t size);
   virtual int debug_msg(char *msg, size_t msg_len) const;
+  virtual void
+  parse(const uint8_t *buf, size_t len)
+  {
+    this->reset(buf, len);
+  }
   virtual QUICFrameGenerator *generated_by();
   bool valid() const;
   LINK(QUICFrame, link);
@@ -97,6 +102,7 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 
   size_t store(uint8_t *buf, size_t *len, size_t limit, bool include_length_field) const;
   QUICStreamId stream_id() const;
@@ -136,6 +142,7 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 
   QUICOffset offset() const;
   uint64_t data_length() const;
@@ -299,7 +306,7 @@ class QUICRstStreamFrame : public QUICFrame
 {
 public:
   QUICRstStreamFrame(QUICFrameId id = 0) : QUICFrame(id) {}
-  QUICRstStreamFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICRstStreamFrame(const uint8_t *buf, size_t len);
   QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset, QUICFrameId id = 0,
                      QUICFrameGenerator *owner = nullptr);
 
@@ -307,18 +314,13 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 
   QUICStreamId stream_id() const;
   QUICAppErrorCode error_code() const;
   QUICOffset final_offset() const;
 
 private:
-  size_t _get_stream_id_field_offset() const;
-  size_t _get_stream_id_field_length() const;
-  size_t _get_error_code_field_offset() const;
-  size_t _get_final_offset_field_offset() const;
-  size_t _get_final_offset_field_length() const;
-
   QUICStreamId _stream_id      = 0;
   QUICAppErrorCode _error_code = 0;
   QUICOffset _final_offset     = 0;
@@ -332,11 +334,12 @@ class QUICPingFrame : public QUICFrame
 {
 public:
   QUICPingFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICPingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICPingFrame(const uint8_t *buf, size_t len);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 
 private:
 };
@@ -349,12 +352,13 @@ class QUICPaddingFrame : public QUICFrame
 {
 public:
   QUICPaddingFrame() : QUICFrame() {}
-  QUICPaddingFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICPaddingFrame(const uint8_t *buf, size_t len);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual bool is_probing_frame() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 };
 
 //
@@ -365,7 +369,7 @@ class QUICConnectionCloseFrame : public QUICFrame
 {
 public:
   QUICConnectionCloseFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICConnectionCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICConnectionCloseFrame(const uint8_t *buf, size_t len);
   QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length, const char *reason_phrase,
                            QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
@@ -373,6 +377,7 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 
   uint16_t error_code() const;
   QUICFrameType frame_type() const;
@@ -380,11 +385,6 @@ public:
   const char *reason_phrase() const;
 
 private:
-  size_t _get_frame_type_field_offset() const;
-  size_t _get_reason_phrase_length_field_offset() const;
-  size_t _get_reason_phrase_length_field_length() const;
-  size_t _get_reason_phrase_field_offset() const;
-
   uint16_t _error_code;
   QUICFrameType _frame_type      = QUICFrameType::UNKNOWN;
   uint64_t _reason_phrase_length = 0;
@@ -399,7 +399,7 @@ class QUICApplicationCloseFrame : public QUICFrame
 {
 public:
   QUICApplicationCloseFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICApplicationCloseFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICApplicationCloseFrame(const uint8_t *buf, size_t len);
   QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length, const char *reason_phrase,
                             QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
@@ -407,16 +407,13 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 
   QUICAppErrorCode error_code() const;
   uint64_t reason_phrase_length() const;
   const char *reason_phrase() const;
 
 private:
-  size_t _get_reason_phrase_length_field_offset() const;
-  size_t _get_reason_phrase_length_field_length() const;
-  size_t _get_reason_phrase_field_offset() const;
-
   QUICAppErrorCode _error_code   = 0;
   uint64_t _reason_phrase_length = 0;
   const char *_reason_phrase     = nullptr;
@@ -430,19 +427,18 @@ class QUICMaxDataFrame : public QUICFrame
 {
 public:
   QUICMaxDataFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICMaxDataFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICMaxDataFrame(const uint8_t *buf, size_t len);
   QUICMaxDataFrame(uint64_t maximum_data, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
 
   uint64_t maximum_data() const;
 
 private:
-  size_t _get_max_data_field_length() const;
-
   uint64_t _maximum_data = 0;
 };
 
@@ -454,12 +450,13 @@ class QUICMaxStreamDataFrame : public QUICFrame
 {
 public:
   QUICMaxStreamDataFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICMaxStreamDataFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICMaxStreamDataFrame(const uint8_t *buf, size_t len);
   QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t maximum_stream_data, QUICFrameId id = 0,
                          QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
@@ -467,11 +464,6 @@ public:
   uint64_t maximum_stream_data() const;
 
 private:
-  size_t _get_stream_id_field_offset() const;
-  size_t _get_stream_id_field_length() const;
-  size_t _get_max_stream_data_field_offset() const;
-  size_t _get_max_stream_data_field_length() const;
-
   QUICStreamId _stream_id       = 0;
   uint64_t _maximum_stream_data = 0;
 };
@@ -484,12 +476,13 @@ class QUICMaxStreamIdFrame : public QUICFrame
 {
 public:
   QUICMaxStreamIdFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICMaxStreamIdFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICMaxStreamIdFrame(const uint8_t *buf, size_t len);
   QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
   QUICStreamId maximum_stream_id() const;
 
 private:
@@ -505,13 +498,14 @@ class QUICBlockedFrame : public QUICFrame
 {
 public:
   QUICBlockedFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICBlockedFrame(const uint8_t *buf, size_t len) : QUICFrame(buf, len) {}
+  QUICBlockedFrame(const uint8_t *buf, size_t len);
   QUICBlockedFrame(QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _offset(offset){};
 
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
+  virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
 
   QUICOffset offset() const;

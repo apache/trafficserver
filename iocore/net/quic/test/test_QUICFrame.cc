@@ -635,20 +635,35 @@ TEST_CASE("Store Ack Frame", "[quic]")
 
 TEST_CASE("Load RST_STREAM Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x01,                                          // Type
-    0x92, 0x34, 0x56, 0x78,                        // Stream ID
-    0x00, 0x01,                                    // Error Code
-    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::RST_STREAM);
-  CHECK(frame1->size() == 15);
-  std::shared_ptr<const QUICRstStreamFrame> rst_stream_frame1 = std::dynamic_pointer_cast<const QUICRstStreamFrame>(frame1);
-  CHECK(rst_stream_frame1 != nullptr);
-  CHECK(rst_stream_frame1->error_code() == 0x0001);
-  CHECK(rst_stream_frame1->stream_id() == 0x12345678);
-  CHECK(rst_stream_frame1->final_offset() == 0x1122334455667788);
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x01,                                          // Type
+      0x92, 0x34, 0x56, 0x78,                        // Stream ID
+      0x00, 0x01,                                    // Error Code
+      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::RST_STREAM);
+    CHECK(frame1->size() == 15);
+    std::shared_ptr<const QUICRstStreamFrame> rst_stream_frame1 = std::dynamic_pointer_cast<const QUICRstStreamFrame>(frame1);
+    CHECK(rst_stream_frame1 != nullptr);
+    CHECK(rst_stream_frame1->error_code() == 0x0001);
+    CHECK(rst_stream_frame1->stream_id() == 0x12345678);
+    CHECK(rst_stream_frame1->final_offset() == 0x1122334455667788);
+  }
+
+  SECTION("BAD Load")
+  {
+    uint8_t buf1[] = {
+      0x01,                   // Type
+      0x92, 0x34, 0x56, 0x78, // Stream ID
+      0x00, 0x01,             // Error Code
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::RST_STREAM);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store RST_STREAM Frame", "[quic]")
@@ -754,6 +769,20 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
     CHECK(memcmp(conn_close_frame->reason_phrase(), reason_phrase, reason_phrase_len) == 0);
   }
 
+  SECTION("Bad loading")
+  {
+    uint8_t buf[] = {
+      0x02,       // Type
+      0x00, 0x0A, // Error Code
+      0x00,       // Frame Type
+      0x05,       // Reason Phrase Length
+    };
+
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::CONNECTION_CLOSE);
+    CHECK(frame->valid() == false);
+  }
+
   SECTION("loading w/o reason phrase")
   {
     uint8_t buf[] = {
@@ -836,6 +865,18 @@ TEST_CASE("Load ApplicationClose Frame", "[quic]")
     CHECK(memcmp(app_close_frame->reason_phrase(), buf1 + 4, 5) == 0);
   }
 
+  SECTION("Bad Loading")
+  {
+    uint8_t buf1[] = {
+      0x03,       // Type
+      0x00, 0x01, // Error Code
+      0x05,       // Reason Phrase Length
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::APPLICATION_CLOSE);
+    CHECK(frame1->valid() == false);
+  }
+
   SECTION("w/o reason phrase")
   {
     uint8_t buf2[] = {
@@ -896,16 +937,29 @@ TEST_CASE("Store ApplicationClose Frame", "[quic]")
 
 TEST_CASE("Load MaxData Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x04,                                          // Type
-    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::MAX_DATA);
-  CHECK(frame1->size() == 9);
-  std::shared_ptr<const QUICMaxDataFrame> max_data_frame = std::dynamic_pointer_cast<const QUICMaxDataFrame>(frame1);
-  CHECK(max_data_frame != nullptr);
-  CHECK(max_data_frame->maximum_data() == 0x1122334455667788ULL);
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x04,                                          // Type
+      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::MAX_DATA);
+    CHECK(frame1->size() == 9);
+    std::shared_ptr<const QUICMaxDataFrame> max_data_frame = std::dynamic_pointer_cast<const QUICMaxDataFrame>(frame1);
+    CHECK(max_data_frame != nullptr);
+    CHECK(max_data_frame->maximum_data() == 0x1122334455667788ULL);
+  }
+
+  SECTION("Bad Load")
+  {
+    uint8_t buf1[] = {
+      0x04, // Type
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::MAX_DATA);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store MaxData Frame", "[quic]")
@@ -927,19 +981,33 @@ TEST_CASE("Store MaxData Frame", "[quic]")
 
 TEST_CASE("Load MaxStreamData Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x05,                                          // Type
-    0x81, 0x02, 0x03, 0x04,                        // Stream ID
-    0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::MAX_STREAM_DATA);
-  CHECK(frame1->size() == 13);
-  std::shared_ptr<const QUICMaxStreamDataFrame> maxStreamDataFrame1 =
-    std::dynamic_pointer_cast<const QUICMaxStreamDataFrame>(frame1);
-  CHECK(maxStreamDataFrame1 != nullptr);
-  CHECK(maxStreamDataFrame1->stream_id() == 0x01020304);
-  CHECK(maxStreamDataFrame1->maximum_stream_data() == 0x1122334455667788ULL);
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x05,                                          // Type
+      0x81, 0x02, 0x03, 0x04,                        // Stream ID
+      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::MAX_STREAM_DATA);
+    CHECK(frame1->size() == 13);
+    std::shared_ptr<const QUICMaxStreamDataFrame> maxStreamDataFrame1 =
+      std::dynamic_pointer_cast<const QUICMaxStreamDataFrame>(frame1);
+    CHECK(maxStreamDataFrame1 != nullptr);
+    CHECK(maxStreamDataFrame1->stream_id() == 0x01020304);
+    CHECK(maxStreamDataFrame1->maximum_stream_data() == 0x1122334455667788ULL);
+  }
+
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x05,                   // Type
+      0x81, 0x02, 0x03, 0x04, // Stream ID
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::MAX_STREAM_DATA);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store MaxStreamData Frame", "[quic]")
@@ -962,16 +1030,28 @@ TEST_CASE("Store MaxStreamData Frame", "[quic]")
 
 TEST_CASE("Load MaxStreamId Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x06,                   // Type
-    0x81, 0x02, 0x03, 0x04, // Stream ID
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::MAX_STREAM_ID);
-  CHECK(frame1->size() == 5);
-  std::shared_ptr<const QUICMaxStreamIdFrame> max_stream_id_frame = std::dynamic_pointer_cast<const QUICMaxStreamIdFrame>(frame1);
-  CHECK(max_stream_id_frame != nullptr);
-  CHECK(max_stream_id_frame->maximum_stream_id() == 0x01020304);
+  SECTION("load")
+  {
+    uint8_t buf1[] = {
+      0x06,                   // Type
+      0x81, 0x02, 0x03, 0x04, // Stream ID
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::MAX_STREAM_ID);
+    CHECK(frame1->size() == 5);
+    std::shared_ptr<const QUICMaxStreamIdFrame> max_stream_id_frame = std::dynamic_pointer_cast<const QUICMaxStreamIdFrame>(frame1);
+    CHECK(max_stream_id_frame != nullptr);
+    CHECK(max_stream_id_frame->maximum_stream_id() == 0x01020304);
+  }
+  SECTION("bad load")
+  {
+    uint8_t buf1[] = {
+      0x06, // Type
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::MAX_STREAM_ID);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store MaxStreamId Frame", "[quic]")
@@ -993,16 +1073,29 @@ TEST_CASE("Store MaxStreamId Frame", "[quic]")
 
 TEST_CASE("Load Blocked Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x08, // Type
-    0x07, // Offset
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::BLOCKED);
-  CHECK(frame1->size() == 2);
-  std::shared_ptr<const QUICBlockedFrame> blocked_stream_frame = std::dynamic_pointer_cast<const QUICBlockedFrame>(frame1);
-  CHECK(blocked_stream_frame != nullptr);
-  CHECK(blocked_stream_frame->offset() == 0x07);
+  SECTION("load")
+  {
+    uint8_t buf1[] = {
+      0x08, // Type
+      0x07, // Offset
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::BLOCKED);
+    CHECK(frame1->size() == 2);
+    std::shared_ptr<const QUICBlockedFrame> blocked_stream_frame = std::dynamic_pointer_cast<const QUICBlockedFrame>(frame1);
+    CHECK(blocked_stream_frame != nullptr);
+    CHECK(blocked_stream_frame->offset() == 0x07);
+  }
+
+  SECTION("bad load")
+  {
+    uint8_t buf1[] = {
+      0x08, // Type
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::BLOCKED);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store Blocked Frame", "[quic]")
