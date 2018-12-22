@@ -527,6 +527,36 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ite == section->end());
   }
 
+  SECTION("load bad frame")
+  {
+    uint8_t buf1[] = {
+      0x1a, // Type
+      0x12, // Largest Acknowledged
+    };
+
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::ACK);
+    CHECK(frame1->valid() == false);
+  }
+
+  SECTION("load bad block")
+  {
+    uint8_t buf1[] = {
+      0x1a,                   // Type
+      0x12,                   // Largest Acknowledged
+      0x74, 0x56,             // Ack Delay
+      0x02,                   // Ack Block Count
+      0x01,                   // Ack Block Section (First ACK Block Length)
+      0x02,                   // Ack Block Section (Gap 1)
+      0x43, 0x04,             // Ack Block Section (ACK Block 1 Length)
+      0x85, 0x06, 0x07, 0x08, // Ack Block Section (Gap 2)
+    };
+
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::ACK);
+    CHECK(frame1->valid() == false);
+  }
+
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length with ECN section")
   {
     uint8_t buf1[] = {
@@ -552,6 +582,23 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ack_frame1->ecn_section()->ect0_count() == 1);
     CHECK(ack_frame1->ecn_section()->ect1_count() == 2);
     CHECK(ack_frame1->ecn_section()->ecn_ce_count() == 3);
+  }
+
+  SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length with ECN section")
+  {
+    uint8_t buf1[] = {
+      0x1b,       // Type
+      0x12,       // Largest Acknowledged
+      0x74, 0x56, // Ack Delay
+      0x00,       // Ack Block Count
+      0x00,       // Ack Block Section
+      // ECN
+      0x01, // ECT0
+      0x02, // ECT1
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::ACK);
+    CHECK(frame1->valid() == false);
   }
 }
 
@@ -1117,19 +1164,33 @@ TEST_CASE("Store Blocked Frame", "[quic]")
 
 TEST_CASE("Load StreamBlocked Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x09,                   // Type
-    0x81, 0x02, 0x03, 0x04, // Stream ID
-    0x07,                   // Offset
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::STREAM_BLOCKED);
-  CHECK(frame1->size() == 6);
-  std::shared_ptr<const QUICStreamBlockedFrame> stream_blocked_frame =
-    std::dynamic_pointer_cast<const QUICStreamBlockedFrame>(frame1);
-  CHECK(stream_blocked_frame != nullptr);
-  CHECK(stream_blocked_frame->stream_id() == 0x01020304);
-  CHECK(stream_blocked_frame->offset() == 0x07);
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x09,                   // Type
+      0x81, 0x02, 0x03, 0x04, // Stream ID
+      0x07,                   // Offset
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM_BLOCKED);
+    CHECK(frame1->size() == 6);
+    std::shared_ptr<const QUICStreamBlockedFrame> stream_blocked_frame =
+      std::dynamic_pointer_cast<const QUICStreamBlockedFrame>(frame1);
+    CHECK(stream_blocked_frame != nullptr);
+    CHECK(stream_blocked_frame->stream_id() == 0x01020304);
+    CHECK(stream_blocked_frame->offset() == 0x07);
+  }
+
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x09,                   // Type
+      0x81, 0x02, 0x03, 0x04, // Stream ID
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM_BLOCKED);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store StreamBlocked Frame", "[quic]")
@@ -1152,17 +1213,30 @@ TEST_CASE("Store StreamBlocked Frame", "[quic]")
 
 TEST_CASE("Load StreamIdBlocked Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x0a,       // Type
-    0x41, 0x02, // Stream ID
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::STREAM_ID_BLOCKED);
-  CHECK(frame1->size() == 3);
-  std::shared_ptr<const QUICStreamIdBlockedFrame> stream_id_blocked_frame =
-    std::dynamic_pointer_cast<const QUICStreamIdBlockedFrame>(frame1);
-  CHECK(stream_id_blocked_frame != nullptr);
-  CHECK(stream_id_blocked_frame->stream_id() == 0x0102);
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x0a,       // Type
+      0x41, 0x02, // Stream ID
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM_ID_BLOCKED);
+    CHECK(frame1->size() == 3);
+    std::shared_ptr<const QUICStreamIdBlockedFrame> stream_id_blocked_frame =
+      std::dynamic_pointer_cast<const QUICStreamIdBlockedFrame>(frame1);
+    CHECK(stream_id_blocked_frame != nullptr);
+    CHECK(stream_id_blocked_frame->stream_id() == 0x0102);
+  }
+
+  SECTION("Load")
+  {
+    uint8_t buf1[] = {
+      0x0a, // Type
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::STREAM_ID_BLOCKED);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store StreamIdBlocked Frame", "[quic]")
@@ -1184,24 +1258,41 @@ TEST_CASE("Store StreamIdBlocked Frame", "[quic]")
 
 TEST_CASE("Load NewConnectionId Frame", "[quic]")
 {
-  uint8_t buf1[] = {
-    0x0b,                                           // Type
-    0x08,                                           // Length
-    0x41, 0x02,                                     // Sequence
-    0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
-    0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
-    0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
-  };
-  std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-  CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
-  CHECK(frame1->size() == 28);
-  std::shared_ptr<const QUICNewConnectionIdFrame> new_con_id_frame =
-    std::dynamic_pointer_cast<const QUICNewConnectionIdFrame>(frame1);
-  CHECK(new_con_id_frame != nullptr);
-  CHECK(new_con_id_frame->sequence() == 0x0102);
-  CHECK((new_con_id_frame->connection_id() ==
-         QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8)));
-  CHECK(memcmp(new_con_id_frame->stateless_reset_token().buf(), buf1 + 12, 16) == 0);
+  SECTION("load")
+  {
+    uint8_t buf1[] = {
+      0x0b,                                           // Type
+      0x08,                                           // Length
+      0x41, 0x02,                                     // Sequence
+      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
+      0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
+      0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
+    CHECK(frame1->size() == 28);
+    std::shared_ptr<const QUICNewConnectionIdFrame> new_con_id_frame =
+      std::dynamic_pointer_cast<const QUICNewConnectionIdFrame>(frame1);
+    CHECK(new_con_id_frame != nullptr);
+    CHECK(new_con_id_frame->sequence() == 0x0102);
+    CHECK((new_con_id_frame->connection_id() ==
+           QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8)));
+    CHECK(memcmp(new_con_id_frame->stateless_reset_token().buf(), buf1 + 12, 16) == 0);
+  }
+
+  SECTION("Bad Load")
+  {
+    uint8_t buf1[] = {
+      0x0b,                                           // Type
+      0x08,                                           // Length
+      0x41, 0x02,                                     // Sequence
+      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
+      0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
+    };
+    std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
+    CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
+    CHECK(frame1->valid() == false);
+  }
 }
 
 TEST_CASE("Store NewConnectionId Frame", "[quic]")
@@ -1228,19 +1319,33 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
 
 TEST_CASE("Load STOP_SENDING Frame", "[quic]")
 {
-  uint8_t buf[] = {
-    0x0c,                   // Type
-    0x92, 0x34, 0x56, 0x78, // Stream ID
-    0x00, 0x01,             // Error Code
-  };
-  std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
-  CHECK(frame->type() == QUICFrameType::STOP_SENDING);
-  CHECK(frame->size() == 7);
+  SECTION("LOAD")
+  {
+    uint8_t buf[] = {
+      0x0c,                   // Type
+      0x92, 0x34, 0x56, 0x78, // Stream ID
+      0x00, 0x01,             // Error Code
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::STOP_SENDING);
+    CHECK(frame->size() == 7);
 
-  std::shared_ptr<const QUICStopSendingFrame> stop_sending_frame = std::dynamic_pointer_cast<const QUICStopSendingFrame>(frame);
-  CHECK(stop_sending_frame != nullptr);
-  CHECK(stop_sending_frame->stream_id() == 0x12345678);
-  CHECK(stop_sending_frame->error_code() == 0x0001);
+    std::shared_ptr<const QUICStopSendingFrame> stop_sending_frame = std::dynamic_pointer_cast<const QUICStopSendingFrame>(frame);
+    CHECK(stop_sending_frame != nullptr);
+    CHECK(stop_sending_frame->stream_id() == 0x12345678);
+    CHECK(stop_sending_frame->error_code() == 0x0001);
+  }
+
+  SECTION("Bad LOAD")
+  {
+    uint8_t buf[] = {
+      0x0c,                   // Type
+      0x92, 0x34, 0x56, 0x78, // Stream ID
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::STOP_SENDING);
+    CHECK(frame->valid() == false);
+  }
 }
 
 TEST_CASE("Store STOP_SENDING Frame", "[quic]")
@@ -1263,18 +1368,32 @@ TEST_CASE("Store STOP_SENDING Frame", "[quic]")
 
 TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
 {
-  uint8_t buf[] = {
-    0x0e,                                           // Type
-    0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
-  };
-  std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
-  CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
-  CHECK(frame->size() == 9);
+  SECTION("Load")
+  {
+    uint8_t buf[] = {
+      0x0e,                                           // Type
+      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
+    CHECK(frame->size() == 9);
 
-  std::shared_ptr<const QUICPathChallengeFrame> path_challenge_frame =
-    std::dynamic_pointer_cast<const QUICPathChallengeFrame>(frame);
-  CHECK(path_challenge_frame != nullptr);
-  CHECK(memcmp(path_challenge_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathChallengeFrame::DATA_LEN) == 0);
+    std::shared_ptr<const QUICPathChallengeFrame> path_challenge_frame =
+      std::dynamic_pointer_cast<const QUICPathChallengeFrame>(frame);
+    CHECK(path_challenge_frame != nullptr);
+    CHECK(memcmp(path_challenge_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathChallengeFrame::DATA_LEN) == 0);
+  }
+
+  SECTION("Load")
+  {
+    uint8_t buf[] = {
+      0x0e,                                     // Type
+      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xef, // Data
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
+    CHECK(frame->valid() == false);
+  }
 }
 
 TEST_CASE("Store PATH_CHALLENGE Frame", "[quic]")
@@ -1302,17 +1421,32 @@ TEST_CASE("Store PATH_CHALLENGE Frame", "[quic]")
 
 TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
 {
-  uint8_t buf[] = {
-    0x0f,                                           // Type
-    0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
-  };
-  std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
-  CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
-  CHECK(frame->size() == 9);
+  SECTION("Load")
+  {
+    uint8_t buf[] = {
+      0x0f,                                           // Type
+      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
+    CHECK(frame->size() == 9);
 
-  std::shared_ptr<const QUICPathResponseFrame> path_response_frame = std::dynamic_pointer_cast<const QUICPathResponseFrame>(frame);
-  CHECK(path_response_frame != nullptr);
-  CHECK(memcmp(path_response_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathResponseFrame::DATA_LEN) == 0);
+    std::shared_ptr<const QUICPathResponseFrame> path_response_frame =
+      std::dynamic_pointer_cast<const QUICPathResponseFrame>(frame);
+    CHECK(path_response_frame != nullptr);
+    CHECK(memcmp(path_response_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathResponseFrame::DATA_LEN) == 0);
+  }
+
+  SECTION("Load")
+  {
+    uint8_t buf[] = {
+      0x0f,                                     // Type
+      0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
+    };
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
+    CHECK(frame->valid() == false);
+  }
 }
 
 TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
@@ -1362,6 +1496,13 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
     CHECK(memcmp(new_token_frame->token(), raw_token, raw_token_len) == 0);
   }
 
+  SECTION("bad load")
+  {
+    std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(raw_new_token_frame, raw_new_token_frame_len - 5);
+    CHECK(frame->type() == QUICFrameType::NEW_TOKEN);
+    CHECK(frame->valid() == false);
+  }
+
   SECTION("store")
   {
     uint8_t buf[32];
@@ -1399,6 +1540,14 @@ TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
       std::dynamic_pointer_cast<const QUICRetireConnectionIdFrame>(frame);
     CHECK(retire_connection_id_frame != nullptr);
     CHECK(retire_connection_id_frame->seq_num() == seq_num);
+  }
+
+  SECTION("bad load")
+  {
+    std::shared_ptr<const QUICFrame> frame =
+      QUICFrameFactory::create(raw_retire_connection_id_frame, raw_retire_connection_id_frame_len - 1);
+    CHECK(frame->type() == QUICFrameType::RETIRE_CONNECTION_ID);
+    CHECK(frame->valid() == false);
   }
 
   SECTION("store")
