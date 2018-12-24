@@ -441,6 +441,7 @@ HostDBContinuation::init(HostDBHash const &the_hash, Options const &opt)
     action = opt.cont;
   } else {
     // ink_assert(!"this sucks");
+    ink_zero(action);
     action.mutex = mutex;
   }
 }
@@ -1591,10 +1592,10 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   EThread *t = e ? e->ethread : this_ethread();
 
   MUTEX_TRY_LOCK(lock, action.mutex, t);
-  // Go ahead and grab the continuation mutex or just grab the action mutex again of there is no continuation mutex
-  MUTEX_TRY_LOCK(lock2, (action.continuation && action.continuation->mutex) ? action.continuation->mutex : action.mutex, t);
-  // Don't continue unless we have both mutexes
-  if (!lock.is_locked() || !lock2.is_locked()) {
+
+  // Separating lock checks here to make sure things don't break
+  // when we check if the action is cancelled.
+  if (!lock.is_locked()) {
     mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
   }
@@ -1602,6 +1603,14 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   if (action.cancelled) {
     hostdb_cont_free(this);
     return EVENT_DONE;
+  }
+
+  // Go ahead and grab the continuation mutex or just grab the action mutex again of there is no continuation mutex
+  MUTEX_TRY_LOCK(lock2, (action.continuation && action.continuation->mutex) ? action.continuation->mutex : action.mutex, t);
+  // Don't continue unless we have both mutexes
+  if (!lock2.is_locked()) {
+    mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
+    return EVENT_CONT;
   }
 
   if (!hostdb_enable || (!*hash.host_name && !hash.ip.isValid())) {
