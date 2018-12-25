@@ -61,7 +61,6 @@ public:
   virtual size_t size() const = 0;
   virtual bool is_probing_frame() const;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const = 0;
-  virtual void reset(){};
   virtual QUICFrame *split(size_t size);
   virtual int debug_msg(char *msg, size_t msg_len) const;
   virtual void parse(const uint8_t *buf, size_t len){};
@@ -70,6 +69,7 @@ public:
   LINK(QUICFrame, link);
 
 protected:
+  virtual void _reset(){};
   QUICFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : _id(id), _owner(owner) {}
   size_t _size               = 0;
   bool _valid                = false;
@@ -97,7 +97,6 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   size_t store(uint8_t *buf, size_t *len, size_t limit, bool include_length_field) const;
   QUICStreamId stream_id() const;
@@ -111,6 +110,8 @@ public:
   LINK(QUICStreamFrame, link);
 
 private:
+  virtual void _reset() override;
+
   ats_unique_buf _data    = {nullptr};
   size_t _data_len        = 0;
   QUICStreamId _stream_id = 0;
@@ -138,7 +139,6 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   QUICOffset offset() const;
   uint64_t data_length() const;
@@ -147,6 +147,8 @@ public:
   LINK(QUICCryptoFrame, link);
 
 private:
+  virtual void _reset() override;
+
   QUICOffset _offset   = 0;
   uint64_t _data_len   = 0;
   ats_unique_buf _data = {nullptr};
@@ -212,13 +214,11 @@ public:
 
     private:
       uint8_t _index                                         = 0;
-      const uint8_t *_buf                                    = nullptr;
       QUICAckFrame::AckBlock _current_block                  = {UINT64_C(0), UINT64_C(0)};
       const std::vector<QUICAckFrame::AckBlock> *_ack_blocks = nullptr;
     };
 
     AckBlockSection(uint64_t first_ack_block) : _first_ack_block(first_ack_block) {}
-    AckBlockSection(const uint8_t *buf, uint8_t ack_block_count) : _buf(buf), _ack_block_count(ack_block_count) {}
     uint8_t count() const;
     size_t size() const;
     size_t store(uint8_t *buf, size_t *len, size_t limit) const;
@@ -229,7 +229,6 @@ public:
     bool has_protected() const;
 
   private:
-    const uint8_t *_buf       = nullptr;
     uint64_t _first_ack_block = 0;
     uint8_t _ack_block_count  = 0;
     std::vector<QUICAckFrame::AckBlock> _ack_blocks;
@@ -265,7 +264,6 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void reset() override;
 
   QUICPacketNumber largest_acknowledged() const;
   uint64_t ack_delay() const;
@@ -276,6 +274,8 @@ public:
   EcnSection *ecn_section();
 
 private:
+  virtual void _reset() override;
+
   QUICPacketNumber _largest_acknowledged = 0;
   uint64_t _ack_delay                    = 0;
   AckBlockSection *_ack_block_section    = nullptr;
@@ -299,13 +299,14 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   QUICStreamId stream_id() const;
   QUICAppErrorCode error_code() const;
   QUICOffset final_offset() const;
 
 private:
+  virtual void _reset() override;
+
   QUICStreamId _stream_id      = 0;
   QUICAppErrorCode _error_code = 0;
   QUICOffset _final_offset     = 0;
@@ -363,7 +364,6 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   uint16_t error_code() const;
   QUICFrameType frame_type() const;
@@ -371,6 +371,8 @@ public:
   const char *reason_phrase() const;
 
 private:
+  virtual void _reset() override;
+
   uint16_t _error_code;
   QUICFrameType _frame_type      = QUICFrameType::UNKNOWN;
   uint64_t _reason_phrase_length = 0;
@@ -394,13 +396,14 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   QUICAppErrorCode error_code() const;
   uint64_t reason_phrase_length() const;
   const char *reason_phrase() const;
 
 private:
+  virtual void _reset() override;
+
   QUICAppErrorCode _error_code   = 0;
   uint64_t _reason_phrase_length = 0;
   const char *_reason_phrase     = nullptr;
@@ -422,11 +425,12 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   uint64_t maximum_data() const;
 
 private:
+  virtual void _reset() override;
+
   uint64_t _maximum_data = 0;
 };
 
@@ -447,12 +451,13 @@ public:
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void reset() override;
 
   QUICStreamId stream_id() const;
   uint64_t maximum_stream_data() const;
 
 private:
+  virtual void _reset() override;
+
   QUICStreamId _stream_id       = 0;
   uint64_t _maximum_stream_data = 0;
 };
@@ -473,9 +478,10 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   QUICStreamId maximum_stream_id() const;
-  virtual void reset() override;
 
 private:
+  virtual void _reset() override;
+
   QUICStreamId _maximum_stream_id = 0;
 };
 
@@ -495,11 +501,12 @@ public:
   virtual size_t size() const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
-  virtual void reset() override;
 
   QUICOffset offset() const;
 
 private:
+  virtual void _reset() override;
+
   QUICOffset _offset = 0;
 };
 
@@ -520,12 +527,13 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   QUICStreamId stream_id() const;
   QUICOffset offset() const;
 
 private:
+  virtual void _reset() override;
+
   QUICStreamId _stream_id = 0;
   QUICOffset _offset      = 0;
 };
@@ -547,11 +555,12 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   QUICStreamId stream_id() const;
 
 private:
+  virtual void _reset() override;
+
   QUICStreamId _stream_id = 0;
 };
 
@@ -574,13 +583,14 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void reset() override;
 
   uint64_t sequence() const;
   QUICConnectionId connection_id() const;
   QUICStatelessResetToken stateless_reset_token() const;
 
 private:
+  virtual void _reset() override;
+
   uint64_t _sequence              = 0;
   QUICConnectionId _connection_id = QUICConnectionId::ZERO();
   QUICStatelessResetToken _stateless_reset_token;
@@ -603,12 +613,13 @@ public:
   virtual size_t size() const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
-  virtual void reset() override;
 
   QUICStreamId stream_id() const;
   QUICAppErrorCode error_code() const;
 
 private:
+  virtual void _reset() override;
+
   QUICStreamId _stream_id      = 0;
   QUICAppErrorCode _error_code = 0;
 };
@@ -633,11 +644,12 @@ public:
   virtual bool is_probing_frame() const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
-  virtual void reset() override;
 
   const uint8_t *data() const;
 
 private:
+  virtual void _reset() override;
+
   ats_unique_buf _data = {nullptr};
 };
 
@@ -661,11 +673,12 @@ public:
   virtual bool is_probing_frame() const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
-  virtual void reset() override;
 
   const uint8_t *data() const;
 
 private:
+  virtual void _reset() override;
+
   ats_unique_buf _data = {nullptr};
 };
 
@@ -687,12 +700,13 @@ public:
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  virtual void reset() override;
 
   uint64_t token_length() const;
   const uint8_t *token() const;
 
 private:
+  virtual void _reset() override;
+
   uint64_t _token_length = 0;
   ats_unique_buf _token  = {nullptr};
 };
@@ -716,11 +730,12 @@ public:
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void reset() override;
 
   uint64_t seq_num() const;
 
 private:
+  virtual void _reset() override;
+
   uint64_t _seq_num = 0;
 };
 
