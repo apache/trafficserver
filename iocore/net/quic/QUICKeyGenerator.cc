@@ -81,6 +81,16 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
   return km;
 }
 
+std::unique_ptr<KeyMaterial>
+QUICKeyGenerator::regenerate(const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf)
+{
+  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
+
+  this->_generate(*km, hkdf, secret, secret_len, cipher);
+
+  return km;
+}
+
 int
 QUICKeyGenerator::_generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                             const QUIC_EVP_CIPHER *cipher)
@@ -91,7 +101,7 @@ QUICKeyGenerator::_generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secr
   //   pn_key = HKDF-Expand-Label(S, "pn", "", pn_key_length)
   this->_generate_key(km.key, &km.key_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
   this->_generate_iv(km.iv, &km.iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
-  QUICKeyGenerator::generate_pn(km.pn, &km.pn_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
+  this->_generate_pn(km.pn, &km.pn_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
 
   return 0;
 }
@@ -137,8 +147,8 @@ QUICKeyGenerator::_generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, co
 }
 
 int
-QUICKeyGenerator::generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
-                              size_t pn_length)
+QUICKeyGenerator::_generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
+                              size_t pn_length) const
 {
   return hkdf.expand(out, out_len, secret, secret_len, LABEL_FOR_PN.data(), LABEL_FOR_PN.length(), pn_length);
 }

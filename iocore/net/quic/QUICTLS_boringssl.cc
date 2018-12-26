@@ -120,6 +120,13 @@ QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
   }
 }
 
+const EVP_MD *
+QUICKeyGenerator::_get_handshake_digest()
+{
+  // TODO not implemented
+  return nullptr;
+}
+
 bool
 QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
                   uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead,

@@ -67,7 +67,7 @@ public:
   bool is_ready_to_derive() const override;
   bool is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const override;
   int initialize_key_materials(QUICConnectionId cid) override;
-  void update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int name);
+  void update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t secret_len);
   const char *negotiated_cipher_suite() const override;
   void negotiated_application_name(const uint8_t **name, unsigned int *len) const override;
   const KeyMaterial *key_material_for_encryption(QUICKeyPhase phase) const override;
@@ -86,6 +86,7 @@ private:
   QUICKeyGenerator _keygen_for_server = QUICKeyGenerator(QUICKeyGenerator::Context::SERVER);
   void _gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const;
   const QUIC_EVP_CIPHER *_get_evp_aead(QUICKeyPhase phase) const;
+  const EVP_MD *_get_handshake_digest() const;
   size_t _get_aead_tag_len(QUICKeyPhase phase) const;
   const KeyMaterial *_get_km(QUICKeyPhase phase, bool for_encryption) const;
 
@@ -100,6 +101,7 @@ private:
   int _process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in);
   void _generate_0rtt_key();
   void _update_encryption_level(QUICEncryptionLevel level);
+  void _print_km(const char *header, KeyMaterial &km, const uint8_t *secret = nullptr, size_t secret_len = 0);
 
   SSL *_ssl                              = nullptr;
   QUICPacketProtection *_client_pp       = nullptr;

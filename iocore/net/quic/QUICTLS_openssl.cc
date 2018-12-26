@@ -139,24 +139,21 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
 }
 
 static int
-key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const unsigned char *key, size_t key_len,
-       const unsigned char *iv, size_t iv_len, void *arg)
+key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, void *arg)
 {
-  QUICTLS *qtls = reinterpret_cast<QUICTLS *>(arg);
-  if (qtls == nullptr) {
+  if (arg == nullptr) {
     return 0;
   }
 
-  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
-  memcpy(km->key, key, key_len);
-  km->key_len = key_len;
-  memcpy(km->iv, iv, iv_len);
-  km->iv_len = iv_len;
+  QUICTLS *qtls = reinterpret_cast<QUICTLS *>(arg);
+  qtls->update_key_materials_on_key_cb(name, secret, secret_len);
 
-  const EVP_MD *md = QUICKeyGenerator::get_handshake_digest(ssl);
-  QUICHKDF hkdf(md);
-  QUICKeyGenerator::generate_pn(km->pn, &km->pn_len, hkdf, secret, secret_len, key_len);
+  return 1;
+}
 
+void
+QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t secret_len)
+{
   if (is_debug_tag_set("vv_quic_crypto")) {
     switch (name) {
     case SSL_KEY_CLIENT_EARLY_TRAFFIC:
@@ -177,50 +174,58 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, const
     default:
       break;
     }
-
-    uint8_t print_buf[128];
-    QUICDebug::to_hex(print_buf, static_cast<const uint8_t *>(secret), secret_len);
-    Debug("vv_quic_crypto", "secret=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "key=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "iv=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "pn=%s", print_buf);
   }
 
-  qtls->update_key_materials_on_key_cb(std::move(km), name);
 
-  return 1;
-}
-
-void
-QUICTLS::update_key_materials_on_key_cb(std::unique_ptr<KeyMaterial> km, int name)
-{
   if (this->_state == HandshakeState::ABORTED) {
     return;
   }
 
+  QUICKeyPhase phase;
+  const QUIC_EVP_CIPHER *cipher;
+  QUICHKDF hkdf(this->_get_handshake_digest());
+  std::unique_ptr<KeyMaterial> km = nullptr;
+
   switch (name) {
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
     // this->_update_encryption_level(QUICEncryptionLevel::ZERO_RTT);
-    this->_client_pp->set_key(std::move(km), QUICKeyPhase::ZERO_RTT);
+    phase = QUICKeyPhase::ZERO_RTT;
+    cipher = this->_get_evp_aead(phase);
+    km = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
+    this->_print_km("update - client", *km, secret, secret_len);
+    this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
-    this->_client_pp->set_key(std::move(km), QUICKeyPhase::HANDSHAKE);
+    phase = QUICKeyPhase::HANDSHAKE;
+    cipher = this->_get_evp_aead(phase);
+    km = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
+    this->_print_km("update - client", *km, secret, secret_len);
+    this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
-    this->_client_pp->set_key(std::move(km), QUICKeyPhase::PHASE_0);
+    phase = QUICKeyPhase::PHASE_0;
+    cipher = this->_get_evp_aead(phase);
+    km = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
+    this->_print_km("update - client", *km, secret, secret_len);
+    this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
-    this->_server_pp->set_key(std::move(km), QUICKeyPhase::HANDSHAKE);
+    phase = QUICKeyPhase::HANDSHAKE;
+    cipher = this->_get_evp_aead(phase);
+    km = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
+    this->_print_km("update - server", *km, secret, secret_len);
+    this->_server_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
-    this->_server_pp->set_key(std::move(km), QUICKeyPhase::PHASE_0);
+    phase = QUICKeyPhase::PHASE_0;
+    cipher = this->_get_evp_aead(phase);
+    km = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
+    this->_print_km("update - server", *km, secret, secret_len);
+    this->_server_pp->set_key(std::move(km), phase);
     break;
   default:
     break;
@@ -529,6 +534,23 @@ QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
       ink_assert(false);
       return -1;
     }
+  }
+}
+
+const EVP_MD *
+QUICTLS::_get_handshake_digest() const
+{
+  switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
+  case TLS1_3_CK_AES_128_GCM_SHA256:
+  case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+  case TLS1_3_CK_AES_128_CCM_SHA256:
+  case TLS1_3_CK_AES_128_CCM_8_SHA256:
+    return EVP_sha256();
+  case TLS1_3_CK_AES_256_GCM_SHA384:
+    return EVP_sha384();
+  default:
+    ink_assert(false);
+    return nullptr;
   }
 }
 

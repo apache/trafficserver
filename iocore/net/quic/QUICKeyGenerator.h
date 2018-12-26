@@ -51,14 +51,13 @@ public:
 
   QUICKeyGenerator(Context ctx) : _ctx(ctx) {}
 
-  static int generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t pn_length);
-  static const EVP_MD *get_handshake_digest(const SSL *ssl);
-
   /**
    * Generate keys for Initial encryption level
    * The keys for the remaining encryption level are derived by TLS stack with "quic " prefix
    */
   std::unique_ptr<KeyMaterial> generate(QUICConnectionId cid);
+
+  std::unique_ptr<KeyMaterial> regenerate(const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf);
 
 private:
   Context _ctx = Context::SERVER;
@@ -72,6 +71,7 @@ private:
   int _generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                     size_t key_length) const;
   int _generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t iv_length) const;
+  int _generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t pn_length) const;
   size_t _get_key_len(const QUIC_EVP_CIPHER *cipher) const;
   size_t _get_iv_len(const QUIC_EVP_CIPHER *cipher) const;
   const QUIC_EVP_CIPHER *_get_cipher_for_initial() const;

@@ -109,29 +109,11 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   std::unique_ptr<KeyMaterial> km;
 
   km = this->_keygen_for_client.generate(cid);
-
-  if (is_debug_tag_set("vv_quic_crypto")) {
-    uint8_t print_buf[512];
-    QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "key=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "iv=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "pn=%s", print_buf);
-  }
+  this->_print_km("initial - client", *km);
   this->_client_pp->set_key(std::move(km), QUICKeyPhase::INITIAL);
 
   km = this->_keygen_for_server.generate(cid);
-
-  if (is_debug_tag_set("vv_quic_crypto")) {
-    uint8_t print_buf[512];
-    QUICDebug::to_hex(print_buf, km->key, km->key_len);
-    Debug("vv_quic_crypto", "key=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->iv, km->iv_len);
-    Debug("vv_quic_crypto", "iv=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km->pn, km->pn_len);
-    Debug("vv_quic_crypto", "pn=%s", print_buf);
-  }
+  this->_print_km("initial - server", *km);
   this->_server_pp->set_key(std::move(km), QUICKeyPhase::INITIAL);
 
   return 1;
@@ -276,4 +258,23 @@ QUICTLS::_get_km(QUICKeyPhase phase, bool for_encryption) const
   }
 
   return pp->get_key(phase);
+}
+
+void
+QUICTLS::_print_km(const char *header, KeyMaterial &km, const uint8_t *secret, size_t secret_len)
+{
+  if (is_debug_tag_set("vv_quic_crypto")) {
+    Debug("vv_quic_crypto", "%s", header);
+    uint8_t print_buf[128];
+    if (secret) {
+      QUICDebug::to_hex(print_buf, static_cast<const uint8_t *>(secret), secret_len);
+      Debug("vv_quic_crypto", "secret=%s", print_buf);
+    }
+    QUICDebug::to_hex(print_buf, km.key, km.key_len);
+    Debug("vv_quic_crypto", "key=%s", print_buf);
+    QUICDebug::to_hex(print_buf, km.iv, km.iv_len);
+    Debug("vv_quic_crypto", "iv=%s", print_buf);
+    QUICDebug::to_hex(print_buf, km.pn, km.pn_len);
+    Debug("vv_quic_crypto", "pn=%s", print_buf);
+  }
 }
