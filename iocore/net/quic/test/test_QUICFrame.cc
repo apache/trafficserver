@@ -27,6 +27,9 @@
 #include "quic/QUICFrame.h"
 #include "quic/QUICStream.h"
 
+extern const ink_freelist_ops *freelist_global_ops;
+extern const ink_freelist_ops *freelist_class_ops;
+
 TEST_CASE("QUICFrame Type", "[quic]")
 {
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x00")) == QUICFrameType::PADDING);
@@ -184,11 +187,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
     };
 
-    uint8_t raw1[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload1 = ats_unique_malloc(5);
-    memcpy(payload1.get(), raw1, 5);
+    uint8_t raw1[]           = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw1, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload1), 5, 0x01, 0x00, false, false, true);
+    QUICStreamFrame stream_frame(block, 0x01, 0x00, false, false, true);
     CHECK(stream_frame.size() == 8);
 
     stream_frame.store(buf, &len, 32);
@@ -207,11 +212,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
     };
-    uint8_t raw2[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload2 = ats_unique_malloc(5);
-    memcpy(payload2.get(), raw2, 5);
+    uint8_t raw2[]           = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw2, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload2), 5, 0x01, 0x01);
+    QUICStreamFrame stream_frame(block, 0x01, 0x01);
     CHECK(stream_frame.size() == 9);
 
     stream_frame.store(buf, &len, 32);
@@ -230,11 +237,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
     };
-    uint8_t raw3[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload3 = ats_unique_malloc(5);
-    memcpy(payload3.get(), raw3, 5);
+    uint8_t raw3[]           = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw3, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload3), 5, 0x01, 0x010000);
+    QUICStreamFrame stream_frame(block, 0x01, 0x010000);
     CHECK(stream_frame.size() == 12);
 
     stream_frame.store(buf, &len, 32);
@@ -253,11 +262,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x05,                                           // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
     };
-    uint8_t raw4[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload4 = ats_unique_malloc(5);
-    memcpy(payload4.get(), raw4, 5);
+    uint8_t raw4[]           = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw4, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload4), 5, 0x01, 0x0100000000);
+    QUICStreamFrame stream_frame(block, 0x01, 0x0100000000);
     CHECK(stream_frame.size() == 16);
 
     stream_frame.store(buf, &len, 32);
@@ -276,11 +287,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x05,                                           // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
     };
-    uint8_t raw5[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload5 = ats_unique_malloc(5);
-    memcpy(payload5.get(), raw5, 5);
+    uint8_t raw5[]           = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw5, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload5), 5, 0x0100, 0x0100000000);
+    QUICStreamFrame stream_frame(block, 0x0100, 0x0100000000);
     CHECK(stream_frame.size() == 17);
 
     stream_frame.store(buf, &len, 32);
@@ -299,11 +312,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x05,                                           // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
     };
-    uint8_t raw6[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload6 = ats_unique_malloc(5);
-    memcpy(payload6.get(), raw6, 5);
+    uint8_t raw6[]           = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw6, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload6), 5, 0x010000, 0x0100000000);
+    QUICStreamFrame stream_frame(block, 0x010000, 0x0100000000);
     CHECK(stream_frame.size() == 19);
 
     stream_frame.store(buf, &len, 32);
@@ -322,11 +337,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x05,                                           // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
     };
-    uint8_t raw7[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload7 = ats_unique_malloc(5);
-    memcpy(payload7.get(), raw7, 5);
+    uint8_t raw7[]           = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw7, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload7), 5, 0x01000000, 0x0100000000);
+    QUICStreamFrame stream_frame(block, 0x01000000, 0x0100000000);
     CHECK(stream_frame.size() == 19);
 
     stream_frame.store(buf, &len, 32);
@@ -345,11 +362,13 @@ TEST_CASE("Store STREAM Frame", "[quic]")
       0x05,                                           // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
     };
-    uint8_t raw[]          = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload = ats_unique_malloc(5);
-    memcpy(payload.get(), raw, 5);
+    uint8_t raw[]            = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw, 5);
+    block->fill(5);
 
-    QUICStreamFrame stream_frame(std::move(payload), 5, 0x01000000, 0x0100000000, true);
+    QUICStreamFrame stream_frame(block, 0x01000000, 0x0100000000, true);
     CHECK(stream_frame.size() == 19);
 
     stream_frame.store(buf, &len, 32);

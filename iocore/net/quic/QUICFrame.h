@@ -26,6 +26,8 @@
 #include <memory>
 #include "tscore/Allocator.h"
 #include "tscore/List.h"
+#include "tscore/Ptr.h"
+#include "I_IOBuffer.h"
 #include <vector>
 #include <iterator>
 
@@ -86,7 +88,7 @@ class QUICStreamFrame : public QUICFrame
 public:
   QUICStreamFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
   QUICStreamFrame(const uint8_t *buf, size_t len);
-  QUICStreamFrame(ats_unique_buf buf, size_t len, QUICStreamId streamid, QUICOffset offset, bool last = false,
+  QUICStreamFrame(Ptr<IOBufferBlock> &block, QUICStreamId streamid, QUICOffset offset, bool last = false,
                   bool has_offset_field = true, bool has_length_field = true, QUICFrameId id = 0,
                   QUICFrameGenerator *owner = nullptr);
 
@@ -112,8 +114,7 @@ public:
 private:
   virtual void _reset() override;
 
-  ats_unique_buf _data    = {nullptr};
-  uint64_t _data_len      = 0;
+  Ptr<IOBufferBlock> _block;
   QUICStreamId _stream_id = 0;
   QUICOffset _offset      = 0;
   bool _fin               = false;
@@ -976,7 +977,7 @@ public:
    * Creates a STREAM frame.
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
-  static QUICStreamFrameUPtr create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset,
+  static QUICStreamFrameUPtr create_stream_frame(Ptr<IOBufferBlock> &block, QUICStreamId stream_id, QUICOffset offset,
                                                  bool last = false, bool has_offset_field = true, bool has_length_field = true,
                                                  QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
