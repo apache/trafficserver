@@ -113,7 +113,7 @@ private:
   virtual void _reset() override;
 
   ats_unique_buf _data    = {nullptr};
-  size_t _data_len        = 0;
+  uint64_t _data_len      = 0;
   QUICStreamId _stream_id = 0;
   QUICOffset _offset      = 0;
   bool _fin               = false;

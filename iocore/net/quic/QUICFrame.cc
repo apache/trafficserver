@@ -576,20 +576,20 @@ QUICAckFrame::parse(const uint8_t *buf, size_t len)
     return;
   }
 
-  size_t ack_block_count = 0;
+  uint64_t ack_block_count = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), ack_block_count, field_len)) {
     return;
   }
 
-  size_t first_ack_block = 0;
+  uint64_t first_ack_block = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), first_ack_block, field_len)) {
     return;
   }
 
   this->_ack_block_section = new AckBlockSection(first_ack_block);
   for (size_t i = 0; i < ack_block_count; i++) {
-    size_t gap           = 0;
-    size_t add_ack_block = 0;
+    uint64_t gap           = 0;
+    uint64_t add_ack_block = 0;
 
     if (!read_varint(pos, LEFT_SPACE(pos), gap, field_len)) {
       return;
