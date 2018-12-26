@@ -134,11 +134,10 @@ QUICFrame::valid() const
 // STREAM Frame
 //
 
-QUICStreamFrame::QUICStreamFrame(ats_unique_buf data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last,
+QUICStreamFrame::QUICStreamFrame(Ptr<IOBufferBlock> &block, QUICStreamId stream_id, QUICOffset offset, bool last,
                                  bool has_offset_field, bool has_length_field, QUICFrameId id, QUICFrameGenerator *owner)
   : QUICFrame(id, owner),
-    _data(std::move(data)),
-    _data_len(data_len),
+    _block(block),
     _stream_id(stream_id),
     _offset(offset),
     _fin(last),
@@ -173,33 +172,36 @@ QUICStreamFrame::parse(const uint8_t *buf, size_t len)
     return;
   }
 
-  if (this->_has_length_field && !read_varint(pos, LEFT_SPACE(pos), this->_data_len, field_len)) {
+  uint64_t data_len = 0;
+  if (this->_has_length_field && !read_varint(pos, LEFT_SPACE(pos), data_len, field_len)) {
     return;
   }
 
   if (!this->_has_length_field) {
-    this->_data_len = LEFT_SPACE(pos);
+    data_len = LEFT_SPACE(pos);
   }
-  if (LEFT_SPACE(pos) < this->_data_len) {
+  if (LEFT_SPACE(pos) < data_len) {
     return;
   }
 
   this->_valid = true;
-  this->_data  = ats_unique_malloc(this->_data_len);
-  memcpy(this->_data.get(), pos, this->_data_len);
-  pos += this->_data_len;
+  this->_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  this->_block->alloc();
+  ink_assert(static_cast<uint64_t>(this->_block->write_avail()) > data_len);
+  memcpy(this->_block->start(), pos, data_len);
+  this->_block->fill(data_len);
+  pos += data_len;
   this->_size = FRAME_SIZE(pos);
 }
 
 void
 QUICStreamFrame::_reset()
 {
-  this->_data             = nullptr;
+  this->_block            = nullptr;
   this->_fin              = false;
   this->_has_length_field = true;
   this->_has_offset_field = true;
   this->_offset           = 0;
-  this->_data_len         = 0;
   this->_stream_id        = 0;
   this->_owner            = nullptr;
   this->_id               = 0;
@@ -215,7 +217,7 @@ QUICStreamFrame::split(size_t size)
     header_len += QUICVariableInt::size(this->_offset);
   }
   if (this->_has_length_field) {
-    header_len += QUICVariableInt::size(this->_data_len);
+    header_len += QUICVariableInt::size(this->_block->read_avail());
   }
 
   if (size <= header_len) {
@@ -224,30 +226,24 @@ QUICStreamFrame::split(size_t size)
   bool fin = this->has_fin_flag();
 
   ink_assert(size < this->size());
+  ink_assert(this->_block.get() != nullptr);
 
   size_t data_len = size - header_len;
-  size_t buf2_len = this->data_length() - data_len;
 
-  ats_unique_buf buf  = ats_unique_malloc(data_len);
-  ats_unique_buf buf2 = ats_unique_malloc(buf2_len);
-  memcpy(buf.get(), this->data(), data_len);
-  memcpy(buf2.get(), this->data() + data_len, buf2_len);
+  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(this->_block->clone());
+  new_block->consume(data_len);
+  this->_block->_end = std::min(this->_block->_start + data_len, this->_block->_buf_end);
 
   if (this->has_offset_field()) {
     this->_offset = this->offset();
   }
 
-  if (this->has_length_field()) {
-    this->_data_len = data_len;
-  }
-
   this->_fin       = false;
-  this->_data      = std::move(buf);
   this->_stream_id = this->stream_id();
 
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(std::move(buf2), buf2_len, this->stream_id(), this->offset() + this->data_length(), fin,
-                              this->_has_offset_field, this->_has_length_field, this->_id, this->_owner);
+  new (frame) QUICStreamFrame(new_block, this->stream_id(), this->offset() + this->data_length(), fin, this->_has_offset_field,
+                              this->_has_length_field, this->_id, this->_owner);
 
   return frame;
 }
@@ -255,9 +251,9 @@ QUICStreamFrame::split(size_t size)
 QUICFrameUPtr
 QUICStreamFrame::clone() const
 {
-  return QUICFrameFactory::create_stream_frame(this->data(), this->data_length(), this->stream_id(), this->offset(),
-                                               this->has_fin_flag(), this->has_offset_field(), this->has_length_field(), this->_id,
-                                               this->_owner);
+  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(this->_block->clone());
+  return QUICFrameFactory::create_stream_frame(new_block, this->stream_id(), this->offset(), this->has_fin_flag(),
+                                               this->has_offset_field(), this->has_length_field(), this->_id, this->_owner);
 }
 
 QUICFrameType
@@ -273,17 +269,22 @@ QUICStreamFrame::size() const
     return this->_size;
   }
 
-  size_t size = 1;
+  size_t size     = 1;
+  size_t data_len = 0;
+  if (this->_block.get() != nullptr) {
+    data_len = this->_block->read_avail();
+  }
+
   size += QUICVariableInt::size(this->_stream_id);
   if (this->_has_offset_field) {
     size += QUICVariableInt::size(this->_offset);
   }
 
   if (this->_has_length_field) {
-    size += QUICVariableInt::size(this->_data_len);
+    size += QUICVariableInt::size(data_len);
+    size += data_len;
   }
 
-  size += this->_data_len;
   return size;
 }
 
@@ -362,13 +363,13 @@ QUICStreamFrame::offset() const
 uint64_t
 QUICStreamFrame::data_length() const
 {
-  return this->_data_len;
+  return this->_block->read_avail();
 }
 
 const uint8_t *
 QUICStreamFrame::data() const
 {
-  return this->_data.get();
+  return reinterpret_cast<const uint8_t *>(this->_block->start());
 }
 
 /**
@@ -2874,14 +2875,11 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len)
 }
 
 QUICStreamFrameUPtr
-QUICFrameFactory::create_stream_frame(const uint8_t *data, size_t data_len, QUICStreamId stream_id, QUICOffset offset, bool last,
+QUICFrameFactory::create_stream_frame(Ptr<IOBufferBlock> &block, QUICStreamId stream_id, QUICOffset offset, bool last,
                                       bool has_offset_field, bool has_length_field, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  ats_unique_buf buf = ats_unique_malloc(data_len);
-  memcpy(buf.get(), data, data_len);
-
   QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(std::move(buf), data_len, stream_id, offset, last, has_offset_field, has_length_field, id, owner);
+  new (frame) QUICStreamFrame(block, stream_id, offset, last, has_offset_field, has_length_field, id, owner);
   return QUICStreamFrameUPtr(frame, &QUICFrameDeleter::delete_stream_frame);
 }
 

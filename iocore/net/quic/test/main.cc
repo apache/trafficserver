@@ -49,6 +49,10 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     LibRecordsConfigInit();
 
     QUICConfig::startup();
+
+    EThread *thread = new EThread();
+    thread->set_specific();
+    init_buffer_allocators(0);
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);

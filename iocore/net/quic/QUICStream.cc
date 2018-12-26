@@ -485,9 +485,13 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     }
   }
 
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(reader->get_current_block()->clone());
+  block->consume(reader->start_offset);
+  block->_end = std::min(block->start() + len, block->_buf_end);
+  ink_assert(static_cast<uint64_t>(block->read_avail()) == len);
+
   // STREAM - Pure FIN or data length is lager than 0
-  frame = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>(reader->start()), len, this->_id,
-                                                this->_send_offset, fin);
+  frame = QUICFrameFactory::create_stream_frame(block, this->_id, this->_send_offset, fin);
   if (!this->_state.is_allowed_to_send(*frame)) {
     QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
     return frame;
