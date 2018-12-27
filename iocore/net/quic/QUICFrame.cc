@@ -405,8 +405,8 @@ QUICStreamFrame::has_fin_flag() const
 // CRYPTO frame
 //
 
-QUICCryptoFrame::QUICCryptoFrame(ats_unique_buf data, size_t data_len, QUICOffset offset, QUICFrameId id, QUICFrameGenerator *owner)
-  : QUICFrame(id, owner), _offset(offset), _data_len(data_len), _data(std::move(data))
+QUICCryptoFrame::QUICCryptoFrame(Ptr<IOBufferBlock> &block, QUICOffset offset, QUICFrameId id, QUICFrameGenerator *owner)
+  : QUICFrame(id, owner), _offset(offset), _block(block)
 {
 }
 
@@ -427,24 +427,29 @@ QUICCryptoFrame::parse(const uint8_t *buf, size_t len)
     return;
   }
 
-  if (!read_varint(pos, LEFT_SPACE(pos), this->_data_len, field_len)) {
+  uint64_t data_len = 0;
+  if (!read_varint(pos, LEFT_SPACE(pos), data_len, field_len)) {
     return;
   }
 
-  if (LEFT_SPACE(pos) < this->_data_len) {
+  if (LEFT_SPACE(pos) < data_len) {
     return;
   }
 
   this->_valid = true;
-  this->_data  = ats_unique_malloc(this->_data_len);
-  memcpy(this->_data.get(), pos, this->_data_len);
+  this->_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  this->_block->alloc();
+  ink_assert(static_cast<uint64_t>(this->_block->write_avail()) > data_len);
+  memcpy(this->_block->start(), pos, data_len);
+  this->_block->fill(data_len);
+  pos += data_len;
   this->_size = FRAME_SIZE(pos);
 }
 
 void
 QUICCryptoFrame::_reset()
 {
-  this->_data   = nullptr;
+  this->_block  = nullptr;
   this->_offset = 0;
   this->_owner  = nullptr;
   this->_id     = 0;
@@ -455,7 +460,7 @@ QUICCryptoFrame::_reset()
 QUICFrame *
 QUICCryptoFrame::split(size_t size)
 {
-  size_t header_len = 1 + QUICVariableInt::size(this->_offset) + QUICVariableInt::size(this->_data_len);
+  size_t header_len = 1 + QUICVariableInt::size(this->_offset) + QUICVariableInt::size(this->_block->read_avail());
   if (size <= header_len) {
     return nullptr;
   }
@@ -463,19 +468,18 @@ QUICCryptoFrame::split(size_t size)
   ink_assert(size < this->size());
 
   size_t data_len = size - header_len;
-  size_t buf2_len = this->data_length() - data_len;
 
-  ats_unique_buf buf  = ats_unique_malloc(data_len);
-  ats_unique_buf buf2 = ats_unique_malloc(buf2_len);
-  memcpy(buf.get(), this->data(), data_len);
-  memcpy(buf2.get(), this->data() + data_len, buf2_len);
+  ink_assert(size < this->size());
+  ink_assert(this->_block.get() != nullptr);
 
-  this->_offset   = this->offset();
-  this->_data_len = data_len;
-  this->_data     = std::move(buf);
+  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(this->_block->clone());
+  new_block->consume(data_len);
+  this->_block->_end = std::min(this->_block->_start + data_len, this->_block->_buf_end);
+
+  this->_offset = this->offset();
 
   QUICCryptoFrame *frame = quicCryptoFrameAllocator.alloc();
-  new (frame) QUICCryptoFrame(std::move(buf2), buf2_len, this->offset() + this->data_length(), this->_id, this->_owner);
+  new (frame) QUICCryptoFrame(this->_block, this->offset() + data_len, this->_id, this->_owner);
 
   return frame;
 }
@@ -483,7 +487,8 @@ QUICCryptoFrame::split(size_t size)
 QUICFrameUPtr
 QUICCryptoFrame::clone() const
 {
-  return QUICFrameFactory::create_crypto_frame(this->data(), this->data_length(), this->offset(), this->_id, this->_owner);
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(this->_block->clone());
+  return QUICFrameFactory::create_crypto_frame(block, this->offset(), this->_id, this->_owner);
 }
 
 QUICFrameType
@@ -495,7 +500,11 @@ QUICCryptoFrame::type() const
 size_t
 QUICCryptoFrame::size() const
 {
-  return 1 + this->_data_len + QUICVariableInt::size(this->_offset) + QUICVariableInt::size(this->_data_len);
+  if (this->_size) {
+    return this->_size;
+  }
+
+  return 1 + this->_block->read_avail() + QUICVariableInt::size(this->_offset) + QUICVariableInt::size(this->_block->read_avail());
 }
 
 int
@@ -542,13 +551,13 @@ QUICCryptoFrame::offset() const
 uint64_t
 QUICCryptoFrame::data_length() const
 {
-  return this->_data_len;
+  return this->_block->read_avail();
 }
 
 const uint8_t *
 QUICCryptoFrame::data() const
 {
-  return this->_data.get();
+  return reinterpret_cast<const uint8_t *>(this->_block->start());
 }
 
 //
@@ -2884,14 +2893,10 @@ QUICFrameFactory::create_stream_frame(Ptr<IOBufferBlock> &block, QUICStreamId st
 }
 
 QUICCryptoFrameUPtr
-QUICFrameFactory::create_crypto_frame(const uint8_t *data, uint64_t data_len, QUICOffset offset, QUICFrameId id,
-                                      QUICFrameGenerator *owner)
+QUICFrameFactory::create_crypto_frame(Ptr<IOBufferBlock> &block, QUICOffset offset, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  ats_unique_buf buf = ats_unique_malloc(data_len);
-  memcpy(buf.get(), data, data_len);
-
   QUICCryptoFrame *frame = quicCryptoFrameAllocator.alloc();
-  new (frame) QUICCryptoFrame(std::move(buf), data_len, offset, id, owner);
+  new (frame) QUICCryptoFrame(block, offset, id, owner);
   return QUICCryptoFrameUPtr(frame, &QUICFrameDeleter::delete_crypto_frame);
 }
 

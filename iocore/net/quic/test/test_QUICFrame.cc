@@ -450,11 +450,13 @@ TEST_CASE("CRYPTO Frame", "[quic]")
       0x05,                         // Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
     };
-    uint8_t raw_data[]     = "\x01\x02\x03\x04\x05";
-    ats_unique_buf payload = ats_unique_malloc(5);
-    memcpy(payload.get(), raw_data, 5);
+    uint8_t raw_data[]       = "\x01\x02\x03\x04\x05";
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    memcpy(block->start(), raw_data, 5);
+    block->fill(5);
 
-    QUICCryptoFrame crypto_frame(std::move(payload), 5, 0x010000);
+    QUICCryptoFrame crypto_frame(block, 0x010000);
     CHECK(crypto_frame.size() == sizeof(expected));
 
     crypto_frame.store(buf, &len, 32);

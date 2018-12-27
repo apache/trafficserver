@@ -131,7 +131,7 @@ class QUICCryptoFrame : public QUICFrame
 public:
   QUICCryptoFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
   QUICCryptoFrame(const uint8_t *buf, size_t len);
-  QUICCryptoFrame(ats_unique_buf buf, size_t len, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+  QUICCryptoFrame(Ptr<IOBufferBlock> &block, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   QUICFrame *split(size_t size) override;
   QUICFrameUPtr clone() const override;
@@ -150,9 +150,8 @@ public:
 private:
   virtual void _reset() override;
 
-  QUICOffset _offset   = 0;
-  uint64_t _data_len   = 0;
-  ats_unique_buf _data = {nullptr};
+  QUICOffset _offset = 0;
+  Ptr<IOBufferBlock> _block;
 };
 
 //
@@ -985,7 +984,7 @@ public:
    * Creates a CRYPTO frame.
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
-  static QUICCryptoFrameUPtr create_crypto_frame(const uint8_t *data, uint64_t data_len, QUICOffset offset, QUICFrameId id = 0,
+  static QUICCryptoFrameUPtr create_crypto_frame(Ptr<IOBufferBlock> &block, QUICOffset offset, QUICFrameId id = 0,
                                                  QUICFrameGenerator *owner = nullptr);
 
   /*
