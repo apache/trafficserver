@@ -31,7 +31,7 @@
 class QUICPacketReceiveQueue
 {
 public:
-  QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketNumberProtector &pn_protector);
+  QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketHeaderProtector &ph_protector);
 
   void enqueue(UDPPacket *packet);
   QUICPacketUPtr dequeue(QUICPacketCreationResult &result);
@@ -41,7 +41,7 @@ public:
 private:
   CountQueue<UDPPacket> _queue;
   QUICPacketFactory &_packet_factory;
-  QUICPacketNumberProtector &_pn_protector;
+  QUICPacketHeaderProtector &_ph_protector;
   QUICPacketNumber _largest_received_packet_number = 0;
   // FIXME: workaround code for coalescing packets
   ats_unique_buf _payload = {nullptr};

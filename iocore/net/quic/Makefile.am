@@ -34,11 +34,11 @@ AM_CPPFLAGS += \
 noinst_LIBRARIES = libquic.a
 
 if OPENSSL_IS_BORINGSSL
-QUICHSProtocol_impl = QUICHandshakeProtocol_boringssl.cc
+QUICPHProtector_impl = QUICPacketHeaderProtector_boringssl.cc
 QUICTLS_impl = QUICTLS_boringssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_boringssl.cc
 else
-QUICHSProtocol_impl = QUICHandshakeProtocol_openssl.cc
+QUICPHProtector_impl = QUICPacketHeaderProtector_openssl.cc
 QUICTLS_impl = QUICTLS_openssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
 endif
@@ -59,7 +59,8 @@ libquic_a_SOURCES = \
   QUICStream.cc \
   QUICHandshake.cc \
   QUICHandshakeProtocol.cc \
-  $(QUICHSProtocol_impl) \
+  QUICPacketHeaderProtector.cc \
+  $(QUICPHProtector_impl) \
   QUICTLS.cc \
   $(QUICTLS_impl) \
   QUICKeyGenerator.cc \

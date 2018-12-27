@@ -38,10 +38,10 @@ struct KeyMaterial {
   // uint8_t iv[EVP_MAX_IV_LENGTH]   = {0};
   uint8_t key[512] = {0};
   uint8_t iv[512]  = {0};
-  uint8_t pn[512]  = {0};
+  uint8_t hp[512]  = {0};
   size_t key_len   = 512;
   size_t iv_len    = 512;
-  size_t pn_len    = 512;
+  size_t hp_len    = 512;
 };
 
 class QUICKeyGenerator
@@ -71,7 +71,7 @@ private:
   int _generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                     size_t key_length) const;
   int _generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t iv_length) const;
-  int _generate_pn(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t pn_length) const;
+  int _generate_hp(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t hp_length) const;
   size_t _get_key_len(const QUIC_EVP_CIPHER *cipher) const;
   size_t _get_iv_len(const QUIC_EVP_CIPHER *cipher) const;
   const QUIC_EVP_CIPHER *_get_cipher_for_initial() const;

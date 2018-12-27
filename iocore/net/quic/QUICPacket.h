@@ -32,6 +32,7 @@
 
 #include "QUICTypes.h"
 #include "QUICHandshakeProtocol.h"
+#include "QUICPacketHeaderProtector.h"
 #include "QUICFrame.h"
 
 #define QUIC_FIELD_OFFSET_CONNECTION_ID 1
@@ -119,9 +120,8 @@ public:
 
   QUICPacketHeaderUPtr clone() const;
 
-  virtual bool has_key_phase() const = 0;
-  virtual bool has_version() const   = 0;
-  virtual bool is_valid() const      = 0;
+  virtual bool has_version() const = 0;
+  virtual bool is_valid() const    = 0;
 
   /***** STATIC members *****/
 
@@ -197,7 +197,6 @@ protected:
   QUICPacketNumber _base_packet_number = 0;
   QUICVersion _version                 = 0;
   size_t _payload_length               = 0;
-  bool _has_key_phase                  = false;
   bool _has_version                    = false;
 };
 
@@ -226,7 +225,6 @@ public:
   const uint8_t *token() const;
   size_t token_len() const;
   QUICKeyPhase key_phase() const;
-  bool has_key_phase() const;
   uint16_t size() const;
   void store(uint8_t *buf, size_t *len) const;
 
@@ -242,7 +240,8 @@ public:
   static bool scil(uint8_t &scil, const uint8_t *packet, size_t packet_len);
   static bool token_length(size_t &token_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
   static bool length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
-  static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len);
+  static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
+  static bool packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len);
 
 private:
   bool _odcil(uint8_t &odcil, const uint8_t *buf, size_t buf_len);
@@ -280,12 +279,11 @@ public:
   QUICVersion version() const;
   const uint8_t *payload() const;
   QUICKeyPhase key_phase() const;
-  bool has_key_phase() const;
   uint16_t size() const;
   void store(uint8_t *buf, size_t *len) const;
 
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
-  static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil);
+  static bool packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil);
 
 private:
   int _packet_number_len;
@@ -383,8 +381,7 @@ public:
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
   static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked);
 
-  static bool protect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector, int dcil);
-  static bool unprotect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector);
+  static bool protect_packet_header(uint8_t *packet, size_t packet_len, const QUICPacketHeaderProtector *ph_protector, int dcil);
 
   LINK(QUICPacket, link);
 

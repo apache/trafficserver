@@ -274,7 +274,7 @@ QUICTLS::_print_km(const char *header, KeyMaterial &km, const uint8_t *secret, s
     Debug("vv_quic_crypto", "key=%s", print_buf);
     QUICDebug::to_hex(print_buf, km.iv, km.iv_len);
     Debug("vv_quic_crypto", "iv=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km.pn, km.pn_len);
-    Debug("vv_quic_crypto", "pn=%s", print_buf);
+    QUICDebug::to_hex(print_buf, km.hp, km.hp_len);
+    Debug("vv_quic_crypto", "hp=%s", print_buf);
   }
 }

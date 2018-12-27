@@ -61,8 +61,8 @@ long_hdr_pkt_len(size_t &pkt_len, uint8_t *buf, size_t len)
   return true;
 }
 
-QUICPacketReceiveQueue::QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketNumberProtector &pn_protector)
-  : _packet_factory(packet_factory), _pn_protector(pn_protector)
+QUICPacketReceiveQueue::QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketHeaderProtector &ph_protector)
+  : _packet_factory(packet_factory), _ph_protector(ph_protector)
 {
 }
 
@@ -100,10 +100,9 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     }
   }
 
-  ats_unique_buf pkt     = {nullptr};
-  size_t pkt_len         = 0;
-  bool has_packet_number = true;
-  QUICPacketType type    = QUICPacketType::UNINITIALIZED;
+  ats_unique_buf pkt  = {nullptr};
+  size_t pkt_len      = 0;
+  QUICPacketType type = QUICPacketType::UNINITIALIZED;
 
   if (QUICInvariants::is_long_header(this->_payload.get())) {
     uint8_t *buf         = this->_payload.get() + this->_offset;
@@ -113,9 +112,8 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
       QUICVersion version;
       QUICPacketLongHeader::version(version, buf, remaining_len);
       if (is_vn(version)) {
-        has_packet_number = false;
-        pkt_len           = remaining_len;
-        type              = QUICPacketType::VERSION_NEGOTIATION;
+        pkt_len = remaining_len;
+        type    = QUICPacketType::VERSION_NEGOTIATION;
       } else if (!QUICTypeUtil::is_supported_version(version)) {
         result  = QUICPacketCreationResult::UNSUPPORTED;
         pkt_len = remaining_len;
@@ -176,8 +174,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     type               = QUICPacketType::PROTECTED;
   }
 
-  // VN doesn't have Packet Number field
-  if (!has_packet_number || QUICPacket::unprotect_packet_number(pkt.get(), pkt_len, &this->_pn_protector)) {
+  if (this->_ph_protector.unprotect(pkt.get(), pkt_len)) {
     quic_packet = this->_packet_factory.create(this->_from, std::move(pkt), pkt_len, this->_largest_received_packet_number, result);
   } else {
     // ZERO_RTT might be rejected

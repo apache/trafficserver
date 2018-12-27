@@ -72,7 +72,7 @@ public:
   void negotiated_application_name(const uint8_t **name, unsigned int *len) const override;
   const KeyMaterial *key_material_for_encryption(QUICKeyPhase phase) const override;
   const KeyMaterial *key_material_for_decryption(QUICKeyPhase phase) const override;
-  const QUIC_EVP_CIPHER *cipher_for_pne(QUICKeyPhase phase) const override;
+  const QUIC_EVP_CIPHER *cipher_for_hp(QUICKeyPhase phase) const override;
 
   bool encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;

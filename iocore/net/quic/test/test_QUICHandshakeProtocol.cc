@@ -389,11 +389,11 @@ TEST_CASE("QUICHandshakeProtocol")
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
-    QUICPacketNumberProtector client_pn_protector;
-    QUICPacketNumberProtector server_pn_protector;
+    QUICPacketHeaderProtector client_ph_protector;
+    QUICPacketHeaderProtector server_ph_protector;
 
-    client_pn_protector.set_hs_protocol(client);
-    server_pn_protector.set_hs_protocol(server);
+    client_ph_protector.set_hs_protocol(client);
+    server_ph_protector.set_hs_protocol(server);
 
     uint8_t expected[] = {0x01, 0x02, 0x03, 0x04, 0x05};
     uint8_t sample[16] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f};
@@ -401,14 +401,14 @@ TEST_CASE("QUICHandshakeProtocol")
     uint8_t protected_pn_len = 0, unprotected_pn_len = 0;
 
     // ## Client -> Server
-    client_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
-    server_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+    client_ph_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
+    server_ph_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
                                   QUICKeyPhase::INITIAL);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
     // ## Server -> Client
-    server_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
-    client_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+    server_ph_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::INITIAL);
+    client_ph_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
                                   QUICKeyPhase::INITIAL);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
@@ -489,14 +489,14 @@ TEST_CASE("QUICHandshakeProtocol")
     // # End Handshake
 
     // ## Client -> Server
-    client_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
-    server_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+    client_ph_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
+    server_ph_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
                                   QUICKeyPhase::PHASE_0);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);
     // ## Server -> Client
-    server_pn_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
-    client_pn_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
+    server_ph_protector.protect(protected_pn, protected_pn_len, expected, sizeof(expected), sample, QUICKeyPhase::PHASE_0);
+    client_ph_protector.unprotect(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample,
                                   QUICKeyPhase::PHASE_0);
     CHECK(unprotected_pn_len == sizeof(expected));
     CHECK(memcmp(unprotected_pn, expected, sizeof(expected)) == 0);

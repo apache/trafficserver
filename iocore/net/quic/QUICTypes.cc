@@ -143,20 +143,13 @@ QUICTypeUtil::read_QUICConnectionId(const uint8_t *buf, uint8_t len)
 int
 QUICTypeUtil::read_QUICPacketNumberLen(const uint8_t *buf)
 {
-  if ((buf[0] & 0xC0) == 0xC0) {
-    return 4;
-  } else if ((buf[0] & 0x80) == 0x80) {
-    return 2;
-  } else {
-    return 1;
-  }
+  return (buf[0] & 0x03) + 1;
 }
 
 QUICPacketNumber
-QUICTypeUtil::read_QUICPacketNumber(const uint8_t *buf)
+QUICTypeUtil::read_QUICPacketNumber(const uint8_t *buf, int encoded_length)
 {
-  int encoded_length = QUICTypeUtil::read_QUICPacketNumberLen(buf);
-  uint64_t pn        = QUICIntUtil::read_nbytes_as_uint(buf, encoded_length);
+  uint64_t pn = QUICIntUtil::read_nbytes_as_uint(buf, encoded_length);
 
   // Remove length indicator
   if (encoded_length == 1) {

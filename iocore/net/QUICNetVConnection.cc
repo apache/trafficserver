@@ -264,7 +264,7 @@ QUICNetVConnection::start()
 
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
   this->_packet_factory.set_hs_protocol(this->_hs_protocol);
-  this->_pn_protector.set_hs_protocol(this->_hs_protocol);
+  this->_ph_protector.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
   this->_congestion_controller = new QUICCongestionController(this);
@@ -1230,8 +1230,8 @@ QUICNetVConnection::_state_common_send_packet()
         written += len;
 
         // TODO: Avoid static function. We don't need to parse buffer again. Get packet number offset from packet.
-        QUICPacket::protect_packet_number(
-          buf, len, &this->_pn_protector,
+        QUICPacket::protect_packet_header(
+          buf, len, &this->_ph_protector,
           (this->_peer_quic_connection_id == QUICConnectionId::ZERO()) ? 0 : this->_peer_quic_connection_id.length());
 
         QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
@@ -1272,7 +1272,7 @@ QUICNetVConnection::_state_closing_send_packet()
   // that an endpoint maintains for a closing connection, endpoints MAY
   // send the exact same packet.
   if (this->_the_final_packet) {
-    this->_packet_handler->send_packet(*this->_the_final_packet, this, this->_pn_protector);
+    this->_packet_handler->send_packet(*this->_the_final_packet, this, this->_ph_protector);
   }
 
   return nullptr;

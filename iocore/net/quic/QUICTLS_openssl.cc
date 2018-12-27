@@ -176,7 +176,6 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
     }
   }
 
-
   if (this->_state == HandshakeState::ABORTED) {
     return;
   }
@@ -189,41 +188,41 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   switch (name) {
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
     // this->_update_encryption_level(QUICEncryptionLevel::ZERO_RTT);
-    phase = QUICKeyPhase::ZERO_RTT;
+    phase  = QUICKeyPhase::ZERO_RTT;
     cipher = this->_get_evp_aead(phase);
-    km = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
+    km     = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
     this->_print_km("update - client", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
-    phase = QUICKeyPhase::HANDSHAKE;
+    phase  = QUICKeyPhase::HANDSHAKE;
     cipher = this->_get_evp_aead(phase);
-    km = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
+    km     = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
     this->_print_km("update - client", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
-    phase = QUICKeyPhase::PHASE_0;
+    phase  = QUICKeyPhase::PHASE_0;
     cipher = this->_get_evp_aead(phase);
-    km = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
+    km     = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
     this->_print_km("update - client", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
-    phase = QUICKeyPhase::HANDSHAKE;
+    phase  = QUICKeyPhase::HANDSHAKE;
     cipher = this->_get_evp_aead(phase);
-    km = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
+    km     = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
     this->_print_km("update - server", *km, secret, secret_len);
     this->_server_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
-    phase = QUICKeyPhase::PHASE_0;
+    phase  = QUICKeyPhase::PHASE_0;
     cipher = this->_get_evp_aead(phase);
-    km = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
+    km     = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
     this->_print_km("update - server", *km, secret, secret_len);
     this->_server_pp->set_key(std::move(km), phase);
     break;
@@ -426,23 +425,23 @@ QUICTLS::reset()
 }
 
 const EVP_CIPHER *
-QUICTLS::cipher_for_pne(QUICKeyPhase phase) const
+QUICTLS::cipher_for_hp(QUICKeyPhase phase) const
 {
   if (phase == QUICKeyPhase::INITIAL) {
-    return EVP_aes_128_ctr();
+    return EVP_aes_128_ecb();
   } else {
     const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
     if (cipher) {
       switch (SSL_CIPHER_get_id(cipher)) {
       case TLS1_3_CK_AES_128_GCM_SHA256:
-        return EVP_aes_128_ctr();
+        return EVP_aes_128_ecb();
       case TLS1_3_CK_AES_256_GCM_SHA384:
-        return EVP_aes_256_ctr();
+        return EVP_aes_256_ecb();
       case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
         return EVP_chacha20();
       case TLS1_3_CK_AES_128_CCM_SHA256:
       case TLS1_3_CK_AES_128_CCM_8_SHA256:
-        return EVP_aes_128_ctr();
+        return EVP_aes_128_ecb();
       default:
         ink_assert(false);
         return nullptr;

@@ -32,7 +32,7 @@
 class QUICClosedConCollector;
 class QUICNetVConnection;
 class QUICPacket;
-class QUICPacketNumberProtector;
+class QUICPacketHeaderProtector;
 
 class QUICPacketHandler
 {
@@ -40,14 +40,14 @@ public:
   QUICPacketHandler();
   ~QUICPacketHandler();
 
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketNumberProtector &pn_protector) = 0;
+  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketHeaderProtector &pn_protector) = 0;
   virtual void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload)                                          = 0;
 
   virtual void close_conenction(QUICNetVConnection *conn);
 
 protected:
   static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
-                           const QUICPacketNumberProtector *pn_protector, int dcil);
+                           const QUICPacketHeaderProtector *ph_protector, int dcil);
   static void _send_packet(Continuation *c, QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload);
 
   Event *_collector_event                       = nullptr;
@@ -74,7 +74,7 @@ public:
 
   // QUICPacketHandler
   virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc,
-                           const QUICPacketNumberProtector &pn_protector) override;
+                           const QUICPacketHeaderProtector &ph_protector) override;
   virtual void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload) override;
 
 private:
@@ -100,7 +100,7 @@ public:
 
   // QUICPacketHandler
   virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc,
-                           const QUICPacketNumberProtector &pn_protector) override;
+                           const QUICPacketHeaderProtector &pn_protector) override;
   virtual void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload) override;
 
 private:

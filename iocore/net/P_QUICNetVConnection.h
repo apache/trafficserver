@@ -253,7 +253,7 @@ private:
   QUICAckFrameManager _ack_frame_manager;
   QUICPinger _pinger;
   QUICPacketRetransmitter _packet_retransmitter;
-  QUICPacketNumberProtector _pn_protector;
+  QUICPacketHeaderProtector _ph_protector;
   QUICRTTMeasure _rtt_measure;
   QUICApplicationMap *_application_map = nullptr;
 
@@ -275,7 +275,7 @@ private:
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
 
-  QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory, this->_pn_protector};
+  QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory, this->_ph_protector};
 
   QUICConnectionErrorUPtr _connection_error  = nullptr;
   uint32_t _state_closing_recv_packet_count  = 0;

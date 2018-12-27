@@ -194,8 +194,8 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
       offset += QUICVariableInt::size(raw_buf + offset);
 
       // PN Field
-      int pn_len = QUICTypeUtil::read_QUICPacketNumberLen(raw_buf + offset);
-      QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(raw_buf + offset), pn_len,
+      int pn_len = QUICTypeUtil::read_QUICPacketNumberLen(raw_buf);
+      QUICPacket::decode_packet_number(this->_packet_number, QUICTypeUtil::read_QUICPacketNumber(raw_buf + offset, pn_len), pn_len,
                                        this->_base_packet_number);
       offset += pn_len;
     }
@@ -268,12 +268,12 @@ QUICPacketLongHeader::type(QUICPacketType &type, const uint8_t *packet, size_t p
     return false;
   }
 
-  uint8_t raw_type = packet[0] & 0x7F;
   QUICVersion version;
   if (QUICPacketLongHeader::version(version, packet, packet_len) && version == 0x00) {
     type = QUICPacketType::VERSION_NEGOTIATION;
   } else {
-    type = static_cast<QUICPacketType>(raw_type);
+    uint8_t raw_type = (packet[0] & 0x30) >> 4;
+    type             = static_cast<QUICPacketType>(raw_type);
   }
   return true;
 }
@@ -377,7 +377,7 @@ QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *
 }
 
 bool
-QUICPacketLongHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len)
 {
   QUICPacketType type;
   QUICPacketLongHeader::type(type, packet, packet_len);
@@ -394,6 +394,15 @@ QUICPacketLongHeader::packet_number_offset(size_t &pn_offset, const uint8_t *pac
   }
   pn_offset = 6 + dcil + scil + token_length_field_len + token_length + length_field_len;
 
+  return true;
+}
+
+bool
+QUICPacketLongHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, size_t packet_len)
+{
+  QUICPacketType type;
+  QUICPacketLongHeader::type(type, packet, packet_len);
+  phase = QUICTypeUtil::key_phase(type);
   return true;
 }
 
@@ -487,12 +496,6 @@ size_t
 QUICPacketLongHeader::token_len() const
 {
   return this->_token_len;
-}
-
-bool
-QUICPacketLongHeader::has_key_phase() const
-{
-  return false;
 }
 
 QUICKeyPhase
@@ -610,8 +613,8 @@ QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_b
   QUICInvariants::dcid(this->_connection_id, this->_buf.get(), len);
 
   int offset               = 1 + this->_connection_id.length();
-  this->_packet_number_len = QUICTypeUtil::read_QUICPacketNumberLen(this->_buf.get() + offset);
-  QUICPacketNumber src     = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + offset);
+  this->_packet_number_len = QUICTypeUtil::read_QUICPacketNumberLen(this->_buf.get());
+  QUICPacketNumber src     = QUICTypeUtil::read_QUICPacketNumber(this->_buf.get() + offset, this->_packet_number_len);
   QUICPacket::decode_packet_number(this->_packet_number, src, this->_packet_number_len, this->_base_packet_number);
   this->_payload_length = len - (1 + QUICConnectionId::SCID_LEN + this->_packet_number_len);
 }
@@ -620,7 +623,6 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase k
                                              QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len)
 {
   this->_type               = type;
-  this->_has_key_phase      = true;
   this->_key_phase          = key_phase;
   this->_packet_number      = packet_number;
   this->_base_packet_number = base_packet_number;
@@ -634,7 +636,6 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase k
                                              ats_unique_buf buf, size_t len)
 {
   this->_type               = type;
-  this->_has_key_phase      = true;
   this->_key_phase          = key_phase;
   this->_connection_id      = connection_id;
   this->_packet_number      = packet_number;
@@ -707,12 +708,6 @@ QUICPacketShortHeader::payload() const
   }
 }
 
-bool
-QUICPacketShortHeader::has_key_phase() const
-{
-  return true;
-}
-
 QUICKeyPhase
 QUICPacketShortHeader::key_phase() const
 {
@@ -740,7 +735,7 @@ QUICPacketShortHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, siz
 }
 
 bool
-QUICPacketShortHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil)
+QUICPacketShortHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil)
 {
   pn_offset = 1 + dcil;
   return true;
@@ -991,7 +986,7 @@ QUICPacket::encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 bool
 QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked)
 {
-  ink_assert(len == 1 || len == 2 || len == 4);
+  ink_assert(len == 1 || len == 2 || len == 3 || len == 4);
 
   uint64_t maximum_diff = 0;
   switch (len) {
@@ -1001,11 +996,14 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
   case 2:
     maximum_diff = 0x4000;
     break;
+  case 3:
+    maximum_diff = 0x400000;
+    break;
   case 4:
     maximum_diff = 0x40000000;
     break;
   default:
-    ink_assert(!"len must be 1, 2 or 4");
+    ink_assert(!"len must be 1, 2, 3 or 4");
   }
   QUICPacketNumber base       = largest_acked & (~(maximum_diff - 1));
   QUICPacketNumber candidate1 = base + src;
@@ -1023,9 +1021,9 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
 }
 
 bool
-QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector, int dcil)
+QUICPacket::protect_packet_header(uint8_t *packet, size_t packet_len, const QUICPacketHeaderProtector *ph_protector, int dcil)
 {
-  size_t pn_offset             = 0;
+  uint8_t pn_offset            = 0;
   uint8_t pn_len               = 4;
   size_t sample_offset         = 0;
   constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
@@ -1040,68 +1038,15 @@ QUICPacket::protect_packet_number(uint8_t *packet, size_t packet_len, const QUIC
     QUICPacketShortHeader::key_phase(phase, packet, packet_len);
     QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, dcil);
   }
-  sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
+  sample_offset = std::min(static_cast<size_t>(pn_offset) + 4, packet_len - aead_expansion);
 
   uint8_t protected_pn[4]  = {0};
   uint8_t protected_pn_len = 0;
   pn_len                   = QUICTypeUtil::read_QUICPacketNumberLen(packet + pn_offset);
-  if (!pn_protector->protect(protected_pn, protected_pn_len, packet + pn_offset, pn_len, packet + sample_offset, phase)) {
+  if (!ph_protector->protect(protected_pn, protected_pn_len, packet + pn_offset, pn_len, packet + sample_offset, phase)) {
     return false;
   }
   memcpy(packet + pn_offset, protected_pn, pn_len);
-  return true;
-}
-
-bool
-QUICPacket::unprotect_packet_number(uint8_t *packet, size_t packet_len, const QUICPacketNumberProtector *pn_protector)
-{
-  size_t pn_offset             = 0;
-  uint8_t pn_len               = 4;
-  size_t sample_offset         = 0;
-  constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
-  QUICKeyPhase phase;
-
-  if (QUICInvariants::is_long_header(packet)) {
-#ifdef DEBUG
-    QUICVersion version;
-    QUICPacketLongHeader::version(version, packet, packet_len);
-    ink_assert(version != 0x0);
-#endif
-
-    QUICPacketType type;
-    QUICPacketLongHeader::type(type, packet, packet_len);
-    phase = QUICTypeUtil::key_phase(type);
-
-    if (!QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len)) {
-      Debug(tag.data(), "Failed to calculate packet number offset");
-      return false;
-    }
-
-    Debug("v_quic_crypto", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
-          QUICDebugNames::key_phase(phase));
-
-  } else {
-    QUICPacketShortHeader::key_phase(phase, packet, packet_len);
-    if (!QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, QUICConnectionId::SCID_LEN)) {
-      Debug(tag.data(), "Failed to calculate packet number offset");
-      return false;
-    }
-  }
-  sample_offset = std::min(pn_offset + 4, packet_len - aead_expansion);
-
-  uint8_t unprotected_pn[4]  = {0};
-  uint8_t unprotected_pn_len = 0;
-  if (!pn_protector->unprotect(unprotected_pn, unprotected_pn_len, packet + pn_offset, pn_len, packet + sample_offset, phase)) {
-    return false;
-  }
-  unprotected_pn_len = QUICTypeUtil::read_QUICPacketNumberLen(unprotected_pn);
-
-  if (pn_offset + unprotected_pn_len > packet_len) {
-    Debug(tag.data(), "Malformed header: pn_offset=%zu, pn_len=%d", pn_offset, unprotected_pn_len);
-    return false;
-  }
-
-  memcpy(packet + pn_offset, unprotected_pn, unprotected_pn_len);
   return true;
 }
 

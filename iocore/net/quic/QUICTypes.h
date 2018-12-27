@@ -81,14 +81,14 @@ constexpr QUICEncryptionLevel QUIC_PN_SPACES[] = {
 
 // Devide to QUICPacketType and QUICPacketLongHeaderType ?
 enum class QUICPacketType : uint8_t {
-  VERSION_NEGOTIATION = 0,
-  PROTECTED,                 // Not on the spec. but just for convenience // should be short header
-  STATELESS_RESET,           // Not on the spec. but just for convenience
-  INITIAL            = 0x7F, // draft-08 version-specific type
-  RETRY              = 0x7E, // draft-08 version-specific type
-  HANDSHAKE          = 0x7D, // draft-08 version-specific type
-  ZERO_RTT_PROTECTED = 0x7C, // draft-08 version-specific type
-  UNINITIALIZED      = 0xFF, // Not on the spec. but just for convenience
+  INITIAL             = 0x00, // draft-17 version-specific type
+  ZERO_RTT_PROTECTED  = 0x01, // draft-17 version-specific type
+  HANDSHAKE           = 0x02, // draft-17 version-specific type
+  RETRY               = 0x03, // draft-17 version-specific type
+  VERSION_NEGOTIATION = 0xF0, // Not on the spec. but just for convenience
+  PROTECTED,                  // Not on the spec. but just for convenience
+  STATELESS_RESET,            // Not on the spec. but just for convenience
+  UNINITIALIZED = 0xFF,       // Not on the spec. but just for convenience
 };
 
 // XXX If you add or remove QUICFrameType, you might also need to change QUICFrame::type(const uint8_t *)
@@ -456,7 +456,7 @@ public:
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
   static int read_QUICPacketNumberLen(const uint8_t *buf);
-  static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf);
+  static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf, int len);
   static QUICVersion read_QUICVersion(const uint8_t *buf);
   static QUICStreamId read_QUICStreamId(const uint8_t *buf);
   static QUICOffset read_QUICOffset(const uint8_t *buf);

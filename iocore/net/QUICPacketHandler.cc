@@ -72,7 +72,7 @@ QUICPacketHandler::close_conenction(QUICNetVConnection *conn)
 
 void
 QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
-                                const QUICPacketNumberProtector *pn_protector, int dcil)
+                                const QUICPacketHeaderProtector *ph_protector, int dcil)
 {
   size_t udp_len;
   Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
@@ -80,8 +80,8 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
   packet.store(reinterpret_cast<uint8_t *>(udp_payload->end()), &udp_len);
   udp_payload->fill(udp_len);
 
-  if (pn_protector) {
-    QUICPacket::protect_packet_number(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_len, pn_protector, dcil);
+  if (ph_protector) {
+    QUICPacket::protect_packet_header(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_len, ph_protector, dcil);
   }
 
   UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload);
@@ -345,9 +345,9 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 
 // TODO: Should be called via eventProcessor?
 void
-QUICPacketHandlerIn::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketNumberProtector &pn_protector)
+QUICPacketHandlerIn::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketHeaderProtector &ph_protector)
 {
-  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
+  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &ph_protector, vc->peer_connection_id().length());
 }
 
 void
@@ -446,9 +446,9 @@ QUICPacketHandlerOut::event_handler(int event, Event *data)
 }
 
 void
-QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketNumberProtector &pn_protector)
+QUICPacketHandlerOut::send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketHeaderProtector &ph_protector)
 {
-  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &pn_protector, vc->peer_connection_id().length());
+  this->_send_packet(this, packet, vc->get_udp_con(), vc->con.addr, vc->pmtu(), &ph_protector, vc->peer_connection_id().length());
 }
 
 void

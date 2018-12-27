@@ -20,17 +20,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "QUICGlobals.h"
 #include "QUICHandshakeProtocol.h"
-#include "QUICDebugNames.h"
-
-#include "tscore/Diags.h"
 #include "QUICTypes.h"
-#include "QUICHKDF.h"
-
-//
-// QUICPacketProtection
-//
 
 QUICPacketProtection::~QUICPacketProtection() {}
 
@@ -50,52 +41,4 @@ QUICKeyPhase
 QUICPacketProtection::key_phase() const
 {
   return this->_key_phase;
-}
-
-//
-// QUICPacketNumberProtector
-//
-
-bool
-QUICPacketNumberProtector::protect(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn,
-                                   uint8_t unprotected_pn_len, const uint8_t *sample, QUICKeyPhase phase) const
-{
-  const KeyMaterial *km = this->_hs_protocol->key_material_for_encryption(phase);
-  if (!km) {
-    Debug("quic_pne", "Failed to encrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
-    return false;
-  }
-
-  const QUIC_EVP_CIPHER *aead = this->_hs_protocol->cipher_for_pne(phase);
-
-  bool ret = this->_encrypt_pn(protected_pn, protected_pn_len, unprotected_pn, unprotected_pn_len, sample, *km, aead);
-  if (!ret) {
-    Debug("quic_pne", "Failed to encrypt a packet number");
-  }
-  return ret;
-}
-
-bool
-QUICPacketNumberProtector::unprotect(uint8_t *unprotected_pn, uint8_t &unprotected_pn_len, const uint8_t *protected_pn,
-                                     uint8_t protected_pn_len, const uint8_t *sample, QUICKeyPhase phase) const
-{
-  const KeyMaterial *km = this->_hs_protocol->key_material_for_decryption(phase);
-  if (!km) {
-    Debug("quic_pne", "Failed to decrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
-    return false;
-  }
-
-  const QUIC_EVP_CIPHER *aead = this->_hs_protocol->cipher_for_pne(phase);
-
-  bool ret = this->_decrypt_pn(unprotected_pn, unprotected_pn_len, protected_pn, protected_pn_len, sample, *km, aead);
-  if (!ret) {
-    Debug("quic_pne", "Failed to decrypt a packet number");
-  }
-  return ret;
-}
-
-void
-QUICPacketNumberProtector::set_hs_protocol(const QUICHandshakeProtocol *hs_protocol)
-{
-  this->_hs_protocol = hs_protocol;
 }
