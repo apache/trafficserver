@@ -29,40 +29,52 @@
 TEST_CASE("QUICStream", "[quic]")
 {
   // Test Data
-  uint8_t payload[]  = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
-  uint32_t stream_id = 0x03;
+  uint8_t payload[]        = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
+  uint32_t stream_id       = 0x03;
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc();
+  memcpy(block->start(), payload, sizeof(payload));
+  block->fill(sizeof(payload));
 
-  ats_unique_buf payload1 = ats_unique_malloc(2);
-  memcpy(payload1.get(), payload, 2);
-  std::shared_ptr<QUICStreamFrame> frame_1 = std::make_shared<QUICStreamFrame>(std::move(payload1), 2, stream_id, 0);
+  Ptr<IOBufferBlock> new_block             = make_ptr<IOBufferBlock>(block->clone());
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_1 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 0);
+  block->consume(2);
 
-  ats_unique_buf payload2 = ats_unique_malloc(2);
-  memcpy(payload2.get(), payload + 2, 2);
-  std::shared_ptr<QUICStreamFrame> frame_2 = std::make_shared<QUICStreamFrame>(std::move(payload2), 2, stream_id, 2);
+  new_block                                = block->clone();
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_2 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 2);
+  block->consume(2);
 
-  ats_unique_buf payload3 = ats_unique_malloc(2);
-  memcpy(payload3.get(), payload + 4, 2);
-  std::shared_ptr<QUICStreamFrame> frame_3 = std::make_shared<QUICStreamFrame>(std::move(payload3), 2, stream_id, 4);
+  new_block                                = block->clone();
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_3 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 4);
+  block->consume(2);
 
-  ats_unique_buf payload4 = ats_unique_malloc(2);
-  memcpy(payload4.get(), payload + 6, 2);
-  std::shared_ptr<QUICStreamFrame> frame_4 = std::make_shared<QUICStreamFrame>(std::move(payload4), 2, stream_id, 6);
+  new_block                                = block->clone();
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_4 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 6);
+  block->consume(2);
 
-  ats_unique_buf payload5 = ats_unique_malloc(2);
-  memcpy(payload5.get(), payload + 8, 2);
-  std::shared_ptr<QUICStreamFrame> frame_5 = std::make_shared<QUICStreamFrame>(std::move(payload5), 2, stream_id, 8);
+  new_block                                = block->clone();
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_5 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 8);
+  block->consume(2);
 
-  ats_unique_buf payload6 = ats_unique_malloc(2);
-  memcpy(payload6.get(), payload + 10, 2);
-  std::shared_ptr<QUICStreamFrame> frame_6 = std::make_shared<QUICStreamFrame>(std::move(payload6), 2, stream_id, 10);
+  new_block                                = block->clone();
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_6 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 10);
+  block->consume(2);
 
-  ats_unique_buf payload7 = ats_unique_malloc(2);
-  memcpy(payload7.get(), payload + 12, 2);
-  std::shared_ptr<QUICStreamFrame> frame_7 = std::make_shared<QUICStreamFrame>(std::move(payload7), 2, stream_id, 12);
+  new_block                                = block->clone();
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_7 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 12);
+  block->consume(2);
 
-  ats_unique_buf payload8 = ats_unique_malloc(2);
-  memcpy(payload8.get(), payload + 14, 2);
-  std::shared_ptr<QUICStreamFrame> frame_8 = std::make_shared<QUICStreamFrame>(std::move(payload8), 2, stream_id, 14);
+  new_block                                = block->clone();
+  new_block->_end                          = new_block->_start + 2;
+  std::shared_ptr<QUICStreamFrame> frame_8 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 14);
+  block->consume(2);
 
   SECTION("QUICStream_assembling_byte_stream_1")
   {
@@ -158,25 +170,29 @@ TEST_CASE("QUICStream", "[quic]")
     std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc();
+    block->fill(1024);
+
     // Start with 1024 but not 0 so received frames won't be processed
-    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(block, stream_id, 1024));
     CHECK(error == nullptr);
     // duplicate
-    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 1024));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(block, stream_id, 1024));
     CHECK(error == nullptr);
-    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 3072));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(block, stream_id, 3072));
     CHECK(error == nullptr);
     // delay
-    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 2048));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(block, stream_id, 2048));
     CHECK(error == nullptr);
     // all frames should be processed
-    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 0));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(block, stream_id, 0));
     CHECK(error == nullptr);
     // start again without the first block
-    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 5120));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(block, stream_id, 5120));
     CHECK(error == nullptr);
     // this should exceed the limit
-    error = stream->recv(*std::make_shared<QUICStreamFrame>(ats_unique_malloc(1024), 1024, stream_id, 8192));
+    error = stream->recv(*std::make_shared<QUICStreamFrame>(block, stream_id, 8192));
     CHECK(error->cls == QUICErrorClass::TRANSPORT);
     CHECK(error->code == static_cast<uint16_t>(QUICTransErrorCode::FLOW_CONTROL_ERROR));
   }
