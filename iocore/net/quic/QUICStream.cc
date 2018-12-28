@@ -413,7 +413,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   // RST_STREAM
   if (this->_reset_reason && !this->_is_reset_sent) {
     frame = QUICFrameFactory::create_rst_stream_frame(*this->_reset_reason, this->_issue_frame_id(), this);
-    this->_records_frame(frame->id(), {frame->type(), level});
+    this->_records_rst_stream_frame(*static_cast<QUICRstStreamFrame *>(frame.get()));
     this->_state.update_with_sending_frame(*frame);
     this->_is_reset_sent = true;
     return frame;
@@ -423,7 +423,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   if (this->_stop_sending_reason && !this->_is_stop_sending_sent) {
     frame =
       QUICFrameFactory::create_stop_sending_frame(this->id(), this->_stop_sending_reason->code, this->_issue_frame_id(), this);
-    this->_records_frame(frame->id(), {frame->type(), level});
+    this->_records_stop_sending_frame(*static_cast<QUICStopSendingFrame *>(frame.get()));
     this->_state.update_with_sending_frame(*frame);
     this->_is_stop_sending_sent = true;
     return frame;
@@ -432,6 +432,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   // MAX_STREAM_DATA
   frame = this->_local_flow_controller.generate_frame(level, UINT16_MAX, maximum_frame_size);
   if (frame) {
+    this->_records_max_stream_data_frame(*static_cast<QUICMaxStreamDataFrame *>(frame.get()));
     return frame;
   }
 
@@ -491,7 +492,9 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   ink_assert(static_cast<uint64_t>(block->read_avail()) == len);
 
   // STREAM - Pure FIN or data length is lager than 0
-  frame = QUICFrameFactory::create_stream_frame(block, this->_id, this->_send_offset, fin);
+  // FIXME has_length_flag and has_offset_flag should be configurable
+  frame =
+    QUICFrameFactory::create_stream_frame(block, this->_id, this->_send_offset, fin, true, true, this->_issue_frame_id(), this);
   if (!this->_state.is_allowed_to_send(*frame)) {
     QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
     return frame;
@@ -514,6 +517,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     this->_send_offset += len;
     this->_write_vio.ndone += len;
   }
+  this->_records_stream_frame(*static_cast<QUICStreamFrame *>(frame.get()), block);
 
   this->_signal_write_event();
   this->_state.update_with_sending_frame(*frame);
@@ -522,23 +526,78 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 }
 
 void
+QUICStream::_records_stream_frame(const QUICStreamFrame &frame, Ptr<IOBufferBlock> &block)
+{
+  QUICFrameInformation info;
+  info.type                   = frame.type();
+  StreamFrameInfo *frame_info = reinterpret_cast<StreamFrameInfo *>(info.data);
+  frame_info->offset          = frame.offset();
+  frame_info->has_fin         = frame.has_fin_flag();
+  frame_info->block           = block;
+  this->_records_frame(frame.id(), info);
+}
+
+void
+QUICStream::_records_rst_stream_frame(const QUICRstStreamFrame &frame)
+{
+  QUICFrameInformation info;
+  info.type                      = frame.type();
+  RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info.data);
+  frame_info->error_code         = frame.error_code();
+  frame_info->final_offset       = frame.final_offset();
+  this->_records_frame(frame.id(), info);
+}
+
+void
+QUICStream::_records_stop_sending_frame(const QUICStopSendingFrame &frame)
+{
+  QUICFrameInformation info;
+  info.type                        = frame.type();
+  StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info.data);
+  frame_info->error_code           = frame.error_code();
+  this->_records_frame(frame.id(), info);
+}
+
+void
+QUICStream::_records_max_stream_data_frame(const QUICMaxStreamDataFrame &frame)
+{
+  QUICFrameInformation info;
+  info.type                       = frame.type();
+  MaxStreamDataInfo *frame_info   = reinterpret_cast<MaxStreamDataInfo *>(info.data);
+  frame_info->maximum_stream_data = frame.maximum_stream_data();
+  this->_records_frame(frame.id(), info);
+}
+
+void
 QUICStream::_on_frame_acked(QUICFrameInformation info)
 {
-  if (info.type == QUICFrameType::RST_STREAM) {
+  StreamFrameInfo *frame_info = nullptr;
+  switch (info.type) {
+  case QUICFrameType::RST_STREAM:
     this->_is_reset_complete = true;
-  } else if (info.type == QUICFrameType::STREAM) {
-    // TODO Check if it received acks for every parts of data
+    break;
+  case QUICFrameType::STREAM:
+    frame_info        = reinterpret_cast<StreamFrameInfo *>(info.data);
+    frame_info->block = nullptr;
     if (false) {
       this->_is_transfer_complete = true;
     }
+    break;
+  case QUICFrameType::STOP_SENDING:
+  case QUICFrameType::MAX_STREAM_DATA:
+  default:
+    break;
   }
+
   this->_state.update_on_ack();
 }
 
 void
 QUICStream::_on_frame_lost(QUICFrameInformation info)
 {
-  if (info.type == QUICFrameType::RST_STREAM) {
+  StreamFrameInfo *frame_info = nullptr;
+  switch (info.type) {
+  case QUICFrameType::RST_STREAM:
     // [draft-16] 13.2.  Retransmission of Information
     // Cancellation of stream transmission, as carried in a RST_STREAM
     // frame, is sent until acknowledged or until all stream data is
@@ -546,8 +605,17 @@ QUICStream::_on_frame_lost(QUICFrameInformation info)
     // "Data Recvd" state is reached on the send stream).  The content of
     // a RST_STREAM frame MUST NOT change when it is sent again.
     this->_is_reset_sent = false;
-  } else if (info.type == QUICFrameType::STOP_SENDING) {
+    break;
+  case QUICFrameType::STREAM:
+    frame_info        = reinterpret_cast<StreamFrameInfo *>(info.data);
+    frame_info->block = nullptr;
+    break;
+  case QUICFrameType::STOP_SENDING:
     this->_is_stop_sending_sent = false;
+    break;
+  case QUICFrameType::MAX_STREAM_DATA:
+  default:
+    break;
   }
 }
 
@@ -824,9 +892,33 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   block->_end = std::min(block->start() + frame_payload_size, block->_buf_end);
   ink_assert(static_cast<uint64_t>(block->read_avail()) == frame_payload_size);
 
-  frame = QUICFrameFactory::create_crypto_frame(block, this->_send_offset);
+  QUICFrameInformation info;
+  info.type                                 = QUICFrameType::CRYPTO;
+  QUICFrameId frame_id                      = this->_issue_frame_id();
+  CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
+  crypto_frame_info->offset                 = this->_send_offset;
+  crypto_frame_info->block                  = block;
+  this->_records_frame(frame_id, info);
+
+  frame = QUICFrameFactory::create_crypto_frame(block, this->_send_offset, frame_id, this);
   this->_send_offset += frame_payload_size;
   this->_write_buffer_reader->consume(frame_payload_size);
 
   return frame;
+}
+
+void
+QUICCryptoStream::_on_frame_acked(QUICFrameInformation info)
+{
+  ink_assert(info.type == QUICFrameType::CRYPTO);
+  CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
+  crypto_frame_info->block                  = nullptr;
+}
+
+void
+QUICCryptoStream::_on_frame_lost(QUICFrameInformation info)
+{
+  ink_assert(info.type == QUICFrameType::CRYPTO);
+  CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
+  crypto_frame_info->block                  = nullptr;
 }
