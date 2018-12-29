@@ -22,9 +22,9 @@
 TLS User Agent Hooks
 ********************
 
-In addition to the HTTP oriented hooks, a plugin can add hooks to trigger code
-during the TLS handshake with the user agent.  This TLS handshake occurs well before
-the HTTP transaction is available, so a separate state machine is required to track the
+In addition to the HTTP oriented hooks, a plugin can add hooks (by calling :c:func:`TSHttpHookAdd`)
+to trigger code during the TLS handshake with the user agent.  This TLS handshake occurs well
+before the HTTP transaction is available, so a separate state machine is required to track the
 TLS hooks.
 
 TLS Hooks
