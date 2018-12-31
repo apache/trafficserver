@@ -42,6 +42,9 @@ EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README-E
 # Default value when creating release candidates
 RC = 0
 
+# Make sure the git pre-commit hook gets installed on build time
+all-local: $(abs_top_srcdir)/.git/hooks/pre-commit
+
 # igalic can't remember if this is make check or make test and neither should you.
 test: check
 
@@ -90,6 +93,10 @@ examples: all
 
 install-examples: examples
 	@cd example && $(MAKE) $(AM_MAKEFLAGS) install pkglibdir=$(pkglibexecdir)
+
+$(abs_top_srcdir)/.git/hooks/pre-commit: $(abs_top_srcdir)/tools/git/pre-commit
+	[ -d $(abs_top_srcdir)/.git/hooks ] && \
+		cp $(abs_top_srcdir)/tools/git/pre-commit $(abs_top_srcdir)/.git/hooks/pre-commit
 
 install-data-hook:
 if BUILD_DOCS
