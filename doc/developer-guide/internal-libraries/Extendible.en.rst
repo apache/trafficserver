@@ -21,17 +21,11 @@
 .. default-domain:: cpp
 
 .. |Extendible| replace:: :class:`Extendible`
-.. |FieldId| replace:: :class:`~Extendible::FieldId`
-.. |FieldId_C| replace:: :type:`FieldId_C`
-.. |FieldSchema| replace:: :class:`~Extendible::FieldSchema`
-.. |Schema| replace:: :class:`~Extendible::Schema`
+.. |FieldId| replace:: :class:`template<typename Derived_t, typename Field_t> FieldId`
+.. |ExtFieldContext| replace:: :type:`ExtFieldContext`
+.. |FieldDesc| replace:: :class:`FieldDesc`
+.. |Schema| replace:: :class:`Schema`
 
-.. |ATOMIC| replace:: :enumerator:`~AccessEnum::ATOMIC`
-.. |BIT| replace:: :enumerator:`~AccessEnum::BIT`
-.. |ACIDPTR| replace:: :enumerator:`~AccessEnum::ACIDPTR`
-.. |STATIC| replace:: :enumerator:`~AccessEnum::STATIC`
-.. |DIRECT| replace:: :enumerator:`~AccessEnum::DIRECT`
-.. |C_API| replace:: :enumerator:`~AccessEnum::C_API`
 
 .. _Extendible:
 
@@ -43,218 +37,291 @@ Synopsis
 
 .. code-block:: cpp
 
-   #include "ts/Extendible.h"
+   #include "tscore/Extendible.h"
 
-|Extendible| allows Plugins to append additional storage to Core data structures.
+|Extendible| allows Plugins to append additional storage to Core data structures and interface like a map or dictionary. Each additional field is declared during init, so that a custom allocator can malloc one block for the Datatype and its extended fields.
+In C++, the |FieldId| are strongly typed field handles, which allows you to use Extendible in multiple inheritance, and at many levels of inheritance hierarchy, with compile time type safety.
 
 Use Case:
 
-TSCore
+  TSCore
 
-  Defines class ``Host`` as |Extendible|
+    Defines class ``Host`` as |Extendible|
 
-TSPlugin ``HealthStatus``
+  TSPlugin ``HealthStatus``
 
-  Appends field ``"down reason code"`` to ``Host``
-  Now the plugin does not need to create completely new lookup table and all implementation that comes with it.
+    Extend the ``Host`` datatype with field ``<int> down reason code``. API returns a handle.
+
+    Use the (Data*, handle) to read & write fields.
 
 
 Description
 +++++++++++
 
-A data class that inherits from Extendible, uses a CRTP (Curiously Recurring Template Pattern) so that its static |Schema| instance is unique among other |Extendible| types.
+A data class that inherits from Extendible, uses a CRTP (Curiously Recurring Template Pattern)
+so that its static |Schema| instance is unique among other |Extendible| types. Thus all instances of the type implicitly know memory layout of the fields.
 
 .. code-block:: cpp
 
-   class ExtendibleExample : Extendible<ExtendibleExample> {
+   class ExtendibleExample : public ext::Extendible<ExtendibleExample> {
       int real_member = 0;
    }
 
+The documentation and code refers to the `Derived` type as the class that is inheriting from an |Extendible|.
 
-During system init, code and plugins can add fields to the |Extendible|'s schema. This will update the `Memory Layout`_ of the schema, and the memory offsets of all fields. The schema does not know the field's type, but it stores the byte size and creates lambdas of the type's constructor and destructor. And to avoid corruption, the code asserts that no instances are in use when adding fields.
+During system init, code and plugins add fields to the |Extendible|'s schema. This will update the `Memory Layout`_ of the schema,
+and the memory offsets of all fields. The schema does not know the field's type, but it stores the byte size and creates std::functions of
+the type's constructor, destructor, and serializer. And to avoid corruption, the code asserts that no instances are in use when adding fields.
 
 .. code-block:: cpp
 
-   ExtendibleExample::FieldId<ATOMIC,int> fld_my_int;
+   ext::FieldId<ExtendibleExample,int> fld_my_int;
 
    void PluginInit() {
-     fld_my_int = ExtendibleExample::schema.addField("my_plugin_int");
+     fld_my_int = ext::fieldAdd(fld_my_int, "my_plugin_int");
    }
 
 
-When an |Extendible| derived class is instantiated, :code:`new()` will allocate a block of memory for the derived class and all added fields. There is zero memory overhead per instance, unless using :enumerator:`~AccessEnum::ACIDPTR` field access type.
+When an derived class is instantiated, :func:`template<> alloc()` will allocate a block of memory for the derived class and all added
+fields. The only memory overhead per instance is an uint16 used as a offset to the start of the extendible block.
 
 .. code-block:: cpp
 
    ExtendibleExample* alloc_example() {
-     return new ExtendibleExample();
+     return ext::alloc<ExtendibleExample>();
    }
 
 Memory Layout
 -------------
-One block of memory is allocated per |Extendible|, which include all member variables and appended fields.
+One block of memory is allocated per |Extendible|, which included all member variables and extended fields.
 Within the block, memory is arranged in the following order:
 
-#. Derived members (+padding align next field)
-#. Fields (largest to smallest)
-#. Packed Bits
+   #. Derived members (+padding align next field)
+   #. Fields (largest to smallest)
+   #. Packed Bits
+
+When using inheritance, all base cases arranged from most super to most derived,
+then all |Extendible| blocks are arranged from most super to most derived.
+If the fields are aligned, padding will be inserted where needed.
 
 Strongly Typed Fields
 ---------------------
-:class:`template<AccessEnum FieldAccess_e, typename T> Extendible::FieldId`
+:class:`template<typename Derived_t, typename Field_t> FieldId`
 
-|FieldId| is a templated ``T`` reference. One benefit is that all type casting is internal to the |Extendible|,
+|FieldId| is a templated ``Field_t`` reference. One benefit is that all type casting is internal to the |Extendible|,
 which simplifies the code using it. Also this provides compile errors for common misuses and type mismatches.
 
 .. code-block:: cpp
 
    // Core code
-   class Food : Extendible<Food> {}
-   class Car : Extendible<Car> {}
+   class Food : public ext::Extendible<Food> {};
+   class Car : public ext::Extendible<Car> {};
 
    // Example Plugin
-   Food::FieldId<STATIC,float> fld_food_weight;
-   Food::FieldId<STATIC,time_t> fld_expr_date;
-   Car::FieldId<STATIC,float> fld_max_speed;
-   Car::FieldId<STATIC,float> fld_car_weight;
+   ext::FieldId<Food,float> fld_food_weight;
+   ext::FieldId<Food,time_t> fld_expr_date;
+   ext::FieldId<Car,float> fld_max_speed;
+   ext::FieldId<Car,float> fld_car_weight;
 
    PluginInit() {
-      Food.schema.addField(fld_food_weight, "weight");
-      Food.schema.addField(fld_expr_date,"expire date");
-      Car.schema.addField(fld_max_speed,"max_speed");
-      Car.schema.addField(fld_car_weight,"weight"); // 'weight' is unique within 'Car'
+      ext::addField(fld_food_weight, "weight");
+      ext::addField(fld_expr_date,"expire date");
+      ext::addField(fld_max_speed,"max_speed");
+      ext::addField(fld_car_weight,"weight"); // 'weight' is unique within 'Car'
    }
 
    PluginFunc() {
-      Food banana;
-      Car camry;
+      Food *banana = ext::alloc<Food>();
+      Car *camry = ext::alloc<Car>();
 
       // Common user errors
 
-      float expire_date = banana.get(fld_expr_date);
-      //^^^                                              Compile error: cannot convert time_t to float
-      float speed = banana.get(fld_max_speed);
-      //                       ^^^^^^^^^^^^^             Compile error: fld_max_speed is not of type Extendible<Food>::FieldId
-      float weight = camry.get(fld_food_weight);
-      //                       ^^^^^^^^^^^^^^^           Compile error: fld_food_weight is not of type Extendible<Car>::FieldId
+      float expire_date = ext::get(banana,fld_expr_date);
+      //^^^
+      // Compile error: cannot convert time_t to float
+
+      float speed = ext::get(banana,fld_max_speed);
+      //                            ^^^^^^^^^^^^^
+      // Compile error: Cannot downcast banana to type Extendible<Car>
+
+      float weight = ext::get(camry,fld_food_weight);
+      //                            ^^^^^^^^^^^^^^^
+      // Compile error: Cannot downcast camry to type Extendible<Food>, even though Car and Food each have a 'weight' field, the FieldId is strongly typed.
+
    }
 
-Field Access Types
-------------------
+   // Inheritance Example
+   class Fruit : Food, Extendible<Fruit> {
+      using super_type = Food;
+   };
 
-.. _AccessType:
+   ext::FieldId<Fruit,has_seeds> fld_has_seeds;
 
-..
-  Currently Sphinx will link to the first overloaded version of the method /
-  function. (As of Sphinx 1.7.6)
+   Fruit.schema.addField(fld_has_seeds, "has_seeds");
 
-.. |GET| replace:: :func:`~Extendible::get`
-.. |READBIT| replace:: :func:`~Extendible::readBit`
-.. |WRITEBIT| replace:: :func:`~Extendible::writeBit`
-.. |WRITEACIDPTR| replace:: :func:`~Extendible::writeAcidPtr`
-.. |INIT| replace:: :func:`~Extendible::init`
+   Fruit mango = ext::alloc<Fruit>();
 
-================   =================================   ================================================================   =================================================   ================================================
-Enums              Allocates                                           API                                                            Pros                                               Cons
-================   =================================   ================================================================   =================================================   ================================================
-|ATOMIC|           ``std::atomic<T>``                  |GET|                                                              Leverages ``std::atomic`` API. No Locking.          Only works on small data types.
-|BIT|              1 bit from packed bits              |GET|, |READBIT|, |WRITEBIT|                                       Memory efficient.                                   Cannot return reference.
-|ACIDPTR|          ``std::make_shared<T>``             |GET|, |WRITEACIDPTR|                                              Avoid skew in non-atomic structures.                Non-contiguous memory allocations. Uses locking.
-|STATIC|           ``T``                               |GET|, |INIT|                                                      Const reference. Fast. Type safe.                   No concurrency protection.
-|DIRECT|           ``T``                               |GET|                                                              Direct reference. Fast. Type safe.                  No concurrency protection.
-|C_API|            a number of bytes                   |GET|                                                              Can use in C.                                       No concurrency protection. Not type safe.
-================   =================================   ================================================================   =================================================   ================================================
+   ext::set(mango, fld_has_seeds) = true;         // downcasts mango to Extendible<Fruit>
+   ext::set(mango, fld_food_weight) = 2;          // downcasts mango to Extendible<Food>
+   ext::set(mango, fld_max_speed) = 9;
+   //              ^^^^^^^^^^^^^
+   // Compile error: Cannot downcast mango to type Extendible<Car>
 
-:code:`operator[](FieldId)` has been overridden to call :code:`get(FieldId)` for all access types.
 
-Unfortunately our data is not "one type fits all". I expect that most config values will be stored as :enumerator:`AccessEnum::STATIC`, most states values will be :enumerator:`AccessEnum::ATOMIC` or :enumerator:`AccessEnum::BIT`, while vectored results will be :enumerator:`AccessEnum::ACIDPTR`.
+Inheritance
+-----------
+
+   Unfortunately it is non-trivial handle multiple |Extendible| super types in the same inheritance tree.
+   :func:`template<> alloc()` handles allocation and initialization of the entire `Derived` class, but it is dependent on each class defining :code:`using super_type = *some_super_class*;` so that it recurse through the classes.
+
+.. code-block:: cpp
+
+   struct A : public Extendible<A> {
+      uint16_t a = {1};
+   };
+
+   struct B : public A {
+      using super_type = A;
+      uint16_t b       = {2};
+   };
+
+   struct C : public B, public Extendible<C> {
+      using super_type = B;
+      uint16_t c       = {3};
+   };
+
+   ext::FieldId<A, atomic<uint16_t>> ext_a_1;
+   ext::FieldId<C, uint16_t> ext_c_1;
+
+   C &x = *(ext::alloc<C>());
+   ext::viewFormat(x);
+
+:func:`viewFormat` prints a diagram of the position and size of bytes used within the allocated memory.
+::
+
+   1A | EXT  | 2b | ##________##__
+   1A | BASE | 2b | __##__________
+   1B | BASE | 2b | ____##________
+   1C | EXT  | 2b | ______##____##
+   1C | BASE | 2b | ________##____
+
+
+
+See src/tscore/unit_tests/test_Extendible.cc for more examples.
 
 Reference
 +++++++++
 
-.. enum:: AccessEnum
+Namespace `ext`
 
-   .. enumerator:: ATOMIC
+.. class:: template<typename Derived_t, typename Field_t> FieldId
 
-      Represents atomic field reference (read, write or other atomic operation).
+   The handle used to access a field. These are templated to prevent human error, and branching logic.
 
-   .. enumerator:: BIT
+   :tparam Derived_t: The class that you want to extend at runtime.
+   :tparam Field_t: The type of the field.
 
-      Represents compressed boolean fields.
+.. type:: const void* ExtFieldContext
 
-   .. enumerator:: STATIC
+   The handle used to access a field through C API. Human error not allowed by convention.
 
-      Represents immutable field, value is not expected to change, no internal thread safety.
-
-   .. enumerator:: ACIDPTR
-
-      Represents a pointer promising Atomicity, Consistency, Isolation, Durability
-
-      .. seealso:: :ref:`AcidPtr`
-
-   .. enumerator:: DIRECT
-
-      Represents a mutable field with no internal thread safety.
-
-   .. enumerator:: C_API
-
-      Represents C-Style pointer access.
 
 .. class:: template<typename Derived_t> Extendible
 
-   Allocates block of memory, uses |FieldId| or schema to access slices of memory.
+   Allocates block of memory, uses |FieldId| and |Schema| to access slices of memory.
 
    :tparam Derived_t: The class that you want to extend at runtime.
 
-   .. class:: template<AccessEnum FieldAccess_e, typename T> FieldId
+   .. member:: static Schema  schema
 
-      The handle used to access a field. These are templated to prevent human error, and branching logic.
-
-      :tparam FieldAccess_e: The type of access to the field.
-      :tparam T: The type of the field.
-
-   .. class:: FieldSchema
-
-      Stores attributes, constructor and destructor of a field.
-
-   .. class:: Schema
-
-      Manages fields and memory layout of an |Extendible| type.
-
-      .. function:: template<AccessEnum FieldAccess_e, typename T> bool addField(FieldId<FieldAccess_e, T> & field_id, std::string const & field_name)
-
-         Add a new field to this record type.
-
-   .. member:: static Schema schema
-
-      one schema instance per |Extendible| to define contained fields
-
-   .. function:: template<AccessEnum FieldAccess_e, typename T> std::atomic<T> & get(FieldId<AccessEnum::ATOMIC, T> const & field)
-
-   .. type::  BitFieldId = FieldId<AccessEnum::BIT, bool>
-
-   .. function:: bool const get(BitFieldId field) const
-
-   .. function:: bool const readBit(BitFieldId field) const
-
-   .. function:: void writeBit(BitFieldId field, bool const val)
-
-   .. function:: template <AccessEnum FieldAccess_e, typename T> T const & get(FieldId<AccessEnum::STATIC, T> field) const
-
-   .. function:: template <AccessEnum FieldAccess_e, typename T> T &init(FieldId<AccessEnum::STATIC, T> field)
-
-   .. function:: template <AccessEnum FieldAccess_e, typename T> std::shared_ptr<const T> get(FieldId<AccessEnum::ACIDPTR, T> field) const
-
-   .. function:: template <AccessEnum FieldAccess_e, typename T> AcidCommitPtr<T> writeAcidPtr(FieldId<AccessEnum::ACIDPTR, T> field)
-
-   .. function:: void * get(FieldId_C & field)
-
-   .. function template <AccessEnum FieldAccess_e, typename T> auto operator[](FieldId<FieldAccess_e, T> field)
-
-      :return: the result of :function:`get`
+      one schema instance per |Extendible| to define contained |FieldDesc|
 
 
-.. type:: const void* FieldId_C
+.. function:: template<typename Derived_t> Extendible* alloc()
 
-   The handle used to access a field through C API. Human error not allowed by convention.
+   Allocate a block of memory. Construct the base data.
+   Recursively construct and initialize `Derived_t::super_type` and its |Extendible| classes.
+
+   :tparam Derived_t: The Derived class to allocate.
+
+.. function:: template<typename Derived_t, typename Field_t> \
+   bool fieldAdd(FieldId\<Derived_t, Field_t> & field_id, std::string const & field_name)
+
+   Declare a new |FieldId| for Derived_t.
+
+   :tparam Derived_t: The class that uses this field.
+   :tparam Field_t: The type of the field.
+
+.. function:: template<typename Derived_t, typename Field_t> \
+   bool fieldFind(FieldId\<Derived_t, Field_t> & field_id, std::string const & field_name)
+
+   Find an existing |FieldId| for Derived_t.
+
+   :tparam Derived_t: The class that uses this field.
+   :tparam Field_t: The type of the field.
+
+.. function:: template<typename T, typename Derived_t,  typename Field_t> \
+   auto const get(T const &, FieldId\<Derived_t,Field_t>)
+
+   Returns T const& value from the field stored in the |Extendible| allocation.
+
+   :tparam T: The class passed in.
+   :tparam Derived_t: The class that uses this field.
+   :tparam Field_t: The type of the field.
+
+.. function:: template<typename T, typename Derived_t, typename Field_t> \
+   auto set(T &, FieldId\<Derived_t,Field_t>)
+
+   Returns T & value from the field stored in |Extendible| allocation.
+
+   :tparam T: The class passed in.
+   :tparam Derived_t: The class that uses this field.
+   :tparam Field_t: The type of the field.
+
+.. function:: template<typename Derived_t> size_t sizeOf()
+
+   Recurse through super classes and sum memory needed for allocation.
+
+   Depends on usage of `super_type` in each class.
+
+   :tparam Derived_t: The class to measure.
+
+.. function:: template<typename Derived_t> void viewFormat()
+
+   Recurse through super classes and prints chart of bytes used within the allocation.
+
+   Depends on usage of `super_type` in each class.
+
+   :tparam Derived_t: The class to analyse.
+
+.. function:: template <typename T> std::string toString(T const &t)
+
+   Convert all extendible fields to std::strings (in a YAML-like format) using the :func:`serializeField()`
+
+   :tparam Derived_t: The class to convert to string.
+
+.. function:: template <typename Field_t> void serializeField(std::ostream &os, Field_t const &f)
+
+   Converts a single field into a std::string (in a YAML-like format).
+
+   Specialize this template or overload the `operator<<` for your field to convert properly.
+
+   This is very useful when debugging.
+
+   :tparam Derived_t: The field data type.
+
+Namespace `ext::details`
+
+
+.. class:: FieldDesc
+
+   Defines a span of memory within the allocation, and holds the constructor, destructor and serializer as std::functions.
+
+   Effectively the type-erased version of |FieldId|.
+
+.. class:: Schema
+
+   Manages a memory layout through a map of |FieldDesc|.
+
+
 
