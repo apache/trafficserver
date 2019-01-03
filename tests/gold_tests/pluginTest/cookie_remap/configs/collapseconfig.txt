@@ -1,0 +1,6 @@
+# This is a test configuration
+
+# Do a regex against the request url
+op:
+  regex: magic
+  sendto: http://127.0.0.10:$PORT/i/////////like/cheetos?.done=http://finance.yahoo.com

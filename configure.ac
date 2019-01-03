@@ -1893,6 +1893,12 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"],
 AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
   [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
+# Build the cookie_remap plugin only if we have yaml-cpp
+#
+TS_CHECK_YAML_CPP
+AM_CONDITIONAL([BUILD_COOKIE_REMAP_PLUGIN],
+  [ test "x$enable_experimental_plugins" = "xyes" -a "x$has_yaml_cpp" != "xno" ])
+
 #
 # use modular IOCORE
 #
