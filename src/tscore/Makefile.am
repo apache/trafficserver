@@ -57,6 +57,9 @@ libtscore_la_SOURCES = \
 	CryptoHash.cc \
 	Diags.cc \
 	EventNotify.cc \
+	EventNotify.h \
+	Extendible.cc \
+	Extendible.h \
 	fastlz.c \
 	Hash.cc \
 	HashFNV.cc \
