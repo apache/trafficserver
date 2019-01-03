@@ -1,0 +1,3 @@
+``
+Request=GET /cookieexists HTTP/1.1 lookup_key={PATH}
+``

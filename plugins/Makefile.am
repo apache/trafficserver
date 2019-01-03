@@ -58,6 +58,7 @@ include experimental/buffer_upload/Makefile.inc
 include experimental/cache_range_requests/Makefile.inc
 include experimental/certifier/Makefile.inc
 include experimental/collapsed_forwarding/Makefile.inc
+include experimental/cookie_remap/Makefile.inc
 include experimental/custom_redirect/Makefile.inc
 include experimental/fq_pacing/Makefile.inc
 include experimental/geoip_acl/Makefile.inc
