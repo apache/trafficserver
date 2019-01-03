@@ -1,0 +1,24 @@
+# This is a test configuration
+
+# Do a regex against the url
+
+op:
+  operation: regex
+  regex: eleventh
+  sendto: http://127.0.0.10:$PORT/$path/eleventh;matrix=2?query=true
+
+op:
+  operation: regex
+  regex: tenth
+  sendto: http://127.0.0.10:$PORT/$path/tenth;matrix=2
+
+op:
+  operation: regex
+  regex: ninth
+  sendto: http://127.0.0.10:$PORT/$path/ninth?query=true
+
+op:
+  operation: regex
+  regex: eighth
+  sendto: http://127.0.0.10:$PORT/$path/eighth
+

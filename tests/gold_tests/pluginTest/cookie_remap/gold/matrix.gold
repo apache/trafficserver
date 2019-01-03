@@ -1,0 +1,15 @@
+``
+Request=GET /eighth/magic;matrix=1/eighth HTTP/1.1 lookup_key={PATH}
+``
+``
+Request=GET /eighth/magic;matrix=1/eighth?hello=10 HTTP/1.1 lookup_key={PATH}
+``
+``
+Request=GET /tenth/magic/tenth;matrix=2 HTTP/1.1 lookup_key={PATH}
+``
+``
+Request=GET /tenth/magic/tenth;matrix=2?query=10 HTTP/1.1 lookup_key={PATH}
+``
+``
+Request=GET /eleventh/magic;matrix=4/eleventh;matrix=2?query=true HTTP/1.1 lookup_key={PATH}
+``
