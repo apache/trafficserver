@@ -1,0 +1,9 @@
+``
+lookup key photos/search?query=magic{}
+``
+lookup key photos/search?query=/theunmatchedpath{}
+``
+lookup key photos/search/cr_substitutions?query=http%3A%2F%2Fwww%2Eexample%2Ecom%2Fmagic{}
+``
+lookup key photos/search/magic/foobar{}
+``

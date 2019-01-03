@@ -1,0 +1,13 @@
+``
+lookup key eighth/magic;matrix=1/eighth{}
+``
+lookup key eighth/magic;matrix=1/eighth?hello=10{}
+``
+lookup key ninth/magic;matrix=5/ninth?query=true{}
+``
+lookup key tenth/magic/tenth;matrix=2{}
+``
+lookup key tenth/magic/tenth;matrix=2?query=10{}
+``
+lookup key eleventh/magic;matrix=4/eleventh;matrix=2?query=true{}
+``

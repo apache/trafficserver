@@ -95,6 +95,10 @@ if HAS_MYSQL
 include experimental/mysql_remap/Makefile.inc
 endif
 
+if BUILD_COOKIE_REMAP_PLUGIN
+include experimental/cookie_remap/Makefile.inc
+endif
+
 endif
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
