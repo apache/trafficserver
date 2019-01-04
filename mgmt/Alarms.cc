@@ -289,7 +289,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     (*(func))(a, ip, desc);
   }
 
-  /* Priority 2 alarms get signalled if they are the first unsolved occurence. */
+  /* Priority 2 alarms get signalled if they are the first unsolved occurrence. */
   if (priority == 2 && !ip) {
     execAlarmBin(desc);
   }

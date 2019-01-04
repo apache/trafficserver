@@ -406,7 +406,7 @@ HttpProxyPort::processOptions(const char *opts)
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
       std::string_view iname{ats_ip_family_name(m_inbound_ip.family())};
       std::string_view fname{ats_ip_family_name(m_family)};
-      Warning("Invalid port descriptor '%s' - the inbound adddress family [%.*s] is not the same type as the explicit family value "
+      Warning("Invalid port descriptor '%s' - the inbound address family [%.*s] is not the same type as the explicit family value "
               "[%.*s]",
               opts, static_cast<int>(iname.size()), iname.data(), static_cast<int>(fname.size()), fname.data());
       zret = false;

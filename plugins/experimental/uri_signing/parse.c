@@ -142,7 +142,7 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
     PluginDebug("Initial validation of JWT failed for %16p", jws);
     goto jwt_fail;
   }
-  TimerDebug("inital validation of jwt");
+  TimerDebug("initial validation of jwt");
 
   cjose_header_t *hdr = cjose_jws_get_protected(jws);
   TimerDebug("getting header of jws");

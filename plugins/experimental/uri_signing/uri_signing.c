@@ -46,7 +46,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "plugin is succesfully initialized");
+  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 

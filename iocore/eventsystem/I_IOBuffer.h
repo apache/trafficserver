@@ -813,7 +813,7 @@ public:
   /**
     Perform a memchr() across the list of IOBufferBlocks. Returns the
     offset from the current start point of the reader to the first
-    occurence of character 'c' in the buffer.
+    occurrence of character 'c' in the buffer.
 
     @param c character to look for.
     @param len number of characters to check. If len exceeds the number

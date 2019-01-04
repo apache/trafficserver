@@ -55,7 +55,7 @@ range with the lower and upper values equal to that IP address).
 The value of ``method`` is a string which must consist of either HTTP method names separated by the
 character '|' or the keyword literal ``ALL``. This keyword may omitted in which case it is treated
 as if it were ``method=ALL``. Methods can also be specified by having multiple instances of the
-``method`` keyword, each specifiying a single method. E.g., ``method=GET|HEAD`` is the same as
+``method`` keyword, each specifying a single method. E.g., ``method=GET|HEAD`` is the same as
 ``method=GET method=HEAD``. The method names are not validated which means non-standard method names
 can be specified.
 
@@ -104,7 +104,7 @@ If the entire subnet were to be denied, that would be::
 
    src_ip=123.45.6.0/24 action=ip_deny
 
-The following example allows to any upstream servers::
+The following example allows one to any upstream servers::
 
    dest_ip=0.0.0.0-255.255.255.255 action=ip_allow
 

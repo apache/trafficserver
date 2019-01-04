@@ -210,7 +210,7 @@ The following list shows the possible actions and their allowed values.
     - ``simple_retry`` - If the parent origin server returns a 404 response on a request
       a new parent is selected and the request is retried.  The number of retries is controlled
       by ``max_simple_retries`` which is set to 1 by default.
-    - ``unavailable_server_retry`` - If the parent returns a 503 response or if the reponse matches
+    - ``unavailable_server_retry`` - If the parent returns a 503 response or if the response matches
       a list of http 5xx responses defined in ``unavailable_server_retry_responses``, the currently selected
       parent is marked down and a new parent is selected to retry the request.  The number of
       retries is controlled by ``max_unavailable_server_retries`` which is set to 1 by default.
@@ -228,7 +228,7 @@ The following list shows the possible actions and their allowed values.
 
 ``max_simple_retries``
   By default the value for ``max_simple_retries`` is 1.  It may be set to any value in the range 1 to 5.
-  If ``parent_retry`` is set to ``simple_retry`` or ``both`` a 404 reponse
+  If ``parent_retry`` is set to ``simple_retry`` or ``both`` a 404 response
   from a parent origin server will cause the request to be retried using a new parent at most 1 to 5
   times as configured by ``max_simple_retries``.
 
@@ -236,7 +236,7 @@ The following list shows the possible actions and their allowed values.
 
 ``max_unavailable_server_retries``
   By default the value for ``max_unavailable_server_retries`` is 1.  It may be set to any value in the range 1 to 5.
-  If ``parent_retry`` is set to ``unavailable_server_retries`` or ``both`` a 503 reponse
+  If ``parent_retry`` is set to ``unavailable_server_retries`` or ``both`` a 503 response
   by default or any http 5xx response listed in the list ``unavailable_server_retry_responses`` from a parent origin server will
   cause the request to be retried using a new parent after first marking the current parent down.  The request
   will be retried at most 1 to 5 times as configured by ``max_unavailable_server_retries``.

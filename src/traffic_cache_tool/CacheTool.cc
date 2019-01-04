@@ -870,7 +870,7 @@ Span::updateHeader()
       zret.push(0, errno, "Failed to update span - ", strerror(errno));
     }
   } else {
-    std::cout << "Writing not enabled, no updates perfomed" << std::endl;
+    std::cout << "Writing not enabled, no updates performed" << std::endl;
   }
   return zret;
 }

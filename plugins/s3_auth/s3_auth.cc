@@ -909,7 +909,7 @@ event_handler(TSCont cont, TSEvent event, void *edata)
     }
 
     if (TS_HTTP_STATUS_OK == status) {
-      TSDebug(PLUGIN_NAME, "Succesfully signed the AWS S3 URL");
+      TSDebug(PLUGIN_NAME, "Successfully signed the AWS S3 URL");
     } else {
       TSDebug(PLUGIN_NAME, "Failed to sign the AWS S3 URL, status = %d", status);
       TSHttpTxnStatusSet(txnp, status);

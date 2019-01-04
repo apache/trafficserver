@@ -32,7 +32,7 @@ Description
 ===========
 
 Reenable the SSL connection :arg:`svc`. If a plugin hook is called, ATS
-processing on that connnection will not resume until this is invoked for that
+processing on that connection will not resume until this is invoked for that
 connection.
 
 If the server is running OpenSSL 1.0.2, the plugin writer can pause SSL handshake

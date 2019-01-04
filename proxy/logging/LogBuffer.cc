@@ -261,7 +261,7 @@ LogBuffer::checkout_write(size_t *write_offset, size_t write_size)
       }
 
       if (switch_state(old_s, new_s)) {
-        // we succeded in setting the new state
+        // we succeeded in setting the new state
         break;
       }
     }

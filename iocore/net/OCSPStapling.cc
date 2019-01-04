@@ -92,7 +92,7 @@ stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
 
 #ifdef SSL_CTX_select_current_cert
   if (!SSL_CTX_select_current_cert(ssl_ctx, x)) {
-    Warning("OCSP: could not select current certifcate chain %p", x);
+    Warning("OCSP: could not select current certificate chain %p", x);
   }
 #endif
 

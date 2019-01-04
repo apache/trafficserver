@@ -1828,7 +1828,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread                     = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
-      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing), errno=%d.", second_read_size,
+      Debug("logstats", "Second read of header failed (attempted %d bytes at offset %d, got nothing), errno=%d.", second_read_size,
             first_read_size, errno);
       return 1;
     }

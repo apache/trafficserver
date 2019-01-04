@@ -46,7 +46,7 @@ The functions also work with the :type:`TSSslSession` object which can be cast t
 
 These functions perform the appropriate locking on the session cache to avoid errors.
 
-The :func:`TSSslSessionGet` and :func:`TSSslSessionGetBuffer` functions retreive the :type:`TSSslSession` object that is identifed by the
+The :func:`TSSslSessionGet` and :func:`TSSslSessionGetBuffer` functions retrieve the :type:`TSSslSession` object that is identifed by the
 :type:`TSSslSessionID` object.  If there is no matching sesion object, :func:`TSSslSessionGet` returns NULL and :func:`TSSslSessionGetBuffer`
 returns 0.
 

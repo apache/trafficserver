@@ -189,7 +189,7 @@ MIOBuffer::puts(char *s, int64_t len)
     }
     if (!*pb || *pb == '\n') {
       int64_t n = (int64_t)(pb - s);
-      memcpy(end(), s, n + 1); // Upto and including '\n'
+      memcpy(end(), s, n + 1); // Up to and including '\n'
       end()[n + 1] = 0;
       fill(n + 1);
       return n + 1;

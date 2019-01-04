@@ -4225,7 +4225,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
         SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrUrlSet returns TS_ERROR");
       } else {
         if (TSHttpHdrUrlGet(bufp1, hdr_loc1, &url_loc_Get) != TS_SUCCESS) {
-          SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrUrlGet retuns TS_ERROR");
+          SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrUrlGet returns TS_ERROR");
         } else {
           if (url_loc == url_loc_Get) {
             SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_PASS, "ok");

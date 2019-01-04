@@ -89,7 +89,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
   empty_input = 0;
   if (!TSVIOBufferGet(input_vio)) {
     if (transform_ctx->output.vio) {
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] reenabling ouput VIO after input VIO does not exist", __FUNCTION__);
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] reenabling output VIO after input VIO does not exist", __FUNCTION__);
       TSVIONBytesSet(transform_ctx->output.vio, transform_ctx->total);
       TSVIOReenable(transform_ctx->output.vio);
       return 0;
