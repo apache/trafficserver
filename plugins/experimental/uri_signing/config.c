@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "uri_signing.h"
+#include "common.h"
 #include "config.h"
 #include "timing.h"
 #include "jwt.h"

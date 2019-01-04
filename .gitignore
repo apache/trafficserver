@@ -116,6 +116,8 @@ plugins/esi/processor_test
 plugins/esi/utils_test
 plugins/esi/vars_test
 
+plugins/experimental/uri_signing/test_uri_signing
+
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
 mgmt/tools/traffic_net_config

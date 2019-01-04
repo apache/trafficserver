@@ -18,5 +18,17 @@
 
 #define PLUGIN_NAME "uri_signing"
 
+#ifdef URI_SIGNING_UNIT_TEST
+#include <stdio.h>
+#include <stdarg.h>
+
+#define PluginDebug(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define PluginError(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+void PrintToStdErr(const char *fmt, ...);
+
+#else
+
 #define PluginDebug(...) TSDebug("uri_signing", PLUGIN_NAME " " __VA_ARGS__)
 #define PluginError(...) PluginDebug(__VA_ARGS__), TSError(PLUGIN_NAME " " __VA_ARGS__)
+
+#endif

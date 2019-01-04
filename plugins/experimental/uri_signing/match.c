@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "uri_signing.h"
+#include "common.h"
 #include "ts/ts.h"
 #include <stdbool.h>
 #include <pcre.h>

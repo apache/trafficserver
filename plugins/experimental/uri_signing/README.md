@@ -147,6 +147,9 @@ This builds in-tree with the rest of the ATS plugins. Of special note, however,
 are the first two libraries: cjose and jansson. These libraries are not
 currently used anywhere else, so they may not be installed.
 
+Note that the default prefix value for cjose is /usr/local. Ensure this is visible to
+any executables that are being run using this library.
+
 As of this writing, both libraries install a dynamic library and a static
 archive. However, by default, the static archive is not compiled with Position
 Independent Code. The build script will detect this and build a dynamic
