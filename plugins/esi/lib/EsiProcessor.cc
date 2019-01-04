@@ -305,7 +305,7 @@ EsiProcessor::process(const char *&data, int &data_len)
 
     /* FAILURE CACHE */
     FailureData *data = static_cast<FailureData *>(pthread_getspecific(threadKey));
-    _debugLog("plugin_esi_failureInfo", "[%s]Fetched data related to thread specfic %p", __FUNCTION__, data);
+    _debugLog("plugin_esi_failureInfo", "[%s]Fetched data related to thread specific %p", __FUNCTION__, data);
 
     for (iter = try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
       if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE) {
@@ -342,7 +342,7 @@ EsiProcessor::process(const char *&data, int &data_len)
       }
     }
     if (attempt_succeeded) {
-      _debugLog(_debug_tag, "[%s] attempt section succeded; using attempt section", __FUNCTION__);
+      _debugLog(_debug_tag, "[%s] attempt section succeeded; using attempt section", __FUNCTION__);
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
     } else {
       _debugLog(_debug_tag, "[%s] attempt section errored; trying except section", __FUNCTION__);
@@ -436,7 +436,7 @@ EsiProcessor::flush(string &data, int &overall_len)
 
     /* FAILURE CACHE */
     FailureData *fdata = static_cast<FailureData *>(pthread_getspecific(threadKey));
-    _debugLog("plugin_esi_failureInfo", "[%s]Fetched data related to thread specfic %p", __FUNCTION__, fdata);
+    _debugLog("plugin_esi_failureInfo", "[%s]Fetched data related to thread specific %p", __FUNCTION__, fdata);
 
     for (iter = try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
       if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE) {
@@ -473,7 +473,7 @@ EsiProcessor::flush(string &data, int &overall_len)
       }
     }
     if (attempt_succeeded) {
-      _debugLog(_debug_tag, "[%s] attempt section succeded; using attempt section", __FUNCTION__);
+      _debugLog(_debug_tag, "[%s] attempt section succeeded; using attempt section", __FUNCTION__);
       _n_prescanned_nodes = _n_prescanned_nodes + try_iter->attempt_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
     } else {

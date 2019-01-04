@@ -143,7 +143,7 @@ rotateLogs()
     if (kill(tspid, SIGUSR2) != 0) {
       mgmt_log("Could not send SIGUSR2 to TS: %s", strerror(errno));
     } else {
-      mgmt_log("Succesfully sent SIGUSR2 to TS!");
+      mgmt_log("Successfully sent SIGUSR2 to TS!");
     }
   }
 }

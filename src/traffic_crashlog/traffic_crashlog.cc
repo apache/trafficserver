@@ -198,7 +198,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   mgmterr = TSInit(nullptr, (TSInitOptionT)(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
   if (mgmterr != TS_ERR_OKAY) {
     char *msg = TSGetErrorMessage(mgmterr);
-    Warning("failed to intialize management API: %s", msg);
+    Warning("failed to initialize management API: %s", msg);
     TSfree(msg);
   }
 

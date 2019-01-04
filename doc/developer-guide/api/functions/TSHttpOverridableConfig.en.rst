@@ -43,7 +43,7 @@ Description
 
 Some of the values that are set in :file:`records.config` can be changed for a
 specific transaction. It is important to note that these functions change the
-configuration values stored for the transation, which is not quite the same as
+configuration values stored for the transaction, which is not quite the same as
 changing the actual operating values of the transaction. The critical effect is
 the value must be changed before it is used by the transaction - after that,
 changes will not have any effect.

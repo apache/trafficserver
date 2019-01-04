@@ -409,7 +409,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 
     switch (result_code) {
     case LogBuffer::LB_OK:
-      // checkout succeded
+      // checkout succeeded
       retry = false;
       break;
 

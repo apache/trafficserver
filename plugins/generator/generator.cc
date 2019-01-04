@@ -609,7 +609,7 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
     TSReleaseAssert(TSHttpTxnCacheLookupStatusGet(arg.txn, &status) == TS_SUCCESS);
     if (status != TS_CACHE_LOOKUP_HIT_FRESH) {
       // This transaction is going to be a cache miss, so intercept it.
-      VDEBUG("intercepting orgin server request for txn=%p", arg.txn);
+      VDEBUG("intercepting origin server request for txn=%p", arg.txn);
       TSHttpTxnServerIntercept(TSContCreate(GeneratorInterceptionHook, TSMutexCreate()), arg.txn);
     }
 

@@ -172,7 +172,7 @@ ArgParser::parse(const char **argv)
   };
   // if there is anything left, then output usage
   if (!args.empty()) {
-    std::string msg = "Unkown command, option or args:";
+    std::string msg = "Unknown command, option or args:";
     for (const auto &it : args) {
       msg = msg + " '" + it + "'";
     }

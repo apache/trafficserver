@@ -330,7 +330,7 @@ TSPluginInit(int argc, const char *argv[])
     // just appended to the configurations.
     TSDebug(PLUGIN_NAME, "Loading global configuration file %s", argv[i]);
     if (conf->parse_config(argv[i], TS_HTTP_READ_RESPONSE_HDR_HOOK)) {
-      TSDebug(PLUGIN_NAME, "Succesfully loaded global config file %s", argv[i]);
+      TSDebug(PLUGIN_NAME, "Successfully loaded global config file %s", argv[i]);
       got_config = true;
     } else {
       TSError("[header_rewrite] failed to parse configuration file %s", argv[i]);
@@ -401,7 +401,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       delete conf;
       return TS_ERROR;
     } else {
-      TSDebug(PLUGIN_NAME, "Succesfully loaded remap config file %s", argv[i]);
+      TSDebug(PLUGIN_NAME, "Successfully loaded remap config file %s", argv[i]);
     }
   }
 

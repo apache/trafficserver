@@ -803,7 +803,7 @@ mptcp
    ===== ======================================================================
    Value Description
    ===== ======================================================================
-   ``0`` |TS| will buffer the request until the post body has been recieved and
+   ``0`` |TS| will buffer the request until the post body has been received and
          then send the request to the origin server.
    ``1`` Immediately return a ``100 Continue`` from |TS| without waiting for
          the post body.
@@ -1724,7 +1724,7 @@ Proxy User Variables
    connection=full     Full user agent connection :ref:`protocol tags <protocol_tags>`
    ==================  ===============================================================
 
-   Each paramater in the list must be separated by ``|`` or ``:``.  For example, ``for|by=uuid|proto`` is
+   Each parameter in the list must be separated by ``|`` or ``:``.  For example, ``for|by=uuid|proto`` is
    a valid value for this variable.  Note that the ``connection`` parameter is a non-standard extension to
    RFC 7239.  Also note that, while |TS| allows multiple ``by`` parameters for the same proxy, this
    is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
@@ -2478,7 +2478,7 @@ DNS
 
 .. ts:cv:: CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
 
-   Allows to specify which ``resolv.conf`` file to use for finding resolvers. While the format of this file must be the same as the
+   Allows one to specify which ``resolv.conf`` file to use for finding resolvers. While the format of this file must be the same as the
    standard ``resolv.conf`` file, this option allows an administrator to manage the set of resolvers in an external configuration file,
    without affecting how the rest of the operating system uses DNS.
 
@@ -2496,7 +2496,7 @@ DNS
    :reloadable:
    :overridable:
 
-   Indicates whether to use SRV records for orgin server lookup.
+   Indicates whether to use SRV records for origin server lookup.
 
 .. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
 
@@ -2729,7 +2729,7 @@ HostDB
    Set the frequency (in seconds) to sync hostdb to disk.
 
    Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
-   This means that the minumum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
+   This means that the minimum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
 
 Logging Configuration
 =====================
@@ -3050,7 +3050,7 @@ Diagnostic Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http|dns
 
-   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.  This configuration
+   Each |TS| `diag` and `debug` level message is annotated with a subsystem tag.  This configuration
    contains an anchored regular expression that filters the messages based on the tag. The
    expressions are prefix matched which creates an implicit ``.*`` at the end. Therefore the default
    value ``http|dns`` will match tags such as ``http``, ``http_hdrs``, ``dns``, and ``dns_recv``.
@@ -3058,7 +3058,7 @@ Diagnostic Logging Configuration
    Some commonly used debug tags are:
 
    ============  =====================================================
-   Tag           Subsytem usage
+   Tag           Subsystem usage
    ============  =====================================================
    dns           DNS query resolution
    http_hdrs     Logs the headers for HTTP requests and responses
@@ -3221,7 +3221,7 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.client.groups_list STRING <See notes under proxy.config.ssl.server.groups_list.>
 
    Configures the list of supported groups provided by OpenSSL which
-   |TS| will use for the "key_share" and "supported groups" extention
+   |TS| will use for the "key_share" and "supported groups" extension
    of TLSv1.3 connections. The value is a colon separated list of
    group NIDs or names, for example "P-521:P-384:P-256". For
    instructions, see "Groups" section of `TLS1.3 - OpenSSLWiki <https://wiki.openssl.org/index.php/TLS1.3#Groups>`_.
@@ -3364,7 +3364,7 @@ SSL Termination
    ``0`` Disables the session cache entirely.
    ``1`` Enables the session cache using OpenSSL's implementation.
    ``2`` Default. Enables the session cache using |TS|'s implementation. This
-         implentation should perform much better than the OpenSSL
+         implementation should perform much better than the OpenSSL
          implementation.
    ===== ======================================================================
 

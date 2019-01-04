@@ -307,7 +307,7 @@ CharIndex::Insert(string_view match_data, HostBranch *toInsert)
 
       // Check to see if are at the level we supposed be at
       if (match_data.size() == 1) {
-        // The slot should always be emtpy, no duplicate keys are allowed
+        // The slot should always be empty, no duplicate keys are allowed
         ink_assert(cur->array[index].branch == nullptr);
         cur->array[index].branch = toInsert;
         break;

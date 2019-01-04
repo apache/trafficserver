@@ -715,7 +715,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           // added by YTS Team, yamsat for bug id 59632
           total += size;
           if (size > 100 || total > 100) {
-            err = "Total volume size added upto more than 100 percent, No volumes created";
+            err = "Total volume size added up to more than 100 percent, No volumes created";
             break;
           }
           // ends here

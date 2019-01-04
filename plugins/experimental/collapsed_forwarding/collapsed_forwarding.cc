@@ -353,7 +353,7 @@ TSRemapInit(TSRemapInterface * /* api_info */, char * /* errbuf */, int /* errbu
     TSError("Cannot initialize %s as both global and remap plugin", DEBUG_TAG);
     return TS_ERROR;
   } else {
-    TSDebug(DEBUG_TAG, "plugin is succesfully initialized for remap");
+    TSDebug(DEBUG_TAG, "plugin is successfully initialized for remap");
     return TS_SUCCESS;
   }
 }

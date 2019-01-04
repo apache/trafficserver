@@ -641,7 +641,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     }
 
     if ((res = safe_getsockname(fd, &local_addr.sa, &local_addr_len)) < 0) {
-      Debug("udpnet", "CreateUdpsocket: getsockname didnt' work");
+      Debug("udpnet", "CreateUdpsocket: getsockname didn't work");
       goto HardError;
     }
   }
