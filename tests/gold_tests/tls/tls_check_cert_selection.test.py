@@ -51,7 +51,7 @@ ts.Disk.remap_config.AddLine(
     'map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
 
 ts.Disk.ssl_multicert_config.AddLines([
-    'ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key',
+    'dest_ip=127.0.0.1 ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key',
     'ssl_cert_name=signed2-bar.pem ssl_key_name=signed-bar.key',
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 ])
@@ -103,4 +103,30 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=bar.com", "Cert should not contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
 tr2.TimeOut = 5
+
+# Should receive random.server.com
+tr2 = Test.AddTestRun("random.server.com cert")
+tr2.Processes.Default.Command = "curl -v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port)
+tr2.ReturnCode = 0
+tr2.StillRunningAfter = server
+tr2.Processes.Default.TimeOut = 5
+tr2.StillRunningAfter = ts
+tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=random.server.com", "Cert should contain random.server.com")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=foo.com", "Cert should not contain foo.com")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=bar.com", "Cert should not contain bar.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
+
+# No SNI match should match specific IP address, foo.com
+# SNI name and returned cert name will not match, so must use -k to avoid cert verification
+tr2 = Test.AddTestRun("Bad SNI")
+tr2.Processes.Default.Command = "curl -v -k --cacert signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port)
+tr2.ReturnCode = 0
+tr2.StillRunningAfter = server
+tr2.Processes.Default.TimeOut = 5
+tr2.StillRunningAfter = ts
+tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "Cert should contain foo.com")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=bar.com", "Cert should not contain bar.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
 
