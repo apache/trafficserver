@@ -378,7 +378,7 @@ Tree<T>::remove(Node *node)
   }
 
   // delete the shadow parent
-  if (parent->is_shadow() && parent->children.empty() && parent->queue->empty()) {
+  if (parent->shadow && parent->children.empty() && parent->queue->empty()) {
     remove(parent);
   }
 
@@ -427,7 +427,7 @@ Tree<T>::reprioritize(Node *node, uint32_t new_parent_id, bool exclusive)
   _change_parent(node, new_parent, exclusive);
 
   // delete the shadow node
-  if (node->is_shadow() && node->children.empty() && node->queue->empty()) {
+  if (node->shadow && node->children.empty() && node->queue->empty()) {
     remove(node);
   }
 }
