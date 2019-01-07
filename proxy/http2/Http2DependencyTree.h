@@ -119,10 +119,10 @@ public:
   Node *find(uint32_t id, bool *is_max_leaf = nullptr);
   Node *find_shadow(uint32_t id, bool *is_max_leaf = nullptr);
   Node *add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t, bool shadow = false);
-  void remove(Node *node);
-  void reprioritize(uint32_t new_parent_id, uint32_t id, bool exclusive);
-  void reprioritize(Node *node, uint32_t id, bool exclusive);
+  Node *reprioritize(uint32_t new_parent_id, uint32_t id, bool exclusive);
+  Node *reprioritize(Node *node, uint32_t id, bool exclusive);
   Node *top();
+  void remove(Node *node);
   void activate(Node *node);
   void deactivate(Node *node, uint32_t sent);
   void update(Node *node, uint32_t sent);
@@ -269,7 +269,7 @@ Tree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T
     node->weight = weight;
     node->shadow = false;
     // Move the shadow node into the proper position in the tree
-    reprioritize(node, parent_id, exclusive);
+    node = reprioritize(node, parent_id, exclusive);
     return node;
   }
 
@@ -389,36 +389,36 @@ Tree<T>::remove(Node *node)
 }
 
 template <typename T>
-void
+Node *
 Tree<T>::reprioritize(uint32_t id, uint32_t new_parent_id, bool exclusive)
 {
   Node *node = find(id);
   if (node == nullptr) {
-    return;
+    return node;
   }
 
-  reprioritize(node, new_parent_id, exclusive);
+  return reprioritize(node, new_parent_id, exclusive);
 }
 
 template <typename T>
-void
+Node *
 Tree<T>::reprioritize(Node *node, uint32_t new_parent_id, bool exclusive)
 {
   if (node == nullptr) {
-    return;
+    return node;
   }
 
   Node *old_parent = node->parent;
   if (old_parent->id == new_parent_id) {
     // Do nothing
-    return;
+    return node;
   }
   // should not change the root node
   ink_assert(node->parent);
 
   Node *new_parent = find(new_parent_id);
   if (new_parent == nullptr) {
-    return;
+    return node;
   }
   // If node is dependent on the new parent, must move the new parent first
   if (new_parent_id != 0 && in_parent_chain(node, new_parent)) {
@@ -429,7 +429,10 @@ Tree<T>::reprioritize(Node *node, uint32_t new_parent_id, bool exclusive)
   // delete the shadow node
   if (node->is_shadow() && node->children.empty() && node->queue->empty()) {
     remove(node);
+    return nullptr;
   }
+
+  return node;
 }
 
 template <typename T>
