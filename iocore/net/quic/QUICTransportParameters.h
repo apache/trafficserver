@@ -80,15 +80,11 @@ public:
   bool is_valid() const;
 
   const uint8_t *getAsBytes(QUICTransportParameterId id, uint16_t &len) const;
-  uint8_t getAsUInt8(QUICTransportParameterId id) const;
-  uint16_t getAsUInt16(QUICTransportParameterId id) const;
-  uint32_t getAsUInt32(QUICTransportParameterId id) const;
+  uint64_t getAsUInt(QUICTransportParameterId id) const;
   bool contains(QUICTransportParameterId id) const;
 
   void set(QUICTransportParameterId id, const uint8_t *value, uint16_t value_len);
-  void set(QUICTransportParameterId id, uint8_t value);
-  void set(QUICTransportParameterId id, uint16_t value);
-  void set(QUICTransportParameterId id, uint32_t value);
+  void set(QUICTransportParameterId id, uint64_t value);
 
   void store(uint8_t *buf, uint16_t *len) const;
 

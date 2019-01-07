@@ -35,8 +35,8 @@
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 static constexpr char tag[]                            = "quic_handshake";
 
-static constexpr uint32_t TP_ERROR_LENGTH = 0x010000;
-// static constexpr uint32_t TP_ERROR_VALUE          = 0x020000;
+static constexpr uint32_t TP_ERROR_LENGTH         = 0x010000;
+static constexpr uint32_t TP_ERROR_VALUE          = 0x020000;
 // static constexpr uint32_t TP_ERROR_MUST_EXIST     = 0x030000;
 static constexpr uint32_t TP_ERROR_MUST_NOT_EXIST = 0x040000;
 
@@ -151,76 +151,43 @@ QUICTransportParameters::_validate_parameters() const
 
   // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_DATA)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_DATA);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI)) != this->_parameters.end()) {
-    if (ite->second->len() != 2) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI)) != this->_parameters.end()) {
-    if (ite->second->len() != 2) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::IDLE_TIMEOUT)) != this->_parameters.end()) {
-    if (ite->second->len() != 2) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::IDLE_TIMEOUT);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_PACKET_SIZE)) != this->_parameters.end()) {
-    if (ite->second->len() != 2) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::MAX_PACKET_SIZE);
-    }
     if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::MAX_PACKET_SIZE);
+      return -(TP_ERROR_VALUE | QUICTransportParameterId::MAX_PACKET_SIZE);
     }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::ACK_DELAY_EXPONENT)) != this->_parameters.end()) {
-    if (ite->second->len() != 1) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::ACK_DELAY_EXPONENT);
-    }
     if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) > 20) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::ACK_DELAY_EXPONENT);
+      return -(TP_ERROR_VALUE | QUICTransportParameterId::ACK_DELAY_EXPONENT);
     }
   }
 
   // MAYs (initial values for the flow control on each type of stream)
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI)) != this->_parameters.end()) {
-    if (ite->second->len() != 4) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::DISABLE_MIGRATION)) != this->_parameters.end()) {
-    if (ite->second->len() != 0) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::DISABLE_MIGRATION);
-    }
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_ACK_DELAY)) != this->_parameters.end()) {
-    if (ite->second->len() != 1) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::MAX_ACK_DELAY);
-    }
   }
 
   return 0;
@@ -239,37 +206,16 @@ QUICTransportParameters::getAsBytes(QUICTransportParameterId tpid, uint16_t &len
   return nullptr;
 }
 
-uint8_t
-QUICTransportParameters::getAsUInt8(QUICTransportParameterId tpid) const
+uint64_t
+QUICTransportParameters::getAsUInt(QUICTransportParameterId tpid) const
 {
-  uint16_t len         = 0;
-  const uint8_t *value = this->getAsBytes(tpid, len);
-  if (value) {
-    return QUICIntUtil::read_nbytes_as_uint(value, 1);
-  } else {
-    return 0;
-  }
-}
-
-uint16_t
-QUICTransportParameters::getAsUInt16(QUICTransportParameterId tpid) const
-{
-  uint16_t len         = 0;
-  const uint8_t *value = this->getAsBytes(tpid, len);
-  if (value) {
-    return QUICIntUtil::read_nbytes_as_uint(value, 2);
-  } else {
-    return 0;
-  }
-}
-
-uint32_t
-QUICTransportParameters::getAsUInt32(QUICTransportParameterId tpid) const
-{
-  uint16_t len         = 0;
-  const uint8_t *value = this->getAsBytes(tpid, len);
-  if (value) {
-    return QUICIntUtil::read_nbytes_as_uint(value, 4);
+  uint64_t int_value       = 0;
+  size_t int_value_len     = 0;
+  uint16_t raw_value_len   = 0;
+  const uint8_t *raw_value = this->getAsBytes(tpid, raw_value_len);
+  if (raw_value) {
+    QUICVariableInt::decode(int_value, int_value_len, raw_value, raw_value_len);
+    return int_value;
   } else {
     return 0;
   }
@@ -293,30 +239,12 @@ QUICTransportParameters::set(QUICTransportParameterId id, const uint8_t *value, 
 }
 
 void
-QUICTransportParameters::set(QUICTransportParameterId id, uint8_t value)
+QUICTransportParameters::set(QUICTransportParameterId id, uint64_t value)
 {
-  uint8_t v[1];
+  uint8_t v[8];
   size_t n;
-  QUICIntUtil::write_uint_as_nbytes(value, 1, v, &n);
-  this->set(id, v, 1);
-}
-
-void
-QUICTransportParameters::set(QUICTransportParameterId id, uint16_t value)
-{
-  uint8_t v[2];
-  size_t n;
-  QUICIntUtil::write_uint_as_nbytes(value, 2, v, &n);
-  this->set(id, v, 2);
-}
-
-void
-QUICTransportParameters::set(QUICTransportParameterId id, uint32_t value)
-{
-  uint8_t v[4];
-  size_t n;
-  QUICIntUtil::write_uint_as_nbytes(value, 4, v, &n);
-  this->set(id, v, 4);
+  QUICIntUtil::write_QUICVariableInt(value, v, &n);
+  this->set(id, v, n);
 }
 
 void
@@ -526,7 +454,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
 
   // MAYs
   if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
-    if (ite->second->len() != QUICStatelessResetToken::LEN) {
+    if (ite->second->len() != 16) {
       return -(TP_ERROR_LENGTH | QUICTransportParameterId::STATELESS_RESET_TOKEN);
     }
   }

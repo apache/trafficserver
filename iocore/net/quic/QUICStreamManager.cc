@@ -61,12 +61,12 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
   this->_remote_tp = remote_tp;
 
   if (this->_local_tp) {
-    this->_local_maximum_stream_id_bidi = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
-    this->_local_maximum_stream_id_uni  = this->_local_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
+    this->_local_maximum_stream_id_bidi = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
+    this->_local_maximum_stream_id_uni  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
   }
   if (this->_remote_tp) {
-    this->_remote_maximum_stream_id_bidi = this->_remote_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
-    this->_remote_maximum_stream_id_uni  = this->_remote_tp->getAsUInt16(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
+    this->_remote_maximum_stream_id_bidi = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
+    this->_remote_maximum_stream_id_uni  = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
   }
 }
 
@@ -276,12 +276,12 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       if (this->_info->direction() == NET_VCONNECTION_OUT) {
         // client
-        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
-        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+        local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+        remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
       } else {
         // server
-        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
-        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+        local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+        remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
       }
 
       break;
@@ -290,8 +290,8 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
         return nullptr;
       }
 
-      local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
-      remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+      local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+      remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
 
       break;
     case QUICStreamType::SERVER_BIDI:
@@ -301,12 +301,12 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       if (this->_info->direction() == NET_VCONNECTION_OUT) {
         // client
-        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
-        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+        local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+        remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
       } else {
         // server
-        local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
-        remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+        local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+        remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
       }
 
       break;
@@ -315,8 +315,8 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
         return nullptr;
       }
 
-      local_max_stream_data  = this->_local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
-      remote_max_stream_data = this->_remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+      local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+      remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
 
       break;
     }
