@@ -1897,8 +1897,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Init plugins as soon as logging is ready.
     (void)plugin_init(); // plugin.config
 
-    SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
-    SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
+    SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
+
+    int certs_are_child_configs = 0;
+    REC_ReadConfigInteger(certs_are_child_configs, "proxy.config.ssl.server.multicert.certs_are_child_configs");
+    if (certs_are_child_configs) {
+      SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
+    }
+
     sslNetProcessor.start(-1, stacksize);
 
     pmgmt->registerPluginCallbacks(global_config_cbs);

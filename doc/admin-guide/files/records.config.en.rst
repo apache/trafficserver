@@ -3283,6 +3283,13 @@ SSL Termination
    :file:`ssl_multicert.config` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.certs_are_child_configs INT 1
+
+   By default (``1``), |TS| treats SSL certificates listed in the :file:`ssl_multicert.config`
+   file as children config files to it.  If a certificate changes, and a reload is requested,
+   all certificates will be reloaded. If false (``0``), |TS| does not track changes to certificates,
+   only to :file:`ssl_multicert.config`
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
 
    The location of the SSL certificates and chains used for accepting
@@ -3544,7 +3551,7 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.sni_policy STRING NULL
    :overridable:
 
-   Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is 
+   Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is
    `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
    remapped origin name is used for the SNI value.
 
