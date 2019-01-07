@@ -122,7 +122,7 @@ QUICIncomingStreamFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t
 {
   // stream with fin flag {11.3. Stream Final Offset}
   // Once a final offset for a stream is known, it cannot change.
-  // If a RST_STREAM or STREAM frame causes the final offset to change for a stream,
+  // If a RESET_STREAM or STREAM frame causes the final offset to change for a stream,
   // an endpoint SHOULD respond with a FINAL_OFFSET_ERROR error (see Section 12).
   // A receiver SHOULD treat receipt of data at or beyond the final offset as a
   // FINAL_OFFSET_ERROR error, even after a stream is closed.

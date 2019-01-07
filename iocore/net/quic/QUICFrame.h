@@ -283,7 +283,7 @@ private:
 };
 
 //
-// RST_STREAM
+// RESET_STREAM
 //
 
 class QUICRstStreamFrame : public QUICFrame
@@ -380,36 +380,6 @@ private:
 };
 
 //
-// APPLICATION_CLOSE
-//
-
-class QUICApplicationCloseFrame : public QUICFrame
-{
-public:
-  QUICApplicationCloseFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICApplicationCloseFrame(const uint8_t *buf, size_t len);
-  QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length, const char *reason_phrase,
-                            QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
-  QUICFrameUPtr clone() const override;
-  virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual QUICFrameType type() const override;
-  virtual size_t size() const override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len) override;
-
-  QUICAppErrorCode error_code() const;
-  uint64_t reason_phrase_length() const;
-  const char *reason_phrase() const;
-
-private:
-  virtual void _reset() override;
-
-  QUICAppErrorCode _error_code   = 0;
-  uint64_t _reason_phrase_length = 0;
-  const char *_reason_phrase     = nullptr;
-};
-
-//
 // MAX_DATA
 //
 
@@ -463,7 +433,7 @@ private:
 };
 
 //
-// MAX_STREAM_ID
+// MAX_STREAMS
 //
 
 class QUICMaxStreamIdFrame : public QUICFrame
@@ -511,7 +481,7 @@ private:
 };
 
 //
-// STREAM_BLOCKED
+// STREAM_DATA_BLOCKED
 //
 
 class QUICStreamBlockedFrame : public QUICFrame
@@ -539,7 +509,7 @@ private:
 };
 
 //
-// STREAM_ID_BLOCKED
+// STREAMS_BLOCKED
 //
 class QUICStreamIdBlockedFrame : public QUICFrame
 {
@@ -768,7 +738,6 @@ extern ClassAllocator<QUICAckFrame> quicAckFrameAllocator;
 extern ClassAllocator<QUICPaddingFrame> quicPaddingFrameAllocator;
 extern ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator;
 extern ClassAllocator<QUICConnectionCloseFrame> quicConnectionCloseFrameAllocator;
-extern ClassAllocator<QUICApplicationCloseFrame> quicApplicationCloseFrameAllocator;
 extern ClassAllocator<QUICMaxDataFrame> quicMaxDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator;
@@ -834,13 +803,6 @@ public:
   {
     frame->~QUICFrame();
     quicConnectionCloseFrameAllocator.free(static_cast<QUICConnectionCloseFrame *>(frame));
-  }
-
-  static void
-  delete_application_close_frame(QUICFrame *frame)
-  {
-    frame->~QUICFrame();
-    quicApplicationCloseFrameAllocator.free(static_cast<QUICApplicationCloseFrame *>(frame));
   }
 
   static void
@@ -1007,15 +969,6 @@ public:
     QUICConnectionError &error, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*
-   * Creates a APPLICATION_CLOSE frame.
-   */
-  static std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc> create_application_close_frame(
-    QUICAppErrorCode error_code, uint16_t reason_phrase_length = 0, const char *reason_phrase = nullptr, QUICFrameId id = 0,
-    QUICFrameGenerator *owner = nullptr);
-  static std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc> create_application_close_frame(
-    QUICConnectionError &error, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
-
-  /*
    * Creates a MAX_DATA frame.
    */
   static std::unique_ptr<QUICMaxDataFrame, QUICFrameDeleterFunc> create_max_data_frame(uint64_t maximum_data, QUICFrameId id = 0,
@@ -1027,7 +980,7 @@ public:
   static std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc> create_max_stream_data_frame(
     QUICStreamId stream_id, uint64_t maximum_stream_data, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   /*
-   * Creates a MAX_STREAM_ID frame.
+   * Creates a MAX_STREAMS frame.
    */
   static std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc> create_max_stream_id_frame(
     QUICStreamId maximum_stream_id, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
@@ -1057,19 +1010,19 @@ public:
                                                                                       QUICFrameGenerator *owner = nullptr);
 
   /*
-   * Creates a STREAM_BLOCKED frame.
+   * Creates a STREAM_DATA_BLOCKED frame.
    */
   static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(
     QUICStreamId stream_id, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*
-   * Creates a STREAM_ID_BLOCKED frame.
+   * Creates a STREAMS_BLOCKED frame.
    */
   static std::unique_ptr<QUICStreamIdBlockedFrame, QUICFrameDeleterFunc> create_stream_id_blocked_frame(
     QUICStreamId stream_id, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*
-   * Creates a RST_STREAM frame.
+   * Creates a RESET_STREAM frame.
    */
   static std::unique_ptr<QUICRstStreamFrame, QUICFrameDeleterFunc> create_rst_stream_frame(QUICStreamId stream_id,
                                                                                            QUICAppErrorCode error_code,

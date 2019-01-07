@@ -376,7 +376,7 @@ QUICStream::recv(const QUICMaxStreamDataFrame &frame)
 QUICConnectionErrorUPtr
 QUICStream::recv(const QUICStreamBlockedFrame &frame)
 {
-  // STREAM_BLOCKED frames are for debugging. Nothing to do here.
+  // STREAM_DATA_BLOCKED frames are for debugging. Nothing to do here.
   return nullptr;
 }
 
@@ -415,7 +415,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     return frame;
   }
 
-  // RST_STREAM
+  // RESET_STREAM
   if (this->_reset_reason && !this->_is_reset_sent) {
     frame = QUICFrameFactory::create_rst_stream_frame(*this->_reset_reason, this->_issue_frame_id(), this);
     this->_records_rst_stream_frame(*static_cast<QUICRstStreamFrame *>(frame.get()));
@@ -470,7 +470,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     // Check Connection/Stream level credit only if the generating STREAM frame is not pure fin
     uint64_t stream_credit = this->_remote_flow_controller.credit();
     if (stream_credit == 0) {
-      // STREAM_BLOCKED
+      // STREAM_DATA_BLOCKED
       frame = this->_remote_flow_controller.generate_frame(level, UINT16_MAX, maximum_frame_size);
       return frame;
     }
@@ -567,7 +567,7 @@ QUICStream::_on_frame_acked(QUICFrameInformationUPtr &info)
 {
   StreamFrameInfo *frame_info = nullptr;
   switch (info->type) {
-  case QUICFrameType::RST_STREAM:
+  case QUICFrameType::RESET_STREAM:
     this->_is_reset_complete = true;
     break;
   case QUICFrameType::STREAM:
@@ -589,13 +589,13 @@ void
 QUICStream::_on_frame_lost(QUICFrameInformationUPtr &info)
 {
   switch (info->type) {
-  case QUICFrameType::RST_STREAM:
+  case QUICFrameType::RESET_STREAM:
     // [draft-16] 13.2.  Retransmission of Information
-    // Cancellation of stream transmission, as carried in a RST_STREAM
+    // Cancellation of stream transmission, as carried in a RESET_STREAM
     // frame, is sent until acknowledged or until all stream data is
     // acknowledged by the peer (that is, either the "Reset Recvd" or
     // "Data Recvd" state is reached on the send stream).  The content of
-    // a RST_STREAM frame MUST NOT change when it is sent again.
+    // a RESET_STREAM frame MUST NOT change when it is sent again.
     this->_is_reset_sent = false;
     break;
   case QUICFrameType::STREAM:

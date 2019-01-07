@@ -94,26 +94,25 @@ enum class QUICPacketType : uint8_t {
 // XXX If you add or remove QUICFrameType, you might also need to change QUICFrame::type(const uint8_t *)
 enum class QUICFrameType : uint8_t {
   PADDING = 0x00,
-  RST_STREAM,
-  CONNECTION_CLOSE,
-  APPLICATION_CLOSE,
-  MAX_DATA,
-  MAX_STREAM_DATA,
-  MAX_STREAM_ID,
   PING,
-  BLOCKED,
-  STREAM_BLOCKED,
-  STREAM_ID_BLOCKED,
-  NEW_CONNECTION_ID,
+  ACK, // 0x02 - 0x03
+  RESET_STREAM = 0x04,
   STOP_SENDING,
+  CRYPTO,
+  NEW_TOKEN,
+  STREAM, // 0x08 - 0x0f
+  MAX_DATA = 0x10,
+  MAX_STREAM_DATA,
+  MAX_STREAMS, // 0x12 - 0x13
+  DATA_BLOCKED = 0x14,
+  STREAM_DATA_BLOCKED,
+  STREAMS_BLOCKED, // 0x16 - 0x17
+  NEW_CONNECTION_ID = 0x18,
   RETIRE_CONNECTION_ID,
   PATH_CHALLENGE,
   PATH_RESPONSE,
-  STREAM = 0x10, // 0x10 - 0x17
-  CRYPTO = 0x18,
-  NEW_TOKEN,
-  ACK, // 0x1a - 0x1b
-  UNKNOWN = 0x1c,
+  CONNECTION_CLOSE, // 0x1c - 0x1d
+  UNKNOWN = 0x1e,
 };
 
 enum class QUICVersionNegotiationStatus {

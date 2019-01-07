@@ -48,8 +48,8 @@ std::vector<QUICFrameType>
 QUICStreamManager::interests()
 {
   return {
-    QUICFrameType::STREAM,          QUICFrameType::RST_STREAM,    QUICFrameType::STOP_SENDING,
-    QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAM_ID,
+    QUICFrameType::STREAM,          QUICFrameType::RESET_STREAM,    QUICFrameType::STOP_SENDING,
+    QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAMS,
   };
 }
 
@@ -144,8 +144,8 @@ QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
   case QUICFrameType::MAX_STREAM_DATA:
     error = this->_handle_frame(static_cast<const QUICMaxStreamDataFrame &>(frame));
     break;
-  case QUICFrameType::STREAM_BLOCKED:
-    // STREAM_BLOCKED frame is for debugging. Just propagate to streams
+  case QUICFrameType::STREAM_DATA_BLOCKED:
+    // STREAM_DATA_BLOCKED frame is for debugging. Just propagate to streams
     error = this->_handle_frame(static_cast<const QUICStreamBlockedFrame &>(frame));
     break;
   case QUICFrameType::STREAM:
@@ -154,10 +154,10 @@ QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
   case QUICFrameType::STOP_SENDING:
     error = this->_handle_frame(static_cast<const QUICStopSendingFrame &>(frame));
     break;
-  case QUICFrameType::RST_STREAM:
+  case QUICFrameType::RESET_STREAM:
     error = this->_handle_frame(static_cast<const QUICRstStreamFrame &>(frame));
     break;
-  case QUICFrameType::MAX_STREAM_ID:
+  case QUICFrameType::MAX_STREAMS:
     error = this->_handle_frame(static_cast<const QUICMaxStreamIdFrame &>(frame));
     break;
   default:

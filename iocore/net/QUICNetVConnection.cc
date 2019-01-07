@@ -511,7 +511,7 @@ QUICNetVConnection::close(QUICConnectionErrorUPtr error)
 std::vector<QUICFrameType>
 QUICNetVConnection::interests()
 {
-  return {QUICFrameType::APPLICATION_CLOSE, QUICFrameType::CONNECTION_CLOSE, QUICFrameType::BLOCKED, QUICFrameType::MAX_DATA};
+  return {QUICFrameType::CONNECTION_CLOSE, QUICFrameType::DATA_BLOCKED, QUICFrameType::MAX_DATA};
 }
 
 QUICConnectionErrorUPtr
@@ -530,10 +530,9 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
   case QUICFrameType::PING:
     // Nothing to do
     break;
-  case QUICFrameType::BLOCKED:
-    // BLOCKED frame is for debugging. Nothing to do here.
+  case QUICFrameType::DATA_BLOCKED:
+    // DATA_BLOCKED frame is for debugging. Nothing to do here.
     break;
-  case QUICFrameType::APPLICATION_CLOSE:
   case QUICFrameType::CONNECTION_CLOSE:
     if (this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed) ||
         this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_draining)) {
@@ -543,10 +542,7 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
     // 7.9.1. Closing and Draining Connection States
     // An endpoint MAY transition from the closing period to the draining period if it can confirm that its peer is also closing or
     // draining. Receiving a closing frame is sufficient confirmation, as is receiving a stateless reset.
-    if (frame.type() == QUICFrameType::APPLICATION_CLOSE) {
-      this->_switch_to_draining_state(QUICConnectionErrorUPtr(std::make_unique<QUICConnectionError>(
-        QUICErrorClass::APPLICATION, static_cast<const QUICApplicationCloseFrame &>(frame).error_code())));
-    } else {
+    {
       uint16_t error_code = static_cast<const QUICConnectionCloseFrame &>(frame).error_code();
       this->_switch_to_draining_state(
         QUICConnectionErrorUPtr(std::make_unique<QUICConnectionError>(static_cast<QUICTransErrorCode>(error_code))));
@@ -1380,7 +1376,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     this->_store_frame(buf, len, max_frame_size, frame, frames);
   }
 
-  // BLOCKED
+  // DATA_BLOCKED
   if (this->_remote_flow_controller->credit() == 0 && this->_stream_manager->will_generate_frame(level)) {
     frame = this->_remote_flow_controller->generate_frame(level, UINT16_MAX, max_frame_size);
     if (frame) {
@@ -1390,7 +1386,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     }
   }
 
-  // STREAM, MAX_STREAM_DATA, STREAM_BLOCKED
+  // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
   if (!this->_path_validator->is_validating()) {
     frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
     while (frame) {
@@ -1491,12 +1487,8 @@ QUICNetVConnection::_packetize_closing_frame()
 
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
 
-  // CONNECTION_CLOSE or APPLICATION_CLOSE
-  if (this->_connection_error->cls == QUICErrorClass::APPLICATION) {
-    frame = QUICFrameFactory::create_application_close_frame(*this->_connection_error);
-  } else {
-    frame = QUICFrameFactory::create_connection_close_frame(*this->_connection_error);
-  }
+  // CONNECTION_CLOSE
+  frame = QUICFrameFactory::create_connection_close_frame(*this->_connection_error);
 
   uint32_t max_size  = this->maximum_quic_packet_size();
   ats_unique_buf buf = ats_unique_malloc(max_size);
@@ -1642,13 +1634,8 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
 void
 QUICNetVConnection::_handle_error(QUICConnectionErrorUPtr error)
 {
-  if (error->cls == QUICErrorClass::APPLICATION) {
-    QUICError("QUICError: %s (%u), APPLICATION ERROR (0x%" PRIx16 ")", QUICDebugNames::error_class(error->cls),
-              static_cast<unsigned int>(error->cls), error->code);
-  } else {
-    QUICError("QUICError: %s (%u), %s (0x%" PRIx16 ")", QUICDebugNames::error_class(error->cls),
-              static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code), error->code);
-  }
+  QUICError("QUICError: %s (%u), %s (0x%" PRIx16 ")", QUICDebugNames::error_class(error->cls),
+            static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code), error->code);
 
   // Connection Error
   this->close(std::move(error));

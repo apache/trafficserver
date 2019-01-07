@@ -46,8 +46,8 @@ QUICReceiveStreamState::is_allowed_to_send(QUICFrameType type) const
   // Return true or break out the switch to return false
   switch (this->get()) {
   case State::_Init:
-    if (type == QUICFrameType::STREAM || type == QUICFrameType::RST_STREAM || type == QUICFrameType::MAX_STREAM_DATA ||
-        type == QUICFrameType::STREAM_BLOCKED) {
+    if (type == QUICFrameType::STREAM || type == QUICFrameType::RESET_STREAM || type == QUICFrameType::MAX_STREAM_DATA ||
+        type == QUICFrameType::STREAM_DATA_BLOCKED) {
       return true;
     }
     break;
@@ -74,7 +74,7 @@ QUICReceiveStreamState::is_allowed_to_send(QUICFrameType type) const
     }
     break;
   case State::DataRecvd:
-    if (type != QUICFrameType::STREAM && type != QUICFrameType::RST_STREAM && type != QUICFrameType::STREAM_BLOCKED) {
+    if (type != QUICFrameType::STREAM && type != QUICFrameType::RESET_STREAM && type != QUICFrameType::STREAM_DATA_BLOCKED) {
       return true;
     }
     break;
@@ -84,10 +84,10 @@ QUICReceiveStreamState::is_allowed_to_send(QUICFrameType type) const
     }
     break;
   case State::ResetRecvd:
-    // It should not send any frame after receiving RST_STREAM
+    // It should not send any frame after receiving RESET_STREAM
     break;
   case State::ResetRead:
-    // It should not send any frame after receiving RST_STREAM
+    // It should not send any frame after receiving RESET_STREAM
     break;
   default:
     ink_assert(!"Unknown state");
@@ -109,8 +109,8 @@ QUICReceiveStreamState::is_allowed_to_receive(QUICFrameType type) const
   // Return true or break out the switch to return false
   switch (this->get()) {
   case State::_Init:
-    if (type == QUICFrameType::STREAM || type == QUICFrameType::RST_STREAM || type == QUICFrameType::MAX_STREAM_DATA ||
-        type == QUICFrameType::STREAM_BLOCKED) {
+    if (type == QUICFrameType::STREAM || type == QUICFrameType::RESET_STREAM || type == QUICFrameType::MAX_STREAM_DATA ||
+        type == QUICFrameType::STREAM_DATA_BLOCKED) {
       return true;
     }
     break;
@@ -155,10 +155,10 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
           this->_set_state(State::DataRecvd);
         }
       }
-    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+    } else if (frame.type() == QUICFrameType::RESET_STREAM) {
       this->_set_state(State::Recv);
       this->_set_state(State::ResetRecvd);
-    } else if (frame.type() == QUICFrameType::MAX_STREAM_DATA || frame.type() == QUICFrameType::STREAM_BLOCKED) {
+    } else if (frame.type() == QUICFrameType::MAX_STREAM_DATA || frame.type() == QUICFrameType::STREAM_DATA_BLOCKED) {
       this->_set_state(State::Recv);
     } else {
       this->_set_state(State::_Invalid);
@@ -172,7 +172,7 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
           this->_set_state(State::DataRecvd);
         }
       }
-    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+    } else if (frame.type() == QUICFrameType::RESET_STREAM) {
       this->_set_state(State::ResetRecvd);
     }
     break;
@@ -181,12 +181,12 @@ QUICReceiveStreamState::update_with_receiving_frame(const QUICFrame &frame)
       if (this->_in_progress->transfer_progress() == this->_in_progress->transfer_goal()) {
         this->_set_state(State::DataRecvd);
       }
-    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+    } else if (frame.type() == QUICFrameType::RESET_STREAM) {
       this->_set_state(State::ResetRecvd);
     }
     break;
   case State::DataRecvd:
-    if (frame.type() == QUICFrameType::RST_STREAM) {
+    if (frame.type() == QUICFrameType::RESET_STREAM) {
       this->_set_state(State::ResetRecvd);
     }
     break;
@@ -253,17 +253,17 @@ QUICSendStreamState::is_allowed_to_send(QUICFrameType type) const
   case State::_Init:
     break;
   case State::Ready:
-    if (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_BLOCKED || type == QUICFrameType::RST_STREAM) {
+    if (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_DATA_BLOCKED || type == QUICFrameType::RESET_STREAM) {
       return true;
     }
     break;
   case State::Send:
-    if (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_BLOCKED || type == QUICFrameType::RST_STREAM) {
+    if (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_DATA_BLOCKED || type == QUICFrameType::RESET_STREAM) {
       return true;
     }
     break;
   case State::DataSent:
-    if (type == QUICFrameType::RST_STREAM) {
+    if (type == QUICFrameType::RESET_STREAM) {
       return true;
     }
     break;
@@ -307,9 +307,9 @@ QUICSendStreamState::update_with_sending_frame(const QUICFrame &frame)
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
         this->_set_state(State::DataSent);
       }
-    } else if (frame.type() == QUICFrameType::STREAM_BLOCKED) {
+    } else if (frame.type() == QUICFrameType::STREAM_DATA_BLOCKED) {
       this->_set_state(State::Send);
-    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+    } else if (frame.type() == QUICFrameType::RESET_STREAM) {
       this->_set_state(State::ResetSent);
     }
     break;
@@ -318,12 +318,12 @@ QUICSendStreamState::update_with_sending_frame(const QUICFrame &frame)
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
         this->_set_state(State::DataSent);
       }
-    } else if (frame.type() == QUICFrameType::RST_STREAM) {
+    } else if (frame.type() == QUICFrameType::RESET_STREAM) {
       this->_set_state(State::ResetSent);
     }
     break;
   case State::DataSent:
-    if (frame.type() == QUICFrameType::RST_STREAM) {
+    if (frame.type() == QUICFrameType::RESET_STREAM) {
       this->_set_state(State::ResetSent);
     }
     break;

@@ -36,7 +36,6 @@ ClassAllocator<QUICAckFrame> quicAckFrameAllocator("quicAckFrameAllocator");
 ClassAllocator<QUICPaddingFrame> quicPaddingFrameAllocator("quicPaddingFrameAllocator");
 ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator("quicRstStreamFrameAllocator");
 ClassAllocator<QUICConnectionCloseFrame> quicConnectionCloseFrameAllocator("quicConnectionCloseFrameAllocator");
-ClassAllocator<QUICApplicationCloseFrame> quicApplicationCloseFrameAllocator("quicApplicationCloseFrameAllocator");
 ClassAllocator<QUICMaxDataFrame> quicMaxDataFrameAllocator("quicMaxDataFrameAllocator");
 ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator("quicMaxStreamDataFrameAllocator");
 ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator("quicMaxStreamDataIdAllocator");
@@ -103,10 +102,16 @@ QUICFrame::type(const uint8_t *buf)
 {
   if (buf[0] >= static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
     return QUICFrameType::UNKNOWN;
-  } else if (static_cast<uint8_t>(QUICFrameType::STREAM) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::CRYPTO)) {
-    return QUICFrameType::STREAM;
-  } else if (static_cast<uint8_t>(QUICFrameType::ACK) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
+  } else if (static_cast<uint8_t>(QUICFrameType::ACK) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::RESET_STREAM)) {
     return QUICFrameType::ACK;
+  } else if (static_cast<uint8_t>(QUICFrameType::STREAM) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::MAX_DATA)) {
+    return QUICFrameType::STREAM;
+  } else if (static_cast<uint8_t>(QUICFrameType::MAX_STREAMS) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED)) {
+    return QUICFrameType::MAX_STREAMS;
+  } else if (static_cast<uint8_t>(QUICFrameType::STREAMS_BLOCKED) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID)) {
+    return QUICFrameType::STREAMS_BLOCKED;
+  } else if (static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
+    return QUICFrameType::CONNECTION_CLOSE;
   } else {
     return static_cast<QUICFrameType>(buf[0]);
   }
@@ -1009,7 +1014,7 @@ QUICAckFrame::EcnSection::ecn_ce_count() const
 }
 
 //
-// RST_STREAM frame
+// RESET_STREAM frame
 //
 
 QUICRstStreamFrame::QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset, QUICFrameId id,
@@ -1073,7 +1078,7 @@ QUICRstStreamFrame::clone() const
 QUICFrameType
 QUICRstStreamFrame::type() const
 {
-  return QUICFrameType::RST_STREAM;
+  return QUICFrameType::RESET_STREAM;
 }
 
 size_t
@@ -1095,7 +1100,7 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 
   size_t n;
   uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::RST_STREAM);
+  *p         = static_cast<uint8_t>(QUICFrameType::RESET_STREAM);
   ++p;
   QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
   p += n;
@@ -1420,149 +1425,6 @@ QUICConnectionCloseFrame::reason_phrase() const
 }
 
 //
-// APPLICATION_CLOSE frame
-//
-QUICApplicationCloseFrame::QUICApplicationCloseFrame(QUICAppErrorCode error_code, uint64_t reason_phrase_length,
-                                                     const char *reason_phrase, QUICFrameId id, QUICFrameGenerator *owner)
-  : QUICFrame(id, owner)
-{
-  this->_error_code           = error_code;
-  this->_reason_phrase_length = reason_phrase_length;
-  this->_reason_phrase        = reason_phrase;
-}
-
-QUICApplicationCloseFrame::QUICApplicationCloseFrame(const uint8_t *buf, size_t len)
-{
-  this->parse(buf, len);
-}
-
-void
-QUICApplicationCloseFrame::_reset()
-{
-  this->_error_code           = 0;
-  this->_reason_phrase_length = 0;
-  this->_reason_phrase        = nullptr;
-
-  this->_owner = nullptr;
-  this->_id    = 0;
-  this->_size  = 0;
-  this->_valid = false;
-}
-
-void
-QUICApplicationCloseFrame::parse(const uint8_t *buf, size_t len)
-{
-  ink_assert(len >= 1);
-  this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
-
-  if (LEFT_SPACE(pos) < 2) {
-    return;
-  }
-
-  this->_error_code = QUICIntUtil::read_nbytes_as_uint(pos, 2);
-  pos += 2;
-
-  size_t field_len = 0;
-  if (!read_varint(pos, LEFT_SPACE(pos), this->_reason_phrase_length, field_len)) {
-    return;
-  }
-
-  if (LEFT_SPACE(pos) < this->_reason_phrase_length) {
-    return;
-  }
-
-  this->_valid         = true;
-  this->_reason_phrase = reinterpret_cast<const char *>(pos);
-  this->_size          = FRAME_SIZE(pos) + this->_reason_phrase_length;
-}
-
-QUICFrameUPtr
-QUICApplicationCloseFrame::clone() const
-{
-  return QUICFrameFactory::create_application_close_frame(this->error_code(), this->reason_phrase_length(), this->reason_phrase(),
-                                                          this->_id, this->_owner);
-}
-
-QUICFrameType
-QUICApplicationCloseFrame::type() const
-{
-  return QUICFrameType::APPLICATION_CLOSE;
-}
-
-size_t
-QUICApplicationCloseFrame::size() const
-{
-  if (this->_size) {
-    return this->_size;
-  }
-
-  return 1 + sizeof(QUICTransErrorCode) + QUICVariableInt::size(this->_reason_phrase_length) + this->_reason_phrase_length;
-}
-
-size_t
-QUICApplicationCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
-{
-  if (limit < this->size()) {
-    return 0;
-  }
-
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::APPLICATION_CLOSE);
-  ++p;
-  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
-  p += n;
-  QUICIntUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
-  p += n;
-  if (this->_reason_phrase_length > 0) {
-    memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
-    p += this->_reason_phrase_length;
-  }
-
-  *len = p - buf;
-  return *len;
-}
-
-int
-QUICApplicationCloseFrame::debug_msg(char *msg, size_t msg_len) const
-{
-  int len =
-    snprintf(msg, msg_len, "| APPLICATION_CLOSE size=%zu code=%s", this->size(), QUICDebugNames::error_code(this->error_code()));
-
-  if (this->reason_phrase_length() != 0 && this->reason_phrase() != nullptr) {
-    memcpy(msg + len, " reason=", 8);
-    len += 8;
-
-    int phrase_len = std::min(msg_len - len, static_cast<size_t>(this->reason_phrase_length()));
-    memcpy(msg + len, this->reason_phrase(), phrase_len);
-    len += phrase_len;
-    msg[len] = '\0';
-    ++len;
-  }
-
-  return len;
-}
-
-QUICAppErrorCode
-QUICApplicationCloseFrame::error_code() const
-{
-  return this->_error_code;
-}
-
-uint64_t
-QUICApplicationCloseFrame::reason_phrase_length() const
-{
-  return this->_reason_phrase_length;
-}
-
-const char *
-QUICApplicationCloseFrame::reason_phrase() const
-{
-  return this->_reason_phrase;
-}
-
-//
 // MAX_DATA frame
 //
 QUICMaxDataFrame::QUICMaxDataFrame(uint64_t maximum_data, QUICFrameId id, QUICFrameGenerator *owner) : QUICFrame(id, owner)
@@ -1762,7 +1624,7 @@ QUICMaxStreamDataFrame::maximum_stream_data() const
 }
 
 //
-// MAX_STREAM_ID
+// MAX_STREAMS
 //
 QUICMaxStreamIdFrame::QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, QUICFrameId id, QUICFrameGenerator *owner)
   : QUICFrame(id, owner)
@@ -1811,7 +1673,7 @@ QUICMaxStreamIdFrame::clone() const
 QUICFrameType
 QUICMaxStreamIdFrame::type() const
 {
-  return QUICFrameType::MAX_STREAM_ID;
+  return QUICFrameType::MAX_STREAMS;
 }
 
 size_t
@@ -1833,7 +1695,7 @@ QUICMaxStreamIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 
   size_t n;
   uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_ID);
+  *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAMS);
   ++p;
   QUICTypeUtil::write_QUICStreamId(this->_maximum_stream_id, p, &n);
   p += n;
@@ -1892,7 +1754,7 @@ QUICBlockedFrame::clone() const
 QUICFrameType
 QUICBlockedFrame::type() const
 {
-  return QUICFrameType::BLOCKED;
+  return QUICFrameType::DATA_BLOCKED;
 }
 
 size_t
@@ -1915,7 +1777,7 @@ QUICBlockedFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   size_t n;
   uint8_t *p = buf;
 
-  *p = static_cast<uint8_t>(QUICFrameType::BLOCKED);
+  *p = static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED);
   ++p;
   QUICTypeUtil::write_QUICOffset(this->_offset, p, &n);
   p += n;
@@ -1932,7 +1794,7 @@ QUICBlockedFrame::offset() const
 }
 
 //
-// STREAM_BLOCKED frame
+// STREAM_DATA_BLOCKED frame
 //
 QUICStreamBlockedFrame::QUICStreamBlockedFrame(const uint8_t *buf, size_t len)
 {
@@ -1980,7 +1842,7 @@ QUICStreamBlockedFrame::clone() const
 QUICFrameType
 QUICStreamBlockedFrame::type() const
 {
-  return QUICFrameType::STREAM_BLOCKED;
+  return QUICFrameType::STREAM_DATA_BLOCKED;
 }
 
 size_t
@@ -2002,7 +1864,7 @@ QUICStreamBlockedFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 
   size_t n;
   uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::STREAM_BLOCKED);
+  *p         = static_cast<uint8_t>(QUICFrameType::STREAM_DATA_BLOCKED);
   ++p;
   QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
   p += n;
@@ -2027,7 +1889,7 @@ QUICStreamBlockedFrame::offset() const
 }
 
 //
-// STREAM_ID_BLOCKED frame
+// STREAMS_BLOCKED frame
 //
 QUICStreamIdBlockedFrame::QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len)
 {
@@ -2070,7 +1932,7 @@ QUICStreamIdBlockedFrame::clone() const
 QUICFrameType
 QUICStreamIdBlockedFrame::type() const
 {
-  return QUICFrameType::STREAM_ID_BLOCKED;
+  return QUICFrameType::STREAMS_BLOCKED;
 }
 
 size_t
@@ -2093,7 +1955,7 @@ QUICStreamIdBlockedFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   size_t n;
   uint8_t *p = buf;
 
-  *p = static_cast<uint8_t>(QUICFrameType::STREAM_ID_BLOCKED);
+  *p = static_cast<uint8_t>(QUICFrameType::STREAMS_BLOCKED);
   ++p;
   QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
   p += n;
@@ -2791,7 +2653,7 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicPaddingFrameAllocator.alloc();
     new (frame) QUICPaddingFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_padding_frame);
-  case QUICFrameType::RST_STREAM:
+  case QUICFrameType::RESET_STREAM:
     frame = quicRstStreamFrameAllocator.alloc();
     new (frame) QUICRstStreamFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_rst_stream_frame);
@@ -2799,10 +2661,6 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicConnectionCloseFrameAllocator.alloc();
     new (frame) QUICConnectionCloseFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_connection_close_frame);
-  case QUICFrameType::APPLICATION_CLOSE:
-    frame = quicApplicationCloseFrameAllocator.alloc();
-    new (frame) QUICApplicationCloseFrame(buf, len);
-    return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_application_close_frame);
   case QUICFrameType::MAX_DATA:
     frame = quicMaxDataFrameAllocator.alloc();
     new (frame) QUICMaxDataFrame(buf, len);
@@ -2811,7 +2669,7 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicMaxStreamDataFrameAllocator.alloc();
     new (frame) QUICMaxStreamDataFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_max_stream_data_frame);
-  case QUICFrameType::MAX_STREAM_ID:
+  case QUICFrameType::MAX_STREAMS:
     frame = quicMaxStreamIdFrameAllocator.alloc();
     new (frame) QUICMaxStreamIdFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_max_stream_id_frame);
@@ -2819,15 +2677,15 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     frame = quicPingFrameAllocator.alloc();
     new (frame) QUICPingFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_ping_frame);
-  case QUICFrameType::BLOCKED:
+  case QUICFrameType::DATA_BLOCKED:
     frame = quicBlockedFrameAllocator.alloc();
     new (frame) QUICBlockedFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_blocked_frame);
-  case QUICFrameType::STREAM_BLOCKED:
+  case QUICFrameType::STREAM_DATA_BLOCKED:
     frame = quicStreamBlockedFrameAllocator.alloc();
     new (frame) QUICStreamBlockedFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_stream_blocked_frame);
-  case QUICFrameType::STREAM_ID_BLOCKED:
+  case QUICFrameType::STREAMS_BLOCKED:
     frame = quicStreamIdBlockedFrameAllocator.alloc();
     new (frame) QUICStreamIdBlockedFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_stream_id_blocked_frame);
@@ -2939,26 +2797,6 @@ QUICFrameFactory::create_connection_close_frame(QUICConnectionError &error, QUIC
     return QUICFrameFactory::create_connection_close_frame(error.code, error.frame_type(), strlen(error.msg), error.msg, id, owner);
   } else {
     return QUICFrameFactory::create_connection_close_frame(error.code, error.frame_type(), 0, nullptr, id, owner);
-  }
-}
-
-std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_application_close_frame(QUICAppErrorCode error_code, uint16_t reason_phrase_length,
-                                                 const char *reason_phrase, QUICFrameId id, QUICFrameGenerator *owner)
-{
-  QUICApplicationCloseFrame *frame = quicApplicationCloseFrameAllocator.alloc();
-  new (frame) QUICApplicationCloseFrame(error_code, reason_phrase_length, reason_phrase, id, owner);
-  return std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_connection_close_frame);
-}
-
-std::unique_ptr<QUICApplicationCloseFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_application_close_frame(QUICConnectionError &error, QUICFrameId id, QUICFrameGenerator *owner)
-{
-  ink_assert(error.cls == QUICErrorClass::APPLICATION);
-  if (error.msg) {
-    return QUICFrameFactory::create_application_close_frame(error.code, strlen(error.msg), error.msg, id, owner);
-  } else {
-    return QUICFrameFactory::create_application_close_frame(error.code, 0, nullptr, id, owner);
   }
 }
 

@@ -45,16 +45,15 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     case QUICFrameType::ACK:
     case QUICFrameType::PATH_CHALLENGE:
     case QUICFrameType::PATH_RESPONSE:
-    case QUICFrameType::RST_STREAM:
-    case QUICFrameType::BLOCKED:
-    case QUICFrameType::STREAM_BLOCKED:
+    case QUICFrameType::RESET_STREAM:
+    case QUICFrameType::DATA_BLOCKED:
+    case QUICFrameType::STREAM_DATA_BLOCKED:
     case QUICFrameType::MAX_DATA:
     case QUICFrameType::MAX_STREAM_DATA:
     case QUICFrameType::NEW_TOKEN:
     case QUICFrameType::PING:
     case QUICFrameType::STOP_SENDING:
     case QUICFrameType::CONNECTION_CLOSE:
-    case QUICFrameType::APPLICATION_CLOSE:
     case QUICFrameType::STREAM:
     case QUICFrameType::CRYPTO:
       break;

@@ -54,26 +54,24 @@ QUICDebugNames::frame_type(QUICFrameType type)
   switch (type) {
   case QUICFrameType::PADDING:
     return "PADDING";
-  case QUICFrameType::RST_STREAM:
-    return "RST_STREAM";
+  case QUICFrameType::RESET_STREAM:
+    return "RESET_STREAM";
   case QUICFrameType::CONNECTION_CLOSE:
     return "CONNECTION_CLOSE";
-  case QUICFrameType::APPLICATION_CLOSE:
-    return "APPLICATION_CLOSE";
   case QUICFrameType::MAX_DATA:
     return "MAX_DATA";
   case QUICFrameType::MAX_STREAM_DATA:
     return "MAX_STREAM_DATA";
-  case QUICFrameType::MAX_STREAM_ID:
-    return "MAX_STREAM_ID";
+  case QUICFrameType::MAX_STREAMS:
+    return "MAX_STREAMS";
   case QUICFrameType::PING:
     return "PING";
-  case QUICFrameType::BLOCKED:
-    return "BLOCKED";
-  case QUICFrameType::STREAM_BLOCKED:
-    return "STREAM_BLOCKED";
-  case QUICFrameType::STREAM_ID_BLOCKED:
-    return "STREAM_ID_BLOCKED";
+  case QUICFrameType::DATA_BLOCKED:
+    return "DATA_BLOCKED";
+  case QUICFrameType::STREAM_DATA_BLOCKED:
+    return "STREAM_DATA_BLOCKED";
+  case QUICFrameType::STREAMS_BLOCKED:
+    return "STREAMS_BLOCKED";
   case QUICFrameType::NEW_CONNECTION_ID:
     return "NEW_CONNECTION_ID";
   case QUICFrameType::STOP_SENDING:
