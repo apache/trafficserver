@@ -46,25 +46,32 @@ struct certinfo {
   time_t expire_time;
 };
 
-void
-certinfo_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
-{
-  certinfo *cinf = (certinfo *)ptr;
+/*
+ * In the case of multiple certificates associated with a SSL_CTX, we must store a map
+ * of cached responses
+ */
+using certinfo_map = std::map<X509 *, certinfo *>;
 
-  if (!cinf) {
+void
+certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
+{
+  certinfo_map *map = (certinfo_map *)ptr;
+
+  if (!map) {
     return;
   }
-  if (cinf->uri) {
-    OPENSSL_free(cinf->uri);
+
+  for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
+    if (iter->second->uri) {
+      OPENSSL_free(iter->second->uri);
+    }
+    if (iter->second->certname) {
+      ats_free(iter->second->certname);
+    }
+    ink_mutex_destroy(&iter->second->stapling_mutex);
+    OPENSSL_free(iter->second);
   }
-  if (cinf->certname) {
-    ats_free(cinf->certname);
-  }
-  if (cinf->cid) {
-    OCSP_CERTID_free(cinf->cid);
-  }
-  ink_mutex_destroy(&cinf->stapling_mutex);
-  OPENSSL_free(cinf);
+  free(map);
 }
 
 static int ssl_stapling_index = -1;
@@ -75,7 +82,7 @@ ssl_stapling_ex_init()
   if (ssl_stapling_index != -1) {
     return;
   }
-  ssl_stapling_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, certinfo_free);
+  ssl_stapling_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, certinfo_map_free);
 }
 
 static X509 *
@@ -136,7 +143,6 @@ end:
 bool
 ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
 {
-  certinfo *cinf;
   scoped_X509 issuer;
   STACK_OF(OPENSSL_STRING) *aia = nullptr;
 
@@ -145,15 +151,19 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
     return false;
   }
 
-  cinf = (certinfo *)SSL_CTX_get_ex_data(ctx, ssl_stapling_index);
-  if (cinf) {
+  certinfo_map *map = static_cast<certinfo_map *>(SSL_CTX_get_ex_data(ctx, ssl_stapling_index));
+  if (map && map->find(cert) != map->end()) {
     Note("certificate already initialized for %s", certname);
     return false;
   }
 
-  cinf = (certinfo *)OPENSSL_malloc(sizeof(certinfo));
+  if (!map) {
+    map = new certinfo_map;
+  }
+  certinfo *cinf = static_cast<certinfo *>(OPENSSL_malloc(sizeof(certinfo)));
   if (!cinf) {
     Error("error allocating memory for %s", certname);
+    delete map;
     return false;
   }
 
@@ -190,7 +200,8 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
     goto err;
   }
 
-  SSL_CTX_set_ex_data(ctx, ssl_stapling_index, cinf);
+  map->insert(std::make_pair(cert, cinf));
+  SSL_CTX_set_ex_data(ctx, ssl_stapling_index, map);
 
   Note("successfully initialized stapling for %s into SSL_CTX: %p", certname, ctx);
   return true;
@@ -207,17 +218,21 @@ err:
   if (cinf) {
     OPENSSL_free(cinf);
   }
+  if (map) {
+    delete map;
+  }
   return false;
 }
 
-static certinfo *
+static certinfo_map *
 stapling_get_cert_info(SSL_CTX *ctx)
 {
-  certinfo *cinf;
+  certinfo_map *map;
 
-  cinf = (certinfo *)SSL_CTX_get_ex_data(ctx, ssl_stapling_index);
-  if (cinf && cinf->cid) {
-    return cinf;
+  // Only return the map if it contains at least one element with a valid entry
+  map = static_cast<certinfo_map *>(SSL_CTX_get_ex_data(ctx, ssl_stapling_index));
+  if (map && !map->empty() && map->begin()->second && map->begin()->second->cid) {
+    return map;
   }
 
   return nullptr;
@@ -427,7 +442,6 @@ void
 ocsp_update()
 {
   SSL_CTX *ctx;
-  certinfo *cinf      = nullptr;
   OCSP_RESPONSE *resp = nullptr;
   time_t current_time;
 
@@ -437,22 +451,27 @@ ocsp_update()
   for (unsigned i = 0; i < ctxCount; i++) {
     SSLCertContext *cc = certLookup->get(i);
     if (cc && cc->ctx) {
-      ctx  = cc->ctx;
-      cinf = stapling_get_cert_info(ctx);
-      if (cinf) {
-        ink_mutex_acquire(&cinf->stapling_mutex);
-        current_time = time(nullptr);
-        if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
-          ink_mutex_release(&cinf->stapling_mutex);
-          if (stapling_refresh_response(cinf, &resp)) {
-            Debug("Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-            SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
+      ctx               = cc->ctx;
+      certinfo *cinf    = nullptr;
+      certinfo_map *map = stapling_get_cert_info(ctx);
+      if (map) {
+        // Walk over all certs associated with this CTX
+        for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
+          cinf = iter->second;
+          ink_mutex_acquire(&cinf->stapling_mutex);
+          current_time = time(nullptr);
+          if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
+            ink_mutex_release(&cinf->stapling_mutex);
+            if (stapling_refresh_response(cinf, &resp)) {
+              Debug("Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+              SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
+            } else {
+              Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+              SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
+            }
           } else {
-            Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-            SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
+            ink_mutex_release(&cinf->stapling_mutex);
           }
-        } else {
-          ink_mutex_release(&cinf->stapling_mutex);
         }
       }
     }
@@ -463,20 +482,29 @@ ocsp_update()
 int
 ssl_callback_ocsp_stapling(SSL *ssl)
 {
-  certinfo *cinf = nullptr;
-  time_t current_time;
-
   // Assume SSL_get_SSL_CTX() is the same as reaching into the ssl structure
   // Using the official call, to avoid leaking internal openssl knowledge
   // originally was, cinf = stapling_get_cert_info(ssl->ctx);
-  cinf = stapling_get_cert_info(SSL_get_SSL_CTX(ssl));
-  if (cinf == nullptr) {
-    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate information");
+  certinfo_map *map = stapling_get_cert_info(SSL_get_SSL_CTX(ssl));
+  if (map == nullptr) {
+    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate map");
     return SSL_TLSEXT_ERR_NOACK;
   }
+  // Fetch the specific certificate used in this negotiation
+  X509 *cert = SSL_get_certificate(ssl);
+  if (!cert) {
+    Error("ssl_callback_ocsp_stapling: failed to get certificate");
+    return SSL_TLSEXT_ERR_NOACK;
+  }
+  certinfo_map::iterator iter = map->find(cert);
+  if (iter == map->end()) {
+    Error("ssl_callback_ocsp_stapling: failed to get certificate information");
+    return SSL_TLSEXT_ERR_NOACK;
+  }
+  certinfo *cinf = iter->second;
 
   ink_mutex_acquire(&cinf->stapling_mutex);
-  current_time = time(nullptr);
+  time_t current_time = time(nullptr);
   if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
     ink_mutex_release(&cinf->stapling_mutex);
     Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
