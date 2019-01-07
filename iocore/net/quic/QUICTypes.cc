@@ -146,6 +146,12 @@ QUICTypeUtil::read_QUICPacketNumberLen(const uint8_t *buf)
   return (buf[0] & 0x03) + 1;
 }
 
+void
+QUICTypeUtil::write_QUICPacketNumberLen(int len, uint8_t *buf)
+{
+  buf[0] |= len - 1;
+}
+
 QUICPacketNumber
 QUICTypeUtil::read_QUICPacketNumber(const uint8_t *buf, int encoded_length)
 {

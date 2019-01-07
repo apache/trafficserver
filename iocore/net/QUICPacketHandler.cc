@@ -81,7 +81,7 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
   udp_payload->fill(udp_len);
 
   if (ph_protector) {
-    QUICPacket::protect_packet_header(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_len, ph_protector, dcil);
+    ph_protector->protect(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_len, dcil);
   }
 
   UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload);

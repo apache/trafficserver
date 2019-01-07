@@ -464,6 +464,7 @@ public:
   static uint64_t read_QUICMaxData(const uint8_t *buf);
 
   static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t *buf, size_t *len);
+  static void write_QUICPacketNumberLen(int len, uint8_t *buf);
   static void write_QUICPacketNumber(QUICPacketNumber packet_number, uint8_t n, uint8_t *buf, size_t *len);
   static void write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len);
   static void write_QUICStreamId(QUICStreamId stream_id, uint8_t *buf, size_t *len);

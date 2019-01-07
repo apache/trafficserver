@@ -24,7 +24,7 @@
 #include "QUICPacketHeaderProtector.h"
 
 bool
-QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead)
+QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead) const
 {
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
@@ -40,30 +40,6 @@ QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, 
     return false;
   }
 
-  EVP_CIPHER_CTX_free(ctx);
-
-  return true;
-}
-
-bool
-QUICPacketHeaderProtector::_encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn,
-                                       uint8_t unprotected_pn_len, const uint8_t *sample, const uint8_t *key, size_t key_len,
-                                       const EVP_CIPHER *aead) const
-{
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-  int len             = 0;
-
-  if (!ctx || !EVP_EncryptInit_ex(ctx, aead, nullptr, key, sample)) {
-    return false;
-  }
-  if (!EVP_EncryptUpdate(ctx, protected_pn, &len, unprotected_pn, unprotected_pn_len)) {
-    return false;
-  }
-  protected_pn_len = len;
-  if (!EVP_EncryptFinal_ex(ctx, protected_pn + len, &len)) {
-    return false;
-  }
-  protected_pn_len += len;
   EVP_CIPHER_CTX_free(ctx);
 
   return true;

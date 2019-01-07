@@ -381,8 +381,6 @@ public:
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
   static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked);
 
-  static bool protect_packet_header(uint8_t *packet, size_t packet_len, const QUICPacketHeaderProtector *ph_protector, int dcil);
-
   LINK(QUICPacket, link);
 
 private:

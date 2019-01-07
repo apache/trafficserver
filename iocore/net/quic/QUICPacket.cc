@@ -515,8 +515,8 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   *len   = 0;
-  buf[0] = 0x80;
-  buf[0] += static_cast<uint8_t>(this->_type);
+  buf[0] = 0xC0;
+  buf[0] += static_cast<uint8_t>(this->_type) << 4;
   if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
     buf[0] |= rand();
   }
@@ -572,6 +572,9 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
       } else {
         pn_len = 1;
       }
+
+      // PN Len field
+      QUICTypeUtil::write_QUICPacketNumberLen(pn_len, buf);
 
       // Length Field
       QUICIntUtil::write_QUICVariableInt(pn_len + this->_payload_length + aead_tag_len, buf + *len, &n);
@@ -1017,36 +1020,6 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
     dst = candidate2;
   }
 
-  return true;
-}
-
-bool
-QUICPacket::protect_packet_header(uint8_t *packet, size_t packet_len, const QUICPacketHeaderProtector *ph_protector, int dcil)
-{
-  uint8_t pn_offset            = 0;
-  uint8_t pn_len               = 4;
-  size_t sample_offset         = 0;
-  constexpr int aead_expansion = 16; // Currently, AEAD expansion (which is probably AEAD tag) length is always 16
-  QUICKeyPhase phase;
-
-  if (QUICInvariants::is_long_header(packet)) {
-    QUICPacketType type;
-    QUICPacketLongHeader::type(type, packet, packet_len);
-    phase = QUICTypeUtil::key_phase(type);
-    QUICPacketLongHeader::packet_number_offset(pn_offset, packet, packet_len);
-  } else {
-    QUICPacketShortHeader::key_phase(phase, packet, packet_len);
-    QUICPacketShortHeader::packet_number_offset(pn_offset, packet, packet_len, dcil);
-  }
-  sample_offset = std::min(static_cast<size_t>(pn_offset) + 4, packet_len - aead_expansion);
-
-  uint8_t protected_pn[4]  = {0};
-  uint8_t protected_pn_len = 0;
-  pn_len                   = QUICTypeUtil::read_QUICPacketNumberLen(packet + pn_offset);
-  if (!ph_protector->protect(protected_pn, protected_pn_len, packet + pn_offset, pn_len, packet + sample_offset, phase)) {
-    return false;
-  }
-  memcpy(packet + pn_offset, protected_pn, pn_len);
   return true;
 }
 

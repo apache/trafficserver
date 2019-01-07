@@ -30,10 +30,8 @@
 class QUICPacketHeaderProtector
 {
 public:
-  bool unprotect(uint8_t *protected_packet, size_t protected_packet_len);
-
-  bool protect(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
-               const uint8_t *sample, QUICKeyPhase phase) const;
+  bool unprotect(uint8_t *protected_packet, size_t protected_packet_len) const;
+  bool protect(uint8_t *unprotected_packet, size_t unprotected_packet_len, int dcil) const;
 
   // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICCryptoInfoProvider or somethign instead.
   // For now it receives a CONST pointer so PacketNubmerProtector cannot bother handshake.
@@ -42,12 +40,10 @@ public:
 private:
   const QUICHandshakeProtocol *_hs_protocol = nullptr;
 
-  bool _calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len);
+  bool _calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len) const;
 
-  bool _generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead);
+  bool _generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead) const;
 
-  bool _unprotect(uint8_t *packet, size_t packet_len, const uint8_t *mask);
-
-  bool _encrypt_pn(uint8_t *protected_pn, uint8_t &protected_pn_len, const uint8_t *unprotected_pn, uint8_t unprotected_pn_len,
-                   const uint8_t *sample, const uint8_t *key, size_t key_len, const QUIC_EVP_CIPHER *aead) const;
+  bool _unprotect(uint8_t *packet, size_t packet_len, const uint8_t *mask) const;
+  bool _protect(uint8_t *packet, size_t packet_len, const uint8_t *mask) const;
 };

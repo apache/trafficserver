@@ -1225,10 +1225,8 @@ QUICNetVConnection::_state_common_send_packet()
         udp_payload->fill(len);
         written += len;
 
-        // TODO: Avoid static function. We don't need to parse buffer again. Get packet number offset from packet.
-        QUICPacket::protect_packet_header(
-          buf, len, &this->_ph_protector,
-          (this->_peer_quic_connection_id == QUICConnectionId::ZERO()) ? 0 : this->_peer_quic_connection_id.length());
+        int dcil = (this->_peer_quic_connection_id == QUICConnectionId::ZERO()) ? 0 : this->_peer_quic_connection_id.length();
+        this->_ph_protector.protect(buf, len, dcil);
 
         QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                      len);
@@ -1613,14 +1611,14 @@ QUICNetVConnection::_init_flow_control_params(const std::shared_ptr<const QUICTr
 {
   this->_stream_manager->init_flow_control_params(local_tp, remote_tp);
 
-  uint32_t local_initial_max_data  = 0;
-  uint32_t remote_initial_max_data = 0;
+  uint64_t local_initial_max_data  = 0;
+  uint64_t remote_initial_max_data = 0;
   if (local_tp) {
-    local_initial_max_data          = local_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);
+    local_initial_max_data          = local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_DATA);
     this->_flow_control_buffer_size = local_initial_max_data;
   }
   if (remote_tp) {
-    remote_initial_max_data = remote_tp->getAsUInt32(QUICTransportParameterId::INITIAL_MAX_DATA);
+    remote_initial_max_data = remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_DATA);
   }
 
   this->_local_flow_controller->set_limit(local_initial_max_data);
@@ -1806,8 +1804,8 @@ QUICNetVConnection::_complete_handshake_if_possible()
 
   // PN space doesn't matter but seems like this is the way to pick the LossDetector for 0-RTT and Short packet
   int index_for_1rtt = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::ONE_RTT);
-  uint8_t ack_delay_exponent =
-    this->_handshake_handler->remote_transport_parameters()->getAsUInt8(QUICTransportParameterId::ACK_DELAY_EXPONENT);
+  uint64_t ack_delay_exponent =
+    this->_handshake_handler->remote_transport_parameters()->getAsUInt(QUICTransportParameterId::ACK_DELAY_EXPONENT);
   this->_loss_detector[index_for_1rtt]->update_ack_delay_exponent(ack_delay_exponent);
 
   this->_start_application();
