@@ -322,7 +322,7 @@ NetAccept::do_blocking_accept(EThread *t)
         return 0;
       }
       if (!action_->cancelled) {
-        SCOPED_MUTEX_LOCK(lock, action_->mutex, t);
+        SCOPED_MUTEX_LOCK(lock, action_->mutex ? action_->mutex : t->mutex, t);
         action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         Warning("accept thread received fatal error: errno = %d", errno);
       }
