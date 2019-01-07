@@ -179,8 +179,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_STREAM_DATA_BIDI_LOCAL";
   case QUICTransportParameterId::INITIAL_MAX_DATA:
     return "INITIAL_MAX_DATA";
-  case QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS:
-    return "INITIAL_MAX_BIDI_STREAMS";
+  case QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI:
+    return "INITIAL_MAX_STREAMS_BIDI";
   case QUICTransportParameterId::IDLE_TIMEOUT:
     return "IDLE_TIMEOUT";
   case QUICTransportParameterId::PREFERRED_ADDRESS:
@@ -191,8 +191,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "STATELESS_RESET_TOKEN";
   case QUICTransportParameterId::ACK_DELAY_EXPONENT:
     return "ACK_DELAY_EXPONENT";
-  case QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS:
-    return "INITIAL_MAX_UNI_STREAMS";
+  case QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI:
+    return "INITIAL_MAX_STREAMS_UNI";
   case QUICTransportParameterId::DISABLE_MIGRATION:
     return "DISABLE_MIGRATION";
   case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE:

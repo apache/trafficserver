@@ -156,15 +156,15 @@ QUICTransportParameters::_validate_parameters() const
     }
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_BIDI_STREAMS);
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
     }
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI)) != this->_parameters.end()) {
     if (ite->second->len() != 2) {
-      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_UNI_STREAMS);
+      return -(TP_ERROR_LENGTH | QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
     }
   }
 
