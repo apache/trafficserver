@@ -1998,17 +1998,17 @@ QUICNewConnectionIdFrame::parse(const uint8_t *buf, size_t len)
   this->_reset();
   uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
 
+  size_t field_len = 0;
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_sequence, field_len)) {
+    return;
+  }
+
   if (LEFT_SPACE(pos) < 1) {
     return;
   }
 
   size_t cid_len = *pos;
   pos += 1;
-
-  size_t field_len = 0;
-  if (!read_varint(pos, LEFT_SPACE(pos), this->_sequence, field_len)) {
-    return;
-  }
 
   if (LEFT_SPACE(pos) < cid_len) {
     return;
@@ -2061,10 +2061,10 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
   ++p;
-  *p = this->_connection_id.length();
-  p += 1;
   QUICIntUtil::write_QUICVariableInt(this->_sequence, p, &n);
   p += n;
+  *p = this->_connection_id.length();
+  p += 1;
   QUICTypeUtil::write_QUICConnectionId(this->_connection_id, p, &n);
   p += n;
   memcpy(p, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
