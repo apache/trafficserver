@@ -50,12 +50,12 @@ protected:
   }
 
   virtual void
-  _on_frame_acked(QUICFrameInformation info)
+  _on_frame_acked(QUICFrameInformation &info)
   {
   }
 
   virtual void
-  _on_frame_lost(QUICFrameInformation info)
+  _on_frame_lost(QUICFrameInformation &info)
   {
   }
 

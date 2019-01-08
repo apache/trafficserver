@@ -164,8 +164,8 @@ protected:
   QUICBidirectionalStreamState _state;
 
   // QUICFrameGenerator
-  void _on_frame_acked(QUICFrameInformation info) override;
-  void _on_frame_lost(QUICFrameInformation info) override;
+  void _on_frame_acked(QUICFrameInformation &info) override;
+  void _on_frame_lost(QUICFrameInformation &info) override;
 };
 
 /**
@@ -212,8 +212,8 @@ private:
     Ptr<IOBufferBlock> block;
   };
 
-  void _on_frame_acked(QUICFrameInformation info) override;
-  void _on_frame_lost(QUICFrameInformation info) override;
+  void _on_frame_acked(QUICFrameInformation &info) override;
+  void _on_frame_lost(QUICFrameInformation &info) override;
 
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICOffset _send_offset           = 0;

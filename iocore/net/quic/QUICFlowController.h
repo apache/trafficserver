@@ -80,7 +80,7 @@ public:
   void forward_limit(QUICOffset new_limit) override;
 
 private:
-  void _on_frame_lost(QUICFrameInformation info) override;
+  void _on_frame_lost(QUICFrameInformation &info) override;
   bool _blocked = false;
 };
 
@@ -101,7 +101,7 @@ public:
   void set_limit(QUICOffset limit) override;
 
 private:
-  void _on_frame_lost(QUICFrameInformation info) override;
+  void _on_frame_lost(QUICFrameInformation &info) override;
   bool _need_to_forward_limit();
 
   QUICRateAnalyzer _analyzer;

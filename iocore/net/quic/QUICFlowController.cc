@@ -149,7 +149,7 @@ QUICRemoteFlowController::update(QUICOffset offset)
 }
 
 void
-QUICRemoteFlowController::_on_frame_lost(QUICFrameInformation info)
+QUICRemoteFlowController::_on_frame_lost(QUICFrameInformation &info)
 {
   ink_assert(info.type == QUICFrameType::BLOCKED || info.type == QUICFrameType::STREAM_BLOCKED);
   if (this->_offset == *reinterpret_cast<QUICOffset *>(info.data)) {
@@ -192,7 +192,7 @@ QUICLocalFlowController::set_limit(QUICOffset limit)
 }
 
 void
-QUICLocalFlowController::_on_frame_lost(QUICFrameInformation info)
+QUICLocalFlowController::_on_frame_lost(QUICFrameInformation &info)
 {
   ink_assert(info.type == QUICFrameType::MAX_DATA || info.type == QUICFrameType::MAX_STREAM_DATA);
   if (this->_limit == *reinterpret_cast<QUICOffset *>(info.data)) {

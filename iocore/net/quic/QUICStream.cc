@@ -569,7 +569,7 @@ QUICStream::_records_max_stream_data_frame(const QUICMaxStreamDataFrame &frame)
 }
 
 void
-QUICStream::_on_frame_acked(QUICFrameInformation info)
+QUICStream::_on_frame_acked(QUICFrameInformation &info)
 {
   StreamFrameInfo *frame_info = nullptr;
   switch (info.type) {
@@ -593,7 +593,7 @@ QUICStream::_on_frame_acked(QUICFrameInformation info)
 }
 
 void
-QUICStream::_on_frame_lost(QUICFrameInformation info)
+QUICStream::_on_frame_lost(QUICFrameInformation &info)
 {
   StreamFrameInfo *frame_info = nullptr;
   switch (info.type) {
@@ -908,7 +908,7 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
 }
 
 void
-QUICCryptoStream::_on_frame_acked(QUICFrameInformation info)
+QUICCryptoStream::_on_frame_acked(QUICFrameInformation &info)
 {
   ink_assert(info.type == QUICFrameType::CRYPTO);
   CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
@@ -916,7 +916,7 @@ QUICCryptoStream::_on_frame_acked(QUICFrameInformation info)
 }
 
 void
-QUICCryptoStream::_on_frame_lost(QUICFrameInformation info)
+QUICCryptoStream::_on_frame_lost(QUICFrameInformation &info)
 {
   ink_assert(info.type == QUICFrameType::CRYPTO);
   CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
