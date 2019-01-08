@@ -16,20 +16,5 @@
  * limitations under the License.
  */
 
-#define PLUGIN_NAME "uri_signing"
-
-#ifdef URI_SIGNING_UNIT_TEST
-#include <stdio.h>
-#include <stdarg.h>
-
-#define PluginDebug(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define PluginError(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-void PrintToStdErr(const char *fmt, ...);
-
-#else
-
-#include "ts/ts.h"
-#define PluginDebug(...) TSDebug("uri_signing", PLUGIN_NAME " " __VA_ARGS__)
-#define PluginError(...) PluginDebug(__VA_ARGS__), TSError(PLUGIN_NAME " " __VA_ARGS__)
-
-#endif
+int normalize_uri(const char *uri, int uri_ct, char *uri_normal, int buffer_size);
+int remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct);
