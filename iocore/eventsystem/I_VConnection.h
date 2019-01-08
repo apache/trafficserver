@@ -406,7 +406,7 @@ public:
   };
 
 protected:
-  std::array<void *, TS_VCONN_MAX_USER_ARG> user_args{nullptr};
+  std::array<void *, TS_VCONN_MAX_USER_ARG> user_args{{nullptr}};
 };
 
 struct DummyVConnection : public AnnotatedVConnection {
