@@ -146,37 +146,36 @@ RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSour
                            bool inc_version = true);
 RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true, bool inc_version = true);
 
-int RecGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
-int RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock = true);
-int RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
-int RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
-int RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock = true);
+RecErrT RecGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
+RecErrT RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock = true);
+RecErrT RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
+RecErrT RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock = true);
+RecErrT RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock = true);
 // Convenience to allow us to treat the RecInt as a single byte internally
-int RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock = true);
+RecErrT RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock = true);
 // Convenience to allow us to treat the RecInt as a bool internally
-int RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
+RecErrT RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
 typedef void (*RecLookupCallback)(const RecRecord *, void *);
 
-int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
-int RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookupCallback callback, void *data, bool lock = true);
+RecErrT RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
+RecErrT RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookupCallback callback, void *data, bool lock = true);
 
-int RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
-int RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
-int RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock = true);
-int RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true);
+RecErrT RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
+RecErrT RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
+RecErrT RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock = true);
+RecErrT RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true);
+RecErrT RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock = true);
+RecErrT RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock = true);
+RecErrT RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock = true);
+RecErrT RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock = true);
+RecErrT RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
 
-int RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock = true);
-int RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock = true);
-int RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock = true);
-int RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock = true);
-int RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
-
-int RecGetRecordAccessType(const char *name, RecAccessT *secure, bool lock = true);
-int RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
+RecErrT RecGetRecordAccessType(const char *name, RecAccessT *secure, bool lock = true);
+RecErrT RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
 
 //------------------------------------------------------------------------
 // Signal and Alarms
