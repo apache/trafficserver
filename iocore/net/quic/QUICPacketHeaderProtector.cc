@@ -45,7 +45,8 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
     QUICPacketLongHeader::key_phase(phase, unprotected_packet, unprotected_packet_len);
     QUICPacketLongHeader::type(type, unprotected_packet, unprotected_packet_len);
   } else {
-    QUICPacketShortHeader::key_phase(phase, unprotected_packet, unprotected_packet_len);
+    // This is a kind of hack. For short header we need to use the same key for header protection regardless of the key phase.
+    phase = QUICKeyPhase::PHASE_0;
     type = QUICPacketType::PROTECTED;
   }
 
@@ -65,7 +66,7 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
   }
 
   uint8_t sample_offset;
-  if (!this->_calc_sample_offset(&sample_offset, unprotected_packet, unprotected_packet_len)) {
+  if (!this->_calc_sample_offset(&sample_offset, unprotected_packet, unprotected_packet_len, dcil)) {
     Debug("v_quic_pne", "Failed to calculate a sample offset");
     return false;
   }
@@ -76,7 +77,7 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
     return false;
   }
 
-  if (!this->_protect(unprotected_packet, unprotected_packet_len, mask)) {
+  if (!this->_protect(unprotected_packet, unprotected_packet_len, mask, dcil)) {
     Debug("quic_pne", "Failed to encrypt a packet number");
   }
 
@@ -101,7 +102,8 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
     QUICPacketLongHeader::key_phase(phase, protected_packet, protected_packet_len);
     QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
   } else {
-    QUICPacketShortHeader::key_phase(phase, protected_packet, protected_packet_len);
+    // This is a kind of hack. For short header we need to use the same key for header protection regardless of the key phase.
+    phase = QUICKeyPhase::PHASE_0;
     type = QUICPacketType::PROTECTED;
   }
 
@@ -121,7 +123,7 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
   }
 
   uint8_t sample_offset;
-  if (!this->_calc_sample_offset(&sample_offset, protected_packet, protected_packet_len)) {
+  if (!this->_calc_sample_offset(&sample_offset, protected_packet, protected_packet_len, QUICConnectionId::SCID_LEN)) {
     Debug("v_quic_pne", "Failed to calculate a sample offset");
     return false;
   }
@@ -146,12 +148,9 @@ QUICPacketHeaderProtector::set_hs_protocol(const QUICHandshakeProtocol *hs_proto
 }
 
 bool
-QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len) const
+QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len,
+int dcil) const
 {
-  uint8_t pn_offset      = 0;
-  uint8_t aead_expansion = 16;
-  QUICKeyPhase phase;
-
   if (QUICInvariants::is_long_header(protected_packet)) {
     uint8_t dcil;
     uint8_t scil;
@@ -171,9 +170,9 @@ QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uin
       *sample_offset += token_len + token_length_len;
     }
   } else {
-    QUICPacketShortHeader::key_phase(phase, protected_packet, protected_packet_len);
+    *sample_offset = 1 + dcil + 4;
   }
-  return std::min(static_cast<size_t>(pn_offset) + 4, protected_packet_len - aead_expansion);
+  return sample_offset + 16 < protected_packet + protected_packet_len;
 }
 
 bool
@@ -199,7 +198,7 @@ QUICPacketHeaderProtector::_unprotect(uint8_t *protected_packet, size_t protecte
 }
 
 bool
-QUICPacketHeaderProtector::_protect(uint8_t *protected_packet, size_t protected_packet_len, const uint8_t *mask) const
+QUICPacketHeaderProtector::_protect(uint8_t *protected_packet, size_t protected_packet_len, const uint8_t *mask, int dcil) const
 {
   uint8_t pn_offset;
 
@@ -211,7 +210,7 @@ QUICPacketHeaderProtector::_protect(uint8_t *protected_packet, size_t protected_
     QUICPacketLongHeader::packet_number_offset(pn_offset, protected_packet, protected_packet_len);
   } else {
     protected_packet[0] ^= mask[0] & 0x1f;
-    QUICPacketShortHeader::packet_number_offset(pn_offset, protected_packet, protected_packet_len, QUICConnectionId::SCID_LEN);
+    QUICPacketShortHeader::packet_number_offset(pn_offset, protected_packet, protected_packet_len, dcil);
   }
 
   for (int i = 0; i < pn_length; ++i) {

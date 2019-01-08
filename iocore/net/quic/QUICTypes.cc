@@ -155,16 +155,7 @@ QUICTypeUtil::write_QUICPacketNumberLen(int len, uint8_t *buf)
 QUICPacketNumber
 QUICTypeUtil::read_QUICPacketNumber(const uint8_t *buf, int encoded_length)
 {
-  uint64_t pn = QUICIntUtil::read_nbytes_as_uint(buf, encoded_length);
-
-  // Remove length indicator
-  if (encoded_length == 1) {
-    pn &= 0x7F;
-  } else {
-    pn &= (0x3FFFFFFF >> ((4 - encoded_length) * 8));
-  }
-
-  return static_cast<QUICPacketNumber>(pn);
+  return QUICIntUtil::read_nbytes_as_uint(buf, encoded_length);
 }
 
 QUICVersion
@@ -214,15 +205,6 @@ void
 QUICTypeUtil::write_QUICPacketNumber(QUICPacketNumber packet_number, uint8_t n, uint8_t *buf, size_t *len)
 {
   uint64_t pn = static_cast<uint64_t>(packet_number);
-  if (n == 1) {
-    // Do nothing
-  } else if (n == 2) {
-    pn |= 0x8000;
-  } else if (n == 4) {
-    pn |= 0xC0000000;
-  } else {
-    ink_assert(!"Encoded length must be 1, 2 or 4");
-  }
   QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(pn), n, buf, len);
 }
 

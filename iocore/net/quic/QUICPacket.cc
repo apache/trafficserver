@@ -729,7 +729,7 @@ QUICPacketShortHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, siz
   if (packet_len < 1) {
     return false;
   }
-  if (packet[0] & 0x40) {
+  if (packet[0] & 0x04) {
     phase = QUICKeyPhase::PHASE_1;
   } else {
     phase = QUICKeyPhase::PHASE_0;
@@ -764,11 +764,10 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 {
   size_t n;
   *len   = 0;
-  buf[0] = 0x00;
+  buf[0] = 0x40;
   if (this->_key_phase == QUICKeyPhase::PHASE_1) {
-    buf[0] += 0x40;
+    buf[0] |= 0x04;
   }
-  buf[0] += 0x30;
   *len += 1;
 
   if (this->_connection_id != QUICConnectionId::ZERO()) {
@@ -780,8 +779,9 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
   size_t dst_len       = this->_packet_number_len;
   QUICPacket::encode_packet_number(dst, this->_packet_number, dst_len);
   QUICTypeUtil::write_QUICPacketNumber(dst, dst_len, buf + *len, &n);
-
   *len += n;
+
+  QUICTypeUtil::write_QUICPacketNumberLen(n, buf);
 }
 
 //

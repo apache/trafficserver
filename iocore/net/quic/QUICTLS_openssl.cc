@@ -191,7 +191,7 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
     phase  = QUICKeyPhase::ZERO_RTT;
     cipher = this->_get_evp_aead(phase);
     km     = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
-    this->_print_km("update - client", *km, secret, secret_len);
+    this->_print_km("update - client - 0rtt", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
@@ -199,7 +199,7 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
     phase  = QUICKeyPhase::HANDSHAKE;
     cipher = this->_get_evp_aead(phase);
     km     = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
-    this->_print_km("update - client", *km, secret, secret_len);
+    this->_print_km("update - client - handshake", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
@@ -207,7 +207,7 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
     phase  = QUICKeyPhase::PHASE_0;
     cipher = this->_get_evp_aead(phase);
     km     = this->_keygen_for_client.regenerate(secret, secret_len, cipher, hkdf);
-    this->_print_km("update - client", *km, secret, secret_len);
+    this->_print_km("update - client - 1rtt", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
@@ -215,7 +215,7 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
     phase  = QUICKeyPhase::HANDSHAKE;
     cipher = this->_get_evp_aead(phase);
     km     = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
-    this->_print_km("update - server", *km, secret, secret_len);
+    this->_print_km("update - server - handshake", *km, secret, secret_len);
     this->_server_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
@@ -223,7 +223,7 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
     phase  = QUICKeyPhase::PHASE_0;
     cipher = this->_get_evp_aead(phase);
     km     = this->_keygen_for_server.regenerate(secret, secret_len, cipher, hkdf);
-    this->_print_km("update - server", *km, secret, secret_len);
+    this->_print_km("update - server - 1rtt", *km, secret, secret_len);
     this->_server_pp->set_key(std::move(km), phase);
     break;
   default:
