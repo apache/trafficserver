@@ -95,8 +95,9 @@ install-examples: examples
 	@cd example && $(MAKE) $(AM_MAKEFLAGS) install pkglibdir=$(pkglibexecdir)
 
 $(abs_top_srcdir)/.git/hooks/pre-commit: $(abs_top_srcdir)/tools/git/pre-commit
-	[ -d $(abs_top_srcdir)/.git/hooks ] && \
-		cp $(abs_top_srcdir)/tools/git/pre-commit $(abs_top_srcdir)/.git/hooks/pre-commit
+	if [ -d $(abs_top_srcdir)/.git/hooks ]; then \
+		cp $(abs_top_srcdir)/tools/git/pre-commit $(abs_top_srcdir)/.git/hooks/pre-commit; \
+	fi
 
 install-data-hook:
 if BUILD_DOCS
