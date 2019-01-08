@@ -95,7 +95,8 @@ enum class QUICPacketType : uint8_t {
 enum class QUICFrameType : uint8_t {
   PADDING = 0x00,
   PING,
-  ACK, // 0x02 - 0x03
+  ACK,
+  ACK_WITH_ECN,
   RESET_STREAM = 0x04,
   STOP_SENDING,
   CRYPTO,
