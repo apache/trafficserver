@@ -96,7 +96,7 @@ QUICAckFrameManager::will_generate_frame(QUICEncryptionLevel level)
 }
 
 void
-QUICAckFrameManager::_on_frame_acked(QUICFrameInformation info)
+QUICAckFrameManager::_on_frame_acked(QUICFrameInformation &info)
 {
   ink_assert(info.type == QUICFrameType::ACK);
   AckFrameInfomation *ack_info = reinterpret_cast<AckFrameInfomation *>(info.data);

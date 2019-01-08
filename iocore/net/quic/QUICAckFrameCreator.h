@@ -115,7 +115,7 @@ private:
     QUICPacketNumber largest_acknowledged = 0;
   };
 
-  virtual void _on_frame_acked(QUICFrameInformation info) override;
+  virtual void _on_frame_acked(QUICFrameInformation &info) override;
 
   /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.
