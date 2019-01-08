@@ -1738,16 +1738,18 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
           X509_free(cert);
           goto fail;
         }
-        certList.push_back(cert);
-        if (SSLConfigParams::load_ssl_file_cb) {
-          SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str(), CONFIG_FLAG_UNVERSIONED);
-        }
+
         // Load up any additional chain certificates
         SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 
         const char *keyPath = key_tok.getNext();
         if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
           goto fail;
+        }
+
+        certList.push_back(cert);
+        if (SSLConfigParams::load_ssl_file_cb) {
+          SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str(), CONFIG_FLAG_UNVERSIONED);
         }
 
         // Must load all the intermediate certificates before starting the next chain
