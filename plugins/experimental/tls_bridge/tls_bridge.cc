@@ -1,19 +1,16 @@
 /*
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
+  Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
+  See the NOTICE file distributed with this work for additional information regarding copyright
+  ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance with the License.  You may obtain a
+  copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+  Unless required by applicable law or agreed to in writing, software distributed under the License
+  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+  or implied. See the License for the specific language governing permissions and limitations under
+  the License.
 */
 
 #include "ts/ts.h"
@@ -24,19 +21,21 @@
 #include "tscore/ts_file.h"
 #include "regex.h"
 
-#define PLUGIN_NAME "TLS Bridge"
-#define PLUGIN_TAG "tls_bridge"
-
 using ts::TextView;
 
 namespace
 {
+constexpr char const PLUGIN_NAME[] = "TLS Bridge";
+constexpr char const PLUGIN_TAG[]  = "tls_bridge";
+
 // Base format string for making the internal CONNECT.
 char const CONNECT_FORMAT[] = "CONNECT https:%.*s HTTP/1.1\r\n\r\n";
 
+// TextView of the 'CONNECT' method string.
 const TextView METHOD_CONNECT{TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT};
 constexpr TextView CONFIG_FILE_ARG{"--file"};
 const std::string TS_CONFIG_DIR{TSConfigDirGet()};
+
 }; // namespace
 
 /* ------------------------------------------------------------------------------------ */
@@ -70,6 +69,8 @@ class BridgeConfig
     using self_type = BridgeConfig;
 
     /// Construct an item.
+    /// @internal Pass in the compiled regex because no instance of this is created if
+    /// the regex doesn't compile successfully.
     Item(std::string_view pattern, Regex &&r, std::string_view service) : _pattern(pattern), _r(std::move(r)), _service(service) {}
 
     std::string _pattern; ///< Original configuration regular expression.
@@ -114,13 +115,12 @@ BridgeConfig::load_pair(std::string_view rxp, std::string_view service, ts::file
   if (r.compile(pattern.c_str(), Regex::ANCHORED)) {
     _items.emplace_back(rxp, std::move(r), service);
   } else {
-    char buff[std::numeric_limits<int>::digits10 + 2];
-    char const *place = "";
+    char buff[std::numeric_limits<int>::digits10 + 2] = "";
     if (ln) {
       snprintf(buff, sizeof(buff), " on line %d", ln);
-      place = buff;
     }
-    TSError("%s: Failed to compile regular expression '%.*s' in %s%s", PLUGIN_TAG, int(rxp.size()), rxp.data(), src.c_str(), place);
+    TSError("[%s] Failed to compile regular expression '%.*s' in %s%s", PLUGIN_NAME, int(rxp.size()), rxp.data(), src.c_str(),
+            buff);
   }
 }
 
@@ -132,7 +132,7 @@ BridgeConfig::load_config(int argc, const char *argv[])
   for (int i = 0; i < argc; i += 2) {
     if (argv[i] == CONFIG_FILE_ARG) {
       if (i + 1 >= argc) {
-        TSError("%s: Invalid '%.*s' argument - no file name found.", PLUGIN_TAG, int(CONFIG_FILE_ARG.size()),
+        TSError("[%s] Invalid '%.*s' argument - no file name found.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
                 CONFIG_FILE_ARG.data());
       } else {
         ts::file::path fp(argv[i + 1]);
@@ -143,7 +143,7 @@ BridgeConfig::load_config(int argc, const char *argv[])
         // bulk load the file.
         std::string content{ts::file::load(fp, ec)};
         if (ec) {
-          TSError("%s: Invalid '%.*s' argument - unable to read file '%s' : %s.", PLUGIN_TAG, int(CONFIG_FILE_ARG.size()),
+          TSError("[%s] Invalid '%.*s' argument - unable to read file '%s' : %s.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
                   CONFIG_FILE_ARG.data(), fp.c_str(), ec.message().c_str());
 
         } else {
@@ -162,7 +162,7 @@ BridgeConfig::load_config(int argc, const char *argv[])
             service.ltrim_if(&isspace); // dump extra separating space.
             // Only need to check service, as if the line isn't empty rxp will also be non-empty.
             if (service.empty()) {
-              TSError("%s: Invalid line %d in '%s' - no destination service found.", PLUGIN_TAG, line_no, fp.c_str());
+              TSError("[%s] Invalid line %d in '%s' - no destination service found.", PLUGIN_NAME, line_no, fp.c_str());
             } else {
               this->load_pair(rxp, service, fp, line_no);
             }
@@ -170,11 +170,11 @@ BridgeConfig::load_config(int argc, const char *argv[])
         }
       }
     } else if (argv[i][0] == '-') {
-      TSError("%s: Unrecognized option '%s'", PLUGIN_TAG, argv[i]);
+      TSError("[%s] Unrecognized option '%s'", PLUGIN_NAME, argv[i]);
       i -= 1; // Don't skip next arg.
     } else {
       if (i + 1 >= argc) {
-        TSError("%s: Regular expression '%s' without destination service", PLUGIN_TAG, argv[i]);
+        TSError("[%s] Regular expression '%s' without destination service", PLUGIN_NAME, argv[i]);
       } else {
         this->load_pair(argv[i], argv[i + 1], plugin_config_fp);
       }
@@ -301,7 +301,7 @@ void
 Bridge::net_accept(TSVConn vc)
 {
   char buff[1024];
-  int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, static_cast<int>(_peer.size()), _peer.data());
+  int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, int(_peer.size()), _peer.data());
 
   TSDebug(PLUGIN_TAG, "Received UA VConn, connecting to peer %.*s", int(_peer.size()), _peer.data());
   // UA side intercepted.
@@ -685,12 +685,12 @@ TSPluginInit(int argc, char const *argv[])
   TSPluginRegistrationInfo info{PLUGIN_NAME, "Oath:", "solidwallofcode@oath.com"};
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError(PLUGIN_NAME ": plugin registration failed.");
+    TSError("[%s] plugin registration failed.", PLUGIN_NAME);
   }
 
   Config.load_config(argc - 1, argv + 1);
   if (Config.count() <= 0) {
-    TSError("%s: No destinations defined, plugin disabled", PLUGIN_TAG);
+    TSError("[%s] No destinations defined, plugin disabled", PLUGIN_NAME);
   }
 
   TSCont contp = TSContCreate(CB_Read_Request_Hdr, TSMutexCreate());

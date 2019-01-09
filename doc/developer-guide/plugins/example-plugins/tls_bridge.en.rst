@@ -66,7 +66,9 @@ Configuration
 =============
 
 |Name| requires at least two instances of |TS| (Ingress and Peer). The client connects to the
-ingress |TS|, and the peer |TS| connects to the service.
+ingress |TS|, and the peer |TS| connects to the service. The Peer could in theory be configured to
+connect on to a further |TS| instance, acting as the ingress to that peer, but that doesn't seem a
+useful case.
 
 #. Disable caching on |TS| in ``records.config``::
 
@@ -87,12 +89,12 @@ ingress |TS|, and the peer |TS| connects to the service.
       The Ingress |TS| also needs ``proxy.config.http.server_ports`` configured to have proxy ports
       to which the Client can connect.
 
-#. Remap on the ingress is not required, however, |TS| requires remap in order to accept the
-   request. This can be done by disabling the remap requirement::
+#. By default |TS| requires remap in order to allow to outbound request to the peer. To disable this
+   requirement and allow all connections, use the setting ::
 
       CONFIG proxy.config.url_remap.remap_required INT 0
 
-   In this case |TS| will act as an open proxy which is unlikely to be a good idea, therefore if
+   In this case |TS| will act as an open proxy which is unlikely to be a good idea. Therefore if
    this approach is used |TS| will need to run in a restricted environment or use access control
    (via ``ip_allow.config`` or ``iptables``).
 
@@ -104,22 +106,23 @@ ingress |TS|, and the peer |TS| connects to the service.
    Remapping will be disabled for the user agent connection and so it will not need a rule.
 
 #. If remap is required on the peer to enable the outbound connection from the peer to the service
-   (it is not explicitly disabled) the destination port must be
+   (e.g. required remapping is not explicitly disabled) the destination port must be
    explicitly stated [#]_. E.g. ::
 
       map https://service:4443 https://service:4443
 
    Note this remap rule cannot alter the actual HTTP transactions between the client and service
-   because those happen inside what is effectively a tunnel between the client and service, supported
-   by the two |TS| instances. This rule just allows the ``CONNECT`` sent from the ingress to cause a
-   tunnel connection from the peer to the service.
+   because those happen inside what is effectively a tunnel between the client and service,
+   supported by the two |TS| instances. This rule serves to allows the ``CONNECT`` sent from the
+   ingress to cause a tunnel connection from the peer to the service.
 
 #. Configure the Ingress |TS| to verify the Peer server certificate::
 
       CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
 
-#. Configure Certificate Authority used by the Ingress |TS| to verify the Peer server certificate. If this
-   is a directory all of the certificates in the directory are treated as Certificate Authorites. ::
+#. Configure Certificate Authority used by the Ingress |TS| to verify the Peer server certificate.
+   If this is a directory, all of the certificates in the directory are treated as Certificate
+   Authorities. ::
 
       CONFIG proxy.config.ssl.client.CA.cert.filename STRING </path/to/CA_certificate_file_name>
 
@@ -150,9 +153,9 @@ ingress |TS|, and the peer |TS| connects to the service.
 
       tls_bridge.so .*[.]service[.]com peer.ats:4443 .*[.]altsvc.ats altpeer.ats:4443
 
-   Mappings can also be specified in an external file. For instance, if the file named "bridge.config" in the default |TS|
-   configuration directory contained mappings, the ``plugin.config`` configuration line could look
-   like ::
+   Mappings can also be specified in an external file. For instance, if there was file named
+   "bridge.config" in the default |TS| configuration directory which contained mappings, the
+   ``plugin.config`` configuration line could look like ::
 
       tls_bridge.so .*[.]service[.]com peer.ats:4443 --file bridge.config
 
@@ -162,7 +165,7 @@ ingress |TS|, and the peer |TS| connects to the service.
 
    These are not identical - direct mappings and file mappings are processed in order. This means in
    the first example, the direct mapping is checked before any mappping in "bridge.config", and in
-   the latter example the mappings in "bridge.config" are checked before the direct mapping. There
+   the latter example the mappings in "bridge.config" are checked before the direct mappings. There
    can be multiple "--file" arguments, which are processed in the order they appear in
    "plugin.config". The file name can be absolute, or relative. If the file name is relative, it is
    relative to the |TS| configuration directory. Therefore, in these examples, "bridge.config" must
